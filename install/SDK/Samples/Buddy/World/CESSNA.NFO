@@ -1,0 +1,27 @@
+<bgno> -- Begin File --
+
+	///////////////////////////////////////
+	//
+	// Vehicle Info
+	//
+	///////////////////////////////////////
+
+	<sign> -- Signature --
+	gvew
+
+	<make> -- Make and Model --
+	sobj cessna
+
+	<capa> -- Capability Mask --
+	2
+
+	<CLAS> -- Classification --
+	4096
+
+	<_LOD> -- Models --
+	cessna.lod
+
+<endo> -- End of File --
+
+
+

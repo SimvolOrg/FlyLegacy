@@ -1,0 +1,333 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	sdbg
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Sim Debug
+	<loc >
+	454
+	251
+	<size>
+	116
+	280
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	112
+	256
+	<ipos>
+	0
+	0
+	0
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	1
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		vehi
+		<bind>
+		20
+		<widg>
+		Button
+		defa
+		<text>
+		Vehicle
+		<loc >
+		5
+		5
+		<size>
+		100
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		100
+		22
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		patc
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Pilot ATC
+		<loc >
+		5
+		28
+		<size>
+		100
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		100
+		22
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		ngns
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Engines
+		<loc >
+		5
+		50
+		<size>
+		100
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		100
+		14
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		susp
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Wheels
+		<loc >
+		5
+		85
+		<size>
+		100
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		100
+		14
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		wing
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Wing Sections
+		<loc >
+		5
+		120
+		<size>
+		100
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		100
+		14
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		rtrs
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Rotors
+		<loc >
+		5
+		155
+		<size>
+		100
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		100
+		14
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		fsys
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Fuel System
+		<loc >
+		5
+		190
+		<size>
+		100
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		100
+		14
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		cage
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Caging...
+		<loc >
+		5
+		227
+		<size>
+		100
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		100
+		22
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

@@ -1,0 +1,314 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	fuel
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	FUEL MANAGER
+	<loc >
+	260
+	340
+	<size>
+	500
+	260
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	499
+	73
+	<ipos>
+	1
+	0
+	1
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<trns>
+	0
+	<save>
+	1
+	<box_>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?box
+		<bind>
+		33
+		<widg>
+		Box
+		defa
+		<text>
+ 
+		<loc >
+		15
+		15
+		<size>
+		230
+		30
+		<enab>
+		1
+		<show>
+		1
+		<trns>
+		<font>
+		deff
+		<ok  >
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		totl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Fuel: 
+		<loc >
+		25
+		24
+		<size>
+		220
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+
+	<box_>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?box
+		<bind>
+		33
+		<widg>
+		Box
+		defa
+		<text>
+ 
+		<loc >
+		15
+		70
+		<size>
+		230
+		60
+		<enab>
+		1
+		<show>
+		1
+		<trns>
+		<font>
+		deff
+		<ok  >
+		0
+	<endo> ========== END OBJECT ==========
+
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		selt
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Selected: 
+		<loc >
+		25
+		75
+		<size>
+		220
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+
+	<slid>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		tots
+		<bind>
+		17
+		<widg>
+		Slider
+		defa
+		<text>
+		
+		<loc >
+		25
+		94
+		<size>
+		190
+		34
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<maxv>
+		100.
+		<minv>
+		0.
+		<curv>
+		50.
+		<majt>
+		10.
+		<dmjt>
+		1
+		<mint>
+		5.
+		<dmnt>
+		0
+		<snap>
+		0
+		<link>
+		
+	<endo> ========== END OBJECT ==========
+
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		stuf
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Fuel Grade
+		<loc >
+		336
+		15
+		<size>
+		150
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		150
+		14
+		<bsiz>
+		150
+		22
+		<item>
+		1
+		80
+		<item>
+		2
+		100
+		<item>
+		3
+		100LL
+		<item>
+		4
+		115
+		<item>
+		5
+		Jet A
+		<item>
+		6
+		Jet A1
+		<item>
+		7
+		Jet A1 Plus
+		<item>
+		8
+		Jet B
+		<item>
+		9
+		Jet B Plus
+		<item>
+		10
+		Automobile
+	<endo> ========== END OBJECT ==========
+
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		tank
+		<bind>
+		51
+		<widg>
+		List
+		defa
+		<loc >
+		15
+		140
+		<size>
+		470
+		100
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		0
+		<msel>
+		0
+		<vscr>
+		1
+		<hscr>
+		1
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+
+
+<endo> ========== END OBJECT ==========

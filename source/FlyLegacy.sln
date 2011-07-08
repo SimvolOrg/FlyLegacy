@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FlyLegacy", "FlyLegacy.vcproj", "{0C221EA6-7B39-4EE0-94CB-3A1F09C77877}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5F680C40-88E4-41C0-9A7E-5A99D3AF473D} = {5F680C40-88E4-41C0-9A7E-5A99D3AF473D}
+		{45EAF17C-5D77-4099-9908-BD8EA9BAF9AE} = {45EAF17C-5D77-4099-9908-BD8EA9BAF9AE}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FlyLegacyPod", "FlyLegacyPod.vcproj", "{45EAF17C-5D77-4099-9908-BD8EA9BAF9AE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FlyLegacyUi", "FlyLegacyUi.vcproj", "{5F680C40-88E4-41C0-9A7E-5A99D3AF473D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0C221EA6-7B39-4EE0-94CB-3A1F09C77877}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0C221EA6-7B39-4EE0-94CB-3A1F09C77877}.Debug|Win32.Build.0 = Debug|Win32
+		{0C221EA6-7B39-4EE0-94CB-3A1F09C77877}.Release|Win32.ActiveCfg = Release|Win32
+		{0C221EA6-7B39-4EE0-94CB-3A1F09C77877}.Release|Win32.Build.0 = Release|Win32
+		{45EAF17C-5D77-4099-9908-BD8EA9BAF9AE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{45EAF17C-5D77-4099-9908-BD8EA9BAF9AE}.Debug|Win32.Build.0 = Debug|Win32
+		{45EAF17C-5D77-4099-9908-BD8EA9BAF9AE}.Release|Win32.ActiveCfg = Release|Win32
+		{45EAF17C-5D77-4099-9908-BD8EA9BAF9AE}.Release|Win32.Build.0 = Release|Win32
+		{5F680C40-88E4-41C0-9A7E-5A99D3AF473D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5F680C40-88E4-41C0-9A7E-5A99D3AF473D}.Debug|Win32.Build.0 = Debug|Win32
+		{5F680C40-88E4-41C0-9A7E-5A99D3AF473D}.Release|Win32.ActiveCfg = Release|Win32
+		{5F680C40-88E4-41C0-9A7E-5A99D3AF473D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

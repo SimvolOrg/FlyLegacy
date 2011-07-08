@@ -1,0 +1,547 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	?win
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Vehicle Info
+	<loc >
+	509
+	388
+	<size>
+	248
+	229
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	244
+	205
+	<ipos>
+	3
+	0
+	3
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<pict>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		icon
+		<bind>
+		17
+		<widg>
+		Picture
+		defa
+		<loc >
+		5
+		5
+		<size>
+		128
+		64
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		tail
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		136
+		4
+		<size>
+		100
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		20
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		goto
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Teleport To
+		<loc >
+		136
+		47
+		<size>
+		100
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		100
+		22
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<line>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		sepr
+		<bind>
+		17
+		<widg>
+		Line
+		defa
+		<loc >
+		2
+		149
+		<size>
+		240
+		1
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<dirc>
+		0
+		<thck>
+		1
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		nick
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		5
+		155
+		<size>
+		215
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		view
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		View
+		<loc >
+		136
+		22
+		<size>
+		100
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		100
+		22
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		chat
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Chat
+		<loc >
+		136
+		175
+		<size>
+		100
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		100
+		22
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		name
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		5
+		77
+		<size>
+		230
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		cate
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		5
+		96
+		<size>
+		230
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Speed
+		<loc >
+		134
+		113
+		<size>
+		40
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		18
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		lat
+		<loc >
+		5
+		113
+		<size>
+		25
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		18
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		lon
+		<loc >
+		5
+		128
+		<size>
+		25
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		18
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Alt
+		<loc >
+		134
+		128
+		<size>
+		40
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		18
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lat 
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		33
+		113
+		<size>
+		100
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lon 
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		33
+		128
+		<size>
+		100
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		alt 
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		177
+		128
+		<size>
+		64
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		sped
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		177
+		113
+		<size>
+		64
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

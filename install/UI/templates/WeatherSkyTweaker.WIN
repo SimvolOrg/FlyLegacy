@@ -1,0 +1,4067 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	skyc
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Sky Tweaker
+	<loc >
+	-83
+	21
+	<size>
+	687
+	461
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	679
+	435
+	<ipos>
+	0
+	0
+	0
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	1
+	<bord>
+	1
+	<bsiz>
+	4
+	<move>
+	1
+	<layr>
+	1
+	<trns>
+	0
+	<save>
+	1
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Y (luminance) zenith
+		<loc >
+		280
+		11
+		<size>
+		127
+		116
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zY_A
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			36
+			20
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zY_B
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			36
+			41
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zY_C
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			36
+			63
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			A:
+			<loc >
+			8
+			21
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			B:
+			<loc >
+			8
+			42
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			C:
+			<loc >
+			8
+			63
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zY_D
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			36
+			85
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			D:
+			<loc >
+			8
+			86
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Chroma x (~red) zenith
+		<loc >
+		278
+		139
+		<size>
+		384
+		120
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			+ theta^3 * (
+			<loc >
+			7
+			19
+			<size>
+			71
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx32
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			79
+			19
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T^2 +
+			<loc >
+			155
+			19
+			<size>
+			31
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx31
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			188
+			19
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T + 
+			<loc >
+			264
+			19
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx30
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			291
+			19
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			)
+			<loc >
+			368
+			19
+			<size>
+			10
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			+ theta^2 * (
+			<loc >
+			7
+			39
+			<size>
+			71
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx22
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			79
+			39
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T^2 +
+			<loc >
+			155
+			39
+			<size>
+			31
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx21
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			188
+			39
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T + 
+			<loc >
+			264
+			39
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx20
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			291
+			39
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			)
+			<loc >
+			368
+			39
+			<size>
+			10
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			+ theta * (
+			<loc >
+			7
+			59
+			<size>
+			71
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx12
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			79
+			59
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T^2 +
+			<loc >
+			155
+			59
+			<size>
+			31
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx11
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			188
+			59
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T + 
+			<loc >
+			264
+			59
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx10
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			291
+			59
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			)
+			<loc >
+			368
+			59
+			<size>
+			10
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			+ (
+			<loc >
+			7
+			79
+			<size>
+			71
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx02
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			79
+			79
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T^2 +
+			<loc >
+			155
+			79
+			<size>
+			31
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx01
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			188
+			79
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T + 
+			<loc >
+			264
+			79
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zx00
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			291
+			79
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			)
+			<loc >
+			368
+			79
+			<size>
+			10
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Chroma y (~green) zenith
+		<loc >
+		278
+		266
+		<size>
+		384
+		120
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			+ theta^3 * (
+			<loc >
+			7
+			19
+			<size>
+			71
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy32
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			79
+			19
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T^2 +
+			<loc >
+			155
+			19
+			<size>
+			31
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy31
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			188
+			19
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T + 
+			<loc >
+			264
+			19
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy30
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			291
+			19
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			)
+			<loc >
+			368
+			19
+			<size>
+			10
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			+ theta^2 * (
+			<loc >
+			7
+			39
+			<size>
+			71
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy22
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			79
+			39
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T^2 +
+			<loc >
+			155
+			39
+			<size>
+			31
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy21
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			188
+			39
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T + 
+			<loc >
+			264
+			39
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy20
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			291
+			39
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			)
+			<loc >
+			368
+			39
+			<size>
+			10
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			+ theta * (
+			<loc >
+			7
+			59
+			<size>
+			71
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy12
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			79
+			59
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T^2 +
+			<loc >
+			155
+			59
+			<size>
+			31
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy11
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			188
+			59
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T + 
+			<loc >
+			264
+			59
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy10
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			291
+			59
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			)
+			<loc >
+			368
+			59
+			<size>
+			10
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			+ (
+			<loc >
+			7
+			79
+			<size>
+			71
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy02
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			79
+			79
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T^2 +
+			<loc >
+			155
+			79
+			<size>
+			31
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy01
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			188
+			79
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T + 
+			<loc >
+			264
+			79
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zy00
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			291
+			79
+			<size>
+			75
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			)
+			<loc >
+			368
+			79
+			<size>
+			10
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Turbidity (T):
+		<loc >
+		279
+		392
+		<size>
+		71
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		1=CLEAR, 4=normal, 8=light haze, 64=thin fog
+		<loc >
+		277
+		412
+		<size>
+		257
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Chroma y (~green) curve
+		<loc >
+		9
+		265
+		<size>
+		259
+		120
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			A
+			<loc >
+			6
+			21
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			B
+			<loc >
+			6
+			39
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			C
+			<loc >
+			6
+			58
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			D
+			<loc >
+			6
+			76
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			E
+			<loc >
+			6
+			95
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyB1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			39
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyC1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			57
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyD1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			75
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyE1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			94
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyA1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			20
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			21
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyA0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			20
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			39
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyB0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			39
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			57
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyC0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			57
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			75
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyD0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			75
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			94
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pyE0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			94
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Chroma x (~red) curve
+		<loc >
+		12
+		138
+		<size>
+		257
+		118
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			A
+			<loc >
+			6
+			21
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			B
+			<loc >
+			6
+			39
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			C
+			<loc >
+			6
+			58
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			D
+			<loc >
+			6
+			76
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			E
+			<loc >
+			6
+			95
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxA1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			20
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxB1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			39
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxC1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			57
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxD1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			75
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxE1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			94
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			21
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxA0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			19
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			39
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxB0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			39
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			57
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxC0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			57
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			75
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxD0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			75
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			94
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pxE0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			94
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Y (luminance) curve
+		<loc >
+		11
+		10
+		<size>
+		259
+		120
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			A
+			<loc >
+			6
+			21
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			B
+			<loc >
+			6
+			39
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			C
+			<loc >
+			6
+			58
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			D
+			<loc >
+			6
+			76
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			E
+			<loc >
+			6
+			95
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYB1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			39
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYC1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			57
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYD1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			75
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYE1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			94
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYA1
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			35
+			20
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			21
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYA0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			20
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			39
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYB0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			39
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			57
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYC0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			57
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			75
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYD0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			75
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			T +
+			<loc >
+			124
+			94
+			<size>
+			25
+			15
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			pYE0
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			151
+			94
+			<size>
+			86
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		turb
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		
+		<loc >
+		355
+		390
+		<size>
+		75
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		256
+		<numb>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		rest
+		<bind>
+		34
+		<widg>
+		Button
+		defa
+		<text>
+		Defaults
+		<loc >
+		545
+		403
+		<size>
+		116
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		116
+		22
+		<bsiz>
+		116
+		22
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grp
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Profiles (SKIES.INI)
+		<loc >
+		420
+		11
+		<size>
+		242
+		117
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			Name:
+			<loc >
+			9
+			23
+			<size>
+			34
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<butn>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			load
+			<bind>
+			17
+			<widg>
+			Button
+			defa
+			<text>
+			Load
+			<loc >
+			46
+			59
+			<size>
+			60
+			22
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<ok  >
+			0
+			<canc>
+			0
+			<rrpt>
+			0
+			<rate>
+			0.
+			<lsiz>
+			0
+			0
+			<bsiz>
+			60
+			22
+		<endo> ========== END OBJECT ==========
+		<butn>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			save
+			<bind>
+			17
+			<widg>
+			Button
+			defa
+			<text>
+			Save
+			<loc >
+			122
+			59
+			<size>
+			60
+			22
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<ok  >
+			0
+			<canc>
+			0
+			<rrpt>
+			0
+			<rate>
+			0.
+			<lsiz>
+			0
+			0
+			<bsiz>
+			60
+			22
+		<endo> ========== END OBJECT ==========
+		<edit>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			name
+			<bind>
+			17
+			<widg>
+			TextField
+			defa
+			<text>
+			
+			<loc >
+			49
+			21
+			<size>
+			188
+			16
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<pass>
+			0
+			<chrs>
+			256
+			<numb>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

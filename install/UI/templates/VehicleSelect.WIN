@@ -1,0 +1,187 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	seta
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Select Aircraft
+	<loc >
+	305
+	164
+	<size>
+	432
+	441
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	424
+	415
+	<ipos>
+	3
+	0
+	2
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	1
+	<bord>
+	1
+	<bsiz>
+	4
+	<move>
+	1
+	<layr>
+	1
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		type
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Aircraft Types
+		<loc >
+		5
+		5
+		<size>
+		200
+		33
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		200
+		11
+		<bsiz>
+		200
+		22
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Available Aircraft
+		<loc >
+		5
+		46
+		<size>
+		100
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		crft
+		<bind>
+		51
+		<widg>
+		List
+		defa
+		<loc >
+		5
+		64
+		<size>
+		414
+		316
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		0
+		<msel>
+		0
+		<vscr>
+		1
+		<hscr>
+		0
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		doit
+		<bind>
+		36
+		<widg>
+		Button
+		defa
+		<text>
+		Switch Aircraft
+		<loc >
+		132
+		390
+		<size>
+		150
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		150
+		22
+		<bsiz>
+		150
+		22
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

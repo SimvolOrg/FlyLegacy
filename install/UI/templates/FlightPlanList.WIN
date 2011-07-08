@@ -1,0 +1,322 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	navl
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	FLIGHT PLAN MANAGER
+	<loc >
+	20
+	80
+	<size>
+	530
+	380
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	490
+	286
+	<ipos>
+	4
+	0
+	2
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<trns>
+	0
+	<save>
+	1
+
+
+
+	<box_>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?box
+		<bind>
+		33
+		<widg>
+		Box
+		defa
+		<text>
+ 
+		<loc >
+		5
+		8
+		<size>
+		520
+		2
+		<enab>
+		1
+		<show>
+		1
+		<trns>
+		<font>
+		deff
+		<ok  >
+		0
+	<endo> ========== END OBJECT ==========
+
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		AVAILABLE FLIGHT PLANS:
+		<loc >
+		6
+		18
+		<size>
+		140
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		allp
+		<bind>
+		51
+		<widg>
+		List
+		defa
+		<loc >
+		6
+		40
+		<size>
+		470
+		130
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		0
+		<msel>
+		0
+		<vscr>
+		1
+		<hscr>
+		1
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		sfpl
+		<bind>
+		34
+		<widg>
+		Button
+		defa
+		<text>
+		Select plan
+		<loc >
+		10
+		180
+		<size>
+		120
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		75
+		22
+		<bsiz>
+		75
+		22
+	<endo> ========== END OBJECT ==========
+
+	<box_>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?box
+		<bind>
+		33
+		<widg>
+		Box
+		defa
+		<text>
+ 
+		<loc >
+		5
+		210
+		<size>
+		520
+		2
+		<enab>
+		1
+		<show>
+		1
+		<trns>
+		<font>
+		deff
+		<ok  >
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		SECTIONAL CHARTS:
+		<loc >
+		6
+		220
+		<size>
+		120
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		chrt
+		<bind>
+		51
+		<widg>
+		List
+		defa
+		<loc >
+		6
+		240
+		<size>
+		470
+		100
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		0
+		<msel>
+		0
+		<vscr>
+		1
+		<hscr>
+		1
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		smap
+		<bind>
+		34
+		<widg>
+		Button
+		defa
+		<text>
+		Select chart
+		<loc >
+		10
+		350
+		<size>
+		120
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		75
+		22
+		<bsiz>
+		75
+		22
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

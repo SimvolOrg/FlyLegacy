@@ -1,0 +1,129 @@
+//
+// Fly! Legacy Window Template
+//
+// File -> Quit confirm dialog
+//
+
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	quit
+	<widg>
+	Window
+	defa
+	<text>
+	Confirm Program Quit
+	<loc >
+	320
+	320
+	<size>
+	200
+	120
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<clos>
+	0
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		mesg
+		<widg>
+		Label
+		defa
+		<text>
+		Are you sure you want to quit?
+		<loc >
+		15
+		10
+		<size>
+		180
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		canc
+		<bind>
+		34
+		<widg>
+		Button
+		defa
+		<text>
+		Cancel
+		<loc >
+		40
+		91
+		<size>
+		72
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		1
+		<rrpt>
+		0
+		<rate>
+		0.
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		okok
+		<widg>
+		Button
+		defa
+		<text>
+		OK
+		<loc >
+		120
+		91
+		<size>
+		72
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

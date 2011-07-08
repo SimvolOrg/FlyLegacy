@@ -1,0 +1,608 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	envr
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Weather Overview
+	<loc >
+	373
+	185
+	<size>
+	400
+	200
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	274
+	374
+	<ipos>
+	3
+	0
+	3
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		DATE:
+		<loc >
+		8
+		10
+		<size>
+		65
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>   // Edit date
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		date
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		2010/10/18
+		<loc >
+		60
+		10
+		<size>
+		60
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		TIME:
+		<loc >
+		130
+		10
+		<size>
+		60
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>   // Edit time
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		time
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		17h14mn:05sec
+		<loc >
+		170
+		10
+		<size>
+		90
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>   // Edit time
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		utc_
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		17h14mn:05sec
+		<loc >
+		260
+		10
+		<size>
+		100
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		LOCATION:
+		<loc >
+		 8
+		26
+		<size>
+		65
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  // Distance to
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dist
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		120 miles from
+		<loc >
+		80
+		26
+		<size>
+		80
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  //Location
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		loca
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Dallas/Fort Worth International Airport
+		<loc >
+		165
+		26
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<box_>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?box
+		<bind>
+		33
+		<widg>
+		Box
+		defa
+		<text>
+ 
+		<loc >
+		8
+		46
+		<size>
+		380
+		2
+		<enab>
+		1
+		<show>
+		1
+		<trns>
+		<font>
+		deff
+		<ok  >
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		ALTITUDE:
+		<loc >
+		8
+		54
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl> // ALTITUDE
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		alti
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		18 feet
+		<loc >
+		90
+		54
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		WIND:
+		<loc >
+		8
+		72
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  //WIND
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		wind
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		WIND:
+		<loc >
+		90
+		72
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		TEMPERATURE:
+		<loc >
+		8
+		90
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  //TEMPERATURE
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		temp
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		xx degres
+		<loc >
+		90
+		90
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		BAROMETER:
+		<loc >
+		8
+		108
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  // BAROMETER 
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		baro
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		18 HPa
+		<loc >
+		90
+		108
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		rain
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		PRECIPITATION:  none
+		<loc >
+		8
+		126
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>  
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		CLOUD COVER:
+		<loc >
+		8
+		144
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>   // Cloud cover
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		clod
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		aa
+		<loc >
+		90
+		144
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

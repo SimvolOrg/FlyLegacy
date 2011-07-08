@@ -1,0 +1,17 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<wobj> ---- world object type ----
+	plan
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		38 44'10.0000"N
+		119 45' 59.0000"W
+		10000.0
+		<_NFO> ---- Vehicle Info Files ----
+		flyhawk.nfo
+		<user> ---- default user vehicle ----
+		<iang> ---- inertial angular position ----
+		0.001416,-1.57,-0.002321
+		<vmod> ---- view mode ----
+		cock
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

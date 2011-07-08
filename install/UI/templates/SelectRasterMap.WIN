@@ -1,0 +1,251 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	smap
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Select Map
+	<loc >
+	269
+	233
+	<size>
+	486
+	303
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	478
+	275
+	<ipos>
+	2
+	0
+	2
+	0
+	<clos>
+	0
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	4
+	<move>
+	1
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		list
+		<bind>
+		17
+		<widg>
+		List
+		defa
+		<loc >
+		8
+		25
+		<size>
+		462
+		214
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		0
+		<msel>
+		0
+		<vscr>
+		1
+		<hscr>
+		0
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Select A Map To View
+		<loc >
+		8
+		11
+		<size>
+		250
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		ok__
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		OK
+		<loc >
+		377
+		243
+		<size>
+		80
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		80
+		22
+		<bsiz>
+		80
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		canc
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Cancel
+		<loc >
+		285
+		243
+		<size>
+		80
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		1
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		80
+		22
+		<bsiz>
+		80
+		22
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		type
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Type
+		<loc >
+		8
+		243
+		<size>
+		206
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		73
+		2
+		0
+		<lsiz>
+		28
+		19
+		<bsiz>
+		178
+		22
+		<item>
+		all_
+		Show All Maps
+		<item>
+		sac_
+		Sectional Charts
+		<item>
+		tac_
+		Terminal Area Charts
+		<item>
+		loen
+		Low Enroute Charts
+		<item>
+		hien
+		Hi Enroute Charts
+		<item>
+		sid_
+		Departure Charts
+		<item>
+		star
+		Arrival Charts
+		<item>
+		diag
+		Airport Diagrams
+		<item>
+		topo
+		Topographic Maps
+		<item>
+		misc
+		Miscellaneous Maps
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

@@ -1,0 +1,4325 @@
+<bgno> ==== BEGIN OBJECT =====
+
+////////////////////////////////////////////////
+//
+//	panel bitmap, position, and offsets
+//
+////////////////////////////////////////////////
+
+<panl> ---- panelBackground ----
+FLYPNL0.PBM
+<3Dxy> ---- 3D window position ----
+0
+-480
+<3Dsz> ---- 3D window size ----
+1397
+1024
+<isiz> ---- image size ----
+1397
+700
+<home> ---- home offset X Y ----
+480
+186
+106
+<home> ---- home offset X Y ----
+600
+150
+200
+<home> ---- home offset X Y ----
+768
+0
+250
+<keep> ---- keep resident in memory ----
+<scrl> ---- scrolling cockpit ----
+<lite> ---- gauge lights ----
+<bgno> ---- begin ----
+	<id__> ---- ID ----
+	gage
+	<ambi> ---- Ambient override ----
+	<msg_> ---- Message ----
+	<bgno> ---- begin ----
+		<conn> ---- group ----
+		gglt
+		<user> ---- user data ----
+		HARDWARE,STATE
+		<dtag> ---- user data ----
+		levl
+	<endo> ---- end ----
+<endo> ---- end ----
+<lite> ---- panel lights ----
+<bgno> ---- begin ----
+	<id__> ---- ID ----
+	panl
+	<ambi> ---- Ambient override ----
+	<msg_> ---- Message ----
+	<bgno> ---- begin ----
+		<conn> ---- group ----
+		pnlt
+		<user> ---- user data ----
+		HARDWARE,STATE
+		<dtag> ---- user data ----
+		levl
+	<endo> ---- end ----
+<endo> ---- end ----
+<lite> ---- pedestal lights ----
+<bgno> ---- begin ----
+	<id__> ---- ID ----
+	pede
+	<ambi> ---- Ambient override ----
+	<msg_> ---- Message ----
+	<bgno> ---- begin ----
+		<conn> ---- group ----
+		pdlt
+		<user> ---- user data ----
+		HARDWARE,STATE
+		<dtag> ---- user data ----
+		levl
+	<endo> ---- end ----
+<endo> ---- end ----
+<lite> ---- radio lights ----
+<bgno> ---- begin ----
+	<id__> ---- ID ----
+	radi
+	<ambi> ---- Ambient override ----
+	<msg_> ---- Message ----
+	<bgno> ---- begin ----
+		<conn> ---- group ----
+		rdlt
+		<user> ---- user data ----
+		HARDWARE,STATE
+		<dtag> ---- user data ----
+		levl
+	<endo> ---- end ----
+<endo> ---- end ----
+<lite> ---- annunciator lights ----
+<bgno> ---- begin ----
+	<id__> ---- ID ----
+	anlt
+	<msg_> ---- Message ----
+	<bgno> ---- begin ----
+		<conn> ---- group ----
+		anlt
+		<user> ---- user data ----
+		HARDWARE,STATE
+		<dtag> ---- user data ----
+		levl
+	<endo> ---- end ----
+<endo> ---- end ----
+<clao> ---- cockpit lights always ON ----
+<dlid> ---- default lights ----
+panl
+
+////////////////////////////////////////////////
+//
+//	Airspeed gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+aspd
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	aspd
+	<size> ---- x,y,xsize,ysize ----
+	197
+	170
+	90
+	90
+	<cntr> ---- needle center x,y ----
+	45
+	45
+	<mesg> -- connect to Airspeed Subsystem --
+	<bgno>
+		<conn>
+		sped
+		<dtag>
+		sped
+	<endo>
+	<rang> ---- angle range ----
+	0.0
+	337.0
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	200.0
+	<nedl> ---- bitmap needle ----
+	stnd
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle definition ----
+		needle1.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 0.0
+		40.0 21.0
+		45.0 34.5
+		50.0 46.7
+		55.0 58.3
+		60.0 70.6
+		65.0 80.0
+		70.0 90.9
+		75.0 100.4
+		80.0 110.6
+		85.0 121.3
+		90.0 133.3
+		95.0 144.5
+		100.0 156.7
+		105.0 168.6
+		110.0 180.0
+		115.0 192.2
+		120.0 204.7
+		125.0 216.5
+		130.0 227.5
+		135.0 234.5
+		140.0 242.2
+		145.0 249.1
+		150.0 255.7
+		155.0 263.0
+		160.0 270.0
+		165.0 277.0
+		170.0 284.0
+		175.0 292.7
+		180.0 301.4
+		185.0 309.9
+		190.0 318.9
+		195.0 327.8
+		200.0 336.9
+		<endf> - end format
+	<endo> ---- end table ----
+	<knob> ---- true airspeed knob ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhknob.pbg
+		<rect> ---- click area rect ----
+		-3
+		75
+		14
+		93
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		True Airspeed Adjustment
+	<endo> ---- end click area ----
+	<help> ---- help string ----
+	Airspeed Indicator
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhaspm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Attitude (horizon) gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+hori
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	hori
+	<size> ---- x,y,xsize,ysize ----
+	312
+	170
+	90
+	90
+	<mesg>
+	<bgno>
+		<conn>
+		atti
+		<dtag>
+		atti
+	<endo>
+	<foot> ---- football filename ----
+	ahoriz_b.pbg
+	2
+	3
+	<horz> ---- horizon needle filename ----
+	ahoriz_c.pbm
+	2
+	3
+	<irim> ---- inner rim filename ----
+	ahoriz_d.pbg
+	2
+	3
+	<orim> ---- outer rim filename ----
+	ahoriz_f.pbm
+	2
+	3
+	<fron> ---- front plate filename ----
+	skyhatti.pbm
+	0
+	0
+	<pixd> ---- pixels per degree ----
+	0.6
+	<moff> ---- maximum pixel offset ----
+	23
+	<help> ---- popup help ----
+	Attitude Indicator
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhattm.raw
+	<knob> ---- horizon cross knob ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhknob.pbg
+		<rect> ---- click area rect ----
+		36
+		71
+		54
+		89
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Horizon Needle Adjustment
+	<endo> ---- end click area ----
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Altimeter gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+alti
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	alti
+	<size> ---- x,y,xsize,ysize ----
+	426
+	170
+	90
+	90
+	<mesg> -- connect to Altimeter Subsystem --
+	<bgno>
+		<conn>
+		alti
+		<dtag>
+		alti
+	<endo>
+	<psiz> ---- plate size ----
+	85
+	85
+	<kmsg> ---- Kollsman message ----
+	<bgno> ---- begin ----
+		<conn> ---- group ----
+		alti
+		<dtag>
+		baro
+	<endo> ---- end ----
+	<csrl> ---- left side cursor ----
+	mptleft.csr
+	<csrr> ---- right side cursor ----
+	mptright.csr
+	<ndl1> ---- first needle ----
+	<bgno> ---- begin needle ----
+		<cntr> ---- needle center x,y ----
+		46
+		46
+		<sang> ---- starting angle ----
+		0.0
+		<dunt> ---- degrees per unit ----
+		0.36
+		<nedl> ---- bitmap needle ----
+		stnd
+		<bgno> ==== BEGIN BITMAP NEEDLE ====
+			<file> ---- needle file ----
+			needle1.ndl
+		<endo> ==== END BITMAP NEEDLE ====
+	<endo> ---- end needle ----
+	<ndl2> ---- second needle ----
+	<bgno> ---- begin needle ----
+		<cntr> ---- needle center x,y ----
+		46
+		46
+		<sang> ---- starting angle ----
+		0.0
+		<dunt> ---- degrees per unit ----
+		0.036
+		<nedl> ---- bitmap needle ----
+		stub
+		<bgno> ==== BEGIN BITMAP NEEDLE ====
+			<file> ---- needle file ----
+			needle2.ndl
+		<endo> ==== END BITMAP NEEDLE ====
+	<endo> ---- end needle ----
+	<ndl3> ---- third needle ----
+	<bgno> ---- begin needle ----
+		<cntr> ---- needle center x,y ----
+		46
+		46
+		<sang> ---- starting angle ----
+		0.0
+		<dunt> ---- degrees per unit ----
+		36.0
+		<nedl> ---- bitmap needle ----
+		tenk
+		<bgno> ==== BEGIN BITMAP NEEDLE ====
+			<file> ---- needle file ----
+			ALTI10K.NDL
+		<endo> ==== END BITMAP NEEDLE ====
+	<endo> ---- end needle ----
+	<help> ---- popup help ----
+	Altimeter
+	<koll> ---- Kollsman window ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		69
+		34
+		88
+		55
+	<endo> ---- end click area ----
+	<knob> ---- Kollsman knob ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhknob.pbg
+		<rect> ---- click area rect ----
+		-2
+		74
+		15
+		92
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Kollsman Knob
+	<endo> ---- end click area ----
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhaltm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Vertical speed indicator
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+vspd
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	vspd
+	<size> ---- x,y,xsize,ysize ----
+	427
+	287
+	90
+	90
+	<mesg> -- connect to VSI Subsystem --
+	<bgno>
+		<conn>
+		vsi_
+		<dtag>
+		vsi_
+	<endo>
+	<cntr> ---- needle center x,y ----
+	43
+	44
+	<sang> ---- starting angle ----
+	101.1
+	<gmin> ---- min value allowed ----
+	-2000.0
+	<gmax> ---- max value allowed ----
+	2000.0
+	<nedl> ---- bitmap needle ----
+	stnd
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		NEEDLE1.NDL
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		-2000.0 0.0
+		-1500.0 40.5
+		-1000.0 91.1
+		-500.0 134.9
+		0.0 168.9
+		500.0 204.7
+		1000.0 246.7
+		1500.0 296.2
+		2000.0 335.8
+		<endf> - end format
+	<endo> ---- end table ----
+	<help> ---- popup help ----
+	Vertical Speed Indicator
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhvspm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Directional gyro gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+gyro
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	dgyr
+	<size> ---- x,y,xsize,ysize ----
+	313
+	287
+	90
+	90
+	<mesg>
+	<bgno>
+		<conn>
+		gyro
+		<dtag>
+		yaw_
+	<endo>
+	<over> ---- overlay image ----
+	GYROOVER.PBM
+	2
+	2
+	<cntr> ---- needle center x,y ----
+	45
+	45
+	<rang> ---- angle range ----
+	0.0
+	360.0
+	<nedl> ---- bitmap needle ----
+	gyro
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		DGYRO.NDL
+	<endo> ==== END BITMAP NEEDLE ====
+	<knob> ---- gyro correction knob ----
+	dgknob.pbg
+	-4
+	76
+	15
+	94
+	<apbg> ---- autopilot bug ----
+	apbug.pbg
+	2
+	2
+	_Bug
+	<apkb> ---- autopilot bug knob ----
+	skyhapkb.pbg
+	75
+	76
+	94
+	94
+	<bias> ---- bias tag ----
+	gyro
+	<crsr> ---- default cursor ----
+	mpfinger.csr
+	<help> ---- popup help ----
+	Directional Gyro
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhdgym.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Turn (bank) coordinator
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+turn
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	turn
+	<size> ---- x,y,xsize,ysize ----
+	198
+	287
+	90
+	90
+	<mesg>
+	<bgno>
+		<conn>
+		turn
+		<dtag>
+		turn
+	<endo>
+	<cntr> ---- needle center x,y ----
+	45
+	45
+	<over> ---- overlay image ----
+	turnolay.pbm
+	2
+	5
+	<plan> ---- plane plate ----
+	turncoor.pbg
+	<poff> ---- plane offset ----
+	2
+	5
+	<ball> ---- ball plate ----
+	turnball.pbg
+	<boff> ---- ball offset ----
+	2
+	7
+	<pcon> ---- plane data tag ----
+	turn
+	<bcon> ---- ball data tag ----
+	ball
+	<help> ---- popup help ----
+	Turn Coordinator
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhtrnm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	NAV1 gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+navg
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	n1ob
+	<size> ---- x,y,xsize,ysize ----
+	542
+	170
+	90
+	90
+	<user> ---- user data ----
+	HARDWARE,GAUGE
+	<cntr> ---- compass center X,Y ----
+	46
+	46
+	<comp> ---- compass plate needle ----
+	navp
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		csnavcps.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<lndl> ---- localizer needle ----
+	cdi1v.pbg
+	3
+	3
+	<gndl> ---- glide slope needle ----
+	cdi1h.pbg
+	3
+	3
+	<radi> ---- radio tag ----
+	kx15
+	1
+	<wtab> ---- warning tab ----
+	skyhwarn.pbm
+	<ttab> ---- TO tab ----
+	skyhto.pbm
+	<ftab> ---- FR tab ----
+	skyhfrom.pbm
+	<ntpl> ---- NAV tab placement ----
+	40
+	62
+	<gspl> ---- GS tab placement ----
+	55
+	38
+	<obs_> ---- OBS knob ----
+	obsknob.pbg
+	-3
+	75
+	15
+	93
+	nav1
+	<fcs_> ---- FCS switch ----
+	<bgno> ---- begin message ----
+		<conn> ---- group ----
+		K140
+		<user> ---- user data ----
+		HARDWARE,OTHER
+		<dtag> ---- user data ----
+		_FCS
+	<endo> ---- end message ----
+	<crsr> ---- default cursor ----
+	mpfinger.csr
+	<help> ---- popup help ----
+	Course Deviation Indicator
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhnv1m.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	NAV2 gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+navg
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	n2ob
+	<size> ---- x,y,xsize,ysize ----
+	542
+	287
+	90
+	90
+	<user> ---- user data ----
+	HARDWARE,GAUGE
+	<cntr> ---- compass center X,Y ----
+	46
+	46
+	<comp> ---- compass plate needle ----
+	navp
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		csnavcps.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<lndl> ---- localizer needle ----
+	cdiv2.pbg
+	3
+	4
+	<radi> ---- radio tag ----
+	kx15
+	2
+	<wtab> ---- warning tab ----
+	skyhwarn.pbm
+	<ttab> ---- TO tab ----
+	skyhto.pbm
+	<ftab> ---- FR tab ----
+	skyhfrom.pbm
+	<ntpl> ---- NAV tab placement ----
+	55
+	42
+	<obs_> ---- OBS knob ----
+	obsknob.pbg
+	-3
+	75
+	15
+	93
+	nav2
+	<crsr> ---- default cursor ----
+	mpfinger.csr
+	<help> ---- popup help ----
+	Course Deviation Indicator
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhnv2m.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Nav gauge group
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+ogrp
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<nav1> ---- nav 1 OBS identifier ----
+	n1ob
+	<nav2> ---- nav 2 OBS identifier ----
+	n2ob
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Left fuel tank gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+fuel
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	lfue
+	<over> ---- overlay image ----
+	skyhftl.pbm
+	0
+	0
+	<size> ---- placement and size ----
+	30
+	285
+	33
+	66
+	<mesg>
+	<bgno>
+		<conn>
+		LqTy
+		<dtag>
+		gals
+	<endo>
+	<nedl> ---- bitmap needle ----
+	smal
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		needle3.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<cntr> ---- needle center x,y ----
+	13
+	33
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 154.0
+		5.0 128.7
+		10.0 102.2
+		15.0 75.6
+		20.0 51.2
+		26.0 26.2
+		<endf> - end format
+	<endo> ---- end table ----
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	26.0
+	<help> ---- popup help ----
+	Fuel Quantity (Left)
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhfllm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Right fuel tank gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+fuel
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	rfue
+	<over> ---- overlay name ----
+	skyhftr.pbm
+	0
+	0
+	<size> ---- placement and size ----
+	63
+	285
+	33
+	66
+	<mesg>
+	<bgno>
+		<conn>
+		RqTy
+		<dtag>
+		gals
+	<endo>
+	<nedl> ---- bitmap needle ----
+	smal
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		needle3.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<cntr> ---- needle center x,y ----
+	19
+	33
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 206.9
+		5.0 230.7
+		10.0 258.4
+		15.0 284.9
+		20.0 309.8
+		26.0 332.8
+		<endf> - end format
+	<endo> ---- end table ----
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	26.0
+	<help> ---- popup help ----
+	Fuel Quantity (Right)
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhflrm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	RPM gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+tach
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	rpms
+	<size> ---- placement and size ----
+	427
+	410
+	90
+	90
+	<mesg> -- connect to Tachometer Subsystem --
+	<bgno>
+		<conn>
+		tach
+		<dtag>
+		rpmn
+	<endo>
+	<cntr> ---- needle center x,y ----
+	45
+	46
+	<nedl> ---- bitmap needle ----
+	stnd
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		NEEDLE1.NDL
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 0.0
+		200.0 14.3
+		500.0 34.9
+		700.0 57.8
+		1000.0 72.8
+		1200.0 88.7
+		1500.0 111.8
+		1700.0 129.5
+		1900.0 148.4
+		2000.0 158.1
+		2100.0 167.2
+		2200.0 176.0
+		2300.0 185.1
+		2400.0 195.2
+		2500.0 204.8
+		2700.0 223.3
+		3000.0 250.7
+		<endf> - end format
+	<endo> ---- end table ----
+	<sang> ---- starting angle ----
+	236.5
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	3000.0
+	<help> ---- popup help ----
+	Tachometer
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhrpmm.raw
+	<hobb> ---- HOBBS METER ----
+	<bgno> ---- BEGIN HOBBS ----
+		<unid> ---- unique id ----
+		hob1
+		<size> ---- placement and size ----
+		457
+		465
+		30
+		9
+		<mesg> ---- Subsystem Message ----
+		<bgno>
+			<conn> ---- info tag ----
+			hobs
+			<user> ---- user data ----
+			HARDWARE,GAUGE
+		<endo>
+		<blak> ---- black digits ----
+		skyhhmsb.pbg
+		<whit> ---- white digits ----
+		skyhhmsw.pbm
+	<endo> ---- END HOBBS ----
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Hobbs meter (stand alone)
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+hobb
+<bgno> ==== BEGIN GAUGE ====
+	<unid> ---- unique id ----
+	hob2
+	<size> ---- placement and size ----
+	1233
+	259
+	40
+	11
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- info tag ----
+		hobs
+		<user> ---- user data ----
+		HARDWARE,GAUGE
+	<endo>
+	<blak> ---- black digits ----
+	skyhhmlb.pbg
+	<whit> ---- white digits ----
+	skyhhmlw.pbm
+	<help> ---- help string ----
+	Hobbs Meter
+<endo> ==== END GAUGE ====
+
+////////////////////////////////////////////////
+//
+//	Amps gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+amms
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	amms
+	<over> ---- overlay image ----
+	skyhamp.pbm
+	0
+	0
+	<size> ---- placement and size ----
+	142
+	375
+	33
+	66
+	<cntr> ---- needle center x,y ----
+	19
+	32
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- info tag ----
+		chrg
+		<user> ---- user data ----
+		HARDWARE,GAUGE
+		<dtag>
+		indn
+	<endo>
+	<nedl> ---- bitmap needle ----
+	smal
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		needle3.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		-60.0 216.7
+		-30.0 243.1
+		0.0 270.0
+		30.0 295.6
+		60.0 321.2
+		<endf> - end format
+	<endo> ---- end table ----
+	<gmin> ---- min value allowed ----
+	-60.0
+	<gmax> ---- max value allowed ----
+	60.0
+	<help> ---- popup help ----
+	Ammeter Indicator
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhampm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Vacuum (suction) gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+vacu
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	suct
+	<over> ---- overlay image ----
+	skyhvac.pbm
+	0
+	0
+	<size> ---- placement and size ----
+	109
+	375
+	33
+	66
+	<cntr> ---- needle center x,y ----
+	13
+	32
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		suct
+		<user> ---- user data ----
+		HARDWARE,GAUGE
+		<dtag>
+		indn
+	<endo>
+	<nedl> ---- bitmap needle ----
+	smal
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		needle3.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 142.8
+		4.0 116.9
+		5.0 90.0
+		6.0 64.1
+		7.0 38.4
+		<endf> - end format
+	<endo> ---- end table ----
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	7.0
+	<help> ---- popup help ----
+	Vacuum Indicator
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhvacm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Oil temperature gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+oilt
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	oilt
+	<size> ---- x,y,xsize,ysize ----
+	30
+	375
+	33
+	66
+	<cntr> ---- needle center x,y ----
+	14
+	32
+	<over> ---- overlay image ----
+	skyhoilt.pbm
+	0
+	0
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- connected to ----
+		oilT
+		<user> ---- user data ----
+		HARDWARE,GAUGE
+		<user> ---- user data ----
+		ENGINE,1
+	<endo>
+	<nedl> ---- bitmap needle ----
+	smal
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		needle3.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 163.1
+		100.0 150.7
+		150.0 107.2
+		200.0 58.2
+		240.0 18.4
+		<endf> - end format
+	<endo> ---- end table ----
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	240.0
+	<help> ---- popup help ----
+	Oil Temperature
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhotpm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Oil pressure gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+oilp
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	oilp
+	<size> ---- x,y,xsize,ysize ----
+	63
+	375
+	33
+	66
+	<cntr> ---- needle center x,y ----
+	18
+	32
+	<over> ---- overlay image ----
+	skyhoilp.pbm
+	0
+	0
+	<user> ---- user data ----
+	HARDWARE,GAUGE
+	<user> ---- user data ----
+	ENGINE,1
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- connected to ----
+		oilP
+	<endo>
+	<nedl> ---- bitmap needle ----
+	smal
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		needle3.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 197.4
+		20.0 222.0
+		40.0 249.9
+		60.0 277.3
+		80.0 305.5
+		100.0 325.9
+		115.0 343.8
+		<endf> - end format
+	<endo> ---- end table ----
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	115.0
+	<help> ---- popup help ----
+	Oil Pressure
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhoprm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Fuel flow
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+fflw
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	flow
+	<size> ---- x,y,xsize,ysize ----
+	142
+	285
+	33
+	66
+	<cntr> ---- needle center x,y ----
+	18
+	32
+	<over> ---- overlay image ----
+	skyhfflw.pbm
+	0
+	0
+	<mesg> -- connect to Fuelflow Subsytem --
+	<bgno>
+		<conn>
+		fFlw
+		<dtag>
+		gph_
+	<endo>
+	<nedl> ---- bitmap needle ----
+	smal
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		needle3.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 197.6
+		5.0 203.3
+		10.0 242.9
+		15.0 290.2
+		19.0 339.7
+		<endf> - end format
+	<endo> ---- end table ----
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	19.0
+	<help> ---- popup help ----
+	Fuel Flow
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhfflm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	EGT gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+egtg
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	eEGT
+	<size> ---- x,y,xsize,ysize ----
+	109
+	285
+	33
+	66
+	<cntr> ---- needle center x,y ----
+	13
+	32
+	<over> ---- overlay image ----
+	skyhegt.pbm
+	0
+	0
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- connected to ----
+		eEGT
+		<user> ---- user data ----
+		HARDWARE,GAUGE
+		<user> ---- user data ----
+		ENGINE,1
+	<endo>
+	<nedl> ---- bitmap needle ----
+	smal
+	<bgno> ==== BEGIN BITMAP NEEDLE ====
+		<file> ---- needle file ----
+		needle3.ndl
+	<endo> ==== END BITMAP NEEDLE ====
+	<gtbl> ---- gauge value table ----
+	<bgno> ---- begin table ----
+		<fmt1> - x y
+		0.0 161.7
+		100.0 148.8
+		200.0 116.2
+		300.0 78.7
+		400.0 37.9
+		500.0 22.5
+		<endf> - end format
+	<endo> ---- end table ----
+	<gmin> ---- min value allowed ----
+	0.0
+	<gmax> ---- max value allowed ----
+	500.0
+	<egtr> ---- EGT reference needle default ----
+	200.0
+	<egtn> ---- EGT reference needle bitmap ----
+	needle6.pbg
+	<help> ---- popup help ----
+	Exhaust Gas Temperature
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhegtm.raw
+	<curs> ---- cursor ----
+	mpfinger.csr
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	ADF gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+adfg
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	adfg
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- radio tag ----
+		adfr
+	<endo>
+	<size> ---- size and location ----
+	542
+	410
+	90
+	90
+	<over> ---- overlay image ----
+	SKYHADFO.PBM
+	3
+	3
+	<cntr> ---- compass center x,y ----
+	46
+	46
+	<rang> ---- angle range ----
+	0.0
+	360.0
+	<nedl> ---- ADF needle ----
+	adfn
+	<bgno> ==== BEGIN NEEDLE ====
+		<file> ---- needle file ----
+		adfneed.ndl
+	<endo> ==== END NEEDLE ====
+	<comp> ---- compass plate ----
+	gyro
+	<bgno> ==== BEGIN NEEDLE ====
+		<file> ---- needle file ----
+		DGYRO.NDL
+	<endo> ==== END NEEDLE ====
+	<knob> ---- ADF heading knob ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhadfk.pbg
+		<rect> ---- click area rect ----
+		-3
+		74
+		14
+		92
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Heading
+	<endo> ---- end click area ----
+	<help> ---- popup help ----
+	Auto Direction Finder
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhadfm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Compass strip
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+comp
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	comp
+	<size> ---- size and location ----
+	680
+	22
+	51
+	16
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		mcmp
+	<endo>
+	<comp> ---- compass strip bitmap ----
+	compass.pbm
+	<wind> ---- window width ----
+	51
+	<orgx> ---- origin of zero degrees offset ----
+	36
+	<nton> ---- north to north pixels ----
+	216
+	<over> ---- overlay ----
+	skyhcomp.pbm
+	0
+	0
+	<help> ---- popup help ----
+	Magnetic Compass
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhcpsm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Digital clock/O.A.T.
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+cdcg
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	cdcg
+	<size> ---- x,y,xsize,ysize ----
+	116
+	199
+	51
+	61
+	<oatd> ---- O.A.T. display area ----
+	5
+	16
+	42
+	24
+	<clkd> ---- clock display area ----
+	2
+	27
+	46
+	42
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data connection ----
+		doat
+		<user> ---- user data ----
+		HARDWARE,GAUGE
+		<user> ---- user data ----
+		UNIT,1
+		<dtag> ---- user data ----
+		umod
+	<endo>
+	<bupp> ---- upper button ----
+	<bgno> ---- begin button ----
+		<rect> ---- rectangle ----
+		22
+		1
+		28
+		7
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Upper Button
+	<endo> ---- end button
+	<bsel> ---- select button ----
+	<bgno> ---- begin button ----
+		<rect> ---- rectangle ----
+		13
+		52
+		19
+		57
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Select Button
+	<endo> ---- end button
+	<bcon> ---- control button ----
+	<bgno> ---- begin button ----
+		<rect> ---- rectangle ----
+		32
+		52
+		38
+		57
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Control Button
+	<endo> ---- end button
+	<bbot> ---- both buttons ----
+	<bgno> ---- begin button ----
+		<rect> ---- rectangle ----
+		20
+		52
+		31
+		57
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Set Mode (Select/Control)
+	<endo> ---- end button
+	<help> ---- popup help ----
+	Digital Clock/O.A.T.
+	<lite> ---- light flag ----
+	gage
+	<mask> ---- light mask ----
+	skyhoatm.raw
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Bending King KX155 nav/com radio
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+k155
+<bgno> ==== BEGIN OBJECT ====
+	<unid> ---- unique id ----
+	nc01
+	<size> ---- x,y,xsize,ysize ----
+	670
+	241
+	226
+	65
+	<radi> ---- radio identifier ----
+	kx15
+	1
+	<ca01> ---- COM active whole digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		20
+		7
+		38
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Active Frequency
+	<endo> ---- end click area ----
+	<ca02> ---- COM active fract digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		40
+		7
+		52
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Active Frequency
+	<endo> ---- end click area ----
+	<ca03> ---- COM standby whole digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		76
+		7
+		94
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Standby Frequency
+	<endo> ---- end click area ----
+	<ca04> ---- COM standby fract  digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		96
+		7
+		108
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Standby Frequency
+	<endo> ---- end click area ----
+	<ca05> ---- NAV active whole digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		132
+		7
+		150
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Active Frequency
+	<endo> ---- end click area ----
+	<ca06> ---- NAV active fract digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		152
+		7
+		164
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Active Frequency
+	<endo> ---- end click area ----
+	<ca07> ---- NAV standby whole digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		187
+		7
+		205
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Standby Frequency
+	<endo> ---- end click area ----
+	<ca08> ---- NAV standby fract digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		207
+		7
+		219
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Standby Frequency
+	<endo> ---- end click area ----
+	<ca09> ---- COM tune click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		83
+		34
+		108
+		59
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Frequency Tune Knob
+	<endo> ---- end click area ----
+	<ca10> ---- NAV tune click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		194
+		34
+		219
+		59
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Frequency Tune Knob
+	<endo> ---- end click area ----
+	<ca11> ---- COM channel click area ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt02.pbg
+		<rect> ---- click area rect ----
+		51
+		57
+		72
+		64
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Channel Button
+	<endo> ---- end click area ----
+	<ca12> ---- NAV mode click area ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt02.pbg
+		<rect> ---- click area rect ----
+		162
+		57
+		183
+		64
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Mode Button
+	<endo> ---- end click area ----
+	<ca13> ---- COM transfer click area ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt01.pbg
+		<rect> ---- click area rect ----
+		46
+		39
+		66
+		53
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Transfer Button
+	<endo> ---- end click area ----
+	<ca14> ---- NAV transfer click area ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt01.pbg
+		<rect> ---- click area rect ----
+		156
+		39
+		176
+		53
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Transfer Button
+	<endo> ---- end click area ----
+	<ca15> ---- COM volume click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		12
+		45
+		30
+		62
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Volume Knob
+	<endo> ---- end click area ----
+	<ca16> ---- NAV volume click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		122
+		45
+		140
+		62
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Volume Knob
+	<endo> ---- end click area ----
+	<ca17> ---- OBS digit 1 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		186
+		7
+		192
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		OBS Heading
+	<endo> ---- end click area ----
+	<ca18> ---- OBS digit 2 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		193
+		7
+		199
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		OBS Heading
+	<endo> ---- end click area ----
+	<ca19> ---- OBS digit 3 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		200
+		7
+		206
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		OBS Heading
+	<endo> ---- end click area ----
+	<ca20> ---- Timer minutes ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		182
+		7
+		194
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Flight Timer
+	<endo> ---- end click area ----
+	<ca21> ---- Timer seconds ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		196
+		7
+		208
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Flight Timer
+	<endo> ---- end click area ----
+	<lite> ---- light flag ----
+	radi
+	<help> ---- popup help ----
+	Bendix/King KX155 Nav/Com Radio
+<endo> ==== END OBJECT ====
+
+////////////////////////////////////////////////
+//
+//	Bending King KX155 nav/com radio
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+k155
+<bgno> ==== BEGIN OBJECT ====
+	<unid> ---- unique id ----
+	nc02
+	<size> ---- x,y,xsize,ysize ----
+	670
+	314
+	226
+	65
+	<radi> ---- radio identifier ----
+	kx15
+	2
+	<ca01> ---- COM active whole digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		20
+		7
+		38
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Active Frequency
+	<endo> ---- end click area ----
+	<ca02> ---- COM active fract digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		40
+		7
+		52
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Active Frequency
+	<endo> ---- end click area ----
+	<ca03> ---- COM standby whole digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		76
+		7
+		94
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Standby Frequency
+	<endo> ---- end click area ----
+	<ca04> ---- COM standby fract  digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		96
+		7
+		108
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Standby Frequency
+	<endo> ---- end click area ----
+	<ca05> ---- NAV active whole digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		132
+		7
+		150
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Active Frequency
+	<endo> ---- end click area ----
+	<ca06> ---- NAV active fract digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		152
+		7
+		164
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Active Frequency
+	<endo> ---- end click area ----
+	<ca07> ---- NAV standby whole digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		187
+		7
+		205
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Standby Frequency
+	<endo> ---- end click area ----
+	<ca08> ---- NAV standby fract digits ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		207
+		7
+		219
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Standby Frequency
+	<endo> ---- end click area ----
+	<ca09> ---- COM tune click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		83
+		34
+		108
+		59
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Frequency Tune Knob
+	<endo> ---- end click area ----
+	<ca10> ---- NAV tune click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		194
+		34
+		219
+		59
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Frequency Tune Knob
+	<endo> ---- end click area ----
+	<ca11> ---- COM channel click area ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt02.pbg
+		<rect> ---- click area rect ----
+		51
+		57
+		72
+		64
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Channel Button
+	<endo> ---- end click area ----
+	<ca12> ---- NAV mode click area ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt02.pbg
+		<rect> ---- click area rect ----
+		162
+		57
+		183
+		64
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Mode Button
+	<endo> ---- end click area ----
+	<ca13> ---- COM transfer click area ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt01.pbg
+		<rect> ---- click area rect ----
+		46
+		39
+		66
+		53
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Transfer Button
+	<endo> ---- end click area ----
+	<ca14> ---- NAV transfer click area ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt01.pbg
+		<rect> ---- click area rect ----
+		156
+		39
+		176
+		53
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Transfer Button
+	<endo> ---- end click area ----
+	<ca15> ---- COM volume click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		12
+		45
+		30
+		62
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM Volume Knob
+	<endo> ---- end click area ----
+	<ca16> ---- NAV volume click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		122
+		45
+		140
+		62
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Volume Knob
+	<endo> ---- end click area ----
+	<ca17> ---- OBS digit 1 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		186
+		7
+		192
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		OBS Heading
+	<endo> ---- end click area ----
+	<ca18> ---- OBS digit 2 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		193
+		7
+		199
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		OBS Heading
+	<endo> ---- end click area ----
+	<ca19> ---- OBS digit 3 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		200
+		7
+		206
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		OBS Heading
+	<endo> ---- end click area ----
+	<ca20> ---- Timer minutes ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		182
+		7
+		194
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Flight Timer
+	<endo> ---- end click area ----
+	<ca21> ---- Timer seconds ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		196
+		7
+		208
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Flight Timer
+	<endo> ---- end click area ----
+	<lite> ---- light flag ----
+	radi
+	<help> ---- popup help ----
+	Bendix/King KX155 Nav/Com Radio
+<endo> ==== END OBJECT ====
+
+<gage> ==== GAUGE ENTRY ====
+radg
+<bgno> ==== BEGIN GAUGE ====
+	<rad1> ---- radio #1 ----
+	nc01
+	<rad2> ---- radio #2 ----
+	nc02
+	<key_> ---- key ----
+	acom
+<endo> ==== END GAUGE ====
+
+<gage> ==== GAUGE ENTRY ====
+radg
+<bgno> ==== BEGIN GAUGE ====
+	<rad1> ---- radio #1 ----
+	nc01
+	<rad2> ---- radio #2 ----
+	nc02
+	<key_> ---- key ----
+	anav
+<endo> ==== END GAUGE ====
+
+////////////////////////////////////////////////
+//
+//	Bending King KLN89 GPS radio
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+kl89
+<bgno> ==== BEGIN OBJECT ====
+	<unid> ---- unique id ----
+	gpsg
+	<size> ---- x,y,xsize,ysize ----
+	671
+	168
+	226
+	66
+	<radi> ---- radio identifier ----
+	gpsr
+	1
+	<ca01> ---- MSG button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt34.pbg
+		<rect> ---- click area rect ----
+		42
+		53
+		61
+		65
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Message Button
+	<endo> ---- end click area ----
+	<ca02> ---- OBS button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt35.pbg
+		<rect> ---- click area rect ----
+		62
+		53
+		81
+		65
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		OBS Button
+	<endo> ---- end click area ----
+	<ca03> ---- ALT button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt36.pbg
+		<rect> ---- click area rect ----
+		82
+		53
+		101
+		65
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Altitude Button
+	<endo> ---- end click area ----
+	<ca04> ---- NRST button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt37.pbg
+		<rect> ---- click area rect ----
+		102
+		53
+		121
+		65
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Nearest Button
+	<endo> ---- end click area ----
+	<ca05> ---- ARROW button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt38.pbg
+		<rect> ---- click area rect ----
+		121
+		53
+		140
+		65
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Direct-To Button
+	<endo> ---- end click area ----
+	<ca06> ---- CLR button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt39.pbg
+		<rect> ---- click area rect ----
+		141
+		53
+		160
+		65
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Clear Button
+	<endo> ---- end click area ----
+	<ca07> ---- ENT button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt40.pbg
+		<rect> ---- click area rect ----
+		161
+		53
+		180
+		65
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Enter Button
+	<endo> ---- end click area ----
+	<ca08> ---- CRSR button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt41.pbg
+		<rect> ---- click area rect ----
+		200
+		12
+		219
+		24
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Cursor Button
+	<endo> ---- end click area ----
+	<ca09> ---- Knob ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		194
+		31
+		218
+		56
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Knob
+	<endo> ---- end click area ----
+	<ca10> ---- APT ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		45
+		45
+		56
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Airport Pages
+	<endo> ---- end click area ----
+	<ca11> ---- VOR ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		57
+		45
+		68
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		VOR Pages
+	<endo> ---- end click area ----
+	<ca12> ---- NDB ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		69
+		45
+		80
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NDB Pages
+	<endo> ---- end click area ----
+	<ca13> ---- INT ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		81
+		45
+		92
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Intersection Pages
+	<endo> ---- end click area ----
+	<ca14> ---- USR ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		93
+		45
+		104
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		User Pages
+	<endo> ---- end click area ----
+	<ca15> ---- ACT ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		105
+		45
+		117
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Active Page
+	<endo> ---- end click area ----
+	<ca16> ---- NAV ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		118
+		45
+		129
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV Pages
+	<endo> ---- end click area ----
+	<ca17> ---- FPL ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		130
+		45
+		141
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Flight Plan Pages
+	<endo> ---- end click area ----
+	<ca18> ---- CAL ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		142
+		45
+		153
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Calculator Pages
+	<endo> ---- end click area ----
+	<ca19> ---- SET ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		154
+		45
+		165
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		SET Pages
+	<endo> ---- end click area ----
+	<ca20> ---- OTH ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		166
+		45
+		177
+		52
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Other Pages
+	<endo> ---- end click area ----
+	<ca21> ---- LED ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		36
+		6
+		184
+		44
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		LED Display
+	<endo> ---- end click area ----
+	<ca22> ---- Power ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		5
+		41
+		34
+		66
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Power
+		<bmap> ---- bitmap ----
+		kln89pwr.pbg
+	<endo> ---- end click area ----
+	<lite> ---- light flag ----
+	radi
+	<help> ---- popup help ----
+	Bendix/King KLN89 GPS radio
+<endo> ==== END OBJECT ====
+
+////////////////////////////////////////////////
+//
+//	Bending King KT76 transponder
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+kt76
+<bgno> ==== BEGIN OBJECT ====
+	<unid> ---- unique id ----
+	kt76
+	<size> ---- x,y,xsize,ysize ----
+	670
+	441
+	227
+	54
+	<radi> ---- radio identifier ----
+	kt76
+	1
+	<ca01> ---- digit 1 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		113
+		8
+		119
+		17
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Transponder Code
+	<endo> ---- end click area ----
+	<ca02> ---- digit 2 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		120
+		8
+		126
+		17
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Transponder Code
+	<endo> ---- end click area ----
+	<ca03> ---- digit 3 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		127
+		8
+		133
+		17
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Transponder Code
+	<endo> ---- end click area ----
+	<ca04> ---- digit 4 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		134
+		8
+		140
+		17
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Transponder Code
+	<endo> ---- end click area ----
+	<ca05> ---- Ident button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt08.pbg
+		<rect> ---- click area rect ----
+		5
+		11
+		23
+		23
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Ident Button
+	<endo> ---- end click area ----
+	<ca06> ---- Zero button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt09.pbg
+		<rect> ---- click area rect ----
+		4
+		38
+		22
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Zero Button
+	<endo> ---- end click area ----
+	<ca07> ---- One button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt10.pbg
+		<rect> ---- click area rect ----
+		25
+		38
+		43
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		One Button
+	<endo> ---- end click area ----
+	<ca08> ---- Two button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt11.pbg
+		<rect> ---- click area rect ----
+		46
+		38
+		64
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Two Button
+	<endo> ---- end click area ----
+	<ca09> ---- Three button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt12.pbg
+		<rect> ---- click area rect ----
+		67
+		38
+		85
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Three Button
+	<endo> ---- end click area ----
+	<ca10> ---- Four button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt13.pbg
+		<rect> ---- click area rect ----
+		88
+		38
+		106
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Four Button
+	<endo> ---- end click area ----
+	<ca11> ---- Five button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt14.pbg
+		<rect> ---- click area rect ----
+		109
+		38
+		127
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Five Button
+	<endo> ---- end click area ----
+	<ca12> ---- Six button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt15.pbg
+		<rect> ---- click area rect ----
+		130
+		38
+		148
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Six Button
+	<endo> ---- end click area ----
+	<ca13> ---- Seven button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt16.pbg
+		<rect> ---- click area rect ----
+		151
+		38
+		169
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Seven Button
+	<endo> ---- end click area ----
+	<ca14> ---- Clear button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt17.pbg
+		<rect> ---- click area rect ----
+		178
+		38
+		196
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Clear Button
+	<endo> ---- end click area ----
+	<ca15> ---- VFR button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt18.pbg
+		<rect> ---- click area rect ----
+		205
+		38
+		223
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		VFR Button
+	<endo> ---- end click area ----
+	<ca16> ---- Knob ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		184
+		4
+		225
+		36
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<bmap> ---- bitmap ----
+		bkxpdrkb.pbg
+		<help> ---- popup help ----
+		Transponder Mode
+	<endo> ---- end click area ----
+	<lite> ---- light flag ----
+	radi
+	<help> ---- popup help ----
+	Bendix/King KT76 Transponder
+<endo> ==== END OBJECT ====
+
+<gage> ==== GAUGE ENTRY ====
+radg
+<bgno> ==== BEGIN GAUGE ====
+	<rad1> ---- radio #1 ----
+	kt76
+	<key_> ---- key ----
+	atns
+<endo> ==== END GAUGE ====
+
+////////////////////////////////////////////////
+//
+//	Bending King KR87 ADF
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+kr87
+<bgno> ==== BEGIN OBJECT ====
+	<unid> ---- unique id ----
+	kr87
+	<size> ---- x,y,xsize,ysize ----
+	670
+	387
+	227
+	47
+	<radi> ---- radio identifier ----
+	adfr
+	1
+	<ca01> ---- active digit 1 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		28
+		7
+		34
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Active Frequency
+	<endo> ---- end click area ----
+	<ca02> ---- active digit 2 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		35
+		7
+		41
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Active Frequency
+	<endo> ---- end click area ----
+	<ca03> ---- active digit 3 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		42
+		7
+		48
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Active Frequency
+	<endo> ---- end click area ----
+	<ca04> ---- active digit 4 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		49
+		7
+		55
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Active Frequency
+	<endo> ---- end click area ----
+	<ca05> ---- standby digit 1 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		93
+		7
+		99
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Standby Frequency
+	<endo> ---- end click area ----
+	<ca06> ---- standby digit 2 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		100
+		7
+		106
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Standby Frequency
+	<endo> ---- end click area ----
+	<ca07> ---- standby digit 3 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		107
+		7
+		113
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Standby Frequency
+	<endo> ---- end click area ----
+	<ca08> ---- standby digit 4 ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		114
+		7
+		120
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Standby Frequency
+	<endo> ---- end click area ----
+	<ca11> ---- ADF button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt03.pbg
+		<rect> ---- click area rect ----
+		32
+		31
+		51
+		43
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF/ANT Select
+	<endo> ---- end click area ----
+	<ca12> ---- BFO button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt04.pbg
+		<rect> ---- click area rect ----
+		56
+		31
+		75
+		43
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		BFO Select
+	<endo> ---- end click area ----
+	<ca13> ---- FRQ button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt05.pbg
+		<rect> ---- click area rect ----
+		79
+		31
+		98
+		43
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Frequency Transfer
+	<endo> ---- end click area ----
+	<ca14> ---- FLT button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt06.pbg
+		<rect> ---- click area rect ----
+		103
+		31
+		122
+		43
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Flight/Elapsed Timer Select
+	<endo> ---- end click area ----
+	<ca15> ---- SET button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt07.pbg
+		<rect> ---- click area rect ----
+		127
+		31
+		146
+		43
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Set/Reset Timer
+	<endo> ---- end click area ----
+	<lite> ---- light flag ----
+	radi
+	<help> ---- popup help ----
+	Bendix/King KR87 ADF
+<endo> ==== END OBJECT ====
+
+<gage> ==== GAUGE ENTRY ====
+radg
+<bgno> ==== BEGIN GAUGE ====
+	<rad1> ---- radio #1 ----
+	kr87
+	<key_> ---- key ----
+	aadf
+<endo> ==== END GAUGE ====
+
+
+////////////////////////////////////////////////
+//
+//	Bending King KAP140 AutoPilot
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+ka14
+<bgno> ==== BEGIN OBJECT ====
+	<unid> ---- unique id ----
+	ka14
+	<size> ---- x,y,xsize,ysize ----
+	670
+	502
+	227
+	54
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		K140
+		<user> ---- user data ----
+		HARDWARE,OTHER
+	<endo>
+	<disp> ---- Display pos,size -----
+	 34
+	  5
+	134
+	 28
+	<ca01> ---- AP button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt19.pbg
+		<rect> ---- click area rect ----
+		3
+		37
+		23
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Autopilot Engage
+	<endo> ---- end click area ----
+	<ca02> ---- HDG button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt20.pbg
+		<rect> ---- click area rect ----
+		48
+		37
+		68
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Heading Mode
+	<endo> ---- end click area ----
+	<ca03> ---- NAV button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt21.pbg
+		<rect> ---- click area rect ----
+		74
+		37
+		94
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Navigation Mode
+	<endo> ---- end click area ----
+	<ca04> ---- APR button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt22.pbg
+		<rect> ---- click area rect ----
+		100
+		37
+		120
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Approach Mode
+	<endo> ---- end click area ----
+	<ca05> ---- REV button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt23.pbg
+		<rect> ---- click area rect ----
+		126
+		37
+		146
+		50
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Back Course Approach Mode
+	<endo> ---- end click area ----
+	<ca06> ---- Power light ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhaplt.pbg
+		<rect> ---- click area rect ----
+		 8
+		19
+		18
+		28
+		<help> ---- popup help ----
+		Autopilot Power Light
+	<endo> ---- end click area ----
+	<ca07> ---- ALTITUDE ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		autopalt.pbg
+		<rect> ---- click area rect ----
+		152
+		 37
+		172
+		 50
+		<help> ---- popup help ----
+		Altitude mode
+	<endo> ---- end click area ----
+	<ca08> ---- DN MODE ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		autopdn.pbg
+		<rect> ---- click area rect ----
+		180
+		 40
+		192
+		 49
+		<help> ---- popup help ----
+		DN mode
+	<endo> ---- end click area ----
+
+	<ca09> ---- UP MODE ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		autopup.pbg
+		<rect> ---- click area rect ----
+		180
+		 23
+		192
+		 32
+		<help> ---- popup help ----
+		UP mode
+	<endo> ---- end click area ----
+	<ca10> ----ALT BUTTON ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		autopbt.pbm
+		<rect> ---- click area rect ----
+		196
+		 22
+		224
+		 50
+		<help> ---- popup help ----
+		ALT select
+	<endo> ---- end click area ----
+
+	<da11> ---- Hdg mode 1 ----
+	<bgno> ---- begin display area ----
+		<rect> ---- click area rect ----
+		35
+		 6
+		65
+		17
+		<help> ---- popup help ----
+		Heading mode
+	<endo> ---- end click area ----
+	<da12> ---- Hdg mode 2 ----
+	<bgno> ---- begin display area ----
+		<rect> ---- click area rect ----
+		35
+		18
+		65
+		30
+		<help> ---- popup help ----
+		Heading mode
+	<endo> ---- end click area ----
+	<da13> ---- vt mode 1 ----
+	<bgno> ---- begin display area ----
+		<rect> ---- click area rect ----
+		78
+		 6
+		108
+		17
+		<help> ---- popup help ----
+		Vertical mode
+	<endo> ---- end click area ----
+	<da14> ---- VT mode 2 ----
+	<bgno> ---- begin display area ----
+		<rect> ---- click area rect ----
+		78
+		18
+		108
+		30
+		<help> ---- popup help ----
+		Vertical mode
+	<endo> ---- end click area ----
+	<da15> ---- VT mode 2 ----
+	<bgno> ---- begin display area ----
+		<rect> ---- click area rect ----
+		122
+		  6
+		164
+		 17
+		<help> ---- popup help ----
+		Vertical mode
+	<endo> ---- end click area ----
+	
+	<da16> ---- Engage bitmap ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		autopeng.bmp
+		<rect> ---- click area rect ----
+		60
+		 6
+		72
+		17
+		<help> ---- popup help ----
+		Autopilot Engage Status Light
+	<endo> ---- end click area ----
+	<da17> ---- ARM display ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		autoparm.pbm
+		<rect> ---- click area rect ----
+		60
+		18
+		72
+		30
+		<help> ---- popup help ----
+		ARM status
+	<endo> ---- end click area ----
+	<da18> ---- ALT / VSI display ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		120
+		  6
+		184
+		 17
+		<help> ---- popup help ----
+		ARM status
+	<endo> ---- end click area ----
+
+	<lite> ---- light flag ----
+	radi
+	<help> ---- popup help ----
+	Bendix/King KAP140 Autopilot
+<endo> ==== END OBJECT ====
+
+////////////////////////////////////////////////
+//
+//	Bending King KMA26 Audio Panel
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+kma2
+<bgno> ==== BEGIN OBJECT ====
+	<unid> ---- unique id ----
+	kma2
+	<size> ---- x,y,xsize,ysize ----
+	671
+	117
+	226
+	44
+	<radi> ---- radio identifier ----
+	adio
+	1
+	<ca01> ---- COM1 button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt24.pbg
+		<rect> ---- click area rect ----
+		83
+		3
+		99
+		18
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM1 Audio Select
+	<endo> ---- end click area ----
+	<ca02> ---- COM2 button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt25.pbg
+		<rect> ---- click area rect ----
+		102
+		3
+		118
+		18
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM2 Audio Select
+	<endo> ---- end click area ----
+	<ca03> ---- COM3 button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt26.pbg
+		<rect> ---- click area rect ----
+		121
+		3
+		137
+		18
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		COM3 Audio Select
+	<endo> ---- end click area ----
+	<ca04> ---- NAV1 button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt27.pbg
+		<rect> ---- click area rect ----
+		141
+		3
+		157
+		18
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV1 Audio Select
+	<endo> ---- end click area ----
+	<ca05> ---- NAV2 button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt28.pbg
+		<rect> ---- click area rect ----
+		160
+		3
+		176
+		18
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV2 Audio Select
+	<endo> ---- end click area ----
+	<ca06> ---- MKR button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt29.pbg
+		<rect> ---- click area rect ----
+		83
+		24
+		99
+		39
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Marker Audio Select
+	<endo> ---- end click area ----
+	<ca07> ---- DME button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt30.pbg
+		<rect> ---- click area rect ----
+		102
+		24
+		118
+		39
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		DME Audio Select
+	<endo> ---- end click area ----
+	<ca08> ---- ADF button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt31.pbg
+		<rect> ---- click area rect ----
+		122
+		24
+		138
+		39
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		ADF Audio Select
+	<endo> ---- end click area ----
+	<ca09> ---- AUX button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt32.pbg
+		<rect> ---- click area rect ----
+		141
+		24
+		157
+		39
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Auxillary Audio Select
+	<endo> ---- end click area ----
+	<ca10> ---- MONI button ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhbt33.pbg
+		<rect> ---- click area rect ----
+		160
+		24
+		178
+		39
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Monitor Audio Select
+	<endo> ---- end click area ----
+	<ca11> ---- Outer indicator ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhoutr.pbg
+		<rect> ---- click area rect ----
+		9
+		5
+		21
+		16
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Outer Marker Indicator
+	<endo> ---- end click area ----
+	<ca12> ---- Middle indicator ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhmidl.pbg
+		<rect> ---- click area rect ----
+		9
+		16
+		21
+		27
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Middle Marker Indicator
+	<endo> ---- end click area ----
+	<ca13> ---- Outer indicator ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		skyhinnr.pbg
+		<rect> ---- click area rect ----
+		9
+		27
+		21
+		38
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Inner Marker Indicator
+	<endo> ---- end click area ----
+	<ca14> ---- Volume knob ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		55
+		12
+		75
+		30
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Volume Control
+	<endo> ---- end click area ----
+	<ca15> ---- Microphone Mode ----
+	<bgno> ---- begin click area ----
+		<bmap> ---- bitmap ----
+		kma26kb1.pbg
+		<rect> ---- click area rect ----
+		181
+		4
+		220
+		38
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Microphone Mode
+	<endo> ---- end click area ----
+	<lite> ---- light flag ----
+	radi
+	<help> ---- popup help ----
+	Bendix/King KMA26 Audio Panel
+<endo> ==== END OBJECT ====
+
+////////////////////////////////////////////////
+//
+//	Flap settings switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+flap
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	flap
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		flap
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	903
+	545
+	80
+	110
+	<bmap> ---- bitmap name ----
+	skyhflap.pbg
+	<crsr> ---- default cursor ----
+	mpslide.csr
+	<valu> --- click value range ----
+	4
+	0
+	28
+	0.0
+	NONE
+	29
+	44
+	1.0
+	NONE
+	45
+	59
+	2.0
+	NONE
+	60
+	88
+	3.0
+	NONE
+	<help> ---- popup help ----
+	Flaps Switch
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Throttle knob
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+knob
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	thro
+	<mesg>
+	<bgno>
+		<conn> ---- data tag ----
+		THRO
+		<dtag>
+		thro
+	<endo>	
+	<size> ---- x,y,xsize,ysize ----
+	667
+	569
+	60
+	97
+	<bmap> ---- bitmap name ----
+	skyhthro.pbg
+	<poll> ---- polling ----
+	<crsr> ---- default cursor ----
+	mpslide.csr
+	<help> ---- popup help ----
+	Engine Throttle
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Mixture knob
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+mixt
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	mixt
+	<mesg>
+	<bgno>
+		<conn> ---- data tag ----
+		MIXT
+		<dtag>
+		mixt
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	770
+	569
+	67
+	99
+	<bmap> ---- bitmap name ----
+	skyhmix.pbg
+	<poll> ---- polling ----
+	<crsr> ---- default cursor ----
+	mpslide.csr
+	<help> ---- popup help ----
+	Engine Mixture
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Magneto switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+magn
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	magn
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		ignS
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+		<user> ---- user data ----
+		ENGINE,1
+	<endo>
+	<size> ---- switch size ----
+	38
+	593
+	45
+	42
+	<bmap> ---- bitmap name ----
+	skyhmags.pbg
+	<curs> ---- right side cursor ----
+	mpfinger.csr
+	<sfxl> ---- left sfx ----
+	s-key.wav
+	<sfxr> ---- right sfx ----
+	s-key.wav
+	<help> ---- popup help ----
+	Magneto Switch
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Avionics switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+swit
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	avio
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		avio
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	343
+	576
+	33
+	49
+	<bmap> ---- bitmap name ----
+	skyhavpw.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Avionics Power
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Master battery switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+batt
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	batt
+	<mesg>
+	<bgno>
+		<conn>
+		mBat
+		<dtag>
+		st8t
+	<endo>
+	<altt> ---- alt data tag ----
+	mAlt
+	<batt> ---- battery data tag ----
+	mBat
+	<size> ---- switch size ----
+	109
+	576
+	36
+	50
+	<bmap> ---- bitmap name ----
+	skyhpowr.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Alternator/Battery Switch
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Fuel pump switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+swit
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	fpmp
+	<mesg>
+	<bgno> -- connect to Fuel Pump Switch Subsystem --
+		<conn>
+		fpsw
+		<dtag>
+		st8t
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	144
+	612
+	28
+	38
+	<bmap> ---- bitmap name ----
+	skyhfpmp.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Fuel Pump
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Beacon lights switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+swit
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	becn
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		becn
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	173
+	612
+	28
+	38
+	<bmap> ---- bitmap name ----
+	skyhbeac.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Beacon Lights
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Landing lights switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+swit
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	land
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		land
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	201
+	612
+	28
+	38
+	<bmap> ---- bitmap name ----
+	skyhlndl.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Landing Lights
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Taxi lights switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+swit
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	taxi
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		taxi
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	231
+	612
+	28
+	38
+	<bmap> ---- bitmap name ----
+	skyhtaxi.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Taxi Lights
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Navigation lights switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+swit
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	navl
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		navi
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	260
+	612
+	28
+	38
+	<bmap> ---- bitmap name ----
+	skyhnavl.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Navigation Lights
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Strobe lights switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+swit
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	strb
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		strb
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	289
+	612
+	28
+	38
+	<bmap> ---- bitmap name ----
+	skyhstrb.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Strobe Lights
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Pitot Heat switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+swit
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	phsw
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		phsw
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+		<user> ---- user data ----
+		UNIT,1
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	317
+	612
+	28
+	38
+	<bmap> ---- bitmap name ----
+	skyhpito.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Pitot Heat
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Radio/Panel Lights knob
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+shlk
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	rplk
+	<usri> ---- user data ----
+	HARDWARE,STATE
+	<usri> ---- user data ----
+	DATATAG,'levl'
+	<igrp> ---- user data ----
+	rdlt
+	<usro> ---- user data ----
+	HARDWARE,STATE
+	<usro> ---- user data ----
+	DATATAG,'levl'
+	<ogrp> ---- user data ----
+	gglt
+	<size> ---- x,y,xsize,ysize ----
+	584
+	573
+	42
+	46
+	<iinc> ---- inner knob increment ----
+	0.05
+	<idec> ---- inner knob decrement ----
+	0.05
+	<oinc> ---- outer knob increment ----
+	0.05
+	<odec> ---- outer knob decrement ----
+	0.05
+	<inca> ---- inner click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		0
+		0
+		42
+		23
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Radio Lights
+	<endo> ---- end click area ----
+	<ouca> ---- outer click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		0
+		24
+		42
+		46
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Panel Lights
+	<endo> ---- end click area ----
+	<help> ---- popup help ----
+	Radio/Panel Lights
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Glareshield/Pedestal Lights knob
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+shlk
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	gplk
+	<usri> ---- user data ----
+	HARDWARE,STATE
+	<usri> ---- user data ----
+	DATATAG,'levl'
+	<igrp> ---- user data ----
+	pnlt
+	<usro> ---- user data ----
+	HARDWARE,STATE
+	<usro> ---- user data ----
+	DATATAG,'levl'
+	<ogrp> ---- user data ----
+	pdlt
+	<size> ---- x,y,xsize,ysize ----
+	584
+	644
+	42
+	46
+	<iinc> ---- inner knob increment ----
+	0.05
+	<idec> ---- inner knob decrement ----
+	0.05
+	<oinc> ---- outer knob increment ----
+	0.05
+	<odec> ---- outer knob decrement ----
+	0.05
+	<inca> ---- inner click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		0
+		0
+		42
+		23
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Glareshield Lights
+	<endo> ---- end click area ----
+	<ouca> ---- outer click area ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		0
+		24
+		42
+		46
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		Pedestal Lights
+	<endo> ---- end click area ----
+	<help> ---- popup help ----
+	Radio/Panel Lights
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Cabin Heat knob
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+sios
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	cabh
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn>
+		cabh
+		<user>
+		SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	1028
+	551
+	67
+	62
+	<sbmp> ---- bitmap name ----
+	skyhcabh.pbg
+	<crsr> ---- cursor ----
+	mpfinger.csr
+	<help> ---- popup help ----
+	Cabin Heat
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Cabin Air knob
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+sios
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	caba
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn>
+		caba
+		<user>
+		SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	1027
+	615
+	67
+	68
+	<sbmp> ---- bitmap name ----
+	skyhcaba.pbg
+	<crsr> ---- cursor ----
+	mpfinger.csr
+	<help> ---- popup help ----
+	Cabin Air
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Alternate static air
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+sios
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	sssw
+	<size> ---- x,y,xsize,ysize ----
+	728
+	647
+	34
+	54
+	<mesg> ---- message setup -----
+	<bgno> ---- begin message ----
+		<type> ---- data type ----
+		INT
+		<user> ---- hardware type ----
+		HARDWARE,SWITCH
+		<user> ---- group ----
+		GROUP,'sssw'
+	<endo> ---- end message
+	<sbmp> ---- bitmap name ----
+	skyhstat.pbg
+	<crsr> ---- cursor ----
+	mpfinger.csr
+	<help> ---- popup help ----
+	Alternate Static Air
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Primary annunciator panel
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+shan
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	anuc
+	<size> ---- x,y,xsize,ysize ----
+	386
+	131
+	97
+	27
+	<lowf> ---- low fuel ----
+	skyhlowf.pbm
+	<lowl> ---- low fuel L ----
+	skyhlowl.pbm
+	<lowr> ---- low fuel R ----
+	skyhlowr.pbm
+	<oilp> ---- oil pressure ----
+	skyhloil.pbm
+	<vacl> ---- low vacuum ----
+	skyhvacl.pbm
+	<vacr> ---- low vacuum ----
+	skyhvacr.pbm
+	<lowv> ---- low vacuum ----
+	skyhlowv.pbm
+	<volt> ---- volts ----
+	skyhvolt.pbm
+	<line> ---- warning line ----
+	skyhwlin.pbm
+	<lite> ---- lights ----
+	anlt
+	<help> ---- popup help ----
+	Annunciator Panel
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Annunciator test switch
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+shts
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	ants
+	<swit> ---- switch artwork ----
+	skyhtest.pbg
+	<size> ---- x,y,xsize,ysize ----
+	496
+	127
+	31
+	34
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<mesg> ---- message ----
+	<bgno> ---- begin ----
+		<conn> ---- connection ----
+		anlt
+		<user> ---- hardware ----
+		HARDWARE,STATE
+		<dtag> ---- data tag ----
+		levl
+	<endo> ---- end ----
+	<help> ---- popup help ----
+	Annunciator Switch
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	Emergency Locator switch (ELT)
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+selt
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	selt
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		elts
+		<user> ---- user data ----
+		HARDWARE,SWITCH
+	<endo>
+	<size> ---- x,y,xsize,ysize ----
+	1238
+	188
+	38
+	37
+	<ulit> ---- bitmap name ----
+	skyhelt0.pbg
+	<lit > ---- bitmap name ----
+	skyhelt1.pbg
+	<csru> ---- up cursor ----
+	mpflipup.csr
+	<csrd> ---- down cursor ----
+	mpflipdn.csr
+	<sfxu> ---- up sfx ----
+	switchup.wav
+	<sfxd> ---- down sfx ----
+	switchdn.wav
+	<help> ---- popup help ----
+	Emergency Locator
+<endo> ==== END GAUGE ENTRY ====
+
+////////////////////////////////////////////////
+//
+//	NAV/GPS Selector Panel
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+sngp
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	sngp
+	<size> ---- x,y,xsize,ysize ----
+	556
+	130
+	77
+	30
+	<cnav> ---- NAV switch ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		23
+		10
+		36
+		24
+		<bmap> ---- bitmap ----
+		csnavgps.pbg
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		NAV/GPS Slave
+	<endo> ---- end click area ----
+	<capr> ---- GPS APR switch ----
+	<bgno> ---- begin click area ----
+		<rect> ---- click area rect ----
+		40
+		10
+		53
+		24
+		<bmap> ---- bitmap ----
+		csgpsapr.pbg
+		<curs> ---- cursor ----
+		mpfinger.csr
+		<help> ---- popup help ----
+		GPS Approach
+	<endo> ---- end click area ----
+	<xnav> ---- x,y NAV offset ----
+	7
+	10
+	<xgps> ---- x,y GPS offset ----
+	7
+	18
+	<xapr> ---- x,y APR offset ----
+	55
+	10
+	<xmsg> ---- x,y MSG offset ----
+	7
+	3
+	<xwpt> ---- x,y WPT offset ----
+	55
+	3
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		K140
+		<user> ---- user data ----
+		HARDWARE,OTHER
+	<endo>
+	<help> ---- popup help ----
+	NAV/GPS Selector Panel
+<endo> ==== END GAUGE ENTRY ====
+//=================================================================
+//	Hot spot for checklist
+//=================================================================
+<gage>
+hspt
+<bgno> === begin Gauge Entry =============
+	<unid>  ---- unic id
+	hspt
+	<size> ---- x,y,xsize,ysize ----
+	1184
+	 552
+	 50
+	 45
+	<mesg> ---- Subsystem Message ----
+	<bgno>
+		<conn> ---- data tag ----
+		chkl
+		<user> ---- user data ----
+		HARDWARE,OTHER
+		<dtag> ---- user data ----
+		show
+
+	<endo>
+	<rect> ---- click area ---------
+	0
+	0
+	50
+	45
+
+<endo> === End gauge entry ===============
+
+////////////////////////////////////////////////
+//
+//	Test gauge
+//
+////////////////////////////////////////////////
+
+<gage> ==== GAUGE ENTRY ====
+S__G
+<bgno> ==== BEGIN GAUGE ENTRY ====
+	<unid> ---- unique id ----
+	S__G
+	<size> ---- x,y,xsize,ysize ----
+	197
+	170
+	90
+	90
+	<test>
+	15
+	<mesg> -- connect to Airspeed Subsystem --
+	<bgno>
+		<conn>
+		alti
+		<user>
+		HARDWARE,GAUGE
+		<user>
+		UNIT,1
+	<endo>
+<endo>
+
+<endo> ==== END PANEL FILE ====

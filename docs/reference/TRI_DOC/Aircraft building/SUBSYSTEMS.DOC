@@ -1,0 +1,691 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f1\fswiss\fcharset0\fprq2{\*\panose 020b0604020202020204}Arial;}
+{\f2\fmodern\fcharset0\fprq1{\*\panose 02070309020205020404}Courier New;}{\f3\froman\fcharset2\fprq2{\*\panose 05050102010706020507}Symbol;}{\f4\froman\fcharset0\fprq2{\*\panose 00000000000000000000}Times;}
+{\f5\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}Helvetica;}{\f6\fmodern\fcharset0\fprq1{\*\panose 00000000000000000000}Courier;}{\f7\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}Geneva;}
+{\f8\froman\fcharset0\fprq2{\*\panose 00000000000000000000}Tms Rmn;}{\f9\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}Helv;}{\f10\froman\fcharset0\fprq2{\*\panose 00000000000000000000}MS Serif;}
+{\f11\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}MS Sans Serif;}{\f12\froman\fcharset0\fprq2{\*\panose 00000000000000000000}New York;}{\f13\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}System;}
+{\f14\fnil\fcharset2\fprq2{\*\panose 05000000000000000000}Wingdings;}{\f15\fswiss\fcharset0\fprq2{\*\panose 020b0604030504040204}Tahoma;}{\f16\fswiss\fcharset0\fprq2{\*\panose 020b0a04020102020204}Arial Black;}
+{\f17\fmodern\fcharset0\fprq1{\*\panose 00000000000000000000}LinePrinter;}{\f18\froman\fcharset0\fprq2{\*\panose 00000000000000000000}CG Times;}{\f19\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}Univers;}
+{\f20\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}Univers Condensed;}{\f21\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}Antique Olive;}{\f22\froman\fcharset0\fprq2{\*\panose 02020404030301010803}Garamond;}
+{\f23\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}CG Omega;}{\f24\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}Albertus Medium;}{\f25\fswiss\fcharset0\fprq2{\*\panose 00000000000000000000}Albertus Extra Bold;}
+{\f26\froman\fcharset0\fprq2{\*\panose 00000000000000000000}Clarendon Condensed;}{\f27\fscript\fcharset0\fprq2{\*\panose 00000000000000000000}Coronet;}{\f28\fmodern\fcharset0\fprq1{\*\panose 00000000000000000000}Letter Gothic;}
+{\f29\fscript\fcharset0\fprq2{\*\panose 00000000000000000000}Marigold;}{\f30\fnil\fcharset2\fprq2{\*\panose 00000000000000000000}Marlett;}{\f31\fswiss\fcharset0\fprq2{\*\panose 020b0504020203020204}News Gothic MT;}
+{\f32\fscript\fcharset0\fprq2{\*\panose 03010101010101010101}Lucida Handwriting;}{\f33\fswiss\fcharset0\fprq2{\*\panose 020b0602030504090204}Lucida Sans;}{\f34\fswiss\fcharset0\fprq2{\*\panose 020b0602030504020204}Lucida Sans Unicode;}
+{\f35\froman\fcharset0\fprq2{\*\panose 02040602050305030304}Book Antiqua;}{\f36\fswiss\fcharset0\fprq2{\*\panose 020b0502020202020204}Century Gothic;}{\f37\fmodern\fcharset0\fprq1{\*\panose 02010509020102010303}OCR A Extended;}
+{\f38\froman\fcharset0\fprq2{\*\panose 02040603050505030304}Calisto MT;}{\f39\fswiss\fcharset0\fprq2{\*\panose 020b0306030101010103}Abadi MT Condensed Light;}{\f40\fswiss\fcharset0\fprq2{\*\panose 020e0705020206020404}Copperplate Gothic Bold;}
+{\f41\fswiss\fcharset0\fprq2{\*\panose 020e0507020206020404}Copperplate Gothic Light;}{\f42\fdecor\fcharset0\fprq2{\*\panose 04040403030d02020704}Matisse ITC;}{\f43\fdecor\fcharset0\fprq2{\*\panose 04020404030d07020202}Tempus Sans ITC;}
+{\f44\fdecor\fcharset0\fprq2{\*\panose 04040506030f02020702}Westminster;}{\f45\fmodern\fcharset0\fprq1{\*\panose 020b0609040504020204}Lucida Console;}{\f46\fscript\fcharset0\fprq2{\*\panose 030f0702030302020204}Comic Sans MS;}
+{\f47\fswiss\fcharset0\fprq2{\*\panose 020b0806030902050204}Impact;}{\f48\fswiss\fcharset0\fprq2{\*\panose 020b0604030504040204}Verdana;}{\f49\froman\fcharset2\fprq2{\*\panose 05030102010509060703}Webdings;}
+{\f50\fnil\fcharset2\fprq2{\*\panose 00000400000000000000}Gamekeys MT;}{\f51\fnil\fcharset2\fprq2{\*\panose 05010101010101010101}Microsoft Logo 95;}{\f52\fnil\fcharset0\fprq2{\*\panose 00000400000000000000}SWlogo;}
+{\f53\fswiss\fcharset0\fprq2{\*\panose 020b0502020104020203}Gill Sans MT;}{\f54\fnil\fcharset0\fprq2{\*\panose 02010704040101070104}Glass Gauge;}{\f55\fdecor\fcharset0\fprq1{\*\panose 04010609020102010101}Quartz;}
+{\f56\fswiss\fcharset0\fprq2{\*\panose 020b0506020202030204}Arial Narrow;}{\f57\fswiss\fcharset0\fprq2{\*\panose 020b0706040902060204}Haettenschweiler;}{\f58\froman\fcharset0\fprq2{\*\panose 02050604050505020204}Bookman Old Style;}
+{\f59\fnil\fcharset2\fprq2{\*\panose 01010601010101010101}Monotype Sorts;}{\f60\fnil\fcharset2\fprq2{\*\panose 05000000000000000000}MS Outlook;}{\f61\froman\fcharset2\fprq2{\*\panose 05050102010706020507}Bookshelf Symbol 3;}
+{\f62\fnil\fcharset0\fprq2{\*\panose 00000400000000000000}MathSoftText;}{\f63\fmodern\fcharset0\fprq1{\*\panose 020f0609000104060307}OCR-A;}{\f64\fmodern\fcharset0\fprq1{\*\panose 020b0509000102020203}OCR B MT;}
+{\f65\fswiss\fcharset0\fprq2{\*\panose 020b0603020004020203}QuickType;}{\f66\fswiss\fcharset0\fprq2{\*\panose 020b0506030403020203}QuickType Condensed;}{\f67\fmodern\fcharset0\fprq1{\*\panose 020b0509020104020203}QuickType Mono;}
+{\f68\fswiss\fcharset0\fprq2{\*\panose 020b0600020000000001}QuickType Pi;}{\f69\froman\fcharset0\fprq2{\*\panose 02040502050405020303}Georgia;}{\f70\fnil\fcharset0\fprq2{\*\panose 00000000000000000000}Lucida Blackletter;}
+{\f71\froman\fcharset0\fprq2{\*\panose 02040602050505020304}Lucida Bright;}{\f72\fscript\fcharset0\fprq2{\*\panose 03010101010101010101}Lucida Calligraphy;}{\f73\fscript\fcharset0\fprq2{\*\panose 03070502060502030205}Papyrus;}
+{\f74\froman\fcharset0\fprq2{\*\panose 02080502050505020702}Poor Richard;}{\f75\fscript\fcharset0\fprq2{\*\panose 03070502030502020203}Viner Hand ITC;}{\f76\fnil\fcharset2\fprq2{\*\panose 00000400000000000000}MTBWidgets;}
+{\f77\fnil\fcharset0\fprq2{\*\panose 00000000000000000000}Bazooka;}{\f78\fmodern\fcharset136\fprq1{\*\panose 02010609000101010101}MingLiU;}{\f79\froman\fcharset238\fprq2 Times New Roman CE;}{\f80\froman\fcharset204\fprq2 Times New Roman Cyr;}
+{\f82\froman\fcharset161\fprq2 Times New Roman Greek;}{\f83\froman\fcharset162\fprq2 Times New Roman Tur;}{\f84\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f85\fswiss\fcharset238\fprq2 Arial CE;}{\f86\fswiss\fcharset204\fprq2 Arial Cyr;}
+{\f88\fswiss\fcharset161\fprq2 Arial Greek;}{\f89\fswiss\fcharset162\fprq2 Arial Tur;}{\f90\fswiss\fcharset186\fprq2 Arial Baltic;}{\f91\fmodern\fcharset238\fprq1 Courier New CE;}{\f92\fmodern\fcharset204\fprq1 Courier New Cyr;}
+{\f94\fmodern\fcharset161\fprq1 Courier New Greek;}{\f95\fmodern\fcharset162\fprq1 Courier New Tur;}{\f96\fmodern\fcharset186\fprq1 Courier New Baltic;}{\f169\fswiss\fcharset238\fprq2 Tahoma CE;}{\f170\fswiss\fcharset204\fprq2 Tahoma Cyr;}
+{\f172\fswiss\fcharset161\fprq2 Tahoma Greek;}{\f173\fswiss\fcharset162\fprq2 Tahoma Tur;}{\f174\fswiss\fcharset186\fprq2 Tahoma Baltic;}{\f175\fswiss\fcharset238\fprq2 Arial Black CE;}{\f176\fswiss\fcharset204\fprq2 Arial Black Cyr;}
+{\f178\fswiss\fcharset161\fprq2 Arial Black Greek;}{\f179\fswiss\fcharset162\fprq2 Arial Black Tur;}{\f180\fswiss\fcharset186\fprq2 Arial Black Baltic;}{\f211\froman\fcharset238\fprq2 Garamond CE;}{\f212\froman\fcharset204\fprq2 Garamond Cyr;}
+{\f214\froman\fcharset161\fprq2 Garamond Greek;}{\f215\froman\fcharset162\fprq2 Garamond Tur;}{\f216\froman\fcharset186\fprq2 Garamond Baltic;}{\f283\fswiss\fcharset238\fprq2 Lucida Sans Unicode CE;}
+{\f284\fswiss\fcharset204\fprq2 Lucida Sans Unicode Cyr;}{\f286\fswiss\fcharset161\fprq2 Lucida Sans Unicode Greek;}{\f287\fswiss\fcharset162\fprq2 Lucida Sans Unicode Tur;}{\f289\froman\fcharset238\fprq2 Book Antiqua CE;}
+{\f290\froman\fcharset204\fprq2 Book Antiqua Cyr;}{\f292\froman\fcharset161\fprq2 Book Antiqua Greek;}{\f293\froman\fcharset162\fprq2 Book Antiqua Tur;}{\f294\froman\fcharset186\fprq2 Book Antiqua Baltic;}
+{\f295\fswiss\fcharset238\fprq2 Century Gothic CE;}{\f296\fswiss\fcharset204\fprq2 Century Gothic Cyr;}{\f298\fswiss\fcharset161\fprq2 Century Gothic Greek;}{\f299\fswiss\fcharset162\fprq2 Century Gothic Tur;}
+{\f300\fswiss\fcharset186\fprq2 Century Gothic Baltic;}{\f349\fmodern\fcharset238\fprq1 Lucida Console CE;}{\f350\fmodern\fcharset204\fprq1 Lucida Console Cyr;}{\f352\fmodern\fcharset161\fprq1 Lucida Console Greek;}
+{\f353\fmodern\fcharset162\fprq1 Lucida Console Tur;}{\f355\fscript\fcharset238\fprq2 Comic Sans MS CE;}{\f356\fscript\fcharset204\fprq2 Comic Sans MS Cyr;}{\f358\fscript\fcharset161\fprq2 Comic Sans MS Greek;}
+{\f359\fscript\fcharset162\fprq2 Comic Sans MS Tur;}{\f360\fscript\fcharset186\fprq2 Comic Sans MS Baltic;}{\f361\fswiss\fcharset238\fprq2 Impact CE;}{\f362\fswiss\fcharset204\fprq2 Impact Cyr;}{\f364\fswiss\fcharset161\fprq2 Impact Greek;}
+{\f365\fswiss\fcharset162\fprq2 Impact Tur;}{\f366\fswiss\fcharset186\fprq2 Impact Baltic;}{\f367\fswiss\fcharset238\fprq2 Verdana CE;}{\f368\fswiss\fcharset204\fprq2 Verdana Cyr;}{\f370\fswiss\fcharset161\fprq2 Verdana Greek;}
+{\f371\fswiss\fcharset162\fprq2 Verdana Tur;}{\f372\fswiss\fcharset186\fprq2 Verdana Baltic;}{\f397\fswiss\fcharset238\fprq2 Gill Sans MT CE;}{\f407\fnil\fcharset162\fprq2 Glass Gauge Tur;}{\f413\fdecor\fcharset162\fprq1 Quartz Tur;}
+{\f415\fswiss\fcharset238\fprq2 Arial Narrow CE;}{\f416\fswiss\fcharset204\fprq2 Arial Narrow Cyr;}{\f418\fswiss\fcharset161\fprq2 Arial Narrow Greek;}{\f419\fswiss\fcharset162\fprq2 Arial Narrow Tur;}{\f420\fswiss\fcharset186\fprq2 Arial Narrow Baltic;}
+{\f427\froman\fcharset238\fprq2 Bookman Old Style CE;}{\f428\froman\fcharset204\fprq2 Bookman Old Style Cyr;}{\f430\froman\fcharset161\fprq2 Bookman Old Style Greek;}{\f431\froman\fcharset162\fprq2 Bookman Old Style Tur;}
+{\f432\froman\fcharset186\fprq2 Bookman Old Style Baltic;}{\f493\froman\fcharset238\fprq2 Georgia CE;}{\f494\froman\fcharset204\fprq2 Georgia Cyr;}{\f496\froman\fcharset161\fprq2 Georgia Greek;}{\f497\froman\fcharset162\fprq2 Georgia Tur;}
+{\f498\froman\fcharset186\fprq2 Georgia Baltic;}{\f549\fmodern\fcharset0\fprq1 MingLiU;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;
+\red255\green255\blue255;\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{
+\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 Normal;}{\s1\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 1;}{\s2\li1440\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 
+heading 2;}{\s3\li720\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 3;}{\*\cs10 \additive Default Paragraph Font;}{\s15\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid \sbasedon0 \snext15 Body Text 2;}{\*
+\cs16 \additive \ul\cf2 \sbasedon10 Hyperlink;}{\*\cs17 \additive \ul\cf12 \sbasedon10 FollowedHyperlink;}}{\info{\title Subsystems}{\author Paul Russell}{\operator Paul Russell}{\creatim\yr2000\mo5\dy24\hr15\min31}{\revtim\yr2000\mo8\dy18\hr19\min50}
+{\version3}{\edmins4}{\nofpages9}{\nofwords2085}{\nofchars11889}{\*\company Terminal Reality}{\nofcharsws0}{\vern71}}\widowctrl\ftnbj\aenddoc\hyphcaps0\formshade\viewkind1\viewscale100\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl 
+{\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5
+\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang
+{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\fs28 Subsystems
+\par }{\f16 
+\par This document will explain the Subsystems Data found in the SVH File.
+\par 
+\par }{\f16\ul Prerequisite Reading
+\par }{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "BASIC SYNTAX.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004241534943537e312e444f4300ffffadde000000000000000000000000000000000000000026000000200000000300420041005300490043002000530059004e005400410058002e0044004f00430000
+00}}}{\fldrslt {\cs16\ul\cf2 Basic Syntax}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "BASIC OBJECT TYPES.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d00000042415349434f7e312e444f4300ffffadde0000000000000000000000000000000000000000320000002c00000003004200410053004900430020004f0042004a00450043005400200054005900500045
+0053002e0044004f0043000000}}}{\fldrslt {\cs16\ul\cf2 Basic Object Types}}}{\f16 
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Subsystem Index
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }{\field{\*\fldinst {\f16  HYPERLINK  \\l "SubsysIndex" }{\f16 {\*\datafield 08d0c9ea79f9bace118c8200aa004ba90b02000000080000000c00000053007500620073007900730049006e006400650078000000000000}}}{\fldrslt {\cs16\ul\cf2 Tak{\*\bkmkstart _Hlt480198513}e
+{\*\bkmkend _Hlt480198513} m{\*\bkmkstart _Hlt480375453}{\*\bkmkstart _Hlt491257214}{\*\bkmkend _Hlt480375453}e{\*\bkmkstart _Hlt480257446}{\*\bkmkend _Hlt480257446}{\*\bkmkend _Hlt491257214} there}}}{\f16 
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {The Electrical System
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par The Electrical System Model is a functional model that replicates the electrical state at each node of a circuit.
+\par 
+\par An Electrical Circuit is defined by connecting several subsystems that create a chain of electrical dependencies.  Each Subsystem (or Dependent) consists of a state controller,  named \ldblquote state\rdblquote , and a circuit status, named \ldblquote 
+active\rdblquote .  The logical flow of power in the electrical system starts from the Battery Subsystem and propagates along the chain of dependent subsystems by satisfying two logical questions, 1) \ldblquote Am I in the On State?\rdblquote  , and 2) 
+\ldblquote Is my circuit dependency Active?\rdblquote .  If the answer to both questions is Yes, then the circuit status is Active.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Logical Circuit
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 A Logical Circuit is formed by conn
+ecting dependency chains that express Boolean equations but take no part in the main electrical system in supplying power to the electrical systems.  The Logical Circuit is used to program the specific interaction of complex conditional switching systems.
+
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Signature
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 Subsystems require a Signature to define the specific class of subsystem with specific capabilities.  The default Unique Id of a subsystem is its signature.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Base Class
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 All subsystems share the common capability of being Dependents, while others
+ share capabilities that are common to a specific few.  For purposes of brevity, the Base Class is specified to indicate the common tags.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 A Specification Tag is used in the specification file (SVH File) to define the optional capabilities of the specific Subsystem.
+\par 
+\par }{\f16\ul Message Tags
+\par }{\f16 A Message Tag is used in the specification of an EventMessage to define the optional data available in the specific Subsystem.
+\par 
+\par }{\f16\ul Announcer Tags
+\par }{\f16 An Announcer Tag is used in the specification of an }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Annunciator" }{\f16 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000c00000041006e006e0075006e0063006900610074006f007200000000000000}}}{\fldrslt {\cs16\f16\ul\cf2 Annunciator Subsystem}}}{\f16  to identify an Announcer defined in another subsystem.
+\par 
+\par An Announcer is a monitored logical condition which announces any change in that condition to all Annunciators who have registered for the Announcer.
+\par 
+\par 
+\par }{
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Dependent
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab dpnd
+\par Hardware Type:\tab UNKNOWN
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16\ul Specification Tags
+\par }{
+\par }{\f16 <unId> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Unique Identifier.
+\par 
+\par The Unique Id can be used to label this dependent for rapid communication bonds that are excluded by all others.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <uNum> (int)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Unit Number.
+\par 
+\par The Unit Number can be used to identify this dependent apart from other redundant dependents.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <Indn> (float)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Indication.
+\par 
+\par This parameter is calculated specific to the needs of the Subsystem.  Usually it is the value sent to the Visual of a Gauge.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <timK> (float)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Time Constant.
+\par 
+\par The Time Constant sets the delay parameter of an approximation of an exponential decay as a function of time.  This parameter is used to create smooth transitions in the indications.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <fWAV> (string)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 WAV File Name.
+\par 
+\par The WAV file is played when the subsystem transitions from Off to On.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <volt> (float, volts)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Voltage Supply.
+\par 
+\par The Voltage supply need only be specified for Voltage Source Subsystems (like, Battery, Generator, Alternator, Inverter)
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <FreQ> (int, Hz)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Frequency Supply.
+\par 
+\par The Frequency supply need only be specified for AC Voltage Sources.  This parameter sets the value displayed on the Frequency Meter and signals the Subsystem as an AC electrical component.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <load> (float, amps)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Current Use.
+\par 
+\par The Current Usage should be set for all electrical components that require power.  The Ammeter can display the total current usage for all systems that have specified a usage.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <wire>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Generic Dependency Entry.
+\par 
+\par The Wire is the electrical thread that binds all the Subsystems together to create a whole Electrical System.  The Wire Object defines the Electrical Dependency of this Subsystem on another. 
+\par 
+\par Multiple Wires may be specified and a logical operator may be specified to determine a logical result.  By default the dependencies are logically \lquote OR\rquote ed.
+\par 
+\par Wire Object Tags
+\par 
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 <wrId> (IDType)
+\par }\pard \li2880\nowidctlpar\widctlpar\adjustright {\f16 Wire Id.
+\par 
+\par The Unique Id of the Subsystem that this Subsystem relies upon for power.
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 
+\par <wrHw> (string)
+\par }\pard \li2880\nowidctlpar\widctlpar\adjustright {\f16 Wire Hardware Type.
+\par 
+\par The Hardware Type of the dependency Subsystem.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <eBus> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Electrical Bus Dependency.
+\par 
+\par A wire with hardware type of BUS.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <fuse> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Circuit Breaker Dependency.
+\par 
+\par A wire with hardware type of FUSE.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <swch> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Switch Dependency.
+\par 
+\par A wire with hardware type of SWITCH.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <lite> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Light Dependency.
+\par 
+\par A wire with hardware type of LIGHT.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <annr> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Annunciator Dependency.
+\par 
+\par A wire with hardware type of ANNUNCIATOR.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <batt> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Battery Dependency.
+\par 
+\par A wire with hardware type of BATTERY.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <altr> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Alternator Dependency.
+\par 
+\par A wire with hardware type of ALTERNATOR.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <genr> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Generator Dependency.
+\par 
+\par A wire with hardware type of GENERATOR.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <bool> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 State Dependency.
+\par 
+\par A wire with hardware type of STATE.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <cntr> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Contactor Dependency.
+\par 
+\par A wire with hardware type of CONTACTOR.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <flsh> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Flasher Dependency.
+\par 
+\par A wire with hardware type of FLASHER.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <nvrt> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Inverter Dependency.
+\par 
+\par A wire with hardware type of INVERTER.
+\par 
+\par <st8t> (int, 0 | 1)
+\par State.
+\par 
+\par The initial state of the subsystem.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <annS> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Announce State Flag.
+\par 
+\par This flag creates an Announcer (see Annunciator) for the \ldblquote state\rdblquote  variable.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <annA> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Announce Active Flag.
+\par 
+\par This flag creates an Announcer (see Annunciator) for the \ldblquote active\rdblquote  variable.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <_AND> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 And Logic Gate Flag.
+\par 
+\par This flag sets the logical operator used when multiple dependencies are listed for this subsystem.
+\par 
+\par When all dependencies are Active then Power is Available.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <_OR_> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Or Logic Gate Flag.
+\par 
+\par This flag sets the logical operator used when multiple dependencies are listed for this subsystem.
+\par 
+\par When any of the dependencies are Active then Power is Available.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <pxy1>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Rising Edge Proxy Message Entry.
+\par 
+\par On transition from 0 to 1 of the Active Status, this Message is sent.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <pxy0>
+\par }\pard \fi720\li720\nowidctlpar\widctlpar\adjustright {\f16 Falling Edge Proxy Message Entry.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 On transition from 1 to 0 of the Active Status, this Message is sent.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <LAND>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Landing Light Switch Flag.
+\par 
+\par The Landing Light Key Handler will control the subsystem with this flag set.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <NAVI>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Navigation Light Switch Flag.
+\par 
+\par The Navigation Light Key Handler will control the subsystem with this flag set.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <hwId> (string)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Hardware Identifier.
+\par 
+\par The Hardware Identifier can be used to designate this subsystem as a specific hardware type.
+\par 
+\par The following strings may be used:
+\par 
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 UNKNOWN, BUS, SWITCH, LIGHT, FUSE, STATE, GAUGE, OTHER, CIRCUIT, RADIO, FLAP, HILIFT, GEAR, BATTERY, ALTERNATOR, ANNUNCIATOR, GENERATOR, CONTACTOR, FLASHER, INVERTER
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par 
+\par }{\f16 Match: Unique Id, Hardware Type
+\par 
+\par }\pard\plain \s2\li1440\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }{\f16 Default: State.
+\par 
+\par }\pard\plain \s2\li1440\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Get (Data Tag)
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par Default: State
+\par }\pard \li1440\nowidctlpar\widctlpar\tx2880\adjustright {\f16 \lquote st8t\rquote \tab State
+\par \lquote actv\rquote \tab Active
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par }{
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart SubsysIndex}The Special Task Subsystems{\*\bkmkend SubsysIndex}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }{\f16 Special Task Subsystems were created to serve as a persistent source of data that may be shared by all other simulated systems.
+\par 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "AUTOPILOT PANEL.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004155544f50497e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004100550054004f00500049004c004f0054002000500041004e0045004c002e0044
+004f00430000000000}}}{\fldrslt {\cs16\ul\cf2 Autopilot Subsystems}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f00430000000000}}}{\fldrslt {\cs16\ul\cf2 Electrical Subsystems}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f00430000000000}}}{\fldrslt {\cs16\ul\cf2 Engine Subsystems}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "FUEL SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f00430000000000}}}{\fldrslt {\cs16\ul\cf2 Fuel Subsystems}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f00430000000000}}}{\fldrslt {\cs16\ul\cf2 Radio Subsystems}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f00430000000000}}}{\fldrslt {\cs16\ul\cf2 Standard Instrument Subsystems}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f0043000000}}}{\fldrslt {\cs16\ul\cf2 Vehicle Contro{\*\bkmkstart _Hlt480257453}l{\*\bkmkend _Hlt480257453} Subsystems}}}{\f16 
+\par }{\field{\*\fldinst {\f16 HYPERLINK "MORE SUBSYSTEMS.DOC"}{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f00430000000000}}}{\fldrslt {\cs16\ul\cf2 More {\*\bkmkstart _Hlt480198715}S{\*\bkmkend _Hlt480198715}ubsystems}}}{\f16 
+\par 
+\par }\trowd \trgaph30\trrh68\trleft-30 \clvertalt\cltxlrtb \cellx810\clvertalt\cltxlrtb \cellx3645\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "N1" }{\f1\cf1\cgrid0 
+{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f004300030000004e00310000000000}}}{\fldrslt {\cs16\ul\cf2 _N1_}}}{\f1\cf1\cgrid0 \cell N1 Tachometer\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\trowd \trgaph30\trrh68\trleft-30 
+\clvertalt\cltxlrtb \cellx810\clvertalt\cltxlrtb \cellx3645\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "N2" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f004300030000004e00320000000000}}}{\fldrslt {\cs16\ul\cf2 _N2_}}}{\f1\cf1\cgrid0 \cell N2 Tachometer\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "AirBrake" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f004300090000004100690072004200720061006b006500000000000000}}}{\fldrslt {\cs16\ul\cf2 abrk}}}{\f1\cf1\cgrid0 \cell Air Brake Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "AutoDirectionFinder" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f004300140000004100750074006f0044006900720065006300740069006f006e00460069006e00640065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 adfr}}}{\f1\cf1\cgrid0 \cell Auto Direction Finder\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "AudioPanelRadio" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043001000000041007500640069006f00500061006e0065006c0052006100640069006f00000000000000}}}{\fldrslt {\cs16\ul\cf2 adio}}}{\f1\cf1\cgrid0 \cell Audio Panel Radio\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "Aileron" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f00430008000000410069006c00650072006f006e0000000000}}}{\fldrslt {\cs16\ul\cf2 ailr}}}{\f1\cf1\cgrid0 \cell Aileron Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "Altimeter" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f0043000a00000041006c00740069006d006500740065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 alti}}}{\f1\cf1\cgrid0 \cell Altimeter\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "AltitudeMonitor" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043001000000041006c007400690074007500640065004d006f006e00690074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 altm}}}{\f1\cf1\cgrid0 \cell Altitude Monitor\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Ammeter" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000800000041006d006d006500740065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 amps}}}{\f1\cf1\cgrid0 \cell Ammeter\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "AnnunciatorLight"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043001100000041006e006e0075006e0063006900610074006f0072004c00690067006800740000000000}}}{\fldrslt {\cs16\ul\cf2 anlt}}}{\f1\cf1\cgrid0 \cell Annunciator Light\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Annunciator"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000c00000041006e006e0075006e0063006900610074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 a{\*\bkmkstart _Hlt480102263}n{\*\bkmkend _Hlt480102263}nr}}}{\f1\cf1\cgrid0 \cell Annunciator\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "PerformanceReserve"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043001300000050006500720066006f0072006d0061006e0063006500520065007300650072007600650000000000}}}{\fldrslt {\cs16\ul\cf2 aprs}}}{\f1\cf1\cgrid0 \cell Performance Reserve\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "AileronTrim" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f0043000c000000410069006c00650072006f006e005400720069006d0000000000}}}{\fldrslt {\cs16\ul\cf2 atrm}}}{\f1\cf1\cgrid0 \cell Aileron Trim Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "Attitude" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f004300090000004100740074006900740075006400650000000000}}}{\fldrslt {\cs16\ul\cf2 atti}}}{\f1\cf1\cgrid0 \cell Attitude Indicator\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Battery" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f004300080000004200610074007400650072007900000000000000}}}{\fldrslt {\cs16\ul\cf2 batt}}}{\f1\cf1\cgrid0 \cell Battery\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Propeller" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000a000000500072006f00700065006c006c0065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 blad}}}{\f1\cf1\cgrid0 \cell Propeller Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "BrakeControl"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f0043000d0000004200720061006b00650043006f006e00740072006f006c00000000000000}}}{\fldrslt {\cs16\ul\cf2 brak}}}{\f1\cf1\cgrid0 \cell Brake Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "ExteriorLight"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000e0000004500780074006500720069006f0072004c006900670068007400000000000000}}}{\fldrslt {\cs16\ul\cf2 b{\*\bkmkstart _Hlt491257218}{\*\bkmkstart _Hlt491257548}{\*\bkmkend _Hlt491257548}u{\*\bkmkstart _Hlt480102344}
+{\*\bkmkstart _Hlt491256939}{\*\bkmkend _Hlt491256939}{\*\bkmkend _Hlt491257218}l{\*\bkmkend _Hlt480102344}b}}}{\f1\cf1\cgrid0 \cell Exterior Light\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Antiice" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000800000041006e0074006900690063006500000000000000}}}{\fldrslt {\cs16\ul\cf2 carb}}}{\f1\cf1\cgrid0 \cell Engine Anti-Ice\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "CircuitMonitor" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000f00000043006900720063007500690074004d006f006e00690074006f00720000000000}}}{\fldrslt {\cs16\ul\cf2 cMon}}}{\f1\cf1\cgrid0 \cell Circuit Monitor\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Contactor" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000a00000043006f006e0074006100630074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 cntr}}}{\f1\cf1\cgrid0 \cell Contactor\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "CommRadio" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043000a00000043006f006d006d0052006100640069006f00000000000000}}}{\fldrslt {\cs16\ul\cf2 comm}}}{\f1\cf1\cgrid0 \cell Comm Radio\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "CowlFlapControl" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043001000000043006f0077006c0046006c006100700043006f006e00740072006f006c00000000000000}}}{\fldrslt {\cs16\ul\cf2 cowl}}}{\f1\cf1\cgrid0 \cell Cowl Flap\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "DMEPanel2" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043000a00000044004d004500500061006e0065006c003200000000000000}}}{\fldrslt {\cs16\ul\cf2 dme2}}}{\f1\cf1\cgrid0 \cell DME2 Panel\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "DistanceMeasuringEquipmentPanel" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f00430020000000440069007300740061006e00630065004d006500610073007500720069006e006700450071007500690070006d0065006e007400500061006e0065006c00000000000000}}}{\fldrslt {\cs16\ul\cf2 dmep}}}{\f1\cf1\cgrid0 
+\cell DME Panel\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "DigitalClock" }{\f1\cf1\cgrid0 
+{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000d0000004400690067006900740061006c0043006c006f0063006b0000000000}}}{\fldrslt {\cs16\ul\cf2 doat}}}{\f1\cf1\cgrid0 \cell Digital Clock / OAT System\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "EngineFuelPump" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f0043000f00000045006e00670069006e0065004600750065006c00500075006d00700000000000}}}{\fldrslt {\cs16\ul\cf2 edfp}}}{\f1\cf1\cgrid0 \cell Engine Fuel Pump\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "EngineGauge" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000c00000045006e00670069006e00650047006100750067006500000000000000}}}{\fldrslt {\cs16\ul\cf2 egag}}}{\f1\cf1\cgrid0 \cell Engine Gage\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "EmergencyLocatorTransponder" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043001c00000045006d0065007200670065006e00630079004c006f006300610074006f0072005400720061006e00730070006f006e00640065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 elts}}}{\f1\cf1\cgrid0 \cell Emergency Locator\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "Elevator" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f0043000900000045006c0065007600610074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 elvr}}}{\f1\cf1\cgrid0 \cell Elevator Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "EngineStatusMonitor" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043001400000045006e00670069006e0065005300740061007400750073004d006f006e00690074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 ests}}}{\f1\cf1\cgrid0 \cell Engine Status\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "ElevatorTrim" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f0043000d00000045006c0065007600610074006f0072005400720069006d00000000000000}}}{\fldrslt {\cs16\ul\cf2 etrm}}}{\f1\cf1\cgrid0 \cell Elevator Trim Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "APUFuelSource" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f0043000e0000004100500055004600750065006c0053006f007500720063006500000000000000}}}{\fldrslt {\cs16\ul\cf2 fAPU}}}{\f1\cf1\cgrid0 \cell APU Fuel Source\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "Fuelflow" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f004300090000004600750065006c0066006c006f00770000000000}}}{\fldrslt {\cs16\ul\cf2 fflw}}}{\f1\cf1\cgrid0 \cell Fuelflow Gage\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright 
+{\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "FuelGauge" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f0043000a0000004600750065006c0047006100750067006500000000000000}}}{\fldrslt {\cs16\ul\cf2 fgag}}}{\f1\cf1\cgrid0 \cell Fuel Gage\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright 
+{\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "FuelImbalance" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f0043000e0000004600750065006c0049006d00620061006c0061006e0063006500000000000000}}}{\fldrslt {\cs16\ul\cf2 fimb}}}{\f1\cf1\cgrid0 \cell Fuel Imbalance\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "FireSystem" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000b0000004600690072006500530079007300740065006d0000000000}}}{\fldrslt {\cs16\ul\cf2 fire}}}{\f1\cf1\cgrid0 \cell Fire System\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "FlapControl"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f0043000c00000046006c006100700043006f006e00740072006f006c0000000000}}}{\fldrslt {\cs16\ul\cf2 flap}}}{\f1\cf1\cgrid0 \cell Flap Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 
+\row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "FlapGauge" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000a00000046006c006100700047006100750067006500000000000000}}}{\fldrslt {\cs16\ul\cf2 flpg}}}{\f1\cf1\cgrid0 \cell Flap Gage\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright 
+{\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Flasher" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000800000046006c0061007300680065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 flsh}}}{\f1\cf1\cgrid0 \cell Flasher\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "FuelManagement" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f0043000f0000004600750065006c004d0061006e006100670065006d0065006e00740000000000}}}{\fldrslt {\cs16\ul\cf2 fmnt}}}{\f1\cf1\cgrid0 \cell Fuel Management\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "FastSlowMeter" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000e000000460061007300740053006c006f0077004d006500740065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 fosm}}}{\f1\cf1\cgrid0 \cell Fast Slow Meter\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "FuelPressure" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f0043000d0000004600750065006c005000720065007300730075007200650000000000}}}{\fldrslt {\cs16\ul\cf2 fprs}}}{\f1\cf1\cgrid0 \cell Fuel Pressure Gage\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "FuelPump" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f004300090000004600750065006c00500075006d00700000000000}}}{\fldrslt {\cs16\ul\cf2 fpsw}}}{\f1\cf1\cgrid0 \cell Fuel Pump Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright 
+{\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "FrequencyMeter" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000f0000004600720065007100750065006e00630079004d00650074006500720000000000}}}{\fldrslt {\cs16\ul\cf2 freq}}}{\f1\cf1\cgrid0 \cell Frequency Meter\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "FuelSource" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f0043000b0000004600750065006c0053006f00750072006300650000000000}}}{\fldrslt {\cs16\ul\cf2 fsrc}}}{\f1\cf1\cgrid0 \cell Fuel Source\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "FuelTank" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f004300090000004600750065006c00540061006e006b0000000000}}}{\fldrslt {\cs16\ul\cf2 ftnk}}}{\f1\cf1\cgrid0 \cell Fuel Tank\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright 
+{\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "GearControl"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f0043000c000000470065006100720043006f006e00740072006f006c0000000000}}}{\fldrslt {\cs16\ul\cf2 ge{\*\bkmkstart _Hlt480257443}{\*\bkmkstart _Hlt480257429}{\*\bkmkend _Hlt480257443}a{\*\bkmkend _Hlt480257429}r}
+}}{\f1\cf1\cgrid0 \cell Gear Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Generator" }{
+\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000a000000470065006e0065007200610074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 genr}}}{\f1\cf1\cgrid0 \cell Generator\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "KLN89" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f004300060000004b004c004e00380039000000}}}{\fldrslt {\cs16\ul\cf2 gpsr}}}{\f1\cf1\cgrid0 \cell KLN89 GPS Radio\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "GearLight" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000a00000047006500610072004c006900670068007400000000000000}}}{\fldrslt {\cs16\ul\cf2 grlt}}}{\f1\cf1\cgrid0 \cell Gear Light\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright 
+{\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "GearWarning" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000c00000047006500610072005700610072006e0069006e006700000000000000}}}{\fldrslt {\cs16\ul\cf2 grwn}}}{\f1\cf1\cgrid0 \cell Gear Warning\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "DirectionalGyro" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f0043001000000044006900720065006300740069006f006e0061006c004700790072006f00000000000000}}}{\fldrslt {\cs16\ul\cf2 gyro}}}{\f1\cf1\cgrid0 \cell Directional Gyro\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "HFCommRadio" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043000c0000004800460043006f006d006d0052006100640069006f00000000000000}}}{\fldrslt {\cs16\ul\cf2 hifr}}}{\f1\cf1\cgrid0 \cell HF Comm Radio\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "History" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000800000048006900730074006f0072007900000000000000}}}{\fldrslt {\cs16\ul\cf2 hist}}}{\f1\cf1\cgrid0 \cell History\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Hobbs" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000600000048006f00620062007300000000000000}}}{\fldrslt {\cs16\ul\cf2 hobs}}}{\f1\cf1\cgrid0 \cell Hobbs Meter\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Idle" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f00430005000000490064006c00650000000000}}}{\fldrslt {\cs16\ul\cf2 idle}}}{\f1\cf1\cgrid0 \cell Idle Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Igniter" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f00430008000000490067006e006900740065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 ignc}}}{\f1\cf1\cgrid0 \cell Igniter Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "IndicatorSet" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000d00000049006e00640069006300610074006f00720053006500740000000000}}}{\fldrslt {\cs16\ul\cf2 inds}}}{\f1\cf1\cgrid0 \cell Indicator Set\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "BendixKingKAP140Radio" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f00430016000000420065006e006400690078004b0069006e0067004b004100500031003400300052006100640069006f00000000000000}}}{\fldrslt {\cs16\ul\cf2 ka14}}}{\f1\cf1\cgrid0 \cell BK KAP 140 Radio\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "BendixKingTransponderKT76Radio" }{\f1\cf1\cgrid0 
+{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043001f000000420065006e006400690078004b0069006e0067005400720061006e00730070006f006e006400650072004b0054003700360052006100640069006f0000000000}}}{\fldrslt {\cs16\ul\cf2 kt76}}}{\f1\cf1\cgrid0 \cell 
+BK XPDR KT76 Radio\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "BendixKingNavCommKX155Radio" 
+}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043001c000000420065006e006400690078004b0069006e0067004e006100760043006f006d006d004b00580031003500350052006100640069006f00000000000000}}}{\fldrslt {\cs16\ul\cf2 kx15}}}{\f1\cf1\cgrid0 \cell 
+BK Nav Comm KX155 Radio\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "LightSetting" }{\f1\cf1\cgrid0 
+{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000d0000004c006900670068007400530065007400740069006e00670000000000}}}{\fldrslt {\cs16\ul\cf2 lsst}}}{\f1\cf1\cgrid0 \cell Light Setting\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "MarkerPanel" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043000c0000004d00610072006b0065007200500061006e0065006c00000000000000}}}{\fldrslt {\cs16\ul\cf2 mark}}}{\f1\cf1\cgrid0 \cell Marker Panel\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "MagneticCompass" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f004300100000004d00610067006e00650074006900630043006f006d007000610073007300000000000000}}}{\fldrslt {\cs16\ul\cf2 mcmp}}}{\f1\cf1\cgrid0 \cell Magnetic Compass\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Mixture" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f004300080000004d00690078007400750072006500000000000000}}}{\fldrslt {\cs16\ul\cf2 mixt}}}{\f1\cf1\cgrid0 \cell Mixture Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Alternator" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000b00000041006c007400650072006e00610074006f00720000000000}}}{\fldrslt {\cs16\ul\cf2 natr}}}{\f1\cf1\cgrid0 \cell Alternator\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "NavigationGauge" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f004300100000004e0061007600690067006100740069006f006e0047006100750067006500000000000000}}}{\fldrslt {\cs16\ul\cf2 navg}}}{\f1\cf1\cgrid0 \cell Navigation Gage\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "NavRadio"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f004300090000004e006100760052006100640069006f0000000000}}}{\fldrslt {\cs16\ul\cf2 na{\*\bkmkstart _Hlt479939472}v{\*\bkmkend _Hlt479939472}i}}}{\f1\cf1\cgrid0 \cell Nav Radio\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Magneto" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f004300080000004d00610067006e00650074006f00000000000000}}}{\fldrslt {\cs16\ul\cf2 n{\*\bkmkstart _Hlt479939483}e{\*\bkmkend _Hlt479939483}to}}}{\f1\cf1\cgrid0 \cell Magneto Control\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Inverter" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000900000049006e0076006500720074006500720000000000}}}{\fldrslt {\cs16\ul\cf2 n{\*\bkmkstart _Hlt479939506}{\*\bkmkstart _Hlt479939496}{\*\bkmkend _Hlt479939506}v{\*\bkmkend _Hlt479939496}rt}}}{\f1\cf1\cgrid0 \cell Inverter
+\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "OnGroundMonitor" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f004300100000004f006e00470072006f0075006e0064004d006f006e00690074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 og{\*\bkmkstart _Hlt479939517}n{\*\bkmkend _Hlt479939517}d}}}{\f1\cf1\cgrid0 \cell On Ground Monitor\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "OilPressure" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000c0000004f0069006c0050007200650073007300750072006500000000000000}}}{\fldrslt {\cs16\ul\cf2 o{\*\bkmkstart _Hlt479939549}i{\*\bkmkend _Hlt479939549}lP}}}{\f1\cf1\cgrid0 \cell Oil Pressure Gage\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "Oxygen" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f004300070000004f0078007900670065006e0000000000}}}{\fldrslt {\cs16\ul\cf2 ox{\*\bkmkstart _Hlt479939564}y{\*\bkmkend _Hlt479939564}g}}}{\f1\cf1\cgrid0 \cell Oxygen\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "PropellerDeice" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000f000000500072006f00700065006c006c00650072004400650069006300650000000000}}}{\fldrslt {\cs16\ul\cf2 p{\*\bkmkstart _Hlt479939578}d{\*\bkmkend _Hlt479939578}ic}}}{\f1\cf1\cgrid0 \cell Propeller De-ice\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "PitotHeat" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000a0000005000690074006f0074004800650061007400000000000000}}}{\fldrslt {\cs16\ul\cf2 p{\*\bkmkstart _Hlt479939594}h{\*\bkmkend _Hlt479939594}sw}}}{\f1\cf1\cgrid0 \cell Pitot Heat Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "PneumaticPump" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000e00000050006e00650075006d006100740069006300500075006d007000000000000000}}}{\fldrslt {\cs16\ul\cf2 pn{\*\bkmkstart _Hlt479939610}e{\*\bkmkend _Hlt479939610}p}}}{\f1\cf1\cgrid0 \cell Pneumatic Pump\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Prime" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f004300060000005000720069006d006500000000000000}}}{\fldrslt {\cs16\ul\cf2 p{\*\bkmkstart _Hlt479939625}r{\*\bkmkend _Hlt479939625}im}}}{\f1\cf1\cgrid0 \cell Prime Control\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "Pressurization" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000f000000500072006500730073007500720069007a006100740069006f006e0000000000}}}{\fldrslt {\cs16\ul\cf2 p{\*\bkmkstart _Hlt479939636}z{\*\bkmkend _Hlt479939636}at}}}{\f1\cf1\cgrid0 \cell Pressurization\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "RudderBias"}{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000b000000520075006400640065007200420069006100730000000000}}}{\fldrslt {\cs16\ul\cf2 r{\*\bkmkstart _Hlt480375452}{\*\bkmkstart _Hlt479939650}{\*\bkmkend _Hlt480375452}b{\*\bkmkend _Hlt479939650}ia}}}{
+\f1\cf1\cgrid0 \cell Rudder Bias\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "Radio" }{
+\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043000600000052006100640069006f00000000000000}}}{\fldrslt {\cs16\ul\cf2 r{\*\bkmkstart _Hlt479939673}{\*\bkmkstart _Hlt479939667}{\*\bkmkend _Hlt479939673}d{\*\bkmkend _Hlt479939667}io}}}{
+\f1\cf1\cgrid0 \cell Radio\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "RotaryIgnitionSwitch" }{
+\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043001500000052006f007400610072007900490067006e006900740069006f006e0053007700690074006300680000000000}}}{\fldrslt {\cs16\ul\cf2 rig{\*\bkmkstart _Hlt479939692}n{\*\bkmkend _Hlt479939692}}}}{\f1\cf1\cgrid0 \cell 
+Rotary Ignition Switch\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "RudderTrim" }{
+\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f0043000b0000005200750064006400650072005400720069006d00000000000000}}}{\fldrslt {\cs16\ul\cf2 rt{\*\bkmkstart _Hlt479939728}r{\*\bkmkend _Hlt479939728}m}}}{\f1\cf1\cgrid0 \cell Rudder Trim Control\cell 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "VEHICLE CONTROL SUBSYSTEMS.DOC" \\l "Rudder" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d00000056454849434c7e312e444f4300ffffadde0000000000000000000000000000000000000000420000003c0000000300560045004800490043004c004500200043004f004e00540052004f004c00200053
+0055004200530059005300540045004d0053002e0044004f00430007000000520075006400640065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 r{\*\bkmkstart _Hlt479939738}u{\*\bkmkend _Hlt479939738}dr}}}{\f1\cf1\cgrid0 \cell Rudder Control\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "SurfaceDeice" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000d00000053007500720066006100630065004400650069006300650000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939749}d{\*\bkmkend _Hlt479939749}ic}}}{\f1\cf1\cgrid0 \cell Surface De-ice\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "AirspeedMonitor" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f00430010000000410069007200730070006500650064004d006f006e00690074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939766}p{\*\bkmkend _Hlt479939766}dm}}}{\f1\cf1\cgrid0 \cell Airspeed Monitor\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "Airpeed" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f004300080000004100690072007000650065006400000000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939780}p{\*\bkmkend _Hlt479939780}ed}}}{\f1\cf1\cgrid0 \cell Airspeed Indicator\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "StaticSourceControl" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043001400000053007400610074006900630053006f00750072006300650043006f006e00740072006f006c00000000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939791}s{\*\bkmkend _Hlt479939791}sw}}}{\f1\cf1\cgrid0 \cell Static Source Control\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "StallWarning" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000d0000005300740061006c006c005700610072006e0069006e00670000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939814}t{\*\bkmkend _Hlt479939814}al}}}{\f1\cf1\cgrid0 \cell Stall Warning\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "StarterIgniter" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000f0000005300740061007200740065007200490067006e00690074006500720000000000}}}{\fldrslt {\cs16\ul\cf2 StI{\*\bkmkstart _Hlt479939844}g{\*\bkmkend _Hlt479939844}}}}{\f1\cf1\cgrid0 \cell Starter Igniter\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "StallIdent" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000b0000005300740061006c006c004900640065006e00740000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939877}t{\*\bkmkend _Hlt479939877}lI}}}{\f1\cf1\cgrid0 \cell Stall Ident\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "StarterControl" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000f000000530074006100720074006500720043006f006e00740072006f006c0000000000}}}{\fldrslt {\cs16\ul\cf2 st{\*\bkmkstart _Hlt479939908}{\*\bkmkstart _Hlt479939902}{\*\bkmkend _Hlt479939908}r{\*\bkmkend _Hlt479939902}t}
+}}{\f1\cf1\cgrid0 \cell Starter Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Suction" }{
+\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f00430008000000530075006300740069006f006e00000000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939921}u{\*\bkmkend _Hlt479939921}ct}}}{\f1\cf1\cgrid0 \cell Suction Gage\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "SwitchSet" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000a000000530077006900740063006800530065007400000000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939938}w{\*\bkmkend _Hlt479939938}st}}}{\f1\cf1\cgrid0 \cell Switch Set\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Synchrophaser" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000e000000530079006e006300680072006f00700068006100730065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 s{\*\bkmkstart _Hlt479939951}y{\*\bkmkend _Hlt479939951}nc}}}{\f1\cf1\cgrid0 \cell Synchrophaser\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Tachometer" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000b00000054006100630068006f006d00650074006500720000000000}}}{\fldrslt {\cs16\ul\cf2 ta{\*\bkmkstart _Hlt479939973}c{\*\bkmkend _Hlt479939973}h}}}{\f1\cf1\cgrid0 \cell Tachometer\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "TachometerTimer" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043001000000054006100630068006f006d006500740065007200540069006d0065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 t{\*\bkmkstart _Hlt480375521}a{\*\bkmkstart _Hlt479939989}{\*\bkmkend _Hlt480375521}k
+{\*\bkmkend _Hlt479939989}t}}}{\f1\cf1\cgrid0 \cell Tach Timer\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\
+l "TemperatureAirspeedDisplay" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043001b000000540065006d00700065007200610074007500720065004100690072007300700065006500640044006900730070006c006100790000000000}}}{\fldrslt {\cs16\ul\cf2 ta{\*\bkmkstart _Hlt479940005}s{\*\bkmkend _Hlt479940005}d}}}{\f1\cf1\cgrid0 \cell 
+Temperature Airspeed Display\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "TemperatureControl" }{
+\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f00430013000000540065006d007000650072006100740075007200650043006f006e00740072006f006c0000000000}}}{\fldrslt {\cs16\ul\cf2 te{\*\bkmkstart _Hlt479940019}m{\*\bkmkend _Hlt479940019}p}}}{\f1\cf1\cgrid0 \cell Temperature Control\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Throttle" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f004300090000005400680072006f00740074006c00650000000000}}}{\fldrslt {\cs16\ul\cf2 t{\*\bkmkstart _Hlt479940040}{\*\bkmkstart _Hlt479940033}{\*\bkmkend _Hlt479940040}h{\*\bkmkend _Hlt479940033}ro}}}{\f1\cf1\cgrid0 \cell 
+Throttle Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "Torque" }{\f1\cf1\cgrid0 
+{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000700000054006f00720071007500650000000000}}}{\fldrslt {\cs16\ul\cf2 t{\*\bkmkstart _Hlt479940057}o{\*\bkmkend _Hlt479940057}rq}}}{\f1\cf1\cgrid0 \cell Torque Meter\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ENGINE GAUGE SUBSYSTEMS.DOC" \\l "ThrustReverse" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454e47494e457e312e444f4300ffffadde00000000000000000000000000000000000000003c00000036000000030045004e00470049004e004500200047004100550047004500200053005500420053
+0059005300540045004d0053002e0044004f0043000e0000005400680072007500730074005200650076006500720073006500000000000000}}}{\fldrslt {\cs16\ul\cf2 tr{\*\bkmkstart _Hlt479940088}e{\*\bkmkend _Hlt479940088}v}}}{\f1\cf1\cgrid0 \cell Thrust Reverse Control\cell 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "TurnCoordinator" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f004300100000005400750072006e0043006f006f007200640069006e00610074006f007200000000000000}}}{\fldrslt {\cs16\ul\cf2 t{\*\bkmkstart _Hlt479940105}u{\*\bkmkend _Hlt479940105}rn}}}{\f1\cf1\cgrid0 
+\cell Turn Coordinator\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "ELECTRICAL SUBSYSTEMS.DOC" \\l "Voltmeter" }{\f1\cf1\cgrid0 
+{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000454c454354527e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030045004c0045004300540052004900430041004c0020005300550042005300590053
+00540045004d0053002e0044004f0043000a00000056006f006c0074006d006500740065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 v{\*\bkmkstart _Hlt479940122}o{\*\bkmkend _Hlt479940122}lt}}}{\f1\cf1\cgrid0 \cell Voltmeter\cell }\pard 
+\nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "VerticalSpeed" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f0043000e00000056006500720074006900630061006c0053007000650065006400000000000000}}}{\fldrslt {\cs16\ul\cf2 v{\*\bkmkstart _Hlt479940140}s{\*\bkmkend _Hlt479940140}i_}}}{\f1\cf1\cgrid0 \cell 
+Vertical Speed Indicator\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "MORE SUBSYSTEMS.DOC" \\l "WiperControl" }{\f1\cf1\cgrid0 
+{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004d4f524553557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004d004f00520045002000530055004200530059005300540045004d0053002e0044
+004f0043000d0000005700690070006500720043006f006e00740072006f006c0000000000}}}{\fldrslt {\cs16\ul\cf2 wi{\*\bkmkstart _Hlt479940148}p{\*\bkmkend _Hlt479940148}e}}}{\f1\cf1\cgrid0 \cell Wiper Control\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {
+\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "WeatherRadar" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043000d00000057006500610074006800650072005200610064006100720000000000}}}{\fldrslt {\cs16\ul\cf2 w{\*\bkmkstart _Hlt479940171}{\*\bkmkstart _Hlt479940165}{\*\bkmkend _Hlt479940171}r
+{\*\bkmkend _Hlt479940165}dr}}}{\f1\cf1\cgrid0 \cell Weather Radar\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 
+ HYPERLINK "FUEL SUBSYSTEMS.DOC" \\l "Crossfeed" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000004655454c53557e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004600550045004c002000530055004200530059005300540045004d0053002e0044
+004f0043000a000000430072006f00730073006600650065006400000000000000}}}{\fldrslt {\cs16\ul\cf2 xf{\*\bkmkstart _Hlt479940202}{\*\bkmkstart _Hlt479940187}{\*\bkmkend _Hlt479940202}e{\*\bkmkend _Hlt479940187}d}}}{\f1\cf1\cgrid0 \cell Fuel Crossfeed Control
+\cell }\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\trowd \trgaph30\trrh68\trleft-30 \clvertalt\cltxlrtb \cellx810\clvertalt\cltxlrtb \cellx3645\pard \nowidctlpar\widctlpar\intbl\adjustright {\field{\*\fldinst {\f1\cf1\cgrid0 
+ HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "Transponder" }{\f1\cf1\cgrid0 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043000c0000005400720061006e00730070006f006e00640065007200000000000000}}}{\fldrslt {\cs16\ul\cf2 x{\*\bkmkstart _Hlt479940216}p{\*\bkmkend _Hlt479940216}dr}}}{\f1\cf1\cgrid0 \cell Transponder\cell 
+}\pard \nowidctlpar\widctlpar\intbl\adjustright {\f1\cf1\cgrid0 \row }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "MENU.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c0000000000000460000090000004d454e552e444f4300ffffadde0000000000000000000000000000000000000000160000001000000003004d0045004e0055002e0044004f004300000000000000}}}{\fldrslt {\cs16\ul\cf2 M
+{\*\bkmkstart _Hlt479753443}e{\*\bkmkend _Hlt479753443}nu}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "CREATING THE ELECTRICAL SYSTEM.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004352454154497e312e444f4300ffffadde00000000000000000000000000000000000000004a0000004400000003004300520045004100540049004e0047002000540048004500200045004c00450043
+00540052004900430041004c002000530059005300540045004d002e0044004f0043000000}}}{\fldrslt {\cs16\ul\cf2 Creating the Electrical System}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "SPECIAL SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005350454349417e312e444f4300ffffadde0000000000000000000000000000000000000000320000002c00000003005300500045004300490041004c002000530055004200530059005300540045004d
+0053002e0044004f0043000000}}}{\fldrslt {\cs16\ul\cf2 Special Subsystems}}}{\f16 
+\par 
+\par }{
+\par }}

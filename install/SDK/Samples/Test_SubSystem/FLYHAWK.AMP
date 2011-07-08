@@ -1,0 +1,1744 @@
+<bgno> -- Begin File --
+
+	///////////////////////////////////////////////////
+	//
+	//	Electrical and Gauge Systems
+	//
+	///////////////////////////////////////////////////
+
+	/////
+	//
+	//	Steering Control
+	//
+	/////
+
+	<subs> -- Pneu Pump 1 --
+	ster
+	<bgno>
+	<endo>
+
+	/////
+	//
+	//	Pneumatic Pumps for Pneumatic Subsystems
+	//
+	/////
+
+	<subs> -- Pneu Pump 1 --
+	pnup
+	<bgno>
+		<unId>
+		nup1
+		<suct> -- Suction (psi) --
+		5
+	<endo>
+
+	<subs> -- Pneu Pump 2 --
+	pnup
+	<bgno>
+		<unId>
+		nup2
+		<suct> -- Suction (psi) --
+		5
+	<endo>
+
+	/////
+	//
+	//	New Suction/Vacuum Gauge
+	//
+	/////
+
+	<subs> -- Vacuum Indicator --
+	vaci
+	<bgno>
+		<unId>
+		suct
+		<hwId>
+		GAUGE
+		<timK>
+		1.0
+		<mPmp> -- Pneu Pump Message --
+		<bgno>
+			<conn>
+			nup1
+		<endo>
+		<mPmp> -- Pneu Pump Message --
+		<bgno>
+			<conn>
+			nup2
+		<endo>
+	<endo>
+
+	/////
+	//
+	//	New Directional Gyro
+	//
+	/////
+
+	<subs> - Directional Gyro -
+	GYRO
+	<bgno>
+		<unId>
+		gyro
+		<timK> - error rate (1 degree in 12 minutes) -
+		0.001389
+		<step> - heading bug -
+		1.0
+		<mPmp> -- Pneu Pump Message --
+		<bgno>
+			<conn>
+			nup1
+		<endo>
+		<mPmp> -- Pneu Pump Message --
+		<bgno>
+			<conn>
+			nup2
+		<endo>
+	<endo>
+
+	/////
+	//
+	//	New Attitude Indicator
+	//
+	/////
+
+	<subs> - Attitude Indicator -
+	ATTI
+	<bgno>
+		<unId>
+		atti
+		<timK> - erection time constant -
+		0.5
+		<prat> - precession rate -
+		1440.0
+		<mPmp> -- Pneu Pump Message --
+		<bgno>
+			<conn>
+			nup1
+		<endo>
+		<mPmp> -- Pneu Pump Message --
+		<bgno>
+			<conn>
+			nup2
+		<endo>
+	<endo>
+
+	/////
+	//
+	//	Fuel System Control
+	//
+	/////
+
+	<subs> - Left Tank Fuel Valve Control -
+	dpnd
+	<bgno>
+		<unId> -- Fuel Valvenator --
+		Lone
+		<mPol> -- Polling Message for Left Fuel Valve --
+		<bgno>
+			<grou>
+			Lvlv
+			<user>
+			DATATAG,'st8t'
+		<endo>
+		<pxy0> -- Close Left Fuel Valve --
+		<bgno>
+			<grou>
+			Lvlv
+			<user>
+			DATATAG,'st8t'
+			<type>
+			INT,0
+		<endo>
+		<pxy1> -- Open Left Fuel Valve --
+		<bgno>
+			<grou>
+			Lvlv
+			<user>
+			DATATAG,'st8t'
+			<type>
+			INT,1
+		<endo>
+	<endo>
+
+	<subs> - Right Tank Fuel Valve Control -
+	dpnd
+	<bgno>
+		<unId> -- Fuel Valvenator --
+		Rone
+		<mPol> -- Polling Message for Right Fuel Valve --
+		<bgno>
+			<grou>
+			Rvlv
+			<user>
+			DATATAG,'st8t'
+		<endo>
+		<pxy0> -- Close Right Fuel Valve --
+		<bgno>
+			<grou>
+			Rvlv
+			<user>
+			DATATAG,'st8t'
+			<type>
+			INT,0
+		<endo>
+		<pxy1> -- Open Right Fuel Valve --
+		<bgno>
+			<grou>
+			Rvlv
+			<user>
+			DATATAG,'st8t'
+			<type>
+			INT,1
+		<endo>
+	<endo>
+
+	<subs> - Firewall Fuel Shutoff Valve Control -
+	dpnd
+	<bgno>
+		<unId> -- Fuel Valvenator --
+		fOff
+		<mPol> -- Polling Message for Shutoff Valve --
+		<bgno>
+			<grou>
+			shut
+			<user>
+			DATATAG,'st8t'
+		<endo>
+		<pxy0> -- Close Shutoff Fuel Valve --
+		<bgno>
+			<grou>
+			shut
+			<user>
+			DATATAG,'st8t'
+			<type>
+			INT,0
+		<endo>
+		<pxy1> -- Open Shutoff Fuel Valve --
+		<bgno>
+			<grou>
+			shut
+			<user>
+			DATATAG,'st8t'
+			<type>
+			INT,1
+		<endo>
+	<endo>
+
+	<subs> - Fuel Pump Control -
+	dpnd
+	<bgno>
+		<unId> -- Fuel Pump SWitch --
+		fpsw
+		<mPol> -- Polling Message for Pump --
+		<bgno>
+			<grou>
+			pmp1
+			<user>
+			DATATAG,'nabl'
+		<endo>
+		<pxy0> -- Shutoff Pump --
+		<bgno>
+			<grou>
+			pmp1
+			<user>
+			DATATAG,'nabl'
+			<type>
+			INT,0
+		<endo>
+		<pxy1> -- Activate Pump --
+		<bgno>
+			<grou>
+			pmp1
+			<user>
+			DATATAG,'nabl'
+			<type>
+			INT,1
+		<endo>
+		<fWAV> -- Wave File --
+		172fpump.wav
+	<endo>
+
+	<subs> - Left Fuel Quantity -
+	genI
+	<bgno>
+		<unId>
+		LqTy
+		<mVal> -- Value Message --
+		<bgno>
+			<grou>
+			Ltnk
+			<user>
+			DATATAG,'fqty'
+		<endo>
+		<alia> -- Alias Value Data Tag --
+		gals
+		<fuse>
+		inst
+		<timK>
+		1.0
+		<load> - circuit requirement -
+		0.39
+	<endo>
+
+	<subs> - Left Fuel Low Quantity Monitor -
+	genM
+	<bgno>
+		<unId>
+		Lflo
+		<mVal> -- Value Message (gallons) --
+		<bgno>
+			<grou>
+			Ltnk
+			<user>
+			DATATAG,'fqty'
+		<endo>
+		<.LT.> -- When value less than limit --
+		<comp> -- Limit Value (gallons) --
+		5
+	<endo>
+
+	<subs> - Right Fuel Quantity -
+	genI
+	<bgno>
+		<unId>
+		RqTy
+		<mVal> -- Value Message --
+		<bgno>
+			<grou>
+			Rtnk
+			<user>
+			DATATAG,'fqty'
+		<endo>
+		<alia> -- Alias Value Data Tag --
+		gals
+		<fuse>
+		inst
+		<timK>
+		1.0
+		<load> - circuit requirement -
+		0.39
+	<endo>
+
+	<subs> - Right Fuel Low Quantity Monitor -
+	genM
+	<bgno>
+		<unId>
+		Rflo
+		<mVal> -- Value Message (gallons) --
+		<bgno>
+			<grou>
+			Rtnk
+			<user>
+			DATATAG,'fqty'
+		<endo>
+		<.LT.> -- When value less than limit --
+		<comp> -- Limit Value (gallons) --
+		5
+	<endo>
+
+	<subs> - Fuelflow Gauge -
+	genI
+	<bgno>
+		<unId>
+		fFlw
+		<mVal> -- Value Message (gallons per hour) --
+		<bgno>
+			<grou>
+			tap1
+			<user>
+			DATATAG,'gph_'
+		<endo>
+		<alia> -- Alias Value Data Tag --
+		gph_
+		<fuse>
+		inst
+		<timK>
+		1.0
+		<load> - circuit requirement -
+		0.39
+	<endo>
+
+	<subs> - Subsystem entry -
+	mcmp
+	<bgno> - magnetic compass -
+	<endo>
+	<subs> - Subsystem entry -
+	elts
+	<bgno> - Emergency Locator Transmitter -
+		<gLim> -- Activation G Limit --
+		1.0
+	<endo>
+	<subs> - Subsystem entry -
+	ALTI
+	<bgno> - altimeter -
+		<unId>
+		alti
+		<gNum> -- Port Group Number --
+		1
+	<endo>
+	<subs> - Subsystem entry -
+	VSI_
+	<bgno> - vertical speed -
+		<unId>
+		vsi_
+		<gNum> -- Port Group Number --
+		1
+		<timK>
+		0.5
+	<endo>
+	<subs> - Subsystem entry -
+	SPED
+	<bgno> - airspeed -
+		<unId>
+		sped
+		<gNum> -- Port Group Number --
+		1
+	<endo>
+	<subs> - Subsystem entry -
+	TURN
+	<bgno> - Turn Coordinater -
+		<unId>
+		turn
+		<fuse>
+		turn
+		<timK>
+		0.5
+		<tilt>
+		0.5
+		<load> - circuit requirements -
+		0.82
+	<endo>
+	<subs> - Subsystem entry -
+	TACH
+	<bgno> - Tachometer -
+		<unId>
+		tach
+		<eNum>
+		1
+	<endo>
+	<subs> - Subsystem entry -
+	oilP
+	<bgno> - Oil Pressure Gage -
+		<eNum>
+		1
+		<timK>
+		1.0
+		<lowP> -- Low Pressure Warning (psi) --
+		25
+	<endo>
+	<subs> - Subsystem entry -
+	oilT
+	<bgno> - Oil Temperature Gage -
+		<eNum>
+		1
+		<fuse>
+		inst
+		<timK>
+		1.0
+		<load> - circuit requirement -
+		0.39
+	<endo>
+	<subs> - Subsystem entry -
+	eEGT
+	<bgno> - Exhaust Gas Temperature Gage -
+		<eNum>
+		1
+		<fuse>
+		inst
+		<timK>
+		1.0
+	<endo>
+	<subs> - Subsystem entry -
+	eMAP
+	<bgno> - Manifold Pressure -
+		<eNum>
+		1
+	<endo>
+
+	<subs> - Subsystem entry -
+	doat
+	<bgno> - digital clock o.a.t -
+		<unId> ---- unit id ----
+		doat
+		<hwId> ---- hardware ----
+		GAUGE
+		<batt> -- Battery Circuit --
+		batt
+	<endo>
+	<subs> - Subsystem entry -
+	THRO
+	<bgno> - Throttle Control -
+	<endo>
+	<subs> - Subsystem entry -
+	MIXT
+	<bgno> - Mixture Control -
+		<auto>	- auto control enable
+		<step>
+		0.01
+		<injd> - Fuel Injected -
+		<prmr> - Priming Rate -
+		1.0
+		<prff> - Priming Fuelflow (pph) -
+		30.0
+		<plim> -- Pump Pressure Limit (psi) --
+		10.0
+	<endo>
+	<subs> - Subsystem entry -
+	flap
+	<bgno> - flap control -
+		<fuse>
+		flap
+		<flpP> - array of positions (deg) -
+		4
+		0
+		10
+		17
+		22
+		<flpS> - array of damage speeds (kias) -
+		4
+		0
+		110
+		85
+		85
+		<ratK>
+		4.66
+		<load> - circuit load (amps) -
+		15
+	<endo>
+	<subs> - Subsystem entry -
+	rudr
+	<bgno> - rudder control -
+		<scal>15
+		15.0
+		<step>
+		0.05
+		<bend>
+		1.0
+		<timK>
+		1.0
+	<endo>
+	<subs> - Subsystem entry -
+	ailr
+	<bgno> - aileron control -
+		<scal>
+		15.0
+		<step>
+		0.05
+		<bend>
+		0.0
+		<timK> --reaction--
+		0.1
+	<endo>
+	<subs> - Subsystem entry -
+	elvr
+	<bgno> - elevator control -
+		<scal>
+		18.0
+		<step>
+		0.025
+		<bend>
+		0.0
+		<timK>
+		0.10
+	<endo>
+	<subs> - Subsystem entry -
+	rtrm
+	<bgno> - rudder trim control -
+		<posn> -- Trim Position -- P0.0140
+		0.0140
+		<scal>
+		5.0
+		<step>
+		0.02
+	<endo>
+	<subs> - Subsystem entry -
+	atrm
+	<bgno> - aileron trim control -
+		<posn> -- Trim Position -- Q0.03930
+		0.03930
+		<scal>
+		5.0
+		<step>
+		0.02
+	<endo>
+	<subs> - Subsystem entry -
+	etrm
+	<bgno> - elevator trim control -
+		<scal>
+		20.0
+		<step>
+		0.004
+		<bend>
+		0.0
+		<timK>
+		0.5
+	<endo>
+	<subs> - Subsystem entry -
+	brak
+	<bgno> - Brake Control -
+	<endo>
+	<subs> - Subsystem entry -
+	swst
+	<bgno> - Keyboard Landing Light Switch -
+		<unId> 
+		LAND
+		<smsg> -- Message Data --
+		<bgno>
+			<grou>
+			land
+			<user>
+			HARDWARE,SWITCH
+		<endo>
+		<LAND> -- Handled by LAND Key --
+		<sync> -- sync all switches --
+	<endo>
+	<subs> - Subsystem entry -
+	swst
+	<bgno> - Keyboard Nav Light Switch -
+		<unId> 
+		NAVI
+		<smsg> -- Message Data --
+		<bgno>
+			<grou>
+			navi
+			<user>
+			HARDWARE,SWITCH
+		<endo>
+		<smsg> -- Message Data --
+		<bgno>
+			<grou>
+			becn
+			<user>
+			HARDWARE,SWITCH
+		<endo>
+		<smsg> -- Message Data --
+		<bgno>
+			<grou>
+			strb
+			<user>
+			HARDWARE,SWITCH
+		<endo>
+		<NAVI> -- Handled by NAVI Key --
+		<sync> -- sync all switches --
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Light Switch -
+		<unId> - Unique Id (Landing Light Switch)-
+		land
+		<hwId>
+		SWITCH
+		<fuse> - circuit dependency (fuse) -
+		land
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Light Switch -
+		<unId> - Unique Id (Taxi Light Switch)-
+		taxi
+		<hwId>
+		SWITCH
+		<fuse> - circuit dependency (fuse) -
+		land
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Light Switch -
+		<unId> - Unique Id (Navigation Light Switch)-
+		navi
+		<hwId>
+		SWITCH
+		<fuse> - circuit dependency (fuse) -
+		navi
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Light Switch -
+		<unId> - Unique Id (Beacon Light Switch)-
+		becn
+		<hwId>
+		SWITCH
+		<fuse> - circuit dependency (fuse) -
+		becn
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Light Switch -
+		<unId> - Unique Id (Strobe Light Switch)-
+		strb
+		<hwId>
+		SWITCH
+		<fuse> - circuit dependency (fuse) -
+		strb
+	<endo>
+	<subs> - Subsystem entry -
+	bulb
+	<bgno> - Light Bulb -
+		<LMid> - white rudder light -
+		tail
+		<swch> - circuit dependency (switch) -
+		navi
+		<load> - circuit load (amps) -
+		1.85
+	<endo>
+	<subs> - Subsystem entry -
+	bulb
+	<bgno> - Light Bulb -
+		<LMid> - red beacon on tail -
+		rstt
+		<swch> - circuit dependency (switch) -
+		becn
+		<load> - circuit load (amps) -
+		2.5
+	<endo>
+	<subs> - Subsystem entry -
+	bulb
+	<bgno> - Light Bulb -
+		<LMid> - right nav light -
+		rnvl
+		<swch> - circuit dependency (switch) -
+		navi
+		<load> - circuit load (amps) -
+		1.85
+	<endo>
+	<subs> - Subsystem entry -
+	bulb
+	<bgno> - Light Bulb -
+		<LMid> -  left nav light -
+		lnvl
+		<swch> - circuit dependency (switch) -
+		navi
+		<load> - circuit load (amps) -
+		1.85
+	<endo>
+	<subs> - Subsystem entry -
+	bulb
+	<bgno> - left strobe light -
+		<LMid> - Light Manager Bulb Id -
+		lslt
+		<swch> - circuit dependency (switch) -
+		strb
+		<load> - circuit load (amps) -
+		2.6
+	<endo>
+	<subs> - Subsystem entry -
+	bulb
+	<bgno> - Right strobe light -
+		<LMid> - Light Manager Bulb Id -
+		rslt
+		<swch> - circuit dependency (switch) -
+		strb
+		<load> - circuit load (amps) -
+		2.6
+	<endo>
+	<subs> - Subsystem entry -
+	bulb
+	<bgno> - Landing light -
+		<LMid> - landing light -
+		land
+		<swch> - circuit dependency (switch) -
+		land
+		<load> - circuit load (amps) -
+		8.9
+	<endo>
+	<subs> - Subsystem entry -
+	bulb
+	<bgno> - Landing light -
+		<LMid> - landing light -
+		taxi
+		<swch> - circuit dependency (switch) -
+		taxi
+		<load> - circuit load (amps) -
+		8.9
+	<endo>
+	<subs>
+	phsw
+	<bgno> - Pitot Heat Switch -
+		<aray> - Port Number Array -
+		1
+		1
+		<fuse> - Pitot Heat Fuse --
+		ptht
+		<load> - circuit load (amps)
+		7.10
+	<endo>
+	<subs>
+	dpnd
+	<bgno> - Cabin Heat Knob -
+		<unId>
+		cabh
+		<hwId>
+		SWITCH
+	<endo>
+	<subs>
+	dpnd
+	<bgno> - Cabin Air Knob -
+		<unId>
+		caba
+		<hwId>
+		SWITCH
+	<endo>
+	<subs>
+	sssw
+	<bgno> - Alternate Static Source Switch -
+		<aray> - Port Number Array -
+		1
+		3
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Pitot Heat Circuit Breaker -
+		<unId> - unit id -
+		ptht
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus2
+	<endo>
+	<subs> - Subsystem entry -
+	navg
+	<bgno> - Navigation gauge -
+		<unId> - nav gauge id -
+		nav1
+		<fuse> - circuit connection -
+		nav1
+	<endo>
+	<subs> - Subsystem entry -
+	navg
+	<bgno> - Navigation gauge -
+		<unId> - nav gauge id -
+		nav2
+		<fuse>
+		nav2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		nav1
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		avi1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		nav2
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		avi2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		turn
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		auto
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		avi1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		navi
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		strb
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		becn
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		land
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		flap
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Bus #1 -
+		<unId> - Unit Id -
+		bus1
+		<hwId> - hardware type -
+		BUS
+		<fuse> - independent circuit 1 -
+		natr
+		<swch> - independent circuit 2 -
+		mBat
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Bus #2 -
+		<unId> - Unit Id -
+		bus2
+		<hwId> - hardware type -
+		BUS
+		<fuse> - independent circuit 1 -
+		natr
+		<swch> - independent circuit 2 -
+		mBat
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Avionics Bus #1 -
+		<unId> - Unit Id -
+		avi1
+		<hwId> - hardware type -
+		BUS
+		<swch> - independent circuit -
+		avio
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Avionics Bus #2 -
+		<unId> - Unit Id -
+		avi2
+		<hwId> - hardware type -
+		BUS
+		<swch> - independent circuit -
+		avis
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Essential Crossfeed Bus -
+		<unId> - Unit Id -
+		essl
+		<hwId> - hardware type -
+		BUS
+		<eBus> - independent circuit -
+		bus1
+		<eBus> - independent circuit -
+		bus2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Master Battery Switch -
+		<unId> - Unit Id -
+		mBat
+		<hwId> - hardware type -
+		SWITCH
+		<batt> -- Battery Circuit --
+		batt
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Master Alternator Switch -
+		<unId> - Unit Id -
+		mAlt
+		<hwId> - hardware type -
+		SWITCH
+		<fuse> - independent circuit -
+		altf
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Avionics Switch (Master) -
+		<unId> - Unit Id -
+		avio
+		<hwId> - hardware type -
+		SWITCH
+		<fuse> - independent circuit -
+		avi1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Avionics Switch (Slave) -
+		<unId> - Unit Id -
+		avis
+		<hwId> - hardware type -
+		SWITCH
+		<fuse> - independent circuit -
+		avi2
+		<swch> - independent circuit -
+		avio
+		<st8t> - hardware state -
+		1
+		<_AND> -- AND Independent Circuit States --
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		avi1
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker -
+		<unId> - unit id -
+		avi2
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		bus2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker (GPS) -
+		<unId> - unit id -
+		_gps
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		avi1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker (ADF) -
+		<unId> - unit id -
+		_adf
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		avi2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker (Transponder) -
+		<unId> - unit id -
+		pond
+		<hwId> - hardware type -
+		FUSE
+		<eBus>
+		avi2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Circuit Breaker (Annunciator Panel) -
+		<unId> - unit id -
+		warn
+		<hwId> - hardware type -
+		FUSE
+		<eBus> - connected to essential bus -
+		essl
+	<endo>
+	<subs> - Subsystem entry -
+	rign
+	<bgno> - Rotory Ignition Switch -
+		<unId> - Unit Id -
+		ignS
+		<hwId> - hardware type -
+		SWITCH
+		<fuse> - independent circuit -
+		inst
+		<st8t> - Enabled -
+		1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Instrument Fuse -
+		<unId> - Unit Id -
+		inst
+		<hwId> - hardware type -
+		FUSE
+		<eBus> - independent circuit -
+		bus1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Annunciator Test switch -
+		<unId> - Unit Id -
+		test
+		<hwId> - hardware type -
+		SWITCH
+		<fuse> - fuse -
+		warn
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Annunciator BRT switch -
+		<unId> - Unit Id -
+		abrt
+		<hwId> - hardware type -
+		SWITCH
+		<fuse> - fuse -
+		warn
+		<st8t> -- Hardware State --
+		1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Annunciator DIM switch -
+		<unId> - Unit Id -
+		adim
+		<hwId> - hardware type -
+		SWITCH
+		<fuse> - fuse -
+		warn
+		<st8t> -- Hardware State --
+		1
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Annunciator Brite or Dim Logic -
+		<unId> - Unit Id -
+		BorD
+		<hwId> - hardware type -
+		STATE
+		<swch> - Brite Switch -
+		abrt
+		<swch> - Dim Switch -
+		adim
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Instrument Lights Fuse -
+		<unId> - Unit Id -
+		ilts
+		<hwId> - hardware type -
+		FUSE
+		<eBus> - independent circuit -
+		bus2
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Alternator Field Fuse -
+		<unId> - Unit Id -
+		altf
+		<hwId> - hardware type -
+		FUSE
+		<eBus> - independent circuit -
+		essl
+	<endo>
+	<subs> - Subsystem entry -
+	dpnd
+	<bgno> - Alternator Fuse -
+		<unId> - Unit Id -
+		natr
+		<hwId> - hardware type -
+		FUSE
+		<altr> -- Alternator Circuit --
+		natr
+	<endo>
+	<subs> - Subsystem entry -
+	amps
+	<bgno> - Charge Ammeter -
+		<unId> - unit id -
+		chrg
+		<hwId>
+		GAUGE
+		<chrg> - charge meter -
+		<timK>
+		5.0
+		<mMon> -- Monitored System --
+		<bgno>
+			<grou>
+			batt
+			<user>
+			HARDWARE,BATTERY
+		<endo>
+	<endo>
+	<subs> - Subsystem entry -
+	natr
+	<bgno> - Alternator -
+		<swch> - circuit -
+		mAlt
+		<mxld> - max capacity (amps)
+		60
+		<loRg> - least RPM regulatable -
+		550
+		<volt> - max Voltage -
+		28.0
+	<endo>
+	<subs> - Subsystem entry -
+	batt
+	<bgno> - Battery -
+		<life> - amp-hour rating -
+		30
+		<volt> - max voltage -
+		24.0
+	<endo>
+	<subs> - Subsystem Entry -
+	anlt
+	<bgno> -- begin Annunciator Test Blinker --
+		<unId> -- Unit Id --
+		test
+		<hwId> -- Hardware Type --
+		LIGHT
+		<swch> -- Press-to-Test --
+		test
+		<blnk> - Blink Period (sec) -
+		0
+		<blpp> - Blink Rate -
+		0.25
+	<endo> -- end Annunciator lt --
+	<subs> - Subsystem Entry -
+	dpnd
+	<bgno> -- Light Bulb --
+		<unId> -- Unit Id --
+		lowV
+		<hwId> -- Hardware Type --
+		LIGHT
+		<lite> -- Test Blinker --
+		test
+		<lite> -- Light --
+		LowV
+	<endo>
+	<subs> - Subsystem Entry -
+	anlt
+	<bgno> -- begin Annunciator lt --
+		<unId> -- Unit Id --
+		LowV
+		<hwId> -- Hardware Type --
+		LIGHT
+		<bool> -- Low Voltage Monitor --
+		lowV
+		<bool> -- Brite OR Dim Logic State --
+		BorD
+		<_AND> -- AND Circuits --
+		<blnk> - Blink Period (sec) -
+		10
+		<blpp> - Blink Rate -
+		0.25
+	<endo> -- end Annunciator lt --
+
+	<subs> -- Low Voltage Monitor --
+	genM
+	<bgno>
+		<unId>
+		lowV
+		<fuse>
+		warn
+		<.LT.> -- When Value is less than Limit --
+		<comp> -- RPM Limit --
+		550
+		<mVal> -- Value Message --
+		<bgno>
+			<conn> -- Engine 1 RPM --
+			tach
+			<dtag>
+			rpmn
+		<endo>
+	<endo>
+
+	<subs> - Subsystem Entry -
+	dpnd
+	<bgno> -- Light Bulb --
+		<unId> -- Unit Id --
+		loOP
+		<hwId> -- Hardware Type --
+		LIGHT
+		<lite> -- Test Blinker --
+		test
+		<lite> -- Light --
+		LoOP
+	<endo>
+	<subs> - Subsystem Entry -
+	anlt
+	<bgno> -- begin Annunciator lt --
+		<unId> -- Unit Id --
+		LoOP
+		<hwId> -- Hardware Type --
+		LIGHT
+		<bool> -- Oil Pressure Monitor --
+		loOP
+		<bool> -- Brite OR Dim Logic State --
+		BorD
+		<_AND> -- AND Circuits --
+		<blnk> - Blink Period (sec) -
+		10
+		<blpp> - Blink Rate -
+		0.25
+	<endo> -- end Annunciator lt --
+
+	<subs> -- Oil Pressure Monitor --
+	genM
+	<bgno>
+		<unId>
+		loOP
+		<fuse>
+		warn
+		<.LT.> -- When Value is less than limit --
+		<comp> -- Oil pressure Limit --
+		25
+		<mVal>
+		<bgno>
+			<conn>
+			oilP
+			<dtag>
+			indn
+		<endo>
+	<endo>
+
+	<subs> - Subsystem Entry -
+	dpnd
+	<bgno> -- Light Bulb --
+		<unId> -- Unit Id --
+		vac1
+		<hwId> -- Hardware Type --
+		LIGHT
+		<lite> -- Test Blinker --
+		test
+		<lite> -- Light --
+		Vac1
+	<endo>
+	<subs> - Subsystem Entry -
+	anlt
+	<bgno> -- begin Annunciator lt --
+		<unId> -- Unit Id --
+		Vac1
+		<hwId> -- Hardware Type --
+		LIGHT
+		<bool> -- Low Vac Monitor --
+		vac1
+		<bool> -- Brite OR Dim Logic State --
+		BorD
+		<_AND> -- AND Circuits --
+		<blnk> - Blink Period (sec) -
+		10
+		<blpp> - Blink Rate -
+		0.25
+	<endo> -- end Annunciator lt --
+
+	<subs> -- Low Vacuum Monitor --
+	genM
+	<bgno>
+		<unId>
+		vac1
+		<fuse>
+		warn
+		<.GE.> -- When value is greater or equal to limit --
+		<comp>
+		1
+		<mVal> -- Value Message --
+		<bgno>
+			<conn>
+			nup1
+			<dtag>
+			inop
+		<endo>
+	<endo>
+
+	<subs> - Subsystem Entry -
+	dpnd
+	<bgno> -- Light Bulb --
+		<unId> -- Unit Id --
+		vac2
+		<hwId> -- Hardware Type --
+		LIGHT
+		<lite> -- Test Blinker --
+		test
+		<lite> -- Light --
+		Vac2
+	<endo>
+
+	<subs> - Subsystem Entry -
+	anlt
+	<bgno> -- begin Annunciator lt --
+		<unId> -- Unit Id --
+		Vac2
+		<hwId> -- Hardware Type --
+		LIGHT
+		<bool> -- Low Vac Monitor --
+		vac2
+		<bool> -- Brite OR Dim Logic State --
+		BorD
+		<_AND> -- AND Circuits --
+		<blnk> - Blink Period (sec) -
+		10
+		<blpp> - Blink Rate -
+		0.25
+	<endo> -- end Annunciator lt --
+
+	<subs> -- Low Vacuum Monitor --
+	genM
+	<bgno>
+		<unId>
+		vac2
+		<fuse>
+		warn
+		<.GE.> -- When value is greater or equal to limit --
+		<comp>
+		1
+		<mVal> -- Value Message --
+		<bgno>
+			<conn>
+			nup2
+			<dtag>
+			inop
+		<endo>
+	<endo>
+
+	<subs> -- Scripted Failure State --
+	dpnd>
+	<bgno>
+		<unId>
+		Lfal
+		<hwId>
+		STATE
+		<st8t>
+		0
+	<endo>
+
+	<subs> - Subsystem Entry -
+	dpnd
+	<bgno> -- Light Bulb --
+		<unId> -- Unit Id --
+		LQty
+		<hwId> -- Hardware Type --
+		LIGHT
+		<lite> -- Test Blinker --
+		test
+		<lite> -- Light --
+		lQty
+		<bool> -- Scripted Failure --
+		Lfal
+	<endo>
+	<subs> - Subsystem Entry -
+	anlt
+	<bgno> -- begin Annunciator lt --
+		<unId> -- Unit Id --
+		lQty
+		<hwId> -- Hardware Type --
+		LIGHT
+		<bool> -- Left Fuel Qty Monitor --
+		Lflo
+		<bool> -- Brite OR Dim Logic State --
+		BorD
+		<_AND> -- AND Circuits --
+		<blnk> - Blink Period (sec) -
+		10
+		<blpp> - Blink Rate -
+		0.25
+	<endo> -- end Annunciator lt --
+	<subs> - Subsystem Entry -
+	dpnd
+	<bgno> -- Light Bulb --
+		<unId> -- Unit Id --
+		RQty
+		<hwId> -- Hardware Type --
+		LIGHT
+		<lite> -- Test Blinker --
+		test
+		<lite> -- Light --
+		rQty
+	<endo>
+	<subs> - Subsystem Entry -
+	anlt
+	<bgno> -- begin Annunciator lt --
+		<unId> -- Unit Id --
+		rQty
+		<hwId> -- Hardware Type --
+		LIGHT
+		<bool> -- Right Fuel Qty Monitor --
+		Rflo
+		<bool> -- Brite OR Dim Logic State --
+		BorD
+		<_AND> -- AND Circuits --
+		<blnk> - Blink Period (sec) -
+		10
+		<blpp> - Blink Rate -
+		0.25
+	<endo> -- end Annunciator lt --
+	<subs> - Subsystem Entry -
+	dpnd
+	<bgno> -- Light Bulb for Line --
+		<unId> -- Unit Id --
+		wlin
+		<hwId> -- Hardware Type --
+		LIGHT
+		<lite> -- Test Blinker --
+		test
+	<endo>
+	<subs> - Subsystem entry -
+	hobs
+	<bgno> - Hobbs meter -
+		<batt> -- Battery Circuit --
+		batt
+		<eNum> -- Engine Number --
+		1
+	<endo> - end Hobbs meter
+	<subs> - Subsystem entry -
+	takt
+	<bgno> - Tach Timer -
+		<batt> -- Battery Circuit --
+		batt
+		<eNum> -- Engine Number --
+		1
+	<endo> - end Hobbs meter
+	<subs> - Subsystem Entry -
+	stal
+	<bgno> - Stall Warning -
+		<wing> -- Wing Section Name -
+		Right w/Flap
+	<endo>
+	<subs> - Subsystem entry -
+	K140
+	<bgno> - Autopilot -
+		<atop> -- autopilot specification --
+		<bgno> -- begin --
+			<fcsf> -- Autopilot File Spec --
+			flyhawk.fcs
+		<endo>
+		<fuse> - circuit connection -
+		auto
+		<load> - circuit load (amps)
+		2
+		<mDG_> -- Directional Gyro System --
+		<bgno>
+			<grou>
+			gyro
+			<dtag>
+			yaw_
+		<endo>
+		<nav1> -- Navigation Gage System --
+		<bgno>
+			<grou>
+			'nav1'
+			<user>
+			HARDWARE,GAUGE
+		<endo>
+		<vsi_> --VSI gauge ---------
+		<bgno>
+			<grou>
+			 vsi_
+			<dtag>
+			 vsi_'
+			<user>
+			HARDWARE,GAUGE
+		<endo>
+	<endo>
+	<subs> ---- subsystem entry ----
+	kx15
+	<bgno> ---- BEGIN OBJECT ----
+		<unId> ---- unit id ----
+		kx15
+		<uNum> ---- unit number ----
+		1
+		<fuse>
+		nav1
+		<load> - circuit load (amps) -
+		0.5
+	<endo> ---- END OBJECT ----
+	<subs> ---- subsystem entry ----
+	kx15
+	<bgno> ---- BEGIN OBJECT ----
+		<unId> ---- unit id ----
+		kx15
+		<uNum> ---- unit number ----
+		2
+		<fuse>
+		nav2
+		<load> - circuit load (amps) -
+		0.5
+	<endo> ---- END OBJECT ----
+	<subs> ---- subsystem entry ----
+	kt76
+	<bgno> ---- BEGIN OBJECT ----
+		<unId> ---- unit id ----
+		kt76
+		<fuse> ---- circuit breaker ----
+		pond
+		<lspd> ---- lower airspeed limit ----
+		75
+		<uspd> ---- upper airspeed limit ----
+		150
+		<load> - circuit load (amps) -
+		2
+		<mAlt> -- Altimeter Message --
+		<bgno>
+			<conn>
+			alti
+			<dtag>
+			alti
+		<endo>
+	<endo> ---- END OBJECT ----
+	<subs> ---- subsystem entry ----
+	adfr
+	<bgno> ---- BEGIN OBJECT ----
+		<unId> ---- unit id ----
+		adfr
+		<fuse> ---- circuit breaker ----
+		_adf
+		<load> - circuit load (amps) -
+		2
+	<endo> ---- END OBJECT ----
+	<subs> ---- subsystem entry ----
+	gpsr
+	<bgno> ---- BEGIN OBJECT ----
+		<unId> ---- unit id ----
+		gpsr
+		<fuse> ---- circuit breaker ----
+		_gps
+		<load> - circuit load (amps) -
+		1
+		<mFMS> ---- Fuel Management Subsystem ----
+		<bgno>
+			<grou>
+			fMat
+			<dtag>
+			st8t
+		<endo>
+		<mSpd> ---- Airspeed Indicator Subsystem ----
+		<bgno>
+			<grou>
+			sped
+			<dtag>
+			st8t
+		<endo>
+	<endo> ---- END OBJECT ----
+	<subs> ---- subsystem entry ----
+	adio
+	<bgno> ---- BEGIN OBJECT ----
+		<unId> ---- unit id ----
+		adio
+		<eBus> ---- electric bus ----
+		essl
+		<load> - circuit load (amps) -
+		1
+	<endo> ---- END OBJECT ----
+	<subs> - Subsystem entry -
+	lsst
+	<bgno> - Light setting (Radio) -
+		<unId> - unit id -
+		rdlt
+		<hwId> - hardware type -
+		STATE
+		<fuse> - circuit breaker -
+		ilts
+		<stat> - light ON -
+	<endo>
+	<subs> - Subsystem entry -
+	lsst
+	<bgno> - Light setting (Panel) -
+		<unId> - unit id -
+		gglt
+		<hwId> - hardware type -
+		STATE
+		<fuse> - circuit breaker -
+		ilts
+		<stat> - light ON -
+	<endo>
+	<subs> - Subsystem entry -
+	lsst
+	<bgno> - Light setting (Glareshield) -
+		<unId> - unit id -
+		pnlt
+		<hwId> - hardware type -
+		STATE
+		<fuse> - circuit breaker -
+		ilts
+		<stat> - light ON -
+		<levl> - light level -
+		0.5
+	<endo>
+	<subs> - Subsystem entry -
+	lsst
+	<bgno> - Light setting (Pedestal) -
+		<unId> - unit id -
+		pdlt
+		<hwId> - hardware type -
+		STATE
+		<fuse> - circuit breaker -
+		ilts
+		<stat> - light ON -
+		<levl> - light level -
+		0.5
+	<endo>
+	<subs> - Subsystem entry -
+	lsst
+	<bgno> - Light setting (Annunciators) -
+		<unId> - unit id -
+		anlt
+		<hwId> - hardware type -
+		STATE
+		<fuse> - circuit breaker -
+		ilts
+		<stat> - light ON -
+		<levl> - level -
+		1.0
+	<endo>
+	<subs> - Subsystem entry -
+	mark
+	<bgno> - Marker Beacon -
+	<endo>
+	<subs> - Subsystem entry -
+	fMat
+	<bgno> - Fuel Management -
+	<endo>
+
+	/////
+	//
+	//	Test
+	//
+	/////
+
+	<subs> -- --
+	dpnd
+	<bgno>
+		<unId> -  -
+		tst1
+	<endo>
+
+	////////////////////////////////
+	//
+	//	
+	//	TST1_DLL
+	//
+	////////////////////////////////
+
+	<subs> -- 
+	TST1
+	<bgno> -- modify key in banner options
+		<unId>
+		TST1
+		<test>
+		2
+	  <mesg> -- connect to Airspeed Subsystem --
+	  <bgno>
+		  <conn>
+		  tst1
+	  <endo>
+	<endo>
+
+<endo> -- End of File --

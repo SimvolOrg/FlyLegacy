@@ -1,0 +1,204 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f16\fswiss\fcharset0\fprq2{\*\panose 020b0a04020102020204}Arial Black;}{\f17\froman\fcharset238\fprq2 Times New Roman CE;}{\f18\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f20\froman\fcharset161\fprq2 Times New Roman Greek;}{\f21\froman\fcharset162\fprq2 Times New Roman Tur;}{\f22\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f113\fswiss\fcharset238\fprq2 Arial Black CE;}{\f114\fswiss\fcharset204\fprq2 Arial Black Cyr;}{\f116\fswiss\fcharset161\fprq2 Arial Black Greek;}{\f117\fswiss\fcharset162\fprq2 Arial Black Tur;}{\f118\fswiss\fcharset186\fprq2 Arial Black Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 Normal;}{\s1\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 1;}{\s2\li-90\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 2;}{\s3\keepn\nowidctlpar\widctlpar\adjustright \b\fs20\cgrid \sbasedon0 \snext0 heading 3;}{\*\cs10 \additive Default Paragraph Font;}{\*\cs15 \additive \ul\cf2 \sbasedon10 Hyperlink;}{\*\cs16 \additive \ul\cf12 \sbasedon10 FollowedHyperlink;}}{\*\listtable{\list\listtemplateid-1968420522\listsimple{\listlevel\levelnfc0\leveljc0\levelfollow0\levelstartat1\levelspace0\levelindent0{\leveltext\'02\'00);}{\levelnumbers\'01;}\fi-360\li360\jclisttab\tx360 }{\listname ;}\listid353961090}{\list\listtemplateid-1968420522\listsimple{\listlevel\levelnfc0\leveljc0\levelfollow0\levelstartat1\levelspace0\levelindent0{\leveltext\'02\'00);}{\levelnumbers\'01;}\fbias0 \fi-360\li360\jclisttab\tx360 }{\listname ;}\listid508638628}{\list\listtemplateid-912996258\listsimple{\listlevel\levelnfc0\leveljc0\levelfollow0\levelstartat4\levelspace0\levelindent0{\leveltext\'02\'00);}{\levelnumbers\'01;}\fi-360\li360\jclisttab\tx360 }{\listname ;}\listid573391686}{\list\listtemplateid396250516\listsimple{\listlevel\levelnfc0\leveljc0\levelfollow0\levelstartat1\levelspace0\levelindent0{\leveltext\'02\'00);}{\levelnumbers\'01;}\fi-360\li360\jclisttab\tx360 }{\listname ;}\listid1386105252}{\list\listtemplateid822404040\listsimple{\listlevel\levelnfc0\leveljc0\levelfollow0\levelstartat5\levelspace0\levelindent0{\leveltext\'02\'00);}{\levelnumbers\'01;}\fi-360\li360\jclisttab\tx360 }{\listname ;}\listid2003391907}}{\*\listoverridetable{\listoverride\listid353961090\listoverridecount0\ls1}{\listoverride\listid508638628\listoverridecount0\ls2}{\listoverride\listid1386105252\listoverridecount0\ls3}{\listoverride\listid573391686\listoverridecount0\ls4}{\listoverride\listid2003391907\listoverridecount0\ls5}}{\info{\title Engines}{\author Paul Russell}{\operator Paul Russell}{\creatim\yr2000\mo5\dy24\hr15\min34}{\revtim\yr2000\mo5\dy24\hr15\min34}{\version2}{\edmins0}{\nofpages4}{\nofwords679}{\nofchars3875}{\*\company Terminal Reality}{\nofcharsws4758}{\vern71}}\widowctrl\ftnbj\aenddoc\formshade\viewkind1\viewscale100\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\fs28 Debug Information
+\par }{\f16 
+\par This document will explain the Simulation Debug Information displays that can be activated.
+\par 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Disclaimer
+\par }\pard\plain \li-90\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par The Debug Displays were not intended to be used by anyone but the programmer who created them. The flexibility of customizing the display pages requires minor alterations to the code, so the functionality is limited.  These Displays are only offered to provide as much information about the internals of the simulation as possible.
+\par 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {How to Activate the Displays
+\par }\pard\plain \li-90\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par The Simulation Debug Information is contained on four different pages.  Each page can be activated by altering the FLY.INI file.
+\par 
+\par [SIM]
+\par useDebugPrint=p
+\par 
+\par where, p is the page number ( 1 | 2 | 3 | 4 )
+\par and p=0 will deactivate the display.
+\par 
+\par Page Content
+\par 
+\par Each page contains multiple columns of cryptic labels followed by numeric displays.  The contents of each page is directly related to the components each aircraft is equipped.
+\par 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Page 1 Column 1 (PlaneEngine)
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard\plain \s3\keepn\nowidctlpar\widctlpar\tx3600\outlinelevel2\adjustright \b\fs20\cgrid {PlaneEngine\tab Engine Type
+\par }\pard\plain \nowidctlpar\widctlpar\tx3600\adjustright \fs20\cgrid {State\tab Engine State
+\par Throttle\tab Throttle Setting (%)
+\par Mixture\tab Mixture Setting (%)
+\par A/f\tab Air to Fuel Ratio
+\par BHP\tab Power Available (hp)
+\par RPM\tab Engine Revs (rpm)
+\par MAP\tab Manifold Absolute Pressure (inHg)
+\par EGT\tab Exhaust Gas Temperature (F)
+\par CHT\tab Cylinder Head Temperature (F)
+\par OilT\tab Oil Temperature (F)
+\par OilP\tab Oil Pressure (psi)
+\par Ff\tab Fuelflow (pps)
+\par Af\tab Airflow (pps)
+\par Ff\tab Fuelflow (pph)
+\par Prime\tab  not used
+\par }\pard\plain \s3\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \b\fs20\cgrid {Propeller
+\par }\pard\plain \nowidctlpar\widctlpar\tx3600\adjustright \fs20\cgrid {RPM\tab Prop Revs (rpm)
+\par Thrust\tab Thrust (lb)
+\par BHP\tab Power Required (hp)
+\par AOA\tab Blade Angle of Attack (deg)
+\par Angle\tab Blade Angle (deg)
+\par Chord\tab Chord Length (ft)
+\par Tff\tab Thrust Factor
+\par Qff\tab Torque Factor
+\par 
+\par Piot-Static System
+\par Pressure of Port 1 (psf)
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {
+\par Page 1 Column 1 (Turboprop)
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard\plain \s3\keepn\nowidctlpar\widctlpar\tx3600\outlinelevel2\adjustright \b\fs20\cgrid {Turboprop\tab Engine Type
+\par }\pard\plain \nowidctlpar\widctlpar\tx3600\adjustright \fs20\cgrid {State\tab Engine State
+\par Throttle\tab Throttle Setting (%)
+\par Tt4\tab Total Temperature in the combustion chamber (R)
+\par Tt4/Tt4D\tab Ratio of Current to Design Temperatures
+\par Thrust\tab Thrust (lb)
+\par Ff\tab Fuelflow (pps)
+\par Af\tab Airflow (pps)
+\par 1/f\tab Air to Fuel Ratio
+\par wdc\tab Watch Dog Count \endash  number of iterations per pass
+\par BEM\tab unused
+\par M9\tab Exit Mach Number
+\par Pc\tab Compressor Pressure Ratio
+\par TSFC\tab Thrust Specific Fuel Consumption
+\par N1\tab Low Speed Turbine RPM
+\par N2\tab High Speed Turbine RPM
+\par ITTF\tab Inter Turbine Temperature (F)
+\par ITTC\tab Inter Turbine Temperature (C)
+\par CoreCf\tab Power from the core
+\par PropCf\tab Power from the prop
+\par SHP\tab Power Available
+\par Q\tab Torque Available
+\par TtL\tab Iterated Total Temperature (R)
+\par PtL\tab Iterated Total Pressure (psf)
+\par }\pard\plain \s3\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \b\fs20\cgrid {
+\par Propeller
+\par }\pard\plain \nowidctlpar\widctlpar\tx3600\adjustright \fs20\cgrid {RPM\tab Prop Revs (rpm)
+\par Thrust\tab Thrust (lb)
+\par BHP\tab Power Required (hp)
+\par AOA\tab Blade Angle of Attack (deg)
+\par Angle\tab Blade Angle (deg)
+\par Chord\tab Chord Length (ft)
+\par Tff\tab Thrust Factor
+\par Qff\tab Torque Factor
+\par 
+\par Piot-Static System
+\par Pressure of Port 1 (psf)
+\par }\pard \li-90\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Page 1 Column 1 (Turbofan)
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard\plain \s3\keepn\nowidctlpar\widctlpar\tx3600\outlinelevel2\adjustright \b\fs20\cgrid {Turbofan\tab Engine Type
+\par }\pard\plain \nowidctlpar\widctlpar\tx3600\adjustright \fs20\cgrid {State\tab Engine State
+\par Throttle\tab Throttle Setting (%)
+\par Tt4\tab Total Temperature in the combustion chamber (R)
+\par Tt4/Tt4D\tab Ratio of Current to Design Temperatures
+\par Thrust\tab Thrust (lb)
+\par Ff\tab Fuelflow (pps)
+\par Af\tab Airflow (pps)
+\par 1/f\tab Air to Fuel Ratio
+\par wdc\tab Watch Dog Count \endash  number of iterations per pass
+\par BEM\tab unused
+\par M9\tab Exit Mach Number
+\par Pc\tab Compressor Pressure Ratio
+\par TSFC\tab Thrust Specific Fuel Consumption
+\par N1\tab Low Speed Turbine RPM
+\par N2\tab High Speed Turbine RPM
+\par Bpr\tab Bypass ratio
+\par BprD\tab Design Bypass Ratio
+\par }\pard\plain \s3\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \b\fs20\cgrid {
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Page 1 Column 2
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard\plain \s3\keepn\nowidctlpar\widctlpar\tx3600\outlinelevel2\adjustright \b\fs20\cgrid {\b0 De\tab Elevator Deflection Angle (deg)
+\par Da\tab Aileron Deflection Angle (deg)
+\par }\pard\plain \nowidctlpar\widctlpar\tx3600\adjustright \fs20\cgrid {Dr\tab Rudder Deflection Angle (deg)
+\par Df\tab Flap Deflection Angle (deg)
+\par Te\tab Elevator Trim Angle (deg)
+\par Ta\tab Aileron Trim Angle (deg)
+\par Tr\tab Rudder Trim Angle (deg)
+\par Ape\tab Autopilot Elevator Angle (deg)
+\par Apa\tab Autopilot Aileron Angle (deg)
+\par Apr\tab Autopilot Rudder Angle (deg)
+\par 
+\par L/D\tab Lift to Drag Ratio
+\par G\tab Normal Acceleration (G)
+\par F\tab Total Force Vector (lb)
+\par M\tab Total Moment Vector (ft-lb)
+\par Nav1\tab Unused
+\par Seg\tab Unused
+\par FdP\tab Flight Director Pitch Angle (deg)
+\par FdR\tab Flight Director Roll Angle (deg)
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Page 1 Column 3 (Autopilot)
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard \nowidctlpar\widctlpar\tx3600\adjustright {AI Pilot\tab Autopilot enabled
+\par Etrim\tab unused
+\par Atrim\tab unused
+\par Rtrim\tab unused
+\par YawDanper\tab unused
+\par AutoTaxi\tab unused
+\par AutoPitch\tab unused
+\par AutoHdg\tab unused
+\par AutoBank\tab unused
+\par AutoSpeed\tab unused
+\par AutoVert\tab unused
+\par AutoAlt\tab unused
+\par AutoAGL\tab unused
+\par AutoLbeam\tab unused
+\par AutoVbeam\tab unused
+\par AltError\tab unused
+\par AltErate\tab unused
+\par AutoAOA\tab unused
+\par 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Page 1 Column 4 (Dynamics)
+\par }\pard\plain \nowidctlpar\widctlpar\tx3600\adjustright \fs20\cgrid {
+\par V\tab Airspeed KTAS, KIAS
+\par Alt\tab altitude MSL (ft)
+\par Ralt\tab altitude AGL (ft)
+\par Vsi\tab Vertical Speed (fpm)
+\par Roll\tab Bank Angle (deg)
+\par Pitch\tab Pitch Angle (deg)
+\par Yaw\tab Heading Angle (deg)
+\par Wt\tab Total Weight (lb)
+\par 
+\par Qerror\tab Quaternion Error
+\par U\tab Longitudinal Velocity (fps)
+\par V\tab Lateral Velocity (fps)
+\par W\tab Normal Velocity (fps)
+\par Ud\tab Longitudinal Acceleration (fpsps)
+\par Vd\tab Lateral Acceleration (fpsps)
+\par Wd\tab Normal Acceleration (fpsps)
+\par P\tab Roll rate (dps)
+\par Q\tab Pitch rate (dps)
+\par R\tab Yaw Rate (dps)
+\par Cl\tab Estimated Lift Coefficient
+\par Cd\tab Estimated Drag Coefficient
+\par L\tab Approximate Lift Force (lb)
+\par D\tab Approximate Drag Force (lb)
+\par Alpha\tab Estimated Angle of Attack (deg)
+\par Beta\tab Estimated Side Slip Angle (deg)
+\par Mach\tab Mach Number
+\par 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Page 2 (Suspension)
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par Unusable
+\par 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Page 3 (ATC)
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par Unusable
+\par 
+\par }\pard\plain \s2\li-90\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Page 4 (Weather)
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par Unusable
+\par 
+\par 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "MENU.DOC" }{\f16 {\*\datafield \bin108  ÐÉêyùºÎŒ‚ ª K©            À      F  	   MENU.DOC ÿÿ­Þ                           M E N U . D O C   }}}{\fldrslt {\cs15\ul\cf2 M{\*\bkmkstart _Hlt479753443}e{\*\bkmkend _Hlt479753443}nu}}}{\f16 
+\par }{
+\par 
+\par }\pard \li-90\nowidctlpar\widctlpar\adjustright {
+\par }}

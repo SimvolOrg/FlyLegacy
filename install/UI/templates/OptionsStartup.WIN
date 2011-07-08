@@ -1,0 +1,202 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	gogo
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Startup Options
+	<loc >
+	458
+	336
+	<size>
+	220
+	179
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	216
+	155
+	<ipos>
+	1
+	0
+	1
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Use the options below to control what Fly! II does when you first start.
+		<loc >
+		7
+		6
+		<size>
+		199
+		43
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		1
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		feat
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Startup Feature
+		<loc >
+		8
+		62
+		<size>
+		200
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		200
+		14
+		<bsiz>
+		200
+		22
+		<item>
+		0
+		Default
+		<item>
+		1
+		QuickFlight
+		<item>
+		2
+		Adventures
+		<item>
+		3
+		Flight Planner
+		<item>
+		4
+		Persistent World
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		butn
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		OK
+		<loc >
+		132
+		126
+		<size>
+		75
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		75
+		22
+		<bsiz>
+		75
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		canc
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Cancel
+		<loc >
+		48
+		126
+		<size>
+		75
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		1
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		75
+		22
+		<bsiz>
+		75
+		22
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

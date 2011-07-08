@@ -1,0 +1,6371 @@
+<bgno> ========== BEGIN SCENERY ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'00.4004"N
+		122 23'04.6346"W
+		35.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			SFMAIN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.243080,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'57.1534"N
+		122 23'17.2152"W
+		50.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj2
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			SFNEW.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.243080,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'10.1959"N
+		122 23'33.9668"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj3
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITEN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.483256,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'47.4521"N
+		122 23'25.4472"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj4
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITEN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.483256,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'37.4335"N
+		122 23'15.5143"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj5
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITEN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.483256,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'45.5536"N
+		122 22'54.8558"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj6
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITEN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.483256,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'05.9370"N
+		122 22'46.2350"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj7
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITEN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.483256,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'05.9370"N
+		122 22'46.2350"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj8
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITEN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.483256,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'26.8592"N
+		122 22'38.6916"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		pole
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 37'26.8592"N
+		122 22'38.6916"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'44.8857"N
+		122 23'34.7532"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		pole
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 37'44.8857"N
+		122 23'34.7532"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'32.4145"N
+		122 23'25.3442"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		Lfob_pole_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 37'32.4145"N
+		122 23'25.3442"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'08.4211"N
+		122 22'28.4248"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		Lfob_pole_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 37'08.4211"N
+		122 22'28.4248"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'10.7374"N
+		122 22'21.9615"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		Lfob_pole_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 37'10.7374"N
+		122 22'21.9615"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'37.1122"N
+		122 22'11.2495"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		Lfob_pole_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 37'37.1122"N
+		122 22'11.2495"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'41.8238"N
+		122 21'32.9093"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		Lfob_pole_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 36'41.8238"N
+		122 21'32.9093"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'23.1639"N
+		122 22'53.4486"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		Lfob_pole_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 36'23.1639"N
+		122 22'53.4486"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'23.1639"N
+		122 22'53.4486"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		Lfob_pole_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 36'23.1639"N
+		122 22'53.4486"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'04.8510"N
+		122 23'05.2325"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<name> ---- object name (descriptive) ----
+		Lfob_pole_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMat.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			AirMatN.bin
+		<endo> ========== END OBJECT ==========
+		<lite> ---- Light object -----------------
+		omni
+		<bgno> ---- Light parameters -------------
+			<colr> ----Color ------
+			_red
+			<rdim> --- Radius (feet) --------
+			10.5
+			<offs> --- Offset (feet) from object ---
+			0			// X
+			0			// Y
+			10			// Z
+		<endo> -----End of parameters ------------
+
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	wsok
+	<bgno> ========== BEGIN OBJECT ==========
+		<_NFO> -- Vehicle Info File --
+		WS1_LFOB.NFO
+		<geop> ---- geo position lat lon elev ----
+		37 37'04.8510"N
+		122 23'05.2325"W
+		0.
+		<type> ---- object type ----
+		gvew
+		<flag> ---- gestalt flags ----
+		558391
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		gvew38
+		<name> ---- object name (descriptive) ----
+		Lfob_1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25.bin
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			sk00
+			AirM00N.bin
+			<modl> ---- model entry ----
+			sk05
+			AirM05N.bin
+			<modl> ---- model entry ----
+			sk10
+			AirM10N.bin
+			<modl> ---- model entry ----
+			sk15
+			AirM15N.bin
+			<modl> ---- model entry ----
+			sk20
+			AirM20N.bin
+			<modl> ---- model entry ----
+			sk25
+			AirM25N.bin
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'29.2319"N
+		122 22'38.1408"W
+		4.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj20
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			LCART.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.069092,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'32.5348"N
+		122 22'42.3638"W
+		4.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj21
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			LCART.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.543588,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'26.8010"N
+		122 22'36.7392"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj22
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITEN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.543588,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'29.7233"N
+		122 22'43.4874"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj23
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLITEN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.543588,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'08.4702"N
+		122 23'38.9388"W
+		27.5
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj24
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			ABUILD.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.869474,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'12.8471"N
+		122 23'38.9673"W
+		27.5
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj25
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			ABUILD.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.805386,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'04.4543"N
+		122 23'47.4855"W
+		27.5
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj26
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			ABUILD.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.070818,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'58.9819"N
+		122 23'42.6595"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj27
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG60.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG60N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.790466,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'02.6026"N
+		122 23'46.1893"W
+		27.5
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj28
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			ABUILD.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.213549,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'39.9493"N
+		122 22'55.1707"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj29
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED62N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.427889,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'34.4810"N
+		122 22'46.7000"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj30
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED62N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.454382,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'33.8639"N
+		122 22'45.1343"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj31
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED62N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.467896,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'40.6020"N
+		122 22'56.8208"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj32
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED62N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.427889,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'34.7531"N
+		122 22'52.9696"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj33
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED63.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED63N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.087233,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'43.9218"N
+		122 23'14.2672"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj34
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED63.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED63N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.041545,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'39.9629"N
+		122 22'53.7560"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj35
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED60.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED60N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.575545,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'33.8704"N
+		122 22'43.7153"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj36
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED60.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED60N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.602282,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'40.3893"N
+		122 23'05.6578"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj37
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML61.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML61N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.457182,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'40.7846"N
+		122 23'06.6406"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj38
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML61.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML61N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.457182,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'41.2080"N
+		122 23'07.7182"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj39
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML61.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML61N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.457182,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'41.6779"N
+		122 23'08.8297"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj40
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML62N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.457182,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'42.2741"N
+		122 23'10.1857"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj41
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML62N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.457182,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'46.2434"N
+		122 22'50.6655"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj42
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG60.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG60N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.029093,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'58.1792"N
+		122 23'24.3521"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj43
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED61.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED61N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.681530,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'00.5579"N
+		122 23'24.4846"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj44
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED61.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED61N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.681530,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'01.7711"N
+		122 23'24.9069"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj45
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML61.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML61N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.681530,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'08.4071"N
+		122 23'22.1222"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj46
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG60.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG60N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.759643,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'09.5027"N
+		122 23'17.5382"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj47
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED63.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED63N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.092286,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'43.2003"N
+		122 22'39.4267"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj48
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG62N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.041545,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'55.9742"N
+		122 22'50.5377"W
+		-6.1663669943809509
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146524875
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj49
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAP2TWR.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAP2TWRN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'09.5251"N
+		122 24'47.6977"W
+		96.575321200659658
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj50
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS0536.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS0536N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.010910,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'11.8439"N
+		122 25'23.2998"W
+		117.05230817373652
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj51
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN3014.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN3014N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.563498,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'06.3362"N
+		122 25'25.9757"W
+		120.85508573766498
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj52
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS4011.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS4011N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.563498,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'14.8702"N
+		122 25'21.8110"W
+		115.48872299802581
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj53
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS1007.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS1007N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.563498,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'11.4445"N
+		122 25'18.6049"W
+		111.061078008164
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj54
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3031.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3031N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.563498,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'18.4132"N
+		122 25'21.1814"W
+		114.22746676034944
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj55
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN1030.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN1030N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.134294,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'59.9856"N
+		122 25'39.1180"W
+		137.68089687001327
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj56
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD2004.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD2004N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.047286,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'34.2968"N
+		122 23'18.3460"W
+		5.3298000246286392e-002
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146664139
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj57
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAPMTRM.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAPMTRMN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.574794,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'34.1521"N
+		122 23'17.9001"W
+		5.3298000246286392e-002
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146664139
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj58
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAPMTRM.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAPMTRMN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'24.9879"N
+		122 23'28.1105"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj59
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML63.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML63N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.615257,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'08.5094"N
+		122 23'36.2369"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj60
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG62N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.805386,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'08.5568"N
+		122 23'38.5956"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj61
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED60.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED60N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.805386,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'24.6201"N
+		122 23'30.7310"W
+		10.5
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj62
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FIRE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FIREN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.231794,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'29.8158"N
+		122 22'29.6539"W
+		10.5
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj63
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FIRE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FIREN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.040838,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'35.6716"N
+		122 23'56.3557"W
+		-0.31589201092720032
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj64
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP1002.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'35.1873"N
+		122 23'57.5950"W
+		-0.31589201092720032
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj65
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP1002.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'34.7256"N
+		122 23'58.8151"W
+		-0.31589201092720032
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj66
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP1002.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'27.3109"N
+		122 23'55.1324"W
+		-3.3911500126123428e-002
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj67
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0502.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'27.4408"N
+		122 23'54.1156"W
+		-3.3911500126123428e-002
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj68
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0502.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'28.8097"N
+		122 23'55.5675"W
+		-3.3911500126123428e-002
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj69
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0502.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'24.3862"N
+		122 23'38.7619"W
+		4.9946198463439941
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj70
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0101.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0101N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.480962,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'23.8627"N
+		122 23'38.2536"W
+		4.9946198463439941
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj71
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0101.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0101N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.480962,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'28.8914"N
+		122 22'31.4309"W
+		4.9946198463439941
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj72
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0101.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0101N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.032816,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'06.3966"N
+		122 23'36.4678"W
+		-7.9248897731304169e-002
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj73
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0104.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP0104N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.151516,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'35.4292"N
+		122 23'58.8977"W
+		-2.8265199603083602e-007
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj74
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			100FTLNK.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.890642,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'23.4261"N
+		122 21'37.2913"W
+		61.159099578857422
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj75
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			H-SHIP.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.041545,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'26.5029"N
+		122 23'52.3857"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj76
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED63.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APMED63N.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.459869,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 49'39.5417"N
+		122 25'24.3976"W
+		100.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj77
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			ALCATRZ.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.569326,0.026885
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'27.6337"N
+		122 24'17.35"W
+		67.179711527337759
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2146926283
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj78
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			COITTWR.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			COITTWRN.SMF
+		<endo> ========== END OBJECT ==========
+		<shdw> ---- shadow info ----
+		<bgno> ========== BEGIN OBJECT ==========
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'47.02"N
+		122 23'53.1858"W
+		299.87434058256224
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj79
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BOA.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BOAN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.141593,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'54.3096"N
+		122 23'48.9534"W
+		247.06561376316759
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj80
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BTRANAM.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BTRANAMN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.141593,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'53.4827"N
+		122 23'41.8510"W
+		17.972623359434628
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj81
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			2STSTEP.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.525762,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'50.4110"N
+		122 23'49.342"W
+		22.119253578931964
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj82
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG2037.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG2037N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.477758,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'38.1289"N
+		122 25'07.6529"W
+		8.7632311467827577
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj83
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU0533.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU0533N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.477758,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'50.6854"N
+		122 23'41.5078"W
+		17.54836429376352
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj84
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3026.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3026N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.080861,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'40.8731"N
+		122 23'45.8843"W
+		20.489729823627663
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj85
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU2016.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU2016N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.351166,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'45.1860"N
+		122 23'46.5024"W
+		20.439064384473539
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj86
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN4051.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN4051N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.080861,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'47.1541"N
+		122 23'46.8561"W
+		225.6737699154869
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj87
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG4019.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG4019N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.651657,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'43.2127"N
+		122 23'38.4370"W
+		15.520861217689331
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj88
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3031.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3031N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.080861,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'42.6627"N
+		122 23'41.8113"W
+		17.325930329717842
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj89
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG3013.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG3013N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.154196,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'40.8431"N
+		122 23'50.4033"W
+		23.027775919974147
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj90
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN4021.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN4021N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.735219,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'50.9156"N
+		122 23'56.8239"W
+		27.288602150465859
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj91
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD2012.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD2012N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.137562,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'39.9111"N
+		122 25'04.3421"W
+		7.4489985955314353
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj92
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS0536.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS0536N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.137562,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'56.2937"N
+		122 23'44.6278"W
+		19.375951874822569
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj93
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN1030.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN1030N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.137562,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'36.1199"N
+		122 23'34.6275"W
+		12.558614519110399
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj94
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG1031.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG1031N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.137562,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'53.5342"N
+		122 23'38.6899"W
+		15.254514814984695
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj95
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN0527.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN0527N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.137562,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'42.9581"N
+		122 23'55.5760"W
+		181.460519295187
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj96
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS3016.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS3016N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.137562,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'45.3965"N
+		122 23'36.2205"W
+		13.615755582954087
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj97
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN2039.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN2039N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.137562,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'50.2993"N
+		122 23'52.4626"W
+		24.828548082467272
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj98
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3031.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3031N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.708358,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'47.1913"N
+		122 23'43.2714"W
+		18.294893575671537
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj99
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN2009.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN2009N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.708358,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'38.6173"N
+		122 25'10.5059"W
+		8.0862128660237929
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj100
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU0550.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU0550N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.112366,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'44.2777"N
+		122 23'43.7411"W
+		18.606617610517382
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj101
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD4024.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD4024N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.014130,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'39.5488"N
+		122 23'56.5614"W
+		27.114403284660103
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj102
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3044.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU3044N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,6.253617,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'50.1519"N
+		122 23'38.4488"W
+		15.094531329463855
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj103
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS4022.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS4022N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.902632,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'46.5286"N
+		122 23'33.9081"W
+		12.492553385505829
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj104
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1017.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1017N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.688121,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'34.4800"N
+		122 24'57.9154"W
+		11.401120462425489
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj105
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD0537.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD0537N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'53.676"N
+		122 23'46.8748"W
+		20.686191896697515
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj106
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN2009.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN2009N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.213570,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'38.3967"N
+		122 24'53.3833"W
+		8.2688520808022759
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj107
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD0544.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD0544N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'43.115"N
+		122 23'34.7434"W
+		12.63556602408465
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj108
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1002.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1002N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'23.4974"N
+		122 25'21.7425"W
+		20.604284776839133
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj109
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1002.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1002N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'14.7488"N
+		122 25'11.1892"W
+		27.847428178496067
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj110
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1002.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1002N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'57.8704"N
+		122 23'44.9925"W
+		19.437088207836339
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj111
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS1004.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS1004N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'23.9813"N
+		122 25'24.1823"W
+		21.160102102436213
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj112
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS1004.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS1004N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'26.9420"N
+		122 25'21.6518"W
+		17.918566561145873
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj113
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0532.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0532N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'56.4259"N
+		122 23'44.9287"W
+		19.560835653280215
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj114
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0532.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0532N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'14.6675"N
+		122 25'13.2917"W
+		29.838897527559517
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj115
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0525.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0525N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.660529,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 40'28.2587"N
+		122 22'56.6329"W
+		75.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj116
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			CANDLE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			CANDLEN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'03.8317"N
+		122 25'23.7007"W
+		212.4352862304454
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj117
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			OAKCOL.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			OAKCOLN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'13.6552"N
+		122 27'00.5698"W
+		301.06882715137374
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj118
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'24.3961"N
+		122 26'59.4388"W
+		273.64044512229759
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj119
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'27.9990"N
+		122 27'01.1325"W
+		265.81567761715337
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj120
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'32.1700"N
+		122 27'02.1552"W
+		256.13459604346394
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj121
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'36.2201"N
+		122 27'04.5949"W
+		247.69415176867528
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj122
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'41.6737"N
+		122 27'08.3750"W
+		236.73795238086581
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj123
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'46.2367"N
+		122 27'11.4139"W
+		231.19902897977326
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj124
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'47.3036"N
+		122 27'12.8128"W
+		230.36075175228319
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj125
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'14.2017"N
+		122 27'01.8444"W
+		300.557302860714
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj126
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'19.8670"N
+		122 27'01.7704"W
+		286.43694456009712
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj127
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'24.1240"N
+		122 27'02.1554"W
+		276.11906859685149
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj128
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'28.3764"N
+		122 27'03.8018"W
+		266.64970915537924
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj129
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'31.3169"N
+		122 27'05.2810"W
+		260.32783818747384
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj130
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'35.8439"N
+		122 27'08.2138"W
+		251.03011975636196
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj131
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'39.4523"N
+		122 27'11.4209"W
+		244.19601521887472
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj132
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'43.9500"N
+		122 27'15.2269"W
+		234.57056050298482
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj133
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'47.2411"N
+		122 27'18.5634"W
+		226.90685295287375
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj134
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'44.8463"N
+		122 27'21.5223"W
+		228.90867249240992
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj135
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'36.3685"N
+		122 27'13.9912"W
+		252.25594865642387
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj136
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'33.3967"N
+		122 27'12.1604"W
+		259.72742499385959
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj137
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'29.6010"N
+		122 27'09.8155"W
+		267.59891175533227
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj138
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'24.9995"N
+		122 27'08.7101"W
+		278.2943709398923
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj139
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'20.7196"N
+		122 27'07.6027"W
+		288.18972539232669
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj140
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'15.7980"N
+		122 27'07.4264"W
+		300.29680647080068
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj141
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'14.7117"N
+		122 27'12.3697"W
+		306.27539237014128
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj142
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'17.2832"N
+		122 27'11.9898"W
+		299.63629180955422
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj143
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'20.3255"N
+		122 27'12.3184"W
+		292.29801194471918
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj144
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'44.5995"N
+		122 26'54.5511"W
+		222.71946707239982
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj145
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'42.7754"N
+		122 26'51.4533"W
+		223.684121476054
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj146
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'39.2501"N
+		122 26'50.4756"W
+		230.79849583921808
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj147
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'38.8677"N
+		122 27'32.9085"W
+		233.494620600063
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj148
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'37.6048"N
+		122 27'31.5657"W
+		237.52247213370356
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj149
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 46'35.6165"N
+		122 27'30.7509"W
+		243.00165203126323
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj150
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FAN.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FANN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,4.273099,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 38'09.3777"N
+		122 23'46.3389"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj151
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FLYTHRU.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			FLYTHRUN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.783207,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 49'05.4420"N
+		122 28'44.8498"W
+		447.63848377953275
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj152
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			GGATE.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			GGATEN.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,6.135101,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'38.7854"N
+		122 21'03.7641"W
+		200.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj153
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAYBRG1.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAYBRG1N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.880836,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'02.4336"N
+		122 22'53.7105"W
+		200.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj154
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAYBRG2.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BAYBRG2N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.802432,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36'59.3064"N
+		122 22'43.4620"W
+		0.33307600021362305
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj155
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_RA_T.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.271861,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'02.4898"N
+		122 22'42.7238"W
+		0.33307600021362305
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj156
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_RA_U.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.271861,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'29.2012"N
+		122 23'30.4913"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj157
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_A.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,5.271861,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'26.7349"N
+		122 23'03.7843"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj158
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSRED3.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'28.1470"N
+		122 23'05.7971"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj159
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSRED4.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'23.6544"N
+		122 22'32.7005"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj160
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_G.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'29.5217"N
+		122 22'23.5272"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj161
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_H.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'32.7643"N
+		122 22'21.6165"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj162
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_I.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'33.5137"N
+		122 22'23.7929"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj163
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_J.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'29.5228"N
+		122 22'26.5319"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj164
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_M.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'27.5951"N
+		122 22'27.7147"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj165
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_K.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'23.1602"N
+		122 22'30.7889"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj166
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_L.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'23.2416"N
+		122 22'32.2527"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj167
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_M.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'22.4959"N
+		122 22'28.6142"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj168
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'21.2047"N
+		122 22'26.9780"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj169
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_O.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'20.8134"N
+		122 22'25.9988"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj170
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_P.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'17.9200"N
+		122 22'17.6847"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj171
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_W.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'17.6933"N
+		122 22'12.8472"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj172
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_X.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'23.1969"N
+		122 22'09.2782"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj173
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_Y.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'25.4818"N
+		122 22'06.9987"W
+		0.11343900114297867
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		5
+		<id  > ---- object id (unique) ----
+		mobj174
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APS_BK_Z.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.000000,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'22.9699"N
+		122 23'39.2970"W
+		-0.31589201092720032
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj175
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP1002.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'26.7088"N
+		122 23'42.7695"W
+		-0.31589201092720032
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<id  > ---- object id (unique) ----
+		mobj176
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			TAP1002.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,3.558635,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'41.4044"N
+		122 22'40.2321"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj177
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APLRG62N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.050541,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'37.6890"N
+		122 22'41.2490"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj178
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML62N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.479745,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'38.8740"N
+		122 22'42.2074"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj179
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML62.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML62N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.479745,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 37'38.4267"N
+		122 22'43.8712"W
+		0.
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		3
+		<id  > ---- object id (unique) ----
+		mobj180
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML63.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			APSML63N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,2.050541,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'50.3094"N
+		122 23'35.4213"W
+		13.085433984022565
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS2010.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS2010N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.899776,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'51.390"N
+		122 23'33.3967"W
+		11.907989821598782
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0532.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0532N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,0.899776,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 48'05.6174"N
+		122 24'00.1765"W
+		29.513483868450731
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1002.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU1002N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.548873,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'47.2823"N
+		122 23'59.6315"W
+		29.265383604956661
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN0534.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN0534N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.577935,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'36.6723"N
+		122 23'50.5656"W
+		23.13550821198077
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS2010.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS2010N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.577935,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'36.2469"N
+		122 23'36.2304"W
+		13.788469455243295
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0532.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBG0532N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.567465,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'27.9213"N
+		122 23'48.9075"W
+		22.035161785341213
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN1033.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBN1033N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.548873,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'24.5846"N
+		122 23'43.2713"W
+		18.755668604630998
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU2016.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBU2016N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.548873,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'25.2209"N
+		122 23'44.9867"W
+		20.039755704103065
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS1007.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BGS1007N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.548873,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'50.8215"N
+		122 24'00.1089"W
+		29.468594031138842
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD2042.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BRD2042N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.548873,0.000000
+	<endo> ========== END OBJECT ==========
+	<wobj> ---- world object type ----
+	mobj
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 47'46.2884"N
+		122 23'30.7012"W
+		9.953068268083733
+		<type> ---- object type ----
+		mobj
+		<flag> ---- gestalt flags ----
+		-2147450571
+		<detl> ---- detail level ----
+		1
+		<kmmd> ---- model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS0528.SMF
+		<endo> ========== END OBJECT ==========
+		<kmmn> ---- night model manager ----
+		<bgno> ========== BEGIN OBJECT ==========
+			<modl> ---- model entry ----
+			norm
+			BBS0528N.SMF
+		<endo> ========== END OBJECT ==========
+		<iang> ---- inertial angular position ----
+		0.000000,1.548873,0.000000
+	<endo> ========== END OBJECT ==========
+<endo> ========== END SCENERY ==========

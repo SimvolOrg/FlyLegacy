@@ -1,0 +1,82 @@
+<html>
+<!--  Created with the CoffeeCup HTML Editor  -->
+<!--        http://www.coffeecup.com/         -->
+<!--     Brewed on 8/12/2005 11:13:38 PM      -->
+<head>
+  <title>Fly! Legacy - Screenshots</title>
+  <link rel="stylesheet" type="text/css" href="default.css"> 
+  <meta http-equiv="Content-Script-Type" Content="text/javascript">
+  <script src="default.js"></script>
+</head>
+
+<body>
+  <!-- Global page table -->
+  <table border="0" width="90%">
+  <tbody>
+
+  <!-- First row of global page table is logo script -->
+  <tr>
+    <td colspan="3">
+      <script>TopLogo();</script>
+    </td>
+  </tr>
+
+  <!-- Second row of global page table is multi-column main page -->
+  <tr>
+    <td width="20%" valign="top">
+      <!-- Left menu -->
+      <script>LeftMenu();</script>
+    </td>
+    <td width="60%" valign="top">
+    <h2>Screenshots</h2>
+	<h3>Terrain</h3>
+	<p>The first screenshots simply show a region of sliced (customized)
+	terrain.  Note the sky shading which uses the same algorithm as
+	Fly! II and is fully compatible with the Fly! II Sky Tweaker and
+	any custom skies.ini settings.  It is important to note that in this
+	prototype terrain system
+	implementation, only low-resolution terrain textures are supported.
+	These were taken at the "proof of concept" point when support for sliced
+	scenery was first being implemented.
+	The	sliced terrain is Dominique Klein's Lake Tahoe, and the aircraft is
+	ROTW's Seneca V.
+	<img src="screenshots/Legacy_SenecaTahoe.jpg"><br>
+	<img src="screenshots/Legacy_SenecaTahoe2.jpg"><br>
+	<p>The next screenshots compare transitions between custom (sliced) terrain
+	and the default worldwide terrrain in Fly! II and Fly! Legacy.
+	Note that in Fly! II, there are "gaps" due to mismatches between the
+	higher-resolution elevation data in the sliced terrain area, and the
+	more sparse elevation data of the default terrain.  Today's faster
+	processors may make it feasible to seamlessly blend these areas.
+	<p>First, the transition area in Fly! II:
+	<img src="screenshots/Fly2_TahoeEdge.jpg"><br>
+	<p>and the same region in Fly! Legacy:
+	<img src="screenshots/Legacy_TahoeEdge.jpg"><br>
+	<p>Again, remember that the Fly! Legacy terrain engine is only using
+	very low-resolution textures at this time so the terrain lacks sharpness.
+	With the terrain system in wireframe debugging mode, you can see how
+	the sparse default terrain area blends into the adjacent higher-resolution
+	sliced terrain area by the addition of more vertices and triangles
+	as required:
+	<img src="screenshots/Mesh.gif"><br>
+
+	<h3>User Interface</h3>
+	Fly! Legacy will support all of the custom user interface widgets
+	implemented in the Fly! II user interface.  Screenshots of the
+	widget implementations (in-progress) will be uploaded soon.
+    <td width="20%">
+    </td>
+  </tr>
+
+  <!-- Third row is page footer -->
+  <tr>
+    <td colspan="3">
+      <script>Footer();</script>
+    </td>
+  </tr>
+
+  </tbody>
+  </table>
+</body>
+</html>
+

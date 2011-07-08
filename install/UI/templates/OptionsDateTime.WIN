@@ -1,0 +1,412 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	date
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Date & Time
+	<loc >
+	428
+	320
+	<size>
+	290
+	180
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Time
+		<loc >
+		3
+		14
+		<size>
+		35
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		18
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		time
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		12:00
+		<loc >
+		44
+		13
+		<size>
+		41
+		15
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		5
+	<endo> ========== END OBJECT ==========
+	<radb>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		uutc
+		<bind>
+		17
+		<widg>
+		RadioButton
+		defa
+		<text>
+		UTC
+		<loc >
+		95
+		5
+		<size>
+		50
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<stat>
+		0
+	<endo> ========== END OBJECT ==========
+	<radb>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		locl
+		<bind>
+		17
+		<widg>
+		RadioButton
+		defa
+		<text>
+		Local
+		<loc >
+		95
+		22
+		<size>
+		50
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<stat>
+		1
+	<endo> ========== END OBJECT ==========
+	<line>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lin
+		<bind>
+		17
+		<widg>
+		Line
+		defa
+		<loc >
+		2
+		43
+		<size>
+		297
+		1
+		<enab>
+		1
+		<show>
+		1
+		<dirc>
+		0
+		<thck>
+		1
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		mnth
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Month
+		<loc >
+		6
+		45
+		<size>
+		100
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<lsiz>
+		35
+		0
+		<item>
+		1
+		January
+		<item>
+		2
+		February
+		<item>
+		3
+		March
+		<item>
+		4
+		April
+		<item>
+		5
+		May
+		<item>
+		6
+		June
+		<item>
+		7
+		July
+		<item>
+		8
+		August
+		<item>
+		9
+		September
+		<item>
+		10
+		October
+		<item>
+		11
+		November
+		<item>
+		12
+		December
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Day
+		<loc >
+		115
+		65
+		<size>
+		25
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		day 
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		19
+		<loc >
+		145
+		63
+		<size>
+		30
+		15
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		2
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Year
+		<loc >
+		200
+		65
+		<size>
+		25
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		year
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		2000
+		<loc >
+		230
+		63
+		<size>
+		44
+		15
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		4
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		okok
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		OK
+		<loc >
+		200
+		150
+		<size>
+		80
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		canc
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Cancel
+		<loc >
+		110
+		150
+		<size>
+		80
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		1
+		<rrpt>
+		0
+		<rate>
+		0.
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

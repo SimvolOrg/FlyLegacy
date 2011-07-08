@@ -1,0 +1,21 @@
+<bgno> ========== KSFO ==========
+	<wobj> ---- world object type ----
+	plan
+	<bgno> ========== BEGIN OBJECT ==========
+		<geop> ---- geo position lat lon elev ----
+		37 36' 50.1600"N
+		122 21' 29.1500"W
+		4.00
+		<_NFO> -ultra-cessna172-tri1-flyhawk-pa19-stearman- Vehicle Info Files ----
+		frflyhawk.nfo
+		<user> ---- default user vehicle ----
+		<iang> ---- inertial angular position ----
+		0.0,-1.39,0.0
+		<bvel> - could be 0.0,0.0,40.0 (f/s)
+		0.0,0.0,0.0
+		<bang>
+		0.0,0.0,0.0
+		<vmod> ---- view mode ----
+		spot
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

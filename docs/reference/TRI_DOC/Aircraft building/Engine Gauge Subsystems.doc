@@ -1,0 +1,911 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f16\fswiss\fcharset0\fprq2{\*\panose 020b0a04020102020204}Arial Black;}
+{\f17\froman\fcharset238\fprq2 Times New Roman CE;}{\f18\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f20\froman\fcharset161\fprq2 Times New Roman Greek;}{\f21\froman\fcharset162\fprq2 Times New Roman Tur;}
+{\f22\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f113\fswiss\fcharset238\fprq2 Arial Black CE;}{\f114\fswiss\fcharset204\fprq2 Arial Black Cyr;}{\f116\fswiss\fcharset161\fprq2 Arial Black Greek;}{\f117\fswiss\fcharset162\fprq2 Arial Black Tur;}
+{\f118\fswiss\fcharset186\fprq2 Arial Black Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;
+\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 
+Normal;}{\s1\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 1;}{\s2\li720\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 2;}{\s3\li1440\keepn\nowidctlpar\widctlpar\adjustright 
+\f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 3;}{\s4\keepn\nowidctlpar\widctlpar\adjustright \f16\fs28\cgrid \sbasedon0 \snext0 heading 4;}{\*\cs10 \additive Default Paragraph Font;}{\*\cs15 \additive \ul\cf2 \sbasedon10 Hyperlink;}{\*\cs16 \additive \i 
+\sbasedon10 Emphasis;}{\*\cs17 \additive \ul\cf12 \sbasedon10 FollowedHyperlink;}{\s18\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid \sbasedon0 \snext18 Body Text 2;}{\s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid 
+\sbasedon0 \snext19 Body Text Indent 2;}}{\info{\title Engine Gauge Subsystems}{\author Paul Russell}{\operator Paul Russell}{\creatim\yr2000\mo5\dy24\hr15\min34}{\revtim\yr2000\mo8\dy15\hr20\min49}{\version3}{\edmins18}{\nofpages21}{\nofwords2124}
+{\nofchars12112}{\*\company Terminal Reality}{\nofcharsws0}{\vern71}}\widowctrl\ftnbj\aenddoc\hyphcaps0\formshade\viewkind4\viewscale100\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang
+{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}
+{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9
+\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain \s4\keepn\nowidctlpar\widctlpar\outlinelevel3\adjustright \f16\fs28\cgrid {Engine Subsystems
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par Prerequisite Reading
+\par }{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "BASIC SYNTAX.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004241534943537e312e444f4300ffffadde000000000000000000000000000000000000000026000000200000000300420041005300490043002000530059004e005400410058002e0044004f00430000
+00}}}{\fldrslt {\cs15\ul\cf2 Basic Syntax}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "BASIC OBJECT TYPES.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d00000042415349434f7e312e444f4300ffffadde0000000000000000000000000000000000000000320000002c00000003004200410053004900430020004f0042004a00450043005400200054005900500045
+0053002e0044004f0043000000}}}{\fldrslt {\cs15\ul\cf2 Basic Object Types}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005355425359537e312e444f4300ffffadde0000000000000000000000000000000000000000220000001c0000000300530055004200530059005300540045004d0053002e0044004f0043000000}}
+}{\fldrslt {\cs15\ul\cf2 S{\*\bkmkstart _Hlt480372407}{\*\bkmkstart _Hlt480372301}{\*\bkmkend _Hlt480372407}u{\*\bkmkend _Hlt480372301}bsystems
+\par }}}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Engine Subsystem
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab n/a
+\par Base Class:\tab Engine Subsystem
+\par Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Engine Subsystem provides the interface to the Engine Model.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{
+\par }{\f16 <eNum> (int)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Engine Number.
+\par 
+\par The Engine Number is the index of the Engine in the Engine Manager that is associated with this subsystem.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <rpmO> (int, 0=RPM | 1=N1 | 2=N2 )
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 RPM Option.
+\par 
+\par The RPM Option is used to set the access of the associated RPM.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }{\f16 
+\par None.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Engine Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab n/a
+\par Base Class:\tab Engine Subsystem
+\par Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Engine Control Subsystem contains the common functionality of the engine controllers.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{
+\par }{\f16 <step>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Step.
+\par 
+\par The Step parameter sets the percentage of control movement per key press.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }{\f16 
+\par None.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Throttle}Throttle Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Throttle}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479940055}Signature:\tab thro
+\par Base Class:\tab Engine Control
+\par {\*\bkmkend _Hlt479940055}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s18\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Throttle Control Subsystem handles all Engine Throttle requests for the specified engine.
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par }{
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Group)
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par thro\tab sets the percentage throttle, where 0 is idle and 1 is full
+\par 
+\par }{\f16\ul Get (Group)
+\par }{\f16 
+\par thro\tab returns the percentage throttle setting.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Mixture}Mixture Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Mixture}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939376}Signature:\tab mixt
+\par Base Class:\tab Engine Control
+\par {\*\bkmkend _Hlt479939376}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s18\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Mixture Control Subsystem handles all Engine Mixture requests for the specified engine.
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par <injd> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Fuel Injected Flag.
+\par 
+\par The Fuel Injected Flag sets the Mixture Controller to prime via a fuel pump.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <prmr> (float, %)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Priming Rate.
+\par 
+\par The Primer Rate is a normalized accumulation rate to simulate the priming delay.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <prff> (float, pph)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Prime Fuelflow.
+\par 
+\par The Prime Fuelflow is the fuelflow while injecting before engine start
+\par }{
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Group)
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {mixt\tab sets the percentage mixture, where 0 is cutoff and 1 is full rich.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Get (Group)
+\par }{\f16 
+\par mixt\tab returns the percentage mixture setting.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Propeller}Propeller Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Propeller}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938057}Signature:\tab blad
+\par Base Class:\tab Engine Control
+\par {\*\bkmkend _Hlt479938057}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s18\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Propeller Control Subsystem handles all Engine Propeller  requests for the specified engine.
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par <minr> (int, RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Min Governed RPM.
+\par 
+\par The Min Governed RPM sets the least RPM that can be selected by the Propeller Control.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <maxr> (int, RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Max Governed RPM.
+\par 
+\par The Max Governed RPM sets the greatest RPM that can be selected by the Propeller Control.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <afet> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Auto Feather Flag.
+\par 
+\par The Auto Feather Flag causes the Prop Control to request feathering position when the engine is not running.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <gvrn> (float)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Governing Gain.
+\par 
+\par The Governing Gain sets the responsiveness of the governor.
+\par }{
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Group)
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {blad\tab sets the percentage governing range, where 0 is Min RPM and 1 is Max RPM.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Get (Group)
+\par }{\f16 
+\par blad\tab returns the percentage governing range.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Prime}Prime Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Prime}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939635}Signature:\tab prim
+\par Base Class:\tab Engine Control
+\par {\*\bkmkend _Hlt479939635}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Group)
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {prim\tab sets the number of priming pumps to animate.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Get (Group)
+\par }{\f16 
+\par prim\tab returns the display value.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Idle}Idle Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Idle}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939186}Signature:\tab idle
+\par Base Class:\tab Engine Control
+\par {\*\bkmkend _Hlt479939186}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par <Arpm> (int, units set by rpmO)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Ignite RPM.
+\par 
+\par The Ignite RPM specified the minimum RPM required before the igniter is automatically activated..
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <Aign> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Enable Automatic Ignition.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <Mign> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Disable Automatic Ignition (Manual Ignition).
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default\tab sets the percentage position of the Idle Control.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Get
+\par }{\f16 
+\par Default\tab returns the percent position of the Idle Control.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart StarterControl}Starter Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend StarterControl}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939920}Signature:\tab {\*\bkmkstart _Hlt479939905}{\*\bkmkend _Hlt479939905}strt
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939920}Hardware Type:\tab SWITCH
+\par 
+\par The Starter Control Subsystem provides the interface to the engine starter.
+\par 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Specification Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <manl> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Manual Terminate Flag.
+\par 
+\par The Manual Terminate Flag sets the Starter Control to remain active until manually deactivated.  Otherwise the Starter Control will deactivate when the Engine Starter deactivates.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <sAmp> (float, amps)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Start Current Load.
+\par 
+\par The Starter Current Load sets the magnitude of the amperage required to operate the starter.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default\tab sets the state of the starter switch.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Get
+\par }{\f16 
+\par Default\tab returns the status of the starter switch.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 strt\tab announce Starter Engaged
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Igniter}Igniter Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Igniter}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939217}Signature:\tab ignc
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939217}Hardware Type:\tab SWITCH
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 The Igniter Control Subsystem provides the interface to the engine igniter.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par 
+\par }{\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default\tab sets the state of the igniter switch.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Get
+\par }{\f16 
+\par Default\tab returns the status of the igniter switch.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Magneto}Magneto Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Magneto}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939494}Signature:\tab neto
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939494}Hardware Type:\tab SWITCH
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par The Magneto Control provides the interface to the engine Magnetos.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par 
+\par }{\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default\tab sets the state of the magnetos (1=Right,2=Left).
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Get
+\par }{\f16 
+\par Default\tab returns the status of the magnetos.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart RotaryIgnitionSwitch}Rotary Ignition Switch
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend RotaryIgnitionSwitch}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939703}Signature:\tab rign
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939703}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 The Rotary Ignition Switch combines the Starter Control and the Magneto Control into a 5 position rotary selector switch.
+\par 
+\par The selections proceed as follows: 1) Off, 2) Left Magneto, 3) Right Magneto, 4) Both Magnetos, 5) Start. 
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <sAmp> (float, amps)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Start Current Load.
+\par 
+\par The Starter Current Load sets the magnitude of the amperage required to operate the starter.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default\tab sets the switch position.}{\ul 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par Default\tab returns the switch positon.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart StarterIgniter}Starter / Igniter
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend StarterIgniter}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939866}Signature:\tab StIg
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939866}Hardware Type:\tab SWITCH
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s18\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Starter / Igniter Subsystem combines the Starter and the Igniter Control into a 3 position switch.
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par The positions proceed as follows: 0) Off, 1) Starter, 2) Starter and Igniter.
+\par 
+\par }{\f16\ul Specification Tags
+\par 
+\par }{\f16 <sAmp> (float, amps)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Start Current Load.
+\par 
+\par The Starter Current Load sets the magnitude of the amerage required to operate the starter.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-720\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default\tab sets the switch position.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Get
+\par }{\f16 
+\par Default\tab returns the status of the starter.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 strt\tab announce Starter Engaged
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart ThrustReverse}Thrust Reverse Control
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend ThrustReverse}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479940103}Signature:\tab trev
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479940103}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par 
+\par }{\f16 <dTim> (float, seconds)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Deploy Time.
+\par 
+\par The Deploy Time sets the period of time required to move the Thrust Reverser from full stow position to full deploy position.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <_Air> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Enable Air Deployment.
+\par 
+\par Allows Thrust Reverser to be deployed while the aircraft is airborne.  Otherwise, the wheels must be on the ground before deployment is possible.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Data Tag)
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {\lquote unit\rquote \tab sets percent deployment. (default)
+\par \lquote _Arm\rquote \tab enables deployment.
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul Get (Data Tag)
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par \lquote unit\rquote \tab returns the percent deployment. (default)
+\par \lquote _Arm\rquote \tab returns the arming status.
+\par \lquote Unlk\rquote \tab returns the Unlock status.
+\par \lquote Rvrs\rquote \tab returns the Full Deploy status.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par revr\tab announce Reverser Unlocked
+\par 
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart EngineGauge}{\*\bkmkstart OilTemp}Oil Temperature Gauge
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend EngineGauge}{\*\bkmkend OilTemp}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938723}Signature:\tab oilT
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479938723}Hardware Type:\tab GAUGE
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par The Oil Temperature Gauge Subsystem provides an interface to the engine models oil temperature value.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par <degF> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Fahrenheit Flag.
+\par 
+\par Set display units to Degrees Fahrenheit.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <degC> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Celsius Flag.
+\par 
+\par Set display units to Degrees Celsius.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the display value.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Exhaust Gas Temperature Gauge
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab eEGT
+\par Base Class:\tab Engine Subsystem
+\par Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Exhaust Gas Temperature Gauge Subsystem provides an interface to the engine models EGT value.
+\par 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Specification Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <degF> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Fahrenheit Flag.
+\par 
+\par Set display units to Degrees Fahrenheit.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <degC> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Celsius Flag.
+\par 
+\par Set display units to Degrees Celsius.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the display value.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Cylinder Head Temperature Gauge
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab eCHT
+\par Base Class:\tab Engine Subsystem
+\par Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Cylinder Head Temperature Gauge Subsystem provides an interface to the engine models CHT value.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par <degF> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Fahrenheit Flag.
+\par 
+\par Set display units to Degrees Fahrenheit.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <degC> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Celsius Flag.
+\par 
+\par Set display units to Degrees Celsius.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the display value.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Inter Turbine Temperature Gauge
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab eITT
+\par Base Class:\tab Engine Subsystem
+\par Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Inter Turbine Temperature Gauge Subsystem provides an interface to the engine models ITT value.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par <degF> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Fahrenheit Flag.
+\par 
+\par Set display units to Degrees Fahrenheit.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <degC> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Celsius Flag.
+\par 
+\par Set display units to Degrees Celsius.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the display value.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Manifold Absolute Pressure Gauge
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab eMAP
+\par Base Class:\tab Engine Subsystem
+\par Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The MAP Gauge Subsystem provides an interface to the engine models MAP value.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par 
+\par }{\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the display value.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart OilPressure}Oil Pressure Gauge
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend OilPressure}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939562}Signature:\tab oilP
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939562}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Oil Pressure Gauge Subsystem provides an interface to the engine models oil pressure value.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par <lowP> (int, psi)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Low Oil Pressure Limit.
+\par 
+\par Sets the magnitude of the least tolerable oil pressure for proper engine operations.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the display value.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 loOP\tab announce Low Oil Pressure
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart PneumaticPump}Pneumatic Pump
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend PneumaticPump}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939622}Signature:\tab pnep
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479939622}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par <eNum> (int, engine index)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Engine Number.
+\par 
+\par The Engine Number specifies the index of the engine that this pump depends.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <suct> (int, psi)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Suction Pressure.
+\par 
+\par The Suction Pressure provided by this pump.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <dIce> (int, psi)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 De-ice Pneumatic Pressure.
+\par 
+\par The pressure required to operate the de-ice inflatable boots.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <Lrpm> (int, RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Least Operative RPM.
+\par 
+\par The least RPM required to create sufficient suction.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <Hrpm> (int, RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Highest Operative RPM.
+\par 
+\par The greatest RPM tolerated to create sufficient suction.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <mSct> (int, psi)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Min Operative Suction.
+\par 
+\par The suction generated at the Least Operative RPM.
+\par }{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }{\f16 
+\par None.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 inop\tab announce Inoperative
+\par dIce\tab announce Pneumatic De-ice active
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Suction}Suction Gauge
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Suction}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939936}Signature:\tab suct
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939936}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par <pump> (}{\field{\*\fldinst {\f16  HYPERLINK  \\l "PneumaticPump" }{\f16 {\*\datafield 08d0c9ea79f9bace118c8200aa004ba90b02000000080000000e00000050006e00650075006d006100740069006300500075006d0070000000000000}}}{\fldrslt {\cs15\ul\cf2 Pneum
+{\*\bkmkstart _Hlt491005451}a{\*\bkmkend _Hlt491005451}tic Pump}}}{\f16 )
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Pneumatic Pump Entry.
+\par 
+\par Any number of Pump entries can be specified to support multi-engine or redundancy.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the display value.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Hobbs}Hobbs Meter
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Hobbs}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939164}Signature:\tab hobs
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939164}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par <hour> (float, hours)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Chronometer.
+\par 
+\par The number of hours the engine has been operated.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default:\tab sets the chronometer.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the operating hours.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart TachometerTimer}Tachometer Timer
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend TachometerTimer}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479940002}Signature:\tab takt
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479940002}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par <hour> (float, hours)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Chronometer.
+\par 
+\par The number of RPM-hours the engine has been operated.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <rpmK> (float, hours/RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Time to Tachometer Ratio.
+\par 
+\par The real-time to design rpm ratio.  Its used to determine the average workload during the life of the engine.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default:\tab sets the chronometer.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par Default:\tab returns the operating hours.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Tachometer}Tachometer
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Tachometer}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939986}Signature:\tab {\*\bkmkstart _Hlt479937627}{\*\bkmkend _Hlt479937627}tach
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939986}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par 
+\par }{\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get (Group)
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par rpm1\tab returns the RPM of engine 1.
+\par rpm2\tab returns the RPM of engine 2.
+\par rpmn\tab returns the RPM of specified engine.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart N1}N1 Tachometer
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend N1}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab _N1_
+\par Base Class:\tab Engine Subsystem
+\par Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par <refr> (int, %RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Initial Reference Setting.
+\par 
+\par This parameter sets the initial display for the RPM Reference value.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <rmin> (int, %RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Min Selectable Reference Value.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <rmax> (int, %RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Max Selectable Reference Value.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul {\*\bkmkstart _Hlt479937633}{\*\bkmkend _Hlt479937633}
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Data Tag)
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {\lquote refr\rquote \tab sets the reference value
+\par \lquote rmin\rquote \tab sets the min selectable reference value.
+\par \lquote rmin\rquote \tab sets the max selectable reference value.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get (Data Tag)
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {\lquote lagd\rquote \tab returns the indicated RPM. (default)
+\par \lquote true\rquote \tab returns the actual engine RPM.
+\par \lquote refr\rquote \tab returns the reference value
+\par \lquote rmin\rquote \tab returns the min selectable reference value.
+\par \lquote rmin\rquote \tab returns the max selectable reference value.
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart N2}N2 Tachometer
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend N2}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479937695}Signature:\tab _N2}{\i\f16 _}{\f16 
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479937695}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Data Tag)
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get (Data Tag)
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {\lquote lagd\rquote \tab returns the indicated RPM. (default)
+\par \lquote true\rquote \tab returns the actual engine RPM.
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Torque}Torque Meter
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Torque}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479940082}Signature:\tab torq
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479940082}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Data Tag)
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get (Data Tag)
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {\lquote lagd\rquote \tab returns the indicated torque. (default)
+\par \lquote true\rquote \tab returns the actual propeller torque.
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart TwinSub}Twin Engine Subsystem{\*\bkmkend TwinSub}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab n/a
+\par Base Class:\tab Twin Engine Subsystem
+\par Hardware Type:\tab UNKNOWN
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par <rEng> (int, index)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Right Engine Index
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <lEng> (int, index)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Left Engine Index
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <rpmL> (int, RPM Unit selected by rpmO)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 RPM Differential Limit.
+\par 
+\par When the difference in RPM is exceeded, then the system is triggered.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }{\f16 
+\par None.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Synchrophaser}Synchrophaser
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Synchrophaser}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939971}Signature:\tab sync
+\par Base Class:\tab }{\field{\*\fldinst {\f16  HYPERLINK  \\l "TwinSub" }{\f16 {\*\datafield 08d0c9ea79f9bace118c8200aa004ba90b0200000008000000080000005400770069006e005300750062000000000000}}}{\fldrslt {\cs15\ul\cf2 Twin Engine Subsystem}}}{\f16 
+\par {\*\bkmkend _Hlt479939971}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Synchrophaser Subsystem supports a display that spins to indicate the relative difference between the RPM of a twin engine aircraft.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par <spin> (float, radians/RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Spin Rate per RPM Difference.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Data Tag)
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get (Data Tag)
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Default:\tab returns the indicated orientation (radians).
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart _Hlt480375347}{\*\bkmkstart PerformanceReserve}{\*\bkmkend _Hlt480375347}Performance Reserve{\*\bkmkend PerformanceReserve}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479937968}Signature:\tab aprs
+\par Base Class:\tab }{\field{\*\fldinst {\f16  HYPERLINK  \\l "TwinSub" }{\f16 {\*\datafield 08d0c9ea79f9bace118c8200aa004ba90b0200000008000000080000005400770069006e005300750062000000000000}}}{\fldrslt {\cs15\ul\cf2 Twin Engine Subsystem}}}{\f16 
+\par {\*\bkmkend _Hlt479937968}Hardware Type:\tab UNKNOWN
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Performance Reserve Subsystem will monitor both engines.  When an engine drops below the RPM differential then the other engine\rquote s max operating rpm is increased.
+\par 
+\par }{\f16\ul Specification Tags
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par }\pard \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Data Tag)
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {\lquote armd\rquote \tab enables the system.
+\par \lquote ovrd\rquote \tab disables system activation.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get (Data Tag)
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {\lquote armd\rquote \tab returns the Armed Status.
+\par \lquote ovrd\rquote \tab returns the Override Status.
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart RudderBias}Rudder Bias
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend RudderBias}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939664}Signature:\tab rbia
+\par Base Class:\tab }{\field{\*\fldinst {\f16  HYPERLINK  \\l "TwinSub" }{\f16 {\*\datafield 08d0c9ea79f9bace118c8200aa004ba90b0200000008000000080000005400770069006e005300750062000000000000}}}{\fldrslt {\cs15\ul\cf2 Twin Engine Subsystem}}}{\f16 
+\par {\*\bkmkend _Hlt479939664}Hardware Type:\tab UNKNOWN
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Rudder Bias Subsystem monitors a twin engine aircraft.  When an engine falls below the differential rpm limit, then the rudder is actuated to compensate.
+\par 
+\par }{\f16\ul Specification Tags
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par }\pard \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Message Tags
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par }\pard \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Antiice}Engine Anti-ice
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Antiice}\tab 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938122}Signature:\tab carb
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479938122}Hardware Type:\tab OTHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Engine Anti-ice Subsystem provides the control interface to the engine anti-ice options.
+\par 
+\par }{\f16\ul Specification Tags
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par }\pard \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard\plain \s3\li1440\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Set (Group)
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {carb\tab set state of engine anti-ice.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Get (Group)
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {carb\tab returns the engine anti-ice status.
+\par }\pard\plain \fi-1440\li2880\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart EngineStatusMonitor}Engine Status Monitor
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend EngineStatusMonitor}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938787}Signature:\tab ests
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479938787}Hardware Type:\tab STATE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Engine Status Monitor Subsystem provides a means of triggering events based on the Operating State of the engne.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par <mode> (string, OFF | STOPPING | STARTING | MOTORING | RUNNING)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Monitor Mode.
+\par 
+\par Sets the Status that causes an Active Status.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par \tab None.
+\par 
+\par }}

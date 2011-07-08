@@ -1,0 +1,998 @@
+###############################################################
+###############################################################
+#
+#	fly.py
+#
+#	Fly! Python interface - Utilities and Constants
+#
+#	Copyright (c) 2000, by Terminal Reality Inc.
+#	All Rights Reserved.
+#
+###############################################################
+###############################################################
+
+#
+#	Import the SDK function library
+#
+
+from flysdk import *
+
+###############################################################
+###############################################################
+#
+#	Utility Functions
+#
+###############################################################
+###############################################################
+
+###############################################################
+#
+#	IDType(string)
+#
+#		This utility will take a 4-character string
+#		and convert it to a numeric ID, which can
+#		be passed to the SDK functions where
+#		appropriate
+#
+###############################################################
+
+def IDType(string):
+	result = 0
+	if len(string) == 4:
+		for c in string:
+			result = result << 8
+			result = result + ord(c)
+	return result
+
+def ID(string):
+	return IDType(string)
+
+def IDString(value):
+	string = "%c" % ((value >> 24) & 0xFF)
+	string = string + "%c" % ((value >> 16) & 0xFF)
+	string = string + "%c" % ((value >> 8) & 0xFF)
+	string = string + "%c" % (value & 0xFF)
+	return string
+
+###############################################################
+#
+#	Standard Dictionary Types
+#
+###############################################################
+
+def Message(id = 0, group = 0, datatag = 0):
+	message = {
+		"id" : id,
+		"group" : group,
+		"dataType" : 0,
+		"result" : 0,
+		"action" : 0,
+		"sender" : 0,
+		"receiver" : 0,
+		"charData" : 0,
+		"charPtrData" : 0,
+		"intData" : 0,
+		"intPtrData" : 0,
+		"realData" : 0.0,
+		"realPtrData" : 0,
+		"voidData" : 0,
+		"unit" : 0,
+		"hw" : 0,
+		"engine" : 0,
+		"tank" : 0,
+		"gear" : 0,
+		"unused" : 0,
+		"datatag" : datatag,
+		"sw" : 0
+	}
+	return message
+
+def Stream(filename = "", mode = ""):
+	stream = {
+		"filename" : filename,
+		"mode" : mode,
+		"stream" : 0L
+	}
+	return stream
+
+def Vector(x = 0.0, y = 0.0, z = 0.0):
+	vector = {
+		"x" : x,
+		"y" : y,
+		"z" : z
+	}
+	return vector
+
+def Polar(p = 0.0, h = 0.0, r = 0.0):
+	vector = {
+		"p" : p,
+		"h" : h,
+		"r" : r
+	}
+	return vector
+
+def Position(lat = 0.0, lon = 0.0, alt = 0.0):
+	position = {
+		"lat" : lat,
+		"lon" : lon,
+		"alt" : alt
+	}
+	return position
+
+def WeatherInfo():
+	info = {
+		"visibility" : 0.0,
+		"surfaceTemp" : 0,
+		"dewPointTemp" : 0,
+		"altimeter" : 0.0,
+		"windSpeed" : 0,
+		"gustSpeed" : 0,
+		"windHeading" : 0,
+		"windFluctuates" : 0,
+		"precipIntensity" : 0,
+		"precipType" : 0,
+		"layer1Active" : 0,
+		"layer1Altitude" : 0,
+		"layer1Type" : 0,
+		"layer1Height" : 0,
+		"layer2Active" : 0,
+		"layer2Altitude" : 0,
+		"layer2Type" : 0,
+		"layer2Height" : 0,
+		"layer3Active" : 0,
+		"layer3Altitude" : 0,
+		"layer3Type" : 0,
+		"layer3Height" : 0
+	}
+	return info
+
+def Time(hour = 0, minute = 0, second = 0, msecs = 0):
+	time = {
+		"hour" : hour,
+		"minute" : minute,
+		"second" : second,
+		"msecs" : msecs
+	}
+	return time
+
+def Date(month = 0, day = 0, year = 0):
+	date = {
+		"month" : month,
+		"day" : day,
+		"year" : year
+	}
+	return date
+
+def DateTime():
+	dateTime = {
+		"date" : Date(),
+		"time" : Time()
+	}
+	return dateTime
+
+def DateTimeDelta():
+	dateTimeDelta = {
+		"dYears" : 0,
+		"dMonths" : 0,
+		"dDays" : 0,
+		"dHours" : 0,
+		"dMinutes" : 0,
+		"dSeconds" : 0,
+		"dMillisecs" : 0
+	}
+	return dateTimeDelta
+
+def DataBlockItem(label = ID("none"), intData = 0, floatData = 0.0):
+	dataItem = {
+		"label" : label,
+		"intData" : intData,
+		"floatData" : floatData
+	}
+	return dataItem
+
+def EpicEvent():
+	epicEvent = {
+		"next" : 0,
+		"cmd" : 0,
+		"data" : [0,0,0,0,0,0]
+	}
+	return epicEvent
+
+###############################################################
+#
+#	RGB
+#
+#		Creates a packed 32-bit RGB value
+#
+###############################################################
+
+def RGB(r,g,b):
+	return ((r << 16) | (g << 8) | b)
+
+###############################################################
+###############################################################
+#
+#	Constants/Globals
+#
+###############################################################
+###############################################################
+
+#	EMessageDataType
+
+TYPE_NONE = IDType('    ')
+TYPE_CHAR = IDType('char')
+TYPE_CHARPTR = IDType('cptr')
+TYPE_INT = IDType('int ')
+TYPE_INTPTR = IDType('iptr')
+TYPE_REAL = IDType('real')
+TYPE_REALPTR = IDType('rptr')
+TYPE_VOID = IDType('void')
+		
+#	EMessageRequest
+
+MSG_UNKNOWN = IDType('none')
+MSG_GETDATA = IDType('getd')
+MSG_SETDATA = IDType('setd')
+MSG_DATACHANGED = IDType('chan')
+MSG_REFERENCE = IDType('refr')
+MSG_TRIGGER = IDType('trig')
+MSG_OBJECTDYING = IDType('die ')
+MSG_CAMERA = IDType('aCam')
+
+#	EMessageResult
+
+MSG_IGNORED = 0
+MSG_PROCESSED = 1
+MSG_USED = 2
+
+#	EMessageHWType
+
+HW_UNKNOWN = 0
+HW_BUS = 1
+HW_SWITCH = 2
+HW_LIGHT = 3
+HW_FUSE	= 4
+HW_STATE = 5
+HW_GAUGE = 6
+HW_OTHER = 7
+HW_CIRCUIT = 8
+HW_RADIO = 9
+HW_FLAP = 10
+HW_HILIFT = 11
+HW_GEAR = 12
+HW_BATTERY = 13
+HW_ALTERNATOR = 14
+HW_ANNUNCIATOR = 15
+HW_GENERATOR = 16
+HW_CONTACTOR = 17
+HW_SOUNDFX = 18
+HW_FLASHER = 19
+HW_INVERTER = 20
+HW_UNITLESS = 101
+HW_UNBENT = 102
+HW_SCALE = 103
+
+#	EDLLObjectType
+
+TYPE_DLL_GAUGE = IDType('gage')
+TYPE_DLL_SYSTEM = IDType('subs')
+TYPE_DLL_WORLDOBJECT = IDType('wobj')
+TYPE_DLL_WINDOW = IDType('wind')
+TYPE_DLL_CAMERA = IDType('came')
+TYPE_DLL_CONTROL = IDType('cont')
+
+#	EFlyObjectType
+
+TYPE_FLY_UNKNOWN = 0
+TYPE_FLY_WORLDOBJECT = IDType('wobj')
+TYPE_FLY_MODELOBJECT = IDType('mobj')
+TYPE_FLY_SIMULATEDOBJECT = IDType('sobj')
+TYPE_FLY_VEHICLE = IDType('vehi')
+TYPE_FLY_GROUNDVEHICLE = IDType('gveh')
+TYPE_FLY_AIRPLANE = IDType('plan')
+TYPE_FLY_HELICOPTER = IDType('heli')
+
+#	EBitmapType
+
+TYPE_SINGLE = IDType('pbm ')
+TYPE_FRAMES = IDType('pbg ')
+TYPE_INVALID = IDType('    ')
+
+#	EStreamTagResult 
+
+TAG_IGNORED = 0
+TAG_READ = 1
+
+#	EClickResult
+
+MOUSE_TRACKING_OFF = 0,
+MOUSE_TRACKING_ON = 1
+
+#	ECursorResult
+
+CURSOR_NOT_CHANGED = 0,
+CURSOR_WAS_CHANGED = 1
+
+
+#	ECameraType
+
+CAMERA_INVALID = 0,
+CAMERA_COCKPIT = IDType('cock')
+CAMERA_SPOT = IDType('spot')
+CAMERA_FLYBY = IDType('flyb')
+CAMERA_TOWER = IDType('towr')
+CAMERA_CHASE = IDType('chas')
+CAMERA_OBSERVER = IDType('obsv')
+
+#	ENavaidTypes
+
+NAVAID_TYPE_UNKNOWN = 0
+NAVAID_TYPE_VOR = 1 << 0
+NAVAID_TYPE_TACAN = 1 << 2
+NAVAID_TYPE_NDB = 1 << 3
+NAVAID_TYPE_DME = 1 << 4
+NAVAID_TYPE_LOCATOR = 1 << 5
+NAVAID_TYPE_LOCALIZER = 1 << 6
+NAVAID_TYPE_GS = 1 << 7
+NAVAID_TYPE_BACKCOURSE = 1 << 8
+NAVAID_TYPE_INNERMARKER = 1 << 9
+NAVAID_TYPE_MIDDLEMARKER = 1 << 10
+NAVAID_TYPE_OUTERMARKER = 1 << 11
+NAVAID_TYPE_WAYPOINT = 1 << 12
+NAVAID_TYPE_VOT = 1 << 13
+NAVAID_TYPE_VORTAC = NAVAID_TYPE_VOR | NAVAID_TYPE_TACAN
+NAVAID_TYPE_VORDME = NAVAID_TYPE_VOR | NAVAID_TYPE_DME
+NAVAID_TYPE_NDBDME = NAVAID_TYPE_NDB | NAVAID_TYPE_DME
+NAVAID_TYPE_ILSDME = NAVAID_TYPE_LOCALIZER | NAVAID_TYPE_DME
+
+#	ENavaidClasses
+
+NAVAID_CLASS_UNKNOWN = 0
+NAVAID_CLASS_HIGH = 1
+NAVAID_CLASS_LOW = 2
+NAVAID_CLASS_TERMINAL = 3
+NAVAID_CLASS_MEDIUMHOMING = 4
+NAVAID_CLASS_HIGHHOMING = 5
+NAVAID_CLASS_ANTICIPATED = 6
+
+#	ENavaidUsage 
+
+NAVAID_USAGE_UNKNOWN = 0
+NAVAID_USAGE_HIGH = 1
+NAVAID_USAGE_LOW = 2
+NAVAID_USAGE_BOTH = 3
+NAVAID_USAGE_TERMINAL = 4
+NAVAID_USAGE_RNAV = 5
+
+#	ECommTypes
+
+COMM_UNKNOWN= 0
+COMM_TOWER = 1 << 0
+COMM_CLEARANCEDELIVERY = 1 << 1
+COMM_GROUNDCONTROL = 1 << 2
+COMM_APPROACHCONTROL = 1 << 3
+COMM_DEPARTURECONTROL = 1 << 4
+COMM_FLIGHTSERVICESTATION = 1 << 5
+COMM_CENTER = 1 << 6
+COMM_ATIS = 1 << 7
+COMM_CTAF = 1 << 8
+COMM_MULTICOM = 1 << 9
+COMM_EMERGENCY = 1 << 10
+
+#	ENavWaypointUsage 
+
+WAYPOINT_USAGE_UNKNOWN = 0
+WAYPOINT_USAGE_HIGH = 1
+WAYPOINT_USAGE_LOW = 2
+WAYPOINT_USAGE_BOTH = 3
+WAYPOINT_USAGE_TERMINAL = 4
+WAYPOINT_USAGE_HIGHALTRNAV = 5
+
+#	ENavWaypointType
+
+WAYPOINT_TYPE_UNNAMED = 1 << 0
+WAYPOINT_TYPE_NDB = 1 << 1
+WAYPOINT_TYPE_NAMED = 1 << 2
+WAYPOINT_TYPE_OFFROUTE = 1 << 3
+
+#	EAirportType
+
+AIRPORT_TYPE_UNKNOWN = 0
+AIRPORT_TYPE_AIRPORT = 1 << 1
+AIRPORT_TYPE_HELIPORT = 1 << 2
+AIRPORT_TYPE_SEAPLANEBASE = 1 << 3
+AIRPORT_TYPE_BALLOONPORT = 1 << 4
+AIRPORT_TYPE_GLIDERPORT = 1 << 5
+AIRPORT_TYPE_STOLPORT = 1 << 6
+AIRPORT_TYPE_ULTRALIGHT = 1 << 7
+
+#	EAirportOwnership
+
+AIRPORT_OWNERSHIP_UNKNOWN = 0
+AIRPORT_OWNERSHIP_PUBLIC = 1
+AIRPORT_OWNERSHIP_PRIVATE = 2
+AIRPORT_OWNERSHIP_AIRFORCE = 3
+AIRPORT_OWNERSHIP_NAVY = 4
+AIRPORT_OWNERSHIP_ARMY = 5
+
+#	EAirportUsage
+
+AIRPORT_USAGE_UNKNOWN = 0
+AIRPORT_USAGE_PUBLIC = 1
+AIRPORT_USAGE_PRIVATE = 2
+
+#	EAirportFrameService
+
+AIRPORT_FRAMESERVICE_UNKNOWN = 0
+AIRPORT_FRAMESERVICE_NONE = 1
+AIRPORT_FRAMESERVICE_MINOR = 2
+AIRPORT_FRAMESERVICE_MAJOR = 3
+
+#	EAirportEngineService
+
+AIRPORT_ENGINESERVICE_UNKNOWN = 0
+AIRPORT_ENGINESERVICE_NONE = 0
+AIRPORT_ENGINESERVICE_MINOR = 1
+AIRPORT_ENGINESERVICE_MAJOR = 2
+
+#	EAirportOxygen
+
+AIRPORT_OXYGEN_UNKNOWN = 0
+AIRPORT_OXYGEN_NONE = 1
+AIRPORT_OXYGEN_LOW = 2
+AIRPORT_OXYGEN_HIGH = 3
+AIRPORT_OXYGEN_HIGHLOW = 4
+
+#	EAirportLensColor
+
+AIRPORT_BEACON_UNKNOWN = 0
+AIRPORT_BEACON_NONE = 1
+AIRPORT_BEACON_CLEARGREEN = 2
+AIRPORT_BEACON_CLEARYELLOW = 3
+AIRPORT_BEACON_CLEARGREENYELLOW = 4
+AIRPORT_BEACON_SPLITCLEARGREEN = 5
+AIRPORT_BEACON_YELLOW = 6
+AIRPORT_BEACON_GREEN = 7
+
+#	EAirportRegion 
+
+AIRPORT_REGION_UNKNOWN = 0
+AIRPORT_REGION_FAAALASKA = 1
+AIRPORT_REGION_FAACENTRAL = 2
+AIRPORT_REGION_FAAEASTERN = 3
+AIRPORT_REGION_FAAGREATLAKES = 4
+AIRPORT_REGION_FAAINTERNATIONAL = 5
+AIRPORT_REGION_FAANEWENGLAND = 6
+AIRPORT_REGION_FAANORTHWESTMOUNTAIN = 7
+AIRPORT_REGION_FAASOUTHERN = 8
+AIRPORT_REGION_FAASOUTHWEST = 9
+AIRPORT_REGION_FAAWESTERNPACIFIC = 10
+
+#	EAirportFuelTypes
+
+AIRPORT_FUEL_80 = 1 << 1
+AIRPORT_FUEL_100 = 1 << 2
+AIRPORT_FUEL_100LL = 1 << 3
+AIRPORT_FUEL_115 = 1 << 4
+AIRPORT_FUEL_JETA = 1 << 5
+AIRPORT_FUEL_JETA1 = 1 << 6
+AIRPORT_FUEL_JETA1PLUS = 1 << 7
+AIRPORT_FUEL_JETB = 1 << 8
+AIRPORT_FUEL_JETBPLUS = 1 << 9
+AIRPORT_FUEL_AUTOMOTIVE = 1 << 10
+
+#	EAirportBasedAircraft
+
+AIRPORT_AIRCRAFT_SINGLEENGINE = 1 << 1
+AIRPORT_AIRCRAFT_MULTIENGINE = 1 << 2
+AIRPORT_AIRCRAFT_JETENGINE = 1 << 3
+AIRPORT_AIRCRAFT_HELICOPTER = 1 << 4
+AIRPORT_AIRCRAFT_GLIDERS = 1 << 5
+AIRPORT_AIRCRAFT_MILITARY = 1 << 6
+AIRPORT_AIRCRAFT_ULTRALIGHT = 1 << 7
+
+#	EAirportScheduleMonth
+
+AIRPORT_MONTH_JANUARY = 1 << 1
+AIRPORT_MONTH_FEBRUARY = 1 << 2
+AIRPORT_MONTH_MARCH = 1 << 3
+AIRPORT_MONTH_APRIL = 1 << 4
+AIRPORT_MONTH_MAY = 1 << 5
+AIRPORT_MONTH_JUNE = 1 << 6
+AIRPORT_MONTH_JULY = 1 << 7
+AIRPORT_MONTH_AUGUST = 1 << 8
+AIRPORT_MONTH_SEPTEMBER = 1 << 9
+AIRPORT_MONTH_OCTOBER = 1 << 10
+AIRPORT_MONTH_NOVEMBER = 1 << 11
+AIRPORT_MONTH_DECEMBER = 1 << 12
+
+#	EAirportScheduleDay
+
+AIRPORT_DAY_SUNDAY = 1 << 16
+AIRPORT_DAY_MONDAY = 1 << 17
+AIRPORT_DAY_TUESDAY = 1 << 18
+AIRPORT_DAY_WEDNESDAY = 1 << 19
+AIRPORT_DAY_THURSDAY = 1 << 20
+AIRPORT_DAY_FRIDAY = 1 << 21
+AIRPORT_DAY_SATURDAY = 1 << 22
+
+#	EAirportScheduleRange
+
+AIRPORT_SCHEDULE_ALLDAY = 1 << 28
+AIRPORT_SCHEDULE_SPECIFICTIME = 1 << 29
+AIRPORT_SCHEDULE_SUNRISE = 1 << 30
+AIRPORT_SCHEDULE_SUNSET = 1 << 31
+
+#	EAirportLightingControl
+
+AIRPORT_LIGHTING_24HOURS = 1 << 1
+AIRPORT_LIGHTING_ATCCONTROLLED = 1 << 2
+AIRPORT_LIGHTING_RADIOCONTROLLED = 1 << 3
+AIRPORT_LIGHTING_RADIOREQUIRED = 1 << 4
+AIRPORT_LIGHTING_PHONEREQUIRED = 1 << 5
+
+#	AirportAirspace
+
+AIRPORT_AIRSPACE_A = 1
+AIRPORT_AIRSPACE_B = 2
+AIRPORT_AIRSPACE_C = 3
+AIRPORT_AIRSPACE_D = 4
+AIRPORT_AIRSPACE_E = 5
+AIRPORT_AIRSPACE_G = 6
+
+#	EMouseCursorStyle
+
+CURSOR_ARROW = 0
+CURSOR_CROSS = 1
+CURSOR_FINGER = 2
+CURSOR_HAND = 3
+CURSOR_MOVE = 4
+CURSOR_SIZE_H = 5
+CURSOR_SIZE_HV = 6
+CURSOR_SIZE_V = 7
+CURSOR_FLIP_DOWN = 8
+CURSOR_FLIP_UP = 9
+CURSOR_FLIP_LEFT = 10
+CURSOR_FLIP_RIGHT = 11
+CURSOR_TURN_LEFT = 12
+CURSOR_TURN_RIGHT = 13
+CURSOR_SLIDE = 14
+
+#	EMouseButton
+
+MOUSE_BUTTON_LEFT = 1 << 0
+MOUSE_BUTTON_RIGHT = 1 << 1
+MOUSE_BUTTON_MIDDLE = 1 << 2
+
+#	EWindowRegion
+ 
+IN_WINDOW_CONTENT = 1 
+IN_WINDOW_DRAG = 2 
+IN_WINDOW_CLOSE = 3 
+IN_WINDOW_SIZE = 4 
+IN_WINDOW_SIZE_RIGHT = 5 
+IN_WINDOW_SIZE_LEFT = 6 
+IN_WINDOW_SIZE_BOTTOM = 7
+IN_WINDOW_HIDE = 8
+
+#	EWindowFlags
+
+WINDOW_HAS_TITLEBAR = 1 << 0
+WINDOW_HAS_CLOSEBOX = 1 << 1
+WINDOW_HAS_SIZEBOX = 1 << 2
+WINDOW_HAS_BORDER = 1 << 3
+WINDOW_IS_MOVEABLE = 1 << 4
+WINDOW_IS_RESIZEABLE = 1 << 5
+
+#	EFPEntryType
+
+ENTRY_AIRPORT = 1
+ENTRY_NAVAID = 2
+ENTRY_WAYPOINT = 3
+ENTRY_USER = 4
+
+#	ETimeOfDay
+
+TIME_DAWN = 1
+TIME_DAYTIME = 2
+TIME_DUSK = 3
+TIME_NIGHTTIME = 4
+
+#	EJoystickAxis
+
+X_AXIS_INDEX = 1
+Y_AXIS_INDEX = 2
+RUDDER_AXIS_INDEX = 3
+TRIM_AXIS_INDEX = 4
+RBRAKE_AXIS_INDEX = 5
+LBRAKE_AXIS_INDEX = 6
+THROTTLE_AXIS_INDEX = 7
+THROTTLE1_AXIS_INDEX = THROTTLE_AXIS_INDEX
+THROTTLE2_AXIS_INDEX = 8
+THROTTLE3_AXIS_INDEX = 9
+THROTTLE4_AXIS_INDEX = 10
+MIXTURE_AXIS_INDEX = 11
+MIXTURE1_AXIS_INDEX = MIXTURE_AXIS_INDEX
+MIXTURE2_AXIS_INDEX = 12
+MIXTURE3_AXIS_INDEX = 13
+MIXTURE4_AXIS_INDEX = 14
+PROP_AXIS_INDEX = 15
+PROP1_AXIS_INDEX = PROP_AXIS_INDEX
+PROP2_AXIS_INDEX = 16,
+PROP3_AXIS_INDEX = 17,
+PROP4_AXIS_INDEX = 18
+
+#	ERadioType
+
+RADIO_COM = 1 << 0
+RADIO_NAV = 1 << 1
+RADIO_DME = 1 << 2
+RADIO_XPDR = 1 << 3
+RADIO_AP = 1 << 4
+RADIO_GPS = 1 << 5
+RADIO_ADF = 1 << 6
+RADIO_AUDIO = 1 << 7
+RADIO_HF = 1 << 8
+
+#	EFreqType
+
+FREQ_ACTIVE = 0
+FREQ_STANDBY = 1
+
+#	ECollisionType
+
+RAY_COLLIDE_GROUND = 0x01
+RAY_COLLIDE_MODELS = 0x02
+RAY_COLLIDE_CLOUDS = 0x04
+RAY_COLLIDE_ALL = 0xFF
+RAY_COLLIDE_SOLID_OBJECTS = RAY_COLLIDE_ALL & ~RAY_COLLIDE_CLOUDS
+
+#	EWeatherObstructionTypes
+
+WEATHER_INTENSITY_VICINITY = 0x00000001
+WEATHER_INTENSITY_LIGHT = 0x00000002
+WEATHER_INTENSITY_MODERATE = 0x00000004
+WEATHER_INTENSITY_HEAVY = 0x00000008
+WEATHER_DESCRIPTOR_SHALLOW = 0x00000010
+WEATHER_DESCRIPTOR_PARTIAL = 0x00000020
+WEATHER_DESCRIPTOR_PATCHES = 0x00000040
+WEATHER_DESCRIPTOR_LOW_DRIFTING = 0x00000080
+WEATHER_DESCRIPTOR_BLOWING = 0x00000100
+WEATHER_DESCRIPTOR_SHOWERS = 0x00000200
+WEATHER_DESCRIPTOR_THUNDERSTORMS = 0x00000400
+WEATHER_DESCRIPTOR_FREEZING = 0x00000800
+WEATHER_PHENOMENA_DRIZZLE = 0x00001000
+WEATHER_PHENOMENA_RAIN = 0x00002000
+WEATHER_PHENOMENA_SNOW = 0x00004000
+WEATHER_PHENOMENA_SNOW_GRAINS = 0x00008000
+WEATHER_PHENOMENA_ICE_CRYSTALS = 0x00010000
+WEATHER_PHENOMENA_ICE_PELLETS = 0x00020000
+WEATHER_PHENOMENA_HAIL = 0x00040000
+WEATHER_PHENOMENA_SMALL_HAIL_OR_SNOW = 0x00080000
+WEATHER_PHENOMENA_FOG = 0x00100000
+WEATHER_PHENOMENA_UNIDENTIFIED = 0x00200000
+WEATHER_PHENOMENA_VOLCANIC_ASH = 0x00400000
+WEATHER_PHENOMENA_SQUALL = 0x00800000
+WEATHER_PHENOMENA_WIDESPREAD_DUST = 0x01000000
+WEATHER_PHENOMENA_SPRAY = 0x02000000
+WEATHER_PHENOMENA_SAND = 0x04000000
+WEATHER_PHENOMENA_DUST_SAND_WHIRLS = 0x08000000
+WEATHER_PHENOMENA_FUNNEL_CLOUD = 0x10000000
+WEATHER_PHENOMENA_SAND_STORM = 0x20000000
+WEATHER_PHENOMENA_DUST_STORM = 0x40000000
+
+#	EWeatherSkyTypes
+
+WEATHER_SKY_UNKNOWN = 0
+WEATHER_SKY_CLEAR = 1
+WEATHER_SKY_FEW = 2
+WEATHER_SKY_SCATTERED = 3
+WEATHER_SKY_BROKEN = 4
+WEATHER_SKY_OVERCAST = 5
+
+#	EWheelStatus
+
+WHEELS_NOTONGROUND = 0
+WHEELS_SOMEONGROUND = 1
+WHEELS_ALLONGROUND = 2
+WHEELS_ONEONGROUND = 3
+WHEELS_INWATER = 4
+
+#	EGroundTypes 
+
+GROUND_CONCRETE = 0
+GROUND_ASPHALT = 1
+GROUND_TURF = 2
+GROUND_DIRT = 3
+GROUND_GRAVEL = 4
+GROUND_METAL = 5
+GROUND_SAND = 6
+GROUND_WOOD = 7
+GROUND_WATER = 8
+GROUND_MATS = 9
+GROUND_SNOW = 10
+GROUND_ICE = 11
+GROUND_GROOVED = 12
+GROUND_TREATED = 13
+
+
+#	EFileSearchLocation
+
+SEARCH_PODS = 1 << 0
+SEARCH_DISK = 1 << 1
+SEARCH_ALL = SEARCH_PODS | SEARCH_DISK
+
+#	EKeyboardKeys
+
+KB_KEY_ESC = 1
+KB_KEY_1 = 2
+KB_KEY_2 = 3
+KB_KEY_3 = 4
+KB_KEY_4 = 5
+KB_KEY_5 = 6
+KB_KEY_6 = 7
+KB_KEY_7 = 8
+KB_KEY_8 = 9
+KB_KEY_9 = 10
+KB_KEY_0 = 11
+KB_KEY_MINUS = 12
+KB_KEY_EQUALS = 13
+KB_KEY_BACKSPACE = 14
+KB_KEY_TAB = 15
+KB_KEY_Q = 16
+KB_KEY_W = 17
+KB_KEY_E = 18
+KB_KEY_R = 19
+KB_KEY_T = 20
+KB_KEY_Y = 21
+KB_KEY_U = 22
+KB_KEY_I = 23
+KB_KEY_O = 24
+KB_KEY_P = 25
+KB_KEY_FORWARD_BRACKET = 26
+KB_KEY_REVERSE_BRACKET = 27
+KB_KEY_ENTER = 28
+KB_KEY_LCTRL = 29
+KB_KEY_A = 30
+KB_KEY_S = 31
+KB_KEY_D = 32
+KB_KEY_F = 33
+KB_KEY_G = 34
+KB_KEY_H = 35
+KB_KEY_J = 36
+KB_KEY_K = 37
+KB_KEY_L = 38
+KB_KEY_SEMI_COLON = 39
+KB_KEY_SINGLE_QUOTE = 40
+KB_KEY_REVERSE_SINGLE_QUOTE = 41
+KB_KEY_LSHIFT = 42
+KB_KEY_BACKSLASH = 43
+KB_KEY_Z = 44
+KB_KEY_X = 45
+KB_KEY_C = 46
+KB_KEY_V = 47
+KB_KEY_B = 48
+KB_KEY_N = 49
+KB_KEY_M = 50
+KB_KEY_COMMA = 51
+KB_KEY_PERIOD = 52
+KB_KEY_SLASH = 53
+KB_KEY_RSHIFT = 54
+KB_KEY_STAR = 55
+KB_KEY_LALT = 56
+KB_KEY_SPACE = 57
+KB_KEY_CAPSLOCK = 58
+KB_KEY_F1 = 59
+KB_KEY_F2 = 60
+KB_KEY_F3 = 61
+KB_KEY_F4 = 62
+KB_KEY_F5 = 63
+KB_KEY_F6 = 64
+KB_KEY_F7 = 65
+KB_KEY_F8 = 66
+KB_KEY_F9 = 67
+KB_KEY_F10 = 68
+KB_KEY_NUMLOCK = 69
+KB_KEY_SCROLLLOCK = 70
+KB_KEY_HOME = 71
+KB_KEY_UP = 72
+KB_KEY_PGUP = 73
+KB_KEY_KEYPAD_MINUS = 74
+KB_KEY_LEFT = 75
+KB_KEY_CENTER = 76
+KB_KEY_RIGHT = 77
+KB_KEY_KEYPAD_PLUS = 78
+KB_KEY_END = 79
+KB_KEY_DOWN = 80
+KB_KEY_PGDN = 81
+KB_KEY_INSERT = 82
+KB_KEY_DEL = 83
+KB_KEY_F11 = 87
+KB_KEY_F12 = 88
+KB_KEY_KEYPAD_ENTER = 284
+KB_KEY_RCTRL = 285
+KB_KEY_KEYPAD_SLASH = 309
+KB_KEY_RALT = 312
+KB_KEY_EXT_NUMLOCK = 325
+KB_KEY_GRAY_HOME = 327
+KB_KEY_GRAY_UP = 328
+KB_KEY_GRAY_PGUP = 329
+KB_KEY_GRAY_LEFT = 331
+KB_KEY_GRAY_RIGHT = 333
+KB_KEY_GRAY_END = 335
+KB_KEY_GRAY_DOWN = 336
+KB_KEY_GRAY_PGDN = 337
+KB_KEY_GRAY_INS = 338
+KB_KEY_GRAY_DEL = 339
+KB_KEY_META = 340
+
+#	EKeyboardModifiers
+
+KB_MODIFIER_NONE = 0
+KB_MODIFIER_CTRL = (1 << 0) << 16
+KB_MODIFIER_ALT = (1 << 1) << 16
+KB_MODIFIER_SHIFT = (1 << 2) << 16
+KB_MODIFIER_META = (1 << 3) << 16
+
+#	EGaugeHilite
+
+GAUGE_HILITE_NONE = 0
+GAUGE_HILITE_ARROW = 1 << 0
+GAUGE_HILITE_BOX = 1 << 1
+GAUGE_HILITE_CIRCLE = 1 << 2
+GAUGE_HILITE_BLINK = 1 << 8
+
+#	EWindowType
+
+WINDOW_CAMERA = 1
+WINDOW_RASTER_MAP = 2
+WINDOW_VECTOR_MAP = 3
+WINDOW_CHECKLIST = 4
+WINDOW_GPS = 5
+WINDOW_MINIPANEL = 6
+WINDOW_AXIS = 7
+
+#	RGB Colors
+
+RGB_BLACK = RGB(0, 0, 0)
+RGB_WHITE = RGB(255, 255, 255)
+RGB_RED = RGB(255, 0, 0)
+RGB_GREEN = RGB(0, 255, 0)
+RGB_BLUE = RGB(0, 0, 255)
+RGB_YELLOW = RGB(255, 255, 0)
+RGB_MAGENTA = RGB(255, 0, 255)
+RGB_AQUA = RGB(0, 255, 255)
+RGB_ORANGE = RGB(255, 128, 0)
+RGB_PINK = RGB(255, 0, 128)
+RGB_DARK_GRAY = RGB(64, 64, 64)
+RGB_MEDIUM_GRAY = RGB(128, 128, 128)
+RGB_LIGHT_GRAY = RGB(192, 192, 192)
+
+#	EUIComponentTypes
+
+COMPONENT_WINDOW = ID('wind')
+COMPONENT_BUTTON = ID('butn')
+COMPONENT_POPUPMENU = ID('menu')
+COMPONENT_CHECKBOX = ID('chek')
+COMPONENT_RADIOBUTTON = ID('radi')
+COMPONENT_LABEL = ID('labl')
+COMPONENT_LINE = ID('line')
+COMPONENT_BOX = ID('box_')
+COMPONENT_PICTURE = ID('pict')
+COMPONENT_MENUBAR = ID('mbar')
+COMPONENT_SCROLLBAR = ID('scrl')
+COMPONENT_SLIDER = ID('slid')
+COMPONENT_GROUPBOX = ID('gbox')
+COMPONENT_GAUGE = ID('gage')
+COMPONENT_LIST = ID('list')
+COMPONENT_SCROLLAREA = ID('scla')
+COMPONENT_TEXTFIELD = ID('txtf')
+COMPONENT_TEXTAREA = ID('txta')
+COMPONENT_PROGRESS = ID('prog')
+COMPONENT_MAP = ID('map_')
+COMPONENT_TABPAGE = ID('tabp')
+COMPONENT_TABBUTTON = ID('tabb')
+COMPONENT_TABCONTROL = ID('tabc')
+COMPONENT_GRAPH = ID('grph')
+
+#	EUIComponentEvents
+
+EVENT_IDCHANGED	= ID('dtid')
+EVENT_HIDDEN = ID('hide')
+EVENT_SHOWN = ID('show')
+EVENT_ENABLED = ID('enbl')
+EVENT_DISABLED = ID('!enb')
+EVENT_RESIZED = ID('size')
+EVENT_MOVED = ID('move')
+EVENT_RENAMED = ID('name')
+EVENT_COMPONENTDIED = ID('dead')
+EVENT_CHECKED = ID('chek')
+EVENT_UNCHECKED = ID('uchk')
+EVENT_SELECTITEM = ID('slct')
+EVENT_BUTTONPRESSED = ID('actn')
+EVENT_TEXTCHANGED = ID('delt')
+EVENT_TEXTSET = ID('tset')
+EVENT_VALUECHANGED = ID('valu')
+EVENT_OPENWINDOW = ID('open')
+EVENT_CLOSEWINDOW = ID('clos')
+EVENT_TITLECHANGED = ID('titl')
+EVENT_FOCUSLOST = ID('!foc')
+EVENT_FOCUSGAINED = ID('foci')
+EVENT_WIDGETTYPECHANGED	= ID('widg')
+EVENT_DIALOGDISMISSED	= ID('dlog')
+EVENT_DIALOGDISMISSEDOK	= ID('dlOK')
+EVENT_DIALOGDISMISSEDCANCEL = ID('dlCn')
+EVENT_ANYSUBEVENT = 0
+EVENT_NOSUBEVENT = 0
+
+#	Boolean values
+
+FALSE = 0
+TRUE = 1
+NO = FALSE
+YES = TRUE
+OFF = FALSE
+ON = TRUE
+
+#	UI globals
+
+DESKTOP = 0
+GLOBAL_MENUBAR = ID('MBar')
+PLUGINS_MENU_ID = ID('plug')
+PLUGINS_MENU_NAME = "Plugins"
+
+#	Simulation constants
+
+PI = 3.1415926535898
+TWO_PI	= 2.0 * PI
+DEG2RAD = PI / 180.0
+RAD2DEG = 180.0 / PI
+DEG2SEC = 3600.0
+SEC2DEG = 1.0 / DEG2SEC
+SEC2RAD = SEC2DEG * DEG2RAD
+RAD2SEC = RAD2DEG * DEG2SEC
+FT2METER = 0.3048
+METER2FT = 1.0 / FT2METER
+FT2KM = FT2METER / 1000.0
+KM2FT = 1.0 / FT2KM
+KTS2FPS = 1.689
+FPS2KTS = 1.0 / KTS2FPS
+FPS2FPM = 60.0
+FPM2FPS = 1.0 / FPS2FPM
+FPS2HFPM = FPS2FPM / 100.0
+RPS2RAD = TWO_PI
+RAD2RPS = 1.0 / TWO_PI
+MPH2FPS = 5280.0 / 3600.0
+FPS2MPH = 1.0 / MPH2FPS
+DEG2NMI = 60.0
+NMI2DEG = 1.0 / DEG2NMI
+NMI2FT = 6076.0
+FT2NMI = 1.0 / NMI2FT
+SMI2FT = 5280.0
+FT2SMI = 1.0 / SMI2FT
+FT2RAD = FT2NMI * NMI2DEG * DEG2RAD
+RAD2FT = RAD2DEG * DEG2NMI * NMI2FT
+INCHESHG2PSI = 0.4912
+REV2RAD = TWO_PI
+RAD2REV = 1.0 / REV2RAD
+PSF2INHG = 1.414e-2
+INHG2PSF = 1.0 / PSF2INHG
+PSI2PSF =  12.0 * 12.0
+PSF2PSI =  1.0 / PSI2PSF
+INHG2PSI = INHG2PSF * PSF2PSI
+PSI2INHG = PSI2PSF * PSF2INHG
+BTU2FTLB =  778.3
+FTLB2BTU =  1.0 / BTU2FTLB
+FPS2KMPH = FT2KM *  3600.0
+KMPH2FPS =  1.0 / FPS2KMPH
+INHG2HP =  33.88
+HP2INHG =  1.0 / INHG2HP
+INHG2MB = INHG2HP
+MB2INHG = HP2INHG
+NMI2SMI =  5280.0 / NMI2FT
+SMI2NMI =  1.0 / NMI2SMI
+
+###############################################################
+#	END OF FILE
+###############################################################
+

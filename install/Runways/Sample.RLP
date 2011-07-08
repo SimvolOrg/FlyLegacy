@@ -1,0 +1,40 @@
+//------------------------------------------------------------------------------------------------
+//	Runway Light Profile 
+//		SAMPLE file
+//	Any TAG must have only one value from the indicated set
+//	Save file as SFO.RLP for San Francisco airport.  The name must be the FAA name for US and
+//	ICAA for the rest of the world
+//------------------------------------------------------------------------------------------------
+<bgno> ==== Begin File =====================
+	<rwId> ==== Runway end =============
+	19L
+	<bgno> ========== BEGIN OBJECT ==========
+		<aprL> ---- APPROACH LIGHTS -----
+		none
+		REIL
+		ODAL
+		ALSR
+		ALF1
+		ALF2
+		<Tbar> ---- THRESHOLD BAR -------
+		none
+		Rend		// Red only
+		Gend		// Green Only
+		2end		// Green and Red
+		inop		// inoperable
+		<Wbar> ---- WING BAR ------------
+		none		// None
+		yes		// One wing bar
+		<tdzL> ---- Touch Down zone -----
+		none		// No
+		yes		// Yes
+		<ctrL> ---- Center Lights -------
+		none		// None
+		mono		// white
+		inst		// Alternate Red White
+		<edgL> ---- Edge Lights ---------
+		none		// None
+		mono		// White
+		inst		// Yelow white
+	<endo> ========== END OBJECT ============
+<endo> ==== End of File =========

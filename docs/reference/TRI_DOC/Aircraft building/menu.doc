@@ -1,0 +1,74 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f16\fswiss\fcharset0\fprq2{\*\panose 020b0a04020102020204}Arial Black;}
+{\f79\froman\fcharset238\fprq2 Times New Roman CE;}{\f80\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f82\froman\fcharset161\fprq2 Times New Roman Greek;}{\f83\froman\fcharset162\fprq2 Times New Roman Tur;}
+{\f84\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f175\fswiss\fcharset238\fprq2 Arial Black CE;}{\f176\fswiss\fcharset204\fprq2 Arial Black Cyr;}{\f178\fswiss\fcharset161\fprq2 Arial Black Greek;}{\f179\fswiss\fcharset162\fprq2 Arial Black Tur;}
+{\f180\fswiss\fcharset186\fprq2 Arial Black Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;
+\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 
+Normal;}{\s1\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 1;}{\s2\li720\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 2;}{\*\cs10 \additive Default Paragraph Font;}{
+\s15\li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid \sbasedon0 \snext15 Body Text 2;}{\s16\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid \sbasedon0 \snext16 Body Text Indent 2;}{\*\cs17 \additive \ul\cf2 \sbasedon10 Hyperlink;}{\*\cs18 
+\additive \ul\cf12 \sbasedon10 FollowedHyperlink;}{\s19\qc\nowidctlpar\widctlpar\adjustright \f16\fs28\cgrid \sbasedon0 \snext19 Title;}}{\*\listtable{\list\listtemplateid1562919664\listsimple{\listlevel\levelnfc0\leveljc0\levelfollow0\levelstartat1
+\levelspace0\levelindent0{\leveltext\'02\'00);}{\levelnumbers\'01;}\fi-360\li360\jclisttab\tx360 }{\listname ;}\listid238253202}{\list\listtemplateid2069532930\listsimple{\listlevel\levelnfc0\leveljc0\levelfollow0\levelstartat1\levelspace0\levelindent0
+{\leveltext\'02\'00);}{\levelnumbers\'01;}\fbias0 \fi-360\li1080\jclisttab\tx1080 }{\listname ;}\listid1294629053}}{\*\listoverridetable{\listoverride\listid238253202\listoverridecount0\ls1}{\listoverride\listid1294629053\listoverridecount0\ls2}}{\info
+{\title Movable Parts}{\author Paul Russell}{\operator Paul Russell}{\creatim\yr2000\mo5\dy24\hr15\min33}{\revtim\yr2000\mo8\dy18\hr19\min50}{\version4}{\edmins7}{\nofpages1}{\nofwords121}{\nofchars691}{\*\company Terminal Reality}{\nofcharsws848}
+{\vern71}}\widowctrl\ftnbj\aenddoc\hyphcaps0\formshade\viewkind4\viewscale110\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang
+{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang
+{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain 
+\s19\qc\nowidctlpar\widctlpar\adjustright \f16\fs28\cgrid {
+\par Menu
+\par }\pard\plain \qc\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "BASIC SYNTAX.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004241534943537e312e444f4300ffffadde000000000000000000000000000000000000000026000000200000000300420041005300490043002000530059004e005400410058002e0044004f00430000
+00000000f0}}}{\fldrslt {\cs17\ul\cf2 Basic{\*\bkmkstart _Hlt491233598} {\*\bkmkend _Hlt491233598}Syntax}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "BASIC OBJECT TYPES.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d00000042415349434f7e312e444f4300ffffadde0000000000000000000000000000000000000000320000002c00000003004200410053004900430020004f0042004a00450043005400200054005900500045
+0053002e0044004f0043000000006f7079}}}{\fldrslt {\cs17\ul\cf2 Basic Object Types}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "THE SVH FILE FROM SCRATCH.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005448455356487e312e444f4300ffffadde0000000000000000000000000000000000000000400000003a000000030054004800450020005300560048002000460049004c0045002000460052004f004d
+00200053004300520041005400430048002e0044004f00430000006f0000697320}}}{\fldrslt {\cs17\ul\cf2 The SVH File{\*\bkmkstart _Hlt491239710} {\*\bkmkend _Hlt491239710}from Scratch}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "DEBUG INFO.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004445425547497e312e444f4300ffffadde0000000000000000000000000000000000000000220000001c000000030044004500420055004700200049004e0046004f002e0044004f0043000020003937
+00}}}{\fldrslt {\cs17\ul\cf2 Debug Info}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "WINGS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000a00000057494e47532e444f4300ffffadde000000000000000000000000000000000000000018000000120000000300570049004e00470053002e0044004f004300006b0000007300}}}{\fldrslt {
+\cs17\ul\cf2 Wings}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "ENGINES.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000c000000454e47494e45532e444f4300ffffadde00000000000000000000000000000000000000001c00000016000000030045004e00470049004e00450053002e0044004f0043000000007400}}}{\fldrslt {
+\cs17\ul\cf2 Engines}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "PROPELLERS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d00000050524f50454c7e312e444f4300ffffadde0000000000000000000000000000000000000000220000001c0000000300500052004f00500045004c004c004500520053002e0044004f0043000000000000
+00}}}{\fldrslt {\cs17\ul\cf2 Propellers}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "FUEL.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c0000000000000460000090000004655454c2e444f4300ffffadde0000000000000000000000000000000000000000160000001000000003004600550045004c002e0044004f004300000000000000}}}{\fldrslt {\cs17\ul\cf2 
+Fuel S{\*\bkmkstart _Hlt491257036}y{\*\bkmkend _Hlt491257036}stem}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "VARIABLE LOAD.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005641524941427e312e444f4300ffffadde0000000000000000000000000000000000000000280000002200000003005600410052004900410042004c00450020004c004f00410044002e0044004f0043
+000000000000000000}}}{\fldrslt {\cs17\ul\cf2 Variable Load}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "MOVABLE PARTS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004d4f5641424c7e312e444f4300ffffadde0000000000000000000000000000000000000000280000002200000003004d004f005600410042004c0045002000500041005200540053002e0044004f0043
+000000000000000000}}}{\fldrslt {\cs17\ul\cf2 Movable Parts}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "RETRACTABLE GEAR.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005245545241437e312e444f4300ffffadde00000000000000000000000000000000000000002e0000002800000003005200450054005200410043005400410042004c004500200047004500410052002e
+0044004f004300000000000000}}}{\fldrslt {\cs17\ul\cf2 Retractable Landing Gear}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "PITOT.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000a0000005049544f542e444f4300ffffadde0000000000000000000000000000000000000000180000001200000003005000490054004f0054002e0044004f00430000000000000000}}}{\fldrslt {
+\cs17\ul\cf2 Pitot-Static System}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005355425359537e312e444f4300ffffadde0000000000000000000000000000000000000000220000001c0000000300530055004200530059005300540045004d0053002e0044004f0043000000000000
+00}}}{\fldrslt {\cs17\ul\cf2 Sub{\*\bkmkstart _Hlt491257211}s{\*\bkmkstart _Hlt491255845}{\*\bkmkend _Hlt491257211}y{\*\bkmkend _Hlt491255845}stems}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "CHECKLISTS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d000000434845434b4c7e312e444f4300ffffadde0000000000000000000000000000000000000000220000001c000000030043004800450043004b004c0049005300540053002e0044004f0043000000000000
+00}}}{\fldrslt {\cs17\ul\cf2 Checklists}}}{\f16 
+\par }{\field\fldedit{\*\fldinst {\f16  HYPERLINK "AUTOPILOT PANEL.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004155544f50497e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004100550054004f00500049004c004f0054002000500041004e0045004c002e0044
+004f0043000000000000000000}}}{\fldrslt {\cs17\ul\cf2 Aut{\*\bkmkstart _Hlt491241273}o{\*\bkmkend _Hlt491241273}pilot}}}{\f16 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "FLIGHT CONTROL SYSTEM.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d000000464c494748547e312e444f4300ffffadde00000000000000000000000000000000000000003800000032000000030046004c004900470048005400200043004f004e00540052004f004c002000530059
+005300540045004d002e0044004f0043000000000000000000}}}{\fldrslt {\cs17\ul\cf2 Flight Control System}}}{\f16 
+\par }{\field\fldedit{\*\fldinst {\f16 HYPERLINK "EXTERNAL LIGHTS.DOC"}{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d00000045585445524e7e312e444f4300ffffadde00000000000000000000000000000000000000002c000000260000000300450058005400450052004e0041004c0020004c00490047004800540053002e0044
+004f004300}}}{\fldrslt {\cs17\ul\cf2 External{\*\bkmkstart _Hlt491257199} {\*\bkmkend _Hlt491257199}Lights}}}{\f16 
+\par 
+\par }{\field\flddirty{\*\fldinst {\b\f16  HYPERLINK "REVISION LIST.DOC" }{\b\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005245564953497e312e444f4300ffffadde0000000000000000000000000000000000000000280000002200000003005200450056004900530049004f004e0020004c004900530054002e0044004f0043
+0000000000}}}{\fldrslt {\cs17\b\ul\cf2 Revisio{\*\bkmkstart _Hlt491242847}n{\*\bkmkend _Hlt491242847}s List}}}{\b\f16 
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {
+\par }}

@@ -1,0 +1,98 @@
+<bgno> ========== BEGIN FILE ==========
+	<rwId>  === Runway End Profile definition ===
+	28L        // Hi end
+	<bgno>  ====== Begin Object ====
+		<aprL>      // Approach lights system
+		ALSR
+		<Tbar>      // Threshold lights
+		Gend
+		<Wbar>      // Wing bar lights
+		none
+		<tdzL>      // Touch Down zone
+		none
+		<ctrL>      // Center lights
+		inst
+		<edgL>      // Edge Lights
+		inst
+	<endo>  === End Object ======================
+	<rwId>  === Runway End Profile definition ===
+	10R        // Lo end
+	<bgno>  ====== Begin Object ====
+		<aprL>      // Approach lights system
+		none
+		<Tbar>      // Threshold lights
+		none
+		<Wbar>      // Wing bar lights
+		none
+		<tdzL>      // Touch Down zone
+		none
+		<ctrL>      // Center lights
+		none
+		<edgL>      // Edge Lights
+		none
+	<endo>  === End Object ======================
+	<rwId>  === Runway End Profile definition ===
+	28R        // Hi end
+	<bgno>  ====== Begin Object ====
+		<aprL>      // Approach lights system
+		ALF2
+		<Tbar>      // Threshold lights
+		2end
+		<Wbar>      // Wing bar lights
+		none
+		<tdzL>      // Touch Down zone
+		yes_
+		<ctrL>      // Center lights
+		inst
+		<edgL>      // Edge Lights
+		inst
+	<endo>  === End Object ======================
+	<rwId>  === Runway End Profile definition ===
+	10L        // Lo end
+	<bgno>  ====== Begin Object ====
+		<aprL>      // Approach lights system
+		none
+		<Tbar>      // Threshold lights
+		none
+		<Wbar>      // Wing bar lights
+		none
+		<tdzL>      // Touch Down zone
+		none
+		<ctrL>      // Center lights
+		none
+		<edgL>      // Edge Lights
+		none
+	<endo>  === End Object ======================
+	<rwId>  === Runway End Profile definition ===
+	19L        // Hi end
+	<bgno>  ====== Begin Object ====
+		<aprL>      // Approach lights system
+		ALF1
+		<Tbar>      // Threshold lights
+		2end
+		<Wbar>      // Wing bar lights
+		none
+		<tdzL>      // Touch Down zone
+		yes_
+		<ctrL>      // Center lights
+		inst
+		<edgL>      // Edge Lights
+		inst
+	<endo>  === End Object ======================
+	<rwId>  === Runway End Profile definition ===
+	01R        // Lo end
+	<bgno>  ====== Begin Object ====
+		<aprL>      // Approach lights system
+		none
+		<Tbar>      // Threshold lights
+		none
+		<Wbar>      // Wing bar lights
+		none
+		<tdzL>      // Touch Down zone
+		none
+		<ctrL>      // Center lights
+		none
+		<edgL>      // Edge Lights
+		none
+	<endo>  === End Object ======================
+<endo>  === End of Runway Definition file ===

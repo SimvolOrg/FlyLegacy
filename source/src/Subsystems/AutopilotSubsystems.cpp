@@ -1,0 +1,2237 @@
+/*
+ * AutopilotSubsystems.cpp
+ *
+ * Part of Fly! Legacy project
+ *
+ * Copyright 2003-2005 Chris Wallace
+ * Copyright 2007-etc  Jean Sabatier
+ * Fly! Legacy is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ * Fly! Legacy is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ *   along with Fly! Legacy; if not, write to the Free Software
+ *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+#include "../Include/Subsystems.h"
+#include "../Include/Autopilot.h"
+#include "../Include/RadioGauges.h"
+#include "../Include/Globals.h"
+#include "../Include/FuiParts.h"
+#include "../Include/FuiUser.h"
+#include "../Include/Joysticks.h"
+using namespace std;
+//============================================================================
+#define AUTO_FLARE_TIME float(6)
+#define VSI_SAMPLE (double(0.05))
+//============================================================================
+//  K140 Fields to draw
+//============================================================================
+RADIO_DSP  CBKAP140Gauge::fieldTAB[] = {
+  {K140_FD_HD1,RADIO_CA11},                          // Heading mode field 1
+  {K140_FD_HD2,RADIO_CA12},                          // Heading mode field 2
+  {K140_FD_VT1,RADIO_CA13},                          // Vertical mode field 1
+  {K140_FD_VT2,RADIO_CA14},                          // Vertical mode field 2
+  {K140_FD_VSI,RADIO_CA18},                          // VSI
+  {K140_FD_ALT,RADIO_CA19},                          // Altitude
+  {0,},                                              // Last field
+};
+//============================================================================
+//  K140 Fields to draw
+//============================================================================
+RADIO_FLD  alertK140[] = {
+  {0,RAD_ATT_INACT,0},                      // 0 state
+  {0,RAD_ATT_ACTIV,"ALT"},                  // 1 State
+  };
+//============================================================================
+//  Autopilot PID name
+//============================================================================
+Tag CPIDbox::PidIDENT[] = {
+  'roll',                   
+  'head',
+  'bank',
+  'glid',
+  'alth',
+  'vsih',
+  'aoa_',
+  'rudr',
+	'thro',
+};
+//===============================================================================================
+//  Autopilot edit table
+//===============================================================================================
+//---Lateral mode -----------------------------------------
+char *autoTB1[] = {
+  "OFF",
+  "ROL",          // Roll control
+  "HDG",          // Heading
+  "LG1",          // NAV intercept
+  "LG2",          // NAV tracking
+};
+//--- Vertical mode ---------------------------------------
+char *autoTB2[] = {
+  "OFF",
+  "ALT",          // Altitude
+  "GSI",          // Glide slope intercept
+  "GST",          // Glide slope Tracking
+  "VSP",          // VSI hold
+  "FLR",          // Flare mode
+	"FIN",					// Final
+};
+//===============================================================================================
+// PID controller
+//  A PID controller is a single unit used to monitor a single value against a reference value
+//===============================================================================================
+//  Init default values
+//--------------------------------------------------------------------------------------
+CPIDbox::CPIDbox(U_CHAR No,AutoPilot *ap)
+{ TypeIs (SUBSYSTEM_PIDBOX);
+  hwId  = HW_PID;
+  SetIdent(PidIDENT[No]);
+  nPid  = No;
+  apil  = ap;  //---------------------------------------------
+  Yn  = 0;              // Current value to 0
+  Rn  = 0;              // Reference value to 0
+  //--------Default values-----------------------
+  Rn    = 0;
+  Kp    = 0.05;
+  Ts    = 0;
+  SetITIME(0);
+  SetDTIME(0);
+  SetATIME(0);
+  iMax  = 0;
+  vmin  = -1;
+  vmax  = +1;
+  drvt  = 0;            // Dont use derivative
+  intg  = 0;            // Dont use integrator
+  anti  = 0;            // Dont use anti saturation
+  //---------------------------------------------
+  Init();
+}
+//------------------------------------------------------------------------------
+//  Free the resources
+//------------------------------------------------------------------------------
+CPIDbox::~CPIDbox()
+{ 
+}
+//------------------------------------------------------------------------------
+//  Init Controller
+//------------------------------------------------------------------------------
+void CPIDbox::Init()
+{ en    = 0;
+  en1   = 0;
+  en2   = 0;
+  Un    = 0;
+  Vn    = 0;
+  es    = 0;
+  Rn    = 0;
+  eSum  = 0;
+  yPrv  = 0;
+  Ki    = 0;
+  Kd    = 0;
+  Ks    = 0;
+  Yn    = 0;
+  vSat  = 0;
+  return;
+}
+//------------------------------------------------------------------------------
+//	Set coefficients
+//------------------------------------------------------------------------------
+void CPIDbox::SetCoef(double kp,double ti, double td)
+{	Kp	= kp;
+	Ti	= ti;
+	Td	= td;
+	return;
+}
+//------------------------------------------------------------------------------
+//  Read controller parameters
+//------------------------------------------------------------------------------
+int CPIDbox::Read(SStream *st,Tag tag)
+{ double val;
+  switch(tag) {
+  //---Kp: Proportional coefficient ----------
+  case 'Kp__':
+    ReadDouble(&Kp,st);
+    return TAG_READ;
+  //---Integrator time -----------------------
+  case 'iTim':
+    ReadDouble(&val,st);
+    SetITIME(val);
+    return TAG_READ;
+  //---Saturator time -----------------------
+  case 'aTim':
+    ReadDouble(&val,st);
+    SetATIME(val);
+    return TAG_READ;
+  //---Integrator limit -----------------------
+  case 'iMax':
+    ReadDouble(&iMax,st);
+    return TAG_READ;
+  //---Derivator time -----------------------
+  case 'dTim':
+    ReadDouble(&val,st);
+    SetDTIME(val);
+    return TAG_READ;
+  //---Minimum value ----------------------
+  case 'vmin':
+    ReadDouble(&vmin,st);
+    return TAG_READ;
+  //---Maximum value ----------------------
+  case 'vmax':
+    ReadDouble(&vmax,st);
+    return TAG_READ;
+  }
+  return TAG_IGNORED;
+}
+//------------------------------------------------------------------------------
+//  All parameters are read
+//------------------------------------------------------------------------------
+void CPIDbox::ReadFinished()
+{ 
+  return;
+}
+//------------------------------------------------------------------------------
+//  Set derivator time
+//------------------------------------------------------------------------------
+void CPIDbox::SetDTIME(double t)
+{ Td    = t;
+  drvt  = (fabs(t) > 0.00001)?(1):(0);
+  return;
+}
+//------------------------------------------------------------------------------
+//  Set integrator time
+//------------------------------------------------------------------------------
+void CPIDbox::SetITIME(double t)
+{ Ti    = t;
+  intg  = (fabs(t) > 0.00001)?(1):(0);
+  eSum  = 0;
+  Ki    = 0;
+  return;
+}
+//------------------------------------------------------------------------------
+//  Set anti saturation time
+//------------------------------------------------------------------------------
+void CPIDbox::SetATIME(double t)
+{ Ta    = t;
+  anti  = (fabs(t) > 0.00001)?(1):(0);
+  return;
+}
+
+//------------------------------------------------------------------------------
+//  clamp value
+//------------------------------------------------------------------------------
+double CPIDbox::Clamp(double v)
+{ if (v < vmin) return vmin;
+  if (v > vmax) return vmax;
+  return v;
+}
+//------------------------------------------------------------------------------
+//  check clamp values
+//------------------------------------------------------------------------------
+void CPIDbox::SetClamp(CAeroControl *sys)
+{ float m1;
+  float m2;
+  sys->GetClamp(m1,m2);
+  if (m1 > vmin)  vmin = m1;
+  if (m2 < vmax)  vmax = m2;
+  return;
+}
+//------------------------------------------------------------------------------
+//  Set message for reading
+//------------------------------------------------------------------------------
+void CPIDbox::SetMsgInp(SMessage *msg,Tag dst, Tag prm)
+{ msg->group          = dst;
+  msg->sender         = unId;
+  msg->id             = MSG_GETDATA;
+  msg->dataType       = TYPE_REAL;
+  msg->user.u.datatag = prm;
+  return;
+}
+
+//------------------------------------------------------------------------------
+//  Return a parameter value
+//------------------------------------------------------------------------------
+double CPIDbox::GetValue(Tag pm)
+{ switch (pm) {
+  case 'Kp__':
+    return Kp;
+  case 'iTim':
+    return Ti;
+  case 'dTim':
+    return Td;
+  case 'aTim':
+    return Ta;
+  case 'iMax':
+    return iMax;
+  case 'vmin':
+    return vmin;
+  case 'vmax':
+    return vmax;
+
+  }
+  return 0;
+}
+//------------------------------------------------------------------------------
+//  Set a parameter value
+//------------------------------------------------------------------------------
+void CPIDbox::SetValue(Tag pm,double val)
+{ switch (pm) {
+  case 'Kp__':
+    Kp  = val;
+    return;
+  case 'iTim':
+    SetITIME(val);
+    return;
+  case 'dTim':
+    SetDTIME(val);
+    return;
+  case 'aTim':
+    SetATIME(val);
+    return;
+  case 'iMax':
+    iMax  = val;
+    return;
+  case 'vmin':
+    vmin = val;
+    return;
+  case 'vmax':
+    vmax = val;
+    return;
+
+  }
+  return;
+}
+//------------------------------------------------------------------------------
+//  Compute integral term
+//------------------------------------------------------------------------------
+double CPIDbox::Integrate(double ki)
+{ double    vi   = ki * eSum;
+  if (vi > +iMax)  return +iMax;
+  if (vi < -iMax)  return -iMax;
+  return vi;
+}
+//------------------------------------------------------------------------------
+//  Compute saturation value
+//------------------------------------------------------------------------------
+void CPIDbox::TrakSaturation(double val,double minv, double maxv)
+{ vSat = 0;
+  if ((val > minv) && (val < maxv))   return;
+  double ers = val - Un;
+  vSat = (ers * Ta) / Ts;
+  return;
+}
+//------------------------------------------------------------------------------
+//  Update the controller and return the output value
+//    tm is delta time
+//    Y  is the actual controlled value
+//    R is the reference (target) value
+//   return the new action value
+//------------------------------------------------------------------------------
+double CPIDbox::Update(float tm,double Y,double R)
+{ double dtm = 0;
+  double itm = 0;
+  //--Update sum and history -----------
+  eSum -= en2;
+  en2   = en1;
+  en1   = en;
+  //------------------------------------
+  Ts    = tm;
+  yPrv  = Yn;
+  Yn    = Y;
+  Rn    = R;
+  //----Compute Ki ---------------------
+  if (intg) Ki = (Kp * tm) / Ti;
+  //----Compute Kd ---------------------
+  if (drvt) Kd = (Kp * Td) / tm;
+  //----Compute current error ----------
+  en    = Rn - Yn;
+  eSum += en;
+  //-----Compute proportional term -----
+  Un    =  (Kp * en);
+  //---- Get Integral term -------------
+  if (intg) {Ki = Integrate(Ki);    Un += Ki;}
+  //---- Get Derivative gain -----------
+  if (drvt) {Kd = Kd * (Yn - yPrv); Un += Kd;}
+  Vn = Clamp(Un);
+  return Vn;
+}
+//--------------------------------------------------------------------
+//  Edit controller data for Probe
+//--------------------------------------------------------------------
+void CPIDbox::Probe(CFuiCanva *cnv)
+{ //---Input signal and reference
+  cnv->AddText( 1,0,"Inp(Yn) %.05f",Yn);
+  cnv->AddText(20,1,"Ref(Rn) %.05f",Rn);
+  //---Ti and Td -----------------------------------
+  cnv->AddText( 1,0,"Ki      %.05f",Ki);
+  cnv->AddText(20,1,"Kd      %.05f",Kd);
+  //------------------------------------------------
+  cnv->AddText( 1,1,"sat      %.05f",vSat);
+  //------------------------------------------------
+  cnv->AddText(20,1,"Out(Vn) %.05f",Vn);
+  return;
+}
+//===============================================================================================
+//  CLASS CPIDdecoder
+//        Class to decode all PID controllers
+//===============================================================================================
+CPIDdecoder::CPIDdecoder(const char *fn,AutoPilot *ap)
+{ SStream s;
+  apil  = ap;
+  strcpy (s.filename, "WORLD/");
+  strcat (s.filename, fn);
+  strcpy (s.mode, "r");
+  if (OpenStream (&s)) {
+    ReadFrom (this, &s);
+    CloseStream (&s);
+  }
+}
+
+//------------------------------------------------------------------------------------
+//  Delete all resources
+//------------------------------------------------------------------------------------
+CPIDdecoder::~CPIDdecoder()
+{ 
+}
+//------------------------------------------------------------------------------------
+//  Decode Landing option
+//------------------------------------------------------------------------------------
+void CPIDdecoder::DecodeLanding(SStream *st)
+{ float pm1;
+  float pm2;
+  int nf;
+  char str[128];
+  ReadString(str,100,st);
+  nf = sscanf(str," disengage , %f ft", &pm1);
+  if (1 == nf)    return apil->SetDISopt(pm1);
+  nf = sscanf(str," flare , %f ft, %f deg",&pm1,&pm2);
+  if (2 == nf)    return apil->SetFLRopt(pm1,pm2);
+  return;
+}
+//------------------------------------------------------------------------------------
+//  Decode throttle control
+//------------------------------------------------------------------------------------
+void CPIDdecoder::DecodeTHRO(char *txt)
+{ float pm1;
+	int nf = sscanf(txt,"%f ft",&pm1);
+	if (nf != 1)	return;
+	apil->SetACUT(pm1);
+	return;
+}
+//------------------------------------------------------------------------------------
+//  Read list of PID components
+//------------------------------------------------------------------------------------
+int CPIDdecoder::Read(SStream *st,Tag tag)
+{ char txt[128];
+	CPIDbox *pbx = 0;
+  double   prm = 0;
+  float    fnb = 10;
+  switch (tag)  {
+		//--- Approach rate -------------------------------------
+		case 'THRO':
+			ReadString(txt,128,st);
+			DecodeTHRO(txt);
+			return TAG_READ;
+		//---Disengage altitude ---------------------------------
+		case 'land':
+			DecodeLanding(st);
+			return TAG_READ;
+		//---MISS LANDING PARAMETERS ---------------
+		case 'miss':
+			ReadDouble(&prm,st);
+			apil->SetMISopt(prm);
+			return TAG_READ;
+		//---Heading coefficient --------------------------------
+		case 'bias':              // Head adjust
+			ReadDouble(&prm,st);
+			return TAG_READ;
+		//---Turn anticipation ----------------------------------
+		case 'turn':
+			ReadDouble(&prm,st);
+			apil->SetTurn(prm);
+			return TAG_READ;
+		//----Glide catching angle ------------------------------
+		case 'catg':
+			ReadDouble(&prm,st);
+			apil->SetGLDopt(prm);
+			return TAG_READ;
+		//---Vertical trim reference -----------------------------
+		case 'vref':
+			ReadDouble(&prm,st);
+			apil->SetVREF(prm);
+			return TAG_READ;
+		//----ROLL controller ------------------------------------
+		case 'roll':              
+			pbx = new CPIDbox(PID_ROL,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+		//---HEAD controller ------------------------------------
+		case 'head':
+			pbx = new CPIDbox(PID_HDG,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+		//---BANK CONTROLLER ------------------------------------
+		case 'bank':
+			pbx = new CPIDbox(PID_BNK,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+		//---ALTITUDE hold controller ---------------------------
+		case 'alth':
+			pbx = new CPIDbox(PID_ALT,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+		//---Glide Slope controller ---------------------------
+		case 'glid':
+			pbx = new CPIDbox(PID_GLS,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+		//---Vertical speed hold controller -----------------------
+		case 'vsih':
+			pbx = new CPIDbox(PID_VSP,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+		//---Angle of attack controller -----------------------
+		case 'aoa_':
+			pbx = new CPIDbox(PID_AOA,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+		//---Rudder controller -----------------------
+		case 'rudr':
+			pbx = new CPIDbox(PID_RUD,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+  }
+
+  return TAG_IGNORED;
+}
+//===============================================================================================
+// CAutopilotMasterPanel
+//===============================================================================================
+CAutopilotMasterPanel::CAutopilotMasterPanel (void)
+{ TypeIs (SUBSYSTEM_AUTOPILOT_MASTER_PANEL); }
+//-----------------------------------------------------------------------------------
+//  Read parameters 
+//-----------------------------------------------------------------------------------
+int CAutopilotMasterPanel::Read (SStream *stream, Tag tag)
+{switch (tag) {
+  case 'mAP1':
+    ReadMessage(&ap1,stream);
+    return TAG_READ;
+  case 'mAP2':
+    ReadMessage(&ap2,stream);
+    return TAG_READ;
+    }
+return CDependent::Read(stream,tag);
+}
+//===============================================================================================
+//
+// AutoPilot:  Autopilot generic subsystem
+//  This subsystem is used as the core autopilot for every other panels
+//===============================================================================================
+AutoPilot::AutoPilot (void)
+{ TypeIs (SUBSYSTEM_AUTOPILOT_PANEL);
+  hwId    = HW_OTHER;
+  lStat   = AP_DISENGD;
+  vStat   = AP_DISENGD;
+  glide   = 0.5;                     // Default catching glide angle
+  Radio   = 0;
+  Powr    = 0;
+  land    = LAND_DISCT;
+  //---Init flasher ------------------------------------------
+  timFS   = 0;              // Flasher timer
+  mskFS   = 0xFF;           // Character on
+  //---Lateral mode --------------------------------------
+  rHDG    = 0;
+  hERR    = 0;
+  dREF    = 0;
+  vTIM0   = 0;
+  vTIM1   = 0;
+  vMPS    = 0;
+  vHRZ    = 0;
+  Turn    = 1.0f;         // Coef for Turn anticipation 
+  Vref    = 0;            // Default Vertical Trim reference 
+	xRAT		= 0;						// Cruise rate
+	fRAT		= 0;						// Final rate
+	cRAT		= 0;
+	aCUT		= 0;
+  //---Vertical parameters -------------------------------
+  eVRT    = 0;
+  rALT    = 400;
+  xALT    = 0;
+  rVSI    = 0;
+  vTime   = 0;
+  //---Options and controls ------------------------------
+  uvsp    = 0;
+  aprm    = 0;
+	ugaz		= 0;
+	finm		= 0;
+  //---Default limits ------------------------------------
+  aLim    = 10000;
+  vLim    = 2000;
+  aMIS    = 00;
+  abrt    = 0;
+  //-------------------------------------------------------
+  for (int k=0; k<PID_MAX; k++) pidL[k] = 0;
+	//--- Init throttle PID ---------------------------------
+	CPIDbox *box		= new CPIDbox(PID_GAS,this);
+	pidL[PID_GAS]		= box;
+	box->SetCoef(0.3f,0,0.05f);
+	box->SetMini(0);
+	pidQ.PutEnd(box);
+  //-------------------------------------------------------
+  mTRN.sender = unId;
+  mTRN.group  = 'turn';             // Turn coordinator
+  mTRN.user.u.datatag = 'itrn';     // Rate turn 
+  mTRN.id     = MSG_GETDATA;        // Read Data
+  //-------------------------------------------------------
+  mALT.group  = 'alti';               // altimeter
+  mALT.sender = unId;
+  mALT.user.u.datatag = 'alti';       // baro altitude tag
+  mALT.id = MSG_GETDATA;              // Get data
+  mALT.dataType = TYPE_REAL;          // Double format
+  //-------------------------------------------------------
+  mVSI.group  = 'vsi_';               // VSI
+  mVSI.sender = unId;
+  mVSI.user.u.datatag = 'vsi_';       // vertical speed
+  mVSI.id = MSG_GETDATA;              // Get data
+  mVSI.dataType = TYPE_REAL;          // Double format
+  //-------------------------------------------------------
+	mGAZ.group	= 'THRO';								// THROTTLE
+  mGAZ.sender = unId;
+  mGAZ.user.u.datatag = 'gets';       // throttle
+  mGAZ.id = MSG_GETDATA;              // Get data
+  mGAZ.dataType = TYPE_REAL;          // Double format
+  //-------------------------------------------------------
+  double d3 = 3.0;
+  double r3 = DegToRad(d3);           // 3° in radian
+  sin3      = sin(r3);                // sine(3°)
+  tCoef     = double(2) / (60 * PI);  // Turning coefficient
+  //-------------------------------------------------------
+  plane = 0;
+  //---Set Time K ------------------------------------------
+  timK  = float(VSI_SAMPLE);
+  eVSP  = 0;
+  aLND  = 100;                        // Disengage altitude
+  land  = globals->vehOpt.Get(VEH_AP_OPTN);  // Land option
+  //----Init lights ----------------------------------------
+  alta    = 0;
+  flsh    = 0;
+  //--Lateral error is 2.5° whatever the distance -----------
+  hMIS  = 4.0;
+  //--Vertical error is tangent(1) * 1000 units -------------
+  vMIS  = 2.4;
+}
+
+//------------------------------------------------------------------------------------
+//  Decode PID controllers
+//------------------------------------------------------------------------------------
+void AutoPilot::ReadPID(char *fn)
+{ char fname[MAX_PATH];
+  if (0 == *fn)   return;
+  strncpy(fname,fn,256);
+  char *dot = strchr(fname,'.');
+  if (0 == dot)   return;
+  strcpy(dot,".PID");
+  CPIDdecoder pdc(fname,this);
+  //---- Check that all PID exist ------------------
+  inUse = 1;
+  if (0 == pidL[PID_ROL]) inUse = 0;
+  if (0 == pidL[PID_HDG]) inUse = 0;
+  if (0 == pidL[PID_BNK]) inUse = 0;
+  if (0 == pidL[PID_GLS]) inUse = 0;
+  if (0 == pidL[PID_ALT]) inUse = 0;
+  if (0 == pidL[PID_AOA]) inUse = 0;
+  if (0 == pidL[PID_VSP]) uvsp  = 0;
+  //---- Store plane to control ---------------------
+  plane = (CAirplaneObject*) mveh;
+  return;
+}
+//------------------------------------------------------------------------------------
+//  Execute final initialization when every component are present
+//------------------------------------------------------------------------------------
+void AutoPilot::PrepareMsg(CVehicleObject *veh)
+{ //-- init PID -------------------------------
+  mveh->Register(this);
+  char *fcs = mveh->nfo->GetFCS();
+  ReadPID(fcs);
+  InitPID();
+	//--- Get throttle controller ---------------
+	mGAZ.voidData = 0;
+	Send_Message(&mGAZ);
+	gazS	= (CThrottleControl*)mGAZ.voidData;
+	mGAZ.user.u.datatag = 'thro';
+	//--- Send Speed ----------------------------
+	Send_Message(&mSPD);
+	//--- Check if autothrottle is available ----
+	bool ok = (aCUT > 0);
+	if (ok)		return;
+	gazS		= 0;
+	ugaz		= 0;
+  return;
+}
+//------------------------------------------------------------------------------------
+//  Init Aircraft parameters
+//------------------------------------------------------------------------------------
+void AutoPilot::InitPID()
+{ if (0 == inUse) return;
+  //---Get control surfaces ------------------------------
+  ailS = mveh->amp->GetAilerons();
+  elvS = mveh->amp->GetElevators();
+  rudS = mveh->amp->GetRudders();
+  elvT = mveh->amp->GetElevatorTrim();
+  //---Aircraft paramaters --------------------------------
+  wAOI    = mveh->GetWingIncidenceDeg();
+  minA    = mveh->GetWingAoAMinRad();
+  maxA    = mveh->GetWingAoAMaxRad();
+  minA    = RadToDeg(minA) * 0.5f;
+  maxA    = RadToDeg(maxA) * 0.6f;
+  //------------------------------------------------------
+  pidL[PID_GLS]->SetMaxi(maxA);
+  pidL[PID_GLS]->SetMini(minA);
+  //------------------------------------------------------
+  pidL[PID_ALT]->SetMaxi(maxA);
+  pidL[PID_ALT]->SetMini(minA);
+  //------------------------------------------------------
+  pidL[PID_BNK]->SetClamp(ailS);
+  pidL[PID_AOA]->SetClamp(elvS);
+  pidL[PID_AOA]->SetClamp(elvT);
+  //------------------------------------------------------
+  if (0 == uvsp)  return;
+  pidL[PID_VSP]->SetMaxi(maxA);
+  pidL[PID_VSP]->SetMini(minA);
+  return;
+}
+//------------------------------------------------------------------------------------
+//  Round value
+//------------------------------------------------------------------------------------
+double AutoPilot::RoundValue(double v,double p)
+{ int v1 = int(v  * p);
+  return double(v1) / p;
+}
+//------------------------------------------------------------------------------------
+//  Compute Aircraft Angle of slope
+//------------------------------------------------------------------------------------
+double AutoPilot::GetAOS()
+{ double p = globals->dang.x;
+  return -RoundValue(p,10);
+}
+//------------------------------------------------------------------------------------
+//  Compute vertical error
+//  Given the VSI and the vehicle speed, we can compute the slope of ascent/descent.
+//      target slope = asin( (feet per minute) / (vsi feet per minute))
+//  The error is the difference between actual slope and target one (in radian)
+//------------------------------------------------------------------------------------
+void AutoPilot::VSPerror()
+{ double mph  = mveh->GetPreCalculedKIAS();    // Speed in miles per hour
+  double fpm  = TC_FEET_FROM_MILE(mph) / 60;   // In feet per minute 
+  if (mph < 10) return;                        // No more speed 
+  double val  = rVSI / fpm;                    // Sine of angle of slope
+  double phi  = asin(val);
+  phi         = RadToDeg(phi);
+  //---Get actual angle ------------------
+  double aos  = -GetAOS();
+  eVSP        = (phi - aos);
+  //---Check for Altitude Alert ----------
+  if (!CheckAlert())  return;
+  //---Change to ALTITUDE HOLD ------------
+  EnterALT();
+  return;
+}
+//------------------------------------------------------------------------------------
+//  Check altitude Alert
+//  The flasher is set if
+//  a)  Altitude alert (alta) is set, and
+//  b)  The difference between target (rALT) and actual (cALT) altitude
+//      is in [1000,200] feet
+//  The function return true if altitude alert is effective and coming within 100 feet
+//------------------------------------------------------------------------------------
+bool AutoPilot::CheckAlert()
+{  if (0 == alta)  return false;
+  //--- Set flasher ----------------------
+  double lim = fabs(eVRT);
+  if ((lim < 1000) && (lim > 200))  flsh = 1;
+  if (lim  >  100)   return false; 
+  return true;
+}
+//------------------------------------------------------------------------------------
+//  Add PID controller 
+//------------------------------------------------------------------------------------
+void AutoPilot::AddPID(CPIDbox *pbx)
+{ pidQ.PutEnd(pbx);
+  int No    = pbx->GetPidNo();
+  pidL[No]  = pbx;
+  return;
+}
+//------------------------------------------------------------------------------------
+//  Delete all resources
+//------------------------------------------------------------------------------------
+AutoPilot::~AutoPilot()
+{	CPIDbox *pbx  = pidQ.Pop();
+  while (pbx) {delete pbx; pbx = pidQ.Pop();}
+  mveh->Register((AutoPilot *)0);
+}
+//-----------------------------------------------------------------------------------
+//  Read parameters 
+//-----------------------------------------------------------------------------------
+int AutoPilot::Read (SStream *stream, Tag tag)
+{ float pm;
+  switch (tag) {
+  case 'atop':
+    // Autopilot specification
+    SkipObject (stream);
+    return TAG_READ;
+  //----Get heading (gyro or GPS) ----------------
+  case 'mDG_':
+    // Directional gyro (heading) message
+    ReadMessage (&mBUG, stream);
+    mBUG.user.u.datatag = 'dBug';         // Get Bug deviation
+    mBUG.id = MSG_GETDATA;
+    mHDG    = mBUG;
+    mHDG.user.u.datatag = 'yaw_';         // Actual heading
+    return TAG_READ;
+  //----Altimeter -----------------------------
+  case 'mAlt':
+    // Altimeter message
+    ReadMessage (&mALT, stream);
+    return TAG_READ;
+  //----VSI gauge ----------------------------
+  case 'vsi_':
+    ReadMessage (&mVSI, stream);
+    return TAG_READ;
+  //----Speed system --------------------------
+	case 'sped':
+		ReadMessage(&mSPD, stream);
+		return TAG_READ;
+  //----Navigation radio ---------------------
+  case 'nav1':
+    // NAV radio message
+    ReadMessage (&mNAV, stream);
+    mNAV.sender         = unId;
+    mNAV.voidData       = &Radio;
+    mNAV.user.u.datatag = 'gets';
+    mNAV.id = MSG_GETDATA;
+    return TAG_READ;
+  //---Altitude limit ------------------------
+  case 'aLim':
+    ReadFloat(&pm,stream);
+    aLim  = pm;
+    return TAG_READ;
+  //---VSP limit -----------------------------
+  case 'vLim':
+    ReadFloat(&pm,stream);
+    vLim  = pm;
+    return TAG_READ;
+  }
+
+  return CDependent::Read(stream,tag);
+}
+//-----------------------------------------------------------------------------------
+//  All parameters are read
+//-----------------------------------------------------------------------------------
+void AutoPilot::ReadFinished()
+{ CDependent::ReadFinished();
+  CSimulatedVehicle *svh = mveh->svh;
+  fRAT	= svh->GetApproachSpeed();
+	xRAT  = svh->GetCruiseSpeed() * 0.94;
+  return;
+}
+//-----------------------------------------------------------------------
+//  Get all PID subsystems for probe
+//-----------------------------------------------------------------------
+void AutoPilot::GetAllSubsystems(std::vector<CPIDbox*> &pid)
+{ CPIDbox *pbx;
+  for (pbx = pidQ.GetFirst(); pbx!=0; pbx = pidQ.GetNext(pbx))
+  { pid.push_back(pbx); }
+  return;
+}
+//-----------------------------------------------------------------------
+//  Get all PID subsystems for PID tuner
+//-----------------------------------------------------------------------
+void AutoPilot::GetAllPID(CFuiPID *win)
+{ CPIDbox *pbx;
+  for (pbx = pidQ.GetFirst(); pbx!=0; pbx = pidQ.GetNext(pbx))
+  { win->AddPID(pbx); }
+  return;
+}
+//-----------------------------------------------------------------------
+//  Set flare option
+//  Compute the leg length that is the lenght before touching ground during
+//  the flared segment
+//  Note that eLEG is computed feet
+//  a = decision altitude
+//  s = slope in degres
+//	Compute ground distance as h/d = tan(s)
+//	so d = h / tan(alpha)
+//-----------------------------------------------------------------------
+void AutoPilot::SetFLRopt(double a, double s)
+{ double r = DegToRad(s);
+  aLND    = a;
+	sTAN		= tan(r);
+  land    = LAND_FLARE;
+  return;
+}
+//-----------------------------------------------------------------------
+//  Set miss landing option
+//  a is the decision altitude
+//  r is the cone radius to catch the signal
+//-----------------------------------------------------------------------
+void AutoPilot::SetMISopt(double a)
+{ if (a > 100)  aMIS  = a;
+  return;
+}
+//---------------------------------------------------------------------
+//  This is to intercept AXIS destination as well
+//---------------------------------------------------------------------
+bool AutoPilot::MsgForMe (SMessage *msg)
+{ if (msg) {
+    bool matchGroup = ((msg->group == unId) || (msg->group == 'AXIS'));
+    bool hwNull     = (msg->user.u.hw == HW_UNKNOWN);
+    bool hwMatch    = (msg->user.u.hw == (unsigned int) hwId);
+    bool unitNull   = (msg->user.u.unit == 0);
+    bool unitMatch  = (msg->user.u.unit == uNum);
+    return matchGroup && (hwNull || hwMatch) && (unitNull || unitMatch);
+  }
+  return false;
+}
+//--------------------------------------------------------------------
+//  Receive a message 
+//--------------------------------------------------------------------
+EMessageResult AutoPilot::ReceiveMessage (SMessage *msg)
+{ EMessageResult rs = (active)?(MSG_ACK):(MSG_IGNORED);
+  if (msg->id == MSG_GETDATA) {
+    switch (msg->user.u.datatag) {
+      //--- Request a pointer to this subsystem --------
+      case 'gets':
+        msg->voidData = this;
+        return MSG_PROCESSED;
+      //--- Auto pilot engaged -------------------------
+      case 'apOn':
+        msg->intData = Engaged();
+        return MSG_PROCESSED;
+      //--- Heading mode ON ----------------------------
+      case '_Hdg':
+        msg->intData = (lStat == AP_LAT_HDG)?(1):(0);
+        return MSG_PROCESSED;
+      //--- Altitude maintained ------------------------
+      case '_Alt':
+        msg->intData = (vStat == AP_VRT_ALT)?(1):(0);
+        return MSG_PROCESSED;
+      //--- Navigation mode ----------------------------
+      case '_Nav':
+        msg->intData = NavMode();
+        return MSG_PROCESSED;
+      //--- Approach mode ------------------------------
+      case '_Apr':
+        msg->intData = IlsMode();
+        return MSG_PROCESSED;
+      //--- Glide slope tracking -----------------------
+      case '__GS':
+        msg->intData = (vStat == AP_VRT_GST);
+        return MSG_PROCESSED;
+
+      }
+    return  MSG_IGNORED;
+  }
+  if (msg->id == MSG_SETDATA) {
+    switch (msg->user.u.datatag) {
+      //---Autopilot engage ----------------------------
+      case 'apOn':
+        NewEvent(AP_EVN_ENG);
+        msg->result = rs;
+        return MSG_PROCESSED;
+      //---Heading mode --------------------------------
+      case '_Hdg':
+        NewEvent(AP_EVN_HDG);
+        msg->result = rs;
+        return MSG_PROCESSED;
+      //--- Altitude hold ------------------------------
+      case '_Alt':
+        NewEvent(AP_EVN_ALT);
+        msg->result = rs;
+        return MSG_PROCESSED;
+      //--- Navigation mode ----------------------------
+      case '_Nav':
+        NewEvent(AP_EVN_NAV);
+        msg->result = rs;
+        return MSG_PROCESSED;
+      //--- Approach mode ------------------------------
+      case '_Apr':
+        NewEvent(AP_EVN_APR);
+        msg->result = rs;
+        return MSG_PROCESSED;
+    }
+  }
+      //=======================================
+  return  MSG_IGNORED;
+}
+//-----------------------------------------------------------------------
+//  Manage Lateral mode (aircraft behavior in horizontal
+//-----------------------------------------------------------------------
+void AutoPilot::LateralMode()
+{ 
+  switch (lStat)  {
+    case AP_DISENGD:
+      return ModeDIS();
+    case AP_LAT_ROL:
+      return ModeROL();
+    case AP_LAT_HDG:
+      return ModeHDG();
+    case AP_LAT_LT1:
+      return ModeLT1();
+    case AP_LAT_LT2:
+      return ModeLT2();
+  }
+return;
+}
+//-----------------------------------------------------------------------
+//  Manage Vertical mode
+//-----------------------------------------------------------------------
+void AutoPilot::VerticalMode()
+{ flsh  = 0;  
+  switch(vStat) {
+      //--- Disengaged ---------
+      case AP_DISENGD:          
+        return;
+      //--- Maintain altitude --
+      case AP_VRT_ALT:
+        ModeALT();
+        return;
+      //--- Glide intercept ----
+      case AP_VRT_GSW:
+        ModeGSW();
+        return;
+      //--- Glide tracking ----
+      case AP_VRT_GST:
+        ModeGST();
+        return;
+      //--- Vertical speed ----
+      case AP_VRT_SPD:
+        ModeVSP();
+        return;
+      //---Flare leg ---------
+      case AP_VRT_FLR:
+        ModeFLR();
+				return;
+			//---Final leg --------
+			case AP_VRT_FIN:
+				ModeFIN();
+        return;
+   }
+  return;
+}
+//-----------------------------------------------------------------------
+//  Time slice Autopilot
+//-----------------------------------------------------------------------
+void AutoPilot::TimeSlice(float dT,U_INT FrNo)
+{ CDependent::TimeSlice(dT,FrNo);
+  if (0 == Radio)   Send_Message(&mNAV);    // Get Navigation info
+  Radio = (RADIO_VAL*)mNAV.voidData;
+  if (0 == active) {PowerLost();        return;}                        
+  if (globals->dbc->NotSynch(FrameNo))  return;
+  dTime = dT;
+  if (AP_DISENGD == lStat)              return;
+  //---------------------------------------------------------
+  Send_Message(&mALT);
+  cALT  = mALT.realData;                  // Current altitude
+  cAGL  = cALT - globals->tcm->GetGroundAltitude();
+  LateralMode();
+  VerticalMode();
+	TrackSpeed();
+  return;
+}
+
+//-----------------------------------------------------------------------
+//  AUTO PILOT ENGAGE
+//-----------------------------------------------------------------------
+int AutoPilot::Engage()
+{ if (0 == Powr)    return 0;
+  NewEvent(AP_EVN_ENG);
+  return 1;
+}
+//-----------------------------------------------------------------------
+//  AUTO PILOT DISENGAGE
+//-----------------------------------------------------------------------
+void AutoPilot::Disengage(char gr)
+{ lStat   = AP_DISENGD;
+  vStat   = AP_DISENGD;
+  signal  = SIGNAL_OFF;
+  StateChanged(AP_STATE_DIS);
+  ailS->PidValue(0);
+  rudS->PidValue(0);
+	globals->jsm->Connect();
+	ugaz		= 0;
+	finm		= 0;
+  //----Reset trim if aircraft on ground ---------------
+  if ((gr) || (mveh->WheelsAreOnGround())) elvT->SetValue(1);
+  if (gr) Alarm();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Check radio Signal
+//-----------------------------------------------------------------------
+int AutoPilot::BadSignal(char s)
+{ if (0 == Radio)           {Alarm(); return 1;}
+  if (0 == Radio->actv)     {Alarm(); return 1;}
+  char  msk = Radio->ntyp & s; 
+  if (0 == msk)             {Alarm(); return 1;}
+  signal  = s;
+  return 0;
+}
+
+//-----------------------------------------------------------------------
+//  Manage Lateral mode with ailerons
+//  Maintain the target heading rHDG
+//  The rHDG direction is given by the autopilot bug found in some gauge
+//-----------------------------------------------------------------------
+void AutoPilot::LateralHold()
+{ float turn    = globals->dang.y;                  // Actual banking (deg)
+  CPIDbox *hbox = pidL[PID_HDG];                    // Heading controller
+  CPIDbox *bbox = pidL[PID_BNK];                    // Banking controller
+  Send_Message(&mHDG);                               // Current heading
+  aHDG          = mHDG.realData;
+  double   err  = Norme180(aHDG - rHDG);						// Error in [-180,+180]
+  double   trn = hbox->Update(dTime,err,0);					// Input to Head controller
+  double   val = bbox->Update(dTime,turn,trn);      // Banking to controller
+  ailS->PidValue(val);                              // result to ailerons
+//  TRACE("HOLD: aHDG=%.2f rHDG=%.2f",aHDG,rHDG);
+  return;
+}
+//-----------------------------------------------------------------------
+//  Manage Lateral mode with rudder
+//  Maintain the target heading rHDG
+//  The rHDG direction is given by the autopilot bug found in some gauge
+//-----------------------------------------------------------------------
+void AutoPilot::RudderHold()
+{ CPIDbox *rbox = pidL[PID_RUD];                    // Rudder controller
+  Send_Message(&mHDG);                               // Current heading
+  aHDG          = mHDG.realData;
+  double   err  = Norme180(aHDG - rHDG);            // Error in [-180,+180]
+  double   val  = rbox->Update(dTime,err,0);        // to controller
+  rudS->PidValue(-val);                              // result to rudder
+//  TRACE("HOLD: aHDG=%.2f rHDG=%.2f",aHDG,rHDG);
+  return;
+}
+//-----------------------------------------------------------------------
+//  Manage Vertical mode
+//  Maintain the target vertical slope. As very small value is used
+//  for glide slope error, so it is multiplied by 1000 because it is
+//  easier to control by the PID.
+//-----------------------------------------------------------------------
+void AutoPilot::GlideHold()
+{ eVRT *= vAMP;                                       // Amplify glide error
+  double gld = pidL[PID_GLS]->Update(dTime,eVRT,0);   // error to glide controller
+  double glr = RoundValue(gld,100);
+  double aoa = GetAOS();                              // Current AOA inverted
+  double etr = pidL[PID_AOA]->Update(dTime,aoa,glr);  // Feed AOA controler
+  elvT->SetValue(-etr);                               // Vertical to elevator
+  return;
+}
+//-----------------------------------------------------------------------
+//	Hold AOA
+//-----------------------------------------------------------------------
+void AutoPilot::HoldAOA(double ref)
+{	double aoa = GetAOS();
+	double etr = pidL[PID_AOA]->Update(dTime,aoa,ref);		// Feed AOA controler
+	elvT->SetValue(-etr);                                // Vertical to elevator
+  return;
+}
+//-----------------------------------------------------------------------
+//  Manage Altitude mode
+//  Maintain the target altitude
+//  NOTE:  The VSP controller is maintained in synchro with the altitude
+//         controller.
+//-----------------------------------------------------------------------
+void AutoPilot::AltitudeHold()
+{ double nul = pidL[PID_VSP]->Update(dTime,eVRT,0); // Maintain VSP controller
+  double taa = pidL[PID_ALT]->Update(dTime,eVRT,0); // erro to altitude controller
+  double alt = RoundValue(taa,10);                  // round value
+  double aoa = GetAOS();
+  double val = pidL[PID_AOA]->Update(dTime,aoa,alt);// Feed AOA controler
+  elvT->SetValue(-val);                             // To elevator TRIM
+  return;
+}
+//-----------------------------------------------------------------------
+//  Manage Roll mode
+//  1°Read rate turn and send sample to ROLL CONTROLLER
+//  2°Activate ROL Controller
+//-----------------------------------------------------------------------
+void AutoPilot::ModeROL()
+{ double bnk = mveh->GetRRtoLDBank();               // Get Bank angle
+  double cor = pidL[PID_ROL]->Update(dTime,bnk,0);  // Feet to controller
+  double val = pidL[PID_BNK]->Update(dTime,cor,0);  // Turn rate
+  ailS->PidValue(val);                              // Send to aileron 
+  return;
+}
+//--------------------------------------------------------------------------------
+//  Manage Lateral Leg 1
+//  Leg1 is the part where aircraft is heading in direction D, trying to
+//  intercept the radial R of the OBS or ILS. D may be any direction, even one
+//  that is opposite the NAV/ILS signal.
+//---------------------------------------------------------------------------------
+//  The arc AB start with point A where the aircraft should start to turn
+//  toward direction  R.  A is the decision point to leave Leg1 to enter
+//  Leg2 which is the R tracking part.
+//--------------------------------------------------------------------------------
+//  Decision point is based on time for the aircraft to complete ARC AB
+//  Assuming a standard turning speed of 2° sec (A complete 360° turn in 3 minutes)
+//  the time T0 is given by
+//  T0 = A / 3   where A = (R - D)mod360, the angle from direction D
+//  to direction R (the reference direction)
+//  At anytime we know the distance from the aircraft P to the R direction
+//  at point H.
+//  h = horizontal distance from P to D = d sin(Q) where d is the distance
+//  from P to the ILS/OBS spot and Q° is the angle between R and the radial
+//  where P reside.  h = distance PH.
+//  We can compute the velocity of P along PH with v = V sin(Q) where V is
+//  the aircraft velocity along D and Q is defined above.
+//  T1 = h / v.  Is the time for P to reach D.
+//  Now when T1 <= T0, its time to turn.
+//--------------------------------------------------------------------------------
+void AutoPilot::ModeLT1()
+{ if (BadSignal(signal))  return EnterROL();
+  //----Compute distance to intercept point (in feet) -------------------
+  double rd   = DegToRad(Radio->hDEV);
+  dREF        = fabs(Radio->mdis * sin(rd));    // Distance to R (nm)
+  //---Compute time in sec for ARC AB -----------------------------------
+  vTIM0       = (Radio->iAng / 3) * Turn; 
+  //---Compute velocity component   --in miles per sec ------------------
+  vMPS        = mveh->GetPreCalculedKIAS() / 3600;  //in miles / sec;
+	double err  = Norme180(aHDG - Radio->hREF);
+  double aAB  = DegToRad(err);
+  vHRZ        = fabs(vMPS * sin(aAB));              // Velocity X component
+  vTIM2       = vTIM1;                              // Save value
+  vTIM1       = (vHRZ > FLT_EPSILON)?(dREF / vHRZ):(SEC_IN_DAY);
+  if (vTIM1 > vTIM0) return CheckDirection(); 
+  //----Enter second leg ------------------------------------------------
+	pERR	= 0;
+  aERR  = 1000;
+  rHDG  = Radio->hREF;
+  lStat = AP_LAT_LT2;
+  StateChanged(sEVN);
+	finm	= 1;									// Final leg
+	//TRACE("Enter LEG2 to direction %.2f", rHDG);
+	return;
+}
+//-----------------------------------------------------------------------
+//  Check if we are going in the wrong direction
+//  When vTIM1 is increasing, we are not going to cross the NAV/ILS radial
+//  thus the precomputed cross direction cHDG is used.
+//  cHDG was computed to cross the NAV/ILS signal at right angle
+//-----------------------------------------------------------------------
+void AutoPilot::CheckDirection()
+{ if (vTIM2 > vTIM1)  return LateralHold();  // Time is decreasing
+  rHDG  = cHDG;                               // Cross tracking
+  return LateralHold();
+}
+//-----------------------------------------------------------------------
+//	Adjust correction factor
+//-----------------------------------------------------------------------
+#define CLAMP_COR (double(90))
+double AutoPilot::AdjustHDG()
+{ //-- compute new direction -------
+  double cor = 8 * hERR;
+  if (cor > +CLAMP_COR) cor = +CLAMP_COR; 
+  if (cor < -CLAMP_COR) cor = -CLAMP_COR;
+	double dir = Norme360(Radio->hREF + cor);     // New direction;
+	return dir;
+}
+//-----------------------------------------------------------------------
+//  Manage Lateral Leg 2
+//  Track reference direction(hREF)
+//  During leg 2, the ILS signal is tracked laterally by feeding corrective
+//  amount to the reference heading. The Lateral PID is then used
+//------------------------------------------------------------------------
+//  hERR =  Error between Current Radial (crossed by plane) and 
+//          hREF.  
+//  This value is used to adjust the reference heading (rHDG) used by
+//  the heading PID. 
+//  However, the correction is limited to avoid going away at the first stages
+//  when the angle between the cap and ILS is over 90°
+//-----------------------------------------------------------------------
+void AutoPilot::ModeLT2()
+{ if (BadSignal(signal))  return ExitLT2();
+  //--Compute radial error --------------------
+  hERR  = Norme180(Radio->radi - Radio->hREF);
+  //--Compute heading factor ---------------
+	rHDG	= AdjustHDG();     // New direction;
+//  TRACE("aHDG=%.2f RADI=%.2f hERR=%.2f, cor=%.2f rHDG=%.2f",
+//        aHDG,Radio->radi,hERR,cor,rHDG);
+	//-- check for final leg by rudder -----------
+	return LateralHold();
+}
+//-----------------------------------------------------------------------
+//  Wait for glide slope intercept
+//  Maintain altitude until the glide slope of tuned ILS is intercepted
+//  -glide is the catching error threshold
+//-----------------------------------------------------------------------
+void AutoPilot::ModeGSW()
+{ if (abs(Radio->gDEV) > glide) return AltitudeHold();
+  pidL[PID_AOA]->SetTarget(0);
+  vStat = AP_VRT_GST;
+  StateChanged(AP_STATE_VTK);
+  vAMP  = 0;                        // Vertical amplifier
+  return;
+}
+//-----------------------------------------------------------------------
+//  Track glide slope uses an amplifier of 1000 for better control
+//-----------------------------------------------------------------------
+//  NOTE:  The vertical amplifier acts as a damping feature to avoid
+//         a brutal change of attitude when the glide slope is tracked
+//         at the begining.
+//         vAMP is set to 1000 at maximum value
+//-----------------------------------------------------------------------
+void AutoPilot::ModeGST()
+{ eVRT = -Radio->gDEV;          // Glide error
+  if (vAMP < 1000) vAMP += 2;   // Increase amplifier
+  GlideHold();                  // Hold slope
+  //---Check for flare mode ------------------------
+  if (0 == land)            return;     // No option
+  //---Check for landing option  -------------------
+  double agl = globals->tcm->GetPlaneAGL();
+  if (agl  < aLND)
+  { if (land == LAND_DISCT)   return  Disengage(1);
+    if (globals->vehOpt.Not(VEH_AP_LAND)) return;
+    if (land == LAND_FLARE)   return  EnterFLR();
+    return;
+  }
+  //---Check for miss landing option ---------------
+  if (globals->vehOpt.Not(VEH_AP_DISC)) return;
+  if (agl  < aMIS)
+  { if (aERR > hMIS)          return AbortLanding(1);
+    double erg = fabs(eVRT);
+    if (erg > vMIS)						return AbortLanding(2);
+  }
+  return;
+}
+//-----------------------------------------------------------------------
+//  Abort landing
+//-----------------------------------------------------------------------
+void AutoPilot::AbortLanding(char r)
+{ abrt  = r;
+  Alarm();
+  EnterALT();
+  EnterROL();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Track vertical speed. 
+//  Get VSP error in eVSP
+//  Maintain ALT controller in synchro
+//  Use VSP controller to get correction . Vref is the trim position
+//  at null VSI (depend on aircraft)
+//-----------------------------------------------------------------------
+void AutoPilot::ModeVSP()
+{ VSPerror();
+  double nul = pidL[PID_ALT]->Update(dTime,eVSP,0);       // Maintain ALT controller
+  double trm = pidL[PID_VSP]->Update(dTime,eVSP,Vref);    // Feed VSI controler
+  elvT->SetValue(-trm);                                   // value to TRIM elevator
+  return;
+}
+//-----------------------------------------------------------------------
+//  Flare segment
+//	Compute expected altitude at touch dow distance
+//  NOTE: Vertical error eVRT is computed in Tan unit for
+//        compatibility with GlideHold()
+//-----------------------------------------------------------------------
+void AutoPilot::ModeFLR()
+{ float spd = mveh->GetPreCalculedKIAS();           // Speed in knots
+  afps = spd * FEET_PER_NM * HOUR_PER_SEC;          // In feet per sec
+	//--- compute expected altitude ------------------------------
+	double dis	= Radio->fdis - nTDP;				// Touch down distance
+	double xagl	=	dis * sTAN;								// Expected AGL
+	dTDP				= dis;
+	eVRT				= (xagl - cAGL) / dis;			// Expressed in tan unit
+  vAMP = 2000;														// Amplifier
+  GlideHold();
+	TRACE("FLR: kts=%.2f agl=%.4f AoA=%.4f xagl=%.4f",spd,cAGL,-GetAOS(),xagl);
+  if (mveh->WheelsAreOnGround())  EnterFIN();
+	rAGL	= cAGL;
+  return;
+}
+//-----------------------------------------------------------------------
+//	Final groung segment
+///-----------------------------------------------------------------------
+void AutoPilot::ModeFIN()
+{	//----------------------------------------------------------------
+	float spd = mveh->GetPreCalculedKIAS();           // Speed in knots
+  TRACE("GRN: kts=%.2f agl=%.4f AoA=%.4f",spd,cAGL,-GetAOS());
+	//--- push plane on ground ---------------------------------
+	elvT->SetValue(0);
+	elvS->SetValue(0.1f);
+	if (spd > 30) return;
+	Disengage(1);globals->Trace.Raz(TRACE_WHEEL);
+	return;
+}
+//-----------------------------------------------------------------------
+//	Select  Speed to hold
+//-----------------------------------------------------------------------
+double AutoPilot::SelectSpeed()
+{	finm		&= aprm;
+	//--- Check for final -------------------
+  bool cut = (cAGL <= aCUT);
+	if (finm && cut)	return 0;
+	if (finm)					return fRAT;
+	//--- Check for altitude up -------------
+  bool up = (vStat == AP_VRT_SPD) && (rVSI > 0);
+	if  (up)	return 1000;				// Maximum rate
+	up	= (vStat == AP_VRT_ALT) && (eVRT > 100);
+	if  (up)	return 1000;				// Maximum rate
+	//--- return cruise speed ---------------
+	return xRAT;
+}
+//-----------------------------------------------------------------------
+//	Track Speed
+//	NOTE: Correction is inverted
+//-----------------------------------------------------------------------
+void AutoPilot::TrackSpeed()
+{	ugaz &= globals->jsm->Off();
+	if (0 == ugaz)			return;
+	//--- Select speed to hold ---------------
+	cRAT = SelectSpeed();
+	Send_Message(&mSPD);
+	double cor = (mSPD.realData - cRAT);
+	double val = pidL[PID_GAS]->Update(dTime,cor,0);
+	gazS->Target(val);
+	return;
+}
+//-----------------------------------------------------------------------
+//  Track Altitude 
+//-----------------------------------------------------------------------
+void AutoPilot::ModeALT()
+{ eVRT  = (rALT - cALT);   // Vertical error
+  AltitudeHold();
+  if (!CheckAlert())  return;
+  alta  = 0;                        // ALT arm off
+  StateChanged(AP_STATE_AAA);       // State is changed
+  return;
+}
+//-----------------------------------------------------------------------
+//  Manage Head mode
+//  -Read autopilot deviation from heading to BUG
+//  -This is the input for HEAD PID
+//  -Reference is 0. The HEAD PID will send turning order until
+//                   deviation is 0
+//  -Send Turning rate to BANK PID to limit rate turn;
+//-----------------------------------------------------------------------
+void AutoPilot::ModeHDG()
+{ //---Activate heading controller ------------------------------
+  Send_Message(&mBUG);                            // Get BUG deviation
+  rHDG  = mBUG.realData;													// Target = bug direction
+  LateralHold();																	// Reduce deviation
+  return;
+}
+//-----------------------------------------------------------------------
+//  In disengage mode, we maintain the VSP controller in standby
+//-----------------------------------------------------------------------
+void AutoPilot::ModeDIS()
+{ CatchVSP();
+  VSPerror();
+  pidL[PID_VSP]->Update(dTime,eVSP,0);
+  return;
+}
+//-----------------------------------------------------------------------
+//  Lost of Power:  Enter inactive state
+//-----------------------------------------------------------------------
+int AutoPilot::PowerLost()
+{ lStat = AP_DISENGD;
+  vStat = AP_DISENGD;
+  alta = 0;
+  return 0;
+}
+//-----------------------------------------------------------------------
+//  Exit mode LT2
+//-----------------------------------------------------------------------
+void AutoPilot::ExitLT2()
+{ EnterROL();
+  EnterVSP();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Exit Heading mode
+//-----------------------------------------------------------------------
+void AutoPilot::ExitHDG()
+{ StateChanged(AP_STATE_HDF);
+  EnterROL();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter INI Mode
+//-----------------------------------------------------------------------
+void AutoPilot::EnterINI()
+{ 
+	EnterROL();
+  EnterVSP();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Leave NAV or APR leg1 with NAV event
+//  1° Transition NAV => No NAV :   Enter ROL mode only
+//  2° Transition APR => NAV    :   Enter NAV mode
+//-----------------------------------------------------------------------
+void AutoPilot::ExitNAV()
+{ if (0 == aprm)  return EnterROL();
+  //---Changing from APR to NAV -------------------
+  EnterALT();                   // Enter Altitude mode
+  EnterNAV();                   // ENter NAV mode
+  return;   
+}
+//-----------------------------------------------------------------------
+//  Leave APR leg2  NAV event
+//  1° Transition NAV => No NAV :   Enter ROL mode only
+//-----------------------------------------------------------------------
+void AutoPilot::ExitAPR()
+{ if (0 == aprm)  return EnterAPR();
+  //--- Leave APR mode ----------------------------
+	aprm	= 0;
+  EnterALT();
+  EnterROL();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter ALT Mode
+//  NOTE:  Transition from APR=>ALT implies the end of APR mode
+//         In this case, new mode is ROL + ALT
+//-----------------------------------------------------------------------
+void AutoPilot::EnterALT()
+{ CatchALT();                       // Actual ALT
+  StateChanged(AP_STATE_ALT);       // Warn Panel
+  vStat = AP_VRT_ALT;               // Lock on altitude
+  elvS->PidValue(0);                // Reset elevator
+  pidL[PID_ALT]->Init();            // init PID
+  pidL[PID_AOA]->Init();            // init PID
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter ROLL Mode
+//-----------------------------------------------------------------------
+void AutoPilot::EnterROL()
+{ pidL[PID_ROL]->Init();
+  pidL[PID_BNK]->Init();
+  lStat   = AP_LAT_ROL;
+  signal  = SIGNAL_OFF;
+  StateChanged(AP_STATE_ROL);
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter HEADING Mode
+//-----------------------------------------------------------------------
+void AutoPilot::EnterHDG()
+{ aprm  = 0;
+  pidL[PID_HDG]->Init();
+  pidL[PID_BNK]->Init();
+  pidL[PID_HDG]->SetTarget(0);
+  signal  = SIGNAL_OFF;
+  lStat   = AP_LAT_HDG;
+  StateChanged(AP_STATE_HDG);
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter HEADING Mode only
+//-----------------------------------------------------------------------
+void AutoPilot::OnlyHDG()
+{ EnterHDG();
+  vStat   = AP_DISENGD;
+  StateChanged(AP_STATE_VOF);
+  EnterVSP();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Compute a direction perpendicular to the reference signal that
+//  will drive the aircraft to cross the signal
+//  1° Difference between signal and heading 
+//      if difference positive, the signal is to the right
+//      if difference negative, the signal is to the left
+//  2° Cross heading (cHDG) is the signal direction +- 90°
+//-----------------------------------------------------------------------
+void AutoPilot::GetCrossHeading()
+{ vTIM1 = SEC_IN_DAY;                   // Decision timer at max value
+  cHDG  = Wrap180(Radio->hDEV);         // sign of difference
+  float cor = (cHDG > 0)?(-90):(+90);
+  cHDG  = Wrap360(Radio->hREF + cor);
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter Lateral Mode Leg 1 for tracking VOR
+//-----------------------------------------------------------------------
+void AutoPilot::EnterNAV()
+{ if (BadSignal(SIGNAL_VOR + SIGNAL_ILS))  return;
+  aprm = 0;
+  pidL[PID_HDG]->Init();
+  pidL[PID_BNK]->Init();
+  Send_Message(&mHDG);                   // Get current heading
+  rHDG  = mHDG.realData;                // As target heading
+  side  = VOR_SECTOR_TO;
+  StateChanged(AP_STATE_NAV);
+  sEVN  = AP_STATE_NTK;                 // Next state
+  lStat = AP_LAT_LT1;
+  //---Compute direction perpendicular to the radial -----
+  return GetCrossHeading();
+}
+//-----------------------------------------------------------------------
+//  Swap ALTITUDE HOLD Mode
+//-----------------------------------------------------------------------
+void AutoPilot::SwapALT()
+{ if (vStat == AP_VRT_ALT)  return EnterVSP();
+  //--- Enter Altitude mode -------------
+  EnterALT();
+  //--- Leave approach mode if needed ---
+  if (aprm)   EnterROL();
+	aprm	= 0;
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter Lateral Mode Leg 1 for tracking ILS
+//-----------------------------------------------------------------------
+void AutoPilot::EnterAPR()
+{ if (BadSignal(SIGNAL_ILS))    return;
+  aprm    = 1;
+  alta  = 0;                        // ALT armed off
+  pidL[PID_HDG]->Init();
+  pidL[PID_BNK]->Init();
+  Send_Message(&mHDG);               // Get current heading
+  rHDG  = mHDG.realData;            // As target heading
+  side  = VOR_SECTOR_TO;
+  StateChanged(AP_STATE_APR);
+  sEVN  = AP_STATE_ATK;             // next state
+  lStat = AP_LAT_LT1;
+  //---Compute a direction perpendicualr to the radial ----
+  GetCrossHeading();
+  //--Init vertical mode -----
+  pidL[PID_GLS]->Init();
+  pidL[PID_AOA]->Init();
+  vStat = AP_VRT_GSW;
+  rALT  = cALT;             // Current altitude As reference
+  return;
+}
+//-----------------------------------------------------------------------
+//  Catch vertical speed and normalize to multiple of 100 feet 
+//-----------------------------------------------------------------------
+void AutoPilot::CatchVSP()
+{ if (0 == uvsp) return;
+  Send_Message(&mVSI);                       // Get actual VSI
+  int    vsi = int(mVSI.realData / 100);    // integer part
+  double rst = fmod(mVSI.realData,100 );    // fract part
+  double rnd = (rst > 50)?(100):(0);
+  rVSI       = (double(vsi) * 100) + rnd;
+  if (rVSI < -2000) rVSI = -2000;
+  if (rVSI > +2000) rVSI = +2000;
+  return;
+}
+//-----------------------------------------------------------------------
+//  Catch Altitude
+//  Set rALT (reference altitude) to actual altitude
+//-----------------------------------------------------------------------
+void AutoPilot::CatchALT()
+{ int    alt = int(cALT / 100);           // Integer part
+  double rst = fmod(cALT,100);            // Fract part
+  double rnd = (rst > 50)?(100):(0);
+  rALT       = (double(alt) * 100) + rnd; // As target
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter vertical speed
+//-----------------------------------------------------------------------
+void AutoPilot::EnterVSP()
+{ eVSP  = 0;
+  aprm  = 0;
+  vStat = AP_DISENGD;          // VSP holder
+  StateChanged(AP_STATE_VOF);
+  if (0 == uvsp) return;
+  pidL[PID_VSP]->Init();
+  pidL[PID_AOA]->Init();
+  elvT->SetValue(0);
+  CatchVSP();                   // Get VSI
+  vStat = AP_VRT_SPD;           // VSP holder
+  StateChanged(AP_STATE_VSP);   // state change
+  return;
+}
+//-----------------------------------------------------------------------
+//  Enter flare mode
+//  Fix the airspeed and change state
+//	Touch down offset is the new traget point due to change of slope
+//	in flare mode
+//-----------------------------------------------------------------------
+void AutoPilot::EnterFLR()
+{ EnterROL();
+  float spd = mveh->GetPreCalculedKIAS();           // Speed in knots
+  afps = spd * FEET_PER_NM * HOUR_PER_SEC;          // In feet per sec
+  vStat = AP_VRT_FLR;                               // Vertical state
+  TRACE("ENTER FLARE");
+	//--- Compute touch down offset from ILS ----------
+	double tdp = aLND / sTAN;
+	nTDP	= Radio->fdis - tdp ;
+	globals->Trace.Set(TRACE_WHEEL);
+	mveh->SetABS(1);
+  return;
+}
+//-----------------------------------------------------------------------
+//	Enter final leg
+//-----------------------------------------------------------------------
+void AutoPilot::EnterFIN()
+{	//--- disengage and set aircraft level --------------- 
+	lStat   = AP_LAT_ROL;
+  vStat   = AP_VRT_FIN;
+  StateChanged(AP_VRT_FIN);
+  ailS->PidValue(0);							// Set Level
+  rudS->PidValue(0);							// Rudder to 0
+	mveh->SetABS(0);
+	return;
+}
+//-----------------------------------------------------------------------
+//  PROCES EVENT in DISENGAGED STATE
+//-----------------------------------------------------------------------
+void AutoPilot::StateDIS(int evn)
+{ //--- Process only autopilot engage ------------------
+  if (AP_EVN_ENG != evn)  return;
+  vTime = 0;
+  Send_Message(&mALT);
+  cALT  = mALT.realData;                  // Current altitude
+  EnterINI(); 
+  return;
+}
+//-----------------------------------------------------------------------
+//  Inc ALT
+//-----------------------------------------------------------------------
+void AutoPilot::IncALT()
+{ if (aprm)   return;
+  rALT  += 100;
+  StateChanged(AP_STATE_ACH);
+  return;
+}
+//-----------------------------------------------------------------------
+//  Inc ALT
+//-----------------------------------------------------------------------
+void AutoPilot::DecALT()
+{ if (aprm)   return;
+  if (rALT <= 500) rALT = 600;
+  rALT  -= 100;
+  StateChanged(AP_STATE_ACH);
+  return;
+}
+//-----------------------------------------------------------------------
+//  Button UP
+//-----------------------------------------------------------------------
+void AutoPilot::IncVSP()
+{ if (aprm)                 return;
+  if (rVSI >= +vLim)        return;
+  rVSI += 100;
+  StateChanged(AP_STATE_VCH);       // VSP change
+  return;
+}
+//-----------------------------------------------------------------------
+//  Button DN
+//-----------------------------------------------------------------------
+void AutoPilot::DecVSP()
+{ if (aprm)                 return;
+  if (rVSI <= -vLim)        return;
+  rVSI -= 100;
+  StateChanged(AP_STATE_VCH);       // VSP change
+  return;
+}
+//-----------------------------------------------------------------------
+//  PROCES EVENT in ROLL STATE
+//-----------------------------------------------------------------------
+void AutoPilot::StateROL(int evn)
+{ switch (evn)  {
+  //----ENG button --------------------
+  case AP_EVN_ENG:
+    return Disengage(0);
+  //--- HDG button --------------------
+  case AP_EVN_HDG:
+    return EnterHDG();
+  //--- NAV button --------------------
+  case AP_EVN_NAV:
+    return EnterNAV();
+  //--- APR  button--------------------
+  case AP_EVN_APR:
+    return EnterAPR();
+  //--- REV button --------------------
+  case AP_EVN_REV:
+    return;
+  //--- ALT button --------------------
+  case AP_EVN_ALT:
+    return SwapALT();
+  }
+  return;
+}
+//-----------------------------------------------------------------------
+//  PROCES EVENT in HEADING STATE
+//-----------------------------------------------------------------------
+void AutoPilot::StateHDG(int evn)
+{ switch (evn)  {
+  //----ENG button ----------------
+  case AP_EVN_ENG:
+    return Disengage(0);
+  //--- HDG button ----------------
+  case AP_EVN_HDG:
+    return ExitHDG();
+  //--- NAV button ----------------
+  case AP_EVN_NAV:
+    return EnterNAV();
+  //--- APR button ----------------
+  case AP_EVN_APR:
+    return EnterAPR();
+  //--- REV button ----------------
+  case AP_EVN_REV:
+    return;
+    //--- ALT button --------------
+  case AP_EVN_ALT:
+    return SwapALT();
+  }
+  return;
+}
+//-----------------------------------------------------------------------
+//  PROCES EVENT in LATERAL LEG 1
+//-----------------------------------------------------------------------
+void AutoPilot::StateLAT(int evn)
+{ switch (evn)  {
+  //----ENG button ------------------------
+  case AP_EVN_ENG:
+    return Disengage(0);
+  //--- HDG button ------------------------
+  case AP_EVN_HDG:
+    return OnlyHDG();
+  //--- NAV button ------------------------
+  case AP_EVN_NAV:
+    return ExitNAV();
+  //--- APR button ------------------------
+  case AP_EVN_APR:
+    return ExitAPR();
+  //--- REV button ------------------------
+  case AP_EVN_REV:
+    return EnterINI();
+  //--- ALT button --------------
+  case AP_EVN_ALT:
+    return SwapALT();
+
+  }
+  return;
+}
+//-----------------------------------------------------------------------
+//  Dispatch event to current state
+//-----------------------------------------------------------------------
+void AutoPilot::NewEvent(int evn)
+{ if (0 == inUse)         return;
+  if (!active)            return;
+  if (AP_EVN_BUP == evn)  return IncVSP();
+  if (AP_EVN_BDN == evn)  return DecVSP();
+  if (AP_EVN_AUP == evn)  return IncALT();
+  if (AP_EVN_ADN == evn)  return DecALT();
+  switch (lStat)  {
+    case AP_DISENGD:
+      return StateDIS(evn);
+    case AP_LAT_ROL:
+      return StateROL(evn);
+    case AP_LAT_HDG:
+      return StateHDG(evn);
+    case AP_LAT_LT1:
+      return StateLAT(evn);
+    case AP_LAT_LT2:
+      return StateLAT(evn);
+  }
+  return;
+}
+//-----------------------------------------------------------------------
+//  GAS control
+//-----------------------------------------------------------------------
+void AutoPilot::GasControl()
+{	if (0 == gazS)						return;
+	if (AP_DISENGD == lStat)	return;
+	//--- swap gas control -------------
+	ugaz	^= 1;
+	if (0 == ugaz)						return;
+	//--- Check if OK ------------------
+  globals->jsm->Disconnect();
+	ailS->SetValue(0);
+	return;
+}
+//-----------------------------------------------------------------------
+//  Dispatch event altitude alert
+//-----------------------------------------------------------------------
+void AutoPilot::ALTalertSWP()
+{ if (aprm)       return;           // Ignore in approach mode
+  alta ^= 1;                        // Toggle ALT arm
+  StateChanged(AP_STATE_AAA);       // State is changed
+  return;
+}
+//-----------------------------------------------------------------------
+//  Set altitude alert
+//-----------------------------------------------------------------------
+void AutoPilot::ALTalertSET()
+{ if (aprm)       return;           // Ignore in approach mode
+  alta  = 1;                        // ALT armed
+  StateChanged(AP_STATE_AAA);       // State is changed
+  return;
+}
+//--------------------------------------------------------------------
+//  Edit Autopilot data
+//--------------------------------------------------------------------
+void AutoPilot::Probe(CFuiCanva *cnv)
+{ cnv->AddText( 1,1,"SPEED: %.02f",cRAT);
+  cnv->AddText( 1,"rHDG");
+  cnv->AddText( 8,1,"%.05f",rHDG);
+  cnv->AddText( 1,"dREF:");
+  cnv->AddText( 8,1,"%.05f",dREF);
+  cnv->AddText( 1,"hERR:");
+  cnv->AddText( 8,1,"%.05f",hERR);
+  cnv->AddText( 1,"vTIMs");
+  cnv->AddText( 8,1,"%.00f-%.00f s",vTIM0,vTIM1);
+  cnv->AddText( 1,"eVRT");
+  cnv->AddText( 8,1,"%.05f",eVRT);
+
+  if (Radio)
+  { cnv->AddText( 1,"hDEV");
+		cnv->AddText( 8,1,"%.05f",Radio->hDEV);
+		cnv->AddText( 1,"Feet");
+    cnv->AddText( 8,1,"%.00f",Radio->fdis);
+  }
+	  if (lStat == AP_LAT_LT1)
+  {  cnv->AddText( 1,"vHRZ");
+     cnv->AddText( 8,1,"%.5f",vHRZ);
+     cnv->AddText( 1,"dREF");
+     cnv->AddText( 8,1,"%.5f",dREF);
+  }
+
+  if (lStat == AP_LAT_LT2)
+  {  cnv->AddText( 1,"aERR");
+     cnv->AddText( 8,1,"%.5f",aERR);
+  }
+  else
+  { cnv->AddText( 1,"rVSI");
+    cnv->AddText( 8,1,"%.00f",rVSI);
+  }
+  if (vStat == AP_VRT_ALT)
+  { cnv->AddText( 1,"xALT");
+    cnv->AddText( 8,1,"%.00f",xALT);
+  }
+  if (vStat == AP_VRT_SPD)
+  { cnv->AddText( 1,"eVSP");
+    cnv->AddText( 8,1,"%.4f",eVSP);
+  }
+	if (vStat == AP_VRT_FLR)
+  { cnv->AddText( 1,"dTDP");
+		cnv->AddText( 8,1,"%.0f",dTDP);
+  }
+
+  cnv->AddText(1,1,"Lateral : %s",autoTB1[lStat]);
+  cnv->AddText(1,1,"Vertical: %s",autoTB2[vStat]);
+  cnv->AddText(1,1,"ABRT    : %d",abrt);
+  return;
+}
+//========================================================================================
+//
+// CKAP140Panel
+//
+//  NOTE: All display fields starts at CA11
+//========================================================================================
+CKAP140Panel::CKAP140Panel (void) : AutoPilot()
+{ TypeIs (SUBSYSTEM_KAP140_PANEL);
+  flsh   = 0;
+  uvsp   = AP_VRT_SPD;              // use VSP
+  //---Init display fields -----------------------------------
+  InitField(K140_FD_HD1,0,RADIO_CA11);
+  InitField(K140_FD_HD2,0,RADIO_CA12);
+  InitField(K140_FD_VT1,0,RADIO_CA13);
+  InitField(K140_FD_VT2,0,RADIO_CA14);
+  InitField(K140_FD_VSI,0,RADIO_CA18);
+  InitField(K140_FD_ALT,0,RADIO_CA19);
+  ClearAll();
+  //--- Add disconnect sound ---------------------------------
+  CAudioManager *snd = globals->snd;
+  sbf = snd->ReserveSoundBUF('k4ds',"Beep_24.wav",0);
+}
+//--------------------------------------------------------------------------
+//  Init a radio field 
+//  -data is the char field
+//  -No is the display field number
+//--------------------------------------------------------------------------
+void CKAP140Panel::InitField(short No,char * data, short cf)
+{ fldTAB[No].sPos   = cf;
+  fldTAB[No].data   = data;
+  fldTAB[No].state  = RAD_ATT_INACT;
+  return;
+}
+//--------------------------------------------------------------------
+//  Activate a field
+//--------------------------------------------------------------------
+void CKAP140Panel::Lite(char No,char *txt)
+{ fldTAB[No].state = RAD_ATT_ACTIV;
+  fldTAB[No].data  = txt;
+  return;
+}
+//--------------------------------------------------------------------
+//  Modify a field
+//--------------------------------------------------------------------
+void CKAP140Panel::CopyField(char No,RADIO_FLD *fld)
+{ fldTAB[No].state = fld->state;
+  fldTAB[No].data  = fld->data;
+  return;
+}
+//--------------------------------------------------------------------
+//  Clear a field
+//--------------------------------------------------------------------
+void CKAP140Panel::ClearField(int No)
+{ fldTAB[No].state    = RAD_ATT_INACT;
+  fldTAB[No].data     = 0;
+  return;
+}
+//--------------------------------------------------------------------
+//  Pop up a field
+//  The odd field (1,3,5, etc) is ligthed with text of next field number
+//  Result:  Lighted text seems to change from one field to the next
+//--------------------------------------------------------------------
+void CKAP140Panel::PopField(int No)
+{ int pr = No - 1;
+  fldTAB[pr].data   = fldTAB[No].data;
+  fldTAB[pr].state  = fldTAB[No].state;
+  fldTAB[No].data   = 0;
+  fldTAB[No].state  = RAD_ATT_INACT;
+  return;
+}
+//--------------------------------------------------------------------
+//  Clear all fields
+//--------------------------------------------------------------------
+void CKAP140Panel::ClearAll()
+{ ClearField(K140_FD_HD1);
+  ClearField(K140_FD_HD2);
+  ClearField(K140_FD_VT1);
+  ClearField(K140_FD_VSI);
+  ClearField(K140_FD_ALT);
+  return;
+}
+//--------------------------------------------------------------------
+//  Autodisconnect
+//--------------------------------------------------------------------
+void CKAP140Panel::Alarm()
+{ globals->snd->Play(sbf);
+  return;
+}
+//--------------------------------------------------------------------
+//  DISPATCHER:  Click Event coming from the gauge
+//--------------------------------------------------------------------
+int CKAP140Panel::Dispatch(int evn)            // Dispatching 
+{ if (0 == Powr)            return 0;
+  switch (evn)  {
+    //---Autopilot engage ----Swap engage indicator -----
+    case RADIO_CA01:
+      NewEvent(AP_EVN_ENG);
+      return 0;
+    //---Heading mode -----------------------------------
+    case RADIO_CA02:
+      NewEvent(AP_EVN_HDG);
+      return 0;
+    //---Navigation mode --------------------------------
+    case RADIO_CA03:
+      NewEvent(AP_EVN_NAV);
+      return 0;
+    //---APPROACH MODE ---------------------------------
+    case RADIO_CA04:
+      NewEvent(AP_EVN_APR);
+      return 0;
+    //---ALTITUDE HOLD ---------------------------------
+    case RADIO_CA07:
+      NewEvent(AP_EVN_ALT);
+      return 0;
+    //--Button UP --------------------------------------
+    case RADIO_CA09:
+      NewEvent(AP_EVN_BUP);
+      return 0;
+    //--Button Down ------------------------------------
+    case RADIO_CA08:
+      NewEvent(AP_EVN_BDN);
+      return 0;
+    //---ALTITUDE SELECT -------------------------------
+    case RADIO_CA10:
+      ALTalertSET();
+      if (msDIR == -1)  NewEvent(AP_EVN_ADN);
+      else              NewEvent(AP_EVN_AUP);
+      return 0;
+    //---- Arm ALTITUDE ALERT ---------------------------
+    case RADIO_CA20:
+      ALTalertSWP();
+      return 0;
+		//---- Arm throttle control -------------------------
+		case RADIO_CA22:
+			GasControl();
+			return 0;
+
+  }
+  return evn;
+}
+//--------------------------------------------------------------------
+//  Power ON Event
+//--------------------------------------------------------------------
+int CKAP140Panel::PowerON()
+{ return 0;
+}
+//--------------------------------------------------------------------
+//  Power OF Event
+//--------------------------------------------------------------------
+int CKAP140Panel::PowerOF()
+{ PowerLost();
+  ClearAll();
+  return 0;
+}
+//--------------------------------------------------------------------
+//  Time slice autopilot 
+//--------------------------------------------------------------------
+void CKAP140Panel::TimeSlice(float dT,U_INT FrNo)
+{ AutoPilot::TimeSlice(dT,FrNo);
+  flsh      = Flash() & globals->clk->GetON();
+  char old  = Powr;
+  Powr      = active;
+  if (old == Powr) return;
+  if (Powr == 1) PowerON();
+  if (Powr == 0) PowerOF();
+  return;
+}
+//--------------------------------------------------------------------
+//  Edit VSP
+//--------------------------------------------------------------------
+void CKAP140Panel::EditVSP()
+{ int   pm = int(rVSI);
+  sprintf_s(vsp,8,"%+04d",pm);
+  vsp[7]   = 0;
+  Lite(K140_FD_VSI,vsp);
+  return;
+}
+//--------------------------------------------------------------------
+//  Edit ALT
+//--------------------------------------------------------------------
+void CKAP140Panel::EditALT()
+{ int  pm = int(rALT);
+  sprintf_s(alt,8,"%05d",pm);
+  alt[7] = 0;
+  Lite(K140_FD_ALT,alt);
+  return;
+}
+//--------------------------------------------------------------------
+//  Autopilot change state 
+//  Process light according to new state
+//--------------------------------------------------------------------
+void CKAP140Panel::StateChanged(U_CHAR evn)
+{ switch (evn)  {
+    //---AUTO PILOT is disengaged -------------
+    case AP_STATE_DIS:
+      ClearAll();
+      return;
+    //---ROLL MODE ------------------------
+    case AP_STATE_ROL:
+      Lite(K140_FD_HD1,"ROL");
+      ClearField(K140_FD_HD2);
+      return;
+    //---HEADING MODE ------------------------
+    case AP_STATE_HDG:
+      Lite(K140_FD_HD1,"HDG");
+      ClearField(K140_FD_HD2);
+      return;
+    //---Head to NAV MODE --------------------
+    case AP_STATE_NAV:
+      ClearField(K140_FD_HD1);
+      Lite(K140_FD_HD2,"NAV");
+      return;
+    //---Track NAV by OBS --------------------
+    case AP_STATE_NTK:
+      PopField(K140_FD_HD2);
+      return;
+    //---APR mode ILS MODE --------------------
+    case AP_STATE_APR:
+      ClearField(K140_FD_HD1);
+      ClearField(K140_FD_VSI);
+      Lite(K140_FD_HD2,"APR");
+      Lite(K140_FD_VT2,"GS ");
+      return;
+      return;
+    //---ILS TRACK MODE --------------------
+    case AP_STATE_ATK:
+      PopField(K140_FD_HD2);
+      return;
+    //---GLIDE TRACK MODE --------------------
+    case AP_STATE_VTK:
+      PopField(K140_FD_VT2);
+      return;
+    //---ALTITUDE HOLD MODE ------------------
+    case AP_STATE_ALT:
+      EditALT();
+      Lite(K140_FD_VT1,"ALT");
+      ClearField(K140_FD_VSI);
+      return;
+    case AP_STATE_ACH:
+      EditALT();
+      return;
+    //---VSP HOLD MODE ------------------
+    case AP_STATE_VSP:
+      Lite(K140_FD_VT1,"VSP");
+      EditVSP();
+      return;
+    //---VERTICAL HOLD OFF ------------------
+    case AP_STATE_VOF:
+      ClearField(K140_FD_VT1);
+      ClearField(K140_FD_VSI);
+      return;
+    //--VSI change -----------------------
+    case AP_STATE_VCH:
+      EditVSP();
+      return;
+    //---Altitude alert -------------------
+    case AP_STATE_AAA:
+      CopyField(K140_FD_VT2,alertK140 + armALT());
+      return;
+  }
+  //-------------------------------------------------
+  return;
+}
+//==================================================================
+// CAFCS85Panel
+//==================================================================
+CAFCS85Panel::CAFCS85Panel (void)
+{ TypeIs (SUBSYSTEM_AFCS85_PANEL);
+}
+//-------------------------------------------------------------------
+//  Read parameters
+//-------------------------------------------------------------------
+int CAFCS85Panel::Read(SStream *st,Tag tag)
+{ return AutoPilot::Read(st,tag);
+}
+
+//===============================================================================
+//
+// CKAP150Panel
+//===============================================================================
+CKAP150Panel::CKAP150Panel (void)
+{
+  TypeIs (SUBSYSTEM_K150_PANEL);
+}
+
+//
+// CKAP200Panel
+//
+CKAP200Panel::CKAP200Panel (void)
+{
+  TypeIs (SUBSYSTEM_K200_PANEL);
+}
+
+//
+// CAFCS65Panel
+//
+CAFCS65Panel::CAFCS65Panel (void)
+{
+  TypeIs (SUBSYSTEM_AFCS65_PANEL);
+}
+

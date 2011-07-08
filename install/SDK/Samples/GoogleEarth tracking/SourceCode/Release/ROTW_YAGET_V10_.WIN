@@ -1,0 +1,478 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	aget
+	<bind>
+	81
+	<widg>
+	Window
+	defa
+	<text>
+	Google Earth Interface
+	<loc >
+	349
+	90
+	<size>
+	287
+	266
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	279
+	240
+	<ipos>
+	0
+	0
+	0
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	1
+	<bord>
+	1
+	<bsiz>
+	4
+	<move>
+	1
+	<layr>
+	1
+	<trns>
+	0
+	<save>
+	1
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		btn1
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Loop
+		<loc >
+		6
+		7
+		<size>
+		60
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		0
+		0
+		<bsiz>
+		60
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		btn2
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Set Timer
+		<loc >
+		197
+		41
+		<size>
+		60
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		0
+		0
+		<bsiz>
+		60
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		btn3
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Save Pos
+		<loc >
+		7
+		72
+		<size>
+		82
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		82
+		22
+		<bsiz>
+		82
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		btn4
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Save Path
+		<loc >
+		8
+		98
+		<size>
+		81
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		81
+		22
+		<bsiz>
+		81
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		btn5
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Print Path
+		<loc >
+		93
+		98
+		<size>
+		90
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		90
+		22
+		<bsiz>
+		90
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		btn6
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Track Pos
+		<loc >
+		197
+		72
+		<size>
+		60
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		0
+		0
+		<bsiz>
+		60
+		22
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lbl1
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		from 0.5 to 5.0
+		<loc >
+		11
+		40
+		<size>
+		82
+		16
+		<enab>
+		0
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		68
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		edt1
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		1.0
+		<loc >
+		98
+		40
+		<size>
+		75
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		256
+		<numb>
+		0
+		<rsiz>
+		R
+		<modf>
+	<endo> ========== END OBJECT ==========
+	<txta>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		txt1
+		<bind>
+		17
+		<widg>
+		TextArea
+		defa
+		<text>
+		++++++
+		<loc >
+		14
+		200
+		<size>
+		250
+		100
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lbl2
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		
+		<loc >
+		14
+		150
+		<size>
+		250
+		15
+		<enab>
+		0
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lbl3
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		
+		<loc >
+		14
+		165
+		<size>
+		250
+		15
+		<enab>
+		0
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lbl4
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		
+		<loc >
+		14
+		180
+		<size>
+		250
+		15
+		<enab>
+		0
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lblI
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		NB You need a :...\FlyLegacy\GoogleEarth folder
+		<loc >
+		18
+		250
+		<size>
+		280
+		30
+		<enab>
+		0
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		1
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

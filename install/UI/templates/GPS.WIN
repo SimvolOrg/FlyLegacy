@@ -1,0 +1,49 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	gpsw
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	
+	<loc >
+	458
+	336
+	<size>
+	108
+	96
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	104
+	75
+	<ipos>
+	1
+	0
+	1
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+<endo> ========== END OBJECT ==========

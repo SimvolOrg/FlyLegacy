@@ -1,0 +1,1 @@
+start /wait python-2.6.5.msi

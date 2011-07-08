@@ -1,0 +1,442 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang1044\deftab360{\fonttbl{\f0\fswiss\fcharset0 Arial;}{\f1\froman\fcharset0 Times New Roman;}{\f2\froman\fprq2\fcharset0 Times New Roman;}{\f3\fnil\fprq1\fcharset0 Courier New;}{\f4\fmodern\fcharset0 Courier New;}{\f5\fnil\fcharset2 Symbol;}}
+{\colortbl ;\red0\green0\blue255;\red128\green0\blue0;}
+{\*\generator Msftedit 5.41.15.1507;}\viewkind4\uc1\pard\sb240\sa60\qc\lang1033\kerning28\b\f0\fs32 Fly! Legacy\par
+Developer\rquote s Guide\par
+\pard\kerning0\b0\f1\fs24\par
+\fs20\par
+\par
+Last Updated : \lang1044 February 27, 2006\lang1033\par
+\pard\sb240\sa60\qc\kerning28\b\f0\fs32 Table of Contents\par
+\pard\kerning0\b0\f1\fs24\par
+\pard\li240\tx720\tqr\tldot\tx8630\lang1044 1.\tab Introduction\tab 3\par
+\pard\li480\tx1200\tqr\tldot\tx8630 1.1.\tab Purpose\tab 3\par
+1.2.\tab Intended Audience\tab 3\par
+\pard\li240\tx720\tqr\tldot\tx8630 2.\tab Third Party Libraries\tab 4\par
+\pard\li480\tx1200\tqr\tldot\tx8630 2.1.\tab OpenGL\tab 5\par
+2.2.\tab OpenAL\tab 5\par
+2.3.\tab GLUT\tab 5\par
+2.4.\tab\lang1033 OpenGL\'ae SDK\tab 5\lang1044\par
+2.5.\tab Independent JPEG Group JPEG Library\tab 6\par
+2.6.\tab PLIB (Steve\rquote s Portable Game Library)\tab 7\par
+2.7.\tab Pthreads-Win32\tab 7\par
+2.8.\tab STLPort (C++ Standard Template Library)\tab 8\par
+\pard\li240\tx720\tqr\tldot\tx8630 3.\tab Obtaining Source Code\tab 9\par
+4.\tab Building Fly! Legacy\tab 10\par
+\pard\li480\tx1200\tqr\tldot\tx8630 4.1.\tab Microsoft Visual C++ 6.0\tab 10\par
+4.2.\tab Microsoft Visual C++ .NET 2005 Express Edition\tab 10\par
+4.3.\tab Dev-C++\tab 10\par
+4.4.\tab Autoconf / Automake\tab 10\par
+\pard\li240\tx720\tqr\tldot\tx8630 5.\tab Coding Style Guidelines\tab 11\par
+6.\tab Doxygen Commenting\tab 12\par
+\pard\li480\tx1200\tqr\tldot\tx8630 6.1.\tab Comment Blocks\tab 12\par
+6.2.\tab Doxygen Keywords\tab 12\par
+6.3.\tab File Descriptions\tab 12\par
+6.4.\tab Data Structure / Class Descriptions\tab 12\par
+6.5.\tab Member Descriptions\tab 13\par
+\pard\li240\tx720\tqr\tldot\tx8630 7.\tab Debugging Aids\tab 14\par
+\pard\li480\tx1200\tqr\tldot\tx8630 7.1.\tab Subsystem Logging\tab 14\par
+7.2.\tab Debug Logs\tab 14\par
+7.3.\tab GTFO (Fatal Error) Logs\tab 14\par
+7.4.\tab Warning Logs\tab 15\par
+7.5.\tab Memory Leak Log\tab 15\par
+7.6.\tab DrawNoticeToUser\tab 16\par
+\pard\lang1033\par
+\pard\keepn\pagebb\fi-720\li720\sb240\sa60\tx720\b\i\f0\fs28 1.\tab Introduction\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\i0\fs26 1.1.\tab Purpose\par
+\pard\b0\f1\fs24\par
+The purpose of this document is to:\par
+\pard{\pntext\f1 1\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart1\pndec }
+\fi-360\li720\tx720 describe the prerequisites and procedures for building Fly! Legacy from source code\par
+{\pntext\f1 2\tab}provide guidance to potential contributors in the areas of coding and documentation standards\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 1.2.\tab Intended Audience\par
+\pard\b0\f1\fs24\par
+This document is intended for software developers who wish to either:\par
+\pard{\pntext\f1 1\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart1\pndec }
+\fi-360\li720\tx720 build Fly! Legacy from source code\par
+{\pntext\f1 2\tab}contribute their software development and programming skills to the project\par
+\pard{\pntext\f1 5)\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart5\pndec{\pntxta)}}
+\fi-360\li720\tx720\par
+\pard{\pntext\f1 6)\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart5\pndec{\pntxta)}}
+\fi-360\li360\tx720 This document is not required reading for end-users of the application.\par
+\pard\keepn\pagebb\fi-720\li720\sb240\sa60\tx720\b\i\f0\fs28 2.\tab Third Party Libraries\par
+\pard\b0\i0\f1\fs24\par
+Like many open source projects, Fly! Legacy builds upon the work done by other teams in the open source development community.  As such, several third party libraries need to be available in your develoment environment before you can successfully build and run the Fly! Legacy application.\par
+\par
+For each third party library, a summary table is provided with the following information:\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl License\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Static Libraries\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Dynamic Libraries\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell\cell\row\pard\par
+\ldblquote Web Site\rdblquote  is the last known web site for the project, where source code (and possibly pre-compiled binaries for your development environment) can be obtained.\par
+\par
+\ldblquote License\rdblquote  lists the distribution and re-use license applicable to the supported version(s) of the library.  Common licenses include:\par
+\pard{\pntext\f1 1\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart1\pndec }
+\fi-360\li720\tx720 LGPL\tab\tab GNU Library General Public License version 2 or later\par
+{\pntext\f1 2\tab}GPL\tab\tab GNU Public License version 2 or later\par
+\pard\par
+\ldblquote Supported Version(s)\rdblquote  lists all versions of the library which are explicitly supported by Fly! Legacy.  Higher versions of most libraries are usually supported since most library designers ensure backwards compatibility.  Lower versions may or may not be supported depending on the specific capabilities present or not present in that version.\par
+\par
+\ldblquote Include Files\rdblquote  lists all C and/or C++ header files that must be accessible when compiling Fly! Legacy.  Generally this means ensuring that the folders in which these headers are present are defined in the \ldblquote Includes\rdblquote  folder list for your development environment.\par
+\par
+\ldblquote Static Libraries\rdblquote  lists all library files which are statically linked to the Fly! Legacy application at compile/link time (i.e. when building the application .exe file).  These libraries typically have extensions of .lib or .a depending on which linker is used by your development environment.  Generally this means ensuring that the folders in which these libraries are present are defined in the \ldblquote Libraries\rdblquote  folder list for you development environment.\par
+\par
+\ldblquote Dynamic Libraries\rdblquote  lists the library files which are dynamically linked to the Fly! Legacy application at run-time.  These libraries typically have extensions of .dll.  These libraries must be present in the same folder that your Fly! Legacy executable file resides in.\par
+\par
+\ldblquote Project Settings\rdblquote  lists any compiler definitions or settings in the Fly! Legacy application or sub-libraries that affect operation of the third party library.\par
+\par
+\ldblquote Build Notes\rdblquote  generally just refers to specific README files or documentation for the third-party library.  It is beyond the scope of this document to describe in detail the steps which must be performed to build each of the third party libraries.\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 2.1.\tab OpenGL\par
+\pard\b0\f1\fs24\par
+OpenGL (Open Graphics Library) provides basic support for 3D accelerated graphics.\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\cf1\ul http://www.opengl.org\cf0\ulnone\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl License\cell Free\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell 1.1\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell gl/gl.h\par
+gl/glu.h\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Static Libraries\cell opengl32.lib\par
+glu32.lib\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Dynamic Libraries\cell opengl32.dll\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell N/A\cell\row\pard\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 2.2.\tab OpenAL\par
+\pard\b0\f1\fs24\par
+OpenAL (Open Audio Library) provides support for sound effects.\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\cf1\ul http://www.openal.org\cf0\ulnone\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl License\cell LGPL\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell 1.1\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell\lang1040 al/al.h\par
+al/alc.h\par
+al/alut.h\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\lang1033 Static Libraries\cell OpenAL32.lib\par
+ALut.lib\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Dynamic Libraries\cell OpenAL32.dll\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell HAVE_OPENAL controls whether audio support is enabled\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell N/A\cell\row\pard\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 2.3.\tab GLUT\par
+\pard\b0\f1\fs24\par
+GLUT (OpenGL Utility Toolkit) is a convience layer that makes it easier for applications to use the OpenGL library.  GLUT automates some of the basic tasks such as management of the application window, handling keyboard and mouse input, etc.\par
+\par
+There are several alternative implementations of the GLUT library:\par
+\pard{\pntext\f1 1\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart1\pndec }
+\fi-360\li720\tx720 Original GLUT version 3.7 by Mark Kilgard\par
+{\pntext\f1 2\tab}OpenGLUT version ???\par
+{\pntext\f1 3\tab}FreeGLUT version 2.4.0\par
+\pard\par
+While technically, any of these alternative implementations should work, we recommend FreeGLUT version 2.4.0 for Fly! Legacy.\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\cf1\ul http://www.freeglut.org\cf0\ulnone\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl License\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell 2.4.0\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell gl/freeglut.h\par
+gl/freeglut_ext.h\par
+gl/freeglut_std.h\par
+gl/glut.h\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Static Libraries\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Dynamic Libraries\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell\cell\row\pard\par
+\pard\sb100\sa100\b\f0\fs26 2.4.\tab\b0\f1\fs24 OpenGL\'ae SDK \par
+Contains software development kits for developers using OpenGL. \par
+First, there are extension header files defining interfaces (enumerants, prototypes, and for platforms supporting dynamic runtime extension queries, such as Linux and Microsoft Windows, function pointer typedefs) for all GL, GLX, and WGL extensions in the {\field{\*\fldinst{HYPERLINK "registry/index.html"}}{\fldrslt{\cf1\ul extension registry}}}\cf0\ulnone\f1\fs24 : \par
+\pard{\pntext\f5\'B7\tab}{\*\pn\pnlvlblt\pnf5\pnindent360{\pntxtb\'B7}}\fi-360\li720\sb100\sa100\b{\field{\*\fldinst{HYPERLINK "ABI/glext.h"}}{\fldrslt{\cf1\ul glext.h}}}\cf0\ulnone\b0\f1\fs24  (GL extensions) \par
+\b{\field{\*\fldinst{HYPERLINK "{\pntext\f5\'B7\tab}ABI/glxext.h"}}{\fldrslt{\cf1\ul glxext.h}}}\cf0\ulnone\b0\f1\fs24  (GLX extensions) \par
+\b{\field{\*\fldinst{HYPERLINK "{\pntext\f5\'B7\tab}ABI/wglext.h"}}{\fldrslt{\cf1\ul wglext.h}}}\cf0\ulnone\b0\f1\fs24  (WGL extensions) \par
+\pard\sb100\sa100 Based on the extension headers, Intel has created the {\field{\*\fldinst{HYPERLINK "GLsdk.zip"}}{\fldrslt{\cf1\ul GLsdk library}}}\cf0\ulnone\f1\fs24  to ease use of OpenGL extensions, by providing a static library containing wrapper functions for extensions which otherwise must be accessed by use of \b wglGetProcAddress\b0  on Windows and \b glXGetProcAddressARB\b0  on Linux. \par
+\pard\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\f2\fs20 http://oss.sgi.com/projects/ogl-sample/sdk.html\f1\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\fs24 License\cell Free : {\field{\*\fldinst{HYPERLINK "GLsdk.zip"}}{\fldrslt{\cf1\ul GLsdk library}}}\cf0\ulnone\f1\fs24\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell\cf2\lang1036\f3\fs20 GL/glext.h\par
+GL/glxext.h\par
+GL/wglext.h\cf0\lang1033\f1\fs24\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Static Libraries\cell\lang1036\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\lang1033 Dynamic Libraries\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell N/A\cell\row\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 2.5.\tab Independent JPEG Group JPEG Library\par
+\pard\b0\f1\fs24\par
+The JPEG library by the Independent JPEG Group (IJG) is a library for reading and writing image files in JPEG format.\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\cf1\ul\fs20 http://www.ijg.org\cf0\ulnone\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\fs24 License\cell Free\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell 6b\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell jpeglib.h\par
+jconfig.h\par
+jerror.h\par
+jmorecfg.h\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Static Libraries\cell libjpeg.lib\lang1036\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\lang1033 Dynamic Libraries\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell N/A\cell\row\pard\par
+\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 2.6.\tab PLIB (Steve\rquote s Portable Game Library)\par
+\pard\b0\f1\fs24\par
+PLIB is a suite of libraries intended to help game developers develop portable applications across various operating systems and hardware platforms.  The principal author is Steve Baker, with help from others.\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\cf1\ul\fs20 http://plib.sourceforge.net\cf0\ulnone\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\fs24 License\cell LGPL \cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell 1.8.4\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell plib/fnt.h\par
+plib/js.h\par
+plib/pu.h\par
+plib/puGLUT.h\par
+plib/sg.h\par
+plib/ssg.h\par
+plib/ssgaFire.h\par
+plib/ssgaLensFlare.h\par
+plib/ssgaParticleSystem.h\par
+plib/ssgaScreenDump.h\par
+plib/ssgaShapes.h\par
+plib/ssgAux.h\par
+plib/ssgaWaveSystem.h\par
+plib/ssgconf.h\par
+plib/ul.h\par
+plib/ulRTTI.h\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Static Libraries\cell ul[_d].lib\par
+sg[_d].lib\par
+ssg[_d].lib\par
+\lang1036 pui[_d].lib\par
+js[_d].lib\par
+fnt[_d].lib\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\lang1033 Dynamic Libraries\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell PRECISION_TIMER_PLIB causes the time manager to use PLIB\rquote s high-precision timer for accurate realtime tracking.  Currently this is not used; rather PRECISION_TIMER_WIN32 is specified to use the Win32 native high-precision timer interface.\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell N/A\cell\row\pard\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 2.7.\tab Pthreads-Win32\par
+\pard\b0\f1\fs24\par
+The pthreads-win32 library implements a standard POSIX-compliant model for lightweight processes (threads).\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\fs20 http://sourceware.org/pthreads-win32/\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\fs24 License\cell LGPL\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell 2.7.0\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell pthread.h\par
+sched.h\par
+semaphore.h\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Static Libraries\cell pthreadVC2.lib\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Dynamic Libraries\cell pthreadVC2.dll\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell N/A\cell\row\pard\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 2.8.\tab STLPort (C++ Standard Template Library)\par
+\pard\b0\f1\fs24\par
+Although many development environments include their own version of the STL, Fly! Legacy has standardized on the free open-source STLPort implementation.\par
+\par
+\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Web Site\cell\cf1\ul\fs20 http://www.stlport.org\cf0\ulnone\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl\fs24 License\cell Free (see documentation)\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Supported Versions\cell 4.6.2\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Include Files\cell See STLPort documentation\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Static Libraries\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Dynamic Libraries\cell N/A\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Project Settings\cell Ensure that the Include folder for STLPort is at a higher priority than Include folders for any other implementations.\cell\row\trowd\trgaph108\trleft900\trpaddl108\trpaddr108\trpaddfl3\trpaddfr3
+\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx4320\clbrdrl\brdrw15\brdrs\clbrdrt\brdrw15\brdrs\clbrdrr\brdrw15\brdrs\clbrdrb\brdrw15\brdrs \cellx7740\pard\intbl Build Notes\cell Do not use STLPort iostreams; use in wrapper mode.  See STLPort documentation for details.\cell\row\pard\par
+\par
+\pard\keepn\pagebb\fi-720\li720\sb240\sa60\tx720\b\i\f0\fs28 3.\tab Obtaining Source Code\par
+\pard\b0\i0\f1\fs24\par
+... brief CVS tutorial\par
+... online browsing at SourceForge.net\par
+\par
+\pard\keepn\pagebb\fi-720\li720\sb240\sa60\tx720\b\i\f0\fs28 4.\tab Building Fly! Legacy\par
+\pard\b0\i0\f1\fs24 Several build environments are supported, with additional environments planned for the future both for Microsoft Windows and other platforms.  This chapter provides an overview of how to build Fly! Legacy from source code in each of the supported environments.\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 4.1.\tab Microsoft Visual C++ 6.0\par
+\pard\b0\f1\fs24 This section provides a complete walktrough of preparing a development environment for FlyLegacy using Microsoft Visual C++ 6.0.\par
+\pard\sb240\sa60\b\i\fs26 Download dependent libraries\par
+\pard\b0\i0\fs24 OpenGL: OpenGL headers and libraries are included in the VC++ 6.0 environment. The other libraries must be downloaded from the locations given above. The pthreads library is available in binary form. The rest must be built from source.\par
+\pard\sb240\sa60\b\i\fs26 Build dependent libraries\par
+\pard\b0\i0\fs24 Follow the instructions included with each library. A few points to note:\par
+\par
+\pard{\pntext\f1 1.\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart1\pndec{\pntxta.}}
+\fi-360\li720\tx720\b jpeglib\b0 :\line There is a conflict between jmorecfg.h and headers included by windows.h. Make the following changes to jmorecfg.h before building:\line\line Change line 161 to read (or delete the line alltogether):\line typedef int INT32;\line\line Change the ifdef block starting at line 212 to read:\line #ifdef NEED_FAR_POINTERS\line #define FAR  far\line #else\line #ifndef FAR\line #define FAR\line #endif\line #endif\line\par
+\pard{\pntext\f1 2.\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart2\pndec{\pntxta.}}
+\fi-360\li720\tx720\b plib\b0 : \line ssgaScreenDump.h is not installed correctly if building the library per instructions. It must be copied manually from src/ssgAux.\line\line To avoid an undefined symbol error when linking FlyLegacy, the file src/ssg/ssgStatistics.cxx must be added to the ssg subproject before plib is built.\par
+\pard\sb240\sa60\b\i\fs26 Install dependent libraries\par
+\pard\b0\i0\fs24 Create a file structure something like this (deplibs is an absolute path to somewhere suitable in your file system):\par
+deplibs/openal/include/al\par
+deplibs/freeglut/include/gl\par
+deplibs/jpeglib/include\par
+deplibs/plib/include/plib\par
+deplibs/pthreads/include\par
+deplibs/stlport/stlport\par
+deplibs/lib\par
+\par
+Copy the header files for each library to the respective directory, and copy all the lib- and dll-files to the lib directory\par
+\par
+Start Visual C++. Open the Options dialog (\i Tools /Options\i0 ). Select the \i Directories\i0  tab.\par
+\par
+In the dropdown menu labeled \ldblquote Select directories for:\rdblquote , select \i Include files\i0 . Add deplibs/stlport/stlport to the list. Move it to the top of the list (before VC\rquote s own include directores).\par
+\par
+Add the deplibs/*/include directories leave them at the bottom of the list.\par
+\par
+Now select \i Library files.\i0  Add deplibs/lib to the list. Close the dialog. You are ready to build Fly! Legacy.\par
+\pard\sb240\sa60\b\i\fs26 Install Fly! Legacy Data Files\par
+\pard\b0\i0\fs24 Download from CVS and copy to Fly!II install directory. The CVS subdirectories may cause Fly! Legacy to crash, so they should be removed.\par
+\pard\sb240\sa60\b\i\fs26 Build Fly! Legacy\par
+\pard\b0\i0\fs24 Download the source from CVS, unless you have already done so.\par
+\par
+Open the FlyLegacy.dsw workspace in Visual C++. Make sure FlyLegacy is the active project and select Rebuild All.\par
+\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 4.2.\tab Microsoft Visual C++ .NET 2005 Express Edition\par
+\pard\b0\f1\fs24 This section provides a complete walkthrough of preparing a development environment for Fly! Legacy using the free Microsoft Visual Studio .NET C++ 2005 Express Edition.  This is a free download from Microsoft.\par
+\pard\sb240\sa60\b\i\fs26 Download and install Express Edition software\par
+\pard\b0\i0\fs24 The installer for Visual C++ .NET 2005 Express Edition can be downloaded from:\par
+\cf1\ul http://msdn.microsoft.com/vstudio/express/visualc/download/\cf0\ulnone\par
+\par
+\pard\sb240\sa60\b\i\fs26 Install Microsoft Windows Platform SDK\par
+\pard\b0\i0\fs24 See the following web page for important details about downloading and installing the Platform SDK, and configuring Visual C++ .NET 2005 for use with the SDK:\par
+\cf1\ul http://msdn.microsoft.com/vstudio/express/visualc/usingpsdk/\par
+\cf0\ulnone\par
+\pard\sb240\sa60\b\i\fs26 Download Fly! Legacy Source via CVS\par
+\pard\b0\i0\fs24\par
+\pard\sb240\sa60\b\i\fs26 Install Dependent Libraries\par
+\pard\b0\i0\fs24\par
+\pard\sb240\sa60\b\i\fs26 Install Fly! Legacy Data Files\par
+\pard\b0\i0\fs24\par
+\pard\sb240\sa60\b\i\fs26 Customize FlyLegacy Project\par
+\pard\b0\i0\fs24\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 4.3.\tab Dev-C++\par
+\pard\b0\f1\fs24 Dev-C++ is a free Integrated Development Environment (IDE) from Bloodshed Software.\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 4.4.\tab Autoconf / Automake\par
+\pard\b0\f1\fs24\par
+Support for autoconf / automake for UNIX-like development environments such as Cygwin or Linux is planned for the future.\par
+\par
+\pard\keepn\pagebb\fi-720\li720\sb240\sa60\tx720\b\i\f0\fs28 5.\tab Coding Style Guidelines\par
+\pard\b0\i0\f1\fs24 TBD\'85see existing code for guidelines on variable and member naming, class naming, etc.\par
+\pard\keepn\pagebb\fi-720\li720\sb240\sa60\tx720\b\i\f0\fs28 6.\tab Doxygen Commenting\par
+\pard\b0\i0\f1\fs24 Source code documentation is automatically generated with the Doxygen application (\cf1\ul http://www.doxygen.org\cf0\ulnone ).  Specially formatted comment blocks in the code are used to both document the code itself, and to allow Doxygen to extract relevant information about the code in a more readable format.  The Doxygen manual describes all of the special keywords and comment styles that can be used.  Please try to observe the following guidelines to ensure consistency of Doxygen usage throughout the code base.  Note that these styles only apply to comments intended for extraction by Doxygen.  Most code comments simply use the usual C/C++ comment syntax.\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 6.1.\tab Comment Blocks\par
+\pard\b0\f1\fs24 Multi-line comment blocks should use Qt-style notation:\par
+\par
+\f4\fs16 /*!\par
+\pard\li60 * This is a multi-line\par
+*   Doxygen comment block\par
+*/\par
+\pard\f1\fs24\par
+Single-line comment blocks should use \ldblquote triple-slash notation\rdblquote :\par
+\par
+\f4\fs16 /// This is a single-line Doxygen comment\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 6.2.\tab Doxygen Keywords\par
+\pard\b0\f1\fs24 All Doxygen keywords should use the backslash (\\) character rather than the at-sign (@)\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 6.3.\tab File Descriptions\par
+\pard\b0\f1\fs24 All headers and implementation files must have a Doxygen file description block immediately following the standardized file header.  The file description should contain both a brief and detailed description.\par
+\par
+Example:\par
+\par
+\f4\fs16 /*! \\file QuarterGlobeTile.cpp\par
+ *  \\brief Implements CQuarterGlobeTile and descendent classes\par
+ *\par
+ * Implementation for the terrain tile classes relating to quarter globe tiles:\par
+ *   CQuarterGlobeTile\par
+ *\par
+ */\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 6.4.\tab Data Structure / Class Descriptions\par
+\pard\b0\f1\fs24 Brief and detailed descriptions should precede every data structure and class declaration\par
+\par
+Example:\par
+\par
+\f4\fs16 /*!\par
+ * Concrete elevation block class representing data stored in a QTR file\par
+ *\par
+ * This class encapsulates elevation data stored in a single QTR file.\par
+ *   QTR ("Quadtree") files are the native Fly! II elevation data format\par
+ *   for default terrain areas.  Each QTR file contains elevation data for\par
+ *   an 8x8 block of globe tiles.  Default elevation point resolution for\par
+ *   the files supplied with Fly! II is one point at the center of each\par
+ *   default detail tile.\par
+ */\par
+class CElevationBlockQTR : public CElevationBlock \{\par
+. . .\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 6.5.\tab Member Descriptions\par
+\pard\b0\f1\fs24 Where appropriate, use Doxygen comments to describe individual members of data structures and classes.  The ///< notation is a useful way to append a Doxygen comment following the definition of the member.\par
+\par
+Example:\par
+\f4\fs16 public:\par
+  int           debugLevel; ///< Debug level for terrain manager\par
+\par
+protected:\par
+  ssgRoot       *root;      ///< Root for terrain scene graph\par
+  ssgTransform  *top;       ///< Top-level transform for all terrain\par
+\par
+  int xLast;                           ///< X-index of QGT at last update           \par
+  int zLast;                           ///< Z-index of QGT at last update\par
+  std::set<CQuarterGlobeTile*> qFree;  ///< Set of free QGT entities\par
+  std::set<CQuarterGlobeTile*> qBusy;  ///< Set of busy QGT entities\par
+\f1\fs24\par
+\pard\keepn\pagebb\fi-720\li720\sb240\sa60\tx720\b\i\f0\fs28 7.\tab Debugging Aids\par
+\pard\b0\i0\f1\fs24\par
+Several facilities exist to help developers debug code under development.\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 7.1.\tab Subsystem Logging\par
+\pard\b0\f1\fs24 Certain subsystems have their own logging facilities that can be enabled/disabled through INI settings.  See the [Logs] section of the INI Settings Reference Guide for the specific syntax of the settings and the filename of the log file in the Logs folder.\par
+\par
+Subsystem logging is currently available for:\par
+\pard{\pntext\f1 1\tab}{\*\pn\pnlvlbody\pnf1\pnindent360\pnstart1\pndec }
+\fi-360\li420\tx420 Pod Filesystem\par
+{\pntext\f1 2\tab}Terrain\par
+\pard\par
+This approach could be extended to other subsystems as desired.  As a general rule, if you feel that you would want to keep the debug logging capability in a final Release-built application, for potential use by end users to assist in debugging difficult problems, then feel free to make use of this facility.\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 7.2.\tab Debug Logs\par
+\pard\b0\f1\fs24 A special log file named Logs/Debug.log is created in Debug build configurations.  Developers can write log messages to this file through the DEBUGLOG macro, defined in FlyLegacy.h.   The macro accepts a printf-style format string and an arbitrary number of arguments.  The log message contains a timestamp, source code filename and line number and the formatted debug string.\par
+\par
+Example:\par
+\par
+\lang1044\f4\fs16 DEBUGLOG ("CQuarterGlobeTile::AssignIndices x=%d z=%d this=0x%08X", x, z, this);\par
+\lang1033\f1\fs24\par
+would result in the following log message in Logs/Debug.log:\par
+\par
+\lang1036\f4\fs16 2005-10-03 09:39:10.531  Debug\par
+  File: Terrain\\QuarterGlobeTile.cpp  Line: 231\par
+  CQuarterGlobeTile::AssignIndices x=334 z=335 this=0x0E377A18\par
+\lang1033\f1\fs24\par
+Debug logs should generally be used only for local debugging and should be removed before committing to the CVS repository.  It\rquote s OK to leave debug log statements in the committed code base while trying to track down a rare or intermittent problem, but this should be kept to a minimum to avoid cluttering the code (and potentially the debug log file).\par
+\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 7.3.\tab GTFO (Fatal Error) Logs\par
+\pard\b0\f1\fs24 The gtfo macro should be called whenever a fatal error is encountered.  It causes the application to write a log message to the file Logs/Gtfo.log and immediately exit.  As per the debug logs, the gtfo macro accepts a printf-style format string and a number of arguments.\par
+\par
+Calls to gtfo that are committed to the CVS repository should only correspond to truly fatal errors.  When possible, the code should attempt to gracefully handle error conditions due to bad input data.\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 7.4.\tab Warning Logs\par
+\pard\b0\f1\fs24 The warning log facility is another distinct log file that allows applications to generate messages describing non-fatal error conditions.  Warning logs are generated in both Debug and Release build configurations.  The corresponding log filename is Logs/Warning.log.  The WARNINGLOG macro operates exactly as the DEBUGLOG and gtfo macros, accepting a printf-style format string and a number of additional parameters used to fill in the format specifications.\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 7.5.\tab Memory Leak Log\par
+\pard\b0\f1\fs24 In Debug build configurations on the Win32 platform, a memory leak report is generated in the Logs/MemoryLeaks.log file.  Developers should check to ensure that their code submission does not result in any new memory leaks.  Even \ldblquote one-time\rdblquote  allocations that would normally be cleaned up when the application exits should be eliminated through cleanup procedures and class destructors.  This avoids clutter in the memory leak report and ensures that no true leaks are allowed to exist as the code base progresses.\par
+\par
+Sometimes, memory leaks are present in third-party libraries beyond the control of the developer.  In this case, bracket the known memory leak with intentional tagged memory leaks so that they can be easily identified in the report.\par
+\par
+Example:\par
+\par
+\f4\fs16   /// \\todo Remove marker tags around puInit memory leaks\par
+  char *mark1 = new char[32];\par
+  strcpy (mark1, "puInit Start");\par
+  puInit ();\par
+  char *mark2 = new char[32];\par
+  strcpy (mark2, "puInit End");\par
+\f1\fs24\par
+In this case, the puInit() function of the PUI library in PLIB has some known memory leaks.  By bracketing the function call with \ldblquote known\rdblquote  memory leaks that have the \ldblquote puInit Start\rdblquote  and \ldblquote puInit End\rdblquote  strings written into them, the puInit() memory leaks can be isolated in the memory leak report:\par
+\par
+\lang1036\f4\fs16\{35530\} normal block at 0x0A7F47A8, 32 bytes long.\par
+ Data: <puInit End      > 70 75 49 6E 69 74 20 45 6E 64 00 CD CD CD CD CD \par
+\{35529\} normal block at 0x0A906C78, 128 bytes long.\par
+ Data: <                > 00 CD CD CD CD CD CD CD CD CD CD CD CD CD CD CD \par
+\{35528\} normal block at 0x0A7F46E0, 128 bytes long.\par
+ Data: <                > 00 CD CD CD CD CD CD CD CD CD CD CD CD CD CD CD \par
+\{35527\} normal block at 0x0A7F4538, 364 bytes long.\par
+ Data: <TVt             > 54 56 74 00 0F 00 00 00 00 00 00 00 00 00 00 00 \par
+\{35526\} normal block at 0x0A7F44D0, 32 bytes long.\par
+ Data: <puInit Start    > 70 75 49 6E 69 74 20 53 74 61 72 74 00 CD CD CD \par
+\lang1033\f1\fs24\par
+\pard\keepn\fi-792\li792\sb240\sa60\tx792\b\f0\fs26 7.6.\tab DrawNoticeToUser\par
+\pard\b0\f1\fs24\par
+The DrawNoticeToUser() function, defined in Ui.h, can be used to display a message to the user onscreen in realtime.  It is useful for displaying realtime debugging data that is not appropriate for log files (for example, data that changes on each update or redraw cycle).  DrawNoticeToUser() is also used as a normal means of informing the user of camera changes, etc. so its use for debugging should be limited to local debugging prior to submitting any updates to the CVS repository.\par
+\par
+}
+ 

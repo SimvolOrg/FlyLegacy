@@ -1,0 +1,726 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	wind
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	WIND LAYERS CONFIGURATION
+	<loc >
+	361
+	282
+	<size>
+	450
+	250
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	250
+	250
+	<ipos>
+	1
+	0
+	1
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<labl>	// ERROR MESSAGE 
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		eror
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		  
+		<loc >
+		10
+		4
+		<size>
+		200
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+        <list> // Layer list
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		layr
+		<bind>
+		51
+		<widg>
+		List
+		defa
+		<loc >
+		10
+		28
+		<size>
+		400
+		100
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		0
+		<msel>
+		0
+		<vscr>
+		1
+		<hscr>
+		1
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+	<labl>	// ALTITUDE
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		selt
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		ALTITUDE: 
+		<loc >
+		150
+		130
+		<size>
+		50
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>		// Altitude +
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		altp
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		+
+		<loc >
+		150			// Was 484
+		150
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<butn>		// Altitude -
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		altm
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		-
+		<loc >
+		182			
+		150
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<labl>	// DIRECTION
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		DIRECTION:
+		<loc >
+		230
+		130
+		<size>
+		60
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>		// Altitude +
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dirp
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		+10
+		<loc >
+		230			
+		150
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<butn>		// Altitude -
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dirm
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		-10
+		<loc >
+		262			
+		150
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<butn>		// Altitude +
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		diru
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		+1
+		<loc >
+		230			
+		174
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<butn>		// Altitude -
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dird
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		-1
+		<loc >
+		262			
+		174
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<labl>	// SPEED
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		SPEED
+		<loc >
+		350
+		130
+		<size>
+		60
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>		// SPEED +
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		spdp
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		+
+		<loc >
+		350			
+		150
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		16
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<butn>		// SPEED -
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		spdm
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		-
+		<loc >
+		382			// Was 484
+		150
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<box_>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?box
+		<bind>
+		33
+		<widg>
+		Box
+		defa
+		<text>
+ 
+		<loc >
+		10
+		208
+		<size>
+		400
+		2
+		<enab>
+		1
+		<show>
+		1
+		<trns>
+		<font>
+		deff
+		<ok  >
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>	// Cloud cover
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		CLOUD COVER
+		<loc >
+		10
+		220
+		<size>
+		100
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		popm
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		 
+		<loc >
+		100
+		200
+		<size>
+		100
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		145
+		2
+		0
+		<lsiz>
+		100
+		14
+		<bsiz>
+		125
+		22
+		<rsiz>
+		R
+	<endo> ========== END OBJECT ==========
+	<labl>	// Cloud cover
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lb?
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		CEIL:
+		<loc >
+		210
+		220
+		<size>
+		90
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>		// Ceil +
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		skyp
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		+
+		<loc >
+		262			
+		218
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		ceil
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		1000 feet
+		<loc >
+		300
+		220
+		<size>
+		76
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		256
+	<endo> ========== END OBJECT ==========
+	<butn>		// Ceil +
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		skym
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		-
+		<loc >
+		382			
+		218
+		<size>
+		30
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		1
+		<rate>
+		0.4
+		<lsiz>
+		35
+		20
+		<bsiz>
+		35
+		20
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

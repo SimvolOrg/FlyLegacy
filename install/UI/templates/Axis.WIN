@@ -1,0 +1,541 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	axis
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Axis
+	<loc >
+	433
+	215
+	<size>
+	159
+	265
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	155
+	241
+	<ipos>
+	3
+	0
+	4
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	1
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		elvr
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Elevator
+		<loc >
+		5
+		4
+		<size>
+		140
+		75
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			Axis
+			<loc >
+			5
+			21
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			Trim
+			<loc >
+			5
+			51
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<slid>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			axis
+			<bind>
+			17
+			<widg>
+			Slider
+			defa
+			<text>
+			
+			<loc >
+			35
+			15
+			<size>
+			100
+			26
+			<enab>
+			0
+			<show>
+			1
+			<font>
+			deff
+			<maxv>
+			1.
+			<minv>
+			-1.
+			<curv>
+			0.
+			<majt>
+			0.10000000149011612
+			<dmjt>
+			1
+			<mint>
+			5.
+			<dmnt>
+			0
+			<snap>
+			0
+			<link>
+			
+		<endo> ========== END OBJECT ==========
+		<slid>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			trim
+			<bind>
+			17
+			<widg>
+			Slider
+			defa
+			<text>
+			
+			<loc >
+			35
+			45
+			<size>
+			100
+			26
+			<enab>
+			0
+			<show>
+			1
+			<font>
+			deff
+			<maxv>
+			1.
+			<minv>
+			-1.
+			<curv>
+			0.
+			<majt>
+			0.10000000149011612
+			<dmjt>
+			1
+			<mint>
+			5.
+			<dmnt>
+			0
+			<snap>
+			0
+			<link>
+			
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		ailr
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Aileron
+		<loc >
+		5
+		82
+		<size>
+		140
+		75
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			Axis
+			<loc >
+			5
+			21
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			Trim
+			<loc >
+			5
+			51
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<slid>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			axis
+			<bind>
+			17
+			<widg>
+			Slider
+			defa
+			<text>
+			
+			<loc >
+			35
+			15
+			<size>
+			100
+			26
+			<enab>
+			0
+			<show>
+			1
+			<font>
+			deff
+			<maxv>
+			1.
+			<minv>
+			-1.
+			<curv>
+			0.
+			<majt>
+			0.10000000149011612
+			<dmjt>
+			1
+			<mint>
+			5.
+			<dmnt>
+			0
+			<snap>
+			0
+			<link>
+			
+		<endo> ========== END OBJECT ==========
+		<slid>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			trim
+			<bind>
+			17
+			<widg>
+			Slider
+			defa
+			<text>
+			
+			<loc >
+			35
+			45
+			<size>
+			100
+			26
+			<enab>
+			0
+			<show>
+			1
+			<font>
+			deff
+			<maxv>
+			1.
+			<minv>
+			-1.
+			<curv>
+			0.
+			<majt>
+			0.10000000149011612
+			<dmjt>
+			1
+			<mint>
+			5.
+			<dmnt>
+			0
+			<snap>
+			0
+			<link>
+			
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		rudd
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Rudder
+		<loc >
+		5
+		160
+		<size>
+		140
+		75
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			Axis
+			<loc >
+			5
+			21
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			?lbl
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			Trim
+			<loc >
+			5
+			51
+			<size>
+			25
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<slid>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			axis
+			<bind>
+			17
+			<widg>
+			Slider
+			defa
+			<text>
+			
+			<loc >
+			35
+			15
+			<size>
+			100
+			26
+			<enab>
+			0
+			<show>
+			1
+			<font>
+			deff
+			<maxv>
+			1.
+			<minv>
+			-1.
+			<curv>
+			0.
+			<majt>
+			0.10000000149011612
+			<dmjt>
+			1
+			<mint>
+			5.
+			<dmnt>
+			0
+			<snap>
+			0
+			<link>
+			
+		<endo> ========== END OBJECT ==========
+		<slid>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			trim
+			<bind>
+			17
+			<widg>
+			Slider
+			defa
+			<text>
+			
+			<loc >
+			35
+			45
+			<size>
+			100
+			26
+			<enab>
+			0
+			<show>
+			1
+			<font>
+			deff
+			<maxv>
+			1.
+			<minv>
+			-1.
+			<curv>
+			0.
+			<majt>
+			0.10000000149011612
+			<dmjt>
+			1
+			<mint>
+			5.
+			<dmnt>
+			0
+			<snap>
+			0
+			<link>
+			
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

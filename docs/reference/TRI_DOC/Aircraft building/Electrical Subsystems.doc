@@ -1,0 +1,531 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f16\fswiss\fcharset0\fprq2{\*\panose 020b0a04020102020204}Arial Black;}
+{\f79\froman\fcharset238\fprq2 Times New Roman CE;}{\f80\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f82\froman\fcharset161\fprq2 Times New Roman Greek;}{\f83\froman\fcharset162\fprq2 Times New Roman Tur;}
+{\f84\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f175\fswiss\fcharset238\fprq2 Arial Black CE;}{\f176\fswiss\fcharset204\fprq2 Arial Black Cyr;}{\f178\fswiss\fcharset161\fprq2 Arial Black Greek;}{\f179\fswiss\fcharset162\fprq2 Arial Black Tur;}
+{\f180\fswiss\fcharset186\fprq2 Arial Black Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;
+\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 
+Normal;}{\s1\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 1;}{\s2\li1440\keepn\nowidctlpar\widctlpar\adjustright \f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 2;}{\s3\li720\keepn\nowidctlpar\widctlpar\adjustright 
+\f16\fs20\ul\cgrid \sbasedon0 \snext0 heading 3;}{\s4\keepn\nowidctlpar\widctlpar\adjustright \f16\fs28\cgrid \sbasedon0 \snext0 heading 4;}{\*\cs10 \additive Default Paragraph Font;}{\*\cs15 \additive \ul\cf2 \sbasedon10 Hyperlink;}{\*\cs16 \additive 
+\ul\cf12 \sbasedon10 FollowedHyperlink;}{\s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid \sbasedon0 \snext17 Body Text 2;}{\s18\fi720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid \sbasedon0 \snext18 Body Text Indent 2;}{
+\s19\fi-1440\li2880\nowidctlpar\widctlpar\tx2880\adjustright \f16\fs20\cgrid \sbasedon0 \snext19 Body Text Indent 3;}}{\info{\title Electrical Subsystems}{\author Paul Russell}{\operator Paul Russell}{\creatim\yr2000\mo5\dy24\hr15\min34}
+{\revtim\yr2000\mo8\dy18\hr19\min50}{\version3}{\edmins3}{\nofpages13}{\nofwords1649}{\nofchars9400}{\*\company Terminal Reality}{\nofcharsws0}{\vern71}}\widowctrl\ftnbj\aenddoc\hyphcaps0\formshade\viewkind4\viewscale100\pgbrdrhead\pgbrdrfoot \fet0\sectd 
+\linex0\endnhere\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4
+\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}
+{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain \s4\keepn\nowidctlpar\widctlpar\outlinelevel3\adjustright \f16\fs28\cgrid {
+Electrical Subsystems
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par Prerequisite Reading
+\par }{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "BASIC SYNTAX.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004241534943537e312e444f4300ffffadde000000000000000000000000000000000000000026000000200000000300420041005300490043002000530059004e005400410058002e0044004f00430000
+00}}}{\fldrslt {\cs15\ul\cf2 Basic Syntax}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "BASIC OBJECT TYPES.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d00000042415349434f7e312e444f4300ffffadde0000000000000000000000000000000000000000320000002c00000003004200410053004900430020004f0042004a00450043005400200054005900500045
+0053002e0044004f0043000000}}}{\fldrslt {\cs15\ul\cf2 Basic Object Types}}}{\f16 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005355425359537e312e444f4300ffffadde0000000000000000000000000000000000000000220000001c0000000300530055004200530059005300540045004d0053002e0044004f0043000000}}
+}{\fldrslt {\cs15\ul\cf2 Subsyst{\*\bkmkstart _Hlt479761964}e{\*\bkmkend _Hlt479761964}ms
+\par }}}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Battery}Battery{\*\bkmkend Battery}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938040}Signature:\tab batt
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479938040}Hardware Type:\tab BATTERY
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {
+The battery performs special tasks that the electrical system requires, therefore there MUST be a battery and it MUST be the first dependent in the electrical system dependency chain.
+\par 
+\par The battery will provide DC power to the circuit if all other power supplies do not provide enough.  Only when abundant power is available will the battery charge, otherwise, the battery will drain at the specified rate.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{
+\par }{\f16 <life> (float, amp-hr)
+\par }\pard \fi720\li720\nowidctlpar\widctlpar\adjustright {\f16 Battery Capacity.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <chrt> (float, amp-hr/sec)
+\par }\pard \fi720\li720\nowidctlpar\widctlpar\adjustright {\f16 Charging Rate.
+\par 
+\par The capacity recovery speed when the charger is active.
+\par 
+\par The charger is active when the circuit provides abundant power.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <chld> (float, amps)
+\par }\pard \fi720\li720\nowidctlpar\widctlpar\adjustright {\f16 Battery Charge Load.
+\par 
+\par The circuit load present while the battery is charging.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <lowB> (float, %)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Battery Low Limit.
+\par 
+\par The percentage capacity of the battery when Low Battery warning annunciators activate.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 None.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 lowB\tab announce Low Battery Voltage
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Alternator}Alternator
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Alternator}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939390}Signature:\tab natr
+\par Base Class:\tab Engine Subsystem
+\par {\*\bkmkend _Hlt479939390}Hardware Type:\tab ALTERNATOR
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Alternator is a DC power source that will match the current load of the circuit up to its load capacity.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par 
+\par }{\f16 <mxld> (float, amps)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Load Capacity.
+\par 
+\par The Load Capacity is used to set the maximum current supplied to the circuit.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <hiRg> (float, RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 High Voltage Regulation RPM Limit.
+\par 
+\par The Alternator will provide the specified voltage until this RPM is exceeded.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <loRg> (float, RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Low Voltage Regulation RPM Limit.
+\par 
+\par The Alternator will provide the specified voltage above this RPM.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \s3\li720\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {\tab None.
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \fi-1440\li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 lowV\tab announce Low Voltage
+\par maxV\tab announce High Voltage
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }{\f16 {\*\bkmkstart Generator}Generator
+\par {\*\bkmkend Generator}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab genr
+\par Base Class:\tab Engine Subsystem
+\par Hardware Type:\tab GENERATOR
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Generator is a DC power source that will match the current load of the circuit up to its load capacity.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par 
+\par }{\f16 <mxld> (float, amps)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Load Capacity.
+\par 
+\par The Load Capacity is used to set the maximum current supplied to the circuit.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <hiRg> (float, RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 High Voltage Regulation RPM Limit.
+\par 
+\par The Generator will provide the specified voltage until this RPM is exceeded.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <loRg> (float, RPM)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Low Voltage Regulation RPM Limit.
+\par 
+\par The Generator will provide the specified voltage above this RPM.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \s3\li720\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }{\f16 \tab None.
+\par 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi-1440\li2880\nowidctlpar\widctlpar\adjustright {\f16 lowV\tab announce Low Voltage
+\par maxV\tab announce High Voltage
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }{\f16\ul {\*\bkmkstart Inverter}Inverter
+\par }{\f16 {\*\bkmkend Inverter}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939512}Signature:\tab nvrt{\*\bkmkstart _Hlt479939504}{\*\bkmkend _Hlt479939504}
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479939512}Hardware Type:\tab INVERTER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s18\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Inverter is used to transition from a DC Circuit to an AC Circuit.  The Inverter creates a barrier so DC monitors and AC monitors can determine the proper line voltages.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par }{
+\par }{\f16\ul Message Tags
+\par }{\f16 
+\par None.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart CircuitMonitor}Circuit Monitor{\*\bkmkend CircuitMonitor}
+\par }{\ulnone 
+\par }\pard\plain \li720\nowidctlpar\widctlpar\tx2880\adjustright \fs20\cgrid {\f16 {\*\bkmkstart _Hlt479938152}Signature:\tab n/a
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479938152}Hardware Type:\tab UNKNOWN
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s3\li720\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Specification Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }{\f16 <mMon> (EventMessage)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Monitored Circuit Message Entry.
+\par 
+\par This message is sent during initialization to create a persistent path of communication to the circuit node that contains the information that needs to be monitored.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <cvrt> (Polynomial)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Conversion Polynomial Entry.
+\par 
+\par The Conversion Polynomial can be used to convert the Base Units of the monitored circuit into any desired units.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }{\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Ammeter}Ammeter
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Ammeter}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479937909}Signature:\tab amps
+\par Base Class:\tab Circuit Monitor
+\par {\*\bkmkend _Hlt479937909}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Ammeter subsystem is used to support Ammeter Gauges or Electrical Load Monitoring displays.
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{
+\par }{\f16 <chrg> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Use as Charge Meter Flag.
+\par 
+\par This flag is used to display the circuit loading as a positive number when charging and a negative number when the battery is supplying the power to the circuit.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <lodm> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Use as Load Meter Flag.
+\par 
+\par This flag is used to set the Ammeter to directly display the circuit loading.
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Message Tags
+\par }{\f16 
+\par }\pard\plain \s2\li1440\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par None.
+\par 
+\par }\pard\plain \s2\li1440\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Get
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par Default:\tab returns the indicated loading (amps)
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Voltmeter}Voltmeter{\*\bkmkend Voltmeter}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479940136}Signature:\tab volt
+\par Base Class:\tab Circuit Monitor
+\par {\*\bkmkend _Hlt479940136}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Voltmeter Subsystem is used to support Voltmeter Gauges or electrical power supply monitoring displays.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <lowV> (float, volts)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Low Voltage Limit.
+\par 
+\par The Low Voltage Limit is used to set the threshold that triggers the Low Voltage Annunciation.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16\ul Message Tags
+\par }{\f16 
+\par }\pard\plain \s2\li1440\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par None.
+\par 
+\par }\pard\plain \s2\li1440\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Get
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par Default:\tab returns the indicated system voltage (volts)
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Announcer Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi-1440\li2160\nowidctlpar\widctlpar\adjustright {\f16 lowV\tab announce Low Voltage
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart FrequencyMeter}Frequency Meter{\*\bkmkend FrequencyMeter}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938990}Signature:\tab freq
+\par Base Class:\tab Circuit Monitor
+\par {\*\bkmkend _Hlt479938990}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Frequency Meter Subsystem is used to support AC circuit monitoring displays.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par }{
+\par }{\f16\ul Message Tags
+\par }{\f16 
+\par None.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Flasher}Flasher{\*\bkmkend Flasher}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938922}Signature:\tab flsh
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479938922}Hardware Type:\tab FLASHER
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Flasher Subsystem is used to continuously toggle the Active status of the circuit.
+\par 
+\par The Flasher should be dependent on a controlling subsystem to reduce the overhead of re-computing the circuit states after each cycle.
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{
+\par }{\f16 <time> (float, seconds)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Cycle Period.
+\par 
+\par The Cycle Period is the amount of time the flasher delays after automatically toggling the State of the subsystem.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16\ul Message Tags
+\par }{\f16 
+\par None.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Contactor}Contactor
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Contactor}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938199}Signature:\tab cntr
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479938199}Hardware Type:\tab CONTACTOR
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Contactor Subsystem was created to simulate the generator contactors found in larger aircraft.  A Contactor monitors three isolated logical circuits, 1) Close, 2
+) Open, and 3) Reset.  When the individual circuit logic transitions from Off to On, the Contactor will change state accordingly.  If the individual circuit deactivates, the Contactor remains latched in its current state.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par 
+\par }{\f16 <clos> (EventMessage)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Close Message Entry.
+\par 
+\par The Close Message is sent during initialization to form a persistent communication path to the Active Status of the receiving subsystem.  The receiving subsystem should represent the results of a logical circuit that will cau
+se the Contactor to Close (become active).}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16 <open> (EventMessage)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Open Message Entry.
+\par 
+\par The Open Message is sent during initialization to form a persistent communication path to the Active Status of the receiving subsystem.  The receiving subsystem should r
+epresent the results of a logical circuit that will cause the Contactor to Open (become inactive).}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16 <rset> (EventMessage)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Reset Message Entry.
+\par 
+\par The Reset Message is sent during initialization to form a persistent communication path to the Active Status of 
+the receiving subsystem.  The receiving subsystem should represent the results of a logical circuit that will cause the Contactor to re-initialize (bypass the state history).}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16 <dlyC> (float, seconds)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Close Delay Period.
+\par 
+\par The Close Delay sets the period of time required to transition to the Active Status.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16 <dlyO> (float, seconds)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Open Delay Period.
+\par 
+\par The Open Delay sets the period of time required to transition to the Inactive Status.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par 
+\par }{\f16\ul Message Tags
+\par 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {None.
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart History}History{\*\bkmkend History}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939148}Signature:\tab hist
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479939148}Hardware Type:\tab UNKNOWN
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The History Subsystem was created to support the Master Caution & Warning System.  The History Subsystem becomes active when anyone of its dependencies transitions from Off to On.
+\par 
+\par }{\f16\ul Specification Tags
+\par }{\f16 
+\par None.
+\par 
+\par }{\f16\ul Message Tags
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 None.
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart Annunciator}Annunciator
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend Annunciator}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479937949}Signature:\tab annr
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479937949}Hardware Type:\tab ANNUNCIATOR
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Annunciator Subsystem provides a means of creating a persistent communication path to the subsystem that can determine when a specific event has occurred.
+\par 
+\par For example, Engine Fire Warning Annunciators can be located in several locations within the cockpit to remind pilots of all the systems that should be checked during an engine fire.  The Annunciator Subsystem connected to the \ldblquote Fire\rdblquote 
+ Announcer of the Fire System Subsystem is used to represent the \ldblquote Fire\rdblquote  event.  Now, all \ldblquote Fire\rdblquote  dependent events can be notified.
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Specification Tags
+\par }{
+\par }{\f16 <anId> (Announcer)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Announcer Message Entry.
+\par 
+\par The Announcer Message must be preceded by the Signature of the Announcer which is specified in the announcing subsystem description.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16\ul Message Tags
+\par 
+\par Set
+\par }{\f16 
+\par None.
+\par 
+\par }{\f16\ul Get
+\par }{\f16 
+\par }\pard\plain \s3\li720\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {\ulnone Default:\tab returns the Active Status.
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart AnnunciatorLight}Annunciator Light{\*\bkmkend AnnunciatorLight}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479937929}Signature:\tab anlt
+\par Base Class:\tab Annunciator
+\par {\*\bkmkend _Hlt479937929}Hardware Type:\tab LIGHT
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Annunciator Light Subsystem provides the capabilities of the Annunciator Subsystem and adds the option to create switching delays.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par }{
+\par }{\f16 <blnk> (float, seconds)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Blink Period.
+\par 
+\par The amount of time state will automatically toggle.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16 <blpp> (float, blinks per second)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Blink Rate.
+\par 
+\par The number of toggle cycles in one second.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16 <on_t> (float, seconds)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Leading Edge Delay Period.
+\par 
+\par The amount of time after an Off to On cycle occurs that passes before the light turns On.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16 <offt> (float, seconds)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Trailing Edge Delay Period.
+\par 
+\par The amount of time after an On to Off cycle occurs that passes before the light turns Off.}{
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {
+\par }{\f16\ul Message Tags
+\par 
+\par Set
+\par }{\f16 
+\par None.
+\par 
+\par }{\f16\ul Get
+\par }{\f16 
+\par }\pard\plain \s3\li720\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {\ulnone Default:\tab returns the Active Status.
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {Subsystem Set
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \fi720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Signature:\tab n/a
+\par Base Class:\tab Dependent
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 Hardware Type:\tab UNKNOWN
+\par }\pard\plain \s17\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul Specification Tags
+\par 
+\par }{\f16 <smsg> (EventMessage)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Subsystem Message Entry.
+\par 
+\par The Subsystem Message is sent during initialization to create a persistent communication path to the data contained in the receiving subsystem.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <zero> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Zero Based Indexing Flag.
+\par 
+\par The Zero Based Indexing flag sets the Subsystem Set to report the List Index of the Subsystem List with 0 as the first index, otherwise 1 is the default.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <dflt> (int, index)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Default Index.
+\par 
+\par The Default Index is used to set the initial Subsystem in the Set.
+\par 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard \li1440\nowidctlpar\widctlpar\tx2880\adjustright {\f16\ul Get (Data Tag)
+\par }{\f16 
+\par \lquote indx\rquote \tab returns the active index.
+\par 
+\par }{\f16\ul Set (Data Tag)
+\par }{\f16 
+\par \lquote indx\rquote \tab selects the active subsystem by index.
+\par }\pard \li1440\nowidctlpar\widctlpar\tx2880\tx3600\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart IndicatorSet}Indicator Set{\*\bkmkend IndicatorSet}
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939232}Signature:\tab inds
+\par Base Class:\tab Subsystem Set
+\par {\*\bkmkend _Hlt479939232}Hardware Type:\tab GAUGE
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Indicator Set Subsystem was created to provide a flexible method of supporting a multi-meter which is controlled by a multi-position selector.
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par Each subsystem in the set should represent a gauge subsystem. 
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul {\*\bkmkstart _Hlt480102271}{\*\bkmkend _Hlt480102271}Specification Tags
+\par 
+\par }{\f16 <scal> (float)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Scale.
+\par 
+\par The Scale is used to provide an proportional adjustment to the values reported by the active subsystem.
+\par 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }\pard \li1440\nowidctlpar\widctlpar\tx2880\adjustright {\f16\ul Get (Data Tag)
+\par }{\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\tx2880\adjustright \f16\fs20\cgrid {\lquote indn\rquote \tab returns the indication of the active subsystem.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\tx2880\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s19\fi-1440\li2880\nowidctlpar\widctlpar\tx2880\adjustright \f16\fs20\cgrid {\lquote scal\rquote \tab returns the scaled indication of the active subsystem.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\tx2880\adjustright \fs20\cgrid {\f16 
+\par }{\f16\ul Set (Data Tag)
+\par }{\f16 
+\par \lquote scal\rquote \tab sets the scale used with the Scaled value.
+\par }\pard \li1440\nowidctlpar\widctlpar\tx2880\tx3600\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart SwitchSet}Switch Set
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend SwitchSet}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479939950}Signature:\tab swst
+\par Base Class:\tab Subsystem Set
+\par {\*\bkmkend _Hlt479939950}Hardware Type:\tab SWITCH
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Switch Set Subsystem was created to support multi-position switches.
+\par 
+\par Each subsystem in the set should represent a Switch or State subsystem.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16\ul Specification Tags
+\par 
+\par }{\f16 <sync> (no value)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Synchronous Switching Flag.
+\par 
+\par The Synchronous Switching flag causes the list of subsystems to be treated as a simple On/Off Switch that controls all subsystems simultaneously.
+\par 
+\par By default, the list of subsystems are treated as mutually exclusive positions of a multi-position switch.  The active subsystem will sent the On Value and all other positions will be sent the Off Value.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <ssOn> (int)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 On Value.
+\par 
+\par The On Value is used to set the value sent to the active subsystem when it transitions from 0 to 1.  The default is 1.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <ssOf> (int)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Off Value.
+\par 
+\par The Off Value is used to set the value sent to the active subsystem when it transitions from 1 to 0.  The default is 0.
+\par 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par None.
+\par }\pard \nowidctlpar\widctlpar\tx2880\tx3600\adjustright {\f16 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \f16\fs20\ul\cgrid {{\*\bkmkstart ExteriorLight}{\*\bkmkstart _Hlt491257549}{\*\bkmkend _Hlt491257549}Exterior Light
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 {\*\bkmkend ExteriorLight}
+\par }\pard \li720\nowidctlpar\widctlpar\tx2880\adjustright {\f16 {\*\bkmkstart _Hlt479938089}Signature:\tab bulb
+\par Base Class:\tab Dependent
+\par {\*\bkmkend _Hlt479938089}Hardware Type:\tab LIGHT
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard\plain \s17\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Exterior Light Subsystem creates the interface between the electrical system and the associated Switchology to control the display of the external lights.
+\par }\pard\plain \fi720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s3\li720\keepn\nowidctlpar\widctlpar\outlinelevel2\adjustright \f16\fs20\ul\cgrid {Specification Tags
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\ul 
+\par }{\f16 <LMid> (IDType)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Light Manager Bulb Id.
+\par 
+\par The Light Manager Bulb Id is defined in the }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "EXTERNAL LIGHTS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d00000045585445524e7e312e444f4300ffffadde00000000000000000000000000000000000000002c000000260000000300450058005400450052004e0041004c0020004c00490047004800540053002e0044
+004f004300}}}{\fldrslt {\cs15\f16\ul\cf2 Ex{\*\bkmkstart _Hlt491257293}t{\*\bkmkend _Hlt491257293}ernal Light Manager}}}{\f16  and is set here to associate this light control to that light.
+\par 
+\par }\pard\plain \s2\li720\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Message Tags
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard\plain \s2\li1440\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Get
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par Default:\tab returns the Active Status.
+\par 
+\par }\pard\plain \s2\li1440\keepn\nowidctlpar\widctlpar\outlinelevel1\adjustright \f16\fs20\ul\cgrid {Set
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par Default:\tab sets the State.
+\par 
+\par }\pard \nowidctlpar\widctlpar\tx2880\tx3600\adjustright {\f16 
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par 
+\par }}

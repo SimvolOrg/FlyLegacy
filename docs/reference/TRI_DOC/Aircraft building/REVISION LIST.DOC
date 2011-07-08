@@ -1,0 +1,65 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f16\fswiss\fcharset0\fprq2{\*\panose 020b0a04020102020204}Arial Black;}
+{\f17\froman\fcharset238\fprq2 Times New Roman CE;}{\f18\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f20\froman\fcharset161\fprq2 Times New Roman Greek;}{\f21\froman\fcharset162\fprq2 Times New Roman Tur;}
+{\f22\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f113\fswiss\fcharset238\fprq2 Arial Black CE;}{\f114\fswiss\fcharset204\fprq2 Arial Black Cyr;}{\f116\fswiss\fcharset161\fprq2 Arial Black Greek;}{\f117\fswiss\fcharset162\fprq2 Arial Black Tur;}
+{\f118\fswiss\fcharset186\fprq2 Arial Black Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;
+\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 
+Normal;}{\s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \ul\cgrid \sbasedon0 \snext0 heading 1;}{\*\cs10 \additive Default Paragraph Font;}{\*\cs15 \additive \ul\cf2 \sbasedon10 Hyperlink;}{\s16\qc\nowidctlpar\widctlpar\adjustright 
+\f16\fs28\cgrid \sbasedon0 \snext16 Title;}{\*\cs17 \additive \ul\cf12 \sbasedon10 FollowedHyperlink;}}{\info{\title Revision List}{\author Paul Russell}{\operator Paul Russell}{\creatim\yr2000\mo8\dy18\hr14\min22}{\revtim\yr2000\mo8\dy18\hr18\min19}
+{\version10}{\edmins8}{\nofpages1}{\nofwords89}{\nofchars512}{\*\company Terminal Reality}{\nofcharsws0}{\vern71}}\widowctrl\ftnbj\aenddoc\hyphcaps0\formshade\viewkind4\viewscale100\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl 
+{\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5
+\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang
+{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain \s16\qc\nowidctlpar\widctlpar\adjustright \f16\fs28\cgrid {Revision List
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par 
+\par 
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \ul\cgrid {\field{\*\fldinst {\ulnone HYPERLINK "AUTOPILOT PANEL.DOC"}{\fs20\ulnone {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004155544f50497e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004100550054004f00500049004c004f0054002000500041004e0045004c002e0044
+004f00430000000000}}}{\fldrslt {\cs15\cf2 Autopil{\*\bkmkstart _Hlt491248864}o{\*\bkmkend _Hlt491248864}t Panel Subsystem
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid }}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {Added support for Auto-Brakes
+\par Added support for Auto-Throttle
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \ul\cgrid {\field{\*\fldinst {\ulnone HYPERLINK "THE SVH FILE FROM SCRATCH.DOC" \\l "Suspension"}{\fs20\ulnone {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005448455356487e312e444f4300ffffadde0000000000000000000000000000000000000000400000003a000000030054004800450020005300560048002000460049004c0045002000460052004f004d
+00200053004300520041005400430048002e0044004f0043000b000000530075007300700065006e00730069006f006e000000000000000000}}}{\fldrslt {\cs15\cf2 Suspen{\*\bkmkstart _Hlt491243804}s{\*\bkmkstart _Hlt491243831}{\*\bkmkend _Hlt491243804}i{\*\bkmkstart _Hlt491243840
+}{\*\bkmkend _Hlt491243831}o{\*\bkmkend _Hlt491243840}n {\*\bkmkstart _Hlt491248860}M{\*\bkmkend _Hlt491248860}odel}}}{\ulnone 
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {Added Speed Sensitive Steering Table
+\par Added Speed Sensitive Braking Table
+\par Added adjustable Rolling Resistance
+\par Added Diagnostic Output Option
+\par }\pard \nowidctlpar\widctlpar\adjustright {
+\par }\pard\plain \s1\keepn\nowidctlpar\widctlpar\outlinelevel0\adjustright \ul\cgrid {\field{\*\fldinst {\ulnone HYPERLINK "WINGS.DOC"}{\fs20\ulnone {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000a00000057494e47532e444f4300ffffadde000000000000000000000000000000000000000018000000120000000300570049004e00470053002e0044004f00430000000000000000}}}{\fldrslt {
+\cs15\cf2 Aerodyna{\*\bkmkstart _Hlt491245415}m{\*\bkmkend _Hlt491245415}ics Model
+\par }\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid }}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {Added Moment Coefficient to the Wing Sections
+\par Added Moment Coefficient to the Flaps
+\par Added Moment Coefficient to the Spoilers
+\par Added Alternate Ground Effect Method
+\par Added a method to adjust the total Form Drag
+\par Added a method to adjust the Aerodynamic Center
+\par Added support for Transonic and Supersonic Aerodynamics
+\par Added Diagnostic Output
+\par 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\field\flddirty{\*\fldinst {\fs24 HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "TurnCoordinator"}{{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f004300100000005400750072006e0043006f006f007200640069006e00610074006f00720000000000000000000000}}}{\fldrslt {\cs15\fs24\ul\cf2 Turn Co{\*\bkmkstart _Hlt491248869}o{\*\bkmkend _Hlt491248869}rd
+{\*\bkmkstart _Hlt491243835}i{\*\bkmkend _Hlt491243835}na{\*\bkmkstart _Hlt491243436}t{\*\bkmkend _Hlt491243436}or Subsystem
+\par }}}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {Added Adjustments
+\par 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\field\fldedit{\*\fldinst {\fs24 HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" \\l "KLN89"}{\fs24 {\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f004300060000004b004c004e00380039000000}}}{\fldrslt {\cs15\fs24\ul\cf2 GPS Radio Subsystem}{\cs15\fs24\ul\cf2 
+\par }}}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {Added}{
+\par 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\field\fldedit{\*\fldinst {\fs24 HYPERLINK "STANDARD INSTRUMENT SUBSYTEMS.DOC" \\l "TurnCoordinator"}{{\*\datafield 
+08d0c9ea79f9bace118c8200aa004ba90b02000000090000000303000000000000c00000000000004600000d0000005354414e44417e312e444f4300ffffadde0000000000000000000000000000000000000000480000004200000003005300540041004e004400410052004400200049004e0053005400520055004d0045
+004e005400200053005500420053005900540045004d0053002e0044004f004300100000005400750072006e0043006f006f007200640069006e00610074006f00720000000000000000000000}}}{\fldrslt {\cs15\fs24\ul\cf2 External Lights}{\cs15\fs24\ul\cf2 
+\par }}}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {
+\par }\pard \fi720\nowidctlpar\widctlpar\adjustright {Added
+\par 
+\par }{
+\par }}

@@ -1,0 +1,394 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	vect
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Vector Map
+	<loc >
+	180
+	140
+	<size>
+	640
+	480
+	<quad>
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	1
+	<move>
+	1
+	<layr>
+	1
+	<trns>
+	0
+	<save>
+	1
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		zoom
+		<bind>
+		34
+		<widg>
+		VectorGroupbox
+		vect
+		<text>
+		Zoom
+		<loc >
+		140
+		209
+		<size>
+		84
+		46
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<butn>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zout
+			<bind>
+			34
+			<widg>
+			Button
+			defa
+			<text>
+			-
+			<loc >
+			4
+			18
+			<size>
+			35
+			22
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<ok  >
+			0
+			<canc>
+			0
+			<rrpt>
+			1
+			<rate>
+			0.05000000149011612
+		<endo> ========== END OBJECT ==========
+		<butn>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			zin 
+			<bind>
+			34
+			<widg>
+			Button
+			defa
+			<text>
+			+
+			<loc >
+			40
+			18
+			<size>
+			35
+			22
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<ok  >
+			0
+			<canc>
+			0
+			<rrpt>
+			1
+			<rate>
+			0.05000000149011612
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		rose
+		<bind>
+		33
+		<widg>
+		VectorGroupbox
+		vect
+		<text>
+		Compass
+		<loc >
+		1
+		210
+		<size>
+		84
+		46
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<butn>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			rin 
+			<bind>
+			17
+			<widg>
+			Button
+			defa
+			<text>
+			-
+			<loc >
+			4
+			17
+			<size>
+			35
+			22
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<ok  >
+			0
+			<canc>
+			0
+			<rrpt>
+			1
+			<rate>
+			0.10000000149011612
+		<endo> ========== END OBJECT ==========
+		<butn>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			rout
+			<bind>
+			17
+			<widg>
+			Button
+			defa
+			<text>
+			+
+			<loc >
+			40
+			17
+			<size>
+			35
+			22
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<ok  >
+			0
+			<canc>
+			0
+			<rrpt>
+			1
+			<rate>
+			0.10000000149011612
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		back
+		<bind>
+		34
+		<widg>
+		VectorGroupbox
+		vect
+		<text>
+		Transparency
+		<loc >
+		280
+		209
+		<size>
+		84
+		46
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<butn>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			bkdn
+			<bind>
+			34
+			<widg>
+			Button
+			defa
+			<text>
+			-
+			<loc >
+			4
+			18
+			<size>
+			35
+			22
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<ok  >
+			0
+			<canc>
+			0
+			<rrpt>
+			1
+			<rate>
+			0.10000000149011612
+		<endo> ========== END OBJECT ==========
+		<butn>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			bkup
+			<bind>
+			34
+			<widg>
+			Button
+			defa
+			<text>
+			+
+			<loc >
+			40
+			18
+			<size>
+			35
+			22
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<ok  >
+			0
+			<canc>
+			0
+			<rrpt>
+			1
+			<rate>
+			0.10000000149011612
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<mbar>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		menu
+		<bind>
+		19
+		<widg>
+		WindowMenuBar
+		defa
+		<loc >
+		0
+		0
+		<size>
+		303
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<menu>
+		airp
+		Airports
+		<item>
+		drwa
+		Show Airports
+		<item>
+		nama
+		Show Names
+		<item>
+		idsa
+		Show IDs
+		<menu>
+		naid
+		Navaids
+		<item>
+		drwn
+		Show NDBs
+		<item>
+		namn
+		Show NDB Names
+		<item>
+		idsn
+		Show NDB IDs
+		<sepi>
+		0
+		<item>
+		drwv
+		Show VORs
+		<item>
+		namv
+		Show VOR Names
+		<item>
+		idsv
+		Show VOR IDs
+		<item>
+		frqn
+		Show VOR Frequencies
+		<menu>
+		opts
+		Options
+		<item>
+		labl
+		Show Labels
+		<item>
+		clin
+		coast line
+		<sepi>
+		0
+		<item>
+		ilsd
+		ILS Director
+//		<item>
+//		zoom
+//		Show Zoom Buttons
+//		<item>
+//		rose
+//		Show Rose Buttons
+		<sepi>
+		0
+		<item>
+		plat
+		Compass Rose
+		<item>
+		fade
+		Fade Compass Rose
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

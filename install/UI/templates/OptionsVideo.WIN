@@ -1,0 +1,248 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	sgrh
+	<bind>
+	68
+	<widg>
+	Window
+	defa
+	<text>
+	Video Options
+	<loc >
+	350
+	240
+	<size>
+	290
+	180
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Select the options appropriate for your system
+		<loc >
+		10
+		10
+		<size>
+		300
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		20
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		gres
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Resolution
+		<loc >
+		5
+		40
+		<size>
+		180
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<item>
+		r640
+		640x480
+		<item>
+		r800
+		800x600
+		<item>
+		1024
+		1024x768
+	<endo> ========== END OBJECT ==========
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		bitd
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Bit Depth
+		<loc >
+		200
+		40
+		<size>
+		80
+		36
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<item>
+		16bt
+		16 bits/pixel
+		<item>
+		32bt
+		32 bits/pixel
+	<endo> ========== END OBJECT ==========
+	<chkb>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		full
+		<bind>
+		17
+		<widg>
+		CheckBox
+		defa
+		<text>
+		Fullscreen
+		<loc >
+		5
+		90
+		<size>
+		200
+		15
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<stat>
+		0
+	<endo> ========== END OBJECT ==========
+	<chkb>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		agpt
+		<bind>
+		17
+		<widg>
+		CheckBox
+		defa
+		<text>
+		High Detail Textures
+		<loc >
+		5
+		120
+		<size>
+		200
+		15
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<stat>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		canc
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Cancel
+		<loc >
+		130
+		150
+		<size>
+		72
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		1
+		<rrpt>
+		0
+		<rate>
+		0.
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		okok
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		OK
+		<loc >
+		210
+		150
+		<size>
+		72
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

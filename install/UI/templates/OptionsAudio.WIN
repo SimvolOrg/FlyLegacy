@@ -1,0 +1,493 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	SndO
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Audio Options
+	<loc >
+	324
+	248
+	<size>
+	380
+	310
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<move>
+	1
+	<layr>
+	1
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Settings
+		<loc >
+		8
+		8
+		<size>
+		362
+		100
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<popu>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			devc
+			<bind>
+			17
+			<widg>
+			PopupMenu
+			defa
+			<text>
+			Device
+			<loc >
+			10
+			16
+			<size>
+			339
+			36
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<lsiz>
+			339
+			14
+		<endo> ========== END OBJECT ==========
+		<popu>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			frmt
+			<bind>
+			17
+			<widg>
+			PopupMenu
+			defa
+			<text>
+			Format
+			<loc >
+			10
+			56
+			<size>
+			120
+			36
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<lsiz>
+			120
+			14
+			<item>
+			mono
+			Mono
+			<item>
+			ster
+			Stereo
+			<item>
+			arnd
+			Surround
+		<endo> ========== END OBJECT ==========
+		<popu>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			qlty
+			<bind>
+			17
+			<widg>
+			PopupMenu
+			defa
+			<text>
+			Quality
+			<loc >
+			136
+			56
+			<size>
+			120
+			36
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<lsiz>
+			120
+			14
+			<item>
+			08bt
+			8-bit (Good)
+			<item>
+			16bt
+			16-bit (Best)
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Volume
+		<loc >
+		8
+		120
+		<size>
+		362
+		60
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<slid>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			volm
+			<bind>
+			17
+			<widg>
+			Slider
+			defa
+			<text>
+			
+			<loc >
+			10
+			19
+			<size>
+			150
+			27
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<maxv>
+			100.
+			<minv>
+			0.
+			<curv>
+			50.
+			<majt>
+			10.
+			<dmjt>
+			1
+			<mint>
+			5.
+			<dmnt>
+			0
+			<snap>
+			0
+		<endo> ========== END OBJECT ==========
+		<labl>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			cvol
+			<bind>
+			17
+			<widg>
+			Label
+			defa
+			<text>
+			
+			<loc >
+			166
+			19
+			<size>
+			50
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<just>
+			17
+			<wrap>
+			0
+		<endo> ========== END OBJECT ==========
+		<chkb>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			mute
+			<bind>
+			17
+			<widg>
+			CheckBox
+			defa
+			<text>
+			Mute
+			<loc >
+			275
+			19
+			<size>
+			75
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<stat>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<grbx>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?grb
+		<bind>
+		17
+		<widg>
+		Groupbox
+		defa
+		<text>
+		Sounds
+		<loc >
+		8
+		190
+		<size>
+		362
+		80
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<chkb>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			scpt
+			<bind>
+			17
+			<widg>
+			CheckBox
+			defa
+			<text>
+			Cockpit
+			<loc >
+			8
+			52
+			<size>
+			150
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<stat>
+			0
+		<endo> ========== END OBJECT ==========
+		<chkb>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			senv
+			<bind>
+			17
+			<widg>
+			CheckBox
+			defa
+			<text>
+			Environment
+			<loc >
+			190
+			35
+			<size>
+			150
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<stat>
+			0
+		<endo> ========== END OBJECT ==========
+		<chkb>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			satc
+			<bind>
+			17
+			<widg>
+			CheckBox
+			defa
+			<text>
+			Air traffic Control
+			<loc >
+			190
+			18
+			<size>
+			150
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<stat>
+			0
+		<endo> ========== END OBJECT ==========
+		<chkb>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			seng
+			<bind>
+			17
+			<widg>
+			CheckBox
+			defa
+			<text>
+			Engine
+			<loc >
+			8
+			18
+			<size>
+			150
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<stat>
+			0
+		<endo> ========== END OBJECT ==========
+		<chkb>
+		<bgno> ========== BEGIN OBJECT ==========
+			<ID  >
+			sveh
+			<bind>
+			17
+			<widg>
+			CheckBox
+			defa
+			<text>
+			Aircraft
+			<loc >
+			8
+			35
+			<size>
+			150
+			14
+			<enab>
+			1
+			<show>
+			1
+			<font>
+			deff
+			<stat>
+			0
+		<endo> ========== END OBJECT ==========
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		canc
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Cancel
+		<loc >
+		220
+		280
+		<size>
+		72
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		1
+		<rrpt>
+		0
+		<rate>
+		0.
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		okok
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		OK
+		<loc >
+		300
+		280
+		<size>
+		72
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

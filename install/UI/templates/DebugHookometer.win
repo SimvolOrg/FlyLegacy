@@ -1,0 +1,149 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	hkom
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	
+	<loc >
+	402
+	342
+	<size>
+	220
+	110
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	212
+	82
+	<ipos>
+	0
+	0
+	0
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	1
+	<bord>
+	1
+	<bsiz>
+	4
+	<move>
+	1
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lstH
+		<bind>
+		19
+		<widg>
+		List
+		defa
+		<loc >
+		5
+		5
+		<size>
+		200
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		1
+		<msel>
+		0
+		<vscr>
+		0
+		<hscr>
+		0
+		<dwid>
+		200
+		<autw>
+		0
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		errL
+		<bind>
+		51
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		5
+		55
+		<size>
+		200
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+	<endo> ========== END OBJECT ==========
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lstM
+		<bind>
+		19
+		<widg>
+		List
+		defa
+		<loc >
+		5
+		30
+		<size>
+		200
+		20
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		1
+		<msel>
+		0
+		<vscr>
+		0
+		<hscr>
+		0
+		<dwid>
+		200
+		<autw>
+		0
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

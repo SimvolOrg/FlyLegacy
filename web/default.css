@@ -1,0 +1,91 @@
+
+body {
+  background:	#96DBFD url(images/bodybg.jpg) repeat
+}
+
+a {
+  font-family:	"Arial", sans-serif;
+  font-style:	normal;
+  font-weight:	normal;
+  font-size:    100%;
+  color:	black;
+}
+
+p {
+  font-family:	"Arial", sans-serif;
+  font-style:	normal;
+  font-weight:	normal;
+  font-size:    100%;
+  color:	black;
+}
+
+h1 {
+  font-family:	"Arial", sans-serif;
+  font-style:	normal;
+  font-weight:	bold;
+  font-size:	x-large;
+  color:	black;
+}
+
+h2 {
+  font-family:	"Arial", sans-serif;
+  font-style:	normal;
+  font-weight:	bold;
+  font-size:	large;
+  color:	black;
+}
+
+h3 {
+  font-family:	"Arial", sans-serif;
+  font-style:	italic;
+  font-weight:	bold;
+  font-size:	medium;
+  color:	blue;
+}
+
+table {
+  border:	1;
+}
+
+.left_menu_header {
+  color:	blue;
+  text-align:	center;
+}
+
+.left_menu_item {
+  color:	blue;
+  text-align:	center;
+}
+
+.news_headline {
+  font-family:	"Arial", sans-serif;
+  font-style:	normal;
+  font-weight:	bold;
+  font-size:	125%;
+  color:	black;
+}
+
+.news_byline {
+  font-family:	"Arial", sans-serif;
+  font-style:	italic;
+  font-weight:	normal;
+  font-size:	75%;
+  color:	black;
+}
+
+.news_body {
+  font-family:	"Arial", sans-serif;
+  font-style:	normal;
+  font-weight:	normal;
+  font-size:	100%;
+  color:	black;
+}
+
+.copyright {
+  font-family:	"Arial", sans-serif;
+  font-style:	normal;
+  font-weight:	normal;
+  font-size:	75%;
+  color:	black;
+}
+

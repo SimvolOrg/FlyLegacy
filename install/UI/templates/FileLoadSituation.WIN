@@ -1,0 +1,219 @@
+//
+// Fly! Legacy Window Template
+//
+// File -> Load Situation dialog
+//
+
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	Load
+	<widg>
+	Window
+	defa
+	<text>
+	Load Situation
+	<loc >
+	200
+	175
+	<size>
+	400
+	250
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<move>
+	1
+	<layr>
+	3
+	<popu>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		fold
+		<bind>
+		17
+		<widg>
+		PopupMenu
+		defa
+		<text>
+		Folder
+		<loc >
+		8
+		2
+		<size>
+		270
+		40
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<lsiz>
+		40
+		22
+		<bsiz>
+		230
+		22
+	<endo> ========== END OBJECT ==========
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		list
+		<bind>
+		51
+		<widg>
+		List
+		defa
+		<loc >
+		10
+		50
+		<size>
+		375
+		150
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		0
+		<usrr>
+		0
+		<msel>
+		1
+		<vscr>
+		1
+		<hscr>
+		0
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		14
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		33
+		<widg>
+		Label
+		defa
+		<text>
+		File Name
+		<loc >
+		8
+		222
+		<size>
+		60
+		15
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		name
+		<bind>
+		33
+		<widg>
+		TextField
+		defa
+		<text>
+		
+		<loc >
+		70
+		222
+		<size>
+		150
+		15
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		256
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		canc
+		<bind>
+		34
+		<widg>
+		Button
+		defa
+		<text>
+		Cancel
+		<loc >
+		240
+		220
+		<size>
+		72
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		1
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		open
+		<bind>
+		34
+		<widg>
+		Button
+		defa
+		<text>
+		Open
+		<loc >
+		320
+		220
+		<size>
+		72
+		21
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

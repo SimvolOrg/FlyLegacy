@@ -1,0 +1,131 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	mapw
+	<bind>
+	18
+	<widg>
+	Window
+	defa
+	<text>
+	Maps
+	<loc >
+	390
+	269
+	<size>
+	244
+	226
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	236
+	200
+	<ipos>
+	0
+	0
+	0
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	1
+	<bord>
+	1
+	<bsiz>
+	4
+	<move>
+	1
+	<layr>
+	1
+	<trns>
+	0
+	<save>
+	1
+	<map_>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		map_
+		<bind>
+		51
+		<loc >
+		1
+		18
+		<size>
+		232
+		179
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+	<endo> ========== END OBJECT ==========
+	<mbar>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		mbar
+		<bind>
+		19
+		<widg>
+		WindowMenuBar
+		defa
+		<loc >
+		0
+		0
+		<size>
+		236
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<menu>
+		view
+		View
+		<item>
+		slct
+		Select Map...
+		<sepi>
+		0
+		<menu>
+		opti
+		Options
+		<item>
+		auto
+		Auto-Select
+		<item>
+		cntr
+		Auto-Center
+		<item>
+		user
+		Show User Aircraft
+		<item>
+		aiac
+		Show Computer Aircraft
+		<sepi>
+		0
+		<item>
+		25__
+		25%
+		<item>
+		50__
+		50%
+		<item>
+		75__
+		75%
+		<item>
+		100_
+		100%
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

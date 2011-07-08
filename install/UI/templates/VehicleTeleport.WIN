@@ -1,0 +1,622 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	goto
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Teleport
+	<loc >
+	392
+	312
+	<size>
+	282
+	171
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	278
+	147
+	<ipos>
+	1
+	0
+	1
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Longitude
+		<loc >
+		5
+		45
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		h
+		<loc >
+		30
+		25
+		<size>
+		10
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		m
+		<loc >
+		100
+		25
+		<size>
+		10
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		s
+		<loc >
+		170
+		65
+		<size>
+		10
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		s
+		<loc >
+		170
+		25
+		<size>
+		10
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lath
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		
+		<loc >
+		41
+		24
+		<size>
+		35
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		2
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		latm
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		
+		<loc >
+		111
+		24
+		<size>
+		35
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		2
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lats
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		
+		<loc >
+		181
+		24
+		<size>
+		35
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		2
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lons
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		
+		<loc >
+		182
+		64
+		<size>
+		35
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		2
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Latitude
+		<loc >
+		5
+		5
+		<size>
+		200
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		h
+		<loc >
+		30
+		65
+		<size>
+		10
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<radb>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dirS
+		<bind>
+		17
+		<widg>
+		RadioButton
+		defa
+		<text>
+		S
+		<loc >
+		230
+		31
+		<size>
+		88
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<stat>
+		1
+	<endo> ========== END OBJECT ==========
+	<radb>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dirN
+		<bind>
+		17
+		<widg>
+		RadioButton
+		defa
+		<text>
+		N
+		<loc >
+		230
+		15
+		<size>
+		88
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<stat>
+		1
+	<endo> ========== END OBJECT ==========
+	<grpb>
+	<radb>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dirE
+		<bind>
+		17
+		<widg>
+		RadioButton
+		defa
+		<text>
+		E
+		<loc >
+		230
+		55
+		<size>
+		88
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<stat>
+		1
+	<endo> ========== END OBJECT ==========
+	<radb>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dirW
+		<bind>
+		17
+		<widg>
+		RadioButton
+		defa
+		<text>
+		W
+		<loc >
+		230
+		71
+		<size>
+		88
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<stat>
+		1
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lonm
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		
+		<loc >
+		111
+		64
+		<size>
+		35
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		2
+	<endo> ========== END OBJECT ==========
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		lonh
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+		
+		<loc >
+		42
+		64
+		<size>
+		35
+		16
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<pass>
+		0
+		<chrs>
+		3
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		m
+		<loc >
+		100
+		65
+		<size>
+		10
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		goto
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Teleport
+		<loc >
+		146
+		113
+		<size>
+		100
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		1
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		100
+		22
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dirc
+		<bind>
+		17
+		<widg>
+		Button
+		defa
+		<text>
+		Directory...
+		<loc >
+		27
+		113
+		<size>
+		100
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		100
+		22
+		<bsiz>
+		100
+		22
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========

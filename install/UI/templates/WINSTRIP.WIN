@@ -1,0 +1,78 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	strp
+	<bind>
+	68
+	<widg>
+	Window
+	defa
+	<loc >
+	12
+	104
+	<size>
+	500
+	 20
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	300
+	 30
+	<ipos>
+	10
+	0
+	2
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	4
+	<move>
+	1
+	<layr>
+	0
+	<trns>
+	0
+	<save>
+	0
+	<edit>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		text
+		<bind>
+		17
+		<widg>
+		TextField
+		defa
+		<text>
+
+		<loc >
+		20
+		0
+		<size>
+		460
+		18
+		<hscr>
+		1
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+	<endo> ========== END OBJECT ==========
+
+<endo> ========== END OBJECT ==========

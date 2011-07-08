@@ -1,0 +1,18 @@
+<bgno> -- Begin File --
+
+	///////////////////////////////////////////////////
+	//
+	//	Visual Aircraft Models
+	//
+	///////////////////////////////////////////////////
+
+	<dlod> ---- daytime models ----
+	<bgno> ---- begin models ----
+		<mod2> ---- model entry ----
+		comp
+		flymed.acm
+		200
+	<endo> ---- end models ----
+
+<endo> -- End of File --
+

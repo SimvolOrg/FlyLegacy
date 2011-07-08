@@ -1,0 +1,708 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<desc> ========== Description ===========
+	SFO-->BOS
+	<vers> ---------- version number --------
+	4
+	<wpnt> --------- Waypoint ---------------
+	sarw
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		SAN FRANCISCO INTL
+		<llps> ---------Lat/lon,alt position 
+		135428.406250,855450.562500,11.000000
+		<dbky> ---------Database key --------
+		US10802
+		<type> ---------Waypoint type--------
+		sarw
+		<altd> ---Altitude (feet) at WPT-----
+		11.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		SACRAMENTO
+		<llps> ---------Lat/lon,alt position 
+		138397.078125,858414.312500,10.000000
+		<dbky> ---------Database key --------
+		US2SAC1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		HANGTOWN
+		<llps> ---------Lat/lon,alt position 
+		139408.906250,861302.375000,2602.000000
+		<dbky> ---------Database key --------
+		US4HNW1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		MUSTANG
+		<llps> ---------Lat/lon,alt position 
+		142312.578125,865238.125000,5940.000000
+		<dbky> ---------Database key --------
+		US2FMG1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		LOVELOCK
+		<llps> ---------Lat/lon,alt position 
+		144449.671875,869120.437500,4784.000000
+		<dbky> ---------Database key --------
+		US2LLC1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		BATTLE MOUNTAIN
+		<llps> ---------Lat/lon,alt position 
+		146048.937500,875079.875000,4536.000000
+		<dbky> ---------Database key --------
+		US2BAM1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	wywy
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		SPRUZ
+		<llps> ---------Lat/lon,alt position 
+		146438.109375,882535.750000,0.000000
+		<dbky> ---------Database key --------
+		SPRUZUS
+		<type> ---------Waypoint type--------
+		wywy
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		BONNEVILLE
+		<llps> ---------Lat/lon,alt position 
+		146613.953125,886473.312500,4220.000000
+		<dbky> ---------Database key --------
+		US2BVL1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		SALT LAKE CITY
+		<llps> ---------Lat/lon,alt position 
+		147060.906250,892865.125000,4220.000000
+		<dbky> ---------Database key --------
+		US2SLC1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		FORT BRIDGER
+		<llps> ---------Lat/lon,alt position 
+		148962.421875,898473.312500,7060.000000
+		<dbky> ---------Database key --------
+		US4FBR1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		ROCK SPRINGS
+		<llps> ---------Lat/lon,alt position 
+		149724.765625,903544.875000,6780.000000
+		<dbky> ---------Database key --------
+		US2OCS1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		CHEROKEE
+		<llps> ---------Lat/lon,alt position 
+		150320.546875,908704.875000,7050.000000
+		<dbky> ---------Database key --------
+		US4CKW1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		CHEYENNE
+		<llps> ---------Lat/lon,alt position 
+		148359.437500,918817.500000,6210.000000
+		<dbky> ---------Database key --------
+		US2CYS1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		SCOTTSBLUFF
+		<llps> ---------Lat/lon,alt position 
+		150818.968750,923464.750000,4170.000000
+		<dbky> ---------Database key --------
+		US2BFF1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	wywy
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		EVENN
+		<llps> ---------Lat/lon,alt position 
+		151718.000000,927541.750000,0.000000
+		<dbky> ---------Database key --------
+		EVENNUS
+		<type> ---------Waypoint type--------
+		wywy
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		VALENTINE
+		<llps> ---------Lat/lon,alt position 
+		154301.812500,934021.312500,2586.000000
+		<dbky> ---------Database key --------
+		US5VTN1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		O'NEILL
+		<llps> ---------Lat/lon,alt position 
+		152893.812500,940727.062500,2030.000000
+		<dbky> ---------Database key --------
+		US2ONL1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		WAYNE
+		<llps> ---------Lat/lon,alt position 
+		152049.328125,946850.937500,1431.000000
+		<dbky> ---------Database key --------
+		US5LCG1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		STORM LAKE
+		<llps> ---------Lat/lon,alt position 
+		153361.734375,953120.187500,1485.000000
+		<dbky> ---------Database key --------
+		US5SLB1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		FORT DODGE
+		<llps> ---------Lat/lon,alt position 
+		153400.250000,956538.625000,1150.000000
+		<dbky> ---------Database key --------
+		US2FOD1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		MASON CITY
+		<llps> ---------Lat/lon,alt position 
+		155141.062500,960012.437500,1210.000000
+		<dbky> ---------Database key --------
+		US2MCW1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	wywy
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		SABBO
+		<llps> ---------Lat/lon,alt position 
+		155273.265625,967792.625000,0.000000
+		<dbky> ---------Database key --------
+		SABBOUS
+		<type> ---------Waypoint type--------
+		wywy
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		MINERAL POINT
+		<llps> ---------Lat/lon,alt position 
+		154396.984375,971184.750000,1157.000000
+		<dbky> ---------Database key --------
+		US5MRJ1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		MADISON
+		<llps> ---------Lat/lon,alt position 
+		155321.375000,974377.062500,860.000000
+		<dbky> ---------Database key --------
+		US2MSN1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		BADGER
+		<llps> ---------Lat/lon,alt position 
+		155220.671875,978176.375000,1080.000000
+		<dbky> ---------Database key --------
+		US2BAE1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		MUSKO
+		<llps> ---------Lat/lon,alt position 
+		155236.109375,985793.375000,0.000000
+		<dbky> ---------Database key --------
+		US5MK3
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		ALMA
+		<llps> ---------Lat/lon,alt position 
+		155964.093750,990773.250000,0.000000
+		<dbky> ---------Database key --------
+		US5AMN1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		BROWNE
+		<llps> ---------Lat/lon,alt position 
+		156353.500000,994110.875000,600.000000
+		<dbky> ---------Database key --------
+		US5HYX1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		LARAMIE
+		<llps> ---------Lat/lon,alt position 
+		148816.312500,915404.625000,7280.000000
+		<dbky> ---------Database key --------
+		US2LAR1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		PECK
+		<llps> ---------Lat/lon,alt position 
+		155721.203125,998215.687500,810.000000
+		<dbky> ---------Database key --------
+		US2ECK1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		LONDON
+		<llps> ---------Lat/lon,alt position 
+		154937.171875,1003865.562500,910.000000
+		<dbky> ---------Database key --------
+		CA2YXU1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		PLAZZ
+		<llps> ---------Lat/lon,alt position 
+		154345.765625,1012260.687500,630.000000
+		<dbky> ---------Database key --------
+		US5GB1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		PENN YAN
+		<llps> ---------Lat/lon,alt position 
+		153518.250000,1018599.125000,977.000000
+		<dbky> ---------Database key --------
+		US5PYA1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		SYRACUSE
+		<llps> ---------Lat/lon,alt position 
+		155377.906250,1021663.562500,420.000000
+		<dbky> ---------Database key --------
+		US2SYR1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		ALBANY
+		<llps> ---------Lat/lon,alt position 
+		153889.937500,1030308.500000,275.000000
+		<dbky> ---------Database key --------
+		US2ALB1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		MOUNT SNOW
+		<llps> ---------Lat/lon,alt position 
+		154539.015625,1033689.750000,1920.000000
+		<dbky> ---------Database key --------
+		US5VWD1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		GARDNER
+		<llps> ---------Lat/lon,alt position 
+		153165.421875,1036590.500000,1280.000000
+		<dbky> ---------Database key --------
+		US2GDM1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	snav
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		LYNDY
+		<llps> ---------Lat/lon,alt position 
+		152827.484375,1040532.187500,15.000000
+		<dbky> ---------Database key --------
+		US5LQ1
+		<type> ---------Waypoint type--------
+		snav
+		<altd> ---Altitude (feet) at WPT-----
+		8400.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+	<wpnt> --------- Waypoint ---------------
+	sarw
+	<bgno> ========== BEGIN OBJECT ==========
+		<name> ---------- Waypoint name -----
+		GENERAL EDWARD LAWRENCE LOGAN INTL
+		<llps> ---------Lat/lon,alt position 
+		152511.656250,1040381.375000,19.000000
+		<dbky> ---------Database key --------
+		US05375
+		<type> ---------Waypoint type--------
+		sarw
+		<altd> ---Altitude (feet) at WPT-----
+		19.000000
+		<sped> ---Speed (knots)   at WPT-----
+		94.500000
+		<mark> ---Terminated mark- ----------
+		 
+	<endo> ========== END OBJECT ============
+<endo> ========== END OBJECT ============

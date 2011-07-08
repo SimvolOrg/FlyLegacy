@@ -1,0 +1,7 @@
+6
+spot,Spot Camera,1
+orbt,Orbit Camera,0
+obsr,Stationary Camera,1
+flyb,Fly-By Camera,1
+towr,Tower Camera,1
+over,Over Camera,1

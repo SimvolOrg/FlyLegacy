@@ -1,0 +1,359 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f16\fswiss\fcharset0\fprq2{\*\panose 020b0a04020102020204}Arial Black;}
+{\f17\froman\fcharset238\fprq2 Times New Roman CE;}{\f18\froman\fcharset204\fprq2 Times New Roman Cyr;}{\f20\froman\fcharset161\fprq2 Times New Roman Greek;}{\f21\froman\fcharset162\fprq2 Times New Roman Tur;}
+{\f22\froman\fcharset186\fprq2 Times New Roman Baltic;}{\f113\fswiss\fcharset238\fprq2 Arial Black CE;}{\f114\fswiss\fcharset204\fprq2 Arial Black Cyr;}{\f116\fswiss\fcharset161\fprq2 Arial Black Greek;}{\f117\fswiss\fcharset162\fprq2 Arial Black Tur;}
+{\f118\fswiss\fcharset186\fprq2 Arial Black Baltic;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;
+\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\widctlpar\adjustright \fs20\cgrid \snext0 
+Normal;}{\*\cs10 \additive Default Paragraph Font;}{\s15\li720\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid \sbasedon0 \snext15 Body Text 2;}{\s16\li1440\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid \sbasedon0 \snext16 Body Text Indent 2;}{\*
+\cs17 \additive \ul\cf2 \sbasedon10 Hyperlink;}{\*\cs18 \additive \ul\cf12 \sbasedon10 FollowedHyperlink;}}{\info{\title The SVH File from Scratch}{\author Paul Russell}{\operator Paul Russell}{\creatim\yr2000\mo5\dy24\hr15\min30}
+{\revtim\yr2000\mo8\dy18\hr15\min5}{\version7}{\edmins36}{\nofpages10}{\nofwords1887}{\nofchars10756}{\*\company Terminal Reality}{\nofcharsws13209}{\vern71}}
+\widowctrl\ftnbj\aendnotes\aftnstart0\hyphhotz0\aftnnar\lytprtmet\hyphcaps0\viewkind4\viewscale100\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2
+\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6
+\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang
+{\pntxtb (}{\pntxta )}}\pard\plain \nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16\fs28 The SVH File from Scratch
+\par }{\f16 
+\par This document will explain the creation of the SVH File.  A brief description of each required parameter will be included.
+\par 
+\par }{\f16\ul Prerequisite Reading
+\par }{\f16 
+\par Basic Syntax
+\par Basic Object Types
+\par 
+\par }{\f16\ul A White Canvas
+\par }{\f16 
+\par I find the easiest way
+ to create a new aircraft in Fly! is to start by creating a new text file and give it the appropriate name (like MyPlane.SVH).  At one point in the creation of Fly!, there was no other files.  I had to create the first file without the aide of Cut and Pas
+te.  Now, we are past that, so let's use the files supplied with Fly! as a source of ready-made components that may be used to create "MyPlane".
+\par 
+\par }{\f16\ul What must be in the SVH File?
+\par }{\f16 
+\par If you are looking at the Skyhawk.SVH file, you may think it seems busy.  If you
+ are looking at the Hawker.SVH file, you may think it seems cluttered.  If you did a little comparison between the two files, you probably recognized a similar pattern.  You may have concluded that the Hawker file should be longer than the Skyhawk file be
+cause of the relative complexity of the actual aircraft.
+\par 
+\par The Fly! Architecture allows you the ability to scale the Level of Complexity.  If you choose to create an aircraft with no interior, no cockpit panel, you can eliminate most of the content of the SVH File.
+\par 
+\par Currently, MyPlane.SVH is empty...
+\par 
+\par All SVH File must begin and end with the Object Tags.  So on line 1 of MyPlane.SVH add <bgno> and add <endo> to the second to the last line.  Leave the last line blank to prevent some possible End-of-file problems with different editors.
+\par 
+\par <bgno> -- Begin SVH File Object --
+\par <endo> -- End SVH File Object --
+\par [blank line]
+\par 
+\par All the rest of the file content needs to be added between the Begin and End Tags (including comments, to be safe)
+\par 
+\par }{\f16\ul Must Have
+\par }{\f16 The following Tags are required to satisfy basic requirements for the user interface and game engine (Access Violation prevention).
+\par 
+\par <name>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 Object Name is any text that uniquely names your aircraft.  This text can be used in Search Routines within the game, so a unique match can be achieved.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <acid>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+Tail Number is a string that is used by ATC to uniquely identify your aircraft during run-time.  The Tail Number is used to create a unique History File, so you may fly several different aircraft with the same Make and Model.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <make>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+The Make or manufacturer is used by the ATC phrase system.  If the Make is one of the following (cessna, piper, navajo, hawker, kingair) then the matching phrase will be included when the ATC references this aircraft.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <CLAS>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Aircraft Classification is used by the User Interface in the Aircraft Setup Dialog and it is used to place Dynamic Aircraft Scenery.
+\par 
+\par 1\tab Single
+\par 2\tab Twin
+\par 4\tab Turboprop
+\par 8\tab Jet
+\par 16\tab Jumbo
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <USAG>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Aircraft Usage is used to place Dynamic Aircraft Scenery.
+\par 
+\par 1\tab Civilian
+\par 2\tab Commercial
+\par 4\tab Military
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <emas>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Empty Mass is the mass of the aircraft without Fuel, Passengers or Cargo.  (reminder; Mass = Weight / Gravity = Weight(lbs) / 32.174(ft / sq. sec.))  Note: Fly! uses the English Mass Unit of Slugs.
+
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <maxM>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+The Maximum Mass is the maximum allowable mass of the aircraft fully loaded.  The suspension model uses the Max Mass to determine the strength of the springs when the suspension is in the neutral position.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <mine>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Moment of Inertia is required to convert the Sum of the Moments into the angular acceleration for the aircraft.
+\par 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 <dcen>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Dynamic Center is the vector distance from the Model Center (origin of the visual model) to the Gravity Center (origin of the dynamics model).
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <iceR>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Wing Ice Accumulation Rate is speed (%/second) at which ice accumulates on the aerodynamic surfaces.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <CEIL>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Service Ceiling is the pressure altitude where the aircraft's maximum rate of climb is 100 feet per minute.  The ATC uses this value to direct aircraft.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <043a>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Fast Cruise Speed is the speed used by the AI Pilot when enroute to destination.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <044a>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Approach Speed is the speed used by the AI Pilot during the initial approach phase while waiting to intercept the glideslope.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <045a>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Best Climb is used by the AI Pilot for increasing altitude at a reasonable rate.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <048a>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Never Exceed Speed is a structural limit for the aircraft.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <mxCG>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+The Max CG Movement is the vector distance from the Aerodynamic Center to the Gravity Center when the aircraft is empty.  The X value is used to set the Max Lateral Tolerance for the CG (it should always be positive).
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <posG>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Positive G Limit is an acceleration limit for the aircraft.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <negG>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Negative G Limit is an acceleration limit for the aircraft.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <stal>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Simple Stall Speed is used by the AI Pilot as a quick calculation for the minimum flight speed.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <mmgr>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Model Manager Info specifies the Visual Model Levels of Detail (LOD).  The Model Manager Info is a list of LOD Objects.
+\par 
+\par <mod2>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Model Entry of format 2 expects three parameters as follows:
+\par 
+\par Line 1: Model Type
+\par Line 2: Articulated Model File Name
+\par Line 3: Pixel Distance
+\par 
+\par The Model Type is an IDType that identifies the purpose of this LOD.  It is not used but has a restriction.  It must be the same in all LOD for this aircraft.
+\par 
+\par The Articulated Model File Name specifies the ARM file used at this LOD.
+\par 
+\par The Pixel Distance is used to determine when this LOD will be drawn.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 Note: Only one LOD must be specified but two is highly recommended to prevent overloading the graphics card. 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16  
+\par <shdw>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Shadow Info specifies the visual for the shadow of the aircraft.
+\par 
+\par <modl>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 Model Entry of format 1 expects two parameters as follows:
+\par 
+\par Line1: Model Type
+\par Line2: Model File Name
+\par 
+\par The Model Type is an IDType that is not used anymore but must be included.
+\par 
+\par The Model File Name specifies the BIN file used for the shadow.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par Note: The Shadow is not required but recommended as a visual queue of height.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <ckmg>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 The Cockpit Manager contains a list of cockpit panel objects.
+\par 
+\par <ckpt>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The Cockpit Panel Object expects two parameters as follows:
+\par 
+\par Line 1: Panel Id
+\par Line 2: Panel File Name
+\par 
+\par The Panel Id is a unique IDType used to identify a specific interior visual.
+\par 
+\par The Panel File Name identifies the file or files that the cockpit visual is stored.  If the File Name includes an extension, then this specific file
+ is used.  If the File Name does not include an extension then a predefined extension is used based on the current graphics resolution.
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par <cmgr>
+\par The Camera Manager is a list of Camera Objects.  There are four different camera types, 1) Cockpit Camera, 2) Spot Camera, 3) Flyby Camera and 4) the Tower Camera.
+\par 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 <came>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The Camera Object Entry is a "Variable Object".  You must specify the Signature of Camera Object.
+\par 
+\par cock\tab Cockpit Camera
+\par spot\tab Spot Camera
+\par flyb\tab Flyby Camera
+\par towr\tab Tower Camera
+\par 
+\par The Spot, Flyby and Tower Cameras require no other information but the Cockpit Camera is a little more involved.  The following Tags must be specified for the Cockpit Camera:
+\par 
+\par <seat>
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 The Location and Orientation of the Cockpit Camera.  It requires six parameters as follows:
+\par 
+\par Line 1: Pitch Angle (radians)
+\par Line 2: Heading Angle (radians)
+\par Line 3: Bank Angle (radians)
+\par Line 4: Lateral Distance from the Model Center (feet)
+\par Line 5: Vertical Distance from the Model Center (feet)
+\par Line 6: Longitudinal Distance from the Model Center (feet)
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par The Cockpit Camera contains a list of Panel Objects, so the Cockpit can view any number of panels.
+\par 
+\par <panl>
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 The Panel Object contains the data required to adjust the camera to view at any orientation.
+\par 
+\par <id__>
+\par }\pard \li2880\nowidctlpar\widctlpar\adjustright {\f16 The Panel Id is the IDType of the associated panel defined in the Cockpit Manager specification.
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 
+\par <main>
+\par }\pard \li2880\nowidctlpar\widctlpar\adjustright {\f16 The Main Tag identifies the Default Panel View and should only be found in one Panel Object.
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 
+\par <hdg_>
+\par }\pard \li2880\nowidctlpar\widctlpar\adjustright {\f16 The Heading is the lateral viewing angle in degrees.
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 
+\par <ptch>
+\par }\pard \li2880\nowidctlpar\widctlpar\adjustright {\f16 The Pitch is the vertical viewing angle in degrees.
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 
+\par <pnls>
+\par }\pard \li2880\nowidctlpar\widctlpar\adjustright {\f16 The Adjacent Panels Set expects four Panel IDs to be specified in the following order:
+\par 
+\par Line 1: The panel to the left
+\par Line 2: The panel to the right
+\par Line 3: The panel above
+\par Line 4: The panel below
+\par 
+\par If the adjacent view does not apply, then used the following reserved panel id: NONE.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 {\*\bkmkstart VariableLoad}<vLdm>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 {\*\bkmkend VariableLoad}The Variable Load Manager contains a list of Loads.  Each Load represents an optional amount of weight like Passengers, Cargo and Luggage.
+\par 
+\par The least specification requires one Pilot to be included.
+\par 
+\par <unit>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The Single Load allows for the specification of a weight at a specific location.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <name>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The Name is required by the UI for identification.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <bPos>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The Position of the Load is the vector distance relative to the Center of Gravity when the aircraft is empty.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <load>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The Load is the default weight for this location.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <hiLm>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The High Limit of Load is the maximum weight that this location can support.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <loLm>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The Low Limit of Load is the minimum weight that this location must contain.
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <uLoc>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The pixel location of the graphic on the Loadout Dialog.  It expects two parameters as follows:
+\par 
+\par Line1: Horizontal Pixel Distance
+\par Line2: Vertical Pixel Distance
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par <utyp>
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 The UI Type Info defines the category of the load and the associated graphic file name.  It expects two parameters as follows:
+\par 
+\par Line 1: Category Name (Pilot, Copilot, Cargo, Passenger, Luggage)
+\par Line 2: File Name of the graphic
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 
+\par {\*\bkmkstart Suspension}<sspm>
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 {\*\bkmkend Suspension}The Suspension Manager consists of a list of independent Struts (spring and damper systems).
+\par 
+\par The suspension must be either a standard tricycle gear ( a single nose wheel followed by two mains), or a tail dragger ( two mains followed by a tail wheel).
+\par 
+\par <stbl}{\f16 >}{\f16  (Table)}{\f16 
+\par }\pard\plain \s15\li1440\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Speed Sensitive Steering Table}{.}{
+\par 
+\par Ground Speed is the independent variable and Steering Gain is the dependent variable for the table. 
+\par 
+\par This table can be used to create maximum Nose Wheel Steering (NWS) at very slow speeds, reduced NWS at taxi speeds and minimum steering at takeoff speeds.  The Rudder Steering remains unaffected by this table.
+\par }{
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 <b}{\f16 tbl>}{\f16  (Table)}{\f16 
+\par }\pard\plain \s15\li1440\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Speed Sensitive Braking}{ Table.
+\par 
+\par Ground Speed is the independent variable and }{Braking}{ Gain is the dependent variable for the table. 
+\par 
+\par This table can be used to create maximum }{brake effectiveness at slow speeds and reduced effectiveness at high landing speeds}{.
+\par 
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 <outp}{\f16 >}{\f16  (no value)}{\f16 
+\par }\pard\plain \s15\li1440\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {Create diagnostic output file}{.
+\par 
+\par }{This tag will write a file named \ldblquote suspension.out\rdblquote  to your Fly directory.  It will report the location of each wheel relative to the model center of the aircraft.}{
+\par 
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 <susp> (object entry)
+\par }\pard\plain \s15\li1440\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Independent Suspension Info defines the parameters associated with each Strut.
+\par }\pard\plain \li720\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 <name> (String)
+\par }\pard\plain \s16\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Part Name defined in the Model Manager (ARM File).  Used to move the articulated wheel relative to the fuselage.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <damn> (String)
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 The Damage Region Name for this wheel.  Used for ground interaction detection.
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par <actn> (int, 0|1)
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 The Action is the articulated movement of the wheel. 
+\par 
+\par 0 for Strut or Piston action
+\par 1 for Torsion Action
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par <ster> (int, 0|1)
+\par }\pard\plain \s15\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Steer Enable flag is used to allow this wheel to rotate when the rudder is used.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <mStr> (float, degrees)
+\par }\pard\plain \s16\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {
+The Max Steer Angle is used to set the magnitude of the steer angle when the rudder is at full deflection.  While the sign of the Steer Angle is used to set the gearing relative to the rudder input.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <brak> (int, -1|0|1)
+\par }\pard\plain \s16\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Brake Enable Flag is used to allow this wheel to create a brake force when the brake is used.  The Sign of the value is used to define a Left (-1) or Right (+1) brake.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <maxC> (float, feet)
+\par }\pard \li2160\nowidctlpar\widctlpar\adjustright {\f16 The Max Compression is the distance the strut is allowed to move relative to the neutral position.
+\par }\pard \li1440\nowidctlpar\widctlpar\adjustright {\f16 
+\par <damR> (float)
+\par }\pard\plain \s16\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Damping Ratio is used to set the response time of the Spring/Damper System.  A value of 1.0 will set the stiffest ride and a value of 0.0 will set a bouncy ride.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <fxht> (float, feet)
+\par }\pard\plain \s16\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Fix Height parameter is used to adjust the height of the wheels relative to the fuselage.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <drag> (float, lbs-sq.ft.)
+\par }\pard\plain \s16\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Drag Constant is used to add a Drag Force and Moment due to extending the gear.
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par <brkF> (float)
+\par }\pard\plain \s16\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The Brake Factor is used to adjust the strength of the brake.  A value of 0.0 will disable braking, while a value of 1.0 will create maximum braking.
+\par 
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 <rrFr}{\f16 >}{\f16  (float)}{\f16 
+\par }\pard\plain \s16\li2160\nowidctlpar\widctlpar\adjustright \f16\fs20\cgrid {The }{Rolling Resistance Factor}{.}{
+\par 
+\par This parameter is a gain to adjust the Tire/Surface interaction in the direction of rotation of the tire.}{
+\par }\pard\plain \li1440\nowidctlpar\widctlpar\adjustright \fs20\cgrid {\f16 
+\par }\pard \li720\nowidctlpar\widctlpar\adjustright {\f16 
+\par }\pard \nowidctlpar\widctlpar\adjustright {\f16 The example file \ldblquote MyPlane1.SVH\rdblquote  was created from the Skyhawk.SVH file This file illustrate the least content for an SVH file that will display the Skyhawk in the simulation environment.
+
+\par 
+\par }{\f16\ul What makes it flyable?
+\par }{\f16 
+\par The Fly! Aircraft is created much like real world aircraft, it is a collection of parts or systems.  In order to get your aircraft to fly, the following additional sections need to be included in the SVH file:
+\par 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "WINGS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000a00000057494e47532e444f4300ffffadde000000000000000000000000000000000000000018000000120000000300570049004e00470053002e0044004f00430000000000000000}}}{\fldrslt {
+\cs17\ul\cf2 Wing Section Data}}}{\f16 , }{\field{\*\fldinst {\f16  HYPERLINK "ENGINES.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000c000000454e47494e45532e444f4300ffffadde00000000000000000000000000000000000000001c00000016000000030045004e00470049004e00450053002e0044004f0043000000000000}}}{\fldrslt {
+\cs17\ul\cf2 Engine Data}}}{\f16 , and specific }{\field{\*\fldinst {\f16  HYPERLINK "SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005355425359537e312e444f4300ffffadde0000000000000000000000000000000000000000220000001c0000000300530055004200530059005300540045004d0053002e0044004f0043000000000000
+00}}}{\fldrslt {\cs17\ul\cf2 Subsystems}}}{\f16 .
+\par 
+\par }{\f16\ul What makes it Fly!?
+\par }{\f16 
+\par In order to support full Fly! functionality, the following additional sections should be included in the SVH file:
+\par 
+\par }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "MOVABLE PARTS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004d4f5641424c7e312e444f4300ffffadde0000000000000000000000000000000000000000280000002200000003004d004f005600410042004c0045002000500041005200540053002e0044004f0043
+000000000000000000}}}{\fldrslt {\cs17\f16\ul\cf2 Movable Aerodynamic Control Surfaces}}}{\f16 , }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "RETRACTABLE GEAR.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000005245545241437e312e444f4300ffffadde00000000000000000000000000000000000000002e0000002800000003005200450054005200410043005400410042004c004500200047004500410052002e
+0044004f004300000000000000}}}{\fldrslt {\cs17\f16\ul\cf2 Movable Retractable Gear Parts}}}{\f16 , }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "RADIO INSTRUMENT SUBSYSTEMS.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d000000524144494f497e312e444f4300ffffadde0000000000000000000000000000000000000000440000003e000000030052004100440049004f00200049004e0053005400520055004d0045004e00540020
+00530055004200530059005300540045004d0053002e0044004f0043000000000000000000}}}{\fldrslt {\cs17\f16\ul\cf2 Radio Stack}}}{\f16 , }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "PITOT.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000a0000005049544f542e444f4300ffffadde0000000000000000000000000000000000000000180000001200000003005000490054004f0054002e0044004f00430000000000000000}}}{\fldrslt {
+\cs17\f16\ul\cf2 Pitot-Static System}}}{\f16 , }{\field\flddirty{\*\fldinst {\f16  HYPERLINK "AUTOPILOT PANEL.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c00000000000004600000d0000004155544f50497e312e444f4300ffffadde00000000000000000000000000000000000000002c0000002600000003004100550054004f00500049004c004f0054002000500041004e0045004c002e0044
+004f0043000000000000000000}}}{\fldrslt {\cs17\f16\ul\cf2 Flight Control System}}}{\f16 , Sound Effects and all Cockpit Control functionality. 
+\par 
+\par Each section mentioned above can be relatively involved, so they will be described in the following documents:
+\par 
+\par }{\field{\*\fldinst {\f16  HYPERLINK "MENU.DOC" }{\f16 {\*\datafield 
+00d0c9ea79f9bace118c8200aa004ba90b02000000010000000303000000000000c0000000000000460000090000004d454e552e444f4300ffffadde0000000000000000000000000000000000000000160000001000000003004d0045004e0055002e0044004f0043000000000000000000000000000000}}}{\fldrslt {
+\cs17\ul\cf2 M{\*\bkmkstart _Hlt479753443}e{\*\bkmkstart _Hlt479753544}{\*\bkmkend _Hlt479753443}n{\*\bkmkend _Hlt479753544}u}}}{\f16 
+\par 
+\par }}

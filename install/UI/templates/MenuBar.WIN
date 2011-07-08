@@ -1,0 +1,207 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+		MBar
+	<widg>
+		MenuBar
+		defa
+	<menu>
+		file
+		File
+	<item>
+		load
+		Load Scenario...
+	<item>
+		save
+		Save Scenario
+	<item>
+		sava
+		Save Scenario As...
+	<sepr>
+	<itm?>
+		1
+		quit
+		Quit
+	<itm?>
+		2
+		quit
+		Exit
+	<menu>
+		optn
+		Options
+	<item>
+		osnd
+		Sound...
+	<item>
+		date
+		Date & Time...
+	<sepr>
+	<item>
+		keys
+		Keys & Buttons...
+	<item>
+		axes
+		Setup Axes...
+	<item>
+		tstc
+		Test Controls...
+	<sepr>
+	<item>
+		ockp
+		Cockpit...
+	<sepr>
+	<item>
+		gogo
+		Startup...
+	<sepr>
+	<item>
+		real
+		Realism...
+	<item>
+		tree
+		Scenery...
+	<sepr>
+	<item>
+		paus
+		Pause
+	<sepr>
+	<item>
+		mute
+		Mute
+	<menu>
+		gogo
+		QuickFlight
+	<item>
+		qfly
+		QuickFlight...
+	<item>
+		sfly
+		Adventures...
+	<menu>
+		fpln
+		Flight Plan
+	<item>
+		sfpl
+		Flight Planner...
+	<sepr>
+	<item>
+		cwpt
+		Current Waypoint...
+	<item>
+		vdir
+		Directory...
+	<sepr>
+	<item>
+		navl
+		Navigation Log...
+	<item>
+		fpck
+		Check List...
+	<sepr>
+	<item>
+		logb
+		Log Book...
+	<menu>
+		airc
+		Aircraft
+	<item>
+		sair
+		Select Aircraft...
+	<item>
+		ouch
+		Damage Report...
+	<sepr>
+	<item>
+		sbag
+		Weight & Balance...
+	<item>
+		sful
+		Fuel Loadout...
+	<item>
+		otun
+		Tune Radios...
+	<sepr>
+	<item>
+		cgin
+		CG Indicator...
+	<item>
+		oair
+		Options...
+	<sepr>
+	<item>
+		goto
+		Teleport...
+	<item>
+		slew
+		Slew
+	<menu>
+		envr
+		Weather
+	<item>
+		envo
+		Overview...
+	<sepr>
+	<item>
+		envc
+		Clouds...
+	<item>
+		envw
+		Winds...
+	<item>
+		envm
+		Other...
+	<sepr>
+	<item>
+		metr
+		Load METAR...
+	<menu>
+		netw
+		Multiplayer
+	<item>
+		MPst
+		Connect...
+	<item>
+		dcon
+		Disconnect
+	<sepr>
+	<item>
+		chat
+		Chat Window...
+	<item>
+		fndp
+		Find Pilot...
+	<sepr>
+	<item>
+		motd
+		Show MOTD...
+	<item>
+		admn
+		Sysop...
+	<file>
+		.\usermenu.win
+	<menu>
+		wind
+		Windows
+	<item>
+		gwin
+		GPS Window
+	<item>
+		mwin
+		Map Window
+	<item>
+		vwin
+		Vector Window
+	<sepr>
+	<item>
+		axis
+		Axis Window
+	<sepr>
+	<item>
+		bbox
+		Instant Replay
+	<menu>
+		help
+		Help
+	<item>
+		who 
+		About FLY! II...
+<endo> ========== END OBJECT ==========

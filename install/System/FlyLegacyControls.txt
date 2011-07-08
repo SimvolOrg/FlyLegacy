@@ -1,0 +1,58 @@
+<bgno>  === Begin Joystick Definition File ===
+	<sets>  -- simple (0) or full 4 engines axes (1) --
+	0
+	<neut>  -- Neutral [0-1] stick coefficient --
+	0.083333
+	<jaxe> -- joystick axe definition --
+	<bgno>
+		<njoy>  -- internal number (must precede devc) --
+		0
+		<devc>  -- input device name --------------------
+		Microsoft SideWinder Precision 2
+		<Anum> -- device axe number ----------------------
+		0
+		<Ctrl> -- sim control tag ------------------------
+		ailr
+		<invt>
+		0
+	<endo>
+	<jaxe> -- joystick axe definition --
+	<bgno>
+		<njoy>  -- internal number (must precede devc) --
+		0
+		<devc>  -- input device name --------------------
+		Microsoft SideWinder Precision 2
+		<Anum> -- device axe number ----------------------
+		1
+		<Ctrl> -- sim control tag ------------------------
+		elev
+		<invt>
+		0
+	<endo>
+	<jaxe> -- joystick axe definition --
+	<bgno>
+		<njoy>  -- internal number (must precede devc) --
+		0
+		<devc>  -- input device name --------------------
+		Microsoft SideWinder Precision 2
+		<Anum> -- device axe number ----------------------
+		3
+		<Ctrl> -- sim control tag ------------------------
+		rudr
+		<invt>
+		0
+	<endo>
+	<jaxe> -- joystick axe definition --
+	<bgno>
+		<njoy>  -- internal number (must precede devc) --
+		0
+		<devc>  -- input device name --------------------
+		Microsoft SideWinder Precision 2
+		<Anum> -- device axe number ----------------------
+		2
+		<Ctrl> -- sim control tag ------------------------
+		thr1
+		<invt>
+		1
+	<endo>
+<endo>  === End of Joystick Definition file ===

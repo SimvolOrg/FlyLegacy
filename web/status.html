@@ -1,0 +1,252 @@
+<html>
+<!--  Created with the CoffeeCup HTML Editor  -->
+<!--        http://www.coffeecup.com/         -->
+<!--     Brewed on 8/12/2005 11:13:38 PM      -->
+<head>
+  <title>Fly! Legacy - Development Status</title>
+  <link rel="stylesheet" type="text/css" href="default.css"> 
+  <meta http-equiv="Content-Script-Type" Content="text/javascript">
+  <script src="default.js"></script>
+</head>
+
+<body>
+  <!-- Global page table -->
+  <table border="0" width="90%">
+  <tbody>
+
+  <!-- First row of global page table is logo script -->
+  <tr>
+    <td colspan="3">
+      <script>TopLogo();</script>
+    </td>
+  </tr>
+
+  <!-- Second row of global page table is multi-column main page -->
+  <tr>
+    <td width="20%" valign="top">
+      <!-- Left menu -->
+      <script>LeftMenu();</script>
+    </td>
+    <td width="60%" valign="top">
+    <h2>Development Status</h2>
+    <p>Fly! Legacy is currently at the Pre-Alpha stage of development.  What does this mean?
+       Basically, it means that the design and implementation has not progressed far enough
+       for the application to operate as any kind of complete flight simulator.
+       There are major areas which have extremely limited or no implementation available.
+       Many other areas are in only very preliminary stages of implementation.
+       Some areas that may appear to be implemented may only use a limited prototype or placeholder
+       implementation that will require significant re-work in the future. 
+       In the Pre-Alpha stage, the application is considered to be usable only be active developers,
+       not by typical end users.
+
+    <p>The current objective is to progress the implementation to an Alpha technology demo.
+       At the Alpha stage, there is enough implementation for end users to begin to use the application.
+       Compared to the existing capabilities of Fly! II, there will still be significant limitations.
+       There will likely be quite a few design and coding defects, resulting in functional errors (bugs)
+       and stability problems (crashes).
+
+    <p>Following achievement of the Alpha build, development will progress to the Beta stage.
+       At this stage, practically all functionality will be present in the simulator in order to achieve
+       a high level of functional parity with Fly! II version 2.5.240.
+       Any prototype or placeholder implementations should be replaced with "final" designs.
+       The user community will be invited to participate more actively in using the application as a
+       complete flight simulator package and reporting bugs to the development team.
+
+    <p>The following table provides a summary of design and implementation progress in all major categories
+       of the application.
+       The % complete is a very arbitrary guess, given that in most cases there is not a complete design spec
+       that is being coded to.
+       The categories are very high-level and are just conveniences for grouping areas of the software.
+
+    <table border="1">
+    <tbody>
+    <tr>
+      <td>Application Framework</td>
+      <td>70%</td>
+      <td>
+        Application startup/initialization and cleanup/shutdown, in addition to items such as logging,
+        general-purpose utilities, POD filesystem, DBD database loading, inter-subsystem messaging, etc.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Time</td>
+      <td>80%</td>
+      <td>
+        Control of the simulation time, and utilities for manipulating dates and times.
+      </td>
+    </tr>
+
+    <tr>
+      <td>User Interface</td>
+      <td>20%</td>
+      <td>
+        Implementation of the FUI framework.  Implementation of FUI callbacks for all application dialogs, menus, etc.
+        This currently also includes some PUI code for the main menu that will eventually be obsoleted.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Keyboard</td>
+      <td>20%</td>
+      <td>
+        Interface with the user via keyboard input.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Terrain</td>
+      <td>20%</td>
+      <td>
+        Rendering of the earth's surface.  Terrain is limited to just the topography and texturing, not to any
+        additional Scenery rendering as described below.  Includes both generic and sliced (e.g. TerraScene)
+        terrain data sources.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Scenery</td>
+      <td>10%</td>
+      <td>
+        Rendering of objects on top of the terrain, such as airports (including taxiways and runways), buildings, etc.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Sky</td>
+      <td>40%</td>
+      <td>
+        Rendering of the simulation sky, including the tweakable sky colouring, celestial objects and clouds.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Models</td>
+      <td>50%</td>
+      <td>
+        Implementation of the model hierarchy, including scenery models, AI vehicles, up to and including
+        the basic framework for user vehicles.  The specific functionality for each of the user vehicle types
+        is tracked separately.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Airplanes</td>
+      <td>30%</td>
+      <td>
+        Specific functionality for the Airplane user vehicle type.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Helicopters</td>
+      <td>0%</td>
+      <td>
+        Specific functionality for the Helicopter user vehicle type.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Ground Vehicles</td>
+      <td>0%</td>
+      <td>
+        Specific functionality for the Ground Vehicle user vehicle type.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Gauges</td>
+      <td>20%</td>
+      <td>
+        Implementation of the many building block gauge types.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Subsystems</td>
+      <td>20%</td>
+      <td>
+        Implementation of the internal vehicle subsystem building blocks that provide the electrical,
+        pitot/static, fuel, control, etc. behaviour of a vechicle.  Special advanced subsystems such
+        as the KLN-89 GPS will be tracked separately.
+      </td>
+    </tr>
+
+    <tr>
+      <td>KLN-89 GPS</td>
+      <td>0%</td>
+      <td>
+        Implementation of both gauge and subsystem components of the KLN-89 GPS.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Controls</td>
+      <td>0%</td>
+      <td>
+        Interface with user control devices such as joysticks, yokes, rudder pedals, etc.
+        Does not include keyboard controls which are tracked under the Keyboard category.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Flight Dynamics</td>
+      <td>0%</td>
+      <td>
+        All aspects of vehicle flight dynamics and ground handling.
+      </td>
+    </tr>
+
+    <tr>
+      <td>AI Aircraft</td>
+      <td>0%</td>
+      <td>
+        Also known as Dynamic Scenery, support for computer-controlled vechicles operating around the user.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Weather Effects</td>
+      <td>0%</td>
+      <td>
+        Visual and flight dynamics effects of weather phenomena such as wind, precipitation, icing, etc.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Air Traffic Control</td>
+      <td>0%</td>
+      <td>
+        Rather than duplicate Fly! II's ATC system, I would prefer to incorporate a more extensible,
+        flexible implementation such as C4TO.
+      </td>
+    </tr>
+
+    <tr>
+      <td>Special Effects</td>
+      <td>0%</td>
+      <td>
+        Special visual effects such as smoke, fire, sparks, contrails, etc.
+      </td>
+    </tr>
+
+    </tbody>
+    </table>
+    </td>
+  
+    <td width="20%">
+    </td>
+  </tr>
+
+  <!-- Third row is page footer -->
+  <tr>
+    <td colspan="3">
+      <script>Footer();</script>
+    </td>
+  </tr>
+
+  </tbody>
+  </table>
+</body>
+</html>
+

@@ -1,0 +1,923 @@
+<bgno> ========== BEGIN OBJECT ==========
+	<ID  >
+	envr
+	<bind>
+	17
+	<widg>
+	Window
+	defa
+	<text>
+	Almanac
+	<loc >
+	373
+	185
+	<size>
+	278
+	398
+	<enab>
+	1
+	<show>
+	1
+	<font>
+	deff
+	<wsiz>
+	274
+	374
+	<ipos>
+	3
+	0
+	3
+	0
+	<clos>
+	1
+	<mini>
+	0
+	<zoom>
+	0
+	<titl>
+	1
+	<rsiz>
+	0
+	<bord>
+	1
+	<bsiz>
+	2
+	<move>
+	1
+	<layr>
+	1
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Time
+		<loc >
+		5
+		47
+		<size>
+		65
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		loca
+		<bind>
+		19
+		<widg>
+		Label
+		defa
+		<text>
+		Dallas/Fort Worth International Airport
+		<loc >
+		13
+		25
+		<size>
+		220
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Clouds
+		<loc >
+		5
+		95
+		<size>
+		100
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Winds
+		<loc >
+		5
+		187
+		<size>
+		100
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		wind
+		<bind>
+		19
+		<widg>
+		List
+		defa
+		<loc >
+		20
+		207
+		<size>
+		245
+		60
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		0
+		<msel>
+		0
+		<vscr>
+		1
+		<hscr>
+		0
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Precipitation
+		<loc >
+		5
+		282
+		<size>
+		65
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Visibility
+		<loc >
+		5
+		299
+		<size>
+		65
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		prec
+		<bind>
+		19
+		<widg>
+		Label
+		defa
+		<text>
+		light rain
+		<loc >
+		75
+		282
+		<size>
+		130
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		visi
+		<bind>
+		19
+		<widg>
+		Label
+		defa
+		<text>
+		10 miles
+		<loc >
+		75
+		298
+		<size>
+		130
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Altimeter
+		<loc >
+		5
+		316
+		<size>
+		65
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Temperature
+		<loc >
+		5
+		333
+		<size>
+		65
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<line>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lin
+		<bind>
+		17
+		<widg>
+		Line
+		defa
+		<loc >
+		0
+		43
+		<size>
+		319
+		1
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<dirc>
+		0
+		<thck>
+		1
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		time
+		<bind>
+		19
+		<widg>
+		Label
+		defa
+		<text>
+		12:00 UTC (8:00 local)
+		<loc >
+		75
+		47
+		<size>
+		130
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		date
+		<bind>
+		19
+		<widg>
+		Label
+		defa
+		<text>
+		January 1, 2001
+		<loc >
+		75
+		65
+		<size>
+		130
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<line>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lin
+		<bind>
+		17
+		<widg>
+		Line
+		defa
+		<loc >
+		0
+		88
+		<size>
+		319
+		1
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<dirc>
+		0
+		<thck>
+		1
+	<endo> ========== END OBJECT ==========
+	<line>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lin
+		<bind>
+		17
+		<widg>
+		Line
+		defa
+		<loc >
+		0
+		181
+		<size>
+		319
+		1
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<dirc>
+		0
+		<thck>
+		1
+	<endo> ========== END OBJECT ==========
+	<line>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lin
+		<bind>
+		17
+		<widg>
+		Line
+		defa
+		<loc >
+		0
+		275
+		<size>
+		319
+		1
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<dirc>
+		0
+		<thck>
+		1
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		altm
+		<bind>
+		19
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		75
+		316
+		<size>
+		190
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		temp
+		<bind>
+		19
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		75
+		333
+		<size>
+		190
+		13
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dloc
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		Change
+		<loc >
+		206
+		2
+		<size>
+		60
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		49
+		22
+		<bsiz>
+		60
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dtim
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		Change
+		<loc >
+		206
+		45
+		<size>
+		60
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		49
+		22
+		<bsiz>
+		60
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dcld
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		Change
+		<loc >
+		206
+		90
+		<size>
+		60
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		49
+		22
+		<bsiz>
+		60
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dwin
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		Change
+		<loc >
+		206
+		183
+		<size>
+		60
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		49
+		22
+		<bsiz>
+		60
+		22
+	<endo> ========== END OBJECT ==========
+	<butn>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		doth
+		<bind>
+		18
+		<widg>
+		Button
+		defa
+		<text>
+		Change
+		<loc >
+		206
+		282
+		<size>
+		60
+		22
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<ok  >
+		0
+		<canc>
+		0
+		<rrpt>
+		0
+		<rate>
+		0.
+		<lsiz>
+		49
+		22
+		<bsiz>
+		60
+		22
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Dew Point
+		<loc >
+		6
+		350
+		<size>
+		65
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		dewp
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Label
+		<loc >
+		75
+		350
+		<size>
+		185
+		14
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Current Location
+		<loc >
+		5
+		7
+		<size>
+		195
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<labl>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		?lbl
+		<bind>
+		17
+		<widg>
+		Label
+		defa
+		<text>
+		Date
+		<loc >
+		5
+		66
+		<size>
+		65
+		17
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		butn
+		<just>
+		17
+		<wrap>
+		0
+	<endo> ========== END OBJECT ==========
+	<list>
+	<bgno> ========== BEGIN OBJECT ==========
+		<ID  >
+		clod
+		<bind>
+		19
+		<widg>
+		List
+		defa
+		<loc >
+		20
+		113
+		<size>
+		245
+		60
+		<enab>
+		1
+		<show>
+		1
+		<font>
+		deff
+		<utit>
+		1
+		<usrr>
+		0
+		<msel>
+		0
+		<vscr>
+		1
+		<hscr>
+		0
+		<dwid>
+		100
+		<autw>
+		1
+		<dhgt>
+		12
+	<endo> ========== END OBJECT ==========
+<endo> ========== END OBJECT ==========
