@@ -23,6 +23,7 @@
 
 /*! \file AeroModelDraw.h
  *  \brief Defines classes used in the aerodynamic model.
+ *  \test
  */
 #ifndef AERO_MODELDRAW_H_
 #define AERO_MODELDRAW_H_
