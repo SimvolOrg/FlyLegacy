@@ -2245,7 +2245,7 @@ void C_TurnCoordinatorGauge::Draw(void)
 	float acc =  float(mesg.realData);
   //--- Draw ball ---------------------
   //int frm  = mbal + int(rbal * acc);
-  int frm  = mbal + int(float(mbal) * acc * 0.5f);
+  int frm  = mbal + int(float(mbal) * acc * 0.5f); // 0.16
   ball.Draw(frm);    
   //--- Get plane value ---------------
 	mesg.user.u.datatag = pcon;

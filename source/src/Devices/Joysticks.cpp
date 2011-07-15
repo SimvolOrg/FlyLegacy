@@ -637,6 +637,7 @@ void CJoysticksManager::Clear(CSimAxe *axe,U_CHAR all)
 void CJoysticksManager::Invert(CSimAxe *axe,U_CHAR all)
 { axe->Invert();
   U_CHAR grp = axe->group;
+  modify = 1;
 	if ((0 == all) ||(0 == grp))	return;
   for (int k = 0; k != JOY_AXIS_NUMBER; k++)
   { CSimAxe *axk = &AxesList[k];
@@ -646,7 +647,7 @@ void CJoysticksManager::Invert(CSimAxe *axe,U_CHAR all)
     if (axk->iAxe  != axe->iAxe)  continue;   // Not same axis
     axk->Invert();
   }
-	modify	= 1;
+	//modify	= 1;
   return;
 }
 //------------------------------------------------------------------------
@@ -962,6 +963,7 @@ void CJoysticksManager::UseHat(SJoyDEF *jsp,char s)
 {	jsp->SetHat(s);
   jsh	= jsp->jNumber();
 	uht	= s;
+  modify = 1;
 	if (0 == s)		return;
 	//--- Release Hat from other joysticks ------------
 	std::vector<SJoyDEF *>::iterator jk;
@@ -970,7 +972,7 @@ void CJoysticksManager::UseHat(SJoyDEF *jsp,char s)
 		if (jsk == jsp)		continue;
 		jsk->SetHat(0);
 	}
-	modify = 1;
+	//modify = 1;
 	return;
 }
 //----------------------------------------------------------------------------------

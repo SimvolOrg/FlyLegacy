@@ -1056,7 +1056,8 @@ void CTurnCoordinator::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
     if (rateT > +2.0f)	rateT = +2.0f;					  // clamp to +2
     if (rateT < -2.0f)	rateT = -2.0f;					  // clamp to -2;
     //--- get acceleration vector for the ball ----------------------------
-    const CVector *acc = mveh->GetBodyAccelerationVector(); // LH m.s² 
+//    const CVector *acc = mveh->GetBodyAccelerationVector(); // LH m.s² 
+    const CVector *acc = mveh->GetBodyVelocityVector(); // LH m.s² 
     ////----get Y lateral acceleration vector -----------------------------
     //float	dac = float((acc->y) / dT);		          // in rad.sec
     //if (dac > +TWO_PI)		dac = +float(TWO_PI);	  // clamp to +2
@@ -1065,9 +1066,10 @@ void CTurnCoordinator::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
     //----get Y lateral acceleration vector -------------------------------
     if (get_data_ball) {
       //float	dac = float(acc->x) * dT * dT * 100.0f;			// in rad.sec²
-      double d = -acc->z; // z
-      if (d < 1.0) d = 1.0;
-      float dac = float(acc->y) / d * 10.0f; // was x
+//      double d = -acc->z; // z
+//      if (d < 1.0) d = 1.0;
+//      float dac = float(acc->y) / d * 10.0f; // was x
+      float dac = float(-acc->x);
       //
       // if this computation doesn't fit our goals try this :
       //
@@ -1079,7 +1081,7 @@ void CTurnCoordinator::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
       {	FILE *fp_debug;
 	      if(!(fp_debug = fopen("__DDEBUG_1.txt", "a")) == NULL)
 	      {
-		      fprintf(fp_debug, "%f %f %f %f\n", acc->x, acc->z, dac, dT);
+		      fprintf(fp_debug, "%f %f %f %f %f\n", acc->x, acc->y, acc->z, dac, dT);
 		      fclose(fp_debug); 
       }	}
       #endif
