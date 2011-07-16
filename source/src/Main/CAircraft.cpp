@@ -1561,7 +1561,8 @@ void COPALObject::RestOnGround()
 //  SIMULATE
 //------------------------------------------------------------------------------------------
 void COPALObject::Simulate (float dT,U_INT FrNo) 
-{  /// Call parent class simulation timeslice
+{ if (dT > 0.1f) return; // fix to avoid aerodynamics errors when fps are low
+  /// Call parent class simulation timeslice
   CVehicleObject::Simulate (dT, FrNo);
   //---Aircraft orientation ------------------------------------------------------
   SVector or_s = GetOrientation (); // RH
