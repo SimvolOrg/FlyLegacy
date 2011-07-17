@@ -992,6 +992,13 @@ int RedrawSimulation ()
   // Call the time manager to indicate that another cycle is occurring.
   //   This represents the redraw cycle, not necessarily the simulation
   //   cycle, though at present they are coupled.
+  //   was :
+  //   globals->tim->Update ();
+  //   dSimT  = globals->tim->GetDeltaSimTime();
+  //   dRealT = globals->tim->GetDeltaRealTime();
+  //   globals->dST = dSimT;
+  //   globals->dRT = dRealT;
+  //
   while (tmp_timerS < FPS_LIMIT) { // start basic fps limiter
     globals->tim->Update ();
     dSimT  = globals->tim->GetDeltaSimTime();
@@ -1000,9 +1007,11 @@ int RedrawSimulation ()
     tmp_timerR += dRealT; 
   } // end basic fps limiter
   dSimT = tmp_timerS;
+  globals->tim->SetDeltaSimTime (dSimT);
   globals->dST = dSimT;
   tmp_timerS -= FPS_LIMIT;
   dRealT = tmp_timerR;
+  globals->tim->SetDeltaRealTime (dRealT);
   globals->dRT = dRealT;
   tmp_timerR = tmp_timerS;
   // Accumulate frame rate statistics every second

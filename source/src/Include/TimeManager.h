@@ -63,7 +63,9 @@ public:
   inline float    GetElapsedSimTime (void){return elapsed; }
   inline float    GetElapsedRealTime(void){return elapsedReal;}
   inline float    GetDeltaRealTime (void) {return dRealTime;}
+  inline void     SetDeltaRealTime (float &rt) {dRealTime = rt;}
   inline float    GetDeltaSimTime  (void) {return dSimTime;}
+  inline void     SetDeltaSimTime  (float &dt) {dSimTime = dt;}
   //----------------------------------------------------------
   inline float    GetTimeScale()    {return scale;}
   inline bool     GetPauseState()   {return paused;}
