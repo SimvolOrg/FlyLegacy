@@ -981,17 +981,30 @@ U_INT Frame = 0xFFFFFFFF;
  *  @return
  *    Enumeration value representing the application state following the completion of the redraw cycle.
  */
+float tmp_timerS = 0.0f,
+      tmp_timerR = 0.0f;
+
+
 int RedrawSimulation ()
 { float dSimT, dRealT;
+  const float FPS_LIMIT = globals->opal_sim->getStepSize ();
 
   // Call the time manager to indicate that another cycle is occurring.
   //   This represents the redraw cycle, not necessarily the simulation
   //   cycle, though at present they are coupled.
-  globals->tim->Update ();
-  dSimT  = globals->tim->GetDeltaSimTime();
+  while (tmp_timerS < FPS_LIMIT) { // start basic fps limiter
+    globals->tim->Update ();
+    dSimT  = globals->tim->GetDeltaSimTime();
+    dRealT = globals->tim->GetDeltaRealTime();
+    tmp_timerS += dSimT;
+    tmp_timerR += dRealT; 
+  } // end basic fps limiter
+  dSimT = tmp_timerS;
   globals->dST = dSimT;
-  dRealT = globals->tim->GetDeltaRealTime();
+  tmp_timerS -= FPS_LIMIT;
+  dRealT = tmp_timerR;
   globals->dRT = dRealT;
+  tmp_timerR = tmp_timerS;
   // Accumulate frame rate statistics every second
   nFrames++;
   tFrames += dRealT;
@@ -999,12 +1012,24 @@ int RedrawSimulation ()
       frameRate = (float)nFrames / tFrames;
       tFrames = 0.0f;
       nFrames = 0;
-    }
+  }
   //------------Update global clock ---------------------
   Frame++;
 	globals->Frame = Frame;
   globals->clk->Update(dRealT);
   //-------- Update situation----------------------------
+//
+////#ifdef _DEBUG	
+//  {	FILE *fp_debug;
+//	  if(!(fp_debug = fopen("__DDEBUG_frame.txt", "a")) == NULL)
+//	  {
+//		  fprintf(fp_debug, "%f %u %f [R=%f S=%f]\n", 
+//        dSimT, Frame, frameRate, 
+//        dRealT, tmp_timerS);
+//		  fclose(fp_debug); 
+//  }	}
+////#endif
+
   globals->sit->Timeslice (dSimT,Frame);
 
   // The global CSituation object contains all informations about the current
