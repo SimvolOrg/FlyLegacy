@@ -34,7 +34,7 @@
  *   of the encapsulated database; the application must determine this by
  *   examining the details of the tempate and indexes as necessary.
  */
-//
+
 #include "../Include/Globals.h"
 #include "../Include/Database.h"
 #include "../Include/Pod.h"
