@@ -24,9 +24,10 @@
 #include "../Include/Subsystems.h"
 #include "../Include/Robot.h"
 #include "../Include/FuiParts.h"
+#include "../Include/PlanDeVol.h"
 using namespace std;
 //=========================================================================
-//  Display Checklist when requested through message tag 'show'
+//  This robot is in charge of starting the aircraft
 //=========================================================================
 CRobot::CRobot()
 { TypeIs (SUBSYSTEM_ROBOT);
@@ -35,7 +36,6 @@ CRobot::CRobot()
   step    = 0;
 	win 		= 0;
 }
-
 //---------------------------------------------------------------
 //  Receive message
 //---------------------------------------------------------------
@@ -57,7 +57,7 @@ EMessageResult CRobot::ReceiveMessage (SMessage *msg)
    }
   }
   // See if the message can be processed by the parent class
-  return CDependent::ReceiveMessage (msg);
+  return CSubsystem::ReceiveMessage (msg);
 }
 //---------------------------------------------------------------
 //   Start action
@@ -205,5 +205,52 @@ void CRobot::TimeSlice(float dT,U_INT FrNo)
 
   }
   return;
+}
+//=========================================================================
+//	Set of error messages
+//=========================================================================
+char *vpMSG[] = {
+	"Not yet implemented ",									// Msg00
+	"Flight plan is empty",									// Msg01
+	"We are not at departing airport",			// Msg02
+	"No take-off runway in flight plan",		// Msg03
+	"No landing runway in flight plan",			// Msg04
+	"Cannot start when not on ground.",			// Msg05
+};
+//=========================================================================
+//  This robot will pilot the aircraft and execute
+//	the current flight plan
+//=========================================================================
+VPilot::VPilot()
+{ fpln = 0;
+}
+//--------------------------------------------------------------
+//	Create error
+//--------------------------------------------------------------
+void VPilot::Error(int No)
+{	globals->fui->DialogError(vpMSG[No],"VIRTUAL PILOT");
+	return;
+}
+//--------------------------------------------------------------
+//	Request to start the virtual pilot
+//--------------------------------------------------------------
+void VPilot::Start()
+{	bool ok = false;
+	if  (ok)							return Error(0);
+	fpln	= mveh->GetFlightPlan();
+	//--- Check if on ground ------------------
+	ok = mveh->AllWheelsOnGround();
+	if (!ok)							return Error(5);
+	//--- Check for airport -------------------
+  if (fpln->IsEmpty())	return Error(1);
+	char *dk = fpln->GetDepartingKey();
+	ok = globals->apm->AreWeAt(dk);
+	if (!ok)							return Error(2);
+	//--- Check for runways -------------------
+	ok	= fpln->HasTakeOffRunway();
+	if (!ok)							return Error(3);
+	ok	= fpln->HasLandingRunway();
+	if (!ok)							return Error(4);
+	//----------------------------------------
 }
 //=======================END OF FILE ======================================================================

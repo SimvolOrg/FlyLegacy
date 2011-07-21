@@ -444,7 +444,7 @@ void CGearOpal::BrakeForce(float dT)
 	//--- pedal force -----------------------------------------
 	char  side  = gearData->Side;
   float btbl  = gearData->btbl;                 // Gear coefficient
-  float force = mveh->GetBrakeForce(side) * btbl;
+  float force = mveh->GetBrakeForce(side) * btbl * 1.5f;
 	//--- compute brake force ---------------------------------
 	CSimulatedVehicle *svh = mveh->svh;
 	double ac = svh->GetBrakeAcceleration();			// acceleration

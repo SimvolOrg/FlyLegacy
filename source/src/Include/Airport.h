@@ -199,12 +199,12 @@ class CAptObject : public CqItem, public CDrawByCamera {
   CAirportMgr    *apm;                                // Airport Manager
   CObjPtr         pApt;                               // Airport smart pointer
   CAirport       *Airp;                               // Airport pointer
-  double          pDist;                              // Airport distance (squared)
   double          cutOF;                              // Altitude cut-off
   double          Alt;                                // Aircraft altitude
   CCamera        *cam;                                // Current camera
   SPosition       apos;                               // Aircraft position
   SVector         cpos;                               // Camera position
+	float						nmiles;															// Distance in miles
 	//------------------------------------------------------------------------
 	C_QGT					 *qgt;																// Airport QGT
   //------------------------------------------------------------------------
@@ -409,7 +409,7 @@ public:
   //----------------------------------------------------------------------
   inline bool      IsVisible()                {return (visible != 0);}
   inline bool      NotVisible()               {return (visible == 0);}
-  inline void      SetPDIS(double d)          {pDist = d;}
+	inline void			 SetMiles(float m)					{nmiles = m;}
   inline void      GetSLT(SVector &v)         {v = scl;}
   inline void      GetSTH(SVector &v)         {v = sct;}
   inline void      SetCamera(CCamera *c)      {cam = c;}
@@ -422,8 +422,9 @@ public:
   inline double    GetYnormal(double f)       {return (f * ppy);}
   inline double    GetRDF()                   {return rdf;}
   inline double    GetCPF()                   {return cpf;}
-	inline double    GetPDIS()									{return pDist;}
   inline SPosition GetOrigin()                {return org;}
+	inline float		 GetNmiles()								{return nmiles;}
+	//---------------------------------------------------------------------
   inline void      SetScale(float sc)         {grid = sc;}
   inline void      SetXGrid(int nx)           {gx = nx;}
   inline void      SetZGrid(int nz)           {gz = nz;}
@@ -509,6 +510,7 @@ class CAirportMgr {
   double          PavArc;                     // Pavement size in arcsec
 	//---- Nearest airport -------------------------------------------
 	CAptObject		 *nApt;												// Nearest airport
+	SPosition      *endp;												// Runway end point
   //-----Aircraft Icon----------------------------------------------
   CPicQUAD       *avion;                      // Aircraft icon
   //-----Methods ---------------------------------------------------
@@ -518,6 +520,7 @@ public:
   void    TimeSlice(float dT);                // Update Airport List
 	void		bindVBO();
 	void		SaveNearest(CAptObject *apo);
+	bool		AreWeAt(char *key);
   //----AIRPORT BUILDING --------------------------------------------
   int       SetRunwayProfile(CAirport *apt);
   void      AddProfile(RWY_EPF &epf);
@@ -532,6 +535,9 @@ public:
   inline CCamera     *GetCamera()             {return cam;}
   inline double       GetPaveFactor()         {return PavArc;}
   inline CPicQUAD    *GetIcon()               {return avion;}
+	inline void					SetRunwayEnd(SPosition *p)	{endp = p;}
+	//-----------------------------------------------------------------
+	inline SPosition   *GetRunwayEnd()					{return endp;}
 	//-----------------------------------------------------------------
 	inline CAptObject  *GetNearestAPT()					{return nApt;}
 };

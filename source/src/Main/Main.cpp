@@ -59,7 +59,6 @@
 #include "../Include/Export.h"
 #include "../Include/Import.h"
 #include "../Include/SqlMGR.h"
-#include "../Include/FlightPlan.h"
 #include "../Include/BlackBox.h"
 //----Windows particular -------------------------
 #include <math.h>
@@ -305,6 +304,24 @@ char *GetStandardAlphabet(char car)
 static WORD savedGammaRamp[3][0x100];
 static HDC  hdc = 0;
 #endif // _WIN32
+//========================================================================================
+//  Some trace of computing
+//========================================================================================
+/*
+void ArcTangente()
+{	double deg  = 0;
+	double rad	= 0;
+	for (deg=0; deg < 360; deg +=10)
+	{	rad = DegToRad(deg);
+		double x  = cos(rad);
+		double y  = sin(rad);
+		double a  = atan2(-x,y);
+		double b  = RadToDeg(a);
+		TRACE("Deg=%.0f A=%.2f",deg,b);
+	}
+	return;
+}
+*/
 //========================================================================================
 //  Restaure gamma ramp from file
 //========================================================================================
@@ -727,7 +744,6 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->fui);
   SAFE_DELETE (globals->cld);         // Delete cloud system
   SAFE_DELETE (globals->sit);
-  SAFE_DELETE (globals->fpl);         // Delete flight plan manager
   SAFE_DELETE (globals->slw);         // Delete slew manager
   SAFE_DELETE (globals->kbd);         // Delete keymap manager;
 //  ----Must be last ----------------------
@@ -934,8 +950,6 @@ void InitSimulation (void)
   globals->dang  = orid;
 	//----Joystick ---------------------------------------------------
 	CJoysticksManager::Instance().Init( );
-  //----Create flight plan -----------------------------------------
-  globals->fpl = new CFlightPlan(0);
   //----Create check list manager ----------------------------------
   globals->chk = new PlaneCheckList();
   //------Load situation -------------------------------------------
@@ -1412,7 +1426,6 @@ int main (int argc, char **argv)
   globals->imp  = 0;                          // Import
   globals->kbd  = 0;                          // Keyboard interface
   globals->fui  = 0;                          // Windows manager
-  globals->fpl  = 0;                          // Flight plan
   globals->jsm  = 0;                          // Joystick manager
   globals->skm  = 0;                          // Sky manager
   globals->wtm  = 0;                          // Weather manager

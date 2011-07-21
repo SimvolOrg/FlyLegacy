@@ -280,6 +280,11 @@ bool aKeyAMFL(int kid,int key, int mod)
 {	int ne = globals->pln->GetEngNb();
   globals->jsm->SendGroup(JOY_GROUP_MIXT,'amfl',ne);
   return true; }
+//---Autopilot Takeoff---------------------------------------
+bool aKeyTKOF(int kid,int key, int mod)
+{	globals->pln->aPIL->EnterTakeOFF();
+	return true;
+}
 //---Open GPS window (TODO: must check the correct GPS) -----
 bool aKeyGWIN(int kid, int key, int mod)
 { globals->fui->ToggleFuiWindow(FUI_WINDOW_KLN89);
@@ -333,15 +338,15 @@ bool aKeyTPID(int kid,int code,int mod)
   return true; }
 
 //================================================================================
-// CAirplaneObject
+// CAirplane
 //
-CLogFile* CAirplaneObject::log = NULL;
+CLogFile* CAirplane::log = NULL;
 //
 // [PHYSICS]
 // aircraftPhysics=normal
 //  JSDEV*:  Implement keyboard message (NAVI etc)
 //================================================================================
-CAirplaneObject::CAirplaneObject (void)
+CAirplane::CAirplane (void)
 { SetType(TYPE_FLY_AIRPLANE);
 	damM.Severity	= 0;
   damM.msg			=   0;
@@ -384,13 +389,13 @@ CAirplaneObject::CAirplaneObject (void)
   GetIniVar ("Logs", "logAirplaneObject", &opt);
   if (opt) {
     log = new CLogFile ("logs/AirplaneObject.txt", "w");
-    if (log) log->Write ("CAirplaneObject data log\n");
+    if (log) log->Write ("CAirplane data log\n");
   } else log = NULL;
 }
 //-----------------------------------------------------------------------------
 //	JSDEV* Delete this object
 //-----------------------------------------------------------------------------
-CAirplaneObject::~CAirplaneObject (void)
+CAirplane::~CAirplane (void)
 { globals->pln = 0;
   globals->kbd->UnbindGroup('plne');
   SAFE_DELETE (log);
@@ -398,7 +403,7 @@ CAirplaneObject::~CAirplaneObject (void)
 //-----------------------------------------------------------------------------
 //	JSDEV* All parameters are read
 //-----------------------------------------------------------------------------
-void CAirplaneObject::ReadFinished (void)
+void CAirplane::ReadFinished (void)
 { 
   CVehicleObject::ReadFinished ();
   //---Init rudder parameters ------------------------
@@ -408,7 +413,7 @@ void CAirplaneObject::ReadFinished (void)
   main_wing_aoa_min = wng->GetAirfoil     ("Wing Airfoil")->GetAoAMin ();
   main_wing_aoa_max = wng->GetAirfoil     ("Wing Airfoil")->GetAoAMax ();
 #ifdef _DEBUG
-  DEBUGLOG ("CAirplaneObject::ReadFinished wing_incidence =%f", main_wing_incid);
+  DEBUGLOG ("CAirplane::ReadFinished wing_incidence =%f", main_wing_incid);
   DEBUGLOG ("                              wing_AoAMin    =%f", main_wing_aoa_min);
   DEBUGLOG ("                              wing_AoAMax    =%f", main_wing_aoa_max);
 #endif
@@ -425,7 +430,7 @@ void CAirplaneObject::ReadFinished (void)
 //-----------------------------------------------------------------------------
 //  Register all planes keys
 //-----------------------------------------------------------------------------
-void CAirplaneObject::BindKeys()
+void CAirplane::BindKeys()
 { CKeyMap *km = globals->kbd;
   globals->pln = this;
   km->BindGroup('plne',KeyAirGroup);
@@ -463,6 +468,7 @@ void CAirplaneObject::BindKeys()
   km->Bind('admx',aKeyADMX,KEY_REPEAT);           // Mixture decrease
 	km->Bind('amfr',aKeyAMFR,KEY_SET_ON);						// Mixture full rich
 	km->Bind('amfl',aKeyAMFL,KEY_SET_ON);						// Mixture full lean
+	km->Bind('tkof',aKeyTKOF,KEY_SET_ON);						// Autopilot Take-off
   //---Menu keys -------------------------------------------------------
   km->Bind('gwin',aKeyGWIN,KEY_SET_ON);           // Display GPS
   km->Bind('adet',aKeyADET,KEY_SET_ON);           // Display aircraft info
@@ -546,7 +552,7 @@ void CAirplaneObject::BindKeys()
 //-----------------------------------------------------------------------------
 //	JSDEV* Prepare message for all subsystems
 //-----------------------------------------------------------------------------
-void CAirplaneObject::PrepareMsg ()
+void CAirplane::PrepareMsg ()
 {	CSubsystem *sub = NULL;
 	std::vector<CSubsystem*>::iterator it;
 	for (it = amp->subs.begin(); it != amp->subs.end(); it++)
@@ -563,7 +569,7 @@ void CAirplaneObject::PrepareMsg ()
 //-----------------------------------------------------------------------------
 //	JSDEV* Find message receiver in all plane subsystems
 //-----------------------------------------------------------------------------
-bool CAirplaneObject::FindReceiver (SMessage *msg)
+bool CAirplane::FindReceiver (SMessage *msg)
 { char cid[8];
   char cgr[8];
   char ctg[8];
@@ -584,7 +590,7 @@ bool CAirplaneObject::FindReceiver (SMessage *msg)
 //-----------------------------------------------------------------------------
 //	JSDEV* Find message receiver in electrical subsystems
 //-----------------------------------------------------------------------------
-bool CAirplaneObject::FindReceiver (SMessage *msg,CElectricalSystem *esys)
+bool CAirplane::FindReceiver (SMessage *msg,CElectricalSystem *esys)
 {	if (esys == NULL)	return false;
 	std::vector<CSubsystem*>::iterator it;
 	for (it = esys->subs.begin(); it != esys->subs.end(); it++)
@@ -598,7 +604,7 @@ bool CAirplaneObject::FindReceiver (SMessage *msg,CElectricalSystem *esys)
 //-----------------------------------------------------------------------------
 //	JSDEV* Find message receiver in gas subsystems
 //-----------------------------------------------------------------------------
-bool CAirplaneObject::FindReceiver (SMessage *msg,CFuelSystem *gsys)
+bool CAirplane::FindReceiver (SMessage *msg,CFuelSystem *gsys)
 {	if (gsys == NULL)	return false;
 	std::vector<CFuelSubsystem*>::iterator it;
 	for	(it = gsys->fsub.begin(); it != gsys->fsub.end(); it++)
@@ -611,7 +617,7 @@ bool CAirplaneObject::FindReceiver (SMessage *msg,CFuelSystem *gsys)
 //-------------------------------------------------------------------------------
 //	Send to all airplane components
 //--------------------------------------------------------------------------------
-EMessageResult CAirplaneObject::ReceiveMessage(SMessage *msg)
+EMessageResult CAirplane::ReceiveMessage(SMessage *msg)
 { EMessageResult           rc = SendMessageToAmpSystems(msg);
   //--If not found, try to find message receiver in list of fuel subsystems
   if (0 == msg->receiver)  rc = SendMessageToGasSystems(msg);
@@ -624,7 +630,7 @@ EMessageResult CAirplaneObject::ReceiveMessage(SMessage *msg)
 //-------------------------------------------------------------------------------
 //	Send to electrical subsystem
 //--------------------------------------------------------------------------------
-EMessageResult CAirplaneObject::SendMessageToAmpSystems(SMessage *msg)
+EMessageResult CAirplane::SendMessageToAmpSystems(SMessage *msg)
 { if (0 == amp)   return MSG_IGNORED;
   EMessageResult  rc   = MSG_IGNORED;
   // Electrical systems are valid, send msg to each subs until handler found
@@ -641,7 +647,7 @@ EMessageResult CAirplaneObject::SendMessageToAmpSystems(SMessage *msg)
 //-------------------------------------------------------------------------------
 //	Send to gas subsystems
 //--------------------------------------------------------------------------------
-EMessageResult CAirplaneObject::SendMessageToGasSystems (SMessage *msg)
+EMessageResult CAirplane::SendMessageToGasSystems (SMessage *msg)
 { if (0 == gas)   return MSG_IGNORED;
   EMessageResult  rc   = MSG_IGNORED;
   // Fuel systems are valid, send msg to each subs until handler found
@@ -658,7 +664,7 @@ EMessageResult CAirplaneObject::SendMessageToGasSystems (SMessage *msg)
 //-------------------------------------------------------------------------------
 //	Send to engine subsystems
 //--------------------------------------------------------------------------------
-EMessageResult CAirplaneObject::SendMessageToEngSystems (SMessage *msg)
+EMessageResult CAirplane::SendMessageToEngSystems (SMessage *msg)
 { if (0 == eng)   return MSG_IGNORED;
   EMessageResult  rc   = MSG_IGNORED;
   //
@@ -678,7 +684,7 @@ EMessageResult CAirplaneObject::SendMessageToEngSystems (SMessage *msg)
 //-------------------------------------------------------------------------------
 //	Send to external subsystems
 //--------------------------------------------------------------------------------
-EMessageResult CAirplaneObject::SendMessageToExternals (SMessage *msg)
+EMessageResult CAirplane::SendMessageToExternals (SMessage *msg)
 { if (0 == amp)   return MSG_IGNORED;
   EMessageResult  rc   = MSG_IGNORED;
   // Electrical systems are valid, send msg to each subs until handler found
@@ -695,7 +701,7 @@ EMessageResult CAirplaneObject::SendMessageToExternals (SMessage *msg)
 //-------------------------------------------------------------------------------
 //	Return engine subsystems
 //--------------------------------------------------------------------------------
-void CAirplaneObject::GetAllEngines(std::vector<CEngine*> &engs)
+void CAirplane::GetAllEngines(std::vector<CEngine*> &engs)
 { engs = eng->engn;
   return;
 }
@@ -703,7 +709,7 @@ void CAirplaneObject::GetAllEngines(std::vector<CEngine*> &engs)
 //  Initial state
 //	Place aircraft at the good altitude
 //--------------------------------------------------------------------------------
-SPosition CAirplaneObject::SetOnGround()
+SPosition CAirplane::SetOnGround()
 { if (globals->Init)  return orgp;
   SPosition pos = orgp;
   pos.alt   = globals->tcm->GetGroundAltitude() + GetBodyAGL();
@@ -714,7 +720,7 @@ SPosition CAirplaneObject::SetOnGround()
 //-------------------------------------------------------------------------------
 //  Collision detected 
 //--------------------------------------------------------------------------------
-void CAirplaneObject::BodyCollision(CVector &p)
+void CAirplane::BodyCollision(CVector &p)
 { if (globals->vehOpt.Not(VEH_D_CRASH)) return;
   DAMAGE_MSG msg = {3,0,'crby',"STRUCTURAL DAMAGE"};
   DamageEvent(&msg);
@@ -732,7 +738,7 @@ void CAirplaneObject::BodyCollision(CVector &p)
 //          In the futur, when the .sit file describes in flight situation
 //          we will have to make some adaptation
 //-----------------------------------------------------------------------------
-void CAirplaneObject::TimeSlice(float dT,U_INT frame)
+void CAirplane::TimeSlice(float dT,U_INT frame)
 { pit->TimeSlice(dT);
 	CJoysticksManager *jsm = globals->jsm;
   switch (State)  {
@@ -762,7 +768,7 @@ void CAirplaneObject::TimeSlice(float dT,U_INT frame)
 //----------------------------------------------------------------------------
 //	Set damage if needed
 //----------------------------------------------------------------------------
-void CAirplaneObject::CrashEvent(DAMAGE_MSG *msg)
+void CAirplane::CrashEvent(DAMAGE_MSG *msg)
 { Tag          sbf  = 0;
   int         prio  = damM.Severity;
   if (msg->Severity >= prio)    damM = *msg;
@@ -793,7 +799,7 @@ void CAirplaneObject::CrashEvent(DAMAGE_MSG *msg)
 //----------------------------------------------------------------------------
 //	Damage Event
 //----------------------------------------------------------------------------
-void CAirplaneObject::DamageEvent(DAMAGE_MSG *msg)
+void CAirplane::DamageEvent(DAMAGE_MSG *msg)
 { CAudioManager *snd = globals->snd;
   switch (State)
 { //--- Initial state: ignore ---------------- 
@@ -817,7 +823,7 @@ void CAirplaneObject::DamageEvent(DAMAGE_MSG *msg)
 //-------------------------------------------------------------------------------
 //	Reset Airplane
 //--------------------------------------------------------------------------------
-void CAirplaneObject::ResetVehicle()
+void CAirplane::ResetVehicle()
 { //--Stop engines ---------------------------------------
   CutAllEngines();
   //--- Set Parking brake --------------------------------
@@ -828,7 +834,7 @@ void CAirplaneObject::ResetVehicle()
 //----------------------------------------------------------------------------
 //	Reset crash:
 //----------------------------------------------------------------------------
-void CAirplaneObject::ResetCrash(char p)
+void CAirplane::ResetCrash(char p)
 { //--- Cut engines --------------------------------------
   park  = p;
   CutAllEngines();
@@ -840,7 +846,7 @@ void CAirplaneObject::ResetCrash(char p)
 //----------------------------------------------------------------------------
 //  Aircraft is now level
 //----------------------------------------------------------------------------
-void CAirplaneObject::EndLevelling()
+void CAirplane::EndLevelling()
 { //--- Set orientation ----------------------------------
   ResetZeroOrientation ();
   //--- Set parking brakes ------------------------------
@@ -856,7 +862,7 @@ void CAirplaneObject::EndLevelling()
 //-----------------------------------------------------------------------------
 //  Keyboard interface for controls  
 //-----------------------------------------------------------------------------
-bool CAirplaneObject::CenterControls()
+bool CAirplane::CenterControls()
 { globals->slw->Level(0);
   //----Reset all axis -------------------
   CAeroControl *a = amp->pAils;
@@ -871,222 +877,222 @@ bool CAirplaneObject::CenterControls()
   return true;
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::AileronIncr (void)
+void CAirplane::AileronIncr (void)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->pAils;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::AileronDecr (void)
+void CAirplane::AileronDecr (void)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->pAils;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::AileronSet (float fv)
+void CAirplane::AileronSet (float fv)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->pAils;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::ElevatorIncr (void)
+void CAirplane::ElevatorIncr (void)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->pElvs;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::ElevatorDecr (void)
+void CAirplane::ElevatorDecr (void)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->pElvs;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::ElevatorSet (float fv)
+void CAirplane::ElevatorSet (float fv)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->pElvs;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderOpalCoef (float fv)
+void CAirplane::RudderOpalCoef (float fv)
 { // Get pointer to control subsystem in electrical systems
   CRudderControl *p = amp->pRuds;
   if (p) p->SetOpalCoef (fv);
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderBankMap (CFmtxMap *m)
+void CAirplane::RudderBankMap (CFmtxMap *m)
 { // Get pointer to control subsystem in electrical systems
   CRudderControl *p = amp->pRuds;
   if (p) p->SetBankMap(m);
 }
 
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderIncr (void)
+void CAirplane::RudderIncr (void)
 {
   // Get pointer to control subsystem in electrical systems
   CRudderControl *p = amp->pRuds;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderDecr (void)
+void CAirplane::RudderDecr (void)
 { // Get pointer to control subsystem in electrical systems
   CRudderControl *p = amp->pRuds;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderSet (float fv)
+void CAirplane::RudderSet (float fv)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->pRuds;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::GroundBrakes (U_CHAR b) 
+void CAirplane::GroundBrakes (U_CHAR b) 
 {  // Get pointer to control subsystem in electrical systems
   CBrakeControl *p = amp->pwb;
   if (p) p->HoldBrake(b);
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::ParkBrake () 
+void CAirplane::ParkBrake () 
 {  // Get pointer to control subsystem in electrical systems
   CBrakeControl *p = amp->pwb;
   if (p) p->SwapPark();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::GearUpDown (void) // 
+void CAirplane::GearUpDown (void) // 
 { // Get pointer to control subsystem in electrical systems
   CGearControl *p = amp->pgr;
   if (p) p->Swap ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::FlapsExtend (void)
+void CAirplane::FlapsExtend (void)
 {  // Get pointer to control subsystem in electrical systems
   CFlapControl *p = amp->pFlaps;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::FlapsRetract (void)
+void CAirplane::FlapsRetract (void)
 {  // Get pointer to control subsystem in electrical systems
   CFlapControl *p = amp->pFlaps;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::AileronTrimIncr (void)
+void CAirplane::AileronTrimIncr (void)
 {  // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->aTrim;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::AileronTrimDecr (void)
+void CAirplane::AileronTrimDecr (void)
 {  // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->aTrim;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::AileronTrimSet (float fv)
+void CAirplane::AileronTrimSet (float fv)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->aTrim;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::ElevatorTrimIncr (void)
+void CAirplane::ElevatorTrimIncr (void)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->eTrim;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::ElevatorTrimDecr (void)
+void CAirplane::ElevatorTrimDecr (void)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->eTrim;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::ElevatorTrimSet (float fv)
+void CAirplane::ElevatorTrimSet (float fv)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->eTrim;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderTrimIncr (void)
+void CAirplane::RudderTrimIncr (void)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->rTrim;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderTrimDecr (void)
+void CAirplane::RudderTrimDecr (void)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->rTrim;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderBias (float inc)
+void CAirplane::RudderBias (float inc)
 { // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->pRuds;
   if (p) p->ModBias(inc);
 }
 
 //-----------------------------------------------------------------------------
-void CAirplaneObject::RudderTrimSet (float fv)
+void CAirplane::RudderTrimSet (float fv)
 {  // Get pointer to control subsystem in electrical systems
   CAeroControl *p = amp->rTrim;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::Aileron (void)
+float CAirplane::Aileron (void)
 {  float fv = 0.0f;
   CAeroControl *p = amp->pAils;
   if (p) fv = p->Val ();
   return fv;
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::AileronDeflect (void)
+float CAirplane::AileronDeflect (void)
 {  float fv = 0.0f;
   CAeroControl *p = amp->pAils;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::Elevator (void)
+float CAirplane::Elevator (void)
 {  float fv = 0.0f;
   CAeroControl *p = amp->pElvs;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::ElevatorDeflect (void)
+float CAirplane::ElevatorDeflect (void)
 {  float fv = 0.0f;
   CAeroControl *p = amp->pElvs;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::Rudder (void)
+float CAirplane::Rudder (void)
 { float fv = 0.0f;
   CAeroControl *p = amp->pRuds;
   if (p) fv = p->Val();
   return fv;
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::RudderDeflect (void)
+float CAirplane::RudderDeflect (void)
 { float fv = 0.0f;
   CAeroControl *p = amp->pRuds;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::AileronTrim (void)
+float CAirplane::AileronTrim (void)
 { float fv = 0.0f;
   CAeroControl *p = amp->aTrim;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::ElevatorTrim (void)
+float CAirplane::ElevatorTrim (void)
 { float fv = 0.0f;
   CAeroControl *p = amp->eTrim;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
-float CAirplaneObject::RudderTrim (void)
+float CAirplane::RudderTrim (void)
 { float fv = 0.0f;
   CAeroControl *p = amp->rTrim;
   if (p) fv = p->Val( );
@@ -1094,34 +1100,15 @@ float CAirplaneObject::RudderTrim (void)
 }
 
 //-----------------------------------------------------------------------------
-float CAirplaneObject::Flaps (void)
+float CAirplane::Flaps (void)
 { float fv = 0.0f;
   CFlapControl *p = amp->pFlaps;
  // if (p) fv = p->Val( );
   return fv;
 }
 
-void CAirplaneObject::Simulate (float dT,U_INT FrNo) 
-{
-}
 
-void CAirplaneObject::UpdateOrientationState (float dT, U_INT FrNo)
-{
-}
-
-double CAirplaneObject::GetMassInKgs (void) {
-  return CVehicleObject::GetMassInKgs ();
-}
-
-const SVector* CAirplaneObject::GetMomentOfInertia () {
-  return CVehicleObject::GetMomentOfInertia ();
-}
-
-const SVector* CAirplaneObject::GetCG () {
-  return CVehicleObject::GetCG ();
-}
-
-void CAirplaneObject::Print (FILE *f)
+void CAirplane::Print (FILE *f)
 {
 }
 
@@ -1387,7 +1374,7 @@ void COPALObject::ReadFinished (void)
 { //MEMORY_LEAK_MARKER ("readfnopa")
   Plane           = globals->opal_sim->createSolid();
 	phyMod					= Plane;
-  CAirplaneObject::ReadFinished ();
+  CAirplane::ReadFinished ();
   PlaneShape();
   mm.mass = static_cast<opal::real> (wgh->GetTotalMassInKgs () /** 9.81f*/); // 
   dihedral_coeff = ADJ_DHDL_COEFF; /// should be 500.0
@@ -1395,7 +1382,6 @@ void COPALObject::ReadFinished (void)
   wind_coeff  = ADJ_WIND_COEFF;
   acrd_coeff  = 1.0f;               /// rudder fudger ; only in PHY file
   gear_drag   = ADJ_GEAR_DRAG;       /// gear drag
-  gear_adjust_height = 0.0f;
   //-----------------------------------------------------------------
   //  Init default values
   //-----------------------------------------------------------------
@@ -1417,16 +1403,14 @@ void COPALObject::ReadFinished (void)
     pitch_coeff = globals->uph->Kpth;
     wind_coeff = globals->uph->Kwnd;
     gear_drag = globals->uph->KdrG;
-    gear_adjust_height = globals->uph->Ghgt;
     //---Init rudder coef ------------------------------------------
-    CAirplaneObject *apln = (CAirplaneObject *)this;
+    CAirplane *apln = (CAirplane *)this;
     apln->RudderOpalCoef(acrd_coeff);
   }
   //----------------------------------------------------------------
   DEBUGLOG ("PHY : dieh=%f pitchK%f acrd=%f", dihedral_coeff, pitch_coeff, acrd_coeff);
   DEBUGLOG ("PHY : pmine%f rmine%f ymine%f", pitchMine, rollMine, yawMine); 
   DEBUGLOG ("PHY : wind effect coeff%f", wind_coeff);
-  DEBUGLOG ("PHY : gear adjust height%f", gear_adjust_height);
   //-----------------------------------------------------------------
   CVector   Cg   = wgh->svh_cofg;
   double    cy   = FeetToMetres(Cg.z);
@@ -1492,7 +1476,7 @@ void COPALObject::ResetSpeeds (void)
 //--------------------------------------------------------------------------
 void COPALObject::ResetCrash (char p)  
 { if (State == VEH_CRSH)  return;
-  CAirplaneObject::ResetCrash(p);
+  CAirplane::ResetCrash(p);
   //--- Zero velocity ------------------------------------
   ResetSpeeds ();
   //--- Zero Forces and Moments --------------------------
@@ -1500,6 +1484,11 @@ void COPALObject::ResetCrash (char p)
   //------------------------------------------------------
   return;
 }
+//--------------------------------------------------------------------------
+//  Szet wind position
+//--------------------------------------------------------------------------
+void COPALObject::SetWindPos(double p)
+{wind_pos = std::min(p,wind_pos);}
 //--------------------------------------------------------------
 //  Set aircraft orientation to 0,0,0
 //--------------------------------------------------------------

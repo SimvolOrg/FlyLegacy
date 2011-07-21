@@ -108,10 +108,10 @@ struct D2R2_ACTION {
 	void	D2R2_ACTION::SetParam(void *p)		{user = p;}
 };
 //=================================================================
-//  Check list display
-//  An internal subsystem to display Window Check list 
+//  Robot to execute the check list
+//  
 //=================================================================
-class CRobot : public CDependent {
+class CRobot : public CSubsystem {
   //----ATTRIBUTES: ----------------------------------
   char  step;                   // Action step
   Tag   actn;                   // Current action
@@ -146,6 +146,24 @@ public:
   inline void Register(CFuiCkList *w)      {win = w;}
 	//---------------------------------------------------
 	inline bool	Inactive()		{return (ROBOT_STOP == step);}
+};
+//=================================================================
+//  Virtual Pilot to pilot the aircraft
+//  
+//=================================================================
+class VPilot: public CSubsystem {
+protected:
+	//--- ATTRIBUTES --------------------------------------
+	CFPlan						*fpln;			// Flight plan to execute
+	AutoPilot         *apil;			// Auto pilote
+	BUS_RADIO					 Radio;			// Radio bus
+	//-----------------------------------------------------
+public:
+	VPilot();
+	//-----------------------------------------------------
+	void	Error(int No);
+	void	Start();
+
 };
 //=======================END OF FILE ======================================================================
 #endif ROBOT_H

@@ -493,7 +493,7 @@ protected:
   int       radi_unit;
   SMessage  mobs;             // OBS message set
   SMessage  mrad;             // Radio Message
-  RADIO_VAL *radio;           // Radio data
+  BUS_RADIO *radio;           // Radio data
 	//--------Localizer needle-- -------------------------------
   float     vobs;             // OBS from radio
   float     lndK;             // Horizontal coefficient

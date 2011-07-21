@@ -34,13 +34,13 @@ using namespace std;
 // CRadio
 //===================================================================================
 CRadio::CRadio (void)
-{
-  TypeIs (SUBSYSTEM_RADIO);
+{ TypeIs (SUBSYSTEM_RADIO);
   hwId    = HW_RADIO;
   sinc    = 0;
   test    = false;
   nState  = 0;
   cState  = 0;
+	WPT			= 0;
   VOR     = 0;
   ILS     = 0;
   COM     = 0;
@@ -53,7 +53,7 @@ CRadio::CRadio (void)
   Radio.mdis = 0;
   Radio.fdis = 0;
   Radio.aDir = 0;
-  memset(&Radio,0,sizeof(RADIO_VAL));
+  memset(&Radio,0,sizeof(BUS_RADIO));
   Radio.ntyp = SIGNAL_OFF;
   Radio.flag = VOR_SECTOR_OF;
   ActCom.freq   = 0;
@@ -297,7 +297,17 @@ void CRadio::RazField(RADIO_FLD *tab,short No)
   tab[No].data  = "";
   return;
 }
-
+//--------------------------------------------------------------------------
+//  Enter/leave waypoint mode:  ROBOT/GPS interface
+//--------------------------------------------------------------------------
+void	CRadio::ModeWPT(CWPT *wp)
+{	WPT	= wp;													// Store waypoint 
+	if (0 == wp)					return;
+	//--- Cut any other station -------------------------
+	VOR = 0;
+	ILS	= 0;
+	return;
+}
 //--------------------------------------------------------------------------
 //  Change OBS from external
 //--------------------------------------------------------------------------
@@ -306,42 +316,36 @@ int CRadio::SetXOBS(short inc)
   obs += inc;
   if (  0 > obs) obs  = 359;
   if (359 < obs) obs  = 0;
-  Radio.xOBS = obs;
+	Radio.SetOBS(obs);
   return obs;
 }
 //--------------------------------------------------------------------------
 //  Maintain all values
+//	Values are updated in a specific structure used for interface
+//	with all gauges and subsystems such as autopilot
 //--------------------------------------------------------------------------
 void CRadio::TimeSlice (float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
-  float rad  = 0;
-  if (VOR) 
-    { rad = VOR->GetRadial(); 
-      Radio.ntyp = SIGNAL_VOR;
-      Radio.mdis = VOR->GetNmiles();
-      Radio.mdev = VOR->GetMagDev();
-      Radio.nav  = VOR;
-      Radio.hREF = Radio.xOBS;
+  float   rad = 0;
+	CmHead *sys = 0;
+	if (WPT)	{sys = WPT;}
+	if (VOR)	{sys = VOR;}
+	if (ILS)  {sys = ILS;}
+	if (sys)
+	{		sys->SetOBS(Radio.xOBS);
+			rad = sys->GetRadial(); 
+      Radio.ntyp = sys->SignalType();							
+      Radio.mdis = sys->GetNmiles();
+      Radio.mdev = sys->GetMagDev();
+      Radio.nav  = sys;
+      Radio.hREF = sys->GetRefDirection();				//Radio.xOBS;
       Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,sPower);
-      Radio.gDEV = 0;
+      Radio.gDEV = sys->GetVrtDeviation();				//0;
       Radio.radi = rad;
-      Radio.fdis = VOR->GetFeetDistance();
-      Radio.sens = 10;
+      Radio.fdis = sys->GetFeetDistance();
+      Radio.sens = sys->Sensibility();						//10;
     }
-  else if (ILS) 
-    { rad = ILS->GetRadial(); 
-      Radio.ntyp = SIGNAL_ILS;
-      Radio.mdis = ILS->GetNmiles();
-      Radio.mdev = ILS->GetMagDev();
-      Radio.nav  = ILS;
-      Radio.gDEV = ILS->GetGlide();
-      Radio.hREF = ILS->GetRwyDirection();
-      Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,sPower);
-      Radio.radi = rad;
-      Radio.fdis = ILS->GetFeetDistance();
-      Radio.sens = 20;
-    }
-  else 
+	  else 
   {   Radio.nav  = 0;
       Radio.hREF = 0;
       Radio.flag = VOR_SECTOR_OF;
@@ -547,7 +551,6 @@ EMessageResult CRadio::ReceiveMessage (SMessage *msg)
        //----Set external OBS ------------------
       case 'obs_':
         msg->intData  = SetXOBS(short(msg->realData));
-        Radio.xOBS   = short(msg->intData);
         return MSG_PROCESSED;
 
       }

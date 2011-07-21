@@ -32,7 +32,8 @@
 //====================================================================================
 #ifndef BENDIXKING_H
 #define BENDIXKING_H
-
+//====================================================================================
+class CFPlan;
 //=====================================================================
 //  Class CK155radio for Bendix / KING K155 700A
 //  NOTES:  Generic RADIO attributes are  in the CRadio level
@@ -346,7 +347,7 @@ class CRunway;
 class CCOM;
 class CILS;
 class CNavaid;
-class CWayPoint;
+class COldWayPoint;
 //-------------------------------------------------------------
 //  Define K89 input field structure
 //-------------------------------------------------------------
@@ -682,11 +683,11 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   //-------FLIGHT PLAN ----------------------------------------
   int               EnterFLPpage01();
   int               ChangeFPLnode();
-  int               EditFPLoption(char *edt, CWayPoint *wpt);
-  int               EditFPLSlot(short ln,CWayPoint *wpt);
+  int               EditFPLoption(char *edt, CWPoint *wpt);
+  int               EditFPLSlot(short ln,CWPoint *wpt);
   int               EditNoFplan();
   int               EditFlightPage();
-  void              EditFPLmark(short lin,CWayPoint *wpt);
+  void              EditFPLmark(short lin,CWPoint *wpt);
   int               ChangeFPLcursor();
   //-------ACTIVE WAYPOINT ------------------------------------
   void              ModeLEG();
@@ -844,7 +845,7 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   //==============Data members ===================================
 protected:
   CK89gauge         *Gauge;             // K89 gauge object
-  RADIO_VAL         *Radio;             // Master radio
+  BUS_RADIO         *Radio;             // Master radio
   char               Active;            // Activity
   SMessage           gMsg;
   //----------Vector functions --------------------------------
@@ -898,7 +899,7 @@ protected:
   U_SHORT           fpMax;              // Number of wpt in FPL
   U_SHORT           MaxNO;              // Maximum nodes
   U_SHORT           LimNO;              // Limite number
-  CFlightPlan      *FPL;                // Flight plan
+  CFPlan           *FPL;                // Flight plan
   CmHead           *cOBJ;               // Current  object
   CmHead           *pOBJ;               // Previous object in queue
   CmHead           *nOBJ;               // Next     object in queue

@@ -27,7 +27,7 @@
 #include "../Include/Fui.h"
 #include "../Include/FuiUser.h"
 #include "../Include/FuiParts.h"
-#include "../Include/FlightPlan.h"
+#include "../Include/PlanDeVol.h"
 //==================================================================================
 //
 //  NAVIGATION LOG:  List a detailled Flight Plan
@@ -36,8 +36,8 @@
 CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
 :CFuiWindow(idn,filename,0,0,0)
 { char *erm = "Incorrect FlightPlanLog.WIN file";
-  fplan = globals->fpl;
-  wpt   = 0;
+  fpln	= globals->pln->GetFlightPlan();
+	fpln->Register(this);
   //----- Get components ------------------------------
   eWIN  = (CFuiLabel *)   GetComponent('eror');
   if (0 == eWIN)  gtfo(erm);
@@ -45,62 +45,86 @@ CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
   if (0 == nWIN)  gtfo(erm);
   dWIN  = (CFuiTextField*)GetComponent('desc');
   if (0 == dWIN)  gtfo(erm);
-  sWIN  = (CFuiTextField*)GetComponent('sped');
-  if (0 == sWIN)  gtfo(erm);
-  rWIN  = (CFuiTextField*)GetComponent('drem');
-  if (0 == rWIN)  gtfo(erm);
+  grh   = (CFuiCanva*)GetComponent('canv');
+  if (0 == grh)		gtfo(erm);
+	ilsF	= (CFuiLabel*)GetComponent('ilsf');
+  if (0 == ilsF)	gtfo(erm);
+	//--- Get altitude components ----------------------
+	wALT	= (CFuiTextField*)GetComponent('alti');
+	if (0 == wALT)	gtfo(erm);
+	//--- Init runway end points component -------------
+	rend	= (CFuiGroupBox*)GetComponent('rend');
+  if (0 == rend)	gtfo(erm);
+	tkoID	= "NUL";
+	ptko	= (CFuiPopupMenu*)rend->GetComponent('ptko');
+	if (0 == ptko)	gtfo(erm);
+	lndID	= "NUL";
+	plnd	= (CFuiPopupMenu*)rend->GetComponent('plnd');
+	if (0 == plnd)	gtfo(erm);
   //-----------Init the list box-----------------------
   eWIN->SetText("");
-  flpBOX     = fplan->GetFBOX();
+	flpBOX		 = fpln->GetFBOX();
   U_INT type = LIST_HAS_TITLE + LIST_NOHSCROLL;
   flpBOX->SetParameters(this,'list',type);
-  FillCurrentPlan();
   globals->dbc->RegisterLOGwindow(this);
+	//--- Select first node ----------------------------
+	FillCurrentPlan();
+
 }
 //--------------------------------------------------------------------------
 //  Destroy the nav log
 //--------------------------------------------------------------------------
 CFuiFlightLog::~CFuiFlightLog()
-{ 
+{ fpln->Register(0);
+}
+//--------------------------------------------------------------------------
+//  Select first node
+//--------------------------------------------------------------------------
+void CFuiFlightLog::Select()
+{	sWPT = (CWPoint*)flpBOX->GetSelectedSlot();
+	GetRunway();
+	//--- Edit altitude ----------------------------
+	char *alti = (sWPT)?(sWPT->GetEdAltitude()):("");
+	wALT->SetText(alti);
+	return;
 }
 //--------------------------------------------------------------------------
 //  Fill the current flight plan
 //--------------------------------------------------------------------------
 void CFuiFlightLog::FillCurrentPlan()
-{ nWIN->SetText(fplan->GetFileName());
-  dWIN->SetText(fplan->GetDescription());
+{ nWIN->SetText(fpln->GetFileName());
+	dWIN->SetText(fpln->GetDescription());
   flpBOX->Display();
-  return;
-}
-//--------------------------------------------------------------------------
-//  Refresh display
-//--------------------------------------------------------------------------
-void CFuiFlightLog::Refresh()
-{ float spd = fplan->GetSpeed();
-  sWIN->EditText("%.1fKt)",spd);
-  //---Refresh remaining distance -----------
-  float dis = fplan->GetRemainingNM();
-  flpBOX->Refresh();
-  rWIN->EditText("%.1fnm",dis);
+	Select();
+	fpln->Reload(0);
   return;
 }
 //-------------------------------------------------------------------------
 //  Draw the navigation log
 //-------------------------------------------------------------------------
 void CFuiFlightLog::Draw()
-{ CFuiWindow::Draw();
+{ if (Req.EndOfReq())  EndOfRequest(&Req);
+	CFuiWindow::Draw();
   return;
 }
 //-------------------------------------------------------------------------
 //  Open detail window on item selected
 //-------------------------------------------------------------------------
 bool CFuiFlightLog::OpenDetail()
-{ CFlpLine  *lin = (CFlpLine*)flpBOX->GetPrimary();
-  if (0 == lin)               return false;
-  CWayPoint *wpt = lin->GetWPT();
-  CmHead *obj    = wpt->GetDBobject();
+{ CWPoint  *wpt	= (CWPoint*)flpBOX->GetPrimary();
+  if (0 == wpt)               return false;
+  CmHead *obj			= wpt->GetDBobject();
   if (0 == obj)               return false;
-  return  FullDetailObject(obj,wpt->GetWaypointNo());
+	U_INT No				=	wpt->GetWaypointNo();
+	switch (obj->GetActiveQ())
+	{ case VOR:
+      return CreateVORwindow(obj,No,1);
+    case NDB:
+      return CreateNDBwindow(obj,No,1);
+    case APT:
+      return CreateAPTwindow(obj,No,1);
+  }
+	return false;
 }
 //-------------------------------------------------------------------------
 //  Open the directory window and wait for action
@@ -115,29 +139,29 @@ void CFuiFlightLog::OpenDirectory()
 }
 //-------------------------------------------------------------------------
 //  Insert the waypoint in flight plan
-//  -Update the previous and next node
 //  -Refresh the list
 //-------------------------------------------------------------------------
-void  CFuiFlightLog::InsertWaypoint(CWayPoint *wp)
-{ CFlpLine   *slot  = new CFlpLine;
-  slot->SetWPT(wp);
-  slot->Edit();
-  flpBOX->InsSlot(slot);
-  fplan->Recycle();
+void  CFuiFlightLog::InsertWaypoint(CWPoint *wp)
+{ wp->Edit();
+  flpBOX->InsSlot(wp);
+  fpln->Reorder(1);
+	flpBOX->Refresh();
+	Select();
   return;
 }
 //-------------------------------------------------------------------------
 //  Create an Airport waypoint
 //-------------------------------------------------------------------------
 void  CFuiFlightLog::CreateAPTwaypoint()
-{ CAirport  *apt = (CAirport*)selOBJ.Pointer();
-  CWayPoint *wpt = new CWayPoint(fplan);
-  wpt->SetType('sarw');
+{ int alt        = fpln->actCEIL();
+	CAirport  *apt = (CAirport*)selOBJ.Pointer();
+  CWPoint   *wpt = new CWPoint(fpln,'airp');
+  wpt->SetUser('airp');
   wpt->SetName    (apt->GetName());
   wpt->SetPosition(apt->GetPosition());
   wpt->SetDbKey   (apt->GetKey());
-  wpt->SetAltitude(apt->GetElevation());
-  wpt->SetOBJ(apt);
+  wpt->SetAltitude(alt);
+  wpt->SetDBwpt(apt);
   InsertWaypoint(wpt);
   return;
 }
@@ -145,35 +169,48 @@ void  CFuiFlightLog::CreateAPTwaypoint()
 //  Create an NAVAID waypoint
 //-------------------------------------------------------------------------
 void  CFuiFlightLog::CreateNAVwaypoint()
-{ CNavaid   *nav = (CNavaid*)selOBJ.Pointer();
-  CWayPoint *wpt = new CWayPoint(fplan);
-  wpt->SetType('snav');
+{ int alt        = fpln->actCEIL();
+	CNavaid   *nav = (CNavaid*)selOBJ.Pointer();
+  CWPoint   *wpt = new CWPoint(fpln,'snav');
+  wpt->SetUser('snav');
   wpt->SetName    (nav->GetName());
   wpt->SetPosition(nav->GetPosition());
   wpt->SetDbKey   (nav->GetDbKey());
-  wpt->SetAltitude(nav->GetElevation());
-  wpt->SetOBJ(nav);
+  wpt->SetAltitude(alt);
+  wpt->SetDBwpt(nav);
   InsertWaypoint(wpt);
   return;
 }
 
 //-------------------------------------------------------------------------
-//  Free Object. Assign 0 to smart pointer
+//  Create a USER waypoint
 //-------------------------------------------------------------------------
-bool  CFuiFlightLog::FreeObject()
-{ selOBJ  = 0;
-  return true;
+void  CFuiFlightLog::CreateWPTwaypoint()
+{ int alt      = fpln->actCEIL();
+	CWPT		*pnt = (CWPT*)selOBJ.Pointer();
+  CWPoint	*wpt = new CWPoint(fpln,'wayp');
+	wpt->SetUser('uswp');
+  wpt->SetName    (pnt->GetName());
+  wpt->SetPosition(pnt->GetPosition());
+  wpt->SetDbKey   (pnt->GetDbKey());
+  wpt->SetAltitude(alt);
+  wpt->SetDBwpt(pnt);
+	pnt->SetNOD(wpt);
+  InsertWaypoint(wpt);
+  return;
 }
 //-------------------------------------------------------------------------
 //  Check for a valid insert
 //  We cannot insert if the next waypoint is terminated
 //-------------------------------------------------------------------------
 bool CFuiFlightLog::ValidInsert()
-{ CFlpLine *prm  = (CFlpLine*)flpBOX->NextPrimToSelected();
+{ eWIN->SetText("");
+	CWPoint *prm  = (CWPoint*)flpBOX->NextPrimToSelected();
   if (0 == prm)     return true;    // Empty => valid insert
-  CWayPoint *wpt = prm->GetWPT();
-  bool ok = !wpt->IsTerminated();
+  bool ok = !prm->IsTerminated();
   if (ok)           return true;
+	//--- delete object ------------------------------------
+	selOBJ = 0;
   char *msg = "CANNOT ADD BEFORE NON TERMINATED WAYPOINT";
   eWIN->RedText(msg);
   return false;
@@ -185,7 +222,7 @@ bool CFuiFlightLog::ValidInsert()
 //-------------------------------------------------------------------------
 bool CFuiFlightLog::NotifyFromDirectory(CmHead *obj)
 { selOBJ  = obj;                            // Assign object
-  if (!ValidInsert())   return FreeObject();
+	if (!ValidInsert())   return false;
   switch (obj->GetActiveQ()) {
     case APT:
       CreateAPTwaypoint();
@@ -196,12 +233,20 @@ bool CFuiFlightLog::NotifyFromDirectory(CmHead *obj)
     case NDB:
       CreateNAVwaypoint();
       return true;
+		case WPT:
+			CreateWPTwaypoint();
+			return true;
   }
   return true;
 }
 //-------------------------------------------------------------------------
-//  Check for a valid manipulations
+//  Send error 4
 //-------------------------------------------------------------------------
+void CFuiFlightLog::Error4()
+{ char *msg = "FILE NAME IS EMPTY!!!";
+  eWIN->RedText(msg);
+  return;
+}
 //-------------------------------------------------------------------------
 //  Send error 3
 //-------------------------------------------------------------------------
@@ -230,11 +275,13 @@ void CFuiFlightLog::Error1()
 //  Delete the selected Waypoint
 //-------------------------------------------------------------------------
 void CFuiFlightLog::DeleteWaypoint()
-{ if (flpBOX->IsEmpty())              return;
-  CFlpLine *lin = (CFlpLine*)flpBOX->GetPrimary();
-  if (lin->GetWPT()->IsTerminated())  return Error3();
+{ if (fpln->IsEmpty())              return;
+	eWIN->SetText("");
+  CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
+  if (wpt->IsTerminated())  return Error3();
   flpBOX->DeleteItem();
-  fplan->Recycle();
+  fpln->Reorder(1);
+	sWPT	= 0;
   return;
 }
 //-------------------------------------------------------------------------
@@ -242,14 +289,15 @@ void CFuiFlightLog::DeleteWaypoint()
 //-------------------------------------------------------------------------
 void CFuiFlightLog::MoveUpWaypoint()
 { //--- Check that selected waypoint may move ---------------
-  if (flpBOX->IsEmpty())                    return;
-  CFlpLine *lin = (CFlpLine*)flpBOX->GetPrimary();
-  if (lin->GetWPT()->IsTerminated())        return Error1();
+	eWIN->SetText("");
+  if (fpln->IsEmpty())          return;
+  CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
+  if (wpt->IsTerminated())        return Error1();
   //--- Check that the previous is not terminated -----------
-  lin = (CFlpLine*)flpBOX->PrevPrimary(lin);
-  if (lin && lin->GetWPT()->IsTerminated()) return Error2();
+  wpt = (CWPoint*)flpBOX->PrevPrimary(wpt);
+  if (wpt && wpt->IsTerminated()) return Error2();
   flpBOX->MoveUpItem();
-  fplan->Recycle();
+  fpln->Reorder(1);
   return;
 }
 //-------------------------------------------------------------------------
@@ -257,27 +305,105 @@ void CFuiFlightLog::MoveUpWaypoint()
 //-------------------------------------------------------------------------
 void CFuiFlightLog::MoveDwWaypoint()
 { //--- Check that selected waypoint may move ---------------
-  if (flpBOX->IsEmpty())                    return;
-  CFlpLine *lin = (CFlpLine*)flpBOX->GetPrimary();
-  if (lin->GetWPT()->IsTerminated())        return Error1();
+	eWIN->SetText("");
+  if (fpln->IsEmpty())          return;
+  CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
+  if (wpt->IsTerminated())        return Error1();
   //--- Check that the next is not terminated -----------
-  lin = (CFlpLine*)flpBOX->NextPrimToSelected();
-  if (lin && lin->GetWPT()->IsTerminated()) return Error2();
+  wpt = (CWPoint*)flpBOX->NextPrimToSelected();
+  if (wpt && wpt->IsTerminated()) return Error2();
   flpBOX->MoveDwItem();
-  fplan->Recycle();
+  fpln->Reorder(1);
   return;
 }
-
+//----------------------------------------------------------------------
+//      Post a request to get Runways for selected airport
+//----------------------------------------------------------------------
+void CFuiFlightLog::GetRunway()
+{ CWPoint *wpt = sWPT;
+	grh->EraseCanvas();
+	rend->Hide();
+	rwyBOX.EmptyIt();
+	if (0 == wpt)						return;
+	if (wpt->NotAirport())	return;
+	tkoID = wpt->GetTkoRwy();
+  lndID = wpt->GetLndRwy();
+	rend->Show();
+	CFuiRwyEXT::Init();
+	Req.SetWindow(this);
+  Req.SetAPT(wpt->GetDbKey());
+	rwyBOX.SetParameters(0,0,0);
+  Req.SetReqCode(RWY_BY_AIRPORT);
+  PostRequest(&Req);
+  return;
+}
+//----------------------------------------------------------------------
+//      Queue a line descriptor for one runway
+//----------------------------------------------------------------------
+void	CFuiFlightLog::AddDBrecord(void *rec,DBCODE cd)
+{	switch (cd)	{
+		//--- Record is a runway ------------------------
+		case RWY_BY_AIRPORT:
+			{	CRwyLine *rwy = (CRwyLine*)rec;
+				line					= rwy;
+				rwyBOX.AddSlot(rwy);
+				StoreExtremities(rwy->GetDXH(),rwy->GetDYH());
+				StoreExtremities(rwy->GetDXL(),rwy->GetDYL());
+				return;
+			}
+		//--- Record is an ILS for previous runway ------
+		case COM_BY_AIRPORT:
+			{	CComLine *com = (CComLine *)rec;
+				if (line)	line->SetILS(com);
+				delete com;
+				return;
+			}
+	}
+	return;
+}
+//----------------------------------------------------------------------
+//  Result return from database
+//----------------------------------------------------------------------
+void CFuiFlightLog::EndOfRequest(CDataBaseREQ *req)
+{ req->SetReqCode(NO_REQUEST);
+	if (0 == sWPT)		return;							//was deleted
+	ComputeScale();												// Compute drawing scale
+	ScaleAllRWY();												// Scale drawing coordinates
+	InitRunwayEnds();
+	DrawRunways();
+	ilsF->SetText(ilsTXT);
+  return;
+}
+//----------------------------------------------------------------------
+//  Modify altitude
+//----------------------------------------------------------------------
+void CFuiFlightLog::ModifAlti(int inc)
+{	if (0 == sWPT)	return;
+	CWPoint *prv = (CWPoint*)flpBOX->PrevPrimary(sWPT);
+	char *alti = sWPT->ModifyAltitude(inc);
+	wALT->SetText(alti);
+	flpBOX->LineRefresh();
+}
 //-------------------------------------------------------------------------
 //  Close this window
 //-------------------------------------------------------------------------
 void CFuiFlightLog::CloseMe()
-{ fplan->Save();
+{ fpln->Save();
   globals->dbc->RegisterLOGwindow(0);
   CFuiDirectory *dir = globals->dbc->GetDIRwindow();
   if (dir)   dir->RegisterMe(0);
   Close();
   return;
+}
+//-------------------------------------------------------------------------
+//  Modify file name
+//-------------------------------------------------------------------------
+void CFuiFlightLog::ChangeFileName()
+{	char *nm = nWIN->GetText();
+  eWIN->SetText("");
+	fpln->SetFileName(nm);
+	if (0 == *nm) Error4();
+	return;
 }
 //-------------------------------------------------------------------------
 //  Event notification
@@ -290,6 +416,7 @@ void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
     return;
   case 'list':
     flpBOX->VScrollHandler((U_INT)itm,evn);
+		Select();
     return;
   //--- Open info on waypoint -----------------
   case 'info':
@@ -313,26 +440,56 @@ void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
     return;
   //---- Name is modified --------------------
   case 'name':
-    fplan->SetFileName(nWIN->GetText());
-    fplan->Modify(1);
+		ChangeFileName();
     return;
   //---- Description is modified ------------
   case 'desc':
-    fplan->SetDescription(dWIN->GetText());
-    fplan->Modify(1);
+    fpln->SetDescription(dWIN->GetText());
     return;
   //---  Reset marks ------------------------
   case 'rset':
-    fplan->Reset();
+    fpln->Reorder(1);
     return;
   //---  Clear the plan ----------------------
   case 'zero':
-    fplan->Clear(0);
+    fpln->Clear(0);
     FillCurrentPlan();
     return;
+	//--- Increment altitude -------------------
+	case 'palt':
+		ModifAlti(+100);
+		return;
+	//--- Decrement altitude -------------------
+	case 'malt':
+		ModifAlti(-100);
+		return;
 }
 
   return;
 }
-
+//----------------------------------------------------------------------------------
+//  Notification from Popup
+//----------------------------------------------------------------------------------
+void CFuiFlightLog::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
+{ U_INT   No = (U_INT)itm;
+  if (evn != EVENT_POP_CLICK) return;
+  switch (id) {
+		//--- Change Take off runway ----------
+		case 'ptko':
+			ptko->Select(No);
+			tkoID	= cMENU[No];
+			DrawRunways();
+			sWPT->SetTkoRwy(tkoID);
+			return;
+		//--- Change landing runway --------
+		case 'plnd':
+			plnd->Select(No);
+			lndID	= cMENU[No];
+			DrawRunways();
+			sWPT->SetLndRwy(lndID);
+  		ilsF->SetText(ilsTXT);
+			return;
+	}
+	return;
+}
 //=======================END OF FILE ==================================================

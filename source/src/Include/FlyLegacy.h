@@ -2081,12 +2081,11 @@ class CNavaid;
 class CRunway;
 class CPaveRWY;
 class CAptObject;
-class CFlightPlan;                // Flight plan
 class CVehicleObject;             // Vehicle object
 class CAudioManager;              // Audio sustem
 class CExternalLightManager;      // Light manager
 class CElectricalSystem;          // electrical system
-class AutoPilot;            // Autopilot system
+class AutoPilot;									// Autopilot system
 class CMagneticModel;             // Magnetic model
 class CFuelSystem;                // Fuel system
 class CKeyMap;                    // Keyboard interface
@@ -2858,6 +2857,14 @@ enum OTYPE {  ANY = 0x00,       // Any
               SHR = 0x01,       // Shared
               DBM = 0x03,       // DBM
 };
+//----------SIGNAL TYPE -------------------------------------------
+#define SIGNAL_OFF 0
+#define SIGNAL_VOR 1
+#define SIGNAL_ILS 2
+#define SIGNAL_COM 4
+#define SIGNAL_WPT 8
+//------------------------------------------------------------------
+#define SIGNAL_NAV (SIGNAL_VOR+SIGNAL_ILS+SIGNAL_WPT)
 //===================================================================================
 //  NOTE:  dLon and dLat are working area used for several purposes 
 //===================================================================================
@@ -2900,12 +2907,22 @@ public:
   virtual float      GetNmiles()      {return 0; }
   virtual float      GetElevation()   {return 0;}
   virtual U_INT      GetRecNo()       {return 0;}
+	virtual short      GetRefDirection(){return 0;}
+	virtual float      GetVrtDeviation(){return 0;}
+	virtual double		 Sensibility()		{return 0;}
+	virtual U_CHAR		 SignalType()     {return SIGNAL_OFF;}
+	virtual float			 GetFeetDistance(){return 0;}
+	//------------------------------------------------------------
   virtual void       Refresh(U_INT FrNo) {return;}
   virtual float      GetLatitude()    {return 0;}
   virtual float      GetLongitude()   {return 0;}
   virtual float      GetFrequency()   {return 0;}
   virtual SPosition  GetPosition();
   virtual SPosition *ObjPosition()    {return 0;}
+	//------------------------------------------------------------
+	virtual void       SetOBS(short d)	{;}
+	virtual void			 SetNmiles(float m) {;}
+	//------------------------------------------------------------
 	        void  IncUser(void);					    // Increment user count
 	        void  DecUser();				          // Decrement user count
 	        bool  NeedUpdate(U_INT FrNo);		  // Need update
@@ -2917,15 +2934,20 @@ public:
   inline void   SetDistLat(short lat)   {dLat = lat;  }  
   inline int    GetDistLon(void)        {return dLon; }
   inline void   SetDistLon(short lon)   {dLon = lon;  }
+	//------------------------------------------------------------
+  inline float  GetNmFactor()           {return nmFactor; }
   inline  CmHead*  NextInQ1()        {return Cnext; }
   inline  CmHead*  PrevInQ1()        {return Cprev; }
   inline  CmHead*  NextInQ2()        {return Tnext; }
   inline QTYPE  GetActiveQ(void)        {return (QTYPE)(qAct); }
   inline OTYPE  GetObjType(void)        {return (OTYPE)(oTyp); }
+	//------------------------------------------------------------
   inline void   Lock()                  {pthread_mutex_lock  (&mux);}
   inline void   Unlock()                {pthread_mutex_unlock(&mux);}
   inline bool   IsUsed()                {return (0 != uCount);}
-  inline float  GetNmFactor()           {return nmFactor; }
+	//-------------------------------------------------------------
+	inline bool   IsNot(U_CHAR t)					{return (qAct != t);}
+	inline bool   Isa(char t)							{return (qAct == t);}
   //-------------------------------------------------------------
   inline bool   IsShared()              {return (oTyp & SHR);}
 };
@@ -2934,10 +2956,15 @@ public:
 struct RWEND { 
     SPosition pos;                  // END Position
     char  rwid[4];                  // Runway ID
+		float	ifrq;											// ILS frequency
+		char  ilsD[8];									// Frequency edited
     int   dx;                       // Distance to origin
     int   dy;                       // (dito)
     int   cx;                       // Corner coordinate
     int   cy;                       // (dito)
+		//----------------------------------------------------
+		RWEND::RWEND()
+		{	ifrq = 0; ilsD[0] = 0;}
 };
 //====================================================================
 //  Data to control ILS
@@ -3118,17 +3145,7 @@ public:
   inline bool       IsNull()    {return (0 == ptr);}
   inline CmHead *Pointer()      {return ptr;}
 };
-//============================================================================
-//  Flight Plan route extremity
-//============================================================================
-class CRouteEXT: public CmHead {
-  //----ATTRIBUTES-----------------------------------------------
-  SPosition loc;                        // Extremity coordinate
-  //-------------------------------------------------------------
-public:
-  inline void       SetPosition(SPosition *p);
-  inline SPosition *ObjPosition()             {return &loc;}
-};
+
 //==============================================================================
 //  Option 
 //==============================================================================
@@ -3217,7 +3234,7 @@ class TXT_LIST {
 //  Radio Interface
 //=============================================================================
 //-----------COMPUTED VALUE FOR EXTERNAL GAUGES -----------------------
-typedef struct {  U_CHAR    rnum;       // Radio num
+struct BUS_RADIO {U_CHAR    rnum;       // Radio num
                   U_CHAR    actv;       // Activity
                   U_CHAR    flag;       // Flag type
                   U_CHAR    ntyp;       // Nav Type
@@ -3233,7 +3250,14 @@ typedef struct {  U_CHAR    rnum;       // Radio num
                   double    iAng;       // Intercept angle plane to OBS/ILS
                   double    sens;       // Horizontal sensibility
                   CmHead    *nav;       // Nav object
-} RADIO_VAL;
+	//--- Set OBS ----------------------------------------------
+	void BUS_RADIO::SetOBS(short dir)
+	{ xOBS = dir;
+		if (nav)	nav->SetOBS(dir);
+		return;
+	}
+	//----------------------------------------------------------
+} ;
 //=============================================================
 //  Structure to describe a waypoint for GPS Bendix King
 //=============================================================

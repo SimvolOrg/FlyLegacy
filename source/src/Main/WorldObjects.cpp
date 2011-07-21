@@ -77,7 +77,6 @@
 #include "../Include/MagneticModel.h" // iang correction from .SIT file ln 161
 #include "../Include/Atmosphere.h"    // CVehicleObject::GetIAS (double &spd)
 #include "../Include/Weather.h" 
-#include "../Include/FlightPlan.h"
 #include "../Include/3dMath.h"
 #include <vector>								      // JSDEV* for STL
 
@@ -468,17 +467,15 @@ CVehicleObject::CVehicleObject (void)
 : CSimulatedObject ()
 { int pnl = 0;
   SetType(TYPE_FLY_VEHICLE);
-  user = false;
   GetIniVar ("Sim", "UpdateInSlewMode", &pnl);
   upd  = pnl;
-  vmode = 'cock';
   cur   = 0;
   prv   = 1;
   nEng  = 0;
+	engR	= 0;
   //----Init aero model drawing ---------------------------
-  float tmp_aero = 8.0f;
-  GetIniFloat ("Graphics", "drawAeromodel", &tmp_aero);
-  draw_aero = double(tmp_aero);
+  draw_aero = 8;
+  GetIniFloat ("Graphics", "drawAeromodel", &draw_aero);
   //---Radio interface -------------------------------------
   rTAG[0]         = 0;
   rTAG[NAV_INDEX] = 0;
@@ -486,9 +483,7 @@ CVehicleObject::CVehicleObject (void)
   rTAG[ADF_INDEX] = 0;
   aPIL  = 0;
   //--------------------------------------------------------
-  agl_alt	= 0.0f;
   WOW_nber  = 0;
-  WextZ     = 0;
   //---- Initialize user vehicle subclasses ----------------
   nfo = NULL;
   svh = NULL;
@@ -595,9 +590,7 @@ int CVehicleObject::Read (SStream *stream, Tag tag)
   switch (tag) {
   case 'user':
     // No arguments, this tag indicates that this is the user vehicle
-    user = true;
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'engn':
     // No arguments, this tag indicates that the engine is on
     rc = TAG_READ;
@@ -617,12 +610,6 @@ int CVehicleObject::Read (SStream *stream, Tag tag)
   case 'bang':
     ReadVector (&bodyAngularVelocity, stream);
     DEBUGLOG ("CVehicleObject::Read <bang> (%.2f %.2f %.2f)", bodyAngularVelocity.x, bodyAngularVelocity.y, bodyAngularVelocity.z);
-    rc = TAG_READ;
-    break;
-  case 'plan':
-    // Flight plan is created when CVehicle is created, allowing to fill it with navlog windows
-    globals->fpl->ReadPlan(stream);
-    TRACE("Read flight Plan");
     rc = TAG_READ;
     break;
   default:
@@ -677,7 +664,7 @@ void CVehicleObject::ReadFinished (void)
   //MEMORY_LEAK_MARKER ("phy")
   // Create dynamics modelling classes if this is a user vehicle
   //MEMORY_LEAK_MARKER ("wgh")
-  if (user)  wgh = new CWeightManager (this);
+  wgh = new CWeightManager (this);
   //MEMORY_LEAK_MARKER ("wgh")
 
   // Instantiate all user vehicle subcomponents defined in NFO file
@@ -853,11 +840,6 @@ void CVehicleObject::DrawAeromodelData (void)
   if (globals->vehOpt.Has(VEH_DW_AERO)  && wng ) wng->DrawAerodelData (draw_aero);
 }
 //---------------------------------------------------------------------------
-bool  CVehicleObject::isUserVehicle (void)
-{
-  return user;
-}
-//---------------------------------------------------------------------------
 //  Return camera according to current window
 //----------------------------------------------------------------------------
 CCameraManager* CVehicleObject::GetCameraManager ()
@@ -889,7 +871,6 @@ void CVehicleObject::Print (FILE *f)
   if (amp) amp->Print (f);
   if (lod) lod->Print (f);
   if (elt) elt->Print (f);
-  globals->fpl->Print(f);
 }
 //-----------------------------------------------------------------------
 //  Timeslice all features of vehicle
@@ -922,7 +903,7 @@ void CVehicleObject::Update (float dT,U_INT FrNo)
   //! Needs a framerate of at least 40 to work properly
   //! and the timeslice must be equal size that is Simulate()
   //! should be called every 0.025
-  Simulate(dT,FrNo);     ///< actually calls CAirplaneObject::Simulate or any other typed vehicle 
+  Simulate(dT,FrNo);     ///< actually calls CAirplane::Simulate or any other typed vehicle 
 }
 //-----------------------------------------------------------------------
 //
@@ -957,15 +938,6 @@ void CVehicleObject::Simulate (float dT,U_INT FrNo)
   // timeslice wind effect on aircraft
   //GetAircraftWindEffect ();
   return;
-}
-
-void CVehicleObject::UpdateOrientationState (float dT, U_INT FrNo) 
-{
-}
-
-const float& CVehicleObject::GetUserAGL (void)
-{
-  return (agl_alt);
 }
 //============================================================
 double CVehicleObject::GetMassInKgs (void)
@@ -1018,9 +990,9 @@ double CVehicleObject::GetGroundspeed ()  // m/s in LH
   return sqrt (airspeed.x * airspeed.x + airspeed.z * airspeed.z);
 }
 
-///
+///====================================================================
 /// AirSpeed in m/s and LH
-///
+///====================================================================
 const CVector* CVehicleObject::GetAirspeed (void) 
 { // returns body airspeed
   airspeed.x = vb[cur].x; //
@@ -1029,9 +1001,9 @@ const CVector* CVehicleObject::GetAirspeed (void)
   return &vb[cur];
 }
 
-///
+///===================================================================
 /// Body relative AirSpeed in m/s and LH
-///
+///===================================================================
 const CVector* CVehicleObject::GetRelativeBodyAirspeed (void) 
 {// Airspeed = groundspeed - windspeed
  // SVector w_dir_for_body_ = globals->wtm->w_dir_for_body; // LH

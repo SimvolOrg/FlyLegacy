@@ -4772,7 +4772,7 @@ void CNavigationGauge::ReadFinished ()
 //-------------------------------------------------------------------
 void CNavigationGauge::GetRadio()
 { Send_Message(&mrad);
-  radio     = (RADIO_VAL*)mrad.voidData;
+  radio     = (BUS_RADIO*)mrad.voidData;
   if (0 == radio)   return;
   //--- Set radio block in nav gauge if OBS is specified ----
   if (0 == obs)     return;

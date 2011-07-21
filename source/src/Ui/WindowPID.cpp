@@ -80,20 +80,12 @@ CFuiPID::CFuiPID(Tag idn, const char *filename)
   CFuiWindow::ReadFinished();
   pBox.SetParameters(this,'lpid',0);
   mBox.SetParameters(this,'lprm',0);
-  AutoPilot   *aps = GetAutoPilot();
+  AutoPilot   *aps = globals->pln->GetAutoPilot();
   if (aps) aps->GetAllPID(this);
   pBox.SortAndDisplay();
   SelectPID();
   EditInc();
   MoveTo(200,200);
-}
-//-----------------------------------------------------------
-//  Get autopilot if any
-//-----------------------------------------------------------
-AutoPilot   *CFuiPID::GetAutoPilot()
-{ CVehicleObject *veh = globals->sit->uVeh;
-  if (0 == veh)   return 0;
-  return veh->GetAutoPilot();
 }
 //-----------------------------------------------------------
 //  Edit Increment

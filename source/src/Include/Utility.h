@@ -402,9 +402,7 @@ template <class T> static inline T Wrap180 (T deg)
   deg = Wrap360 (deg);
 
   // Negate if greater than 180 deg
-  if (deg > (T)180) {
-    deg  -= (T)360;
-  }
+  if (deg > (T)180)  deg  -= (T)360;
   return deg;
 }
 //----------------------------------------------------------------------
@@ -415,8 +413,7 @@ template <class T> static inline T Wrap24 (T hrs)
 {
   while (hrs <  (T)0)
     hrs += (T)24;
-  while (hrs >= (T)24)
-    hrs -= (T)24;
+  while (hrs >= (T)24)  hrs -= (T)24;
   return hrs;
 }
 //----------------------------------------------------------------------
@@ -427,8 +424,7 @@ template <class T> static inline T Wrap60 (T min)
 {
   while (min <  (T)0)
     min += (T)60;
-  while (min >= (T)60)
-    min -= (T)60;
+  while (min >= (T)60)   min -= (T)60;
   return min;
 }
 //----------------------------------------------------------------------

@@ -263,8 +263,8 @@ void vehicle_cg_cb (puObject* obj)
 //----------------------------------------------------------------------
 //  Vehicle Teleport
 //----------------------------------------------------------------------
-void vehicle_teleport_cb (puObject* obj)
-{ globals->kbd->Stroke('menu','goto'); }
+void vehicle_vpilot_cb (puObject* obj)
+{ globals->pln->VirtualPilot(); }
 //----------------------------------------------------------------------
 //  Vehicle dammage report
 //----------------------------------------------------------------------
@@ -275,7 +275,7 @@ void Vehicle_reset_cb (puObject* obj)
 char *vehicle_legends[] =
 { "Reset Damages",
   "--------------------",
-  "Teleport",
+	"Virtual pilot",
   "--------------------",
   "CG Indicator...",
   "--------------------",
@@ -291,7 +291,7 @@ char *vehicle_legends[] =
 puCallback vehicle_cb[] =
 { Vehicle_reset_cb,
   NULL,
-  NULL,                         // vehicle_teleport_cb,
+  vehicle_vpilot_cb,
   NULL,
   vehicle_cg_cb,
   NULL,
@@ -962,7 +962,7 @@ void debug_dump_electrical_cb (puObject* obj)
   CVehicleObject *user = globals->sit->GetUserVehicle ();
   if (user != NULL) {
     if (user->GetType () == TYPE_FLY_AIRPLANE) {
-      CAirplaneObject *pObj = (CAirplaneObject *)user;
+      CAirplane *pObj = (CAirplane *)user;
       if (pObj) {
         CElectricalSystem *amp = pObj->amp;
         if (amp != NULL) {

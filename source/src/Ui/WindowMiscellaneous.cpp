@@ -583,12 +583,11 @@ CFuiKLN89::ClkFN CFuiKLN89::HndTAB[4] =
 };
 
 
-//
+//========================================================================
 // CFuiConfirmQuit
 //
 // CFuiWindow subclass to handle the program quit confirmation dialog
-//
-
+//=========================================================================
 CFuiConfirmQuit::CFuiConfirmQuit (Tag id, const char* filename)
 : CFuiWindow (id, filename, NULL, NULL, NULL)
 {
@@ -596,13 +595,11 @@ CFuiConfirmQuit::CFuiConfirmQuit (Tag id, const char* filename)
   CFuiComponent* mesg = GetComponent ('mesg');
   mesg->SetText ("Are you sure you want to quit?");
 }
-
 //-------------------------------------------------------------------------
 //  Event notification
 //-------------------------------------------------------------------------
-void CFuiConfirmQuit::NotifyChildEvent (Tag id, Tag component, EFuiEvents event)
-{
-  switch (event) {
+void CFuiConfirmQuit::NotifyChildEvent (Tag id, Tag component, EFuiEvents evn)
+{ switch (evn) {
   case EVENT_BUTTONPRESSED:
     switch (component) {
     case 'okok':
@@ -622,5 +619,19 @@ void CFuiConfirmQuit::NotifyChildEvent (Tag id, Tag component, EFuiEvents event)
     ;
   }
 }
-
+//========================================================================
+// Error Message
+//
+//=========================================================================
+CFuiErrorMSG::CFuiErrorMSG (Tag id, const char* filename)
+: CFuiWindow (id, filename, NULL, NULL, NULL)
+{ mesg = (CFuiLabel*)GetComponent ('mesg');
+}
+//-------------------------------------------------------------------------
+//  Event notification
+//-------------------------------------------------------------------------
+void CFuiErrorMSG::NotifyChildEvent (Tag id, Tag itm, EFuiEvents evn)
+{	Close();
+	return;
+}
 //=========================END of FILE =============================================

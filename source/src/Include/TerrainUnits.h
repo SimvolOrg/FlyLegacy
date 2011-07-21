@@ -180,6 +180,8 @@
 #define TC_ARCS_FROM_QGT(X)  ((double(X) * TC_FULL_WRD_ARCS) / 512)
 #define TC_ARCS_FROM_GBT(X)  ((double(X) * TC_FULL_WRD_ARCS) / 256)
 #define TC_ARCS_FROM_SUB(X)  ((double(X) * TC_FULL_WRD_ARCS) / TC_FULL_WRD_SUBD)
+//----------------------------------------------------------------------
+#define TC_RAD_FROM_ARCS(X)  ( double(X) * (PI / 648000))      
 //------------LONGITUDE BAND PARAMETERS --------------------------------
 #define TC_ABS_QGT_DET(X)		 (X >> TC_BY1024)
 #define TC_QGT_FROM_INDX(X)  (X >> (TC_BY1024 + TC_BY32))       

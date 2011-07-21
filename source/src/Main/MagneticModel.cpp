@@ -193,9 +193,9 @@ void CMagneticModel::CalculateFieldStrengths (SPosition pos,
   int n, m;
 
   // Convert position to radian lat/lon and km alt
-  double rlat = DegToRad ((float)pos.lat / 3600.0f);
+  double rlat = TC_RAD_FROM_ARCS(pos.lat);							//DegToRad ((float)pos.lat / 3600.0f);
   double rlon = DegToRad (Wrap180 ((float)pos.lon / 3600.0f));
-  double alt = FeetToMetres (pos.alt) / 1000.0f;
+  double alt  = FeetToMetres (pos.alt) / 1000.0f;
 
   // Initialize table of sin and cos powers
   double srlat = sin(rlat);

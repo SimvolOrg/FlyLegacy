@@ -799,6 +799,7 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 	apm     = md;
   pApt    = apt;
   Airp    = apt;
+	nmiles  = apt->GetNmiles();
 	//---- Clear vbo buffer to avoid drawing -----------------------
 	pVBO	  = 0;
 	eVBO		= 0;
@@ -2560,8 +2561,7 @@ void CAptObject::Draw()
 	DrawVBO(pVBO,nPAV);
 	if (tr) TRACE("TCM: --Leave pavement");
   //-----Draw all edges ---------------------------------------------------
-
-  if (pDist < 2)
+	if (nmiles < 2)
   { apm->BindYellow();
 		DrawVBO(eVBO,nEDG);
   }
@@ -2572,8 +2572,7 @@ void CAptObject::Draw()
 	std::vector<CTarmac*>::iterator tm;
 	for(tm=tmcQ.begin(); tm!=tmcQ.end(); tm++) (*tm)->Draw();
   //-----Draw Center marks if distance < 2Nm  -----------------------------
-
-  if (pDist < 2)
+	if (nmiles < 2)
   { apm->BindYellow();;
 		DrawVBO(cVBO,nCTR);
   }
@@ -2721,11 +2720,11 @@ void CAptObject::DrawLights(CCamera *cc)
   for (rwy = Airp->GetNextRunway(rwy); rwy != 0;rwy = Airp->GetNextRunway(rwy))
   { CRLP *lpf = rwy->GetRLP();
     if (0 == lpf)                 continue;
-		lpf->DistanceNow(pDist);
+		lpf->DistanceNow(nmiles);
     lpf->DrawLITE(cpos);                      // Draw night lights
   }
   //----Draw Taxiway lights -----------------------------------------------
-  if (swlt && (pDist < 16.0))   taxS.DrawSystem(cpos);
+	if (swlt && (nmiles < 4))			taxS.DrawSystem(cpos);
   if (swlt)                     becS.DrawSystem(cpos);
   //-----------------------------------------------------------------------
   glPopAttrib();
@@ -2825,7 +2824,8 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
   dbm     = globals->dbc;
   tcm     = tm;
   Dist    = 15.0;                     // Collect airport from 15 nmiles around
-  Limit   = Dist * Dist;              // Squared limit
+//  Limit   = Dist * Dist;              // Squared limit
+	Limit   = Dist;
   //--- Taxi texture scale -------------------------
   PavSize = 50;
   PavArc  = 1 / TC_ARCS_FROM_FEET(PavSize);
@@ -2849,9 +2849,12 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
   //----Register in globals ------------------------
   globals->apm = this;
   //----Check for No Airport -----------------------
-  int NoAP     = 0;
+  int NoAP    = 0;
   GetIniVar("Sim", "NoAirport", &NoAP);
   if (NoAP) globals->noAPT++;
+	//--- Current location ---------------------------
+	nApt				= 0;
+	endp				= 0;
   //-----For test. ------------------------------------------------
   int op = 0;
   GetIniVar("TRACE","DrawILS",&op);
@@ -2884,13 +2887,15 @@ void CAirportMgr::TimeSlice(float dT)
   //----scan airport queue for Airport leaving the radius ------
   for ( apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
       { apt = apo->GetAirport();
-        float     dst = dbm->GetFlatDistance(apt);
-        apo->SetPDIS(dst);
+       // float     dst = dbm->GetFlatDistance(apt);
+				float dst = GetRealFlatDistance(apt);
+				apo->SetMiles(dst);
         apo->TimeSlice(dT);
         if (dst <= Limit)   continue;
         //---------Remove entry --------------------------------
 				if (apo == nApt)	nApt = 0;				// No more nearest
         apt->SetAPO(0);										// Remove pointer
+				endp		= 0;
         prv = aptQ.Detach(apo);
         delete apo;
         apo = (prv)?(prv):(aptQ.GetFirst());
@@ -2902,10 +2907,9 @@ void CAirportMgr::TimeSlice(float dT)
     { if (apt->IsSelected())                continue;   // Already in Queue
       fn  = apt->GetIdentity();
       apo = new CAptObject(this,apt);                   // Create airport object
-      apo->SetPDIS(apt->GetPDIS());                     // Init distance
       apo->SetCamera(cam);                              // Current camera
       aptQ.PutEnd(apo);                                 // Enter new Airport in Queue
-			SaveNearest(apo);																	// Get nearest airport
+			SaveNearest(apo);																	// Save nearest airport
     }
   //----Update runway for current airports in queue -------------
   for   (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
@@ -2919,11 +2923,21 @@ void CAirportMgr::TimeSlice(float dT)
 //	Save nearest airport
 //----------------------------------------------------------------------------------
 void CAirportMgr::SaveNearest(CAptObject *apo)
-{	if (0 == nApt)	{nApt = apo;	return;}
-  double sdis = apo->GetPDIS();								// Squared distance to  plane
-	if (nApt->GetPDIS() < sdis)		return;				// Still to far 
+{	float dis = apo->GetNmiles();
+	if (dis > 2)									return;
+	if (0 == nApt)	{nApt = apo;	return;}
+	if (nApt->GetNmiles() < dis)	return;				// Still to far 
 	nApt	= apo;																// New candidate
 	return;
+}
+//----------------------------------------------------------------------------------
+//	Check if we are at airport defined by key
+//----------------------------------------------------------------------------------
+bool CAirportMgr::AreWeAt(char *key)
+{	if (0 == nApt)											return false;
+	CAirport *apt = nApt->GetAirport();
+	if (strcmp(apt->GetKey(),key) == 0)	return true;
+	return false;
 }
 //----------------------------------------------------------------------------------
 //	Bind buffer
@@ -2931,6 +2945,7 @@ void CAirportMgr::SaveNearest(CAptObject *apo)
 void CAirportMgr::bindVBO()
 {	glBindBuffer(GL_ARRAY_BUFFER,oVBO);
 	glVertexPointer  (3,GL_FLOAT,sizeof(TC_WORLD),0);
+	return;
 }
 //----------------------------------------------------------------------------------
 //  Draw Airports

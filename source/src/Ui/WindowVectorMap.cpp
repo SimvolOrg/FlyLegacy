@@ -38,7 +38,8 @@
 #include "../Include/Taxiway.h"
 #include "../Include/FreeImage.h"
 #include "../Include/TerrainTexture.h"
-#include "../Include/FlightPlan.h"
+#include "../Include/PlanDeVol.h"
+
 //=======================================================================
 //  VECTOR WINDOW STATE
 //=======================================================================
@@ -46,11 +47,22 @@
 #define VWIN_DOC 1              // Document view
 #define VWIN_LST 2              // Document list
 #define VWIN_RWY 3              // Runway view
+#define VWIN_WPT 4							// Waypoint
+//=======================================================================
+//  Next state table
+//=======================================================================
+char vmapNSTAT[] = 
+{	VWIN_MAP,						// 0 => 0
+	VWIN_DOC,						// 1 => 1
+	VWIN_LST,						// 2 => 2
+	VWIN_RWY,						// 3 => 3
+	VWIN_MAP,						// 4 => 0
+};
 //=======================================================================
 //  MENU FOR VECTOR MAP
 //=======================================================================
 char *DocMENU[] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,""};
-char *TelMENU[] = {"IGNORE","TELEPORT", 0,0,0,0};
+char *WptMENU[] = {"IGNORE","Add a waypoint to Flight Plan", 0,0,0,0};
 char *noDOC = "No document";
 //=======================================================================
 //  NAV MENU
@@ -65,6 +77,15 @@ char *NavMENU[] =
   0,                                // 6 Frequency
   "RETURN",                         // 7 Return
   0,                                // End
+};
+//=======================================================================
+//  WPT MENU
+//=======================================================================
+char *WayMENU[] =
+{	0,																// 0 Name
+	0,																// 1 distance next
+	"RETURN",
+	0,
 };
 //=======================================================================
 //  AIRPORT MENU
@@ -93,11 +114,6 @@ char *AptMENU[] =
   0,                                //20 = RETURN
   0,                                //21 = 0 (END)
 };
-//=======================================================================
-//  MENU FOR RUNWAY MAP
-//=======================================================================
-char *ArrMENU[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-char *DepMENU[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 //=======================================================================
 //  MENUS FOR LIGHT PROFILE
 //  Changing item here must also change TC_APR_XXXX definitions in LightSystem.h
@@ -168,6 +184,11 @@ U_INT maskOPT[] =
 	  (VM_APTN | VM_APTI),					    // 1 Airport
     (VM_VORN | VM_VORI | VM_VORF),    // 2 VOR
     (VM_NDBN | VM_NDBI ),             // 3 NDB
+		0,																// 4 ILS
+		0,																// 5 COM
+		0,																// 6 RWY
+		VM_NDBI,													// 7 WPT
+		0,																// 8 OBN
 };
 //=======================================================================
 //  ILS VECTOR DRAWING
@@ -196,7 +217,7 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   widgetTag = 'defa';
   strcpy (widgetName, "VectorMap");
   dbc   = globals->dbc;
-  fPlan = globals->fpl;
+  fPlan = globals->pln->GetFlightPlan();
   Focus = 0;
   //----- Initialize vector map status -------------------
   vmapOrient.p = vmapOrient.h = vmapOrient.r = 0;
@@ -271,7 +292,7 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   LoadOthBitmap("ICONS/FP-ICOW2.BMP", WPTORA);
   LoadOthBitmap("ICONS/FP-ICOW3.BMP", WPTYEL);
   LoadOthBitmap("ICONS/FP-ICOW4.BMP", WPTGRN);
-  LoadOthBitmap("ICONS/FP-ICOWU.BMP", WPTBLK);
+  LoadOthBitmap("ICONS/FP-ICOWP.BMP", WPTBLK);
   //----------Init Airport stack ---------------------------
   LoadAptBitmap("ICONS/FP-ICO06.BMP",TYP01);
   LoadAptBitmap("ICONS/FP-ICO07.BMP",TYP02);
@@ -351,6 +372,8 @@ CFuiVectorMap::~CFuiVectorMap (void)
   //----IMAGE ----------------------
   if (DocInfo.rgba)  delete [] DocInfo.rgba;
   DocInfo.rgba = 0;
+	//--- Flight plan ----------------
+	fPlan->Save();
 }
 //------------------------------------------------------------------------------
 //  Init Menu items
@@ -427,10 +450,9 @@ bool CFuiVectorMap::ClipOBJ(int vx,int vy,int bx, int by)
 //-----------------------------------------------------------------------------
 void CFuiVectorMap::DrawLabel(int fnt,int x,int y,CmHead *obj)
 { U_INT No  = obj->GetActiveQ();
-  if (No > NDB) No = 0;
+  if (No > OBN) No = 0;
   U_INT msk = maskOPT[No];              // Get mask related to object;
   U_INT prp = option.Get(msk);
-//  int   px  =  x;
   if (prp & VM_IDEN) x = fLab[fnt]->DrawNText(surface,x, y, cLab[fnt], obj->GetIdent()) + Intv[fnt];
   if (prp & VM_FREQ) x = fLab[fnt]->DrawNText(surface,x, y, cLab[fnt], obj->GetEFreq()) + Intv[fnt];
   if (prp & VM_NAME) x = fLab[fnt]->DrawNText(surface,x, y, cLab[fnt], obj->GetName())  + Intv[fnt];
@@ -454,6 +476,7 @@ void  CFuiVectorMap::DrawNDB(void)
     bmp   = OthBMAP[xtype];
     xbm   = OthSIZE[xtype].w2;
     ybm   = OthSIZE[xtype].h2;
+
     fnt   = (Focus == ndb)?(1):(0);
     ylab  = GetScreenCoordinates (ndb,xIcon, yIcon, ybm, 0);
     if (ClipOBJ(xIcon,yIcon,xbm,ybm)) continue;
@@ -623,9 +646,9 @@ void  CFuiVectorMap::DrawAPT(void)
     bmp->DrawBitmap(surface,(xIcon - xbm), (yIcon - ybm), 0);
     if (option.Has(VM_DLAB)) DrawLabel(fnt,xIcon,ylab,apt);
     EnterScreenTable(apt,(xIcon + x),(yIcon + y));
-    //-----Remember nearets airport -------------------------------------------
-    if (apt->GetPDIS() > ndis) continue;
-    ndis = apt->GetPDIS();
+    //-----Remember nearest airport -------------------------------------------
+		if (apt->GetNmiles() > ndis) continue;
+		ndis = apt->GetNmiles();
     napt = apt;
   }
   return;
@@ -646,7 +669,32 @@ void CFuiVectorMap::DrawRoute(CRouteEXT &org,CRouteEXT &ext)
   int x2,y2;
   GetScreenCoordinates(&ext,x2,y2);
   DrawFastLine(surface,x1, y1, x2, y2, white);
+	//--- Check if origin is a waypoint from flight plan -----------
+	CmHead *obj = org.GetOBJ();
+	if (0 == obj)									return;
+	if (obj->GetActiveQ() != WPT)	return;
+	//--------------------------------------------------------------
+	float dis = ext.GetLegDistance();
+	org.SetNodeDistance(dis);
+	dbc->GetFlatDistance(obj);
+	DrawWayPoint((CWPT *)obj);
   return;
+}
+//---------------------------------------------------------------------------------------------
+//  Draw a waypoint from flight plan
+//---------------------------------------------------------------------------------------------
+void CFuiVectorMap::DrawWayPoint(CWPT *wpt)
+{ CBitmap *bmp  = OthBMAP[WPTBLK];
+  int     xbm   = OthSIZE[WPTBLK].w2;
+  int     ybm   = OthSIZE[WPTBLK].h2;
+  int xIcon; 
+  int yIcon;
+  int ylab		= GetScreenCoordinates (wpt, xIcon, yIcon,ybm);
+  short fnt   = (Focus == wpt)?(1):(0);
+  bmp->DrawBitmap (surface,(xIcon - xbm), (yIcon - ybm), 0);
+  if (option.Has(VM_DLAB)) DrawLabel(fnt,xIcon,ylab,wpt);
+  EnterScreenTable(wpt,(xIcon + x),(yIcon + y));
+	return;
 }
 //---------------------------------------------------------------------------------------------
 //  Draw the current ILS vector if requested
@@ -990,7 +1038,8 @@ void CFuiVectorMap::NotifyMenuEvent(Tag idm, Tag itm)
 //  Mouse move over the Popup menu
 //---------------------------------------------------------------------------------
 bool CFuiVectorMap::MovePopMAP(int mx, int my)
-{ if (Focus.IsNull()) return true;
+{ if (Focus.IsNull())		return true;
+  if (Focus->Isa(WPT))	return true;
   EditPopDistance(mx,my);
   MyPop->Refresh(1);
   return true;
@@ -1004,6 +1053,8 @@ bool CFuiVectorMap::InsideMove(int mx,int my)
   if  (VWIN_DOC == dStat)                 return MoveDOC(mx,my);
   if  (VWIN_LST == dStat)                 return true;
   if  (VWIN_RWY == dStat)                 return MoveRWY(mx,my);
+	if  (VWIN_WPT == dStat)									return MoveWPT(mx,my);
+
   Focus = LookForScreenHit(short(mx),short(my));
   if (Focus.Assigned())                   return true;
   if (!MouseHit(mx,my))                   return false;
@@ -1016,13 +1067,13 @@ bool CFuiVectorMap::InsideMove(int mx,int my)
 //  
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::InsideClick (int mx, int my, EMouseButton button)
-{ RegisterFocus(0);
+{ if (RegisterFocus(0))								return true;
   if (!MouseHit(mx,my))               return false;
   switch (dStat)    {
   //-----NORMAL VECTOR WINDOWS ---------------------------------------------
   case VWIN_MAP:
-//    if (Focus == 0)                   return OpenPopTEL(mx,my);
-    if (!Focus.Assigned())            return true;
+    if (Focus == 0)                   return OpenWptMEN(mx,my);
+		if (Focus->Isa(WPT))							return ClickWptOBJ(mx,my,button);
     if (button == MOUSE_BUTTON_LEFT)  return OpenWinDET(Focus.Pointer(),0);
     if (button == MOUSE_BUTTON_RIGHT) return OpenPopOBJ(mx,my);
     break;
@@ -1047,7 +1098,9 @@ bool CFuiVectorMap::InsideClick (int mx, int my, EMouseButton button)
 //  End move
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::StopClickInside(int x, int y, EMouseButton button)
-{ DocInfo.state = 0;
+{ if (2 == DocInfo.state)		WaypointMoved();
+	DocInfo.state = 0;
+	dStat	= vmapNSTAT[dStat];
   return true;
 }
 //----------------------------------------------------------------------------------
@@ -1067,7 +1120,7 @@ void CFuiVectorMap::EditPopDistance(int mx,int my)
   float dx      = ((mx - xOrg) * Zoom) / VM_SCALE;
   float dy      = ((my - yOrg) * Zoom) / VM_SCALE;
   float ds      = SquareRootFloat((dx * dx) + (dy *dy));
-  sprintf(disHD,"-%s: %s at %.1f nm",cat,idn,ds);
+  sprintf(disHD,"-%s: %.1f nm from %s",cat,ds,idn);
 }
 //----------------------------------------------------------------------------------
 //  Update upper line with coordinates
@@ -1200,22 +1253,41 @@ void CFuiVectorMap::EditPopAPT(CmHead *obj)
   return;
 }
 //----------------------------------------------------------------------------------
+//  Open Popup menu
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::OpenPOP(int mx,int my)
+{ MyPop = new CFuiPage(mx,my,&smen,this);
+	xOrg  = mx;
+  yOrg  = my;
+  MyPop->SetState(1);
+  RegisterFocus(MyPop);
+	return true;
+}
+//----------------------------------------------------------------------------------
+//  Open a floating menu for WPT
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::OpenWptOBJ(int mx, int my)
+{ CWPT *wpt   = (CWPT*)Focus.Pointer();
+	smen.Ident	= 'mowp';
+	smen.aText  = WayMENU;
+	char *nam   = wpt->GetName();
+	smen.aText[0]	= nam;
+	sprintf(disHD,"%s: %.1f nm to next",nam,wpt->GetDistance());
+	smen.aText[1] = disHD;
+	return OpenPOP(mx,my);
+}
+//----------------------------------------------------------------------------------
 //  Open a floating menu for APT, NAV or NDB
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::OpenPopOBJ(int mx,int my)
 { smen.aText  = cMENU;
   //--- Save teleport position ---------
   CmHead *obj = Focus.Pointer();
-  telp        = obj->GetPosition();
+  wpos        = obj->GetPosition();
   //--- Edit Menu ----------------------
 	smen.Ident	= 'mmap';
   EditPopITM();
-  MyPop = new CFuiPage(mx,my,&smen,this);
-  xOrg  = mx;
-  yOrg  = my;
-  MyPop->SetState(1);
-  RegisterFocus(MyPop);
-  return true;
+	return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
 //  Open a floating menu over a document
@@ -1225,12 +1297,7 @@ bool CFuiVectorMap::OpenPopDOC(int mx,int my)
 	smen.aText = cMENU;
   smen.aText[0] = "CLOSE DOCUMENT";
   smen.aText[1] = 0;
-  MyPop = new CFuiPage(mx,my,&smen,this);
-  xOrg  = mx;
-  yOrg  = my;
-  MyPop->SetState(1);
-  RegisterFocus(MyPop);
-  return true;
+	return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
 //  Open a floating menu with the list of documents
@@ -1238,13 +1305,8 @@ bool CFuiVectorMap::OpenPopDOC(int mx,int my)
 bool CFuiVectorMap::OpenPopLST(int mx,int my)
 { smen.Ident = 'ldoc';
 	smen.aText = DocMENU;
-  MyPop = new CFuiPage(mx,my,&smen,this);
-  xOrg  = mx;
-  yOrg  = my;
-  MyPop->SetState(1);
-  RegisterFocus(MyPop);
   dStat = VWIN_LST;
-  return true;
+  return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
 //  Get ILS Radio (object is an airport)
@@ -1277,26 +1339,17 @@ bool CFuiVectorMap::OpenPopRWY(int mx,int my)
 	int k					= SetRWYends(1);
   smen.aText[k++] = "CLOSE VIEW";
   smen.aText[k]		= 0;
-  MyPop = new CFuiPage(mx,my,&smen,this);
-  xOrg  = mx;
-  yOrg  = my;
-  MyPop->SetState(1);
-  RegisterFocus(MyPop);
-  return true;
+  return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
 //  Open a floating menu over a point
 //----------------------------------------------------------------------------------
-bool CFuiVectorMap::OpenPopTEL(int mx,int my)
-{ smen.Ident = 'mtel';
-	smen.aText = TelMENU;
-  telp  = geop;
-  MyPop = new CFuiPage(mx,my,&smen,this);
-  xOrg  = mx;
-  yOrg  = my;
-  MyPop->SetState(1);
-  RegisterFocus(MyPop);
-  return true;
+bool CFuiVectorMap::OpenWptMEN(int mx,int my)
+{ if (0 == dbc->GetLOGwindow())		return true;
+	smen.Ident = 'mwpt';
+	smen.aText = WptMENU;
+  wpos  = geop;
+  return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
 //  Close the floating menu
@@ -1311,6 +1364,41 @@ int CFuiVectorMap::ClosePopMenu()
   //---When closing popup, we cant stay in state 2 ----------
   if (VWIN_LST == dStat)  dStat = VWIN_MAP;
   return 1;
+}
+//----------------------------------------------------------------------------------
+//  Click over a waypoint
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::ClickWptOBJ(int mx,int my,EMouseButton button)
+{	if (button == MOUSE_BUTTON_RIGHT)	return OpenWptOBJ(mx,my);
+	dStat = VWIN_WPT;
+	//--- prepare to move the waypoint ----------------------
+	DocInfo.state = 1;
+	return true;
+}
+//----------------------------------------------------------------------------------
+// Move Waypoint
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::MoveWPT(int mx,int my)
+{ int xorg = halfW + surface->xScreen;
+  int yorg = halfH + surface->yScreen;
+  double dx = +((mx - xorg) * Zoom) / VM_SCALE;
+  double dy = -((my - yorg) * Zoom) / VM_SCALE;
+  SPosition pos = globals->geop;
+  AddMilesTo(pos,dx,dy);
+	CWPT *wpt = (CWPT*)Focus.Pointer();
+	wpt->GetNode()->SetPosition(pos);
+	DocInfo.state = 2;
+	return true;
+}
+//----------------------------------------------------------------------------------
+// Waypoint has moved
+//----------------------------------------------------------------------------------
+void CFuiVectorMap::WaypointMoved()
+{	fPlan->Reorder(1);
+	CFuiFlightLog *nwin = dbc->GetLOGwindow();
+  if (0 == nwin)      return;
+	nwin->Refresh();
+	return;
 }
 //---------------------------------------------------------------------------------
 //  Go back to Vector Map from document view
@@ -1333,6 +1421,24 @@ int CFuiVectorMap::ClickRwyMENU(short itm)
   return 1;
 }
 //---------------------------------------------------------------------------------
+//  Click waypoint menu
+//	Check for waypoint creation
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::ClickWptMENU(short itm)
+{ if (*smen.aText[itm]	== 'A')	CreateWPT();
+	dStat = VWIN_MAP;
+  ClosePopMenu();
+  return 1;
+}
+//---------------------------------------------------------------------------------
+//  Click waypoint Object
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::ClickWptOBJM(short itm)
+{	dStat = VWIN_MAP;
+  ClosePopMenu();
+  return 1;
+}
+//---------------------------------------------------------------------------------
 //  Position aircraft for start on runway
 //---------------------------------------------------------------------------------
 int CFuiVectorMap::StartonRWY(short itm)
@@ -1343,8 +1449,24 @@ int CFuiVectorMap::StartonRWY(short itm)
   globals->tcm->Teleport(pos);
 	CVector ori   = veh->GetOrientation();
 	ori.z					= DegToRad(end->aRot);
+	ori.x					= 0;
+	ori.y					= 0;
 	veh->SetOrientation(ori);
 	veh->SetPhysicalOrientation(ori);
+	//--- Set Autopilote temporary ----------
+	RwyID *opo    = end->opos;
+	globals->apm->SetRunwayEnd(&opo->pos);
+	globals->pln->GetAutoPilot()->SetGroundMode(&opo->pos);
+	return 1;
+}
+//---------------------------------------------------------------------------------
+//  Create a waypoint at cursor position and add it to flight plan
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::CreateWPT()
+{	CWPT *wpt = fPlan->GetUserWPT(&wpos);
+	Focus		  = wpt;
+	CFuiFlightLog *nwin = dbc->GetLOGwindow();
+  nwin->NotifyFromDirectory(Focus.Pointer());
 	return 1;
 }
 //---------------------------------------------------------------------------------
@@ -1472,6 +1594,14 @@ void CFuiVectorMap::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
 			case 'lrwy':
 				ClickRwyMENU(itm);
 				return;
+			//--- Click over waypoint menu ------
+			case 'mwpt':
+				ClickWptMENU(itm);
+				return;
+			//--- Click over waypoint object ------
+			case 'mowp':
+				ClickWptOBJM(itm);
+				return;
 	}
   return;
 }
@@ -1488,7 +1618,7 @@ void CFuiVectorMap::AddToFlightPlan()
 //  Compute coordinate of mouse point and teleport to the point
 //----------------------------------------------------------------------------------
 void CFuiVectorMap::Teleport()
-{ globals->tcm->Teleport(telp);
+{ globals->tcm->Teleport(wpos);
   return;
 }
 //---------------------------------------------------------------------------------
@@ -1726,20 +1856,13 @@ CFuiAptDetail::CFuiAptDetail(Tag idn,const char *filename,int lim)
   //--------------Find components  ---------------------------
   grh     = (CFuiCanva*)GetComponent('canv');
   if (0 == grh)  gtfo(abt);
-  aPop    = (CFuiPopupMenu*)GetComponent('rarr');
-  dPop    = (CFuiPopupMenu*)GetComponent('rdep');
   lpBox   = (CFuiGroupBox*) GetComponent('rlpf');
   chk     = (CFuiCheckbox*) GetComponent('show');
   if (0 == chk)  gtfo(abt);
-  //-------------------------------------------------
+  //----------------------------------------------------------
   Req.SetWindow(this);
   //-- init extremities for all runways  ---------------------
-  lExt  = 0;                // Left   side
-  rExt  = 0;                // Right  side
-  uExt  = 0;                // Upper  side
-  bExt  = 0;                // Bottom side
-  mx    = 0;                // Point of view coordinate X
-  my    = 0;                // (dito)        coordinate Y 
+	CFuiRwyEXT::Init();
   //--------Radio message for tuning --------------------------
   mesg.id = MSG_SETDATA;
 }
@@ -1764,7 +1887,10 @@ void CFuiAptDetail::Initialize(CmHead *obj,U_SHORT tp,U_SHORT No)
   this->Apt   = (CAirport*)obj;
   this->wptNo = No;
   Apt->SetInEDIT();
-  //-------------------------------------------------
+	//-------------------------------------------------
+	tkoID	= "NUL";
+	lndID	= "NUL";
+	//-------------------------------------------------
   float nbr;
   char  edt[256];
   CFuiLabel *lab = 0;
@@ -1860,6 +1986,7 @@ void CFuiAptDetail::InitLightProfile()
   globals->apm->SetRunwayProfile(Apt);
   return;
 }
+
 //----------------------------------------------------------------------
 //  Lock all
 //----------------------------------------------------------------------
@@ -1901,11 +2028,13 @@ void CFuiAptDetail::UnlockAll()
 //----------------------------------------------------------------------
 //  Draw Light profile of selected runway
 //----------------------------------------------------------------------
-void CFuiAptDetail::DrawProfile(U_INT No)
-{ int opt = 0;
-  CRwyLine *slot = (CRwyLine*)rwyBOX.GetSlot(No);
+void CFuiAptDetail::DrawProfile()
+{ if (0 == vers)		return;
+  CRwyLine *slot = (CRwyLine*)rwyBOX.GetSelectedSlot();
+	if (0 == slot)		return;
   CRunway  *rwy  = Apt->FindRunway(slot->GetHiEndID());
-  if (0 == rwy)   return;
+  if (0 == rwy)     return;
+	int opt = 0;
   CRLP     *lpf  = rwy->GetRLP();
   int       ctr  = lpf->GetCenterLM();
   int       edg  = lpf->GetEdgeLM();
@@ -1984,218 +2113,28 @@ void CFuiAptDetail::EndOfRequest(CDataBaseREQ *req)
 //  Terminate Process 
 //----------------------------------------------------------------------
 void CFuiAptDetail::Terminate()
-{ chk->SetState(1);
+{	chk->SetState(1);
   comBOX.Display();
   rwyBOX.Display();
   ComputeScale();
   ScaleAllRWY();
   DrawRunways();
-  //----------------------------------------------------------------
-  if (aPop) EditPopArrival();
-  if (dPop) EditPopDeparture();
+	DrawProfile();
   //-------Free the object -----------------------------------------
   Po  = 0;
   return;
 }
-//----------------------------------------------------------------------------------
-//  Set Popup title
-//----------------------------------------------------------------------------------
-void CFuiAptDetail::SetArrPopTitle(U_INT No)
-{ aPop->SetButtonText((char*)aMenu.aText[No]);
-  return;
-}
 
-//----------------------------------------------------------------------------------
-//  Edit popup arrival
-//----------------------------------------------------------------------------------
-void CFuiAptDetail::EditPopArrival()
-{ U_INT dim = rwyBOX.GetSize();
-  if (dim > FLOAT_MENU_DIM)  dim = FLOAT_MENU_DIM;
-  //-----Build the menu -------------------------------
-  U_INT   inx = 0;
-  for (inx = 0; inx != dim; inx++)  
-  { CRwyLine *slot = (CRwyLine*)rwyBOX.GetSlot(inx);
-    ArrMENU[inx]   = slot->GetData();
-  }
-  ArrMENU[inx] = "";
-  aPop->CreatePage(&aMenu,ArrMENU);
-  return;
-}
-//----------------------------------------------------------------------------------
-//  Set Popup title
-//----------------------------------------------------------------------------------
-void CFuiAptDetail::SetDepPopTitle(U_INT No)
-{ dPop->SetButtonText((char*)dMenu.aText[No]);
-  return;
-}
 
-//----------------------------------------------------------------------------------
-//  Edit popup departure
-//----------------------------------------------------------------------------------
-void CFuiAptDetail::EditPopDeparture()
-{ U_INT dim = rwyBOX.GetSize();
-  if (dim > FLOAT_MENU_DIM)  dim = FLOAT_MENU_DIM;
-  //-----Build the menu -----------------------------------
-  U_INT   inx = 0;
-  for (inx = 0; inx != dim; inx++)  
-  { CRwyLine *slot = (CRwyLine*)rwyBOX.GetSlot(inx);
-    DepMENU[inx]   = slot->GetData();
-  }
-  DepMENU[inx] = "";
-  dPop->CreatePage(&dMenu,DepMENU);
-  return;
-}
-
-//----------------------------------------------------------------------------------
-//    Add a runway Band to the current list
-//    Note:  
-//      To draw the runways, the following method is applied
-//      The first runway end is taken as origin of real coordinates (in feet).
-//      For all others runway ends, the distance to the origin is computed.
-//      The point of view (POV) is computed as the barycenter of all ends
-//      Then a translation to the POV and a scaling will be applied  to
-//      all ends to give pixel coordinate. 
-//      Runway corners (to have a 2D drawing) are computed using the normal
-//      to the ruway direction.
-//      Largest Extremities in all directions are stored to compute the 
-//      distance span and then the scale ratio (feet to pixel).
-//      A last translation occurs to position the POV in the mid point of
-//      the window canva.
-//
-//----------------------------------------------------------------------------------
-//-------------------------------------------------------------------------
-//  Store extremities
-//    Extremities are stored to compute the distance span of all runway ends
-//    The point of view (POV) is the barycenter of all ends
-//-------------------------------------------------------------------------
-void CFuiAptDetail::StoreExtremities(short dx, short dy)
-{ if (dx < lExt)   lExt  = dx;
-  if (dx > rExt)   rExt  = dx;
-  if (dy < uExt)   uExt  = dy;
-  if (dy > bExt)   bExt  = dy;
-  mx  += dx;
-  my  += dy;
-  return;
-}
-//----------------------------------------------------------------------------------
-//  Compute drawing scale for canvas (nbr of pixels per feet)
-//----------------------------------------------------------------------------------
-void CFuiAptDetail::ComputeScale()
-{ int md  = 2 * GetRWYspan();
-  int wd  = grh->Height();
-  int ht  = grh->Width();
-  int np  = (wd > ht)?(wd):(ht);
-  wx      = (wd >> 1);
-  wy      = (ht >> 1);
-  scale   = 0;
-  //-------Compute Scale ratio -----------------------------------
-  if (0 == md)  return;
-  scale   =  float(np * 0.9) / md;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Return ruways span
-//  -Runway span is the largest extend (in feet) in either direction
-//   The end coordinates are first translated to the POV
-//-------------------------------------------------------------------------
-int CFuiAptDetail::GetRWYspan()
-{ int Nb  = rwyBOX.GetSize();
-  if (0 == Nb)  return 0;
-  //-------compute barycenter of all ends ---------------
-  mx  = mx / (Nb << 1);
-  my  = my / (Nb << 1);
-  //------ Translate extentds to POV --------------------
-  lExt  -= mx;
-  rExt  -= mx;
-  uExt  -= my;
-  bExt  -= my;
-  //----- return largest extend ------------------------
-  int   dtx = (rExt < -lExt)?(rExt):(-lExt);
-  int   dty = (bExt > -uExt)?(bExt):(-uExt);
-  return (dtx > dty)?(dtx):(dty);
-}
-//----------------------------------------------------------------------------------
-//  Scale and translate all runway coordinates
-//----------------------------------------------------------------------------------
-void CFuiAptDetail::ScaleAllRWY()
-{ int No = 1;
-  CRwyLine *slot = (CRwyLine*)rwyBOX.GetSlot(0);
-  while (slot)
-  { slot->AdjustEnd(scale,mx,my);
-    slot->ComputeCorner(wx,wy);
-    slot  = (CRwyLine*)rwyBOX.GetSlot(No++);
-  }
-  return;
-}
-//----------------------------------------------------------------------------------
-//  Draw all runway
-//----------------------------------------------------------------------------------
-void CFuiAptDetail::DrawRunways()
-{ U_INT No  = 0;
-  U_INT sel = rwyBOX.GetSelectedNo();
-  int   xc  = 0;
-  CRwyLine *slot = 0;
-  grh->EraseCanvas();
-  if (0 == chk->GetState())      return;
-  for (No = 0; No != rwyBOX.GetSize();No++)
-  { slot  = (CRwyLine*)rwyBOX.GetSlot(No);
-    xc    = (No == sel)?(1):(0);
-    if (0 == slot->GetLeng()) continue;
-    int x0; 
-    int y0;
-    int x1;
-    int y1;
-    slot->GetEnd01(&x0,&y0);
-    slot->GetEnd02(&x1,&y1);
-    grh->DrawSegment(x0,y0,x1,y1,xc);
-    x0  = x1;
-    y0  = y1;
-    slot->GetEnd03(&x1,&y1);
-    grh->DrawSegment(x0,y0,x1,y1,xc);
-    x0  = x1;
-    y0  = y1;
-    slot->GetEnd04(&x1,&y1);
-    grh->DrawSegment(x0,y0,x1,y1,xc);
-    x0  = x1;
-    y0  = y1;
-    slot->GetEnd01(&x1,&y1);
-    grh->DrawSegment(x0,y0,x1,y1,xc);
-  }
-  if (1 == vers)  DrawProfile(sel);
-  return;
-}
 //----------------------------------------------------------------------------------
 //  Draw 
 //  -Dispatch end of database request first
 //----------------------------------------------------------------------------------
 void CFuiAptDetail::Draw()
 { if (Req.EndOfReq())  EndOfRequest(&Req);
+	U_INT sel = rwyBOX.GetSelectedNo();
   CFuiWindow::Draw();
   return;
-}
-//-------------------------------------------------------------------------
-//  Open Detail on previous waypoint
-//-------------------------------------------------------------------------
-bool CFuiAptDetail::OpenPrevDetail()
-{ CFlightPlan         *fp = globals->fpl;
-  if (0 == wptNo)      return true;
-  int No  = wptNo - 1;
-  CWayPoint *wpt = fp->GetWaypoint(No);
-  CmHead           *obj = wpt->GetDBobject();
-  return  FullDetailObject(obj,No);
-}
-//-------------------------------------------------------------------------
-//  Open Detail on next waypoint
-//-------------------------------------------------------------------------
-bool CFuiAptDetail::OpenNextDetail()
-{ CFlightPlan         *fp = globals->fpl;
-  int end = fp->GetSize();
-  int No  = wptNo + 1;
-  if (No == end)      return true;
-  CWayPoint *wpt = fp->GetWaypoint(No);
-  if (0 == wpt)       return true;
-  CmHead           *obj = wpt->GetDBobject();
-  return  FullDetailObject(obj,No);
 }
 //-------------------------------------------------------------------------
 //  Tune com radio to the frequency of selected com
@@ -2239,18 +2178,11 @@ void  CFuiAptDetail::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
   case 'runs':
     rwyBOX.VScrollHandler((U_INT)itm,evn);
     DrawRunways();
+		DrawProfile();
     return;
 
   case 'show':
     DrawRunways();
-    return;
-
-  case 'Iarr':
-    OpenPrevDetail();
-    return;
-
-  case 'Idep':
-    OpenNextDetail();
     return;
 
   case 'tune':
@@ -2271,12 +2203,6 @@ void  CFuiAptDetail::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 void CFuiAptDetail::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
 { U_INT   No = (U_INT)itm;
   switch (id) {
-    case 'rarr':
-      if (evn == EVENT_SELECTITEM) SetArrPopTitle(No);
-      return;
-    case 'rdep':
-      if (evn == EVENT_SELECTITEM) SetDepPopTitle(No);
-      return;
     case 'lock':
       if (0 == No) LockAll();
       if (1 == No) UnlockAll();

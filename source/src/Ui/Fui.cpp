@@ -38,7 +38,6 @@
 #include "../Include/MagneticModel.h"
 #include "../Include/WorldObjects.h"
 #include "../Include/TerrainTexture.h"
-#include "../Include/FlightPlan.h"
 //--------------------------------------------------------------------
 using namespace std;
 
@@ -738,9 +737,10 @@ void CFuiComponent::Draw (SSurface *sf)
 //    -Notify the previous for loosing focus 
 //------------------------------------------------------------------------
 bool CFuiComponent::RegisterFocus(CFuiComponent *comp)
-{ if (cFocus && (cFocus != comp)) cFocus->FocusLost();
+{ bool  lf = (cFocus && (cFocus != comp));
+	if (lf)			cFocus->FocusLost();
   cFocus  = comp;
-  return true;
+  return lf;
 }
 //------------------------------------------------------------------------
 //  Clear focus without notification
@@ -1452,65 +1452,6 @@ void CFuiWindow::PostRequest(CDataBaseREQ *req)
   return;
 }
 //----------------------------------------------------------------------
-//  Helper for Detailled waypoint windows 
-//  Set Waypoint Data
-//----------------------------------------------------------------------
-void CFuiWindow::SetWayPoint(U_INT No)
-{ CFlightPlan         *fp = globals->fpl;
-  CWayPoint   *wpt = fp->GetWaypoint(No);
-  CFuiComponent *lab = 0;
-  bool  not1  = fp->NotFirst(No);
-  bool  not2  = fp->NotLast (No);
-  char  edt[32];
-  char  dep[32];
-  U_INT hh = 0;
-  U_INT mn = 0;
-  U_INT dd = 0;
-  U_INT mo = 0;
-  if (0 == wpt)     return;
-  //-------Estimated arrival time-----------
-  lab = GetComponent('weta');
-  if (0 == lab)  gtfo("Incorrect FUI window detail file");
-  wpt->GetArrivalTime(&hh,&mn);
-  wpt->GetArrivalDay (&dd,&mo);
-  sprintf(dep,"% u-% u at %02uh%02umn",dd,mo,hh,mn);
-  if (not1) lab->SetText(dep);
-  //------Elapse time ----------------------
-  lab = GetComponent('wete');
-  if (0 == lab)  gtfo("Incorrect FUI Airport detail file");
-  wpt->GetLegDuration(&dd,&hh,&mn);
-  if (0 == dd)  sprintf(edt,"%02uh%02umn",hh,mn); 
-  else          sprintf(edt,"%ud-%02uh%02umn",dd,hh,mn);
-  if (not1) lab->SetText(edt);
-  //-----Origin name -----------------------
-  if (not1)  SetGroupInfo(No,'oarr',(No-1));
-  if (not2)  SetGroupInfo(No,'odep',(No+1),dep);
-  return;
-}
-//----------------------------------------------------------------------
-//  Helper for Detailled waypoint windows 
-//  Set group box info for arrival/departure time
-//----------------------------------------------------------------------
-void CFuiWindow::SetGroupInfo(U_INT np,Tag idg,U_INT nx,char *dep)
-{ CFlightPlan         *fp  = globals->fpl;
-  CFuiGroupBox        *box = (CFuiGroupBox*)GetComponent(idg);
-  CWayPoint *wpt = fp->GetWaypoint(np);
-  CWayPoint *nod = fp->GetWaypoint(nx);
-  if (0 == wpt) return;
-  char  edt[8];
-  float spd = wpt->GetSpeed();
-  float alt = wpt->GetAltitude();
-  if (0 == box)  gtfo("Incorrect FUI Airport detail file");
-  box->SetChildText('onam',nod->GetName());
-  sprintf(edt,"% 5.1f",spd);
-  box->SetChildText('ospd',edt);
-  sprintf(edt,"% 6.0f",alt);
-  box->SetChildText('oalt',edt);
-  if (0 == dep)       return;
-  box->SetChildText('odtm',dep);
-  return;
-}
-//----------------------------------------------------------------------
 //  Helper to create Detailled VOR windows 
 //----------------------------------------------------------------------
 bool  CFuiWindow::CreateVORwindow(CmHead *obj,U_INT No,int lim)
@@ -1518,7 +1459,6 @@ bool  CFuiWindow::CreateVORwindow(CmHead *obj,U_INT No,int lim)
   wind = (CFuiNavDetail *)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_NAVAID,lim);
   if (0 == wind)    return true;
   wind->Initialize(obj,VOR,No);
-  if (0 == lim)  wind->SetWayPoint(No);
   return true;
 }
 //----------------------------------------------------------------------
@@ -1529,7 +1469,6 @@ bool  CFuiWindow::CreateNDBwindow(CmHead *obj,U_INT No,int lim)
   wind = (CFuiNavDetail *)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_NAVAID,lim);
   if (0 == wind)    return true;
   wind->Initialize(obj,NDB,No);
-  if (0 == lim)  wind->SetWayPoint(No);
   return true;
 }
 //----------------------------------------------------------------------
@@ -1540,22 +1479,8 @@ bool  CFuiWindow::CreateNDBwindow(CmHead *obj,U_INT No,int lim)
 //----------------------------------------------------------------------
 bool  CFuiWindow::CreateAPTwindow(CmHead *obj,U_INT No,int lim)
 { CFuiAptDetail *wind = 0;
-  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_AIRPORT,1);
+  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_AIRPORT,lim);
   if (0 == wind)  return true;
-  wind->Initialize(obj,APT,No);
-  return true;
-}
-//----------------------------------------------------------------------
-//  Helper to create Detailled Airport windows long version
-//  lim = 0 => Flight Plan detail
-//  No = waypoint No
-//----------------------------------------------------------------------
-bool  CFuiWindow::CreateAPTwinFPL(CmHead *obj,U_INT No,int lim)
-{ CFuiAptDetail *wind = 0;
-  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_FPDETAIL_AIRPORT,0);
-  if (0 == wind)  return true;
-  wind->SetWayPoint(No);
-  wind->SetFtPlanVersion();
   wind->Initialize(obj,APT,No);
   return true;
 }
@@ -1563,9 +1488,9 @@ bool  CFuiWindow::CreateAPTwinFPL(CmHead *obj,U_INT No,int lim)
 //  Helper to create Detailled Airport windows with runway light profile
 //  No = waypoint No
 //----------------------------------------------------------------------
-bool  CFuiWindow::CreateAPTwinRWY(CmHead *obj,U_INT No,int lim)
+bool  CFuiWindow::CreateAPTwinLIT(CmHead *obj,U_INT No,int lim)
 { CFuiAptDetail *wind = 0;
-  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_AIRPORT,0);
+  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_AIRPORT,lim);
   if (0 == wind)  return true;
   wind->SetRunwayVersion();
   wind->Initialize(obj,APT,No);
@@ -1589,25 +1514,6 @@ bool CFuiWindow::SmallDetailObject(CmHead *obj,U_INT No)
  return true;
 }
 //----------------------------------------------------------------------
-//  Helper to create Full Detailled windows on an object
-//----------------------------------------------------------------------
-bool CFuiWindow::FullDetailObject(CmHead *obj,U_INT No)
-{ QTYPE type        = obj->GetActiveQ();
-  switch (type) {
-    case VOR:
-      return CreateVORwindow(obj,No,0);
-
-    case NDB:
-      return CreateNDBwindow(obj,No,0);
-
-    case APT:
-      CAirport *apt = (CAirport*)obj;
-      CreateAPTwinFPL(obj,No,0);
-      return true;
-  }
- return true;
-}
-//----------------------------------------------------------------------
 //  Helper to create Map Detailled windows on an object
 //----------------------------------------------------------------------
 bool CFuiWindow::OpenWinDET(CmHead *obj,U_INT No)
@@ -1621,9 +1527,13 @@ bool CFuiWindow::OpenWinDET(CmHead *obj,U_INT No)
       return CreateNDBwindow(obj,No,1);
     //---Create a full version of detailled ndb ------
     case APT:
-      CAirport *apt = (CAirport*)obj;
-      if (!apt->UnderEdit())   CreateAPTwinRWY(obj,No,0);
-      return true;
+			{	CAirport *apt = (CAirport*)obj;
+				if (!apt->UnderEdit())   CreateAPTwinLIT(obj,No,0);
+				return true;
+			}
+		//--- Init for moving --------------------------
+		case WPT:
+			return true;
   }
  return true;
 }
@@ -2528,6 +2438,24 @@ void CFuiPopupMenu::Select(U_INT No)
   SetButtonText((char*)men->aText[No]);
   Page->Select(No);
   return;
+}
+//-----------------------------------------------------------------------
+//  Select by text
+//-----------------------------------------------------------------------
+void CFuiPopupMenu::SelectText(char *art)
+{	FL_MENU *men = (Page)?(Page->GetMenu()):(0);
+  if (0 == men)   return;
+	char **atx = men->aText;
+	U_INT	 No=0;
+	for (int k=0; k >= 0; k++)
+	{	char *itm = men->aText[k];
+		if (0 == itm)							break;
+		if (strcmp(itm,art) != 0) continue;
+		No	= k;
+		break;
+	}
+	Select(No);
+	return;
 }
 //-----------------------------------------------------------------------
 //  Return menu
@@ -5903,6 +5831,18 @@ void CFuiCanva::MoveParentTo (int xp, int yp)
   return;
 }
 //-------------------------------------------------------------------
+//  Draw a Character 
+//-------------------------------------------------------------------
+void CFuiCanva::DrawChar(int x0,int y0,char c,U_INT col)
+{	fnts->DrawChar(surface,x0,y0,c,cTab[col]);
+}
+//-------------------------------------------------------------------
+//  Draw a text 
+//-------------------------------------------------------------------
+void CFuiCanva::DrawNText(int x0,int y0,char *t,U_INT c)
+{	fnts->DrawNText(surface,x0,y0,cTab[c],t);
+}
+//-------------------------------------------------------------------
 //  Draw a line 
 //-------------------------------------------------------------------
 void CFuiCanva::DrawSegment(int x0,int y0,int x1,int y1,int xc)
@@ -6157,7 +6097,201 @@ bool  CFuiPage::MouseMove(int mx, int my)
   AddPopupText(lin, (char*)menu->aText[lin]);
   return true;
 }
-
+//===========================================================================================
+//	CFuiRwyEXT:  Runway extension
+//===========================================================================================
+CFuiRwyEXT::CFuiRwyEXT()
+{	Init();
+  //-------------------------------------------------
+	ptko	= 0;
+	plnd	= 0;
+	grh		= 0;
+}
+//------------------------------------------------------------------
+//	Init Drawing parameters
+//------------------------------------------------------------------
+void CFuiRwyEXT::Init()
+{	//-- init extremities for all runways  ---------------------
+  lExt  = 0;                // Left   side
+  rExt  = 0;                // Right  side
+  uExt  = 0;                // Upper  side
+  bExt  = 0;                // Bottom side
+  mx    = 0;                // Point of view coordinate X
+  my    = 0;                // (dito)        coordinate Y 
+}
+//-------------------------------------------------------------------------
+//  Store extremities
+//    Extremities are stored to compute the distance span of all runway ends
+//    The point of view (POV) is the barycenter of all ends
+//-------------------------------------------------------------------------
+void CFuiRwyEXT::StoreExtremities(short dx, short dy)
+{ if (dx < lExt)   lExt  = dx;
+  if (dx > rExt)   rExt  = dx;
+  if (dy < uExt)   uExt  = dy;
+  if (dy > bExt)   bExt  = dy;
+  mx  += dx;
+  my  += dy;
+  return;
+}
+//-------------------------------------------------------------------------
+//  Return ruways span
+//  -Runway span is the largest extend (in feet) in either direction
+//   The end coordinates are first translated to the POV
+//-------------------------------------------------------------------------
+int CFuiRwyEXT::GetRWYspan()
+{ int Nb  = rwyBOX.GetSize();
+	if (0 == Nb)  return 0;
+  //-------compute barycenter of all ends ---------------
+  mx  = mx / (Nb << 1);
+  my  = my / (Nb << 1);
+  //------ Translate extentds to POV --------------------
+  lExt  -= mx;
+  rExt  -= mx;
+  uExt  -= my;
+  bExt  -= my;
+  //----- return largest extend ------------------------
+  int   dtx = (rExt < -lExt)?(rExt):(-lExt);
+  int   dty = (bExt > -uExt)?(bExt):(-uExt);
+  return (dtx > dty)?(dtx):(dty);
+}
+//----------------------------------------------------------------------------------
+//  Compute drawing scale for canvas (nbr of pixels per feet)
+//----------------------------------------------------------------------------------
+void CFuiRwyEXT::ComputeScale()
+{ int md  = 2 * GetRWYspan();
+  int wd  = grh->Height();
+  int ht  = grh->Width();
+  int np  = (wd > ht)?(wd):(ht);
+  wx      = (wd >> 1);
+  wy      = (ht >> 1);
+  scale   = 0;
+  //-------Compute Scale ratio -----------------------------------
+  if (0 == md)  return;
+  scale   =  float(np * 0.8) / md;
+  return;
+}
+//----------------------------------------------------------------------------------
+//  Scale and translate all runway coordinates
+//----------------------------------------------------------------------------------
+void CFuiRwyEXT::ScaleAllRWY()
+{ U_INT No	= 0;
+	CRwyLine *slot = (CRwyLine*)rwyBOX.GetSlot(No++);
+  while (slot)
+  { slot->AdjustEnd(scale,mx,my);
+    slot->ComputeCorner(wx,wy);
+    slot  = (CRwyLine*)rwyBOX.GetSlot(No++);
+  }
+  return;
+}
+//----------------------------------------------------------------------------------
+//    Note:  
+//      To draw the runways, the following method is applied
+//      The first runway end is taken as origin of real coordinates (in feet).
+//      For all others runway ends, the distance to the origin is computed.
+//      The point of view (POV) is computed as the barycenter of all ends
+//      Then a translation to the POV and a scaling will be applied  to
+//      all ends to give pixel coordinate. 
+//      Runway corners (to have a 2D drawing) are computed using the normal
+//      to the ruway direction.
+//      Largest Extremities in all directions are stored to compute the 
+//      distance span and then the scale ratio (feet to pixel).
+//      A last translation occurs to position the POV in the mid point of
+//      the window canva.
+//
+//----------------------------------------------------------------------------------
+//	Return text to draw
+//----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
+//  Draw all runway
+//----------------------------------------------------------------------------------
+void CFuiRwyEXT::DrawRunways()
+{ //----------------------------------
+	int x0; 
+	int y0;
+  int x1;
+  int y1;
+	//---------------------------------
+	char tk	= 0;				// Take off detected
+	char ld = 0;				// Land detected
+	char eq = (strcmp(tkoID,lndID)==0)?(1):(0);
+	//--- Take off coordinates --------
+	int	xt	= 0;
+	int	yt	= 0;
+	//--- Landing coordinates ---------
+	int xl	= 0;
+	int	yl	= 0;
+	//---------------------------------
+	U_INT No  = 0;
+  U_INT sel = rwyBOX.GetSelectedNo();
+  int   xc  = 0;
+  CRwyLine *slot = 0;
+  grh->EraseCanvas();
+	ilsFQ	= "None";
+  for (No = 0; No != rwyBOX.GetSize();No++)
+  { slot  = (CRwyLine*)rwyBOX.GetSlot(No);
+		tk	 += slot->CheckEnd(tkoID,&xt,&yt,0);
+		ld	 += slot->CheckEnd(lndID,&xl,&yl,&ilsFQ);
+		//--- todo: save ILS data if landing runway is CRwyLine*)
+    xc    = (No == sel)?(1):(0);
+		if (ptko)	xc = 0;
+    if (0 == slot->GetLeng()) continue;
+    slot->GetEnd01(&x0,&y0);
+    slot->GetEnd02(&x1,&y1);
+    grh->DrawSegment(x0,y0,x1,y1,xc);
+    x0  = x1;
+    y0  = y1;
+    slot->GetEnd03(&x1,&y1);
+    grh->DrawSegment(x0,y0,x1,y1,xc);
+    x0  = x1;
+    y0  = y1;
+    slot->GetEnd04(&x1,&y1);
+    grh->DrawSegment(x0,y0,x1,y1,xc);
+    x0  = x1;
+    y0  = y1;
+    slot->GetEnd01(&x1,&y1);
+    grh->DrawSegment(x0,y0,x1,y1,xc);
+  }
+	//--- Edit ILS data -----------------------
+	_snprintf(ilsTXT,20,"Landing ILS %s",ilsFQ);
+	//--- Draw the label ----------------------
+	if (eq && (tk) && (ld))
+	{	grh->DrawNText(xt,yt,"T+L",1);	return;}
+	if (tk)	grh->DrawNText(xt,yt,"Tko",1);
+	if (ld)	grh->DrawNText(xl,yl,"Lnd",1);
+  return;
+}
+//----------------------------------------------------------------------
+//  Init runway ends popup from runway list
+//----------------------------------------------------------------------
+void CFuiRwyEXT::InitRunwayEnds()
+{	//--- Slot 0 is for NONE entry -------------------
+	cMENU[0]		= "NONE";
+	pMENU[0]		= 0;
+	//--- Scan list of runways ----------------------
+	int				No	 = 0;
+	int       k    = 1;
+	CRwyLine *slot = (CRwyLine*)rwyBOX.GetSlot(No++);
+ 	//--- Note that first numbers are for HI ends ----
+  while (slot)
+  { char *hi	= slot->GetHiEndID();
+		cMENU[k]	= hi;
+		pMENU[k]	= slot;
+		k++;
+		char *lo  = slot->GetLoEndID();
+		cMENU[k]	= lo;
+		pMENU[k]	= slot;
+		k++;
+		slot  = (CRwyLine*)rwyBOX.GetSlot(No++);
+  }
+	cMENU[k]	= 0;
+	//--- Create take off pop menu ------------------
+	ptko->CreatePage(&men1,cMENU);
+	ptko->SelectText(tkoID);
+	//--- Create landing pop menu -------------------
+	plnd->CreatePage(&men2,cMENU);
+	plnd->SelectText(lndID);
+	return;
+}
 //===========================================================================================
 //
 //  DLL fui window

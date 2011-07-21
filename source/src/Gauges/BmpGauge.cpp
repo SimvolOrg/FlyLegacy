@@ -299,7 +299,7 @@ void	C_NavigationGauge::CollectVBO(TC_VTAB *vtb)
 //-------------------------------------------------------------------
 void C_NavigationGauge::GetRadio()
 { Send_Message(&mrad);
-  radio     = (RADIO_VAL*)mrad.voidData;
+  radio     = (BUS_RADIO*)mrad.voidData;
   return;
 }
 //-------------------------------------------------------------------

@@ -1657,6 +1657,15 @@ void CFlapControl::SetPosition(SMessage *msg)
   return;
 }
 //----------------------------------------------------------------------
+//  Autopilot interface
+//----------------------------------------------------------------------
+void CFlapControl::SetPosition(int pos)
+{ if (!active)  return;
+  if (vlod) pos = vlod->SetFlapPosition(pos);
+  NewPosition(pos);
+  return;
+}
+//----------------------------------------------------------------------
 //  Process Message
 //----------------------------------------------------------------------
 EMessageResult  CFlapControl::ReceiveMessage (SMessage *msg)

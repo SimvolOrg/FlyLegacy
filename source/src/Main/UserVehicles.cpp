@@ -47,9 +47,9 @@
 #include "../Include/Atmosphere.h"
 #include "../Include/Joysticks.h" 
 #include "../Include/3Dmath.h"
-#include "../Include/FlightPlan.h"
 #include "../Include/RadioGauges.h"
 #include "../Include/Robot.h"
+#include "../Include/PlanDeVol.h"
 using namespace std;
 
 ///////// DEBUG STUFF TO REMOVE LATER ////////////////////////////////
@@ -909,10 +909,12 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
     CloseStream (&s);
   }
   //---Add some extra ones -------------------------------
-  CRobot *sys = new CRobot();  // Check list opener
-	d2r2	= sys;
-  subs.push_back(sys);             // Add to amp list
-  // 
+	d2r2	= new CRobot();							// Check list executer
+	d2r2->SetParent(v);
+  subs.push_back(d2r2);							// Add to amp list
+	vpil	= new VPilot();							// Virtual pilot
+	vpil->SetParent(v);
+	subs.push_back(vpil);							// Add to amp list
 }
 //-----------------------------------------------------------------------
 CElectricalSystem::~CElectricalSystem (void)
@@ -1404,7 +1406,7 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
         //MEMORY_LEAK_MARKER ("electr74")
         s = new CAileronControl;
         //MEMORY_LEAK_MARKER ("electr74")
-        if (pAils == 0) pAils = (CAileronControl *)s;
+        pAils = (CAileronControl *)s;
         break;
       case SUBSYSTEM_RUDDER_CONTROL:
         //MEMORY_LEAK_MARKER ("electr75")
@@ -1756,7 +1758,10 @@ void CElectricalSystem::AddExternal(CSubsystem *sy,SStream *st)
 //  All is read
 //---------------------------------------------------------------------------
 void CElectricalSystem::ReadFinished (void)
-{
+{	//-- Add Fligth Plan subsystem ----------------------
+	CFPlan	*fp = new CFPlan(mveh);
+	subs.push_back (fp);
+	fpln	= fp;
 }
 //-----------------------------------------------------------------------------
 //  Create and return the K89 GPS structure
@@ -1797,7 +1802,6 @@ void CElectricalSystem::DrawExternal()
 //-----------------------------------------------------------------------------
 void CElectricalSystem::Timeslice(float dT,U_INT FrNo)
 {	
-  
   std::vector<CSubsystem*>::iterator its;
 	for (its=subs.begin(); its!=subs.end(); its++) 
 	{	CSubsystem *sub = *its;
@@ -2859,6 +2863,7 @@ int  CEngine::StopEngine(char r)
   sound->StopSound();
 	sound->SetEnginePitch(1);
 	sound->Play(ENGINE_STOPPING);
+	mveh->DecEngR();
   return 1;
 }
 //---------------------------------------------------------------------
@@ -2925,6 +2930,7 @@ int CEngine::StartEngine()
   eData->e_state  = ENGINE_RUNNING;
   sound->SetLoop(true);
   sound->Play(ENGINE_CATCHING);
+	mveh->IncEngR();
   return 1;
 }
 //---------------------------------------------------------------------
@@ -2996,6 +3002,7 @@ int CEngine::StateCatching()
   sound->SetEnginePitch(eData->Pitch());
 	sound->Play(ENGINE_RUNNING);
   eData->e_state = ENGINE_RUNNING;
+	mveh->IncEngR();
   return 1;
 }
 //---------------------------------------------------------------------
@@ -3073,6 +3080,7 @@ int CEngine::StateWindmill()
 	eData->e_state  = ENGINE_RUNNING;
   sound->SetEnginePitch(eData->Pitch());
 	sound->Play(ENGINE_RUNNING);
+	mveh->IncEngR();
   return 1;
 }
 

@@ -496,9 +496,9 @@ int CK155radio::COMstatePgMode(K55_EVENT evn)
 //--------------------------------------------------------------------------
 int CK155radio::NAVenterNormal()
 { InhibitFields(navTAB,K155_DNAV_SZ);
-  SetField(navTAB,RADIO_FD_ANAV_WP,"%03u",ActNav.whole);
+  SetField(navTAB,RADIO_FD_ANAV_WP,"%03u", ActNav.whole);
   SetField(navTAB,RADIO_FD_ANAV_FP,".%02u",ActNav.fract / 10);
-  SetField(navTAB,RADIO_FD_SNAV_WP,"%03u",SbyNav.whole);
+  SetField(navTAB,RADIO_FD_SNAV_WP,"%03u", SbyNav.whole);
   SetField(navTAB,RADIO_FD_SNAV_FP,".%02u",SbyNav.fract / 10);
   nState  = K55_NAV_NOR;
   return 1;
@@ -935,21 +935,23 @@ int CK155radio::Dispatcher(K55_EVENT evn)
 void CK155radio::TimeSlice (float dT,U_INT FrNo)
 { CRadio::TimeSlice (dT,FrNo);
   if (0 == sPower)        return;
-  //---Update flasher --------------------------------------------------
+  //---Update flasher ----------------------------------------------------
   mskFS = RadioMSK[globals->clk->GetON()];
-  //--------------------------------------------------------------------
+  //----------------------------------------------------------------------
   if (0 == Dispatcher(K55EV_CLOCK))     return;              // Clock Event
-  //----Refresh all nav stations ---------------------------------------
+	//----Compute second timer ---------------------------------------------
+  gTimer += dT;
+	if (gTimer > 1.0)	{gTimer -= 1.0; Dispatcher(K55EV_TOPSC);}// Beat second
+	//--- Process Radio 1 specific tasks -----------------------------------
+	if (1 == uNum)    globals->rdb->TuneTo(COM);
+  if (1 == uNum)    globals->cILS = ILS;
+	//--- Refresh comm radio -----------------------------------------------
+  COM = globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh com
+	//----In WPT mode, refresh only WPT ------------------------------------
+	if (WPT)					return WPT->Refresh(FrNo);
+  //----Refresh other  stations ------------------------------------------
   VOR	= globals->dbc->GetTunedNAV(VOR,FrNo,ActNav.freq);     // Refresh VOR
   ILS = globals->dbc->GetTunedILS(ILS,FrNo,ActNav.freq);     // Refresh ILS
-  COM = globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh com
-  if (1 == uNum)    globals->rdb->TuneTo(COM);
-  if (1 == uNum)    globals->cILS = ILS;
-  //----Compute second timer -------------------------------------------
-  gTimer += dT;
-  if (gTimer < 1.0)       return;
-  gTimer -= 1.0;
-  Dispatcher(K55EV_TOPSC);                              // Beat second
   return;
 }
 //==========================================================================

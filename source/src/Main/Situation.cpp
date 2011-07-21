@@ -32,7 +32,7 @@
 
 /*!
       In CSituation::Read I changed the TYPE_FLY_AIRPLANE case
-      from CAirplaneObject to CUFOObject new object for developping purposes.
+      from CAirplane to CUFOObject new object for developping purposes.
       We'd revert it when aerodynamics and 3d rendering will be settled
  */
 
@@ -55,7 +55,6 @@
 #include "../Include/database.h"
 #include "../Include/TerrainCache.h"
 #include "../Include/Cloud.h"
-#include "../Include/FlightPlan.h"
 #include "../Include/Atmosphere.h"
 #include "../Include/DrawVehiclePosition.h"
 #include "../Include/DrawVehicleSmoke.h"
@@ -491,7 +490,7 @@ void CSlewManager::Update (float dT)
 //--------------------------------------------------------------------------
 void CSlewManager::SetLevel(CVehicleObject *user)
 { int level = 0;
-  CAirplaneObject *pln = ((CAirplaneObject *)globals->sit->GetUserVehicle());
+  CAirplane *pln = globals->pln;
   if (0 == pln)   return;
   //-----Adjust pitch ---------------------------------
   CVector ori = globals->iang;
@@ -700,7 +699,7 @@ int CSituation::Read (SStream *stream, Tag tag)
             // sdk: prepare plugin dlls = DLLInstantiate
             if (globals->plugins_num) globals->plugins.On_Instantiate (0,0,NULL);
             // 122809
-            CAirplaneObject *plan = GetAnAircraft();
+            CAirplane *plan = GetAnAircraft();
             StoreVEH(plan);
             //---Continue reading on behalf of the CVehicleObject --------
             ReadFrom (plan, stream);
@@ -745,7 +744,6 @@ void CSituation::SetAircraftFrom(char *nfo)
   //---Set aircraft from nfo ---------------------
   uVeh  = GetAnAircraft();
   uVeh->StoreNFO(nfo);
-  uVeh->SetUser();
   uVeh->ReadFinished();
   AdjustCameras();
   return;
@@ -761,22 +759,22 @@ CSimulatedObject* CSituation::GetASimulated (void)
 //---------------------------------------------------------------------------------
 //  Process Plane type
 //---------------------------------------------------------------------------------
-CAirplaneObject* CSituation::GetAnAircraft (void)
+CAirplane* CSituation::GetAnAircraft (void)
 {
-  CAirplaneObject *plan = NULL;
+  CAirplane *plan = NULL;
   char buffer_ [128] = {"ufo"};
 
   if (IsSectionHere ("PHYSICS")) {
     GetIniString ("PHYSICS", "aircraftPhysics", buffer_, 128);
 
     if (!strcmp (buffer_, "ufo")) {
-      // tmp : use CUFOObject instead of CAirplaneObject
+      // tmp : use CUFOObject instead of CAirplane
       // for simplified aerodynamics and 3d rendering
       plan = (CUFOObject *) new CUFOObject (); // 
     } 
 #ifdef HAVE_OPAL
     else if (!strcmp (buffer_, "aero-opal")) {
-      // tmp : use COPALObject instead of CAirplaneObject
+      // tmp : use COPALObject instead of CAirplane
       //MEMORY_LEAK_MARKER ("OPALObject start")
       TRACE("Generate COPALObject");
       plan = new COPALObject (); // 
@@ -784,20 +782,20 @@ CAirplaneObject* CSituation::GetAnAircraft (void)
     } 
 #endif
     else if (!strcmp (buffer_, "normal")) {
-      // Instantiate new CAirplaneObject
-      plan = new CAirplaneObject (); // 
+      // Instantiate new CAirplane
+      plan = new CAirplane (); // 
       plan->is_ufo_object  = false;
       plan->is_opal_object = false;
     } 
     else { // default
-      // tmp : use CUFOObject instead of CAirplaneObject
+      // tmp : use CUFOObject instead of CAirplane
       strcpy (buffer_, "\0");
       TRACE("Generate CUFOObject");
       plan = (CUFOObject *) new CUFOObject (); // 
     }
   }
   else { // default
-     // tmp : use CUFOObject instead of CAirplaneObject
+     // tmp : use CUFOObject instead of CAirplane
      strcpy (buffer_, "\0");
      plan = (CUFOObject *) new CUFOObject (); // 
   }
@@ -852,8 +850,7 @@ void CSituation::Prepare (void)
 //   sim world onscreen.
 //----------------------------------------------------------------------------
 void CSituation::Timeslice (float dT,U_INT frame)
-{	CFlightPlan  *fpl = globals->fpl;
-  // A new cycle begins --------------------------------
+{	// A new cycle begins --------------------------------
   dTime   = dT;
   FrameNo = frame;
   //--- Update weather parameters -----------------------
@@ -871,8 +868,6 @@ void CSituation::Timeslice (float dT,U_INT frame)
   //---Dont update any vehicle when special editing --------
 	char nod = globals->noEXT + globals->noINT;
   if (nod >= 2)											return;
-  //-----Update Flight plan --------------------------------
-  if (fpl) fpl->TimeSlice(dT,frame);
   //---- Update vehicle ------------------------------------
   if (uVeh) uVeh->TimeSlice(dT,frame);
   if (sVeh) sVeh->Timeslice(dT,frame);

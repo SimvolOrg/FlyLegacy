@@ -28,6 +28,7 @@
 #include "../Include/Globals.h"
 #include "../sqlite/sqlite3.h"
 //=====================================================================================
+class CWPoint;
 class CAirport;
 class C_QGT;
 class C_CDT;
@@ -596,7 +597,7 @@ public:
   void     MatchWPTforGPS(CGPSrequest *req,int dir);
   void     GetOBJbyIdent (CGPSrequest *req, char *tab, Tag type);
   //----ACCESS FOR FLIGHT PLAN --------------------------------------------
-  void     GetFlightPlanWPT(CWayPoint* wpt);
+  void     GetFlightPlanWPT(CWPoint* wpt);
   //----Elevation management ----------------------------------------------
   int      WriteElevationBlob  (REGION_REC &reg);
   void     WriteElevationRegion(REGION_REC &reg);

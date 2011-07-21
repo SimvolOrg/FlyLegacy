@@ -61,6 +61,7 @@ enum EFuiWindowIdentifier
   FUI_WINDOW_SITUATION_LOAD          = 'Load',
   FUI_WINDOW_MANAGE_DLL              = 'DLLs',
   FUI_WINDOW_QUIT                    = 'Quit',
+	FUI_WINDOW_ERMSG									 = 'erms',
   FUI_WINDOW_FRAME_RATE              = 'fpsw',
   FUI_WINDOW_OPTIONS_VIDEO           = 'VidO',
   FUI_WINDOW_OPTIONS_AUDIO           = 'SndO',
@@ -736,15 +737,11 @@ public:
   virtual void        Initialize(CmHead*obj,U_SHORT type){}
           void        AddZoomButton();
           void        AddMiniButton();
-          void        SetWayPoint(U_INT No);
-          void        SetGroupInfo(U_INT nw,Tag idg, U_INT No,char *dep = 0);
           bool        CreateVORwindow(CmHead *obj,U_INT No,int lim);
           bool        CreateNDBwindow(CmHead *obj,U_INT No,int lim);
           bool        CreateAPTwindow(CmHead *obj,U_INT No,int lim);
-          bool        CreateAPTwinRWY(CmHead *obj,U_INT No,int lim);
-          bool        CreateAPTwinFPL(CmHead *obj,U_INT No,int lim);
+          bool        CreateAPTwinLIT(CmHead *obj,U_INT No,int lim);
           bool        SmallDetailObject(CmHead *obj,U_INT No);
-          bool        FullDetailObject (CmHead *obj,U_INT No);
           bool        OpenWinDET (CmHead *obj,U_INT No);
           bool        ClickImage (int mx, int my, EMouseButton button,S_IMAGE &info);
           bool        MoveImage(int mx,int my,S_IMAGE &info);
@@ -944,6 +941,7 @@ public:
   void  SetButtonText(char *txt);
   void  SetText(char *txt);
   void  Select(U_INT No);
+	void  SelectText(char *txt);
   FL_MENU *GetMenu();
   //-----------------------------------------------------------
   void  Lock()    {SetProperty(FUI_IS_LOCKED);}
@@ -1766,6 +1764,7 @@ enum EFuiThemeFlagType {
   THEME_FLAG_USE_SHADOW                =  2,
   THEME_FLAG_MAX
 };
+
 //==================================================================================
 //  CFuiRuwayGraph to draw runway
 //==================================================================================
@@ -1803,6 +1802,8 @@ public:
    bool   MouseStopClick (int x, int y, EMouseButton button);
    //----------Draw canvas ------------------------------------------
    void   DrawSegment(int x0,int y0,int x1,int y1,int xc);
+	 void		DrawChar(int x0,int y0,char c,U_INT k=0);
+	 void		DrawNText(int x0,int y0,char *t,U_INT c);
    void   EraseCanvas();
    void   Draw();
    //----------------------------------------------------------------
@@ -1976,6 +1977,7 @@ public:
   void    EnterDrawing();
   void    Draw ();
   void    ExitDrawing();
+	void		DialogError(char *msg, char *from = 0);
   void    DrawOnlyNotices();
   void    DrawNoticeToUser  (char *text,float time);
   void    DrawHelp          (float time,int x, int y);
@@ -2039,6 +2041,19 @@ public :
   CFuiConfirmQuit (Tag id, const char* filename);
   void NotifyChildEvent (Tag id, Tag component, EFuiEvents event);
 };
+//=============================================================================================
+// FUI Error message
+//=============================================================================================
+class CFuiErrorMSG : public CFuiWindow
+{	//------------------------------------------------------------
+	CFuiLabel *mesg;
+public :
+  CFuiErrorMSG (Tag id, const char* filename);
+  void NotifyChildEvent (Tag id, Tag component, EFuiEvents event);
+	//--------------------------------------------------------------
+	inline void Display(char *m)	{mesg->SetText(m);}
+};
+//=============================================================================================
 
 class CFuiOptionsVideo : public CFuiWindow
 {

@@ -1311,7 +1311,7 @@ protected:
   float       rang_min, rang_max;
   float       gsdf;       // Glideslope deflection
   //-----------------------------------------------------------
-  RADIO_VAL       radio;      // Radio values
+  BUS_RADIO       radio;      // Radio values
   float PixDev;               // Half Bar wide in pixel
   //-----------------------------------------------------------
 public:
@@ -1482,7 +1482,7 @@ protected:
   SMessage  mobs;             // OBS message set
   SMessage  mnav;             // Nav message
   SMessage  mrad;             // Radio Message
-  RADIO_VAL *radio;           // Radio data
+  BUS_RADIO *radio;           // Radio data
 	//--------Localizer needle-- -------------------------------
   int     vobs;                       // OBS from radio
   int     locFramesPerDeg;            // Localizer sensibility

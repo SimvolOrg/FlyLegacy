@@ -1071,7 +1071,7 @@ void CBitmapBMP::DrawBitmap (SSurface *sf, int x, int y,int fr)
 //          Avoid the multiplication for each pixel in DrawDot()
 //=========================================================================
 void CBitmapBMP::DrawRgbBMP(SSurface *sf, int x, int y, int fr)
- { short xs  = (x < 0)?(0):(x);
+ {short xs  = (x < 0)?(0):(x);
   if (xs >= short(sf->xSize))   return;         // Clip: bitmap in the right side of rectangle
   short ys  = sf->ySize - y - ht;
   if (ys >= short(sf->ySize))   return;         // Clip: bitmap below rectangle

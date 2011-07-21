@@ -42,7 +42,7 @@
 #include "../Include/Weather.h"
 #include "../Include/database.h"
 #include "../Include/WorldObjects.h"
-#include "../Include/FlightPlan.h"
+#include "../Include/PlanDeVol.h"
 #include "../Include/BendixKing.h"
 #include "../Include/Atmosphere.h"
 #include "../Include/RadioGauges.h"
@@ -313,6 +313,7 @@ int CK89gps::ChangeMode(K89_EVENT evn)
       return EnterNAVpage01();
 
     case K89_FPL:
+			if (evn)	return 1;
       InitState(K89_MODE_FPL);
       return EnterFLPpage01();
 
@@ -377,7 +378,7 @@ float CK89gps::GetOpeningStep()
 //  Init Flight Plan parameters
 //-----------------------------------------------------------------------------
 int CK89gps::PowerONa(K89_EVENT evn)
-{ FPL     = globals->fpl;
+{ FPL     =  globals->pln->GetFlightPlan();			//globals->fpl;
   if (K89_POW   == evn)         return PowerCUT();
   if (K89_CLOCK != evn)         return 0;
   //-------Let Time to Draw the moving amber rectangles ---------
@@ -1671,7 +1672,7 @@ int CK89gps::EditNAVpage01()
   //------Edit Line 0 -----------------------------------
   U_CHAR dot = (actWNO != -1)?('\x82'):('\x84');
   if (0 == actWPT)  return EditWPTNone();
-  char *idfr =  (Mode == GPS_MODE_NORMAL)?(FPL->GetTermIdent()):(nul);
+  char *idfr =  nul;				//(Mode == GPS_MODE_NORMAL)?(FPL->GetTermIdent()):(nul);
   char *idto =  actWPT->GetIdent();
   _snprintf(edt,16,"%4s",idfr);
   StoreText(edt,K89_LINE0,K89_CLN08);
@@ -1788,7 +1789,7 @@ void CK89gps::EditLegETA(char *edt,float dis)
 //  Edit Fligh time
 //------------------------------------------------------------------
 void CK89gps::EditFTime(char *edt)
-{ int sec = FPL->GetFlightTime();
+{ int sec = 0;                          //FPL->GetFlightTime();
   int hor = (sec / 3600);
   int min = (sec - (hor * 3600)) / 60;
   if (0 == fState)    strcpy(edt,"__:__");
@@ -1907,9 +1908,10 @@ int CK89gps::NAVpage03(K89_EVENT evn)
 //  Edit departure time
 //-----------------------------------------------------------------------------
 void CK89gps::EditDepartTime(char *edt)
-{ SDateTime sd = FPL->GetFPLDepTime();
-  if (0 == fState)  strcpy(edt,"__:__");
-  else _snprintf(edt,16,"%02u:%02u",sd.time.hour,sd.time.minute);
+{ //SDateTime sd;									// = FPL->GetFPLDepTime();
+	strcpy(edt,"__:__");
+ // if (0 == fState)  strcpy(edt,"__:__");
+ // else _snprintf(edt,16,"%02u:%02u",sd.time.hour,sd.time.minute);
   return;
 }
 //-----------------------------------------------------------------------------
@@ -1918,8 +1920,8 @@ void CK89gps::EditDepartTime(char *edt)
 //-----------------------------------------------------------------------------
 int CK89gps::EditNAVpage03()
 { char edt[16];
-  float dis = (actWNO != -1)?(FPL->GetTotalDistance()):(wDIS);
-  char *idn = (actWNO != -1)?(FPL->GetLastIdent()):("____");
+  float dis = wDIS;												//(actWNO != -1)?(FPL->GetTotalDistance()):(wDIS);
+  char *idn = ("____");										//(actWNO != -1)?(FPL->GetLastIdent()):("____");
   if  (0 != actWPT) idn = actWPT->GetIdent();
   SDateTime st = globals->tim->GetUTCDateTime();
   _snprintf(edt,16,"UTC  %02u:%02u",st.time.hour,st.time.minute);
@@ -2088,7 +2090,7 @@ int CK89gps::SetDIRwaypoint()
 { if (dWPT.Assigned())
   { Mode  = GPS_MODE_DIRECT;                      // Mode is Direct To
     dWPT->Refresh(FrameNo);                       // Actualize data
-    int No  = FPL->NbInFlightPlan(dWPT.Pointer(),1);
+    int No  = 0;										//FPL->NbInFlightPlan(dWPT.Pointer(),1);
     fWPT    = Point[0].wpAD;                        // Save flight plan active wp
     //--Assign direct waypoint parameters --------------------------
     Point[1].wpNO = No;                           // Waypoint number
@@ -2101,7 +2103,7 @@ int CK89gps::SetDIRwaypoint()
   { Mode = GPS_MODE_NORMAL;
     Point[1].wpNO = -1;
     Point[1].wpAD = 0;
-    FPL->NbInFlightPlan(fWPT.Pointer(),1);         // recover original active wp
+    //FPL->NbInFlightPlan(fWPT.Pointer(),1);         // recover original active wp
   }
   //--In both cases, VNAV is not valid anymore ---------------------
   SelectActiveWaypoint();               // New active waypoint
@@ -2383,23 +2385,23 @@ int CK89gps::FPLpage01(K89_EVENT evn)
   //---CLOCKevent: refresh page ----------------------------------
   case K89_CLOCK:
        ClearRightDisplay();
-      if (FPL->NotSame(serial)) return EnterFLPpage01();
+      //if (FPL->NotSame(serial)) return EnterFLPpage01();
       return EditFlightPage();
   //---PAGE event:  Change displayed nodes -----------------------
   case K89_PAG:
-      if (FPL->NotStable()) return 1;
+      if (evn) return 1;	//if (FPL->NotStable()) return 1;
       if (0 == curPOS)  ChangeFPLnode();
       else              ChangeFPLcursor();
       return 1;
   //---CSR event: Swap cursor on option --------------------------
   case K89_CSR:
-      if (FPL->NotStable()) return 1;
+			if (evn)	return 1; //      if (FPL->NotStable()) return 1;
       if (0 == curPOS)  ChangeFPLcursor();
       else              curPOS = 0;
       return 1;
   //---CLR event: Change option ----------------------------------
   case K89_CLR:
-      if (FPL->NotStable()) return 1;
+      if (evn)	return 1;	//if (FPL->NotStable()) return 1;
       if (5 != curPOS)    return 1;
       OpFPL++;
       if (4 == OpFPL) OpFPL = 0;
@@ -2435,9 +2437,9 @@ int CK89gps::EnterFLPpage01()
   OpFPL   = 0;
   curPOS  = 0;
   aState  = K89_FPLP1;
-  if (FPL->NotStable()) return EditNoFplan();
-  serial  = FPL->GetSerial();
-  fpMax   = FPL->GetSize();
+	if (aState)	return EditNoFplan();		//  if (FPL->NotStable()) return EditNoFplan();
+  serial  = 0;			//FPL->GetSerial();
+  fpMax   = 0;			//FPL->GetSize();
   rGPS->wptNo = Point[0].wpNO;
   EditFlightPage();
   return 1;
@@ -2484,17 +2486,19 @@ int CK89gps::EditNoFplan()
 //  Edit Flight Plan in forward mode
 //---------------------------------------------------------------------
 int CK89gps::EditFlightPage()
-{ if (FPL->NotStable()    ) return 1;
+{ int a = 1;
+	if (a)	return 1;
+	//if (FPL->NotStable()    ) return 1;
   short lin = 0;
   short No  = rGPS->wptNo;
-  CWayPoint *wpt;
+  CWPoint *wpt;
   while ((No < fpMax) && (lin != 3))
-  { wpt  = FPL->GetWaypoint(No++);
+  { wpt  = 0;						//FPL->GetWaypoint(No++);
     Stack[lin]  = wpt->GetDBobject();
     EditFPLSlot(lin++,wpt);
   }
   if (No == fpMax)  return 1;
-  wpt = FPL->GetLastWaypoint();
+  wpt = 0;			//FPL->GetLastWaypoint();
   EditFPLSlot(lin,wpt);
   Stack[lin]  = wpt->GetDBobject();
   return 1;
@@ -2502,11 +2506,11 @@ int CK89gps::EditFlightPage()
 //---------------------------------------------------------------------
 //  Edit slot option 
 //---------------------------------------------------------------------
-int CK89gps::EditFPLoption(char *edt, CWayPoint *wpt)
+int CK89gps::EditFPLoption(char *edt, CWPoint *wpt)
 { switch (OpFPL)  {
     //--------Cumulated distance -----------------
     case 0:
-      { float dis = wpt->GetTotalDis();
+      { float dis = 0;			//wpt->GetTotalDis();
         if (dis > 999)  _snprintf(edt,16,"%5u ",int(dis));
         else            _snprintf(edt,16,"%.1f ",dis);
         return 1;
@@ -2516,7 +2520,7 @@ int CK89gps::EditFPLoption(char *edt, CWayPoint *wpt)
       { U_INT dd = 0;
         U_INT hh = 0;
         U_INT mm = 0;
-        wpt->GetLegDuration(&dd,&hh,&mm);
+ //       wpt->GetLegDuration(&dd,&hh,&mm);
         if (dd)         _snprintf(edt,16,">1 day",dd);
         else            _snprintf(edt,16,"%02u:%02u ",hh,mm);
         return 1;
@@ -2525,14 +2529,14 @@ int CK89gps::EditFPLoption(char *edt, CWayPoint *wpt)
     case 2:
       { U_INT hh = 0;
         U_INT mn = 0;
-        char  dd = wpt->GetSameDay();
-        wpt->GetArrivalTime(&hh,&mn);
+        char  dd = 0;			//wpt->GetSameDay();
+        //	wpt->GetArrivalTime(&hh,&mn);
         _snprintf(edt,16,"%02u:%02u%c",hh,mn,dd);
         return 1;
       }
     //------Dtk: Desired track to next leg -------
     case 3:
-      { float dtk = wpt->GetDTK();
+      { float dtk = 0;			//wpt->GetDTK();
         int   dti = Round(dtk);
         _snprintf(edt,16,"%3u°  ",dti);
         return 1;
@@ -2543,28 +2547,28 @@ int CK89gps::EditFPLoption(char *edt, CWayPoint *wpt)
 //---------------------------------------------------------------------
 //  Edit Marker for this Waypoint
 //---------------------------------------------------------------------
-void CK89gps::EditFPLmark(short lin,CWayPoint *wpt)
+void CK89gps::EditFPLmark(short lin,CWPoint *wpt)
 { char mk = ' ';
   if (-1 == actWNO)    return;              // DIRECT TO (not in FPL)
   short No = wpt->GetWaypointNo();          // Current waypoint
-  short fr = FPL->GetNoTerminated();        // Last terminated
+  short fr = 0;			//FPL->GetNoTerminated();        // Last terminated
   short to = actWNO;                        // Active waypoint
   if (fr != (to-1)) fr = -1;                // No From
   if (No == fr) mk = '\x85';                // From marker
   if (No == to) mk = '\x86';                // To marker
-  if ((mk == '\x86') && wpt->IsInside()) Prop = K89_ATT_FLASH;
+//  if ((mk == '\x86') && wpt->IsInside()) Prop = K89_ATT_FLASH;
   StoreChar(mk,lin,K89_CLN06);
   return;
 }
 //---------------------------------------------------------------------
 //  Edit Waypoint SLOT
 //---------------------------------------------------------------------
-int CK89gps::EditFPLSlot(short lin,CWayPoint *wpt)
+int CK89gps::EditFPLSlot(short lin,CWPoint *wpt)
 { char edt[16];
-  CmHead *obj    = wpt->GetDBobject();
-  short      No  = wpt->GetWaypointNo() + 1;
+  CmHead *obj    = 0;			//wpt->GetDBobject();
+  short      No  = 1;		//wpt->GetWaypointNo() + 1;
   const char      *idn = (obj)?(obj->GetIdent()):("????");
-  float      dis = wpt->GetTotalDis();
+  float      dis = 0;			//wpt->GetTotalDis();
   _snprintf(edt,16,"%2u:%-4s",No,idn);
   if ((lin + 1) == curPOS)  Prop = K89_ATT_FLASH;
   StoreText(edt,lin,K89_CLN07);
@@ -2982,7 +2986,7 @@ int CK89gps::GetNextALTWaypoint()
   if (No < actWNO)   return 0;
   if (No >= fpMax)   return 0;
   vnaWNO  = No;
-  vnaWPT  = FPL->GetDBObject(No);
+  vnaWPT  = 0;			//FPL->GetDBObject(No);
   vState  = K89_VNA_OFF;
   return 1;
 }
@@ -3221,7 +3225,8 @@ int CK89gps::EnterCALpage01()
   fd      = Gauge->GetLetField(K89_FIELD06);
   EditCALident(fd,wptFR.Pointer());
   //---To Waypoint -------------------------
-  CalTNO = FPL->NbInFlightPlan(wptTO.Pointer(),0);
+  CalTNO = 0;					//FPL->NbInFlightPlan(wptTO.Pointer(),0);
+	
   if (CalTNO > 0)  OpCAL = 1;
   fd      = Gauge->GetLetField(K89_FIELD07);
   EditCALident(fd,wptTO.Pointer());
@@ -3341,7 +3346,8 @@ void CK89gps::ComputeCALparameters()
   SVector	v	    = GreatCirclePolar(&pfm, &pto);
   float   r     = Wrap360((float)v.h - wmag);
   CalCAP        = Round(r);
-  float   d     = (OpCAL == 0)?(v.r * MILE_PER_FOOT):(FPL->GetDistanceTo(CalTNO));
+//  float   d     = (OpCAL == 0)?(v.r * MILE_PER_FOOT):(FPL->GetDistanceTo(CalTNO));
+	float		d     = 0;
 	CalDIS        = Round(d);
   //-----Compute Fuel requested ----------------------------------
   CalFUS        = 0;
@@ -3573,7 +3579,7 @@ int CK89gps::EnterACTmode(CmHead *obj)
   rGPS->Clean();
   rGPS->obj     = obj;
   rGPS->wptNo   = 0;
-  curNO         = FPL->NbInFlightPlan(obj,0);
+  curNO         = 0;			//FPL->NbInFlightPlan(obj,0);
   if (0 == obj)   return EnterNULpage01(1,K89_MODE_ACT,1);
   switch (obj->GetActiveQ())  {
     case APT:
@@ -3768,7 +3774,7 @@ void CK89gps::ClearFlightPlanWPT()
 //  flight plan is present
 //------------------------------------------------------------------
 void CK89gps::UpdateWaypointData()
-{ FPL->GetActiveParameters(*Point);
+{ //FPL->GetActiveParameters(*Point);
   if (Mode == GPS_MODE_NORMAL)  return;
   //---Update "direct to" data --------------
   CmHead *obj = Point[1].wpAD.Pointer();
@@ -3850,8 +3856,7 @@ void CK89gps::RefreshVNAVpoint()
     { vnaWPT->Refresh(FrameNo);
       vnaDIS  = vnaWPT->GetNmiles();
     }
-    else 
-    { vnaDIS = FPL->GetDistanceTo(vnaWNO);}
+    else    vnaDIS = 0;			//vnaDIS = FPL->GetDistanceTo(vnaWNO);}
     switch (vState) {
       case K89_VNA_OFF:
           if (K89_MSG_VNA == msgNO) msgNO = K89_MSG_OFF;
@@ -4206,10 +4211,12 @@ void  CK89gps::TimeSlice (float dT,U_INT FrNo)
   //-----Update flasher -----------------------------------
   mskFS = K89FLASH[globals->clk->GetON()];
   //-----Update flight plan state after power ON ----------
+	/*
   if (aState > K89_PWRNA)
   {   Speed   = FPL->GetSpeed();
       fState  = FPL->IsStarted();
   }
+	*/
   aPos  = globals->geop;
   //-----Refresh active waypoint --------------------------
   if (aState >= K89_APTP1)

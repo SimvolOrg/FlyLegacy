@@ -26,8 +26,8 @@
 #include "../Include/Globals.h"
 #include "../Include/Fui.h"
 #include "../Include/FuiParts.h"
-#include "../Include/FlightPlan.h"
 #include "../Include/Robot.h"
+#include "../Include/PlanDeVol.h"
 #include <vector>
 //=====================================================================================
 //  preconddition decoding structure

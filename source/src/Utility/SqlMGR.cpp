@@ -35,8 +35,8 @@
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainTexture.h"
 #include "../Include/Airport.h"
-#include "../Include/FlightPlan.h"
 #include "../Include/LightSystem.h"
+#include "../Include/PlanDeVol.h"
 
 //==================================================================================
 //  Database request to compile
@@ -1314,8 +1314,8 @@ void SqlMGR::RWYbyAPTkey(CDataBaseREQ *rqb)
     if (No++ == 0)  org = lin->GetHiPosition();
     globals->dbc->ComputeDistance(lin,org);
     lin->EditRWY();
-    ILSbyRWYkey(rqb,lin);
     rqb->Wind->AddDBrecord(lin,(DBCODE)rqb->Code);
+    ILSbyRWYkey(rqb,lin);
   }
   //-----Close request ---------------------------------------------------
   sqlite3_finalize(stm);
@@ -1489,7 +1489,7 @@ void SqlMGR::GetOBJbyIdent(CGPSrequest *rgq, char *tab, Tag type)
 //-----------------------------------------------------------------------
 //  Get any object by its unic key
 //-----------------------------------------------------------------------
-void SqlMGR::GetFlightPlanWPT(CWayPoint* wpt)
+void SqlMGR::GetFlightPlanWPT(CWPoint* wpt)
 { char req[1024];
 	char   *key = wpt->GetDbKey();
   char   *tab = wpt->GetSQLtab();
@@ -1497,14 +1497,14 @@ void SqlMGR::GetFlightPlanWPT(CWayPoint* wpt)
   _snprintf(req,1024,"SELECT * FROM %s WHERE ukey = '%s';*",tab,key);
   sqlite3_stmt *stm = CompileREQ(req,genDBE);
   if (SQLITE_ROW == sqlite3_step(stm))
-  {   switch(wpt->GetSQLtag())
-      {   case 'APT*':
+  {   switch(wpt->GetUser())
+      {   case 'airp':
             obj = DecodeAPT(stm,SHR);
             break;
-          case 'NAV*':
+          case 'snav':
             obj = DecodeNAV(stm,SHR);
             break;
-          case 'WPT*':
+          case 'dbwp':
             obj = DecodeWPT(stm,SHR);
             break;
       }

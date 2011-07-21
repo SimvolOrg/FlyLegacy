@@ -228,7 +228,7 @@ typedef struct {
   float             dRT;                // Real time delta from last frame
   float             dST;                // Simu time delta from last Frame
   //---------Interface with master radio -----------------------------
-  RADIO_VAL        *Radio;              // Radio block
+  BUS_RADIO        *Radio;              // Radio block
   CILS             *cILS;               // Current ILS
   //---------Globals cameras parameters-------------------------------
   CCameraRunway         *cap;           // Camera airport
@@ -253,7 +253,6 @@ typedef struct {
   CImport               *imp;           //  Import manager
   CKeyMap               *kbd;           // Keyboard  interface
   CFuiManager           *fui;           // Windows manager
-  CFlightPlan           *fpl;           // Flight Plan
   CSkyManager           *skm;           // Sky manager
   CWeatherManager       *wtm;           // Weather manager
   CMagneticModel        *mag;           // Magnetic model
@@ -264,7 +263,7 @@ typedef struct {
   PlaneCheckList               *chk;           // Check List manager
   CAtmosphereModelJSBSim *atm;          // Atmosphere
   CAudioManager         *snd;           // Sound manager
-  CAirplaneObject       *pln;           // Plane object
+  CAirplane             *pln;           // Plane object
   //-------Aircraft items --------------------------------------------
   CCameraManager        *ccm;           /// Current camera manager
   CPanel                *pan;           /// Active panel

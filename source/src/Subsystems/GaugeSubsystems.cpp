@@ -893,9 +893,10 @@ EMessageResult CDirectionalGyro::ReceiveMessage (SMessage *msg)
 //			Computation done in degres in aircraft coordinates
 //	NOTE: Dont use indn as it is used for pressure value
 //        Vacuum is taken from the base class.
-//        When the debug window is active, vacuum is set to on
 //  NOTE: Directional Gyro gives geographical direction without
-//        magnetic deviation.
+//        magnetic deviation, based on the compass dial (gyro).
+//				If the dial is not aligned with the north, the indicated
+//				yaw is false.
 //--------------------------------------------------------------------
 void CDirectionalGyro::TimeSlice (float dT,U_INT FrNo)		
 {	// Update the pump value (indn) from the parent class
@@ -1168,7 +1169,7 @@ CNavigation::CNavigation (void)
 }
 //------------------------------------------------------------------
 //	Process Receive Message
-//	The nav gauge uses RADIO_VAL struct that is updated by the
+//	The nav gauge uses BUS_RADIO struct that is updated by the
 //  master radio.
 //    xOBS: External OBS in °
 //    hDEV: Deviation between current NAV radial and OBS
@@ -1198,14 +1199,14 @@ EMessageResult  CNavigation::ReceiveMessage (SMessage *msg)
 
     case 'rfsh':
       if (0 == radio)   return MSG_PROCESSED;
-      RADIO_VAL *rad  = (RADIO_VAL*)msg->voidData;
+      BUS_RADIO *rad  = (BUS_RADIO*)msg->voidData;
       *rad            = *radio;
        return MSG_PROCESSED;
     }
 
   case MSG_SETDATA:
     if (msg->user.u.datatag == 'setr') 
-    { radio  = (RADIO_VAL*)msg->voidData;
+    { radio  = (BUS_RADIO*)msg->voidData;
       return MSG_PROCESSED;
     }
     if (msg->user.u.datatag == 'knob')
@@ -1388,7 +1389,7 @@ void CMarkerPanel::PrepareMsg(CVehicleObject *veh)
   rMSG.id           = MSG_GETDATA;
   rMSG.voidData     = 0;
   Send_Message(&rMSG);
-  Radio = (RADIO_VAL*)rMSG.voidData;
+  Radio = (BUS_RADIO*)rMSG.voidData;
   return;
 }
 //---------------------------------------------------------------

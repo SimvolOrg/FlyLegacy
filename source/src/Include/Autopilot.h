@@ -42,7 +42,7 @@ class CFuiCanva;
 class CFuiPID;
 class AutoPilot;
 class CAeroControl;
-class CAirplaneObject;
+class CAirplane;
 class CSoundBUF;
 //====================================================================================
 // *
@@ -91,16 +91,18 @@ protected:
 #define AP_LAT_HDG  2           // Heading mode
 #define AP_LAT_LT1  3           // LATERAL LEG 1
 #define AP_LAT_LT2  4           // LATERAL LEG 2
+#define AP_LAT_GND  5						// Ground steering
 //====================================================================================
 //  AUTOPILOT VERTICAL STATES
 //====================================================================================
 #define AP_DISENGD  0           // Disengaged
-#define AP_VRT_ALT  1           // Altitude hold
-#define AP_VRT_GSW  2           // Glide slope waiting
-#define AP_VRT_SPD  3           // Vertical speed
-#define AP_VRT_GST  4           // Glide slope tracking
-#define AP_VRT_FLR  5           // Flare segment
-#define AP_VRT_FIN	6						// Final ground segment
+#define AP_VRT_TKO	1						// Take off
+#define AP_VRT_ALT  2           // Altitude hold
+#define AP_VRT_VSP  3           // Vertical speed
+#define AP_VRT_GSW  4           // Glide slope waiting
+#define AP_VRT_GST  5           // Glide slope tracking
+#define AP_VRT_FLR  6           // Flare segment
+#define AP_VRT_FIN	7						// Final ground segment
 //====================================================================================
 //  AUTOPILOT EVENTS
 //====================================================================================
@@ -282,6 +284,7 @@ protected:
   char       aprm;                          // Approach mode
   char       ugaz;                          // Use autothrottle
 	char       finm;													// final mode
+	char       wgrd;													// Wheel on ground
   //-----------Lights--------------------------------------------------
   char       alta;                          // Altitude armed
   char       flsh;                          // Flash
@@ -289,6 +292,7 @@ protected:
   U_CHAR      timFS;                            // Flasher timer
   U_CHAR      mskFS;                            // Flasher mask
   //---Surface control -------------------------------------------------
+	CFlapControl *flpS;												// Flaps systems
   CAeroControl *ailS;                       // aileron surface
   CAeroControl *elvS;                       // Elevator surface
   CAeroControl *rudS;                       // Rudder surface
@@ -310,15 +314,25 @@ protected:
   double     hMIS;              // Lateral miss error
   double     vMIS;              // Vertical miss error
 	double     rAGL;							// AGL reference
+	double	   dSPD;							// Disengage speed
+	//--- Flap control ----------------------------------------------------
+	char			 tkoFP;							// Take off flap position
+	double		 tkoFA;							// Altitude
+	char			 lndFP;							// Landing flap position
+	double		 lndFA;							// Distance for landing flap
 	//--- Flare parameters ------------------------------------------------
 	double     sTAN;						  // Flare slope (radian)
 	double     nTDP;							// Touch down point
 	double     dTDP;							// Distance to touch down point
+	//--- Ground target ---------------------------------------------------
+	SPosition	*gPOS;							// Ground position
 	//--- Autothrottle parameters -----------------------------------------
 	double     cRAT;							// Current rate to maintain
 	double     xRAT;							// Cruise rate
 	double		 fRAT;							// Final approach rate
 	double		 aCUT;							// Altitude to cut throttle
+	double     vROT;							// Rotate speed
+	double		 aTGT;							// Target altitude
   //---Lateral & vertical mode control values ---------------------------
   double     tCoef;                         // Turn coefficient
   double     dREF;                          // Distance to Reference
@@ -333,7 +347,6 @@ protected:
   double     vTIM0;                         // Time for ARC AB
   double     vTIM1;                         // Time for P to D
   double     vTIM2;                         // Previous vTIM1
-  double     vMPS;                          // Mile per second
   double     vHRZ;                          // Horizontal speed
   //----Verticale mode control values ----------------------------------
   double     eVRT;                          // Vertical error (glide)
@@ -347,21 +360,22 @@ protected:
   double      cALT;                         // Current altitude
   double      cAGL;                         // Current AGL
   double      afps;                         // Aircraft feet per second
+	double      kSPD;													// Current speed KTS
   //-------------------------------------------------------------------
   double     vTime;                         // VSP timer
   //--------------------------------------------------------------------
   float      gTime;                         // ground timer
-  CAirplaneObject *plane;                   // Plane to control
+  CAirplane *plane;                   // Plane to control
   //---Lateral leg parameters ------------------------------------------
   U_CHAR     mode;                          // Autopilot mode
   U_CHAR     signal;                        // NAV Signal (VOR/ILS)
-  U_CHAR     side;                          // TO/ FROM
+  U_CHAR     rfu1;                          // TO/ FROM
   U_CHAR     sEVN;                          // STate Event
   //--------------------------------------------------------------------
   char       abrt;                          // Abort land
   //---Delta time ------------------------------------------------------
   float      dTime;                         // Dt
-  RADIO_VAL *Radio;                         // Radio Data 
+  BUS_RADIO *Radio;                         // Radio Data 
   //--------------------------------------------------------------------
   CPIDQ       pidQ;                         // List of components
   CPIDbox    *pidL[PID_MAX];                // Stack of PID
@@ -387,6 +401,11 @@ public:
   virtual void  Alarm() {}
   // CSubsystem methods
   virtual const char* GetClassName (void) { return "AutoPilot"; }
+	//-------------------------------------------------------------------
+  void            TimeSlice(float dT,U_INT FrNo);
+	//-------------------------------------------------------------------
+	void		DisplayGroundDeviation(double p1);
+	void		SetGroundMode(SPosition *p);
   //-------------------------------------------------------------------
   void            Probe(CFuiCanva *cnv);
   void            ReadPID(char *fn);
@@ -395,22 +414,24 @@ public:
   void            GetAllSubsystems(std::vector<CPIDbox*> &pid);
   void            GetAllPID(CFuiPID *win);
   void            InitPID();
-  void            TimeSlice(float dT,U_INT FrNo);
   int             BadSignal(char s);
   void            VSPerror();
   void            ALTalertSWP();
   void            ALTalertSET();
   bool            CheckAlert();
   //-------Options ----------------------------------------------------
-	inline void SetFRAT(double r)						{fRAT		= r;}
-	inline void SetXRAT(double r)						{xRAT   = r;}
+
 	inline void SetACUT(double v)						{aCUT		= v;}
   inline void SetVREF(double v)           {Vref		= v;}
   inline void SetTurn(double t)           {Turn		= t;}
   inline void SetGLDopt(double g)         {glide	= g;}
   inline void SetDISopt(double a)         {aLND		= a;}
-  void        SetFLRopt(double a, double b);
+	void				SetLndFLP(char p,double a)	{lndFP = p; lndFA = a;}
+	void				SetTkoFLP(char p,double a)  {tkoFP = p; tkoFA = a;}
+	void				SetTKOopt(double s, double a);
+  void        SetFLRopt(double a, double b,double d);
   void        SetMISopt(double a);
+	inline void SetGroundPos(SPosition *p)	{gPOS		= p;}
   //-------------------------------------------------------------------
   double          RoundValue(double v,double p);
   double          GetAOS();
@@ -422,9 +443,13 @@ public:
   int             PowerLost();
   void            Disengage(char op);
   int             Engage();
-	void						TrackSpeed();
 	double					SelectSpeed();
+	bool						MissLanding();
+	void						LandingOption();
+  bool            AbortLanding(char k);
+	void						Rotate();
   //-------TRANSITION ROUTINE -----------------------------------------
+	bool						EnterTakeOFF();
   void            EnterINI();
   void            EnterROL();
   void            EnterHDG();
@@ -446,18 +471,21 @@ public:
   void            LateralHold();
   void            RudderHold();
   void            GlideHold();
+	void						SpeedHold();
   void            IncVSP();
   void            DecVSP();
   void            IncALT();
   void            DecALT();
 	void						HoldAOA(double v);
-  //--------------------------------------------------------------------
+  //----Lateral modes --------------------------------------------------
 	double					AdjustHDG();
   void            GetCrossHeading();
   void            ModeLT1();
   void            ModeLT2();
   void            ModeROL();
   void            ModeHDG();
+	void						ModeGND();
+	//---- Vertical modes ------------------------------------------------
   void            ModeGSW();
   void            ModeGST();
   void            ModeALT();
@@ -466,12 +494,12 @@ public:
 	void						ModeFIN();
   void            ModeDIS();
   void            CheckDirection();
-  void            AbortLanding(char k);
   //-------EVENT PROCESSING -------------------------------------------
   void            StateDIS(int evn);
   void            StateROL(int evn);
   void            StateHDG(int evn);
   void            StateLAT(int evn);
+	void						StateGND(int evn);
   void            NewEvent(int evn);
 	void						GasControl();
   //-------------------------------------------------------------------
@@ -551,6 +579,8 @@ public:
   int     Read(SStream *st,Tag tag);
   void    DecodeLanding(SStream *st);
 	void		DecodeTHRO(char *txt);
+	void		DecodeVROT(char *txt);
+	void		DecodeFlap(char *txt);
 };
 
 //====================================================================================

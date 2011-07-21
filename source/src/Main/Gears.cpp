@@ -521,7 +521,7 @@ const SVector& CGear::GetBodyGearForce_ISU  (void)
   
   // fake : remove
   // Get input data
-  //CAirplaneObject *userVehicle = (CAirplaneObject*)(globals->sit->GetUserVehicle());
+  //CAirplane *userVehicle = (CAirplane*)(globals->sit->GetUserVehicle());
   // aircraft inertial-frame velocity in meters/sc
   //CVector acc = *(userVehicle->GetInertialVelocityVector());
   //acc.Times (-1.0 / 3.0);

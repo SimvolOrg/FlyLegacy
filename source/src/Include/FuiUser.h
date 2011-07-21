@@ -40,7 +40,6 @@
 
 #include "../Include/Fui.h"
 #include "../Include/FuiParts.h"
-#include "../Include/FlightPlan.h"
 #include <list>
 #include <vector>
 #include <stack>
@@ -53,6 +52,7 @@
 //===================================================================================
 class CCameraRunway;
 class CPIDbox;
+class CRouteEXT;
 //===================================================================================
 // Forward declare all class types
 //===================================================================================
@@ -112,7 +112,7 @@ class CmHead;                                  // Forward declaration
 class CNavaid;
 class CDbCacheMgr;
 class CObjPtr;
-class CFlightPlan;
+class COldFlightPlan;
 class CWayPoint;
 //================================================================================
 //  Structure for Radio description
@@ -211,15 +211,18 @@ protected:
   void        LoadOthBitmap(char *art,VM_BMP no);
   void        RelocateBox(CFuiGroupBox* box,short ht);               
   //--------------Mouse & Popup menu Functionss --------------------------
+	bool				ClickWptOBJ(int mx,int my,EMouseButton button);
   bool        MovePopMAP(int mx, int my);
   bool        InsideClick (int x, int y, EMouseButton button);
   bool        StopClickInside(int x, int y, EMouseButton button);
   bool        InsideMove(int x, int y);
+	bool				OpenPOP(int mx,int my);
+	bool				OpenWptOBJ(int mx,int my);
   bool        OpenPopOBJ(int mx,int my);
   bool        OpenPopDOC(int mx,int my);
   bool        OpenPopLST(int mx,int my);
   bool        OpenPopRWY(int mx,int my);
-  bool        OpenPopTEL(int mx,int my);
+  bool        OpenWptMEN(int mx,int my);
   //-------MENU EDITION --------------------------------------------------
 	int					SetRWYends(char k);
   int         SetRWYitem(char k);
@@ -266,14 +269,18 @@ protected:
   bool        ClickRWY(int mx,int my);
   bool        MoveDOC(int mx,int my);
   bool        MoveRWY(int mx,int my);
+	bool				MoveWPT(int mx,int my);
   int         SearchDOC();
   int         ClickMapMENU(short ln);
   int         ClickDocLIST(short ln);
   int         ClickDocMENU(short ln);
   int         ClickRwyMENU(short ln);
+	int					ClickWptMENU(short ln);
+	int					ClickWptOBJM(short itm);
   int         ClickRadLIST(int k);
   void        ClickLitITEM();
 	int					StartonRWY(short itm);
+	int					CreateWPT();
   //----------ILS helper ------------------------------------------------
   void        IlsPixel(int No,int x,int y);
   void        UpdateILS();
@@ -285,6 +292,8 @@ protected:
   //----------Interface to flight plan ---------------------------------
 public:
   void        DrawRoute(CRouteEXT &org,CRouteEXT &ext);
+	void				DrawWayPoint(CWPT *wpt);
+	void				WaypointMoved();
   //--------------------Attributes -------------------------------------
 protected:
   SVector     vmapOrient;                   ///< User vehicle orientation
@@ -304,7 +313,7 @@ protected:
   SC_TABLE      sTable;                   // Screen table
   SC_SLOT      *hSlot;                    // Selected slot
   //-------Flight plan parameters ----------------------------------
-  CFlightPlan *fPlan;                       // Flight Plan
+  CFPlan       *fPlan;                       // Flight Plan
   //--------Math parameters ----------------------------------------
   CRoseMatrix mRose;                        // Rotation Matrix
   //--------Airport stock of bitmaps --------------------------------
@@ -353,7 +362,7 @@ protected:
   U_INT         cLab[2];                    // Color Label
   //------ Coordinates under cursor -----------------------------
   SPosition   geop;                         // geo Position
-  SPosition   telp;                         // Teleport position
+  SPosition   wpos;                         // Waypoint position
   //------Diagram management ------------------------------------
   S_IMAGE     DocInfo;                      // Diagram image
   char        dStat;                        // Draw state
@@ -496,7 +505,6 @@ class CFuiPID: public CFuiWindow {
   //-------METHODS -------------------------------------------
 public:
   CFuiPID(Tag idn, const char *filename);
-  AutoPilot    *GetAutoPilot();
   void          AddPID(CPIDbox *pid);
   void          SelectPID();
   void          EditInc();

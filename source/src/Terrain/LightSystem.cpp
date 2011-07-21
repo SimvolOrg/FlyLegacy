@@ -751,7 +751,7 @@ void CRLP::DrawLITE(SVector &cam)
 //  Set PAPI point size
 //---------------------------------------------------------------------------------
 void CRLP::DistanceNow(float dis)
-{ float dim = (dis < 25.0)?(10):(2);
+{ float dim = (dis < 5.0)?(10):(2);
 	papi.SetMiniSize(dim);
 	return;
 }

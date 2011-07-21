@@ -70,21 +70,23 @@ Tag CPIDbox::PidIDENT[] = {
 //===============================================================================================
 //---Lateral mode -----------------------------------------
 char *autoTB1[] = {
-  "OFF",
+  "OFF",					// OFF
   "ROL",          // Roll control
   "HDG",          // Heading
   "LG1",          // NAV intercept
   "LG2",          // NAV tracking
+	"GND",					// Ground steering
 };
 //--- Vertical mode ---------------------------------------
 char *autoTB2[] = {
-  "OFF",
-  "ALT",          // Altitude
-  "GSI",          // Glide slope intercept
-  "GST",          // Glide slope Tracking
-  "VSP",          // VSI hold
-  "FLR",          // Flare mode
-	"FIN",					// Final
+  "OFF",					// 0
+	"TKO",					// 1-Take off
+  "ALT",          // 2-Altitude
+  "VSP",          // 3-VSP Tracking
+  "GSW",          // 4-Glide slope intercept
+  "GST",          // 5-Glide slope tracking
+  "FLR",          // 6-Flare mode
+	"FIN",					// 7-Final
 };
 //===============================================================================================
 // PID controller
@@ -407,13 +409,14 @@ CPIDdecoder::~CPIDdecoder()
 void CPIDdecoder::DecodeLanding(SStream *st)
 { float pm1;
   float pm2;
+	float pm3;
   int nf;
   char str[128];
   ReadString(str,100,st);
   nf = sscanf(str," disengage , %f ft", &pm1);
   if (1 == nf)    return apil->SetDISopt(pm1);
-  nf = sscanf(str," flare , %f ft, %f deg",&pm1,&pm2);
-  if (2 == nf)    return apil->SetFLRopt(pm1,pm2);
+  nf = sscanf(str," flare , %f ft, %f deg, %f kts",&pm1,&pm2,&pm3);
+  if (3 == nf)    return apil->SetFLRopt(pm1,pm2,pm3);
   return;
 }
 //------------------------------------------------------------------------------------
@@ -422,8 +425,29 @@ void CPIDdecoder::DecodeLanding(SStream *st)
 void CPIDdecoder::DecodeTHRO(char *txt)
 { float pm1;
 	int nf = sscanf(txt,"%f ft",&pm1);
-	if (nf != 1)	return;
-	apil->SetACUT(pm1);
+	if (nf == 1) apil->SetACUT(pm1);
+	return;
+}
+//------------------------------------------------------------------------------------
+//  Decode Rotation speed
+//------------------------------------------------------------------------------------
+void CPIDdecoder::DecodeVROT(char *txt)
+{	float pm1;
+	float pm2;
+  int nf = sscanf(txt,"%f kts , %f ft",&pm1,&pm2);
+	if (nf == 2)	apil->SetTKOopt(pm1,pm2);
+	return;
+}
+//------------------------------------------------------------------------------------
+//  Decode Flaps parameters
+//------------------------------------------------------------------------------------
+void CPIDdecoder::DecodeFlap(char *txt)
+{	int		pm1,pm3;
+	float pm2,pm4;
+	int nf = sscanf(txt,"tko ( %d , %f ft ) , lnd ( %d , %f ft)", &pm1,&pm2,&pm3,&pm4);
+	if (nf != 4)	return;
+	apil->SetTkoFLP(pm1,pm2);
+	apil->SetLndFLP(pm3,pm4);
 	return;
 }
 //------------------------------------------------------------------------------------
@@ -435,7 +459,12 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
   double   prm = 0;
   float    fnb = 10;
   switch (tag)  {
-		//--- Approach rate -------------------------------------
+		//--- Rotation speed for take-off ------------------------
+		case 'Vrot':
+			ReadString(txt,128,st);
+			DecodeVROT(txt);
+			return TAG_READ;
+		//--- Cut off altitude -----------------------------------
 		case 'THRO':
 			ReadString(txt,128,st);
 			DecodeTHRO(txt);
@@ -443,6 +472,11 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 		//---Disengage altitude ---------------------------------
 		case 'land':
 			DecodeLanding(st);
+			return TAG_READ;
+		//--- Flaps parameters ----------------------------------
+		case 'flap':
+			ReadString(txt,128,st);
+			DecodeFlap(txt);
 			return TAG_READ;
 		//---MISS LANDING PARAMETERS ---------------
 		case 'miss':
@@ -553,19 +587,27 @@ AutoPilot::AutoPilot (void)
   Radio   = 0;
   Powr    = 0;
   land    = LAND_DISCT;
-  //---Init flasher ------------------------------------------
+	//---Flap parameters -----------------------------------
+	tkoFP		= 0;
+	tkoFA		= -100;
+	lndFP		= 0;
+	lndFA		= -100;
+  //---Init flasher --------------------------------------
   timFS   = 0;              // Flasher timer
   mskFS   = 0xFF;           // Character on
   //---Lateral mode --------------------------------------
+	gPOS		= 0;
   rHDG    = 0;
   hERR    = 0;
   dREF    = 0;
   vTIM0   = 0;
   vTIM1   = 0;
-  vMPS    = 0;
   vHRZ    = 0;
   Turn    = 1.0f;         // Coef for Turn anticipation 
-  Vref    = 0;            // Default Vertical Trim reference 
+  Vref    = 0;            // Default Vertical Trim reference
+	//------------------------------------------------------
+	aTGT		= 2500;					// Target altitude at take off
+	vROT		= 0;						// Rotation speed at TKO
 	xRAT		= 0;						// Cruise rate
 	fRAT		= 0;						// Final rate
 	cRAT		= 0;
@@ -584,7 +626,7 @@ AutoPilot::AutoPilot (void)
   //---Default limits ------------------------------------
   aLim    = 10000;
   vLim    = 2000;
-  aMIS    = 00;
+  aMIS    = 400;							// Misslanding altitude chack
   abrt    = 0;
   //-------------------------------------------------------
   for (int k=0; k<PID_MAX; k++) pidL[k] = 0;
@@ -627,13 +669,13 @@ AutoPilot::AutoPilot (void)
   //---Set Time K ------------------------------------------
   timK  = float(VSI_SAMPLE);
   eVSP  = 0;
-  aLND  = 100;                        // Disengage altitude
-  land  = globals->vehOpt.Get(VEH_AP_OPTN);  // Land option
+  aLND  = 200;                        // Disengage altitude
+ 
   //----Init lights ----------------------------------------
   alta    = 0;
   flsh    = 0;
   //--Lateral error is 2.5° whatever the distance -----------
-  hMIS  = 4.0;
+  hMIS  = 2.5;
   //--Vertical error is tangent(1) * 1000 units -------------
   vMIS  = 2.4;
 }
@@ -659,7 +701,7 @@ void AutoPilot::ReadPID(char *fn)
   if (0 == pidL[PID_AOA]) inUse = 0;
   if (0 == pidL[PID_VSP]) uvsp  = 0;
   //---- Store plane to control ---------------------
-  plane = (CAirplaneObject*) mveh;
+  plane = (CAirplane*) mveh;
   return;
 }
 //------------------------------------------------------------------------------------
@@ -691,6 +733,7 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
 void AutoPilot::InitPID()
 { if (0 == inUse) return;
   //---Get control surfaces ------------------------------
+	flpS = mveh->amp->GetFlaps();
   ailS = mveh->amp->GetAilerons();
   elvS = mveh->amp->GetElevators();
   rudS = mveh->amp->GetRudders();
@@ -729,7 +772,7 @@ double AutoPilot::RoundValue(double v,double p)
 //------------------------------------------------------------------------------------
 double AutoPilot::GetAOS()
 { double p = globals->dang.x;
-  return -RoundValue(p,10);
+  return -RoundValue(p,100);
 }
 //------------------------------------------------------------------------------------
 //  Compute vertical error
@@ -738,9 +781,8 @@ double AutoPilot::GetAOS()
 //  The error is the difference between actual slope and target one (in radian)
 //------------------------------------------------------------------------------------
 void AutoPilot::VSPerror()
-{ double mph  = mveh->GetPreCalculedKIAS();    // Speed in miles per hour
-  double fpm  = TC_FEET_FROM_MILE(mph) / 60;   // In feet per minute 
-  if (mph < 10) return;                        // No more speed 
+{ double fpm  = TC_FEET_FROM_MILE(kSPD) / 60;  // In feet per minute 
+  if (kSPD < 10) return;                       // No more speed 
   double val  = rVSI / fpm;                    // Sine of angle of slope
   double phi  = asin(val);
   phi         = RadToDeg(phi);
@@ -762,11 +804,11 @@ void AutoPilot::VSPerror()
 //  The function return true if altitude alert is effective and coming within 100 feet
 //------------------------------------------------------------------------------------
 bool AutoPilot::CheckAlert()
-{  if (0 == alta)  return false;
+{ if (0 == alta)			return false;
   //--- Set flasher ----------------------
   double lim = fabs(eVRT);
-  if ((lim < 1000) && (lim > 200))  flsh = 1;
-  if (lim  >  100)   return false; 
+  if ((lim > 200) && (lim < 1000))  flsh = 1;
+  if ( lim  >  100)		return false; 
   return true;
 }
 //------------------------------------------------------------------------------------
@@ -879,12 +921,21 @@ void AutoPilot::GetAllPID(CFuiPID *win)
 //	Compute ground distance as h/d = tan(s)
 //	so d = h / tan(alpha)
 //-----------------------------------------------------------------------
-void AutoPilot::SetFLRopt(double a, double s)
+void AutoPilot::SetFLRopt(double a, double s, double d)
 { double r = DegToRad(s);
   aLND    = a;
+	dSPD		= d;
 	sTAN		= tan(r);
   land    = LAND_FLARE;
   return;
+}
+//-----------------------------------------------------------------------
+//	Set Take off parameters
+//-----------------------------------------------------------------------
+void AutoPilot::SetTKOopt(double s, double a)
+{	vROT		= s;
+	aTGT		= a;
+	return;
 }
 //-----------------------------------------------------------------------
 //  Set miss landing option
@@ -996,6 +1047,8 @@ void AutoPilot::LateralMode()
       return ModeLT1();
     case AP_LAT_LT2:
       return ModeLT2();
+		case AP_LAT_GND:
+			return ModeGND();
   }
 return;
 }
@@ -1021,7 +1074,7 @@ void AutoPilot::VerticalMode()
         ModeGST();
         return;
       //--- Vertical speed ----
-      case AP_VRT_SPD:
+      case AP_VRT_VSP:
         ModeVSP();
         return;
       //---Flare leg ---------
@@ -1041,18 +1094,20 @@ void AutoPilot::VerticalMode()
 void AutoPilot::TimeSlice(float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
   if (0 == Radio)   Send_Message(&mNAV);    // Get Navigation info
-  Radio = (RADIO_VAL*)mNAV.voidData;
+  Radio = (BUS_RADIO*)mNAV.voidData;
   if (0 == active) {PowerLost();        return;}                        
   if (globals->dbc->NotSynch(FrameNo))  return;
   dTime = dT;
   if (AP_DISENGD == lStat)              return;
   //---------------------------------------------------------
+	wgrd = mveh->WheelsAreOnGround();
   Send_Message(&mALT);
   cALT  = mALT.realData;                  // Current altitude
   cAGL  = cALT - globals->tcm->GetGroundAltitude();
+	kSPD	= mveh->GetPreCalculedKIAS();			// Current speed
   LateralMode();
   VerticalMode();
-	TrackSpeed();
+	SpeedHold();
   return;
 }
 
@@ -1066,20 +1121,25 @@ int AutoPilot::Engage()
 }
 //-----------------------------------------------------------------------
 //  AUTO PILOT DISENGAGE
+//	NOTE: elevator trim is left unchanged so there is no brutal change
+//			when autopilot is disengaged in flight
 //-----------------------------------------------------------------------
 void AutoPilot::Disengage(char gr)
 { lStat   = AP_DISENGD;
   vStat   = AP_DISENGD;
   signal  = SIGNAL_OFF;
   StateChanged(AP_STATE_DIS);
-  ailS->PidValue(0);
-  rudS->PidValue(0);
+  ailS->Neutral();							// Aileron to O
+  rudS->Neutral();
 	globals->jsm->Connect();
 	ugaz		= 0;
 	finm		= 0;
+	gPOS		= 0;
+	//---- Pull up if altitude is lower than 500 ---------
+	if (cAGL < 500)	elvT->SetValue(-0.5);
   //----Reset trim if aircraft on ground ---------------
-  if ((gr) || (mveh->WheelsAreOnGround())) elvT->SetValue(1);
-  if (gr) Alarm();
+  if ((gr) || (wgrd)) elvT->SetValue(0);
+  Alarm();
   return;
 }
 //-----------------------------------------------------------------------
@@ -1093,7 +1153,22 @@ int AutoPilot::BadSignal(char s)
   signal  = s;
   return 0;
 }
-
+//-----------------------------------------------------------------------
+//	Track Speed
+//	NOTE: Adjust throttle to target speed
+//-----------------------------------------------------------------------
+void AutoPilot::SpeedHold()
+{	ugaz &= globals->jsm->Off();
+	if ((0 == ugaz) && (vStat == AP_VRT_TKO))		return Disengage(1);
+	if ( 0 == ugaz)	return;
+	//--- Select speed to hold ---------------
+	cRAT = SelectSpeed();
+	Send_Message(&mSPD);
+	double cor = (mSPD.realData - cRAT);
+	double val = pidL[PID_GAS]->Update(dTime,cor,0);
+	gazS->Target(val);
+	return;
+}
 //-----------------------------------------------------------------------
 //  Manage Lateral mode with ailerons
 //  Maintain the target heading rHDG
@@ -1115,7 +1190,6 @@ void AutoPilot::LateralHold()
 //-----------------------------------------------------------------------
 //  Manage Lateral mode with rudder
 //  Maintain the target heading rHDG
-//  The rHDG direction is given by the autopilot bug found in some gauge
 //-----------------------------------------------------------------------
 void AutoPilot::RudderHold()
 { CPIDbox *rbox = pidL[PID_RUD];                    // Rudder controller
@@ -1211,16 +1285,15 @@ void AutoPilot::ModeLT1()
   //---Compute time in sec for ARC AB -----------------------------------
   vTIM0       = (Radio->iAng / 3) * Turn; 
   //---Compute velocity component   --in miles per sec ------------------
-  vMPS        = mveh->GetPreCalculedKIAS() / 3600;  //in miles / sec;
 	double err  = Norme180(aHDG - Radio->hREF);
   double aAB  = DegToRad(err);
-  vHRZ        = fabs(vMPS * sin(aAB));              // Velocity X component
+  vHRZ        = fabs((kSPD / 3600) * sin(aAB));              // Velocity X component
   vTIM2       = vTIM1;                              // Save value
   vTIM1       = (vHRZ > FLT_EPSILON)?(dREF / vHRZ):(SEC_IN_DAY);
   if (vTIM1 > vTIM0) return CheckDirection(); 
   //----Enter second leg ------------------------------------------------
 	pERR	= 0;
-  aERR  = 1000;
+  aERR  = 5000;								// misslanding distance
   rHDG  = Radio->hREF;
   lStat = AP_LAT_LT2;
   StateChanged(sEVN);
@@ -1271,9 +1344,68 @@ void AutoPilot::ModeLT2()
   //--Compute heading factor ---------------
 	rHDG	= AdjustHDG();     // New direction;
 //  TRACE("aHDG=%.2f RADI=%.2f hERR=%.2f, cor=%.2f rHDG=%.2f",
-//        aHDG,Radio->radi,hERR,cor,rHDG);
 	//-- check for final leg by rudder -----------
 	return LateralHold();
+}
+//-----------------------------------------------------------------------
+//	Ground steering
+//	Compute deviation error between target and current direction
+//	Use rudder to maintain target heading
+//	
+//-----------------------------------------------------------------------
+void AutoPilot::ModeGND()
+{	//--- Compute error -------------------------
+  CPIDbox *rbox = pidL[PID_RUD];                // Rudder controller
+	double dir	= Wrap180(globals->dang.z);				// Actual Heading
+	rHDG				= GetAngleFromGeoPosition(globals->geop,*gPOS);
+	hERR				= (rHDG - dir);										// Scale to 10 deg
+  double val  = rbox->Update(dTime,hERR,0);     // to controller
+  rudS->PidValue(-val);                         // result to rudder
+	//---- hold level ---------------------------
+	ModeROL();
+	//---- Proceed according to vertical mode ---
+	switch (vStat)	{
+		//--- take off mode ----------------------
+		case AP_VRT_TKO:
+			if (kSPD < vROT)							return;
+			Rotate();
+			return;
+  	//--- in VSP mode leave GND at 50 feet agl-
+		case AP_VRT_VSP:
+		case AP_VRT_ALT:
+			if (cAGL < 100)								return;
+			lStat	= AP_LAT_ROL;
+			rudS->Neutral();
+			return;
+		//--- in final disengage below cut speed--
+		case AP_VRT_FIN:
+			if (kSPD > dSPD)							return;
+			Disengage(1);
+			flpS->SetPosition(0);
+			return;
+	}
+	return;
+}
+//-----------------------------------------------------------------------
+//		Rotate for take off
+//		Set altitude alert to requested altitude
+//-----------------------------------------------------------------------
+void AutoPilot::Rotate()
+{	alta  = 1;                        // ALT armed
+  StateChanged(AP_STATE_AAA);       // State is changed
+	//--- Set reference altitude ------------------------
+	rALT  = aTGT;
+	StateChanged(AP_STATE_ACH);				// Altitude changed
+	//--- Enter altitude Hold ---------------------------
+	StateChanged(AP_STATE_ALT);       // Warn Panel
+  vStat = AP_VRT_ALT;               // Lock on altitude
+  elvS->Neutral();									// Reset elevator
+	rudS->Neutral();									// Reset rudder
+	ailS->Neutral();									// Reset ailerons
+  pidL[PID_ALT]->Init();            // init PID
+  pidL[PID_AOA]->Init();            // init PID
+	pidL[PID_RUD]->Init();
+	return;
 }
 //-----------------------------------------------------------------------
 //  Wait for glide slope intercept
@@ -1289,6 +1421,34 @@ void AutoPilot::ModeGSW()
   return;
 }
 //-----------------------------------------------------------------------
+//	Check for miss landing conditions
+//-----------------------------------------------------------------------
+bool AutoPilot::MissLanding()
+{ if (cAGL > aMIS)					return false;
+  //---Check for lateral miss landing ------------------
+  if (fabs(hERR) > hMIS)        return AbortLanding(1);
+	//---Check for vertical miss landing -----------------
+  if (fabs(eVRT) > vMIS)				return AbortLanding(2);
+	return false;
+}
+//-----------------------------------------------------------------------
+//	Process landing option
+//-----------------------------------------------------------------------
+void AutoPilot::LandingOption()
+{ if (MissLanding())					return;
+	//--- Update options ---------------------------
+	U_INT opt = globals->vehOpt.Get(VEH_AP_OPTN) | land;  // Land option
+	//--- Check for flap control -------------------
+	if (cAGL < lndFA) flpS->SetPosition(lndFP);
+	//---Ignore if above altitude ------------------
+  if (cAGL > aLND)						return;
+	//--- Flare option -----------------------------
+	if (opt == LAND_FLARE)			return EnterFLR();
+	//--- Disconnect autopilot ---------------------
+	Disengage(0);
+  return;
+}
+//-----------------------------------------------------------------------
 //  Track glide slope uses an amplifier of 1000 for better control
 //-----------------------------------------------------------------------
 //  NOTE:  The vertical amplifier acts as a damping feature to avoid
@@ -1300,34 +1460,18 @@ void AutoPilot::ModeGST()
 { eVRT = -Radio->gDEV;          // Glide error
   if (vAMP < 1000) vAMP += 2;   // Increase amplifier
   GlideHold();                  // Hold slope
-  //---Check for flare mode ------------------------
-  if (0 == land)            return;     // No option
-  //---Check for landing option  -------------------
-  double agl = globals->tcm->GetPlaneAGL();
-  if (agl  < aLND)
-  { if (land == LAND_DISCT)   return  Disengage(1);
-    if (globals->vehOpt.Not(VEH_AP_LAND)) return;
-    if (land == LAND_FLARE)   return  EnterFLR();
-    return;
-  }
-  //---Check for miss landing option ---------------
-  if (globals->vehOpt.Not(VEH_AP_DISC)) return;
-  if (agl  < aMIS)
-  { if (aERR > hMIS)          return AbortLanding(1);
-    double erg = fabs(eVRT);
-    if (erg > vMIS)						return AbortLanding(2);
-  }
+	LandingOption();
   return;
 }
 //-----------------------------------------------------------------------
 //  Abort landing
 //-----------------------------------------------------------------------
-void AutoPilot::AbortLanding(char r)
+bool AutoPilot::AbortLanding(char r)
 { abrt  = r;
   Alarm();
   EnterALT();
   EnterROL();
-  return;
+  return true;
 }
 //-----------------------------------------------------------------------
 //  Track vertical speed. 
@@ -1350,17 +1494,17 @@ void AutoPilot::ModeVSP()
 //        compatibility with GlideHold()
 //-----------------------------------------------------------------------
 void AutoPilot::ModeFLR()
-{ float spd = mveh->GetPreCalculedKIAS();           // Speed in knots
-  afps = spd * FEET_PER_NM * HOUR_PER_SEC;          // In feet per sec
+{ afps = kSPD * FEET_PER_NM * HOUR_PER_SEC;          // In feet per sec
 	//--- compute expected altitude ------------------------------
 	double dis	= Radio->fdis - nTDP;				// Touch down distance
 	double xagl	=	dis * sTAN;								// Expected AGL
-	dTDP				= dis;
+	dTDP				= dis;											// Touch down point
 	eVRT				= (xagl - cAGL) / dis;			// Expressed in tan unit
   vAMP = 2000;														// Amplifier
   GlideHold();
-	TRACE("FLR: kts=%.2f agl=%.4f AoA=%.4f xagl=%.4f",spd,cAGL,-GetAOS(),xagl);
-  if (mveh->WheelsAreOnGround())  EnterFIN();
+//	TRACE("FLR: kts=%.2f agl=%.4f AoA=%.4f xagl=%.4f",spd,cAGL,-GetAOS(),xagl);
+	//--- wait for touch down ------------------------------------
+  if (wgrd)  EnterFIN();
 	rAGL	= cAGL;
   return;
 }
@@ -1369,13 +1513,20 @@ void AutoPilot::ModeFLR()
 ///-----------------------------------------------------------------------
 void AutoPilot::ModeFIN()
 {	//----------------------------------------------------------------
-	float spd = mveh->GetPreCalculedKIAS();           // Speed in knots
-  TRACE("GRN: kts=%.2f agl=%.4f AoA=%.4f",spd,cAGL,-GetAOS());
+//  TRACE("GRN: kts=%.2f agl=%.4f AoA=%.4f",spd,cAGL,-GetAOS());
 	//--- push plane on ground ---------------------------------
 	elvT->SetValue(0);
 	elvS->SetValue(0.1f);
-	if (spd > 30) return;
-	Disengage(1);globals->Trace.Raz(TRACE_WHEEL);
+	double lsp = dSPD * 1.4;
+	//--- wait for speed to slow down --------------------
+	if (kSPD > lsp)									return;
+	//--- If ILS enter ground steering -------------------
+	gPOS		= 0;
+	if (SIGNAL_ILS != Radio->ntyp)  return Disengage(1);
+	rudS->Neutral();
+	CILS   *ils = (CILS*)	Radio->nav;
+	gPOS		= ils->GetFarPoint();
+	lStat		= AP_LAT_GND;						
 	return;
 }
 //-----------------------------------------------------------------------
@@ -1383,32 +1534,22 @@ void AutoPilot::ModeFIN()
 //-----------------------------------------------------------------------
 double AutoPilot::SelectSpeed()
 {	finm		&= aprm;
-	//--- Check for final -------------------
+	//--- Check for final ------------------------
   bool cut = (cAGL <= aCUT);
 	if (finm && cut)	return 0;
 	if (finm)					return fRAT;
-	//--- Check for altitude up -------------
-  bool up = (vStat == AP_VRT_SPD) && (rVSI > 0);
+	//--- Check for Take off ---------------------
+	bool t1 = (vStat == AP_VRT_TKO) && (kSPD < 20);
+	if  (t1)	return 20;					// Initial leg
+	bool t2 = (vStat == AP_VRT_TKO);
+	if  (t2)  return 1000;				// Max speed
+	//--- Check for altitude up ------------------
+  bool up = (vStat == AP_VRT_VSP) && (rVSI > 0);
 	if  (up)	return 1000;				// Maximum rate
 	up	= (vStat == AP_VRT_ALT) && (eVRT > 100);
 	if  (up)	return 1000;				// Maximum rate
-	//--- return cruise speed ---------------
+	//--- return cruise speed --------------------
 	return xRAT;
-}
-//-----------------------------------------------------------------------
-//	Track Speed
-//	NOTE: Correction is inverted
-//-----------------------------------------------------------------------
-void AutoPilot::TrackSpeed()
-{	ugaz &= globals->jsm->Off();
-	if (0 == ugaz)			return;
-	//--- Select speed to hold ---------------
-	cRAT = SelectSpeed();
-	Send_Message(&mSPD);
-	double cor = (mSPD.realData - cRAT);
-	double val = pidL[PID_GAS]->Update(dTime,cor,0);
-	gazS->Target(val);
-	return;
 }
 //-----------------------------------------------------------------------
 //  Track Altitude 
@@ -1471,11 +1612,34 @@ void AutoPilot::ExitHDG()
   return;
 }
 //-----------------------------------------------------------------------
+//	External interface to enter take-off mode
+//	Check all pre-conditions
+//-----------------------------------------------------------------------
+bool AutoPilot::EnterTakeOFF()
+{ if (vROT <= 0)						return false;					// Vrot present
+	if (0 == gPOS)						return false;					// Ground position
+	if (!wgrd)								return false;					// Wheels on ground
+	if (0 == gazS)						return false;					// Gas controller
+  if (kSPD > 20)						return false;					// Speed lower then 20KTS
+	if (AP_LAT_ROL != lStat)	return false;					// Initial lateral mode
+	if (AP_VRT_VSP != vStat)	return false;					// Initial vertical mode
+	if (!mveh->AllEngineOn())	return false;					// All engine running
+	//----- Engage Throttle control ----
+	ugaz	= 1;
+  globals->jsm->Disconnect();
+	ailS->Neutral();
+	rudS->Neutral();
+	elvT->Neutral();
+	//---- Lateral state to steer mode --
+	lStat	= AP_LAT_GND;
+	vStat = AP_VRT_TKO;
+	return true;
+}
+//-----------------------------------------------------------------------
 //  Enter INI Mode
 //-----------------------------------------------------------------------
 void AutoPilot::EnterINI()
-{ 
-	EnterROL();
+{ EnterROL();
   EnterVSP();
   return;
 }
@@ -1570,15 +1734,14 @@ void AutoPilot::GetCrossHeading()
 //  Enter Lateral Mode Leg 1 for tracking VOR
 //-----------------------------------------------------------------------
 void AutoPilot::EnterNAV()
-{ if (BadSignal(SIGNAL_VOR + SIGNAL_ILS))  return;
+{ if (BadSignal(SIGNAL_NAV))  return;
   aprm = 0;
   pidL[PID_HDG]->Init();
   pidL[PID_BNK]->Init();
-  Send_Message(&mHDG);                   // Get current heading
-  rHDG  = mHDG.realData;                // As target heading
-  side  = VOR_SECTOR_TO;
+  Send_Message(&mHDG);										// Get current heading
+  rHDG  = mHDG.realData;									// As target heading
   StateChanged(AP_STATE_NAV);
-  sEVN  = AP_STATE_NTK;                 // Next state
+  sEVN  = AP_STATE_NTK;										// Next state
   lStat = AP_LAT_LT1;
   //---Compute direction perpendicular to the radial -----
   return GetCrossHeading();
@@ -1604,9 +1767,8 @@ void AutoPilot::EnterAPR()
   alta  = 0;                        // ALT armed off
   pidL[PID_HDG]->Init();
   pidL[PID_BNK]->Init();
-  Send_Message(&mHDG);               // Get current heading
+  Send_Message(&mHDG);              // Get current heading
   rHDG  = mHDG.realData;            // As target heading
-  side  = VOR_SECTOR_TO;
   StateChanged(AP_STATE_APR);
   sEVN  = AP_STATE_ATK;             // next state
   lStat = AP_LAT_LT1;
@@ -1616,7 +1778,7 @@ void AutoPilot::EnterAPR()
   pidL[PID_GLS]->Init();
   pidL[PID_AOA]->Init();
   vStat = AP_VRT_GSW;
-  rALT  = cALT;             // Current altitude As reference
+  rALT  = cALT;											// Current altitude As reference
   return;
 }
 //-----------------------------------------------------------------------
@@ -1624,7 +1786,7 @@ void AutoPilot::EnterAPR()
 //-----------------------------------------------------------------------
 void AutoPilot::CatchVSP()
 { if (0 == uvsp) return;
-  Send_Message(&mVSI);                       // Get actual VSI
+  Send_Message(&mVSI);											// Get actual VSI
   int    vsi = int(mVSI.realData / 100);    // integer part
   double rst = fmod(mVSI.realData,100 );    // fract part
   double rnd = (rst > 50)?(100):(0);
@@ -1650,14 +1812,14 @@ void AutoPilot::CatchALT()
 void AutoPilot::EnterVSP()
 { eVSP  = 0;
   aprm  = 0;
-  vStat = AP_DISENGD;          // VSP holder
+  vStat = AP_DISENGD;						// VSP holder
   StateChanged(AP_STATE_VOF);
   if (0 == uvsp) return;
   pidL[PID_VSP]->Init();
   pidL[PID_AOA]->Init();
-  elvT->SetValue(0);
+  elvT->Neutral();
   CatchVSP();                   // Get VSI
-  vStat = AP_VRT_SPD;           // VSP holder
+  vStat = AP_VRT_VSP;           // VSP holder
   StateChanged(AP_STATE_VSP);   // state change
   return;
 }
@@ -1669,19 +1831,21 @@ void AutoPilot::EnterVSP()
 //-----------------------------------------------------------------------
 void AutoPilot::EnterFLR()
 { EnterROL();
-  float spd = mveh->GetPreCalculedKIAS();           // Speed in knots
-  afps = spd * FEET_PER_NM * HOUR_PER_SEC;          // In feet per sec
+  afps = kSPD * FEET_PER_NM * HOUR_PER_SEC;          // In feet per sec
   vStat = AP_VRT_FLR;                               // Vertical state
-  TRACE("ENTER FLARE");
+	//  TRACE("ENTER FLARE");
 	//--- Compute touch down offset from ILS ----------
 	double tdp = aLND / sTAN;
 	nTDP	= Radio->fdis - tdp ;
-	globals->Trace.Set(TRACE_WHEEL);
+	//	globals->Trace.Set(TRACE_WHEEL);
 	mveh->SetABS(1);
   return;
 }
 //-----------------------------------------------------------------------
 //	Enter final leg
+//	-Set final state
+//	-Locate ILS far point and set as ground target
+//
 //-----------------------------------------------------------------------
 void AutoPilot::EnterFIN()
 {	//--- disengage and set aircraft level --------------- 
@@ -1692,18 +1856,6 @@ void AutoPilot::EnterFIN()
   rudS->PidValue(0);							// Rudder to 0
 	mveh->SetABS(0);
 	return;
-}
-//-----------------------------------------------------------------------
-//  PROCES EVENT in DISENGAGED STATE
-//-----------------------------------------------------------------------
-void AutoPilot::StateDIS(int evn)
-{ //--- Process only autopilot engage ------------------
-  if (AP_EVN_ENG != evn)  return;
-  vTime = 0;
-  Send_Message(&mALT);
-  cALT  = mALT.realData;                  // Current altitude
-  EnterINI(); 
-  return;
 }
 //-----------------------------------------------------------------------
 //  Inc ALT
@@ -1742,6 +1894,18 @@ void AutoPilot::DecVSP()
   if (rVSI <= -vLim)        return;
   rVSI -= 100;
   StateChanged(AP_STATE_VCH);       // VSP change
+  return;
+}
+//-----------------------------------------------------------------------
+//  PROCES EVENT in DISENGAGED STATE
+//-----------------------------------------------------------------------
+void AutoPilot::StateDIS(int evn)
+{ //--- Process only autopilot engage ------------------
+  if (AP_EVN_ENG != evn)  return;
+  vTime = 0;
+  Send_Message(&mALT);
+  cALT  = mALT.realData;                  // Current altitude
+  EnterINI(); 
   return;
 }
 //-----------------------------------------------------------------------
@@ -1824,6 +1988,18 @@ void AutoPilot::StateLAT(int evn)
   return;
 }
 //-----------------------------------------------------------------------
+//  PROCES EVENT in Ground steering
+//-----------------------------------------------------------------------
+void AutoPilot::StateGND(int evn)
+{	if (AP_EVN_ENG == evn)	return Disengage(1);
+	gPOS	= 0;
+	rudS->Neutral();
+	ailS->Neutral();
+	lStat = AP_LAT_ROL;
+	StateROL(evn);
+	return;
+}
+//-----------------------------------------------------------------------
 //  Dispatch event to current state
 //-----------------------------------------------------------------------
 void AutoPilot::NewEvent(int evn)
@@ -1844,6 +2020,8 @@ void AutoPilot::NewEvent(int evn)
       return StateLAT(evn);
     case AP_LAT_LT2:
       return StateLAT(evn);
+		case AP_LAT_GND:
+			return StateGND(evn);
   }
   return;
 }
@@ -1858,7 +2036,7 @@ void AutoPilot::GasControl()
 	if (0 == ugaz)						return;
 	//--- Check if OK ------------------
   globals->jsm->Disconnect();
-	ailS->SetValue(0);
+	ailS->Neutral();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -1920,7 +2098,7 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   { cnv->AddText( 1,"xALT");
     cnv->AddText( 8,1,"%.00f",xALT);
   }
-  if (vStat == AP_VRT_SPD)
+  if (vStat == AP_VRT_VSP)
   { cnv->AddText( 1,"eVSP");
     cnv->AddText( 8,1,"%.4f",eVSP);
   }
@@ -1934,6 +2112,22 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   cnv->AddText(1,1,"ABRT    : %d",abrt);
   return;
 }
+//-----------------------------------------------------------------------
+//  Glut to display ground deviation
+//-----------------------------------------------------------------------
+void AutoPilot::DisplayGroundDeviation(double p1)
+{	char txt[128];
+	_snprintf(txt,126,"rHDG =%.2f hERR=%.4f Rudr=%.4f",rHDG,hERR,p1);
+	DrawNoticeToUser(txt,2);
+}
+//-----------------------------------------------------------------------
+//  Set ground mode for test
+//-----------------------------------------------------------------------
+void AutoPilot::SetGroundMode(SPosition *p)
+{	if (0 == p)				return;
+	gPOS	= p;
+	return;
+}
 //========================================================================================
 //
 // CKAP140Panel
@@ -1943,7 +2137,7 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 CKAP140Panel::CKAP140Panel (void) : AutoPilot()
 { TypeIs (SUBSYSTEM_KAP140_PANEL);
   flsh   = 0;
-  uvsp   = AP_VRT_SPD;              // use VSP
+  uvsp   = AP_VRT_VSP;              // use VSP
   //---Init display fields -----------------------------------
   InitField(K140_FD_HD1,0,RADIO_CA11);
   InitField(K140_FD_HD2,0,RADIO_CA12);
@@ -2011,6 +2205,7 @@ void CKAP140Panel::ClearAll()
 { ClearField(K140_FD_HD1);
   ClearField(K140_FD_HD2);
   ClearField(K140_FD_VT1);
+	ClearField(K140_FD_VT2);
   ClearField(K140_FD_VSI);
   ClearField(K140_FD_ALT);
   return;

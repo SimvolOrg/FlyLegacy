@@ -53,6 +53,8 @@
 class CFuiPlot;
 class CGroundSuspension;
 class CgHolder;
+class CFPlan;
+class VPilot;
 //=======================================================================================
 //
 // Sound effects for an engine; corresponds to <engn> sub-object in .SFX file
@@ -349,7 +351,7 @@ public:
   //---- CEngineManager methods -------------------------------------------
   void          SetTAP(CFuelTap *fs);
   /*! returns the number of engines for the current user */
-  unsigned int  HowMany() {return engine_number;};
+  U_CHAR  HowMany() {return engine_number;};
   /*! */
   void          Timeslice (float dT,U_INT FrNo);
   void          CutAllEngines();
@@ -367,13 +369,14 @@ public:
   const float&   GetEnginesPfact (void);                ///< returns P fact in form of X thrust offset (LH)
   //--------------------------------------------------------------------
   inline void    GetAllEngines(std::vector<CEngine*> &egs) { egs = engn;}
+	inline U_CHAR  GetEngineNbr()		{return (engine_number);}
   //--------------------------------------------------------------------
 public:
   std::vector<CEngine*> engn;                           ///< List of engine instances
 
 protected:
   std::vector<CEngine*>::const_iterator ie;
-  unsigned int engine_number;                           ///< Number of defined engines
+  U_CHAR engine_number;                           ///< Number of defined engines
   SVector eng_total_force;                              ///< sum all forces from engine list
   SVector eng_total_moment;                             ///< sum all moment from engin list
   SVector eng_total_pos;                                ///< relative position of all the engines
@@ -493,11 +496,14 @@ public:
   //---- return all subsystems -------------------------------------------
   inline float GetBrakeForce(char p) {return (pwb)?(pwb->GetBrakeForce(p)):(0);}
   ///---------------------------------------------------------------------
+	inline VPilot                 *GetVirtualPilot(){return vpil;}
+	inline CFlapControl           *GetFlaps()				{return pFlaps;}
   inline CAileronControl        *GetAilerons()    {return pAils;}
   inline CElevatorControl       *GetElevators()   {return pElvs;}
   inline CRudderControl         *GetRudders()     {return pRuds;}
   inline CElevatorTrimControl   *GetElevatorTrim(){return eTrim;}
 	//---------------------------------------------------------------------
+	inline  CFPlan                *GetFlightPlan()	{return fpln;}
 	inline	CRobot                *GetRobot()				{return d2r2;}
   //---------------------------------------------------------------------
 public:
@@ -507,11 +513,13 @@ public:
   std::vector<CSubsystem*>    subs;   // List of electrical subsystems
   std::vector<CSubsystem*>    sext;   // List of external subsystems
   ///----- Shortcut pointers to special subsystem types ------------------
-	CRobot                *d2r2;
-  CAileronControl       *pAils;
-  CElevatorControl      *pElvs;
-  CRudderControl        *pRuds;
-  CFlapControl          *pFlaps;
+	CFPlan								*fpln;						// Flight Plan
+	VPilot								*vpil;						// Virtual pilot
+	CRobot                *d2r2;						// Robot
+  CAileronControl       *pAils;						// Aileron
+  CElevatorControl      *pElvs;						// elevator
+  CRudderControl        *pRuds;						// Ruder
+  CFlapControl          *pFlaps;					// Flaps
   CAileronTrimControl   *aTrim;
   CElevatorTrimControl  *eTrim;
   CRudderTrimControl    *rTrim;

@@ -233,6 +233,25 @@ void  CRwyLine::ComputeCorner(short mx,short my)
   return;
 }
 //-----------------------------------------------------------------
+//  Check for end id
+//-----------------------------------------------------------------
+
+U_CHAR CRwyLine::CheckEnd(char *id,int *px,int *py, char **d)
+{	if	(strcmp(id,Hend.rwid) == 0)
+	{	*px	= Hend.dx;
+		*py	= Hend.dy;
+		if (d)	*d = Hend.ilsD;
+		return 1;
+	}
+	if	(strcmp(id,Lend.rwid) == 0)
+	{	*px = Lend.dx;
+		*py = Lend.dy;
+		if (d) *d = Lend.ilsD;
+		return 1;
+	}
+	return 0;
+}
+//-----------------------------------------------------------------
 //  Return drawing segment 1
 //-----------------------------------------------------------------
 void  CRwyLine::GetEnd01(int *px,int *py)
@@ -264,6 +283,26 @@ void  CRwyLine::GetEnd04(int *px,int *py)
   *py = Hend.cy;
   return;
 } 
+//-----------------------------------------------------------------
+//  Set ILS data into info
+//-----------------------------------------------------------------
+void CRwyLine::SetILS(CComLine *c)
+{	char *idn = c->GetIdent();
+  char *frq = c->GetDfrq();
+  char *hid = Hend.rwid;
+	if (strcmp(idn,hid) == 0)
+	{	Hend.ifrq	= c->GetFreq();
+		strncpy(Hend.ilsD,frq,8);
+		return;
+	}
+	char *lid = Lend.rwid;
+	if (strcmp(idn,lid) == 0)
+	{	Lend.ifrq = c->GetFreq();
+		strncpy(Lend.ilsD,frq,8);
+		return;
+	}
+	return;
+}
 //----------------------------------------------------------------------------------
 //  Edit a Runway line
 //----------------------------------------------------------------------------------
@@ -280,10 +319,9 @@ void CFlpLine::Print(CFuiList *w,U_CHAR ln)
 { w->NewLine(ln);
   w->AddText(ln, 1, 1,GetMark());
   w->AddText(ln, 3,24,GetName());
-  w->AddText(ln,18, 6,GetIden()); 
-  w->AddText(ln,24,10,GetDist());
-  w->AddText(ln,33, 8,GetRadi());
-  w->AddText(ln,37, 8,GetAlti());
+  w->AddText(ln,18, 5,GetIden()); 
+  w->AddText(ln,22,10,GetDist());
+  w->AddText(ln,34,12,GetAlti());
   w->AddText(ln,41,12,GetElap());
   w->AddText(ln,48,14,GetEtar());
   return;
@@ -769,6 +807,7 @@ void  CListBox::SetParameters(CFuiWindow *win,Tag idn,U_INT tp,short lh)
 { htr             = lh;
   typ             = tp;
   Title           = (tp & LIST_HAS_TITLE)?(1):(0);
+	if (0 == win)		return;
   Mother          = win;
   ident           = idn;
   wList           = (CFuiList*)Mother->GetComponent(idn);
@@ -1338,7 +1377,7 @@ void CListBox::DeleteItem()
     it  = Obj.erase(it);
   }
   Renum(top,nNOD);      // Reset sequence to this range
-  //---Update paramaters depending on number of nodes --------
+  //---Update parameters depending on number of nodes --------
   InitP2();
   if (IsEmpty())    return ShowPage(sLIN);
   //--- Set selection to previous item if last was deleted --

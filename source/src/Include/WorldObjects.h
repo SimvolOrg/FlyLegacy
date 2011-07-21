@@ -46,6 +46,8 @@
 #include "../Include/Autopilot.h"
 #include "../Include/AudioManager.h"
 #include "../Include/OpalGears.h"
+#include "../Include/Robot.h"
+
 #include <vector>
 
 //======================================================================================
@@ -255,18 +257,16 @@ public:
   virtual void				      PrepareMsg(void);							      // JSDEV* Message preparation
 		      void				      TraceMsgPrepa(SMessage *msg);				// JSDEV* Message preparation
           void              DrawAeromodelData();
-  virtual bool              isUserVehicle();
   virtual CCameraManager*   GetCameraManager();
   virtual CCockpitManager*  GetCockpitManager()      {return pit;}
   virtual Tag               GetPanel();
   virtual void              SetPanel(Tag tag);
-          void              SetUser                  () {user = true;};
   virtual void              Print                    (FILE *f);
   virtual void              TimeSlice(float dT,U_INT frame) {}
   virtual void              Update(float dT,U_INT FrNo);		        // JSDEV*
   virtual void              ResetVehicle(void) {;} 
   //! Returns altitude above ground in feet
-  const float&              GetUserAGL();
+	float                     GetUserAGL()	{return 0;}
   //! Returns vehicle mass (kg)
   virtual double            GetMassInKgs();
 	virtual double						GetMassInLbs();
@@ -337,12 +337,10 @@ public:
   inline  void  RegisterNAV(Tag r)    {rTAG[NAV_INDEX] = r;}      //{rNAV = r;}
   inline  void  RegisterCOM(Tag r)    {rTAG[COM_INDEX] = r;}      //rCOM = r;}
   inline  void  RegisterADF(Tag r)    {rTAG[ADF_INDEX] = r;}      //rADF = r;}
-  inline  void  Register(AutoPilot *p){aPIL = p;}
   inline  Tag   GetNAV()              {return  rTAG[NAV_INDEX];}  //rNAV;}
   inline  Tag   GetCOM()              {return  rTAG[COM_INDEX];}  //rCOM;}
   inline  Tag   GetADF()              {return  rTAG[ADF_INDEX];}  //rADF;}
   inline  Tag   GetRadio(int k)       {return rTAG[k];}
-  inline  AutoPilot *GetAutoPilot()   {return  aPIL;}
   //------------------------------------------------------------------------
   //! send wing deflection to aeromodel
   void          SetWingChannel(CAeroControlChannel *aero);
@@ -355,10 +353,11 @@ public:
   CAcmSpin     *SetSpinner(char e,char *pn) {return (lod)?(lod->AddSpinner(e,pn)):(0);}     // Set spinner part
   //------------ Gear Methods --------------------------------------------------------------
 	void					SetABS(char p)					{whl->SetABS(p);}
-  float         GetBrakeForce(int p)    {return (amp)?(amp->GetBrakeForce(p)):(0);}
+	float         GetBrakeForce(int p)    {return amp->GetBrakeForce(p);}
   char          GetWheelNum()           {return  WOW_nber++;}
   bool          WheelsAreOnGround()     {return whl->WheelsAreOnGround();}
-  char          NbWheelsOnGround()      {return whl->GetNbWheelOnGround();}   
+  char          NbWheelsOnGround()      {return whl->GetNbWheelOnGround();}  
+	bool					AllWheelsOnGround()			{return whl->AllWheelsOnGround();}
   //--------------Aero model management --------------------------------------------------
   const double&             GetWingIncidenceDeg     (void) {return main_wing_incid;}
   const float&              GetWingAoAMinRad        (void) {return main_wing_aoa_min;}
@@ -372,13 +371,12 @@ public:
   virtual void  Simulate          (float dT, U_INT FrNo);				// JSDEV*
   /// Called from Timeslice() to update motion state, using the current
   /// mass, mass distribution and total force as input
-  virtual void  UpdateOrientationState (float dT, U_INT FrNo);
+	virtual void  UpdateOrientationState (float dT, U_INT FrNo) {;}
   // Simulation internals are only available to subclasses
 	virtual void  SetWindPos(double p) {;}
   //-------------------------------------------------------------------------------------
 public:
   // wind angle relative to the wind direction in LH m/s
-  CVector w_dir_for_body;                   
 
   // Vehicle specifications, subsystems, etc.
   char                  upd;                  // Update instrument while in slew
@@ -399,13 +397,13 @@ public:
   CSlopeWindData        *swd;
   CWeightManager        *wgh;
   CVehicleHistory       *hst;
-  CNullSubsystem		    *nSub;            //  Null subsystem to receive message without identified receiver
+  CNullSubsystem		    *nSub;						//  Null subsystem to receive message without identified receiver
   //-----Radio interface --------------------------------------------------------
-  Tag                   rTAG[4];          // Radio TAG: NAV-COM-ADF
-  AutoPilot            *aPIL;             // Autopilot 
+  Tag                   rTAG[4];					// Radio TAG: NAV-COM-ADF
+ 	AutoPilot						 *aPIL;							// Autopilot 
   //-----Sound object collection ------------------------------------------------
   std::map<Tag,CSoundOBJ*> sounds;            // Sound objects related to vehicle
-  //-----Sound interface --------------------------------------------------------
+	//====== METHODS ==============================================================
   inline void  AddSound(CSoundOBJ *so) {sounds[so->GetTag()];}
   //-----Mouse events -----------------------------------------------------------
   inline bool   MouseMove (int x,int y) { return (pit)? (pit->MouseMove(x,y)):(false);}
@@ -414,9 +412,8 @@ public:
   inline const char*        GetPID()                { return (nfo)?(nfo->GetPID()):(0);}
   inline CNullSubsystem*    GetNullSubsystem(void)  { return nSub; }
   inline char              *GetNFOname()            { return nfoFilename;}
-  inline void               GetVisualCG(SVector &v)       {if (wgh) wgh->GetVisualCG(v);}
+  inline void               GetVisualCG(SVector &v) {if (wgh) wgh->GetVisualCG(v);}
   //-----Control management ----------------------------------------------------------------
-	inline  CRobot           *GetRobot()	{return amp->GetRobot(); }
   //----------------------------------------------------------------------------------------
   inline  CAnimatedModel        *GetLOD()     {return lod;}
   inline  CWeightManager        *GetWGH()     {return wgh;}
@@ -427,29 +424,37 @@ public:
   inline float  GetDryWeight()                            {return (wgh)?(wgh->GetDryWeight()):(0);}
   inline float  GetGasWeight()                            {return (wgh)?(wgh->GetGasWeight()):(0);}
   inline float  GetLodWeight()                            {return (wgh)?(wgh->GetLodWeight()):(0);}
-  //---------------------------------------------------------------------------------------
+  //--- Acces to systems ------------------------------------------------------------------
+	inline  void							Register(AutoPilot *p){aPIL = p;}
+	inline  AutoPilot        *GetAutoPilot()	{return  aPIL;}
+	inline  CRobot           *GetRobot()			{return amp->GetRobot(); }
+	inline  CFPlan           *GetFlightPlan() {return amp->GetFlightPlan();}
+	//-----------------------------------------------------------------------------------------
 protected:
-  char   nEng;                             // Engine number
-  float  dihedral_coeff;                   ///< dihedral coeff SVH <dieh>
-  float  acrd_coeff;                       ///< acrd coeff in SVH file
-  float  pitch_coeff;                      ///< pitch coeff SVH <pitd>
-  int    wind_effect;                      ///< flag
-  float  wind_coeff;                       ///< wind coefficient effect
-  float  gear_drag;                        ///< drag from gear
-  float  gear_adjust_height;               ///< adjust gear height
-  bool   user;                             ///< Is this the user vehicle?
-  Tag    vmode;                            ///< View mode (ID of default camera)
-  float  agl_alt;
+  char   nEng;															// Engine number
+	U_CHAR engR;															// Number of running engines
+  float  dihedral_coeff;										///< dihedral coeff SVH <dieh>
+  float  acrd_coeff;												///< acrd coeff in SVH file
+  float  pitch_coeff;												///< pitch coeff SVH <pitd>
+	//--- Wind parameters ----------------------------------------------------------
+  CVector w_dir_for_body;                   
+  int			wind_effect;											///< flag
+  float		wind_coeff;                       ///< wind coefficient effect
+  float		gear_drag;                        ///< drag from gear
   //---Aerodata drawing ----------------------------------------------------------
-  double draw_aero;                        ///< draw aeromodel data for lines lenght
+  float		draw_aero;                        ///< draw aeromodel data for lines lenght
   //---Wheels parameters ---------------------------------------------------------
   char    WOW_nber;                         // Wheel number
   char    rfuw;                             // Reserved
-  double  WextZ;                            // Wheel longitudinal extension 
   //---Wheels functions ----------------------------------------------------------
 public:    
   inline  float GetGSpeed()               {return 0;}
   inline  double GetWBase()               {return whl->GetWBase();}
+	//---Engine interface ----------------------------------------------------------
+	inline  void RazEngR()										{engR	= 0;}
+	inline  void IncEngR()										{engR++;}
+	inline  void DecEngR()										{engR--;}
+	inline  bool AllEngineOn()								{return (engR == eng->GetEngineNbr());}
 protected:
   //--- PLOT parameter table -----------------------------------------------------
   PLOT_PM   plotPM[16];                    // Plot parameters table
@@ -501,11 +506,24 @@ protected:
 //    <bgno>
 //    <endo>
 //=========================================================================================
-class CAirplaneObject : public CVehicleObject {
+class CAirplane : public CVehicleObject {
+protected:
+	//-------Message to aircraft -----------------------------------------------
+  SMessage  Navi;                     // Navigation light message
+  SMessage  Land;                     // Landing light message
+  SMessage  Taxi;                     // Taxi light message
+  SMessage  Strb;                     // Strobe message
+  SMessage  Apil;                     // autopilot
+	//--- Control systems ------------------------------------------------------
+  //-----------Park option ----------------------------------------------------
+  char         park;
+  static       CLogFile *log;
+  U_INT        sound;                 // Crash sound
+	//--- METHODS ---------------------------------------------------------------
 public:
   // Constructors / destructor
-  CAirplaneObject                              (void);
-  virtual ~CAirplaneObject                     (void);
+  CAirplane                              (void);
+  virtual ~CAirplane                     (void);
 
   // CStreamObject methods
   virtual void  ReadFinished (void);
@@ -514,14 +532,10 @@ public:
   virtual void      Print (FILE *f);
 
   // CSimulatedObject methods
-  virtual void Simulate(float dT, U_INT FrNo);		///< Override 
-  virtual void UpdateOrientationState(float dT, U_INT FrNo);		///< Override
+	virtual void Simulate(float dT, U_INT FrNo) {;}		///< Override 
+	virtual void UpdateOrientationState(float dT, U_INT FrNo) {;}		///< Override
   virtual void ResetVehicle();
-  // CVehicleObject methods
-  virtual	double					GetMassInKgs();
-  virtual	const SVector*	GetMomentOfInertia (void);
-  virtual	const SVector*	GetCG              (void);
-  //----JSDEV* Message preparation ----------------------------------------------
+  //----JSDEV* Message preparation --------------------------------------------
   virtual	void			PrepareMsg(void);	// Prepare all subsystem messages
   virtual	bool			FindReceiver(SMessage *msg);			
 			    bool			FindReceiver(SMessage *msg,CElectricalSystem *esys);
@@ -556,7 +570,7 @@ public:
   //-----------------------------------------------------------------------------
   void              BindKeys();
   //-----------------------------------------------------------------------------
-  // CAirplaneObject methods
+  // CAirplane methods
   /// The control surface methods AileronIncr etc. cause the appropriate
   ///   control surface to be deflected "up" or "down" (as defined for that
   ///   particular control) by one step.  Step size is an aircraft-specific
@@ -581,22 +595,22 @@ public:
   //----Flap interface -----------------------------------------------------------
   void         FlapsExtend         (void);      ///< Increment flaps by one step
   void         FlapsRetract        (void);      ///< Retract flaps by one step
-
+	//--- Aileron Trim interface --------------------------------------------------
   void         AileronTrimIncr     (void);      ///< Increment aileron trim one step
   void         AileronTrimDecr     (void);      ///< Decrement aileron trim one step
   void         AileronTrimSet      (float fv);  ///< Set aileron trim value
-
+	//--- Elevator Trim interface --------------------------------------------------
   void         ElevatorTrimIncr    (void);      ///< Increment elevator trim one step
   void         ElevatorTrimDecr    (void);      ///< Decrement elevator trim one step
   void         ElevatorTrimSet     (float fv);  ///< Set elevator trim value
-
+	//--- Rudder Trim interface --------------------------------------------------
   void         RudderTrimIncr      (void);      ///< Increment rudder trim one step
   void         RudderTrimDecr      (void);      ///< Decrement rudder trim one step
   void         RudderTrimSet       (float fv);  ///< Set rudder trim value
   void         GroundBrakes        (U_CHAR b);  ///< Set Ground Brakes on-off
   void         ParkBrake           (void);      ///< set parking brake
   void         GearUpDown          (void);      ///< gear up/down
-
+	//--- Surface position interface --------------------------------------------------
   float        Aileron             (void);      ///< Get aileron position
   float        AileronDeflect      (void);      ///< Get aileron deflection
   float        Elevator            (void);      ///< Get elevator position
@@ -606,22 +620,14 @@ public:
   float        AileronTrim         (void);      ///< Get aileron trim position
   float        ElevatorTrim        (void);      ///< Get elevator trim position
   float        RudderTrim          (void);      ///< Get rudder trim position
+	//--- ACCES TO SUBSYSTEMS --------------------------------------------------
+	inline    void				 VirtualPilot()	{amp->vpil->Start();}
   //------Message interface --------------------------------------------------
   inline    void         SendNaviMsg()  {Send_Message(&Navi);}
   inline    void         SendApilMsg()  {Send_Message(&Apil);}
   inline    int          GetEngNb()     {return amp->pEngineManager->HowMany();}
   //---------------------------------------------------------------------------
   float        Flaps               (void);      ///< Get flaps position
-  //-----------Park option ----------------------------------------------------
-  char         park;
-  static       CLogFile *log;
-  U_INT        sound;                 // Crash sound
-  //-------Message to aircraft -----------------------------------------------
-  SMessage  Navi;                     // Navigation light message
-  SMessage  Land;                     // Landing light message
-  SMessage  Taxi;                     // Taxi light message
-  SMessage  Strb;                     // Strobe message
-  SMessage  Apil;                     // autopilot
 };
 
 //=========================================================================================
@@ -636,7 +642,7 @@ public:
 //    <bgno>
 //    <endo>
 //=========================================================================================
-class CUFOObject : public CAirplaneObject {
+class CUFOObject : public CAirplane {
 public:
   // Constructors / destructor
   CUFOObject                              (void);
@@ -662,7 +668,7 @@ public:
 //    <endo>
 //
 #ifdef HAVE_OPAL
-class COPALObject : public CAirplaneObject {
+class COPALObject : public CAirplane {
 public:
   // Constructors / destructor
   COPALObject                             (void);
@@ -687,7 +693,7 @@ public:
   void  ResetSpeeds();
   void  ResetCrash(char p);
 	//----------------------------------------------------------
-	inline void SetWindPos(double p)	{wind_pos = std::min(p,wind_pos);}
+	void SetWindPos(double p);	
   //----------------------------------------------------------
   // class members
   opal::Solid *Ground;                                              // Ground solid

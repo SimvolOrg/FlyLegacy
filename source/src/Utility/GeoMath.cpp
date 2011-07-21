@@ -654,11 +654,12 @@ double GetReductionFactor(U_INT cz)
 //  Return compensation factor for the latitude
 //-----------------------------------------------------------------------------
 void GetLatitudeFactor(double lat,double &rf,double &cp)
-{ double rad = DegToRad(lat / 3600);
+{ double rad = TC_RAD_FROM_ARCS(lat);			// DegToRad(lat / 3600);
   rf = cos(rad);
   cp = 1/ rf;
   return;
 }
+
 //-----------------------------------------------------------------------------
 //  return the maximum inner circle in feet
 //-----------------------------------------------------------------------------
@@ -788,6 +789,21 @@ double LongitudeInBand(U_INT qx, double lon)
   return (lon - dta);
 }
 //-----------------------------------------------------------------------------
+//	Given geo positions P1 and P2 return angle between
+//	P1 and P2 taking P1 as origin
+//	Compute aqngle relative to geographical north
+//-----------------------------------------------------------------------------
+double GetAngleFromGeoPosition(SPosition &p1,SPosition &p2)
+{	double dlon = LongitudeDifference(p2.lon,p1.lon);
+	double dlat	= p2.lat - p1.lat;
+	double rad  = TC_RAD_FROM_ARCS(p2.lat);
+	double f1   = TC_FEET_FROM_ARCS(dlat);							// Vertical feet
+	double f2   = TC_FEET_FROM_ARCS(dlon) * cos(rad);		// Horizontal feet
+	double alf  = atan2(-f2,f1);												// Arc [-Pi + Pi]
+	double deg  = RadToDeg(alf);
+	return deg;
+}
+//-----------------------------------------------------------------------------
 //  Compute Modulo Band latitude
 //  Qz is the QGT Z index
 /// lat is absolute world latitude
@@ -842,7 +858,7 @@ SVector SubtractPosition(SPosition &from, SPosition &to)
 //-----------------------------------------------------------------------------
 void AddMilesTo(SPosition &pos,double mx,double my)
 { pos.lat   += TC_ARCS_FROM_MILE(my);
-  double rad = DegToRad(pos.lat / 3600);
+  double rad = TC_RAD_FROM_ARCS(pos.lat);				// Latitude in radian
   double cpf = 1 / cos(rad);
   pos.lon   += TC_ARCS_FROM_MILE(mx) * cpf;
   return;
@@ -889,6 +905,27 @@ bool PointInTriangle(CVector &p,CVector &a,CVector &b,CVector &c,CVector &n)
   n.CrossProduct(b,c);                  // Get z positive
   n.Normalize();
   return true;
+}
+//-----------------------------------------------------------------------------
+//  Compute flat distance in nautical miles from aircraft 
+//  position (pos) to destination position(to). 
+//  1 N mile => 1 minute of arc
+//  Vertical and horizontal distances are stored as integer and scaled by a 
+//  factor 128 for better precision in drawing the vactor map.
+//  The short int allows for a +/-256 miles capacity with this factor
+//-----------------------------------------------------------------------------
+float GetRealFlatDistance(CmHead *obj)
+{   SPosition pos = globals->geop;														// Aircraft position
+	  SPosition *To = obj->ObjPosition();
+    double disLat = (To->lat - pos.lat) / 60.0;								// Lattitude Distance in nm
+    double difLon = LongitudeDifference(To->lon,pos.lon);			// Longitude difference in arcsec
+    double disLon = obj->GetNmFactor() * difLon;              // Compute x component
+    obj->SetDistLon(short(disLon * 128));                     // Store longitude component scaled by 128
+    obj->SetDistLat(short(disLat * 128));                     // Store latitude component scaled by 128
+		float  sq     = float((disLon * disLon) + (disLat * disLat));
+    float  ds     = SquareRootFloat(sq);                      // Return real distance
+		obj->SetNmiles(ds);
+		return ds;
 }
 //=========================================================================================
 //  Class GroundSpot:   Info on a ground spot

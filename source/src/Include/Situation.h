@@ -221,7 +221,7 @@ public:
   //----- CSituation methods---------------------------
   void              OpenSitFile();
   void              AdjustCameras();
-  CAirplaneObject  *GetAnAircraft (void);
+  CAirplane  *GetAnAircraft (void);
   CSimulatedObject *GetASimulated (void);
   void              StoreVEH(CVehicleObject *veh);
   void              SetAircraftFrom(char *nfo);

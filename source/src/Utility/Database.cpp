@@ -37,8 +37,8 @@
 #include "../Include/SqlMGR.h"
 #include "../Include/TerrainCache.h"
 #include "../Include/Weather.h"
-#include "../Include/FlightPlan.h"
 #include "../Include/AudioManager.h"
+#include "../include/PlanDeVol.h"
 using namespace std;
 //=====================================================================
 extern double rwyATHR[];
@@ -429,7 +429,7 @@ void CDatabaseOBS::DecodeRecord(U_LONG offset,CmHead *obj)
   d = LittleEndian (d);
   obs->ofrq = float(d);
   //-------------------------------------
-  double lr     = DegToRad (obs->pos.lat / 3600.0);       // Latittude in Radian
+  double lr     = TC_RAD_FROM_ARCS(obs->pos.lat);					//DegToRad (obs->pos.lat / 3600.0); 
   obs->nmFactor = cos(lr) / 60;                           // 1 nm at latitude lr
   return;
 }
@@ -1593,7 +1593,7 @@ CCOM::CCOM(OTYPE qo,QTYPE qa)
 //-----------------------------------------------------------------------
 void CCOM::SetAttributes()
 { comInx = GetComINDEX(ctyp);
-  double lr   = DegToRad (pos.lat / 3600.0);         // Latittude in Radian
+  double lr   = TC_RAD_FROM_ARCS(pos.lat);	//DegToRad (pos.lat / 3600.0);         
   nmFactor = cos(lr) / 60;                           // 1 nm at latitude lr
   return;
 }
@@ -1659,13 +1659,16 @@ CWPT::CWPT(OTYPE qo,QTYPE qa)
 :CmHead(qo,qa)
 {	radial	= 0;
 	nmiles	= 0;
+	wmag		= 0;
+	dsfeet	= 0;
+	user		= 'dbwp';								// Database waypoint
 }
 //-----------------------------------------------------------------
 //  Set additional attributes
 //-----------------------------------------------------------------
 void CWPT::SetAttributes()
-{ double lr   = DegToRad (wpos.lat / 3600.0);      // Latittude in Radian
-  nmFactor = cos(lr) / 60;                           // 1 nm at latitude lr
+{ double lr   = TC_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
+  nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
   return;
 }
 //-----------------------------------------------------------------
@@ -1676,10 +1679,39 @@ void CWPT::SetAttributes()
 void	CWPT::Refresh(U_INT FrNo)
 {	if (NeedUpdate(FrNo) == false)	return;
 	//----compute WPT relative position -------------
-      SVector	v	      = GreatCirclePolar(&globals->geop, &wpos);
-      radial  = Wrap360((float)v.h - wmag);
-	    nmiles  = (float)v.r * MILE_PER_FOOT;
-	    return;
+  SVector	v	      = GreatCirclePolar(&globals->geop, &wpos);
+  radial  = Wrap360((float)v.h - wmag);
+	nmiles  = (float)v.r * MILE_PER_FOOT;
+  dsfeet  =  v.r;
+	return;
+}
+//-----------------------------------------------------------------
+//  Set as flight plan waypoint
+//-----------------------------------------------------------------
+void	CWPT::Init(char *idn,SPosition *pos)
+{	user		= 'uswp';								// User Waypoint
+	wkey[0]	= 0;
+	wcty[0]	= 0;
+	wsta[0]	= 0;
+	strncpy(widn,idn,5);
+	widn[4]	= 0;
+	wloc		= 0;
+	wpos		= *pos;
+	wtyp		= 2;
+	//--- Set reduction factor --------------
+	double lr   = TC_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
+  nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
+	return;
+}
+//-----------------------------------------------------------------
+// Change position
+//-----------------------------------------------------------------
+void CWPT::SetPosition(SPosition p)
+{	wpos = p;
+	//--- Set reduction factor --------------
+	double lr   = TC_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
+  nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
+	return;
 }
 //-----------------------------------------------------------------------
 //	Trace Waypoint
@@ -1709,7 +1741,7 @@ void CNavaid::SetAttributes()
   if (IsNDB())  qAct = NDB;                     // Set Type
   sprintf(efrq,"%3.2f",freq);                   // Edit frequency
   //-------Compute distance reduction factor -----------------   
-  double lr = DegToRad (pos.lat / 3600.0);      // Latittude in Radian
+  double lr = TC_RAD_FROM_ARCS(pos.lat);				//DegToRad (pos.lat / 3600.0);     
   nmFactor  = cos(lr) / 60;                     // 1 nm at latitude lr
   return;
 }
@@ -1750,12 +1782,12 @@ void CNavaid::SetNavIndex()
 void	CNavaid::Refresh(U_INT FrNo)
 {	if (NeedUpdate(FrNo) == false)	return;
 	//----compute Navaid relative position -------------
-      SVector	v	      = GreatCirclePolar(&globals->geop, &pos);
-      radial  = Wrap360((float)v.h - mDev);
-	    nmiles  = (float)v.r * MILE_PER_FOOT;
-      vdzRad  =  globals->geop.alt * TANGENT_7DEG;
-      dsfeet  =  v.r;
-	    return;
+  SVector	v	      = GreatCirclePolar(&globals->geop, &pos);
+  radial  = Wrap360((float)v.h - mDev);
+	nmiles  = (float)v.r * MILE_PER_FOOT;
+  vdzRad  =  globals->geop.alt * TANGENT_7DEG;
+  dsfeet  =  v.r;
+	return;
 }
 //-----------------------------------------------------------------
 //	Check for freq and range match
@@ -1845,8 +1877,8 @@ CAirport::~CAirport()
 //-----------------------------------------------------------------
 void CAirport::SetAttributes()
 { //--------Compute distance reduction factor ------------------
-  double lr   = DegToRad (apos.lat / 3600.0);      // Latittude in Radian
-  nmFactor = cos(lr) / 60;                         // 1 nm at latitude lr
+  double lr   = TC_RAD_FROM_ARCS(apos.lat);				//DegToRad (apos.lat / 3600.0);  
+  nmFactor = cos(lr) / 60;                        // 1 nm at latitude lr
 }
 //-----------------------------------------------------------------
 //	Add a runway
@@ -2058,7 +2090,7 @@ CILS::CILS(OTYPE qo,QTYPE qa)
 //  Set additional attributes
 //------------------------------------------------------------------------
 void  CILS::SetAttributes()
-{ double lr = DegToRad (pos.lat / 3600.0);    // Latittude in Radian
+{ double lr = TC_RAD_FROM_ARCS(pos.lat);			//DegToRad (pos.lat / 3600.0); 
   nmFactor  = cos(lr) / 60;                   // 1 nm at latitude lr
   return;
 }
@@ -2127,7 +2159,7 @@ char CILS::InMARK(SVector &pos, B_MARK &b,CBeaconMark &m)
 void CILS::SetIlsParameters(CRunway *rwy,ILS_DATA *dt, float dir)
 { this->rwy   = rwy;
   rwyDir      = Wrap360(dir - mDev);        // Compute real direction
-  ilsVEC      = Wrap360(dir + 180.f);    // Runway vector
+  ilsVEC      = Wrap360(dir + 180.f);				// Runway vector
   ilsD        = dt;
   ilsD->ils   = this;
   return SetGlidePRM();
@@ -2237,16 +2269,21 @@ void CRunway::SetAttributes()
   ilsD[RWY_HI_END].ils   = 0;
   ilsD[RWY_HI_END].lndP  = pshi;
   ilsD[RWY_HI_END].altT  = alti;
+	//----------------------------
   ilsD[RWY_LO_END].ils   = 0;
   ilsD[RWY_LO_END].lndP  = pslo;
   ilsD[RWY_LO_END].altT  = alti;
+	//----------------------------
   pID[RWY_HI_END].LetID  = GetIdentIndex(rhid[2]);
   pID[RWY_LO_END].LetID  = GetIdentIndex(rlid[2]);
 	pID[RWY_HI_END].pos		 = pshi;
 	pID[RWY_LO_END].pos		 = pslo;
+	//----------------------------
+	pID[RWY_HI_END].opos	 = &pID[RWY_LO_END];
+	pID[RWY_LO_END].opos	 = &pID[RWY_HI_END];
   //-------Compute distance reduction factor -------------
-  double lr   = DegToRad (pshi.lat / 3600.0);      // Latittude in Radian
-  nmFactor = cos(lr) / 60;                         // 1 nm at latitude lr
+  double lr   = TC_RAD_FROM_ARCS(pshi.lat);					//DegToRad (pshi.lat / 3600.0);
+  nmFactor = cos(lr) / 60;													// 1 nm at latitude lr
   return;
 }
 //-----------------------------------------------------------------
@@ -3663,6 +3700,7 @@ CAirport *CDbCacheMgr::FindAPTforILS(char *kapt)
 //  Vertical and horizontal distances are stored as integer and scaled by a 
 //  factor 128 for better precision in drawing the vactor map.
 //  The short int allows for a +/-256 miles capacity with this factor
+//	NOTE: The NmFactor is divided by 60 to convert arsec in nmiles
 //-----------------------------------------------------------------------------
 float CDbCacheMgr::GetFlatDistance(CmHead *obj)
 {   SPosition *To = obj->ObjPosition();
@@ -3680,7 +3718,7 @@ float CDbCacheMgr::GetFlatDistance(CmHead *obj)
 void CDbCacheMgr::GetFeetDistance(int *dx, int *dy,SPosition org, SPosition des)
 {   double disLat = (des.lat - org.lat) / 60.0;               // Lattitude Distance in nm
     double difLon = (des.lon - org.lon);                      // Longitude difference in arcsec
-    double latRad = DegToRad (org.lat / 3600.0);              // Latitude in Radian
+    double latRad = TC_RAD_FROM_ARCS(org.lat);								// Latitude in Radian
     double circle = cos(latRad) * MILE_CIRCUMFERENCE;         // Circle in nm
     double disLon = (circle * difLon) / (3600 * 360);         // Longitude distance in nm
     *dx = int(disLon * FEET_PER_NM);                          // Distance in feet
@@ -3734,10 +3772,10 @@ CWPT* CDbCacheMgr::GetWaypointByKey(char *key)
 //------------------------------------------------------------------------
 //  Get way point from the database
 //------------------------------------------------------------------------
-void CDbCacheMgr::GetFlightPlanWPT(CWayPoint* wpt)
+void CDbCacheMgr::GetFlightPlanWPT(CWPoint* wpt)
 { CmHead* obj = 0;
-  switch(wpt->GetTnod())  {
-  case  'sarw':
+  switch(wpt->GetUser())  {
+  case  'airp':
     obj = GetAirportByName(wpt->GetName());
     wpt->SetDBwpt(obj);
     return;
@@ -3745,7 +3783,7 @@ void CDbCacheMgr::GetFlightPlanWPT(CWayPoint* wpt)
     obj = GetNavaidByNameAndKey(wpt->GetName(),wpt->GetDbKey());
     wpt->SetDBwpt(obj);
     return;
-  case 'wywy':
+  case 'dbwp':
     obj = GetWaypointByKey(wpt->GetDbKey());
     wpt->SetDBwpt(obj);
     return;
@@ -3755,9 +3793,8 @@ void CDbCacheMgr::GetFlightPlanWPT(CWayPoint* wpt)
 //----------------------------------------------------------------
 //  Populate Waypoint from database
 //----------------------------------------------------------------
-void CDbCacheMgr::PopulateNode(CWayPoint *wpt)
-{ if (wpt->IsPopulated()) return;
-  SqlMGR *sqm = globals->sqm;
+void CDbCacheMgr::PopulateNode(CWPoint *wpt)
+{ SqlMGR *sqm = globals->sqm;
   if (gSQL) sqm->GetFlightPlanWPT(wpt); 
   else           GetFlightPlanWPT(wpt);
   return;
@@ -4051,23 +4088,13 @@ CAirport *CDbCacheMgr::FindAPTbyDistance(CAirport *old,float radius)
   float dis;
   CAirport  *apt  = (old)?((CAirport*)old->NextInQ1()):((CAirport*)hd->GetFirst());
   while (apt)
-  { dis = GetFlatDistance(apt);
-    apt->SetPDIS(dis);
+  {	dis = GetRealFlatDistance(apt);
     if (dis <= radius) break;
     apt = (CAirport*)apt->Cnext; 
   }
   //----Unlock airport queue here -----------------------------
   hd->Unlock();
   return apt;
-}
-//=========================================================================
-//  Set NAV coordinates (QGT TILE)
-//=========================================================================
-void CDbCacheMgr::SetQGTinNAV(CNavaid *nav)
-{ U_INT cx;
-  U_INT cz;
-  IndicesInQGT (nav->pos, cx, cz);
-  return;
 }
 //=========================================================================
 //  Find airport for a comm object

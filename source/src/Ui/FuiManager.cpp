@@ -374,6 +374,13 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       // Program quit confirmation dialog
       window = new CFuiConfirmQuit (windowId, "UI/TEMPLATES/FileQuit.win");
       break;
+    //---Error message ----------------------------------------
+    case FUI_WINDOW_ERMSG:
+      windowId  = GenTag();
+      window		= new CFuiErrorMSG (windowId, "UI/TEMPLATES/ERRORMSG.win");
+			window->MoveTo(xPos,yPos);
+      break;
+
     case FUI_WINDOW_SITUATION_LOAD:
       window  = new CFuiWindow (windowId, "UI/TEMPLATES/FileLoadSituation.WIN");
       break;
@@ -727,7 +734,17 @@ void CFuiManager::DrawBrake(char *text, float time,int x, int y)
   noteb->SetText (text);
   noteb->SetActive(time);
 }
-
+//------------------------------------------------------------------------------
+/// Display a error window
+//------------------------------------------------------------------------------
+void CFuiManager::DialogError(char *msg,char *from)
+{	CFuiErrorMSG *win = (CFuiErrorMSG *)CreateFuiWindow(FUI_WINDOW_ERMSG);
+  char *ttl = "ERROR";
+  if (from)	ttl = from;
+	win->SetTitle(ttl);
+	win->Display(msg);
+	return;
+}
 ///=============================================================================
 /// Display an application-specified message to the user in a pop-up box for
 ///   the specified time

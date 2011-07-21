@@ -683,11 +683,6 @@ enum K55_EVENT {
 #define RADIO_FD_SCOM_WP  2
 #define RADIO_FD_SCOM_FP  3
 #define RADIO_FD_NUMBER   4
-//----------SIGNAL TYPE -----------------------------------------------
-#define SIGNAL_OFF 0
-#define SIGNAL_VOR 1
-#define SIGNAL_ILS 2
-#define SIGNAL_COM 4
 //---------SECTOR VOR -------------------------------------------------
 #define VOR_SECTOR_OF 0
 #define VOR_SECTOR_TO 1
@@ -1636,7 +1631,7 @@ typedef enum {
 class CMarkerPanel : public CDependent {
 protected:
   SMessage    rMSG;             // Radio message
-  RADIO_VAL  *Radio;            // primary radio
+  BUS_RADIO  *Radio;            // primary radio
   CBeaconMark outm;             // Outter
   CBeaconMark medm;             // medium
   CBeaconMark inrm;             // inner
@@ -2260,6 +2255,7 @@ public:
   inline  float    Val()   {return data.raw;}
   inline  float Deflect()  {return data.deflect;};
   //--- For autopilot ------------------------------------------
+	inline  void	   Neutral()	{vPID = 0; data.raw = 0;} 
   inline  void     PidValue(double v)   {vPID = v;}
   inline  void     SetMainControl(CAeroControl *c) {Cont = c;}
   //---ATTRIBUTS -----------------------------------------------
@@ -2349,6 +2345,7 @@ public:
   void    TimeSlice (float dT,U_INT FrNo = 0);
   void    NewPosition(int pos);
   void    SetPosition(SMessage *msg);
+	void		SetPosition(int pos);
   // CSubsystem methods
   const char* GetClassName (void) { return "CFlapControl"; }
   EMessageResult  ReceiveMessage (SMessage *msg);
@@ -3426,7 +3423,7 @@ protected:
   } CHFREQ;
   //------------COMMON PARTS -----------------------------------
   U_CHAR      sPower;                           // Power state
-  RADIO_VAL   Radio;                            // Computed values
+  BUS_RADIO   Radio;                            // Computed values
   //------------COM part ---------------------------------------
   U_CHAR      cState;                           // COM state
   RADIO_FLD   comTAB[K155_DCOM_SZ];             // Control field
@@ -3460,9 +3457,10 @@ protected:
   //-----------Flasher --------------------------------------------
   U_CHAR      mskFS;                            // Flasher mask
   //--------------NAVAID objects ------ -----------------------------
-	CNavaid*    VOR;                              // VOR selected
-  CILS*       ILS;                              // ILS selected
-  CCOM*       COM;                              // COM selected
+	CWPT			 *WPT;															// WAy point
+	CNavaid    *VOR;                              // VOR selected
+  CILS       *ILS;                              // ILS selected
+  CCOM       *COM;                              // COM selected
   U_SHORT     OBS;                              // OBS value
   //-----Mouse management ---------------------------------------------
   short    mDir;                                // Mouse direction
@@ -3479,6 +3477,8 @@ public:
   void  TimeSlice (float dT,U_INT FrNo);
   void  Probe(CFuiCanva *cnv);
   virtual float Frequency()  {return 0;}
+	//--- Enter /leave waypoint mode ---------------------------
+	void	ModeWPT(CWPT *wpt);
  //-----------------------------------------------------------
   void  MakeFrequency(RADIO_FRQ *loc);
   void  StoreFreq(RADIO_FRQ *loc, float fq);
@@ -3722,7 +3722,7 @@ protected:
 //==================================================================================
 class CNavigation : public CDependent {
   //----Attributes ----------------------------------------------------
-  RADIO_VAL *radio;
+  BUS_RADIO *radio;
   SMessage   msg;
   //-------------------------------------------------------------------
 public:

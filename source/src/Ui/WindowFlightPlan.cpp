@@ -27,7 +27,7 @@
 #include "../Include/Fui.h"
 #include "../Include/FuiUser.h"
 #include "../Include/FuiParts.h"
-#include "../Include/FlightPlan.h"
+#include "../Include/PlanDeVol.h"
 //==================================================================================
 //
 //  FlightPlan List:  List of available flight plans
@@ -36,7 +36,7 @@
 CFuiListPlan::CFuiListPlan(Tag idn, const char* filename)
 :CFuiWindow(idn,filename,0,0,0)
 { char *erm = "Incorrect FlightPlanList.WIN file";
-  fPlan = globals->fpl;
+	fpln	= globals->pln->GetFlightPlan();
   frame = (U_INT)(-1);
   //-----------Init List of plans ---------------------
   U_INT typ1 = LIST_HAS_TITLE + LIST_NOHSCROLL;
@@ -48,7 +48,7 @@ CFuiListPlan::CFuiListPlan(Tag idn, const char* filename)
   FillChartList();
   mapBOX.SortAndDisplay();
   //-----Locate current plan --------------------------
-  char *key   = fPlan->GetFileName();
+	char *key = fpln->GetFileName();
   allBOX.GoToKey(key);
   //-----List of Charts ------------------------------
 }
@@ -69,11 +69,13 @@ void CFuiListPlan::TitlePlan()
   return;
 }
 //-------------------------------------------------------------------------
-//  Fill the list of plans
+//  Fill the list of plans with file name and description
+//	NOTE:  We create a temporary flight plan (fpn) just to extract
+//				 the description tag
 //-------------------------------------------------------------------------
 void CFuiListPlan::FillPlans()
 { char nfile[MAX_PATH];
-  CFlightPlan fpl(1);
+  CFPlan  fpn(globals->pln);
   CFpnLine *slot = 0;
   char     *ds   = 0;     
   char pn[MAX_PATH];
@@ -90,8 +92,8 @@ void CFuiListPlan::FillPlans()
     { deb++;
       slot->SetFile(deb);
       if (end) *end = 0;
-      fpl.Open(deb);
-      ds = fpl.GetDescription();
+			fpn.Assign(deb,1);
+			ds	= fpn.GetDescription();
       slot->SetName(ds);
       allBOX.AddSlot(slot);
       slot = 0;
@@ -110,14 +112,13 @@ void CFuiListPlan::SelectPlan()
   strncpy(fn,lin->GetFile(),MAX_PATH);
   char *end = strrchr(fn,'.');
   if (end) *end = 0;
-  fPlan->Open(fn);
-  //---Set Initial state ------------------------------
-  fPlan->InitialState();
+	fpln->Assign(fn,0);
   //---Open or refresh detail -------------------------
   CFuiFlightLog *win = globals->dbc->GetLOGwindow();
-  if (win)  return win->Reset();
+  if (win)  win->Reset();
   //---Open the detail window -------------------------
-  globals->fui->CreateFuiWindow (FUI_WINDOW_FPLAN_LOG);
+  else	globals->fui->CreateFuiWindow (FUI_WINDOW_FPLAN_LOG);
+	Close();
   return;
 }
 //-------------------------------------------------------------------------

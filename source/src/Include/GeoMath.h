@@ -109,6 +109,8 @@ double  GetQgtSouthLatitude(short cz);
 double  GetQgtNorthLatitude(short cz);
 float   GetMediumCircle(int tz);
 float   GetFogDensity(int tz);
+//----------------------------------------------------------------
+float GetRealFlatDistance(CmHead *obj);
 double  LongitudeDifference(double f1,double f2);
 SVector SubtractPosition(SPosition &from, SPosition &to);
 U_INT   QgtDifference(U_INT q1,U_INT q2);
@@ -120,6 +122,7 @@ double  GetLatitudeArcs(U_INT tz);
 double  GetLatitudeDelta(U_INT tz);
 double  GetTileSWcorner(U_INT ax,U_INT az,SVector &v);
 double  LongitudeInBand(U_INT qx, double lon);
+double	GetAngleFromGeoPosition(SPosition &p1,SPosition &p2);
 void    GetVertexCoordinates(U_INT vx,U_INT vz,SVector &v);
 void    Add2dPosition(SPosition &p1,SPosition &p2, SPosition &r);
 void    AddMilesTo(SPosition &pos,double mx,double my);
@@ -219,7 +222,7 @@ inline double GetYTRANS(U_CHAR a,U_CHAR q)
 //  return reduction factor
 //-----------------------------------------------------------------------------
 inline double GetReductionFactor(double lat)
-{ double rad = DegToRad(lat / 3600);
+{ double rad = TC_RAD_FROM_ARCS(lat);				// DegToRad(lat / 3600);
   return cos(rad);}
 //-----------------------------------------------------------------------------
 //  Return the band longitude of vertex

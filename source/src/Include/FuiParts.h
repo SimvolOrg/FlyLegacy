@@ -35,6 +35,7 @@ class CSimAxe;
 class CAirport;
 class CWaypoint;
 class C2valSlot;
+class CWPoint;
 //=============================================================================
 extern char *ObjBTN[];
 extern char *AptBTN[];
@@ -231,48 +232,42 @@ public:
 //=============================================================================
 class CFlpLine: public CSlot {
   //-----------Attributes -----------------------------------
-  CWayPoint      *wPnt;               // Current waypoint
+  CWPoint      *wPnt;                 // Current waypoint
   //---------------------------------------------------------
   char            Iden[6];            // Identity
   char            Mark[2];            // Crossed marker
   char            Dist[10];           // Distance
-  char            Sped[10];           // Speed
-  char            Radi[8];            // Radial
-  char            Alti[8];            // Altitude
-  char            Elap[12];           // Elapse time
-  char            Etar[14];           // Arrival time
+  char            Alti[16];           // Altitude
+  char            Elap[16];           // Elapse time
+  char            Etar[16];           // Arrival time
 public:
   //---------------------------------------------------------
-  CFlpLine() : CSlot() {wPnt = 0;*Elap=0; *Etar=0;}
+	CFlpLine(): CSlot() {wPnt = 0;}
   void            Print(CFuiList *w,U_CHAR ln);
   void            Edit();
   //------------inline --------------------------------------
   void            SetIden(char *id)   {strncpy(Iden,id, 5);}
   void            SetMark(char *mk)   {strncpy(Mark,mk, 2);}
   void            SetDist(char *di)   {strncpy(Dist,di,10);}
-  void            SetSped(char *sp)   {strncpy(Sped,sp,10);}
-  void            SetRadi(char *rd)   {strncpy(Radi,rd, 8);}
-  void            SetAlti(char *al)   {strncpy(Alti,al, 8);}
-  void            SetWPT(CWayPoint *w){wPnt = w;}
+  void            SetAlti(char *al)   {strncpy(Alti,al,12);}
+  void            SetWPT(CWPoint *w){wPnt = w;}							// OBSOLETE
   void            SetElap(char *el)   {strncpy(Elap,el,12);}
   void            SetEtar(char *ar)   {strncpy(Etar,ar,14);}
   //---------------------------------------------------------
   char           *GetIden()           {return Iden;}
   char           *GetMark()           {return Mark;}
   char           *GetDist()           {return Dist;}
-  char           *GetSped()           {return Sped;}
-  char           *GetRadi()           {return Radi;}
   char           *GetAlti()           {return Alti;}
   char           *GetElap()           {return Elap;}
   char           *GetEtar()           {return Etar;}
-  CWayPoint      *GetWPT()            {return wPnt;}
+  CWPoint        *GetWPT()            {return wPnt;}						// OBSOLETE
 };
 //=============================================================================
 //  Class CFpnLine to display Flight Plan name
 //=============================================================================
 class CFpnLine: public CSlot {
   //-----------Attributes ----------------------------------
-  char fname[32];
+  char fname[64];
 public:
   CFpnLine() : CSlot() {}
   void            Print(CFuiList *w,U_CHAR ln);
@@ -308,8 +303,9 @@ public:
   inline  U_INT   GetMask()               {return mask;}
   inline  void    SetIndex(RD_COM x)      {comInx = x;}
   //----------------------------------------------------------
-  char        *GetData()             {return data;}
-  char        *GetDfrq()             {return dfrq;}
+  char        *GetData()							{return data;}
+  char        *GetDfrq()							{return dfrq;}
+	char        *GetIdent()							{return irwy;}
   //----------------------------------------------------------
   void  FillCom();
   void  FillILS();
@@ -341,6 +337,7 @@ public:
   void      SetHend(RWEND end)        {Hend = end;}
   void      SetLend(RWEND end)        {Lend = end;}
   void      SetRWID(int k)            {rwid = k;}
+	void			SetILS(CComLine *c);
   void      EditRWY();
   void      AdjustEnd(float scale,short tx,short ty);
   void      ComputeCorner(short mx,short my);
@@ -348,6 +345,7 @@ public:
   void      GetEnd02(int *px,int *py);
   void      GetEnd03(int *px,int *py);
   void      GetEnd04(int *px,int *py);
+	U_CHAR		CheckEnd(char *id,int *px,int *py, char **d);
   //-------------------------------------------------------------
   inline    int GetDXH()    {return Hend.dx;}
   inline    int GetDYH()    {return Hend.dy;}
@@ -732,13 +730,14 @@ public:
   //-------------------------------------------------------------
   inline  int GetTopSlot()  {return hNOD + aLIN - sLIN;}
   //-------------------------------------------------------------
-  inline void   Refresh()           {PrintPage();}
+  inline void   Refresh()           {if (Mother) PrintPage();}
   inline void   LineRefresh()       {PrintFocus();}
   //-------------------------------------------------------------
   inline U_INT  GetSize()           {return Obj.size();}
   inline void   Clear()             {Obj.clear();}
   inline bool   IsEmpty()           {return (Title == Obj.size());}
-  inline bool   OutSide(U_INT No)   {return (No >= Obj.size());}   
+  inline bool   OutSide(U_INT No)   {return (No >= Obj.size());} 
+	inline void   NoTitle()						{Title = 0;}
   //-------------------------------------------------------------
 public:
   CSlot  *GetSelectedSlot(); 
@@ -746,9 +745,58 @@ public:
 
 };
 //==================================================================================
+#define WAPT_MENU_SIZE (17)
+//==================================================================================
+//  CFuiRwyEXT to draw runway
+//==================================================================================
+class CFuiRwyEXT{
+protected:
+	//--- Drawing attributes --------------------------------------------
+	float      scale;												// Map scale                     
+  short       wx;                         // Canva mid dimension
+  short       wy;                         // 
+ 	//--- Runway parameters  ---------------------------------------------
+  int       lExt;                         // Left extremity   (in nautical miles)
+  int       rExt;                         // Right extremity  (dito)
+  int       uExt;                         // top extremity    (dito)
+  int       bExt;                         // Bottom extremity (dito)
+  SPosition oRWY;                         // Origin for position (first runway);
+  int         mx;                         // Point of view
+  int         my;                         // (dito)
+	//-------------------------------------------------------------------
+  CFuiCanva	     *grh;										// Graph windows
+	CFuiPopupMenu	*ptko;										// List of runways for take off
+	CFuiPopupMenu	*plnd;										// List of runways for landing
+	//-------------Runway ends management ---------------------------
+	CFuiGroupBox  *rend;                    // runway end box
+  FL_MENU        men1;                    // Take off menu
+	FL_MENU				 men2;										// Landing menu
+	char          *cMENU[WAPT_MENU_SIZE];	  // item descriptor (char*)
+	void          *pMENU[WAPT_MENU_SIZE];		// Item related
+	//-------------------------------------------------------------------
+	char       *tkoID;											// take off ID
+	char       *lndID;											// Land ID
+	char       *ilsFQ;											// ILS frequency
+	char        ilsTXT[20];									// Landing ils
+	//-------------------------------------------------------------------
+  CListBox		rwyBOX;											// Runway list
+	//--- Methods -------------------------------------------------------
+public:
+	CFuiRwyEXT();
+	void	Init();
+	void	StoreExtremities(short dx, short dy);
+	void	ComputeScale();
+	void	ScaleAllRWY();
+	int   GetRWYspan();
+	void	DrawRunways();
+	//--- Runway end points --------------------------------------------
+	void	InitRunwayEnds();
+};
+//==================================================================================
 //  CLASS Airport Detail to edit Airport parameters
 //==================================================================================
-class CFuiAptDetail: public CFuiWindow
+//==================================================================================
+class CFuiAptDetail: public CFuiRwyEXT, public CFuiWindow
 { //--------------Attributes --------------------------------------
 protected:
   U_CHAR    vers;                         // version 
@@ -761,26 +809,8 @@ protected:
   CDataBaseREQ  Req;
   //-------------Comm management ----------------------------------
   CListBox comBOX;                        // Com list box
-  CListBox rwyBOX;                        // Runway list
   //---------------------------------------------------------------
   CFuiCheckbox  *chk;                     // Checkbox
-  CFuiCanva  *grh;                     // Graphe windows
-  float      scale;                      // Map scale                     
-  short       wx;                         // Canva mid dimension
-  short       wy;                         // 
- 	//------------------DETAIL AIRPORT management -------------------------
-  int       lExt;                         // Left extremity   (in nautical miles)
-  int       rExt;                         // Right extremity  (dito)
-  int       uExt;                         // top extremity    (dito)
-  int       bExt;                         // Bottom extremity (dito)
-  SPosition oRWY;                         // Origin for position (first runway);
-  int         mx;                         // Point of view
-  int         my;                         // (dito)
-  //---------------------------------------------------------------------
-  CFuiPopupMenu *aPop;                    // Arrival Popup
-  FL_MENU        aMenu;                   // Arrival menu
-  CFuiPopupMenu *dPop;                    // Departure Popup
-  FL_MENU        dMenu;                   // Departure menu
   //-----LIGHT PROFILE MANAGEMENT ---------------------------------------
   CRunway       *cRwy;                    // Current runway in modification
   CRLP          *cRpf;                    // Runway profile
@@ -827,88 +857,85 @@ public:
    void   Terminate();
   //----Light profile ----------------------------------------------
   void    InitLightProfile();
-  void    DrawProfile(U_INT Nr);
+  void    DrawProfile();
   void    LockAll();
   void    UnlockAll();
   void    ChangeProfile(CFuiPopupMenu &pop,int No);
   //----inline methods ---------------------------------------------
   inline  void     SetWayPointNo(U_SHORT No) {wptNo  = No;}
   inline  U_SHORT  GetWayPointNo()           {return wptNo;}
-  //----------------------------------------------------------------
-  void  SetArrPopTitle(U_INT No);
-  void  EditPopArrival();
-  void  SetDepPopTitle(U_INT No);
-  void  EditPopDeparture();
-  //-------------Edit methods --------------------------------------
-  void  StoreExtremities(short dx, short dy);
-  int   GetRWYspan();
   //-------------Notifications -------------------------------------
   void  NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
   void  NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn);
-  bool  OpenPrevDetail();
-  bool  OpenNextDetail();
   bool  TuneRadioCom();
-  //------------Drawing runways ----------------------------------
-  void  ComputeScale();
-  void  ScaleAllRWY();
-  void  DrawRunways();
   //------------Database Management ------------------------------
   void  AddDBrecord(void *rec,DBCODE code);
   //--------------------------------------------------------------
   inline void SetRunwayVersion()  {vers = 1;}
-  inline void SetFtPlanVersion()  {vers = 2;}
 };
 //==================================================================================
 // Detail of current FLIGHT PLAN
 //==================================================================================
-class CFuiFlightLog : public CFuiWindow
+class CFuiFlightLog : public CFuiRwyEXT, public CFuiWindow
 { //------------Attributes ---------------------------------------
-  CFlightPlan       *fplan;                 // Flight Plan
-  CWayPoint         *wpt;                   // Waypoint to edit
+	CFPlan             *fpln;									// Flight plan
   //-----------Title line ----------------------------------------
-  CFlpLine            ttl;                  // Title
-  //-----------Title line ----------------------------------------
+  CRwyLine           *line;                 // Current line
+  //--------------------------------------------------------------
   CFuiLabel          *eWIN;                 // Error Label
+	CFuiLabel          *ilsF;                 // ils frequency
+  //-------------Database Request ---------------------------------
+  CDataBaseREQ  Req;
   //-----------Vertical list box ---------------------------------
-  CListBox           *flpBOX;
+  CListBox           *flpBOX;								// Node list
   //----------Edit fields ----------------------------------------
   CFuiTextField       *nWIN;                // Name window
   CFuiTextField       *dWIN;                // Description
-  CFuiTextField       *sWIN;                // Speed
-  CFuiTextField       *rWIN;                // Remaining distance
+	//--- Altitude components --------------------------------------
+	CFuiTextField       *wALT;								// Altitude edit
   //----------Waypoint management --------------------------------
   CObjPtr            selOBJ;                // Selected object pointer
   U_INT               noWPT;                // Waypoint number
   QTYPE               tyWPT;                // Waypoint type
-  CWayPoint        *obWPT;                  // WayPoint object
+	CWPoint            *sWPT;									// Selected waypoint
+	//--- METHODS --------------------------------------------------
 public:
   //------------Methods ------------------------------------------
    CFuiFlightLog(Tag idn, const char *filename);
   ~CFuiFlightLog(void);
-  bool    FreeObject();
   //------------Notification -------------------------------------
   bool    OpenDetail();
   void    OpenDirectory();
   void    CloseMe();
+	void		ChangeFileName();
   bool    NotifyFromDirectory(CmHead *obj);
   void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
+	void		NotifyFromPopup (Tag idm,Tag itm,EFuiEvents evn);
   //------FlightPlan management-----------------------------------
   void    FillCurrentPlan();
-  void    Refresh();
+	void		Select();
+	//--- Runway management --------------------------------------
+	void		GetRunway();
+	void		AddDBrecord(void *rec,DBCODE cd);
+	void		EndOfRequest(CDataBaseREQ *req);
   //------------Waypoint management ------------------------------
   void    CreateAPTwaypoint();
   void    CreateNAVwaypoint();
-  void    InsertWaypoint(CWayPoint *wp);
+	void		CreateWPTwaypoint();
+  void    InsertWaypoint(CWPoint *wp);
   void    DeleteWaypoint();
   void    MoveUpWaypoint();
   void    MoveDwWaypoint();
   void    Error1();
   void    Error2();
   void    Error3();
+	void		Error4();
+	void		ModifAlti(int inc);
   //--------------------------------------------------------------
   bool    ValidInsert();
   //--------------------------------------------------------------
   inline  void  Reset()   {FillCurrentPlan();}
+	inline  void  Refresh()	{flpBOX->Refresh();}
   //--------------------------------------------------------------
   void    Draw();
 };
@@ -919,7 +946,7 @@ public:
 class CFuiListPlan : public CFuiWindow
 { //------------Attributes ---------------------------------------
   U_INT               frame;
-  CFlightPlan         *fPlan;               // Flight Plan
+	CFPlan						 *fpln;									// Airplane FlightPlan
   //----------List of plans --------------------------------------
   CListBox            allBOX;
   //----------List of Charts -------------------------------------
@@ -928,7 +955,7 @@ class CFuiListPlan : public CFuiWindow
   CObjPtr            selOBJ;                // Selected object pointer
   U_INT               noWPT;                // Waypoint number
   QTYPE               tyWPT;                // Waypoint type
-  CWayPoint        *obWPT;                // WayPoint object
+  CWPoint            *obWPT;                // WayPoint object
   float               speed;                // average Cruise speed
   float               alti;                 // average ceiling
 public:
@@ -1159,6 +1186,7 @@ public:
   //------NOTIFICATIONS ---------------------------------------------------
   void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 };
+
 //==========================================================================================
 //  TERRA BROWSER
 //==========================================================================================
