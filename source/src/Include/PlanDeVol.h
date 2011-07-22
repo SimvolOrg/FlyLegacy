@@ -216,6 +216,7 @@ private:
   //----------Logical state --------------------------------------
   U_CHAR          State;                      // State
   //--------------------------------------------------------------
+	Tag							format;											// Actual format
 	char						genWNO;											// Waypoint number
   char            option;                     // 1=>Just descriptor
   char            modify;                     // Modified indicator
