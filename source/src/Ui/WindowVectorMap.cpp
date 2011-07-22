@@ -1318,11 +1318,9 @@ int CFuiVectorMap::SetRWYends(char k)
   for (rwy = (CRunway*)qhd->GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
   { char *end = rwy->GetHiEnd();
 		smen.aText[k]	= end;
-		smen.aItem[k]	= rwy->GetEndDEF(RWY_HI_END);
 		k++;
 		end	= rwy->GetLoEnd();
 		smen.aText[k]	= end;
-		smen.aItem[k]	= rwy->GetEndDEF(RWY_LO_END);
 		k++;
   }
   return k;
@@ -1442,21 +1440,8 @@ int CFuiVectorMap::ClickWptOBJM(short itm)
 //  Position aircraft for start on runway
 //---------------------------------------------------------------------------------
 int CFuiVectorMap::StartonRWY(short itm)
-{ RwyID *end		= (RwyID*)	smen.aItem[itm];
-  SPosition pos = end->pos;
-	CVehicleObject *veh = globals->sit->uVeh;
-  if (0 == veh)											return 1;
-  globals->tcm->Teleport(pos);
-	CVector ori   = veh->GetOrientation();
-	ori.z					= DegToRad(end->aRot);
-	ori.x					= 0;
-	ori.y					= 0;
-	veh->SetOrientation(ori);
-	veh->SetPhysicalOrientation(ori);
-	//--- Set Autopilote temporary ----------
-	RwyID *opo    = end->opos;
-	globals->apm->SetRunwayEnd(&opo->pos);
-	globals->pln->GetAutoPilot()->SetGroundMode(&opo->pos);
+{ char *idn = smen.aText[itm];
+	globals->apm->SetOnRunway(obAirp,idn);
 	return 1;
 }
 //---------------------------------------------------------------------------------
