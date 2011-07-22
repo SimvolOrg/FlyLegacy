@@ -2940,6 +2940,48 @@ bool CAirportMgr::AreWeAt(char *key)
 	return false;
 }
 //----------------------------------------------------------------------------------
+//	Check if we are at airport defined by key
+//----------------------------------------------------------------------------------
+RwyID *CAirportMgr::LocateEND(CAirport *apt,char *idn)
+{ ClQueue  *qhd = apt->GetRWYQ();
+  CRunway *rwy;
+	char    *idr;
+	RwyID   *res = 0;
+  for (rwy = (CRunway*)qhd->GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
+	{	idr  = rwy->GetHiEnd();
+	  if (strcmp(idn,idr)==0) {res = rwy->GetEndDEF(RWY_HI_END); break;}
+		idr  = rwy->GetLoEnd();
+		if (strcmp(idn,idr)==0) {res = rwy->GetEndDEF(RWY_LO_END); break;}
+	}
+	return res;
+}
+//----------------------------------------------------------------------------------
+//	Position aircarft at the runway threshold
+//----------------------------------------------------------------------------------
+bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
+{	CAirport *dep = (nApt)?(nApt->GetAirport()):(0);
+	if (apt)	dep = apt;
+	if (0 == dep)		return false;
+	//------------------------------------------------
+	RwyID *end		= LocateEND(apt,idn);
+	if (0 == end)		return false;
+  SPosition pos = end->pos;
+	CAirplane *pln = globals->pln;
+  if (0 == pln)		return false;
+  globals->tcm->Teleport(pos);
+	CVector ori   = pln->GetOrientation();
+	ori.z					= DegToRad(end->aRot);
+	ori.x					= 0;
+	ori.y					= 0;
+	pln->SetOrientation(ori);
+	pln->SetPhysicalOrientation(ori);
+	//--- Set Autopilote temporary ----------
+	RwyID *opo    = end->opos;
+	SetRunwayEnd(&opo->pos);
+	pln->GetAutoPilot()->SetGroundMode(&opo->pos);
+	return true;
+}
+//----------------------------------------------------------------------------------
 //	Bind buffer
 //----------------------------------------------------------------------------------
 void CAirportMgr::bindVBO()
