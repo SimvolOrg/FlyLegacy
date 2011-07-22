@@ -520,7 +520,10 @@ public:
   void    TimeSlice(float dT);                // Update Airport List
 	void		bindVBO();
 	void		SaveNearest(CAptObject *apo);
+	//--- EXTERNAL INTERFACE ------------------------------------------
 	bool		AreWeAt(char *key);
+	RwyID  *CAirportMgr::LocateEND(CAirport *apt,char *idn);
+	bool		SetOnRunway(CAirport *apt,char *idn);
   //----AIRPORT BUILDING --------------------------------------------
   int       SetRunwayProfile(CAirport *apt);
   void      AddProfile(RWY_EPF &epf);

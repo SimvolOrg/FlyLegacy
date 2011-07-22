@@ -1522,9 +1522,10 @@ public:
   inline double     GetAltitude()      {return apos.alt;}
   inline char *     GetIdentity()      {return (*afaa)?(afaa):(aica);}
   //-----------------------------------------------------------------
+	ClQueue    *GetRWYQ()								 {return &rwyQ;}
   CRunway    *GetNextRunway(CRunway *rwy);      // Get next runway
   //-----------------------------------------------------------------
-  bool        HasRunway()               {return rwyQ.NotEmpty();}
+  bool        HasRunway()              {return rwyQ.NotEmpty();}
   //------------------------------------------------------------------
 };
 //================================================================================
