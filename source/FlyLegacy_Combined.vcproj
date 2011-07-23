@@ -818,6 +818,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\Subsystems\BlackBox.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Include\BlackBox.h"
+				>
+			</File>
+			<File
 				RelativePath="src\Subsystems\ControlSubsystems.cpp"
 				>
 				<FileConfiguration
@@ -1014,6 +1022,14 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\src\Subsystems\PlanDeVol.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Include\PlanDeVol.h"
+				>
+			</File>
+			<File
 				RelativePath="src\Subsystems\RadioSubsystems.cpp"
 				>
 				<FileConfiguration
@@ -1032,6 +1048,14 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\Subsystems\Robot.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Include\Robot.h"
+				>
 			</File>
 			<File
 				RelativePath="src\Subsystems\SimulationSubsystems.cpp"
@@ -1195,30 +1219,6 @@
 			</File>
 			<File
 				RelativePath="src\Include\FlyLegacy.h"
-				>
-			</File>
-			<File
-				RelativePath="src\Main\FrameRateTracker.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\Include\FrameRateTracker.h"
 				>
 			</File>
 			<File
@@ -2190,6 +2190,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\Ui\WindowTerraEditor.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\Ui\WindowVectorMap.cpp"
 				>
 			</File>
@@ -2222,11 +2226,19 @@
 			Name="Sqlite"
 			>
 			<File
+				RelativePath=".\src\sqlite\shell.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\SQLite\sqlite3.c"
 				>
 			</File>
 			<File
 				RelativePath=".\src\SQLite\sqlite3.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sqlite\sqlite3ext.h"
 				>
 			</File>
 		</Filter>
