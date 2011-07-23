@@ -640,7 +640,7 @@ void InitGlobalsNoPodFilesystem (char *root)
    //MEMORY_LEAK_MARKER ("opal::createSimulator end")
    opal::Vec3r g (0.0f, 0.0f, -(GRAVITY_MTS));
    globals->opal_sim->setGravity (g);
-   float step_size = ADJ_STEP_SIZE;          // 0.02f;
+   float step_size = ADJ_STEP_SIZE;          // 0.04f;
    GetIniFloat ("PHYSICS", "adjustStepSize", &step_size);
    globals->opal_sim->setStepSize (step_size); // was 0.02
    DEBUGLOG ("InitGlobalsNoPod step_size=%f", step_size);
