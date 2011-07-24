@@ -651,6 +651,10 @@ void InitGlobalsNoPodFilesystem (char *root)
    globals->sBar = 0;
    globals->status_bar_limit = 0.5f;
    GetIniFloat ("Sim", "statusBarDeltaSec", &globals->status_bar_limit);
+   globals->fps_limiter = true;
+   char buff_ [8] = {0};
+   GetIniString ("Sim", "fpsLimiter", buf_, 8);
+   if (!strcmp (buff_, "false")) globals->fps_limiter = false;
 
    // CAGING
    globals->caging_fixed_sped = false;
@@ -1006,28 +1010,31 @@ int RedrawSimulation ()
   // Call the time manager to indicate that another cycle is occurring.
   //   This represents the redraw cycle, not necessarily the simulation
   //   cycle, though at present they are coupled.
-  //   was :
-  //   globals->tim->Update ();
-  //   dSimT  = globals->tim->GetDeltaSimTime();
-  //   dRealT = globals->tim->GetDeltaRealTime();
-  //   globals->dST = dSimT;
-  //   globals->dRT = dRealT;
-  //
-  while (tmp_timerS < FPS_LIMIT) { // start basic fps limiter
+  //   
+  if (globals->fps_limiter)
+  {
+    while (tmp_timerS < FPS_LIMIT) { // start basic fps limiter
+      globals->tim->Update ();
+      dSimT  = globals->tim->GetDeltaSimTime();
+      dRealT = globals->tim->GetDeltaRealTime();
+      tmp_timerS += dSimT;
+      tmp_timerR += dRealT; 
+    } // end basic fps limiter
+    dSimT = tmp_timerS;
+    globals->tim->SetDeltaSimTime (dSimT);
+    globals->dST = dSimT;
+    tmp_timerS -= FPS_LIMIT;
+    dRealT = tmp_timerR;
+    globals->tim->SetDeltaRealTime (dRealT);
+    globals->dRT = dRealT;
+    tmp_timerR = tmp_timerS;
+  } else {
     globals->tim->Update ();
     dSimT  = globals->tim->GetDeltaSimTime();
     dRealT = globals->tim->GetDeltaRealTime();
-    tmp_timerS += dSimT;
-    tmp_timerR += dRealT; 
-  } // end basic fps limiter
-  dSimT = tmp_timerS;
-  globals->tim->SetDeltaSimTime (dSimT);
-  globals->dST = dSimT;
-  tmp_timerS -= FPS_LIMIT;
-  dRealT = tmp_timerR;
-  globals->tim->SetDeltaRealTime (dRealT);
-  globals->dRT = dRealT;
-  tmp_timerR = tmp_timerS;
+    globals->dST = dSimT;
+    globals->dRT = dRealT;
+  } 
   // Accumulate frame rate statistics every second
   nFrames++;
   tFrames += dRealT;
