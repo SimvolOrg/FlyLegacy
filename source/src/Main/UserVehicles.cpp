@@ -431,8 +431,10 @@ void CSimulatedVehicle::PrintInfo (int bar_cycle)
     rpm           = float(mRpm.realData);
 
     char buff [256] = {0};
-    _snprintf (buff,255, "Alt = %-5.0f\t\t  Speed = %-4.0f\t\t Vsi = %-5.0f\t\t Yaw = %-3.0f\t\t Rpm = %-5.0f",
-      altitude, speed, vert_speed, magn_compass, rpm);
+    int fps = 0;
+    if (globals->dST) fps = 1 / globals->dST;
+    _snprintf (buff,255, "Alt = %-5.0f\t\t  Speed = %-4.0f\t\t Vsi = %-5.0f\t\t Yaw = %-3.0f\t\t Rpm = %-5.0f\t\t fps = %03d",
+      altitude, speed, vert_speed, magn_compass, rpm, fps);
     DrawNoticeToUser (buff, 1.0f);
   }
   //

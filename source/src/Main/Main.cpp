@@ -653,7 +653,7 @@ void InitGlobalsNoPodFilesystem (char *root)
    GetIniFloat ("Sim", "statusBarDeltaSec", &globals->status_bar_limit);
    globals->fps_limiter = true;
    char buff_ [8] = {0};
-   GetIniString ("Sim", "fpsLimiter", buf_, 8);
+   GetIniString ("Sim", "fpsLimiter", buff_, 8);
    if (!strcmp (buff_, "false")) globals->fps_limiter = false;
 
    // CAGING
