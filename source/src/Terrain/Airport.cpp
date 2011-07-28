@@ -987,7 +987,6 @@ void CAptObject::BuildRunwayLight(CRunway *rwy)
   //---Build threshold bars -------------------------
   ThresholdBarLights(rwy);
   WingBarLights(rwy);
-//  TouchDWLights(rwy);
   ApproachLight(rwy);
   return;
 }
@@ -2479,7 +2478,7 @@ int CAirportMgr::SetRunwayProfile(CAirport *apt)
   CRLParser prs(this,apt->GetAptName());      // Read user profiles
   CRunway  *rwy = 0;
   for (rwy = apt->GetNextRunway(rwy); rwy != 0;rwy = apt->GetNextRunway(rwy))
-  { if (rwy->HasProfile())  return 0;
+	{ if (rwy->HasProfile())  {CRLP *old = rwy->GetRLP(); delete old;} //return 0;
     //---Build the runway default profile -----------------------
     CRLP    *lpf = new CRLP(rwy);             // Build runway light profile
     //----Locate Hi and Lo user profile -------------------------
@@ -2854,8 +2853,6 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
   strcpy(txf.path,"ART/YLWMARK.BMP");
   img.GetAnyTexture(txf);
 	xOBJ	= globals->txw->GetTexOBJ(txf,0,GL_RGBA);
-	//--- Nearest airport ----------------------------
-	nApt	= 0;
   //--- Aicraft icon -------------------------------
   avion   = new CPicQUAD();
   avion->GetBitmap("ART/PICON.BMP");
