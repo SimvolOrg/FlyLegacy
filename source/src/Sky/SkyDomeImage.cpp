@@ -602,6 +602,7 @@ void CSkyDomeImage::GetDomeColour (float theta, float phi, float &r, float &g, f
 
   // Linearly interpolate point A between vertices of upper row (stack-1)
   int indexA = ((stack-1) * SKYDOME_SLICES) + slice;
+	if (indexA > nDomeVertices) indexA = nDomeVertices - 1;
   sgVec3 A;
   sgCopyVec3 (A, &domeColour[indexA*3]);
   sgScaleVec3 (A, (1.0-s));
@@ -609,6 +610,8 @@ void CSkyDomeImage::GetDomeColour (float theta, float phi, float &r, float &g, f
 
   // Linearly interpolate point B between vertices of lower row (stack)
   int indexB = (stack * SKYDOME_SLICES) + slice;
+	if (indexB > nDomeVertices) indexB = nDomeVertices - 1;
+
   sgVec3 B;
   sgCopyVec3 (B, &domeColour[indexB*3]);
   sgScaleVec3 (B, (1.0-s));
