@@ -391,6 +391,7 @@ void VPilot::ChangeWaypoint()
   Radio->TuneNavTo(frq,1);						// Tune radio to nav
 	Radio->ModeEXT(0);									// Set internal mode
 	float dir = wayP->GetDirection();
+	TRACE("VPL: Ref dir=%.2f",dir);
 	Radio->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wayP->GetAltitude());

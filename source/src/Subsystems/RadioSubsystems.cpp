@@ -363,7 +363,9 @@ int CRadio::IncXOBS(short inc)
 void CRadio::ChangeRefDirection(float d)
 {	CmHead *sys = Radio.nav;
 	if (sys)	sys->SetRefDirection(d);
-	return Synchronize();
+	Radio.SetOBS(d);
+	Synchronize();
+	TRACE("RADIO: Ref dir=%.2f",Radio.hREF);
 }
 //--------------------------------------------------------------------------
 //  Maintain all values
