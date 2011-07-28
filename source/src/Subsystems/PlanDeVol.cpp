@@ -45,9 +45,11 @@ CWPoint::CWPoint(CFPlan *fp,Tag t) : CSlot()
   Legdis    = 0;
   disTot    = 0;
 	oMrk			= 0;
+	ilsF			= 0;
 	strcpy(tkoRWY,"NONE");
 	strcpy(lndRWY,"NONE");
 	strcpy(dbKey, "NONE");
+ *Dirt = 0;
 	//-------------------------------------------------
   ClearDate(artime);
   elapse.dYears   = 0;
@@ -133,8 +135,16 @@ void CWPoint::SetPosition(SPosition p)
 	if (0 == obj)					return;
 	if (obj->IsNot(WPT))	return;
 	CWPT *wpt = (CWPT *)obj;
-	p.alt			= altitude;
 	wpt->SetPosition(p);
+	return;
+}
+//-----------------------------------------------------------
+//	Set Direction
+//-----------------------------------------------------------
+void CWPoint::SetDirection(double d)
+{	rDir = d;
+	_snprintf(Dirt,4,"%03d",int(d));
+	Dirt[3] = 0;
 	return;
 }
 //-----------------------------------------------------------
@@ -167,7 +177,7 @@ int CWPoint::Read (SStream *stream, Tag tag)
 	case 'type':
   case 'user':
     ReadTag (&user, stream);
-		TagToString(txt,user);
+		TagToString(userT,user);
     return TAG_READ;
 
   case 'name':
@@ -208,6 +218,11 @@ int CWPoint::Read (SStream *stream, Tag tag)
 	case 'land':
 		ReadString(lndRWY,4,stream);
 		lndRWY[4]	= 0;
+		return TAG_READ;
+
+	//--- ILS Frequency -----------------------
+	case 'ILS_':
+		ReadFloat(&ilsF,stream);
 		return TAG_READ;
 
 	//--- Take off runway ----------------------
@@ -296,7 +311,7 @@ void CWPoint::NodeEnd(CWPoint *prv)
 // Populate a usr waypoint
 //-----------------------------------------------------------------
 void CWPoint::UserWaypoint()
-{	CWPT	*nod = fplan->GetUserWPT(&position);
+{	CWPT	*nod = fplan->CreateUserWPT(&position);
 	nod->SetIDN(Iden);
 	nod->SetDIS(Legdis);
 	nod->SetNOD(this);
@@ -383,23 +398,20 @@ void CWPoint::SetLegDistance(float d)
 //-----------------------------------------------------------------
 //	Outside waypoint
 //-----------------------------------------------------------------
-void CWPoint::Outside()
-{ SVector v;
-	double wmag	= DBwpt->GetMagDev();
-	v	= GreatCirclePolar(&globals->geop, &position);
-	pDis	= v.r * MILE_PER_FOOT;
-	pDir  = Wrap360(v.h - wmag);
-	if (pDis > 2.0)		return;
+bool CWPoint::Outside()
+{	if (pDis > 2.0)		return true;
 	//--- we are now inside --------------
 	State = WPT_STA_INS;
 	strcpy(Mark,"O");
-	return;
+	fplan->Refresh();
+	return true;
 }
 //-----------------------------------------------------------------
 //  Return Arrival time
 //-----------------------------------------------------------------
 void CWPoint::EditArrival()
-{ int hh = artime.time.hour;
+{ artime = globals->tim->GetUTCDateTime();
+	int hh = artime.time.hour;
   int mn = artime.time.minute;
   int dd = artime.date.day;
   int mo = artime.date.month;
@@ -409,26 +421,24 @@ void CWPoint::EditArrival()
 //-----------------------------------------------------------------
 //	Inside waypoint
 //-----------------------------------------------------------------
-void CWPoint::Inside()
-{	SVector v;
-  double  p = pDis;
-	double wmag	= DBwpt->GetMagDev();
-	v	= GreatCirclePolar(&globals->geop, &position);
-	pDis	= v.r * MILE_PER_FOOT;
-	pDir  = Wrap360(v.h - wmag);
-	if (p > pDis)			return;
+bool CWPoint::Inside()
+{ if (pDis > 0.75)			return true;
 	//--- Waypoint is terminated now ------
 	State = WPT_STA_TRM;
 	strcpy(Mark,"X");
-	artime = globals->tim->GetUTCDateTime();
-	return;
+	EditArrival();
+	fplan->Refresh();
+	return false;
 }
 //-----------------------------------------------------------------
 //	Update current node
 //-----------------------------------------------------------------
-void CWPoint::Update()
-{	
+bool CWPoint::Update()
+{	//--- compute distance to aircraft ---------
+	CmHead *obj = DBwpt.Pointer();
+  float dis = GetRealFlatDistance(obj); 
 	//--- update according to state ------------
+  pDis  = double(dis);
 	switch(State)
 	{	//--- We still are outside -----
 		case WPT_STA_OUT:
@@ -436,7 +446,7 @@ void CWPoint::Update()
 	  case WPT_STA_INS:
 			return Inside();
 	}
-	return;
+	return false;
 }
 //------------------------------------------------------------
 //  Save this waypoint
@@ -466,6 +476,10 @@ void CWPoint::Save(SStream *s)
 	WriteString(tkoRWY,s);
 	WriteTag('land', "---Landing runway ------------", s);
 	WriteString(lndRWY,s);
+	if (ilsF != 0) 
+	{	WriteTag('ILS_', "---ILS FREQUENCY -------------", s);
+		WriteFloat(&ilsF,s);
+	}
   WriteTag('mark', "---Terminated mark- ----------", s);
   WriteString(mrk,s);
   WriteTag('endo', "========== END OBJECT ============", s);
@@ -481,6 +495,7 @@ void CWPoint::Print(CFuiList *w,U_CHAR ln)
   w->AddText(ln, 3,24,Name);
   w->AddText(ln,18, 5,Iden); 
   w->AddText(ln,22,10,Dist);
+	w->AddText(ln,30, 4,Dirt);
   w->AddText(ln,34,12,Alti);
   w->AddText(ln,41,12,Elap);
   w->AddText(ln,48,14,Etar);
@@ -496,15 +511,13 @@ CFPlan::CFPlan(CVehicleObject *m)
   serial	= 0;
 	State		= FPL_STA_NUL;
 	modify	= 0;
-// *Name    = 0;										// File name
-// *Desc		= 0;										// Description
-//  Version = 0;                    // Version
 	//---Init title ---------------------------------
   head.FixeIt();
   head.SetName("Waypoint name");
   head.SetMark("X");
   head.SetIden("Ident");
   head.SetDist("Dis (nm)");
+	head.SetDirt("Cap to");
   head.SetAlti("Alti(ft)");
   head.SetElap("Elapse");
   head.SetEtar("Arrival");
@@ -585,13 +598,27 @@ void CFPlan::AddNode(CWPoint *wpt)
 	return;
 }
 //-----------------------------------------------------------------
+// Read format
+//-----------------------------------------------------------------
+void CFPlan::ReadFormat(SStream *stream)
+{	char txt[128];
+  char fm[10];
+	int  pm = 0;
+	ReadString(txt,128,stream);
+	int nf = sscanf(txt,"wpno = %d , format=%[^ ]s",&pm,fm);
+	if (nf != 2)		return;
+	format = StringToTag(fm);
+	genWNO = pm;
+	return;
+}
+//-----------------------------------------------------------------
 //  Read all tags
 //	When option is set, we are just interested by the description
 //-----------------------------------------------------------------
 int CFPlan::Read (SStream *stream, Tag tag)
 { switch (tag) {
 	case 'form':
-		ReadTag(&format,stream);
+		ReadFormat(stream);
 		return TAG_READ;
   case 'desc':
 		if (format != 'FM01') return TAG_EXIT;
@@ -601,7 +628,10 @@ int CFPlan::Read (SStream *stream, Tag tag)
   case 'vers':
     ReadInt((int*)(&Version),stream);
     return TAG_READ;
-
+	case 'ceil':
+		ReadInt(&cALT,stream);
+		return TAG_READ;
+	//--- Waypoint description ---------------
   case 'wpnt':
     // Read flight plan waypoint sub-object
     { if (option) return TAG_EXIT;
@@ -609,10 +639,9 @@ int CFPlan::Read (SStream *stream, Tag tag)
       ReadTag (&tp, stream);
 			CWPoint *wp     = new CWPoint(this,tp);
       ReadFrom (wp, stream);
-
 			//--- Add a node ---------------------
 			wp->Edit();
-			//---Add a new slot ---------------------
+			//---Add a new slot ------------------
 			AddNode(wp); 
 			return TAG_READ;
 		}
@@ -634,11 +663,16 @@ void CFPlan::ReadFinished()
 //----------------------------------------------------------------------
 void CFPlan::SetDistance(CWPoint *p0, CWPoint *p1)
 {	SVector v = {0,0,0};
-	if (0 == p1)	return p0->SetLegDistance(0);
+	if (0 == p0)	return p1->SetLegDistance(0);
 	//--- compute real distance ----------------
 	v	= GreatCirclePolar(p0->GetGeoP(), p1->GetGeoP());
 	float d = float(v.r) * MILE_PER_FOOT;
-	p0->SetLegDistance(d);
+	//--- distance to previous -----------------
+	p1->SetLegDistance(d);
+	//--- direction to p1 ----------------------
+	double mdev = p1->GetMagDeviation();
+	double rdir = Wrap360((float)v.h - mdev);
+	p1->SetDirection(rdir);
 	return;
 }
 //----------------------------------------------------------------------
@@ -653,12 +687,14 @@ void CFPlan::GenWptName(char *edt)
 }
 //-----------------------------------------------------------------
 // Create a user waypoint
+//	NOTE:  We use the local magnetic deviation for the waypoint
 //-----------------------------------------------------------------
-CWPT *CFPlan::GetUserWPT(SPosition *p)
+CWPT *CFPlan::CreateUserWPT(SPosition *p)
 {	char  edt[8];
   GenWptName(edt);
 	CWPT *wpt = new CWPT(ANY,WPT);
 	wpt->Init(edt,p);
+	wpt->SetMGD(globals->magDEV);		
 	wpt->SetNAM("User waypoint");
 	wpt->SetKey("NONE");
 	return wpt;
@@ -679,7 +715,7 @@ void CFPlan::Reorder(char m)
 	{	wpt	= (CWPoint *)wPoints.GetSlot(k);
 		if (0 == wpt)	break;
 		wpt->SetSeq(k);
-		SetDistance(wpt,prv);
+		SetDistance(prv,wpt);
 		if (1 == k)	np1	= wpt;
 		if (2 == k) np2 = wpt;
 		wpt->NodeNAV(prv,m);
@@ -710,21 +746,32 @@ void CFPlan::Reload(char m)
 	mALT    = 100 * a;
 	cALT		=  80 * a;
 }
+//----------------------------------------------------------------------
+//	Modify ceil
+//----------------------------------------------------------------------
+int CFPlan::ModifyCeil(int inc)
+{	cALT += inc;
+	if (cALT < 500)		cALT = 500;
+	if (cALT > mALT)	cALT = mALT;
+	return cALT;
+}
+
 //-----------------------------------------------------------------
 //	Update parameters
 //-----------------------------------------------------------------
-void	CFPlan::TimeSlice(float dT, U_INT fr)
+void	CFPlan::TimeSlice(float dT, U_INT frm)
 {	//--- Update according to current state ---------------
+	int	fin = NbWPT - 1;					// Final step
 	switch (State)	{
 		//--- No flight plan loaded ---------------
 		case FPL_STA_NUL:
 			return;
-		//--- Flight plan operational -----------
+		//--- Flight plan operational -------------
 		case FPL_STA_OPR:
-			cWPT->Update();
+			if (0 == cWPT)			return Stop();
+			if (cWPT->Update())	return;
+			//--- Change to next waypoint -----------
 			cWPT	= (CWPoint*)wPoints.NextPrimary(cWPT);
-			if (cWPT)	return;
-			cWPT	= (CWPoint*)wPoints.HeadPrimary();
 			return;
 	}
 }
@@ -732,11 +779,18 @@ void	CFPlan::TimeSlice(float dT, U_INT fr)
 //	Activate the flight plan
 //	Check for completness
 //-----------------------------------------------------------------
-int	CFPlan::Activate()
+int	CFPlan::Activate(U_INT frm)
 {	if (0 == NbWPT)					return 1;
 	State = FPL_STA_OPR;
 	cWPT	= (CWPoint*)wPoints.HeadPrimary();
 	return 0;
+}
+//-----------------------------------------------------------------
+//	DeActivate the flight plan
+//	Check for completness
+//-----------------------------------------------------------------
+void CFPlan::Stop()
+{	State = FPL_STA_NUL;
 }
 //-----------------------------------------------------------------
 //	Return airport departing key
@@ -746,6 +800,15 @@ char *CFPlan::GetDepartingKey()
 	CWPoint *dep	= (CWPoint *)wPoints.HeadPrimary();
 	if (0 == dep)	return none;
 	return dep->GetDbKey();
+}
+//-----------------------------------------------------------------
+//	Return departing runway identifier
+//-----------------------------------------------------------------
+char *CFPlan::GetDepartingRWY()
+{	char *none		= "NONE";
+	CWPoint *dep	= (CWPoint *)wPoints.HeadPrimary();
+	if (0 == dep)	return none;
+	return dep->GetTkoRwy();
 }
 //-----------------------------------------------------------------
 //	Check for departing runway
@@ -762,6 +825,13 @@ bool CFPlan::HasLandingRunway()
 {	CWPoint *lnd		= (CWPoint *)wPoints.LastPrimary();
 	if(lnd)	return lnd->HasLndRWY();
 	return false;
+}
+//-----------------------------------------------------------------
+//	Check for final  node
+//-----------------------------------------------------------------
+bool CFPlan::IsOnFinal()
+{	if (0 == cWPT)			return false;
+	return (int(NbWPT) == cWPT->GetSeq());
 }
 //--------------------------------------------------------------------
 //  Call vector map to draw the route
@@ -816,7 +886,8 @@ void CFPlan::RenameFile(char *old,char *fbak)
 //  version 0:    Initial version
 //--------------------------------------------------------------------
 void CFPlan::Save()
-{ if (0 == modify)		return;
+{ char txt[128];
+	if (0 == modify)		return;
 	if (0 == NbWPT)     return;
 	if (0 == *Name)			return;
   char name[PATH_MAX];
@@ -831,7 +902,8 @@ void CFPlan::Save()
   if (!OpenStream (&s))     return;
   WriteTag('bgno', "========== BEGIN OBJECT ==========", &s);
 	WriteTag('form', "---- Format Type -----------------", &s);
-	WriteString("B", &s);
+	sprintf(txt,"wpno=%02d, format=FM01",genWNO);
+	WriteString(txt, &s);
   WriteTag('desc', "========== Description ===========", &s);
   WriteString(Desc, &s);
   WriteTag('vers', "---------- version number --------", &s);

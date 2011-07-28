@@ -893,8 +893,11 @@ EMessageResult CDirectionalGyro::ReceiveMessage (SMessage *msg)
 //			Computation done in degres in aircraft coordinates
 //	NOTE: Dont use indn as it is used for pressure value
 //        Vacuum is taken from the base class.
-//  NOTE: Directional Gyro gives geographical direction without
-//        magnetic deviation, based on the compass dial (gyro).
+//  NOTE: Directional Gyro gives magnetic direction. The global variable
+//				magDEV maintains the average magnetic deviation from the 
+//				geographic north pole. So
+//				Yaw = H - M; where H= aircraft heading and M = magnetic deviation
+//				When yaw = 0 we have H=M. 
 //				If the dial is not aligned with the north, the indicated
 //				yaw is false.
 //--------------------------------------------------------------------

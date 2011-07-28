@@ -337,7 +337,7 @@ int CK155radio::COMenterNormal()
 //--------------------------------------------------------------------------
 //  COM Normal mode
 //--------------------------------------------------------------------------
-int CK155radio::COMstateNormal(K55_EVENT evn)
+int CK155radio::COMstateNormal(U_INT evn)
 { switch (evn)  {
     //---Change ACtive com whole part --------------------
     case K55EV_ACOM_WP:
@@ -389,7 +389,7 @@ int CK155radio::COMenterSelect()
 //  COM Chanel select mode
 //  Must return 1 if event is exclusively processed
 //--------------------------------------------------------------------------
-int CK155radio::COMstateSelect(K55_EVENT evn)
+int CK155radio::COMstateSelect(U_INT evn)
 { switch (evn)  {
       //---Ignore all digit change request -------------
       case K55EV_ACOM_WP:
@@ -438,7 +438,7 @@ int CK155radio::COMenterPgMode()
 //  COM chanel programing mode 
 //  Must return 1 if event is exclusively processed
 //--------------------------------------------------------------------------
-int CK155radio::COMstatePgMode(K55_EVENT evn)
+int CK155radio::COMstatePgMode(U_INT evn)
 { switch (evn) {
       //----Ignore active com change request ----------------------
       case K55EV_ACOM_WP:
@@ -506,7 +506,7 @@ int CK155radio::NAVenterNormal()
 //--------------------------------------------------------------------------
 //  NAV normal mode 
 //--------------------------------------------------------------------------
-int CK155radio::NAVstateNormal(K55_EVENT evn)
+int CK155radio::NAVstateNormal(U_INT evn)
 { switch (evn)  {
 
       //---Modify Active NAV whole part -----------------------
@@ -604,7 +604,7 @@ int CK155radio::SetOBS(short inc)
 //--------------------------------------------------------------------------
 //  NAV CDI mode
 //--------------------------------------------------------------------------
-int CK155radio::NAVstateCDI(K55_EVENT evn)
+int CK155radio::NAVstateCDI(U_INT evn)
 { switch (evn)  {
       //---Modify Active NAV whole part -----------------------
       case K55EV_ANAV_WP:
@@ -676,7 +676,7 @@ int CK155radio::NAVenterBRG()
 //-------------------------------------------------------------------------
 //  Bearing mode
 //-------------------------------------------------------------------------
-int CK155radio::NAVstateBRG(K55_EVENT evn)
+int CK155radio::NAVstateBRG(U_INT evn)
 { switch (evn)  {
       //---allow to change Active frequency ------------
       case K55EV_ANAV_WP:
@@ -743,7 +743,7 @@ int CK155radio::NAVenterRAD()
 //-------------------------------------------------------------------------
 //  Radial mode
 //-------------------------------------------------------------------------
-int CK155radio::NAVstateRAD(K55_EVENT evn)
+int CK155radio::NAVstateRAD(U_INT evn)
 { switch (evn)  {
       //---allow to change Active frequency ------------
       case K55EV_ANAV_WP:
@@ -850,7 +850,7 @@ int CK155radio::ChangeTimerMode()
 //-----------------------------------------------------------------------
 //  Timer mode
 //-----------------------------------------------------------------------
-int CK155radio::NAVstateTIM(K55_EVENT evn)
+int CK155radio::NAVstateTIM(U_INT evn)
 { switch (evn)  {    
       //---Dont allow to change Active frequency ------------
       case K55EV_ANAV_WP:
@@ -899,7 +899,7 @@ int CK155radio::PowerOFF()
 //============================================================================
 //  K55 DISPATCHER
 //============================================================================
-int CK155radio::Dispatcher(K55_EVENT evn)
+int CK155radio::Dispatcher(U_INT evn)
 { 
   switch (sPower) {
     //----Check for power ON----------------------------
@@ -947,8 +947,8 @@ void CK155radio::TimeSlice (float dT,U_INT FrNo)
   if (1 == uNum)    globals->cILS = ILS;
 	//--- Refresh comm radio -----------------------------------------------
   COM = globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh com
-	//----In WPT mode, refresh only WPT ------------------------------------
-	if (WPT)					return WPT->Refresh(FrNo);
+	//----In external mode, refresh only WPT -------------------------------
+	if (EXT.IsActive())	return EXT.Refresh(FrNo);
   //----Refresh other  stations ------------------------------------------
   VOR	= globals->dbc->GetTunedNAV(VOR,FrNo,ActNav.freq);     // Refresh VOR
   ILS = globals->dbc->GetTunedILS(ILS,FrNo,ActNav.freq);     // Refresh ILS
@@ -1272,7 +1272,7 @@ int CKR87radio::K87enterPOF()
 //------------------------------------------------------------------------
 //  Detect POWER ON  STATE
 //------------------------------------------------------------------------
-int CKR87radio::K87statePOF(K87_EVENT evn)
+int CKR87radio::K87statePOF(U_INT evn)
 { if (K87EV_POWR != evn)  return 0;
   if (0 == active)        return 0;
   //----Enter Frequency state ---------------------
@@ -1300,7 +1300,7 @@ int CKR87radio::K87enterFRQ()
 //------------------------------------------------------------------------
 //  Common event decoder
 //------------------------------------------------------------------------
-int CKR87radio::K87eventDEC(K87_EVENT evn)
+int CKR87radio::K87eventDEC(U_INT evn)
 { 
   switch (evn)  {
   //--------Power switch --------------------------------
@@ -1347,7 +1347,7 @@ int CKR87radio::K87eventDEC(K87_EVENT evn)
 //------------------------------------------------------------------------
 //  FREQUENCY  STATE
 //------------------------------------------------------------------------
-int CKR87radio::K87stateFRQ(K87_EVENT evn)
+int CKR87radio::K87stateFRQ(U_INT evn)
 { if (K87eventDEC(evn)) return 1;
   switch (evn)  {
   //--------Frequency button ----------------------------
@@ -1486,7 +1486,7 @@ int CKR87radio::K87eventRST()
 //--------------------------------------------------------------------
 //  TIMER MODE 
 //--------------------------------------------------------------------
-int CKR87radio::K87stateTIM(K87_EVENT evn)
+int CKR87radio::K87stateTIM(U_INT evn)
 { if (K87eventDEC(evn)) return 1;
   switch (evn)  {
     //---Modify timing value -------------------------------
@@ -1519,7 +1519,7 @@ int CKR87radio::K87stateTIM(K87_EVENT evn)
 //--------------------------------------------------------------------
 //  DISPATCHER 
 //--------------------------------------------------------------------
-int CKR87radio::Dispatcher(K87_EVENT evn)            // Dispatching 
+int CKR87radio::Dispatcher(U_INT evn)            // Dispatching 
 { return (this->*adfn[rState])(evn);
 }
 //--------------------------------------------------------------------
@@ -1733,7 +1733,7 @@ int CKT76radio::EnterALT()
 //--------------------------------------------------------------------
 //  Power off:  Check for Power ON 
 //--------------------------------------------------------------------
-int CKT76radio::StatePOF(KT76events evn)
+int CKT76radio::StatePOF(U_INT evn)
 { if (!active)            return 0;
   if (KT76EV_PWR != evn)  return 0;
   if (mDir != +1)         return 0;
@@ -1779,7 +1779,7 @@ void CKT76radio::EditFLEV(float alt)
 //--------------------------------------------------------------------
 //  DISPATCHER 
 //--------------------------------------------------------------------
-int CKT76radio::Dispatcher(KT76events evn,int pm)            // Dispatching 
+int CKT76radio::Dispatcher(U_INT evn,int pm)            // Dispatching 
 { if (0 == sPower)        return StatePOF(evn);
   if (KT76EV_PWR == evn)  return UpdButton();
   if (KT76EV_DIG == evn)  return ModDigit(pm - KT76BZ_DIG);

@@ -29,7 +29,35 @@
 #include "../Include/FuiUser.h"
 
 using namespace std;
-
+//===================================================================================
+// CExtSource:   An externnal radio source used to drive the radio
+//===================================================================================
+void CExtSource::SetSource(CmHead *src,U_INT frm)
+{	active	= 1;
+	qAct		= src->GetActiveQ();					// Store active queue
+	strncpy(sidn,src->GetIdent(),5);			// store ident
+	strncpy(snam,src->GetName(),64);			// Store name
+	spos		= src->GetPosition();					// Geo position
+	smag		= src->GetMagDev();						// Magnetic deviation
+	//--- compute feet factor at given latitude ---------------
+	double lr   = TC_RAD_FROM_ARCS(spos.lat);					//DegToRad  
+  nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
+	//--- Refresh distance and direction -----------------------
+	Refresh(frm);
+	refD		 = radial;
+	return;
+}
+//--------------------------------------------------------------------------
+//	Refresh distance and direction to aircraft
+//--------------------------------------------------------------------------
+void CExtSource::Refresh(U_INT frm)
+{	//----compute WPT relative position -------------
+  SVector	v	      = GreatCirclePolar(&globals->geop, &spos);
+  radial  = Wrap360((float)v.h - smag);
+	nmiles  = (float)v.r * MILE_PER_FOOT;
+  dsfeet  =  v.r;
+	return;
+}
 //===================================================================================
 // CRadio
 //===================================================================================
@@ -40,7 +68,6 @@ CRadio::CRadio (void)
   test    = false;
   nState  = 0;
   cState  = 0;
-	WPT			= 0;
   VOR     = 0;
   ILS     = 0;
   COM     = 0;
@@ -297,21 +324,32 @@ void CRadio::RazField(RADIO_FLD *tab,short No)
   tab[No].data  = "";
   return;
 }
+
 //--------------------------------------------------------------------------
-//  Enter/leave waypoint mode:  ROBOT/GPS interface
+//  Enter/leave external mode:  ROBOT/GPS interface
+//	Synchronize radio with type of source
 //--------------------------------------------------------------------------
-void	CRadio::ModeWPT(CWPT *wp)
-{	WPT	= wp;													// Store waypoint 
-	if (0 == wp)					return;
-	//--- Cut any other station -------------------------
-	VOR = 0;
-	ILS	= 0;
+void CRadio::ModeEXT(CmHead *src)
+{	//--- Back to normal mode. Synchro radio with nav ------
+	if (0 == src)	
+	{	EXT.Stop(); 
+	  VOR	= globals->dbc->GetTunedNAV(VOR,Frame,ActNav.freq);     // Refresh VOR
+    ILS = globals->dbc->GetTunedILS(ILS,Frame,ActNav.freq);     // Refresh ILS
+	}
+	else
+	//--- Update external bus ---------------------------
+	{	EXT.SetSource(src,Frame);
+		VOR	= 0;
+		ILS = 0;
+	}
+	Synchronize();
+	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);
 	return;
 }
 //--------------------------------------------------------------------------
 //  Change OBS from external
 //--------------------------------------------------------------------------
-int CRadio::SetXOBS(short inc)
+int CRadio::IncXOBS(short inc)
 { short obs  = Radio.xOBS;
   obs += inc;
   if (  0 > obs) obs  = 359;
@@ -320,24 +358,39 @@ int CRadio::SetXOBS(short inc)
   return obs;
 }
 //--------------------------------------------------------------------------
+//  Change Reference direction from external
+//--------------------------------------------------------------------------
+void CRadio::ChangeRefDirection(float d)
+{	CmHead *sys = Radio.nav;
+	if (sys)	sys->SetRefDirection(d);
+	return Synchronize();
+}
+//--------------------------------------------------------------------------
 //  Maintain all values
 //	Values are updated in a specific structure used for interface
 //	with all gauges and subsystems such as autopilot
 //--------------------------------------------------------------------------
 void CRadio::TimeSlice (float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
-  float   rad = 0;
+	Frame				= FrNo;
+  return Synchronize();
+}
+//------------------------------------------------------------------
+//  Resynchronize radio
+//------------------------------------------------------------------
+void	CRadio::Synchronize()
+{ float   rad = 0;
 	CmHead *sys = 0;
-	if (WPT)	{sys = WPT;}
-	if (VOR)	{sys = VOR;}
-	if (ILS)  {sys = ILS;}
+	if (EXT.IsActive())	{sys = &EXT;}
+	if (VOR)						{sys = VOR;}
+	if (ILS)						{sys = ILS;}
+	Radio.nav  = sys;
 	if (sys)
-	{		sys->SetOBS(Radio.xOBS);
+	{		sys->SetNavOBS(Radio.xOBS);
 			rad = sys->GetRadial(); 
       Radio.ntyp = sys->SignalType();							
       Radio.mdis = sys->GetNmiles();
       Radio.mdev = sys->GetMagDev();
-      Radio.nav  = sys;
       Radio.hREF = sys->GetRefDirection();				//Radio.xOBS;
       Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,sPower);
       Radio.gDEV = sys->GetVrtDeviation();				//0;
@@ -346,8 +399,7 @@ void CRadio::TimeSlice (float dT,U_INT FrNo)
       Radio.sens = sys->Sensibility();						//10;
     }
 	  else 
-  {   Radio.nav  = 0;
-      Radio.hREF = 0;
+  {   Radio.hREF = 0;
       Radio.flag = VOR_SECTOR_OF;
       Radio.ntyp = SIGNAL_OFF;
       Radio.gDEV = 0;
@@ -356,9 +408,8 @@ void CRadio::TimeSlice (float dT,U_INT FrNo)
   //---Compute angle between reference and aircraft heading --
   Radio.aDir = Wrap360(mveh->GetDirection() - Radio.mdev);
   Radio.iAng = Wrap360(Radio.hREF - Radio.aDir);
-  return;
+	return;
 }
-
 //--------------------------------------------------------------
 //	Set glide deviation in the message
 //--------------------------------------------------------------
@@ -526,6 +577,10 @@ EMessageResult CRadio::ReceiveMessage (SMessage *msg)
         msg->voidData = &Radio;
         return MSG_PROCESSED;
 
+			case 'gets':
+        msg->voidData = this;
+        return MSG_PROCESSED;
+
       }
       break;
 
@@ -550,7 +605,7 @@ EMessageResult CRadio::ReceiveMessage (SMessage *msg)
         return MSG_PROCESSED;
        //----Set external OBS ------------------
       case 'obs_':
-        msg->intData  = SetXOBS(short(msg->realData));
+        msg->intData  = IncXOBS(short(msg->realData));
         return MSG_PROCESSED;
 
       }
@@ -700,6 +755,7 @@ void  CNavRadio::TimeSlice (float dT,U_INT FrNo)
   ILS = globals->dbc->GetTunedILS(ILS,FrNo,ActNav.freq);     // Refresh ILS
   return;
 }
+
 //------------------------------------------------------------------
 //  Receive a message
 //------------------------------------------------------------------

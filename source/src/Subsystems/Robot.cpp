@@ -210,19 +210,24 @@ void CRobot::TimeSlice(float dT,U_INT FrNo)
 //	Set of error messages
 //=========================================================================
 char *vpMSG[] = {
-	"Not yet implemented ",									// Msg00
+	"Aircraft is now all your's ",					// Msg00
 	"Flight plan is empty",									// Msg01
 	"We are not at departing airport",			// Msg02
 	"No take-off runway in flight plan",		// Msg03
 	"No landing runway in flight plan",			// Msg04
 	"Cannot start when not on ground.",			// Msg05
+	"Start the aircraft and come back",			// Msg06
+	"Cannot locate take-off runway",				// Msg07
+	"Please open Nav Radio 1",							// Msg08
+	"No ILS for landing",										// Msg09
 };
 //=========================================================================
 //  This robot will pilot the aircraft and execute
 //	the current flight plan
 //=========================================================================
 VPilot::VPilot()
-{ fpln = 0;
+{ State = VPL_IS_IDLE;
+	fpln	= 0;
 }
 //--------------------------------------------------------------
 //	Create error
@@ -232,25 +237,214 @@ void VPilot::Error(int No)
 	return;
 }
 //--------------------------------------------------------------
+//	Hand back the aircraft
+//--------------------------------------------------------------
+void VPilot::HandleBack()
+{	State = VPL_IS_IDLE;
+	Radio->ModeEXT(0);
+	Error(0);
+	return;
+}
+//--------------------------------------------------------------
+//	Locate radio 
+//--------------------------------------------------------------
+bool VPilot::GetRadio()
+{	//----Radio message ------------------------
+  mrad.sender         = unId;
+  mrad.dataType       = TYPE_VOID;
+  mrad.user.u.hw      = HW_RADIO;
+  mrad.id             = MSG_GETDATA;
+  mrad.user.u.datatag = 'gets';
+  mrad.group          = mveh->GetRadio(1);
+  mrad.user.u.unit    = 1;
+	Send_Message(&mrad);
+  Radio     = (CRadio*)mrad.voidData;
+	if (0 == Radio)				return false;
+	busR			= Radio->GetBUS();
+	return (0 != Radio->GetPowerState());
+ }
+//--------------------------------------------------------------
 //	Request to start the virtual pilot
 //--------------------------------------------------------------
 void VPilot::Start()
-{	bool ok = false;
-	if  (ok)							return Error(0);
-	fpln	= mveh->GetFlightPlan();
+{	pln			= (CAirplane*)mveh;
+	apil	  = pln->GetAutoPilot();
+	CAirportMgr *apm = globals->apm;
+	fpln		= pln->GetFlightPlan();
+	//-----------------------------------------
+  if (State != VPL_IS_IDLE)	return HandleBack();
 	//--- Check if on ground ------------------
-	ok = mveh->AllWheelsOnGround();
+	bool ok = pln->AllWheelsOnGround();
 	if (!ok)							return Error(5);
 	//--- Check for airport -------------------
   if (fpln->IsEmpty())	return Error(1);
 	char *dk = fpln->GetDepartingKey();
-	ok = globals->apm->AreWeAt(dk);
+	ok = apm->AreWeAt(dk);
 	if (!ok)							return Error(2);
 	//--- Check for runways -------------------
 	ok	= fpln->HasTakeOffRunway();
 	if (!ok)							return Error(3);
 	ok	= fpln->HasLandingRunway();
 	if (!ok)							return Error(4);
-	//----------------------------------------
+	//--- Check if all engine running ---------
+	ok	= pln->AllEngineOn();
+	if (!ok)							return Error(6);
+	ok = GetRadio();
+	if (!ok)							return Error(8);
+	//--- Position on runway ------------------
+	char *idr = fpln->GetDepartingRWY();
+	ok  = apm->SetOnRunway(0,idr);
+	if (!ok)							return Error(7);
+	//--- Pre - TAKE-OFF ----------------------
+	cnt	= 6;
+	T01	= 0;
+	State = VPL_STARTING;
 }
+//--------------------------------------------------------------
+//	Prepare to start
+//--------------------------------------------------------------
+void VPilot::PreStart(float dT)
+{	char txt[128];
+	T01 -= dT;
+	if (T01 > 0)		return;
+	cnt--;
+	if (cnt < 0)		return EnterTakeOff();
+	T01  = 1;
+	sprintf(txt,"VIRTUAL PILOT: STARTING IN %d sec",cnt);
+	globals->fui->DrawNoticeToUser(txt,1.2f);
+	return;
+}
+//--------------------------------------------------------------
+//	Take off Action
+//--------------------------------------------------------------
+void VPilot::EnterTakeOff()
+{	State = VPL_TAKE_OFF;
+  apil->Engage();
+	apil->EnterTakeOFF();
+	return;
+}
+//--------------------------------------------------------------
+//	Take off Mode
+//	 TODO: Put AGL in parameter
+//--------------------------------------------------------------
+void VPilot::ModeTKO()
+{	if (apil->IsDisengaged())	return HandleBack();
+	if (apil->BellowAGL(500))	return;
+	fpln->Activate(FrNo);
+	//--- Climb to 1500 -----------
+	State = VPL_CLIMBING;
+	return;
+}
+//--------------------------------------------------------------
+//	Take off Mode
+//	 TODO: Put AGL in parameter
+//--------------------------------------------------------------
+void VPilot::ModeCLM()
+{	if (apil->IsDisengaged())	  return HandleBack();
+	if (apil->BellowAGL(1200))	return;
+	//--- Drive toward next waypoint -----------
+	ChangeWaypoint();
+	return;
+}
+//--------------------------------------------------------------
+//	Enter final mode
+//--------------------------------------------------------------
+void VPilot::EnterFinal()
+{ TRACE("VPL: Enter Final: %s",wayP->GetName());
+	float frq = wayP->GetILSFrequency();
+  if (0 == frq) {Error(9); return HandleBack();}
+	Radio->TuneNavTo(frq,1);						// Tune radio to nav
+	Radio->ModeEXT(0);									// Set internal mode
+	//--- Configure autopilot for landing ------------------
+	apil->SetLandingMode();
+	State = VPL_LANDING;
+	return;
+}
+//--------------------------------------------------------------
+//	Enter waypoint mode
+//	Tune Radio to waypoint
+//	Set autopilot in Nav mode and altitude hold
+//--------------------------------------------------------------
+void VPilot::EnterWaypoint()
+{	Radio->ModeEXT(wayP->GetDBobject());			// Enter waypoint mode
+	float dir = wayP->GetDirection();
+	Radio->ChangeRefDirection(dir);
+	//--- configure autopilot ------------------------------
+  double alt = double(wayP->GetAltitude());
+	apil->ChangeALT(alt);							// Set target altitude
+	apil->SetNavMode();								// Set NAV mode 
+	State = VPL_TRACKING;
+	return;
+}
+//--------------------------------------------------------------
+//	Change to next Waypoint
+//--------------------------------------------------------------
+void VPilot::ChangeWaypoint()
+{	float rad = 0;
+	wayP	= fpln->GetCurrentNode();
+	TRACE("VPL: Change WPT to %s",wayP->GetName());
+	if (fpln->IsOnFinal())		return EnterFinal();
+	//--- Set radio mode ---------------------
+  if (wayP->IsaWaypoint())	return EnterWaypoint();
+	//--- Set OBS and radio frequency --------
+  float frq = wayP->GetFrequency();
+  Radio->TuneNavTo(frq,1);						// Tune radio to nav
+	Radio->ModeEXT(0);									// Set internal mode
+	float dir = wayP->GetDirection();
+	Radio->ChangeRefDirection(dir);
+	//--- Configure autopilot ------------------------------
+	double alt = double(wayP->GetAltitude());
+	apil->ChangeALT(alt);							// Set target altitude
+	apil->SetNavMode();								// Set NAV mode 
+	State = VPL_TRACKING;
+	return;
+}
+//--------------------------------------------------------------
+//	Tracking Waypoint
+//--------------------------------------------------------------
+void VPilot::ModeTracking()
+{ if (apil->IsDisengaged())	return HandleBack();
+	if (wayP->IsActive())	return;
+	ChangeWaypoint();
+	return;
+}
+//--------------------------------------------------------------
+//	We are now Landing
+//	Do nothing until auto pilot disengaged
+//--------------------------------------------------------------
+void VPilot::ModeLanding()
+{ if (apil->IsDisengaged())	return HandleBack();
+	return;
+}
+//--------------------------------------------------------------
+//	Time slice
+//--------------------------------------------------------------
+void VPilot::TimeSlice (float dT,U_INT frm)
+{	if (State == VPL_IS_IDLE)	return;
+	FrNo			= frm;
+	switch (State)	{
+		//--- PRE-TAKE-OFF------------------
+		case VPL_STARTING:
+			PreStart(dT);
+			return;
+		//--- TAKE-OF State ---------------
+		case VPL_TAKE_OFF:
+			ModeTKO();
+			return;
+		//--- Climbing --------------------
+		case VPL_CLIMBING:
+			ModeCLM();
+			return;
+		//--- Tracking mode ----------------
+		case VPL_TRACKING:
+			ModeTracking();
+			return;
+		//--- Landing ----------------------
+		case VPL_LANDING:
+			ModeLanding();
+			return;
+	}
+	return;
+}
+
 //=======================END OF FILE ======================================================================
