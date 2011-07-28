@@ -642,7 +642,7 @@ void InitGlobalsNoPodFilesystem (char *root)
    globals->opal_sim->setGravity (g);
    float step_size = ADJ_STEP_SIZE;          // 0.02f;
    GetIniFloat ("PHYSICS", "adjustStepSize", &step_size);
-   globals->opal_sim->setStepSize (step_size); // was 0.02
+ //  globals->opal_sim->setStepSize (step_size); // was 0.02 JSTEMP
    DEBUGLOG ("InitGlobalsNoPod step_size=%f", step_size);
    globals->simulation = false;
    char buffer_ [128] = {0};
@@ -973,9 +973,6 @@ void COption::Toggle(U_INT p)
 //=======================================================================================
 // Redraw function when application is in simulation state
 //========================================================================================
-unsigned int   nFrames = 0;      // Sim frame rate counter
-float          tFrames = 0.0f;   // Sim frame rate timer
-float          frameRate = 0.0f; // Sim frame rate
 //===========================================================================
 //  Global frame count used to synchronize all subsystems
 //===========================================================================
@@ -1003,17 +1000,19 @@ int RedrawSimulation ()
 { float dSimT, dRealT;
   const float FPS_LIMIT = globals->opal_sim->getStepSize ();
 
-  // Call the time manager to indicate that another cycle is occurring.
-  //   This represents the redraw cycle, not necessarily the simulation
-  //   cycle, though at present they are coupled.
-  //   was :
-  //   globals->tim->Update ();
-  //   dSimT  = globals->tim->GetDeltaSimTime();
-  //   dRealT = globals->tim->GetDeltaRealTime();
-  //   globals->dST = dSimT;
-  //   globals->dRT = dRealT;
-  //
-  while (tmp_timerS < FPS_LIMIT) { // start basic fps limiter
+  //Call the time manager to indicate that another cycle is occurring.
+  //This represents the redraw cycle, not necessarily the simulation
+  //cycle, though at present they are coupled.
+	// was
+     globals->tim->Update ();
+     dSimT  = globals->tim->GetDeltaSimTime();
+     dRealT = globals->tim->GetDeltaRealTime();
+     globals->dST = dSimT;
+     globals->dRT = dRealT;
+  
+/*
+  while (tmp_timerS < FPS_LIMIT) 
+	{ // start basic fps limiter
     globals->tim->Update ();
     dSimT  = globals->tim->GetDeltaSimTime();
     dRealT = globals->tim->GetDeltaRealTime();
@@ -1028,14 +1027,7 @@ int RedrawSimulation ()
   globals->tim->SetDeltaRealTime (dRealT);
   globals->dRT = dRealT;
   tmp_timerR = tmp_timerS;
-  // Accumulate frame rate statistics every second
-  nFrames++;
-  tFrames += dRealT;
-  if (tFrames > 1.0f) {
-      frameRate = (float)nFrames / tFrames;
-      tFrames = 0.0f;
-      nFrames = 0;
-  }
+*/	
   //------------Update global clock ---------------------
   Frame++;
 	globals->Frame = Frame;
