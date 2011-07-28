@@ -351,6 +351,7 @@ typedef struct {
   opal::Simulator *opal_sim;
 #endif
   bool  simulation;
+  bool  fps_limiter;
   char  sBar;
   float status_bar_limit;
 
