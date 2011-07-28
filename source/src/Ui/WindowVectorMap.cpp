@@ -1347,6 +1347,7 @@ bool CFuiVectorMap::OpenWptMEN(int mx,int my)
 	smen.Ident = 'mwpt';
 	smen.aText = WptMENU;
   wpos  = geop;
+	wpos.alt	 = 0;
   return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
@@ -1448,7 +1449,7 @@ int CFuiVectorMap::StartonRWY(short itm)
 //  Create a waypoint at cursor position and add it to flight plan
 //---------------------------------------------------------------------------------
 int CFuiVectorMap::CreateWPT()
-{	CWPT *wpt = fPlan->GetUserWPT(&wpos);
+{	CWPT *wpt = fPlan->CreateUserWPT(&wpos);
 	Focus		  = wpt;
 	CFuiFlightLog *nwin = dbc->GetLOGwindow();
   nwin->NotifyFromDirectory(Focus.Pointer());

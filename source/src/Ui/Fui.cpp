@@ -6215,22 +6215,19 @@ void CFuiRwyEXT::DrawRunways()
 	char ld = 0;				// Land detected
 	char eq = (strcmp(tkoID,lndID)==0)?(1):(0);
 	//--- Take off coordinates --------
-	int	xt	= 0;
-	int	yt	= 0;
+	tEND	= 0;
 	//--- Landing coordinates ---------
-	int xl	= 0;
-	int	yl	= 0;
+	lEND  = 0;
 	//---------------------------------
 	U_INT No  = 0;
   U_INT sel = rwyBOX.GetSelectedNo();
   int   xc  = 0;
   CRwyLine *slot = 0;
   grh->EraseCanvas();
-	ilsFQ	= "None";
   for (No = 0; No != rwyBOX.GetSize();No++)
   { slot  = (CRwyLine*)rwyBOX.GetSlot(No);
-		tk	 += slot->CheckEnd(tkoID,&xt,&yt,0);
-		ld	 += slot->CheckEnd(lndID,&xl,&yl,&ilsFQ);
+		tk	 += slot->CheckEnd(tkoID,&tEND);		//&xt,&yt,0);
+		ld	 += slot->CheckEnd(lndID,&lEND);		//&xl,&yl,&ilsFQ);
 		//--- todo: save ILS data if landing runway is CRwyLine*)
     xc    = (No == sel)?(1):(0);
 		if (ptko)	xc = 0;
@@ -6252,12 +6249,14 @@ void CFuiRwyEXT::DrawRunways()
     grh->DrawSegment(x0,y0,x1,y1,xc);
   }
 	//--- Edit ILS data -----------------------
-	_snprintf(ilsTXT,20,"Landing ILS %s",ilsFQ);
+	char *ilsd = (lEND)?(lEND->ilsD):("None");
+	_snprintf(ilsTXT,20,"Landing ILS %s",ilsd);
+	ilsFQ			 = (lEND)?(lEND->ifrq):(0);
 	//--- Draw the label ----------------------
 	if (eq && (tk) && (ld))
-	{	grh->DrawNText(xt,yt,"T+L",1);	return;}
-	if (tk)	grh->DrawNText(xt,yt,"Tko",1);
-	if (ld)	grh->DrawNText(xl,yl,"Lnd",1);
+	{	grh->DrawNText(tEND->dx,tEND->dy,"T+L",1);	return;}
+	if (tk)	grh->DrawNText(tEND->dx,tEND->dy,"Tko",1);
+	if (ld)	grh->DrawNText(lEND->dx,lEND->dy,"Lnd",1);
   return;
 }
 //----------------------------------------------------------------------

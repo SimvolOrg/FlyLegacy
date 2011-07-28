@@ -236,19 +236,24 @@ void  CRwyLine::ComputeCorner(short mx,short my)
 //  Check for end id
 //-----------------------------------------------------------------
 
-U_CHAR CRwyLine::CheckEnd(char *id,int *px,int *py, char **d)
-{	if	(strcmp(id,Hend.rwid) == 0)
-	{	*px	= Hend.dx;
+U_CHAR CRwyLine::CheckEnd(char *id,RWEND **end)   //int *px,int *py, char **d)
+{	if	(strcmp(id,Hend.rwid) == 0) {*end = &Hend; return 1;}
+/*
+	{	
+		*px	= Hend.dx;
 		*py	= Hend.dy;
 		if (d)	*d = Hend.ilsD;
 		return 1;
 	}
-	if	(strcmp(id,Lend.rwid) == 0)
+	*/
+	if	(strcmp(id,Lend.rwid) == 0) {*end = &Lend; return 1;}
+	/*
 	{	*px = Lend.dx;
 		*py = Lend.dy;
 		if (d) *d = Lend.ilsD;
 		return 1;
 	}
+	*/
 	return 0;
 }
 //-----------------------------------------------------------------
@@ -321,6 +326,7 @@ void CFlpLine::Print(CFuiList *w,U_CHAR ln)
   w->AddText(ln, 3,24,GetName());
   w->AddText(ln,18, 5,GetIden()); 
   w->AddText(ln,22,10,GetDist());
+	w->AddText(ln,30,4, GetDirt());
   w->AddText(ln,34,12,GetAlti());
   w->AddText(ln,41,12,GetElap());
   w->AddText(ln,48,14,GetEtar());
