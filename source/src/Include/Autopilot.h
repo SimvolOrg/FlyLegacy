@@ -29,6 +29,7 @@
 
 #include "../Include/FlyLegacy.h"
 #include "../Include/Subsystems.h"
+#include "../Include/Radio.h"
 //====================================================================================
 #ifndef AUTOPILOT_H
 #define AUTOPILOT_H
@@ -283,7 +284,7 @@ protected:
   char       uvsp;                          // use VSP
   char       aprm;                          // Approach mode
   char       ugaz;                          // Use autothrottle
-	char       finm;													// final mode
+	char       leg2;													// Leg2 mode
 	char       wgrd;													// Wheel on ground
   //-----------Lights--------------------------------------------------
   char       alta;                          // Altitude armed
@@ -299,9 +300,9 @@ protected:
   CAeroControl *elvT;                       // Elevator trim
 	//---------------------------------------------------------
 	CThrottleControl *gazS;										// gas controller
-  //---Coeeficient corrector -------------------------------------------
-  double     Turn;                          // Turn adjust
-  double     Vref;                          // VSP Reference
+  //---Tracking control ------------------------------------------------
+  double     Turn;                          // Turn adjust coef
+	double     gain;													// gain factor
   //---Angle of attack -------------------------------------------------
   double     wAOI;                          // Wing Angle of incidence (°)
   double     minA;                          // Minimuùm AOA
@@ -333,22 +334,23 @@ protected:
 	double		 aCUT;							// Altitude to cut throttle
 	double     vROT;							// Rotate speed
 	double		 aTGT;							// Target altitude
-  //---Lateral & vertical mode control values ---------------------------
+  //---Vertical mode control values --------------------------------------
   double     tCoef;                         // Turn coefficient
   double     dREF;                          // Distance to Reference
   double     sin3;                          // Sine(3°)
   double     glide;                         // Catching glide angle
+	//--- Lateral control values -------------------------------------------
   double     rHDG;                          // Target Heading
   double     aHDG;                          // Actual heading (yaw)
-  double     cHDG;                          // cross heading
-  double     aERR;                          // Absolute error
+  double     xHDG;                          // cross heading
+	double     nHDG;													// Next heading
   double     hERR;                          // Lateral error
-  double     pERR;                          // previous Value
   double     vTIM0;                         // Time for ARC AB
   double     vTIM1;                         // Time for P to D
   double     vTIM2;                         // Previous vTIM1
   double     vHRZ;                          // Horizontal speed
   //----Verticale mode control values ----------------------------------
+  double     Vref;                          // VSP Reference
   double     eVRT;                          // Vertical error (glide)
   double     eGLD;                          // Absolute glide error
   double     vAMP;                          // Vertical amplifier
@@ -357,6 +359,7 @@ protected:
   double     xALT;                          // Expected altitude
   double     rVSI;                          // Reference VSI
   //---Current parameters -------------------------------------------
+	double      cFAC;												  // Current factor
   double      cALT;                         // Current altitude
   double      cAGL;                         // Current AGL
   double      afps;                         // Aircraft feet per second
@@ -399,7 +402,7 @@ public:
   bool  MsgForMe (SMessage *msg);
   virtual void  StateChanged(U_CHAR evs) {}
   virtual void  Alarm() {}
-  // CSubsystem methods
+  //--- CSubsystem methods --------------------------------------------
   virtual const char* GetClassName (void) { return "AutoPilot"; }
 	//-------------------------------------------------------------------
   void            TimeSlice(float dT,U_INT FrNo);
@@ -420,10 +423,9 @@ public:
   void            ALTalertSET();
   bool            CheckAlert();
   //-------Options ----------------------------------------------------
-
 	inline void SetACUT(double v)						{aCUT		= v;}
   inline void SetVREF(double v)           {Vref		= v;}
-  inline void SetTurn(double t)           {Turn		= t;}
+  inline void SetTrak(double t,double a)  {Turn		= t; gain = a;}
   inline void SetGLDopt(double g)         {glide	= g;}
   inline void SetDISopt(double a)         {aLND		= a;}
 	void				SetLndFLP(char p,double a)	{lndFP = p; lndFA = a;}
@@ -432,6 +434,11 @@ public:
   void        SetFLRopt(double a, double b,double d);
   void        SetMISopt(double a);
 	inline void SetGroundPos(SPosition *p)	{gPOS		= p;}
+	//--- External interface --------------------------------------------
+	bool				Init();
+	bool 				Engage();
+	bool				EnterTakeOFF();
+	void				SetNavMode();
   //-------------------------------------------------------------------
   double          RoundValue(double v,double p);
   double          GetAOS();
@@ -442,14 +449,12 @@ public:
   //-------------------------------------------------------------------
   int             PowerLost();
   void            Disengage(char op);
-  int             Engage();
 	double					SelectSpeed();
 	bool						MissLanding();
 	void						LandingOption();
   bool            AbortLanding(char k);
 	void						Rotate();
   //-------TRANSITION ROUTINE -----------------------------------------
-	bool						EnterTakeOFF();
   void            EnterINI();
   void            EnterROL();
   void            EnterHDG();
@@ -476,9 +481,12 @@ public:
   void            DecVSP();
   void            IncALT();
   void            DecALT();
+	void						ChangeALT(double a);
 	void						HoldAOA(double v);
+	void						SetLandingMode();
   //----Lateral modes --------------------------------------------------
 	double					AdjustHDG();
+	double          AdjustFinal();
   void            GetCrossHeading();
   void            ModeLT1();
   void            ModeLT2();
@@ -506,10 +514,13 @@ public:
   inline char     armALT()  {return alta;}
   //-------------------------------------------------------------------
   inline char GetPOW()                {return Powr;}
-  inline char Engaged() {return ((lStat != AP_DISENGD) || (vStat != AP_DISENGD));}
   inline char NavMode() {return (signal == SIGNAL_VOR);}
   inline char IlsMode() {return (signal == SIGNAL_ILS);}
   inline char Flash()   {return flsh;}
+	//--- Virtual pilot interface ---------------------------------------
+	inline bool BellowAGL(double a)	{return (cAGL < a);}
+	inline bool IsDisengaged()		  {return (lStat == AP_DISENGD);}
+  inline bool IsEngaged()					{return (lStat != AP_DISENGD);}
   //-------------------------------------------------------------------
   inline    bool        engLite()     {return (AP_STATE_DIS != lStat);}
 };
@@ -578,6 +589,7 @@ public:
  ~CPIDdecoder();
   int     Read(SStream *st,Tag tag);
   void    DecodeLanding(SStream *st);
+	void		DecodeTRAK(char *txt);
 	void		DecodeTHRO(char *txt);
 	void		DecodeVROT(char *txt);
 	void		DecodeFlap(char *txt);

@@ -60,8 +60,8 @@ public:
 	double	GetAltitude(SPosition &p);
 	bool    InvalideQuad();
   //------------------------------------------------------------
-	inline void		Edit(char *txt) {sprintf(txt,"QGT(%03d-%03d) TILE(%02d-%02d) GROUND=%.0f feet",
-		qx,qz,tx,tz,alt);}
+	inline void		Edit(char *txt) {sprintf(txt,"QGT(%03d-%03d) TILE(%02d-%02d) GROUND=%4d feet",
+		qx,qz,tx,tz,int(alt));}
 	inline void	  ClampLon()	{if (lon > TC_FULL_WRD_ARCS) lon = 0;}
   inline U_INT  xQGT()            {return qx;}
   inline U_INT  zQGT()            {return qz;}

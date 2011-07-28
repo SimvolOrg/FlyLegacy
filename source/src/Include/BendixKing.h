@@ -29,6 +29,7 @@
 
 #include "../Include/FlyLegacy.h"
 #include "../Include/Subsystems.h"
+#include "../Include/Radio.h"
 //====================================================================================
 #ifndef BENDIXKING_H
 #define BENDIXKING_H
@@ -42,7 +43,7 @@ class CK155radio : public CRadio {
   friend class CK155gauge;
   friend class C_K155gauge;
   //---------State function -------------------------------------------
-  typedef int (CK155radio::*StaFN)(K55_EVENT evn);
+  typedef int (CK155radio::*StaFN)(U_INT evn);
   //-------------------------------------------------------------------
   float       gTimer;                           // Global timer
   //---------ATTRIBUTES for COM management ----------------------------
@@ -94,25 +95,25 @@ public:
   int     PowerOFF();
   //------COM state functions --------------------------------------
   int     COMenterNormal();                     // Enter normal state
-  int     COMstateNormal(K55_EVENT evn);        // Normal Mode
+  int     COMstateNormal(U_INT evn);						// Normal Mode
   int     COMenterSelect();                     // Enter chanel select mode
-  int     COMstateSelect(K55_EVENT evn);        // Chanel select state
+  int     COMstateSelect(U_INT evn);						// Chanel select state
   int     COMenterPgMode();                     // Enter programing mode
-  int     COMstatePgMode(K55_EVENT evn);        // Chanel programing mode
+  int     COMstatePgMode(U_INT evn);						// Chanel programing mode
   //------NAV state functions ----------------------------------------
   int     NAVupdateTimer();                     // Update NAV timer
   int     NAVenterNormal();                     // Enter normal state
-  int     NAVstateNormal(K55_EVENT evn);        // Normal mode
+  int     NAVstateNormal(U_INT evn);						// Normal mode
   int     NAVenterCDI();                        // Enter CDI mode
-  int     NAVstateCDI(K55_EVENT evn);           // CDI state
+  int     NAVstateCDI(U_INT evn);								// CDI state
   int     NAVenterBRG();                        // Enter bearing mode
-  int     NAVstateBRG(K55_EVENT evn);           // Bearing mode
+  int     NAVstateBRG(U_INT evn);								// Bearing mode
   int     NAVenterRAD();                        // Enter radial mode
-  int     NAVstateRAD(K55_EVENT evn);           // Radial mode
+  int     NAVstateRAD(U_INT evn);								// Radial mode
   int     NAVenterTIM();                        // Enter timer mode
-  int     NAVstateTIM(K55_EVENT evn);           // Timer state
+  int     NAVstateTIM(U_INT evn);								// Timer state
   //------Dispatcher --------------------------------------------------
-  int     Dispatcher(K55_EVENT evn);            // Dispatching 
+  int     Dispatcher(U_INT evn);            // Dispatching 
   void    TimeSlice (float dT,U_INT FrNo);      // Time slice
   //-------------------------------------------------------------------
   inline short    GetCDIdim() {return cdiDIM;}
@@ -181,7 +182,7 @@ enum K87_EVENT  {
 class CKR87radio  : public CRadio {
   friend class CKR87gauge;
   //---------State function -------------------------------------------
-  typedef int (CKR87radio::*StaFN)(K87_EVENT evn);
+  typedef int (CKR87radio::*StaFN)(U_INT evn);
   static StaFN       adfn[];                        // State Dispatcher
   //-----ATTRIBUTES ---------------------------------------------------
   U_CHAR      aPower;                               // Power button state
@@ -241,14 +242,14 @@ protected:
   void      TuneToFreq(SMessage *msg);
   void      UpdateCompass(short inc);
   //-----State functions ----------------------------------------------
-  int       K87eventDEC(K87_EVENT evn);             // Common decoder
+  int       K87eventDEC(U_INT evn);             // Common decoder
   int       K87enterPOF();                          // Enter power off   
-  int       K87statePOF(K87_EVENT evn);             // Power off state
+  int       K87statePOF(U_INT evn);             // Power off state
   int       K87enterFRQ();                          // Enter frequency mode
-  int       K87stateFRQ(K87_EVENT evn);             // Frequency state
+  int       K87stateFRQ(U_INT evn);             // Frequency state
   int       K87enterTIM();                          // Enter timer mode
   int       K87leaveTIM();                          // Leave timer mode
-  int       K87stateTIM(K87_EVENT evn);             // Timer state
+  int       K87stateTIM(U_INT evn);             // Timer state
   int       K87eventFLT();                          // FLT event
   int       K87eventRST();                          // Event reset
 public:
@@ -258,7 +259,7 @@ public:
   inline    U_CHAR      GetState()            {return rState;}
   inline    RADIO_FLD  *GetField(U_CHAR No)   {return adfTAB + No;}
   //-------------------------------------------------------------------
-  int       Dispatcher(K87_EVENT evn);            // Dispatching 
+  int       Dispatcher(U_INT evn);            // Dispatching 
 };
 
 //===========================================================================
@@ -1091,9 +1092,9 @@ public:
   int     EnterPON();
   int     EnterALT();
   //-----------------------------------------------------------
-  int     Dispatcher(KT76events evn,int pm);
+  int     Dispatcher(U_INT evn,int pm);
   //-------------------------------------------------------------
-  int     StatePOF(KT76events evn);
+  int     StatePOF(U_INT evn);
   //-------------------------------------------------------------
   inline  RADIO_FLD  *GetField(U_CHAR No)   {return xpdTAB + No;}
   inline  char        ButtonPos()           {return State;}

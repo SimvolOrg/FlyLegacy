@@ -609,7 +609,7 @@ public:
 	inline  void  SetKey(U_INT kxy)	    {gKey    = kxy;}	  // Store key
   inline  void  SetReady()            {Action  = TC_READY;}
 	inline	bool  HasSee(U_INT FrNo)    {return (NoFrame == FrNo); }
-	inline  U_INT GetKey()			        {return  gKey; }
+	inline  U_INT GetTileKey()	        {return  gKey; }
   inline  bool  IsEmpty()             {return (0 == NbObj);}
   inline  bool  HasObject()           {return (0 != NbObj);}
   inline  bool  IsComplete()          {return (Action == TC_READY);}
@@ -899,7 +899,7 @@ protected:
   //----GQT  key -----------------------------------------------
   float  pDis;                          // Plane distance (squared)
   //----Additional attributes for various purposes -------------
-	short xobs;														// OBS direction
+	float xobs;														// OBS direction
 	float	radial;                         // Aircraft radial in °
 	float	nmiles;                         // Distance to VOR/NDB
   float dsfeet;                         // Distance in feet
@@ -909,7 +909,8 @@ protected:
 public:
 	CNavaid(OTYPE qo,QTYPE qa);
   //------Virtual functions ----------------------------
-	inline short      GetRefDirection()	{return xobs;}
+	inline  char*     GetKey(void)      {return nkey; }
+	inline double     GetRefDirection()	{return xobs;}
   inline float      GetRadial()	      {return radial;}
 	inline float      GetNmiles()	      {return nmiles;}
   inline char*      GetIdent()        {return naid; }
@@ -935,7 +936,8 @@ public:
   inline bool       IsInRange()       {return (rang >= nmiles);	}
   inline bool		    IsNotInRange()    {return !(IsInRange());	}
   //-------------------------------------------------------
-	inline  void      SetOBS(short d)			{xobs	  = d;}
+	inline  void      SetNavOBS(float d)  {xobs	  = d;}
+	inline  void      SetRefDirection(float d)	{xobs = d;}
   inline  void      SetRecNo(U_INT No)  {recNo  = No;}
   inline  void      SetPDIS(float d)    {pDis   = d;}
   inline  U_INT     GetRecNo()          {return recNo;}
@@ -985,6 +987,7 @@ protected:
   float	    radial;                       // Aircraft radial in °
 	float	    nmiles;                       // Distance to VOR/NDB
   float			dsfeet;                       // Distance in feet
+	float     rDir;													// Reference direction
   //---------------------------------------------------------------
 protected:
   void  SetAttributes();
@@ -1001,7 +1004,7 @@ public:
   //--------Generic functions ----------------------------
 	inline Tag				GetUser()					{return user;}
   inline int        GetType()		      {return wtyp; }
-  inline char*      GetDbKey()        {return wkey;}
+  inline char*      GetKey()          {return wkey;}
   inline char*      GetCountry()      {return wcty;}
   inline char*      GetState()        {return wsta;}
   inline SPosition  GetPosition()     {return wpos;}
@@ -1014,8 +1017,9 @@ public:
 	inline CWPoint   *GetNode()					{return node;}
 	//------------------------------------------------------
 	inline	U_CHAR		SignalType()			{return SIGNAL_WPT;}
-	inline  short			GetRefDirection() {return short(radial);}
+	inline  double		GetRefDirection() {return rDir;}
 	inline  float     GetFeetDistance() {return dsfeet;}
+	inline  void      SetRefDirection(float d)	{rDir = d;}
   //------------------------------------------------------
 	inline void				SetNOD(CWPoint *w){node = w;}
   inline void       SetKey(char *k)   {strncpy(wkey,k,10);}
@@ -1126,7 +1130,7 @@ public:
   inline  char InMIDL(SVector &p,CBeaconMark &r)  {return InMARK(p,medM,r);}
   inline  char InINNR(SVector &p,CBeaconMark &r)  {return InMARK(p,inrM,r);}
   //------------------------------------------------------------------
-	inline  short GetRefDirection()			{return short(rwyDir);}
+	inline  double GetRefDirection()		{return rwyDir;}
 	inline  float GetRwyDirection()			{return rwyDir;}
   inline  char* GetName()             {return name;}
   inline  char *GetRWID()             {return irwy;}
@@ -1448,9 +1452,12 @@ protected:
   CCOM  *rdep;                            // Departure
   Tag   Metar;                            // Metar key
   float cfrq;                             // Clearance frequency
+	//-------------------------------------------------------------------------------
   float radial;                           // Radial to airport
   float nmiles;                           // Distance in mile
+  float dsfeet;                           // Distance in feet
   float pDis;                             // Squared distance
+	float rDir;														  // Reference direction
   //----------Queue of Runways ---------------------------------------------------
   CAptObject *apo;                        // Airport object
   ClQueue     rwyQ;                       // Airport runway queue
@@ -1496,6 +1503,10 @@ public:
   inline  bool      NotSelected()     {return (0 == apo);}
   inline  int       UnderEdit()       {return (Prop & TC_EDIT_BOX);}
   //----RADIO INTERFACE ---------------------------------------------
+	inline	U_CHAR		SignalType()			{return SIGNAL_WPT;}
+	inline  void      SetRefDirection(float d)	{rDir = d;}
+	inline  double		GetRefDirection() {return rDir;}
+	inline  float     GetFeetDistance() {return dsfeet;}
   inline void       SetATIS(CCOM *r)  {atis = r;}
   inline void       SetRDEP(CCOM *r)  {rdep = r; cfrq = r->GetFrequency();}
   inline CCOM      *GetATIS()         {return atis;}

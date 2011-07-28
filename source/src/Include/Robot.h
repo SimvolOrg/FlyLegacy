@@ -26,6 +26,7 @@
 #include "../Include/FlyLegacy.h"
 class	CPanel;
 class CGauge;
+class CAirplane;
 //=========================================================================
 //  ROBOT RETURN CODE
 //=========================================================================
@@ -148,22 +149,57 @@ public:
 	inline bool	Inactive()		{return (ROBOT_STOP == step);}
 };
 //=================================================================
+//	Virtual pilot states
+//=================================================================
+#define VPL_IS_IDLE			(0)
+#define VPL_STARTING		(1)
+#define VPL_TAKE_OFF		(2)
+#define VPL_CLIMBING		(3)
+#define VPL_TRACKING		(4)
+#define VPL_LANDING     (5)
+//=================================================================
 //  Virtual Pilot to pilot the aircraft
 //  
 //=================================================================
 class VPilot: public CSubsystem {
 protected:
 	//--- ATTRIBUTES --------------------------------------
+	char							 State;
+	char							 cnt;
+	//-----------------------------------------------------
+	U_INT							 FrNo;
+	float							 T01;
+	CWPoint					  *wayP;			// Target WayPoint
+	//-----------------------------------------------------
+	CAirplane         *pln;				// Airplane
 	CFPlan						*fpln;			// Flight plan to execute
 	AutoPilot         *apil;			// Auto pilote
-	BUS_RADIO					 Radio;			// Radio bus
+	CRadio					  *Radio;			// Radio n°1
+	BUS_RADIO         *busR;			// Radio bus
+	//--- Radio messages ----------------------------------
+	SMessage           mrad;			// Radio message
 	//-----------------------------------------------------
 public:
 	VPilot();
+	bool	GetRadio();
 	//-----------------------------------------------------
 	void	Error(int No);
+	//--- Action routines ---------------------------------
+	void	PreStart(float dT);
+	void	EnterTakeOff();
+	void	EnterFinal();
+	void	EnterWaypoint();
+	void	ChangeWaypoint();
+	//--- State routines ----------------------------------
 	void	Start();
-
+	void	HandleBack();
+	//--- Mode routines -----------------------------------
+	void	ModeTKO();
+	void	ModeCLM();
+	void	ModeTracking();
+	void	ModeLanding();
+	//------------------------------------------------------
+	void TimeSlice (float dT,U_INT FrNo);
 };
 //=======================END OF FILE ======================================================================
 #endif ROBOT_H

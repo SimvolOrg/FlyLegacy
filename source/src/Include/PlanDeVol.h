@@ -106,18 +106,22 @@ private:
   SPosition                 position;     // Geographic position
   int												altitude;     // Expected altitude at waypoint
   char                      dbKey[10];    // Database key value
+	char                      userT[6];			// User tag
+	//---------------------------------------------------------------------
+	float						ilsF;								// ILS Frequency if any							
   //---------------------------------------------------------------------
-  CFPlan									 *fplan;        // Mother flight plan
+  CFPlan					*fplan;							// Mother flight plan
 	//--- AREA TO EDIT VALUES   --------------------------------------------
   char            Iden[6];            // Identity
   char            Mark[2];            // Crossed marker
   char            Dist[10];           // Distance
+	char						Dirt[6];						// Direction to
   char            Alti[16];           // Altitude
   char            Elap[16];           // Elapse time
   char            Etar[16];           // Arrival time
 	//---------------------------------------------------------------------
+	double          rDir;								// Direction to next waypoint
 	double					pDis;								// Plane distance	
-	double					pDir;								// Direction to Waypoint
   //---------------------------------------------------------------------
   U_CHAR                    State;        // State
   float                     Legdis;       // Distance from previous in nm
@@ -129,11 +133,11 @@ private:
   SDateTime                 artime;       // Arrival time
   CObjPtr                   DBwpt;        // Way point from database
   //------Edit parameter ------------------------------------------------
-  char                      mTxt[2];      // Marker
-  char                      oMrk;         // Previous mark
+  char             mTxt[2];								// Marker
+  char             oMrk;									// Previous mark
   //--- METHODS -------------------------------------------------
 public:
-	CWPoint(CFPlan *fp,Tag t);		    						// Constructor
+	CWPoint(CFPlan *fp,Tag t);		    			// Constructor
  ~CWPoint();															// Destructor
 	//-------------------------------------------------------------
 	int			Read (SStream *stream, Tag tag);
@@ -153,10 +157,11 @@ public:
 	int			BestAltitudeFrom(int a0);
 	void    SetAltitude(int a);
 	void    SetPosition(SPosition p);
+  void		SetDirection(double d);
 	//-------------------------------------------------------------
-	void		Update();
-	void		Outside();
-	void		Inside();
+	bool		Update();
+	bool		Outside();
+	bool		Inside();
 	void		EditArrival();
 	//-------------------------------------------------------------
 	void		Save(SStream *s);
@@ -173,6 +178,7 @@ public:
   inline void       SetType(Tag t)        {type = t;}
   inline void       SetDbKey(char *k)     {strncpy(dbKey,k,10);}
 	//--- Edition ---------------------------------------------------
+	inline void				SetIlsFrequency(float f)				{ilsF	= f;}
 	inline void				SetMark(char *mk)			{strncpy(Mark,mk, 2);}
 	inline void       SetIden(char *id)			{strncpy(Iden,id, 5); Iden[5]  = 0;}
 	inline void				SetAlti(char *al)			{strncpy(Alti,al,12); Alti[11] = 0;}
@@ -180,6 +186,7 @@ public:
 	inline void				SetDBwpt(CmHead *obj)	{DBwpt = obj;}
 	inline void       SetSeq(U_SHORT s)			{Seq = s;}
 	inline void				SetUser(Tag u)				{user = u;}
+	inline void       SetRefDirection()			{DBwpt->SetRefDirection(rDir);}
 	//--- Edited field s ------------------------------------------
 	char*							GetEdAltitude()				{return Alti;}
 	//---Node parameters ------------------------------------------
@@ -193,15 +200,19 @@ public:
 	inline char*      GetLndRwy()						{return lndRWY;}
 	inline SPosition* GetGeoP()							{return &position;}
 	inline Tag				GetUser()							{return user;}
+	inline float			GetFrequency()				{return DBwpt->GetFrequency();}
+	inline float			GetILSFrequency()			{return ilsF;}
+	inline double     GetMagDeviation()			{return DBwpt->GetMagDev();}
+	inline double			GetDirection()				{return rDir;}
 	//--------------------------------------------------------------
 	inline bool				HasTkoRWY() {return (strcmp("NONE",tkoRWY) != 0);}
 	inline bool				HasLndRWY()	{return (strcmp("NONE",lndRWY) != 0);}
 	inline bool       IsPopulated()         {return DBwpt.Assigned();}
   inline bool       IsTerminated()        {return (State == WPT_STA_TRM);}
+	inline bool				IsActive()						{return (State != WPT_STA_TRM);}
 	inline bool       NotAirport()          {return (type != 'airp');}
 	inline bool				IsFirst()							{return (Seq == 1);}
-	inline bool				NotWaypoint()					{return (type != 'wayp');}
-	inline bool				IsaWaypoint()					{return (type == 'wayp');}
+	inline bool				IsaWaypoint()					{return (type != 'snav');}
 };
 //===========================================================================
 //  CFPlan defines flight plan
@@ -224,6 +235,7 @@ private:
   char            Desc[128];                  // Description
   U_INT           Version;                    // Version
 	U_INT						NbWPT;											// Total waypoints
+	//----------------------------------------------------------------
 	CWPoint        *cWPT;												// Current waypoint					
 	//--- DATA from SVH file -----------------------------------------
 	float					  nmlSPD;											// Normal speed
@@ -245,6 +257,7 @@ protected:
 	void	GenerateName();
 	void	Clear(char m);
 	int 	Read (SStream *stream, Tag tag);
+	void	ReadFormat(SStream *stream);
 	void	ReadFinished();
 	//---------------------------------------------------------------
 public:
@@ -252,13 +265,17 @@ public:
 	void	AddNode(CWPoint *wpt);
 	void	TimeSlice(float dT, U_INT fr);
 	void	Reload(char m);
+	int 	ModifyCeil(int inc);
 	//--- Robot interface -------------------------------------------
-	int	  Activate();
+	int	  Activate(U_INT frm);
+	void	Stop();
 	char *GetDepartingKey();
+	char *GetDepartingRWY();
 	bool  HasTakeOffRunway();
 	bool	HasLandingRunway();
+	bool	IsOnFinal();
 	//---------------------------------------------------------------
-	CWPT *GetUserWPT(SPosition *p);
+	CWPT *CreateUserWPT(SPosition *p);
 	//--- Change parameters -----------------------------------------
 	void  SetFileName(char *n);
 	void	SetDescription(char *d);
@@ -279,12 +296,15 @@ public:
 	inline char		   *GetDescription()	{	return Desc;}
 	inline void				IncWPT()					{	NbWPT++;}
 	inline void				DecWPT()					{	NbWPT--;}
-	//--- Aircraft aprameters ---------------------------------------
+	//--- Virtual pilot interface -----------------------------------
+	inline CWPoint   *GetCurrentNode()	{return cWPT;}
+	//--- Aircraft parameters ---------------------------------------
 	inline float			crsSpeed()				{return nmlSPD;}
 	inline float			aprSpeed()				{return aprSPD;}
 	inline int        maxCEIL()					{return mALT;}
 	inline int				actCEIL()					{return cALT;}
 	//---------------------------------------------------------------
+	inline bool       IsUsed()					{return (State != FPL_STA_NUL);}
 	inline bool				IsEmpty()					{return (0 == NbWPT);}
 	inline bool       IsNotLast(U_INT s){return (s != NbWPT);}
 	inline bool       IsLast(U_INT s)		{return (s == NbWPT);}

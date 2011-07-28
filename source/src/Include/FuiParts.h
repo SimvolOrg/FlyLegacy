@@ -237,6 +237,7 @@ class CFlpLine: public CSlot {
   char            Iden[6];            // Identity
   char            Mark[2];            // Crossed marker
   char            Dist[10];           // Distance
+	char						Dirt[6];						// Direction to
   char            Alti[16];           // Altitude
   char            Elap[16];           // Elapse time
   char            Etar[16];           // Arrival time
@@ -249,6 +250,7 @@ public:
   void            SetIden(char *id)   {strncpy(Iden,id, 5);}
   void            SetMark(char *mk)   {strncpy(Mark,mk, 2);}
   void            SetDist(char *di)   {strncpy(Dist,di,10);}
+	void						SetDirt(char *dr)   {strncpy(Dirt,dr,6);}
   void            SetAlti(char *al)   {strncpy(Alti,al,12);}
   void            SetWPT(CWPoint *w){wPnt = w;}							// OBSOLETE
   void            SetElap(char *el)   {strncpy(Elap,el,12);}
@@ -257,6 +259,7 @@ public:
   char           *GetIden()           {return Iden;}
   char           *GetMark()           {return Mark;}
   char           *GetDist()           {return Dist;}
+	char					 *GetDirt()						{return Dirt;}
   char           *GetAlti()           {return Alti;}
   char           *GetElap()           {return Elap;}
   char           *GetEtar()           {return Etar;}
@@ -345,7 +348,7 @@ public:
   void      GetEnd02(int *px,int *py);
   void      GetEnd03(int *px,int *py);
   void      GetEnd04(int *px,int *py);
-	U_CHAR		CheckEnd(char *id,int *px,int *py, char **d);
+	U_CHAR		CheckEnd(char *id,RWEND **end);		///int *px,int *py, char **d);
   //-------------------------------------------------------------
   inline    int GetDXH()    {return Hend.dx;}
   inline    int GetDYH()    {return Hend.dy;}
@@ -776,8 +779,11 @@ protected:
 	//-------------------------------------------------------------------
 	char       *tkoID;											// take off ID
 	char       *lndID;											// Land ID
-	char       *ilsFQ;											// ILS frequency
 	char        ilsTXT[20];									// Landing ils
+	//-------------------------------------------------------------------
+	RWEND			 *tEND;												// Selected take-off end
+	RWEND			 *lEND;												// Selected landing end
+	float			  ilsFQ;											// Ils frequency
 	//-------------------------------------------------------------------
   CListBox		rwyBOX;											// Runway list
 	//--- Methods -------------------------------------------------------
@@ -891,6 +897,8 @@ class CFuiFlightLog : public CFuiRwyEXT, public CFuiWindow
   //----------Edit fields ----------------------------------------
   CFuiTextField       *nWIN;                // Name window
   CFuiTextField       *dWIN;                // Description
+	//----------Ceil component -------------------------------------
+	CFuiTextField				*wCEL;								// Ceil edit
 	//--- Altitude components --------------------------------------
 	CFuiTextField       *wALT;								// Altitude edit
   //----------Waypoint management --------------------------------
@@ -914,6 +922,7 @@ public:
   //------FlightPlan management-----------------------------------
   void    FillCurrentPlan();
 	void		Select();
+	void		EditCeil(int a);
 	//--- Runway management --------------------------------------
 	void		GetRunway();
 	void		AddDBrecord(void *rec,DBCODE cd);
@@ -922,15 +931,13 @@ public:
   void    CreateAPTwaypoint();
   void    CreateNAVwaypoint();
 	void		CreateWPTwaypoint();
-  void    InsertWaypoint(CWPoint *wp);
+  void    InsertWaypoint(CWPoint *wp,CmHead *obj);
   void    DeleteWaypoint();
   void    MoveUpWaypoint();
   void    MoveDwWaypoint();
-  void    Error1();
-  void    Error2();
-  void    Error3();
-	void		Error4();
+	void		Error(char No);
 	void		ModifAlti(int inc);
+	void		ModifCeil(int inc);
   //--------------------------------------------------------------
   bool    ValidInsert();
   //--------------------------------------------------------------

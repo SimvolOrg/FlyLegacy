@@ -2898,6 +2898,7 @@ public:
   CmHead();                               // Default constructor
   virtual ~CmHead() {}                    // Virtual destructor
   virtual char      *GetName()        {return 0;}  // Get Name
+	virtual char      *GetKey()					{return "NONE";} // Database key
   virtual char      *GetIdent()       {return "";} // ICAO identification
   virtual char      *GetCountry()     {return "";}
   virtual char      *GetEFreq()       {return "";}
@@ -2907,7 +2908,7 @@ public:
   virtual float      GetNmiles()      {return 0; }
   virtual float      GetElevation()   {return 0;}
   virtual U_INT      GetRecNo()       {return 0;}
-	virtual short      GetRefDirection(){return 0;}
+	virtual double     GetRefDirection(){return 0;}
 	virtual float      GetVrtDeviation(){return 0;}
 	virtual double		 Sensibility()		{return 0;}
 	virtual U_CHAR		 SignalType()     {return SIGNAL_OFF;}
@@ -2920,7 +2921,8 @@ public:
   virtual SPosition  GetPosition();
   virtual SPosition *ObjPosition()    {return 0;}
 	//------------------------------------------------------------
-	virtual void       SetOBS(short d)	{;}
+	virtual void			 SetNavOBS(float d)   {;}
+	virtual void       SetRefDirection(float d)	{;}
 	virtual void			 SetNmiles(float m) {;}
 	//------------------------------------------------------------
 	        void  IncUser(void);					    // Increment user count
@@ -3253,7 +3255,7 @@ struct BUS_RADIO {U_CHAR    rnum;       // Radio num
 	//--- Set OBS ----------------------------------------------
 	void BUS_RADIO::SetOBS(short dir)
 	{ xOBS = dir;
-		if (nav)	nav->SetOBS(dir);
+		if (nav)	nav->SetNavOBS(dir);
 		return;
 	}
 	//----------------------------------------------------------

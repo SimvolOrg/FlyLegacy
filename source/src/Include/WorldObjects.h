@@ -351,13 +351,6 @@ public:
   void          SetPartTransparent(char* part, bool ok = true);
   //----Set spinner part -------------------------------------------------------------------
   CAcmSpin     *SetSpinner(char e,char *pn) {return (lod)?(lod->AddSpinner(e,pn)):(0);}     // Set spinner part
-  //------------ Gear Methods --------------------------------------------------------------
-	void					SetABS(char p)					{whl->SetABS(p);}
-	float         GetBrakeForce(int p)    {return amp->GetBrakeForce(p);}
-  char          GetWheelNum()           {return  WOW_nber++;}
-  bool          WheelsAreOnGround()     {return whl->WheelsAreOnGround();}
-  char          NbWheelsOnGround()      {return whl->GetNbWheelOnGround();}  
-	bool					AllWheelsOnGround()			{return whl->AllWheelsOnGround();}
   //--------------Aero model management --------------------------------------------------
   const double&             GetWingIncidenceDeg     (void) {return main_wing_incid;}
   const float&              GetWingAoAMinRad        (void) {return main_wing_aoa_min;}
@@ -409,16 +402,23 @@ public:
   inline bool   MouseMove (int x,int y) { return (pit)? (pit->MouseMove(x,y)):(false);}
   inline bool   MouseClick(EMouseButton b,int u,int x,int y)  { return (pit)? (pit->MouseClick(b,u,x,y)):(false);}
   //-----------------------------------------------------------------------------
-  inline const char*        GetPID()                { return (nfo)?(nfo->GetPID()):(0);}
   inline CNullSubsystem*    GetNullSubsystem(void)  { return nSub; }
   inline char              *GetNFOname()            { return nfoFilename;}
   inline void               GetVisualCG(SVector &v) {if (wgh) wgh->GetVisualCG(v);}
-  //-----Control management ----------------------------------------------------------------
-  //----------------------------------------------------------------------------------------
+  //-----Engine management ---------------------------------------------------------
+	inline bool		AllEngineOn()						{return (engR == eng->GetEngineNbr());}
+  //---------------------------------------------------------------------------------
   inline  CAnimatedModel        *GetLOD()     {return lod;}
   inline  CWeightManager        *GetWGH()     {return wgh;}
 	inline  int                    GetEngNb()		{return nEng;}
-  //-----------Fuel management -------------------------------------------------------------
+	//--- Gear Management -------------------------------------------------------------
+	void					SetABS(char p)					{whl->SetABS(p);}
+	float         GetBrakeForce(int p)    {return amp->GetBrakeForce(p);}
+  char          GetWheelNum()           {return  WOW_nber++;}
+  bool          WheelsAreOnGround()     {return whl->WheelsAreOnGround();}
+  char          NbWheelsOnGround()      {return whl->GetNbWheelOnGround();}  
+	bool					AllWheelsOnGround()			{return whl->AllWheelsOnGround();}
+  //--- Fuel Management -------------------------------------------------------------
   inline void   GetFuelCell(std::vector<CFuelCell*> &vf)  {if (wgh) wgh->GetFuelCell(vf);}
   inline void   GetLoadCell(std::vector<CLoadCell*> &vl)  {if (wgh) wgh->GetLoadCell(vl);}
   inline float  GetDryWeight()                            {return (wgh)?(wgh->GetDryWeight()):(0);}
@@ -429,6 +429,7 @@ public:
 	inline  AutoPilot        *GetAutoPilot()	{return  aPIL;}
 	inline  CRobot           *GetRobot()			{return amp->GetRobot(); }
 	inline  CFPlan           *GetFlightPlan() {return amp->GetFlightPlan();}
+  inline  char             *GetPID()        {return (nfo)?(nfo->GetPID()):(0);}
 	//-----------------------------------------------------------------------------------------
 protected:
   char   nEng;															// Engine number
@@ -450,11 +451,10 @@ protected:
 public:    
   inline  float GetGSpeed()               {return 0;}
   inline  double GetWBase()               {return whl->GetWBase();}
-	//---Engine interface ----------------------------------------------------------
+	//---Engine internal interface -------------------------------------------------
 	inline  void RazEngR()										{engR	= 0;}
 	inline  void IncEngR()										{engR++;}
 	inline  void DecEngR()										{engR--;}
-	inline  bool AllEngineOn()								{return (engR == eng->GetEngineNbr());}
 protected:
   //--- PLOT parameter table -----------------------------------------------------
   PLOT_PM   plotPM[16];                    // Plot parameters table
