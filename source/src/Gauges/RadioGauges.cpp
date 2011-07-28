@@ -299,7 +299,7 @@ int CK155gauge::AnyComEvent(int mx, int my)
   { U_CHAR No = itm->No;
 		if (!ca[No].IsHit(mx,my)) {itm++;	continue;}
 	  if (!ca[No].IsOK(cMsk))		{itm++;	continue;}
-    RAD->Dispatcher((K55_EVENT)itm->Ev);
+    RAD->Dispatcher(itm->Ev);
     return itm->No;
   }
   return 0;
@@ -314,7 +314,7 @@ int CK155gauge::AnyNavEvent(int mx,int my)
   { U_CHAR No = itm->No;
 		if (!ca[No].IsHit(mx,my)) {itm++;	continue;}
 		if (!ca[No].IsOK(cMsk))		{itm++;	continue;}
-    RAD->Dispatcher((K55_EVENT)itm->Ev);
+    RAD->Dispatcher(itm->Ev);
     return itm->No;
   }
   return 0;
@@ -329,7 +329,7 @@ void CK155gauge::ClickField(int na, short dir)
   RAD->mDir      = dir;
   while (itm->No)
   { if (itm->No != na) {itm++; continue;}
-    RAD->Dispatcher((K55_EVENT)itm->Ev);
+    RAD->Dispatcher(itm->Ev);
     return;
   }
   return;
@@ -604,7 +604,7 @@ void CKR87gauge::ClickField(int na, short dir)
   RAD->mDir       = dir;
   while (itm->No)
   { if (itm->No != na) {itm++; continue;}
-    RAD->Dispatcher((K87_EVENT)itm->Ev);
+    RAD->Dispatcher(itm->Ev);
     return;
   }
   return;
@@ -749,7 +749,7 @@ int CKT76gauge::AnyEvent(int mx,int my)
   while (itm->No) 
   { ev++;
     if (!ca[itm->No].IsHit(mx,my)) {itm++; continue; }
-    RAD->Dispatcher((KT76events)itm->Ev,ev);
+    RAD->Dispatcher(itm->Ev,ev);
     return 1;
   }
   return 0;
@@ -765,7 +765,7 @@ void CKT76gauge::ClickField(int na, short dir)
   while (itm->No)
   { ev++;
     if (itm->No != na) {itm++; continue;}
-    RAD->Dispatcher((KT76events)itm->Ev,ev);
+    RAD->Dispatcher(itm->Ev,ev);
     return;
   }
   return;
