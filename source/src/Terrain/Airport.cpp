@@ -1057,10 +1057,23 @@ void CAptObject::SetRunwayData(CRunway *rwy)
 //---------------------------------------------------------------------------------
 //  We compute a point inside the runway
 //  some feet after the threshold.  This will be
-//  the ILS landing position.
-//  Then we compute an origin point (at some more distance)
+//  the ILS landing position. (lndP)
+//  Then we compute an origin point (at opposite end)
 //  that is used in the glide slope computation
 //  all coordinates are in absolutes arcseconds
+//	Then we compute a far point (farP) 15000 feet away for drawing ILS
+//	Example:
+//          mini above
+//				(M)	Threshold 
+//					  |        lndP (landing point)
+//						|					|										Opposite End
+//	RWY 12L  -------------------------------------                 (at 15000 feet)
+//											L												|                    |
+//																							|                    |
+//																							|                    |
+//																							refP(R)              |
+//																																Far (F)
+//	M, L , R and F are aligned at 3° slope
 //--------------------------------------------------------------------------------
 void CAptObject::SetLandingPRM(ILS_DATA *ils)
 { double d1 = ils->d1;
@@ -2940,13 +2953,13 @@ bool CAirportMgr::AreWeAt(char *key)
 	return false;
 }
 //----------------------------------------------------------------------------------
-//	Check if we are at airport defined by key
+//	Locate runway end by identifier
 //----------------------------------------------------------------------------------
 RwyID *CAirportMgr::LocateEND(CAirport *apt,char *idn)
 { ClQueue  *qhd = apt->GetRWYQ();
   CRunway *rwy;
 	char    *idr;
-	RwyID   *res = 0;
+	RwyID   *res	= 0;
   for (rwy = (CRunway*)qhd->GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
 	{	idr  = rwy->GetHiEnd();
 	  if (strcmp(idn,idr)==0) {res = rwy->GetEndDEF(RWY_HI_END); break;}
@@ -2959,11 +2972,12 @@ RwyID *CAirportMgr::LocateEND(CAirport *apt,char *idn)
 //	Position aircarft at the runway threshold
 //----------------------------------------------------------------------------------
 bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
-{	CAirport *dep = (nApt)?(nApt->GetAirport()):(0);
+{	endp					= 0;
+	CAirport *dep = (nApt)?(nApt->GetAirport()):(0);
 	if (apt)	dep = apt;
 	if (0 == dep)		return false;
 	//------------------------------------------------
-	RwyID *end		= LocateEND(apt,idn);
+	RwyID *end		= LocateEND(dep,idn);
 	if (0 == end)		return false;
   SPosition pos = end->pos;
 	CAirplane *pln = globals->pln;
@@ -2978,7 +2992,6 @@ bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
 	//--- Set Autopilote temporary ----------
 	RwyID *opo    = end->opos;
 	SetRunwayEnd(&opo->pos);
-	pln->GetAutoPilot()->SetGroundMode(&opo->pos);
 	return true;
 }
 //----------------------------------------------------------------------------------
