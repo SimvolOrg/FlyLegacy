@@ -1134,7 +1134,7 @@ float GetSector(float dta)
 //  Reference Direction is :
 //  -OBS direction when radio is a NAV
 //  -ILS direction when radio is a ILS
-//  -WPT
+//  -WPT direction (radial)
 //  The flag is either F (from) or T (to) depending on the sector
 //  of the NAV where the aircraft is flying. 0 is when no signal is
 //  available or aircraft is in the dead angle of the radio

@@ -2201,7 +2201,7 @@ bool CILS::IsSelected(float hz)
 //          Aircraft altitude
 ///         Altitude of glide plan at aircraft position
 //    S is the glide slope plane
-//    R is the reference position (ILS origin)
+//    R is the reference position (ILS position)
 //    P is the aircraft position
 //    D is the distance (P-R)
 //    hG is the landing ground elevation
@@ -2216,6 +2216,11 @@ bool CILS::IsSelected(float hz)
 // 
 //    errG is also used by autopilot to maintain the glide slope in
 //    APPROACH mode
+//		NOTE:  ILS position are set at opposite end of the runway.
+//					 Thus the reference point (refP) is the other side of the runway, 
+//					 the distance is distance to opposite runway end.
+//					 Thus , when choosing which ILS is nearest to the aircraft
+//					 the test should be inverted. (See AIRPORT for ILS construction)
 //---------------------------------------------------------------------------
 void	CILS::Refresh(U_INT FrNo)
 {	if (NeedUpdate(FrNo) == false)	return;
@@ -2225,7 +2230,7 @@ void	CILS::Refresh(U_INT FrNo)
   radial = Wrap360((float)v.h - mDev);
 	nmiles = float(v.r) * MILE_PER_FOOT;
   double dsf = v.r;             // feet distance
-  ilsD->disF = dsf;
+  ilsD->disF = dsf;							// 
   //----compute glide slope variation in tan unit --------
   double vH  = dsf * ilsD->gTan;
   ilsD->errG = (globals->geop.alt - vH - ref->alt) / dsf;
@@ -2963,7 +2968,7 @@ CDbCacheMgr::~CDbCacheMgr()
 //---------------------------------------------------------------------
 void CDbCacheMgr::PopTile(char opt)	
 {	CTileCache *obj = (CTileCache*)ActQ.PopFromQ1();
-  U_INT key = obj->GetKey();
+  U_INT key = obj->GetTileKey();
   int   nob = obj->NbObj;
   if(!tr)       return;
   if (0 == opt) return;
@@ -3526,8 +3531,8 @@ void CDbCacheMgr::RwyToCache(CRunway *rwy,CTileCache *tc)
 void CDbCacheMgr::Populate(CTileCache *tc,CDatabase *db,QTYPE qx)
 {	if (db->NotMounted())   return;
   char key[16];
-	int kx = (tc->GetKey() >> 16);
-	int	kz = (tc->GetKey() & 0x0000FFFF);
+	int kx = (tc->GetTileKey() >> 16);
+	int	kz = (tc->GetTileKey() & 0x0000FFFF);
 	sprintf (key, "%03d%03d", kx, kz);
 	unsigned long offset = db->Search ('nltl', key);
   int nb = 0;
@@ -3557,8 +3562,8 @@ bool CDbCacheMgr::ValidILS(CILS *obj)
 //------------------------------------------------------------------------
 void CDbCacheMgr::IlsFromPOD(CTileCache *tc,CDatabase *db)
 {	char key[16];
-	int kx = (tc->GetKey() >> 16);
-	int	kz = (tc->GetKey() & 0x0000FFFF);
+	int kx = (tc->GetTileKey() >> 16);
+	int	kz = (tc->GetTileKey() & 0x0000FFFF);
 	sprintf (key, "%03d%03d", kx, kz);
 	U_LONG offset = db->Search ('nltl', key);
   int no = 0;
@@ -3930,18 +3935,15 @@ CILS *CDbCacheMgr::GoodILS(CILS* ils1, CILS* ils2)
 }
 //-------------------------------------------------------------------------
 //    Return the best ILS
-//    NOTE: Several runways have two ILS of the same frequency
-//          but opposed by 180° for both directions.
-//          In that case the best ILS is the one that gives the smallest angle
-//          with aircraft direction
+//    NOTE: When several ILS of the same frequency are detected
+//          the one selected is the one nearest to the aircarft
+//		NOTE:		Distance test is inverted due to ILS reference 
+//						located at opposite runway end
 //-------------------------------------------------------------------------
 CILS *CDbCacheMgr::BestILS(CILS* ils1,CILS* ils2)
 {   if (ils2 == 0)          return ils1;
-    int   sap =  strcmp(ils1->iapt,ils2->iapt);               // same Airport
-    bool  sry = (ils2->rwyDir == (ils1->rwyDir + 180.0f));    // same runway
-    if (sap && sry)   return GoodILS(ils1,ils2);
     //-----otherwise get the nearest for the same frequency ----------
-    return (ils2->GetNmiles() < ils1->GetNmiles())?(ils2):(ils1);
+    return (ils2->GetNmiles() > ils1->GetNmiles())?(ils2):(ils1);
 }
 //-------------------------------------------------------------------------
 //  Find a tuned ILS in the cache list
@@ -3954,6 +3956,7 @@ CILS *CDbCacheMgr::FindILS(U_INT FrNo,float freq)
   hd->Lock();
 	for (ils1 = (CILS*)hd->GetFirst(); ils1 != 0; ils1 = (CILS*)ils1->NextInQ1())
 	{	if (!ils1->IsSelected(freq))	continue;	
+	  if (!ils1->ilsD)							continue;
     ils1->Refresh(FrNo);
     if (ils1->IsInRange() == 0)   continue;
     ils2  = BestILS(ils1,ils2);
