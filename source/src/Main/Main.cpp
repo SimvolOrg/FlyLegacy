@@ -1010,15 +1010,13 @@ int RedrawSimulation ()
   // Call the time manager to indicate that another cycle is occurring.
   //   This represents the redraw cycle, not necessarily the simulation
   //   cycle, though at present they are coupled.
-  //   
-  //bool test_fr = !(frameRate < 1.0f / FPS_LIMIT - (frameRate * 0.1f));
-  //if (globals->fps_limiter && test_fr)
+  // 
   bool test_fr = frameRate < 1.0f / FPS_LIMIT - (frameRate * 0.1f);
   if (!globals->fps_limiter || test_fr)
   {
-      globals->tim->Update ();
-      dSimT  = globals->tim->GetDeltaSimTime();
-      dRealT = globals->tim->GetDeltaRealTime();
+    globals->tim->Update ();
+    dSimT  = globals->tim->GetDeltaSimTime();
+    dRealT = globals->tim->GetDeltaRealTime();
     globals->dST = dSimT;
     globals->dRT = dRealT;
   } else {
