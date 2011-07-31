@@ -1459,6 +1459,7 @@ void  CCameraObserver::SetCameraPosition (const float &pitchInRads, const float 
 //===================================================================================
 CCameraFlyby::CCameraFlyby (void)
 { // This camera cannot be manually handled
+  Prof.Set(CAM_MAY_ZOOM);
   // Default position to an arbitrary value to cause position recalc on first update
   cameraPos.lat = cameraPos.lon = cameraPos.alt = 0;
   // Temporarily set orientation based on position NE of the target
