@@ -1093,6 +1093,24 @@ int GetRounded(float nb)
   if (round & 0x02) value++;
   return value;
 }
+//--------------------------------------------------------------------------
+//  Return rounded altitude to 100 feet
+//--------------------------------------------------------------------------
+double RoundAltitude(double a)
+{	int    alt = int(a / 100);           // Integer part
+  double rst = fmod(a, 100);           // Fract part
+  double rnd = (rst > 50)?(100):(0);
+  return (double(alt) * 100) + rnd;	
+}
+//-----------------------------------------------------------
+//	Round altitude to 100 feet
+//-----------------------------------------------------------
+int  RoundAltitude(int a)
+{	int rst = a % 100;
+	int ent = a / 100;
+	if (rst) ent++;
+	return (ent * 100);
+}
 //=========================================================================================
 //  Return the magnetic direction of Aircraft
 //=========================================================================================
