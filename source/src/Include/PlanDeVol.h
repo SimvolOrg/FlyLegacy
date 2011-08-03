@@ -124,6 +124,7 @@ private:
 	double					pDis;								// Plane distance	
   //---------------------------------------------------------------------
   U_CHAR                    State;        // State
+	U_CHAR										Modif;				// Modifier indicator
   float                     Legdis;       // Distance from previous in nm
   float                     disTot;       // Total distance from start point
 	char											tkoRWY[6];	  // Take off runway
@@ -147,6 +148,8 @@ public:
 	void		Populate();
 	void		UserWaypoint();
 	//-------------------------------------------------------------
+	ILS_DATA	*GetLandingData();
+	//-------------------------------------------------------------
 	void		NodeOne(CWPoint *n);
 	void		NodeTwo(CWPoint *p);
 	void		NodeEnd(CWPoint *p);
@@ -158,8 +161,9 @@ public:
 	void    SetAltitude(int a);
 	void    SetPosition(SPosition p);
   void		SetDirection(double d);
+	float		NewReference(CVehicleObject *veh);
 	//-------------------------------------------------------------
-	bool		Update();
+	bool		Update(char e);
 	bool		Outside();
 	bool		Inside();
 	void		EditArrival();
@@ -178,6 +182,7 @@ public:
   inline void       SetType(Tag t)        {type = t;}
   inline void       SetDbKey(char *k)     {strncpy(dbKey,k,10);}
 	//--- Edition ---------------------------------------------------
+	inline void				SetModif(U_CHAR m)		{ Modif = m;}
 	inline void				SetIlsFrequency(float f)				{ilsF	= f;}
 	inline void				SetMark(char *mk)			{strncpy(Mark,mk, 2);}
 	inline void       SetIden(char *id)			{strncpy(Iden,id, 5); Iden[5]  = 0;}
@@ -190,6 +195,7 @@ public:
 	//--- Edited field s ------------------------------------------
 	char*							GetEdAltitude()				{return Alti;}
 	//---Node parameters ------------------------------------------
+	inline char				GetModif()	{char m = Modif; Modif = 0; return m;}
   inline char*      GetName()             {return Name;}
 	inline float			GetLegDistance()      {return Legdis;}
 	inline int				GetAltitude()         {return altitude;}
@@ -226,6 +232,8 @@ private:
   U_INT           serial;
   //----------Logical state --------------------------------------
   U_CHAR          State;                      // State
+	//--- Timer ----------------------------------------------------
+	float						Timer;											// T01
   //--------------------------------------------------------------
 	Tag							format;											// Actual format
 	char						genWNO;											// Waypoint number
@@ -264,8 +272,10 @@ public:
 	void	Assign(char *fn,char opt);
 	void	AddNode(CWPoint *wpt);
 	void	TimeSlice(float dT, U_INT fr);
-	void	Reload(char m);
+	void	Actualize(char m);
 	int 	ModifyCeil(int inc);
+	//---------------------------------------------------------------
+	double TurningPoint();
 	//--- Robot interface -------------------------------------------
 	int	  Activate(U_INT frm);
 	void	Stop();
@@ -285,6 +295,7 @@ public:
 	void	SetDistance(CWPoint *p0, CWPoint *p1);
 	void	Reorder(char m);
 	void	GenWptName(char *edt);
+	void	MovedWaypoint(CWPoint *wpt);
 	//---------------------------------------------------------------
 	void	DrawOnMap(CFuiVectorMap *win);
 	//---------------------------------------------------------------

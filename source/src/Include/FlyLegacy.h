@@ -2863,8 +2863,6 @@ enum OTYPE {  ANY = 0x00,       // Any
 #define SIGNAL_ILS 2
 #define SIGNAL_COM 4
 #define SIGNAL_WPT 8
-//------------------------------------------------------------------
-#define SIGNAL_NAV (SIGNAL_VOR+SIGNAL_ILS+SIGNAL_WPT)
 //===================================================================================
 //  NOTE:  dLon and dLat are working area used for several purposes 
 //===================================================================================
@@ -2920,6 +2918,7 @@ public:
   virtual float      GetFrequency()   {return 0;}
   virtual SPosition  GetPosition();
   virtual SPosition *ObjPosition()    {return 0;}
+	virtual SPosition *GetFarPoint()    {return 0;}
 	//------------------------------------------------------------
 	virtual void			 SetNavOBS(float d)   {;}
 	virtual void       SetRefDirection(float d)	{;}
@@ -2980,6 +2979,8 @@ typedef struct {
     float      errG;                          // Glide error (in tan unit)
     float      gTan;                          // Tan of glide slope
     float      altT;                          // altitude above threshold
+		//--- LAnding direction ------------------------
+		float      lnDIR;												  // Landing direction
     //---Distances to define this ILS --------------
     float      d1;                            // Landing distance
     float      d2;                            // reference distance

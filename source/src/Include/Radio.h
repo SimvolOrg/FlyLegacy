@@ -35,26 +35,35 @@ protected:
 	//--- ATTRIBUTE -----------------------------------
 	char			qAct;													// Index of active queue;													// qType
 	char			active;												// Active indicator
+	U_CHAR    signal;												// Signal type
+	U_CHAR		rfu1;
+	//-------------------------------------------------
 	char      sidn[5];                      // ident = first char from name
   char      snam[64];                     // source name
+	//-------------------------------------------------
+	ILS_DATA *ilsD;													// optional ILS DATA
 	//-------------------------------------------------
 	SPosition spos;                         // position lat long alti
 	float     smag;                         // Magnetic dev
   float	    radial;                       // Aircraft radial in °
 	float	    nmiles;                       // Distance to VOR/NDB
   float			dsfeet;                       // Distance in feet
+	float			vdev;													// Vertical deviation
 	double    refD;													// Reference direction
+	SPosition *farP;												// Far landing position
 	//--- METHODS -------------------------------------
 public:
 	CExtSource(): CmHead(ANY,OTH) {active = 0;}
 	//--------------------------------------------------
-	void			SetSource(CmHead *src,U_INT frm);
+	void			SetSource(CmHead *src,ILS_DATA *ils,U_INT frm);
 	void			Refresh(U_INT frm);
 	//--------------------------------------------------
 	inline	void			Stop()				{	active = 0;}
-	inline	U_CHAR		SignalType()	{ return SIGNAL_WPT;}
+	inline	U_CHAR		SignalType()	{ return signal;}
 	//--------------------------------------------------
+	inline  SPosition *GetFarPoint()	  {return farP;}
 	inline	void			SetRefDirection(float d) {refD = d;}
+	inline	void			SetPosition(SPosition *p)	{spos = *p;}
 	//--------------------------------------------------
 	inline  float			GetFeetDistance()	{ return dsfeet;}
 	inline	float     GetNmiles()				{ return nmiles; }
@@ -62,6 +71,7 @@ public:
 	inline  float			GetRadial()				{ return radial;}
 	inline  double    GetRefDirection()	{ return refD;}
 	inline  double    Sensibility()     { return 10;}
+	inline  float			GetVrtDeviation()	{ return vdev;}
 	//--------------------------------------------------
 	inline  bool			IsActive()		{ return (active != 0);}
 };
@@ -154,8 +164,10 @@ public:
   CRadio (void);
  ~CRadio();
   void   ReadFinished();
+	void	 FreeRadios(char opt);
   //--- virtual methods --------------------------------------
   int    virtual Dispatcher(U_INT evn) {return 1;}
+	int    virtual PowerON()             {sPower = 1; return 1;}
   //----------------------------------------------------------
   bool  MsgForMe (SMessage *msg);
   void  TimeSlice (float dT,U_INT FrNo);
@@ -163,8 +175,9 @@ public:
   void  Probe(CFuiCanva *cnv);
   virtual float Frequency()  {return 0;}
 	//--- Enter /leave waypoint mode ---------------------------
-	void	ModeEXT(CmHead *src);				// Enter/leave external mode
+	void	ModeEXT(CmHead *src,ILS_DATA *ils = 0);	// Enter/leave external mode
 	void	ChangeRefDirection(float d);
+	void	ChangePosition(SPosition *p);
  //-----------------------------------------------------------
   void  MakeFrequency(RADIO_FRQ *loc);
   void  StoreFreq(RADIO_FRQ *loc, float fq);

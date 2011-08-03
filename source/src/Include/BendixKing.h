@@ -93,6 +93,7 @@ public:
   int     ChangeTimerValue(short inc);
   int     ChangeTimerMode();
   int     PowerOFF();
+	int			PowerON();
   //------COM state functions --------------------------------------
   int     COMenterNormal();                     // Enter normal state
   int     COMstateNormal(U_INT evn);						// Normal Mode

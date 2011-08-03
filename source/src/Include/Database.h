@@ -742,7 +742,7 @@ public:
       void        GetFeetDistance(int *dx,int *dy,SPosition org,SPosition des);
       CNavaid*    GetNavaidByNameAndKey(char *name,char *key);
       CAirport*   GetAirportByName(char *name);
-      CWPT*  GetWaypointByKey(char *key);
+      CWPT*       GetWaypointByKey(char *key);
       //---------Interface to radio components-----------------
 			CNavaid*	GetTunedNAV(CNavaid *pn,U_INT FrNo,float freq);
 			CNavaid*	GetTunedNDB(CNavaid *pn,U_INT FrNo,float freq);
@@ -764,6 +764,7 @@ public:
       //----For Airport -----------------------------------------
       void      SetAirportIdent(CCOM *com);
       CAirport *FindAPTbyDistance(CAirport *old,float radius);
+			CAirport *FindAPTbyKey(char *key);
       //----------------------------------------------------------
       inline    short       GetRelativePos(short vp) {return (vp < 128)?(127 - vp):(vp - 128);}
       inline    SPosition  *GetPlanePos() {return &aPos;}
@@ -1101,7 +1102,6 @@ protected:
   //------------ILS parameters -------------------------------------
   CRunway   *rwy;                         // Associated runway
   CAirport  *apt;                         // Associated airpot
-  float   rwyDir;                         // Runway direction
   float   ilsVEC;                         // ILS vector
   float	  radial;                         // Aircraf position
 	float	  nmiles;                         // Distance to ILS
@@ -1130,8 +1130,8 @@ public:
   inline  char InMIDL(SVector &p,CBeaconMark &r)  {return InMARK(p,medM,r);}
   inline  char InINNR(SVector &p,CBeaconMark &r)  {return InMARK(p,inrM,r);}
   //------------------------------------------------------------------
-	inline  double GetRefDirection()		{return rwyDir;}
-	inline  float GetRwyDirection()			{return rwyDir;}
+	inline  double GetRefDirection()		{return ilsD->lnDIR;}		
+	inline  float GetRwyDirection()			{return ilsD->lnDIR;}		
   inline  char* GetName()             {return name;}
   inline  char *GetRWID()             {return irwy;}
   inline  float GetRadial()           {return radial; }
@@ -1279,7 +1279,10 @@ public:
  //------------------------------------------------------------------
  CRunway *GetNext()     {return (CRunway*)CmHead::Cnext;}
  //------------------------------------------------------------------
+ 	ILS_DATA  *GetIlsEnd(char *e);
+ //------------------------------------------------------------------
   void    InitILS(CILS *ils);
+	void		UpdateILS(float dir);
   void		Trace(char *op,U_INT FrNo,U_INT key);
   int     GetCode();
   int     GetLetter();
@@ -1499,6 +1502,8 @@ public:
   inline  void      AddOneILS()       {NbILS++;}
   inline  int       GetLighting()     {return altf;}
   inline  int       GetIcon()         {return aicn;}
+	//-----------------------------------------------------------------
+	inline	bool			SameKey(char *k)	{return (strcmp(k,akey) == 0);}
   inline  bool      IsSelected()      {return (0 != apo);}
   inline  bool      NotSelected()     {return (0 == apo);}
   inline  int       UnderEdit()       {return (Prop & TC_EDIT_BOX);}

@@ -168,7 +168,7 @@ protected:
 	char							 cnt;
 	//-----------------------------------------------------
 	U_INT							 FrNo;
-	float							 T01;
+	float							 T01;				// Timer
 	CWPoint					  *wayP;			// Target WayPoint
 	//-----------------------------------------------------
 	CAirplane         *pln;				// Airplane
@@ -190,6 +190,7 @@ public:
 	void	EnterFinal();
 	void	EnterWaypoint();
 	void	ChangeWaypoint();
+	void	Refresh();
 	//--- State routines ----------------------------------
 	void	Start();
 	void	HandleBack();

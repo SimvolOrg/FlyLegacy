@@ -71,7 +71,6 @@ public:
 protected:
 
 };
-
 //=====================================================================================
 //---PID BOX INDEX -------------------------------------
 #define PID_ROL 0                 // ROLL PID
@@ -284,7 +283,6 @@ protected:
   char       uvsp;                          // use VSP
   char       aprm;                          // Approach mode
   char       ugaz;                          // Use autothrottle
-	char       leg2;													// Leg2 mode
 	char       wgrd;													// Wheel on ground
   //-----------Lights--------------------------------------------------
   char       alta;                          // Altitude armed
@@ -334,11 +332,12 @@ protected:
 	double		 aCUT;							// Altitude to cut throttle
 	double     vROT;							// Rotate speed
 	double		 aTGT;							// Target altitude
-  //---Vertical mode control values --------------------------------------
+  //--- LEG2 mode control values --------------------------------------
   double     tCoef;                         // Turn coefficient
   double     dREF;                          // Distance to Reference
   double     sin3;                          // Sine(3°)
   double     glide;                         // Catching glide angle
+	double     rDIS;													// Remaining distance
 	//--- Lateral control values -------------------------------------------
   double     rHDG;                          // Target Heading
   double     aHDG;                          // Actual heading (yaw)
@@ -349,10 +348,9 @@ protected:
   double     vTIM1;                         // Time for P to D
   double     vTIM2;                         // Previous vTIM1
   double     vHRZ;                          // Horizontal speed
-  //----Verticale mode control values ----------------------------------
+  //----Vertical mode control values ----------------------------------
   double     Vref;                          // VSP Reference
   double     eVRT;                          // Vertical error (glide)
-  double     eGLD;                          // Absolute glide error
   double     vAMP;                          // Vertical amplifier
   double     rALT;                          // Reference altitude
   double     eVSP;                          // VSP error 
@@ -486,13 +484,14 @@ public:
 	void						SetLandingMode();
   //----Lateral modes --------------------------------------------------
 	double					AdjustHDG();
-	double          AdjustFinal();
   void            GetCrossHeading();
   void            ModeLT1();
   void            ModeLT2();
   void            ModeROL();
   void            ModeHDG();
 	void						ModeGND();
+	bool            CheckDistance();
+  void            CheckDirection();
 	//---- Vertical modes ------------------------------------------------
   void            ModeGSW();
   void            ModeGST();
@@ -501,7 +500,6 @@ public:
   void            ModeFLR();
 	void						ModeFIN();
   void            ModeDIS();
-  void            CheckDirection();
   //-------EVENT PROCESSING -------------------------------------------
   void            StateDIS(int evn);
   void            StateROL(int evn);
