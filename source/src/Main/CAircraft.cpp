@@ -1535,7 +1535,7 @@ void COPALObject::PositionAGL()
 //------------------------------------------------------------------------------------------
 void COPALObject::RestOnGround()
 { double    grn = globals->tcm->GetGroundAltitude();
-  SPosition pos = globals->geop;
+  SPosition pos = geop;
   pos.alt       = grn + GetPositionAGL();
   SetPosition(pos);
   PositionAGL();
