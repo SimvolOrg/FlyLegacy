@@ -669,13 +669,13 @@ void CFuiVectorMap::DrawRoute(CRouteEXT &org,CRouteEXT &ext)
   int x2,y2;
   GetScreenCoordinates(&ext,x2,y2);
   DrawFastLine(surface,x1, y1, x2, y2, white);
-	//--- Check if origin is a waypoint from flight plan -----------
-	CmHead *obj = org.GetOBJ();
+	//--- Check if extremity is a waypoint from flight plan --------
+	CmHead *obj = ext.GetOBJ();
 	if (0 == obj)									return;
 	if (obj->GetActiveQ() != WPT)	return;
 	//--------------------------------------------------------------
 	float dis = ext.GetLegDistance();
-	org.SetNodeDistance(dis);
+	ext.SetNodeDistance(dis);
 	dbc->GetFlatDistance(obj);
 	DrawWayPoint((CWPT *)obj);
   return;
@@ -1393,7 +1393,8 @@ bool CFuiVectorMap::MoveWPT(int mx,int my)
 // Waypoint has moved
 //----------------------------------------------------------------------------------
 void CFuiVectorMap::WaypointMoved()
-{	fPlan->Reorder(1);
+{	CWPT *wpt = (CWPT*)Focus.Pointer();
+	fPlan->MovedWaypoint(wpt->GetNode());
 	CFuiFlightLog *nwin = dbc->GetLOGwindow();
   if (0 == nwin)      return;
 	nwin->Refresh();

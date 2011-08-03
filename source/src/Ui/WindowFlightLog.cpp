@@ -116,8 +116,7 @@ void CFuiFlightLog::EditCeil(int a)
 //  Fill the current flight plan
 //--------------------------------------------------------------------------
 void CFuiFlightLog::FillCurrentPlan()
-{ 
-	nWIN->SetText(fpln->GetFileName());
+{ nWIN->SetText(fpln->GetFileName());
 	dWIN->SetText(fpln->GetDescription());
 	EditCeil(fpln->actCEIL());
   flpBOX->Display();
@@ -456,7 +455,7 @@ void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
   case 'zero':
 		if (fpln->IsUsed())	return Error(5);
     fpln->Clear(0);
-		fpln->Reload(0);
+		fpln->Actualize(0);
     FillCurrentPlan();
     return;
 	//--- Increment altitude -------------------
