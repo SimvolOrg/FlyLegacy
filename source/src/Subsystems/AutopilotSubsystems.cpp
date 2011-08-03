@@ -1360,8 +1360,8 @@ void AutoPilot::ModeLT2()
 { if (BadSignal(signal))  return ExitLT2();
   //--Compute heading factor ---------------
 	rHDG	= AdjustHDG();     // New direction;
-	TRACE("LT2: aHDG=%.2f RADI=%.2f hERR=%.2f, cFAC=%.2f rHDG=%.2f",
-		aHDG,Radio->radi,hERR,cFAC,rHDG);
+	//	TRACE("LT2: aHDG=%.2f RADI=%.2f hERR=%.2f, cFAC=%.2f rHDG=%.2f",
+	//	aHDG,Radio->radi,hERR,cFAC,rHDG);
 	//-- check for final leg ----------------
 	if (!CheckDistance())		return;
 	return LateralHold();
