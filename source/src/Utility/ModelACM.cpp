@@ -1410,7 +1410,7 @@ void CModelACM::SetPartKeyframe (char* partname, float frame)
 //  Compute shadow matrix
 //---------------------------------------------------------------------------
 bool CModelACM::BuildShadowMatrix()
-{ float delta_alt =  globals->geop.alt - globals->tcm->GetGroundAltitude();
+{ float delta_alt =  mveh->GetAltitude() - globals->tcm->GetGroundAltitude();
   if (delta_alt > 300.0f) return false;
   CVector &sunP_ = *(globals->tcm->SunPosition());
   float lPos[]  = { sunP_.x, sunP_.y, sunP_.z, 1.0f }; // World position of light source
