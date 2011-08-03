@@ -2080,7 +2080,6 @@ char CBeaconMark::Set(char s)
 CILS::CILS(OTYPE qo,QTYPE qa)
 :CmHead(qo,qa)
 { rwy     = 0;                              // Clear runway
-  rwyDir  = 0;                              // Clear direction
   ilsVEC  = 0;                              // ils vector
  	radial	= 0;                              // Clear radial
 	nmiles	= 0;                              // Clear direction
@@ -2158,10 +2157,11 @@ char CILS::InMARK(SVector &pos, B_MARK &b,CBeaconMark &m)
 //------------------------------------------------------------------------
 void CILS::SetIlsParameters(CRunway *rwy,ILS_DATA *dt, float dir)
 { this->rwy   = rwy;
-  rwyDir      = Wrap360(dir - mDev);        // Compute real direction
-  ilsVEC      = Wrap360(dir + 180.f);				// Runway vector
+  float mdir  = Wrap360(dir - mDev);				// Magnetic deviation
+  ilsVEC      = Wrap360(dir + 180);					// Runway vector
   ilsD        = dt;
   ilsD->ils   = this;
+	ilsD->lnDIR = mdir;
   return SetGlidePRM();
 }
 //-----------------------------------------------------------------
@@ -2242,8 +2242,8 @@ void	CILS::Refresh(U_INT FrNo)
 void  CILS::Trace(char *op,U_INT FrNo,U_INT key)
 {	U_INT x = (key >> 16);
 	U_INT y = (key & 0x0000FFFF);
-	TRACE("        %s ILS %4s Apt %10s Rwy %4s Freq %06.2f Range %06.2f Direction %06.2f",
-		  op,iils,iapt,irwy,freq,rang,rwyDir);
+	TRACE("        %s ILS %4s Apt %10s Rwy %4s Freq %06.2f Range %06.2f",
+		  op,iils,iapt,irwy,freq,rang);
 	return;
 }
 //==========================================================================
@@ -2274,10 +2274,12 @@ void CRunway::SetAttributes()
   ilsD[RWY_HI_END].ils   = 0;
   ilsD[RWY_HI_END].lndP  = pshi;
   ilsD[RWY_HI_END].altT  = alti;
+	ilsD[RWY_HI_END].gTan  = float(TANGENT_3DEG);
 	//----------------------------
   ilsD[RWY_LO_END].ils   = 0;
   ilsD[RWY_LO_END].lndP  = pslo;
   ilsD[RWY_LO_END].altT  = alti;
+	ilsD[RWY_LO_END].gTan  = float(TANGENT_3DEG);
 	//----------------------------
   pID[RWY_HI_END].LetID  = GetIdentIndex(rhid[2]);
   pID[RWY_LO_END].LetID  = GetIdentIndex(rlid[2]);
@@ -2290,6 +2292,17 @@ void CRunway::SetAttributes()
   double lr   = TC_RAD_FROM_ARCS(pshi.lat);					//DegToRad (pshi.lat / 3600.0);
   nmFactor = cos(lr) / 60;													// 1 nm at latitude lr
   return;
+}
+//-----------------------------------------------------------------
+//  Update landing parametres 
+//-----------------------------------------------------------------
+void CRunway::UpdateILS(float dir)
+{	float mdev = rhhd - rhmh;
+	float hdir = Wrap360(-dir - mdev);
+	ilsD[RWY_HI_END].lnDIR = hdir;
+	float ldir = Wrap360(hdir + 180);
+	ilsD[RWY_LO_END].lnDIR = ldir;
+	return;
 }
 //-----------------------------------------------------------------
 //  Return Ground Index
@@ -2342,6 +2355,24 @@ void CRunway::InitILS(CILS *ils)
     return;
   }
   return;
+}
+//---------------------------------------------------------------------------------
+//  Set Landing parameters
+//---------------------------------------------------------------------------------
+ILS_DATA  *CRunway::GetIlsEnd(char *e)
+{	//--- landing in hi end --------------
+	if (0 == strcmp(e,rhid))	
+	{ float ldir  = rhmh;					// Mag direction
+	  ilsD[RWY_HI_END].lnDIR = ldir;
+		return (ilsD + RWY_HI_END);
+	}
+	//--- landing in lo end --------------
+	if (0 == strcmp(e,rlid))  
+	{	float ldir  = rlmh;					//Magnetic direction
+	  ilsD[RWY_LO_END].lnDIR = ldir;
+		return (ilsD + RWY_LO_END);
+	}
+	return 0;
 }
 //---------------------------------------------------------------------------------
 //  Compute runway code (ref TP312E)
@@ -4094,6 +4125,21 @@ CAirport *CDbCacheMgr::FindAPTbyDistance(CAirport *old,float radius)
   {	dis = GetRealFlatDistance(apt);
     if (dis <= radius) break;
     apt = (CAirport*)apt->Cnext; 
+  }
+  //----Unlock airport queue here -----------------------------
+  hd->Unlock();
+  return apt;
+}
+//=========================================================================
+//  Find airport by key
+//=========================================================================
+CAirport *CDbCacheMgr::FindAPTbyKey(char *key)
+{ ClQueue   *hd		= aHead[APT];
+  CAirport	*apt	= 0;
+  //----Lock airport queue here ---------------------------
+  hd->Lock();
+  for (apt = (CAirport*)hd->GetFirst(); apt != 0; apt = (CAirport*)apt->NextInQ1())
+  {	if (apt->SameKey(key)) break;
   }
   //----Unlock airport queue here -----------------------------
   hd->Unlock();
