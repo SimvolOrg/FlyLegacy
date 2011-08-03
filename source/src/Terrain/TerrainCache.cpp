@@ -1739,11 +1739,11 @@ int CSuperTile::Draw3D(U_CHAR tod)
     glTranslated(tr.x,tr.y,tr.z);     // To object origin
     glRotated(ry,0,0,1);
     //---Draw object ----------------------------------------
-    if (obj->NoZU())    glDisable(GL_DEPTH_TEST);			
+    if (obj->NoZB())    glDisable(GL_DEPTH_TEST);			
     //--- Set diffuse property --------------------------------
     glMaterialfv (GL_FRONT_AND_BACK, GL_DIFFUSE, white);
     obj->DrawModel(mod,LOD);
-    if (obj->NoZU())    glEnable(GL_DEPTH_TEST);		
+    if (obj->NoZB())    glEnable(GL_DEPTH_TEST);		
     //----------------------------------------------------------------
     glPopMatrix();
     nbo++;

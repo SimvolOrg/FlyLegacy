@@ -558,11 +558,13 @@ void CPaveRWY::AppendAsTriangle(CPaveRWY *pav)
 { TC_VTAB *src = pav->GetVTAB();
   TC_VTAB *dst = ptab.GetVTAB() + ptab.GetNBVT();
   TC_VTAB *org = src++;               // Origin of fan
+	if (0 == pav->GetNBVT())		return;
   int      nbt = pav->GetNBVT() - 2;  // Number of triangles
   for (int k = 0; k != nbt; k++)
   { *dst++ = *org;                    // First vertex of triangle
     *dst++ = *src++;              
     *dst++ = *src;
+		//======SET TRAP HERE =====================================
      ptab.AddCount(3);                // 3 vertices added
   }
   return;

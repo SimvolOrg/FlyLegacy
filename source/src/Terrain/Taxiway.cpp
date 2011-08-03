@@ -557,9 +557,23 @@ void CTileTMS::FillTriangles(CStreamFile *sf,int nb,TC_VTAB *tab)
 		*dst++ = tab[N0];                 // Triangle vertex 1
     *dst++ = tab[N1];									// Triangle vertex 2
     *dst++ = tab[N2];									// Triangle vertex 3
+		//==============================================================
+		//	TRAP error for big triangles in ORLY
+		//==============================================================
+		 float p1 = (tab[N0].VT_Y + tab[N1].VT_Y) * (tab[N0].VT_X - tab[N1].VT_X);
+		 float p2 = (tab[N1].VT_Y + tab[N2].VT_Y) * (tab[N1].VT_X - tab[N2].VT_X);
+		 float p3 = (tab[N2].VT_Y + tab[N0].VT_Y) * (tab[N2].VT_X - tab[N0].VT_X);
+		 float sf = (p1 + p2 + p3) * 0.5;
+		 bool del		= (fabs(sf) > 400);
+		 if (del)
+		 {	dst -= 3;
+				pave->AddCount(-3);
+			  TRACE ("APO %s SF=%.4f---- x0=%.4f y0=%.4f",apo->GetAptName(),sf,tab[N0].VT_X,tab[N0].VT_Y);
+		 }
+		 //=======END OF TRAP ==========================================
 		 N1	= N2;													// Forward to next triangle
   }
-  dtq.PutEnd(pave);
+  if (pave->GetNBVT()) dtq.PutEnd(pave);
   return;
 }
 //-------------------------------------------------------------------------------
