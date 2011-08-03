@@ -1858,7 +1858,7 @@ int CK89gps::EditNAVpage02()
   switch (OpPos) {
     //----------Format 0: Edit coordinates -------------------------------
     case 0:
-      { SPosition pos = globals->geop;
+      { SPosition pos = mveh->GetPosition();			//globals->geop;
         EditLatitude (pos.lat,K89_LINE2,K89_CLN10);
         EditLongitude(pos.lon,K89_LINE3,K89_CLN10);
         break;
@@ -4217,7 +4217,7 @@ void  CK89gps::TimeSlice (float dT,U_INT FrNo)
       fState  = FPL->IsStarted();
   }
 	*/
-  aPos  = globals->geop;
+  aPos  = mveh->GetPosition();					//globals->geop;
   //-----Refresh active waypoint --------------------------
   if (aState >= K89_APTP1)
   { UpdateWaypointData();
