@@ -2871,7 +2871,6 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
   int op = 0;
   GetIniVar("TRACE","DrawILS",&op);
   dILS   = op;
-  globals->draw_ils = op ? true : false;
 }
 //=========================================================================================
 //  Destroy airports
@@ -3033,7 +3032,7 @@ void CAirportMgr::DrawLights()
   CAptObject *apo = 0;
   glEnable(GL_TEXTURE_2D);
   for (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
-  { if (globals->draw_ils) apo->DrawILS();
+  { if (dILS) apo->DrawILS();
     if (apo->NotVisible())  continue;
     apo->DrawLights(cam);
   }
