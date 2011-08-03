@@ -440,7 +440,7 @@ void CSimulatedVehicle::PrintInfo (int bar_cycle)
   //
   else 
   if (2 == bar_cycle) {
-    SPosition pos_to    = globals->geop;
+    SPosition pos_to    = mveh->GetPosition();				
     SVector orientation = globals->iang; 
     char buff [128] = {'\0'};
     char edt1 [128] = {'\0'};

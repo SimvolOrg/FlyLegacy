@@ -176,7 +176,7 @@ char CGearOpal::GCompr__Timeslice  (void)
   double   *M = mveh->GetROTM();               // Rotation matrix
   gearData->gPos.MultMatGL(M,V);               // Rotate
   //---Wheel AGL is local contact + body AGL -----------------------
-  double bagl = globals->geop.alt - grd;
+  double bagl = mveh->GetAltitude() - grd;
   double wagl = bagl + V.z;
   susp->SetWheelAGL(wagl);
   if (wagl > 0.5)   return 0;

@@ -655,7 +655,6 @@ void InitGlobalsNoPodFilesystem (char *root)
    char buff_ [8] = {0};
    GetIniString ("Sim", "fpsLimiter", buff_, 8);
    if (!strcmp (buff_, "false")) globals->fps_limiter = false;
-   globals->draw_ils = false;
 
    // CAGING
    globals->caging_fixed_sped = false;

@@ -284,7 +284,7 @@ void CSuspension::Write (SStream *stream)
 //-----------------------------------------------------------------------
 void CSuspension::GearDamaged(char nsk)
 { U_INT f = globals->Frame;
-  TRACE("%06d: Wheel %s Dammaged (%d) at %.4f",f,gear_data.susp_name,nsk,globals->geop.alt);
+  TRACE("%06d: Wheel %s Dammaged (%d) at %.4f",f,gear_data.susp_name,nsk,mveh->GetAltitude());
   char dam1[64];
   sprintf(dam1,"Gear %s shoked",gear_data.susp_name);
   char dam2[64];
@@ -502,11 +502,11 @@ void CGear::GearB2L_Timeslice (void)
   */
   // to be tested later
   SVector bodyPos;
-  SPosition cgPos = globals->geop;                  ///< alt in feet lat and lon in arcsec
-  SVector ori     = globals->iang;                  ///< rad
+  SPosition cgPos = mveh->GetPosition();                  ///< alt in feet lat and lon in arcsec
+  SVector ori     = globals->iang;												///< rad
   /// \todo use matrix instead
   TurnVectorFromFulcrum (vGearLoc2CG, ori, bodyPos);
-  BodyVector2WorldPos   (cgPos, bodyPos, WPos);                         ///< WPos = SPosition so alt in feet
+  BodyVector2WorldPos   (cgPos, bodyPos, WPos);           ///< WPos = SPosition so alt in feet
 }
 
 
