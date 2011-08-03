@@ -415,6 +415,12 @@ void windows_closesec_cb(puObject* obj)
     globals->sScreen.ID = 0;
   }
 }
+
+void windows_toggleIlsView(puObject* obj)
+{
+  if (!globals->draw_ils) globals->draw_ils = true;
+  else globals->draw_ils = false;
+}
 //-------------------------------------------------------------------------
 //  Swap Full screen.  
 //-------------------------------------------------------------------------
@@ -445,6 +451,7 @@ void windows_togglefullscreen_cb(puObject* obj)
 char *windows_legends[] =
 {
   "Toggle full screen",
+  "Toggle ILS View",
 //  "--------------------",
 //  "Close secondary view",
 //  "Create secondary view",
@@ -458,6 +465,7 @@ char *windows_legends[] =
 puCallback windows_cb[] =
 {
   windows_togglefullscreen_cb,
+  windows_toggleIlsView,
  // NULL,                         // Separator
  // NULL,                         // windows_closesec_cb,
  //  NULL,                         // windows_newview_cb,

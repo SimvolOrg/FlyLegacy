@@ -655,6 +655,7 @@ void InitGlobalsNoPodFilesystem (char *root)
    char buff_ [8] = {0};
    GetIniString ("Sim", "fpsLimiter", buff_, 8);
    if (!strcmp (buff_, "false")) globals->fps_limiter = false;
+   globals->draw_ils = false;
 
    // CAGING
    globals->caging_fixed_sped = false;
@@ -1010,9 +1011,16 @@ int RedrawSimulation ()
   // Call the time manager to indicate that another cycle is occurring.
   //   This represents the redraw cycle, not necessarily the simulation
   //   cycle, though at present they are coupled.
-  //   
-  if (globals->fps_limiter)
+  // 
+  bool test_fr = frameRate < 1.0f / FPS_LIMIT - (frameRate * 0.1f);
+  if (!globals->fps_limiter || test_fr)
   {
+    globals->tim->Update ();
+    dSimT  = globals->tim->GetDeltaSimTime();
+    dRealT = globals->tim->GetDeltaRealTime();
+    globals->dST = dSimT;
+    globals->dRT = dRealT;
+  } else {
     while (tmp_timerS < FPS_LIMIT) { // start basic fps limiter
       globals->tim->Update ();
       dSimT  = globals->tim->GetDeltaSimTime();
@@ -1028,12 +1036,6 @@ int RedrawSimulation ()
     globals->tim->SetDeltaRealTime (dRealT);
     globals->dRT = dRealT;
     tmp_timerR = tmp_timerS;
-  } else {
-    globals->tim->Update ();
-    dSimT  = globals->tim->GetDeltaSimTime();
-    dRealT = globals->tim->GetDeltaRealTime();
-    globals->dST = dSimT;
-    globals->dRT = dRealT;
   } 
   // Accumulate frame rate statistics every second
   nFrames++;

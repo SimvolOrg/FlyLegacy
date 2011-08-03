@@ -450,8 +450,8 @@ void  CCamera::SetZoom(float z)
 void CCamera::ZoomRatioIn (void)
 { if (Prof.Not(CAM_MAY_ZOOM))	return;
 	char txt[256];
-  fov -= 0.25;
-  if (fov < 25) fov = 25;
+  fov -= 0.25f;
+  if (fov < 25.0f) fov = 25.0f;
   int fv = int(fov);
   SetMinAGL();
   _snprintf(txt,255,"FOV: %02d °",fv);
@@ -464,8 +464,8 @@ void CCamera::ZoomRatioIn (void)
 void CCamera::ZoomRatioOut (void)
 { if (Prof.Not(CAM_MAY_ZOOM))	return;
 	char txt[256];
-  fov += 0.25;
-  if (fov > 90) fov = 90;
+  fov += 0.25f;
+  if (fov > 90.0f) fov = 90.0f;
   int fv = int(fov);
   SetMinAGL();
   _snprintf(txt,255,"FOV: %02d °",fv);
@@ -1459,6 +1459,7 @@ void  CCameraObserver::SetCameraPosition (const float &pitchInRads, const float 
 //===================================================================================
 CCameraFlyby::CCameraFlyby (void)
 { // This camera cannot be manually handled
+  Prof.Set(CAM_MAY_ZOOM);
   // Default position to an arbitrary value to cause position recalc on first update
   cameraPos.lat = cameraPos.lon = cameraPos.alt = 0;
   // Temporarily set orientation based on position NE of the target
@@ -1677,6 +1678,35 @@ void CCameraTower::UpdatePosition(float Dt)
   GetNearestAirport ();
   return;
 }
+//-------------------------------------------------------------------------
+// ZoomIn
+//-------------------------------------------------------------------------
+void CCameraTower::ZoomRatioIn (void)
+{ if (Prof.Not(CAM_MAY_ZOOM))	return;
+	char txt[256];
+  t_zoomRatio -= 0.25f;
+  if (t_zoomRatio < 0.15f) t_zoomRatio = 0.15f;
+  fov = t_zoomRatio;
+  SetMinAGL();
+  _snprintf(txt,255,"FOV: %02.0f °",fov);
+  globals->fui->DrawNoticeToUser(txt,5);
+  return;
+}
+//-------------------------------------------------------------------------
+// ZoomOut
+//-------------------------------------------------------------------------
+void CCameraTower::ZoomRatioOut (void)
+{ if (Prof.Not(CAM_MAY_ZOOM))	return;
+	char txt[256];
+  t_zoomRatio += 0.25f;
+  if (t_zoomRatio > 90.0f) t_zoomRatio = 90.0f;
+  fov = t_zoomRatio;
+  SetMinAGL();
+  _snprintf(txt,255,"FOV: %02.0f °",fov);
+  globals->fui->DrawNoticeToUser(txt,5);
+  return;
+}
+
 //==============================================================================
 // Overhead camera
 //==============================================================================

@@ -433,6 +433,8 @@ public:
   }
 	//----------------------------------------------------------------------
 	CVector		ComputeOffset(SPosition tgt);
+  virtual void  ZoomRatioIn (void);
+  virtual void  ZoomRatioOut (void);
   void			UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
 	void			UpdatePosition(float Dt);
 	void			ComputeAngle(CVector &v);
