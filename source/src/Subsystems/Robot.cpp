@@ -305,14 +305,14 @@ void VPilot::Start()
 //	Prepare to start
 //--------------------------------------------------------------
 void VPilot::PreStart(float dT)
-{	char txt[128];
+{	char *edt = globals->fui->PilotNote();
 	T01 -= dT;
 	if (T01 > 0)		return;
 	cnt--;
 	if (cnt < 0)		return EnterTakeOff();
 	T01  = 1;
-	sprintf(txt,"VIRTUAL PILOT: STARTING IN %d sec",cnt);
-	globals->fui->DrawNoticeToUser(txt,1.2f);
+	_snprintf(edt,128,"STARTING IN %02d sec",cnt);
+	globals->fui->PilotToUser();
 	return;
 }
 //--------------------------------------------------------------
@@ -354,7 +354,8 @@ void VPilot::ModeCLM()
 //  -GPS waypoint
 //--------------------------------------------------------------
 void VPilot::EnterFinal()
-{ TRACE("VPL: Enter Final: %s",wayP->GetName());
+{ //TRACE("VPL: Enter Final: %s",wayP->GetName());
+	char *edt = globals->fui->PilotNote();
 	float frq = wayP->GetILSFrequency();
 	//--- If frequency, use as ILS ------------------------
   if (frq) 
@@ -370,41 +371,49 @@ void VPilot::EnterFinal()
 	//--- Configure autopilot for landing ------------------
 	apil->SetLandingMode();
 	State = VPL_LANDING;
+	//--- Advise user --------------------------------------
+	_snprintf(edt,128,"Entering final for %s",wayP->GetName());
+	globals->fui->PilotToUser();
 	return;
 }
 //--------------------------------------------------------------
-//	Enter waypoint mode
-//	Tune Radio to waypoint
-//	Set autopilot in Nav mode and altitude hold
+//	Compute direction
+//	If leg distance is lower than 8 miles, head direct to station
+//
 //--------------------------------------------------------------
-void VPilot::EnterWaypoint()
-{	CmHead *obj = wayP->GetDBobject();
-	Radio->ModeEXT(obj);							// Enter waypoint mode
-	float dir = wayP->GetDirection();
-	Radio->ChangeRefDirection(dir);
-	//--- configure autopilot ------------------------------
-  double alt = double(wayP->GetAltitude());
-	apil->ChangeALT(alt);							// Set target altitude
-	apil->SetNavMode();								// Set NAV mode 
-	State = VPL_TRACKING;
-	return;
+float VPilot::GetDirection()
+{	float rem = wayP->GetLegDistance();
+  float seg = wayP->GetDirection();
+	float dev = Radio->GetDeviation();
+	float rdv = fabs(dev);
+	if ((rem > 8) || (rdv < 20))	return seg;
+	//--- Compute direct-to direction to waypoint -----
+  return wayP->NewReference(mveh);
 }
 //--------------------------------------------------------------
 //	Change to next Waypoint
 //--------------------------------------------------------------
 void VPilot::ChangeWaypoint()
-{	float rad = 0;
+{	char *edt = globals->fui->PilotNote();
+	float rad = 0;
 	wayP	= fpln->GetCurrentNode();
 //	TRACE("VPL: Change WPT to %s",wayP->GetName());
 	if (fpln->IsOnFinal())		return EnterFinal();
-	//--- Set radio mode ---------------------
-  if (wayP->IsaWaypoint())	return EnterWaypoint();
-	//--- Set OBS and radio frequency --------
-  float frq = wayP->GetFrequency();
-  Radio->TuneNavTo(frq,1);						// Tune radio to nav
-	Radio->ModeEXT(0);									// Set internal mode
-	float dir = wayP->GetDirection();
-//	TRACE("VPL: Ref dir=%.2f",dir);
+	//--- Advise user -------------------------------------
+	float dir = GetDirection();
+	_snprintf(edt,128,"Heading %03d to %s",int(dir),wayP->GetName());
+	globals->fui->PilotToUser();
+	//--- Set radio mode ----------------------------------
+  if (wayP->IsaWaypoint())											
+	{	CmHead *obj = wayP->GetDBobject();
+		Radio->ModeEXT(obj);								// Set GSP mode
+	}
+	//--- Set OBS and radio frequency ---------------------
+	else
+	{	float frq = wayP->GetFrequency();
+		Radio->TuneNavTo(frq,1);						// Tune radio to nav
+		Radio->ModeEXT(0);									// Set NAV mode
+	}
 	Radio->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wayP->GetAltitude());

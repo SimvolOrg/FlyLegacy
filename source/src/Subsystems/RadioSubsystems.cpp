@@ -55,10 +55,11 @@ void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
 //--------------------------------------------------------------------------
 //	Refresh distance and direction to aircraft
 //--------------------------------------------------------------------------
-void CExtSource::Refresh(U_INT frm)
+void CExtSource::Refresh(U_INT fram)
 {	//----compute WPT relative position -------------
+	SPosition *acp  = mveh->GetAdPosition();
 	SPosition *ref  = (ilsD)?(&ilsD->refP):(&spos);
-  SVector	v	      = GreatCirclePolar(&globals->geop, ref);
+  SVector	v	      = GreatCirclePolar(acp, ref);
   radial  = Wrap360((float)v.h - smag);
 	nmiles  = (float)v.r * MILE_PER_FOOT;
   dsfeet  =  v.r;
@@ -66,7 +67,7 @@ void CExtSource::Refresh(U_INT frm)
 	if (0 == ilsD)		return;
 	double alr  = ilsD->refP.alt;
 	double vH		= dsfeet * ilsD->gTan;
-	vdev  = (globals->geop.alt - vH - alr) / dsfeet;
+	vdev  = (acp->alt - vH - alr) / dsfeet;
 	ilsD->errG  = vdev;			  
 	return;
 }
@@ -104,6 +105,7 @@ CRadio::CRadio (void)
 //-------------------------------------------------------------------
 void CRadio::ReadFinished()
 { CDependent::ReadFinished();
+	EXT.SetVEH(mveh);
   return;
 }
 //------------------------------------------------------------------

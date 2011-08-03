@@ -1312,12 +1312,13 @@ void AutoPilot::CheckDirection()
   return LateralHold();
 }
 //-----------------------------------------------------------------------
-//	In final LEG2 mode, chack that distance is decreasing
+//	In final LEG2 mode, check that distance is decreasing
 //-----------------------------------------------------------------------
 bool AutoPilot::CheckDistance()
 {	double prv = rDIS;
 	rDIS	= Radio->mdis;
 	if (0 == aprm)						return true;
+	if (0 == redz)						return true;
 	if (rDIS < prv)						return true;
 	AbortLanding(3);
 	return false;
@@ -1327,20 +1328,19 @@ bool AutoPilot::CheckDistance()
 //-----------------------------------------------------------------------
 double AutoPilot::AdjustHDG()
 { //-- Approach=> 45° toward ILS--------
-	double sig  = (hERR < 0)?(+1):(-1);
+	double sig  = (Radio->hDEV < 0)?(-1):(+1);
 	double cor  =  sig * 45;
-	double era  = fabs(hERR);
-	bool   red  = (era < 20);			// Red sector
+	double era  = fabs(Radio->hDEV);
+	redz				= (era < 20)?(1):(0);			// Red sector
 	cFAC				= 0;
 	//--- Approach leg and not in red sector ----------
-	if (!red &&  aprm)		return Wrap360(Radio->hREF + cor);
+	if (!redz &&  aprm)		return Wrap360(Radio->hREF + cor);
 	//--- Other tracking mode --------------
 	if (era > 21)		era  = 20;
 	cFAC	= (21 - era) * gain;
 	if (era < 0.16)	cFAC = 20;
-  cor   = (cFAC * hERR);
-	hERR	= cor;
-	double dir  = Norme360(Radio->radi + cor);     // New direction;
+  cFAC  *= Radio->hDEV;
+	double dir  = Norme360(Radio->radi - cFAC);     // New direction;
 	return dir;
 }
 //-----------------------------------------------------------------------
@@ -1358,11 +1358,10 @@ double AutoPilot::AdjustHDG()
 //-----------------------------------------------------------------------
 void AutoPilot::ModeLT2()
 { if (BadSignal(signal))  return ExitLT2();
-  //--Compute radial error --------------------
-  hERR  = Norme180(Radio->radi - Radio->hREF);
   //--Compute heading factor ---------------
 	rHDG	= AdjustHDG();     // New direction;
-	//  TRACE("aHDG=%.2f RADI=%.2f hERR=%.2f, cor=%.2f rHDG=%.2f",
+	TRACE("LT2: aHDG=%.2f RADI=%.2f hERR=%.2f, cFAC=%.2f rHDG=%.2f",
+		aHDG,Radio->radi,hERR,cFAC,rHDG);
 	//-- check for final leg ----------------
 	if (!CheckDistance())		return;
 	return LateralHold();
@@ -1377,7 +1376,7 @@ void AutoPilot::ModeGND()
 {	//--- Compute error -------------------------
   CPIDbox *rbox = pidL[PID_RUD];                // Rudder controller
 	double dir	= Wrap180(globals->dang.z);				// Actual Heading
-	rHDG				= GetAngleFromGeoPosition(globals->geop,*gPOS);
+	rHDG				= GetAngleFromGeoPosition(*mveh->GetAdPosition(),*gPOS);
 	hERR				= (rHDG - dir);										// Scale to 10 deg
   double val  = rbox->Update(dTime,hERR,0);     // to controller
   rudS->PidValue(-val);                         // result to rudder
@@ -1414,7 +1413,7 @@ void AutoPilot::Rotate()
 {	alta  = 1;                        // ALT armed
   StateChanged(AP_STATE_AAA);       // State is changed
 	//--- Set reference altitude ------------------------
-	rALT  = aTGT;
+	rALT  = RoundAltitude(aTGT);
 	StateChanged(AP_STATE_ACH);				// Altitude changed
 	//--- Enter altitude Hold ---------------------------
 	StateChanged(AP_STATE_ALT);       // Warn Panel
@@ -1491,8 +1490,9 @@ bool AutoPilot::AbortLanding(char r)
   Alarm();
   EnterALT();
   EnterROL();
-	rALT	= globals->tcm->GetGroundAltitude() + 1500;
+	rALT	= RoundAltitude(globals->tcm->GetGroundAltitude() + 1500);
 	StateChanged(AP_STATE_ALT);
+	flpS->SetPosition(0);
   return true;
 }
 //-----------------------------------------------------------------------
@@ -1574,7 +1574,7 @@ double AutoPilot::SelectSpeed()
 			return xRAT;
 		//--- Altitude mode --------------------------
 		case AP_VRT_ALT:
-			if (eVRT > 1000)	return 1000;
+			if (eVRT > 100)	  return 1000;
 			return xRAT;
 	}
 
@@ -1681,7 +1681,7 @@ void AutoPilot::ExitAPR()
 //-----------------------------------------------------------------------
 void AutoPilot::EnterALT()
 { aprm	= 0;
-	CatchALT();                       // Actual ALT
+	rALT	= RoundAltitude(cALT);      // Actual ALT
   StateChanged(AP_STATE_ALT);       // Warn Panel
   vStat = AP_VRT_ALT;               // Lock on altitude
   elvS->PidValue(0);                // Reset elevator
@@ -1802,17 +1802,6 @@ void AutoPilot::CatchVSP()
   return;
 }
 //-----------------------------------------------------------------------
-//  Catch Altitude
-//  Set rALT (reference altitude) to actual altitude
-//-----------------------------------------------------------------------
-void AutoPilot::CatchALT()
-{ int    alt = int(cALT / 100);           // Integer part
-  double rst = fmod(cALT,100);            // Fract part
-  double rnd = (rst > 50)?(100):(0);
-  rALT       = (double(alt) * 100) + rnd; // As target
-  return;
-}
-//-----------------------------------------------------------------------
 //  Enter vertical speed
 //-----------------------------------------------------------------------
 void AutoPilot::EnterVSP()
@@ -1879,7 +1868,7 @@ void AutoPilot::IncALT()
 void AutoPilot::ChangeALT(double a)
 { if (aprm)									return;
   if (vStat != AP_VRT_ALT)	return;
-  rALT  = a;
+  rALT  = RoundAltitude(a);
   StateChanged(AP_STATE_ALT);       // Warn Panel
   return;
 }

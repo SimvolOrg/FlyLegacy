@@ -96,15 +96,6 @@ char *CWPoint::ChangeAltitude(int a)
 	Alti[15]	= 0;
 	return Alti;
 }
-//-----------------------------------------------------------
-//	Round altitude to 100 feet
-//-----------------------------------------------------------
-int CWPoint::RoundAltitude(int a)
-{	int rst = a % 100;
-	int ent = a / 100;
-	if (rst) ent++;
-	return (ent * 100);
-}
 //----------------------------------------------------------------------
 //	Select best altitude depending on distance from previous node
 //	a0 is the previous node altitude
@@ -118,7 +109,6 @@ int CWPoint::BestAltitudeFrom(int a0)
 	int     ra = RoundAltitude(sa);
 	return ra;
 }
-
 //-----------------------------------------------------------
 //	Set Altitude
 //-----------------------------------------------------------
