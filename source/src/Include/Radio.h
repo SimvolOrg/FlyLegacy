@@ -32,6 +32,8 @@
 //===================================================================================
 class CExtSource: public CmHead {
 protected:
+	//-------------------------------------------------
+	CVehicleObject *mveh;										// Mother vehicle
 	//--- ATTRIBUTE -----------------------------------
 	char			qAct;													// Index of active queue;													// qType
 	char			active;												// Active indicator
@@ -58,6 +60,8 @@ public:
 	void			SetSource(CmHead *src,ILS_DATA *ils,U_INT frm);
 	void			Refresh(U_INT frm);
 	//--------------------------------------------------
+	inline  void			SetVEH(CVehicleObject *v) {mveh = v;} 
+	//---------------------------------------------------
 	inline	void			Stop()				{	active = 0;}
 	inline	U_CHAR		SignalType()	{ return signal;}
 	//--------------------------------------------------
@@ -211,6 +215,9 @@ public:
   inline U_CHAR GetFlashMask()    {return mskFS;}
   inline void   SetDirection(int d)   {mDir = d;}
   inline int    GetDirection()        {return mDir;}
+	inline float  GetMilesTo()			{return Radio.mdis;}
+	//-------------------------------------------------------------
+	inline double GetDeviation()		{return Radio.hDEV;}
 	//-------------------------------------------------------------
 	inline BUS_RADIO *GetBUS()			{return &Radio;}
   //-------------------------------------------------------------

@@ -156,7 +156,6 @@ public:
 	void		NodeNAV(CWPoint *p, char m);
 	char*		ModifyAltitude(int inc);
 	char*   ChangeAltitude(int a);
-	int			RoundAltitude(int a);
 	int			BestAltitudeFrom(int a0);
 	void    SetAltitude(int a);
 	void    SetPosition(SPosition p);

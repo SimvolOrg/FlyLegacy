@@ -126,7 +126,7 @@ public:
   inline    SPosition  GetPosition()												{return geop;}
   inline    double     GetDirection()												{return -dang.z;}
   inline    double     GetAltitude()												{return geop.alt;}
-  inline    void       SetAltPosition(const double &alt_)		{geop.alt = alt_;}
+  inline    void       SetAltPosition(double a)		          {geop.alt = a;}
   //----------------------------------------------------------------------------
   virtual void SetPhysicalOrientation (CVector &v)  {;}  // used in COpal to slew orientation
   virtual void ResetSpeeds() {}

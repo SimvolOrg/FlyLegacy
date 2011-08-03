@@ -539,6 +539,7 @@ public:
   inline double       GetPaveFactor()         {return PavArc;}
   inline CPicQUAD    *GetIcon()               {return avion;}
 	inline void					SetRunwayEnd(SPosition *p)	{endp = p;}
+	inline void					SwapILSdraw()						{dILS ^= 1;}
 	//-----------------------------------------------------------------
 	inline SPosition   *GetRunwayEnd()					{return endp;}
 	//-----------------------------------------------------------------

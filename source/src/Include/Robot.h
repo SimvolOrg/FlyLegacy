@@ -188,9 +188,9 @@ public:
 	void	PreStart(float dT);
 	void	EnterTakeOff();
 	void	EnterFinal();
-	void	EnterWaypoint();
 	void	ChangeWaypoint();
 	void	Refresh();
+	float GetDirection();
 	//--- State routines ----------------------------------
 	void	Start();
 	void	HandleBack();

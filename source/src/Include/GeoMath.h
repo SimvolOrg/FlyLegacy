@@ -129,6 +129,8 @@ void    AddMilesTo(SPosition &pos,double mx,double my);
 void    GetLatitudeFactor(double lat,double &rf,double &cp);
 void    GetQgtMidPoint(int gx,int gz,SPosition &p);
 int     GetRounded(float nb);
+double  RoundAltitude(double a);
+int			RoundAltitude(int a);
 U_INT   AbsoluteTileKey(int qx, int dx);
 U_INT   GetTileFromLatitude(double lat);
 bool    TileIsLeft(U_INT k1,U_INT k2);

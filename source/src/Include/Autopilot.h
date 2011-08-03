@@ -284,6 +284,7 @@ protected:
   char       aprm;                          // Approach mode
   char       ugaz;                          // Use autothrottle
 	char       wgrd;													// Wheel on ground
+	char			 redz;													// Red zone
   //-----------Lights--------------------------------------------------
   char       alta;                          // Altitude armed
   char       flsh;                          // Flash
@@ -338,7 +339,7 @@ protected:
   double     sin3;                          // Sine(3°)
   double     glide;                         // Catching glide angle
 	double     rDIS;													// Remaining distance
-	//--- Lateral control values -------------------------------------------
+	//--- Lateral control values ----------------------------------------
   double     rHDG;                          // Target Heading
   double     aHDG;                          // Actual heading (yaw)
   double     xHDG;                          // cross heading
@@ -443,7 +444,6 @@ public:
   void            LateralMode();
   void            VerticalMode();
   void            CatchVSP();
-  void            CatchALT();
   //-------------------------------------------------------------------
   int             PowerLost();
   void            Disengage(char op);

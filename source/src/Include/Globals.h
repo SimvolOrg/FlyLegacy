@@ -352,7 +352,6 @@ typedef struct {
 #endif
   bool  simulation;
   bool  fps_limiter;
-  bool  draw_ils;
   char  sBar;
   float status_bar_limit;
 

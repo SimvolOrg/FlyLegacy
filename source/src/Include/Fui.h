@@ -1728,6 +1728,8 @@ public:
   inline  void  SetActive()           {actv = true;}
   inline  void  RazActive()           {actv = false;}
   inline  bool  IsActive()            {return actv;}
+	//-------------------------------------------------------------
+	inline  char *Buffer()							{return text;}
 };
 
 //===================================================================
@@ -1935,7 +1937,7 @@ protected:
   std::map<Tag,CFuiTheme*>        themeMap;
   std::vector<CFuiWindow*>        winList;        // Drawing priority
   CFuiTextPopup                   *slew;
-  CFuiTextPopup                   *pause;
+  CFuiTextPopup                   *notep;					// Virtual pilot
   CFuiTextPopup                   *note1;         // User note
   CFuiTextPopup                   *noteb;         // Brake states
   CFuiTextPopup                   *notec;         // Crash windows
@@ -1980,6 +1982,7 @@ public:
 	void		DialogError(char *msg, char *from = 0);
   void    DrawOnlyNotices();
   void    DrawNoticeToUser  (char *text,float time);
+	void		PilotToUser();
   void    DrawHelp          (float time,int x, int y);
   void    DrawBrake         (char *text, float time,int x, int y);
   void    ScreenResize();
@@ -2000,6 +2003,8 @@ public:
 public:
   // Access functions for applications to get/set widget state
   void  SetComponentText (Tag window, Tag component, char* text);
+	//--------------------------------------------------------------------------
+	inline char    *PilotNote()					{return notep->Buffer();}
   //--------------------------------------------------------------------------
   inline void     SetNoticeFont(SFont *f) {note1->ChangeFont(f);}
   inline void     RazCrash()          {notec->RazActive();}
