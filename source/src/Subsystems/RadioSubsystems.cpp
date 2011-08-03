@@ -32,19 +32,24 @@ using namespace std;
 //===================================================================================
 // CExtSource:   An externnal radio source used to drive the radio
 //===================================================================================
-void CExtSource::SetSource(CmHead *src,U_INT frm)
+void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
 {	active	= 1;
 	qAct		= src->GetActiveQ();					// Store active queue
 	strncpy(sidn,src->GetIdent(),5);			// store ident
 	strncpy(snam,src->GetName(),64);			// Store name
 	spos		= src->GetPosition();					// Geo position
 	smag		= src->GetMagDev();						// Magnetic deviation
+	signal  = (ils)?(SIGNAL_ILS):(SIGNAL_VOR);	// Station type
+	//--- Any ILS to set --------------------------------------
+	ilsD		= ils;
+	vdev		= 0;
+	farP		= (ils)?(&ils->farP):(0);
+	refD    = (ils)?(ils->lnDIR):(0);
 	//--- compute feet factor at given latitude ---------------
 	double lr   = TC_RAD_FROM_ARCS(spos.lat);					//DegToRad  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
 	//--- Refresh distance and direction -----------------------
 	Refresh(frm);
-	refD		 = radial;
 	return;
 }
 //--------------------------------------------------------------------------
@@ -52,10 +57,17 @@ void CExtSource::SetSource(CmHead *src,U_INT frm)
 //--------------------------------------------------------------------------
 void CExtSource::Refresh(U_INT frm)
 {	//----compute WPT relative position -------------
-  SVector	v	      = GreatCirclePolar(&globals->geop, &spos);
+	SPosition *ref  = (ilsD)?(&ilsD->refP):(&spos);
+  SVector	v	      = GreatCirclePolar(&globals->geop, ref);
   radial  = Wrap360((float)v.h - smag);
 	nmiles  = (float)v.r * MILE_PER_FOOT;
   dsfeet  =  v.r;
+	//--- compute vertical deviation ----------------
+	if (0 == ilsD)		return;
+	double alr  = ilsD->refP.alt;
+	double vH		= dsfeet * ilsD->gTan;
+	vdev  = (globals->geop.alt - vH - alr) / dsfeet;
+	ilsD->errG  = vdev;			  
 	return;
 }
 //===================================================================================
@@ -98,12 +110,7 @@ void CRadio::ReadFinished()
 //  Free all stations
 //-------------------------------------------------------------------
 CRadio::~CRadio()
-{ if (VOR)  VOR->DecUser();
-  VOR     = 0;
-  if (COM)  COM->DecUser();
-  COM     = 0;
-  if (ILS)  ILS->DecUser();
-  ILS     = 0;
+{ FreeRadios(1);
 }
 //------------------------------------------------------------------
 //  Primary radio answer to datatag 'Radi' unit 1
@@ -324,12 +331,21 @@ void CRadio::RazField(RADIO_FLD *tab,short No)
   tab[No].data  = "";
   return;
 }
-
+//--------------------------------------------------------------------------
+//  Free navigation systems
+//--------------------------------------------------------------------------
+void CRadio::FreeRadios(char opt)
+{	if (VOR)	{VOR->DecUser(); VOR = 0;}
+	if (ILS)	{ILS->DecUser(); ILS = 0;}
+	if (0 == opt)							return;
+	if (COM)  {COM->DecUser(); COM = 0;}
+	return;
+}
 //--------------------------------------------------------------------------
 //  Enter/leave external mode:  ROBOT/GPS interface
 //	Synchronize radio with type of source
 //--------------------------------------------------------------------------
-void CRadio::ModeEXT(CmHead *src)
+void CRadio::ModeEXT(CmHead *src,ILS_DATA *ils)
 {	//--- Back to normal mode. Synchro radio with nav ------
 	if (0 == src)	
 	{	EXT.Stop(); 
@@ -338,9 +354,8 @@ void CRadio::ModeEXT(CmHead *src)
 	}
 	else
 	//--- Update external bus ---------------------------
-	{	EXT.SetSource(src,Frame);
-		VOR	= 0;
-		ILS = 0;
+	{	EXT.SetSource(src,ils,Frame);
+		FreeRadios(0);
 	}
 	Synchronize();
 	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);
@@ -356,6 +371,14 @@ int CRadio::IncXOBS(short inc)
   if (359 < obs) obs  = 0;
 	Radio.SetOBS(obs);
   return obs;
+}
+//--------------------------------------------------------------------------
+//  Change source position
+//--------------------------------------------------------------------------
+void CRadio::ChangePosition(SPosition *p)
+{ if (!EXT.IsActive())			return;
+	EXT.SetPosition(p);
+	return;
 }
 //--------------------------------------------------------------------------
 //  Change Reference direction from external
@@ -737,10 +760,7 @@ void CNavRadio::PowerStatus()
   //---- Check for power off ---------------
   if ((1 == nState) && (0 == active))
   { nState = 0;
-    if (VOR)  VOR->DecUser();
-    VOR     = 0;
-    if (ILS)  ILS->DecUser();
-    ILS     = 0;
+		FreeRadios(1);
     return;
   }
 }

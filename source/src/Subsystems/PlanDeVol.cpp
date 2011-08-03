@@ -28,6 +28,7 @@
 using namespace std;
 //===============================================================================
 #define CLIMB_SLOPE (float(0.03))
+#define AUTO_RTIME  (1800)						// Refresh every 30 mn
 //===============================================================================
 //	CWPoint
 //===============================================================================
@@ -36,6 +37,7 @@ CWPoint::CWPoint(CFPlan *fp,Tag t) : CSlot()
 	Seq       = 0;
   type      = t;
   fplan     = fp;
+	Modif			= 0;
 	fp->IncWPT();
   position.lat = position.lon = position.alt = 0;
   altitude  = 0;
@@ -261,6 +263,22 @@ char *CWPoint::GetSQLtab()
 	return "NUT";
 }
 //--------------------------------------------------------------------
+//  Return landing data
+//--------------------------------------------------------------------
+ILS_DATA *CWPoint::GetLandingData()
+{	if (NotAirport())	return 0;
+  CAirport *apw = (CAirport*)GetDBobject();
+	if (0 == apw)			return 0;
+	char *key			= apw->GetKey();
+	//--- Locate airport in cache ----------
+  CAirport *apt = globals->dbc->FindAPTbyKey(key);
+	if (0 == apt)	return 0;
+	//--- Locate runway end ----------------
+	CRunway  *rwy = apt->FindRunway(lndRWY);
+	if (0 == rwy)					return 0;
+	return rwy->GetIlsEnd(lndRWY);
+}
+//--------------------------------------------------------------------
 //  Process first node
 //	-Check for speed and altitude
 //--------------------------------------------------------------------
@@ -297,7 +315,6 @@ void CWPoint::NodeEnd(CWPoint *prv)
 	if (prv->IsTerminated())	return;
 	//--- Compute previous altitude ----------
 	int	pa    = fplan->actCEIL();
-//	int pa    = prv->GetAltitude();
 	int a0    = int(DBwpt->GetElevation());
 	int ba    = BestAltitudeFrom(a0);
 	int na    = min(pa,ba);
@@ -422,7 +439,8 @@ void CWPoint::EditArrival()
 //	Inside waypoint
 //-----------------------------------------------------------------
 bool CWPoint::Inside()
-{ if (pDis > 0.75)			return true;
+{ double tds = fplan->TurningPoint();
+	if (pDis > tds)			return true;
 	//--- Waypoint is terminated now ------
 	State = WPT_STA_TRM;
 	strcpy(Mark,"X");
@@ -430,15 +448,27 @@ bool CWPoint::Inside()
 	fplan->Refresh();
 	return false;
 }
+//-----------------------------------------------------------
+//	Set reference Direction from aircraft
+//-----------------------------------------------------------
+float CWPoint::NewReference(CVehicleObject *veh)
+{	SVector v = {0,0,0};
+  CmHead *obj	= DBwpt.Pointer();
+	if (0 == obj)	return rDir;
+	v	= GreatCirclePolar(veh->GetAdPosition(), obj->ObjPosition());
+	double mdev = obj->GetMagDev();
+	double ndir = Wrap360((float)v.h - mdev);
+	return ndir;
+}
 //-----------------------------------------------------------------
 //	Update current node
 //-----------------------------------------------------------------
-bool CWPoint::Update()
-{	//--- compute distance to aircraft ---------
+bool CWPoint::Update(char end)
+{	Modif |= end;
+	//--- compute distance to aircraft ---------
 	CmHead *obj = DBwpt.Pointer();
-  float dis = GetRealFlatDistance(obj); 
-	//--- update according to state ------------
-  pDis  = double(dis);
+  pDis = double(GetRealFlatDistance(obj)); 
+	//--- Update according to state ------------
 	switch(State)
 	{	//--- We still are outside -----
 		case WPT_STA_OUT:
@@ -526,6 +556,9 @@ CFPlan::CFPlan(CVehicleObject *m)
 	serial = 0;
 	win		 = 0;
 	//------------------------------------------------
+	mALT		= 5000;
+	cALT		= 4500;
+	//------------------------------------------------
 	format = '0';
 }
 //-----------------------------------------------------------------
@@ -579,7 +612,7 @@ void CFPlan::Assign(char *fn,char opt)
   SStream s;
   strncpy (s.filename,name, PATH_MAX);
   strcpy (s.mode, "r");
-	Reload(0);
+	Actualize(0);
 	//--- Read plan and set loaded state ------
   if (!OpenStream (&s))   return;
   option	= opt;
@@ -664,6 +697,7 @@ void CFPlan::ReadFinished()
 void CFPlan::SetDistance(CWPoint *p0, CWPoint *p1)
 {	SVector v = {0,0,0};
 	if (0 == p0)	return p1->SetLegDistance(0);
+	if (0 == p1)	return;
 	//--- compute real distance ----------------
 	v	= GreatCirclePolar(p0->GetGeoP(), p1->GetGeoP());
 	float d = float(v.r) * MILE_PER_FOOT;
@@ -731,12 +765,24 @@ void CFPlan::Reorder(char m)
 	return;
 }
 //-----------------------------------------------------------------
+// Waypoint has moved
+//-----------------------------------------------------------------
+void CFPlan::MovedWaypoint(CWPoint *wpt)
+{	Modify(1);
+	CWPoint	*prv  = (CWPoint*)wPoints.PrevPrimary(wpt);
+	SetDistance(prv,wpt);
+	CWPoint *nxt  = (CWPoint*)wPoints.NextPrimary(wpt);
+	SetDistance(wpt,nxt);
+	wpt->SetModif(1);
+	return;
+}
+//-----------------------------------------------------------------
 //	Reinit flight plan and possibly save it
 //-----------------------------------------------------------------
-void CFPlan::Reload(char m)
+void CFPlan::Actualize(char m)
 {	modify |= m;
 	//--- Get values for this aircraft -------------
-	CSimulatedVehicle     *svh = globals->pln->svh;
+	CSimulatedVehicle     *svh = mveh->svh;
 	nmlSPD	=  svh->GetCruiseSpeed();
 	aprSPD  =  svh->GetApproachSpeed();
 	mALT	  =  int(svh->GetCeiling());
@@ -745,6 +791,26 @@ void CFPlan::Reload(char m)
 	if (b)	a++;
 	mALT    = 100 * a;
 	cALT		=  80 * a;
+}
+//----------------------------------------------------------------------
+//	We have to define the notion of a terminated waypoint
+//	We say that Waypoint is terminated when it is time to turn to the next
+//	We may then compute the distance from the waypoint to define the
+//	termination radius.
+//	We base our estimation on a standard rotational speed of 2 minutes 
+//	for a complete turn of 360 deg 
+//	It is expected that the angle between 2 waypoint rarely exceed 90°.
+//	So, for a 90° turn, 15 seconds are expected (0.004166... hour)
+//	Now we used a 1.2 coefficient for safety thus the ratio is
+//	R = (0.004166) * 1.2 = 0.005
+//
+//	With S = (speed) we have the distance D = S * R in miles 
+//	When aircraft if at this distance of the NAV station, then we
+//	say that the waypoint is terminated
+//----------------------------------------------------------------------
+double CFPlan::TurningPoint()
+{	double spd = mveh->GetPreCalculedKIAS();
+	return (spd * 0.005);
 }
 //----------------------------------------------------------------------
 //	Modify ceil
@@ -760,18 +826,24 @@ int CFPlan::ModifyCeil(int inc)
 //	Update parameters
 //-----------------------------------------------------------------
 void	CFPlan::TimeSlice(float dT, U_INT frm)
-{	//--- Update according to current state ---------------
-	int	fin = NbWPT - 1;					// Final step
+{	//--- Update Timer ------------------------------------
+	Timer -= dT;
+	bool end = (Timer < 0);
+	if (end) Timer = AUTO_RTIME;
+	//--- Update according to current state ---------------
 	switch (State)	{
 		//--- No flight plan loaded ---------------
 		case FPL_STA_NUL:
 			return;
 		//--- Flight plan operational -------------
 		case FPL_STA_OPR:
-			if (0 == cWPT)			return Stop();
-			if (cWPT->Update())	return;
+			if (0 == cWPT)					return Stop();
+			if (cWPT->Update(end))	return;
 			//--- Change to next waypoint -----------
 			cWPT	= (CWPoint*)wPoints.NextPrimary(cWPT);
+			if (0 == cWPT)					return;
+			cWPT->SetModif(0);
+			Timer	= AUTO_RTIME;			
 			return;
 	}
 }
@@ -781,8 +853,10 @@ void	CFPlan::TimeSlice(float dT, U_INT frm)
 //-----------------------------------------------------------------
 int	CFPlan::Activate(U_INT frm)
 {	if (0 == NbWPT)					return 1;
+	Reorder(1);
 	State = FPL_STA_OPR;
 	cWPT	= (CWPoint*)wPoints.HeadPrimary();
+	Timer	= AUTO_RTIME;						// Set 30 minutes
 	return 0;
 }
 //-----------------------------------------------------------------
@@ -873,7 +947,6 @@ void CFPlan::SetDescription(char *d)
 	modify		= 1;
 	return;
 }	
-
 //----------------------------------------------------------------------
 //  Rename the file (Windows dependent
 //----------------------------------------------------------------------
@@ -908,7 +981,9 @@ void CFPlan::Save()
   WriteString(Desc, &s);
   WriteTag('vers', "---------- version number --------", &s);
   WriteInt((int*)(&Version), &s);
-  //---Sav individual Waypoint ------------------------
+	WriteTag('ceil', "-----------Average ceil ----------", &s);
+	WriteInt(&cALT,&s);
+  //---Save individual Waypoint ------------------------
 	for (U_INT k=1; k < wPoints.GetSize(); k++) 
 	{	CWPoint *wpt = (CWPoint*)wPoints.GetSlot(k);
 		wpt->Save(&s); 

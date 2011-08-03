@@ -219,7 +219,7 @@ char *vpMSG[] = {
 	"Start the aircraft and come back",			// Msg06
 	"Cannot locate take-off runway",				// Msg07
 	"Please open Nav Radio 1",							// Msg08
-	"No ILS for landing",										// Msg09
+	"No runway for landing",								// Msg09
 };
 //=========================================================================
 //  This robot will pilot the aircraft and execute
@@ -254,12 +254,13 @@ bool VPilot::GetRadio()
   mrad.dataType       = TYPE_VOID;
   mrad.user.u.hw      = HW_RADIO;
   mrad.id             = MSG_GETDATA;
-  mrad.user.u.datatag = 'gets';
   mrad.group          = mveh->GetRadio(1);
   mrad.user.u.unit    = 1;
+  mrad.user.u.datatag = 'gets';
 	Send_Message(&mrad);
   Radio     = (CRadio*)mrad.voidData;
 	if (0 == Radio)				return false;
+	Radio->PowerON();
 	busR			= Radio->GetBUS();
 	return (0 != Radio->GetPowerState());
  }
@@ -296,7 +297,7 @@ void VPilot::Start()
 	ok  = apm->SetOnRunway(0,idr);
 	if (!ok)							return Error(7);
 	//--- Pre - TAKE-OFF ----------------------
-	cnt	= 6;
+	cnt	= 11;
 	T01	= 0;
 	State = VPL_STARTING;
 }
@@ -329,7 +330,7 @@ void VPilot::EnterTakeOff()
 //--------------------------------------------------------------
 void VPilot::ModeTKO()
 {	if (apil->IsDisengaged())	return HandleBack();
-	if (apil->BellowAGL(500))	return;
+	if (apil->BellowAGL(200))	return;
 	fpln->Activate(FrNo);
 	//--- Climb to 1500 -----------
 	State = VPL_CLIMBING;
@@ -348,13 +349,24 @@ void VPilot::ModeCLM()
 }
 //--------------------------------------------------------------
 //	Enter final mode
+//	Final may use 
+//	-ILS radio station
+//  -GPS waypoint
 //--------------------------------------------------------------
 void VPilot::EnterFinal()
 { TRACE("VPL: Enter Final: %s",wayP->GetName());
 	float frq = wayP->GetILSFrequency();
-  if (0 == frq) {Error(9); return HandleBack();}
-	Radio->TuneNavTo(frq,1);						// Tune radio to nav
-	Radio->ModeEXT(0);									// Set internal mode
+	//--- If frequency, use as ILS ------------------------
+  if (frq) 
+	{	Radio->TuneNavTo(frq,1);						// Tune radio to nav
+		Radio->ModeEXT(0);									// Set internal mode
+	}
+	//--- Use as GPS waypoint if airport ------------------
+	else 
+	{	ILS_DATA *ils = wayP->GetLandingData();
+		if (0 == ils)	{Error(9); return HandleBack();}
+		Radio->ModeEXT(wayP->GetDBobject(),ils);	
+	}
 	//--- Configure autopilot for landing ------------------
 	apil->SetLandingMode();
 	State = VPL_LANDING;
@@ -366,7 +378,8 @@ void VPilot::EnterFinal()
 //	Set autopilot in Nav mode and altitude hold
 //--------------------------------------------------------------
 void VPilot::EnterWaypoint()
-{	Radio->ModeEXT(wayP->GetDBobject());			// Enter waypoint mode
+{	CmHead *obj = wayP->GetDBobject();
+	Radio->ModeEXT(obj);							// Enter waypoint mode
 	float dir = wayP->GetDirection();
 	Radio->ChangeRefDirection(dir);
 	//--- configure autopilot ------------------------------
@@ -382,7 +395,7 @@ void VPilot::EnterWaypoint()
 void VPilot::ChangeWaypoint()
 {	float rad = 0;
 	wayP	= fpln->GetCurrentNode();
-	TRACE("VPL: Change WPT to %s",wayP->GetName());
+//	TRACE("VPL: Change WPT to %s",wayP->GetName());
 	if (fpln->IsOnFinal())		return EnterFinal();
 	//--- Set radio mode ---------------------
   if (wayP->IsaWaypoint())	return EnterWaypoint();
@@ -391,7 +404,7 @@ void VPilot::ChangeWaypoint()
   Radio->TuneNavTo(frq,1);						// Tune radio to nav
 	Radio->ModeEXT(0);									// Set internal mode
 	float dir = wayP->GetDirection();
-	TRACE("VPL: Ref dir=%.2f",dir);
+//	TRACE("VPL: Ref dir=%.2f",dir);
 	Radio->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wayP->GetAltitude());
@@ -401,11 +414,23 @@ void VPilot::ChangeWaypoint()
 	return;
 }
 //--------------------------------------------------------------
+//	Refresh direction to waypoint if needed
+//--------------------------------------------------------------
+void VPilot::Refresh()
+{	if (!wayP->IsActive())			return;
+	if (0 == wayP->GetModif())	return; 
+  float dir = wayP->NewReference(mveh);
+	Radio->ChangePosition(wayP->GetGeoP());
+	Radio->ChangeRefDirection(dir);
+	return;
+}
+//--------------------------------------------------------------
 //	Tracking Waypoint
 //--------------------------------------------------------------
 void VPilot::ModeTracking()
 { if (apil->IsDisengaged())	return HandleBack();
-	if (wayP->IsActive())	return;
+	Refresh();
+	if (wayP->IsActive())	    return;
 	ChangeWaypoint();
 	return;
 }

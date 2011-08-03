@@ -245,6 +245,10 @@ EMessageResult CK155radio::ReceiveMessage (SMessage *msg)
   if (msg->id == MSG_SETDATA) {
        //---- SetActive NAV Frequency -----------------
     switch (msg->user.u.datatag) {
+			//--- Request for power on -------------
+			case 'pwon':
+				msg->intData = PowerON();
+				return MSG_PROCESSED;
       case 'navA':
         opt = (nState == K55_NAV_NOR)?(1):(0);
         TuneNavTo(msg->realData,opt);
@@ -644,8 +648,9 @@ int CK155radio::NAVstateCDI(U_INT evn)
 //--------------------------------------------------------------------------
 int CK155radio::SetStationBearing()
 { float rad = 0;
-  if (VOR)  rad = VOR->GetRadial();
-  if (ILS)  rad = ILS->GetRadial();
+	if (Radio.nav)	Radio.nav->GetRadial();
+//  if (VOR)  rad = VOR->GetRadial();
+//  if (ILS)  rad = ILS->GetRadial();
   int dir   = GetRounded(rad);
   OBS       = dir;
   SetField(navTAB,K155_FOBS_DG,"%03u",OBS);
@@ -655,8 +660,9 @@ int CK155radio::SetStationBearing()
 //  Refresh Bearing
 //--------------------------------------------------------------------------
 int CK155radio::RefreshBearing()
-{ if (VOR)  return SetStationBearing();
-  if (ILS)  return SetStationBearing();
+{ if (Radio.nav)	return SetStationBearing();
+//	if (VOR)  return SetStationBearing();
+//  if (ILS)  return SetStationBearing();
   SetField(navTAB,K155_FOBS_DG,"%s","---");
   nDat5[7]  = '\x81';     // To flag
   return 1;
@@ -711,8 +717,9 @@ int CK155radio::NAVstateBRG(U_INT evn)
 //--------------------------------------------------------------------------
 int CK155radio::SetStationRadial()
 { float rad = 0;
-  if (VOR)  rad = VOR->GetRadial();
-  if (ILS)  rad = ILS->GetRadial();
+	if (Radio.nav)	Radio.nav->GetRadial();
+//  if (VOR)  rad = VOR->GetRadial();
+//  if (ILS)  rad = ILS->GetRadial();
   int dir = GetRounded(rad) - 180;
   OBS     = Wrap360(dir);
   SetField(navTAB,K155_FOBS_DG,"%03u",OBS);
@@ -722,8 +729,9 @@ int CK155radio::SetStationRadial()
 //  Refresh Radial
 //--------------------------------------------------------------------------
 int CK155radio::RefreshRadial()
-{ if (VOR)  return SetStationRadial();
-  if (ILS)  return SetStationRadial();
+{ if (Radio.nav)	SetStationRadial();
+//	if (VOR)  return SetStationRadial();
+//  if (ILS)  return SetStationRadial();
   SetField(navTAB,K155_FOBS_DG,"%s","---");
   nDat5[7]  = '\x81';     // To flag
   return 1;
@@ -887,14 +895,26 @@ int CK155radio::NAVstateTIM(U_INT evn)
 int CK155radio::PowerOFF()
 { sPower      = 0;
   Radio.actv  = 0;
-  if (VOR)  VOR->DecUser();
-  VOR     = 0;
-  if (COM)  COM->DecUser();
-  COM     = 0;
-  if (ILS)  ILS->DecUser();
-  ILS     = 0;
+	FreeRadios(1);
   if (1 == uNum)  globals->rdb->TuneTo(0);
   return 0;
+}
+//-----------------------------------------------------------------------
+//  Update power
+//-----------------------------------------------------------------------
+int CK155radio::PowerON()
+{	if (sPower == 1)	return 1;
+  Radio.actv = 1;
+  sPower  = 1;
+  COMenterNormal();
+  cTurn   = 1;
+  NAVenterNormal();
+  nTimer  = 0;
+  nCount  = 1;
+  tMode   = 0;
+  gTimer  = 0;              // Second timer
+  mskFS   = 0xFF;           // Character on
+  return 1;
 }
 //============================================================================
 //  K55 DISPATCHER
@@ -906,17 +926,7 @@ int CK155radio::Dispatcher(U_INT evn)
     case 0:
       if (0 == active)          return 0;
       if (K55EV_POWR_SW != evn) return 0;
-      Radio.actv = 1;
-      sPower  = 1;
-      COMenterNormal();
-      cTurn   = 1;
-      NAVenterNormal();
-      nTimer  = 0;
-      nCount  = 1;
-      tMode   = 0;
-      gTimer  = 0;              // Second timer
-      mskFS   = 0xFF;           // Character on
-      return 1;
+      return PowerON();
     //---Power is ON -----------------------------------
     case 1:
       if (K55EV_POWR_SW == evn) return PowerOFF();
@@ -951,6 +961,7 @@ void CK155radio::TimeSlice (float dT,U_INT FrNo)
 	if (EXT.IsActive())	return EXT.Refresh(FrNo);
   //----Refresh other  stations ------------------------------------------
   VOR	= globals->dbc->GetTunedNAV(VOR,FrNo,ActNav.freq);     // Refresh VOR
+	if (VOR)	return;
   ILS = globals->dbc->GetTunedILS(ILS,FrNo,ActNav.freq);     // Refresh ILS
   return;
 }

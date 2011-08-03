@@ -635,7 +635,6 @@ AutoPilot::AutoPilot (void)
   uvsp    = 0;
   aprm    = 0;
 	ugaz		= 0;
-	leg2		= 0;
   //---Default limits ------------------------------------
   aLim    = 10000;
   vLim    = 2000;
@@ -903,7 +902,7 @@ void AutoPilot::ReadFinished()
 { CDependent::ReadFinished();
   CSimulatedVehicle *svh = mveh->svh;
   fRAT	= svh->GetApproachSpeed();
-	xRAT  = svh->GetCruiseSpeed() * 0.94;
+	xRAT  = svh->GetCruiseSpeed() * 0.98;
   return;
 }
 //-----------------------------------------------------------------------
@@ -1141,7 +1140,6 @@ void AutoPilot::Disengage(char gr)
   rudS->Neutral();
 	globals->jsm->Connect();
 	ugaz		= 0;
-	leg2		= 0;
 	gPOS		= 0;
 	//---- Pull up if altitude is lower than 500 ---------
 	if (cAGL < 500)	elvT->SetValue(-0.5);
@@ -1297,7 +1295,7 @@ void AutoPilot::ModeLT1()
   //----Enter second leg ------------------------------------------------
   lStat = AP_LAT_LT2;
   StateChanged(sEVN);
-	leg2	= 1;									// leg2
+	rDIS	= Radio->mdis;								// Remaining distance
 	//TRACE("LT1: Enter LEG2 rHDG=%.2f aHDG=%.2f", rHDG,aHDG);
 	return;
 }
@@ -1314,29 +1312,15 @@ void AutoPilot::CheckDirection()
   return LateralHold();
 }
 //-----------------------------------------------------------------------
-//	Adjust correction factor for final
-//	Below 2° of error, sensibility is adjusted with a factor from [6-30]
-//	NOTE: NOT USED ANYMORE
+//	In final LEG2 mode, chack that distance is decreasing
 //-----------------------------------------------------------------------
-double AutoPilot::AdjustFinal()
-{	double dir = 0;
-/*
-	double era = fabs(hERR);
-	if (era < 2.5) 
-	{	double cor = 12 * hERR;
-		dir = Norme360(Radio->radi + cor);			// New direction;
-	}
-	else
-	//----Compute distance to intercept point (in feet) -------------------
-	{	double  dev	= DegToRad(Radio->hDEV);
-		double  rem = fabs(Radio->mdis * sin(dev));			// remaining to R (nm)
-		double  cna = 1  - (rem / radius);		  				// Sinus 
-		double  cor = RadToDeg(acos(cna)) * cFAC;
-		dir = Norme360(Radio->hREF - cor);
-		//TRACE("LT2 radius=%.4f rem=%.4f cna=%.5f cor=%.2f dir=%.2f aHDG=%.2f",radius,rem,cna,cor,dir,aHDG);
-	}
-	*/
-	return dir;
+bool AutoPilot::CheckDistance()
+{	double prv = rDIS;
+	rDIS	= Radio->mdis;
+	if (0 == aprm)						return true;
+	if (rDIS < prv)						return true;
+	AbortLanding(3);
+	return false;
 }
 //-----------------------------------------------------------------------
 //	Adjust correction factor according to different types of legs
@@ -1351,9 +1335,11 @@ double AutoPilot::AdjustHDG()
 	//--- Approach leg and not in red sector ----------
 	if (!red &&  aprm)		return Wrap360(Radio->hREF + cor);
 	//--- Other tracking mode --------------
-	if (era > 20)	era = 19;
-	cFAC	= (20 - era) * gain;
-  cor   = cFAC * hERR;
+	if (era > 21)		era  = 20;
+	cFAC	= (21 - era) * gain;
+	if (era < 0.16)	cFAC = 20;
+  cor   = (cFAC * hERR);
+	hERR	= cor;
 	double dir  = Norme360(Radio->radi + cor);     // New direction;
 	return dir;
 }
@@ -1377,7 +1363,8 @@ void AutoPilot::ModeLT2()
   //--Compute heading factor ---------------
 	rHDG	= AdjustHDG();     // New direction;
 	//  TRACE("aHDG=%.2f RADI=%.2f hERR=%.2f, cor=%.2f rHDG=%.2f",
-	//-- check for final leg by rudder -----------
+	//-- check for final leg ----------------
+	if (!CheckDistance())		return;
 	return LateralHold();
 }
 //-----------------------------------------------------------------------
@@ -1457,7 +1444,7 @@ void AutoPilot::ModeGSW()
 //	Check for miss landing conditions
 //-----------------------------------------------------------------------
 bool AutoPilot::MissLanding()
-{ if (cAGL > aMIS)					return false;
+{ if (cAGL > aMIS)							return false;
   //---Check for lateral miss landing ------------------
   if (fabs(hERR) > hMIS)        return AbortLanding(1);
 	//---Check for vertical miss landing -----------------
@@ -1504,7 +1491,7 @@ bool AutoPilot::AbortLanding(char r)
   Alarm();
   EnterALT();
   EnterROL();
-	rALT	= 1500;
+	rALT	= globals->tcm->GetGroundAltitude() + 1500;
 	StateChanged(AP_STATE_ALT);
   return true;
 }
@@ -1559,8 +1546,7 @@ void AutoPilot::ModeFIN()
 	gPOS		= 0;
 	if (SIGNAL_ILS != Radio->ntyp)  return Disengage(1);
 	rudS->Neutral();
-	CILS   *ils = (CILS*)	Radio->nav;
-	gPOS		= ils->GetFarPoint();
+	gPOS		= Radio->nav->GetFarPoint();
 	lStat		= AP_LAT_GND;						
 	return;
 }
@@ -1568,21 +1554,30 @@ void AutoPilot::ModeFIN()
 //	Select  Speed to hold
 //-----------------------------------------------------------------------
 double AutoPilot::SelectSpeed()
-{	leg2		&= aprm;
-	//--- Check for final ------------------------
-  bool cut = (cAGL <= aCUT);
-	if (leg2 && cut)	return 0;
-	if (leg2)					return fRAT;
-	//--- Check for Take off ---------------------
-	bool t1 = (vStat == AP_VRT_TKO) && (kSPD < 20);
-	if  (t1)	return 21;					// Initial leg
-	bool t2 = (vStat == AP_VRT_TKO);
-	if  (t2)  return 1000;				// Max speed
-	//--- Check for altitude up ------------------
-  bool up = (vStat == AP_VRT_VSP) && (rVSI > 0);
-	if  (up)	return 1000;				// Maximum rate
-	up	= (vStat == AP_VRT_ALT) && (eVRT > 100);
-	if  (up)	return 1000;				// Maximum rate
+{	switch (vStat)	{
+	  //--- ground  final --------------------------
+		case AP_VRT_FLR:
+		case AP_VRT_FIN:
+			return 0;
+		//--- Tracking glide in final ----------------
+		case AP_VRT_GST:
+			if (cAGL <= aCUT)	return    0;
+			if (eVRT >   0.5)	return 1000;
+			if (cAGL <  2200)	return fRAT;
+			return  xRAT;
+		//--- take-off -------------------------------
+		case AP_VRT_TKO:
+			return 1000;
+		//--- climbing -------------------------------
+		case AP_VRT_VSP:
+			if (rVSI > 0)			return 1000;
+			return xRAT;
+		//--- Altitude mode --------------------------
+		case AP_VRT_ALT:
+			if (eVRT > 1000)	return 1000;
+			return xRAT;
+	}
+
 	//--- return cruise speed --------------------
 	return xRAT;
 }
@@ -1685,7 +1680,8 @@ void AutoPilot::ExitAPR()
 //         In this case, new mode is ROL + ALT
 //-----------------------------------------------------------------------
 void AutoPilot::EnterALT()
-{ CatchALT();                       // Actual ALT
+{ aprm	= 0;
+	CatchALT();                       // Actual ALT
   StateChanged(AP_STATE_ALT);       // Warn Panel
   vStat = AP_VRT_ALT;               // Lock on altitude
   elvS->PidValue(0);                // Reset elevator
@@ -1748,7 +1744,7 @@ void AutoPilot::GetCrossHeading()
 //  Enter Lateral Mode Leg 1 for tracking VOR
 //-----------------------------------------------------------------------
 void AutoPilot::EnterNAV()
-{ if (BadSignal(SIGNAL_NAV))  return;
+{ if (BadSignal(SIGNAL_VOR))  return;
   aprm = 0;
   pidL[PID_HDG]->Init();
   pidL[PID_BNK]->Init();
@@ -1840,8 +1836,9 @@ void AutoPilot::EnterVSP()
 //	in flare mode
 //-----------------------------------------------------------------------
 void AutoPilot::EnterFLR()
-{ EnterROL();
-  afps = kSPD * FEET_PER_NM * HOUR_PER_SEC;         // In feet per sec
+{ aprm	= 0;
+	EnterROL();
+  afps	= kSPD * FEET_PER_NM * HOUR_PER_SEC;         // In feet per sec
   vStat = AP_VRT_FLR;                               // Vertical state
 	//  TRACE("ENTER FLARE");
 	//--- Compute touch down offset from ILS ----------
@@ -2164,7 +2161,7 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   {  cnv->AddText( 1,"vHRZ");
      cnv->AddText( 8,1,"%.5f",vHRZ);
      cnv->AddText( 1,"dREF");
-     cnv->AddText( 8,1,"%.5f feet",dREF);
+     cnv->AddText( 8,1,"%.5f nm",dREF);
   }
 	if (lStat == AP_LAT_LT2)
 	{	cnv->AddText( 1,"cFAC");
