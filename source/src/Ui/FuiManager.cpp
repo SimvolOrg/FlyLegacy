@@ -131,9 +131,8 @@ void CFuiManager::Init (void)
   slew->SetText ("Slew");
   slew->SetPosition (globals->cScreen->Width - 60, globals->cScreen->Height - NOTE_OFFSET);
 
-  pause = new CFuiTextPopup;
-  pause->SetText ("Pause");
-  pause->SetPosition (globals->cScreen->Width - 60, globals->cScreen->Height - NOTE_OFFSET);
+  notep = new CFuiTextPopup;
+  notep->SetPosition (globals->cScreen->Width - 300,globals->cScreen->Height - NOTE_OFFSET);
 
   note1 = new CFuiTextPopup;
   note1->SetPosition (12, globals->cScreen->Height - NOTE_OFFSET);
@@ -156,7 +155,7 @@ void CFuiManager::Init (void)
 //------------------------------------------------------------------------
 void CFuiManager::ScreenResize()
 { slew->SetPosition   (globals->cScreen->Width - 60, globals->cScreen->Height - NOTE_OFFSET);
-  pause->SetPosition  (globals->cScreen->Width - 60, globals->cScreen->Height - NOTE_OFFSET);
+  notep->SetPosition  (globals->cScreen->Width - 200,globals->cScreen->Height - NOTE_OFFSET);
   note1->SetPosition ( 12, globals->cScreen->Height - NOTE_OFFSET);
   return;
 }
@@ -186,7 +185,7 @@ void CFuiManager::Cleanup (void)
 
   // Delete special widgets
   SAFE_DELETE (slew);
-  SAFE_DELETE (pause);
+  SAFE_DELETE (notep);
   SAFE_DELETE (note1);
   SAFE_DELETE (noteb);
   SAFE_DELETE (notec);
@@ -634,13 +633,12 @@ void CFuiManager::Draw ()
   //------Check for additional process -------------------
   // Draw Slew / Pause indicator if applicable
   if (globals->slw->IsEnabled())       slew->DrawIt ();
-  else
-  if (globals->tim->GetPauseState())  pause->DrawIt ();
-  //--- Draw user messages ------------------------------- 
+  //--- Draw user messages -------------------------------
+	if (notep->IsActive())		notep->Draw();
   if (note1->IsActive())    note1->Draw();
   if (noteb->IsActive())    noteb->Draw();
   if (notec->IsActive())    notec->DrawIt();
-  if (help->IsActive())      help->Draw();
+  if (help->IsActive())     help->Draw();
   //--- Draw Radio communications ------------------------
   CFuiRadioBand *rdb = globals->rdb;
   if (rdb)  rdb->Draw();
@@ -702,6 +700,14 @@ CFuiThemeWidget *CFuiManager::GetThemeWidget (Tag tag, string name)
 void CFuiManager::DrawNoticeToUser (char *text, float time)
 { note1->SetText (text);
   note1->SetActive(time);
+}
+//------------------------------------------------------------------------------
+//	Display pilot message
+//------------------------------------------------------------------------------
+void CFuiManager::PilotToUser()
+{ notep->SetActive(5);
+	notep->DrawText();
+	return;
 }
 //------------------------------------------------------------------------------
 /// Display Help for gauge

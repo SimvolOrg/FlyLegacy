@@ -417,9 +417,7 @@ void windows_closesec_cb(puObject* obj)
 }
 
 void windows_toggleIlsView(puObject* obj)
-{
-  if (!globals->draw_ils) globals->draw_ils = true;
-  else globals->draw_ils = false;
+{ globals->apm->SwapILSdraw();
 }
 //-------------------------------------------------------------------------
 //  Swap Full screen.  
