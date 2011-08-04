@@ -504,6 +504,7 @@ CVehicleObject::CVehicleObject (void)
   swd = NULL;
   wgh = NULL;
   hst = NULL;
+	ckl	= NULL;
   //MEMORY_LEAK_MARKER ("nsub_rd")
   nSub= new CNullSubsystem;							// JSDEV*
   globals->rdb = new CFuiRadioBand;
@@ -567,6 +568,7 @@ CVehicleObject::~CVehicleObject (void)
   SAFE_DELETE (wgh);
   SAFE_DELETE (hst);
   SAFE_DELETE (nSub);
+	SAFE_DELETE (ckl);
   //---Clear sound objects ----------------------------------
   sounds.clear();
   //---JS: Clean globals area -------------------------------
@@ -577,8 +579,6 @@ CVehicleObject::~CVehicleObject (void)
   if (globals->wld) globals->wld->Close();      // Load weight
   if (globals->rdb) globals->rdb->Close();      // radio band
   if (globals->wpb) globals->wpb->Close();      // Window probe
-  //----Close the check list --------------------------------
-  globals->chk->Close();
   globals->inside        =  0;
 }
 //------------------------------------------------------------------------
@@ -721,28 +721,22 @@ void CVehicleObject::ReadFinished (void)
   /// \todo Why are AMP and GAS files dependent upon ENG?  Particularly
   //        for the case of gliders, an AMP may exist without an ENG
 
-  //MEMORY_LEAK_MARKER ("gas")
   if (eng) {
     // Read Fuel System
     if (*nfo->GetGAS()) gas = new CFuelSystem (this,nfo->GetGAS(), eng, wgh);
   }
-  //MEMORY_LEAK_MARKER ("gas")
-
   //---Read Electrical Subystems. ------------------------------- 
-  //MEMORY_LEAK_MARKER ("amp")
   if (*nfo->GetAMP()) amp = new CElectricalSystem (this,nfo->GetAMP(), eng);
-  //MEMORY_LEAK_MARKER ("amp")
-  // Read Cockpit Manager
-  //MEMORY_LEAK_MARKER ("pit")
+  //--- Read Cockpit Manager -----------------------------------
   if (*nfo->GetPIT()) pit = new CCockpitManager (this,nfo->GetPIT());
-  //MEMORY_LEAK_MARKER ("pit")
-  // Read Control Mixer
-  //MEMORY_LEAK_MARKER ("mix")
+  //--- Read Control Mixer
   if (*nfo->GetMIX()) mix = new CControlMixer (this,nfo->GetMIX());
-  //MEMORY_LEAK_MARKER ("mix")
+	//--- Read CheckList ----------------------------------------------
+	ckl = new PlaneCheckList(this);
+	char *tail = svh->GetTailNumber();
+	ckl->OpenList(tail);
   //--  Initialisations (after all the objects creation) ------------
   wgh->Init ();
-  //MEMORY_LEAK_MARKER ("readfnvehi")
   //-- Add drawing position as external feature ---------------------
   if (0 == amp)     return;
   CDrawPosition *upos = new CDrawPosition();

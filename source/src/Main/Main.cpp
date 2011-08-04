@@ -756,7 +756,6 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->wtm);         // Delete weather manager,
   SAFE_DELETE (globals->atm);         // Delete atmosphere, 
   SAFE_DELETE (globals->sqm);         // Delete SQL manager
-  SAFE_DELETE (globals->chk);         // Delete Check List
   globals->nBitmap->ChangeType();
   SAFE_DELETE (globals->nBitmap);
 	SAFE_DELETE (globals->dMap);
@@ -954,8 +953,6 @@ void InitSimulation (void)
   globals->dang  = orid;
 	//----Joystick ---------------------------------------------------
 	CJoysticksManager::Instance().Init( );
-  //----Create check list manager ----------------------------------
-  globals->chk = new PlaneCheckList();
   //------Load situation -------------------------------------------
   globals->sit = new CSituation ();
   TRACE("End of InitSimulation");
@@ -1447,7 +1444,6 @@ int main (int argc, char **argv)
   globals->pln  = 0;
   globals->ccm  = 0;                          // Camera manager 
   globals->pit  = 0;                          // Cockpit manager
-  globals->chk  = 0;                          // Check list
   globals->gas  = 0;                          // Fuel system
   globals->pan  = 0;                          // Active pannel
   globals->uph  = 0;                          // CPhysicModelAdj
