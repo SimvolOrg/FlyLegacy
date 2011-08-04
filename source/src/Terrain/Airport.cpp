@@ -638,7 +638,7 @@ void CRunway::DrawThreshold(SVector &sl,U_CHAR rs)
   //--Draw left part ------------------------------
   GetLTR(ct,rs);                 // Letf part
   glPushMatrix();
-  glTranslatef(ct.x,ct.y,ct.z);
+  glTranslatef(ct.x,ct.y,ct.z);				//ct.z);
   glScaled(sl.x,sl.y,1);
   glRotated(GetROT(rs),0,0,1);
   DrawBand(GetNBT(rs));
@@ -646,7 +646,7 @@ void CRunway::DrawThreshold(SVector &sl,U_CHAR rs)
   //--Draw right part -----------------------------
   GetRTR(ct,rs);                 // right part
   glPushMatrix();
-  glTranslatef(ct.x,ct.y,ct.z);
+  glTranslatef(ct.x,ct.y,ct.z);			//ct.z);
   glScaled(sl.x,sl.y,1);
   glRotated(GetROT(rs),0,0,1);
   DrawBand(GetNBT(rs));
