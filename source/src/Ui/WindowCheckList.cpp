@@ -374,20 +374,21 @@ void CheckChapter::GenerateLines(SStream *st)
 //  AIRCRAFT CHECK LIST
 //  AUTOSTART will engage the whole procedure to start engine
 //=====================================================================================
-PlaneCheckList::PlaneCheckList()
+PlaneCheckList::PlaneCheckList(CVehicleObject *v)
 { hwId = HW_OTHER;
   unId = 'chkl';
+	mveh = v;
   cWIN = 0;
+	d2r2 = mveh->GetRobot();
 }
 //-------------------------------------------------------------------------
 PlaneCheckList::~PlaneCheckList()
-{globals->chk = 0;}
+{}
 //-------------------------------------------------------------------------
 //  Decode Check list
 //-------------------------------------------------------------------------
-void PlaneCheckList::ReadList(char *tail,CRobot *rob)
-{ d2r2	= rob;
-	char name[PATH_MAX];
+void PlaneCheckList::OpenList(char *tail)
+{ char name[PATH_MAX];
   sprintf(name,"WORLD/VEH_%s.LCK",tail);
   if (!pexists(&globals->pfs,name)) return;
   SStream s;
@@ -443,7 +444,19 @@ void PlaneCheckList::Close()
    }
    vCHAP.clear();
 }
-
+//-------------------------------------------------------------------------
+//  Register the managing window
+//-------------------------------------------------------------------------
+void PlaneCheckList::RegisterWindow(CFuiCkList *w)
+{	cWIN	= w;
+	if (d2r2) d2r2->Register(w);
+	return;
+}
+//-------------------------------------------------------------------------
+//  Execute one statemnt
+//-------------------------------------------------------------------------
+bool PlaneCheckList::Execute(D2R2_ACTION &a)
+{	return (d2r2)?(d2r2->Execute(a)):(false);}
 //--------------------------------------------------------------------------
 //  Fill the box with lines from chapter No
 //--------------------------------------------------------------------------
@@ -472,9 +485,10 @@ CFuiCkList::CFuiCkList(Tag idn, const char *filename)
 { char err[128];
   sprintf(err,"Incorrect TEMPLATE file: %",filename);
   //---------------------------------------------------------
-  nSEL       = -1;
-  mPOP.aText = 0;
+  nSEL        = -1;
+  mPOP.aText  = 0;
   panl				= 0;
+	slot				= 0;
   //---Locate components ------------------------------------
   uBUT = (CFuiButton *)    GetComponent('unck');     // Uncheck button
   if (0 == uBUT)    gtfo(err);
@@ -484,25 +498,22 @@ CFuiCkList::CFuiCkList(Tag idn, const char *filename)
   if (0 == cPOP)    gtfo(err);
   //---Request notificationon stop click ---------------------
   wBUT->NotifyOnStop();
-  //---Init list box interface -----------------------------------
+  //---Init list box interface -------------------------------
   U_INT type = LIST_DONT_FREE + LIST_NOHSCROLL + LIST_USE_MARKS;
   iBOX.SetParameters(this,'list',type);
-  Book = globals->chk;
-  if (Book->HasChapter())  BuildMenu();
-  //---Register for closing --------------------------------------
-  globals->chk->RegisterWindow(this);
-  //---Locate the Robot ------------------------------------------
-	robot	= Book->GetRobot();
-	robot->Register(this);
+	//--- Get related objects to work together -----------------
+  LST = globals->pln->ckl;
+  if (LST->HasChapter())  BuildMenu();
+  //---Register for closing ----------------------------------
+  LST->RegisterWindow(this);
 };
 //-------------------------------------------------------------------------
 //  Release resources
 //-------------------------------------------------------------------------
 CFuiCkList::~CFuiCkList()
 { if (mPOP.aText) delete [] mPOP.aText;
-  globals->chk->RegisterWindow(0);
+  LST->RegisterWindow(0);
   if (panl)		panl->ClearFocus();
-  if (robot)  robot->Register(0);
 }
 //-------------------------------------------------------------------------
 //  Build Menu
@@ -510,7 +521,7 @@ CFuiCkList::~CFuiCkList()
 //  -Select the first chapter
 //-------------------------------------------------------------------------
 void CFuiCkList::BuildMenu()
-{ char **tab = Book->GetChapters();
+{ char **tab = LST->GetChapters();
   cPOP->CreatePage(&mPOP,tab);
   NewChapter(0);
   return;
@@ -527,7 +538,7 @@ void CFuiCkList::NewChapter(int No)
   nSEL  = No;
   //---Empty the list box and request a new list -----
   iBOX.Clear();
-  Book->GetLines(iBOX,No);
+  LST->GetLines(iBOX,No);
   iBOX.Display();
   return;
 }
@@ -548,9 +559,9 @@ void CFuiCkList::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
 //-------------------------------------------------------------------------
 bool CFuiCkList::Verify()
 { slot = (CChkLine*)iBOX.GetSelectedSlot();
+  if (0 == slot)											return false;
   D2R2_ACTION &a	=  slot->Action();
 	U_INT     val		=  slot->GetVLID();
-  if (0 == slot)											return false;
   //---Locate the panel -----------------------
 	panl  = globals->pit->GetPanelByTag(a.pnt);
 	gage	= (panl)?(panl->GetGauge(a.ggt)):(0);
@@ -580,7 +591,7 @@ bool CFuiCkList::Verify()
 //  NOTIFICATIONS FROM POPUP:  Locate panel and gauge and draw tour
 //-------------------------------------------------------------------------
 void CFuiCkList::LocateGage()
-{ if (!Verify()) return;
+{ if (!Verify())	return;
   panl->FocusOnGauge(tgag);
   panl->FocusOnClick(gage,ca);
   return;
@@ -591,17 +602,17 @@ void CFuiCkList::LocateGage()
 //  Locate panel and gauge and  Execute action
 //-------------------------------------------------------------------------
 void CFuiCkList::Execute()
-{ if (0 == robot)       return;
-  if (!Verify())				return;
+{ if (!Verify())				return;
   if (0  == actn)       return;
-  robot->Execute(slot->Action());
+  LST->Execute(slot->Action());
   return;
 }
 //-------------------------------------------------------------------------
 //  Mark the slot
 //-------------------------------------------------------------------------
 void CFuiCkList::EndExecute(void *up)
-{ CChkLine *lin  =(CChkLine*)up;
+{ if (0 == up)	return;
+	CChkLine *lin  =(CChkLine*)up;
   lin->SetMark();
   iBOX.Refresh();
   return;
