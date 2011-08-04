@@ -97,8 +97,8 @@ EMessageResult Send_Message (SMessage *msg)
   TagToString(msg->dst,msg->group);
 	if (msg->receiver)    return rc;
   //--- Send message to the CheckList -----------------------------
-  rc = globals->chk->ReceiveMessage(msg);
-  if (msg->receiver)    return rc;
+  //rc = user->ckl->ReceiveMessage(msg);
+  //if (msg->receiver)    return rc;
   //--- Warning has not been generated for this message yet--
   msg->receiver	= user->GetNullSubsystem();			// Set Null Sub as receiver
   //---Ignore when group is null -----------------------------------
