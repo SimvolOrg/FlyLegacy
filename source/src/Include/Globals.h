@@ -260,7 +260,6 @@ typedef struct {
   SqlMGR                *sqm;           // SQL Manager
   SqlTHREAD             *sql;           // SQL Thread
   CSlewManager          *slw;           // Slew manager
-  PlaneCheckList               *chk;           // Check List manager
   CAtmosphereModelJSBSim *atm;          // Atmosphere
   CAudioManager         *snd;           // Sound manager
   CAirplane             *pln;           // Plane object

@@ -390,6 +390,7 @@ public:
   CSlopeWindData        *swd;
   CWeightManager        *wgh;
   CVehicleHistory       *hst;
+	PlaneCheckList        *ckl;
   CNullSubsystem		    *nSub;						//  Null subsystem to receive message without identified receiver
   //-----Radio interface --------------------------------------------------------
   Tag                   rTAG[4];					// Radio TAG: NAV-COM-ADF

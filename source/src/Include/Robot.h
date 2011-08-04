@@ -68,7 +68,7 @@ class CAirplane;
 //-- For panel check list ---------------
 #define D2R2_CHECK_LST	(D2R2_NEED_PANL+D2R2_NEED_GAGE+D2R2_NEED_CPIT)
 //=========================================================================
-//  Structure fro Robot Action
+//  Structure for Robot Action
 //=========================================================================
 struct D2R2_ACTION {
   Tag				actn;													// Action

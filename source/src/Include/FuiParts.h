@@ -1143,7 +1143,7 @@ class CFuiCkList: public CFuiWindow {
   //-------------------------------------------------------------------
   CListBox       iBOX;
   //---CHECKLIST -----------------------------------------------------
-  PlaneCheckList      *Book;
+  PlaneCheckList      *LST;
   //------------------------------------------------------------------
   CChkLine     *prev;                   // previous slot
   CChkLine     *slot;                   // Selected slot

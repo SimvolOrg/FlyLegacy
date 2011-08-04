@@ -4548,10 +4548,11 @@ public:
 
 //===================================================================
 class CheckChapter;
+struct D2R2_ACTION;
 //===================================================================
 //  CheckList Subsystem
 //===================================================================
-class PlaneCheckList: public CDependent {
+class PlaneCheckList: public CSubsystem {
   //---ATTRIBUTES ----------------------------------------------
 protected:
 	//--- Registered window --------------------------------------
@@ -4561,23 +4562,24 @@ protected:
   std::vector<CheckChapter*>   vCHAP;						// Table of Chapters
   //---METHODS--------------------------------------------------
 public:
-  PlaneCheckList();
+  PlaneCheckList(CVehicleObject *v);
  ~PlaneCheckList();
   //------------------------------------------------------------
-  void    ReadList(char *tail, CRobot *r);
+  void    OpenList(char *tail);
   int     Read(SStream *st,Tag tag);
   char  **GetChapters();
   void    GetLines(CListBox &box,U_INT ch);
   void    Close();
+	void    RegisterWindow(CFuiCkList *w);
+	bool    Execute(D2R2_ACTION &a);
 	//------------------------------------------------------------
 	void		AutoStart();
   //------------------------------------------------------------
   EMessageResult ReceiveMessage (SMessage *msg);
   //------------------------------------------------------------
   inline  bool HasChapter()		{return (vCHAP.size() != 0);}
-  inline  void RegisterWindow(CFuiCkList *w) {cWIN = w;}
 	//------------------------------------------------------------
-	inline  CRobot *GetRobot()	{return d2r2;}
+
 };
 
 //==================================================================
