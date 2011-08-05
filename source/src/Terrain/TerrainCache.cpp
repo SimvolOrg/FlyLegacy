@@ -3758,7 +3758,8 @@ void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   if (OneAction())      return;
   if (Tele)     NoteTeleport();
   //-----No cache refresh.  Update magnetic deviation --------------------
-  // if (magRF) globals->mag->GetElements (aPos,magDV, magFD);
+  if (magRF) globals->mag->GetElements (aPos,magDV, magFD);
+	globals->magDEV = magDV;
   magRF = 0;
   //---Update QGT AIRPORT AND 3D MANAGER ---------------------------------
 	UpdateQGTs(dT);

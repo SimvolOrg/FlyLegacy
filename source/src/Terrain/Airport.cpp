@@ -1044,13 +1044,15 @@ void CAptObject::SetRunwayData(CRunway *rwy)
   ils->d1   = rwyMARGE[rwy->GetLgCode()] + hiDSP;
   ils->d2   = rlgt;
   ils->d3   = ils->d1 - 15000;
-  SetLandingPRM(ils);
+	ils->d4   = ils->d1 + 4000;
+  SetLandingPRM(ils,rwy->GetHmDir());
   //---- same for lo end ---------------------------------
   ils       = rwy->GetIlsData(RWY_LO_END);
   ils->d1   = (rlgt - loDSP) - rwyMARGE[rwy->GetLgCode()];
   ils->d2   = 0;
   ils->d3   = ils->d1 + 15000;
-  SetLandingPRM(ils);
+	ils->d4   = ils->d1 - 4000;
+  SetLandingPRM(ils,rwy->GetLmDir());
   //--- SetRunway texture offset in packed texture -------
   wTex  = (rwy->GetPaved() == TC_RWY_PAVED)?(float(1)/8):(float(1)/5);
   return;
@@ -1076,26 +1078,47 @@ void CAptObject::SetRunwayData(CRunway *rwy)
 //																																Far (F)
 //	M, L , R and F are aligned at 3° slope
 //--------------------------------------------------------------------------------
-void CAptObject::SetLandingPRM(ILS_DATA *ils)
+void CAptObject::SetLandingPRM(ILS_DATA *ils,float rdir)
 { double d1 = ils->d1;
   SPosition  *land  = &ils->lndP;
   land->lon = p0.x + (arcX * d1);  // X coord
   land->lat = p0.y + (arcY * d1);  // Y coord
   ComputeElevation(*land);
-  //---- Compute origin point -------------------
+  //---- Compute origin point ---------------------
   double d2 = ils->d2;
   SPosition  *ref  = &ils->refP;
   ref->lon  = p0.x + (arcX * d2) + org.lon;  // X coord
   ref->lat  = p0.y + (arcY * d2) + org.lat;  // Y coord
   ref->alt  = land->alt - (fabs(d2 - d1) * ils->gTan);
-  //---- Compute far point at 15000 feet --------
+  //---- Compute far point at 15000 feet ----------
   SPosition  *fpn  = &ils->farP;
   double d3 = ils->d3;
   fpn->lon  = p0.x + (arcX * d3) + org.lon;  // X coord
   fpn->lat  = p0.y + (arcY * d3) + org.lat;  // Y coord
   fpn->alt  = land->alt + (fabs(d3 - d1) * ils->gTan);
-  //---------------------------------------------
+	//---- Compute opposite point at 4000 feet ----------
+  SPosition  *opo  = &ils->opoP;
+  double d4 = ils->d4;
+  opo->lon  = p0.x + (arcX * d4) + org.lon;  // X coord
+  opo->lat  = p0.y + (arcY * d4) + org.lat;  // Y coord
+  opo->alt  = land->alt + (fabs(d4 - d1) * ils->gTan);
+  //--- Set landing direction for normal runway ---
+	if (0 == ils->ils) ils->lnDIR = rdir;
   return;
+}
+//---------------------------------------------------------------------------------
+//	Trace runway parameters 
+//---------------------------------------------------------------------------------
+void CAptObject::TraceRWY(CRunway *rwy)
+{ RwyID *hi = rwy->GetEndDEF(RWY_HI_END);
+	TRACE("****Rwy %4s-%4s head=%.4f magh=%.4f ori=%.4f lnd=%.2f",
+				Airp->GetIdent(),rwy->GetHiEnd(),rwy->GetHiDir(),rwy->GetHmDir(),
+				hi->aRot,rwy->GetLandDir(RWY_HI_END));
+	RwyID *lo = rwy->GetEndDEF(RWY_LO_END);
+	TRACE("****Rwy %4s-%4s head=%.4f magh=%.4f ori=%.4f lnd=%.2f",
+				Airp->GetIdent(),rwy->GetLoEnd(),rwy->GetLoDir(),rwy->GetLmDir(),
+				lo->aRot,rwy->GetLandDir(RWY_LO_END));
+	return;
 }
 //---------------------------------------------------------------------------------
 //  A runway model defines all segments in a given runway type.  This model is used
@@ -1124,6 +1147,7 @@ void CAptObject::BuildRunwayMidPoints(CRunway *rwy,TC_RSEG_DESC *model)
   rot = RadToDeg(rot);
   rwy->SetROT(rot,TC_HI);
   rwy->SetROT((rot + 180),TC_LO);
+	if (tr) TraceRWY(rwy);
   //---Compute runway scale (unit = width / 200)----------
   //  Scale is used for scaling the designator
   double ch = width / 200;
@@ -1277,7 +1301,7 @@ void CAptObject::BuildTarmacSegs(CRunway *rwy)
   SegmentBase(0);                                       // Compute base points
   AptExtension(psw);                                    // Set extension
   AptExtension(pse);                                    // Set Extension
-	if (tr) TRACE ("     Building segment (V2 map V1) (V3 map V2)");
+	//if (tr) TRACE ("     Building segment (V2 map V1) (V3 map V2)");
   //-------------------------------------------------------------
 	TC_VTAB *tab	= 0;
   for (U_CHAR k = 0; k != eInd; k++)
@@ -1406,8 +1430,8 @@ void CAptObject::ComputeElevation(SPosition &pos)
 //  Build a paved runway
 //---------------------------------------------------------------------------------
 void CAptObject::BuildPavedRunway(CRunway *rwy)
-{ if (tr)  TRACE("  PAVED RUNWAY %s-%s for %s (key=%s)",
-								 rwy->GetHiEnd(),rwy->GetLoEnd(),Airp->GetName(),Airp->GetKey());
+{ //if (tr)  TRACE("  PAVED RUNWAY %s-%s for %s (key=%s)",
+	//							 rwy->GetHiEnd(),rwy->GetLoEnd(),Airp->GetName(),Airp->GetKey());
 	rwy->SetNumberBand(12);
   SetRunwayData(rwy);
   if (tlgr <= 0) return;
@@ -1422,8 +1446,8 @@ void CAptObject::BuildPavedRunway(CRunway *rwy)
 //---------------------------------------------------------------------------------
 void CAptObject::BuildOtherRunway(CRunway *rwy)
 { //--Init model parameters -----------------------------------------
-	if (tr)  TRACE("  OTHER RUNWAY %s-%s for %s",
-								rwy->GetHiEnd(),rwy->GetLoEnd(),Airp->GetName());
+	//if (tr)  TRACE("  OTHER RUNWAY %s-%s for %s",
+	//							rwy->GetHiEnd(),rwy->GetLoEnd(),Airp->GetName());
   SetRunwayData(rwy);
   if (tlgr <= 0) return;
   BuildRunwayMidPoints(rwy,OtherRWY_MODEL);
@@ -2570,10 +2594,10 @@ void CAptObject::Draw()
   glFrontFace(GL_CW);
   glColor4fv(white);
   glBindTexture(GL_TEXTURE_2D,oTAXI);
-	if (tr) TRACE("TCM: --Draw pavement %s",Airp->GetName());
-	if (tr) TRACE("pVBO =%d , nPAV = %d",pVBO,nPAV);
+	//if (tr) TRACE("TCM: --Draw pavement %s",Airp->GetName());
+	//if (tr) TRACE("pVBO =%d , nPAV = %d",pVBO,nPAV);
 	DrawVBO(pVBO,nPAV);
-	if (tr) TRACE("TCM: --Leave pavement");
+	//if (tr) TRACE("TCM: --Leave pavement");
   //-----Draw all edges ---------------------------------------------------
 	if (nmiles < 2)
   { apm->BindYellow();
@@ -2952,22 +2976,6 @@ bool CAirportMgr::AreWeAt(char *key)
 	return false;
 }
 //----------------------------------------------------------------------------------
-//	Locate runway end by identifier
-//----------------------------------------------------------------------------------
-RwyID *CAirportMgr::LocateEND(CAirport *apt,char *idn)
-{ ClQueue  *qhd = apt->GetRWYQ();
-  CRunway *rwy;
-	char    *idr;
-	RwyID   *res	= 0;
-  for (rwy = (CRunway*)qhd->GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
-	{	idr  = rwy->GetHiEnd();
-	  if (strcmp(idn,idr)==0) {res = rwy->GetEndDEF(RWY_HI_END); break;}
-		idr  = rwy->GetLoEnd();
-		if (strcmp(idn,idr)==0) {res = rwy->GetEndDEF(RWY_LO_END); break;}
-	}
-	return res;
-}
-//----------------------------------------------------------------------------------
 //	Position aircarft at the runway threshold
 //----------------------------------------------------------------------------------
 bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
@@ -2976,21 +2984,17 @@ bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
 	if (apt)	dep = apt;
 	if (0 == dep)		return false;
 	//------------------------------------------------
-	RwyID *end		= LocateEND(dep,idn);
-	if (0 == end)		return false;
-  SPosition pos = end->pos;
+	float rot =     dep->GetTakeOffSpot(idn,&tko,&endp);
+  if (0 == tko)		return false;
 	CAirplane *pln = globals->pln;
   if (0 == pln)		return false;
-  globals->tcm->Teleport(pos);
+	globals->tcm->Teleport(*tko);
 	CVector ori   = pln->GetOrientation();
-	ori.z					= DegToRad(end->aRot);
+	ori.z					= DegToRad(rot);
 	ori.x					= 0;
 	ori.y					= 0;
 	pln->SetOrientation(ori);
 	pln->SetPhysicalOrientation(ori);
-	//--- Set Autopilote temporary ----------
-	RwyID *opo    = end->opos;
-	SetRunwayEnd(&opo->pos);
 	return true;
 }
 //----------------------------------------------------------------------------------
