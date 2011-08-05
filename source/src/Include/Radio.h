@@ -52,7 +52,7 @@ protected:
   float			dsfeet;                       // Distance in feet
 	float			vdev;													// Vertical deviation
 	double    refD;													// Reference direction
-	SPosition *farP;												// Far landing position
+	SPosition *opoP;												// opposite position
 	//--- METHODS -------------------------------------
 public:
 	CExtSource(): CmHead(ANY,OTH) {active = 0;}
@@ -65,7 +65,7 @@ public:
 	inline	void			Stop()				{	active = 0;}
 	inline	U_CHAR		SignalType()	{ return signal;}
 	//--------------------------------------------------
-	inline  SPosition *GetFarPoint()	  {return farP;}
+	inline  SPosition *GetOpposite()	  {return opoP;}
 	inline	void			SetRefDirection(float d) {refD = d;}
 	inline	void			SetPosition(SPosition *p)	{spos = *p;}
 	//--------------------------------------------------
@@ -182,7 +182,7 @@ public:
 	void	ModeEXT(CmHead *src,ILS_DATA *ils = 0);	// Enter/leave external mode
 	void	ChangeRefDirection(float d);
 	void	ChangePosition(SPosition *p);
- //-----------------------------------------------------------
+  //-----------------------------------------------------------
   void  MakeFrequency(RADIO_FRQ *loc);
   void  StoreFreq(RADIO_FRQ *loc, float fq);
   void  InitTable(RADIO_FLD *tab,short No,char *data, short cf);

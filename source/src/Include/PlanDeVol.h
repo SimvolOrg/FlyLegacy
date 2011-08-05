@@ -108,6 +108,8 @@ private:
   char                      dbKey[10];    // Database key value
 	char                      userT[6];			// User tag
 	//---------------------------------------------------------------------
+	SPosition                *airp;					// Aircraft position
+	//---------------------------------------------------------------------
 	float						ilsF;								// ILS Frequency if any							
   //---------------------------------------------------------------------
   CFPlan					*fplan;							// Mother flight plan
@@ -122,9 +124,11 @@ private:
 	//---------------------------------------------------------------------
 	double          rDir;								// Direction to next waypoint
 	double					pDis;								// Plane distance	
+	double					oDIS;								// Previous distance
   //---------------------------------------------------------------------
   U_CHAR                    State;        // State
 	U_CHAR										Modif;				// Modifier indicator
+	U_CHAR										mode;					// Leg mode
   float                     Legdis;       // Distance from previous in nm
   float                     disTot;       // Total distance from start point
 	char											tkoRWY[6];	  // Take off runway
@@ -160,7 +164,7 @@ public:
 	void    SetAltitude(int a);
 	void    SetPosition(SPosition p);
   void		SetDirection(double d);
-	float		NewReference(CVehicleObject *veh);
+	float		DirectTO(CVehicleObject *v);
 	//-------------------------------------------------------------
 	bool		Update(char e);
 	bool		Outside();
@@ -194,7 +198,6 @@ public:
 	//--- Edited field s ------------------------------------------
 	char*							GetEdAltitude()				{return Alti;}
 	//---Node parameters ------------------------------------------
-	inline char				GetModif()	{char m = Modif; Modif = 0; return m;}
   inline char*      GetName()             {return Name;}
 	inline float			GetLegDistance()      {return Legdis;}
 	inline int				GetAltitude()         {return altitude;}
@@ -218,6 +221,7 @@ public:
 	inline bool       NotAirport()          {return (type != 'airp');}
 	inline bool				IsFirst()							{return (Seq == 1);}
 	inline bool				IsaWaypoint()					{return (type != 'snav');}
+	inline char				IsDirect() 						{return (Modif | mode);}
 };
 //===========================================================================
 //  CFPlan defines flight plan

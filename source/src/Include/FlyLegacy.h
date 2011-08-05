@@ -2919,6 +2919,7 @@ public:
   virtual SPosition  GetPosition();
   virtual SPosition *ObjPosition()    {return 0;}
 	virtual SPosition *GetFarPoint()    {return 0;}
+	virtual SPosition *GetOpposite()		{return 0;}
 	//------------------------------------------------------------
 	virtual void			 SetNavOBS(float d)   {;}
 	virtual void       SetRefDirection(float d)	{;}
@@ -2975,6 +2976,7 @@ typedef struct {
     SPosition  lndP;                          // Landing point (on tarmac)
     SPosition  refP;                          // reference point
     SPosition  farP;                          // Far point for drawing
+		SPosition  opoP;													// Opposite position
     float      disF;                          // Distance in feet
     float      errG;                          // Glide error (in tan unit)
     float      gTan;                          // Tan of glide slope
@@ -2985,6 +2987,7 @@ typedef struct {
     float      d1;                            // Landing distance
     float      d2;                            // reference distance
     float      d3;                            // Far distance
+		float      d4;														// Opposite
 } ILS_DATA;
 //====================================================================
 #define RWY_HI_END 0

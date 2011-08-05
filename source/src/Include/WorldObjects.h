@@ -144,6 +144,7 @@ public:
   void      AddOrientationInDegres(SVector &v);
   SVector   GetOrientation(void)  {return iang;}    // In RH coordinate system (radian)
   SVector   GetOrientDegre(void)  {return dang;}
+	float			GetMagneticDirection();
   void      GetRRtoLDOrientation  (SVector *vec);
   void		  SetLDtoRROrientation  (SVector *vec);
   double    GetRRtoLDPitch ()     {return  -dang.x;}

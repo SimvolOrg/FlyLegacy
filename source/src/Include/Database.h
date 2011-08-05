@@ -418,6 +418,7 @@ public:
   inline  bool   IsNotForUS()                 {return (strcmp(ctykey,"US") != 0);}
   inline  int    HasCTY()                     {return (filter & 0x01);}
   inline  bool   EndOfReq()                   {return (Code == REQUEST_END);}
+	inline  bool	 IsBusy()											{return (Code != NO_REQUEST);}
 };
 //==================================================================================
 //  GPS DATABASE REQUEST
@@ -1151,6 +1152,7 @@ public:
   inline  SPosition *GetLandingPoint()  {return &ilsD->lndP;}
   inline  SPosition *ObjPosition()      {return &pos;}
   inline  SPosition *GetFarPoint()      {return &ilsD->farP;}
+	inline  SPosition *GetOpposite()			{return &ilsD->opoP;}
   inline  float GetFeetDistance()       {return ilsD->disF;}
   inline  float GetGlide(void)          {return ilsD->errG;}
 	inline  float GetVrtDeviation()				{return ilsD->errG;}
@@ -1279,7 +1281,7 @@ public:
  //------------------------------------------------------------------
  CRunway *GetNext()     {return (CRunway*)CmHead::Cnext;}
  //------------------------------------------------------------------
- 	ILS_DATA  *GetIlsEnd(char *e);
+ 	ILS_DATA  *GetLandDirection(char *e);
  //------------------------------------------------------------------
   void    InitILS(CILS *ils);
 	void		UpdateILS(float dir);
@@ -1293,14 +1295,18 @@ public:
   inline  U_CHAR    *GetHiLightSys()    {return rh8l;}
   inline  U_CHAR    *GetLoLightSys()    {return rl8l;}
   inline  SPosition *GetLandPos(char p) {return &ilsD[p].lndP;}
+	inline  float			 GetLandDir(char p)	{return  ilsD[p].lnDIR;}
+	inline  SPosition *GetOppoPos(char p)	{return &ilsD[p].opoP;}
   inline  char       GetIlsIndex()      {return ilsT;}
   inline  ILS_DATA  *GetIlsData(char p) {return (ilsD + p);}
   //----------------------------------------------------------------
   inline  char      *GetHiEnd()  {return rhid; }
   inline  char      *GetLoEnd()  {return rlid; }
   inline float       GetHiDir()  {return rhhd; }
+	inline float			 GetHmDir()	 {return rhmh; }
   inline SPosition   GetHiPos()  {return pshi; }
   inline float       GetLoDir()  {return rlhd; }
+	inline float			 GetLmDir()	 {return rlmh; }
   inline SPosition   GetLoPos()  {return pslo; }
   inline int         GetLenghi() {return rlen; }
   inline int         GetWidthi() {return rwid;}
@@ -1478,6 +1484,8 @@ public:
   void        RebuildLights(CRunway *rwy);
   void        SaveProfile();
   void        WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,SStream &st);
+	//--------------------------------------------------------
+	float       GetTakeOffSpot(char *rend,SPosition **d,SPosition **e);
   //---------inline ----------------------------------------
   inline float      GetLatitude(void) {return apos.lat;}
   inline float      GetLongitude(void){return apos.lon;}

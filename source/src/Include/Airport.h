@@ -315,12 +315,13 @@ public:
    //----TIME SLICE ------------------------------------------------------
    void   TimeSlice(float dT);
    //----RUNWAY BUILDING -------------------------------------------------
+	 void		TraceRWY(CRunway *rwy);
 	 void		CompactRWY();
    int    BuildTaxiways();
    int    GetTaxiways();
    void   SetRunway();
    void   SetRunwayData(CRunway *rwy);
-   void   SetLandingPRM(ILS_DATA *ils);
+   void   SetLandingPRM(ILS_DATA *ils,float mdir);
    void   SetCameraPosition();
    void   BuildOtherRunway(CRunway *rwy);
    void   AptExtension(GroundSpot &gs);
@@ -510,6 +511,7 @@ class CAirportMgr {
   double          PavArc;                     // Pavement size in arcsec
 	//---- Nearest airport -------------------------------------------
 	CAptObject		 *nApt;												// Nearest airport
+	SPosition      *tko;												// Take off position
 	SPosition      *endp;												// Runway end point
   //-----Aircraft Icon----------------------------------------------
   CPicQUAD       *avion;                      // Aircraft icon
@@ -522,7 +524,6 @@ public:
 	void		SaveNearest(CAptObject *apo);
 	//--- EXTERNAL INTERFACE ------------------------------------------
 	bool		AreWeAt(char *key);
-	RwyID  *CAirportMgr::LocateEND(CAirport *apt,char *idn);
 	bool		SetOnRunway(CAirport *apt,char *idn);
   //----AIRPORT BUILDING --------------------------------------------
   int       SetRunwayProfile(CAirport *apt);

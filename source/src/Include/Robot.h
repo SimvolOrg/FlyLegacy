@@ -190,7 +190,7 @@ public:
 	void	EnterFinal();
 	void	ChangeWaypoint();
 	void	Refresh();
-	float GetDirection();
+	float SetDirection();
 	//--- State routines ----------------------------------
 	void	Start();
 	void	HandleBack();

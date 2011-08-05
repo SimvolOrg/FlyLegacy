@@ -1252,7 +1252,7 @@ public:
   //--------Terrain Parameters -----------------------------------
   inline bool     Teleporting()       {return (Tele != 0);}
   inline double   GetHorizon()        {return hLine;}
-  inline float    GetNorth()          {return magDV;}
+  inline float    GetMagnecticNorth() {return magDV;}
   inline float    GetGroundAltitude() {return Spot.alt;}
 	inline double		GetFeetAGL()				{return fAGL;}
   inline void     GetGroundNormal(CVector &v) {v = Spot.gNM;}
