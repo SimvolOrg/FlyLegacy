@@ -84,7 +84,7 @@ CMagneticModel::~CMagneticModel()
 void CMagneticModel::ReadCoefficients (void)
 {
   char cofFilename[PATH_MAX];
-  strcpy (cofFilename, "System/WMM2005.COF");
+  strcpy (cofFilename, "System/WMM2010.COF");
   FILE* f = fopen (cofFilename, "r");
   if (f) {
     // Read WMM spherical harmonic coefficients

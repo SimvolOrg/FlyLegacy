@@ -277,6 +277,14 @@ void	CWorldObject::GetRRtoLDOrientation (SVector *vec)
 	return;
 }
 //------------------------------------------------------------
+//	Get magnetic direction
+//------------------------------------------------------------
+float	CWorldObject::GetMagneticDirection()
+{	float zdir	= -dang.z;
+  //---work in aircraft local coordinate Left hand in degre -----
+  return Norme360(zdir - globals->magDEV);
+}
+//------------------------------------------------------------
 //	From gauges that work in right hand coordinate and degres
 //-------------------------------------------------------------
 void	CWorldObject::SetLDtoRROrientation (SVector *vec)
