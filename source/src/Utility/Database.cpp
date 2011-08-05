@@ -1911,7 +1911,31 @@ CRunway *CAirport::FindRunway(char *rend)
   return rwy;
 }
 //-----------------------------------------------------------------
-//  Return One of Airport name
+//	Find  a runway take-off spot by end identifier
+//-----------------------------------------------------------------
+float CAirport::GetTakeOffSpot(char *rend,SPosition **dep, SPosition **end)
+{ CRunway   *rwy = 0;
+  float rot = 0;
+  rwyQ.Lock();
+  for (rwy = (CRunway*)rwyQ.GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
+	{ if (strcmp(rend,rwy->GetHiEnd()) == 0)  
+		{*dep = rwy->GetLandPos(RWY_HI_END); 
+		 *end = rwy->GetOppoPos(RWY_HI_END);
+		  rot = rwy->GetROT(RWY_HI_END);
+			break;
+		}
+	  if (strcmp(rend,rwy->GetLoEnd()) == 0)  
+		{*dep = rwy->GetLandPos(RWY_LO_END); 
+		 *end = rwy->GetOppoPos(RWY_LO_END);
+		 rot = rwy->GetROT(RWY_LO_END);
+			break;}
+  }
+	//-- Unlock RWY Queue -------------------------------
+  rwyQ.Unlock();
+  return rot;
+}
+//-----------------------------------------------------------------
+//  Return One of Airport Identifier
 //-----------------------------------------------------------------
 char *CAirport::GetAptName()
 { char *fn = GetFaaID();
@@ -2298,7 +2322,8 @@ void CRunway::SetAttributes()
 //-----------------------------------------------------------------
 void CRunway::UpdateILS(float dir)
 {	float mdev = rhhd - rhmh;
-	float hdir = Wrap360(-dir - mdev);
+  float hlnd = 360 - pID[RWY_HI_END].aRot;
+	float hdir = Wrap360(hlnd - mdev);
 	ilsD[RWY_HI_END].lnDIR = hdir;
 	float ldir = Wrap360(hdir + 180);
 	ilsD[RWY_LO_END].lnDIR = ldir;
@@ -2357,21 +2382,13 @@ void CRunway::InitILS(CILS *ils)
   return;
 }
 //---------------------------------------------------------------------------------
-//  Set Landing parameters
+//  return Landing direction
 //---------------------------------------------------------------------------------
-ILS_DATA  *CRunway::GetIlsEnd(char *e)
+ILS_DATA  *CRunway::GetLandDirection(char *e)
 {	//--- landing in hi end --------------
-	if (0 == strcmp(e,rhid))	
-	{ float ldir  = rhmh;					// Mag direction
-	  ilsD[RWY_HI_END].lnDIR = ldir;
-		return (ilsD + RWY_HI_END);
-	}
+	if (0 == strcmp(e,rhid))	return (ilsD + RWY_HI_END);
 	//--- landing in lo end --------------
-	if (0 == strcmp(e,rlid))  
-	{	float ldir  = rlmh;					//Magnetic direction
-	  ilsD[RWY_LO_END].lnDIR = ldir;
-		return (ilsD + RWY_LO_END);
-	}
+	if (0 == strcmp(e,rlid)) return (ilsD + RWY_LO_END); 
 	return 0;
 }
 //---------------------------------------------------------------------------------
@@ -2958,7 +2975,7 @@ void CDbCacheMgr::IncDeviation(float dev)
 { if (dev < FLT_EPSILON)  return;
   totDEV += dev;
   nbrDEV++;
-  globals->magDEV  = totDEV / nbrDEV;
+//  globals->magDEV  = totDEV / nbrDEV;
   return;
 }
 //-------------------------------------------------------------------------
@@ -2968,8 +2985,8 @@ void CDbCacheMgr::DecDeviation(float dev)
 { if (dev < FLT_EPSILON)  return;
   totDEV -= dev;
   nbrDEV--;
-  if (nbrDEV) globals->magDEV  = totDEV / nbrDEV;
-  else        globals->magDEV  = 0;
+//  if (nbrDEV) globals->magDEV  = totDEV / nbrDEV;
+//  else        globals->magDEV  = 0;
   return;
 }
 //========================================================================

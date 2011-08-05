@@ -1112,18 +1112,6 @@ int  RoundAltitude(int a)
 	return (ent * 100);
 }
 //=========================================================================================
-//  Return the magnetic direction of Aircraft
-//=========================================================================================
-double MagneticDirection()
-{ SVector vec;
-  //---Convert direction from right hand to left hand ---
-  vec.x	= -globals->dang.x;
-	vec.y	= -globals->dang.z;
-	vec.z	= -globals->dang.y;
-  //---work in aircraft local coordinate Left hand in degre -----
-  return Norme360(vec.y - globals->magDEV);
-}
-//=========================================================================================
 //  Compute the flag
 //  0 Warning flag (no detection)
 //  1 To flag
