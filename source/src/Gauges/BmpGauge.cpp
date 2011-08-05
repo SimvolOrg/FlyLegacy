@@ -691,7 +691,7 @@ EClickResult C_DirectionalGyroGauge::MouseClick (int x, int y, int btn)
   { DisplayBUG();
 		return MOUSE_TRACKING_ON;
 	}
-  if (knob.ArmRotation(1,x,y,btn))
+  if (knob.ArmRotation(0.2f,x,y,btn))
   { DisplayHDG();
 		return MOUSE_TRACKING_ON;
 	}
@@ -713,7 +713,7 @@ void C_DirectionalGyroGauge::Draw (void)
 { DrawUnderlay();
   //--- Get hsi heading -------------------------------------
   Send_Message(&mesg);
-  hdg = int(mesg.realData);
+  hdg = float(mesg.realData);
   bug = mesg.user.u.unit;
   nedl.DrawNeedle(Wrap360(-hdg));
 
@@ -747,7 +747,7 @@ void C_DirectionalGyroGauge::Draw (void)
 //	Draw gyro heading
 //-------------------------------------------------------------------
 ECursorResult C_DirectionalGyroGauge::DisplayHDG()
-{ sprintf_s(hbuf,HELP_SIZE,"DIR: %03d°",int(hdg));
+{ sprintf_s(hbuf,HELP_SIZE,"DIR: %.2f°",hdg);
   FuiHelp();
   return CURSOR_WAS_CHANGED;
 }

@@ -3824,7 +3824,7 @@ void CK89gps::ModeOBS()
 //-----------------------------------------------------------------------------
 void CK89gps::RefreshActiveWPT()
 { char  edt[16];
-  aCAP  = MagneticDirection();
+  aCAP  = mveh->GetMagneticDirection();		//MagneticDirection();
   SelectActiveWaypoint();
   const char *idn = (0 == actWPT)?("____"):(actWPT->GetIdent());
   //---Init distance when active waypoint exist --
