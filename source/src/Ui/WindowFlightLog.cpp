@@ -384,7 +384,8 @@ void CFuiFlightLog::ModifCeil(int inc)
 //  Close this window
 //-------------------------------------------------------------------------
 void CFuiFlightLog::CloseMe()
-{ fpln->Save();
+{ if (Req.IsBusy())	return;
+	fpln->Save();
   globals->dbc->RegisterLOGwindow(0);
   CFuiDirectory *dir = globals->dbc->GetDIRwindow();
   if (dir)   dir->RegisterMe(0);
