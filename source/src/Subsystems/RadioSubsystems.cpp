@@ -43,7 +43,7 @@ void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
 	//--- Any ILS to set --------------------------------------
 	ilsD		= ils;
 	vdev		= 0;
-	farP		= (ils)?(&ils->farP):(0);
+	opoP		= (ils)?(&ils->opoP):(0);
 	refD    = (ils)?(ils->lnDIR):(0);
 	//--- compute feet factor at given latitude ---------------
 	double lr   = TC_RAD_FROM_ARCS(spos.lat);					//DegToRad  

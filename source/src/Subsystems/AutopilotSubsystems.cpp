@@ -1328,18 +1328,19 @@ bool AutoPilot::CheckDistance()
 //-----------------------------------------------------------------------
 double AutoPilot::AdjustHDG()
 { //-- Approach=> 45° toward ILS--------
+	double bias = 0;
 	double sig  = (Radio->hDEV < 0)?(-1):(+1);
-	double cor  =  sig * 45;
+	double cor  =  sig * 40;
 	double era  = fabs(Radio->hDEV);
 	redz				= (era < 20)?(1):(0);			// Red sector
 	cFAC				= 0;
 	//--- Approach leg and not in red sector ----------
 	if (!redz &&  aprm)		return Wrap360(Radio->hREF + cor);
 	//--- Other tracking mode --------------
-	if (era > 21)		era  = 20;
-	cFAC	= (21 - era) * gain;
-	if (era < 0.16)	cFAC = 20;
-  cFAC  *= Radio->hDEV;
+	if (era > 20)		era  = 20;
+	cFAC	=  (21  - era) * gain;
+	if (era < 0.40)	cFAC = 14;
+  cFAC  =  (cFAC * Radio->hDEV) + bias;
 	double dir  = Norme360(Radio->radi - cFAC);     // New direction;
 	return dir;
 }
@@ -1363,7 +1364,6 @@ void AutoPilot::ModeLT2()
 	//	TRACE("LT2: aHDG=%.2f RADI=%.2f hERR=%.2f, cFAC=%.2f rHDG=%.2f",
 	//	aHDG,Radio->radi,hERR,cFAC,rHDG);
 	//-- check for final leg ----------------
-	if (!CheckDistance())		return;
 	return LateralHold();
 }
 //-----------------------------------------------------------------------
@@ -1444,6 +1444,7 @@ void AutoPilot::ModeGSW()
 //-----------------------------------------------------------------------
 bool AutoPilot::MissLanding()
 { if (cAGL > aMIS)							return false;
+  if (cAGL <   50)							return false;
   //---Check for lateral miss landing ------------------
   if (fabs(hERR) > hMIS)        return AbortLanding(1);
 	//---Check for vertical miss landing -----------------
@@ -1546,7 +1547,7 @@ void AutoPilot::ModeFIN()
 	gPOS		= 0;
 	if (SIGNAL_ILS != Radio->ntyp)  return Disengage(1);
 	rudS->Neutral();
-	gPOS		= Radio->nav->GetFarPoint();
+	gPOS		= Radio->nav->GetOpposite();
 	lStat		= AP_LAT_GND;						
 	return;
 }
@@ -2133,6 +2134,8 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   cnv->AddText( 8,1,"%.05f",rHDG);
   cnv->AddText( 1,"hREF:");
   cnv->AddText( 8,1,"%.05f",Radio->hREF);
+  cnv->AddText( 1,"aHDG:");
+  cnv->AddText( 8,1,"%.05f",aHDG);
   cnv->AddText( 1,"hERR:");
   cnv->AddText( 8,1,"%.05f",hERR);
   cnv->AddText( 1,"vTIMs");
@@ -2156,8 +2159,6 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 	{	cnv->AddText( 1,"cFAC");
 	  cnv->AddText( 8,1,"%.5f",cFAC);
 	}
-  cnv->AddText( 1,"rVSI");
-  cnv->AddText( 8,1,"%.00f",rVSI);
   if (vStat == AP_VRT_ALT)
   { cnv->AddText( 1,"xALT");
     cnv->AddText( 8,1,"%.00f",xALT);
@@ -2165,14 +2166,16 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   if (vStat == AP_VRT_VSP)
   { cnv->AddText( 1,"eVSP");
     cnv->AddText( 8,1,"%.4f",eVSP);
+		cnv->AddText( 1,"rVSI");
+    cnv->AddText( 8,1,"%.00f",rVSI);
   }
 	if (vStat == AP_VRT_FLR)
   { cnv->AddText( 1,"dTDP");
 		cnv->AddText( 8,1,"%.0f",dTDP);
   }
 
-  cnv->AddText(1,1,"Lateral : %s",autoTB1[lStat]);
-  cnv->AddText(1,1,"Vertical: %s",autoTB2[vStat]);
+  cnv->AddText(1,1,"%s-%s",autoTB1[lStat],autoTB2[vStat]);
+ // cnv->AddText(1,1,"Vertical: %s",autoTB2[vStat]);
   cnv->AddText(1,1,"ABRT    : %d",abrt);
   return;
 }

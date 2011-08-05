@@ -27,6 +27,7 @@
 #include "../Include/Globals.h"
 #include "../Include/Fui.h"
 #include "../Include/Atmosphere.h" // CAirspeedIndicator
+#include "../Include/MagneticModel.h"
 using namespace std;
 
 #ifdef _DEBUG	
@@ -900,6 +901,10 @@ EMessageResult CDirectionalGyro::ReceiveMessage (SMessage *msg)
 //				When yaw = 0 we have H=M. 
 //				If the dial is not aligned with the north, the indicated
 //				yaw is false.
+//	To get magnetic deviation in degre at a position, call
+//	The deviation is returned in decl_degrees
+//	CMagneticModel::Instance().GetElements (this->GetPosition (), decl_degrees_, hor_field_);
+//  
 //--------------------------------------------------------------------
 void CDirectionalGyro::TimeSlice (float dT,U_INT FrNo)		
 {	// Update the pump value (indn) from the parent class
@@ -907,7 +912,6 @@ void CDirectionalGyro::TimeSlice (float dT,U_INT FrNo)
 	// Compute compass indication from aircraft heading, error and knob.
 	SVector ori;
   ori.h  = 0;
-
 	mveh->GetRRtoLDOrientation(&ori);
 	if (!autoAlign) Error = eRate * dT;						            // proportional error
 	tYaw	= Norme360(ori.h + Error + gyro - globals->magDEV); // target yaw
@@ -1150,7 +1154,7 @@ EMessageResult CMagneticCompass::ReceiveMessage (SMessage *msg)
 //  True heading is (360 - indn)
 //----------------------------------------------------------------------------
 void CMagneticCompass::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
-{ indnTarget = float(MagneticDirection());
+{ indnTarget = mveh->GetMagneticDirection();			//float(MagneticDirection());
   //---Warning indn may overshoot range when dT > ratK ------------
   CDependent::TimeSlice(dT,FrNo);							// JSDEV*
 }

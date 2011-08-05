@@ -1003,7 +1003,7 @@ void CMixtureControl::PrepareMsg(CVehicleObject *veh)
 //------------------------------------------------------
 int  CMixtureControl::SetControl(float val)
 {	indnTarget    = val;
-  data->e_mixt  = indn;
+  data->e_mixt  = val;
 	return 1;
 }
 //-----------------------------------------------------
@@ -1848,6 +1848,14 @@ EMessageResult CBrakeControl::ReceiveMessage (SMessage *msg)
             case 'park' : // park brakes
               Park        = msg->intData;
               return MSG_PROCESSED;
+						//--- Set park on if not ------
+						case 'onpk':
+							Park	= 1;
+							return MSG_PROCESSED;
+						//--- Reset park  -------------
+						case 'ofpk':
+							Park	= 0;
+							return MSG_PROCESSED; 
 						//--- break toe ---------------
 						case 'btoe':
 							int u = msg->user.u.engine;

@@ -38,6 +38,8 @@ CWPoint::CWPoint(CFPlan *fp,Tag t) : CSlot()
   type      = t;
   fplan     = fp;
 	Modif			= 0;
+	mode			= 0;
+	airp			= 0;
 	fp->IncWPT();
   position.lat = position.lon = position.alt = 0;
   altitude  = 0;
@@ -95,6 +97,21 @@ char *CWPoint::ChangeAltitude(int a)
 	_snprintf(Alti,16,"% 6d ",a);
 	Alti[15]	= 0;
 	return Alti;
+}
+//-----------------------------------------------------------
+//	Change leg mode
+//	Compute direct path to waypoint
+//-----------------------------------------------------------
+float CWPoint::DirectTO(CVehicleObject *veh)
+{	airp = veh->GetAdPosition();
+	mode = 1;
+	SVector v = {0,0,0};
+  CmHead *obj	= DBwpt.Pointer();
+	if (0 == obj)	return rDir;
+	v	= GreatCirclePolar(airp, obj->ObjPosition());
+	double mdev = obj->GetMagDev();
+	double ndir = Wrap360((float)v.h - mdev);
+	return ndir;
 }
 //----------------------------------------------------------------------
 //	Select best altitude depending on distance from previous node
@@ -266,7 +283,7 @@ ILS_DATA *CWPoint::GetLandingData()
 	//--- Locate runway end ----------------
 	CRunway  *rwy = apt->FindRunway(lndRWY);
 	if (0 == rwy)					return 0;
-	return rwy->GetIlsEnd(lndRWY);
+	return rwy->GetLandDirection(lndRWY);
 }
 //--------------------------------------------------------------------
 //  Process first node
@@ -363,6 +380,7 @@ void CWPoint::NodeNAV(CWPoint *prv,char m)
 	{	strcpy(Mark," ");
 		State		= WPT_STA_OUT;
 	 *Etar	  = 0;
+		mode    = 0;
 	}
 	//--- check for altitude -----------------
 	int minA = int(DBwpt->GetElevation());
@@ -406,11 +424,12 @@ void CWPoint::SetLegDistance(float d)
 //	Outside waypoint
 //-----------------------------------------------------------------
 bool CWPoint::Outside()
-{	if (pDis > 2.0)		return true;
+{	if (pDis > 2.5)		return true;
 	//--- we are now inside --------------
 	State = WPT_STA_INS;
 	strcpy(Mark,"O");
 	fplan->Refresh();
+	oDIS	= pDis;
 	return true;
 }
 //-----------------------------------------------------------------
@@ -430,25 +449,15 @@ void CWPoint::EditArrival()
 //-----------------------------------------------------------------
 bool CWPoint::Inside()
 { double tds = fplan->TurningPoint();
-	if (pDis > tds)			return true;
+  double prd = oDIS;
+	oDIS			 = pDis;
+	if ((prd > pDis) && (pDis > tds))	return true;
 	//--- Waypoint is terminated now ------
 	State = WPT_STA_TRM;
 	strcpy(Mark,"X");
 	EditArrival();
 	fplan->Refresh();
 	return false;
-}
-//-----------------------------------------------------------
-//	Set reference Direction from aircraft
-//-----------------------------------------------------------
-float CWPoint::NewReference(CVehicleObject *veh)
-{	SVector v = {0,0,0};
-  CmHead *obj	= DBwpt.Pointer();
-	if (0 == obj)	return rDir;
-	v	= GreatCirclePolar(veh->GetAdPosition(), obj->ObjPosition());
-	double mdev = obj->GetMagDev();
-	double ndir = Wrap360((float)v.h - mdev);
-	return ndir;
 }
 //-----------------------------------------------------------------
 //	Update current node

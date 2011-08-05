@@ -378,17 +378,17 @@ void VPilot::EnterFinal()
 }
 //--------------------------------------------------------------
 //	Compute direction
-//	If leg distance is lower than 8 miles, head direct to station
+//	If leg distance is under 12 miles, head direct to station
 //
 //--------------------------------------------------------------
-float VPilot::GetDirection()
-{	float rem = wayP->GetLegDistance();
+float VPilot::SetDirection()
+{	float dis = wayP->GetLegDistance();
   float seg = wayP->GetDirection();
 	float dev = Radio->GetDeviation();
 	float rdv = fabs(dev);
-	if ((rem > 8) || (rdv < 20))	return seg;
+	if ((dis > 12) || (rdv < 5))	return seg;
 	//--- Compute direct-to direction to waypoint -----
-  return wayP->NewReference(mveh);
+  return wayP->DirectTO(mveh);
 }
 //--------------------------------------------------------------
 //	Change to next Waypoint
@@ -397,10 +397,11 @@ void VPilot::ChangeWaypoint()
 {	char *edt = globals->fui->PilotNote();
 	float rad = 0;
 	wayP	= fpln->GetCurrentNode();
+	if (wayP->IsFirst())			return;  // wait next
 //	TRACE("VPL: Change WPT to %s",wayP->GetName());
 	if (fpln->IsOnFinal())		return EnterFinal();
 	//--- Advise user -------------------------------------
-	float dir = GetDirection();
+	float dir = SetDirection();
 	_snprintf(edt,128,"Heading %03d to %s",int(dir),wayP->GetName());
 	globals->fui->PilotToUser();
 	//--- Set radio mode ----------------------------------
@@ -426,9 +427,12 @@ void VPilot::ChangeWaypoint()
 //	Refresh direction to waypoint if needed
 //--------------------------------------------------------------
 void VPilot::Refresh()
-{	if (!wayP->IsActive())			return;
-	if (0 == wayP->GetModif())	return; 
-  float dir = wayP->NewReference(mveh);
+{	float dev = Radio->GetDeviation();
+	float rdv = fabs(dev);
+	bool  dto = ((rdv > 5) || (wayP->IsDirect()));
+	//--- check if Direct to is active ----------
+	if (!dto)	return; 
+  float dir = wayP->DirectTO(mveh);
 	Radio->ChangePosition(wayP->GetGeoP());
 	Radio->ChangeRefDirection(dir);
 	return;
@@ -438,8 +442,7 @@ void VPilot::Refresh()
 //--------------------------------------------------------------
 void VPilot::ModeTracking()
 { if (apil->IsDisengaged())	return HandleBack();
-	Refresh();
-	if (wayP->IsActive())	    return;
+	if (wayP->IsActive())	    return Refresh();
 	ChangeWaypoint();
 	return;
 }
