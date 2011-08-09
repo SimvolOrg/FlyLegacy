@@ -975,8 +975,8 @@ void CSituation::Draw ()
   //----Use standard camera seting for drawing ------------------------
   cam->StartShoot(dTime);
   //----Draw sky background ------------------------------------
-  globals->skm->PreDraw();
 
+  globals->skm->PreDraw();
   //--------------------------------------------------------------------
   // Draw the terrain (ground textures, airports, scenery models, etc.)
   //--------------------------------------------------------------------

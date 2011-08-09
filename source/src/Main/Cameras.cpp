@@ -1001,8 +1001,9 @@ void CCockpitPanel::SetPanel(CPanel *p)
 //=====================================================================================
 // Cockpit (vehicle interior) camera
 //=====================================================================================
-CCameraCockpit::CCameraCockpit (void)
-{ Prof.Set(CAM_MAY_ZOOM);
+CCameraCockpit::CCameraCockpit (CVehicleObject *mv)
+{ mveh	 = mv;
+	Prof.Set(CAM_MAY_ZOOM);
 	Rate	 = 2;						// Default rotation rate
 	//-----------------------------------------------
 	Seat.x = Seat.y = Seat.z = 0;
@@ -1084,77 +1085,38 @@ void CCameraCockpit::ReadFinished (void)
     }
   }
 }
-
-//====================================================================================
-//    Update camera offset and orientation.  For the cockpit camera, position
-//    offset is always fixed.  Orientation is the combination of the
-//    target oriention, seat orientation and panel orientation.
-//    Aircraft orientations are in radian
-//      X is pitch
-//      Y is banking
-//      Z is heading
-//  System is right hand coordinates
-//  First local transfomration from camera for Forward and Up vector are applied
-//  Then global transformation  from aircraft orientation are applied 
-//  For both kinds, the order is
-//  1) Bank  about Y
-//  2) Pitch about X
-//  3) Head  about Z
-//  NOTE: Local orientation are kept in degres to avoid conversion
-//====================================================================================
+//------------------------------------------------------------------------------------
+//	Compute camera position using openGL matrix operations
+//------------------------------------------------------------------------------------
 void CCameraCockpit::UpdateCamera (SPosition tgtPos, SVector ori ,float dT)
-{ // Adjust orientation by fixed seat orientation
-  CVector loc = Seat;
-  if (0 == ckPanel) return;
-  loc.x += ckPanel->pit;
-  loc.z += ckPanel->hdg;
-  //--Adjust for pilot Head ---------------------------------
-  loc.x += Head;
-  //---------------------------------------------------------
-  sgVec3   axis;
-  sgMat4   B,P,H,Y, X, Z, M;
-  sgSetVec3 (axis, 1, 0, 0);
-  sgMakeRotMat4 (P, -loc.x, axis);
-  sgMakeRotMat4 (X, RadToDeg(ori.x), axis);
+{	//----- Adjust orientation by fixed seat orientation ----
+  CVector ors = Seat;
+	ors.x += ckPanel->pit;
+  ors.z += ckPanel->hdg;
+  //--Adjust for pilot Head ----------------------
+  ors.x += Head;
+	//--- Rotate all -------------------------------
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glLoadMatrixd( mveh->GetROTM());				// Global aircraft rotation
+	glRotated(+ors.z,0,0,1);				// Head   pilot eye (Z)
+	glRotated(-ors.x,1,0,0);				// Pitch	pilot eye (X)
+	//--- Save matrix ------------------------------
+  glGetDoublev(GL_MODELVIEW_MATRIX,mSEAT);
+  glPopMatrix();
 
-  sgSetVec3 (axis, 0, 1, 0);
-  sgMakeRotMat4 (B, loc.y, axis);
-  sgMakeRotMat4 (Y, RadToDeg(ori.y), axis);
-
-  sgSetVec3 (axis, 0, 0, 1);
-  sgMakeRotMat4 (H, loc.z, axis);
-  sgMakeRotMat4 (Z, RadToDeg(ori.z), axis);
-
-  //--- Do aircraft rotation as B*P*H ----
-  sgCopyMat4     (M, B);
-  sgPostMultMat4 (M, P);
-  sgPostMultMat4 (M, H);
-  //--- Do local rotation as B*P*H ------
-  sgPostMultMat4 (M, Y);
-  sgPostMultMat4 (M, X);
-  sgPostMultMat4 (M, Z);
-  //--- Transform forward vector -------
-  sgVec3 fw;
-  sgSetVec3   (fw, 0,1000,0);
-  sgXformVec3 (fw,M);
-  Fw.x = fw[0];
-  Fw.y = fw[1];
-  Fw.z = fw[2];
-  //--- Transform default Up vector ----
-  sgVec3 up;
-  sgSetVec3   (up, 0,0,1);
-  sgXformVec3 (up, M);
-  Up.x = up[0];
-  Up.y = up[1];
-  Up.z = up[2];
-  //--- Transform offset vector -------
-  sgVec3 rot;
-  sgSetVec3 (rot,Ofs.x,Ofs.y, Ofs.z);    //,Ofs.z);
-  sgXformVec3(rot,M);
-  offset.x = rot[0];
-  offset.y = rot[1];
-  offset.z = rot[2];
+	//--- Compute forward vector -------------------
+	CVector fw(0,100,0);
+	fw.MultMatGL(mSEAT,Fw);
+	//--- Compute up vector ------------------------
+	CVector up(0,0,1);
+	up.MultMatGL(mSEAT,Up);
+	//--- Now compute offset --------------------------
+  Ofs.MultMatGL(mSEAT,offset);
+	return;
 }
+
 //=====================================================================================
 // Return camera lookat point
 //=====================================================================================
@@ -2567,29 +2529,10 @@ void CCameraDLL::SetSignature (const long &sign)
 {
   signature = sign;
 }
+
 //===================================================================================
-// Camera Manager
-//  no is for windows indicator
-//===================================================================================
-CCameraManager::CCameraManager (const char* camFilename,char no)
-{ // Default camera is external spot, unless overridden in a Read() call
-  tCam    = CAMERA_SPOT;
-  aCam    = 0;
-  if (0 == no)   globals->ccm = this;
-  SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, camFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  } else {
-    WARNINGLOG ("CCameraManager : Cannot open .CAM file %s", camFilename);
-  }
-}
-//-------------------------------------------------------------------------
 //  Bind camera keys
-//-------------------------------------------------------------------------
+//===================================================================================
 void CCameraManager::BindKeys()
 { CKeyMap *km = globals->kbd;
   km->BindGroup('cmra',KeyCamGroup);
@@ -2640,6 +2583,26 @@ void CCameraManager::BindKeys()
   km->Bind ('ckpd', cKeyCKPD,KEY_SET_ON);
   return;
 }
+//===================================================================================
+// Camera Manager
+//===================================================================================
+CCameraManager::CCameraManager (CVehicleObject *veh,char* fn)
+{ // Default camera is external spot, unless overridden in a Read() call
+	mveh		= veh;
+  tCam    = CAMERA_SPOT;
+  aCam    = 0;
+  globals->ccm = this;
+  SStream s;
+  strcpy (s.filename, "WORLD/");
+  strcat (s.filename, fn);
+  strcpy (s.mode, "r");
+  if (OpenStream (&s)) {
+    ReadFrom (this, &s);
+    CloseStream (&s);
+  } else {
+    WARNINGLOG ("CCameraManager : Cannot open .CAM file %s", fn);
+  }
+}
 //-----------------------------------------------------------------
 //  Free camera list
 //-----------------------------------------------------------------
@@ -2653,9 +2616,7 @@ CCameraManager::~CCameraManager (void)
 //  Read parameters
 //-----------------------------------------------------------------
 int CCameraManager::Read (SStream *stream, Tag tag)
-{
-  int rc = TAG_IGNORED;
-  switch (tag) {
+{ switch (tag) {
   case 'came':
     // Camera definition
     {
@@ -2665,28 +2626,24 @@ int CCameraManager::Read (SStream *stream, Tag tag)
       case CAMERA_COCKPIT:
         // Cockpit camera
         {
-          CCameraCockpit *cock = new CCameraCockpit;
+          CCameraCockpit *cock = new CCameraCockpit(mveh);
           ReadFrom (cock, stream);
           came[CAMERA_COCKPIT] = cock;
           // If a cockpit camera is defined, make it the default
           tCam = CAMERA_COCKPIT;
+					return TAG_READ;
         }
-        break;
 
       default:
         WARNINGLOG ("CCameraManager::Read : Unknown camera type %s", TagToString(tag));
-      }
-    }
-    rc = TAG_READ;
-    break;
-  }
+				return TAG_IGNORED;
+			}
+		}
+	}
 
-  if (rc != TAG_READ) {
-    // Tag was not processed by this object, it is unrecognized
-    WARNINGLOG ("CCameraManager::Read : Unrecognized tag <%s>", TagToString(tag));
-  }
-
-  return rc;
+  // Tag was not processed by this object, it is unrecognized
+  WARNINGLOG ("CCameraManager::Read : Unrecognized tag <%s>", TagToString(tag));
+  return TAG_IGNORED;
 }
 //-------------------------------------------------------------------------
 //  Assign default cameras

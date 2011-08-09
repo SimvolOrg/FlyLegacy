@@ -78,6 +78,7 @@
 #include "../Include/Atmosphere.h"    // CVehicleObject::GetIAS (double &spd)
 #include "../Include/Weather.h" 
 #include "../Include/3dMath.h"
+#include "../Include/PlanDeVol.h"
 #include <vector>								      // JSDEV* for STL
 
 using namespace std;
@@ -708,7 +709,7 @@ void CVehicleObject::ReadFinished (void)
 
   // Read Camera Manager
   //MEMORY_LEAK_MARKER ("cam")
-  if (*nfo->GetCAM()) cam  = new CCameraManager (nfo->GetCAM(),0);
+  if (*nfo->GetCAM()) cam  = new CCameraManager (this,nfo->GetCAM());
   //MEMORY_LEAK_MARKER ("cam")
 
   // Read Radio Manager

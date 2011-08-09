@@ -576,10 +576,11 @@ bool CAirplane::FindReceiver (SMessage *msg)
   bool fnd = false;
 	if (!fnd) fnd = FindReceiver(msg,amp);
 	if (!fnd) fnd = FindReceiver(msg,gas);
+	if (!fnd) fnd = FindReceiver(msg,eng);
 	if (globals->Trace.Has(TRACE_MSG_PREPA))	TraceMsgPrepa(msg);
 	// Display warning message if message receiver not found
   if (fnd)	return true;
-  if (0 == msg->group)  return false;
+	msg->receiver = GetNullSubsystem();
   TagToString (cid, msg->sender);
   TagToString (cgr, msg->group);
   TagToString (ctg, msg->user.u.datatag);
@@ -608,6 +609,19 @@ bool CAirplane::FindReceiver (SMessage *msg,CFuelSystem *gsys)
 {	if (gsys == NULL)	return false;
 	std::vector<CFuelSubsystem*>::iterator it;
 	for	(it = gsys->fsub.begin(); it != gsys->fsub.end(); it++)
+	{	CSubsystem *sys = *it;
+		if (!sys->IsReceiver(msg))  continue;
+    TagToString(msg->dst,msg->group);
+    return true;
+	}
+	return false;	}
+//-----------------------------------------------------------------------------
+//	JSDEV* Find message receiver in gas subsystems
+//-----------------------------------------------------------------------------
+bool CAirplane::FindReceiver (SMessage *msg,CEngineManager *engs)
+{	if (engs == NULL)	return false;
+	std::vector<CEngine *>::iterator it;
+	for	(it = engs->engn.begin(); it != engs->engn.end(); it++)
 	{	CSubsystem *sys = *it;
 		if (!sys->IsReceiver(msg))  continue;
     TagToString(msg->dst,msg->group);
@@ -1597,7 +1611,8 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   if (!has_fake_engine_thrust) {
     s_p_d = (eng->GetForceISU ()).z * fake_gear_drag; //
     // engine drag from propellers
-    if (0) { // temporary condition to develop
+		bool tmp = 0;
+    if (tmp) { // temporary condition to develop
       ed.pos.x = -ef.pos.x; ed.pos.y = ef.pos.y; ed.pos.z = ef.pos.z;
       // up to now it is assumed that the prop isn't feathered and drag is max
       // if prop is feathered then drag is minored

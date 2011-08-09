@@ -117,6 +117,7 @@ void CPanelLight::Update (float b)
 CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
 { this->id  = id;
 	pit				= pn;						// Panel manager
+	mveh			= pn->GetMVEH();
 	main			= 0;
   strcpy (this->filename, filename);
   txOBJ   = 0;
