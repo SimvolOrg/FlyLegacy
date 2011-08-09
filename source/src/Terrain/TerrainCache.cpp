@@ -1767,7 +1767,7 @@ void CSuperTile::GetLine(CListBox *box)
 //  Add object to draw
 //-----------------------------------------------------------------------------
 void CSuperTile::Add3DObject(CWobj *obj)
-{ if (obj->NoZU()) woQ.PutHead(obj);
+{ if (obj->NoZB()) woQ.PutHead(obj);
   else             woQ.PutEnd(obj);
   return;
 }

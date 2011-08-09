@@ -1356,7 +1356,7 @@ void CWobj::EditModel(CFuiCanva *cnv,char * tp,char *name, M3D_PART_INFO &inf)
 { char edt[128];
   int nvt = inf.NbVT;
   int npo = inf.NbIN / 3;
-  _snprintf(edt,128,"%s model: %s",tp,name);
+  _snprintf(edt,128,"%s model(%dnz): %s ",tp,nozb,name);
   cnv->AddText(1,edt);
   _snprintf(edt,128,"Vertices %d",nvt);
   cnv->AddText(22,edt);
@@ -1421,16 +1421,16 @@ void CWobj::GetInfo(CFuiCanva *cnv)
   M3D_PART_INFO inf;
   //---Edit day Model  characteristics -------------------
   modD->Counts(inf);
-  EditModel(cnv,"Day ",name,inf);
+  EditModel(cnv,"D",name,inf);
   //---Edit Night model  characteristics -------------------
   name  = ModelName(MODEL_NIT);
   inf.NbIN = 0;
   inf.NbVT = 0;
   C3Dmodel *modN = modL[MODEL_NIT];
   if (modN) modN->Counts(inf);
-  if (modN) EditModel(cnv,"Night",name,inf);
+  if (modN) EditModel(cnv,"N",name,inf);
   else   
-  { strcpy(edt,"Night model: None.");
+  { strcpy(edt,"N model: None.");
     cnv->AddText(1,edt,1);
   }
   return;

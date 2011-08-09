@@ -2943,25 +2943,9 @@ void CAirportMgr::TimeSlice(float dT)
     { if (apt->IsSelected())                continue;   // Already in Queue
       fn  = apt->GetIdentity();
       apo = new CAptObject(this,apt);                   // Create airport object
-      //apo->SetCamera(cam);                              // Current camera
+      apo->SetCamera(cam);                              // Current camera
       aptQ.PutEnd(apo);                                 // Enter new Airport in Queue
-			//SaveNearest(apo);																	// Save nearest airport
-    }
-  //----Set nearest airport ------------------------------------
-  float tmp_dst   = 1000000.0f;
-  CAptObject *tmp = 0;
-  for   (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
-    { apt = apo->GetAirport();
-		  float dst = GetRealFlatDistance(apt);
-      if (dst < tmp_dst) {
-        tmp_dst = dst;
-        tmp = apo;
-      }
-    }
-  if (tmp != nApt) {
-    nApt = tmp;
-    nApt->SetCamera (cam);
-    SaveNearest (nApt);
+			SaveNearest(apo);																	// Save nearest airport
     }
   //----Update runway for current airports in queue -------------
   for   (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
@@ -2976,7 +2960,6 @@ void CAirportMgr::TimeSlice(float dT)
 //----------------------------------------------------------------------------------
 void CAirportMgr::SaveNearest(CAptObject *apo)
 {	float dis = apo->GetNmiles();
-	if (dis > 2)									return;
 	if (0 == nApt)	{nApt = apo;	return;}
 	if (nApt->GetNmiles() < dis)	return;				// Still to far 
 	nApt	= apo;																// New candidate
