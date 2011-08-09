@@ -53,6 +53,51 @@
 //==================================================================================
 int Lines = 0;
 //==================================================================================
+struct MSG_HW_TYPE {
+	char *idn;									// Identifier
+	U_INT hwd;									// Hardware type
+};
+//==================================================================================
+//	List of hardware type
+//==================================================================================
+MSG_HW_TYPE hwdTAB[] = {
+			 {"GAUGE"				,HW_GAUGE},
+			 {"SWITCH"			,HW_SWITCH},
+			 {"LIGHT"				,HW_LIGHT},
+			 {"STATE"				,HW_STATE},
+			 {"BUS"					,HW_BUS},
+			 {"FUSE"				,HW_FUSE},
+			 {"OTHER"				,HW_OTHER},
+			 {"CIRCUIT"			,HW_CIRCUIT},
+			 {"RADIO"				,HW_RADIO},
+			 {"FLAP"				,HW_FLAP},
+			 {"HILIFT"			,HW_HILIFT},
+			 {"BATTERY"			,HW_BATTERY},
+			 {"ALTERNATOR"	,HW_ALTERNATOR},
+			 {"ANNUNCIATOR"	,HW_ANNUNCIATOR},
+			 {"GENERATOR"		,HW_GENERATOR},
+			 {"CONTACTOR"		,HW_CONTACTOR},
+			 {"SOUNDFX"			,HW_SOUNDFX},
+			 {"FLASHER"			,HW_FLASHER},
+			 {"INVERTER"		,HW_INVERTER},
+			 {"UNITLESS"		,HW_UNITLESS},
+			 {"UNBENT"			,HW_UNBENT},
+			 {"SCALE"				,HW_SCALE},
+			 {0,0},
+};
+//==================================================================================
+//	Locate hardware type
+//==================================================================================
+U_INT GetHardwareType(char *hwd)
+{	char go = 0;
+	while (go >= 0)
+	{	char *idn = hwdTAB[go].idn;
+		if (0 == idn)	return 0;
+		if (strcmp(idn,hwd)) {go++; continue;}
+		return hwdTAB[go].hwd;
+	}
+	return 0;
+}
 //==========================================================================
 //  Stream object
 //==========================================================================
@@ -1172,11 +1217,13 @@ void ReadUserTag(SMessage *msg,SStream *st)
 { char s[64];
   ReadString (s, 64, st);
   char dtag_string[16]  = {0};
-  char group_string[16] = {0};
+  char param[16] = {0};
   int  int_v            =  0;
   if      (sscanf (s, "DATATAG,'%s'", dtag_string)  == 1) msg->user.u.datatag = StringToTag (dtag_string);
-  else if (sscanf (s, "GROUP,'%s'",   group_string) == 1) msg->group = StringToTag (group_string);
-  else if (sscanf (s, "HARDWARE,%s",  group_string) == 1) {
+  else if (sscanf (s, "GROUP,'%s'",   param) == 1) msg->group = StringToTag (param);
+  else if (sscanf (s, "HARDWARE,%s",  param) == 1) msg->user.u.hw = GetHardwareType(param);
+	/*
+	{
         if (!strcmp (group_string, "GAUGE"))           {msg->user.u.hw = HW_GAUGE;      return;}
         if (!strcmp (group_string, "SWITCH"))          {msg->user.u.hw = HW_SWITCH;     return;}
         if (!strcmp (group_string, "LIGHT"))           {msg->user.u.hw = HW_LIGHT;      return;}
@@ -1201,10 +1248,9 @@ void ReadUserTag(SMessage *msg,SStream *st)
         if (!strcmp (group_string, "SCALE"))           {msg->user.u.hw = HW_SCALE;      return;}
          return;
          }
+				 */
   else if (sscanf (s, "ENGINE,%d", &int_v) == 1) msg->user.u.engine = int_v;
   else if (sscanf (s, "UNIT,%d",   &int_v) == 1) msg->user.u.unit   = int_v;
- 
-        // .../...
   else if (sscanf (s, "%d", &int_v) == 1) msg->user.u.datatag = int_v; // used in FLYHAWK01.PLN <shet> trim wheel
   return;
 }
