@@ -314,6 +314,7 @@ public:
     //----3D management ---------------------------------------------
     float        dEye;            // True eye distance
     float       alpha;            // Alpha chanel
+		CObjQ					zbQ;						// Queue for nozb objects
     CObjQ         woQ;            // Super Tile 3D object Queue
     bool      visible;            // Visibility indicator
     float        white[4];                // Diffuse color for blending

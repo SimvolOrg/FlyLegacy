@@ -664,8 +664,9 @@ protected:
   CFuiVectorMap *wMAP;                    // Vector Map
   //-----Access requests ------------------------------------------------
   ClQueue        reqQ;                    // Queue of requests
-  ClQueue        prmQ;                    // Permanent request
   CGPSrequest    rGPS;                    // GPS request
+	//----Nearest airport -------------------------------------------------
+	CObjPtr			   nAPT;										// Nearest airport 
   //--------------Statistical data   ------------------------------------
   U_LONG         total;                   // Total memory used
   U_LONG         oSize[QDIM];             // Object dimension
@@ -766,6 +767,7 @@ public:
       void      SetAirportIdent(CCOM *com);
       CAirport *FindAPTbyDistance(CAirport *old,float radius);
 			CAirport *FindAPTbyKey(char *key);
+			void			GetNearestAirport(CObjPtr &p0) {p0 = nAPT;}
       //----------------------------------------------------------
       inline    short       GetRelativePos(short vp) {return (vp < 128)?(127 - vp):(vp - 128);}
       inline    SPosition  *GetPlanePos() {return &aPos;}

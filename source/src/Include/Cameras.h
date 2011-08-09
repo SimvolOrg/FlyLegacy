@@ -457,7 +457,6 @@ protected:
 	//---- Azimut and elevation ----------------------
 	CVector   tpos;
 	//------------------------------------------------
-	CAirport *capt;						// Current airport
   float     t_zoomRatio;
   float     twr_timer;
   double    distance;
