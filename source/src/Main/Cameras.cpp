@@ -1501,7 +1501,6 @@ CCameraTower::CCameraTower (void)
   cPrev = CAMERA_FLYBY;
 
   //--- nearest airport --------------
-	capt			 = 0;
   camPos.lat = 135428.40;
   camPos.lon = 855450.56;
   camPos.alt = 50.0;
@@ -1619,13 +1618,11 @@ void CCameraTower::PanDown()
 // GetNearestAirport
 //-------------------------------------------------------------------------
 void CCameraTower::GetNearestAirport (void)
-{ CAptObject *apo	= globals->apm->GetNearestAPT();
-	if (0 == apo)			return;
-  CAirport   *apt = apo->GetAirport();
-	if (capt == apt)	return;
-	capt	 = apt;
-	camPos = apt->GetPosition();
-	camPos.alt += 30;							//Spot.GetAltitude(camPos) + 30;
+{ CObjPtr apt = 0;
+  globals->dbc->GetNearestAirport(apt);
+	if (apt.Assigned())	camPos = apt->GetPosition();
+	else			          camPos = globals->geop;
+	camPos.alt += 50;							
 	return;
 }
 //-------------------------------------------------------------------------
