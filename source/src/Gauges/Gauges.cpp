@@ -1054,7 +1054,8 @@ void CGauge::Init()
   mask = 0;
   strcpy (help, "");
   strcpy (dfmt, "");
-  akbd = 0;
+  sync = 0;
+	subS = 0; 
   surf = 0;
   //--- Sound parameters -----------------------
   sbuf[0] = 0;
@@ -1187,7 +1188,8 @@ void  CGauge::CopyFrom(CGauge &g)
   cursTag = g.cursTag;
   strncpy(help,g.help,64);
   strncpy(dfmt,g.dfmt,64);
-  akbd    = g.akbd;
+  sync    = g.sync;
+	subS		= g.subS;
 	return;
 }
 //---------------------------------------------------------------------
@@ -1507,8 +1509,8 @@ int CGauge::Read (SStream *stream, Tag tag)
 
   case 'igno':
     return TAG_READ;
-  case 'akbd':
-    akbd  = 1;
+  case 'sync':
+    sync  = 1;
     return TAG_READ;
   case 'conn':
     // DEPRECATED -- ignore at this level ------------
@@ -1595,7 +1597,8 @@ int CGauge::Read (SStream *stream, Tag tag)
 //    Read finished
 //------------------------------------------------------------------------
 void CGauge::ReadFinished (void)
-{ // Compute center ------------------------------- 
+{ subS = panel->GetMVEH()->GetNullSubsystem();
+	// Compute center ------------------------------- 
   if (0 == cx)  cx = (w >> 1); 
   if (0 == cy)  cy = (h >> 1); 
   // Message default value 
@@ -1756,7 +1759,7 @@ void CGauge::GetCenterOffset(short* _cx, short* _cy)
 // Update the gauge's indication value
 //  NOTE: Value is often used to compute an angle on a gauge display and
 //        is not the real value read from the subsystem (like fuel QTY)
-//        Thus when the sing * is the first sign in the dfmt mask, the real
+//        Thus when the sign * is the first sign in the dfmt mask, the real
 //        value (rVal) is used rather than the final value.
 //-----------------------------------------------------------------------
 void CGauge::Update (void)
@@ -9176,10 +9179,10 @@ void  CSimpleInOutStateSwitch::PrepareMsg(CVehicleObject *veh)
 { Tag tag = mesg.user.u.datatag;
   mesg.intData  = vin[stat];
   Send_Message (&mesg);
-  if (0 == akbd)      return;
-  mesg.user.u.datatag = 'gage';
-  mesg.voidData       = this;
+  if (0 == sync)      return;
+  mesg.user.u.datatag = 'gets';
   Send_Message(&mesg);
+	subS	= (CSubsystem*) mesg.voidData;
   mesg.user.u.datatag = tag;
   return;
 }
@@ -9211,7 +9214,8 @@ void CSimpleInOutStateSwitch::CheckHold()
 //  Draw the gauge
 //-----------------------------------------------------------------------------
 void CSimpleInOutStateSwitch::Draw (void)
-{ if (chng)           DrawChange();
+{ subS->SetGauge(this);
+	if (chng)           DrawChange();
   if (mack)           CheckHold();
   if (0 == stat)      return;
   //---Check for time out -------------------

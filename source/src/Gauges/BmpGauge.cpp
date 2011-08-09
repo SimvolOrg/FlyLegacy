@@ -638,16 +638,7 @@ int C_DirectionalGyroGauge::Read (SStream *stream, Tag tag)
 //-------------------------------------------------------------------
 void C_DirectionalGyroGauge::ReadFinished ()
 { CGauge::ReadFinished();
-  mbug.group			= mesg.group;
-  mbug.sender     = unId;
-	mbug.id         = MSG_SETDATA;
-	mbug.dataType   = TYPE_REAL;
   //------------------------------------------
-  mgyr.group			= mesg.group;
-  mgyr.sender         = unId;
-	mgyr.user.u.datatag = 'dgyr';
-	mgyr.id             = MSG_SETDATA;
-	mgyr.dataType       = TYPE_REAL;
 }
 //----------------------------------------------------------------------
 //	Dupplicate from similar gauge
@@ -676,7 +667,22 @@ void C_DirectionalGyroGauge::CollectVBO(TC_VTAB *vtb)
 //	Prepare message
 //------------------------------------------------------------------
 void C_DirectionalGyroGauge::PrepareMsg(CVehicleObject *veh)
-{ veh->FindReceiver(&mbug);
+{ //--- Locate gyro subsystem ---------
+	mesg.sender     = unId;
+	veh->FindReceiver(&mesg);
+	gyrS = (CSubsystem*)mesg.receiver;
+	//--- Locate bug receiver -----------
+	mbug.group			= mesg.group;
+  mbug.sender     = unId;
+	mbug.id         = MSG_SETDATA;
+	mbug.dataType   = TYPE_REAL;
+	veh->FindReceiver(&mbug);
+	//--- Locate compss receiver -------
+	mgyr.group			= mesg.group;
+  mgyr.sender         = unId;
+	mgyr.user.u.datatag = 'dgyr';
+	mgyr.id             = MSG_SETDATA;
+	mgyr.dataType       = TYPE_REAL;
   veh->FindReceiver(&mgyr);
 	CGauge::PrepareMsg(veh);
 	return;	
@@ -686,7 +692,6 @@ void C_DirectionalGyroGauge::PrepareMsg(CVehicleObject *veh)
 //----------------------------------------------------------------------
 EClickResult C_DirectionalGyroGauge::MouseClick (int x, int y, int btn)
 { // Initialize Ap knob hold-down values
-
   if (apkb.ArmRotation(1,x,y,btn))
   { DisplayBUG();
 		return MOUSE_TRACKING_ON;
@@ -708,13 +713,15 @@ EClickResult C_DirectionalGyroGauge::StopClick ()
 }
 //----------------------------------------------------------------------
 //	Draw the gauge
+//	NOTE:  Is is expected from the gyro subsystem that
+//				yaw is published through GetPmFT1()
+//				bug is published through GetPmFT2()
 //----------------------------------------------------------------------
 void C_DirectionalGyroGauge::Draw (void)
 { DrawUnderlay();
   //--- Get hsi heading -------------------------------------
-  Send_Message(&mesg);
-  hdg = float(mesg.realData);
-  bug = mesg.user.u.unit;
+	hdg	= gyrS->GetPmFT1();
+	bug	= gyrS->GetPmFT2();
   nedl.DrawNeedle(Wrap360(-hdg));
 
 	//-----Update the gyro knob --------------------------------
@@ -1137,15 +1144,6 @@ C_HorizonGauge::C_HorizonGauge (CPanel *mp)
 C_HorizonGauge::~C_HorizonGauge (void)
 { 
 }
-//----------------------------------------------------------------------
-//	Prepare Messages
-//----------------------------------------------------------------------
-void C_HorizonGauge::PrepareMsg(CVehicleObject *veh)
-{	veh->FindReceiver(&pich);
-	veh->FindReceiver(&roll);
-	CGauge::PrepareMsg(veh);
-	return;	
-}
 //---------------------------------------------------------------------
 //	Read all tags
 //---------------------------------------------------------------------
@@ -1246,10 +1244,6 @@ void C_HorizonGauge::CollectVBO(TC_VTAB *vtb)
 void C_HorizonGauge::ReadFinished()
 { if (0 == pich.group) pich.group = mesg.group;
   if (0 == roll.group) roll.group = mesg.group;
-  pich.id				      = MSG_GETDATA;
-	pich.dataType	      = TYPE_REAL;
- 	roll.id				      = MSG_GETDATA;
-	roll.dataType		    = TYPE_REAL;
   mesg.user.u.datatag = 'knob';
   mesg.id             = MSG_SETDATA;
 
@@ -1259,6 +1253,21 @@ void C_HorizonGauge::ReadFinished()
   Bmire.SetPPD(pixd);
   //---- Init the knob texture ----------
   CTexturedGauge::ReadFinished();
+}
+//----------------------------------------------------------------------
+//	Prepare Messages
+//----------------------------------------------------------------------
+void C_HorizonGauge::PrepareMsg(CVehicleObject *veh)
+{	pich.id				      = MSG_GETDATA;
+	pich.dataType	      = TYPE_REAL;
+	veh->FindReceiver(&pich);
+	pitS	= (CSubsystem*)pich.receiver;
+ 	roll.id				      = MSG_GETDATA;
+	roll.dataType		    = TYPE_REAL;
+	veh->FindReceiver(&roll);
+	rolS	= (CSubsystem*)roll.receiver;
+	CGauge::PrepareMsg(veh);
+	return;	
 }
 //----------------------------------------------------------------------
 //  Mouse move over
@@ -1284,15 +1293,16 @@ EClickResult C_HorizonGauge::StopClick ()
 }
 //-----------------------------------------------------------------------------
 //	JSDEV* ATTITUDE subsystem now gives pitch and roll in degre
+//	NOTE:  It is expected from the subsystems that
+//				subsystem pitS publishes pitch value to GetPmFT1()
+//				subsystem rolS publishes roll  value to GetPmFT2()
 //-----------------------------------------------------------------------------
 void C_HorizonGauge::Draw(void)
 { DrawUnderlay();
 	// Get Pitch value
-	Send_Message (&pich);
-  float pichD = pich.realData;
+	float	pichD = pitS->GetPmFT1();						// Should be pitch
 	//---- Get Roll value ------------
-  Send_Message (&roll);
-  float  rollD = float(roll.intData);
+	float	rollD = rolS->GetPmFT2();						// Should be roll
   //--- Draw foot -----------------
 	Bfoot.DrawNeedle(rollD,pichD);
   //--- Draw ring  ----------------
@@ -1581,8 +1591,6 @@ C_SimpleSwitch::C_SimpleSwitch (CPanel *mp)
   cIndx      = 0;
   mmnt       = false;
   mntO       = false;
-	//--- Create a gauge holder --------------
-	hold			 = globals->pit->GetHolder(unId);
 }
 //-----------------------------------------------------------------------
 //  Free all resources
@@ -1605,6 +1613,8 @@ void C_SimpleSwitch::PrepareMsg(CVehicleObject *veh)
   //---Init the subsystem with current position ------
   mesg.intData	= stat[cIndx];
   Send_Message(&mesg);
+	subS = (CSubsystem*)mesg.receiver;
+	return;
 }
 //---------------------------------------------------------------------
 //    Read gauge tags
@@ -1684,6 +1694,7 @@ void C_SimpleSwitch::ReadFinished (void)
   //---------------------------------------------------
   mesg.id			  = MSG_SETDATA;
   mesg.dataType = TYPE_INT;
+	mesg.user.u.datatag = 'indx';
   //----------------------------------------------------
   if (cIndx > stat_n) cIndx = stat_n - 1;
 }
@@ -1699,7 +1710,8 @@ void C_SimpleSwitch::CollectVBO(TC_VTAB *vtb)
 //  Draw the switch
 //--------------------------------------------------------------------------
 void C_SimpleSwitch::DrawAmbient()
-{ swit.Draw(cIndx);
+{ cIndx	= subS->GetIndex();
+	swit.Draw(cIndx);
   return;
 }
 //-----------------------------------------------------------------------
@@ -1756,9 +1768,8 @@ void C_SimpleSwitch::DecState (void)
 //----------------------------------------------------------------------
 void C_SimpleSwitch::ChangeState()
 { //--- advise subsystem --------------
+	mesg.index = cIndx;
 	Send_Message (&mesg); 
-  //--- synchronize holder ------------
-	hold->pm1	= cIndx;
 	return;
 }
 //----------------------------------------------------------------------
@@ -1933,11 +1944,33 @@ C_BasicMagnetoSwitch::C_BasicMagnetoSwitch (CPanel *mp)
 : C_SimpleSwitch(mp)
 { Prop.Set(NO_SURFACE);
 }
+//------------------------------------------------------------
+//	Prepare messages
+//------------------------------------------------------------
+void C_BasicMagnetoSwitch::PrepareMsg(CVehicleObject *veh)
+{	mesg.id		      = MSG_GETDATA;
+  mesg.dataType		= TYPE_INT;
+  mesg.sender     = unId;
+  mesg.user.u.hw  = HW_SWITCH;
+	veh->FindReceiver(&mesg);
+	subS	= (CSubsystem*)mesg.receiver;
+	mesg.id		      = MSG_SETDATA;
+	C_SimpleSwitch::PrepareMsg(veh);
+	return;
+}
 //-------------------------------------------------------------------------------
 //  Collect VBO data
 //-------------------------------------------------------------------------------
 void C_BasicMagnetoSwitch::CollectVBO(TC_VTAB *vtb)
 {	C_SimpleSwitch::CollectVBO(vtb);
+	return;
+}
+//-------------------------------------------------------------------------------
+//  Draw:  Update state only
+//-------------------------------------------------------------------------------
+void C_BasicMagnetoSwitch::Draw()
+{	cIndx	= subS->GetIndex();
+	C_SimpleSwitch::Draw();
 	return;
 }
 //-------------------------------------------------------------------------------
@@ -1973,8 +2006,6 @@ EClickResult C_BasicMagnetoSwitch::MouseClick (int mouseX, int mouseY, int butto
         pos = MAGNETO_SWITCH_START;
       }
   // Update magneto subsystem
-  mesg.id       = MSG_SETDATA;
-  mesg.dataType = TYPE_INT;
   mesg.intData  = pos;
   ChangeState();
   return rc;
@@ -2008,15 +2039,26 @@ C_BasicBatterySwitch::C_BasicBatterySwitch (CPanel *mp)
 //------------------------------------------------------------
 //	Prepare messages
 //------------------------------------------------------------
-void C_BasicBatterySwitch::PrepareMessage(CVehicleObject *veh)
-{	mbat.id		      = MSG_GETDATA;
+void C_BasicBatterySwitch::PrepareMsg(CVehicleObject *veh)
+{	//--- Locate subsysteem batterie -----
+	mbat.id		      = MSG_GETDATA;
   mbat.sender     = unId;
   mbat.user.u.hw  = HW_SWITCH;
+  mbat.dataType       = TYPE_INT;
+  mbat.user.u.datatag = 'stat';
 	veh->FindReceiver(&mbat);
+	mbat.id		      = MSG_SETDATA;
+	batS = (CSubsystem*)mbat.receiver;
+	//--- Get alternator -------------------
 	malt.id		      = MSG_GETDATA;
   malt.sender     = unId;
   malt.user.u.hw  = HW_SWITCH;
+  malt.dataType       = TYPE_INT;
+  malt.user.u.datatag = 'stat';
 	veh->FindReceiver(&malt);
+	malt.id		      = MSG_SETDATA;
+	altS = (CSubsystem*)malt.receiver;
+	//---------------------------------------
 	C_SimpleSwitch::PrepareMsg(veh);
 	return;
 }
@@ -2032,18 +2074,15 @@ void C_BasicBatterySwitch::CollectVBO(TC_VTAB *vtb)
 //-----------------------------------------------------------
 int C_BasicBatterySwitch::Read (SStream *stream, Tag tag)
 {
-  int rc = TAG_IGNORED;
-  Tag t;
-
   switch (tag) {
   case 'altt':
-    ReadTag (&t, stream);
-    malt.group = t;
+    ReadTag (&altt, stream);
+    malt.group = altt;
     return TAG_READ;
 
   case 'batt':
-    ReadTag (&t, stream);
-    mbat.group = t;
+    ReadTag (&batt, stream);
+    mbat.group = batt;
     return TAG_READ;
   }
   return C_SimpleSwitch::Read (stream, tag);
@@ -2053,31 +2092,19 @@ int C_BasicBatterySwitch::Read (SStream *stream, Tag tag)
 //---------------------------------------------------------------
 void  C_BasicBatterySwitch::ReadFinished()
 { C_SimpleSwitch::ReadFinished();
- //--- Message to Battery -----------------
-  mbat.id       = MSG_SETDATA;
-  mbat.sender         = unId;
-  mbat.dataType       = TYPE_INT;
-  mbat.user.u.datatag = 'stat';
-  //--- Message to Alternator -------------
-  malt.id       = MSG_SETDATA;
-  malt.sender         = unId;
-  malt.dataType       = TYPE_INT;
-  malt.user.u.datatag = 'stat';
-	//--- Create a new gauge holder ----------
-	hold	= globals->pit->GetHolder(unId);
   return;
 }
 //---------------------------------------------------------------
 //  Draw the gauge
 //---------------------------------------------------------------
 void C_BasicBatterySwitch::DrawAmbient()
-{ // Calculate frame number:
+{ sAlt	= altS->GetState();
+	sBat	= batS->GetState();
+	// Calculate frame number:
   //   0 = Both OFF
   //   1 = Alternator ON, Battery OFF
   //   2 = Alternator OFF, Battery ON
   //   3 = Both ON
-	sBat	= hold->pm1;
-	sAlt	= hold->pm2;
   int frame = sAlt + sBat + sBat;
   // Draw appropriate bitmap frame
   swit.Draw(frame);
@@ -2087,8 +2114,7 @@ void C_BasicBatterySwitch::DrawAmbient()
 //  Mouse click
 //------------------------------------------------------------------------------
 EClickResult C_BasicBatterySwitch::MouseClick (int mouseX, int mouseY, int buttons)
-{
-  EClickResult rc = MOUSE_TRACKING_OFF;
+{  EClickResult rc = MOUSE_TRACKING_OFF;
   char mod = 0;
   char bat = sBat;
   char alt = sAlt;
@@ -2096,22 +2122,18 @@ EClickResult C_BasicBatterySwitch::MouseClick (int mouseX, int mouseY, int butto
   if (mouseX < cx)  sAlt  = (mouseY < (cy))?(1):(0);
 	// Right half of the switch controls the battery
   if (mouseX > cx)  sBat  = (mouseY < (cy))?(1):(0);
-	//--- Change in Alternator implies change in battery
-	sBat	|= sAlt;
-	//--- Any change produce a sound -----------------
+	//--- Alternator from off to on implies battery on ---
+	sBat |= (sAlt==1) && (alt == 0);
+	//--- Any change produce a sound ---------------------
   mod = ((sAlt ^ alt) | (sBat ^ bat));
     // Play sound effect if alternator state has changed
   if (mod) globals->snd->Play(sbuf[mod]);
-	
-  // Update battery and alternator subsystems
-  mbat.intData  = int(sBat);
-  Send_Message (&mbat);
-
+	//--- Update alternator state -------------------------
   malt.intData  = int(sAlt);
   Send_Message (&malt);
-  //--- Synchronize Holder -----------------
-	hold->pm1	= sBat;
-	hold->pm2 = sAlt;
+	// Update battery and alternator subsystems
+  mbat.intData  = int(sBat);
+  Send_Message (&mbat);
   return rc;
 }
 
@@ -2207,6 +2229,17 @@ void  C_TurnCoordinatorGauge::ReadFinished()
   tilt    = float(20) / 3;
   return;
 }
+//-------------------------------------------------------
+//	Prepare message
+//-------------------------------------------------------
+void C_TurnCoordinatorGauge::PrepareMsg(CVehicleObject *veh)
+{ //--- Locate indicator subsystem ---------
+	mesg.sender     = unId;
+	veh->FindReceiver(&mesg);
+	trnS = (CSubsystem*)mesg.receiver;
+	CGauge::PrepareMsg(veh);
+	return;
+}
 //-------------------------------------------------------------------------
 //	Copy from similar gauge
 //-------------------------------------------------------------------------
@@ -2237,20 +2270,25 @@ void C_TurnCoordinatorGauge::CollectVBO(TC_VTAB *vtb)
 //    ball  is the inertial angular acceleration in rad per sec
 //          It is clamped in the [-2rad, +2rad] range
 //    ball has been changed as part of body acceleration y / z in LH // LC
+//	NOTE:   It is expected from the turn subsystem that:
+//					ball value is ppublished from GetPmFT1();
+//					needle is published from GetPmFT2()
 //--------------------------------------------------------------------
 void C_TurnCoordinatorGauge::Draw(void)
 { //--- Get ball value ----------------
-	mesg.user.u.datatag = bcon;
-	Send_Message (&mesg);
-	float acc =  float(mesg.realData);
+	//mesg.user.u.datatag = bcon;
+	//Send_Message (&mesg);
+	//float acc =  float(mesg.realData);
+	float acc = trnS->GetPmFT1();
   //--- Draw ball ---------------------
   //int frm  = mbal + int(rbal * acc);
   int frm  = mbal + int(float(mbal) * acc * 0.5f); // 0.16
   ball.Draw(frm);    
   //--- Get plane value ---------------
-	mesg.user.u.datatag = pcon;
-	Send_Message (&mesg);
-	float rateD = (float)mesg.realData;
+	//mesg.user.u.datatag = pcon;
+	//Send_Message (&mesg);
+	//float rateD = (float)mesg.realData;
+	float rateD = trnS->GetPmFT2();
   //--- Clamp value to [-20°,+20°] ----
   float deg  = ClampTo(20,(rateD * tilt)) ;
   nedl.DrawNeedle(deg);
@@ -2662,8 +2700,7 @@ C_SimpleInOutStateSwitch::C_SimpleInOutStateSwitch (CPanel *mp)
   type = GAUGE_SIMPLE_IN_OUT;
   vin[1] = 1;
   vin[0] = 0;
-  stat   = 0;
-	prev   = 127;
+  gpos   = 0;
   mack   = 0;
   strcpy (onht, "");
   strcpy (ofht, "");
@@ -2707,7 +2744,8 @@ int C_SimpleInOutStateSwitch::Read (SStream *stream, Tag tag)
   case 'stat':
   case 'st8t':
 	case 'init':
-    ReadInt ((int*)&stat, stream);
+    ReadInt (&nbr, stream);
+		gpos	= nbr;
     return TAG_READ;
 
   case 'onht':
@@ -2741,8 +2779,6 @@ int C_SimpleInOutStateSwitch::Read (SStream *stream, Tag tag)
 void C_SimpleInOutStateSwitch::ReadFinished (void)
 { CGauge::ReadFinished ();
   //---Init message values -----------------------------
-  mesg.id       = MSG_SETDATA;
-  mesg.dataType = TYPE_INT;
   //---- Send update message to dependent subsystem
   return;
 }
@@ -2750,14 +2786,12 @@ void C_SimpleInOutStateSwitch::ReadFinished (void)
 //  Send message to init the subsystem
 //-----------------------------------------------------------------------------
 void  C_SimpleInOutStateSwitch::PrepareMsg(CVehicleObject *veh)
-{ Tag tag = mesg.user.u.datatag;
-  mesg.intData  = vin[stat];
+{ mesg.id       = MSG_SETDATA;
+  mesg.dataType = TYPE_INT;
+  mesg.intData  = vin[gpos];
   Send_Message (&mesg);
-  if (0 == akbd)      return;
-  mesg.user.u.datatag = 'gage';
-  mesg.voidData       = this;
-  Send_Message(&mesg);
-  mesg.user.u.datatag = tag;
+	subS = (CSubsystem*)mesg.receiver;
+	CGauge::PrepareMsg(veh);
   return;
 }
 //-----------------------------------------------------------------------------
@@ -2769,61 +2803,42 @@ void C_SimpleInOutStateSwitch::CollectVBO(TC_VTAB *vtb)
 	return;
 }
 //-----------------------------------------------------------------------------
-//  Draw the change
+//  State changed from subsystem
 //-----------------------------------------------------------------------------
-void C_SimpleInOutStateSwitch::DrawChange()
-{ stsw.Draw(stat);
-	if (prev == stat)	return;
-  mesg.intData  = vin[stat];
-  Send_Message (&mesg);
-	prev = stat;
-  return;
-}
-//-----------------------------------------------------------------------------
-//  Check for persistence
-//-----------------------------------------------------------------------------
-void C_SimpleInOutStateSwitch::CheckHold()
-{ //---Check state if acknoledged ------------
-  mesg.id = MSG_GETDATA;
-  Send_Message(&mesg);
-  mesg.id = MSG_SETDATA;
-  int old = stat;
-  stat    = mesg.intData;
-  return;
+void C_SimpleInOutStateSwitch::SubsystemCall(CSubsystem *sys,int val)
+{	gpos = (val == vin[0])?(0):(1);
+	return;
 }
 //-----------------------------------------------------------------------------
 //  Draw the gauge
 //-----------------------------------------------------------------------------
 void C_SimpleInOutStateSwitch::DrawAmbient()
-{	DrawChange();
-  if (mack)           CheckHold();
-  if (0 == stat)      return;
+{	//---- Update state -----------------------
+	char val	= subS->GetState();
+	gpos = (val == vin[0])?(0):(1);
+	stsw.Draw(gpos);
+  if (0 == gpos)      return;
   //---Check for time out -------------------
   if (0 == mmnt)      return;
   if (0 == time)      return;
   time--;
   if (time)           return;
-  stat = 0; 
+  gpos = 0; 
   return;
   }
-//-------------------------------------------------------------------------------------
-//  Check for change
-//-------------------------------------------------------------------------------------
-void C_SimpleInOutStateSwitch::SetChange()
-{ if (mack && (mesg.result != MSG_ACK))  return;
-  stat = !stat;
-  //---- Play sound effect --------------------
-  globals->snd->Play(sbuf[stat]);
-  //--- Arm timer for momentary contact -------
-  if (stat)  time = mmnt;
-  return;
-}
+
 //-------------------------------------------------------------------------------------
 //  Mouse click over
 //-------------------------------------------------------------------------------------
 EClickResult C_SimpleInOutStateSwitch::MouseClick (int mouseX, int mouseY, int buttons)
-{ //--- Check for acknowledge -----------------------------------
-  SetChange(); 
+{ //--- Update subsystem state ----------------
+  gpos ^= 1;
+  mesg.intData  = vin[gpos];
+  Send_Message (&mesg);
+  //---- Play sound effect --------------------
+  globals->snd->Play(sbuf[gpos]);
+  //--- Arm timer for momentary contact -------
+  if (gpos)  time = mmnt;
   return MOUSE_TRACKING_OFF;
 }
 //===============================================================================
