@@ -25,6 +25,7 @@
 #include "../Include/FuiParts.h"
 #ifndef PLANDEVOL_H
 #define PLANDEVOL_H
+
 //===============================================================================
 class CFPlan;
 //===========================================================================
@@ -93,6 +94,43 @@ public:
   //-----inline ------------------------------------------------------
   char *GetName()               {return name;}
   int   GetSize()               {return 32;}
+};
+//===================================================================
+//  CheckList Subsystem
+//===================================================================
+class PlaneCheckList: public CSubsystem {
+  //---ATTRIBUTES ----------------------------------------------
+protected:
+	//--- Registered window --------------------------------------
+  CFuiCkList *cWIN;
+	//---  Autorobot ---------------------------------------------
+  CRobot *d2r2;																	// Robot location
+  std::vector<CheckChapter*>   vCHAP;						// Table of Chapters
+	std::vector<SMessage*>	     autoM;						// Auto start messages
+  //---METHODS--------------------------------------------------
+public:
+  PlaneCheckList(CVehicleObject *v);
+ ~PlaneCheckList();
+  //------------------------------------------------------------
+	bool		FltMessage(char *txt);
+	bool		IntMessage(char *txt);
+	bool		DecodeMSG(char *txt);
+  void		ReadAUTO(SStream *st);		
+  void    OpenList(char *tail);
+  int     Read(SStream *st,Tag tag);
+  char  **GetChapters();
+  void    GetLines(CListBox &box,U_INT ch);
+  void    Close();
+	void    RegisterWindow(CFuiCkList *w);
+	bool    Execute(D2R2_ACTION &a);
+	//------------------------------------------------------------
+	bool		AutoStart();
+	SMessage *GetSMessage(U_INT k);
+  //------------------------------------------------------------
+  EMessageResult ReceiveMessage (SMessage *msg);
+  //------------------------------------------------------------
+  inline  bool HasChapter()		{return (vCHAP.size() != 0);}
+	//------------------------------------------------------------
 };
 //===========================================================================
 //  CWPoint defines a node in the current flight plan

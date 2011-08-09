@@ -92,6 +92,7 @@ protected:
 #define AP_LAT_LT1  3           // LATERAL LEG 1
 #define AP_LAT_LT2  4           // LATERAL LEG 2
 #define AP_LAT_GND  5						// Ground steering
+#define AP_LAT_TGA  6						// GO ARROUND
 //====================================================================================
 //  AUTOPILOT VERTICAL STATES
 //====================================================================================
@@ -103,6 +104,14 @@ protected:
 #define AP_VRT_GST  5           // Glide slope tracking
 #define AP_VRT_FLR  6           // Flare segment
 #define AP_VRT_FIN	7						// Final ground segment
+//====================================================================================
+//  GA ARROUND STEP
+//====================================================================================
+#define AP_TGA_UP5	0						// Leg 0 climb to 500
+#define AP_TGA_HD1  1						// Leg 1: Head 90°
+#define AP_TGA_HD2  2						// LEG 2: going away
+#define AP_TGA_HD3	3						// LEG 3: Going along
+#define AP_TGA_HD4  4						// LEG 4: waiting approach
 //====================================================================================
 //  AUTOPILOT EVENTS
 //====================================================================================
@@ -276,6 +285,7 @@ class AutoPilot : public CDependent {
 protected:
   U_CHAR     inUse;                         // Use autopilot
   U_CHAR     lStat;                         // Lateral state
+	U_CHAR		 step;													// TGA step
   U_CHAR     vStat;                         // Vertical state
   U_CHAR     land;                          // landing option
   //-------------------------------------------------------------------
@@ -311,6 +321,7 @@ protected:
   double     vLim;              // VSP limit
   double     aLND;              // Decision altitude for landing
   double     aMIS;              // Decision altitude for miss landing
+	double     cMIS;							// Lateral missing coeff/ feet AGL
   double     hMIS;              // Lateral miss error
   double     vMIS;              // Vertical miss error
 	double     rAGL;							// AGL reference
@@ -487,10 +498,10 @@ public:
   void            GetCrossHeading();
   void            ModeLT1();
   void            ModeLT2();
+	void						ModeTGA();
   void            ModeROL();
   void            ModeHDG();
 	void						ModeGND();
-	bool            CheckDistance();
   void            CheckDirection();
 	//---- Vertical modes ------------------------------------------------
   void            ModeGSW();

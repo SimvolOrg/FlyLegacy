@@ -542,6 +542,7 @@ public:
   virtual	bool			FindReceiver(SMessage *msg);			
 			    bool			FindReceiver(SMessage *msg,CElectricalSystem *esys);
 			    bool			FindReceiver(SMessage *msg,CFuelSystem *gsys);
+					bool			FindReceiver(SMessage *msg,CEngineManager *engs);
   //-----------------------------------------------------------------------------
   virtual void      ResetCrash(char p);
   virtual void      EndLevelling();

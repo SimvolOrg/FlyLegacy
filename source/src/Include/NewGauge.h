@@ -208,6 +208,8 @@ protected:
 	//--- message for GYRO gauge plate -----------------------------
 	SMessage		mbug;						// bug message
   SMessage    mgyr;           // gyro message
+	//--- Related subsystems ---------------------------------------
+	CSubsystem *gyrS;
   //----Values for display----------------------------------------
   float       hdg;              // Gyro direction
   float       bug;              // Autopilot bug
@@ -325,6 +327,9 @@ protected:
 	C_Knob      knob;
 	SMessage    pich;
 	SMessage    roll;
+	//--- Related subsystems ---------------------------------------
+	CSubsystem *pitS;
+	CSubsystem *rolS;
 
 };
 //=======================================================================
@@ -354,7 +359,6 @@ protected:
   void  ChangeState();
   //--- ATTRIBUTES -------------------------------------
 protected:
-	CgHolder *hold;					// Gauge holder
   VStrip  swit;           // Bitmap sitch
   int     cIndx;          // Current index
   //-------- Cursor Tags -------------------------------
@@ -601,6 +605,8 @@ public:
 	//---------------------------------------------------------------
 	void CollectVBO(TC_VTAB *vtb);
   //---------------------------------------------------------------
+	void	PrepareMsg(CVehicleObject *veh);
+	void	Draw();
   ECursorResult MouseMoved (int x, int y);
   EClickResult  MouseClick (int x, int y, int buttons);
   EClickResult  StopClick  ();
@@ -621,19 +627,20 @@ public:
 	//-----------------------------------------------------
 	void	CollectVBO(TC_VTAB *vtb);
   //-----------------------------------------------------
-  void    PrepareMessage(CVehicleObject *veh);
+  void    PrepareMsg(CVehicleObject *veh);
 	void    Draw (void) {;}
 	void		DrawAmbient();
   EClickResult  MouseClick (int x, int y, int buttons);
 
 protected:
-	CgHolder *hold;
   Tag				altt;
   Tag				batt;
   SMessage  mbat;
   SMessage  malt;
   char			sAlt;
   char			sBat;
+	CSubsystem *batS;							// Battery 
+	CSubsystem *altS;							// Alternator
 };
 //=======================================================================
 // C2NeedleGauge
@@ -710,7 +717,7 @@ public:
   C_TurnCoordinatorGauge (CPanel *mp);
   virtual ~C_TurnCoordinatorGauge (void);
 
-  // CStreamObject methods
+  //--- CStreamObject methods --------------------
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished();
   void  CopyFrom(SStream *s);
@@ -719,6 +726,7 @@ public:
 	//---------------------------------------------
 	void	CollectVBO(TC_VTAB *vtb);
 	//---------------------------------------------
+	void			PrepareMsg(CVehicleObject *veh);
   void		  Draw (void);
   //----ATTRIBUTES ----------------------------
 protected:
@@ -729,7 +737,8 @@ protected:
   int       mbal;             // Middle frame
 	//----Block for plane and ball -------------
 	VStrip	ball;
-	//---------------------------------------
+	//---- Related subsystem -------------------
+	CSubsystem *trnS;
 };
 //======================================================================
 //  Gauge Push pull with repeat feature
@@ -923,19 +932,15 @@ public:
 	virtual void  DrawAmbient();
   virtual EClickResult  MouseClick (int x, int y, int buttons);
   //------------------------------------------------------------------
-  void    SetChange();
-  void    DrawChange();
-  void    CheckHold();
-	//------------------------------------------------------------------
-	U_CHAR	State()			{return stat;}
+	void		SubsystemCall(CSubsystem *sys,int val);
 	//--- ATTRIBUTES ---------------------------------------------------
 protected:
   VStrip    stsw;                           // Bitmap switch
   int       vin[2];                         // On/off intt
 
   //------------------------------------------------------------------
-  char     stat;                            // On/Off state
-  char     prev;                            // reserved
+  char     gpos;                            // On/Off position
+  char     rfu1;                            // reserved
   char     mmnt;                            // Momentary contact
   char     mack;                            // Must acknoledge
   //------------------------------------------------------------------

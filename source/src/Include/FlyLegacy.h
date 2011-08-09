@@ -1309,7 +1309,7 @@ typedef struct SMessage
   unsigned int      group;			    // target group ID
   EMessageDataType  dataType;       // result data type
   unsigned int      result;			    // message result code
-
+	unsigned int			index;					// Index value
 //  DLLObjectRef  sender;       
   Tag               sender;         // Sender tag
   DLLObjectRef      receiver;
@@ -1341,7 +1341,6 @@ typedef struct SMessage
       unsigned int  sw;					// switch position
     } u;
   } user;
-  unsigned int  action;
   //--- Constructor -------------------------------
   SMessage()
   { memset(this,0,sizeof(SMessage)); }
@@ -2764,7 +2763,7 @@ void  WritePosition(SPosition *value, SStream *stream);
 void  WriteTime(SDateTime *value, SStream *stream);
 void  WriteTimeDelta(SDateTimeDelta *value, SStream *stream);
 void  WriteMessage(SMessage *message, SStream *stream);
-
+U_INT GetHardwareType(char *hwd);
 //===================================================================================
 //	CDrawByCamera:
 //  Is a virtual class for object that may be drawed into small windows by a camera

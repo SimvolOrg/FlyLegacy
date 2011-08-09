@@ -152,11 +152,13 @@ public:
 //	Virtual pilot states
 //=================================================================
 #define VPL_IS_IDLE			(0)
-#define VPL_STARTING		(1)
-#define VPL_TAKE_OFF		(2)
-#define VPL_CLIMBING		(3)
-#define VPL_TRACKING		(4)
-#define VPL_LANDING     (5)
+#define VPL_PREFLT01		(1)
+#define VPL_PREFLT02		(2)
+#define VPL_STARTING		(3)
+#define VPL_TAKE_OFF		(4)
+#define VPL_CLIMBING		(5)
+#define VPL_TRACKING		(6)
+#define VPL_LANDING     (7)
 //=================================================================
 //  Virtual Pilot to pilot the aircraft
 //  
@@ -166,6 +168,7 @@ protected:
 	//--- ATTRIBUTES --------------------------------------
 	char							 State;
 	char							 cnt;
+	U_CHAR						 msgNo;
 	//-----------------------------------------------------
 	U_INT							 FrNo;
 	float							 T01;				// Timer
@@ -185,6 +188,8 @@ public:
 	//-----------------------------------------------------
 	void	Error(int No);
 	//--- Action routines ---------------------------------
+	void	PreFlight(float dT);
+	void	CheckPreFlight();
 	void	PreStart(float dT);
 	void	EnterTakeOff();
 	void	EnterFinal();

@@ -234,11 +234,11 @@ public:
   virtual   void  DisplayHelp() {DisplayHelp(help);}
 	virtual   void  CollectVBO(TC_VTAB *vtb);
   //--------------------------------------------------------------
-  void            DisplayHelp(char *txt);
-  void            FuiHelp();
+  void      DisplayHelp(char *txt);
+  void      FuiHelp();
   //-------------------Helper for file sound ---------------------
-  int GetSoundTag(int p,SStream *stream);
-  Tag BindCursor(SStream *stream);
+  int				GetSoundTag(int p,SStream *stream);
+  Tag				BindCursor(SStream *stream);
 	//--------------------------------------------------------------
   // CGauge methods
   //--------------------------------------------------------------
@@ -252,6 +252,7 @@ public:
   virtual SSurface*   GetSurface (void) {return surf;}
   virtual const char *GetClassName (void) { return "CGauge"; }
   virtual void        Update (void);
+	virtual void				SubsystemCall(CSubsystem *sys,int stat) {;}
   //--------------------------------------------------------------
   virtual int         CharWD()  {return 0;}
   virtual int         CharHT()  {return 0;}
@@ -353,7 +354,9 @@ protected:
   Tag       cursTag;    // Unique tag for custom cursor
   char      help[64];   // help data
   char      dfmt[64];   // Display format
-  bool      akbd;       // May be activated from keybord
+	//--- Synchro parameters ------------------------------------
+	char      sync;
+  CSubsystem  *subS;    // Associated subsystem
   //-----Help buffer from FuiManager --------------------------
   char     *hbuf;       // Buffer for help (from fui manager help window)
   //-----------------------------------------------------------

@@ -640,6 +640,7 @@ public:
   inline const std::map<Tag,CPanel*>& GetMapCkpt (void) const {return ckpt;}
   //---------------------------------------------------------
 	inline void			SetBrightness(float b)	{brit = b;}
+	inline CVehicleObject *GetMVEH()	{return mveh;}
 };
 
 //==============================================================================
@@ -696,7 +697,7 @@ private:
 //===============================================================================
 class CCameraManager : public CStreamObject {
 public:
-  CCameraManager (const char* whlFilename,char no);
+   CCameraManager (CVehicleObject *veh,char* fn);
   ~CCameraManager (void);
 
   // CStreamObject methods
@@ -730,6 +731,7 @@ public:
   //----------------------------------------------------------------------------
 protected:
   ///----------Attributes ------------------------------------------------------
+	CVehicleObject *mveh;												// Mother vehicle
   CCamera  *aCam;                             // Active camera
   std::map<Tag,CCamera*>   came;              // List of standard cameras
   Tag       tCam;                             // Tag of current camera

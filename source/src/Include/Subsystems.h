@@ -50,6 +50,9 @@ class CSoundBUF;
 class CFuiPlot;
 class CRobot;
 //==================================================================================
+#define DEP_MAIN_STATE (0x01)
+#define DEP_AUXI_STATE (0x02)
+//==================================================================================
 //
 // Logic subsystems
 //
@@ -743,12 +746,22 @@ public:
   virtual EMessageResult  ReceiveMessage (SMessage *msg);
   virtual void  SetGroup (int group) { gNum = group; }
   virtual	void  TimeSlice (float dT,U_INT FrNo);				    // JSDEV*   new TimeSlice
-			    void  TraceTimeSlice(U_INT FrNo);					        // JSDEV*	Trace activation
   virtual void  Print (FILE *f);
   virtual void  Draw()  {}                                  // For external subsystems
+	//---------------------------------------------------------------------------
+	virtual void	SetActive(char a)	{;}
+	virtual void	SetState (char s)	{;}
+	virtual char  GetState()				{return 0;}
+	virtual char  GetActive()				{return 0;}
+	virtual int   GetIndex()				{return 0;}
+	virtual float GetPmFT1()				{return 0;}
+	virtual float GetPmFT2()				{return 0;}
   //---------------------------------------------------------------------------
+  void  TraceTimeSlice(U_INT FrNo);					        // JSDEV*	Trace activation
   void  SetIdent(Tag id);
   void  SetTimK(float t);
+	//--- Synchro management ----------------------------------------------------
+	inline void   SetGauge(CGauge *g)	{gage = g;}
   //---------------------------------------------------------------------------
   inline bool   IsType (Tag t){return (type == t);}
   inline Tag    GetUnId()     {return unId;}				        // 
@@ -908,7 +921,6 @@ public:
   virtual EMessageResult  ReceiveMessage (SMessage *msg);
   virtual void            Print (FILE *f);
   //------------------------------------------------------------------------------------------
-  void  SetState(int s);
   void  GetAllDependents(CFuiProbe *win);
 	void	UpdateState(float dT,U_INT FrNo);	
   void  Poll_AND();
@@ -916,6 +928,12 @@ public:
 	void	SendAllPxy0(void);									
 	void	SendAllPxy1(void);									
 	void	TraceActivity(U_INT FrNo,SMessage *msg,int act);	// Trace activity
+	//-------------------------------------------------------------------------------------------
+	void	SetState(char s);
+	void	SetActive(char a)							{active	= (a != 0);}
+	char  GetActive()										{return active;}
+	char  GetState()										{return state;}
+	int		GetIndex()										{return indx;}
   //-------------------------------------------------------------------------------------------
   // CDependent methods
   inline int    NumDependencies (void){return dpnd.size();}
@@ -952,7 +970,7 @@ public:
   char          nDPND;      // Number of dependents
   char          nPXY0;      // Number of proxy 0
   char          nPXY1;      // Number of proxy 1
-  char          rfu1;       // Reserved
+  int           indx;       // Index value
   //------- Proxy messages for polling ----------------------
   SMessage        mpol; // Message used for polling
   float           rise; // Threshold for rising edge proxy
@@ -1539,10 +1557,11 @@ public:
   EMessageResult      ReceiveMessage (SMessage *msg);
   void                TimeSlice (float dT,U_INT FrNo = 0);			// JSDEV*
   void                Probe(CFuiCanva *cnv);
+	//--------------------------------------------------------------------
+	float		GetPmFT1()	{return indn;}
+	float   GetPmFT2()	{return rateD;}
   //---Attributes ------------------------------------------------------
 protected:
-  bool  get_data;             // get calculation only when asked
-  bool  get_data_ball;        // get calculation only when asked
   float Head;                 // Aircraft banking in °
 	float rateT;							  // computed turning rate
   float rateD;                // Turning rate in degre
@@ -2107,9 +2126,11 @@ public:
 	virtual EMessageResult	ReceiveMessage (SMessage *msg);
 	virtual void			TimeSlice      (float dT,U_INT FrNo);
   //--------------------------------------------------------------------
-  void      Probe(CFuiCanva *cnv);
+  void    Probe(CFuiCanva *cnv);
 	bool	  TrackTarget(float dT);
   int     UpdateLevel(int inc);
+	float		GetPmFT1();
+	float		GetPmFT2();
 	//--------------------------------------------------------------------
 	inline	float			Clamp180(float deg)
 							{	if (deg >  180) return +180;
@@ -2167,6 +2188,10 @@ protected:
   bool      autoAlign;    ///< Gyro is auto aligned
   void      UpdateGyro(float inc);
   void      UpdatePbug(float inc);
+	//--- Published values --------------------------
+	float     GetPmFT1()		{return aYaw;}
+	float			GetPmFT2()		{return abug;}
+	int			  GetIndex()		{return abug;}
   //---------ATTRIBUTES ---------------------------
 private:
   float						aYaw;		// Actual yaw
@@ -2481,16 +2506,18 @@ public:
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished (void);
-
   // CSubsystem methods
   const char* GetClassName (void) { return "CRotaryIgnitionSwitch"; }
   EMessageResult  ReceiveMessage (SMessage *msg);
   void            TimeSlice (float dT,U_INT FrNo);			// JSDEV*
-
+	void						Probe(CFuiCanva *cnv);
+	//---------------------------------------------------------------
+	inline	int		  GetIndex()		{return rot_pos;}
+	//---------------------------------------------------------------
 protected:
   SMessage      meng;   // Engine state
   float         sAmp;   // magnitude of amperage required to operate the starter
-  int           rot_pos;
+  char          rot_pos;
 
 };
 //===========================================================================
@@ -2976,6 +3003,7 @@ public:
   inline void   HoldBrake(char p)     {Hold = p;}
 	inline float  GetBrakeForce(char p) {return (p)?( Force[p]):(0);}
   inline void   SetParking()          {Park = 1;}
+	inline char		GetState()						{return Park;}
   //--------------------------------------------------------------------
   // CSubsystem methods
   const char* GetClassName (void) { return "CBrakeControl"; }
@@ -4549,38 +4577,6 @@ public:
 //===================================================================
 class CheckChapter;
 struct D2R2_ACTION;
-//===================================================================
-//  CheckList Subsystem
-//===================================================================
-class PlaneCheckList: public CSubsystem {
-  //---ATTRIBUTES ----------------------------------------------
-protected:
-	//--- Registered window --------------------------------------
-  CFuiCkList *cWIN;
-	//---  Autorobot ---------------------------------------------
-  CRobot *d2r2;																	// Robot location
-  std::vector<CheckChapter*>   vCHAP;						// Table of Chapters
-  //---METHODS--------------------------------------------------
-public:
-  PlaneCheckList(CVehicleObject *v);
- ~PlaneCheckList();
-  //------------------------------------------------------------
-  void    OpenList(char *tail);
-  int     Read(SStream *st,Tag tag);
-  char  **GetChapters();
-  void    GetLines(CListBox &box,U_INT ch);
-  void    Close();
-	void    RegisterWindow(CFuiCkList *w);
-	bool    Execute(D2R2_ACTION &a);
-	//------------------------------------------------------------
-	void		AutoStart();
-  //------------------------------------------------------------
-  EMessageResult ReceiveMessage (SMessage *msg);
-  //------------------------------------------------------------
-  inline  bool HasChapter()		{return (vCHAP.size() != 0);}
-	//------------------------------------------------------------
-
-};
 
 //==================================================================
 // CDLLSubsystem

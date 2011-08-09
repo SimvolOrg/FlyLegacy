@@ -102,6 +102,7 @@ protected:
   Tag         id;
   char        filename[64];
   CCockpitManager *pit;
+	CVehicleObject  *mveh;
   //--- Interactive panel data members ------------------------------------
   int     x_3Dxy, y_3Dxy;
   int     x_3Dsz, y_3Dsz;
@@ -236,13 +237,14 @@ public:
 	inline  bool			NotMain()							{return (main == 0);}
   //-----------------------------------------------------------------------------
 	inline	  CPanelLight* GetLight()				{return plite;}
-	inline  char*			GetName()			{return filename;}
-  inline  void      GetOFS(TC_4DF &d) {d.x0 = xOffset, d.y0 = yOffset;}
-  inline  int       GetXOffset()  {return xOffset;}
-  inline  int       GetYOffset()  {return yOffset;}
-  inline  int       GetPanelHT()  {return y_3Dsz;}
-  inline  Tag       GetID()       {return id;}
-  inline  int       TotalGauges() {return gage.size();}
+	inline  char*			GetName()							{return filename;}
+  inline  void      GetOFS(TC_4DF &d)			{d.x0 = xOffset, d.y0 = yOffset;}
+  inline  int       GetXOffset()					{return xOffset;}
+  inline  int       GetYOffset()					{return yOffset;}
+  inline  int       GetPanelHT()					{return y_3Dsz;}
+  inline  Tag       GetID()								{return id;}
+  inline  int       TotalGauges()					{return gage.size();}
+	inline  CVehicleObject *GetMVEH()				{return mveh;}
 	inline  void      MouseScreen(int &x, int &y) {x = hit.sx, y = hit.sy;}
 };
 

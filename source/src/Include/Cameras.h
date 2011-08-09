@@ -280,7 +280,7 @@ public:
 //====================================================================================
 class CCameraCockpit : public CCamera {
 public:
-  CCameraCockpit (void);
+  CCameraCockpit (CVehicleObject *mv);
   virtual ~CCameraCockpit (void);
 
   // CStreamObject methods
@@ -322,18 +322,23 @@ public:
   void      DrawPanel();
   void      GetXSRC(TC_4DF &r);
 	//-----------------------------------------------
+	void			SetMatrix(SVector ori);
+	//-----------------------------------------------
 	CPanel*   GetPanel();
   //-----------------------------------------------
   inline void     GetOFS(SVector &v)    {v = Ofs;}
   inline SVector &GetSeat()             {return Seat;}
   //-----------------------------------------------
 protected:
+	CVehicleObject							 *mveh;						//  Mother Vehicle
   std::map<Tag,CCockpitPanel*>  panl;           //  Map unique IDs to cockpit panels
   SVector                       Seat;           //  Orientation angles of <seat> tag
   CCockpitPanel*                ckPanel;        //  Pointer to currently active panel
-  SVector                       Fw;             //  Forward
-  SVector                       Ofs;            //  True offset
+  CVector                       Fw;             //  Forward
+  CVector                       Ofs;            //  True offset
   double                        Head;           //  Pilot head direction
+	//--- transformation matrix ----------------------
+	double												mSEAT[16];			// matrice seat
 };
 
 //========================================================================================

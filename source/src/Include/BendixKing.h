@@ -257,7 +257,7 @@ public:
   //-------------------------------------------------------------------
   inline    void        SetAutopower()        {aPower = 1;}
   inline    U_CHAR      GetMask()             {return mskFS;}
-  inline    U_CHAR      GetState()            {return rState;}
+  inline    U_CHAR      GetRState()           {return rState;}
   inline    RADIO_FLD  *GetField(U_CHAR No)   {return adfTAB + No;}
   //-------------------------------------------------------------------
   int       Dispatcher(U_INT evn);            // Dispatching 
@@ -828,7 +828,7 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   //--------------------------------------------------------------
   void              Probe(CFuiCanva *cnv);
   //-----------inline --------------------------------------------
-  inline U_CHAR     GetState()                {return aState;}
+  inline U_CHAR     GetAState()               {return aState;}
   inline U_SHORT    GetFmask()                {return mskFS;}
   inline U_CHAR     GetScreenHandler()        {return DshNO;}
   inline U_SHORT   *GetDisplay()              {return Display;}
