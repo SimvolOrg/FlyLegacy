@@ -75,6 +75,7 @@ char *autoTB1[] = {
   "LG1",          // NAV intercept
   "LG2",          // NAV tracking
 	"GND",					// Ground steering
+	"TGA",					// Go arround
 };
 //--- Vertical mode ---------------------------------------
 char *autoTB2[] = {
@@ -635,10 +636,15 @@ AutoPilot::AutoPilot (void)
   uvsp    = 0;
   aprm    = 0;
 	ugaz		= 0;
+	//--Lateral error is 2.5° whatever the distance -----------
+  aMIS    = 400;							// Misslanding altitude check
+  hMIS    = 2;
+	cMIS    = hMIS / aMIS;
+  //--Vertical error is tangent(1) * 1000 units -------------
+  vMIS  = 2.5;
   //---Default limits ------------------------------------
   aLim    = 10000;
   vLim    = 2000;
-  aMIS    = 400;							// Misslanding altitude chack
   abrt    = 0;
   //-------------------------------------------------------
   for (int k=0; k<PID_MAX; k++) pidL[k] = 0;
@@ -686,10 +692,6 @@ AutoPilot::AutoPilot (void)
   //----Init lights ----------------------------------------
   alta    = 0;
   flsh    = 0;
-  //--Lateral error is 2.5° whatever the distance -----------
-  hMIS  = 2.5;
-  //--Vertical error is tangent(1) * 1000 units -------------
-  vMIS  = 2.5;
 }
 
 //------------------------------------------------------------------------------------
@@ -956,6 +958,7 @@ void AutoPilot::SetTKOopt(double s, double a)
 //-----------------------------------------------------------------------
 void AutoPilot::SetMISopt(double a)
 { if (a > 100)  aMIS  = a;
+  cMIS = hMIS / a;
   return;
 }
 //---------------------------------------------------------------------
@@ -1059,6 +1062,8 @@ void AutoPilot::LateralMode()
       return ModeLT1();
     case AP_LAT_LT2:
       return ModeLT2();
+		case AP_LAT_TGA:
+			return ModeTGA();
 		case AP_LAT_GND:
 			return ModeGND();
   }
@@ -1312,25 +1317,13 @@ void AutoPilot::CheckDirection()
   return LateralHold();
 }
 //-----------------------------------------------------------------------
-//	In final LEG2 mode, check that distance is decreasing
-//-----------------------------------------------------------------------
-bool AutoPilot::CheckDistance()
-{	double prv = rDIS;
-	rDIS	= Radio->mdis;
-	if (0 == aprm)						return true;
-	if (0 == redz)						return true;
-	if (rDIS < prv)						return true;
-	AbortLanding(3);
-	return false;
-}
-//-----------------------------------------------------------------------
 //	Adjust correction factor according to different types of legs
 //-----------------------------------------------------------------------
 double AutoPilot::AdjustHDG()
 { //-- Approach=> 45° toward ILS--------
 	double bias = 0;
 	double sig  = (Radio->hDEV < 0)?(-1):(+1);
-	double cor  =  sig * 40;
+	double cor  =  sig * 45;
 	double era  = fabs(Radio->hDEV);
 	redz				= (era < 20)?(1):(0);			// Red sector
 	cFAC				= 0;
@@ -1339,7 +1332,7 @@ double AutoPilot::AdjustHDG()
 	//--- Other tracking mode --------------
 	if (era > 20)		era  = 20;
 	cFAC	=  (21  - era) * gain;
-	if (era < 0.40)	cFAC = 14;
+	if (era < 0.4)	cFAC = 18;
   cFAC  =  (cFAC * Radio->hDEV) + bias;
 	double dir  = Norme360(Radio->radi - cFAC);     // New direction;
 	return dir;
@@ -1365,6 +1358,43 @@ void AutoPilot::ModeLT2()
 	//	aHDG,Radio->radi,hERR,cFAC,rHDG);
 	//-- check for final leg ----------------
 	return LateralHold();
+}
+//-----------------------------------------------------------------------
+//	Mode GO ARROUND: A standard procedure is applied 
+//	TODO:  Build a file for specific GO ARROUND per airport
+//	LEG 0:  Climb up to 500 feet
+//	LEG 1:  Turn 90° to the runway direction and make some distance
+//	LEG 2:  Climb up to 1500 and turn 180° to the runway
+//					Make some distance and then enter approach
+//-----------------------------------------------------------------------
+void	AutoPilot::ModeTGA()
+{	switch (step)	{
+		//--- climb to 500 AGL -----------------------
+		case AP_TGA_UP5:
+			if (cAGL < 500)					return LateralHold();
+			flpS->SetPosition(0);
+			//--- Set direction to 90° left of runway --
+			rHDG	= Wrap360(Radio->hREF - 90);
+			step  = AP_TGA_HD1;
+			return  LateralHold();
+		//--- Go back to heading mode --------------
+		case AP_TGA_HD1:
+			hERR  = Norme180(aHDG - rHDG);
+			if (fabs(hERR) > 0.2)		return LateralHold();
+			step	= AP_TGA_HD2;
+			return LateralHold();
+		//--- wait for some distance --------------
+		case AP_TGA_HD2:
+			if (Radio->mdis < 2.5)	return LateralHold();
+			//--- Set Direction along the runway ----
+			rHDG	= Wrap360(Radio->hREF - 180);
+			step  = AP_TGA_HD3;
+			return  LateralHold();
+		case AP_TGA_HD3:
+			if (Radio->mdis < 8)		return LateralHold();
+			return EnterAPR();
+	}
+	return;
 }
 //-----------------------------------------------------------------------
 //	Ground steering
@@ -1445,6 +1475,7 @@ void AutoPilot::ModeGSW()
 bool AutoPilot::MissLanding()
 { if (cAGL > aMIS)							return false;
   if (cAGL <   50)							return false;
+	hMIS = cMIS * cAGL;
   //---Check for lateral miss landing ------------------
   if (fabs(hERR) > hMIS)        return AbortLanding(1);
 	//---Check for vertical miss landing -----------------
@@ -1455,12 +1486,13 @@ bool AutoPilot::MissLanding()
 //	Process landing option
 //-----------------------------------------------------------------------
 void AutoPilot::LandingOption()
-{ if (MissLanding())					return;
+{ hERR	= Radio->hDEV;
+	if (MissLanding())					return;
 	//--- Update options ---------------------------
 	U_INT opt = globals->vehOpt.Get(VEH_AP_OPTN) | land;  // Land option
 	//--- Check for flap control -------------------
 	if (cAGL < lndFA) flpS->SetPosition(lndFP);
-	//---Ignore if above altitude ------------------
+	//---Ignore if above flare altitude ------------
   if (cAGL > aLND)						return;
 	//--- Flare option -----------------------------
 	if (opt == LAND_FLARE)			return EnterFLR();
@@ -1493,7 +1525,8 @@ bool AutoPilot::AbortLanding(char r)
   EnterROL();
 	rALT	= RoundAltitude(globals->tcm->GetGroundAltitude() + 1500);
 	StateChanged(AP_STATE_ALT);
-	flpS->SetPosition(0);
+	lStat	= AP_LAT_TGA;
+	step	= AP_TGA_UP5;
   return true;
 }
 //-----------------------------------------------------------------------
@@ -1649,6 +1682,7 @@ void AutoPilot::ExitHDG()
 void AutoPilot::EnterINI()
 { EnterROL();
   EnterVSP();
+	step	= 0;
   return;
 }
 //-----------------------------------------------------------------------
@@ -2034,6 +2068,8 @@ void AutoPilot::NewEvent(int evn)
       return StateLAT(evn);
     case AP_LAT_LT2:
       return StateLAT(evn);
+		case AP_LAT_TGA:
+			return StateLAT(evn);
 		case AP_LAT_GND:
 			return StateGND(evn);
   }
@@ -2129,11 +2165,11 @@ void AutoPilot::ALTalertSET()
 //  Edit Autopilot data
 //--------------------------------------------------------------------
 void AutoPilot::Probe(CFuiCanva *cnv)
-{ cnv->AddText( 1,1,"SPEED: %.02f",cRAT);
+{ cnv->AddText(1,1,"%s(%d)-%s-ABRT:%d",autoTB1[lStat],step,autoTB2[vStat],abrt);
+	//------------------------------------------------------------------
+	cnv->AddText( 1,1,"SPEED: %.02f",cRAT);
   cnv->AddText( 1,"rHDG");
   cnv->AddText( 8,1,"%.05f",rHDG);
-  cnv->AddText( 1,"hREF:");
-  cnv->AddText( 8,1,"%.05f",Radio->hREF);
   cnv->AddText( 1,"aHDG:");
   cnv->AddText( 8,1,"%.05f",aHDG);
   cnv->AddText( 1,"hERR:");
@@ -2144,7 +2180,9 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   cnv->AddText( 8,1,"%.05f",eVRT);
 
   if (Radio)
-  { cnv->AddText( 1,"hDEV");
+  { cnv->AddText( 1,"hREF:");
+		cnv->AddText( 8,1,"%.05f",Radio->hREF);
+		cnv->AddText( 1,"hDEV");
 		cnv->AddText( 8,1,"%.05f",Radio->hDEV);
 		cnv->AddText( 1,"Feet");
     cnv->AddText( 8,1,"%.00f",Radio->fdis);
@@ -2158,6 +2196,10 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 	if (lStat == AP_LAT_LT2)
 	{	cnv->AddText( 1,"cFAC");
 	  cnv->AddText( 8,1,"%.5f",cFAC);
+	}
+	if (aprm)	
+	{	cnv->AddText( 1,"hMIS");
+		cnv->AddText( 8,1,"%.5f",hMIS);
 	}
   if (vStat == AP_VRT_ALT)
   { cnv->AddText( 1,"xALT");
@@ -2173,10 +2215,6 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   { cnv->AddText( 1,"dTDP");
 		cnv->AddText( 8,1,"%.0f",dTDP);
   }
-
-  cnv->AddText(1,1,"%s-%s",autoTB1[lStat],autoTB2[vStat]);
- // cnv->AddText(1,1,"Vertical: %s",autoTB2[vStat]);
-  cnv->AddText(1,1,"ABRT    : %d",abrt);
   return;
 }
 //-----------------------------------------------------------------------

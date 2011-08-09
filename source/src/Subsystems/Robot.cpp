@@ -26,6 +26,8 @@
 #include "../Include/FuiParts.h"
 #include "../Include/PlanDeVol.h"
 using namespace std;
+
+
 //=========================================================================
 //  This robot is in charge of starting the aircraft
 //=========================================================================
@@ -234,14 +236,14 @@ VPilot::VPilot()
 //--------------------------------------------------------------
 void VPilot::Error(int No)
 {	globals->fui->DialogError(vpMSG[No],"VIRTUAL PILOT");
+  State = VPL_IS_IDLE;
 	return;
 }
 //--------------------------------------------------------------
 //	Hand back the aircraft
 //--------------------------------------------------------------
 void VPilot::HandleBack()
-{	State = VPL_IS_IDLE;
-	Radio->ModeEXT(0);
+{	Radio->ModeEXT(0);
 	Error(0);
 	return;
 }
@@ -287,19 +289,52 @@ void VPilot::Start()
 	if (!ok)							return Error(3);
 	ok	= fpln->HasLandingRunway();
 	if (!ok)							return Error(4);
+	//--- Position on runway ------------------
+	char *idr = fpln->GetDepartingRWY();
+	ok  = apm->SetOnRunway(0,idr);
+	if (!ok)							return Error(7);
+	//--- try to start the plane -------------
+	msgNo	= 0;
+	State = VPL_PREFLT01;
+	T01		= 0;
+	return;
+}
+//--------------------------------------------------------------
+//	Request to start the virtual pilot
+//--------------------------------------------------------------
+void VPilot::PreFlight(float dT)
+{	EMessageResult rs = MSG_IGNORED;
+  if (T01 > 0)														return;
+	T01	 = 1;
+	//------------------------------------------------------
+	char *edt = globals->fui->PilotNote();
+	_snprintf(edt,128,"Starting step %d",msgNo);
+	globals->fui->PilotToUser();
+	//------------------------------------------------------
+	SMessage *msg = pln->ckl->GetSMessage(msgNo++);
+	if (msg)	rs  = Send_Message(msg);
+	if (MSG_PROCESSED == rs)								return;
+	State = VPL_PREFLT02;
+	T01		= 10;
+	return;
+}
+//--------------------------------------------------------------
+//	Request to start the virtual pilot
+//--------------------------------------------------------------
+void VPilot::CheckPreFlight()
+{	bool ok = false;
+	if (T01 > 0)					return;
 	//--- Check if all engine running ---------
 	ok	= pln->AllEngineOn();
 	if (!ok)							return Error(6);
 	ok = GetRadio();
 	if (!ok)							return Error(8);
-	//--- Position on runway ------------------
-	char *idr = fpln->GetDepartingRWY();
-	ok  = apm->SetOnRunway(0,idr);
-	if (!ok)							return Error(7);
 	//--- Pre - TAKE-OFF ----------------------
 	cnt	= 11;
 	T01	= 0;
-	State = VPL_STARTING;
+//	State = VPL_STARTING;
+	EnterTakeOff();
+	return;
 }
 //--------------------------------------------------------------
 //	Prepare to start
@@ -460,7 +495,15 @@ void VPilot::ModeLanding()
 void VPilot::TimeSlice (float dT,U_INT frm)
 {	if (State == VPL_IS_IDLE)	return;
 	FrNo			= frm;
+	T01			 -= dT;
 	switch (State)	{
+		//--- Staring aircraft -------------
+		case VPL_PREFLT01:
+			PreFlight(dT);
+			return;
+		case VPL_PREFLT02:
+			CheckPreFlight();
+			return;
 		//--- PRE-TAKE-OFF------------------
 		case VPL_STARTING:
 			PreStart(dT);

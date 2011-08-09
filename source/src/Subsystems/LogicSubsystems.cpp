@@ -244,9 +244,9 @@ bool CSubsystem::MsgForMe (SMessage *msg)
   //  respond to  message , just uncomment
   //  the following lines and change id
   //-------------------------------------------------------
-  //Tag idn = 'rdlt';                     // Change subsystem name here
+  //Tag idn = 'flap';                     // Change subsystem name here
   //if ((unId == idn) && (msg->group == idn))           
-  //  int a = 0;                          // Put a break point here
+  // int a = 0;                          // Put a break point here
   //-------------------------------------------------------
   if (msg) {
     bool matchGroup = (msg->group == unId);
@@ -315,8 +315,8 @@ EMessageResult CSubsystem::ReceiveMessage (SMessage *msg)
             indnTarget  = (float)msg->realData;
 			      return MSG_PROCESSED;
         //-- Set associated gauge ------------
-          case 'gage':
-            gage  = (CGauge*) msg->voidData;
+          case 'gets':
+            msg->voidData = this;
             return MSG_PROCESSED;
         }
    }
@@ -501,11 +501,25 @@ CNullSubsystem::CNullSubsystem(void)
 EMessageResult CNullSubsystem::ReceiveMessage (SMessage *msg)
 {	msg->result = MSG_IGNORED;
 	return MSG_IGNORED;	}
-//-------------------------------------------------------------------------
+//===========================================================================
 // CDependent
-//-------------------------------------------------------------------------
+//	This is the basis of all logical systems
+//	CDependent has sevral tags and ste values and we should clarify them
+//	char	state:  Is used as the logical state of the subsystem.
+//	char active:	Is used to means that some current flows into the substem.
+//							A switch for instance, may be in the logical state 1, but
+//							with no current flowing.  Thus active = 0 in that situation
+//	Tag st8t:		Used at initialization (coming from AMP file) to set the
+//							the initial value of state.
+//	Reading from Message
+//							Use only 'actv' to get active value (current flowing)
+//							Use 'stat' or 'st8t' to get state  value (logical state)
+//	NOTE				Most of the time, the logical AND/OR operations are used to
+//							set the dependent active status 
+//===========================================================================
 CDependent::CDependent (void)
 { TypeIs (SUBSYSTEM_DEPENDENT);
+  hwId = HW_STATE;
   // Initialize read datatags
   st8t        = -1;              // Invalid state
   stat        = false;
@@ -516,8 +530,8 @@ CDependent::CDependent (void)
   load        = 0;
   mVlt        = 0;
   freQ        = 0;
-
   //-- Initialize logical states ----
+	indx				= 0;
   state       = 0;
   active      = false;
   dflact	    = false;
@@ -833,6 +847,9 @@ void CDependent::Probe(CFuiCanva *cnv,Tag ids)
   //-----------------------------------
   _snprintf(edt,32,"volts: %.2f",volt);
   cnv->AddText( 1,edt,1);
+	//-----------------------------------
+	TagToString(edt,mode);
+	cnv->AddText( 1,1,"mode:%s",edt);
   //---Source -------------------------
   if (0 == ids)   return;
   _snprintf(edt,32,"Source:%s",TagToString(ids));
@@ -846,11 +863,10 @@ void CDependent::Write (SStream *stream)
 //-------------------------------------------------------------------------------
 //  Set State
 //-------------------------------------------------------------------------------
-void CDependent::SetState(int s)
-{ state = s;
-  if (state)  return;
-  active = 0;
-  volt   = 0;
+void CDependent::SetState(char s)
+{ state		= s;
+	if (state)	return;
+	volt		= 0;
   return;
 }
 //-------------------------------------------------------------------------------
@@ -869,7 +885,6 @@ EMessageResult CDependent::ReceiveMessage (SMessage *msg)
   //  be set to follow the update  process of this subsystem
   if (this == globals->psys)
           msg = msg;            // Put break point here
-    
   EMessageResult rc = MSG_IGNORED;
   //---Process get data --------------------------
   if  (msg->id == MSG_GETDATA ) {
@@ -889,6 +904,11 @@ EMessageResult CDependent::ReceiveMessage (SMessage *msg)
         case 'volt':
           msg->realData = volt;
           return MSG_PROCESSED;
+			  //--- Both state ------------------
+				case 'indx':
+					msg->intData = state;
+					msg->index   = indx;
+					return MSG_PROCESSED;
       }
   }
     //---Process Set data ---------------------
@@ -898,10 +918,13 @@ EMessageResult CDependent::ReceiveMessage (SMessage *msg)
         case 'st8t':
         case 'stat':
         case 'nabl':
-        case 'indx':
-            state  = msg->intData;
-						active = (0 == state);					// Force update
+				case 'auxi':
+						SetState(msg->intData);
 		        return MSG_PROCESSED;
+				case 'indx':
+					  SetState(msg->intData);
+						indx	=  msg->index;
+						return MSG_PROCESSED;
       }
   }
 
@@ -1008,6 +1031,7 @@ void CDependent::SendAllPxy1(void)
 		Send_Message(msg);
 	}
 	return;	}
+
 //---------------------------------------------------------------------
 //	JSDEV* TimeSlice for CDependent
 //  -Update the state from dependency

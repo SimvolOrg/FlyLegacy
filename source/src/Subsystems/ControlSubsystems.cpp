@@ -567,10 +567,16 @@ EMessageResult CRotaryIgnitionSwitch::ReceiveMessage (SMessage *msg)
     int msk = (active)?(ENGINE_STR_ALL):(0);
     switch (msg->id) {
         case MSG_GETDATA:
-          if (msg->dataType == TYPE_INT)  msg->intData  = int (pos);
-          if (msg->dataType == TYPE_REAL) msg->realData = double(pos);
-          return MSG_PROCESSED;
-        
+					switch (msg->user.u.datatag) {
+						case 'gets':
+							msg->voidData = this;
+							return MSG_PROCESSED;
+						case 'indx':
+							{	if (msg->dataType == TYPE_INT)  msg->intData  = int (pos);
+								if (msg->dataType == TYPE_REAL) msg->realData = double(pos);
+								return MSG_PROCESSED;
+							}
+					} 
       //----Message from gauge ------------------------------
         case MSG_SETDATA:
           { rot_pos = (EMagnetoSwitch) msg->intData;
@@ -588,15 +594,22 @@ EMessageResult CRotaryIgnitionSwitch::ReceiveMessage (SMessage *msg)
 //  - Set a rest mask just in case
 //-------------------------------------------------------------------------
 void CRotaryIgnitionSwitch::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
-{   CEngineControl::TimeSlice(dT,FrNo);
-    if (rot_pos != MAGNETO_SWITCH_START)  return;
-    meng.intData = ENGINE_STR_ALL;        
-    Send_Message(&meng);
-    if (meng.intData != 1)                return;
-    rot_pos = MAGNETO_SWITCH_BOTH;
-    return;
+{ CEngineControl::TimeSlice(dT,FrNo);  
+	if (rot_pos != MAGNETO_SWITCH_START)	return;
+  meng.intData = ENGINE_STR_ALL;        
+  Send_Message(&meng);
+	if (meng.intData != 1)								return;
+	rot_pos = MAGNETO_SWITCH_BOTH;
+  return;
 }
-
+//------------------------------------------------------------------------
+//	Probe position
+//------------------------------------------------------------------------
+void CRotaryIgnitionSwitch::Probe(CFuiCanva *cnv)
+{	CDependent::Probe(cnv,0);
+	cnv->AddText(1,1,"Position:%d",rot_pos);
+	return;
+}
 //==============================================================================
 // CMagnetoControl 'neto'  from CEngineControl
 //  Magneto control has attributes that define
@@ -699,7 +712,6 @@ void CStarterControl::ArmTimer(SMessage *msg)
   if (0 == state)   return;
   if (mTerm)        return;
   msg->intData  = STARTER_TIMER;
-  msg->action   = 1;
   time          = globals->clk->GetActual() + STARTER_TIMER;
   return;
 }
@@ -1826,7 +1838,7 @@ int CBrakeControl::Decr (char pos)
 //-------------------------------------------------------------------------------
 void CBrakeControl::SwapPark()
 { Park ^= 1;
-  if (gage)  gage->MouseClick(0,0,0);
+  if (gage)  gage->SubsystemCall(this,Park);
   return;
 }
 //-------------------------------------------------------------------------------

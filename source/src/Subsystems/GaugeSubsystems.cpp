@@ -610,6 +610,16 @@ int CAttitudeIndicator::UpdateLevel(int inc)
   return hdeg;
 }
 //----------------------------------------------------------------------------------
+//  Return pitch as a float
+//----------------------------------------------------------------------------------
+float CAttitudeIndicator::GetPmFT1()
+{	return Clamp180(Uatt.x);	}
+//----------------------------------------------------------------------------------
+//  Return roll as a float
+//----------------------------------------------------------------------------------
+float CAttitudeIndicator::GetPmFT2()
+{	return Norme360(Uatt.z);	}
+//----------------------------------------------------------------------------------
 //  receive message
 //----------------------------------------------------------------------------------
 EMessageResult CAttitudeIndicator::ReceiveMessage (SMessage *msg)
@@ -966,7 +976,6 @@ CTurnCoordinator::CTurnCoordinator (void)
 	rateT	= 0;					// Computed rate
 	tilt	= 1;					// default Heading damping rate
   rateD = 0;
-  get_data = get_data_ball = false;
 }
 
 //------------------------------------------------------------------
@@ -1001,7 +1010,6 @@ EMessageResult CTurnCoordinator::ReceiveMessage (SMessage *msg)
   {
     case MSG_GETDATA:
     {  
-      get_data = true;
       switch (msg->user.u.datatag)
       {
         //----Aircraft rate turn -----
@@ -1021,7 +1029,6 @@ EMessageResult CTurnCoordinator::ReceiveMessage (SMessage *msg)
 
         //---Lateral acceleration ----------
         case 'ball':
-          get_data_ball = true;
 	        msg->realData	= indn;
 	        return MSG_PROCESSED;
 
@@ -1047,44 +1054,47 @@ EMessageResult CTurnCoordinator::ReceiveMessage (SMessage *msg)
 //       (Ha-Hp) / dt = 3G
 //       (Ha-Hp) /(3*dt) = G            
 //----------------------------------------------------------------------
+//	JS a LC:  Ne pas mettre de flag sur les subsystems pour calculer
+//						les valeurs à la demande
+//						Certain subsystems servent ailleurs que pour les gauges
+//						et cela introduit des complications
+//---------------------------------------------------------------------
 void CTurnCoordinator::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
-{ if (get_data == true) {
-    SVector ori;
-    mveh->GetRRtoLDOrientation(&ori);
-    // ori is in left hand coordinate so y is the head axis in degre 
-    float htp	= Head;											        // Previous in DEG
-    Head	 = ori.y;												        // Actual   in DEG
-    //---Compute rate turn in degre per second ---------------------------
-    float sD  = ((Head - htp) / dT);              // Target rate in degre per sec
-    rateD    += ((sD - rateD) * (dT * 10));       // damped rate turn
-    //--- Compute rate turn for older gauges -----------------------------
-    float sG  = ((Head - htp) / (3.0f * dT));		  // scaled target rate where 1 is 3°/s
-    //---warning damping may overshoot the interval when dT > tilt -------
-    rateT += (sG - rateT) * (dT / tilt);				  // Damp rate
-    if (rateT > +2.0f)	rateT = +2.0f;					  // clamp to +2
-    if (rateT < -2.0f)	rateT = -2.0f;					  // clamp to -2;
-    //--- get acceleration vector for the ball ----------------------------
+{ SVector ori;
+  mveh->GetRRtoLDOrientation(&ori);
+  // ori is in left hand coordinate so y is the head axis in degre 
+  float htp	= Head;											        // Previous in DEG
+  Head	 = ori.y;												        // Actual   in DEG
+  //---Compute rate turn in degre per second ---------------------------
+  float sD  = ((Head - htp) / dT);              // Target rate in degre per sec
+  rateD    += ((sD - rateD) * (dT * 10));       // damped rate turn
+  //--- Compute rate turn for older gauges -----------------------------
+  float sG  = ((Head - htp) / (3.0f * dT));		  // scaled target rate where 1 is 3°/s
+  //---warning damping may overshoot the interval when dT > tilt -------
+  rateT += (sG - rateT) * (dT / tilt);				  // Damp rate
+  if (rateT > +2.0f)	rateT = +2.0f;					  // clamp to +2
+  if (rateT < -2.0f)	rateT = -2.0f;					  // clamp to -2;
+  //--- get acceleration vector for the ball ----------------------------
 //    const CVector *acc = mveh->GetBodyAccelerationVector(); // LH m.s² 
-    const CVector *acc = mveh->GetBodyVelocityVector(); // LH m.s² 
+  const CVector *acc = mveh->GetBodyVelocityVector(); // LH m.s² 
     ////----get Y lateral acceleration vector -----------------------------
     //float	dac = float((acc->y) / dT);		          // in rad.sec
     //if (dac > +TWO_PI)		dac = +float(TWO_PI);	  // clamp to +2
     //if (dac < -TWO_PI)		dac = -float(TWO_PI);	  // clamp to -2
     //indnTarget = dac; 
     //----get Y lateral acceleration vector -------------------------------
-    if (get_data_ball) {
-      //float	dac = float(acc->x) * dT * dT * 100.0f;			// in rad.sec²
+        //float	dac = float(acc->x) * dT * dT * 100.0f;			// in rad.sec²
 //      double d = -acc->z; // z
 //      if (d < 1.0) d = 1.0;
 //      float dac = float(acc->y) / d * 10.0f; // was x
-      float dac = float(-acc->x);
-      //
-      // if this computation doesn't fit our goals try this :
-      //
-      //const CVector *bacc = mveh->GetBodyAngularVelocityVector(); // LH rad.s² 
-      //const CVector *iacc = mveh->GetInertialAngularVelocityVector(); // LH rad.s²
-      //dac = (bacc->y - iacc->y) * 100.0f;
-      /*/
+   float dac = float(-acc->x);
+   //
+   // if this computation doesn't fit our goals try this :
+   //
+   //const CVector *bacc = mveh->GetBodyAngularVelocityVector(); // LH rad.s² 
+   //const CVector *iacc = mveh->GetInertialAngularVelocityVector(); // LH rad.s²
+   //dac = (bacc->y - iacc->y) * 100.0f;
+   /*/
       #ifdef _DEBUG	
       {	FILE *fp_debug;
 	      if(!(fp_debug = fopen("__DDEBUG_1.txt", "a")) == NULL)
@@ -1093,15 +1103,10 @@ void CTurnCoordinator::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
 		      fclose(fp_debug); 
       }	}
       #endif
-      /*/
-      if (dac > +2.0f)		dac = +2.0f;							    // clamp to +2
-      if (dac < -2.0f)		dac = -2.0f;							    // clamp to -2
-      indnTarget = dac;
-      get_data_ball = false;
-    }
-    //---------------------------------------------------------------------
-    get_data = false;
-  }
+   /*/
+  if (dac > +2.0f)		dac = +2.0f;							    // clamp to +2
+  if (dac < -2.0f)		dac = -2.0f;							    // clamp to -2
+  indnTarget = dac;
   //---------------------------------------------------------------------
   CDependent::TimeSlice (dT,FrNo);								  // JSDEV*
 }

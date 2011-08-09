@@ -142,7 +142,6 @@ int CAlternator::Read (SStream *stream, Tag tag)
 //-----------------------------------------------------------------------
 void CAlternator::ReadFinished()
 { CDependent::ReadFinished();
-  state = 0;
   //--- init engine message -----------
   Tag eng = 'Eng0' + eNum;
   emsg.id             = MSG_GETDATA;
@@ -173,8 +172,7 @@ void CAlternator::TimeSlice(float dT,U_INT FrNo)
   }
   //---Check enough RPM ----------------------
   bool rpm  = ((data->EngRPM() > loRg) && (data->EngRPM() < hiRg));
-  active    = rpm;
-  state     = active;
+  active   &= rpm;
   //---Compute voltage ----------------------
   volt      = (data->EngRPM() - loRg) * vFac * state;
   if (volt > mvlt)  volt = mvlt;

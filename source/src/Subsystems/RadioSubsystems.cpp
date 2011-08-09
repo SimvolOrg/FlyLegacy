@@ -390,7 +390,7 @@ void CRadio::ChangeRefDirection(float d)
 	if (sys)	sys->SetRefDirection(d);
 	Radio.SetOBS(d);
 	Synchronize();
-	TRACE("RADIO: Ref dir=%.2f",Radio.hREF);
+//	TRACE("RADIO: Ref dir=%.2f",Radio.hREF);
 }
 //--------------------------------------------------------------------------
 //  Maintain all values
