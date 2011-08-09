@@ -4804,6 +4804,7 @@ void TCacheMGR::Draw(CCamera *cam)
 	//----Prepare OpenGL for drawing ---------------------------------
   glMatrixMode (GL_MODELVIEW);
   glPushAttrib (mask);
+	glDepthRange(0.00001,1);
   //-------- Extract parameters from camera -------------------------
   orient = cam->GetAzimuth();
   cCam   = cam;
@@ -4867,6 +4868,7 @@ void TCacheMGR::Draw(CCamera *cam)
     qt->visb  = vis;
     glPopMatrix();                            // Back to T2
   }
+
   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   glDisableClientState(GL_VERTEX_ARRAY);
   glPopMatrix();                              // Back to T0 (camera at origin)
@@ -4888,7 +4890,6 @@ void TCacheMGR::Draw(CCamera *cam)
     if (qt->NotVisible())   continue;
     qt->w3D.Draw(cTod);                         // Draw for day or night
   }
-
   //---Reset all parameters ----------------------------------------
   glPopClientAttrib();
   glFrontFace(GL_CCW);
@@ -4912,6 +4913,7 @@ void TCacheMGR::Draw(CCamera *cam)
   glEnableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   objMGR->Draw(cTod);                           // Draw VOR and lights
+
   //-----------------------------------------------------------------
   //  Set Context to draw airport lights 
   //  Camera at origin
@@ -4933,6 +4935,7 @@ void TCacheMGR::Draw(CCamera *cam)
   glMaterialfv (GL_FRONT, GL_EMISSION, GetDeftEmission());
   glColor4f(1,1,1,1);
   if (veh) veh->DrawInside(cam);
+
   //-----------------------------------------------------------------
   //  Draw tracker
   //-----------------------------------------------------------------
