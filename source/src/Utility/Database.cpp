@@ -2929,8 +2929,9 @@ CDbCacheMgr::CDbCacheMgr(void)
   objSTK.nWPT   = 0;
 	//---------forge a dummy key to force refresh at first TimeSlice call--
 	RefKey = 0xFFFFFFFF;
-  //------Complement flight plan -------------------------------------
+  //------ Demux parameter ------------------------------
   cycle   = 0;
+	nAPT		= 0;
   stab    = 0;
   //----------Registered windows ------------------------
   wLOG      = 0;
@@ -3198,6 +3199,9 @@ void CDbCacheMgr::TimeSlice(float dT,U_INT FrNo)
   //----------Duty tasks ---------------------------------------------------
   RefreshCache(FrNo);
   TrackGPS();
+	//---- Maintains nearest airport -----------------------------------------
+	cycle++;
+	if (0 ==(cycle & 0xFF)) nAPT = FindFirstNearest(APT);
   return;
 }
 //-------------------------------------------------------------------------
@@ -3452,7 +3456,8 @@ CmHead *CDbCacheMgr::FindNearestOBJ(CmHead *obj)
   return nob;
 }
 //-------------------------------------------------------------------------
-//  Find the nearest Airport  
+//  Find the nearest object of type QX
+//	FindFirstNearest(APT) return the nearest airport
 //-------------------------------------------------------------------------
 CmHead *CDbCacheMgr::FindFirstNearest(QTYPE qx)
 { ClQueue    *hd = aHead[qx];
@@ -4844,7 +4849,7 @@ void CDbCacheMgr::ExecuteREQ()
   req->Prev = req->Code;
   req->Code = REQUEST_END;
   req->ClearFilter();
-return;
+  return;
 }
 //-------------------------------------------------------------------------
 //  Execute GPS database request
