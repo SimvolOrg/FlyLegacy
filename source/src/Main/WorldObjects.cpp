@@ -939,7 +939,7 @@ void CVehicleObject::Simulate (float dT,U_INT FrNo)
   //--- Timeslice svh stuff : 
   svh->Timeslice (dT);
   // timeslice wind effect on aircraft
-  //GetAircraftWindEffect ();
+  if (wind_effect) GetAircraftWindEffect ();
   return;
 }
 //============================================================
@@ -1187,7 +1187,7 @@ void  CVehicleObject::GetAircraftWindEffect (void)
   CRotationMatrixHPB matx;                                            // LH
   CVector wind_angle (sin (w_angle), 0.0, cos (w_angle));             // LH
   wind_angle.Times (w_spd);
-  SVector or_m = {0.0, 0.0, 0.0};                                     // LH
+  SVector or_m = {0.0, 0.0, 0.0};                                     // 
   or_m.y = -globals->sit->uVeh->GetOrientation ().z; // + is left     // RH to LH
   matx.Setup (or_m);                                                  // LH
   matx.ParentToChild (w_dir_for_body, wind_angle);                    // LH

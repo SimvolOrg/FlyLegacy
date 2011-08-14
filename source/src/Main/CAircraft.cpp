@@ -1265,6 +1265,10 @@ COPALObject::COPALObject (void)
   wind_effect			= 0; //
   GetIniVar ("PHYSICS", "windEffect", &wind_effect);
   DEBUGLOG ("windEffect = %d", wind_effect);
+  turbulence_effect = 0;
+  GetIniVar ("PHYSICS", "turbulenceEffect", &turbulence_effect);
+  DEBUGLOG ("turbulenceEffect = %d", turbulence_effect);
+  turb_timer = 0.0f;
   //--------------------------------------------------------------------------
 	yawMine		= ADJ_YAW_MINE;
 	rollMine	= ADJ_ROLL_MINE;
@@ -1378,7 +1382,7 @@ void COPALObject::PlaneShape()
   ed.type = opal::LOCAL_FORCE_AT_LOCAL_POS; // 
   tf.type = opal::LOCAL_TORQUE; // 
   wm.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
-
+  yf.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
   return;
 }
 //---------------------------------------------------------------------------------------
@@ -1572,6 +1576,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   ef.vec.set (static_cast<opal::real> (0.0), static_cast<opal::real> (0.0), static_cast<opal::real> (0.0));
   ed.vec.set (static_cast<opal::real> (0.0), static_cast<opal::real> (0.0), static_cast<opal::real> (0.0));
   wm.vec.set (static_cast<opal::real> (0.0), static_cast<opal::real> (0.0), static_cast<opal::real> (0.0));
+  yf.vec.set (static_cast<opal::real> (0.0), static_cast<opal::real> (0.0), static_cast<opal::real> (0.0));
   PositionAGL();
   //SVector cgoffset = *(wgh->wb.GetCGOffset_ISU());					 // LH 
   //VectorDistanceLeftToRight  (cgoffset);										// LH=>RH 
@@ -1690,7 +1695,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
     if (wind_effect) {
       double w_K = wind_coeff;// magic number
       if (WheelsAreOnGround ())  w_K *= 0.5; // was 1.0
-      // w_spd in metres/sec
+      //// w_spd in metres/sec
       //double v1      = globals->wtm->GetWindMPS();
       //double w_spd   = v1 * dT * w_K; // ==>m/s==> dist
       //double w_angle = DegToRad (static_cast<double>(globals->wtm->WindRoseDirection ()));
@@ -1704,22 +1709,54 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
       //CVector w_dir_for_body;                                             // LH
       //matx.ParentToChild (w_dir_for_body, wind_angle);                    // LH
 
-      SVector w_dir_for_body_ = w_dir_for_body;
+      const CVector w_dir_for_body_ = w_dir_for_body;
       wm.vec.set (  static_cast<opal::real> (-w_dir_for_body_.x * dT * w_K),// LF to RH
                     static_cast<opal::real> (-w_dir_for_body_.z * dT * w_K),// LF to RH
                     static_cast<opal::real> (-w_dir_for_body_.y * dT * w_K)
                  );
-      wm.pos.set (  static_cast<opal::real> (0.0),
-                    static_cast<opal::real> (
-                    wind_pos * 0.5
-                    /*FeetToMetres (-22.0)*/),                            // LH to RH
-                    static_cast<opal::real> (0.0)
-                 );
+      //wm.pos.set (  static_cast<opal::real> (0.0),
+      //              static_cast<opal::real> (
+      //              wind_pos * 0.5
+      //              /*FeetToMetres (-22.0)*/),                              // LH to RH
+      //              static_cast<opal::real> (0.0)
+      //           );
       wm.duration = static_cast<opal::real> (dT);
+    }
+
+    if (turbulence_effect) {
+      float wTbbCeiling = 5000.0f;
+      double t_alt = globals->sit->uVeh->GetAltitude ();
+      if (t_alt < wTbbCeiling) {
+        float wTrbSpeed = 2.0f;
+        float wTrbDuration = 2.0f;
+        float wTrbTimK = 2.0f;
+        turb_timer += dT;
+        if (turb_timer > wTrbDuration) {
+          turb_timer -= wTrbDuration;
+     		  int rdn = (globals->clk->GetMinute() << 8) +  globals->clk->GetSecond();
+          double TrbSpeed = static_cast <double> (METRES_SEC_PER_KNOT (wTrbSpeed));
+          turb_v.x = static_cast <double> ((rand () % 200 - 100));
+          turb_v.y = static_cast <double> ((rand () % 200 - 100));
+          turb_v.z = static_cast <double> ((rand () % 200 - 100));
+          //TRACE ("t %f %f %f", turb_v.x, turb_v.y, turb_v.z);
+          double tf = static_cast<double> (wgh->GetTotalMassInKgs ()) /** GRAVITY_MTS*/;
+          turb_v.Times (TrbSpeed * tf / 100.0);
+
+          yf.vec.set (  static_cast<opal::real> (turb_v.x),// 
+                        static_cast<opal::real> (turb_v.y),// 
+                        static_cast<opal::real> (turb_v.z) //
+                     );
+          yf.pos.set (  static_cast<opal::real> (0.0),//
+                        static_cast<opal::real> (0.0),// 
+                        static_cast<opal::real> (0.0) //
+                     );
+          yf.duration = static_cast<opal::real> (dT);
+        }
+      }
     }
   }
 
-  if (globals->caging_fixed_alt) fb.z = static_cast<double> ( wgh->GetTotalMassInKgs ()) * GRAVITY_MTS;   // 
+  if (globals->caging_fixed_alt) fb.z = static_cast<double> (wgh->GetTotalMassInKgs ()) * GRAVITY_MTS;   // 
 
   lf.vec = CVectorToVec3r (fb);
   lf.duration = static_cast<opal::real> (dT); 
@@ -1737,6 +1774,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
     fixed_vel.y = FeetToMetres (KtToFps (globals->caging_fixed_sped_fval));  
     Plane->setLocalLinearVel (fixed_vel);  
   }
+  if (turbulence_effect) Plane->addForce (yf);
   globals->simulation = globals->opal_sim->simulate (static_cast<opal::real> (dT));
   //! current state becomes previous state
   prv = cur;

@@ -444,6 +444,9 @@ protected:
   int			wind_effect;											///< flag
   float		wind_coeff;                       ///< wind coefficient effect
   float		gear_drag;                        ///< drag from gear
+	//--- turbulence  parameters ---------------------------------------------------
+  int     turbulence_effect;                ///< turbulence effect toggle
+  CVector turb_v;                           ///< turbulence 3D direction
   //---Aerodata drawing ----------------------------------------------------------
   float		draw_aero;                        ///< draw aeromodel data for lines lenght
   //---Wheels parameters ---------------------------------------------------------
@@ -714,7 +717,7 @@ public:
   CVector spd;                                                      ///< speed
   opal::Force wlf [3];                                              ///< tricycle gear
   opal::Force wm;                                                   ///< wind induced moment
-  int turb_effect;
+  opal::Force yf;                                                   ///< turbulence force
 	//------------------------------------------------------------
 	float yawMine;
 	float rollMine;
@@ -722,6 +725,7 @@ public:
   float angularDamping;
 	float	linearDamping;
 	double wind_pos;
+  float turb_timer;
 	//------------------------------------------------------------
 private:
   CLogFile *log;
