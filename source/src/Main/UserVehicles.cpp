@@ -134,8 +134,16 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
   mRpm.id = MSG_GETDATA;
   mMap.id = MSG_GETDATA;
 
-  elapsed = 0.0f;
-  stallspeed = 0.0f;
+  elapsed      = 0.0f;
+  stallspeed   = 0.0f;
+  wTrbSpeed    = 0.0f;            // Wing turbulence
+  wTrbTimK     = 0.0f;
+  wTrbCeiling  = 0.0f;
+  wTrbDuration = 0.0f;
+  nTrbSpeed    = 0.0f;            // ??? turbulence
+  nTrbTimK     = 0.0f;
+  nTrbCeiling  = 0.0f;
+  nTrbDuration = 0.0f;
 }
 //----------------------------------------------------------------------
 //  Delete this object

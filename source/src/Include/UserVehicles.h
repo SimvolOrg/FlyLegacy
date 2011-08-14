@@ -186,14 +186,6 @@ protected:
   float     negG;
   float     stallspeed;
   float     blst;                 // Local velocity at tail at full throttle
-  float     wTrbSpeed;            // Wing turbulence
-  float     wTrbTimK;
-  float     wTrbCeiling;
-  float     wTrbDuration;
-  float     nTrbSpeed;            // ??? turbulence
-  float     nTrbTimK;
-  float     nTrbCeiling;
-  float     nTrbDuration;
   CVector   newCG_ISU;
 	double    accBrake;							// brake speed acceleration in feet/sec²
 
@@ -210,6 +202,16 @@ protected:
   //std::vector <std::string> user_info;
   //std::vector <SMessage> user_message;
   float       elapsed;
+
+public:
+  float     wTrbSpeed;            // Wing turbulence
+  float     wTrbTimK;
+  float     wTrbCeiling;
+  float     wTrbDuration;
+  float     nTrbSpeed;            // ??? turbulence
+  float     nTrbTimK;
+  float     nTrbCeiling;
+  float     nTrbDuration;
 };
 
 //=========================================================================

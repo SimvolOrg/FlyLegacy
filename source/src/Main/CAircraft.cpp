@@ -1259,16 +1259,18 @@ COPALObject::COPALObject (void)
 { SetType(TYPE_FLY_AIRPLANE);
   is_opal_object	= true;
   log							= NULL;
-  Kb							= 0.0; 
+  Kb							= 0.0;
+  bagl            = 0.0;
   Ground					= 0;
   Plane						= 0;
   wind_effect			= 0; //
+  wind_pos        = 0.0;
   GetIniVar ("PHYSICS", "windEffect", &wind_effect);
   DEBUGLOG ("windEffect = %d", wind_effect);
   turbulence_effect = 0;
   GetIniVar ("PHYSICS", "turbulenceEffect", &turbulence_effect);
   DEBUGLOG ("turbulenceEffect = %d", turbulence_effect);
-  turb_timer = 0.0f;
+  //turb_timer = 0.0f;
   //--------------------------------------------------------------------------
 	yawMine		= ADJ_YAW_MINE;
 	rollMine	= ADJ_ROLL_MINE;
@@ -1286,7 +1288,9 @@ COPALObject::COPALObject (void)
     GetIniFloat ("PHYSICS", "initialSpeedz", &initialSpeedz);
     DEBUGLOG ("globalInitialSpeed (ft) x=%f y=%f z=%f", initialSpeedx, initialSpeedy, initialSpeedz);
   }
-
+  // randomisation used in UpdateNewPositionState
+  int rdn = (globals->clk->GetMinute() << 8) +  globals->clk->GetSecond();
+  srand(rdn);
 }
 //---------------------------------------------------------------------------------------
 //  DESTRUCTOR
@@ -1425,11 +1429,17 @@ void COPALObject::ReadFinished (void)
     CAirplane *apln = (CAirplane *)this;
     apln->RudderOpalCoef(acrd_coeff);
   }
-  //----------------------------------------------------------------
+  ///----------------------------------------------------------------
   DEBUGLOG ("PHY : dieh=%f pitchK%f acrd=%f", dihedral_coeff, pitch_coeff, acrd_coeff);
   DEBUGLOG ("PHY : pmine%f rmine%f ymine%f", pitchMine, rollMine, yawMine); 
   DEBUGLOG ("PHY : wind effect coeff%f", wind_coeff);
-  //-----------------------------------------------------------------
+  ///-----------------------------------------------------------------
+  /// turbulence speed used in UpdateNewPositionState
+  if (turbulence_effect) {
+    tVAL.Conf (INDN_LINEAR, svh->wTrbTimK);
+    svh->wTrbSpeed = KtToFps (static_cast <double> (svh->wTrbSpeed));
+  }
+  ///
   CVector   Cg   = wgh->svh_cofg;
   double    cy   = FeetToMetres(Cg.z);
   double    ix   = (wgh->svh_mine.x*(1.0f / pitchMine) * LBFT2_TO_KGM2);
@@ -1459,6 +1469,7 @@ void COPALObject::ReadFinished (void)
 
 #ifdef _DEBUG
   DEBUGLOG ("COPALObject::ReadFinished wind Tail pos = %f",wind_pos);
+  DEBUGLOG ("COPALObject::ReadFinished wTrbSpeed     = %f",svh->wTrbSpeed);
 #endif
   //MEMORY_LEAK_MARKER ("readfnopa")
 }
@@ -1543,7 +1554,7 @@ void COPALObject::ResetZeroOrientation (void)
 void COPALObject::PositionAGL()
 { opal::Point3r bpos;
 	double cgz  =  wgh->GetCGHeight();
-  double bagl =  geop.alt - globals->tcm->GetGroundAltitude() + cgz;  
+  bagl =  geop.alt - globals->tcm->GetGroundAltitude() + cgz;  
   bpos.z      =  FeetToMetres(bagl);
   Plane->setPosition (bpos);
   return;
@@ -1714,46 +1725,49 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
                     static_cast<opal::real> (-w_dir_for_body_.z * dT * w_K),// LF to RH
                     static_cast<opal::real> (-w_dir_for_body_.y * dT * w_K)
                  );
-      //wm.pos.set (  static_cast<opal::real> (0.0),
-      //              static_cast<opal::real> (
-      //              wind_pos * 0.5
-      //              /*FeetToMetres (-22.0)*/),                              // LH to RH
-      //              static_cast<opal::real> (0.0)
-      //           );
+      wm.pos.set (  static_cast<opal::real> (0.0),
+                    static_cast<opal::real> (
+                    wind_pos /** 0.5*/
+                    /*FeetToMetres (-22.0)*/),                              // LH to RH
+                    static_cast<opal::real> (0.0)
+                 );
       wm.duration = static_cast<opal::real> (dT);
     }
-
-    if (turbulence_effect) {
-      float wTbbCeiling = 5000.0f;
-      double t_alt = globals->sit->uVeh->GetAltitude ();
-      if (t_alt < wTbbCeiling) {
-        float wTrbSpeed = 2.0f;
-        float wTrbDuration = 2.0f;
-        float wTrbTimK = 2.0f;
-        turb_timer += dT;
-        if (turb_timer > wTrbDuration) {
-          turb_timer -= wTrbDuration;
+/*
+    if (turbulence_effect && !WheelsAreOnGround ()) {
+      //float wTbbCeiling = svh->wTrbCeiling; // 5000.0f;
+      double t_alt = GetAltitude ();
+      if (t_alt < svh->wTrbCeiling) {
+        //float wTrbSpeed = svh->wTrbSpeed; // 2.0f;
+        //float wTrbDuration = svh->wTrbDuration; // 2.0f;
+        //float wTrbTimK = svh->wTrbTimK; // 2.0f;
+//        turb_timer += dT;
+//        if (turb_timer > svh->wTrbDuration) {
+//          turb_timer -= svh->wTrbDuration;
      		  int rdn = (globals->clk->GetMinute() << 8) +  globals->clk->GetSecond();
-          double TrbSpeed = static_cast <double> (METRES_SEC_PER_KNOT (wTrbSpeed));
-          turb_v.x = static_cast <double> ((rand () % 200 - 100));
-          turb_v.y = static_cast <double> ((rand () % 200 - 100));
+          srand(rdn);
+          double TrbSpeed = static_cast <double> (METRES_SEC_PER_KNOT (svh->wTrbSpeed));
+          //turb_v.x = static_cast <double> ((rand () % 200 - 100));
+          //turb_v.y = static_cast <double> ((rand () % 200 - 100));
+          turb_v. x = turb_v.y = 0.0;
           turb_v.z = static_cast <double> ((rand () % 200 - 100));
           //TRACE ("t %f %f %f", turb_v.x, turb_v.y, turb_v.z);
-          double tf = static_cast<double> (wgh->GetTotalMassInKgs ()) /** GRAVITY_MTS*/;
-          turb_v.Times (TrbSpeed * tf / 100.0);
+          double tf = wind_coeff * svh->wTrbDuration * TrbSpeed / 100.0;
+          turb_v.Times (tf);
 
-          yf.vec.set (  static_cast<opal::real> (turb_v.x),// 
-                        static_cast<opal::real> (turb_v.y),// 
+          yf.vec.set (  static_cast<opal::real> (0.0),// 
+                        static_cast<opal::real> (0.0),// 
                         static_cast<opal::real> (turb_v.z) //
                      );
-          yf.pos.set (  static_cast<opal::real> (0.0),//
-                        static_cast<opal::real> (0.0),// 
-                        static_cast<opal::real> (0.0) //
-                     );
+          //yf.pos.set (  static_cast<opal::real> (0.0),
+          //              static_cast<opal::real> (wind_pos),
+          //              static_cast<opal::real> (0.0)
+          //           );
           yf.duration = static_cast<opal::real> (dT);
-        }
+//        }
       }
     }
+*/
   }
 
   if (globals->caging_fixed_alt) fb.z = static_cast<double> (wgh->GetTotalMassInKgs ()) * GRAVITY_MTS;   // 
@@ -1882,9 +1896,24 @@ void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
   dist.x  = MetresToFeet (spd.x) * dT;
   dist.y  = MetresToFeet (spd.y) * dT;
   dist.z  = MetresToFeet (spd.z) * dT;
-  ifpos   = dist;
   SPosition pos_from  = GetPosition ();
-  SPosition pos_to    = AddVector (pos_from, dist); // 
+  /// turbulences
+  if (turbulence_effect) {
+    if (bagl > 300.0) { // above 300.0 feet
+      float turb_vz = static_cast <float> ((rand () % 200 - 100)) / 100.0f;
+      //--- Get final values -----------------------------------------------
+      double turbR = static_cast <double> (tVAL.TimeSlice (dT));
+      //--- Set Target value -----------------------------------------------
+      float tmp_val = turb_vz * svh->wTrbSpeed * svh->wTrbDuration;
+      tVAL.Set (tmp_val);
+      //
+      TRACE ("K  %f", turbR);
+      dist.z += turbR;
+    }
+  }
+  //
+  ifpos   = dist;
+  const SPosition pos_to = AddVector (pos_from, dist); // 
   SetPosition (pos_to);
 }
 //---------------------------------------------------------------------------

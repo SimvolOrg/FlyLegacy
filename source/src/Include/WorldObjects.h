@@ -446,7 +446,7 @@ protected:
   float		gear_drag;                        ///< drag from gear
 	//--- turbulence  parameters ---------------------------------------------------
   int     turbulence_effect;                ///< turbulence effect toggle
-  CVector turb_v;                           ///< turbulence 3D direction
+  //CVector turb_v;                           ///< turbulence 3D direction
   //---Aerodata drawing ----------------------------------------------------------
   float		draw_aero;                        ///< draw aeromodel data for lines lenght
   //---Wheels parameters ---------------------------------------------------------
@@ -725,12 +725,14 @@ public:
   float angularDamping;
 	float	linearDamping;
 	double wind_pos;
-  float turb_timer;
+  //float turb_timer;
 	//------------------------------------------------------------
 private:
   CLogFile *log;
+  CValuator tVAL;                                                   ///< Turbulence
   float ground_friction;
   double Kb;                                                        ///< clamp rotation
+  double bagl;                                                      ///< aircraft AGL
 };
 
 #endif
