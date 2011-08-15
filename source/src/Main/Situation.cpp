@@ -88,11 +88,52 @@ void GetExtensionACM(SVector &v)
   if (mod)  mod->GetExtension(v);
   return;
 }
-//=====================================================================================
-// sdk: CFlyObjectListManager
-//
 
-void CFlyObjectListManager::Init()
+///=====================================================================================
+/// CRandomEvents
+///=====================================================================================
+CRandomEvents CRandomEvents::instance;
+
+void CRandomEvents::Init (void)
+{ TRACE ("CRandomEvents::Init");
+  rc = 0;
+  dirty = false;
+  rc++;
+  random.Set (0.0f, 1000, 1.0f);
+}
+
+CRandomEvents::~CRandomEvents (void) 
+{
+  ;
+}
+
+void CRandomEvents::Timeslice (float dT,U_INT Frame)
+{ 
+  random.TimeSlice (dT);
+  int val = random.GetValue ();
+  //TRACE ("CRandomEvents::Timeslice %d %u", val, globals->random_flag);
+  switch (val) {
+    case 28 :
+      if ((globals->random_flag & RAND_TURBULENCE) != 0)
+      { //TRACE ("turb(-) %d =%u", val, globals->random_flag);
+        globals->random_flag &= ~RAND_TURBULENCE;}
+      else
+      { //TRACE ("turb(+) %d =%u", val, globals->random_flag);
+        globals->random_flag |=  RAND_TURBULENCE;}
+      break;
+  }
+  //if (val ==    8) TRACE ("CRandomEvents::Timeslice 0008"); 
+  //if (val ==  100) TRACE ("CRandomEvents::Timeslice 0100"); 
+  //if (val ==   28) TRACE ("CRandomEvents::Timeslice 0028"); 
+  //if (val ==   38) TRACE ("CRandomEvents::Timeslice 0038"); 
+
+}
+
+
+///=====================================================================================
+/// sdk: CFlyObjectListManager
+///=====================================================================================
+void CFlyObjectListManager::Init (void)
 {
   rc = 0;
 
@@ -110,7 +151,7 @@ void CFlyObjectListManager::Init()
   rc++;
 }
 
-CFlyObjectListManager::~CFlyObjectListManager(void) 
+CFlyObjectListManager::~CFlyObjectListManager (void) 
 {
   // dll are responsible for objects deletion in this list
   // except for the first one which is the user object;
@@ -577,11 +618,15 @@ CSituation::CSituation()
   // Perform base initialization
 	FrameNo	= 0;										// JSDEV*
   uVeh    = 0;
-  sVeh = dVeh = 0;
+  sVeh    = dVeh = 0;
+  //MEMORY_LEAK_MARKER (">rnd Construct")
+  if (globals->random_flag & RND_EVENTS_ENABLED)
+    CRandomEvents::Instance ().Init ();
+  //MEMORY_LEAK_MARKER ("<rnd Construct")
   //---- Init DLL ------------------------
   dllW.clear ();
  // Open SIT file from pod filesystem
-  OpenSitFile();
+  OpenSitFile ();
   //MEMORY_LEAK_MARKER ("<SIT Construct")
 }
 //-------------------------------------------------------------------------
@@ -888,6 +933,9 @@ void CSituation::Timeslice (float dT,U_INT frame)
       (*idllW)->TimeSlice (dT);
     }
   }
+  // random events
+  if (globals->random_flag & RND_EVENTS_ENABLED)
+    CRandomEvents::Instance ().Timeslice (dT, frame);
   return;
 }
 //----------------------------------------------------------------------------

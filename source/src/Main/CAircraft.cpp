@@ -1270,6 +1270,7 @@ COPALObject::COPALObject (void)
   turbulence_effect = 0;
   GetIniVar ("PHYSICS", "turbulenceEffect", &turbulence_effect);
   DEBUGLOG ("turbulenceEffect = %d", turbulence_effect);
+  if (turbulence_effect) globals->random_flag |= RAND_TURBULENCE;
   //turb_timer = 0.0f;
   //--------------------------------------------------------------------------
 	yawMine		= ADJ_YAW_MINE;
@@ -1899,16 +1900,18 @@ void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
   SPosition pos_from  = GetPosition ();
   /// turbulences
   if (turbulence_effect) {
-    if (bagl > 300.0) { // above 300.0 feet
-      float turb_vz = static_cast <float> ((rand () % 200 - 100)) / 100.0f;
-      //--- Get final values -----------------------------------------------
-      double turbR = static_cast <double> (tVAL.TimeSlice (dT));
-      //--- Set Target value -----------------------------------------------
-      float tmp_val = turb_vz * svh->wTrbSpeed * svh->wTrbDuration;
-      tVAL.Set (tmp_val);
-      //
-      TRACE ("K  %f", turbR);
-      dist.z += turbR;
+    if ((globals->random_flag & RAND_TURBULENCE) != 0) {
+      if (bagl > 750.0) { // above 300.0 feet
+        float turb_vz = static_cast <float> ((rand () % 200 - 100)) / 100.0f;
+        //--- Get final values -----------------------------------------------
+        double turbR = static_cast <double> (tVAL.TimeSlice (dT));
+        //--- Set Target value -----------------------------------------------
+        float tmp_val = turb_vz * svh->wTrbSpeed * svh->wTrbDuration;
+        tVAL.Set (tmp_val);
+        //
+        //TRACE ("K  %f %f %f (%f %f)", turb_vz, tmp_val, turbR, svh->wTrbSpeed, svh->wTrbDuration);
+        dist.z += turbR;
+      }
     }
   }
   //

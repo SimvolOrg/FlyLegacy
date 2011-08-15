@@ -365,7 +365,7 @@ typedef struct {
   bool  caging_fixed_alt;
   bool  caging_fixed_wings;
 
-
+  USHORT random_flag;
   int   num_of_autogen;     // num_of_autogen objects
 } SGlobals;
 
