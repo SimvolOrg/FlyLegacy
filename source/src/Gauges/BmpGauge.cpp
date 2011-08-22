@@ -714,14 +714,14 @@ EClickResult C_DirectionalGyroGauge::StopClick ()
 //----------------------------------------------------------------------
 //	Draw the gauge
 //	NOTE:  Is is expected from the gyro subsystem that
-//				yaw is published through GetPmFT1()
-//				bug is published through GetPmFT2()
+//				yaw is published through GaugeBusFT01()
+//				bug is published through GaugeBusFT02()
 //----------------------------------------------------------------------
 void C_DirectionalGyroGauge::Draw (void)
 { DrawUnderlay();
   //--- Get hsi heading -------------------------------------
-	hdg	= gyrS->GetPmFT1();
-	bug	= gyrS->GetPmFT2();
+	hdg	= gyrS->GaugeBusFT01();
+	bug	= gyrS->GaugeBusFT02();
   nedl.DrawNeedle(Wrap360(-hdg));
 
 	//-----Update the gyro knob --------------------------------
@@ -901,6 +901,7 @@ void C_AltimeterGauge::PrepareMsg(CVehicleObject *veh)
 {	kmsg.id       =	 MSG_SETDATA;
 	kmsg.dataType = TYPE_REAL;
 	veh->FindReceiver(&kmsg);
+	
 	CGauge::PrepareMsg(veh);
 	return;	}
 //-------------------------------------------------------------------
@@ -933,6 +934,9 @@ EClickResult C_AltimeterGauge::StopClick ()
 }
 //----------------------------------------------------------------------
 //		Draw the altimeter
+//		NOTE: It is expected that the subsystem
+//				a) Publishes altitude in GaugeBusFT01()
+//				b) Publishes radar altitude in GaugeBusFT02();
 //-----------------------------------------------------------------------
 void C_AltimeterGauge::Draw(void)
 {	//--- Draw underlay for light ----------------------------
@@ -943,8 +947,7 @@ void C_AltimeterGauge::Draw(void)
   //--- Draw the base --------------------------------------
   base.Draw(0);
   //--- Compute needle values ------------------------------
-	Send_Message(&mesg);
-	float alt = mesg.realData;
+	float alt = subS->GaugeBusFT01();
   float f3  = alt * (float(36)/10000);
   alt       = fmod(alt,10000);
   float f2  = alt * (float(36)/1000);
@@ -1049,10 +1052,14 @@ ECursorResult C_AirspeedGauge::MouseMoved (int x, int y)
 }
 //-----------------------------------------------------------
 //  Display the gauge
+//	NOTE:  It is expected that the subsystem
+//			a) Publishes the airspeed in GaugeBusFT01();
 //-----------------------------------------------------------
 void C_AirspeedGauge::Draw()
 { DrawUnderlay();
-	CTexturedGauge::Draw();
+	float spd = subS->GaugeBusFT01();
+	Translate(spd);
+	nedl.DrawNeedle(value);       // Draw the needle
   knob.HasChanged();
   knob.Draw();
   return;
@@ -1060,6 +1067,9 @@ void C_AirspeedGauge::Draw()
 //======================================================================
 // CVerticalSpeedGauge
 //  TODO:  Implement the mvsi knob and bug
+//				redefine the draw to use published value.
+//	NOTE: Actually this gauge dont work because it is not connected to the
+//				subsystem
 //======================================================================
 C_VerticalSpeedGauge::C_VerticalSpeedGauge (CPanel *mp)
 : CTexturedGauge(mp)
@@ -1069,9 +1079,8 @@ C_VerticalSpeedGauge::C_VerticalSpeedGauge (CPanel *mp)
 //	JSDEV* Prepare messages
 //---------------------------------------------------------------------
 void C_VerticalSpeedGauge::PrepareMsg(CVehicleObject *veh)
-{	vmsg.id			  = MSG_GETDATA;
-  vmsg.dataType	= TYPE_REAL;
-	veh->FindReceiver(&vmsg);
+{	mesg.id			  = MSG_GETDATA;
+  mesg.dataType	= TYPE_REAL;
 	CGauge::PrepareMsg(veh);
 	return;
 }
@@ -1100,7 +1109,7 @@ int C_VerticalSpeedGauge::Read (SStream *str, Tag tag)
       return TAG_READ;
 
     case 'vmsg':
-      ReadMessage (&vmsg, str);
+      ReadMessage (&mesg, str);
       return TAG_READ;
   }
   return CTexturedGauge::Read (str, tag);
@@ -1294,15 +1303,15 @@ EClickResult C_HorizonGauge::StopClick ()
 //-----------------------------------------------------------------------------
 //	JSDEV* ATTITUDE subsystem now gives pitch and roll in degre
 //	NOTE:  It is expected from the subsystems that
-//				subsystem pitS publishes pitch value to GetPmFT1()
-//				subsystem rolS publishes roll  value to GetPmFT2()
+//				subsystem pitS publishes pitch value to GaugeBusFT01()
+//				subsystem rolS publishes roll  value to GaugeBusFT02()
 //-----------------------------------------------------------------------------
 void C_HorizonGauge::Draw(void)
 { DrawUnderlay();
 	// Get Pitch value
-	float	pichD = pitS->GetPmFT1();						// Should be pitch
+	float	pichD = pitS->GaugeBusFT01();						// Should be pitch
 	//---- Get Roll value ------------
-	float	rollD = rolS->GetPmFT2();						// Should be roll
+	float	rollD = rolS->GaugeBusFT02();						// Should be roll
   //--- Draw foot -----------------
 	Bfoot.DrawNeedle(rollD,pichD);
   //--- Draw ring  ----------------
@@ -1708,9 +1717,10 @@ void C_SimpleSwitch::CollectVBO(TC_VTAB *vtb)
 }
 //--------------------------------------------------------------------------
 //  Draw the switch
+//	GAUGE_BUS_IN03 is used to get the switch state
 //--------------------------------------------------------------------------
 void C_SimpleSwitch::DrawAmbient()
-{ cIndx	= subS->GetIndex();
+{ cIndx	= subS->GaugeBusIN03();
 	swit.Draw(cIndx);
   return;
 }
@@ -1967,9 +1977,10 @@ void C_BasicMagnetoSwitch::CollectVBO(TC_VTAB *vtb)
 }
 //-------------------------------------------------------------------------------
 //  Draw:  Update state only
+//	Gauge Bus IN03 is used to gget the index value (see subsystem.h)
 //-------------------------------------------------------------------------------
 void C_BasicMagnetoSwitch::Draw()
-{	cIndx	= subS->GetIndex();
+{	cIndx	= subS->GaugeBusIN03();
 	C_SimpleSwitch::Draw();
 	return;
 }
@@ -2098,8 +2109,8 @@ void  C_BasicBatterySwitch::ReadFinished()
 //  Draw the gauge
 //---------------------------------------------------------------
 void C_BasicBatterySwitch::DrawAmbient()
-{ sAlt	= altS->GetState();
-	sBat	= batS->GetState();
+{ sAlt	= altS->GaugeBusIN01();
+	sBat	= batS->GaugeBusIN01();
 	// Calculate frame number:
   //   0 = Both OFF
   //   1 = Alternator ON, Battery OFF
@@ -2271,15 +2282,15 @@ void C_TurnCoordinatorGauge::CollectVBO(TC_VTAB *vtb)
 //          It is clamped in the [-2rad, +2rad] range
 //    ball has been changed as part of body acceleration y / z in LH // LC
 //	NOTE:   It is expected from the turn subsystem that:
-//					ball value is ppublished from GetPmFT1();
-//					needle is published from GetPmFT2()
+//					ball value is ppublished from GaugeBusFT01();
+//					needle is published from GaugeBusFT02()
 //--------------------------------------------------------------------
 void C_TurnCoordinatorGauge::Draw(void)
 { //--- Get ball value ----------------
 	//mesg.user.u.datatag = bcon;
 	//Send_Message (&mesg);
 	//float acc =  float(mesg.realData);
-	float acc = trnS->GetPmFT1();
+	float acc = trnS->GaugeBusFT01();
   //--- Draw ball ---------------------
   //int frm  = mbal + int(rbal * acc);
   int frm  = mbal + int(float(mbal) * acc * 0.5f); // 0.16
@@ -2288,7 +2299,7 @@ void C_TurnCoordinatorGauge::Draw(void)
 	//mesg.user.u.datatag = pcon;
 	//Send_Message (&mesg);
 	//float rateD = (float)mesg.realData;
-	float rateD = trnS->GetPmFT2();
+	float rateD = trnS->GaugeBusFT02();
   //--- Clamp value to [-20°,+20°] ----
   float deg  = ClampTo(20,(rateD * tilt)) ;
   nedl.DrawNeedle(deg);
@@ -2812,9 +2823,8 @@ void C_SimpleInOutStateSwitch::SubsystemCall(CSubsystem *sys,int val)
 //-----------------------------------------------------------------------------
 //  Draw the gauge
 //-----------------------------------------------------------------------------
-void C_SimpleInOutStateSwitch::DrawAmbient()
+void C_SimpleInOutStateSwitch::Draw(char val)
 {	//---- Update state -----------------------
-	char val	= subS->GetState();
 	gpos = (val == vin[0])?(0):(1);
 	stsw.Draw(gpos);
   if (0 == gpos)      return;
@@ -2824,6 +2834,15 @@ void C_SimpleInOutStateSwitch::DrawAmbient()
   time--;
   if (time)           return;
   gpos = 0; 
+  return;
+  }
+//-----------------------------------------------------------------------------
+//  Draw the gauge
+//-----------------------------------------------------------------------------
+void C_SimpleInOutStateSwitch::DrawAmbient()
+{	//---- Update state -----------------------
+	char val	= subS->GaugeBusIN01();
+	Draw(val);
   return;
   }
 
@@ -3236,6 +3255,14 @@ void C2NeedleGauge::CopyFrom(SStream *stream)
   type  = src.type;
   return;
 }
+//------------------------------------------------------------------
+//  Prepare message for each needle
+//------------------------------------------------------------------
+void C2NeedleGauge::PrepareMsg(CVehicleObject *veh)
+{ ndl1.PrepareMsg(veh);
+	ndl2.PrepareMsg(veh);
+	return;
+}
 //-----------------------------------------------------------------------------
 //  Collect VBO data
 //-----------------------------------------------------------------------------
@@ -3435,4 +3462,6 @@ void CStripGauge::Draw()
 {	Update();
 	bmap.Draw(value);
 }
+
+
 //=========================END OF FILE =======================================================

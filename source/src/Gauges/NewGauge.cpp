@@ -393,4 +393,33 @@ int CBasicDigitalClockGauge::Read (SStream *stream, Tag tag)
 
   return rc;
 }
+//======================================================================
+// CNavGpsSwitchT0:  Switch NAV/GPS a la Hawk
+//======================================================================
+CNavGpsSwitchT0::CNavGpsSwitchT0 (CPanel *mp)
+: C_SimpleInOutStateSwitch(mp)
+{	gbus = GAUGE_BUS_INT04;
+}
+//------------------------------------------------------------------
+//	Read All parameters throught Simple Switch
+//------------------------------------------------------------------
+int CNavGpsSwitchT0::Read (SStream *stream, Tag tag)
+{ int pm = GAUGE_BUS_INT04;
+	switch (tag) {
+	case 'gbus':
+		ReadInt(&pm,stream);
+		gbus	= pm;
+		return TAG_READ;
+	}
+	return C_SimpleInOutStateSwitch::Read (stream, tag);
+}
+//-----------------------------------------------------------------------------
+//  Draw the gauge
+//-----------------------------------------------------------------------------
+void CNavGpsSwitchT0::DrawAmbient()
+{	//---- Update state -----------------------
+	char val	= subS->GaugeBusINNO(gbus);
+	Draw(val);
+  return;
+  }
 //============ END OF FILE ==========================================================

@@ -47,11 +47,34 @@
 #include "../Include/Atmosphere.h"
 #include "../Include/RadioGauges.h"
 //===========================================================================
+//  KLN98 Mode
+//===========================================================================
+char *modeK89[] =	{
+	"F_Plan",
+	"Direct",
+};
+//===========================================================================
 //  Flasher attribut (depending on globals clock
 //===========================================================================
 U_SHORT K89FLASH[] = {
   K89_ATT_NOCAR,
   K89_ATT_ONCAR,
+};
+//===========================================================================
+//  Waypoint mark when following a fligth plan
+//===========================================================================
+char markWP89[] = {
+	' ',							// 0=> Forward waypoint
+	'\x85',						// 1=> FROM (Origin) waypoint
+	'\x86',						// 2=> TO   (Current)waypoint
+	'\x87',						// 3=> Past terminated
+};
+//===========================================================================
+//  Waypoint mark for NAV page
+//===========================================================================
+char markNV89[] = {
+	'\x82',							// 0=>Mode Flight plan
+	'\x84',							// 1=>Mode Direct To
 };
 //===========================================================================
 //  VECTOR FUNCTIONS FOR KLN_89
@@ -180,10 +203,11 @@ CK89gps::CK89gps (CVehicleObject *v,CK89gauge *g)
   Gauge   = g;
   radi    = 0;
   aState  = K89_PWROF;
-  pow     = 0;
+  Mode    = GPS_MODE_FPLAN;                      // Base mode
+  powr    = 0;
   rGPS    = globals->dbc->GetGPSrequest();
-  fState  = 0;
   vState  = K89_VNA_OFF;
+	v->RegisterGPSR(this);
   //---------Set delimiter fields -----------------------------------
   strcpy(Ident,"....");
   strcpy(Name,"12345678901234567");
@@ -240,31 +264,14 @@ CK89gps::CK89gps (CVehicleObject *v,CK89gauge *g)
   TimZON  = 0;                              // Set UTC
   //-----------Init Flasher ----------------------------------
   mskFS   = K89_ATT_ONCAR;                  // Letter mask
-  Radio   = 0;
-  CDependent::ReadFinished();
   //----------------------------------------------------------
-  SetRadio(radi);
-  Active  = 0;
 }
-//-----------------------------------------------------------------------------
-//  Set Radio Message
-//-----------------------------------------------------------------------------
-void  CK89gps::SetRadio(Tag rad)
-{ gMsg.group  = 'gpsr';
-  gMsg.sender = unId;
-  gMsg.id     = MSG_SETDATA;
-  gMsg.user.u.datatag = 'setg';
-  gMsg.voidData = this;
-  Send_Message(&gMsg);
-  return;
-}
-
 //-----------------------------------------------------------------------------
 //  Free resources
 //-----------------------------------------------------------------------------
 CK89gps::~CK89gps()
-{ Point[0].wpAD = 0;
-  Point[1].wpAD = 0;
+{ //Point[0].wpAD = 0;
+  //Point[1].wpAD = 0;
 }
 //-----------------------------------------------------------------------------
 //  Set Click Handler 
@@ -313,7 +320,6 @@ int CK89gps::ChangeMode(K89_EVENT evn)
       return EnterNAVpage01();
 
     case K89_FPL:
-			if (evn)	return 1;
       InitState(K89_MODE_FPL);
       return EnterFLPpage01();
 
@@ -349,17 +355,19 @@ int CK89gps::ChangeMode(K89_EVENT evn)
 //  State 00:  Power off
 //=============================================================================
 int CK89gps::PowerOFF(K89_EVENT evn)
-{ if ((K89_POW != evn) || (0 == pow))   return 0;
+{	if ((K89_POW != evn) || (0 == powr))   return 0;
   aState  = K89_PWRNA;
   DshNO   = K89_OPEN_DISPLAY;
   Tim01   = 0;
+	TrackGPSEvent(GPSR_EV_PWR,1);
   return 1;
 }
 //-----------------------------------------------------------------------------
 //  Any state:  Power cut
 //-----------------------------------------------------------------------------
 int CK89gps::PowerCUT()
-{ DshNO   = K89_FULL_DISPLAY;
+{ TrackGPSEvent(GPSR_EV_PWR,0);
+	DshNO   = K89_FULL_DISPLAY;
   RazDisplay();
   aState  = K89_PWROF;
   rGPS->Clean();
@@ -378,7 +386,7 @@ float CK89gps::GetOpeningStep()
 //  Init Flight Plan parameters
 //-----------------------------------------------------------------------------
 int CK89gps::PowerONa(K89_EVENT evn)
-{ FPL     =  globals->pln->GetFlightPlan();			//globals->fpl;
+{ 
   if (K89_POW   == evn)         return PowerCUT();
   if (K89_CLOCK != evn)         return 0;
   //-------Let Time to Draw the moving amber rectangles ---------
@@ -466,8 +474,7 @@ int CK89gps::PowerONg(K89_EVENT evn)
       _snprintf(edt,16,"%.0fft",aPos.alt);
       StoreText(edt,K89_LINE1,K89_CLN17);
       //--------------OBS from navigation radio ------
-      Radio = globals->Radio;
-      obs   = (Radio)?(int(Radio->hREF)):(0);
+      obs   = (BUS)?(int(BUS->hREF)):(0);
       _snprintf(edt,16,"%03u°",obs);
       StoreText(edt,K89_LINE2,K89_CLN17);
       FlashWord("Ok ?",K89_LINE3,K89_CLN17);
@@ -579,10 +586,9 @@ int CK89gps::PowerONk(K89_EVENT evn)
       RazDisplay();
       DshNO = K89_PART_DISPLAY;
       StoreText("Leg",   K89_LINE2,K89_CLN03);
-      ClearFlightPlanWPT();
-      Mode    = GPS_MODE_NORMAL;                      // Base mode
+			pMod		= 0;
       vnaWNO  = -1;
-      SelectActiveWaypoint();
+			ModifiedPlan();
       InitVnavWPT();
       RefreshActiveWPT();
       rGPS->obj   = 0;
@@ -617,6 +623,7 @@ int CK89gps::APTpage01(K89_EVENT evn)
       return 1;
   //-----DIR: Enter DIRECT TO mode --------------------------------
   case K89_DIR:
+			rGPS->StopReq();						// Cancel any request
       if (K89_ACT_EDIT == EdMOD)  return 1;
       return EnterDIRpage01(cOBJ);
   //-----CLOCK event  -------------------------------------------
@@ -732,8 +739,8 @@ int CK89gps::EnterAPTpage01()
 { ClearRightDisplay();
   PageHeader(1);
   rCode   = GPS_GT_AIRPORT;
-  rGPS->GetAPT();
-  eorEV   = &CK89gps::EditAPTpage01;
+  rGPS->GetAPT();											// Arm request
+  eorEV   = &CK89gps::EditAPTpage01;	// EOR routine
   SetHandler(K89_GEN_HANDLER,K89_FIELD01,K89_PAG_FD);
   LetFD   = Gauge->GetLetField(1);
   curPOS  = 1;
@@ -772,7 +779,7 @@ int CK89gps::CSRMode01(K89_EVENT evn)
         return 1;
     //------EOR event: End of Request completion ----------
     case K89_EOR:
-        (this->*eorEV)();
+        (this->*eorEV)();				// Call Routine
         Flsiz = 1;
         ReFlash();
         return 1;
@@ -873,7 +880,7 @@ int CK89gps::CSRMode02(K89_EVENT evn)
       break;
     //------EOR event: Request completion -------------------
     case K89_EOR:
-      (this->*eorEV)();
+      (this->*eorEV)();			// Call routine
       ReFlash();
       break;
     //--------See for other modes ---------------------------
@@ -1079,9 +1086,9 @@ int CK89gps::StartAPTp4Back()
 int CK89gps::EnterAPTpage04()
 { nOBJ    = 0;
   pOBJ    = 0;
-  rGPS->GetRWY();
   SetHandler(K89_NUL_HANDLER,0,0);
-  eorEV   = &CK89gps::StartAPTp4ForW;
+	rGPS->GetRWY();													// Arm database request			
+  eorEV   = &CK89gps::StartAPTp4ForW;			// EOR routine
   aState  = K89_APTP4;
   return  1;
 }
@@ -1089,9 +1096,9 @@ int CK89gps::EnterAPTpage04()
 //  Enter AIRPORT PAGE 4 in backward mode
 //--------------------------------------------------------------------
 int CK89gps::BackAPTpage04()
-{ rGPS->GetRWY();
-  SetHandler(K89_NUL_HANDLER,0,0);
-  eorEV   = &CK89gps::StartAPTp4Back;
+{ SetHandler(K89_NUL_HANDLER,0,0);
+	rGPS->GetRWY();													// Arm database request
+  eorEV   = &CK89gps::StartAPTp4Back;			// EOR routine
   aState  = K89_APTP4;
   return  1;
 }
@@ -1275,9 +1282,9 @@ int CK89gps::StartAPTp5Back()
 int CK89gps::EnterAPTpage05()
 { nOBJ    = 0;
   pOBJ    = 0;
-  rGPS->GetCOM();
   SetHandler(K89_NUL_HANDLER,0,0);
-  eorEV   = &CK89gps::StartAPTp5ForW;
+  rGPS->GetCOM();												// Arm database request
+  eorEV   = &CK89gps::StartAPTp5ForW;		// EOR routine
   aState  = K89_APTP5;
   return  1;
 }
@@ -1285,9 +1292,9 @@ int CK89gps::EnterAPTpage05()
 //  Enter AIRPORT PAGE 5 in backward mode
 //--------------------------------------------------------------------
 int CK89gps::BackAPTpage05()
-{ rGPS->GetCOM();
-  SetHandler(K89_NUL_HANDLER,0,0);
-  eorEV   = &CK89gps::StartAPTp5Back;
+{ SetHandler(K89_NUL_HANDLER,0,0);
+	rGPS->GetCOM();												// Arm database request
+  eorEV   = &CK89gps::StartAPTp5Back;		// EOR routine
   aState  = K89_APTP5;
   return  1;
 }
@@ -1405,9 +1412,9 @@ int CK89gps::StartAPTp9Back()
 int CK89gps::EnterAPTpage09()
 { nOBJ    = 0;
   pOBJ    = 0;
-  rGPS->GetILS();
   SetHandler(K89_NUL_HANDLER,0,0);
-  eorEV   = &CK89gps::StartAPTp9ForW;
+  rGPS->GetILS();												// Arm database request
+  eorEV   = &CK89gps::StartAPTp9ForW;		// EOR routine
   aState  = K89_APTP9;
   return  1;
 }
@@ -1472,10 +1479,10 @@ int CK89gps::RADpage01(K89_EVENT evn)
 int CK89gps::EnterVORpage01()
 { PageHeader(1);
   rCode   = GPS_GT_VOR;
-  rGPS->GetVOR();
   SetHandler(K89_GEN_HANDLER,K89_FIELD01,K89_PAG_FD);
-  eorEV   = &CK89gps::EditRADpage01;
-  preSF   = &CK89gps::EnterVORpage01;
+  rGPS->GetVOR();											// Arm gps request
+  eorEV   = &CK89gps::EditRADpage01;	// EOR routine
+  preSF   = &CK89gps::EnterVORpage01;	// Previous routine
   curPOS  = 1;
   LetFD   = Gauge->GetLetField(1);
   aState  = K89_RADP1;
@@ -1487,8 +1494,8 @@ int CK89gps::EnterVORpage01()
 int CK89gps::EnterNDBpage01()
 { PageHeader(1);
   rCode   = GPS_GT_NDB;
-  rGPS->GetNDB();
   SetHandler(K89_GEN_HANDLER,K89_FIELD01,K89_PAG_FD);
+  rGPS->GetNDB();
   eorEV   = &CK89gps::EditRADpage01;
   preSF   = &CK89gps::EnterNDBpage01;
   curPOS  = 1;
@@ -1521,7 +1528,7 @@ void CK89gps::EditNAVheader()
 //  Edit NAV Page 01
 //-----------------------------------------------------------------------------
 int CK89gps::EditRADpage01()
-{ rGPS->SetReqCode(NO_REQUEST);
+{ //rGPS->StopReq();
   ClearRightDisplay();
   cOBJ  = rGPS->obj.Pointer();
   wptTO = cOBJ;
@@ -1668,35 +1675,36 @@ int CK89gps::EnterNAVpage01()
 //--------------------------------------------------------------------
 int CK89gps::EditNAVpage01()
 { char  edt[16];
-  char *nul = "    ";
   //------Edit Line 0 -----------------------------------
-  U_CHAR dot = (actWNO != -1)?('\x82'):('\x84');
+  U_CHAR dot = markNV89[Mode];			
   if (0 == actWPT)  return EditWPTNone();
-  char *idfr =  nul;				//(Mode == GPS_MODE_NORMAL)?(FPL->GetTermIdent()):(nul);
+  char *idfr =  prvIDN;
   char *idto =  actWPT->GetIdent();
-  _snprintf(edt,16,"%4s",idfr);
-  StoreText(edt,K89_LINE0,K89_CLN08);
-  if (wDIS <= 3) Prop = K89_ATT_FLASH;
+  StoreText(idfr,K89_LINE0,K89_CLN08);
+  if (actDIS <= insDIS) Prop = K89_ATT_FLASH;
   StoreChar(dot, K89_LINE0,K89_CLN13);
   _snprintf(edt,16,"%4s",idto);
   StoreText(edt,K89_LINE0,K89_CLN16);
   //-----Edit Line 1 --(CDI or Direction)----------------
   FlashChar('>',K89_LINE1,K89_CLN06,1);
-  cdiDEV  = ComputeDeviation(wOBS,aTRK,&cdiST, 1); 
+  cdiDEV  = ComputeDeviation(wOBS,actRAD,&cdiST, 1); 
   EditNAVP01L02();
   EditTrack();
   //-----Edit Line 3 --(CAP and ETE ) ------------------
-  EditLegETE(edt,wDIS,Speed);
+  EditLegETE(edt,actDIS,Speed);
   StoreText(edt,K89_LINE3,K89_CLN17);
   FlashChar('>',K89_LINE3,K89_CLN06,2);
   //----Edit the current option ------------------------
   switch (OpNAV)  {
+		//--- option TO -------------------
     case 0:
         OpFlag = K89_FLAG_TO;
-        return EditBearing(actRTE,K89_LINE3,K89_CLN07);
+        return EditBearing(actRAD,K89_LINE3,K89_CLN07);
+		//--- option FROM -----------------
     case 1:
         OpFlag = K89_FLAG_FROM;
-        return EditBearing(actRTE,K89_LINE3,K89_CLN07);
+        return EditBearing(actRAD,K89_LINE3,K89_CLN07);
+		//--- option VNAV -----------------
     case 2:
         return EditVNAVstatus(K89_LINE3,  K89_CLN07);
   }
@@ -1709,19 +1717,16 @@ int CK89gps::EditWPTNone()
 { char edt[16];
   StoreText("No active WPT",K89_LINE0,K89_CLN07);
   OpFlag  = K89_FLAG_NONE;
-  aCAP    = 0;
   cdiDEV  = 0;
-  wDIS    = -1;
   EditNAVP01L02();
   EditTrack();
-  EditBearing(aCAP,K89_LINE3,K89_CLN07);
-  EditLegETE(edt,wDIS,Speed);
+  EditBearing(actRAD,K89_LINE3,K89_CLN07);
+  EditLegETE(edt,-1,Speed);
   StoreText(edt,K89_LINE3,K89_CLN17);
   return 1;
 }
 //--------------------------------------------------------------------
 //  Edit  FLY direction
-//  TODO compute flight direction
 //--------------------------------------------------------------------
 int CK89gps::EditFlyDirection()
 { char  edt[16];
@@ -1730,7 +1735,7 @@ int CK89gps::EditFlyDirection()
   if (K89_FLAG_NONE == cdiST) strcpy(edt," Fly _   __._nm");
   else  
   { float rad = DegToRad(cdiDEV);
-    dis = wDIS * sin(rad);
+    dis = actDIS * sin(rad);
     to  = (dis < 0)?('R'):('L');
     dis = abs(dis);
     if (dis > 99) _snprintf(edt,16," Fly %c   %.0fnm",to,dis);
@@ -1792,9 +1797,9 @@ void CK89gps::EditFTime(char *edt)
 { int sec = 0;                          //FPL->GetFlightTime();
   int hor = (sec / 3600);
   int min = (sec - (hor * 3600)) / 60;
-  if (0 == fState)    strcpy(edt,"__:__");
-  else if (hor > 24)  _snprintf(edt,16,"%4uh",hor);
-  else                _snprintf(edt,16,"%02u:%02u",hor,min);
+//  if (0 == fState)    strcpy(edt,"__:__");
+//  else if (hor > 24)  _snprintf(edt,16,"%4uh",hor);
+//  else                _snprintf(edt,16,"%02u:%02u",hor,min);
   return;
 }
 //=============================================================================
@@ -1920,8 +1925,8 @@ void CK89gps::EditDepartTime(char *edt)
 //-----------------------------------------------------------------------------
 int CK89gps::EditNAVpage03()
 { char edt[16];
-  float dis = wDIS;												//(actWNO != -1)?(FPL->GetTotalDistance()):(wDIS);
-  char *idn = ("____");										//(actWNO != -1)?(FPL->GetLastIdent()):("____");
+  float dis = actDIS;												//(activeWNO != -1)?(FPL->GetTotalDistance()):(wDIS);
+  char *idn = ("____");										//(activeWNO != -1)?(FPL->GetLastIdent()):("____");
   if  (0 != actWPT) idn = actWPT->GetIdent();
   SDateTime st = globals->tim->GetUTCDateTime();
   _snprintf(edt,16,"UTC  %02u:%02u",st.time.hour,st.time.minute);
@@ -1994,11 +1999,12 @@ int CK89gps::DIRpage01(K89_EVENT evn)
 //  Enter DIR page 01
 //  NOTE: 
 //    LetFD should be correctly set  before entering here
-//    dWPT  is the candidate waypoint
+//    dirWPT  is the candidate waypoint
 //----------------------------------------------------------------------------
 int CK89gps::EnterDIRpage01(CmHead *obj)
-{ HeaderEnt("DIRECT TO:",K89_CLN09);
-  dWPT    = obj;
+{ wptTO = obj;	
+	HeaderEnt("DIRECT TO:",K89_CLN09);
+  dirWPT    = obj;
   SetIdentity(obj);
   //-------Init waypoint identifier -------------------------------------
   rCode   = NO_REQUEST;
@@ -2015,7 +2021,7 @@ int CK89gps::ClearIdent()
 { char *dst = LetFD->aChar;
   while (*dst)  *dst++ = '_';
   FlashText(LetFD->aChar,LetFD->aDisp);
-  dWPT  = 0;
+  dirWPT  = 0;
   return 0;
 }
 //----------------------------------------------------------------------------
@@ -2072,7 +2078,7 @@ int CK89gps::LeaveDIRmode()
         return 0;
     //---- return from dupplicate pages --------------------
     case 2:
-        if (dWPT.Assigned()) return SetDIRwaypoint();
+        if (dirWPT.Assigned()) return SetDIRwaypoint();
         return EnterDIRpage01(0);      // Re enter DIR TO
   }
   return 0;                         
@@ -2087,26 +2093,18 @@ int CK89gps::LeaveDIRmode()
 //  and the flight plan has not changed.
 //----------------------------------------------------------------------------
 int CK89gps::SetDIRwaypoint()
-{ if (dWPT.Assigned())
-  { Mode  = GPS_MODE_DIRECT;                      // Mode is Direct To
-    dWPT->Refresh(FrameNo);                       // Actualize data
-    int No  = 0;										//FPL->NbInFlightPlan(dWPT.Pointer(),1);
-    fWPT    = Point[0].wpAD;                        // Save flight plan active wp
-    //--Assign direct waypoint parameters --------------------------
-    Point[1].wpNO = No;                           // Waypoint number
-    Point[1].wpAD = dWPT;                         // Descriptor
-    Point[1].wpRT = dWPT->GetRadial();            // Direct route to         
-    dWPT  = 0;                                    // free candidate 
-   } 
-  //---No more Direct TO.  Revert to FLIGHT Plan if any ------------
-  else  
-  { Mode = GPS_MODE_NORMAL;
-    Point[1].wpNO = -1;
-    Point[1].wpAD = 0;
-    //FPL->NbInFlightPlan(fWPT.Pointer(),1);         // recover original active wp
-  }
+{ //--- Check for real waypoint ------------------------------------
+	if (dirWPT.Assigned())
+	{	PushMode(GPS_MODE_DIRECT);
+		FPL->AssignDirect(dirWPT.Pointer());
+		actWPT	   = dirWPT.Pointer();
+		dirWPT  = 0;
+	}
+	else
+	{ PopMode();
+		if (Mode == GPS_MODE_FPLAN) FPL->RestoreNode();
+	}
   //--In both cases, VNAV is not valid anymore ---------------------
-  SelectActiveWaypoint();               // New active waypoint
   InitVnavWPT();                        // Reset VNAV
   wptTO = actWPT;                       // For calculator
   return EnterNAVpage01();
@@ -2153,14 +2151,14 @@ int CK89gps::EnterDUPpage02()
 { char edt[16];
   ClearRightDisplay();
   //-----Edit IDENT with 4 character (padding with spaces) --
-  FormatIdent(dWPT.Pointer(),K89_LINE0,K89_CLN07);
+  FormatIdent(dirWPT.Pointer(),K89_LINE0,K89_CLN07);
   //----Edit name with padding spaces -----------------------
-  FormatLabel(dWPT.Pointer(),K89_LINE1,K89_CLN06,Name);
+  FormatLabel(dirWPT.Pointer(),K89_LINE1,K89_CLN06,Name);
   //---------------------------------------------------------
-  _snprintf(edt,16,"% 6uft",int(dWPT->GetElevation()));
+  _snprintf(edt,16,"% 6uft",int(dirWPT->GetElevation()));
   StoreText(edt,K89_LINE0,K89_CLN15);
   //----------------------------------------------------------
-  char *loc = dWPT->GetCountry();
+  char *loc = dirWPT->GetCountry();
   strncpy(edt,loc,4);
   edt[2]  = 0;
   StoreText(edt,K89_LINE3,K89_CLN06);
@@ -2179,12 +2177,12 @@ int CK89gps::DUPpage01(K89_EVENT evn)
         return CursorDUPchange();
     //-------ENTER:  select the candidate WPT from the stack ---------
     case K89_ENT:
-        dWPT  = Stack[curPOS];
+        dirWPT  = Stack[curPOS];			
         EnterDUPpage02();
         return 1;
     //-------CLR: ---- Return to caller with no waypoint -------------
     case K89_CLR:
-        dWPT  = 0;
+        dirWPT  = 0;
         PopContext();
         return (this->*preSF)();
     //------NRS ---Nearest mode ------------------------------------
@@ -2206,7 +2204,7 @@ int CK89gps::EnterDUPpage01(PreFN cal)
   preSF   = cal;
   SetHandler(K89_NUL_HANDLER,0,0);
   MaxNO   = rGPS->wptQ.GetNbrObj();
-  dWPT    = rGPS->wptQ.GetFirst();
+  dirWPT  = rGPS->wptQ.GetFirst();
   if (1 == MaxNO) return EnterDUPpage02();
   curNO   = 0;
   LimNO   = (MaxNO > 3)?(MaxNO - 3):(0);
@@ -2240,7 +2238,7 @@ int CK89gps::EditWPTSlot(short lin, CmHead *wpt)
   Prop  = (lin == curPOS)?(K89_ATT_FLASH):(K89_ATT_NONE);
   _snprintf(edt,16,"%2u %-4s %s %s",No,wpt->GetIdent(),typ,wpt->GetCountry());
   StoreText(edt,lin,K89_CLN10);
-  Stack[lin]  = wpt;
+  Stack[lin]  = wpt;									// Save in stack
   return 1;
 }
 //---------------------------------------------------------------------
@@ -2384,19 +2382,16 @@ int CK89gps::FPLpage01(K89_EVENT evn)
   switch (evn)  {
   //---CLOCKevent: refresh page ----------------------------------
   case K89_CLOCK:
-       ClearRightDisplay();
-      //if (FPL->NotSame(serial)) return EnterFLPpage01();
+      ClearRightDisplay();
       return EditFlightPage();
   //---PAGE event:  Change displayed nodes -----------------------
   case K89_PAG:
-      if (evn) return 1;	//if (FPL->NotStable()) return 1;
-      if (0 == curPOS)  ChangeFPLnode();
-      else              ChangeFPLcursor();
+      if (0 == curPOS)  BrowseFPLnode();
+      else              BrowseFPLpage();
       return 1;
   //---CSR event: Swap cursor on option --------------------------
   case K89_CSR:
-			if (evn)	return 1; //      if (FPL->NotStable()) return 1;
-      if (0 == curPOS)  ChangeFPLcursor();
+      if (0 == curPOS)  BrowseFPLpage();
       else              curPOS = 0;
       return 1;
   //---CLR event: Change option ----------------------------------
@@ -2410,7 +2405,7 @@ int CK89gps::FPLpage01(K89_EVENT evn)
   case K89_DIR:
     { if ((curPOS < 1) || (curPOS > 4))     return 1;
       if (IsChar(' ',(curPOS-1),K89_CLN09)) return 1;
-      return EnterDIRpage01(Stack[curPOS - 1]);
+      return EnterDIRpage01(Stack[curPOS - 1]);  /// Enter waypoint
     }
   //------NRS ---Nearest mode ------------------------------------
   case K89_NRS:
@@ -2431,47 +2426,52 @@ int CK89gps::FPLpage01(K89_EVENT evn)
 //  Enter flight plan mode
 //-----------------------------------------------------------------------------
 int CK89gps::EnterFLPpage01()
-{ ClearRightDisplay();
+{ FPL     =  mveh->GetFlightPlan();	
+	ClearRightDisplay();
   PageHeader(1);
   SetHandler(K89_NUL_HANDLER,0,0);
   OpFPL   = 0;
   curPOS  = 0;
   aState  = K89_FPLP1;
-	if (aState)	return EditNoFplan();		//  if (FPL->NotStable()) return EditNoFplan();
-  serial  = 0;			//FPL->GetSerial();
-  fpMax   = 0;			//FPL->GetSize();
-  rGPS->wptNo = Point[0].wpNO;
   EditFlightPage();
   return 1;
 }
 //---------------------------------------------------------------------
 //  Change Cursor to next waypoint slot
+//	Cycle cursor to line 0-1-2-3 and DIS label (NOTE curPOS is one ahead)
+//	skip empty line
+//	Store potential direct to in wptTO
 //---------------------------------------------------------------------
-int CK89gps::ChangeFPLcursor()
+int CK89gps::BrowseFPLpage()
 { if (2 > fpMax)    return 1;
   curPOS++;
   if (curPOS == 6)  curPOS = 1;
   if (curPOS == 5)  return 1;
+	//--- On empty line column 9 is a space rather than ':'  -----
   if (IsChar(' ',(curPOS - 1), K89_CLN09)) curPOS = 5;
-  wptTO = Stack[curPOS - 1];
+  else wptTO = Stack[curPOS - 1];
   return 1;
 }
 //---------------------------------------------------------------------
 //  Change Waypoint
+//	Scroll attention (flash) throught the way point list
+//	under user action
 //---------------------------------------------------------------------
-int CK89gps::ChangeFPLnode()
-{ short Max = (fpMax > 4)?(fpMax - 4):(0);
-  short No  = rGPS->wptNo;
+int CK89gps::BrowseFPLnode()
+{ if (0 == basWP)		return 1;					// No flight plan
+	int No = basWP->GetSequence();
   switch(msDIR) {
   case +1:
-    if (No >= Max)   return 1;
-    rGPS->wptNo++;
-    break;
+		No += 4;
+    if (!FPL->Exist(No))   return 1;
+    basWP	= FPL->NextNode(basWP);
+    return 1;
 
   case -1:
-    if (No == 0)     return 1;
-    rGPS->wptNo--;
-    break;
+    No -= 1;
+    if (!FPL->Exist(No))	 return 1;
+		basWP	= FPL->PrevNode(basWP);
+    return 1;
   }
   return 1;
 }
@@ -2484,23 +2484,19 @@ int CK89gps::EditNoFplan()
 }
 //---------------------------------------------------------------------
 //  Edit Flight Plan in forward mode
+//	NOTE: We must show active waypoint if one exist, except when
+//				user is scrolling throught the list
 //---------------------------------------------------------------------
 int CK89gps::EditFlightPage()
-{ int a = 1;
-	if (a)	return 1;
-	//if (FPL->NotStable()    ) return 1;
+{ if (FPL->IsEmpty())	return EditNoFplan();
   short lin = 0;
-  short No  = rGPS->wptNo;
-  CWPoint *wpt;
-  while ((No < fpMax) && (lin != 3))
-  { wpt  = 0;						//FPL->GetWaypoint(No++);
-    Stack[lin]  = wpt->GetDBobject();
-    EditFPLSlot(lin++,wpt);
+  CWPoint *wpt = basWP;
+  while (lin != 3)
+  { if (!EditFPLSlot(lin++,wpt))	return 1;
+		wpt  = FPL->NextNode(wpt);
   }
-  if (No == fpMax)  return 1;
-  wpt = 0;			//FPL->GetLastWaypoint();
+  wpt = FPL->LastNode();
   EditFPLSlot(lin,wpt);
-  Stack[lin]  = wpt->GetDBobject();
   return 1;
 }
 //---------------------------------------------------------------------
@@ -2510,8 +2506,10 @@ int CK89gps::EditFPLoption(char *edt, CWPoint *wpt)
 { switch (OpFPL)  {
     //--------Cumulated distance -----------------
     case 0:
-      { float dis = 0;			//wpt->GetTotalDis();
+      { float dis = wpt->GetSumDistance();
         if (dis > 999)  _snprintf(edt,16,"%5u ",int(dis));
+				else
+    		if (dis == 0)		strcpy(edt,"    ");
         else            _snprintf(edt,16,"%.1f ",dis);
         return 1;
       }
@@ -2548,27 +2546,25 @@ int CK89gps::EditFPLoption(char *edt, CWPoint *wpt)
 //  Edit Marker for this Waypoint
 //---------------------------------------------------------------------
 void CK89gps::EditFPLmark(short lin,CWPoint *wpt)
-{ char mk = ' ';
-  if (-1 == actWNO)    return;              // DIRECT TO (not in FPL)
-  short No = wpt->GetWaypointNo();          // Current waypoint
-  short fr = 0;			//FPL->GetNoTerminated();        // Last terminated
-  short to = actWNO;                        // Active waypoint
-  if (fr != (to-1)) fr = -1;                // No From
-  if (No == fr) mk = '\x85';                // From marker
-  if (No == to) mk = '\x86';                // To marker
-//  if ((mk == '\x86') && wpt->IsInside()) Prop = K89_ATT_FLASH;
+{ if (FPL->Inactive())	return;							// Inactive flight plan
+	char mk = markWP89[FPL->NodeType(wpt)];		// Marker
+	if (actDIS <= insDIS) Prop = K89_ATT_FLASH;
   StoreChar(mk,lin,K89_CLN06);
   return;
 }
 //---------------------------------------------------------------------
 //  Edit Waypoint SLOT
+//	Return true if more waypoints are expected
 //---------------------------------------------------------------------
-int CK89gps::EditFPLSlot(short lin,CWPoint *wpt)
-{ char edt[16];
-  CmHead *obj    = 0;			//wpt->GetDBobject();
-  short      No  = 1;		//wpt->GetWaypointNo() + 1;
-  const char      *idn = (obj)?(obj->GetIdent()):("????");
-  float      dis = 0;			//wpt->GetTotalDis();
+bool CK89gps::EditFPLSlot(short lin,CWPoint *wpt)
+{ if (0 == wpt)			return false;
+  bool rs = !wpt->IsLast();
+	//--- Edit current waypoint -------------------
+	char edt[16];
+  CmHead *obj = wpt->GetDBobject();
+  short    No = wpt->GetSequence();
+  char   *idn	= (obj)?(obj->GetIdent()):("????");
+	Stack[lin]  = obj;
   _snprintf(edt,16,"%2u:%-4s",No,idn);
   if ((lin + 1) == curPOS)  Prop = K89_ATT_FLASH;
   StoreText(edt,lin,K89_CLN07);
@@ -2577,11 +2573,70 @@ int CK89gps::EditFPLSlot(short lin,CWPoint *wpt)
   { Prop  = (5 == curPOS)?(K89_ATT_FLASH):(K89_ATT_YELOW);
     _snprintf(edt,16,">%s",fplTAB[OpFPL]);
     StoreText(edt,lin,K89_CLN16);
-    return 1;
+    return rs;
   }
   EditFPLoption(edt,wpt);
   StoreText(edt,lin,K89_CLN16);
-  return 1;
+  return rs;
+}
+//---------------------------------------------------------------------
+//  Flight Plan is modified
+//	Notification coming from current flight plan
+//---------------------------------------------------------------------
+void CK89gps::ModifiedPlan()
+{	FPL     =  mveh->GetFlightPlan();
+	Mode		= GPS_MODE_FPLAN;
+	actWP		= FPL->GetActiveNode();
+	basWP		= FPL->HeadNode();									// Base waypoint
+  fpMax   = FPL->Size();
+	ActiveWaypoint(actWP,false);
+	return;
+}
+//---------------------------------------------------------------------
+//  Active waypoint is modified
+//	Notification coming from active flight plan
+//	NOTE when a direct TO waypoint is terminated then the next waypoint 
+//			is:
+//	Same waypoint if the waypoint is not part of the flight plan
+//	Otherwise, the next waypoint from the flight plan or 0
+//
+//---------------------------------------------------------------------
+void CK89gps::ActiveWaypoint(CWPoint *wpt,bool endir)
+{	actWP	= wpt;														// Save it
+	DataFromPlan(wpt);
+	prvIDN		= FPL->PreviousIdent(wpt);
+	insDIS		= FPL->GetInDIS();
+	//--- Check for end of DIRECT TO mode -------------
+	if (endir)	PushMode(GPS_MODE_FPLAN);
+	//--- Now assign the active waypoint --------------
+	actWPT = (wpt)?(wpt->GetDBobject()):(0);
+	if (0 == wpt)		return;									// Ignore it
+	//--- first inhibit user scrol mode ---------------
+	if (aState == K89_FPLP1)	curPOS	= 0;
+	if (0 == basWP)	return;
+	//--- check if base waypoint is still OK ----------
+	int asq = wpt->GetSequence();
+	int bsq = basWP->GetSequence();
+	//-- check if active is in range of base ----------
+	bool ok = (asq >= bsq) &&  (asq < (bsq+3));
+	if (ok)					return;			//Still visible
+	//--- Check for scrolling one position ------------
+	ok = (asq == (bsq + 3));
+	if (ok) {basWP = FPL->NextNode(basWP); return;}
+	//--- Change base waypoint ------------------------
+	basWP	= FPL->BaseWPT(basWP);
+	return;
+}
+//------------------------------------------------------------------
+//  Refresh active waypoint
+//------------------------------------------------------------------
+void CK89gps::DataFromPlan(CWPoint *wpt)
+{ Speed			= mveh->GetPreCalculedKIAS();
+	aCAP			= mveh->GetMagneticDirection();
+	actRTE		= (wpt)?(wpt->GetDTK()):(0);  
+	actRAD		= (wpt)?(wpt->GetCAP()):(0);
+	actDIS		= (wpt)?(wpt->GetPlnDistance()):(-1);
+  return;
 }
 //=============================================================================
 //  WPT mode
@@ -2632,9 +2687,9 @@ int CK89gps::WPTpage01(K89_EVENT evn)
 //------------------------------------------------------------------
 int CK89gps::EnterWPTpage01()
 { rCode   = GPS_GT_WPT;
-  rGPS->GetWPT();
   SetHandler(K89_GEN_HANDLER,K89_FIELD01,K89_PAG_FD);
-  eorEV   = &CK89gps::EditWPTpage01;
+  rGPS->GetWPT();											// Arm database request
+  eorEV   = &CK89gps::EditWPTpage01;	// EOR routine
   OpFlag  = K89_FLAG_TO;
   aState  = K89_WPTP1;
   LetFD   = Gauge->GetLetField(3);
@@ -2665,7 +2720,7 @@ int CK89gps::EditWPTAsNRS()
 int CK89gps::EditWPTpage01()
 { char edt[8];
   _snprintf(edt,8,"%2d",curNO + 1);
-  rGPS->SetReqCode(NO_REQUEST);
+ // rGPS->StopReq();
   ClearRightDisplay();
   PageHeader(1);
   cOBJ  = rGPS->obj.Pointer();
@@ -2776,7 +2831,7 @@ int CK89gps::ALTpage02(K89_EVENT evn)
         return 1;
     //------FD2 Change cursor. Except if not a FPL waypoint ---
     case K89_FD2:
-        if (actWNO == -1) return 1;
+        if (IsDirectMode()) return 1;
         curPOS  = 2;
         return GetNextALTWaypoint();
     //------FD3 Change cursor ---------------------------------
@@ -2812,8 +2867,7 @@ int CK89gps::ALTpage02(K89_EVENT evn)
 //  Init Vnav Waypoint
 //-----------------------------------------------------------------------------
 void CK89gps::InitVnavWPT()
-{ vnaWPT  = actWPT;
-  vnaWNO  = actWNO;
+{ vnaWPT  = 0;											//actWPT;
   AltiTG  = aPos.alt;
   OffsVL  = 0;
   GrndSP  = K89_GSP_MIN;
@@ -2982,12 +3036,14 @@ int CK89gps::UpdateRPTfield()
 //  Modify the Target waypoint in FPL
 //-----------------------------------------------------------------------------
 int CK89gps::GetNextALTWaypoint()
-{ short   No  = vnaWNO + msDIR;
-  if (No < actWNO)   return 0;
+{ /*
+	short   No  = vnaWNO + msDIR;
+  if (No < activeWNO)   return 0;
   if (No >= fpMax)   return 0;
   vnaWNO  = No;
   vnaWPT  = 0;			//FPL->GetDBObject(No);
   vState  = K89_VNA_OFF;
+	*/
   return 1;
 }
 //-----------------------------------------------------------------------------
@@ -3037,7 +3093,7 @@ int CK89gps::ChangeALTcursor()
       curPOS--;
       break;
   }
-  if ((2 == curPOS) && (actWNO == -1)) curPOS += msDIR;
+  if ((2 == curPOS) && (IsDirectMode())) curPOS += msDIR;
   return 1;
 }
 //=============================================================================
@@ -3198,9 +3254,9 @@ int CK89gps::SearchCALwaypoint()
 //  Set the new waypoint returned by the dupplicated page or the request
 //-----------------------------------------------------------------------------
 int CK89gps::SetCALwaypoint()
-{ EditCALident(LetFD,dWPT.Pointer());
-  if (LetFD->aChar == IdFR)  wptFR = dWPT;
-  if (LetFD->aChar == IdTO)  wptTO = dWPT;
+{ EditCALident(LetFD,dirWPT.Pointer());
+  if (LetFD->aChar == IdFR)  wptFR = dirWPT;
+  if (LetFD->aChar == IdTO)  wptTO = dirWPT;
   if (wptFR.Assigned())  OpCAL = 0;
   ComputeCALparameters();
   return 1;
@@ -3629,6 +3685,21 @@ int CK89gps::PushContext()
   return 1;
 }
 //----------------------------------------------------------------------------
+//	Push actual mode
+//----------------------------------------------------------------------------
+void CK89gps::PushMode(U_CHAR m)
+{	pMod = Mode;
+	Mode = m;
+	return;
+}
+//----------------------------------------------------------------------------
+//	Pop actual mode
+//----------------------------------------------------------------------------
+void CK89gps::PopMode()
+{	Mode = pMod;
+	pMod = 0;
+}
+//----------------------------------------------------------------------------
 //  Restore previous context
 //  aState is set to 0 to indicate that context is free
 //----------------------------------------------------------------------------
@@ -3758,50 +3829,11 @@ int CK89gps::EditTimeZone(char *edt,float lon)
   return dt;
 }
 //------------------------------------------------------------------
-//  Clear active waypoint
-//------------------------------------------------------------------
-void CK89gps::ClearFlightPlanWPT()
-{ Point[0].wpNO = -1;     // No waypoint
-  Point[0].wpAD =  0;     // No descriptor
-  Point[0].wpRT =  0;     // No route
-  Point[0].wpDR =  0;
-  return;
-}
-//------------------------------------------------------------------
-//  Track flight plan waypoint
-//  Flight plan active waypoint is GPSpoint[0].
-//  There is an active waypoint only when a non empty active
-//  flight plan is present
-//------------------------------------------------------------------
-void CK89gps::UpdateWaypointData()
-{ //FPL->GetActiveParameters(*Point);
-  if (Mode == GPS_MODE_NORMAL)  return;
-  //---Update "direct to" data --------------
-  CmHead *obj = Point[1].wpAD.Pointer();
-  obj->Refresh(FrameNo);
-  Point[1].wpRT = obj->GetRadial();
-  Point[1].wpDR = obj->GetRadial();
-  return;
-}
-//------------------------------------------------------------------
-//  Select active waypoint
-//------------------------------------------------------------------
-void CK89gps::SelectActiveWaypoint()
-{ actWPT  = Point[Mode].wpAD.Pointer();
-  actWNO  = Point[Mode].wpNO;
-  actRTE  = Point[Mode].wpRT;
-  actDIR  = Point[Mode].wpDR;
-  //----Refresh vnav if needed -------------------
-  if (actWNO != vnaWNO) InitVnavWPT();
-  return;
-}
-//------------------------------------------------------------------
 //  Set Route Mode
 //------------------------------------------------------------------
 void CK89gps::ModeLEG()
 { StoreText("Leg",K89_LINE2,K89_CLN03);
   wOBS  = actRTE;
-  aTRK  = actDIR;
   return;
 }
 //------------------------------------------------------------------
@@ -3809,9 +3841,8 @@ void CK89gps::ModeLEG()
 //------------------------------------------------------------------
 void CK89gps::ModeOBS()
 { char  edt[8];
-  float obs = (Radio)?(float(Radio->xOBS)):(0);               // Get current OBS
+  float obs = (BUS)?(float(BUS->xOBS)):(0);               // Get current OBS
   wOBS  = obs;
-  aTRK  = actDIR;
   int vobs   = Round(obs);
   _snprintf(edt,8,"%03u",vobs);
   StoreText(edt,K89_LINE2,K89_CLN03);
@@ -3824,14 +3855,12 @@ void CK89gps::ModeOBS()
 //-----------------------------------------------------------------------------
 void CK89gps::RefreshActiveWPT()
 { char  edt[16];
-  aCAP  = mveh->GetMagneticDirection();		//MagneticDirection();
-  SelectActiveWaypoint();
   const char *idn = (0 == actWPT)?("____"):(actWPT->GetIdent());
-  //---Init distance when active waypoint exist --
-  wDIS = (actWPT)?(actWPT->GetNmiles()):(-1);
   if (K89_MSGP1 == aState)  return;
+	//--- Set Mode ---------------------------------
+	(modOBS)?(ModeOBS()):(ModeLEG());
   //------Refresh left screen part ---------------
-  EditDistance(edt,wDIS);
+  EditDistance(edt,actDIS);
   Prop  = K89_ATT_NBOLD;
   StoreText(edt,K89_LINE0,K89_CLN00);
   _snprintf(edt,8,"%-4s",idn);
@@ -3839,11 +3868,7 @@ void CK89gps::RefreshActiveWPT()
   //-----MSG alert ------------------------------
   if (msgNO)  wrnNO = 2;
   FlashWord(wrnTAB[wrnNO],K89_LINE2,K89_CLN00);
-  //-----OBS or LEG mode ------------------------
-  StoreText("Leg",K89_LINE2,K89_CLN03);
-  if (0 == modOBS)  return ModeLEG();
-  //--- We are in OBS mode ----------------------
-  return ModeOBS();
+	return;
 }
 //-----------------------------------------------------------------------------
 //  DUTY TASK called at each cycle
@@ -4001,13 +4026,14 @@ void CK89gps::EditFuel()
 void CK89gps::EditTrack()
 { char edt[16];
   int     dtk = Round(wOBS);        // Desired track
-  int     atk = Round(aTRK);        // Actual bearing
+  int     atk = Round(aCAP);        // Actual bearing
   if (cdiST == K89_FLAG_NONE)  strcpy(edt,"___°");
   else                        _snprintf(edt,16,"%03u°",dtk);
   StoreText(edt,K89_LINE2,K89_CLN10);
-  if (cdiST == K89_FLAG_NONE)   strcpy(edt,"___°");
+  if (cdiST == K89_FLAG_NONE)  strcpy(edt,"___°");
   else                        _snprintf(edt,16,"%03u°",atk);
   StoreText(edt,K89_LINE2,K89_CLN18);
+	U_SHORT *test= disLN[K89_LINE2] + K89_CLN16;
   return ;
 }
 //----------------------------------------------------------------------------
@@ -4205,27 +4231,25 @@ void CK89gps::CopyDisplay(U_SHORT *src,U_SHORT *des)
 //  Time slice routine 
 //-----------------------------------------------------------------------------
 void  CK89gps::TimeSlice (float dT,U_INT FrNo)
-{ //-----Update Power status ------------------------------
-  pow   = Active;
-  if (0 == pow)   {PowerCUT(); return;}
+{ CDependent::TimeSlice(dT,FrNo);
+	GPSRadio::UpdateTracking(dT,FrNo);
+	//-----Update Power status ------------------------------
+  powr   = active;
+  if (0 == powr)   {PowerCUT(); return;}
   //-----Update flasher -----------------------------------
   mskFS = K89FLASH[globals->clk->GetON()];
-  //-----Update flight plan state after power ON ----------
-	/*
-  if (aState > K89_PWRNA)
-  {   Speed   = FPL->GetSpeed();
-      fState  = FPL->IsStarted();
-  }
-	*/
   aPos  = mveh->GetPosition();					//globals->geop;
   //-----Refresh active waypoint --------------------------
   if (aState >= K89_APTP1)
-  { UpdateWaypointData();
+  { //UpdateWaypointData();
     RefreshActiveWPT();
     RefreshVNAVpoint();
   }
   //-----Call End Of Request Event --------------------------------------------
-  if (rGPS->EndOfReq()) { rGPS->PushCode(); (this->*sfn[aState])(K89_EOR); }
+  if (rGPS->EndOfReq()) 
+	{		rGPS->PushCode();												// Push previous code
+		 (this->*sfn[aState])(K89_EOR);						// Call EOR routine
+	}
   //-----Call the Clock and Beat Events ---------------------------------------
   (this->*sfn[aState])(K89_CLOCK);
   return;
@@ -4234,28 +4258,57 @@ void  CK89gps::TimeSlice (float dT,U_INT FrNo)
 //  Display data
 //--------------------------------------------------------
 void CK89gps::Probe(CFuiCanva *cnv)
-{ char edt[64];
-  _snprintf(edt,32,"aWPT: %d",actWNO);
-  cnv->AddText( 1,edt,1);
+{ char  edt[64];
+	char *act = (actWPT)?(actWPT->GetIdent()):("____");
+	CDependent::Probe(cnv,0);
+	cnv->AddText(1,1,"Mode  :%s",modeK89[Mode]);
+	cnv->AddText(1,1,"actWPT:%s",act);
   _snprintf(edt,32,"wOBS: %03d",int(wOBS));
   cnv->AddText( 1,edt,1);
   _snprintf(edt,32,"aCAP: %03d",int(aCAP));
   cnv->AddText( 1,edt,1);
+	GPSRadio::Probe(cnv);
   return;
 }
 //=====================================================================================
-// CK89radio susbsytem
+//	GPSR State table
 //=====================================================================================
-CK89radio::CK89radio (void)
-{ 
-  TypeIs (SUBSYSTEM_KLN89_GPS_RADIO);
-  GPS = 0;
+char *gpsrETA[]= {
+	"PWOF",					// 0 Power off
+	"STBY",					// 1 Standby
+	"TRAK",					// 2 Tracking
+	"LAND",					// 3 Landing
+	"NONE",					// 4 Out of Service
+};
+//=====================================================================================
+// GPSRadio susbsytem
+//	To interface all GPS
+//=====================================================================================
+GPSRadio::GPSRadio (void)
+{ TypeIs (SUBSYSTEM_GPS_RADIO);
+	BUS	  = 0;
+	FPL		= 0;
+	APL		= 0;
+	RAD		= 0;
+	pln		= 0;
+	basWP	= 0;
+	actWP	= 0;
+	//--------------------------------
+	wTRK	= 0;			// Tracked waypoint
+	//--------------------------------
+	gpsTK	= GPSR_PWOF;
+	navON	= 0;
+	aprON	= 0;
 }
-
+//-------------------------------------------------------------------------------------
+//  Free resources
+//-------------------------------------------------------------------------------------
+GPSRadio::~GPSRadio()
+{ }
 //-------------------------------------------------------------------------------------
 //  Read all tags
 //-------------------------------------------------------------------------------------
-int CK89radio::Read (SStream *stream, Tag tag)
+int GPSRadio::Read (SStream *stream, Tag tag)
 {switch (tag) {
   case 'mFMS':
     // FMS message
@@ -4273,26 +4326,223 @@ int CK89radio::Read (SStream *stream, Tag tag)
 //----------------------------------------------------------------------------------
 //  All tags are read
 //----------------------------------------------------------------------------------
-void CK89radio::ReadFinished (void)
-{
-  // Fill in common message fields
+void GPSRadio::ReadFinished (void)
+{ // Fill in common message fields
   mFMS.id = MSG_GETDATA;
   mSpd.id = MSG_GETDATA;
-
   CDependent::ReadFinished ();
 }
 //----------------------------------------------------------------------------------
-//  TimeSlice
+//  Tracking EVENT
 //----------------------------------------------------------------------------------
-void CK89radio::TimeSlice(float dT,U_INT FrNo)
-{ if (GPS) GPS->Activity(active);
-  CDependent::TimeSlice(dT,FrNo);
-  return;
+void GPSRadio::TrackGPSEvent(U_CHAR evn,char parm)
+{	switch (evn)	{
+	//--- Power event ----------------
+		case GPSR_EV_PWR:
+			PowerEVN(parm);
+			return;
+	}
+	return;
 }
 //----------------------------------------------------------------------------------
-//  Message from GPS gauge
+//  Power EVENT
 //----------------------------------------------------------------------------------
-EMessageResult CK89radio::ReceiveMessage (SMessage *msg)
+void GPSRadio::PowerEVN(char parm)
+{	navON	= 0;
+	aprON	= 0;
+	//--- Check for power ON -----------------
+	bool of =  (gpsTK == GPSR_PWOF);
+	bool pw =  (parm != 0);
+	if (of && pw)	return PowerON();
+	//--- Check for power off ----------------
+	if (pw)				return;
+	gpsTK = GPSR_PWOF;
+	if (RAD) RAD->ModeEXT(0);
+	return;
+}
+//----------------------------------------------------------------------------------
+//  Switch EVENT
+//----------------------------------------------------------------------------------
+void GPSRadio::SwitchNAV(char parm)
+{	if (GPSR_PWOF == gpsTK)	return;			// Power OFF ignore
+	//--- Change state -----------------------------------
+	navON	= parm;
+	if (parm)			EnterTRK();
+	else					EnterSBY();
+	return;
+}
+//----------------------------------------------------------------------------------
+//  Switch EVENT
+//----------------------------------------------------------------------------------
+void GPSRadio::SwitchAPR(char parm)
+{	if (GPSR_PWOF == gpsTK)	return;			// Power OFF ignore
+	//--- Change state -----------------------------------
+	aprON	= parm;
+	return;
+}
+
+//----------------------------------------------------------------------------------
+//  Power ON
+//----------------------------------------------------------------------------------
+void GPSRadio::PowerON()
+{	gpsTK = GPSR_STBY;
+	navON	= 0;
+	pln		= (CAirplane*)mveh;
+	APL	  = pln->GetAutoPilot();
+	RAD		= pln->GetMRAD();
+  BUS   = mveh->GetRadioBUS();
+	bool ok = (APL) && (BUS);
+	if (!ok)	gpsTK	= GPSR_NONE;
+	return;
+}
+//----------------------------------------------------------------------------------
+//  Enter tracking
+//	Autopilot must be engaged
+//	Then
+//	Activate Plan if any and get first node to track
+//----------------------------------------------------------------------------------
+void GPSRadio::EnterTRK()
+{	if (GPSR_NONE == gpsTK)				return;		// No tracking
+  if (APL->IsDisengaged())			return;   // But disengaged
+	if (0 == FPL->ActivatePlan())	return;
+	APL->SetGasControl(1);
+	//--- Set Tracking mode -------------------------
+	gpsTK	= GPSR_TRAK;
+	//---Get first waypoint to track ----------------
+	NextNODE();
+	return;
+}
+//----------------------------------------------------------------------------------
+//  Get next Waypoint
+//	Set RADIO BUS to EXTERNAL SOURCE
+//----------------------------------------------------------------------------------
+void GPSRadio::NextNODE()
+{ float rad = 0;
+	wTRK	= FPL->GetActiveNode();
+	if (0 == wTRK)						return;
+	if (wTRK->IsFirst())			return;  // wait next
+	if (FPL->IsOnFinal())			return EnterAPR();
+	//--- Set Waypoint On External Source ------------------
+	float   dir = SelectDirection();
+	CmHead *obj = wTRK->GetDBobject();
+  RAD->ModeEXT(obj);								// Set EXT mode
+	RAD->ChangeRefDirection(dir);
+	//--- Configure autopilot ------------------------------
+	double alt = double(wTRK->GetAltitude());
+	APL->ChangeALT(alt);							// Set target altitude
+	APL->SetNavMode();								// Set NAV mode 
+	return;
+}
+//--------------------------------------------------------------
+//	Compute direction
+//	If leg distance is under 12 miles, head direct to station
+//  or if deviation is too much
+//--------------------------------------------------------------
+float GPSRadio::SelectDirection()
+{	float dis = wTRK->GetLegDistance();
+  float seg = wTRK->GetDirection();
+	float dev = RAD->GetDeviation();
+	float rdv = fabs(dev);
+	if ((dis > 12) || (rdv < 5))	return seg;
+	//--- Compute direct-to direction to waypoint -----
+  return wTRK->DirectTO(mveh);
+}
+//--------------------------------------------------------------
+//	Refresh direction to waypoint if needed
+//	Correct any drift due to long legs
+//--------------------------------------------------------------
+void GPSRadio::Refresh()
+{	float dev = RAD->GetDeviation();
+	float rdv = fabs(dev);
+	bool  dto = ((rdv > 5) || (wTRK->IsDirect()));
+	//--- check if Direct to is active ----------
+	if (!dto)	return; 
+  float dir = wTRK->DirectTO(mveh);
+	RAD->ChangePosition(wTRK->GetGeoP());
+	RAD->ChangeRefDirection(dir);
+	return;
+}
+//--------------------------------------------------------------
+//	Go back to standby mode
+//	Relax Radio BUS
+//	Go back to radio mode
+//	Let AUTOPILOT in current state
+//--------------------------------------------------------------
+void GPSRadio::EnterSBY()
+{	gpsTK	= GPSR_STBY;
+	navON	= 0;
+	if (RAD) RAD->ModeEXT(0);
+	return;
+}
+//--------------------------------------------------------------
+//	Enter final mode
+//	Final may use 
+//	-ILS radio station
+//  -GPS waypoint
+// TODO:  Check for APR GPS button
+//--------------------------------------------------------------
+void GPSRadio::EnterAPR()
+{ //--- Check  if APR allowed ---------------------------
+	if (0 == aprON)	return EnterSBY();
+	//--- Return landing data -----------------------------
+	ILS_DATA *ils = wTRK->GetLandingData();
+	if (0 == ils)	  return EnterSBY();
+	RAD->ModeEXT(wTRK->GetDBobject(),ils);	
+	//--- Configure autopilot for landing ------------------
+	APL->SetLandingMode();
+	gpsTK = GPSR_LAND;
+	return;
+}
+//--------------------------------------------------------------
+//	Refresh tracking
+//--------------------------------------------------------------
+void GPSRadio::UpdateTracking(float dT,U_INT frm)
+{ 
+	switch (gpsTK)	{
+		case GPSR_PWOF:
+			return;
+		//--- Activate Flight Plan above 500 feet --
+		case GPSR_STBY:
+			return;
+		//--- Tracking active waypoint -------------
+		case GPSR_TRAK:
+			if (APL->IsDisengaged())	return EnterSBY();
+			if (wTRK->IsActive())	    return Refresh();
+			NextNODE();
+			return;
+		//--- Just watch the auto pilot ------------
+		case GPSR_LAND:
+			if (APL->IsDisengaged())	return EnterSBY();
+			if (APL->ModeGround())	  return EnterSBY();
+			return;
+		case GPSR_NONE:
+			return;
+	}
+	//-------------------------------------------
+	return;
+}
+//--------------------------------------------------------------
+//	Return switch position
+//--------------------------------------------------------------
+int GPSRadio::GaugeBusINNO(char No)
+{	if (No == GAUGE_BUS_INT04)	return navON;
+  if (No == GAUGE_BUS_INT05)	return aprON;
+	return 0;
+}
+//--------------------------------------------------------------
+//	Probe values
+//--------------------------------------------------------------
+void GPSRadio::Probe(CFuiCanva *cnv)
+{	cnv->AddText(1,1,"GPSR  :%s",gpsrETA[gpsTK]);
+  if (0 == wTRK)	return;
+	cnv->AddText(1,1,"active:%s",wTRK->GetIdentity());
+	return;
+}
+//----------------------------------------------------------------------------------
+//  Message from external 
+//	NOTE: Gauge should send the nav switch position
+//----------------------------------------------------------------------------------
+EMessageResult GPSRadio::ReceiveMessage (SMessage *msg)
 {   switch (msg->id) {
     case MSG_GETDATA:
       switch (msg->user.u.datatag) {
@@ -4300,23 +4550,30 @@ EMessageResult CK89radio::ReceiveMessage (SMessage *msg)
       case 'req_':
         return MSG_PROCESSED;
       }
-      return CRadio::ReceiveMessage (msg);
-
+      break;
+		//---- Set data ----------------------------------
     case MSG_SETDATA:
       switch(msg->user.u.datatag) {
-      case 'init':
+      case 'pwon':
         return MSG_PROCESSED;
 
-      case 'powf':
+      case 'poff':
         return MSG_PROCESSED;
-      case 'setg':
-        GPS = (CK89gps*)msg->voidData;
-        return MSG_PROCESSED;
-      }
-      return CRadio::ReceiveMessage (msg);
-  }
-  return CRadio::ReceiveMessage (msg);
+
+			//--- Flight plan is modified -------
+			case 'pmod':
+				ModifiedPlan();
+				return MSG_PROCESSED;
+			//--- Set The GPS Slave mode --------
+			case 'navp':
+				SwitchNAV(msg->intData);
+				return MSG_PROCESSED;
+			//--- SetAPR allowed ----------------
+			case 'aprp':
+				SwitchAPR(msg->intData);
+				return MSG_PROCESSED;
+			}
 }
-
-
+  return CDependent::ReceiveMessage (msg);
+}
 //=======================END OF FILE ================================================
