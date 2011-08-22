@@ -39,6 +39,7 @@
 #include "../Include/Weather.h"
 #include "../Include/AudioManager.h"
 #include "../include/PlanDeVol.h"
+#include "../Include/MagneticModel.h"
 using namespace std;
 //=====================================================================
 extern double rwyATHR[];
@@ -2388,7 +2389,7 @@ ILS_DATA  *CRunway::GetLandDirection(char *e)
 {	//--- landing in hi end --------------
 	if (0 == strcmp(e,rhid))	return (ilsD + RWY_HI_END);
 	//--- landing in lo end --------------
-	if (0 == strcmp(e,rlid)) return (ilsD + RWY_LO_END); 
+	if (0 == strcmp(e,rlid))  return (ilsD + RWY_LO_END); 
 	return 0;
 }
 //---------------------------------------------------------------------------------
@@ -2463,6 +2464,8 @@ void  CObstacle::Trace(char *op,U_INT FrNo,U_INT key)
 CmHead::CmHead(OTYPE qo,QTYPE qa)
 { oTyp  = (OTYPE)(qo);
   qAct  = (QTYPE)(qa);
+	//-------------------------------------------
+	uptr		= 0;
   //----Mutex init ----------------------------
   pthread_mutex_init (&mux,  NULL);
   State	  = FREE;	
@@ -2483,6 +2486,8 @@ CmHead::CmHead(OTYPE qo,QTYPE qa)
 CmHead::CmHead() 
 { oTyp  = (ANY);
   qAct  = (ANY);
+	//-------------------------------------------
+	uptr		= 0;
   //----Mutex init ----------------------------
   pthread_mutex_init (&mux,  NULL);
   State	  = FREE;	
