@@ -1340,10 +1340,11 @@ bool CFuiVectorMap::OpenPopRWY(int mx,int my)
   return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
-//  Open a floating menu over a point
+//  Open a floating menu to create a user waypoint
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::OpenWptMEN(int mx,int my)
 { if (0 == dbc->GetLOGwindow())		return true;
+  if (fPlan->IsUsed())						return true;
 	smen.Ident = 'mwpt';
 	smen.aText = WptMENU;
   wpos  = geop;

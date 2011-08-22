@@ -52,15 +52,17 @@ CFuiKLN89::CFuiKLN89(Tag idn,const char *filename)
   yelow   = MakeRGB(255,167,102);           // Yellow color
   //------------Init display ------------------------
   InitGPS();
-//  ClearGPSwindow(black);
 }
 //-------------------------------------------------------------------------
 //  Init the GPS Window
 //-------------------------------------------------------------------------
 void CFuiKLN89::InitGPS()
 { CVehicleObject* veh = globals->sit->GetUserVehicle();
+  GPSRadio *gps = veh->GetGPS();
+	if (0 == gps)									return Close();
+	if ('k89g' != gps->GetUnId())	return Close();
   //-------Get the GPS subsystem --------------------------------
-  GPS = (veh)?(veh->amp->GetKLN89gps()):(0);
+  GPS = (CK89gps*)gps;
   //-------Load the front bitmamp -------------------------------
   Front.Load_Bitmap("ART/GPS_ON.TIF");
   //--------Load the back bitmap --------------------------------
@@ -194,6 +196,8 @@ void CFuiKLN89::InitArea(int No,short x1, short y1, short x2, short y2,U_CHAR df
 bool CFuiKLN89::PowerChange(U_CHAR astate)
 { U_CHAR ppower = PowST;
   PowST = astate;
+if (astate == 0)
+int a = 0;
   if (ppower    == astate)                  return false;
   if (K89_PWROF == astate)
   {   EraseSurfaceRGBA(surface,0);
@@ -225,7 +229,7 @@ void CFuiKLN89::Draw()
 { CFuiWindow::Draw();
   if (0 == GPS) {return;}
   //-------Detect Power change------------------------------
-  U_CHAR  state = GPS->GetState();
+  U_CHAR  state = GPS->GetAState();
   PowerChange(state);
   fMask = GPS->GetFmask();
   if (state >= K89_PWRNA)  (this->*DshTAB[GPS->GetScreenHandler()])();
@@ -341,10 +345,10 @@ void CFuiKLN89::DrawLDRDisplay()
 { int x0 = undTAB[GPS->GetPage()]; 
   int y0 = scrLN[4];
   DrawRect(surface,xOrg,y0,(xOrg+dw),(y0+1),black);
-  DrawFastLine(surface,(rBase-2),yOrg,(rBase-2),(yOrg + dh - 1),amber);
+  DrawFastLine(surface,(rBase-2),yOrg,(rBase-2),(yOrg + dh - 2),amber);
   DrawLSPDisplay();
   DrawRSPDisplay();
-  if (x0) DrawRect(surface,x0,y0,(x0+15),(y0+1),amber);
+	if (x0)	DrawHLine(surface,x0,(x0+15),y0,amber);
   DrawCDIneedle();
   return;
 }

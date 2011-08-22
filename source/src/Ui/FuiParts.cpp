@@ -619,6 +619,7 @@ CObjLine::~CObjLine()
 void CObjLine::Print(CFuiList *w,U_CHAR ln)
 { w->NewLine(ln);
   w->AddText(ln, 1, 0, Name);
+	w->AddText(ln,20, 0,wObj->ModelName(0));
   return;
 }
 //================================================================================
@@ -783,6 +784,7 @@ void  CListBox::AddSlot(CSlot *slot)
 { if (0 == slot)  return;
   slot->SetSeq(Num++);
   Obj.push_back(slot);
+	nNOD	= Obj.size();
   return;
 }
 //--------------------------------------------------------------------------------
@@ -996,7 +998,8 @@ void CListBox::EmptyIt()
     if (slot->IsNotFixed()) delete (slot);
   }
   Obj.clear();
-  Num = 0;
+  Num		= 0;
+	nNOD  = int(Obj.size());
   return;
 }
 //----------------------------------------------------------------------------------

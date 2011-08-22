@@ -139,7 +139,7 @@ bool CFuiFlightLog::OpenDetail()
   if (0 == wpt)               return false;
   CmHead *obj			= wpt->GetDBobject();
   if (0 == obj)               return false;
-	U_INT No				=	wpt->GetWaypointNo();
+	U_INT No				=	wpt->GetSequence();
 	switch (obj->GetActiveQ())
 	{ case VOR:
       return CreateVORwindow(obj,No,1);
@@ -165,15 +165,8 @@ void CFuiFlightLog::OpenDirectory()
 //  Insert the waypoint in flight plan
 //  -Refresh the list
 //-------------------------------------------------------------------------
-void  CFuiFlightLog::InsertWaypoint(CWPoint *wpt, CmHead *obj)
-{ //--- Set common parameters ----------
-	wpt->SetDBwpt   (obj);
-  wpt->SetName    (obj->GetName());
-	wpt->SetIden    (obj->GetIdent());
-  wpt->SetPosition(obj->GetPosition());
-  wpt->SetDbKey   (obj->GetKey());
-  wpt->SetAltitude(fpln->actCEIL());
-	//--- Add waypoint -------------------
+void  CFuiFlightLog::InsertWaypoint(CWPoint *wpt)
+{ //--- Add waypoint -------------------
   flpBOX->InsSlot(wpt);
   fpln->Reorder(1);
 	flpBOX->Refresh();
@@ -184,22 +177,19 @@ void  CFuiFlightLog::InsertWaypoint(CWPoint *wpt, CmHead *obj)
 //  Create an Airport waypoint
 //-------------------------------------------------------------------------
 void  CFuiFlightLog::CreateAPTwaypoint()
-{ int alt        = fpln->actCEIL();
-	CAirport  *apt = (CAirport*)selOBJ.Pointer();
-  CWPoint   *wpt = new CWPoint(fpln,'airp');
-  wpt->SetUser('airp');
-  InsertWaypoint(wpt,apt);
+{ CAirport  *apt = (CAirport*)selOBJ.Pointer();
+	CWPoint		*wpt = fpln->CreateAPTwaypoint(apt);
+	//--- Add waypoint -------------------
+	InsertWaypoint(wpt);
   return;
 }
 //-------------------------------------------------------------------------
 //  Create an NAVAID waypoint
 //-------------------------------------------------------------------------
 void  CFuiFlightLog::CreateNAVwaypoint()
-{ int alt        = fpln->actCEIL();
-	CNavaid   *nav = (CNavaid*)selOBJ.Pointer();
-  CWPoint   *wpt = new CWPoint(fpln,'snav');
-  wpt->SetUser('snav');
-  InsertWaypoint(wpt,nav);
+{ CNavaid   *nav = (CNavaid*)selOBJ.Pointer();
+  CWPoint   *wpt = fpln->CreateNAVwaypoint(nav);
+  InsertWaypoint(wpt);
   return;
 }
 
@@ -208,10 +198,9 @@ void  CFuiFlightLog::CreateNAVwaypoint()
 //-------------------------------------------------------------------------
 void  CFuiFlightLog::CreateWPTwaypoint()
 {	CWPT		*pnt = (CWPT*)selOBJ.Pointer();
-  CWPoint	*wpt = new CWPoint(fpln,'wayp');
-	wpt->SetUser('uswp');
+  CWPoint	*wpt = fpln->CreateWPTwaypoint(pnt);
 	pnt->SetNOD(wpt);
-  InsertWaypoint(wpt,pnt);
+  InsertWaypoint(wpt);
   return;
 }
 //-------------------------------------------------------------------------
@@ -222,7 +211,7 @@ bool CFuiFlightLog::ValidInsert()
 { eWIN->SetText("");
 	CWPoint *prm  = (CWPoint*)flpBOX->NextPrimToSelected();
   if (0 == prm)     return true;    // Empty => valid insert
-  bool ok = !prm->IsTerminated();
+  bool ok = !prm->IsVisited();
   if (ok)           return true;
 	//--- delete object ------------------------------------
 	selOBJ = 0;
@@ -264,10 +253,10 @@ void CFuiFlightLog::Error(char No)
 //  Delete the selected Waypoint
 //-------------------------------------------------------------------------
 void CFuiFlightLog::DeleteWaypoint()
-{ if (fpln->IsEmpty())              return;
+{ if (fpln->IsEmpty())   return;
 	eWIN->SetText("");
   CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
-  if (wpt->IsTerminated())  return Error(2);
+  if (wpt->IsVisited())  return Error(2);
   flpBOX->DeleteItem();
   fpln->Reorder(1);
 	Select();
@@ -279,12 +268,12 @@ void CFuiFlightLog::DeleteWaypoint()
 void CFuiFlightLog::MoveUpWaypoint()
 { //--- Check that selected waypoint may move ---------------
 	eWIN->SetText("");
-  if (fpln->IsEmpty())          return;
+  if (fpln->IsEmpty())         return;
   CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
-  if (wpt->IsTerminated())        return Error(4);
+  if (wpt->IsVisited())        return Error(4);
   //--- Check that the previous is not terminated -----------
   wpt = (CWPoint*)flpBOX->PrevPrimary(wpt);
-  if (wpt && wpt->IsTerminated()) return Error(3);
+  if (wpt && wpt->IsVisited()) return Error(3);
   flpBOX->MoveUpItem();
   fpln->Reorder(1);
   return;
@@ -295,12 +284,12 @@ void CFuiFlightLog::MoveUpWaypoint()
 void CFuiFlightLog::MoveDwWaypoint()
 { //--- Check that selected waypoint may move ---------------
 	eWIN->SetText("");
-  if (fpln->IsEmpty())            return;
+  if (fpln->IsEmpty())          return;
   CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
-  if (wpt->IsTerminated())        return Error(4);
+  if (wpt->IsVisited())					return Error(4);
   //--- Check that the next is not terminated -----------
   wpt = (CWPoint*)flpBOX->NextPrimToSelected();
-  if (wpt && wpt->IsTerminated()) return Error(3);
+  if (wpt && wpt->IsVisited())	return Error(3);
   flpBOX->MoveDwItem();
   fpln->Reorder(1);
   return;
@@ -455,8 +444,9 @@ void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
   //---  Clear the plan ----------------------
   case 'zero':
 		if (fpln->IsUsed())	return Error(5);
-    fpln->Clear(0);
-		fpln->Actualize(0);
+    fpln->ClearPlan();
+		fpln->UpdatePlan();
+		fpln->WarnGPS(1);
     FillCurrentPlan();
     return;
 	//--- Increment altitude -------------------
