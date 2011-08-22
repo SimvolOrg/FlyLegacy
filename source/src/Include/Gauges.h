@@ -121,7 +121,7 @@ class CPanelLight;
 #define GAUGE_ANNUNCIATOR               'annc'
 #define GAUGE_FLYHAWK_ANNUNCIATOR       'shan'
 #define GAUGE_FLYHAWK_ANNUNCIATOR_TEST  'shts'
-#define GAUGE_FLYHAWK_NAV_GPS_PANEL     'sngp'
+#define GAUGE_NAV_GPS_TYPE0							'sngp'
 #define GAUGE_FLYHAWK_FUEL_SELECTOR     'shfs'
 #define GAUGE_ELEVATOR_TRIM             'shet'
 #define GAUGE_MALIBU_CHT_INDICATOR      'mcht'
@@ -1941,29 +1941,6 @@ protected:
 };
 
 
-//
-// CFlyhawkNavGpsPanelGauge
-//
-class CFlyhawkNavGpsPanelGauge : public CBitmapGauge {
-public:
-  CFlyhawkNavGpsPanelGauge (CPanel *mp);
-
-  // CStreamObject methods
-  int   Read (SStream *stream, Tag tag);
-
-  // CGauge methods
-  virtual const char* GetClassName (void) { return "CFlyhawkNavGpsPanelGauge"; }
-  virtual ECursorResult MouseMoved (int x, int y);
-
-protected:
-  CGaugeKnob    cnav;
-  CGaugeKnob    capr;
-  int       xnav_x, xnav_y;
-  int       xgps_x, xgps_y;
-  int       xapr_x, xapr_y;
-  int       xmsg_x, xmsg_y;
-  int       xwpt_x, xwpt_y;
-};
 
 
 //===================================================================

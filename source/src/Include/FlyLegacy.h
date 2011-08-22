@@ -2166,6 +2166,27 @@ class CFuiProbe;
 //----TOOLS -----------------------------------------------------
 class CExport;
 class CImport;
+//============================================================================
+//  Define GAUGE BUS VALUES
+//============================================================================
+#define GAUGE_BUS_INT01	(1)
+#define GAUGE_BUS_INT02	(2)
+#define GAUGE_BUS_INT03	(3)
+#define GAUGE_BUS_INT04	(4)
+#define GAUGE_BUS_INT05	(5)
+#define GAUGE_BUS_INT06	(6)
+#define GAUGE_BUS_INT07	(7)
+#define GAUGE_BUS_INT08	(8)
+//--------------------------------------
+#define GAUGE_BUS_FLT01	(1)
+#define GAUGE_BUS_FLT02	(2)
+#define GAUGE_BUS_FLT03	(3)
+#define GAUGE_BUS_FLT04	(4)
+#define GAUGE_BUS_FLT05	(5)
+#define GAUGE_BUS_FLT06	(6)
+#define GAUGE_BUS_FLT07	(7)
+#define GAUGE_BUS_FLT08	(8)
+
 //=============================================================================
 //  Define VBO offset
 //=============================================================================
@@ -2879,6 +2900,8 @@ protected:
   U_CHAR        oTyp;             // Object type
   U_CHAR        qAct;             // Index of active queue
 	U_INT				NoFrame;				    // Frame stamp
+	//--- User pointer -----------------------------------------
+	void         *uptr;							// User data
   //------------Distance -------------------------------------
   short         dLon;             // Longitudinal component
   short         dLat;             // Lattitude component
@@ -2906,6 +2929,7 @@ public:
   virtual float      GetElevation()   {return 0;}
   virtual U_INT      GetRecNo()       {return 0;}
 	virtual double     GetRefDirection(){return 0;}
+	virtual float			 GetMagDirection(){return 0;}
 	virtual float      GetVrtDeviation(){return 0;}
 	virtual double		 Sensibility()		{return 0;}
 	virtual U_CHAR		 SignalType()     {return SIGNAL_OFF;}
@@ -2936,10 +2960,15 @@ public:
   inline int    GetDistLon(void)        {return dLon; }
   inline void   SetDistLon(short lon)   {dLon = lon;  }
 	//------------------------------------------------------------
+	inline void	 *GetUPTR()								{return uptr;}
+	inline void   SetUPTR(void *p)				{uptr = p;}
+	inline bool   HasUPTR()								{return (0 != uptr);}
+	inline bool   NoUPTR()								{return (0 == uptr);}
+	//------------------------------------------------------------
   inline float  GetNmFactor()           {return nmFactor; }
-  inline  CmHead*  NextInQ1()        {return Cnext; }
-  inline  CmHead*  PrevInQ1()        {return Cprev; }
-  inline  CmHead*  NextInQ2()        {return Tnext; }
+  inline  CmHead*  NextInQ1()						{return Cnext; }
+  inline  CmHead*  PrevInQ1()						{return Cprev; }
+  inline  CmHead*  NextInQ2()						{return Tnext; }
   inline QTYPE  GetActiveQ(void)        {return (QTYPE)(qAct); }
   inline OTYPE  GetObjType(void)        {return (OTYPE)(oTyp); }
 	//------------------------------------------------------------

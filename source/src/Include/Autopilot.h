@@ -240,9 +240,12 @@ public:
   //-------------------------------------------------------
   inline int  GetPidNo()          {return nPid;}
   inline void Rate(double r)      {rate = r;}
+	//-------------------------------------------------------
+	inline float	GetVN()						{return Vn;}
   //-----Set values ---------------------------------------
   inline void SetSample(double s) {Yn = s;}
   inline void SetTarget(double t) {Rn = t;}
+	inline void ClearKI()						{Ki = 0;}
   //-------------------------------------------------------
   inline void SetMaxi(double m)   {if (m < vmax) vmax = m;}
   inline void SetMini(double m)   {if (m > vmin) vmin = m;}
@@ -301,6 +304,9 @@ protected:
   //-----------Flasher ------------------------------------------------
   U_CHAR      timFS;                            // Flasher timer
   U_CHAR      mskFS;                            // Flasher mask
+	//---Subsystems ------------------------------------------------------
+	CSubsystem	 *altS;												// Altimeter
+	CSubsystem   *cmpS;												// Compass
   //---Surface control -------------------------------------------------
 	CFlapControl *flpS;												// Flaps systems
   CAeroControl *ailS;                       // aileron surface
@@ -354,6 +360,7 @@ protected:
   double     rHDG;                          // Target Heading
   double     aHDG;                          // Actual heading (yaw)
   double     xHDG;                          // cross heading
+	double     xCOR;													// 45° correction
 	double     nHDG;													// Next heading
   double     hERR;                          // Lateral error
   double     vTIM0;                         // Time for ARC AB
@@ -366,7 +373,6 @@ protected:
   double     vAMP;                          // Vertical amplifier
   double     rALT;                          // Reference altitude
   double     eVSP;                          // VSP error 
-  double     xALT;                          // Expected altitude
   double     rVSI;                          // Reference VSI
   //---Current parameters -------------------------------------------
 	double      cFAC;												  // Current factor
@@ -518,7 +524,8 @@ public:
   void            StateLAT(int evn);
 	void						StateGND(int evn);
   void            NewEvent(int evn);
-	void						GasControl();
+	void						SwapGasControl();
+	void						SetGasControl(char s);
   //-------------------------------------------------------------------
   inline char     armALT()  {return alta;}
   //-------------------------------------------------------------------
@@ -530,6 +537,7 @@ public:
 	inline bool BellowAGL(double a)	{return (cAGL < a);}
 	inline bool IsDisengaged()		  {return (lStat == AP_DISENGD);}
   inline bool IsEngaged()					{return (lStat != AP_DISENGD);}
+	inline bool ModeGround()				{return (vStat == AP_VRT_FIN);}
   //-------------------------------------------------------------------
   inline    bool        engLite()     {return (AP_STATE_DIS != lStat);}
 };

@@ -419,6 +419,7 @@ public:
   inline  int    HasCTY()                     {return (filter & 0x01);}
   inline  bool   EndOfReq()                   {return (Code == REQUEST_END);}
 	inline  bool	 IsBusy()											{return (Code != NO_REQUEST);}
+	inline  void	 StopReq()										{ Code = NO_REQUEST;}
 };
 //==================================================================================
 //  GPS DATABASE REQUEST
@@ -933,6 +934,7 @@ public:
   inline SPosition  GetPosition()     {return pos; }
   inline SPosition *ObjPosition()     {return &pos;}
   inline float      GetMagDev()       {return mDev; }
+	inline float			GetMagDirection()	{return (radial - mDev);}
   inline int        GetIndexType()    {return int(xType);}
   inline bool       IsTuned()         {return (vdzRad < dsfeet);}
   inline bool       IsNDB()           {return (0 != (type & NAVAID_TYPE_NDB));}
@@ -1014,6 +1016,7 @@ public:
   inline SPosition  GetPosition()     {return wpos;}
   inline SPosition *ObjPosition()     {return &wpos;}
   inline float      GetMagDev()       {return wmag; }
+	inline float			GetMagDirection()	{return (radial - wmag);}
   inline float      GetLatitude()     {return wpos.lat;}
   inline float      GetLongitude()    {return wpos.lon;}
   inline float      GetElevation()    {return wpos.alt;}
@@ -1141,6 +1144,7 @@ public:
   inline  float GetIlsVector()        {return ilsVEC;}
   inline  float GetNmiles(void)       {return nmiles; }
   inline  float GetMagDev(void)       {return mDev; }
+	inline  float GetMagDirection()			{return (radial - mDev);}
   inline  float GetFrequency(void)    {return freq; }
   inline  float GetRange()            {return rang;}
   inline  void  LinkAPT(CAirport *ap) {apt = ap;}
@@ -1505,6 +1509,7 @@ public:
   inline  char*     GetEtat()         {return asta;}
   inline  void      RazInEDIT(void)   {Prop &=(-1 - TC_EDIT_BOX);}
   inline  float     GetMagDev(void)   {return amag; }
+	inline  float     GetMagDirection()	{return (radial - amag);}
   inline  float     GetElevation()    {return apos.alt;}
   inline  char      GetOwner()        {return aown;}
   inline  float     GetClearanceFreq(){return cfrq;}

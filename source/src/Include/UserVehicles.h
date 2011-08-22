@@ -485,10 +485,8 @@ public:
   CSubsystem* GetFirstSubsystemType (Tag type);
   void		  Timeslice(float dT,U_INT FrNo);					// JSDEV* new implementation
   void      Print (FILE *f);
-  CK89gps  *SetKLN89gps(CK89gauge *g);
   ///-----------Registered components ------------------------------------
   inline  void      AddSubsystem(CSubsystem *sys) {subs.push_back(sys); }
-  inline  CK89gps  *GetKLN89gps() {return K89GPS;}
   //----------------------------------------------------------------------
   inline CBrakeControl *GetBrakeControl() {return pwb;}
   //----------------------------------------------------------------------
@@ -526,8 +524,6 @@ public:
   CEngineManager        *pEngineManager;
   CBrakeControl         *pwb;             // Wheel brakes
   CGearControl          *pgr;             // gear control
-  ///------Registered components ------------------------------------
-  CK89gps              *K89GPS;           // K89 GPS
   //-----------------------------------------------------------------
 };
 

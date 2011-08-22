@@ -114,8 +114,8 @@ public:
   int     NAVenterTIM();                        // Enter timer mode
   int     NAVstateTIM(U_INT evn);								// Timer state
   //------Dispatcher --------------------------------------------------
-  int     Dispatcher(U_INT evn);            // Dispatching 
-  void    TimeSlice (float dT,U_INT FrNo);      // Time slice
+  int     Dispatcher(U_INT evn);								// Dispatching 
+  void    Update(float dT,U_INT FrNo,char exs); // Time slice
   //-------------------------------------------------------------------
   inline short    GetCDIdim() {return cdiDIM;}
 };
@@ -224,7 +224,7 @@ public:
   int       Read (SStream *stream, Tag tag);
   void      ReadFinished();
   EMessageResult  ReceiveMessage (SMessage *msg);
-  void      TimeSlice (float dT,U_INT FrNo);      // Time slice
+  void      Update (float dT,U_INT FrNo,char exs);      // Time slice
   bool      CheckPowerON(); 
   bool      CheckPowerOF();
   //-----Utilities ----------------------------------------------------
@@ -565,12 +565,13 @@ class COldWayPoint;
 #define K89_PART_DISPLAY 1
 #define K89_OPEN_DISPLAY 2
 //=============================================================
-#define GPS_MODE_NORMAL (0)       // Normal mode
+#define GPS_MODE_FPLAN (0)       // Normal mode
 #define GPS_MODE_DIRECT (1)       // Direct To
+
 //=============================================================
 // CK89gps  Subsystem
 //=============================================================
-class CK89gps : public CDependent {
+class CK89gps : public GPSRadio {
   friend class CK89gauge;
   friend class CFuiKLN89;
 public:  CK89gps (CVehicleObject *v,CK89gauge *g);
@@ -583,7 +584,6 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   //--------------------------------------------------------------
   void              TimeSlice (float dT,U_INT FrNo);
   void              SetHandler(U_CHAR No,U_CHAR Nf,U_CHAR Tf);
-  void              SetRadio(Tag r);
   //---------Text handling ---------------------------------------
   void              StoreText(const char *txt,short lin,short col);
   void              StoreText(U_SHORT *des,char *org);
@@ -682,23 +682,21 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   int               CursorNRSchange();
   int               DispatchNRSmode();
   int               EditNRSoptions();
-  //-------FLIGHT PLAN ----------------------------------------
-  int               EnterFLPpage01();
-  int               ChangeFPLnode();
+  //-------FLIGHT PLAN Notifications -------------------------
+	void							ActiveWaypoint(CWPoint *wpt,bool e);
+	void							ModifiedPlan();
+  //-------FLIGHT PLAN Management    -------------------------
+	int               BrowseFPLnode();
+  int               BrowseFPLpage();
   int               EditFPLoption(char *edt, CWPoint *wpt);
-  int               EditFPLSlot(short ln,CWPoint *wpt);
+  bool              EditFPLSlot(short ln,CWPoint *wpt);
   int               EditNoFplan();
   int               EditFlightPage();
   void              EditFPLmark(short lin,CWPoint *wpt);
-  int               ChangeFPLcursor();
   //-------ACTIVE WAYPOINT ------------------------------------
   void              ModeLEG();
   void              ModeOBS();
-  void              ClearActiveWPT();
-  void              ClearFlightPlanWPT();
-  void              SetActiveWPT();
-  void              UpdateWaypointData();
-  void              SelectActiveWaypoint();
+  void              DataFromPlan(CWPoint *w);
   void              RefreshActiveWPT();
   void              RefreshVNAVpoint();
   //-------INT page -------------------------------------------
@@ -756,6 +754,8 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   void              CopyDisplay(U_SHORT *src,U_SHORT *des);
   int               PushContext();
   void              PopContext();
+	void							PushMode(U_CHAR m);
+	void							PopMode();
   //---------Transition routines     ---------------------------
   void              InitState(U_CHAR mode);
   int               ChangeMode(K89_EVENT evn);
@@ -773,6 +773,7 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   int               EnterNAVpage02();
   int               EnterNAVpage03();
   int               LeaveDIRmode();
+  int               EnterFLPpage01();
   int               EnterNRSpage01();
   int               EnterALTpage01();
   int               EnterALTpage02();
@@ -843,12 +844,12 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   inline short      GetCDIline()              {return cdiLN;}
   inline float      GetCDIdev()               {return cdiDEV;}
   inline void       SetMouseDir(char md)      {msDIR = md;}
-  inline void       Activity(char a)          {Active = a;}
+	inline bool				IsDirectMode()						{return (Mode == GPS_MODE_DIRECT);}
+	//--------------------------------------------------------------
+	inline void       SetGauge(CGauge *g)				{Gauge  = (CK89gauge*)g;}
   //==============Data members ===================================
 protected:
   CK89gauge         *Gauge;             // K89 gauge object
-  BUS_RADIO         *Radio;             // Master radio
-  char               Active;            // Activity
   SMessage           gMsg;
   //----------Vector functions --------------------------------
   typedef int (CK89gps::*StaFN)(K89_EVENT evn);
@@ -867,7 +868,7 @@ protected:
   CGPSrequest      *rGPS;               // Request to datbase
   U_INT             Frame;              // Current Frame
   //---------------CDI parameters -----------------------------
-  U_CHAR            pow;                // Power enable
+  U_CHAR            powr;               // Power enable
   U_CHAR            cdiIN[3];           // CDI indicator
   U_CHAR            cdiST;              // CDI state
   U_CHAR            cdiFM;              // CDI format
@@ -885,7 +886,7 @@ protected:
   U_CHAR            modOBS;             // OBS mode
   //---------State control ------------------------------------
   U_CHAR            aState;             // Automate state
-  U_CHAR            fState;             // Flight State
+  U_CHAR            rfu3;               // Reserved
   U_CHAR            dState;             // Direct to state
   U_CHAR            vState;             // VNAV state
   //-----------Timer parameters -------------------------------
@@ -895,34 +896,29 @@ protected:
   //-----------Various data -----------------------------------
   SPosition          aPos;              // Aircraft position
   char              *Flag[4];           // Flags
-  //--------- FPL and waypoints--------------------------------
-  U_INT             serial;             // Flight plan serial
+  //--------- Waypoints management -----------------------------
   short             curNO;              // Candidate WPT No in FPL
   U_SHORT           fpMax;              // Number of wpt in FPL
   U_SHORT           MaxNO;              // Maximum nodes
   U_SHORT           LimNO;              // Limite number
-  CFPlan           *FPL;                // Flight plan
   CmHead           *cOBJ;               // Current  object
   CmHead           *pOBJ;               // Previous object in queue
   CmHead           *nOBJ;               // Next     object in queue
-  //----------Active Waypoint parameters ------------------------
+  //--- GPS mode (DIRECT OR FLIGHT PLAN) ------------------------
   char              Mode;               // 0=>Base 1=>DirectTo
-  GPSpoint          Point[3];           // Stack of waypoints
-  //----------------------------------------------------------------
+	char              pMod;								// Previous mode
+  //---Active waypoint parameters --------------------------------
   CmHead           *actWPT;             // Active waypoint
-  short             actWNO;             // active wpt No from FPL
   float             actRTE;             // Active waypoint route
-  float             actDIR;             // Active waypoint direction
+  float             actRAD;             // Active waypoint bearing
+	float							actDIS;							// Active distance
+	float							insDIS;							// Inside distance
+	char             *prvIDN;							// Previous identity
   //----------------------------------------------------------------
-  CObjPtr           dWPT;               // Direct to waypoint
-  CObjPtr           fWPT;               // Flight plan waypoint
+  CObjPtr           dirWPT;             // Direct to waypoint
   float             wOBS;               // Waypoint OBS
-  float             wDIS;               // Waypoint distance
   float             Speed;              // Aircraft speed
   float             aCAP;               // Aircraft CAP
-  //----------Tracking ------------------------------------------
-  float             dTRK;               // Desired tracking
-  float             aTRK;               // Actual tracking
   //----------String fields  ------------------------------------
   U_SHORT           nProp;              // Ident attribute
   char              Ident[6];           // Object identifier
@@ -982,7 +978,7 @@ protected:
   U_CHAR            curPOS;             // Cursor position
   U_CHAR            msgNO;              // Message No
   U_CHAR            OpPAG;              // Calculator page
-  CmHead        *Stack[4];           // Stack for selection
+  CmHead        *Stack[4];              // Stack for selection
   //-----------------------------------------------------------
   K89_CTX           sBuf;              // Context
   //---------GPS subsystem for power control ------------------
@@ -1076,7 +1072,7 @@ public:
   CKT76radio();
   int             Read(SStream *st,Tag tag);
   EMessageResult  ReceiveMessage (SMessage *msg);
-  void            TimeSlice(float dT,U_INT FrNo);
+  void            Update(float dT,U_INT FrNo,char exs);
   //------------------------------------------------------------
   void    EditFLEV(float lev);
   void    SetIdent();

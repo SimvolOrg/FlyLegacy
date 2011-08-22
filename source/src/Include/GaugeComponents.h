@@ -229,7 +229,7 @@ public:
 	void	SetBrightness(float amb);
   //--------------------------------------------------------------
   CGauge *LocateGauge(SStream *s);
-  void  CopyFrom(CGauge &g);
+  void    CopyFrom(CGauge &g);
   //--------------------------------------------------------------
   virtual   void  DisplayHelp() {DisplayHelp(help);}
 	virtual   void  CollectVBO(TC_VTAB *vtb);
@@ -302,6 +302,7 @@ public:
   EClickResult          ArmRepeat(float t,int x, int y, int bt);
   void                  RepeatClick();
   //--------Helpers ----------------------------------------------
+	void		Translate(float v);
   void    GetSize (short* x1, short* y1, short *wd, short* ht);
 	void		GetTour(S_PIXEL *t, short *w, short *h);
   int     ClickAreaFromTag (Tag tag,int *cnb);
