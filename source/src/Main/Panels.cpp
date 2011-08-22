@@ -511,9 +511,9 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
         { CFlyhawkAnnunciatorTest *g = new CFlyhawkAnnunciatorTest(this);
           return ProcessGauge(g,stream); }
 
-      case GAUGE_FLYHAWK_NAV_GPS_PANEL:
-        { CFlyhawkNavGpsPanelGauge *g = new CFlyhawkNavGpsPanelGauge(this);
-          return ProcessGauge(g,stream); }
+ //     case GAUGE_FLYHAWK_NAV_GPS_PANEL:
+ //       { CFlyhawkNavGpsPanelGauge *g = new CFlyhawkNavGpsPanelGauge(this);
+ //         return ProcessGauge(g,stream); }
 
       case GAUGE_FLYHAWK_FUEL_SELECTOR:
         { CFlyhawkFuelSelectorGauge *g = new CFlyhawkFuelSelectorGauge(this);
@@ -938,6 +938,10 @@ int CPanel::ReadNewGauge(SStream *str, Tag tag)
 				case GAUGE_STRIP:
           { CStripGauge *g = new CStripGauge(this);
             return ProcessGauge(g,str); }
+
+				case GAUGE_NAV_GPS_TYPE0:
+        { CNavGpsSwitchT0 *g = new CNavGpsSwitchT0(this);
+          return ProcessGauge(g,str); }
 
       }
 			gtfo("Unknown gauge: %s",TagToString(type));

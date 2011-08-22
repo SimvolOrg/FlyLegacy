@@ -490,7 +490,11 @@ CVehicleObject::CVehicleObject (void)
   rTAG[NAV_INDEX] = 0;
   rTAG[COM_INDEX] = 0;
   rTAG[ADF_INDEX] = 0;
-  aPIL  = 0;
+	//--- Clear Radio components ----------------------------
+	GPSR	= 0;
+	busR	= 0;
+	mRAD	= 0;
+	aPIL	= 0;
   //--------------------------------------------------------
   WOW_nber  = 0;
   //---- Initialize user vehicle subclasses ----------------
@@ -514,10 +518,8 @@ CVehicleObject::CVehicleObject (void)
   wgh = NULL;
   hst = NULL;
 	ckl	= NULL;
-  //MEMORY_LEAK_MARKER ("nsub_rd")
-  nSub= new CNullSubsystem;							// JSDEV*
+	//-------------------------------------------------------
   globals->rdb = new CFuiRadioBand;
-  //MEMORY_LEAK_MARKER ("nsub_rd")
   //----Check for No AIrcraft in Sim section --------------
   int  NoAC = 0;
   GetIniVar("Sim", "NoAircraft", &NoAC);
@@ -576,7 +578,6 @@ CVehicleObject::~CVehicleObject (void)
   SAFE_DELETE (swd);
   SAFE_DELETE (wgh);
   SAFE_DELETE (hst);
-  SAFE_DELETE (nSub);
 	SAFE_DELETE (ckl);
   //---Clear sound objects ----------------------------------
   sounds.clear();
