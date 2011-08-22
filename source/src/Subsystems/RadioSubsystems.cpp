@@ -73,6 +73,7 @@ void CExtSource::Refresh(U_INT fram)
 }
 //===================================================================================
 // CRadio
+//	NOTE:  CRadio hold the Radio BUS n°1 
 //===================================================================================
 CRadio::CRadio (void)
 { TypeIs (SUBSYSTEM_RADIO);
@@ -350,15 +351,17 @@ void CRadio::FreeRadios(char opt)
 void CRadio::ModeEXT(CmHead *src,ILS_DATA *ils)
 {	//--- Back to normal mode. Synchro radio with nav ------
 	if (0 == src)	
-	{	EXT.Stop(); 
-	  VOR	= globals->dbc->GetTunedNAV(VOR,Frame,ActNav.freq);     // Refresh VOR
-    ILS = globals->dbc->GetTunedILS(ILS,Frame,ActNav.freq);     // Refresh ILS
+	{	EXT.Stop();
+		globals->cILS	= 0;
+	  if (0 == sPower)		return;
+		VOR	= globals->dbc->GetTunedNAV(VOR,Frame,ActNav.freq);     // Refresh VOR
+		ILS = globals->dbc->GetTunedILS(ILS,Frame,ActNav.freq);     // Refresh ILS
+		return Synchronize();
 	}
-	else
 	//--- Update external bus ---------------------------
-	{	EXT.SetSource(src,ils,Frame);
-		FreeRadios(0);
-	}
+	EXT.SetSource(src,ils,Frame);
+	if ((uNum == 1)	&& (ils))	globals->cILS	= ils->ils;
+	FreeRadios(0);
 	Synchronize();
 	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);
 	return;
@@ -399,8 +402,13 @@ void CRadio::ChangeRefDirection(float d)
 //--------------------------------------------------------------------------
 void CRadio::TimeSlice (float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
+	bool exs = EXT.IsActive();
+  if (exs)	EXT.Refresh(FrNo);
 	Frame				= FrNo;
-  return Synchronize();
+  Synchronize();
+	//--- Call derived radios -----------------------
+	Update(dT,FrNo,exs);
+	return;
 }
 //------------------------------------------------------------------
 //  Resynchronize radio
@@ -769,10 +777,10 @@ void CNavRadio::PowerStatus()
 //------------------------------------------------------------------
 //  Time slice
 //------------------------------------------------------------------
-void  CNavRadio::TimeSlice (float dT,U_INT FrNo)
-{ CRadio::TimeSlice (dT,FrNo);
-  PowerStatus();
+void  CNavRadio::Update (float dT,U_INT FrNo,char exs)
+{ PowerStatus();
   if (0 == nState)  return;
+	if (exs)					return;
   //----Refresh nav stations ---------------------------------------
   VOR	= globals->dbc->GetTunedNAV(VOR,FrNo,ActNav.freq);     // Refresh VOR
   if (VOR)          return;
@@ -969,11 +977,10 @@ EMessageResult CComRadio::ReceiveMessage (SMessage *msg)
   return rc;
 }
 //------------------------------------------------------------------
-//  Time slice
+//  Update radio
 //------------------------------------------------------------------
-void  CComRadio::TimeSlice (float dT,U_INT FrNo)
-{ CRadio::TimeSlice (dT,FrNo);
-  PowerStatus();
+void  CComRadio::Update(float dT,U_INT FrNo,char exs)
+{ PowerStatus();
   if (0 == cState)  return;
   //----Refresh com stations ---------------------------------------
   COM	= globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh COM
@@ -1360,9 +1367,9 @@ void CTransponderRadio::Dispatcher(U_CHAR evn)
 //------------------------------------------------------------------------
 //  Time slice: Proceed according to state
 //------------------------------------------------------------------------
-void CTransponderRadio::TimeSlice (float dT,U_INT FrNo)				// JSDEV*
+void CTransponderRadio::Update (float dT,U_INT FrNo,char exs)				// JSDEV*
 {
-  CRadio::TimeSlice (dT,FrNo);										// JSDEV*
+ // CRadio::TimeSlice (dT,FrNo);										// JSDEV*
 }
 //===================================================================================
 // CBKKT76Radio

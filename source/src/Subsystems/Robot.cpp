@@ -240,11 +240,12 @@ void VPilot::Error(int No)
 	return;
 }
 //--------------------------------------------------------------
-//	Hand back the aircraft
+//	Handle back the aircraft
 //--------------------------------------------------------------
 void VPilot::HandleBack()
-{	Radio->ModeEXT(0);
+{	if (Radio)	Radio->ModeEXT(0);
 	Error(0);
+	fpln->Stop();
 	return;
 }
 //--------------------------------------------------------------
@@ -366,7 +367,7 @@ void VPilot::EnterTakeOff()
 void VPilot::ModeTKO()
 {	if (apil->IsDisengaged())	return HandleBack();
 	if (apil->BellowAGL(200))	return;
-	fpln->Activate(FrNo);
+	fpln->ActivatePlan();
 	//--- Climb to 1500 -----------
 	State = VPL_CLIMBING;
 	return;
@@ -393,16 +394,10 @@ void VPilot::EnterFinal()
 	char *edt = globals->fui->PilotNote();
 	float frq = wayP->GetILSFrequency();
 	//--- If frequency, use as ILS ------------------------
-  if (frq) 
-	{	Radio->TuneNavTo(frq,1);						// Tune radio to nav
-		Radio->ModeEXT(0);									// Set internal mode
-	}
-	//--- Use as GPS waypoint if airport ------------------
-	else 
-	{	ILS_DATA *ils = wayP->GetLandingData();
-		if (0 == ils)	{Error(9); return HandleBack();}
-		Radio->ModeEXT(wayP->GetDBobject(),ils);	
-	}
+	//--- Return landing data -----------------------------
+	ILS_DATA *ils = wayP->GetLandingData();
+	if (0 == ils)	{Error(9); return HandleBack();}
+	Radio->ModeEXT(wayP->GetDBobject(),ils);	
 	//--- Configure autopilot for landing ------------------
 	apil->SetLandingMode();
 	State = VPL_LANDING;
@@ -431,7 +426,7 @@ float VPilot::SetDirection()
 void VPilot::ChangeWaypoint()
 {	char *edt = globals->fui->PilotNote();
 	float rad = 0;
-	wayP	= fpln->GetCurrentNode();
+	wayP	= fpln->GetActiveNode();
 	if (wayP->IsFirst())			return;  // wait next
 //	TRACE("VPL: Change WPT to %s",wayP->GetName());
 	if (fpln->IsOnFinal())		return EnterFinal();
@@ -439,17 +434,10 @@ void VPilot::ChangeWaypoint()
 	float dir = SetDirection();
 	_snprintf(edt,128,"Heading %03d to %s",int(dir),wayP->GetName());
 	globals->fui->PilotToUser();
-	//--- Set radio mode ----------------------------------
-  if (wayP->IsaWaypoint())											
-	{	CmHead *obj = wayP->GetDBobject();
-		Radio->ModeEXT(obj);								// Set GSP mode
-	}
-	//--- Set OBS and radio frequency ---------------------
-	else
-	{	float frq = wayP->GetFrequency();
-		Radio->TuneNavTo(frq,1);						// Tune radio to nav
-		Radio->ModeEXT(0);									// Set NAV mode
-	}
+	//--- Set Waypoint on external source -----------------
+	CmHead *obj = wayP->GetDBobject();
+	Radio->ModeEXT(obj);
+	//--- Set Reference direction --------------------------
 	Radio->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wayP->GetAltitude());

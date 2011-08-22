@@ -629,7 +629,6 @@ AutoPilot::AutoPilot (void)
   //---Vertical parameters -------------------------------
   eVRT    = 0;
   rALT    = 400;
-  xALT    = 0;
   rVSI    = 0;
   vTime   = 0;
   //---Options and controls ------------------------------
@@ -719,7 +718,7 @@ void AutoPilot::ReadPID(char *fn)
   return;
 }
 //------------------------------------------------------------------------------------
-//  Execute final initialization when every component are present
+//  Get direct access to most used subsystems
 //------------------------------------------------------------------------------------
 void AutoPilot::PrepareMsg(CVehicleObject *veh)
 { //-- init PID -------------------------------
@@ -727,6 +726,14 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
   char *fcs = mveh->nfo->GetFCS();
   ReadPID(fcs);
   InitPID();
+	//--- Locate altimeter ----------------------
+	mveh->FindReceiver(&mALT);
+	altS = (CSubsystem*)mALT.receiver;
+	if (0 == altS)	inUse = 0;
+	//--- Locate compass ------------------------
+  mveh->FindReceiver(&mHDG);
+	cmpS = (CSubsystem*)mHDG.receiver;
+	if (0 == cmpS)	inUse = 0;
 	//--- Get throttle controller ---------------
 	mGAZ.voidData = 0;
 	Send_Message(&mGAZ);
@@ -1118,12 +1125,10 @@ void AutoPilot::TimeSlice(float dT,U_INT FrNo)
   if (AP_DISENGD == lStat)              return;
   //----Get current parameters (altitude, heading, etc)------
 	wgrd = mveh->WheelsAreOnGround();
-  Send_Message(&mALT);
-  cALT  = mALT.realData;                  // Current altitude
+	cALT	= altS->GaugeBusFT01();					// Current altitude
   cAGL  = cALT - globals->tcm->GetGroundAltitude();
-	kSPD	= mveh->GetPreCalculedKIAS();			// Current speed
-	Send_Message(&mHDG);                    // Current mag heading
-  aHDG  = mHDG.realData;
+	kSPD	= mveh->GetPreCalculedKIAS();		// Current speed
+	aHDG	= cmpS->GaugeBusFT01();					// Current mag heading
 	//--- Update both modes -----------------------------------
   LateralMode();
   VerticalMode();
@@ -1158,7 +1163,7 @@ void AutoPilot::Disengage(char gr)
 //-----------------------------------------------------------------------
 int AutoPilot::BadSignal(char s)
 { if (0 == Radio)           {Alarm(); return 1;}
-  if (0 == Radio->actv)     {Alarm(); return 1;}
+//  if (0 == Radio->actv)     {Alarm(); return 1;}
   char  msk = Radio->ntyp & s; 
   if (0 == msk)             {Alarm(); return 1;}
   signal  = s;
@@ -1289,19 +1294,19 @@ void AutoPilot::ModeLT1()
   double rd   = DegToRad(Radio->hDEV);
   dREF        = fabs(Radio->mdis * sin(rd));    // Distance to R (nm)
   //---Compute time in sec for ARC AB -----------------------------------
-  vTIM0       = (Radio->iAng / 3) * Turn; 
+  vTIM0       = fabs(Radio->iAng / 3) * Turn; 
   //---Compute velocity component   --in miles per sec ------------------
-	double dev = Norme180(aHDG - Radio->hREF);
+	double dev  = Norme180(aHDG - Radio->hREF);
   double aAB  = DegToRad(dev);
   vHRZ        = fabs((kSPD / 3600) * sin(aAB));     // Velocity X component
   vTIM2       = vTIM1;                              // Save value
   vTIM1       = (vHRZ > FLT_EPSILON)?(dREF / vHRZ):(SEC_IN_DAY);
-  if (vTIM1 > vTIM0) return CheckDirection(); 
+	//if (aprm)		TRACE("T0=%.4f T1=%.4f T2=%.4f hRF=%.4f rHDG=%.4f aHDG=%.4f",vTIM0,vTIM1,vTIM2,Radio->hREF,rHDG,aHDG);
+  if (vTIM1 > vTIM0) return CheckDirection();
   //----Enter second leg ------------------------------------------------
   lStat = AP_LAT_LT2;
   StateChanged(sEVN);
 	rDIS	= Radio->mdis;								// Remaining distance
-	//TRACE("LT1: Enter LEG2 rHDG=%.2f aHDG=%.2f", rHDG,aHDG);
 	return;
 }
 //-----------------------------------------------------------------------
@@ -1311,9 +1316,10 @@ void AutoPilot::ModeLT1()
 //  xHDG was computed to cross the NAV/ILS signal at right angle
 //-----------------------------------------------------------------------
 void AutoPilot::CheckDirection()
-{ if (vTIM2 > vTIM1)  return LateralHold();  // Time is decreasing
-	//TRACE("LT1: Cross rHDG to %.2f", xHDG);
-  rHDG  = xHDG;                               // Cross tracking
+{ double dev = Norme360(aHDG - Radio->hREF);
+  if ((dev > 90) && (dev < 270))	rHDG  = xHDG;
+	if (vTIM2 < vTIM1)							rHDG  = xHDG;		// Time is increasing
+ // if (aprm)	TRACE("dev=%.4f rHDG=%.4f",dev,rHDG);
   return LateralHold();
 }
 //-----------------------------------------------------------------------
@@ -1322,13 +1328,11 @@ void AutoPilot::CheckDirection()
 double AutoPilot::AdjustHDG()
 { //-- Approach=> 45° toward ILS--------
 	double bias = 0;
-	double sig  = (Radio->hDEV < 0)?(-1):(+1);
-	double cor  =  sig * 45;
 	double era  = fabs(Radio->hDEV);
 	redz				= (era < 20)?(1):(0);			// Red sector
 	cFAC				= 0;
 	//--- Approach leg and not in red sector ----------
-	if (!redz &&  aprm)		return Wrap360(Radio->hREF + cor);
+	if (!redz &&  aprm)		return xCOR;
 	//--- Other tracking mode --------------
 	if (era > 20)		era  = 20;
 	cFAC	=  (21  - era) * gain;
@@ -1379,13 +1383,11 @@ void	AutoPilot::ModeTGA()
 			return  LateralHold();
 		//--- Go back to heading mode --------------
 		case AP_TGA_HD1:
-			hERR  = Norme180(aHDG - rHDG);
-			if (fabs(hERR) > 0.2)		return LateralHold();
+			if (Radio->mdis < 3.0)	return LateralHold();
 			step	= AP_TGA_HD2;
 			return LateralHold();
 		//--- wait for some distance --------------
 		case AP_TGA_HD2:
-			if (Radio->mdis < 2.5)	return LateralHold();
 			//--- Set Direction along the runway ----
 			rHDG	= Wrap360(Radio->hREF - 180);
 			step  = AP_TGA_HD3;
@@ -1457,19 +1459,6 @@ void AutoPilot::Rotate()
 	return;
 }
 //-----------------------------------------------------------------------
-//  Wait for glide slope intercept
-//  Maintain altitude until the glide slope of tuned ILS is intercepted
-//  -glide is the catching error threshold
-//-----------------------------------------------------------------------
-void AutoPilot::ModeGSW()
-{ if (abs(Radio->gDEV) > glide) return AltitudeHold();
-  pidL[PID_AOA]->SetTarget(0);
-  vStat = AP_VRT_GST;
-  StateChanged(AP_STATE_VTK);
-  vAMP  = 0;                        // Vertical amplifier
-  return;
-}
-//-----------------------------------------------------------------------
 //	Check for miss landing conditions
 //-----------------------------------------------------------------------
 bool AutoPilot::MissLanding()
@@ -1510,9 +1499,24 @@ void AutoPilot::LandingOption()
 //-----------------------------------------------------------------------
 void AutoPilot::ModeGST()
 { eVRT = -Radio->gDEV;          // Glide error
-  if (vAMP < 1000) vAMP += 2;   // Increase amplifier
+  if (vAMP < 1000) vAMP += 5;   // Increase amplifier
   GlideHold();                  // Hold slope
 	LandingOption();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Wait for glide slope intercept
+//  Maintain altitude until the glide slope of tuned ILS is intercepted
+//  -glide is the catching error threshold
+//-----------------------------------------------------------------------
+void AutoPilot::ModeGSW()
+{ eVRT  = (rALT - cALT);   // Vertical error	
+	if (abs(Radio->gDEV) > glide) return AltitudeHold();
+  if (Radio->gDEV < 0.0005)			return AltitudeHold();
+	pidL[PID_GLS]->Init();
+  vStat = AP_VRT_GST;
+  StateChanged(AP_STATE_VTK);
+  vAMP  = 0;                        // Vertical amplifier
   return;
 }
 //-----------------------------------------------------------------------
@@ -1661,10 +1665,11 @@ int AutoPilot::PowerLost()
 }
 //-----------------------------------------------------------------------
 //  Exit mode LT2
+//	Enter altitude Hold at 1500 minimum
 //-----------------------------------------------------------------------
 void AutoPilot::ExitLT2()
 { EnterROL();
-  EnterVSP();
+  EnterALT();
   return;
 }
 //-----------------------------------------------------------------------
@@ -1680,7 +1685,8 @@ void AutoPilot::ExitHDG()
 //  Enter INI Mode
 //-----------------------------------------------------------------------
 void AutoPilot::EnterINI()
-{ EnterROL();
+{ pidL[PID_AOA]->Init();
+	EnterROL();
   EnterVSP();
 	step	= 0;
   return;
@@ -1721,7 +1727,6 @@ void AutoPilot::EnterALT()
   vStat = AP_VRT_ALT;               // Lock on altitude
   elvS->PidValue(0);                // Reset elevator
   pidL[PID_ALT]->Init();            // init PID
-  pidL[PID_AOA]->Init();            // init PID
   return;
 }
 //-----------------------------------------------------------------------
@@ -1768,11 +1773,12 @@ void AutoPilot::OnlyHDG()
 //-----------------------------------------------------------------------
 void AutoPilot::GetCrossHeading()
 { vTIM1 = SEC_IN_DAY;                   // Decision timer at max value
-  xHDG  = Wrap180(Radio->hDEV);         // sign of difference
-  float cor = (xHDG > 0)?(-90):(+90);
+  float dev  = Norme180(Radio->hDEV);   // sign of difference
+  float cor = (dev > 0)?(-90):(+90);
+	float haf = 0.5 * cor;
   xHDG  = Wrap360(Radio->hREF + cor);
+	xCOR	= Wrap360(Radio->hREF + haf);
   lStat = AP_LAT_LT1;
-	//TRACE("Enter LEG1. rHDG=%.2f hDEV=%.2f", rHDG, Radio->hDEV);
   return;
 }
 //-----------------------------------------------------------------------
@@ -1817,9 +1823,8 @@ void AutoPilot::EnterAPR()
   GetCrossHeading();
   //--Init vertical mode -----
   pidL[PID_GLS]->Init();
-  pidL[PID_AOA]->Init();
   vStat = AP_VRT_GSW;
-  rALT  = cALT;											// Current altitude As reference
+	TRACE("EnterAPR elvT=%.4f eVRT=%.4f AOA=%.4f",elvT->Val(),eVRT,pidL[PID_AOA]->GetVN());
   return;
 }
 //-----------------------------------------------------------------------
@@ -1951,8 +1956,7 @@ void AutoPilot::StateDIS(int evn)
 { //--- Process only autopilot engage ------------------
   if (AP_EVN_ENG != evn)  return;
   vTime = 0;
-  Send_Message(&mALT);
-  cALT  = mALT.realData;                  // Current altitude
+	cALT	= altS->GaugeBusFT01();		// Current altitude
   EnterINI(); 
   return;
 }
@@ -1972,6 +1976,7 @@ void AutoPilot::StateROL(int evn)
     return EnterNAV();
   //--- APR  button--------------------
   case AP_EVN_APR:
+	  rALT  = cALT;		// Current altitude As reference
     return EnterAPR();
   //--- REV button --------------------
   case AP_EVN_REV:
@@ -1998,6 +2003,7 @@ void AutoPilot::StateHDG(int evn)
     return EnterNAV();
   //--- APR button ----------------
   case AP_EVN_APR:
+	  rALT  = cALT;		// Current altitude As reference
     return EnterAPR();
   //--- REV button ----------------
   case AP_EVN_REV:
@@ -2111,8 +2117,7 @@ bool AutoPilot::EnterTakeOFF()
 	if (AP_VRT_VSP != vStat)	return false;					// Initial vertical mode
 	if (!mveh->AllEngineOn())	return false;					// All engine running
 	//----- Engage Throttle control ----
-	ugaz	= 1;
-  globals->jsm->Disconnect();
+	SetGasControl(1);
 	ailS->Neutral();
 	rudS->Neutral();
 	elvT->Neutral();
@@ -2130,17 +2135,24 @@ void AutoPilot::SetNavMode()
 	return;
 }
 //-----------------------------------------------------------------------
+//  Swap GAS control
+//-----------------------------------------------------------------------
+void AutoPilot::SwapGasControl()
+{	ugaz ^= 1;
+	SetGasControl(ugaz);
+	return;
+}
+//-----------------------------------------------------------------------
 //  GAS control
 //-----------------------------------------------------------------------
-void AutoPilot::GasControl()
+void AutoPilot::SetGasControl(char s)
 {	if (0 == gazS)						return;
 	if (AP_DISENGD == lStat)	return;
-	//--- swap gas control -------------
-	ugaz	^= 1;
-	if (0 == ugaz)						return;
-	//--- Check if OK ------------------
-  globals->jsm->Disconnect();
-	ailS->Neutral();
+	//--- Set gas control -------------
+	ugaz	= s;
+	if (0 == ugaz)	globals->jsm->Connect();
+  else						globals->jsm->Disconnect();
+	if (0 == ugaz)  ailS->Neutral();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -2202,9 +2214,13 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 		cnv->AddText( 8,1,"%.5f",hMIS);
 	}
   if (vStat == AP_VRT_ALT)
-  { cnv->AddText( 1,"xALT");
-    cnv->AddText( 8,1,"%.00f",xALT);
+  { cnv->AddText( 1,"rALT");
+    cnv->AddText( 8,1,"%.00f",rALT);
   }
+	if (vStat == AP_VRT_GST)
+	{	cnv->AddText( 1,"vAMP");
+	  cnv->AddText( 8,1,"%f",vAMP);
+	}
   if (vStat == AP_VRT_VSP)
   { cnv->AddText( 1,"eVSP");
     cnv->AddText( 8,1,"%.4f",eVSP);
@@ -2366,9 +2382,9 @@ int CKAP140Panel::Dispatch(int evn)            // Dispatching
     case RADIO_CA20:
       ALTalertSWP();
       return 0;
-		//---- Arm throttle control -------------------------
+		//---- Arm/disarm throttle control -------------------------
 		case RADIO_CA22:
-			GasControl();
+			SwapGasControl();
 			return 0;
 
   }

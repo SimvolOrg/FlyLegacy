@@ -221,9 +221,13 @@ CK155radio::CK155radio()
 //-------------------------------------------------------------------------
 void CK155radio::ReadFinished()
 { Radio.rnum = uNum;
-  if (1 == uNum)  mveh->RegisterNAV(unId);
-  if (1 == uNum)  mveh->RegisterCOM(unId);
-  if (1 == uNum)  globals->Radio = &Radio;
+	//--- Radio unit 1 is a master radio holding the Radio BUS
+  if (1 == uNum)
+	{	mveh->RegisterNAV(unId);
+		mveh->RegisterCOM(unId);
+		mveh->RegisterRadioBUS(&Radio);
+		mveh->RegisterRAD(this);
+	}
   CRadio::ReadFinished();
   return;
 }
@@ -942,9 +946,8 @@ int CK155radio::Dispatcher(U_INT evn)
 //-------------------------------------------------------------------------------
 //  TIME SLICE
 //-------------------------------------------------------------------------------
-void CK155radio::TimeSlice (float dT,U_INT FrNo)
-{ CRadio::TimeSlice (dT,FrNo);
-  if (0 == sPower)        return;
+void CK155radio::Update(float dT,U_INT FrNo,char exs)
+{ if (0 == sPower)        return;
   //---Update flasher ----------------------------------------------------
   mskFS = RadioMSK[globals->clk->GetON()];
   //----------------------------------------------------------------------
@@ -954,15 +957,15 @@ void CK155radio::TimeSlice (float dT,U_INT FrNo)
 	if (gTimer > 1.0)	{gTimer -= 1.0; Dispatcher(K55EV_TOPSC);}// Beat second
 	//--- Process Radio 1 specific tasks -----------------------------------
 	if (1 == uNum)    globals->rdb->TuneTo(COM);
-  if (1 == uNum)    globals->cILS = ILS;
 	//--- Refresh comm radio -----------------------------------------------
   COM = globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh com
-	//----In external mode, refresh only WPT -------------------------------
-	if (EXT.IsActive())	return EXT.Refresh(FrNo);
+	//----When external source, refresh only COM ---------------------------
+	if (exs)	return;
   //----Refresh other  stations ------------------------------------------
   VOR	= globals->dbc->GetTunedNAV(VOR,FrNo,ActNav.freq);     // Refresh VOR
 	if (VOR)	return;
   ILS = globals->dbc->GetTunedILS(ILS,FrNo,ActNav.freq);     // Refresh ILS
+  if (1 == uNum)    globals->cILS = ILS;
   return;
 }
 //==========================================================================
@@ -1563,10 +1566,10 @@ bool CKR87radio::CheckPowerOF()
 //  -Assert selected NDB
 //  -Compute NDB direction = (NDB Radial - plane direction) (deg)
 //  But for RH, plane direction should be inverted
+//	NOTE:  No external source used yet
 //--------------------------------------------------------------------
-void CKR87radio::TimeSlice (float dT,U_INT FrNo)
-{  CRadio::TimeSlice (dT,FrNo);
-  //---Update according to State --------------------------------------
+void CKR87radio::Update (float dT,U_INT FrNo,char exs)
+{ //---Update according to State --------------------------------------
   if ((K87_POW_OF == rState) && (!CheckPowerON())) return;
   if ((K87_POW_OF != rState) && ( CheckPowerOF())) return;
   mskFS = RadioMSK[globals->clk->GetON()];
@@ -1588,7 +1591,7 @@ void CKR87radio::TimeSlice (float dT,U_INT FrNo)
 //
 //  TRANSPONDER KT76
 //  Radio part:
-//
+//	NOTE:  No external source used yet
 //==========================================================================
 CKT76radio::CKT76radio()
 { TypeIs (SUBSYSTEM_TRANSPONDER_RADIO);
@@ -1820,9 +1823,8 @@ return  CRadio::ReceiveMessage (msg);
 //-------------------------------------------------------------------------
 //  Time Slice
 //-------------------------------------------------------------------------
-void CKT76radio::TimeSlice(float dT,U_INT FrNo)
-{ CDependent::TimeSlice(dT,FrNo);
-  if (!active)  {EnterPOF(); return;}
+void CKT76radio::Update(float dT,U_INT FrNo,char exs)
+{ if (!active)  {EnterPOF(); return;}
   //---Update flasher --------------------------------------------------
   mskFS = RadioMSK[globals->clk->GetON()];
   if (State != XPD_ALT)     return;
