@@ -184,7 +184,7 @@ CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
     sprintf (ext, ".%d", wrkrnd);
     strcat (s.filename, ext);
   }
-
+	TRACE("Read panel %s",filename);
   if (OpenStream (&s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
