@@ -211,6 +211,8 @@ class CK89gauge: public CRadioGauge {  //CBitmapGauge {
   short             yBase;              // Base line
   short             xBase;              // Right side divider
   short             yLed;               // Small leds line
+	short							Ampli;							// CDI width
+	short							Base;								// CDI Base
   //---------- Start of inside click area ---------------------
   short             xClk;               // x start click
   short             yClk;               // y start click
