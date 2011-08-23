@@ -4206,7 +4206,7 @@ bool CK89gps::IsChar(char car,short lin,short col)
 //  Drawing
 //-----------------------------------------------------------------------------
 //  Draw a CDI at indicated position
-//  Deviation is computed as proportional to +- 20° for 33 pixels
+//  Deviation is computed as proportional to +- 20°
 //-----------------------------------------------------------------------------
 int CK89gps::DrawCDI(short lin,short col)
 { StoreText("...........",lin,col);
@@ -4391,6 +4391,7 @@ void GPSRadio::PowerON()
 	APL	  = pln->GetAutoPilot();
 	RAD		= pln->GetMRAD();
   BUS   = mveh->GetRadioBUS();
+	FPL   =  mveh->GetFlightPlan();	
 	bool ok = (APL) && (BUS);
 	if (!ok)	gpsTK	= GPSR_NONE;
 	return;

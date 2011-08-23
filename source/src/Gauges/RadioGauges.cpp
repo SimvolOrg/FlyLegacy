@@ -985,6 +985,11 @@ void CK89gauge::ReadFinished()
   nMsg.id       = MSG_GETDATA;
   nMsg.sender   = unId;
   nMsg.user.u.datatag = 'obs_';
+	//--- Compute CDI width ------------------------------------
+	short pix = 11 * wCar;
+	Ampli			= pix >> 1;						// Half width
+	short cdi = GPS->cdiCL;
+	Base			= xBase + Ampli - (wCar >> 1) + 1;
   return;
 }
 //------------------------------------------------------------------
@@ -1198,18 +1203,18 @@ CK89gauge::DisFN CK89gauge::DshTAB[4] = {
 };
 
 //----------------------------------------------------------------------------
-//  Draw the CDI
+//  Draw the CDI (The full amplitude is [-20°,+20°]
 //----------------------------------------------------------------------------
 void CK89gauge::DrawCDIneedle()
 { short cdi = GPS->cdiCL;
   //-------Draw CDI deviation --(positive=>Left deviation)------------------
   if (0 == cdi) return;
   int y0  = scrLN[GPS->cdiLN];
-  int mid =  xBase + (cdi * wCar)  + (K89_CDI_MIDDLE - 2);
-  int bar = -int((K89_CDI_AMPLI * GPS->cdiDEV) / 40);
+	int mid = Base + (cdi * wCar);
+	int bar = -int((Ampli * GPS->cdiDEV) / 40);
   //-------Clamp result to [0-66] -----------------------------
-  if (-33 > bar) bar = -33;
-  if (+33 < bar) bar = +33;
+  if (-33 > bar) bar = -Ampli;						
+  if (+33 < bar) bar = +Ampli;						
   rFont->SetTransparent();
   rFont->DrawChar(surf,(mid + bar),y0,'|',amber);
   return;
