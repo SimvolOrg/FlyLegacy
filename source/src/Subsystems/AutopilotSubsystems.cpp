@@ -1393,7 +1393,7 @@ void	AutoPilot::ModeTGA()
 			step  = AP_TGA_HD3;
 			return  LateralHold();
 		case AP_TGA_HD3:
-			if (Radio->mdis < 8)		return LateralHold();
+			if (Radio->mdis < 7)		return LateralHold();
 			return EnterAPR();
 	}
 	return;
