@@ -228,8 +228,10 @@ char *vpMSG[] = {
 //	the current flight plan
 //=========================================================================
 VPilot::VPilot()
-{ State = VPL_IS_IDLE;
+{ SetIdent('-VP-');
+	State = VPL_IS_IDLE;
 	fpln	= 0;
+	Radio	= 0;
 }
 //--------------------------------------------------------------
 //	Create error

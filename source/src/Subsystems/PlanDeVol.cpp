@@ -1734,7 +1734,8 @@ int CFPlan::CheckError()
 //	Check for completness
 //-----------------------------------------------------------------
 int	CFPlan::ActivatePlan()
-{	if (FPL_STA_OPR == State)	return 1;
+{	UpdatePlan();							// Values from aircraft
+	if (FPL_STA_OPR == State)	return 1;
 	Reorder(1);
 	if (CheckError())					return 0;
 	//--- Fligth plan is operational ---

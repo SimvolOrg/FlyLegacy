@@ -30,6 +30,14 @@
 
 using namespace std;
 //===================================================================================
+//		Flag
+//===================================================================================
+char *radFLAG[] = {
+	"OF",
+	"TO",
+	"FR",
+};
+//===================================================================================
 // CExtSource:   An externnal radio source used to drive the radio
 //===================================================================================
 void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
@@ -152,45 +160,17 @@ void CRadio::Probe(CFuiCanva *cnv)
                                       ActCom.fract);
   cnv->AddText(1,edt,1);
 
-  sprintf_s(edt,63,"%03d",Radio.xOBS);
-  cnv->AddText( 1,"xOBS");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.hREF);
-  cnv->AddText( 1,"hREF");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.radi);
-  cnv->AddText( 1,"Radial");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.hDEV);
-  cnv->AddText( 1,"hDEV");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.gDEV);
-  cnv->AddText( 1,"gDEV");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.mdis);
-  cnv->AddText( 1,"nMile");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.aDir);
-  cnv->AddText( 1,"aDir");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.iAng);
-  cnv->AddText( 1,"iAng");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%d",Radio.ntyp);
-  cnv->AddText( 1,"Type");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%d",Radio.flag);
-  cnv->AddText( 1,"flag");
-  cnv->AddText(10,edt,1);
+  cnv->AddText( 1,1,"xOBS %03d",Radio.xOBS);
+  cnv->AddText( 1,1,"hREF %.5f",Radio.hREF);
+  cnv->AddText( 1,1,"RADI %.5f",Radio.radi);
+	cnv->AddText( 1,1,"rDEV %.5f",Radio.rDEV );
+  cnv->AddText( 1,1,"hDEV %.5f",Radio.hDEV );
+  cnv->AddText( 1,1,"gDEV %.5f",Radio.gDEV);
+  cnv->AddText( 1,1,"mDIS %.5f",Radio.mdis);
+  cnv->AddText( 1,1,"aDIR %.5f",Radio.aDir);
+  cnv->AddText( 1,1,"iANG %.5f",Radio.iAng);
+  cnv->AddText( 1,1,"rTYP %d",Radio.ntyp);
+	cnv->AddText( 1,1,"flag %s",radFLAG[Radio.flag]);
   return;
 }
 //---------------------------------------------------------------------------
@@ -423,13 +403,14 @@ void	CRadio::Synchronize()
 	if (sys)
 	{		sys->SetNavOBS(Radio.xOBS);
 			rad = sys->GetRadial(); 
+			Radio.radi = rad;
       Radio.ntyp = sys->SignalType();							
       Radio.mdis = sys->GetNmiles();
       Radio.mdev = sys->GetMagDev();
       Radio.hREF = sys->GetRefDirection();				//Radio.xOBS;
+			Radio.rDEV = Wrap360(rad - Radio.hREF);
       Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,sPower);
       Radio.gDEV = sys->GetVrtDeviation();				//0;
-      Radio.radi = rad;
       Radio.fdis = sys->GetFeetDistance();
       Radio.sens = sys->Sensibility();						//10;
     }
@@ -441,7 +422,7 @@ void	CRadio::Synchronize()
       Radio.hDEV = 0;
   }
   //---Compute angle between reference and aircraft heading --
-  Radio.aDir = Wrap360(mveh->GetDirection() - Radio.mdev);
+  Radio.aDir = mveh->GetMagneticDirection();
   Radio.iAng = Wrap360(Radio.hREF - Radio.aDir);
 	return;
 }
