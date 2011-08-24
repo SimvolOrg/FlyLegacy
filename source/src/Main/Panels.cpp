@@ -952,7 +952,7 @@ int CPanel::ReadNewGauge(SStream *str, Tag tag)
 //-----------------------------------------------------------------------
 void CPanel::AssignLite(Tag t)
 { plite = pit->GetLight(t);
-	if (0 == plite)	gtfo("lite %s undefined in %",TagToString(t),filename);
+	if (0 == plite)	gtfo("lite %s undefined in %s",TagToString(t),filename);
 	return;
 }
 //-----------------------------------------------------------------------

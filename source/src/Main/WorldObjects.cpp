@@ -240,7 +240,9 @@ void CWorldObject::SetOrientation(SVector v)
   //----Save position at global level ----------------
   globals->iang = iang;
   globals->dang = dang;
-    //--- Load openGL rotation matrix -----------------
+	//--- To trap a specific bug -----------------------
+	double *ad = &globals->dang.z;
+  //--- Load openGL rotation matrix -----------------
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();

@@ -1580,7 +1580,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   Plane->setMass (mm, mm.inertia);														// 
 
   // 1) wing & engine forces
-  fb.Times (0.0); 
+  fb.Set (0,0,0); 
   if (globals->caging_fixed_wings) fb.Add (wng->GetForce ()); // LH
   VectorDistanceLeftToRight  (fb); // LH=>RH
 
@@ -1630,7 +1630,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   ed.duration = static_cast<opal::real> (dT);
 
   // 2)  wing, mine & engine moments
-  tb.Times (0.0);
+  tb.Set(0,0,0);
   if (globals->caging_fixed_wings) tb.Add (wng->GetMoment ());// 
   VectorOrientLeftToRight (tb); // 
 
