@@ -10212,6 +10212,8 @@ CDualKnobGauge::CDualKnobGauge (CPanel *mp)
   idec = -0.01f;
   oinc = +0.01f;
   odec = -0.01f;
+	inca.SetNoClick();
+	ouca.SetNoClick();
 }
 //-----------------------------------------------------------------------
 //	Prepare messages
@@ -10279,10 +10281,12 @@ int CDualKnobGauge::Read (SStream *stream, Tag tag)
 
   case 'inca':
     ReadFrom (&inca, stream);
+		inca.YesToClick();
     return TAG_READ;
 
   case 'ouca':
     ReadFrom (&ouca, stream);
+		ouca.YesToClick();
     return TAG_READ;
   //----Repeat Timer -----------------------
   case 'rept':

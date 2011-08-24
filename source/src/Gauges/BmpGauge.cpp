@@ -1631,7 +1631,6 @@ void C_SimpleSwitch::PrepareMsg(CVehicleObject *veh)
 int C_SimpleSwitch::Read (SStream *stream, Tag tag)
 {
   int rc = TAG_IGNORED;
-
   switch (tag) {
     //--- read the texture ----------------------------------
     case 'bmap':
@@ -1820,7 +1819,7 @@ EClickResult C_SimpleSwitch::MouseClick (int mouseX, int mouseY, int buttons)
 
   case 2:
     // Horizontal orientation
-    (mouseX < cx)?(IncState ()):(DecState ());
+    (mouseX < cx)?(DecState ()):(IncState ());
     return MOUSE_TRACKING_OFF;
   }
   return MOUSE_TRACKING_ON;
@@ -2778,9 +2777,18 @@ int C_SimpleInOutStateSwitch::Read (SStream *stream, Tag tag)
     return TAG_READ;
 
   case 'mack':
-    //--- must be acknoledged -----------
+    //--- must be acknoledged --------------------
     mack = 1;
     return TAG_READ;
+		//--- Cursor up -(0 position) ----------------
+	case 'csru':
+		csr[0] = BindCursor(stream);
+    return TAG_READ;
+		//--- Cursor dn -(1 position) ----------------
+	case 'csrd':
+		csr[1] = BindCursor(stream);
+    return TAG_READ;
+
   }
   return CGauge::Read (stream, tag);
 }
