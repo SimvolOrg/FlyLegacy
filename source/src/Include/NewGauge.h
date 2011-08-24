@@ -938,7 +938,8 @@ public:
 protected:
   VStrip    stsw;                           // Bitmap switch
   int       vin[2];                         // On/off intt
-
+  //-------- Cursor Tags ---------------------------------------------
+  Tag     csr[2];														// Tags for cursor up/dn
   //------------------------------------------------------------------
   char     gpos;                            // On/Off position
   char     rfu1;                            // reserved

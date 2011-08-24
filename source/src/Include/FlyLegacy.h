@@ -3275,6 +3275,7 @@ struct BUS_RADIO {U_CHAR    rnum;       // Radio num
                   short     xOBS;       // External OBS
                   double    hREF;       // Lateral reference
                   double    radi;       // ILS/VOR radial
+									double		rDEV;				// Relative deviation
                   double    hDEV;       // Lateral Deviation
                   double    gDEV;       // Glide     Deviation
                   double    mdis;       // Distance in miles

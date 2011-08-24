@@ -1446,6 +1446,8 @@ public:
   EMessageResult  ReceiveMessage (SMessage *msg);
   // CSubsystem methods
   const char* GetClassName (void) { return "CSwitchSet"; }
+	//--- Gauge BUS --------------------------------------------
+	inline int			GaugeBusIN03()  {return Indx;}
   //--- Attributes -------------------------------------------
 protected:
   int     Indx;                      // Current position

@@ -108,6 +108,7 @@ protected:
 //  GA ARROUND STEP
 //====================================================================================
 #define AP_TGA_UP5	0						// Leg 0 climb to 500
+#define AP_TGA_HD0	0						// Leg 0:
 #define AP_TGA_HD1  1						// Leg 1: Head 90°
 #define AP_TGA_HD2  2						// LEG 2: going away
 #define AP_TGA_HD3	3						// LEG 3: Going along
@@ -298,6 +299,7 @@ protected:
   char       ugaz;                          // Use autothrottle
 	char       wgrd;													// Wheel on ground
 	char			 redz;													// Red zone
+	char       sect;													// Sector TO
   //-----------Lights--------------------------------------------------
   char       alta;                          // Altitude armed
   char       flsh;                          // Flash
@@ -332,6 +334,9 @@ protected:
   double     vMIS;              // Vertical miss error
 	double     rAGL;							// AGL reference
 	double	   dSPD;							// Disengage speed
+	//--- GO ARROUND ------------------------------------------------------
+	double			TGA0;							// Distance for LEG 1
+	double			TGA1;							// Distance for LEG 2
 	//--- Flap control ----------------------------------------------------
 	char			 tkoFP;							// Take off flap position
 	double		 tkoFA;							// Altitude
@@ -365,7 +370,6 @@ protected:
   double     hERR;                          // Lateral error
   double     vTIM0;                         // Time for ARC AB
   double     vTIM1;                         // Time for P to D
-  double     vTIM2;                         // Previous vTIM1
   double     vHRZ;                          // Horizontal speed
   //----Vertical mode control values ----------------------------------
   double     Vref;                          // VSP Reference
@@ -502,13 +506,14 @@ public:
   //----Lateral modes --------------------------------------------------
 	double					AdjustHDG();
   void            GetCrossHeading();
+	void						ModeLT0();
   void            ModeLT1();
   void            ModeLT2();
 	void						ModeTGA();
   void            ModeROL();
   void            ModeHDG();
 	void						ModeGND();
-  void            CheckDirection();
+  void            CrossDirection();
 	//---- Vertical modes ------------------------------------------------
   void            ModeGSW();
   void            ModeGST();

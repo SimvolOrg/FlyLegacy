@@ -162,6 +162,9 @@ public:
   void      Set(short px, short py, short wd, short ht, char type);
   //---------------------------------------------------------------
 	inline		U_CHAR	IsOK(U_CHAR m) {return (m & Type);}
+	//--------------------------------------------------------------
+	inline    void  SetNoClick()	{	Type &= (-1) - AREA_CLIK;}
+	inline    void	YesToClick()	{ Type |= AREA_CLIK;}
   //--------------------------------------------------------------
   inline    bool  NoShow()      {return ((Type & AREA_SHOW) == 0);}
   inline    bool  NoClick()     {return ((Type & AREA_CLIK) == 0);}
