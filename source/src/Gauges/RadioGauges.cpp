@@ -1578,8 +1578,7 @@ void CBKAP140Gauge::DrawAmbient()
 {	char st = (PAN->GetPOW());
 	ca[6].Draw (st);          // ENG Light
 	//--- Auto throttle -----------------------
-	char ugaz	= PAN->GasST();
-	ca[22].Draw(ugaz);				// Gaz control
+	ca[22].Draw(PAN->GasST());				// Gaz control
 	return;
 }
 //------------------------------------------------------------------

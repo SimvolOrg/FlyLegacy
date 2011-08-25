@@ -2603,7 +2603,7 @@ void CK89gps::ModifiedPlan()
 //---------------------------------------------------------------------
 void CK89gps::ActiveWaypoint(CWPoint *wpt,bool endir)
 {	actWP	= wpt;														// Save it
-	DataFromPlan(wpt);
+	UpdNavigationData(wpt);
 	prvIDN		= FPL->PreviousIdent(wpt);
 	insDIS		= FPL->GetInDIS();
 	//--- Check for end of DIRECT TO mode -------------
@@ -2628,9 +2628,9 @@ void CK89gps::ActiveWaypoint(CWPoint *wpt,bool endir)
 	return;
 }
 //------------------------------------------------------------------
-//  Refresh active waypoint
+//  Refresh Navigation data
 //------------------------------------------------------------------
-void CK89gps::DataFromPlan(CWPoint *wpt)
+void CK89gps::UpdNavigationData(CWPoint *wpt)
 { Speed			= mveh->GetPreCalculedKIAS();
 	aCAP			= mveh->GetMagneticDirection();
 	actRTE		= (wpt)?(wpt->GetDTK()):(0);  
@@ -4392,6 +4392,7 @@ void GPSRadio::PowerON()
 	RAD		= pln->GetMRAD();
   BUS   = mveh->GetRadioBUS();
 	FPL   =  mveh->GetFlightPlan();	
+	FPL->ClearDirect();
 	bool ok = (APL) && (BUS);
 	if (!ok)	gpsTK	= GPSR_NONE;
 	return;
@@ -4405,7 +4406,7 @@ void GPSRadio::PowerON()
 void GPSRadio::EnterTRK()
 {	if (GPSR_NONE == gpsTK)				return;		// No tracking
   if (APL->IsDisengaged())			return;   // But disengaged
-	if (0 == FPL->ActivatePlan())	return;
+	FPL->ActivatePlan();
 	APL->SetGasControl(1);
 	//--- Set Tracking mode -------------------------
 	gpsTK	= GPSR_TRAK;
@@ -4446,7 +4447,7 @@ float GPSRadio::SelectDirection()
 	float rdv = fabs(dev);
 	if ((dis > 12) || (rdv < 5))	return seg;
 	//--- Compute direct-to direction to waypoint -----
-  return wTRK->DirectTO(mveh);
+  return wTRK->GoDirect(mveh);
 }
 //--------------------------------------------------------------
 //	Refresh direction to waypoint if needed
@@ -4458,7 +4459,7 @@ void GPSRadio::Refresh()
 	bool  dto = ((rdv > 5) || (wTRK->IsDirect()));
 	//--- check if Direct to is active ----------
 	if (!dto)	return; 
-  float dir = wTRK->DirectTO(mveh);
+  float dir = wTRK->GoDirect(mveh);
 	RAD->ChangePosition(wTRK->GetGeoP());
 	RAD->ChangeRefDirection(dir);
 	return;
@@ -4487,7 +4488,10 @@ void GPSRadio::EnterAPR()
 	if (0 == aprON)	return EnterSBY();
 	//--- Return landing data -----------------------------
 	ILS_DATA *ils = wTRK->GetLandingData();
+	//--- Change navigation parameters to ILS -------------
 	if (0 == ils)	  return EnterSBY();
+	wTRK->SetLandingMode();
+	//-----------------------------------------------------
 	RAD->ModeEXT(wTRK->GetDBobject(),ils);	
 	//--- Configure autopilot for landing ------------------
 	APL->SetLandingMode();
@@ -4502,8 +4506,9 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 	switch (gpsTK)	{
 		case GPSR_PWOF:
 			return;
-		//--- Activate Flight Plan above 500 feet --
+		//--- Get aircraft parameters to FPL --
 		case GPSR_STBY:
+			FPL->UpdatePlan();
 			return;
 		//--- Tracking active waypoint -------------
 		case GPSR_TRAK:
