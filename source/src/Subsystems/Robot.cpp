@@ -222,6 +222,7 @@ char *vpMSG[] = {
 	"Cannot locate take-off runway",				// Msg07
 	"Please open Nav Radio 1",							// Msg08
 	"No runway for landing",								// Msg09
+	"Throttle control lost",								// MSG10
 };
 //=========================================================================
 //  This robot will pilot the aircraft and execute
@@ -379,7 +380,9 @@ void VPilot::ModeTKO()
 //	 TODO: Put AGL in parameter
 //--------------------------------------------------------------
 void VPilot::ModeCLM()
-{	if (apil->IsDisengaged())	  return HandleBack();
+{	bool tc		= apil->HasGasControl();
+	if (!tc) Error(10);
+	if (apil->IsDisengaged())	  return HandleBack();
 	if (apil->BellowAGL(1200))	return;
 	//--- Drive toward next waypoint -----------
 	ChangeWaypoint();
@@ -420,7 +423,7 @@ float VPilot::SetDirection()
 	float rdv = fabs(dev);
 	if ((dis > 12) || (rdv < 5))	return seg;
 	//--- Compute direct-to direction to waypoint -----
-  return wayP->DirectTO(mveh);
+  return wayP->GoDirect(mveh);
 }
 //--------------------------------------------------------------
 //	Change to next Waypoint
@@ -457,7 +460,7 @@ void VPilot::Refresh()
 	bool  dto = ((rdv > 5) || (wayP->IsDirect()));
 	//--- check if Direct to is active ----------
 	if (!dto)	return; 
-  float dir = wayP->DirectTO(mveh);
+  float dir = wayP->GoDirect(mveh);
 	Radio->ChangePosition(wayP->GetGeoP());
 	Radio->ChangeRefDirection(dir);
 	return;
@@ -466,7 +469,9 @@ void VPilot::Refresh()
 //	Tracking Waypoint
 //--------------------------------------------------------------
 void VPilot::ModeTracking()
-{ if (apil->IsDisengaged())	return HandleBack();
+{ bool tc		= apil->HasGasControl();
+	if (!tc) Error(10);
+	if (apil->IsDisengaged())	return HandleBack();
 	if (wayP->IsActive())	    return Refresh();
 	ChangeWaypoint();
 	return;
@@ -487,7 +492,7 @@ void VPilot::TimeSlice (float dT,U_INT frm)
 	FrNo			= frm;
 	T01			 -= dT;
 	switch (State)	{
-		//--- Staring aircraft -------------
+		//--- Statring aircraft -------------
 		case VPL_PREFLT01:
 			PreFlight(dT);
 			return;

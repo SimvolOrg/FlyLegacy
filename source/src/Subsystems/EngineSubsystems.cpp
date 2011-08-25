@@ -61,6 +61,7 @@ CEngineData::CEngineData(CEngine *m)
   e_blad    = 0;                        // Blad from controler
   //----Output values -------------------------
   e_hob     = 0;                        // Hobb value
+	e_Boost		= 0;												// Booster
   e_Map     = 0;           
   e_gph     = 0;                        // fuel requested (galon per hour)
   e_rpm     = 0;                        // Engine RPM

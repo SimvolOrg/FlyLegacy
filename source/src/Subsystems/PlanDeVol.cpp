@@ -611,8 +611,9 @@ void CWPoint::Build(Tag t)
 	user			= t;
   fplan     = 0;
 	Modif			= 0;
-	mode			= 0;
+	mode			= WPT_MOD_LEG;
 	airp			= 0;
+	activ			= 0;
   position.lat = position.lon = position.alt = 0;
   altitude  = 0;
   DBwpt     = 0;
@@ -668,12 +669,15 @@ char *CWPoint::ChangeAltitude(int a)
 	return Alti;
 }
 //-----------------------------------------------------------
-//	Change leg mode
-//	Compute direct path to waypoint
+//	Change Mode
+//	Compute direct path to waypoint except if landing point
+//	For landing, the reference direction rDir has been
+//	set to the runway direction
 //-----------------------------------------------------------
-float CWPoint::DirectTO(CVehicleObject *veh)
-{	airp = veh->GetAdPosition();
-	mode = 1;
+float CWPoint::GoDirect(CVehicleObject *veh)
+{	if (IsLanding())	return rDir;
+	airp = veh->GetAdPosition();
+	mode = WPT_MOD_DIR;
 	SVector v = {0,0,0};
   CmHead *obj	= DBwpt.Pointer();
 	if (0 == obj)	return rDir;
@@ -719,7 +723,7 @@ void CWPoint::SetPosition(SPosition p)
 //-----------------------------------------------------------
 //	Set Direction
 //-----------------------------------------------------------
-void CWPoint::SetDirection(double d)
+void CWPoint::SetReferenceDIR(double d)
 {	rDir = d;
 	_snprintf(Dirt,4,"%03d",int(d));
 	Dirt[3] = 0;
@@ -881,7 +885,10 @@ ILS_DATA *CWPoint::GetLandingData()
 	//--- Locate runway end ----------------
 	CRunway  *rwy = apt->FindRunway(lndRWY);
 	if (0 == rwy)					return 0;
-	return rwy->GetLandDirection(lndRWY);
+	ILS_DATA *ils = rwy->GetLandDirection(lndRWY);
+	//--- Set reference direction to runway direction --
+	rDir = ils->lnDIR;
+	return ils;
 }
 //--------------------------------------------------------------------
 //  Process first node
@@ -959,7 +966,6 @@ void CWPoint::Populate()
 //----------------------------------------------------------------------
 char* CWPoint::ModifyAltitude(int inc)
 {	if (IsVisited())	return Alti;
-	fplan->Modify(1);
 	float minA = DBwpt->GetElevation();
 	int  a = altitude;
 	a += inc;
@@ -981,7 +987,7 @@ void CWPoint::UpdateMark(char m)
 	strcpy(Mark," ");
 	State		= WPT_STA_OUT;
  *Etar	  = 0;
-	mode    = 0;
+	mode    = WPT_MOD_LEG;
 	return;
 }
 //----------------------------------------------------------------------
@@ -989,6 +995,7 @@ void CWPoint::UpdateMark(char m)
 //----------------------------------------------------------------------
 void CWPoint::NodeNAV(CWPoint *prv,char m)
 {	activ	= 0;
+	Modif	= 0;
 	//--- Update if requested ----------------
 	UpdateMark(m);
 	//--- check for altitude -----------------
@@ -1373,6 +1380,12 @@ void CFPlan::ReadFinished()
 }
 //----------------------------------------------------------------------
 //  Compute distance between nodes
+//	NOTE: the reference direction from p0 to P1 is the direction of
+//				the segment p0-p1.  It is stored in p1 so that only p1 is
+//				needed for navigation. The direct direction to p1 is the 
+//				from actual aircraft position to p1 and may be distinct from
+//				the reference direction.  When the are about the same, the 
+//				aircraft is flying the segment.
 //----------------------------------------------------------------------
 void CFPlan::SetDistance(CWPoint *p0, CWPoint *p1)
 {	SVector v = {0,0,0};
@@ -1387,7 +1400,7 @@ void CFPlan::SetDistance(CWPoint *p0, CWPoint *p1)
 	//--- direction to p1 ----------------------
 	double mdev = p1->GetMagDeviation();
 	double rdir = Wrap360((float)v.h - mdev);
-	p1->SetDirection(rdir);
+	p1->SetReferenceDIR(rdir);
 	return;
 }
 //----------------------------------------------------------------------
@@ -1579,6 +1592,14 @@ void CFPlan::AssignDirect(CmHead *obj)
 	return;
 }
 //-----------------------------------------------------------------
+// Clear Direct mode
+//-----------------------------------------------------------------
+void CFPlan::ClearDirect()
+{	dWPT.SetActive(0);
+	dWPT.SetDBwpt(0);
+	return;
+}
+//-----------------------------------------------------------------
 // Return previous waypoint identity
 //	Called from GPS when active waypoint is changed
 //-----------------------------------------------------------------
@@ -1618,11 +1639,14 @@ void	CFPlan::TimeSlice(float dT, U_INT frm)
 			return;
 		//--- Flight plan operational -------------
 		case FPL_STA_OPR:
+			//--- Check for an empty flight plan ----
+			if (IsEmpty())		return;
 			uWPT	= (CWPoint*)wPoints.NextPrimary(uWPT);
 			//--- Recycle plan if needed ------------
 			if (0 == uWPT)	
 			{ uWPT = (CWPoint*)wPoints.HeadPrimary();
 			  nWPT	= uWPT;}
+			if (0 == uWPT)		return;
 			//--- Update one waypoint ----------------
 			uWPT->UpdateRange(mveh,frm);
 			SaveNearest(uWPT);
@@ -1645,7 +1669,7 @@ void CFPlan::UpdateDirectNode(U_INT frm)
 //-----------------------------------------------------------------
 void CFPlan::UpdateActiveNode(U_INT frm)
 {	aWPT->UpdateRange(mveh,frm);
-	if (GPS)	GPS->DataFromPlan(aWPT);
+	if (GPS)	GPS->UpdNavigationData(aWPT);
 	//---------------------------------------
 	if (0 == aWPT->UpdateState())			return;
 	//--- Waypoint is terminated ------------
@@ -1723,10 +1747,8 @@ void CFPlan::Probe(CFuiCanva *cnv)
 //-----------------------------------------------------------------
 int CFPlan::CheckError()
 {	//--- There must be at least 3 nodes --------------
+	if (dWPT.IsActive())			return 0;
 	if (3 > NbWPT)						return 1;
-	//--- We must have started from here --------------
-	//char *iden = GetDepartingIDN();
-	//if (strcmp(iden,dapt))		return 2;
 	return 0;
 }
 //-----------------------------------------------------------------
@@ -1739,12 +1761,13 @@ int	CFPlan::ActivatePlan()
 	Reorder(1);
 	if (CheckError())					return 0;
 	//--- Fligth plan is operational ---
-	State = FPL_STA_OPR;
-	aWPT	= (CWPoint*)wPoints.HeadPrimary();
-	uWPT	= aWPT;
-	nWPT	= uWPT;
-	dWPT.Unassign();
 	endir	= false;
+	State = FPL_STA_OPR;
+	uWPT	= 0;
+	nWPT	= 0;
+	if (dWPT.IsActive())			return 1;
+	aWPT	= (CWPoint*)wPoints.HeadPrimary();
+	dWPT.Unassign();
 	return 1;
 }
 //-----------------------------------------------------------------
@@ -1771,7 +1794,8 @@ int CFPlan::NodeType(CWPoint *wp)
 //	Check for completness
 //-----------------------------------------------------------------
 void CFPlan::Stop()
-{	State = FPL_STA_NUL;	
+{	State = FPL_STA_NUL;
+	ClearDirect();
 	aWPT	= 0;	}
 //-----------------------------------------------------------------
 //	Return airport departing key

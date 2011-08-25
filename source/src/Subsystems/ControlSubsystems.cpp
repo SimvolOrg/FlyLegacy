@@ -600,6 +600,8 @@ void CRotaryIgnitionSwitch::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
   Send_Message(&meng);
 	if (meng.intData != 1)								return;
 	rot_pos = MAGNETO_SWITCH_BOTH;
+  engm.intData = rignTAB[rot_pos];
+  Send_Message(&engm);
   return;
 }
 //------------------------------------------------------------------------

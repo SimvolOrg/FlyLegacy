@@ -1155,6 +1155,7 @@ void AutoPilot::Disengage(char gr)
   vStat   = AP_DISENGD;
   signal  = SIGNAL_OFF;
   StateChanged(AP_STATE_DIS);
+	mveh->SetABS(0);
   ailS->Neutral();							// Aileron to O
   rudS->Neutral();
 	globals->jsm->Connect();
@@ -1436,13 +1437,15 @@ void AutoPilot::ModeGND()
 			if (kSPD < vROT)							return;
 			Rotate();
 			return;
-  	//--- in VSP mode leave GND at 50 feet agl-
+  	//--- in Take-off mode leave GND at 50 feet agl-
+			/*
 		case AP_VRT_VSP:
 		case AP_VRT_ALT:
 			if (cAGL < 100)								return;
 			lStat	= AP_LAT_ROL;
 			rudS->Neutral();
 			return;
+			*/
 		//--- in final disengage below cut speed--
 		case AP_VRT_FIN:
 			if (kSPD > dSPD)							return;
@@ -1460,7 +1463,7 @@ void AutoPilot::Rotate()
 {	alta  = 1;                        // ALT armed
   StateChanged(AP_STATE_AAA);       // State is changed
 	//--- Set reference altitude ------------------------
-	rALT  = RoundAltitude(aTGT);
+	rALT  = RoundAltitude(aTGT + globals->tcm->GetGroundAltitude());
 	StateChanged(AP_STATE_ACH);				// Altitude changed
 	//--- Enter altitude Hold ---------------------------
 	StateChanged(AP_STATE_ALT);       // Warn Panel
@@ -1471,6 +1474,7 @@ void AutoPilot::Rotate()
   pidL[PID_ALT]->Init();            // init PID
   pidL[PID_AOA]->Init();            // init PID
 	pidL[PID_RUD]->Init();
+	EnterROL();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -1673,6 +1677,7 @@ void AutoPilot::ExitHDG()
 //-----------------------------------------------------------------------
 void AutoPilot::EnterINI()
 { pidL[PID_AOA]->Init();
+	elvS->Neutral();
 	EnterROL();
   EnterVSP();
 	step	= 0;
