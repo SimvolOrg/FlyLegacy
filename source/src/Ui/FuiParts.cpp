@@ -923,7 +923,8 @@ CSlot  *CListBox::GetSelectedSlot()
 //  NOTE: p must be a primary slot
 //--------------------------------------------------------------------------------
 CSlot  *CListBox::NextPrimary(CSlot *p)
-{ int No = p->GetSeq() + p->GetTotLines();
+{ if (0 == p)				return 0;
+	int No = p->GetSeq() + p->GetTotLines();
   return (No >= nNOD)?(0):(Obj[No]);
 }
 //--------------------------------------------------------------------------------
