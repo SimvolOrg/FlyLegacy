@@ -447,6 +447,7 @@ public:
   float   e_blad;                       // Blad from controler
   //----Output values -------------------------
   float   e_hob;                        // Hobb value
+	float		e_Boost;											// Booster
   float   e_Map;                        // Manifold presure (P)
   float   e_hMap;                       // Manifold presure (Hg)
   float   e_gph;                        // fuel requested (galon per hour)

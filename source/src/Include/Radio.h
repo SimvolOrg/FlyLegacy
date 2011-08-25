@@ -467,7 +467,7 @@ public:
 	//--- Notifications from flight plan --------------------
 	virtual void  ModifiedPlan()	{;}
 	virtual void	ActiveWaypoint(CWPoint *wpt,bool e) {;}
-	virtual void	DataFromPlan(CWPoint *w) {;}
+	virtual void	UpdNavigationData(CWPoint *w) {;}
 	//--- Tracking management --------------------------------
 	void	TrackGPSEvent(U_CHAR evn, char prm);
 	void	PowerEVN (char parm);

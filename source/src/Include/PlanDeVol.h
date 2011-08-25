@@ -32,12 +32,15 @@ class CFPlan;
 //===========================================================================
 #define FPL_STA_NUL	(0)										// Empty state
 #define FPL_STA_OPR (1)										// Operational
-//------------------------------------------------------------------------
+//---Waypoint states --------------------------------------------------
 #define WPT_STA_OUT (1)										// outside of waypoint
 #define WPT_STA_INS (2)										// Inside waypoint
 #define WPT_STA_TRM	(3)										// Terminated
 #define WPT_STA_AWA (4)										// Going away
-//------------------------------------------------------------------------
+//---------------------------------------------------------------------
+#define WPT_MOD_LEG	(0)										// Leg Mode
+#define WPT_MOD_DIR (1)										// Direct mode
+#define WPT_MOD_LND (2)										// Mode landing
 //============================================================================
 //  Flight Plan route extremity
 //============================================================================
@@ -163,11 +166,11 @@ private:
   char            Elap[16];           // Elapse time
   char            Etar[16];           // Arrival time
 	//---------------------------------------------------------------------
-	float						dDir;								// Direct Direction to waypoint
-	float						rDir;								// Direction to next waypoint
-	float						pDis;								// Plane distance
-	float						sDis;								// SUmmmed distance
-  float           legDis;							// Distance from previous in nm
+	float						dDir;			// Direct Direction to waypoint
+	float						rDir;			// Direction to this waypoint from previous
+	float						pDis;			// Plane distance
+	float						sDis;			// Summmed distance
+  float           legDis;		// Distance from previous in nm
   //---------------------------------------------------------------------
   U_CHAR                    State;        // State
 	U_CHAR										Modif;				// Modifier indicator
@@ -209,8 +212,8 @@ public:
 	int			BestAltitudeFrom(int a0);
 	void    SetAltitude(int a);
 	void    SetPosition(SPosition p);
-  void		SetDirection(double d);
-	float		DirectTO(CVehicleObject *v);
+  void		SetReferenceDIR(double d);
+	float		GoDirect(CVehicleObject *v);
 	//-------------------------------------------------------------
 	bool		IsLast();
 	char		CheckAway();
@@ -268,11 +271,13 @@ public:
 	inline Tag				GetUser()							{return user;}
 	inline float			GetFrequency()				{return DBwpt->GetFrequency();}
 	inline float			GetILSFrequency()			{return ilsF;}
-	inline float			GetDTK()							{return rDir;}
+	inline float			GetDTK()							{return rDir;}	
 	inline float			GetCAP()							{return dDir;}
 	inline double     GetMagDeviation()			{return DBwpt->GetMagDev();}
 	inline double			GetDirection()				{return rDir;}
 	inline CWPoint   *GetOrgWPT()						{return (CWPoint*)DBwpt->GetUPTR();}
+	//--------------------------------------------------------------
+	inline void				SetLandingMode()			{mode = WPT_MOD_LND;}
 	//--------------------------------------------------------------
 	inline bool				HasTkoRWY() {return (strcmp("NONE",tkoRWY) != 0);}
 	inline bool				HasLndRWY()	{return (strcmp("NONE",lndRWY) != 0);}
@@ -287,6 +292,7 @@ public:
 	//----------------------------------------------------------------------
 	inline bool				NotFromFPL()	{return GetDBobject()->NoUPTR();}
 	inline bool				IsFromFPL()		{return GetDBobject()->HasUPTR();}
+	inline bool       IsLanding()		{return (mode == WPT_MOD_LND);}
 	//-----------------------------------------------------------------------
 	};
 //===========================================================================
@@ -349,8 +355,6 @@ protected:
 	void	ReadFinished();
 	//---------------------------------------------------------------
 public:
-	bool	AssignPlan(char *fn,char opt);
-	void	AddNode(CWPoint *wpt);
 	void	TimeSlice(float dT, U_INT fr);
 	void	UpdatePlan();
 	void	WarnGPS(char m);
@@ -362,10 +366,11 @@ public:
 	//---------------------------------------------------------------
 	double TurningPoint();
 	//--- Robot / GPS interface -------------------------------------
-	int		CheckError();
-	int	  ActivatePlan();
-	int		NodeType(CWPoint *wp);
+	int	  ActivatePlan();				// Form GPS or VPIL
 	void	Stop();
+	//--- Helpers ---------------------------------------------------
+	int		CheckError();
+	int		NodeType(CWPoint *wp);
 	char *GetDepartingKey();
 	char *GetDepartingIDN();
 	char *GetDepartingRWY();
@@ -373,9 +378,13 @@ public:
 	bool	HasLandingRunway();
 	bool	IsOnFinal();
 	void	SaveNearest(CWPoint *w);
-	void	AssignDirect(CmHead *obj);
 	char *PreviousIdent(CWPoint *wpt);
+	//--- Direct mode management ------------------------------------
+	void	AssignDirect(CmHead *obj);				// From GPS
+	void	ClearDirect();										// From GPS
 	//---Flight plan management -------------------------------------
+	bool		AssignPlan(char *fn,char opt);
+	void		AddNode(CWPoint *wpt);
 	CWPT    *CreateUserWPT(SPosition *p);
 	CWPoint *CreateAPTwaypoint(CAirport *apt);
 	CWPoint *CreateNAVwaypoint(CNavaid *nav);

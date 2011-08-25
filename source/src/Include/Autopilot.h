@@ -543,6 +543,7 @@ public:
 	inline bool IsDisengaged()		  {return (lStat == AP_DISENGD);}
   inline bool IsEngaged()					{return (lStat != AP_DISENGD);}
 	inline bool ModeGround()				{return (vStat == AP_VRT_FIN);}
+	inline bool HasGasControl()			{return (ugaz != 0);}
   //-------------------------------------------------------------------
   inline    bool        engLite()     {return (AP_STATE_DIS != lStat);}
 };

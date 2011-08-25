@@ -696,7 +696,7 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   //-------ACTIVE WAYPOINT ------------------------------------
   void              ModeLEG();
   void              ModeOBS();
-  void              DataFromPlan(CWPoint *w);
+  void              UpdNavigationData(CWPoint *w);
   void              RefreshActiveWPT();
   void              RefreshVNAVpoint();
   //-------INT page -------------------------------------------
