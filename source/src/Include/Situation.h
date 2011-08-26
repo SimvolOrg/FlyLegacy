@@ -50,9 +50,55 @@
 #include "FlyLegacy.h"
 #include <vector>
 #include <list> // sdk: CFlyObjectListManager SFlyObjectList
+
+
 //=======================================================================
 class CFuiRadioBand;
-//======================================================================
+//=======================================================================
+typedef enum  {
+
+  NO_RND_EVENTS          = 0,
+  RND_EVENTS_ENABLED     = (1 << 0),
+  RAND_TURBULENCE        = (1 << 1)
+
+} ERandomEvents;
+
+/*! \class CRandomEvents CLASS manager
+  
+    This class maintains a serie of random events
+    that occurrs during the timeslice situation
+    and allows to trigger events wherever it 's needed
+ */
+class CRandomEvents
+{
+	bool                     dirty;                                       ///< oject state memo
+	int                      rc;
+  static CRandomEvents     instance;
+  
+  CRandomEvents            (void) {;}
+	void Copy                (const CRandomEvents &aCopy);                ///< inactivated
+	CRandomEvents            (const CRandomEvents &aCopy);                ///< {Copy(aCopy);} inactivated
+	CRandomEvents& operator= (const CRandomEvents &aCopy);                ///< inactivated
+
+public:
+  CRandomizer random;
+  
+	///< construecteurs et destructeurs
+  void     Init            (void);
+  virtual ~CRandomEvents   (void);
+  static   CRandomEvents& Instance (void) {return instance;}
+
+	///< methods
+  void Timeslice           (float dT,U_INT Frame);
+  
+  ///< set
+
+	///< get
+	
+  ///< Clone
+	CRandomEvents Clone(void);                                            ///< inactivated
+};
+
 /*!
   sdk: SFlyObjectList CLASS manager
   ----------------------------
@@ -62,19 +108,19 @@ class CFuiRadioBand;
   #include <stdio.h>
   #include <string>
   #include <string.h>
-*/
+ */
 class CFlyObjectListManager
 {
-	bool dirty;	                                                          // oject state memo
+	bool dirty;	                                                          ///< oject state memo
 	int  rc;
   void Init(void);
 	
-  void Copy(const CFlyObjectListManager &aCopy);                        // inactivated
-	CFlyObjectListManager(const CFlyObjectListManager &aCopy);            // {Copy(aCopy);} inactivated
-	CFlyObjectListManager& operator=(const CFlyObjectListManager &aCopy); // inactivated
+  void Copy(const CFlyObjectListManager &aCopy);                        ///< inactivated
+	CFlyObjectListManager(const CFlyObjectListManager &aCopy);            ///< {Copy(aCopy);} inactivated
+	CFlyObjectListManager& operator=(const CFlyObjectListManager &aCopy); ///< inactivated
 
 public:
-	// construecteurs et destructeurs
+	///< construecteurs et destructeurs
   CFlyObjectListManager() {Init();}
   virtual ~CFlyObjectListManager(void);
 
@@ -82,12 +128,12 @@ public:
   SFlyObjectList tmp_fly_object;                                        // temporary object
   std::list<SFlyObjectList> fo_list;
   std::list<SFlyObjectList>::iterator i_fo_list;
-	// set
-	// get
+	///< set
+	///< get
   void InsertUserInFirstPosition (const CVehicleObject *user);
   void InsertDLLObjInList (const SDLLObject *obj);
 
-	// Clone
+	///< Clone
 	CFlyObjectListManager Clone(void);                                    // inactivated
 };
 //===========================================================================
@@ -195,12 +241,12 @@ public:
 class CSituation : public CStreamObject {
   //-----------------------------------------------------------
 public:
-  // sdk: SFlyObjectList
+  /// sdk: SFlyObjectList
   /// \todo link this list with wobjList
   CFlyObjectListManager sdk_flyobject_list;
-  CVehicleObject      *uVeh;    // Reference to user vehicle object
-  CSimulatedObject    *sVeh;    // Reference to simulated objects
-  CDLLSimulatedObject *dVeh;    // Reference to Dll       objects
+  CVehicleObject      *uVeh;    ///< Reference to user vehicle object
+  CSimulatedObject    *sVeh;    ///< Reference to simulated objects
+  CDLLSimulatedObject *dVeh;    ///< Reference to Dll       objects
   //-----------------------------------------------------------
   std::vector     <CDLLWindow *> dllW;
   std::vector     <CDLLWindow *>::iterator idllW;
@@ -209,35 +255,35 @@ protected:
   float           dTime;            // Delta time
   //---- Methods --------------------------------------
 public:
-   CSituation ();
-  ~CSituation ();
-   void FreeDLLWindows (void);
+   CSituation                          (void);
+  ~CSituation                          (void);
+   void FreeDLLWindows                 (void);
 
    
   //----- CStreamObject methods-----------------------
-  virtual int   Read (SStream *stream, Tag tag);
-  virtual void  ReadFinished (void);
+  virtual int   Read                   (SStream *stream, Tag tag);
+  virtual void  ReadFinished           (void);
 
   //----- CSituation methods---------------------------
-  void              OpenSitFile();
-  void              AdjustCameras();
-  CAirplane  *GetAnAircraft (void);
-  CSimulatedObject *GetASimulated (void);
-  void              StoreVEH(CVehicleObject *veh);
-  void              SetAircraftFrom(char *nfo);
-  void              SetPosition(SPosition &pos);
-  void              PrintUserVehicle (FILE *f);
-  void              Prepare (void);
-  void              Timeslice (float dT,U_INT Frame);
-  void              Draw (void);
-  void              DrawExternal();
-  void              DrawVehicleFeatures();
-  void              ClearUserVehicle();
-  void              ResetUserVehicle();
-  void              OpalGlobalsClean (void);
-  void              ChangeUserVehicle(char * name, bool bPlane);
-  U_INT             GetFrameNo(void)        {return FrameNo; }
-  void              DrawDLLWindow(void);
+  void              OpenSitFile        (void);
+  void              AdjustCameras      (void);
+  CAirplane  *GetAnAircraft            (void);
+  CSimulatedObject *GetASimulated      (void);
+  void              StoreVEH           (CVehicleObject *veh);
+  void              SetAircraftFrom    (char *nfo);
+  void              SetPosition        (SPosition &pos);
+  void              PrintUserVehicle   (FILE *f);
+  void              Prepare            (void);
+  void              Timeslice          (float dT,U_INT Frame);
+  void              Draw               (void);
+  void              DrawExternal       (void);
+  void              DrawVehicleFeatures(void);
+  void              ClearUserVehicle   (void);
+  void              ResetUserVehicle   (void);
+  void              OpalGlobalsClean   (void);
+  void              ChangeUserVehicle  (char * name, bool bPlane);
+  U_INT             GetFrameNo         (void) {return FrameNo; }
+  void              DrawDLLWindow      (void);
   //----------------------------------------------------
   inline CVehicleObject*   GetUserVehicle() {return uVeh;}
   //----------------------------------------------------

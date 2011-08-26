@@ -134,8 +134,6 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
   mRpm.id = MSG_GETDATA;
   mMap.id = MSG_GETDATA;
 
-  elapsed = 0.0f;
-  stallspeed = 0.0f;
 }
 //----------------------------------------------------------------------
 //  Delete this object

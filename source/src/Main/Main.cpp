@@ -707,9 +707,11 @@ void InitGlobalsNoPodFilesystem (char *root)
       }
     }
 
-    /// aircraft aftermost structure position :
-    /// used to calculate the moment induced
-    /// by the tail wind 
+    globals->random_flag = NO_RND_EVENTS;
+    
+    int randomEvents = 0;
+    GetIniVar ("Sim", "randomEvents", &randomEvents);
+    if (randomEvents) globals->random_flag |= RND_EVENTS_ENABLED;
 
     int num_of_autogen = 0;
     GetIniVar ("Graphics", "numOfAutogen", &num_of_autogen);
