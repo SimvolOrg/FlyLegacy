@@ -92,7 +92,7 @@ void CFuiListPlan::FillPlans()
     { deb++;
       slot->SetFile(deb);
       if (end) *end = 0;
-			fpn.Assign(deb,1);
+			if (!fpn.AssignPlan(deb,1)) break;
 			ds	= fpn.GetDescription();
       slot->SetName(ds);
       allBOX.AddSlot(slot);
@@ -112,7 +112,7 @@ void CFuiListPlan::SelectPlan()
   strncpy(fn,lin->GetFile(),MAX_PATH);
   char *end = strrchr(fn,'.');
   if (end) *end = 0;
-	fpln->Assign(fn,0);
+	fpln->AssignPlan(fn,0);
   //---Open or refresh detail -------------------------
   CFuiFlightLog *win = globals->dbc->GetLOGwindow();
   if (win)  win->Reset();

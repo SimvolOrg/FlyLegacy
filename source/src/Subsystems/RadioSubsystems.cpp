@@ -30,6 +30,14 @@
 
 using namespace std;
 //===================================================================================
+//		Flag
+//===================================================================================
+char *radFLAG[] = {
+	"OF",
+	"TO",
+	"FR",
+};
+//===================================================================================
 // CExtSource:   An externnal radio source used to drive the radio
 //===================================================================================
 void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
@@ -73,6 +81,7 @@ void CExtSource::Refresh(U_INT fram)
 }
 //===================================================================================
 // CRadio
+//	NOTE:  CRadio hold the Radio BUS n°1 
 //===================================================================================
 CRadio::CRadio (void)
 { TypeIs (SUBSYSTEM_RADIO);
@@ -151,45 +160,17 @@ void CRadio::Probe(CFuiCanva *cnv)
                                       ActCom.fract);
   cnv->AddText(1,edt,1);
 
-  sprintf_s(edt,63,"%03d",Radio.xOBS);
-  cnv->AddText( 1,"xOBS");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.hREF);
-  cnv->AddText( 1,"hREF");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.radi);
-  cnv->AddText( 1,"Radial");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.hDEV);
-  cnv->AddText( 1,"hDEV");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.gDEV);
-  cnv->AddText( 1,"gDEV");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.mdis);
-  cnv->AddText( 1,"nMile");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.aDir);
-  cnv->AddText( 1,"aDir");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%.05f",Radio.iAng);
-  cnv->AddText( 1,"iAng");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%d",Radio.ntyp);
-  cnv->AddText( 1,"Type");
-  cnv->AddText(10,edt,1);
-
-  sprintf_s(edt,63,"%d",Radio.flag);
-  cnv->AddText( 1,"flag");
-  cnv->AddText(10,edt,1);
+  cnv->AddText( 1,1,"xOBS %03d",Radio.xOBS);
+  cnv->AddText( 1,1,"hREF %.5f",Radio.hREF);
+  cnv->AddText( 1,1,"RADI %.5f",Radio.radi);
+	cnv->AddText( 1,1,"rDEV %.5f",Radio.rDEV );
+  cnv->AddText( 1,1,"hDEV %.5f",Radio.hDEV );
+  cnv->AddText( 1,1,"gDEV %.5f",Radio.gDEV);
+  cnv->AddText( 1,1,"mDIS %.5f",Radio.mdis);
+  cnv->AddText( 1,1,"aDIR %.5f",Radio.aDir);
+  cnv->AddText( 1,1,"iANG %.5f",Radio.iAng);
+  cnv->AddText( 1,1,"rTYP %d",Radio.ntyp);
+	cnv->AddText( 1,1,"flag %s",radFLAG[Radio.flag]);
   return;
 }
 //---------------------------------------------------------------------------
@@ -350,15 +331,17 @@ void CRadio::FreeRadios(char opt)
 void CRadio::ModeEXT(CmHead *src,ILS_DATA *ils)
 {	//--- Back to normal mode. Synchro radio with nav ------
 	if (0 == src)	
-	{	EXT.Stop(); 
-	  VOR	= globals->dbc->GetTunedNAV(VOR,Frame,ActNav.freq);     // Refresh VOR
-    ILS = globals->dbc->GetTunedILS(ILS,Frame,ActNav.freq);     // Refresh ILS
+	{	EXT.Stop();
+		globals->cILS	= 0;
+	  if (0 == sPower)		return;
+		VOR	= globals->dbc->GetTunedNAV(VOR,Frame,ActNav.freq);     // Refresh VOR
+		ILS = globals->dbc->GetTunedILS(ILS,Frame,ActNav.freq);     // Refresh ILS
+		return Synchronize();
 	}
-	else
 	//--- Update external bus ---------------------------
-	{	EXT.SetSource(src,ils,Frame);
-		FreeRadios(0);
-	}
+	EXT.SetSource(src,ils,Frame);
+	if ((uNum == 1)	&& (ils))	globals->cILS	= ils->ils;
+	FreeRadios(0);
 	Synchronize();
 	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);
 	return;
@@ -399,8 +382,13 @@ void CRadio::ChangeRefDirection(float d)
 //--------------------------------------------------------------------------
 void CRadio::TimeSlice (float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
+	bool exs = EXT.IsActive();
+  if (exs)	EXT.Refresh(FrNo);
 	Frame				= FrNo;
-  return Synchronize();
+  Synchronize();
+	//--- Call derived radios -----------------------
+	Update(dT,FrNo,exs);
+	return;
 }
 //------------------------------------------------------------------
 //  Resynchronize radio
@@ -415,13 +403,14 @@ void	CRadio::Synchronize()
 	if (sys)
 	{		sys->SetNavOBS(Radio.xOBS);
 			rad = sys->GetRadial(); 
+			Radio.radi = rad;
       Radio.ntyp = sys->SignalType();							
       Radio.mdis = sys->GetNmiles();
       Radio.mdev = sys->GetMagDev();
       Radio.hREF = sys->GetRefDirection();				//Radio.xOBS;
+			Radio.rDEV = Wrap360(rad - Radio.hREF);
       Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,sPower);
       Radio.gDEV = sys->GetVrtDeviation();				//0;
-      Radio.radi = rad;
       Radio.fdis = sys->GetFeetDistance();
       Radio.sens = sys->Sensibility();						//10;
     }
@@ -433,7 +422,7 @@ void	CRadio::Synchronize()
       Radio.hDEV = 0;
   }
   //---Compute angle between reference and aircraft heading --
-  Radio.aDir = Wrap360(mveh->GetDirection() - Radio.mdev);
+  Radio.aDir = mveh->GetMagneticDirection();
   Radio.iAng = Wrap360(Radio.hREF - Radio.aDir);
 	return;
 }
@@ -769,10 +758,10 @@ void CNavRadio::PowerStatus()
 //------------------------------------------------------------------
 //  Time slice
 //------------------------------------------------------------------
-void  CNavRadio::TimeSlice (float dT,U_INT FrNo)
-{ CRadio::TimeSlice (dT,FrNo);
-  PowerStatus();
+void  CNavRadio::Update (float dT,U_INT FrNo,char exs)
+{ PowerStatus();
   if (0 == nState)  return;
+	if (exs)					return;
   //----Refresh nav stations ---------------------------------------
   VOR	= globals->dbc->GetTunedNAV(VOR,FrNo,ActNav.freq);     // Refresh VOR
   if (VOR)          return;
@@ -969,11 +958,10 @@ EMessageResult CComRadio::ReceiveMessage (SMessage *msg)
   return rc;
 }
 //------------------------------------------------------------------
-//  Time slice
+//  Update radio
 //------------------------------------------------------------------
-void  CComRadio::TimeSlice (float dT,U_INT FrNo)
-{ CRadio::TimeSlice (dT,FrNo);
-  PowerStatus();
+void  CComRadio::Update(float dT,U_INT FrNo,char exs)
+{ PowerStatus();
   if (0 == cState)  return;
   //----Refresh com stations ---------------------------------------
   COM	= globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh COM
@@ -1360,9 +1348,9 @@ void CTransponderRadio::Dispatcher(U_CHAR evn)
 //------------------------------------------------------------------------
 //  Time slice: Proceed according to state
 //------------------------------------------------------------------------
-void CTransponderRadio::TimeSlice (float dT,U_INT FrNo)				// JSDEV*
+void CTransponderRadio::Update (float dT,U_INT FrNo,char exs)				// JSDEV*
 {
-  CRadio::TimeSlice (dT,FrNo);										// JSDEV*
+ // CRadio::TimeSlice (dT,FrNo);										// JSDEV*
 }
 //===================================================================================
 // CBKKT76Radio

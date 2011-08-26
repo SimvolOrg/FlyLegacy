@@ -1077,8 +1077,12 @@ CGauge::CGauge(CPanel *mp)
 //	JSDEV* Prepare the gauge message
 //-------------------------------------------------------------------
 void CGauge::PrepareMsg(CVehicleObject *veh)
-{	//---- For debugging uncomment those lines -----
+{	//---- For debbug, uncomment the next lines ----
+	//if (unId == 'gpss')
+	//	int a = 0;											// Put brake point here
+	//---- Find subsystem --------------------------
   veh->FindReceiver(&mesg);
+	subS	= (CSubsystem*)mesg.receiver;
 	return;
 }
 //-------------------------------------------------------------------
@@ -1452,8 +1456,6 @@ int CGauge::Read (SStream *stream, Tag tag)
   //--- Message to subsystem ------
   case 'mesg':
     ReadMessage (&mesg, stream);
-    if (mesg.user.u.datatag) return TAG_READ; 
-    mesg.user.u.datatag = 'st8t';
     return TAG_READ;
   //--- Clamping values ---------
   case 'clmp':
@@ -1755,6 +1757,19 @@ void CGauge::GetCenterOffset(short* _cx, short* _cy)
   *_cy = this->cy;
   return;
 }
+//-------------------------------------------------------------------------
+//  Translate the gauge value
+//-------------------------------------------------------------------------
+void CGauge::Translate(float v)
+{	value	= v;
+  vReal = value;
+  // First Clamp to gauge minimum and maximum values
+  if (value < gmin) value = gmin;
+  if (value > gmax) value = gmax;
+  // Tranform data if we are in a lookout tbl 
+  if (gmap)  value = gmap->Lookup(value);
+  if (*dfmt != '*') vReal = value;
+}
 //----------------------------------------------------------------------
 // Update the gauge's indication value
 //  NOTE: Value is often used to compute an angle on a gauge display and
@@ -1793,6 +1808,7 @@ void CGauge::Update (void)
   // Tranform data if we are in a lookout tbl 
   if (gmap)  value = gmap->Lookup(value);
   if (*dfmt != '*') vReal = value;
+	return;
 }
 
 //-------------------------------------------------------------------
@@ -5810,7 +5826,7 @@ void CGenericADFRadioGauge::GetRADIO()
 //  Generate mouse events
 //--------------------------------------------------------------------------
 int CGenericADFRadioGauge::AnyEvent(int mx,int my)
-{ short       sta = RAD->GetState();
+{ char       sta  = RAD->GetRState();
   RADIO_HIT *itm  = RadfHIT[sta];
   while (itm->No) 
   { if (!ck[itm->No].IsHit(mx,my)) {itm++; continue; }
@@ -5868,7 +5884,7 @@ void CGenericADFRadioGauge::Draw()
 { if (0 == RAD) GetRADIO();
   if (0 == RAD)   return;
   ClearDisplay();
-  PowST = RAD->GetState();
+  PowST = RAD->GetRState();
   if (0 == PowST) return;
   DrawADF();
   return;
@@ -6343,81 +6359,7 @@ EClickResult CFlyhawkAnnunciatorTest::MouseClick (int mouseX, int mouseY, int bu
     }
   return MOUSE_TRACKING_ON;
 }
-//------------------------------------------------------------------------------
-// CFlyhawkNavGpsPanelGauge
-//------------------------------------------------------------------------------
-CFlyhawkNavGpsPanelGauge::CFlyhawkNavGpsPanelGauge (CPanel *mp)
-: CBitmapGauge(mp)
-{
-  xnav_x = xnav_y = 0;
-  xgps_x = xgps_y = 0;
-  xapr_x = xapr_y = 0;
-  xmsg_x = xmsg_y = 0;
-  xwpt_x = xwpt_y = 0;
-}
 
-int CFlyhawkNavGpsPanelGauge::Read (SStream *stream, Tag tag)
-{
-  int rc = TAG_IGNORED;
-
-  switch (tag) {
-  case 'cnav':
-    ReadFrom (&cnav, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'capr':
-    ReadFrom (&capr, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'xnav':
-    ReadInt (&xnav_x, stream);
-    ReadInt (&xnav_y, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'xgps':
-    ReadInt (&xgps_x, stream);
-    ReadInt (&xgps_y, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'xapr':
-    ReadInt (&xapr_x, stream);
-    ReadInt (&xapr_y, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'xmsg':
-    ReadInt (&xmsg_x, stream);
-    ReadInt (&xmsg_y, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'xwpt':
-    ReadInt (&xwpt_x, stream);
-    ReadInt (&xwpt_y, stream);
-    rc = TAG_READ;
-    break;
-  }
-
-  if (rc == TAG_IGNORED) {
-    rc = CBitmapGauge::Read (stream, tag);
-  }
-
-  return rc;
-}
-//-----------------------------------------------------------------
-//  Mouse moves over
-//-----------------------------------------------------------------
-ECursorResult CFlyhawkNavGpsPanelGauge::MouseMoved (int x, int y)
-{ // Send updated mouse position to all click areas
-  if (cnav.MouseMoved (x, y))   return CURSOR_WAS_CHANGED;
-  if (capr.MouseMoved (x, y))   return CURSOR_WAS_CHANGED;
-  DisplayHelp();
-  return CURSOR_WAS_CHANGED;
-}
 //====================================================================
 // CFlyhawkFuelSelectorGauge
 //====================================================================
@@ -10270,6 +10212,8 @@ CDualKnobGauge::CDualKnobGauge (CPanel *mp)
   idec = -0.01f;
   oinc = +0.01f;
   odec = -0.01f;
+	inca.SetNoClick();
+	ouca.SetNoClick();
 }
 //-----------------------------------------------------------------------
 //	Prepare messages
@@ -10337,10 +10281,12 @@ int CDualKnobGauge::Read (SStream *stream, Tag tag)
 
   case 'inca':
     ReadFrom (&inca, stream);
+		inca.YesToClick();
     return TAG_READ;
 
   case 'ouca':
     ReadFrom (&ouca, stream);
+		ouca.YesToClick();
     return TAG_READ;
   //----Repeat Timer -----------------------
   case 'rept':

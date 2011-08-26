@@ -1222,33 +1222,6 @@ void ReadUserTag(SMessage *msg,SStream *st)
   if      (sscanf (s, "DATATAG,'%s'", dtag_string)  == 1) msg->user.u.datatag = StringToTag (dtag_string);
   else if (sscanf (s, "GROUP,'%s'",   param) == 1) msg->group = StringToTag (param);
   else if (sscanf (s, "HARDWARE,%s",  param) == 1) msg->user.u.hw = GetHardwareType(param);
-	/*
-	{
-        if (!strcmp (group_string, "GAUGE"))           {msg->user.u.hw = HW_GAUGE;      return;}
-        if (!strcmp (group_string, "SWITCH"))          {msg->user.u.hw = HW_SWITCH;     return;}
-        if (!strcmp (group_string, "LIGHT"))           {msg->user.u.hw = HW_LIGHT;      return;}
-        if (!strcmp (group_string, "STATE"))           {msg->user.u.hw = HW_STATE;      return;}
-        if (!strcmp (group_string, "BUS"))             {msg->user.u.hw = HW_BUS;        return;}
-        if (!strcmp (group_string, "FUSE"))            {msg->user.u.hw = HW_FUSE;       return;}
-        if (!strcmp (group_string, "OTHER"))           {msg->user.u.hw = HW_OTHER;      return;}
-        if (!strcmp (group_string, "CIRCUIT"))         {msg->user.u.hw = HW_CIRCUIT;    return;}
-        if (!strcmp (group_string, "RADIO"))           {msg->user.u.hw = HW_RADIO;      return;}
-        if (!strcmp (group_string, "FLAP"))            {msg->user.u.hw = HW_FLAP;       return;}
-        if (!strcmp (group_string, "HILIFT"))          {msg->user.u.hw = HW_HILIFT;     return;}
-        if (!strcmp (group_string, "BATTERY"))         {msg->user.u.hw = HW_BATTERY;    return;}
-        if (!strcmp (group_string, "ALTERNATOR"))      {msg->user.u.hw = HW_ALTERNATOR; return;}
-        if (!strcmp (group_string, "ANNUNCIATOR"))     {msg->user.u.hw = HW_ANNUNCIATOR;return;}
-        if (!strcmp (group_string, "GENERATOR"))       {msg->user.u.hw = HW_GENERATOR;  return;}
-        if (!strcmp (group_string, "CONTACTOR"))       {msg->user.u.hw = HW_CONTACTOR;  return;}
-        if (!strcmp (group_string, "SOUNDFX"))         {msg->user.u.hw = HW_SOUNDFX;    return;}
-        if (!strcmp (group_string, "FLASHER"))         {msg->user.u.hw = HW_FLASHER;    return;}
-        if (!strcmp (group_string, "INVERTER"))        {msg->user.u.hw = HW_INVERTER;   return;}
-        if (!strcmp (group_string, "UNITLESS"))        {msg->user.u.hw = HW_UNITLESS;   return;}
-        if (!strcmp (group_string, "UNBENT"))          {msg->user.u.hw = HW_UNBENT;     return;}
-        if (!strcmp (group_string, "SCALE"))           {msg->user.u.hw = HW_SCALE;      return;}
-         return;
-         }
-				 */
   else if (sscanf (s, "ENGINE,%d", &int_v) == 1) msg->user.u.engine = int_v;
   else if (sscanf (s, "UNIT,%d",   &int_v) == 1) msg->user.u.unit   = int_v;
   else if (sscanf (s, "%d", &int_v) == 1) msg->user.u.datatag = int_v; // used in FLYHAWK01.PLN <shet> trim wheel
@@ -1285,6 +1258,7 @@ void  ReadMessage (SMessage *msg, SStream *stream)
         Tag grou;
         ReadTag (&grou, stream);
         msg->group = grou;
+				TagToString(msg->dst,grou);
       }
       break;
 

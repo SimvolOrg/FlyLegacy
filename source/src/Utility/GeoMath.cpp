@@ -1126,7 +1126,9 @@ int GetFlag(int dta, char pwr)
 
 //=========================================================================================
 //  Normalize the deviation
-//  Deviation = positive angle from OBS/ILS to Radial
+//  Signe of Deviation give plane position relative to reference direction Ref
+//	Positive:		Plane is on left side 
+//	Negative:		Plane is on right side 
 //=========================================================================================
 float GetSector(float dta)
 {	if (dta >= 270)		return (360 - dta);			    // sector 4

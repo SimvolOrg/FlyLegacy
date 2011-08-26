@@ -2997,6 +2997,12 @@ bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
 	return true;
 }
 //----------------------------------------------------------------------------------
+//	Return the nearest airport Key
+//----------------------------------------------------------------------------------
+char *CAirportMgr::NearestIdent()
+{	if (0 == nApt)	return "----";
+	return nApt->GetAirport()->GetIdent(); }
+//----------------------------------------------------------------------------------
 //	Bind buffer
 //----------------------------------------------------------------------------------
 void CAirportMgr::bindVBO()

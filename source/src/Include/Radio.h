@@ -28,6 +28,9 @@
 
 #include "../Include/FlyLegacy.h"
 //===================================================================================
+class CFPlan;
+class CAirplane;
+//===================================================================================
 // External radio source
 //===================================================================================
 class CExtSource: public CmHead {
@@ -76,6 +79,7 @@ public:
 	inline  double    GetRefDirection()	{ return refD;}
 	inline  double    Sensibility()     { return 10;}
 	inline  float			GetVrtDeviation()	{ return vdev;}
+	inline  float     GetMagDirection()	{ return (radial - smag);}
 	//--------------------------------------------------
 	inline  bool			IsActive()		{ return (active != 0);}
 };
@@ -172,6 +176,7 @@ public:
   //--- virtual methods --------------------------------------
   int    virtual Dispatcher(U_INT evn) {return 1;}
 	int    virtual PowerON()             {sPower = 1; return 1;}
+	void   virtual Update(float dT, U_INT fr, char exs) {;}
   //----------------------------------------------------------
   bool  MsgForMe (SMessage *msg);
   void  TimeSlice (float dT,U_INT FrNo);
@@ -231,8 +236,7 @@ public:
 
 
 //==================================================================
-// JSDEV* CNavRadio suppress time  slice here
-//			and rescan
+// JSDEV* CNavRadio 
 //==================================================================
 class CNavRadio : public CRadio {
     //------RADIO ATTRIBUTES --------------------------------------
@@ -248,7 +252,7 @@ public:
   // CSubsystem methods
   virtual const char* GetClassName (void) { return "CNavRadio"; }
   virtual EMessageResult  ReceiveMessage (SMessage *msg);
-  virtual void            TimeSlice (float dT,U_INT FrNo);
+  virtual void            Update (float dT,U_INT FrNo,char exs);
   //---------RADIO METHODS ---------------------------------
   void  Dispatcher(U_CHAR evn);
   void  PowerStatus();
@@ -286,7 +290,7 @@ public:
  //-------------------------------------------------------------
   void    Dispatcher(U_CHAR evn);
   void    PowerStatus();
-  void    TimeSlice (float dT,U_INT FrNo);
+  void    Update (float dT,U_INT FrNo, char exs);
   //------------------------------------------------------------
   inline RADIO_HIT *GetHIT()              {return RcomHIT[cState];}
   inline RADIO_FLD *GetField(U_CHAR No)   {return &comTAB[No];}
@@ -367,7 +371,7 @@ public:
   // CSubsystem methods
   virtual const char* GetClassName (void) { return "CTransponderRadio"; }
   virtual EMessageResult  ReceiveMessage (SMessage *msg);
-  virtual void            TimeSlice (float dT,U_INT FrNo = 0);				// JSDEV*
+  virtual void            Update (float dT,U_INT FrNo,char exs);				// JSDEV*
   //---------------------------------------------------------------------
   void        Dispatcher(U_CHAR evn);
   void        ModActiveDigit(int xd);
@@ -404,27 +408,88 @@ protected:
   bool              entryMode;
   float             entryTimer;
 };
+//==========================================================================
+//	Tracking state 
+//==========================================================================
+#define GPSR_PWOF		(0)						// Power OFF
+#define GPSR_STBY   (1)						// Standby
+#define GPSR_TRAK		(2)						// Tracking mode
+#define GPSR_LAND		(3)						// Landing
+#define GPSR_NONE   (4)						// NO MODE
+//==========================================================================
+//	Tracking Event 
+//==========================================================================
+#define GPSR_EV_PWR	(0)						// Power Event
+#define GPSR_EV_NAV	(1)						// Nav Switch 
+#define GPSR_EV_APR	(2)						// APR Switch 
 
 //==========================================================================
-// CK89radio
+//   GPS Radio
+//		GaugeBus:
+//			IN01 => State
+//			IN02 => Active
+//			IN03 => NOT USED
+//			IN04 => NAV/GPS 
+//	NOTE:  	gpsON means that the GPS is driving the Autopilot
 //==========================================================================
-class CK89radio : public CRadio {
-public:
-  CK89radio (void);
-
-  // CStreamObject methods
-  int       Read (SStream *stream, Tag tag);
-  void      ReadFinished (void);
-
-  // CSubsystem methods
-  const char* GetClassName (void) { return "CK89radio"; }
-  EMessageResult  ReceiveMessage (SMessage *msg);
-  void    TimeSlice(float dT,U_INT FrNo);
-  //------------------------------------------------------------
+class GPSRadio :  public CDependent {
+	//--- ATTRIBUTES -----------------------------------------
 protected:
-  CK89gps    *GPS;    // GPS Bendix King
-  SMessage    mFMS;   // Flight Management System message
-  SMessage    mSpd;   // Airspeed indicator message
+	//--- Switch ----------------------------------------------
+	char							gpsTK;							// GPS tracking state
+	char							navON;							// Switch position
+	char							aprON;							// Switch position
+	//---------------------------------------------------------
+	CRadio            *RAD;								// Radio n°1
+	AutoPilot         *APL;								// Auto pilote
+	BUS_RADIO         *BUS;               // Master radio
+	//--- Tracking parameters ---------------------------------
+	CWPoint					  *wTRK;							// Tracked WayPoint
+	//---------------------------------------------------------
+	SMessage					mSpd;
+	SMessage					mFMS;
+	//--- Flight plan management ------------------------------
+	CAirplane        *pln;								// Airplane
+  CFPlan           *FPL;                // Flight plan
+	CWPoint					 *basWP;							// Base waypoint
+	CWPoint          *actWP;							// Active waypoint
+	//--- METHODS --------------------------------------------
+public:
+  GPSRadio ();
+ ~GPSRadio();
+	//--- CSubsystem methods ---------------------------------
+  const char* GetClassName (void) { return "GPSRadio"; }
+	//--- CStreamObject methods ------------------------------
+  int   Read (SStream *stream, Tag tag);
+	//--------------------------------------------------------
+  virtual void  ReadFinished (void);
+	virtual void  TimeSlice(float dT,U_INT FrNo)	{;}
+	//--- Notifications from flight plan --------------------
+	virtual void  ModifiedPlan()	{;}
+	virtual void	ActiveWaypoint(CWPoint *wpt,bool e) {;}
+	virtual void	UpdNavigationData(CWPoint *w) {;}
+	//--- Tracking management --------------------------------
+	void	TrackGPSEvent(U_CHAR evn, char prm);
+	void	PowerEVN (char parm);
+	void	SwitchNAV(char parm);
+	void	SwitchAPR(char parm);
+	//--------------------------------------------------------
+	float	SelectDirection();
+	void	UpdateTracking(float dT,U_INT frm);
+	void	Refresh();
+	//--------------------------------------------------------
+	void	PowerON();
+	void	EnterTRK();
+	void	NextNODE();
+	void	EnterAPR();
+	void	EnterSBY();
+	//--------------------------------------------------------
+	void	GPSRadio::Probe(CFuiCanva *cnv);
+	//--- GAUGE BUS  -----------------------------------------
+  int   GaugeBusINNO(char no);		// Get data bus number no
+	//--- Message interface ----------------------------------
+  EMessageResult  ReceiveMessage (SMessage *msg);
+
 };
 //==========END OF THIS FILE ==================================================
 #endif // RADIO_H

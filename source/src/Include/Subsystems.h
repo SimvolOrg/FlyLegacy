@@ -228,7 +228,8 @@ class CRobot;
 #define SUBSYSTEM_HF_COMM_RADIO           ('hifr')  // CHFCommRadio
 #define SUBSYSTEM_TRANSPONDER_RADIO       ('xpdr')  // CTransponderRadio
 #define SUBSYSTEM_ADF_RADIO               ('adfr')  // CADFRadio
-#define SUBSYSTEM_KLN89_GPS_RADIO         ('gpsr')  // CK89radio
+#define SUBSYSTEM_GPS_RADIO								('gpsr')  // CK89radio
+#define SUBSYSTEM_GPS_BX_KLN89						('k89g')	// Bendix King KLN89
 #define SUBSYSTEM_KX155_RADIO             ('kx15')  // CBKKX155Radio
 #define SUBSYSTEM_KT76_RADIO              ('kt76')  // CBKKT76Radio
 #define SUBSYSTEM_AUDIO_PANEL_RADIO       ('adio')  // CAudioPanelRadio
@@ -446,6 +447,7 @@ public:
   float   e_blad;                       // Blad from controler
   //----Output values -------------------------
   float   e_hob;                        // Hobb value
+	float		e_Boost;											// Booster
   float   e_Map;                        // Manifold presure (P)
   float   e_hMap;                       // Manifold presure (Hg)
   float   e_gph;                        // fuel requested (galon per hour)
@@ -751,17 +753,25 @@ public:
 	//---------------------------------------------------------------------------
 	virtual void	SetActive(char a)	{;}
 	virtual void	SetState (char s)	{;}
-	virtual char  GetState()				{return 0;}
-	virtual char  GetActive()				{return 0;}
-	virtual int   GetIndex()				{return 0;}
-	virtual float GetPmFT1()				{return 0;}
-	virtual float GetPmFT2()				{return 0;}
+	//--- GAUGE BUS -------------------------------------------------------------
+	virtual int   GaugeBusINNO(char no)	{return 0;}				// Get data bus number no
+	virtual int   GaugeBusIN01()				{return 0;}				// State
+	virtual int   GaugeBusIN02()				{return 0;}				// Activity
+	virtual int   GaugeBusIN03()				{return 0;}				// Index
+	virtual	int   GaugeBusIN04()				{return 0;}				// Specific to systems
+	virtual int   GaugeBusIN05()				{return 0;}				// Specific to system
+	virtual int   GaugeBusIN06()				{return 0;}				// Specific to system
+	virtual int   GaugeBusIN07()				{return 0;}				// Specific to system
+	virtual int   GaugeBusIN08()				{return 0;}				// Specific to system
+	//---------------------------------------------------------------------------
+	virtual float GaugeBusFT01()				{return 0;}				// Float p1
+	virtual float GaugeBusFT02()				{return 0;}				// Float p2
   //---------------------------------------------------------------------------
   void  TraceTimeSlice(U_INT FrNo);					        // JSDEV*	Trace activation
   void  SetIdent(Tag id);
   void  SetTimK(float t);
 	//--- Synchro management ----------------------------------------------------
-	inline void   SetGauge(CGauge *g)	{gage = g;}
+  virtual void  SetGauge(CGauge *g)	{;}
   //---------------------------------------------------------------------------
   inline bool   IsType (Tag t){return (type == t);}
   inline Tag    GetUnId()     {return unId;}				        // 
@@ -931,9 +941,10 @@ public:
 	//-------------------------------------------------------------------------------------------
 	void	SetState(char s);
 	void	SetActive(char a)							{active	= (a != 0);}
-	char  GetActive()										{return active;}
-	char  GetState()										{return state;}
-	int		GetIndex()										{return indx;}
+	//--- GAUGE BUS -----------------------------------------------------------------------------
+	int		GaugeBusIN01()								{return state;}
+	int   GaugeBusIN02()								{return active;}
+	int		GaugeBusIN03()								{return indx;}
   //-------------------------------------------------------------------------------------------
   // CDependent methods
   inline int    NumDependencies (void){return dpnd.size();}
@@ -1007,14 +1018,17 @@ public:
   virtual int   Read (SStream *stream, Tag tag);
 
   // CSubsystem methods
-	virtual const char* GetClassName (void) { return "CGenericMonitor"; }
-	virtual EMessageResult  ReceiveMessage (SMessage *msg);
-	virtual void	TimeSlice(float dT,U_INT FrNo);				// JSDEV*	
-  virtual void  Probe(CFuiCanva *cnv);
+	const char* GetClassName (void) { return "CGenericMonitor"; }
+	EMessageResult  ReceiveMessage (SMessage *msg);
+	void	TimeSlice(float dT,U_INT FrNo);				// JSDEV*	
+  void  Probe(CFuiCanva *cnv);
 	void	PrepareMsg(CVehicleObject *veh);					    // JSDEV* Prepare Messages
 	float	ExtractValue(SMessage *msg);						      // JSDEV*
   float CombineValues();
   char *ExtractName(SMessage *msg);
+	//--- Published values on Gauge BUS ---------------------------------------
+	int GaugeBusIN01()									{return compR;}	// Result of compare
+	int GaugeBusIN03()									{return comp;}	// Compare reference
   //-----Attributes ---------------------------------------------------------
 protected:
 	EMonitorMode  mode;				          //< How to compare value to reference value
@@ -1058,19 +1072,21 @@ public:
   CGenericIndicator (void);
   virtual ~CGenericIndicator (void);
 
-  // CStreamObject methods
-  virtual int       Read (SStream *stream, Tag tag);
-  virtual void      ReadFinished (void);
-  virtual void      Probe(CFuiCanva *cnv);
-  // CSubsystem methods
-  virtual const char*		GetClassName (void) { return "CGenericIndicator"; }
-  virtual	EMessageResult  ReceiveMessage (SMessage *msg);
-  void		PrepareMsg(CVehicleObject *veh);							// JSDEV* Prepare Messages
-  virtual void				TimeSlice(float dT, U_INT FrNo);			// JSDEV*
-//virtual void				OldTimeSlice (float dT, U_INT FrNo = 0);	// JSDEV*
+  //--- CStreamObject methods -----------------------------------------
+  int       Read (SStream *stream, Tag tag);
+  void      ReadFinished (void);
+  void      Probe(CFuiCanva *cnv);
+  //--- CSubsystem methods --------------------------------------------
+  const char*		GetClassName (void) { return "CGenericIndicator"; }
+  EMessageResult  ReceiveMessage (SMessage *msg);
+  void			PrepareMsg(CVehicleObject *veh);					// JSDEV* Prepare Messages
+  void			TimeSlice(float dT, U_INT FrNo);					// JSDEV*
+	//--- Published values on gauge BUS ---------------------------------
+	float			GaugeBusFT01()				{return indn;}					// computed value
+	//--- ATTRIBUTES ----------------------------------------------------
 protected:
   std::vector<SMessage*>	mVal;		///< Messages to get value for comparison
-  Tag						alia;		///< Alias datatag
+  Tag									alia;		///< Alias datatag
   ECombineMode				mode;		///< How to combine message values
   CPolynome				   *poly;		/// Polynome conversion
 private:
@@ -1285,6 +1301,8 @@ public:
   const char* GetClassName (void) { return "CAmmeter"; }
   //-------------------------------------------------------------------
   EMessageResult CAmmeter::ReceiveMessage (SMessage *msg);
+	//--- published values on gauge bus ---------------------------------
+	float GaugeBusFT01()				{return indn;}	// AMP/H
   //----ATTRIBUTES ----------------------------------------------------
 protected:
   bool        chrg;         // Charge meter
@@ -1429,6 +1447,8 @@ public:
   EMessageResult  ReceiveMessage (SMessage *msg);
   // CSubsystem methods
   const char* GetClassName (void) { return "CSwitchSet"; }
+	//--- Gauge BUS --------------------------------------------
+	inline int			GaugeBusIN03()  {return Indx;}
   //--- Attributes -------------------------------------------
 protected:
   int     Indx;                      // Current position
@@ -1494,6 +1514,9 @@ protected:
   float   decisionHeight;       // In feet AGL
   float   radarAlt;             // Radar altitude
   float   hPres;                // presure in inHg
+	//--- Published values ---------------------------------------
+	float	  GaugeBusFT01()					{return indn;}		// altitude
+	float		GaugeBusFT02()					{return radarAlt;}
   //-----Kolman digits -----------------------------------------
   U_CHAR d1;
   U_CHAR d2;
@@ -1536,6 +1559,8 @@ public:
   const char* GetClassName (void) { return "CAirspeedIndicator"; }
   EMessageResult  ReceiveMessage (SMessage *msg);
   void            TimeSlice (float dT,U_INT FrNo = 0);		// JSDEV*
+	//--- Published values --------------------------------------------
+	float		GaugeBusFT01()		{return indn;}	// Airspeed
   //----ATTRIBUTES---------------------------------------------------
 protected:
   float   maxOperatingMach;       ///< Max operating Mach number
@@ -1558,8 +1583,8 @@ public:
   void                TimeSlice (float dT,U_INT FrNo = 0);			// JSDEV*
   void                Probe(CFuiCanva *cnv);
 	//--------------------------------------------------------------------
-	float		GetPmFT1()	{return indn;}
-	float   GetPmFT2()	{return rateD;}
+	float		GaugeBusFT01()	{return indn;}
+	float   GaugeBusFT02()	{return rateD;}
   //---Attributes ------------------------------------------------------
 protected:
   float Head;                 // Aircraft banking in °
@@ -2129,8 +2154,8 @@ public:
   void    Probe(CFuiCanva *cnv);
 	bool	  TrackTarget(float dT);
   int     UpdateLevel(int inc);
-	float		GetPmFT1();
-	float		GetPmFT2();
+	float		GaugeBusFT01();
+	float		GaugeBusFT02();
 	//--------------------------------------------------------------------
 	inline	float			Clamp180(float deg)
 							{	if (deg >  180) return +180;
@@ -2188,10 +2213,10 @@ protected:
   bool      autoAlign;    ///< Gyro is auto aligned
   void      UpdateGyro(float inc);
   void      UpdatePbug(float inc);
-	//--- Published values --------------------------
-	float     GetPmFT1()		{return aYaw;}
-	float			GetPmFT2()		{return abug;}
-	int			  GetIndex()		{return abug;}
+	//--- Published values on Gauge BUS --------------
+	float     GaugeBusFT01()		{return aYaw;}
+	float			GaugeBusFT02()		{return abug;}
+	int			  GaugeBusIN03()		{return abug;}
   //---------ATTRIBUTES ---------------------------
 private:
   float						aYaw;		// Actual yaw
@@ -2213,20 +2238,18 @@ public:
   CVacuumIndicator (void);
 
   // CStreamObject methods
-  virtual int   Read (SStream *stream, Tag tag);
-//  virtual void  ReadFinished (void);
-
+  int   Read (SStream *stream, Tag tag);
   // CSubsystem methods
-  virtual const char* GetClassName (void) { return "CVacuumIndicator"; }
-  virtual EMessageResult  ReceiveMessage (SMessage *msg);
-//  virtual void TimeSlice (float dT);
-
+  const char*     GetClassName (void) { return "CVacuumIndicator"; }
+  EMessageResult  ReceiveMessage (SMessage *msg);
+	//--- Publish values on gauge bus -------------------
+	float GaugeBusFT01()			{return indn;}	// suction Pressure
 };
 
 
-// *
+//=====================================================================
 // * Control subsystems
-// *
+//=====================================================================
 struct MIXER_DATA {
   char  chn[8];         // Chanel
   float raw;            // Raw control value in range [0,1] or [-1,+1]
@@ -2511,8 +2534,8 @@ public:
   EMessageResult  ReceiveMessage (SMessage *msg);
   void            TimeSlice (float dT,U_INT FrNo);			// JSDEV*
 	void						Probe(CFuiCanva *cnv);
-	//---------------------------------------------------------------
-	inline	int		  GetIndex()		{return rot_pos;}
+	//---Published values on Gauge BUS ------------------------------
+	inline	int		  GaugeBusIN03()		{return rot_pos;}
 	//---------------------------------------------------------------
 protected:
   SMessage      meng;   // Engine state
@@ -2703,7 +2726,9 @@ public:
   // CSubsystem methods
   const char*		  GetClassName (void) { return "COilTemperature"; }
   EMessageResult	ReceiveMessage (SMessage *msg);
-  // 
+	//--- Published values on Gauge BUS -----------------------------
+	float	GaugeBusFT01()						{return indn;}
+  //---------------------------------------------------------------- 
 protected:
 };
 //===================================================================================
@@ -2713,13 +2738,14 @@ class COilPressure : public CEngineControl {
 public:
   COilPressure (void);
 
-  // CStreamObject methods
+  //--- CStreamObject methods --------------------------------
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished();
-  // CSubsystem methods
+  //--- CSubsystem methods ------------------------------------
   const char*		GetClassName (void) { return "COilPressure"; }
   EMessageResult	ReceiveMessage (SMessage *msg);		// JSDEV*
-
+  //--- Published values on Gauge BUS -------------------------
+	float GaugeBusFT01()			{return indn;}		// Pressure;
 protected:
 	float	lowP;						// Low pressure threshold
 	bool	plow;						// Low indicator
@@ -2767,7 +2793,9 @@ public:
   // CSubsystem methods
   const char*		GetClassName (void) { return "CExhaustGasTemperature"; }
   EMessageResult	ReceiveMessage (SMessage *msg);
-  // 
+	//--- Published values on gauge BUS ----------------------------------
+	float	GaugeBusFT01()			{return indn;}		// Temperature
+  //--- ATTRIBUTES ----------------------------------------------------- 
 protected:
   U_CHAR conv;                 // how to display values, whether F° or C°
 };
@@ -3003,7 +3031,8 @@ public:
   inline void   HoldBrake(char p)     {Hold = p;}
 	inline float  GetBrakeForce(char p) {return (p)?( Force[p]):(0);}
   inline void   SetParking()          {Park = 1;}
-	inline char		GetState()						{return Park;}
+	//--- Published values on Gauge Bus ----------------------------------
+	inline int		GaugeBusIN01()				{return Park;}
   //--------------------------------------------------------------------
   // CSubsystem methods
   const char* GetClassName (void) { return "CBrakeControl"; }

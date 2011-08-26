@@ -285,8 +285,6 @@ public:
   //-------------------------------------------------
 protected:
 	C_Knob	        knob;
-	SMessage		    vmsg;
-
 };
 //======================================================================
 // CHorizonGauge
@@ -334,6 +332,7 @@ protected:
 };
 //=======================================================================
 // CSimpleSwitch
+//	Derived class must supply the Draw function
 //=======================================================================
 class C_SimpleSwitch : public CTexturedGauge {
 public:
@@ -661,6 +660,7 @@ public:
   //--- CStreamObject methods -------------------------------
   int   Read (SStream *stream, Tag tag);
   void  CopyFrom(SStream *s);
+	void	PrepareMsg(CVehicleObject *veh);
 	//-----------------------------------------------------
 	void	CollectVBO(TC_VTAB *vtb);
   //-----------------------------------------------------
@@ -933,11 +933,13 @@ public:
   virtual EClickResult  MouseClick (int x, int y, int buttons);
   //------------------------------------------------------------------
 	void		SubsystemCall(CSubsystem *sys,int val);
+	void		Draw(char p);
 	//--- ATTRIBUTES ---------------------------------------------------
 protected:
   VStrip    stsw;                           // Bitmap switch
   int       vin[2];                         // On/off intt
-
+  //-------- Cursor Tags ---------------------------------------------
+  Tag     csr[2];														// Tags for cursor up/dn
   //------------------------------------------------------------------
   char     gpos;                            // On/Off position
   char     rfu1;                            // reserved
@@ -951,6 +953,27 @@ protected:
   char     sstr_off[64];                   ///< ON popup string value
   char     sstr_on[64];                    ///< OFF popup string value
 };
+//=============================================================================
+// CNavGpsSwitchT0:  Switch Nav/GPS type T0
+//=============================================================================
+class CNavGpsSwitchT0 : public C_SimpleInOutStateSwitch {
+	//--- ATTRIBUTES ----------------------------------------------
+protected:
+	char	gbus;					// Gauge bus for state
+	//-------------------------------------------------------------
+public:
+  CNavGpsSwitchT0 (CPanel *mp);
+
+  // CStreamObject methods
+  int   Read (SStream *stream, Tag tag);
+
+  // CGauge methods
+  virtual const char* GetClassName (void) { return "CNavGpsSwitchT0"; }
+	//--------------------------------------------------------------------
+	void	DrawAmbient();
+protected:
+};
+
 //========================================================================
 // strip Gauge:  Gauge using a vertical strip
 //=========================================================================

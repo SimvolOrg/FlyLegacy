@@ -892,13 +892,12 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
   aTrim         = 0;
   eTrim         = 0;
   rTrim         = 0;
-  K89GPS        = 0;
   pwb           = 0;      // Brake system for keyboard
   pgr           = 0;      // Gear control for keyboard
   lastID[0]     = 0;
   lastHW[0]     = 0;
   pEngineManager = engine_manager;
-  // Read from AMP file stream
+  // Read from AMP file stream-----------------------------
   SStream s;
   strcpy (s.filename, "World/");
   strcat (s.filename, ampFilename);
@@ -908,6 +907,11 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
     ReadFrom (this, &s);
     CloseStream (&s);
   }
+	//-- Add Fligth Plan subsystem ----------------------
+	CFPlan	*fp = new CFPlan(mveh);
+	subs.push_back (fp);
+	fpln	= fp;
+
   //---Add some extra ones -------------------------------
 	d2r2	= new CRobot();							// Check list executer
 	d2r2->SetParent(v);
@@ -1571,9 +1575,9 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
         s = new CKR87radio;
         //MEMORY_LEAK_MARKER ("electr83")
         break;
-      case SUBSYSTEM_KLN89_GPS_RADIO:
+      case SUBSYSTEM_GPS_BX_KLN89:
         //MEMORY_LEAK_MARKER ("electr84")
-        s = new CK89radio;
+        s = new CK89gps(mveh,0);
         //MEMORY_LEAK_MARKER ("electr84")
         break;
       case SUBSYSTEM_KX155_RADIO:
@@ -1758,20 +1762,7 @@ void CElectricalSystem::AddExternal(CSubsystem *sy,SStream *st)
 //  All is read
 //---------------------------------------------------------------------------
 void CElectricalSystem::ReadFinished (void)
-{	//-- Add Fligth Plan subsystem ----------------------
-	CFPlan	*fp = new CFPlan(mveh);
-	subs.push_back (fp);
-	fpln	= fp;
-}
-//-----------------------------------------------------------------------------
-//  Create and return the K89 GPS structure
-//-----------------------------------------------------------------------------
-CK89gps  *CElectricalSystem::SetKLN89gps(CK89gauge *g)
-{ if (K89GPS)   return K89GPS;
-  K89GPS  = new CK89gps(mveh,g);
-  AddSubsystem(K89GPS);
-  return K89GPS;
-}
+{	}
 //-----------------------------------------------------------------------------
 void CElectricalSystem::Write (SStream *stream)
 {
@@ -2394,9 +2385,6 @@ int CRadioManager::Read (SStream *stream, Tag tag)
 //        s = new CADFRadio;
         break;
 
-      case SUBSYSTEM_KLN89_GPS_RADIO:
- //       s = new CK89radio;
-        break;
 
       case SUBSYSTEM_KX155_RADIO:
 //        s = new CBKKX155Radio;

@@ -335,13 +335,20 @@ public:
   void  StoreNFO(char *nfo);
   void  ReadParameters(CStreamObject *obj,char *fn);
   //---Radio interface ------------------------------------------------------
+	inline  void  RegisterRadioBUS(BUS_RADIO *b)	{busR = b;}
+	inline  void  RegisterGPSR(GPSRadio *r)				{GPSR = r;}
+	inline  void	RegisterRAD(CRadio *r){mRAD = r;}
   inline  void  RegisterNAV(Tag r)    {rTAG[NAV_INDEX] = r;}      //{rNAV = r;}
   inline  void  RegisterCOM(Tag r)    {rTAG[COM_INDEX] = r;}      //rCOM = r;}
   inline  void  RegisterADF(Tag r)    {rTAG[ADF_INDEX] = r;}      //rADF = r;}
   inline  Tag   GetNAV()              {return  rTAG[NAV_INDEX];}  //rNAV;}
   inline  Tag   GetCOM()              {return  rTAG[COM_INDEX];}  //rCOM;}
   inline  Tag   GetADF()              {return  rTAG[ADF_INDEX];}  //rADF;}
-  inline  Tag   GetRadio(int k)       {return rTAG[k];}
+  inline  Tag   GetRadio(int k)       {return  rTAG[k];}
+	//--- Component pointers ------------------------------------------------
+	inline  BUS_RADIO *GetRadioBUS()		{return busR;}	// Radio BUS
+	inline  GPSRadio  *GetGPS()					{return GPSR;}	// GPS radio 
+	inline  CRadio		*GetMRAD()				{return mRAD;}	// Master radio
   //------------------------------------------------------------------------
   //! send wing deflection to aeromodel
   void          SetWingChannel(CAeroControlChannel *aero);
@@ -392,10 +399,14 @@ public:
   CWeightManager        *wgh;
   CVehicleHistory       *hst;
 	PlaneCheckList        *ckl;
-  CNullSubsystem		    *nSub;						//  Null subsystem to receive message without identified receiver
+	//-----------------------------------------------------------------------------
+  CNullSubsystem		    nSub;						//  Null subsystem to receive message without identified receiver
   //-----Radio interface --------------------------------------------------------
   Tag                   rTAG[4];					// Radio TAG: NAV-COM-ADF
+	BUS_RADIO						 *busR;							// Radio BUS
  	AutoPilot						 *aPIL;							// Autopilot 
+	GPSRadio             *GPSR;							// GPS
+	CRadio               *mRAD;							// Master Radio
   //-----Sound object collection ------------------------------------------------
   std::map<Tag,CSoundOBJ*> sounds;            // Sound objects related to vehicle
 	//====== METHODS ==============================================================
@@ -404,7 +415,7 @@ public:
   inline bool   MouseMove (int x,int y) { return (pit)? (pit->MouseMove(x,y)):(false);}
   inline bool   MouseClick(EMouseButton b,int u,int x,int y)  { return (pit)? (pit->MouseClick(b,u,x,y)):(false);}
   //-----------------------------------------------------------------------------
-  inline CNullSubsystem*    GetNullSubsystem(void)  { return nSub; }
+  inline CNullSubsystem*    GetNullSubsystem(void)  { return &nSub; }
   inline char              *GetNFOname()            { return nfoFilename;}
   inline void               GetVisualCG(SVector &v) {if (wgh) wgh->GetVisualCG(v);}
   //-----Engine management ---------------------------------------------------------

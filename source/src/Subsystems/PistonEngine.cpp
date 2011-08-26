@@ -632,7 +632,6 @@ CPistonEngineModel::CPistonEngineModel (CVehicleObject *v,int eNo)
   Tag id = 'Eng0' | eNo;
   SetIdent(id);
   //--------------------------------------------------------------------
-  //boostAltitude = boostPressure = 0;
   boosted = false;
   boostAltitude = 0;
   boostPressure = 0;

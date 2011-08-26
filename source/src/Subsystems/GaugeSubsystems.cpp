@@ -612,12 +612,12 @@ int CAttitudeIndicator::UpdateLevel(int inc)
 //----------------------------------------------------------------------------------
 //  Return pitch as a float
 //----------------------------------------------------------------------------------
-float CAttitudeIndicator::GetPmFT1()
+float CAttitudeIndicator::GaugeBusFT01()
 {	return Clamp180(Uatt.x);	}
 //----------------------------------------------------------------------------------
 //  Return roll as a float
 //----------------------------------------------------------------------------------
-float CAttitudeIndicator::GetPmFT2()
+float CAttitudeIndicator::GaugeBusFT02()
 {	return Norme360(Uatt.z);	}
 //----------------------------------------------------------------------------------
 //  receive message
@@ -1188,7 +1188,7 @@ CNavigation::CNavigation (void)
 //    gDEV: Glide slope deviation if NAV is an ILS
 //------------------------------------------------------------------
 EMessageResult  CNavigation::ReceiveMessage (SMessage *msg)
-{	if (0 == radio) radio = globals->Radio;	
+{	if (0 == radio) radio = mveh->GetRadioBUS();	
 	switch (msg->id) {
 	case MSG_GETDATA:
     switch (msg->user.u.datatag) {

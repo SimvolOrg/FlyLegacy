@@ -525,6 +525,7 @@ public:
 	//--- EXTERNAL INTERFACE ------------------------------------------
 	bool		AreWeAt(char *key);
 	bool		SetOnRunway(CAirport *apt,char *idn);
+	char   *NearestIdent();
   //----AIRPORT BUILDING --------------------------------------------
   int       SetRunwayProfile(CAirport *apt);
   void      AddProfile(RWY_EPF &epf);
@@ -541,6 +542,7 @@ public:
   inline CPicQUAD    *GetIcon()               {return avion;}
 	inline void					SetRunwayEnd(SPosition *p)	{endp = p;}
 	inline void					SwapILSdraw()						{dILS ^= 1;}
+	//-----------------------------------------------------------------
 	//-----------------------------------------------------------------
 	inline SPosition   *GetRunwayEnd()					{return endp;}
 	//-----------------------------------------------------------------

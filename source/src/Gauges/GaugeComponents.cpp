@@ -685,6 +685,7 @@ void CNeedle::ReadBMAP(SStream *str)
 }
 //----------------------------------------------------------------------
 //  read parameters
+// TODO check why there is a tag <rect>
 //----------------------------------------------------------------------
 int CNeedle::Read (SStream *stream, Tag tag)
 { int pm;
@@ -769,6 +770,9 @@ int CNeedle::Read (SStream *stream, Tag tag)
     case 'help':
       ReadString (help, 64, stream);
       return TAG_READ;
+		//--- Rectangle ----------------
+		case 'rect':
+			break;
 
   }
   TagToString(name,tag);

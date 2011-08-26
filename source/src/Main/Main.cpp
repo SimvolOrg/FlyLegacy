@@ -1415,7 +1415,6 @@ int main (int argc, char **argv)
   globals->objDB = 0;
 	globals->elvPT = 0;
   //---Master radio interface ----------------------------------------
-  globals->Radio = 0;
   globals->cILS  =  0;
   //---Object pointer ------------------------------------------------
   globals->tim  = new CTimeManager();         // Time manager

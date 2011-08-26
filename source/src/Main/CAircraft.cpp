@@ -1597,7 +1597,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   Plane->setMass (mm, mm.inertia);														// 
 
   // 1) wing & engine forces
-  fb.Times (0.0); 
+  fb.Set (0,0,0); // JS: Replace Times(0) because when #NAND or #IND, then fb is not reset
   if (globals->caging_fixed_wings) fb.Add (wng->GetForce ()); // LH
   VectorDistanceLeftToRight  (fb); // LH=>RH
 
@@ -1608,7 +1608,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   float s_p_d = 0.0f;
 	if (1 == GetEngNb())	
 				engines_pos = eng->GetEnginesPosISU (); // LH
-  else  engines_pos.Times (0.0);                // engines_pos = 0
+  else  engines_pos.Set (0,0,0);                // engines_pos = 0
 
   // simulate gear down drag and moment
   // modifying the thrust value and position
@@ -1647,7 +1647,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   ed.duration = static_cast<opal::real> (dT);
 
   // 2)  wing, mine & engine moments
-  tb.Times (0.0);
+  tb.Set(0,0,0);  // JS: Replace Times(0) because when #NAND or #IND, then tb is not reset
   if (globals->caging_fixed_wings) tb.Add (wng->GetMoment ());// 
   VectorOrientLeftToRight (tb); // 
 

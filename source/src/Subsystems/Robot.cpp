@@ -222,14 +222,17 @@ char *vpMSG[] = {
 	"Cannot locate take-off runway",				// Msg07
 	"Please open Nav Radio 1",							// Msg08
 	"No runway for landing",								// Msg09
+	"Throttle control lost",								// MSG10
 };
 //=========================================================================
 //  This robot will pilot the aircraft and execute
 //	the current flight plan
 //=========================================================================
 VPilot::VPilot()
-{ State = VPL_IS_IDLE;
+{ SetIdent('-VP-');
+	State = VPL_IS_IDLE;
 	fpln	= 0;
+	Radio	= 0;
 }
 //--------------------------------------------------------------
 //	Create error
@@ -240,11 +243,12 @@ void VPilot::Error(int No)
 	return;
 }
 //--------------------------------------------------------------
-//	Hand back the aircraft
+//	Handle back the aircraft
 //--------------------------------------------------------------
 void VPilot::HandleBack()
-{	Radio->ModeEXT(0);
+{	if (Radio)	Radio->ModeEXT(0);
 	Error(0);
+	fpln->Stop();
 	return;
 }
 //--------------------------------------------------------------
@@ -366,7 +370,7 @@ void VPilot::EnterTakeOff()
 void VPilot::ModeTKO()
 {	if (apil->IsDisengaged())	return HandleBack();
 	if (apil->BellowAGL(200))	return;
-	fpln->Activate(FrNo);
+	fpln->ActivatePlan();
 	//--- Climb to 1500 -----------
 	State = VPL_CLIMBING;
 	return;
@@ -376,7 +380,9 @@ void VPilot::ModeTKO()
 //	 TODO: Put AGL in parameter
 //--------------------------------------------------------------
 void VPilot::ModeCLM()
-{	if (apil->IsDisengaged())	  return HandleBack();
+{	bool tc		= apil->HasGasControl();
+	if (!tc) Error(10);
+	if (apil->IsDisengaged())	  return HandleBack();
 	if (apil->BellowAGL(1200))	return;
 	//--- Drive toward next waypoint -----------
 	ChangeWaypoint();
@@ -393,16 +399,10 @@ void VPilot::EnterFinal()
 	char *edt = globals->fui->PilotNote();
 	float frq = wayP->GetILSFrequency();
 	//--- If frequency, use as ILS ------------------------
-  if (frq) 
-	{	Radio->TuneNavTo(frq,1);						// Tune radio to nav
-		Radio->ModeEXT(0);									// Set internal mode
-	}
-	//--- Use as GPS waypoint if airport ------------------
-	else 
-	{	ILS_DATA *ils = wayP->GetLandingData();
-		if (0 == ils)	{Error(9); return HandleBack();}
-		Radio->ModeEXT(wayP->GetDBobject(),ils);	
-	}
+	//--- Return landing data -----------------------------
+	ILS_DATA *ils = wayP->GetLandingData();
+	if (0 == ils)	{Error(9); return HandleBack();}
+	Radio->ModeEXT(wayP->GetDBobject(),ils);	
 	//--- Configure autopilot for landing ------------------
 	apil->SetLandingMode();
 	State = VPL_LANDING;
@@ -423,7 +423,7 @@ float VPilot::SetDirection()
 	float rdv = fabs(dev);
 	if ((dis > 12) || (rdv < 5))	return seg;
 	//--- Compute direct-to direction to waypoint -----
-  return wayP->DirectTO(mveh);
+  return wayP->GoDirect(mveh);
 }
 //--------------------------------------------------------------
 //	Change to next Waypoint
@@ -431,7 +431,7 @@ float VPilot::SetDirection()
 void VPilot::ChangeWaypoint()
 {	char *edt = globals->fui->PilotNote();
 	float rad = 0;
-	wayP	= fpln->GetCurrentNode();
+	wayP	= fpln->GetActiveNode();
 	if (wayP->IsFirst())			return;  // wait next
 //	TRACE("VPL: Change WPT to %s",wayP->GetName());
 	if (fpln->IsOnFinal())		return EnterFinal();
@@ -439,17 +439,10 @@ void VPilot::ChangeWaypoint()
 	float dir = SetDirection();
 	_snprintf(edt,128,"Heading %03d to %s",int(dir),wayP->GetName());
 	globals->fui->PilotToUser();
-	//--- Set radio mode ----------------------------------
-  if (wayP->IsaWaypoint())											
-	{	CmHead *obj = wayP->GetDBobject();
-		Radio->ModeEXT(obj);								// Set GSP mode
-	}
-	//--- Set OBS and radio frequency ---------------------
-	else
-	{	float frq = wayP->GetFrequency();
-		Radio->TuneNavTo(frq,1);						// Tune radio to nav
-		Radio->ModeEXT(0);									// Set NAV mode
-	}
+	//--- Set Waypoint on external source -----------------
+	CmHead *obj = wayP->GetDBobject();
+	Radio->ModeEXT(obj);
+	//--- Set Reference direction --------------------------
 	Radio->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wayP->GetAltitude());
@@ -467,7 +460,7 @@ void VPilot::Refresh()
 	bool  dto = ((rdv > 5) || (wayP->IsDirect()));
 	//--- check if Direct to is active ----------
 	if (!dto)	return; 
-  float dir = wayP->DirectTO(mveh);
+  float dir = wayP->GoDirect(mveh);
 	Radio->ChangePosition(wayP->GetGeoP());
 	Radio->ChangeRefDirection(dir);
 	return;
@@ -476,7 +469,9 @@ void VPilot::Refresh()
 //	Tracking Waypoint
 //--------------------------------------------------------------
 void VPilot::ModeTracking()
-{ if (apil->IsDisengaged())	return HandleBack();
+{ bool tc		= apil->HasGasControl();
+	if (!tc) Error(10);
+	if (apil->IsDisengaged())	return HandleBack();
 	if (wayP->IsActive())	    return Refresh();
 	ChangeWaypoint();
 	return;
@@ -497,7 +492,7 @@ void VPilot::TimeSlice (float dT,U_INT frm)
 	FrNo			= frm;
 	T01			 -= dT;
 	switch (State)	{
-		//--- Staring aircraft -------------
+		//--- Statring aircraft -------------
 		case VPL_PREFLT01:
 			PreFlight(dT);
 			return;

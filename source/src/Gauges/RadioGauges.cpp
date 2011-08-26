@@ -584,7 +584,7 @@ ECursorResult CKR87gauge::MouseMoved (int mx, int my)
 //  Check for any event according to radio state
 //------------------------------------------------------------------
 int CKR87gauge::AnyEvent(int mx,int my)
-{ short       sta = RAD->GetState();
+{ char       sta  = RAD->GetRState();
   RADIO_HIT *itm  = Kr87HIT[sta];
   while (itm->No) 
   { if (!ca[itm->No].IsHit(mx,my)) {itm++; continue; }
@@ -599,7 +599,7 @@ int CKR87gauge::AnyEvent(int mx,int my)
 //  na = field number
 //------------------------------------------------------------------
 void CKR87gauge::ClickField(int na, short dir)
-{ short       sta = RAD->GetState();
+{ char       sta = RAD->GetRState();
   RADIO_HIT *itm  = Kr87HIT[sta];
   RAD->mDir       = dir;
   while (itm->No)
@@ -863,12 +863,18 @@ CK89gauge::CK89gauge(CPanel *mp)
   //-------Screen to clear -----------------------------------
   dsw = dsh = 0;
   yLed  = 0;
+	GPS		= 0;
   //-------Init Various data----------------------------------
+  rFont		= (CFont*)globals->fonts.ftmono8.font;
   yelow   = MakeRGB(255,167,102);           // Yellow color
   PowST   = K89_PWROF;
-  //------Create the GPS subsystem ---------------------------
-  GPS     = globals->sit->uVeh->amp->SetKLN89gps(this);
-
+  //------Set Gauge into the GPS subsystem -------------------
+	char *erm = "CK89Gauge needs a k89g subsystem";
+	GPSRadio *gps = panel->GetMVEH()->GetGPS();
+	if (0 == gps)										gtfo(erm);
+	if ('k89g' != gps->GetUnId())		gtfo(erm); 
+	gps->SetGauge(this);
+	GPS     = (CK89gps*)gps;
 }
 //---------------------------------------------------------------
 //  Read all tags
@@ -979,6 +985,11 @@ void CK89gauge::ReadFinished()
   nMsg.id       = MSG_GETDATA;
   nMsg.sender   = unId;
   nMsg.user.u.datatag = 'obs_';
+	//--- Compute CDI width ------------------------------------
+	short pix = 11 * wCar;
+	Ampli			= pix >> 1;						// Half width
+	short cdi = GPS->cdiCL;
+	Base			= xBase + Ampli - (wCar >> 1) + 1;
   return;
 }
 //------------------------------------------------------------------
@@ -1192,18 +1203,18 @@ CK89gauge::DisFN CK89gauge::DshTAB[4] = {
 };
 
 //----------------------------------------------------------------------------
-//  Draw the CDI
+//  Draw the CDI (The full amplitude is [-20°,+20°]
 //----------------------------------------------------------------------------
 void CK89gauge::DrawCDIneedle()
 { short cdi = GPS->cdiCL;
   //-------Draw CDI deviation --(positive=>Left deviation)------------------
   if (0 == cdi) return;
   int y0  = scrLN[GPS->cdiLN];
-  int mid =  xBase + (cdi * wCar)  + (K89_CDI_MIDDLE - 2);
-  int bar = -int((K89_CDI_AMPLI * GPS->cdiDEV) / 40);
+	int mid = Base + (cdi * wCar);
+	int bar = -int((Ampli * GPS->cdiDEV) / 40);
   //-------Clamp result to [0-66] -----------------------------
-  if (-33 > bar) bar = -33;
-  if (+33 < bar) bar = +33;
+  if (-33 > bar) bar = -Ampli;						
+  if (+33 < bar) bar = +Ampli;						
   rFont->SetTransparent();
   rFont->DrawChar(surf,(mid + bar),y0,'|',amber);
   return;
@@ -1567,8 +1578,7 @@ void CBKAP140Gauge::DrawAmbient()
 {	char st = (PAN->GetPOW());
 	ca[6].Draw (st);          // ENG Light
 	//--- Auto throttle -----------------------
-	char ugaz	= PAN->GasST();
-	ca[22].Draw(ugaz);				// Gaz control
+	ca[22].Draw(PAN->GasST());				// Gaz control
 	return;
 }
 //------------------------------------------------------------------

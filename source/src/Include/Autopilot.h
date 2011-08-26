@@ -108,6 +108,7 @@ protected:
 //  GA ARROUND STEP
 //====================================================================================
 #define AP_TGA_UP5	0						// Leg 0 climb to 500
+#define AP_TGA_HD0	0						// Leg 0:
 #define AP_TGA_HD1  1						// Leg 1: Head 90°
 #define AP_TGA_HD2  2						// LEG 2: going away
 #define AP_TGA_HD3	3						// LEG 3: Going along
@@ -240,9 +241,12 @@ public:
   //-------------------------------------------------------
   inline int  GetPidNo()          {return nPid;}
   inline void Rate(double r)      {rate = r;}
+	//-------------------------------------------------------
+	inline float	GetVN()						{return Vn;}
   //-----Set values ---------------------------------------
   inline void SetSample(double s) {Yn = s;}
   inline void SetTarget(double t) {Rn = t;}
+	inline void ClearKI()						{Ki = 0;}
   //-------------------------------------------------------
   inline void SetMaxi(double m)   {if (m < vmax) vmax = m;}
   inline void SetMini(double m)   {if (m > vmin) vmin = m;}
@@ -295,12 +299,16 @@ protected:
   char       ugaz;                          // Use autothrottle
 	char       wgrd;													// Wheel on ground
 	char			 redz;													// Red zone
+	char       sect;													// Sector TO
   //-----------Lights--------------------------------------------------
   char       alta;                          // Altitude armed
   char       flsh;                          // Flash
   //-----------Flasher ------------------------------------------------
   U_CHAR      timFS;                            // Flasher timer
   U_CHAR      mskFS;                            // Flasher mask
+	//---Subsystems ------------------------------------------------------
+	CSubsystem	 *altS;												// Altimeter
+	CSubsystem   *cmpS;												// Compass
   //---Surface control -------------------------------------------------
 	CFlapControl *flpS;												// Flaps systems
   CAeroControl *ailS;                       // aileron surface
@@ -326,6 +334,9 @@ protected:
   double     vMIS;              // Vertical miss error
 	double     rAGL;							// AGL reference
 	double	   dSPD;							// Disengage speed
+	//--- GO ARROUND ------------------------------------------------------
+	double			TGA0;							// Distance for LEG 1
+	double			TGA1;							// Distance for LEG 2
 	//--- Flap control ----------------------------------------------------
 	char			 tkoFP;							// Take off flap position
 	double		 tkoFA;							// Altitude
@@ -354,11 +365,11 @@ protected:
   double     rHDG;                          // Target Heading
   double     aHDG;                          // Actual heading (yaw)
   double     xHDG;                          // cross heading
+	double     xCOR;													// 45° correction
 	double     nHDG;													// Next heading
   double     hERR;                          // Lateral error
   double     vTIM0;                         // Time for ARC AB
   double     vTIM1;                         // Time for P to D
-  double     vTIM2;                         // Previous vTIM1
   double     vHRZ;                          // Horizontal speed
   //----Vertical mode control values ----------------------------------
   double     Vref;                          // VSP Reference
@@ -366,7 +377,6 @@ protected:
   double     vAMP;                          // Vertical amplifier
   double     rALT;                          // Reference altitude
   double     eVSP;                          // VSP error 
-  double     xALT;                          // Expected altitude
   double     rVSI;                          // Reference VSI
   //---Current parameters -------------------------------------------
 	double      cFAC;												  // Current factor
@@ -496,13 +506,14 @@ public:
   //----Lateral modes --------------------------------------------------
 	double					AdjustHDG();
   void            GetCrossHeading();
+	void						ModeLT0();
   void            ModeLT1();
   void            ModeLT2();
 	void						ModeTGA();
   void            ModeROL();
   void            ModeHDG();
 	void						ModeGND();
-  void            CheckDirection();
+  void            CrossDirection();
 	//---- Vertical modes ------------------------------------------------
   void            ModeGSW();
   void            ModeGST();
@@ -518,7 +529,8 @@ public:
   void            StateLAT(int evn);
 	void						StateGND(int evn);
   void            NewEvent(int evn);
-	void						GasControl();
+	void						SwapGasControl();
+	void						SetGasControl(char s);
   //-------------------------------------------------------------------
   inline char     armALT()  {return alta;}
   //-------------------------------------------------------------------
@@ -530,6 +542,8 @@ public:
 	inline bool BellowAGL(double a)	{return (cAGL < a);}
 	inline bool IsDisengaged()		  {return (lStat == AP_DISENGD);}
   inline bool IsEngaged()					{return (lStat != AP_DISENGD);}
+	inline bool ModeGround()				{return (vStat == AP_VRT_FIN);}
+	inline bool HasGasControl()			{return (ugaz != 0);}
   //-------------------------------------------------------------------
   inline    bool        engLite()     {return (AP_STATE_DIS != lStat);}
 };

@@ -21,20 +21,26 @@
 //    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 //===============================================================================
-#include "../Include/FlyLegacy.h"
-#include "../Include/FuiParts.h"
 #ifndef PLANDEVOL_H
 #define PLANDEVOL_H
+
+#include "../Include/FlyLegacy.h"
+#include "../Include/FuiParts.h"
 
 //===============================================================================
 class CFPlan;
 //===========================================================================
 #define FPL_STA_NUL	(0)										// Empty state
 #define FPL_STA_OPR (1)										// Operational
-//------------------------------------------------------------------------
+//---Waypoint states --------------------------------------------------
 #define WPT_STA_OUT (1)										// outside of waypoint
 #define WPT_STA_INS (2)										// Inside waypoint
 #define WPT_STA_TRM	(3)										// Terminated
+#define WPT_STA_AWA (4)										// Going away
+//---------------------------------------------------------------------
+#define WPT_MOD_LEG	(0)										// Leg Mode
+#define WPT_MOD_DIR (1)										// Direct mode
+#define WPT_MOD_LND (2)										// Mode landing
 //============================================================================
 //  Flight Plan route extremity
 //============================================================================
@@ -138,7 +144,7 @@ public:
 class CWPoint : public CSlot, public CStreamObject {
 private:
   //------------------Attributes --------------------------------------------
-  U_SHORT                   Seq;					// Sequence number 
+  U_SHORT                   nSeq;					// Sequence number 
   Tag                       type;         // Waypoint type
 	Tag												user;					// Waypoint usage
   SPosition                 position;     // Geographic position
@@ -160,15 +166,17 @@ private:
   char            Elap[16];           // Elapse time
   char            Etar[16];           // Arrival time
 	//---------------------------------------------------------------------
-	double          rDir;								// Direction to next waypoint
-	double					pDis;								// Plane distance	
-	double					oDIS;								// Previous distance
+	float						dDir;			// Direct Direction to waypoint
+	float						rDir;			// Direction to this waypoint from previous
+	float						pDis;			// Plane distance
+	float						sDis;			// Summmed distance
+  float           legDis;		// Distance from previous in nm
   //---------------------------------------------------------------------
   U_CHAR                    State;        // State
 	U_CHAR										Modif;				// Modifier indicator
 	U_CHAR										mode;					// Leg mode
-  float                     Legdis;       // Distance from previous in nm
-  float                     disTot;       // Total distance from start point
+	U_CHAR										activ;				// Active indicator
+	//---------------------------------------------------------------------
 	char											tkoRWY[6];	  // Take off runway
 	char											lndRWY[6];		// Landing runway
   SDateTimeDelta            elapse;       // Elapse time
@@ -177,37 +185,47 @@ private:
   CObjPtr                   DBwpt;        // Way point from database
   //------Edit parameter ------------------------------------------------
   char             mTxt[2];								// Marker
-  char             oMrk;									// Previous mark
   //--- METHODS -------------------------------------------------
 public:
 	CWPoint(CFPlan *fp,Tag t);		    			// Constructor
+	CWPoint();
  ~CWPoint();															// Destructor
+  void		Build(Tag t);
 	//-------------------------------------------------------------
 	int			Read (SStream *stream, Tag tag);
 	void		ClearDate (SDateTime &sd);
 	char*   GetIdentity();
 	char*   GetSQLtab();
 	void		Populate();
-	void		UserWaypoint();
+	void		PopulateUser();
 	//-------------------------------------------------------------
 	ILS_DATA	*GetLandingData();
 	//-------------------------------------------------------------
+	void		SetSeq(U_SHORT s);
 	void		NodeOne(CWPoint *n);
 	void		NodeTwo(CWPoint *p);
-	void		NodeEnd(CWPoint *p);
+	void		NodeEnd();
 	void		NodeNAV(CWPoint *p, char m);
+	void		UpdateMark(char m);
 	char*		ModifyAltitude(int inc);
 	char*   ChangeAltitude(int a);
 	int			BestAltitudeFrom(int a0);
 	void    SetAltitude(int a);
 	void    SetPosition(SPosition p);
-  void		SetDirection(double d);
-	float		DirectTO(CVehicleObject *v);
+  void		SetReferenceDIR(double d);
+	float		GoDirect(CVehicleObject *v);
 	//-------------------------------------------------------------
-	bool		Update(char e);
-	bool		Outside();
-	bool		Inside();
+	bool		IsLast();
+	char		CheckAway();
+	char		Outside();
+	char		Inside();
+	char		UpdateState();
+	void		UpdateRange(CVehicleObject *veh,U_INT frame);
 	void		EditArrival();
+	float		GetPrevDistance();
+	//-------------------------------------------------------------
+	void		FillWPT(CmHead *obj);
+	void		Unassign();
 	//-------------------------------------------------------------
 	void		Save(SStream *s);
 	//-------------------------------------------------------------
@@ -215,29 +233,34 @@ public:
 	void		SetLndRwy(char *r);
 	void		Edit();
   void		SetLegDistance(float d);
+	void		SetSumDistance(CWPoint *p0);
 	//--- CSlot management ----------------------------------------
 	void    Print(CFuiList *w,U_CHAR ln); 
 	//-------------------------------------------------------------
-	inline U_SHORT    GetWaypointNo()       {return Seq;}
+	inline U_SHORT    GetSequence()       {return nSeq;}
 	//--- NODE ----------------------------------------------------
   inline void       SetType(Tag t)        {type = t;}
   inline void       SetDbKey(char *k)     {strncpy(dbKey,k,10);}
-	//--- Edition ---------------------------------------------------
-	inline void				SetModif(U_CHAR m)		{ Modif = m;}
+	//--- Edition -------------------------------------------------
+	inline void				SetFlightPlan(CFPlan *p)	{fplan = p;}
+	inline void				SetActive(U_CHAR a)		{activ = a;}
+	inline void				SetModif(U_CHAR m)		{Modif = m;}
 	inline void				SetIlsFrequency(float f)				{ilsF	= f;}
 	inline void				SetMark(char *mk)			{strncpy(Mark,mk, 2);}
 	inline void       SetIden(char *id)			{strncpy(Iden,id, 5); Iden[5]  = 0;}
 	inline void				SetAlti(char *al)			{strncpy(Alti,al,12); Alti[11] = 0;}
 	inline void       SetDist(char *di)			{strncpy(Dist,di,10); Dist[9]	 = 0;}
 	inline void				SetDBwpt(CmHead *obj)	{DBwpt = obj;}
-	inline void       SetSeq(U_SHORT s)			{Seq = s;}
 	inline void				SetUser(Tag u)				{user = u;}
 	inline void       SetRefDirection()			{DBwpt->SetRefDirection(rDir);}
 	//--- Edited field s ------------------------------------------
 	char*							GetEdAltitude()				{return Alti;}
 	//---Node parameters ------------------------------------------
+	inline char				GetState()						{return State;}
   inline char*      GetName()             {return Name;}
-	inline float			GetLegDistance()      {return Legdis;}
+	inline float			GetLegDistance()      {return legDis;}
+	inline float			GetSumDistance()			{return (*Mark == 'X')?(0):(sDis);}
+	inline float			GetPlnDistance()			{return pDis;}
 	inline int				GetAltitude()         {return altitude;}
 	inline CmHead*    GetDBobject()         {return DBwpt.Pointer();}
 	inline  Tag       GetType()             {return type;}
@@ -248,19 +271,30 @@ public:
 	inline Tag				GetUser()							{return user;}
 	inline float			GetFrequency()				{return DBwpt->GetFrequency();}
 	inline float			GetILSFrequency()			{return ilsF;}
+	inline float			GetDTK()							{return rDir;}	
+	inline float			GetCAP()							{return dDir;}
 	inline double     GetMagDeviation()			{return DBwpt->GetMagDev();}
 	inline double			GetDirection()				{return rDir;}
+	inline CWPoint   *GetOrgWPT()						{return (CWPoint*)DBwpt->GetUPTR();}
+	//--------------------------------------------------------------
+	inline void				SetLandingMode()			{mode = WPT_MOD_LND;}
 	//--------------------------------------------------------------
 	inline bool				HasTkoRWY() {return (strcmp("NONE",tkoRWY) != 0);}
 	inline bool				HasLndRWY()	{return (strcmp("NONE",lndRWY) != 0);}
 	inline bool       IsPopulated()         {return DBwpt.Assigned();}
-  inline bool       IsTerminated()        {return (State == WPT_STA_TRM);}
-	inline bool				IsActive()						{return (State != WPT_STA_TRM);}
+  inline bool       IsVisited()						{return (*Mark == 'X');}
+	inline bool				IsActive()						{return (activ != 0);}
 	inline bool       NotAirport()          {return (type != 'airp');}
-	inline bool				IsFirst()							{return (Seq == 1);}
+	inline bool				IsFirst()							{return (nSeq == 1);}
 	inline bool				IsaWaypoint()					{return (type != 'snav');}
 	inline char				IsDirect() 						{return (Modif | mode);}
-};
+	inline bool				IsInside()						{return (WPT_STA_INS == State);}
+	//----------------------------------------------------------------------
+	inline bool				NotFromFPL()	{return GetDBobject()->NoUPTR();}
+	inline bool				IsFromFPL()		{return GetDBobject()->HasUPTR();}
+	inline bool       IsLanding()		{return (mode == WPT_MOD_LND);}
+	//-----------------------------------------------------------------------
+	};
 //===========================================================================
 //  CFPlan defines flight plan
 //===========================================================================
@@ -273,20 +307,31 @@ private:
   U_INT           serial;
   //----------Logical state --------------------------------------
   U_CHAR          State;                      // State
-	//--- Timer ----------------------------------------------------
-	float						Timer;											// T01
   //--------------------------------------------------------------
 	Tag							format;											// Actual format
+	//--------------------------------------------------------------
 	char						genWNO;											// Waypoint number
   char            option;                     // 1=>Just descriptor
   char            modify;                     // Modified indicator
+	bool						endir;											// Direct waypoint terminated
+	//---------------------------------------------------------------------
+	char 					  dapt[6];										// Departing airport
+	//---------------------------------------------------------------
   char            Name[64];                   // File name
   char            Desc[128];                  // Description
   U_INT           Version;                    // Version
 	U_INT						NbWPT;											// Total waypoints
-	//----------------------------------------------------------------
-	CWPoint        *cWPT;												// Current waypoint					
-	//--- DATA from SVH file -----------------------------------------
+	//---Flight plan management ------------------------------------
+	GPSRadio       *GPS;												// Radio GPS if any
+	CWPoint        *aWPT;												// Active waypoint
+	CWPoint        *uWPT;												// Updated waypoint
+	CWPoint        *nWPT;												// Nearest waypoint
+	//-------------------------------------------------------------
+	char						nul[6];											// Null ident
+	//--- Waypoint for direct mode --------------------------------
+	CWPoint         dWPT;												// Direct waypoint
+	//--- DATA from SVH file ---------------------------------------
+	float           insDIS;											// Inner distance
 	float					  nmlSPD;											// Normal speed
 	float						aprSPD;											// Approach
 	int 						mALT;												// max Ceiling
@@ -304,29 +349,48 @@ public:
 	//---------------------------------------------------------------
 protected:
 	void	GenerateName();
-	void	Clear(char m);
+	void	ClearPlan();
 	int 	Read (SStream *stream, Tag tag);
 	void	ReadFormat(SStream *stream);
 	void	ReadFinished();
 	//---------------------------------------------------------------
 public:
-	void	Assign(char *fn,char opt);
-	void	AddNode(CWPoint *wpt);
 	void	TimeSlice(float dT, U_INT fr);
-	void	Actualize(char m);
+	void	UpdatePlan();
+	void	WarnGPS(char m);
 	int 	ModifyCeil(int inc);
+	void	UpdateDirectNode(U_INT fr);
+	void	UpdateActiveNode(U_INT fr);
+	void	ActivateNode(CWPoint *wpt);
+	void	RestoreNode();
 	//---------------------------------------------------------------
 	double TurningPoint();
-	//--- Robot interface -------------------------------------------
-	int	  Activate(U_INT frm);
+	//--- Robot / GPS interface -------------------------------------
+	int	  ActivatePlan();				// Form GPS or VPIL
 	void	Stop();
+	//--- Helpers ---------------------------------------------------
+	int		CheckError();
+	int		NodeType(CWPoint *wp);
 	char *GetDepartingKey();
+	char *GetDepartingIDN();
 	char *GetDepartingRWY();
 	bool  HasTakeOffRunway();
 	bool	HasLandingRunway();
 	bool	IsOnFinal();
-	//---------------------------------------------------------------
-	CWPT *CreateUserWPT(SPosition *p);
+	void	SaveNearest(CWPoint *w);
+	char *PreviousIdent(CWPoint *wpt);
+	//--- Direct mode management ------------------------------------
+	void	AssignDirect(CmHead *obj);				// From GPS
+	void	ClearDirect();										// From GPS
+	//---Flight plan management -------------------------------------
+	bool		AssignPlan(char *fn,char opt);
+	void		AddNode(CWPoint *wpt);
+	CWPT    *CreateUserWPT(SPosition *p);
+	CWPoint *CreateAPTwaypoint(CAirport *apt);
+	CWPoint *CreateNAVwaypoint(CNavaid *nav);
+	CWPoint *CreateWPTwaypoint(CWPT		*pnt);
+	CWPoint *NextStep(CWPoint *n);
+	CWPoint *BaseWPT(CWPoint *w);
 	//--- Change parameters -----------------------------------------
 	void  SetFileName(char *n);
 	void	SetDescription(char *d);
@@ -337,11 +401,17 @@ public:
 	void	Reorder(char m);
 	void	GenWptName(char *edt);
 	void	MovedWaypoint(CWPoint *wpt);
+	void	Probe(CFuiCanva *cnv);
+	//---------------------------------------------------------------
+	CWPoint   *NextNode(CWPoint *w);
+	CWPoint   *PrevNode(CWPoint *w);
+	bool	Exist(int No);
 	//---------------------------------------------------------------
 	void	DrawOnMap(CFuiVectorMap *win);
 	//---------------------------------------------------------------
 	inline void	Register(CFuiFlightLog *w)	{win = w;}
-	//---------------------------------------------------------------
+	//--------------------------------------------------------------
+	inline int        GetActSequence()	{return (aWPT)?(aWPT->GetSequence()):(0);}
 	inline CListBox	 *GetFBOX()         {	return &wPoints;}
 	inline void				Modify(char m)		{	modify |= m;}
 	inline char		   *GetFileName()			{	return Name;}
@@ -349,23 +419,31 @@ public:
 	inline void				IncWPT()					{	NbWPT++;}
 	inline void				DecWPT()					{	NbWPT--;}
 	//--- Virtual pilot interface -----------------------------------
-	inline CWPoint   *GetCurrentNode()	{return cWPT;}
+	inline CWPoint   *GetActiveNode()		{return aWPT;}
 	//--- Aircraft parameters ---------------------------------------
 	inline float			crsSpeed()				{return nmlSPD;}
 	inline float			aprSpeed()				{return aprSPD;}
 	inline int        maxCEIL()					{return mALT;}
 	inline int				actCEIL()					{return cALT;}
+	inline float			GetInDIS()				{return insDIS;}
 	//---------------------------------------------------------------
 	inline bool       IsUsed()					{return (State != FPL_STA_NUL);}
 	inline bool				IsEmpty()					{return (0 == NbWPT);}
 	inline bool       IsNotLast(U_INT s){return (s != NbWPT);}
 	inline bool       IsLast(U_INT s)		{return (s == NbWPT);}
+	inline bool				Inactive()				{return (State == FPL_STA_NUL);}
 	//--------------------------------------------------------------
-	inline void				Refresh()					{if (win)	wPoints.Refresh();}
+	inline int				Size()						{return NbWPT;}
+	//--------------------------------------------------------------
+	inline void				Refresh()					{if (win)	win->Refresh();}
 	inline CSlot     *Next(CSlot *s)		{return wPoints.NextPrimary(s);}
 	inline CSlot     *Prev(CSlot *s)		{return wPoints.PrevPrimary(s);}
 	//---------------------------------------------------------------
+	inline CWPoint   *GetNearest()			{return nWPT;}
+	inline CWPoint   *HeadNode()				{return (CWPoint*)wPoints.HeadPrimary();}
+	inline CWPoint   *LastNode()				{return (CWPoint*)wPoints.LastPrimary();}
+	//----------------------------------------------------------------
 };
 
 //=======================END OF FILE ======================================================================
-#endif PLANDEVOL_H
+#endif //PLANDEVOL_H

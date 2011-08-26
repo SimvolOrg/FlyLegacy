@@ -244,7 +244,7 @@ bool CSubsystem::MsgForMe (SMessage *msg)
   //  respond to  message , just uncomment
   //  the following lines and change id
   //-------------------------------------------------------
-  //Tag idn = 'flap';                     // Change subsystem name here
+  //Tag idn = 'k89g';                     // Change subsystem name here
   //if ((unId == idn) && (msg->group == idn))           
   // int a = 0;                          // Put a break point here
   //-------------------------------------------------------
@@ -263,7 +263,10 @@ bool CSubsystem::MsgForMe (SMessage *msg)
 //	Return the CDependent (if this is the case) initial state
 //---------------------------------------------------------------------
 bool CSubsystem::IsReceiver(SMessage *msg)
-{	if (!MsgForMe(msg))	return false;
+{	//--- for debugging only ---------------------
+	//if (unId == 'k89g')
+	//	int a = 0;
+	if (!MsgForMe(msg))	return false;
   msg->receiver	= this;
 	return true;
 }

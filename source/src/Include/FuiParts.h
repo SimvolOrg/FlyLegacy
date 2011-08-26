@@ -931,7 +931,7 @@ public:
   void    CreateAPTwaypoint();
   void    CreateNAVwaypoint();
 	void		CreateWPTwaypoint();
-  void    InsertWaypoint(CWPoint *wp,CmHead *obj);
+  void    InsertWaypoint(CWPoint *w);
   void    DeleteWaypoint();
   void    MoveUpWaypoint();
   void    MoveDwWaypoint();
