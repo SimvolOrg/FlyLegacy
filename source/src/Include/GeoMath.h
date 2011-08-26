@@ -110,7 +110,8 @@ double  GetQgtNorthLatitude(short cz);
 float   GetMediumCircle(int tz);
 float   GetFogDensity(int tz);
 //----------------------------------------------------------------
-float GetRealFlatDistance(CmHead *obj);
+float		GetRealFlatDistance(CmHead *obj);
+float		GetFlatDistance(SPosition *to);
 double  LongitudeDifference(double f1,double f2);
 SVector SubtractPosition(SPosition &from, SPosition &to);
 U_INT   QgtDifference(U_INT q1,U_INT q2);

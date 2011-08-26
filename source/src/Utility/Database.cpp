@@ -1914,26 +1914,56 @@ CRunway *CAirport::FindRunway(char *rend)
 //-----------------------------------------------------------------
 //	Find  a runway take-off spot by end identifier
 //-----------------------------------------------------------------
-float CAirport::GetTakeOffSpot(char *rend,SPosition **dep, SPosition **end)
+float CAirport::GetTakeOffSpot(char *rend,SPosition **dep,ILS_DATA **ils)
 { CRunway   *rwy = 0;
   float rot = 0;
   rwyQ.Lock();
   for (rwy = (CRunway*)rwyQ.GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
 	{ if (strcmp(rend,rwy->GetHiEnd()) == 0)  
-		{*dep = rwy->GetLandPos(RWY_HI_END); 
-		 *end = rwy->GetOppoPos(RWY_HI_END);
+		{*dep = rwy->GetLandPos(RWY_HI_END);
+		 *ils = rwy->GetIlsData(RWY_HI_END);
 		  rot = rwy->GetROT(RWY_HI_END);
 			break;
 		}
 	  if (strcmp(rend,rwy->GetLoEnd()) == 0)  
 		{*dep = rwy->GetLandPos(RWY_LO_END); 
-		 *end = rwy->GetOppoPos(RWY_LO_END);
-		 rot = rwy->GetROT(RWY_LO_END);
+		 *ils = rwy->GetIlsData(RWY_LO_END);
+		  rot = rwy->GetROT(RWY_LO_END);
 			break;}
   }
 	//-- Unlock RWY Queue -------------------------------
   rwyQ.Unlock();
   return rot;
+}
+//-----------------------------------------------------------------
+//	Find nearest (to pos) runway take off direction
+//	We must compute plane distance to ruway center line
+//-----------------------------------------------------------------
+ILS_DATA *CAirport::GetNearestRwyEnd(SPosition *pos,SPosition **dst)
+{	CRunway   *rwy = 0;
+  ILS_DATA  *nrs = 0;
+	char      *idn = 0;
+  float      dis = 1000;
+	rwyQ.Lock();
+	for (rwy = (CRunway*)rwyQ.GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
+	{	float rh = GetFlatDistance(rwy->ptrHiPos());
+	  //--- Save Hi runway position ---------------------
+	  if (rh <  dis)	
+		{	idn = rwy->GetHiEnd();
+			dis = rh; 
+			nrs = rwy->GetIlsData(RWY_HI_END); 
+		 *dst	= rwy->ptrLoPos(); }
+		//--- Save Lo runway position ----------------------
+		float rl = GetFlatDistance(rwy->ptrLoPos());
+		if (rl <  dis)  
+		{ idn = rwy->GetLoEnd();
+			dis = rl; 
+			nrs = rwy->GetIlsData(RWY_LO_END);
+		 *dst = rwy->ptrHiPos();	}
+	}
+	//-- Unlock RWY Queue -------------------------------
+  rwyQ.Unlock();
+	return nrs;
 }
 //-----------------------------------------------------------------
 //  Return One of Airport Identifier

@@ -1423,11 +1423,12 @@ void	AutoPilot::ModeTGA()
 void AutoPilot::ModeGND()
 {	//--- Compute error -------------------------
   CPIDbox *rbox = pidL[PID_RUD];                // Rudder controller
-	double dir	= Wrap180(globals->dang.z);				// Actual Heading
-	rHDG				= GetAngleFromGeoPosition(*mveh->GetAdPosition(),*gPOS);
-	hERR				= (rHDG - dir);										// Scale to 10 deg
+	aHDG	  = mveh->GetDirection();				// Actual Heading
+	rHDG		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),*gPOS);
+	hERR		= Wrap180(rHDG - aHDG );
   double val  = rbox->Update(dTime,hERR,0);     // to controller
-  rudS->PidValue(-val);                         // result to rudder
+  rudS->PidValue(val);                         // result to rudder
+	TRACE("rHDG=%.5f DIR=%.5f hERR=%.5f val=%.5f",rHDG,aHDG,hERR,val);
 	//---- hold level ---------------------------
 	ModeROL();
 	//---- Proceed according to vertical mode ---
@@ -1609,11 +1610,14 @@ void AutoPilot::ModeFIN()
 	elvT->SetValue(0);
 	elvS->SetValue(0.1f);
 	double lsp = dSPD * 1.4;
-	//--- wait for speed to slow down --------------------
-	if (kSPD > lsp)									return;
+	//--- Time to disengage --------------------
+	if (kSPD < lsp)
+	{	gPOS		= 0;
+		Disengage(1);
+		return;
+	}
 	//--- If ILS enter ground steering -------------------
-	gPOS		= 0;
-	if (SIGNAL_ILS != Radio->ntyp)  return Disengage(1);
+	if (gPOS)						return;
 	rudS->Neutral();
 	gPOS		= Radio->nav->GetOpposite();
 	lStat		= AP_LAT_GND;						
@@ -1807,7 +1811,8 @@ void AutoPilot::SwapALT()
 //  Enter Lateral Mode Leg 1 for tracking ILS
 //-----------------------------------------------------------------------
 void AutoPilot::EnterAPR()
-{ rALT  = RoundAltitude(cALT + 100);		// Current altitude As reference
+{ gPOS	= 0;
+	rALT  = RoundAltitude(cALT + 100);		// Current altitude As reference
 	StateChanged(AP_STATE_ACH);
 	if (BadSignal(SIGNAL_ILS))    return;
   aprm    = 1;
@@ -2104,8 +2109,10 @@ bool AutoPilot::Engage()
 //	Check all pre-conditions
 //-----------------------------------------------------------------------
 bool AutoPilot::EnterTakeOFF()
-{	wgrd = mveh->WheelsAreOnGround();
-	gPOS	= globals->apm->GetRunwayEnd();
+{	wgrd  = mveh->WheelsAreOnGround();
+//  bool end = globals->apm->GetTakeOffDirection(&gPOS,mveh->GetAdPosition());
+  gPOS	= globals->apm->GetDepartingEND();
+//	if (!end)									return false;
 	if (vROT <= 0)						return false;					// Vrot present
 	if (0 == gPOS)						return false;					// Ground position
 	if (!wgrd)								return false;					// Wheels on ground
@@ -2213,8 +2220,7 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 	cnv->AddText( 1,1,"SPEED: %.02f",cRAT);
   cnv->AddText( 1,"rHDG");
   cnv->AddText( 8,1,"%.05f",rHDG);
-  cnv->AddText( 1,"aHDG:");
-  cnv->AddText( 8,1,"%.05f",aHDG);
+  cnv->AddText( 1,1,"aHDG: %.5f",aHDG);
   cnv->AddText( 1,"hERR:");
   cnv->AddText( 8,1,"%.05f",hERR);
   cnv->AddText( 1,"vTIMs");

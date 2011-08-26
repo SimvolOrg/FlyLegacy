@@ -3011,6 +3011,7 @@ typedef struct {
     float      altT;                          // altitude above threshold
 		//--- LAnding direction ------------------------
 		float      lnDIR;												  // Landing direction
+		float      tkDIR;													// Take OFF direction
     //---Distances to define this ILS --------------
     float      d1;                            // Landing distance
     float      d2;                            // reference distance
