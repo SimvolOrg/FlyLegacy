@@ -1044,15 +1044,17 @@ void CAptObject::SetRunwayData(CRunway *rwy)
   ils->d1   = rwyMARGE[rwy->GetLgCode()] + hiDSP;
   ils->d2   = rlgt;
   ils->d3   = ils->d1 - 15000;
-	ils->d4   = ils->d1 + 4000;
-  SetLandingPRM(ils,rwy->GetHmDir());
+	ils->d4   = 0;							// Not used
+	ils->opoP = rwy->GetLoPos();
+  SetLandingPRM(ils,rwy->GetHmDir(),rwy->GetLmDir());
   //---- same for lo end ---------------------------------
   ils       = rwy->GetIlsData(RWY_LO_END);
   ils->d1   = (rlgt - loDSP) - rwyMARGE[rwy->GetLgCode()];
   ils->d2   = 0;
   ils->d3   = ils->d1 + 15000;
-	ils->d4   = ils->d1 - 4000;
-  SetLandingPRM(ils,rwy->GetLmDir());
+	ils->d4   = 0;							// Not used
+	ils->opoP = rwy->GetHiPos();
+  SetLandingPRM(ils,rwy->GetLmDir(),rwy->GetHmDir());
   //--- SetRunway texture offset in packed texture -------
   wTex  = (rwy->GetPaved() == TC_RWY_PAVED)?(float(1)/8):(float(1)/5);
   return;
@@ -1078,7 +1080,7 @@ void CAptObject::SetRunwayData(CRunway *rwy)
 //																																Far (F)
 //	M, L , R and F are aligned at 3° slope
 //--------------------------------------------------------------------------------
-void CAptObject::SetLandingPRM(ILS_DATA *ils,float rdir)
+void CAptObject::SetLandingPRM(ILS_DATA *ils,float ln,float tk)
 { double d1 = ils->d1;
   SPosition  *land  = &ils->lndP;
   land->lon = p0.x + (arcX * d1);  // X coord
@@ -1096,14 +1098,9 @@ void CAptObject::SetLandingPRM(ILS_DATA *ils,float rdir)
   fpn->lon  = p0.x + (arcX * d3) + org.lon;  // X coord
   fpn->lat  = p0.y + (arcY * d3) + org.lat;  // Y coord
   fpn->alt  = land->alt + (fabs(d3 - d1) * ils->gTan);
-	//---- Compute opposite point at 4000 feet ----------
-  SPosition  *opo  = &ils->opoP;
-  double d4 = ils->d4;
-  opo->lon  = p0.x + (arcX * d4) + org.lon;  // X coord
-  opo->lat  = p0.y + (arcY * d4) + org.lat;  // Y coord
-  opo->alt  = land->alt + (fabs(d4 - d1) * ils->gTan);
   //--- Set landing direction for normal runway ---
-	if (0 == ils->ils) ils->lnDIR = rdir;
+	ils->tkDIR	= ln;										// Take off direction
+	if (0 == ils->ils) ils->lnDIR = ln;		// Landing direction
   return;
 }
 //---------------------------------------------------------------------------------
@@ -2923,7 +2920,6 @@ void CAirportMgr::TimeSlice(float dT)
   //----scan airport queue for Airport leaving the radius ------
   for ( apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
       { apt = apo->GetAirport();
-       // float     dst = dbm->GetFlatDistance(apt);
 				float dst = GetRealFlatDistance(apt);
 				apo->SetMiles(dst);
         apo->TimeSlice(dT);
@@ -2983,7 +2979,7 @@ bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
 	if (apt)	dep = apt;
 	if (0 == dep)		return false;
 	//------------------------------------------------
-	float rot =     dep->GetTakeOffSpot(idn,&tko,&endp);
+	float rot =     dep->GetTakeOffSpot(idn,&tko,&rdep);
   if (0 == tko)		return false;
 	CAirplane *pln = globals->pln;
   if (0 == pln)		return false;
@@ -2994,6 +2990,17 @@ bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
 	ori.y					= 0;
 	pln->SetOrientation(ori);
 	pln->SetPhysicalOrientation(ori);
+	return true;
+}
+//----------------------------------------------------------------------------------
+//	Return the nearest direction 
+//----------------------------------------------------------------------------------
+bool CAirportMgr::GetTakeOffDirection(SPosition **opp,SPosition *p)
+{	CAirport *dep = (nApt)?(nApt->GetAirport()):(0);
+	if (0 == dep)			return false;
+	ILS_DATA *ils = dep->GetNearestRwyEnd(p,opp);
+	if (0 == ils)			return false;
+//	*opp   = &ils->opoP;
 	return true;
 }
 //----------------------------------------------------------------------------------

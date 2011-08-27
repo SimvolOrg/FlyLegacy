@@ -192,7 +192,7 @@ char CGearOpal::GCompr__Timeslice  (void)
   if (lim && (mass> lim) )                return susp->GearShock(10);   // Gear destroyed
   //----Check for compression -(in feet) --------------------------
   double lim1 = -gearData->maxC;
-  double lim2 = -gearData->maxC * 0.5;
+  double lim2 = -gearData->maxC * 0.2;
   if (wagl < lim1)                        return susp->GearShock(1);    // Gear impaired
   if (wagl < lim2)  susp->PlayTire(0);
   return 1;

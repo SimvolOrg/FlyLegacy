@@ -3881,7 +3881,7 @@ void CK89gps::RefreshVNAVpoint()
     { vnaWPT->Refresh(FrameNo);
       vnaDIS  = vnaWPT->GetNmiles();
     }
-    else    vnaDIS = 0;			//vnaDIS = FPL->GetDistanceTo(vnaWNO);}
+    else    vnaDIS = 0;			
     switch (vState) {
       case K89_VNA_OFF:
           if (K89_MSG_VNA == msgNO) msgNO = K89_MSG_OFF;

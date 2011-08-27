@@ -1311,9 +1311,11 @@ public:
   inline float       GetHiDir()  {return rhhd; }
 	inline float			 GetHmDir()	 {return rhmh; }
   inline SPosition   GetHiPos()  {return pshi; }
+	inline SPosition  *ptrHiPos()  {return &pshi;}
   inline float       GetLoDir()  {return rlhd; }
 	inline float			 GetLmDir()	 {return rlmh; }
   inline SPosition   GetLoPos()  {return pslo; }
+	inline SPosition  *ptrLoPos()	 {return &pslo;}
   inline int         GetLenghi() {return rlen; }
   inline int         GetWidthi() {return rwid;}
   inline int         GetHiDSP()  {return rhdt; }
@@ -1491,7 +1493,8 @@ public:
   void        SaveProfile();
   void        WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,SStream &st);
 	//--------------------------------------------------------
-	float       GetTakeOffSpot(char *rend,SPosition **d,SPosition **e);
+	float       GetTakeOffSpot(char *rend,SPosition **dp,ILS_DATA **d);
+	ILS_DATA   *GetNearestRwyEnd(SPosition *pos,SPosition **dst);
   //---------inline ----------------------------------------
   inline float      GetLatitude(void) {return apos.lat;}
   inline float      GetLongitude(void){return apos.lon;}

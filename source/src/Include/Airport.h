@@ -321,7 +321,7 @@ public:
    int    GetTaxiways();
    void   SetRunway();
    void   SetRunwayData(CRunway *rwy);
-   void   SetLandingPRM(ILS_DATA *ils,float mdir);
+   void   SetLandingPRM(ILS_DATA *ils,float ln,float tk);
    void   SetCameraPosition();
    void   BuildOtherRunway(CRunway *rwy);
    void   AptExtension(GroundSpot &gs);
@@ -497,6 +497,8 @@ class CAirportMgr {
 	//--- Letter and band VBO -----------------------------------------
 	U_INT						xOBJ;												// yellow texture
 	U_INT						oVBO;												// VBO buffer
+	//--- Departing runway --------------------------------------------
+	ILS_DATA       *rdep;												// Departing spot
   //-----------------------------------------------------------------
   TCacheMGR      *tcm;
   U_INT           tr;                         // Trace indicator
@@ -526,6 +528,7 @@ public:
 	bool		AreWeAt(char *key);
 	bool		SetOnRunway(CAirport *apt,char *idn);
 	char   *NearestIdent();
+	bool    GetTakeOffDirection(SPosition **opp,SPosition *p);
   //----AIRPORT BUILDING --------------------------------------------
   int       SetRunwayProfile(CAirport *apt);
   void      AddProfile(RWY_EPF &epf);
@@ -540,13 +543,10 @@ public:
   inline CCamera     *GetCamera()             {return cam;}
   inline double       GetPaveFactor()         {return PavArc;}
   inline CPicQUAD    *GetIcon()               {return avion;}
-	inline void					SetRunwayEnd(SPosition *p)	{endp = p;}
 	inline void					SwapILSdraw()						{dILS ^= 1;}
 	//-----------------------------------------------------------------
-	//-----------------------------------------------------------------
-	inline SPosition   *GetRunwayEnd()					{return endp;}
-	//-----------------------------------------------------------------
 	inline CAptObject  *GetNearestAPT()					{return nApt;}
+	inline SPosition   *GetDepartingEND()				{return (rdep)?(&rdep->opoP):(0);}
 };
 //============================END OF FILE =================================================
 

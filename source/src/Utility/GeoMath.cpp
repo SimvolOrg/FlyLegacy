@@ -791,7 +791,7 @@ double LongitudeInBand(U_INT qx, double lon)
 //-----------------------------------------------------------------------------
 //	Given geo positions P1 and P2 return angle between
 //	P1 and P2 taking P1 as origin
-//	Compute aqngle relative to geographical north
+//	Compute angle relative to geographical north
 //-----------------------------------------------------------------------------
 double GetAngleFromGeoPosition(SPosition &p1,SPosition &p2)
 {	double dlon = LongitudeDifference(p2.lon,p1.lon);
@@ -799,7 +799,7 @@ double GetAngleFromGeoPosition(SPosition &p1,SPosition &p2)
 	double rad  = TC_RAD_FROM_ARCS(p2.lat);
 	double f1   = TC_FEET_FROM_ARCS(dlat);							// Vertical feet
 	double f2   = TC_FEET_FROM_ARCS(dlon) * cos(rad);		// Horizontal feet
-	double alf  = atan2(-f2,f1);												// Arc [-Pi + Pi]
+	double alf  = atan2(f2,f1);												// atan2(Y,X)
 	double deg  = RadToDeg(alf);
 	return deg;
 }
@@ -927,6 +927,26 @@ float GetRealFlatDistance(CmHead *obj)
 		obj->SetNmiles(ds);
 		return ds;
 }
+//-----------------------------------------------------------------------------
+//  Compute flat distance in nautical miles from aircraft 
+//  position (pos) to destination position(to). Store distance in obj
+//  1 N mile => 1 minute of arc
+//  Vertical and horizontal distances are stored as integer and scaled by a 
+//  factor 128 for better precision in drawing the vactor map.
+//  The short int allows for a +/-256 miles capacity with this factor
+//	NOTE: The NmFactor is divided by 60 to convert arsec in nmiles
+//-----------------------------------------------------------------------------
+float GetFlatDistance(SPosition *To)
+{   SPosition pos = globals->geop;															// Aircraft position  
+		double	disLat	= (To->lat - pos.lat) / 60.0;								// Lattitude Distance in nm
+    double	difLon	= LongitudeDifference(To->lon,pos.lon);			// Longitude difference in arcsec
+		double   lr			= TC_RAD_FROM_ARCS(pos.lat);								// Latitude in radian
+		double  factor	= cos(lr) / 60;															// 1 nm at latitude lr
+    double	disLon	= factor * difLon;													// Reduce x component
+		double	sq			= ((disLon * disLon) + (disLat * disLat));  // squarred distance
+		return   SquareRootFloat(sq);
+}
+
 //=========================================================================================
 //  Class GroundSpot:   Info on a ground spot
 //=========================================================================================
