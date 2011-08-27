@@ -667,6 +667,9 @@ void CPluginMain::On_Instantiate (const long,const long,SDLLObject**) const
         //                               types[1]->signature,
         //                               plg_object); // workaround
         //} else
+        #ifdef _DEBUG_dll2
+          //TRACE ("type = %d", (*idll_data).ityp_obj->first->type);
+        #endif
         if ((*idll_data).ityp_obj->first->type == TYPE_DLL_WINDOW){
 
         (*idll_data).dll_registry->DLLInstantiate ( (*idll_data).ityp_obj->first->type,
@@ -733,8 +736,10 @@ void CPluginMain::On_Instantiate (const long,const long,SDLLObject**) const
 	              fclose(fp_debug);
               }}
             #endif
-          } else
+          }
+        } else
           if ((*idll_data).ityp_obj->first->type == TYPE_DLL_GAUGE){
+            plg_object [0] = 0; // 082711
             dll_gauges_init_counter++;
             #ifdef _DEBUG
               //TRACE ("DLL GAUGE INITIALIZED %d %p", dll_windows_init_counter, plg_object [0]);
@@ -811,20 +816,23 @@ void CPluginMain::On_Instantiate (const long,const long,SDLLObject**) const
 /*/ //122809
           } else
           if ((*idll_data).ityp_obj->first->type == TYPE_DLL_SYSTEM){
+            plg_object [0] = 0; // 082711
             dll_system_init_counter++;
             #ifdef _DEBUG
               //TRACE ("DLL SUBSYSTEM INITIALIZED %d %p", dll_system_init_counter, plg_object [0]);
             #endif
           } else
           if ((*idll_data).ityp_obj->first->type == TYPE_DLL_VIEW){
+            plg_object [0] = 0; // 082711
           } else
           if ((*idll_data).ityp_obj->first->type == TYPE_DLL_CAMERA){
             dll_camera_init_counter++;
+            plg_object [0] = 0; // 082711
             #ifdef _DEBUG
               //TRACE ("DLL CAMERA INITIALIZED %d %p", dll_camera_init_counter, plg_object [0]);
             #endif
           }
-        }
+//        }
 //        dllobjects_counter++; // lc 110709
       }
     }
@@ -1170,7 +1178,7 @@ void CPluginMain::On_Instantiate_DLLSystems (const long sig,const long,SDLLObjec
 void CPluginMain::On_Instantiate_DLLCamera (const long sig,const long,SDLLObject**) const
 {
 #ifdef _DEBUG
-  //TRACE ("DLL INSTANTIATE CAMERA %d", dll_system_init_counter);
+  //TRACE ("DLL INSTANTIATE CAMERA %d", dll_camera_init_counter);
 #endif
   for (idll_data = dll_data.begin (); idll_data != dll_data.end (); ++idll_data) {
     if ((*idll_data).dll_registry->DLLInstantiate) {
@@ -1206,7 +1214,11 @@ void CPluginMain::On_Instantiate_DLLCamera (const long sig,const long,SDLLObject
       }
     }
   }
-}
+#ifdef _DEBUG_DLLGAUGES
+  UtilityPrintDLLObject ();
+  UtilityPrintDLLData ();
+#endif
+}  //
 
 void CPluginMain::On_InitObject      (SDLLObject*) const
 {
@@ -1561,6 +1573,7 @@ int CPluginMain::On_InitGlobalMenus (void) const
       ++count;
     }
   }
+  //TRACE ("On_InitGlobalMenus %d", count); // 082711
   return count;
 }		    // DLLInitGlobalMenus;
 

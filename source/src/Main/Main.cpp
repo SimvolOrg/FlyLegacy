@@ -1563,15 +1563,14 @@ int main (int argc, char **argv)
   }
   else
     //! plugins_num is used as a plugin flag along the code
-    globals->plugins_num = 0;
-  
+    globals->plugins_num = 0; 
+
   // sdk: init menu with added items if any 
   if (globals->plugins_num && !globals->plugins.On_InitGlobalMenus ()) {
-    init_ui ();
+    init_user_ui (); // was init_ui (); 082711
   } else {
     init_user_ui ();
   }
- 
   //--- Initialize fonts and cursor manager -------------------
   InitFonts ();
   globals->cum = new CCursorManager();
