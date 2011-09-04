@@ -296,7 +296,8 @@ void CFuiKeyMap::DefaultKeys()
 //  -Assign to key
 //--------------------------------------------------------------------------
 void CFuiKeyMap::ButtonHit(SJoyDEF *jsd,int bt)
-{ modify = 1;
+{ if (modOpt == 0) {Message("To Modify set MODE to CHANGE !"); return; }
+	modify = 1;
   Unassign(jsd,bt);
   CKeyLine          *kln = (CKeyLine*)keyBOX.GetSelectedSlot();
   CKeyDefinition    *kdf = kln->GetKDef();

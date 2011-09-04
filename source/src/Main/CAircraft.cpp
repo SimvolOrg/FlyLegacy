@@ -420,7 +420,7 @@ void CAirplane::ReadFinished (void)
   //--- Call final initialization ------------------
   PrepareMsg ();
   BindKeys();                             // Map all keys
-  //---- Set Initial state state -------------------
+  //---- Set Initial state -------------------------
   State = VEH_INIT;
   //--- Interconnect trim controls -----------------
   amp->aTrim->SetMainControl(amp->GetAilerons());
@@ -433,6 +433,7 @@ void CAirplane::ReadFinished (void)
 void CAirplane::BindKeys()
 { CKeyMap *km = globals->kbd;
   globals->pln = this;
+	globals->jsm->Connect();
   km->BindGroup('plne',KeyAirGroup);
   //---Control surfaces ----------------------------------------------------
   km->Bind('adel',aKeyADEL,KEY_REPEAT);
@@ -724,7 +725,7 @@ void CAirplane::GetAllEngines(std::vector<CEngine*> &engs)
 //	Place aircraft at the good altitude
 //--------------------------------------------------------------------------------
 SPosition CAirplane::SetOnGround()
-{ if (globals->Init)  return orgp;
+{ if (globals->tcm->MeshBusy())  return orgp;
   SPosition pos = orgp;
   pos.alt   = globals->tcm->GetGroundAltitude() + GetBodyAGL();
   SetPosition(pos);
@@ -764,8 +765,8 @@ void CAirplane::TimeSlice(float dT,U_INT frame)
       }
     //--- Aircraft is crashing ----------------------------
     case VEH_CRSH:
-      
       if (!globals->snd->IsPlaying(sound)) State = VEH_INOP;
+			return;
     //--- Aircraft is operational or damaged----------------
     case VEH_INOP:
     case VEH_OPER:

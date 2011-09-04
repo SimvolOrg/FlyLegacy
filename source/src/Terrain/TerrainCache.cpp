@@ -3178,14 +3178,12 @@ TCacheMGR::TCacheMGR()
 	tr			= ter;
   td      = 0;                      // THREAD DEBUG indicator
   qRDY    = 0;
-  globals->Init = 1;                // Initialization
   scale.x = TC_FEET_PER_ARCSEC;     // Scaling parameters
   scale.y = TC_FEET_PER_ARCSEC;
   scale.z = 1.0;
   mask    = GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_POLYGON_BIT | GL_FOG | GL_LIGHTING_BIT | GL_COLOR;
   Terrain = 0;
   Tele    = 0;
-  nTel    = 0;
   bbox    = globals->mBox.GetTcmBox("TCacheMGR");
   //----Sun Radius base on average apparent diameter in[0.5244°,0.5422°]------
   double alf = DegToRad(double(0.533333) * 0.5);
@@ -3459,12 +3457,10 @@ void TCacheMGR::Teleport(SPosition &dst)
   if (0 == veh)											return;
   if (veh->HasState(VEH_INOP))			return;
 	if (globals->aPROF & PROF_NO_TEL)	return;
-  nTel          = veh->WheelsAreOnGround();
   globals->m3d->ReleaseVOR();
   veh->SetPosition(dst);
   Tele          = 1;
   Terrain       = 0;
-  globals->Init = 1;
   return;
 }
 //-------------------------------------------------------------------------
@@ -3474,13 +3470,14 @@ void TCacheMGR::NoteTeleport()
 { char edt[128];
   _snprintf(edt,128,"Teleport. Please wait.");
   DrawNoticeToUser(edt,1);
-  if (qRDY)                 return;
+  if (qRDY)              return;
   //----End of teleporting ---------------------
   Tele = 0;
   Spot.PopQGT();
   CVehicleObject *veh = globals->sit->uVeh;
-  if (0 == veh)             return;
-  if (0 == nTel)            return;
+  if (0 == veh)         return;
+	bool grnd  = veh->WheelsAreOnGround();
+  if (!grnd)            return;
   //---Set aircraft on ground at destination ---
   veh->RestOnGround();
 }
@@ -3756,6 +3753,7 @@ void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
 	//--- Update action ----------------------------------------------------
   if (action)           return;
   if (OneAction())      return;
+	//--- End initial state when all QGT are ready -------------------------
   if (Tele)     NoteTeleport();
   //-----No cache refresh.  Update magnetic deviation --------------------
   if (magRF) globals->mag->GetElements (aPos,magDV, magFD);
@@ -4613,8 +4611,7 @@ int TCacheMGR::OneAction()
 			objMGR->LocateObjects(qgt);
 			//----------------------------------------------------
       if (tr) TRACE("TCM: -- Time: %04.2fQGT(%3d-%3d) Load Objects",Time(),qgt->xKey,qgt->zKey);
-      if (0 == qRDY) globals->Init = 0;
-			//----------------------------------------------------
+      //----------------------------------------------------
       return LastAction();
     //---- Delete the QGT --------------------------------
     case TC_QT_DEL:

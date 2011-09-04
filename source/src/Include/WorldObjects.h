@@ -82,6 +82,7 @@ protected:
 	void     *phyMod;
   //----Global state ----------------------------------------
   char    State;
+	float		Time;				// State timer
   //----Aircraft parameters ---------------------------------
   //  NOTE: Those fields should be dupplicated in globals
   //---------------------------------------------------------

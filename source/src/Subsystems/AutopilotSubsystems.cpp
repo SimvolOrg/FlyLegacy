@@ -1422,11 +1422,10 @@ void	AutoPilot::ModeTGA()
 //-----------------------------------------------------------------------
 void AutoPilot::ModeGND()
 {	//--- Compute error -------------------------
-  CPIDbox *rbox = pidL[PID_RUD];                // Rudder controller
 	aHDG	  = mveh->GetDirection();				// Actual Heading
 	rHDG		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),*gPOS);
 	hERR		= Wrap180(rHDG - aHDG );
-  double val  = rbox->Update(dTime,hERR,0);     // to controller
+  double val  = pidL[PID_RUD]->Update(dTime,hERR,0);     // to controller
   rudS->PidValue(val);                         // result to rudder
 	TRACE("rHDG=%.5f DIR=%.5f hERR=%.5f val=%.5f",rHDG,aHDG,hERR,val);
 	//---- hold level ---------------------------
@@ -1438,15 +1437,6 @@ void AutoPilot::ModeGND()
 			if (kSPD < vROT)							return;
 			Rotate();
 			return;
-  	//--- in Take-off mode leave GND at 50 feet agl-
-			/*
-		case AP_VRT_VSP:
-		case AP_VRT_ALT:
-			if (cAGL < 100)								return;
-			lStat	= AP_LAT_ROL;
-			rudS->Neutral();
-			return;
-			*/
 		//--- in final disengage below cut speed--
 		case AP_VRT_FIN:
 			if (kSPD > dSPD)							return;
@@ -1607,18 +1597,17 @@ void AutoPilot::ModeFIN()
 {	//----------------------------------------------------------------
 	//  TRACE("GRN: kts=%.2f agl=%.4f AoA=%.4f",spd,cAGL,-GetAOS());
 	//--- push plane on ground ---------------------------------
+	ailS->Neutral();
 	elvT->SetValue(0);
 	elvS->SetValue(0.1f);
-	double lsp = dSPD * 1.4;
-	//--- Time to disengage --------------------
-	if (kSPD < lsp)
-	{	gPOS		= 0;
-		Disengage(1);
-		return;
-	}
-	//--- If ILS enter ground steering -------------------
-	if (gPOS)						return;
 	rudS->Neutral();
+	double lsp = dSPD * 1.4;
+	//--- wait for speed to slow down --------------------
+//	if (kSPD > lsp)									return;
+	//--- If ILS enter ground steering -------------------
+	gPOS		= 0;
+//	if (SIGNAL_ILS != Radio->ntyp)  return Disengage(1);
+	
 	gPOS		= Radio->nav->GetOpposite();
 	lStat		= AP_LAT_GND;						
 	return;
@@ -1812,7 +1801,7 @@ void AutoPilot::SwapALT()
 //-----------------------------------------------------------------------
 void AutoPilot::EnterAPR()
 { gPOS	= 0;
-	rALT  = RoundAltitude(cALT + 100);		// Current altitude As reference
+	rALT  = RoundAltitude(cALT - 100);		// Current altitude As reference
 	StateChanged(AP_STATE_ACH);
 	if (BadSignal(SIGNAL_ILS))    return;
   aprm    = 1;
@@ -2217,7 +2206,7 @@ void AutoPilot::ALTalertSET()
 void AutoPilot::Probe(CFuiCanva *cnv)
 { cnv->AddText(1,1,"%s(%d)-%s-ABRT:%d",autoTB1[lStat],step,autoTB2[vStat],abrt);
 	//------------------------------------------------------------------
-	cnv->AddText( 1,1,"SPEED: %.02f",cRAT);
+cnv->AddText( 1,1,"GAS:%d-SPEED:%.02f",ugaz,cRAT);
   cnv->AddText( 1,"rHDG");
   cnv->AddText( 8,1,"%.05f",rHDG);
   cnv->AddText( 1,1,"aHDG: %.5f",aHDG);

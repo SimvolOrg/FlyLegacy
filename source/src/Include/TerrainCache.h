@@ -1040,7 +1040,6 @@ class TCacheMGR {
   U_CHAR      wire;                         // QGT step
   U_CHAR      Terrain;                      // Terrian indicator
   //------Teleport ----------------------------------------------
-  U_CHAR      nTel;                         // Tel index
   U_CHAR      Tele;                         // Teleport in action
   //-------Vector map:  pixels per mile -------------------------
   SVector     ppM;                          // Pixels per mile
@@ -1238,6 +1237,7 @@ public:
   //-------------------------------------------------------------
 	inline void IncRDY(short n)				{qRDY += n;}
   inline bool MeshReady()           {return (qRDY == 0);}
+	inline bool MeshBusy()						{return (qRDY != 0);}
   inline bool TelePorting()         {return (Tele == 1);}
   //---------Time of day management -----------------------------
   inline bool   IsDay()             {return (cTod == 'D');}

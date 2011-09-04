@@ -211,7 +211,6 @@ typedef struct {
   CBitmapNUL  nBmap;                    /// Bitmap NUL
 	CFmtxMap   *dMap;											// Dummy map table
   //-------- Application state ---------------------------------------
-  char        Init;                     /// Initial state
   EAppState appState;
   //---- Cockpit panel parameters ------------------------------------
   int         panelScrollStep, panelCreepStep;

@@ -133,7 +133,8 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
   mMag.id = MSG_GETDATA;
   mRpm.id = MSG_GETDATA;
   mMap.id = MSG_GETDATA;
-
+	//----------------------------------------------
+	elapsed = 0;
 }
 //----------------------------------------------------------------------
 //  Delete this object
@@ -385,7 +386,7 @@ void CSimulatedVehicle::Write (SStream *stream)
 void CSimulatedVehicle::Timeslice (float dT)
 {
   if (globals->sBar) {
-    elapsed += dT;
+	    elapsed += dT;
     if (elapsed > globals->status_bar_limit) {
       elapsed = elapsed - globals->status_bar_limit;
       PrintInfo (globals->sBar); // 1 => aircraft data  2 => angle & position
@@ -406,7 +407,7 @@ void CSimulatedVehicle::CalcNewCG_ISU (void)
 
 void CSimulatedVehicle::PrintInfo (int bar_cycle)
 {
-  if (1 == bar_cycle) {
+	  if (1 == bar_cycle) {
     float altitude = 0.0f;
     float speed = 0.0f;
     float vert_speed = 0.0f;
