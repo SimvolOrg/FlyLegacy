@@ -169,7 +169,7 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
 //  wagl = bagl + ROT(gPos) is the wheel contact AGL after rotation
 //  When wagl is negative, the wheel is on ground
 //==============================================================================
-char CGearOpal::GCompr__Timeslice  (void)
+char CGearOpal::GCompr__Timeslice  (void)//082911
 { //-- Apply aircraft rotation to contact point --------------------
   double  grd = globals->tcm->GetGroundAltitude();  
   SVector   V;                                 // Local rotated coordinates
@@ -179,23 +179,36 @@ char CGearOpal::GCompr__Timeslice  (void)
   double bagl = mveh->GetAltitude() - grd;
   double wagl = bagl + V.z;
   susp->SetWheelAGL(wagl);
-  if (wagl > 0.5)   return 0;
   //----------------------------------------------------------------
-//  U_INT fr    = globals->sit->GetFrameNo();
-//  TRACE("%06d: WHeel GRND=%.04f bagl=%.04f wagl=%.04f",fr,grd,bagl,wagl,gearData->susp_name);
+  //U_INT fr    = globals->sit->GetFrameNo();//082911
+  //TRACE("%06d: WHeel GRND=%.04f bagl=%.04f wagl=%.04f %s",fr,grd,bagl,wagl,gearData->susp_name);
+  if (wagl > 0.5)   return 0;
 
   //----Compute impact power in pound per feet per sec ------------
   float mass = mveh->wgh->GetTotalMassInLbs();
   mass      *= MetresToFeet (vWhlVelVec.z);
   gearData->imPW = mass;                      // Impact on wheel
   float lim  = gearData->powL;
+
   if (lim && (mass> lim) )                return susp->GearShock(10);   // Gear destroyed
   //----Check for compression -(in feet) --------------------------
   double lim1 = -gearData->maxC;
   double lim2 = -gearData->maxC * 0.2;
+  ////
+  //#ifndef _DEBUG	
+  //{	FILE *fp_debug;
+	 // if(!(fp_debug = fopen("__DDEBUG_g.txt", "a")) == NULL)
+	 // {
+		//  int test = 0;
+		//  fprintf(fp_debug, "%f>%f %f<%f\n", mass, lim, wagl, lim1);
+		//  fclose(fp_debug); 
+  //}	}
+  //#endif
+  
   if (wagl < lim1)                        return susp->GearShock(1);    // Gear impaired
   if (wagl < lim2)  susp->PlayTire(0);
   return 1;
+
 }
 //-----------------------------------------------------------------------
 //  Repair the wheel
@@ -895,19 +908,17 @@ void COpalGroundSuspension::Timeslice (float dT)
     VectorCrossProduct (mass_moment, mainVM, mass_force);
     /// add gear moment to the CG moment
     SumGearMoments = VectorSum (SumGearMoments, mass_moment);
-
     #ifdef _DEBUG_suspension	
     {   FILE *fp_debug;
       if((fp_debug = fopen("__DDEBUG_suspension.txt", "a")) != NULL)
       {
             fprintf(fp_debug, "---------------------------------------------------------\n");
-            fprintf(fp_debug, "COpalGroundSuspension::Timeslice nWOW=%d SumF(%f %f %f) SumM(%f %f %f)\n",
-              nWOW,
+            fprintf(fp_debug, "COpalGroundSuspension::Timeslice SumF(%f %f %f) SumM(%f %f %f)\n",
               SumGearForces.x,  SumGearForces.y,  SumGearForces.z,
               SumGearMoments.x, SumGearMoments.y, SumGearMoments.z
              );
             fprintf(fp_debug, " cg(%f %f %f) mg(%f %f %f) mp(%f %f %f)\n mf(%f %f %f) mm(%f %f %f) (mwh%f Mg%f mg%f)\n",
-              globals->sit->user->svh->GetNewCG_ISU ()->x,  globals->sit->user->svh->GetNewCG_ISU ()->y,  globals->sit->user->svh->GetNewCG_ISU ()->z,
+              globals->sit->uVeh->svh->GetNewCG_ISU ()->x,  globals->sit->uVeh->svh->GetNewCG_ISU ()->y,  globals->sit->uVeh->svh->GetNewCG_ISU ()->z,
               main_gear.x, main_gear.y, main_gear.z,
               mass_pos.x, mass_pos.y, mass_pos.z,
               mass_force.x, mass_force.y, mass_force.z,
