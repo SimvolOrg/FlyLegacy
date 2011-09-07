@@ -75,11 +75,14 @@ typedef enum {
 class CWorldObject : public CStreamObject {
 protected:
 	//------ Type of vehicle ----------------------------
-  char        stype[8];
-  Tag         type; 
+  char    stype[8];
+  Tag     type; 
+	//--- Dammage management ----------------------------
+  U_INT       sound;										// Crash sound
   DAMAGE_MSG  damM;
+	std::vector<DAMAGE_MSG *>	damL;				// Dammage list
 	//--- physical model --------------------------------------
-	void     *phyMod;
+	void   *phyMod;
   //----Global state ----------------------------------------
   char    State;
 	float		Time;									// State timer
@@ -122,10 +125,13 @@ public:
   virtual void      ReadFinished   (void);
 
   //--- CWorldObjectBase methods -----------------------------
+	virtual void HereWeCrash()				{;}
+  virtual void EndLevelling()				{;}
+  virtual void ResetCrash (char p); 
   virtual void Print (FILE *f);
-  virtual void ResetCrash (char p) {} 
-  virtual void EndLevelling() {}
-  virtual void DamageEvent(DAMAGE_MSG *msg) {;}
+	//--- Dammage management --------------------------------------------------------------
+  void    DamageEvent(DAMAGE_MSG *msg);
+  void    CrashEvent(DAMAGE_MSG *msg);
   //------------------------------------------------------------
   inline  Tag   GetType (void) { return type; }
   inline  Tag*  GetTypePointer (void) { return &type; }
@@ -374,7 +380,7 @@ public:
   const double&             GetWingIncidenceDeg     (void) {return main_wing_incid;}
   const float&              GetWingAoAMinRad        (void) {return main_wing_aoa_min;}
   const float&              GetWingAoAMaxRad        (void) {return main_wing_aoa_max;}
-  //--------------Plotting interface ----------------------------------------------------
+  //--- Plotting interface --------------------------------------------------------------
   int               AddToPlotMenu(char **menu, int k);
   void              PlotParameters(PLOT_PP *pp,Tag itm);
   //-------------------------------------------------------------------------------------
@@ -546,7 +552,6 @@ protected:
   //-----------Park option ----------------------------------------------------
   char         park;
   static       CLogFile *log;
-  U_INT        sound;                 // Crash sound
 	//--- METHODS ---------------------------------------------------------------
 public:
   // Constructors / destructor
@@ -586,13 +591,11 @@ public:
   void              GetAllEngines(std::vector<CEngine*> &engs);
   void              CutAllEngines()     {eng->CutAllEngines();}
   void              EnginesIdle()       {eng->EnginesIdle();}
-  void              AbortEngines()      {eng->AbortEngines();}
+	void							HereWeCrash()       {eng->AbortEngines();}
   SPosition         SetOnGround();
   double            GetBodyAGL()      {return whl->GetBodyAGL();}
   double            GetPositionAGL()  {return whl->GetPositionAGL();}
   void              BodyCollision(CVector &p);
-  void              DamageEvent(DAMAGE_MSG *msg);
-  void              CrashEvent(DAMAGE_MSG *msg);
   //----Update the vehicle ------------------------------------------------------
   void              TimeSlice(float dT,U_INT frame);
   //-----------------------------------------------------------------------------

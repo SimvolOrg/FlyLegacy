@@ -306,11 +306,72 @@ void	CWorldObject::SetLDtoRROrientation (SVector *vec)
   globals->dang = dang;
 	return;
 }
-
+//----------------------------------------------------------------------------
+//	Set damage if needed
+//----------------------------------------------------------------------------
+void CWorldObject::CrashEvent(DAMAGE_MSG *msg)
+{ Tag          sbf  = 0;
+  int         prio  = damM.Severity;
+  if (msg->Severity >= prio)    damM = *msg;
+  prio              = damM.Severity;
+  CFuiTextPopup  *note = globals->fui->GetCrashNote();
+  sbf = damM.snd;
+  //---- Check for warning advise ------------------------
+  if (1 == prio)
+  { note->OrangeBack();
+    note->SetText(damM.msg);
+    note->SetActive();
+  }
+  //---- This is a red crash -----------------------------
+  if (2 <= prio)
+  { note->RedBack();
+    State = VEH_CRSH;
+    HereWeCrash();
+    note->SetText(damM.msg);
+    note->SetActive();
+  }
+  if (0 == sbf)           return;
+  //---- Play corresponding sound ------------------------
+  CAudioManager *snd = globals->snd;
+  CSoundBUF     *buf = snd->GetSoundBUF(sbf);
+  sound = snd->Play(buf);
+  return;
+}
+//----------------------------------------------------------------------------
+//	Damage Event
+//----------------------------------------------------------------------------
+void CWorldObject::DamageEvent(DAMAGE_MSG *msg)
+{ CAudioManager *snd = globals->snd;
+  switch (State)
+{ //--- Initial state: ignore ---------------- 
+  case VEH_INIT:
+    return;
+  //---- Normal mode: process event ----------
+  case VEH_OPER:
+    CrashEvent(msg);
+    return;
+  //---- Crashing: ignore --------------------
+  case VEH_CRSH:
+    if (sound) return;
+    State = VEH_INOP; 
+    return;
+  //---- Crashed:  ignore --------------------
+  case VEH_INOP:
+    return;
+  }
+  return;
+}
+//----------------------------------------------------------------------------
+//	Reset carsh data
+//----------------------------------------------------------------------------
+void CWorldObject::ResetCrash(char p)
+{ for (U_INT k=0; k<damL.size(); k++) delete damL[k];
+	damL.clear();
+	return;
+}
 //-------------------------------------------------------------
 void CWorldObject::Print (FILE *f)
-{
-  char s[256];
+{ char s[256];
   FormatPosition (geop, s);
   fprintf (f, "Position      : %s %f' MSL\n", s, geop.alt);
   fprintf (f, "Orientation   : %f %f %f\n", iang.x, iang.y, iang.z);

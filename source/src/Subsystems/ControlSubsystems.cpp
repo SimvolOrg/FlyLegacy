@@ -1656,6 +1656,14 @@ void CFlapControl::ReadFinished()
 void CFlapControl::NewPosition(int pos)
 { actualPos   = pos;
   indnTarget  = (aPos)?(aPos[pos].degre):(0);
+	if (mveh->NotOPT(VEH_D_CRASH))	return;
+	//--- check if flap dammaged by speed -----------
+	float sped  = mveh->GetPreCalculedKIAS();
+	if (sped < aPos[pos].speed)			return;
+	//--- Generate a message ------------------------
+	DAMAGE_MSG msg = {1,0,0,"Flaps are out (overspeed)"};
+	mveh->DamageEvent(&msg);
+	state = 0;								// Flaps out of service
   return;
 }
 //----------------------------------------------------------------------
@@ -1746,7 +1754,8 @@ void CFlapControl::Decr (void)
 //         AeroControl TimeSlice must be skipped for this reason
 //-----------------------------------------------------------------------
 void CFlapControl::TimeSlice (float dT,U_INT FrNo)
-{ data.deflect = indn;
+{ active      &= (state == 1);							// Check for Out of Service
+	data.deflect = indn;
   data.scaled  = indn;
   CDependent::TimeSlice (dT,FrNo);
   return;
