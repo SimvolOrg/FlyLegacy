@@ -959,9 +959,6 @@ void InitSimulation (void)
   globals->sit = new CSituation ();
   TRACE("End of InitSimulation");
   //----Set some options ------------------------------------------
-  globals->vehOpt.Set(VEH_AP_LAND);
-  globals->vehOpt.Set(VEH_D_CRASH);
-  globals->vehOpt.Set(VEH_PN_HELP);
   return;
 }
 //=======================================================================
@@ -1344,7 +1341,7 @@ int main (int argc, char **argv)
     strcpy (globals->sitFilename, argv[1]);
   } else {
     // No .SIT filename provided on command line; use INI settings
-    GetIniString ("UI", "startupSituation", globals->sitFilename, 80);
+    GetIniString ("UI", "startupSituation", globals->sitFilename, (PATH_MAX-1));
     if (strlen (globals->sitFilename) == 0) {
       // No default startup situation specified in INI settings
       strcpy (globals->sitFilename, "Saved Simulations/Default.sit");
@@ -1447,7 +1444,6 @@ int main (int argc, char **argv)
   globals->pit  = 0;                          // Cockpit manager
   globals->gas  = 0;                          // Fuel system
   globals->pan  = 0;                          // Active pannel
-  globals->uph  = 0;                          // CPhysicModelAdj
   globals->wfl  = 0;                          // Fuel loadout
   globals->wld  = 0;                          // Load window
   globals->wpb  = 0;                          // Window probe

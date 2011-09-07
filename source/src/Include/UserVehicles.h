@@ -241,9 +241,7 @@ protected:
 // Corresponds to a single <engn> object in the Engine Manager ENG file
 //========================================================================
 class CEngine : public CDependent
-{  //--- ATTRIBUTES --------------------------------------------
-protected:
-  CVehicleObject *mveh;
+{ //--- ATTRIBUTES --------------------------------------------
   //---- METHODS -----------------------------------------------
 public:
   CEngine (CVehicleObject *v,int eNum, char* type, char* name);
@@ -292,6 +290,8 @@ public:
   //---PLOT interface -------------------------------------------
   int       AddToPlotMenu(char **menu, PLOT_PM *pm, int k);
   bool      PlotParameters(PLOT_PP *pp,Tag id, Tag type);
+	//-------------------------------------------------------------
+	inline void					   Reset()	{ngnModel->Reset();}
   //-------------------------------------------------------------
   inline CFuelTap       *GetTapItem()     {return Tap;}
   //-------------------------------------------------------------
@@ -349,7 +349,7 @@ public:
 
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
-
+  
   //---- CEngineManager methods -------------------------------------------
   void          SetTAP(CFuelTap *fs);
   /*! returns the number of engines for the current user */

@@ -691,7 +691,6 @@ int CNeedle::Read (SStream *stream, Tag tag)
 { int pm;
   double dm;
   char name[128];
-
   switch (tag) {
     //--- Vertical amplitude-----------
     case 'ampv':
@@ -851,10 +850,10 @@ void CNeedle::Draw (void)
   }
   //----- check for --- table look up -----------
   if (gmap) value   = gmap->Lookup(value);
-  else        value = Clamp(value);
-  float degrees     = sang + value;
+  else      value   = Clamp(value);
+  float     deg     = sang + value;
   // Draw needle into gauge surface
-  rotn.Draw (degrees);
+  rotn.Draw (deg);
   return;
 }
 //==========================================================================

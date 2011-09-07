@@ -1090,7 +1090,6 @@ void CheckTuningMenu(puObject *itm,char *iden,char st)
 		if (strcmp(iden,iden) != 0)	continue;
 		//--- Process according to item -----------
 		if (0==st)		itm->greyOut();
-//		itm->greyOut();
 		return;
 	}
 	return;
@@ -1121,6 +1120,7 @@ void CheckTuningMenu()
   CrossTuningMenu("TERRA Editor",elv);
 	return;
 }
+
 //============================================================================
 //  TUNING MENU ITEMS
 //  NOTE JS->Laurent:  Don't put vehicle code into the menu callback

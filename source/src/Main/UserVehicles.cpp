@@ -1703,7 +1703,7 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
         break;
       case SUBSYSTEM_SMOKE:
          //MEMORY_LEAK_MARKER ("smoke_sys");
-         s = new CSubsystemSmoke;
+         s = new CSubsystemSmoke(mveh);
          AddExternal(s,stream);
          return TAG_READ;
          //MEMORY_LEAK_MARKER ("smoke_sys");
@@ -3225,6 +3225,7 @@ void CEngineManager::CutAllEngines()
   for (eg = engn.begin(); eg != engn.end(); eg++)
   { CEngine *eng = (*eg);
     eng->StopEngine(5);
+		eng->Reset();
   }
   return;
 }
@@ -3248,6 +3249,7 @@ void CEngineManager::AbortEngines()
   for (eg = engn.begin(); eg != engn.end(); eg++)
   { CEngine *eng = (*eg);
     eng->AbortEngine(6);
+		eng->Reset();
   }
   return;
 }

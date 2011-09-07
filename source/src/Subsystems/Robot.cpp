@@ -243,6 +243,13 @@ void VPilot::Error(int No)
 	return;
 }
 //--------------------------------------------------------------
+//	Warn
+//--------------------------------------------------------------
+void VPilot::Warn(int No)
+{	globals->fui->DialogError(vpMSG[No],"VIRTUAL PILOT");
+	return;
+}
+//--------------------------------------------------------------
 //	Handle back the aircraft
 //--------------------------------------------------------------
 void VPilot::HandleBack()
@@ -470,7 +477,7 @@ void VPilot::Refresh()
 //--------------------------------------------------------------
 void VPilot::ModeTracking()
 { bool tc		= apil->HasGasControl();
-	if (!tc) Error(10);
+	if (!tc) Warn(10);
 	if (apil->IsDisengaged())	return HandleBack();
 	if (wayP->IsActive())	    return Refresh();
 	ChangeWaypoint();

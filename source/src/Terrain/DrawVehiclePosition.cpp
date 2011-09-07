@@ -37,11 +37,12 @@ using namespace std;
 //========================================================================
 // CDrawPosition:  Init all parameters
 //========================================================================
-CDrawPosition::CDrawPosition (void)
+CDrawPosition::CDrawPosition (CVehicleObject *mv)
 { hwId  = HW_UNKNOWN;
   TypeIs (SUBSYSTEM_BASE);
   SetIdent('upos');
-  on  = 0;
+  on		= 0;
+	mveh	= mv;
   //----------------------------------------------------------
   lw  = 1.5f;
   GetIniFloat ("Graphics", "drawPositionWidth", &lw);
@@ -65,18 +66,18 @@ CDrawPosition::CDrawPosition (void)
     nb = static_cast <unsigned> (nb_);
   }
   if (0 == version) point_pos.clear ();
-  on = globals->vehOpt.Get(VEH_DW_VPOS);
+  on = mveh->GetOPT(VEH_DW_VPOS);
 }
-
+//--------------------------------------------------------------------
+//  Destroy object
+//--------------------------------------------------------------------
 CDrawPosition::~CDrawPosition (void)
-{
-  ;
-}
+{;}
 //--------------------------------------------------------------------
 //  Reset the points and toggle on/off
 //--------------------------------------------------------------------
 bool CDrawPosition::Reset (void)
-{ U_INT p = globals->vehOpt.Get(VEH_DW_VPOS);
+{ U_INT p = mveh->GetOPT(VEH_DW_VPOS);
   if (p == on)  return (on == 0);
   if (0 == version) point_pos.clear ();
   on    = p;
@@ -90,7 +91,7 @@ EMessageResult CDrawPosition::ReceiveMessage (SMessage *msg)
   switch (msg->user.u.datatag) {
      //---- Return option ----------------------
       case 'togl':
-          globals->vehOpt.Toggle(VEH_DW_VPOS);
+          mveh->ToggleOPT(VEH_DW_VPOS);
           return MSG_PROCESSED;
   }
   return CSubsystem::ReceiveMessage(msg);

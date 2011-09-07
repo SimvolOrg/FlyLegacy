@@ -111,6 +111,11 @@ CWorldObject::CWorldObject (void)
   damM.Severity		= 0;
 	damM.msg				= 0;
 	phyMod	= 0;
+	//--- Default options -------------------
+	SetOPT(VEH_AP_LAND);
+  SetOPT(VEH_D_CRASH);
+  SetOPT(VEH_PN_HELP);
+
 }
 //-------------------------------------------------------------------
 //  Read parameters
@@ -584,7 +589,6 @@ CVehicleObject::~CVehicleObject (void)
   //---Clear sound objects ----------------------------------
   sounds.clear();
   //---JS: Clean globals area -------------------------------
-  globals->uph           = 0;
   globals->simulation    = false;
   //---Close any open window related to aircarft ------------
   if (globals->wfl) globals->wfl->Close();      // Fuel load
@@ -751,10 +755,10 @@ void CVehicleObject::ReadFinished (void)
   wgh->Init ();
   //-- Add drawing position as external feature ---------------------
   if (0 == amp)     return;
-  CDrawPosition *upos = new CDrawPosition();
+  CDrawPosition *upos = new CDrawPosition(this);
   amp->AddExternal(upos,0);
   //-- Add vehicle smoke as external subsystem ----------------------
-  CVehicleSmoke *usmk = new CVehicleSmoke();
+  CVehicleSmoke *usmk = new CVehicleSmoke(this);
   amp->AddExternal(usmk,0);
   //---Add various parameters ---------------------------------------
   nEng  = eng->HowMany();
@@ -789,6 +793,7 @@ void CVehicleObject::TraceMsgPrepa (SMessage *msg)
 //----------------------------------------------------------------------------
 void CVehicleObject::PrepareMsg (void)
 {	if (pit)	pit->PrepareMsg(this);				// Prepare panel gauges
+  if (ckl)  ckl->PrepareMsg(this);				// Check list messages
 	return;	
 }
 //----------------------------------------------------------------------------
@@ -843,7 +848,7 @@ void CVehicleObject::DrawInside(CCamera *cam)
 //---------------------------------------------------------------------------
 void CVehicleObject::DrawAeromodelData (void)
 { // Draw all externally visible objects associated with the vehicle
-  if (globals->vehOpt.Has(VEH_DW_AERO)  && wng ) wng->DrawAerodelData (draw_aero);
+  if (globals->pln->HasOPT(VEH_DW_AERO)  && wng ) wng->DrawAerodelData (draw_aero);
 }
 //---------------------------------------------------------------------------
 //  Return camera according to current window

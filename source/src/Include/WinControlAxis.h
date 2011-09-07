@@ -34,7 +34,7 @@ class CFuiAxis: public CFuiWindow
 { //-------ATTRIBUTES --------------------------------------
   CJoysticksManager *jsm;
   //-------VEHICLE component selection ---------------------
-  U_SHORT            vehOpt;                // current vehicle
+  U_SHORT            vehNo;                 // current vehicle
   CFuiPopupMenu     *vehPOP;                // Vehicle popup
   FL_MENU            vehMEN;                // Vehicle menu
   //------ LABEL For errors ---------------------------------

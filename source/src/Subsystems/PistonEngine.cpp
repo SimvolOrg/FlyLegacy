@@ -36,8 +36,8 @@ using namespace std;
 //=============================================================================
 // CPistonTRI1 model
 //=============================================================================
-CPistonTRI1::CPistonTRI1 (CPropellerModel *prop,CEngineData *ed)
-: CPiston (prop)
+CPistonTRI1::CPistonTRI1 (CVehicleObject *v,CPropellerModel *prop,CEngineData *ed)
+: CPiston (v,prop)
 { //--- Forge id -----------------------------------
   uNum    = prop->GetUnum();
   Tag id  = 'Eps0' + uNum;
@@ -52,9 +52,10 @@ CPistonTRI1::CPistonTRI1 (CPropellerModel *prop,CEngineData *ed)
   /// \todo remove later tmp
   MaxHP = double(eData->rbhp);//180;
   prop->SetMinRPM (eData->irpm);
-  // 
-  if (globals->uph) {
-    Kegt = globals->uph->Kegt;
+  //------------------------------------------------
+	CPhysicModelAdj *phy = mveh->GetPHY();
+  if (phy) {
+    Kegt = phy->Kegt;
     DEBUGLOG ("PHY : Kegt=%f", Kegt);
   } else {
     Kegt = 1.0f;
@@ -341,13 +342,13 @@ void CPistonTRI1::Probe(CFuiCanva *cnv)
 //==============================================================================
 // CPiston model
 //==============================================================================
-CPiston::CPiston ( CPropellerModel *prop)
+CPiston::CPiston (CVehicleObject *v, CPropellerModel *prop)
 : R_air(287.3),
   rho_fuel(800),                 // estimate
   calorific_value_fuel(47.3e6),
   Cp_air(1005),
   Cp_fuel(1700)
-{
+{ mveh = v;
   p_prop = prop;
   Percentage_Power = 0.0;
 
@@ -379,13 +380,14 @@ CPiston::CPiston ( CPropellerModel *prop)
 
   //
   ENGINE_THRUST_COEFF = 1.0;
-  if (!globals->uph) { /// PHY file
+	CPhysicModelAdj *phy = mveh->GetPHY();
+  if (!phy) { /// PHY file
     float tmp_eng_thrust_coeff = ADJ_ENGN_THRST; // 1.6f;
     GetIniFloat ("PHYSICS", "adjustEngineThrust", &tmp_eng_thrust_coeff);
-    if (tmp_eng_thrust_coeff) ENGINE_THRUST_COEFF = static_cast<double> (tmp_eng_thrust_coeff);
+    if (tmp_eng_thrust_coeff) ENGINE_THRUST_COEFF = double(tmp_eng_thrust_coeff);
     DEBUGLOG ("CPiston::CPiston thrust_coeff=%f", ENGINE_THRUST_COEFF);
   } else {
-    ENGINE_THRUST_COEFF = static_cast<double> (globals->uph->Ktst);
+    ENGINE_THRUST_COEFF = double(phy->Ktst);
     DEBUGLOG ("CPiston::CPiston PHY : thrust_coeff=%f", ENGINE_THRUST_COEFF);
   }
 }
@@ -775,8 +777,8 @@ void CPistonEngineModel::ReadFinished (void)
     eData->rbhp = rbhp;
     eData->bost_alt = double(boostAltitude);
     eData->bost_pr  = double(boostPressure);
-    if (type == PROP_JSB) piston  = new CPistonJSBSim (e_prop,eData);
-    else                  piston  = new CPistonTRI1   (e_prop,eData);
+    if (type == PROP_JSB) piston  = new CPistonJSBSim (mveh,e_prop,eData);
+    else                  piston  = new CPistonTRI1   (mveh,e_prop,eData);
     if (boosted) {
           piston->SetBoosted ();
           /// if boosted save the boost values as min and max MAP
@@ -800,8 +802,9 @@ CDependent *CPistonEngineModel::GetPart(char k)
 //-----------------------------------------------------------------------
 void CPistonEngineModel::SetMixture()
 { eData->c_mixt = 0;
-  if (!globals->uph)    return;
-  eData->c_mixt = globals->uph->mixC;
+	CPhysicModelAdj *phy = mveh->GetPHY();
+  if (0 == phy)    return;
+  eData->c_mixt = phy->mixC;
   eData->e_mixt = eData->c_mixt;
   return;
 }

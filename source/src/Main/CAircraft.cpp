@@ -77,7 +77,6 @@
 #include "../Include/MagneticModel.h" // iang correction from .SIT file ln 161
 #include "../Include/Atmosphere.h"    // CVehicleObject::GetIAS (double &spd)
 #include "../Include/Weather.h" 
-#include "../Include/FlightPlan.h"
 #include "../Include/3dMath.h"
 #include "../Include/Collisions.h"
 #include <vector>								      // JSDEV* for STL
@@ -318,19 +317,19 @@ bool aKeyRSET(int kid,int code,int mod)
   return true; }
 //--- Aero vector  ----------------------------------------
 bool aKeyAERV(int kid,int code,int mod)
-{ globals->vehOpt.Toggle(VEH_DW_AERO);
+{ globals->pln->ToggleOPT(VEH_DW_AERO);
   return true; }
 //---Aero position ----------------------------------------
 bool aKeyAERP(int kid,int code,int mod)
-{ globals->vehOpt.Toggle(VEH_DW_VPOS);
+{ globals->pln->ToggleOPT(VEH_DW_VPOS);
   return true; }
 //---Draw smoke -------------------------------------------
 bool aKeySMOK(int kid,int code,int mod)
-{ globals->vehOpt.Toggle(VEH_DW_SMOK);
+{ globals->pln->ToggleOPT(VEH_DW_SMOK);
   return true; }
 //---Draw shadow ------------------------------------------
 bool aKeySHAD(int kid,int code,int mod)
-{ globals->vehOpt.Toggle(VEH_DW_SHAD);
+{ globals->pln->ToggleOPT(VEH_DW_SHAD);
   return true;  }
 //---Tune PID (if autopilot exist -------------------------
 bool aKeyTPID(int kid,int code,int mod)
@@ -736,7 +735,7 @@ SPosition CAirplane::SetOnGround()
 //  Collision detected 
 //--------------------------------------------------------------------------------
 void CAirplane::BodyCollision(CVector &p)
-{ if (globals->vehOpt.Not(VEH_D_CRASH)) return;
+{ if (NotOPT(VEH_D_CRASH)) return;
   DAMAGE_MSG msg = {3,0,'crby',"STRUCTURAL DAMAGE"};
   DamageEvent(&msg);
   return;
@@ -833,17 +832,6 @@ void CAirplane::DamageEvent(DAMAGE_MSG *msg)
   case VEH_INOP:
     return;
   }
-  return;
-}
-//-------------------------------------------------------------------------------
-//	Reset Airplane
-//--------------------------------------------------------------------------------
-void CAirplane::ResetVehicle()
-{ //--Stop engines ---------------------------------------
-  CutAllEngines();
-  //--- Set Parking brake --------------------------------
-  CBrakeControl *brk = amp->GetBrakeControl();
-  if (brk)             brk->SetParking();
   return;
 }
 //----------------------------------------------------------------------------
@@ -1418,15 +1406,15 @@ void COPALObject::ReadFinished (void)
   //-----------------------------------------------------------------
   //  Init from PHY file
   //------------------------------------------------------------------
-  if (globals->uph) {
-    yawMine		= globals->uph->Ymin;
-    rollMine	= globals->uph->Rmin;
-    pitchMine = globals->uph->Pmin;
-    dihedral_coeff = globals->uph->Kdeh;
-    acrd_coeff = globals->uph->Krud;
-    pitch_coeff = globals->uph->Kpth;
-    wind_coeff = globals->uph->Kwnd;
-    gear_drag = globals->uph->KdrG;
+  if (phy) {
+    yawMine					= phy->Ymin;
+    rollMine				= phy->Rmin;
+    pitchMine				= phy->Pmin;
+    dihedral_coeff	= phy->Kdeh;
+    acrd_coeff			= phy->Krud;
+    pitch_coeff			= phy->Kpth;
+    wind_coeff			= phy->Kwnd;
+    gear_drag				= phy->KdrG;
     //---Init rudder coef ------------------------------------------
     CAirplane *apln = (CAirplane *)this;
     apln->RudderOpalCoef(acrd_coeff);
@@ -1513,6 +1501,8 @@ void COPALObject::ResetCrash (char p)
   //--- Zero Forces and Moments --------------------------
   Plane->zeroForces ();
   //------------------------------------------------------
+	globals->fui->RazCrash();
+	globals->sit->ReloadAircraft();
   return;
 }
 //--------------------------------------------------------------------------

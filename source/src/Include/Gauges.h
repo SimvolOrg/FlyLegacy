@@ -2945,7 +2945,7 @@ public:
   void  ReadFinished();
   // CGauge methods
   virtual const char* GetClassName (void) { return "CBasicBatterySwitch"; }
-  virtual void PrepareMessage(CVehicleObject *veh);
+  virtual void PrepareMsg(CVehicleObject *veh);
   virtual void  Draw (void);
   virtual EClickResult  MouseClick (int x, int y, int buttons);
 

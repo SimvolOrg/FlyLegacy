@@ -89,10 +89,11 @@ protected:
 #define AP_DISENGD  0           // Disengaged
 #define AP_LAT_ROL  1           //  Roll mode
 #define AP_LAT_HDG  2           // Heading mode
-#define AP_LAT_LT1  3           // LATERAL LEG 1
-#define AP_LAT_LT2  4           // LATERAL LEG 2
-#define AP_LAT_GND  5						// Ground steering
-#define AP_LAT_TGA  6						// GO ARROUND
+#define AP_LAT_LT0  3						// LATERAL LEG 0
+#define AP_LAT_LT1  4           // LATERAL LEG 1
+#define AP_LAT_LT2  5           // LATERAL LEG 2
+#define AP_LAT_GND  6						// Ground steering
+#define AP_LAT_TGA  7						// GO ARROUND
 //====================================================================================
 //  AUTOPILOT VERTICAL STATES
 //====================================================================================
@@ -339,9 +340,9 @@ protected:
 	double			TGA1;							// Distance for LEG 2
 	//--- Flap control ----------------------------------------------------
 	char			 tkoFP;							// Take off flap position
-	double		 tkoFA;							// Altitude
+	double		 tkoFA;							// Altitude for retracting flaps
 	char			 lndFP;							// Landing flap position
-	double		 lndFA;							// Distance for landing flap
+	double		 lndFA;							// Altitude for setting flaps
 	//--- Flare parameters ------------------------------------------------
 	double     sTAN;						  // Flare slope (radian)
 	double     nTDP;							// Touch down point
@@ -351,8 +352,9 @@ protected:
 	//--- Autothrottle parameters -----------------------------------------
 	double     cRAT;							// Current rate to maintain
 	double     xRAT;							// Cruise rate
-	double		 fRAT;							// Final approach rate
+	double		 fSPD;							// Final approach speed
 	double		 aCUT;							// Altitude to cut throttle
+	double		 aFSP;							// Altitude for final speed
 	double     vROT;							// Rotate speed
 	double		 aTGT;							// Target altitude
   //--- LEG2 mode control values --------------------------------------
@@ -443,7 +445,7 @@ public:
   void            ALTalertSET();
   bool            CheckAlert();
   //-------Options ----------------------------------------------------
-	inline void SetACUT(double v)						{aCUT		= v;}
+	inline void SetTHRO(int f, int c)				{aFSP   = f; aCUT	= c;}
   inline void SetVREF(double v)           {Vref		= v;}
   inline void SetTrak(double t,double a)  {Turn		= t; gain = a;}
   inline void SetGLDopt(double g)         {glide	= g;}

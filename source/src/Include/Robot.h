@@ -187,6 +187,7 @@ public:
 	bool	GetRadio();
 	//-----------------------------------------------------
 	void	Error(int No);
+	void	Warn(int No);
 	//--- Action routines ---------------------------------
 	void	PreFlight(float dT);
 	void	CheckPreFlight();

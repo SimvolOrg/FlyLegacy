@@ -92,12 +92,12 @@ public:
   std::queue  <SPosition> posQ, oldQ;
   U_INT       on;                // On Off indicator
   //------------------------------------------------------------------
-  CBaseSmoke            (int n);
+  CBaseSmoke            (int n,U_INT ip);
   virtual ~CBaseSmoke   (void);
   void  Init();
   void  SetQuad(float dim);
-  void  Draw            (void);
-  bool  Reset           (void);
+  void  Draw            (U_INT op);
+  bool  Reset           (U_INT op);
   void  FillStruct      (void);
   void  UpdateParticles (void);
   bool  LoadTexture     (char *texname, GLuint texhandle);
@@ -141,7 +141,7 @@ protected:
   CBaseSmoke *bs;
   //---------------------------------------------
 public:
-  CVehicleSmoke (void);
+  CVehicleSmoke (CVehicleObject *v);
  ~CVehicleSmoke (void);
  //-----------------------------------------------
   EMessageResult ReceiveMessage (SMessage *msg);
@@ -160,7 +160,7 @@ protected:
   CBaseSmoke *bs;
   //---Methods ------------------------------------------------------
 public:
-  CSubsystemSmoke (void);
+  CSubsystemSmoke (CVehicleObject *v);
   virtual ~CSubsystemSmoke (void);
 
   virtual const   char* GetClassName (void) { return "CSubsystemSmoke"; }

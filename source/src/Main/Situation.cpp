@@ -431,8 +431,8 @@ void CSlewManager::StartSlew()
 { grnd = veh->WheelsAreOnGround();
   mode = SLEW_MOVE;
   ZeroRate();
-  vopt = globals->vehOpt.Get(VEH_D_CRASH);
-  globals->vehOpt.Raz(VEH_D_CRASH);
+  vopt = globals->pln->GetOPT(VEH_D_CRASH);
+  globals->pln->RazOPT(VEH_D_CRASH);
   return;
 }
 //------------------------------------------------------------------------
@@ -447,7 +447,7 @@ void CSlewManager::StopSlew()
   //---------------------------------------------
   mode = SLEW_STOP;
   if (grnd)  veh->RestOnGround();
-  globals->vehOpt.Set(vopt);
+  globals->pln->SetOPT(vopt);
   return;
 }
 //------------------------------------------------------------------------
@@ -644,6 +644,14 @@ void CSituation::OpenSitFile()
   }
   gtfo ("CSituation : Cannot open SIT file %s", s.filename);
   return;
+}
+//-------------------------------------------------------------------------
+//  Reload situation
+//-------------------------------------------------------------------------
+void CSituation::ReloadAircraft()
+{	ClearUserVehicle();
+	OpenSitFile();
+	return;
 }
 //-------------------------------------------------------------------------
 //  Free resources
@@ -856,7 +864,7 @@ void CSituation::ReadFinished (void)
   CMagneticModel::Instance().Init (dt.date);
   AdjustCameras();
   // sdk:save a pointer to 'user' as the first item in the sdk SFlyObjectRef list
-  if (uVeh) sdk_flyobject_list.InsertUserInFirstPosition (uVeh);
+  //if (uVeh) sdk_flyobject_list.InsertUserInFirstPosition (uVeh);
   TRACE("CSituation::ReadFinished");
 }
 //---------------------------------------------------------------------------
@@ -972,8 +980,8 @@ void CSituation::ClearUserVehicle()
 //      Reset user vehicle
 //----------------------------------------------------------------------------
 void CSituation::ResetUserVehicle()
-{ if (0 == uVeh) return;
-  uVeh->ResetCrash (1); return;
+{ if (0 == uVeh)				return;
+  uVeh->ResetCrash(1);	return;
   return;
 }
 //==============================================================================
@@ -1005,14 +1013,17 @@ void CSituation::DrawExternal()
   }
   return;
 }
-//==============================================================================
+//-------------------------------------------------------------------------------
 //  Draw user position and vehicle smoke
-//===============================================================================
+//-------------------------------------------------------------------------------
 void CSituation::DrawVehicleFeatures()
 { if (0 == uVeh)        return;
   uVeh->DrawExternalFeatures();
   return;
 }
+//-------------------------------------------------------------------------------
+//  Change situation
+//-------------------------------------------------------------------------------
 //==============================================================================
 //  Draw the situation
 //  All drawing of the scene (except for PUI user interface widgets) is

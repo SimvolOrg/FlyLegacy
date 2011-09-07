@@ -58,7 +58,7 @@ protected:
   float lw;                       // line width
   //----Public method -----------------------------------------------
 public:
-  CDrawPosition (void);
+  CDrawPosition (CVehicleObject *m);
  ~CDrawPosition (void);
  //------------------------------------------------------------------
   EMessageResult ReceiveMessage (SMessage *msg);

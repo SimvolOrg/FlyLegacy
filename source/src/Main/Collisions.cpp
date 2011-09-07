@@ -33,7 +33,7 @@ CrashDetector::CrashDetector()
 //  Process one event
 //-----------------------------------------------------------------
 void CrashDetector::handleCollisionEvent(const opal::CollisionEvent& e )
-{ if (globals->vehOpt.Not(VEH_D_CRASH)) return;
+{
   opal::Solid *pln  = e.thisSolid;
   opal::Solid *oth  = e.otherSolid;
   opal::Point3r pnt = e.pos;

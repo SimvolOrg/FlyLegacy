@@ -1462,7 +1462,7 @@ void CModelACM::Draw (char mode)
 	Configure(vbu);									// Configure mode memory or VBO
   //-- Draw only the top-level parent...children will be drawn recursively --
 	cOBJ	= 0;
-  if (globals->vehOpt.Has(VEH_DW_SHAD))
+  if (mveh->HasOPT(VEH_DW_SHAD))
 	{	if (BuildShadowMatrix())	topParent->DrawAsShadow (mode);	}
 	//------------------------------------------------------------------------
   glEnableClientState(GL_NORMAL_ARRAY);

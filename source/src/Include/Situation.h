@@ -250,8 +250,9 @@ public:
   //-----------------------------------------------------------
   std::vector     <CDLLWindow *> dllW;
   std::vector     <CDLLWindow *>::iterator idllW;
+	//-----------------------------------------------------------
 protected:
-  U_INT           FrameNo;
+	U_INT           FrameNo;
   float           dTime;            // Delta time
   //---- Methods --------------------------------------
 public:
@@ -267,6 +268,7 @@ public:
   //----- CSituation methods---------------------------
   void              OpenSitFile        (void);
   void              AdjustCameras      (void);
+	void							ReloadAircraft();
   CAirplane  *GetAnAircraft            (void);
   CSimulatedObject *GetASimulated      (void);
   void              StoreVEH           (CVehicleObject *veh);
@@ -274,6 +276,7 @@ public:
   void              SetPosition        (SPosition &pos);
   void              PrintUserVehicle   (FILE *f);
   void              Prepare            (void);
+	//----------------------------------------------------
   void              Timeslice          (float dT,U_INT Frame);
   void              Draw               (void);
   void              DrawExternal       (void);

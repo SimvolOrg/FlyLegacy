@@ -1078,8 +1078,8 @@ CGauge::CGauge(CPanel *mp)
 //-------------------------------------------------------------------
 void CGauge::PrepareMsg(CVehicleObject *veh)
 {	//---- For debbug, uncomment the next lines ----
-	//if (unId == 'gpss')
-	//	int a = 0;											// Put brake point here
+	//if (unId == 'lful')
+	//	int a = 0;											// Put break point here
 	//---- Find subsystem --------------------------
   veh->FindReceiver(&mesg);
 	subS	= (CSubsystem*)mesg.receiver;
@@ -1815,7 +1815,7 @@ void CGauge::Update (void)
 //  Display Help below the gauge
 //-------------------------------------------------------------------
 void CGauge::DisplayHelp(char *txt)
-{ if (globals->vehOpt.Not(VEH_PN_HELP)) return;
+{ if (globals->pln->NotOPT(VEH_PN_HELP)) return;
   char edt[64];
 	int xn = tour[NW_PIX].x;
 	int yn = tour[NW_PIX].y + h;
@@ -1834,7 +1834,7 @@ void CGauge::DisplayHelp(char *txt)
 //  Call Fui
 //-------------------------------------------------------------------
 void CGauge::FuiHelp()
-{ if (globals->vehOpt.Not(VEH_PN_HELP)) return;
+{ if (globals->pln->NotOPT(VEH_PN_HELP)) return;
 	int	xn	= tour[NW_PIX].x;			// Screen X coordinate
 	int	yn	= tour[NW_PIX].y + h;	// Screen Y coordinate
   globals->fui->DrawHelp(1,xn,yn); 
@@ -9205,7 +9205,7 @@ CBasicBatterySwitch::CBasicBatterySwitch (CPanel *mp)
 //------------------------------------------------------------
 //	Prepare messages
 //------------------------------------------------------------
-void CBasicBatterySwitch::PrepareMessage(CVehicleObject *veh)
+void CBasicBatterySwitch::PrepareMsg(CVehicleObject *veh)
 {	mbat.id		      = MSG_GETDATA;
   mbat.sender     = unId;
   mbat.user.u.hw  = HW_SWITCH;

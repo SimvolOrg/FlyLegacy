@@ -661,15 +661,6 @@ CAeroModelFlap::~CAeroModelFlap()
   
 }
 //---------------------------------------------------------------------------
-//  Get Channel coefficient from PHY file
-//---------------------------------------------------------------------------
-void CAeroModelFlap::GetPhyCoeff(char *name)
-{ CPhysicModelAdj *phy = globals->uph;
-  if (0 == phy)     return;
-  phy->GetCoef(name,adj);
-  return;
-}
-//---------------------------------------------------------------------------
 //  Read all parameters
 //---------------------------------------------------------------------------
 int CAeroModelFlap::Read (SStream *stream, Tag tag)
@@ -680,7 +671,7 @@ int CAeroModelFlap::Read (SStream *stream, Tag tag)
     // Aero model channel name for this movable flap
     ReadString (s, 80, stream);
     channel = s;
-    GetPhyCoeff(s);
+    wing->PhyCoef(s,adj);
     return TAG_READ;
   case 'part':
     // External model part name linked to this aero model channel
@@ -796,7 +787,8 @@ CAeroModelWingSection::CAeroModelWingSection (CVehicleObject *v,char* name)
   col_ = cod_ = com_ = 1.0f;
   mflpS = NULL;
 //  flpS  = 0;
-  if (!globals->uph) { /// PHY file
+  CPhysicModelAdj *phy = mveh->GetPHY();
+  if (!phy) { /// PHY file
     float tmp = ADJ_LIFT_COEFF;
     GetIniFloat ("PHYSICS", "adjustCoeffOfLift", &tmp);
     col_ = static_cast <double> (tmp);// 
@@ -809,12 +801,12 @@ CAeroModelWingSection::CAeroModelWingSection (CVehicleObject *v,char* name)
     DEBUGLOG ("CAeroModelWingSection : %s\n\
       col=%f cod=%f com=%f", name, col_, cod_, com_);
   } else {
-    col_ = static_cast <double> (globals->uph->Klft);
-    cod_ = static_cast <double> (globals->uph->Kdrg);
-    com_ = static_cast <double> (globals->uph->Kmmt);
+    col_ = double(phy->Klft);
+    cod_ = double(phy->Kdrg);
+    com_ = double(phy->Kmmt);
     DEBUGLOG ("CAeroModelWingSection PHY : %s\n\
       col=%f cod=%f com=%f (%p)",
-      name, col_, cod_, com_, globals->uph);
+      name, col_, cod_, com_, phy);
   }
 
   has_splr = has_trim = false;
@@ -990,6 +982,14 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
   // Tag was not processed by this object, it is unrecognized
   WARNINGLOG ("CAeroModelWingSection::Read : Unrecognized tag <%s>", TagToString(tag));
   return TAG_IGNORED;
+}
+//---------------------------------------------------------------------
+//	Return PHY coefficients
+//---------------------------------------------------------------------
+void CAeroModelWingSection::PhyCoef(char *name,AERO_ADJ &itm)
+{	CPhysicModelAdj  *phy = mveh->GetPHY();
+	if (phy)  phy->GetCoef(name,itm);
+	return;
 }
 //---------------------------------------------------------------------------------
 //  Store a channel pointer into each wing section that uses this channel
@@ -1344,7 +1344,6 @@ CPhysicModelAdj::CPhysicModelAdj (CVehicleObject *v,char* phyFilename)
   if (OpenStream (&s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
-    globals->uph = this;
   }
   //---JS Abort if a name is specified and no file exists ---
   else gtfo("No PHY file found %s", s.filename);
@@ -1353,8 +1352,7 @@ CPhysicModelAdj::CPhysicModelAdj (CVehicleObject *v,char* phyFilename)
 //  Destructor
 //----------------------------------------------------------------
 CPhysicModelAdj::~CPhysicModelAdj (void)
-{ globals->uph = 0;
-  std::map<std::string,AERO_ADJ*>::iterator it;
+{ std::map<std::string,AERO_ADJ*>::iterator it;
   for (it = aero.begin(); it != aero.end(); it++)
   {AERO_ADJ *itm = (*it).second;
    delete itm;

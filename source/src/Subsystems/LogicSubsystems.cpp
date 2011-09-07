@@ -264,7 +264,7 @@ bool CSubsystem::MsgForMe (SMessage *msg)
 //---------------------------------------------------------------------
 bool CSubsystem::IsReceiver(SMessage *msg)
 {	//--- for debugging only ---------------------
-	//if (unId == 'k89g')
+	//if (unId == 'mfSS')
 	//	int a = 0;
 	if (!MsgForMe(msg))	return false;
   msg->receiver	= this;

@@ -31,7 +31,7 @@
 CFuiVehOption::CFuiVehOption(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,280,220,0)
 { //---Init windows -----------------------------------------
-  mveh  = globals->sit->GetUserVehicle();
+  mveh  = globals->pln;
   char  ok = 0;
   //--- Get components --------------------------------------
   title = 1;
@@ -90,7 +90,7 @@ CFuiVehOption::CFuiVehOption(Tag idn, const char *filename)
 //  Check for option
 //--------------------------------------------------------------
 char CFuiVehOption::GetOption(U_INT p)
-{ return (globals->vehOpt.Has(p))?(1):(0);}
+{ return (globals->pln->HasOPT(p))?(1):(0);}
 
 //--------------------------------------------------------------
 //  Init the window
@@ -109,35 +109,35 @@ void CFuiVehOption::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
       return;
     //--- Autopilot auto land  -------------------------
     case 'rlnd':
-      globals->vehOpt.Toggle(VEH_AP_LAND);
+      mveh->ToggleOPT(VEH_AP_LAND);
       return;
     //--- Autopilot autodisconnect ---------------------
     case 'rdis':
-      globals->vehOpt.Toggle(VEH_AP_DISC);
+      mveh->ToggleOPT(VEH_AP_DISC);
       return;
     //--- Crash detection ------------------------------
     case 'cdet':
-      globals->vehOpt.Toggle(VEH_D_CRASH);
+      mveh->ToggleOPT(VEH_D_CRASH);
       return;
     //--- Panel help -----------------------------------
     case 'help':
-      globals->vehOpt.Toggle(VEH_PN_HELP);
+      mveh->ToggleOPT(VEH_PN_HELP);
       return;
     //--- Draw smoke -----------------------------------
     case 'smbx':
-      globals->vehOpt.Toggle(VEH_DW_SMOK);
+      mveh->ToggleOPT(VEH_DW_SMOK);
       return;
     //--- Draw shadow -----------------------------------
     case 'shbx':
-      globals->vehOpt.Toggle(VEH_DW_SHAD);
+      mveh->ToggleOPT(VEH_DW_SHAD);
       return;
     //--- Draw position ---------------------------------
     case 'psbx':
-      globals->vehOpt.Toggle(VEH_DW_VPOS);
+      mveh->ToggleOPT(VEH_DW_VPOS);
       return;
     //--- Draw aero vectors -----------------------------
     case 'aebx':
-      globals->vehOpt.Toggle(VEH_DW_AERO);
+      mveh->ToggleOPT(VEH_DW_AERO);
       return;
 
   }

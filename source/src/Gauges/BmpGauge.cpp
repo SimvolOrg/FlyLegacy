@@ -3174,7 +3174,7 @@ void C1NeedleGauge::CopyFrom(CGauge *mg,C1NeedleGauge &src)
 void C1NeedleGauge::Draw()
 { DrawUnderlay();
 	Update();
-  nedl.DrawNeedle(value); 
+  nedl.DrawNeedle(value);
   return;
 }
 //--------------------------------------------------------------------

@@ -41,9 +41,8 @@ using namespace std;
 //    Put all common initialization in base class here
 //    Use TC_VTAB for interleaved Array for better performances
 ///==============================================================================
-CBaseSmoke::CBaseSmoke (int n)
-{
-  point_pos.clear ();
+CBaseSmoke::CBaseSmoke (int n,U_INT ip)
+{ point_pos.clear ();
   spr                     = NULL;
   timer                   = 10.0f;           // Default timer  10
   version                 = 0;               // 1 = default vector / 2 = queued
@@ -97,7 +96,7 @@ CBaseSmoke::CBaseSmoke (int n)
   if (smk_t == 2) ntx += LoadTexture ("smokebis", smoke_texture [1]);
   draw = (smk_t == ntx);
   //--Initial value -----------------------------------------
-  on = globals->vehOpt.Get(VEH_DW_SMOK);
+  on = ip;
 
 }
 //---------------------------------------------------------------------
@@ -114,9 +113,8 @@ CBaseSmoke::~CBaseSmoke (void)
 //---------------------------------------------------------------------
 //  Detect change state in drawing. Init everything if yes
 //---------------------------------------------------------------------
-bool CBaseSmoke::Reset (void)
-{ U_INT p = globals->vehOpt.Get(VEH_DW_SMOK);
-  if (p == on)  return (on == 0);
+bool CBaseSmoke::Reset (U_INT p)
+{ if (p == on)  return (on == 0);
   //--- changing status ----------------
   if (0 == version) point_pos.clear ();
   if (1 == version) FillStruct ();
@@ -280,9 +278,9 @@ void CBaseSmoke::UpdateParticles (void)
 //    Suppress DEPTH TEST for better looking
 //    Use interleave array for better performances
 //--------------------------------------------------------------------------
-void CBaseSmoke::Draw (void)
-{ if (!draw)      return;
-  if (Reset())    return;
+void CBaseSmoke::Draw (U_INT op)
+{ if (!draw)				return;
+  if (Reset(op))    return;
   SPosition upos = globals->geop;
   SVector cam; globals->cam->GetOrientation (cam);
   int del = int(delay * 100.0f);
@@ -363,12 +361,13 @@ void CBaseSmoke::Draw (void)
 //  JS:   Put it as an external subsystem in the  amp system.  This belong to 
 //        the aircraft and it should not be at global level
 //==========================================================================
-CVehicleSmoke::CVehicleSmoke (void)
+CVehicleSmoke::CVehicleSmoke (CVehicleObject *mv)
 { TypeIs (SUBSYSTEM_SMOKE);
   hwId = HW_UNKNOWN;
   SetIdent('vsmk');       // Vehicle smoke
   //------------------------------------------
-  bs = new CBaseSmoke(25);      // Use 25 points
+	mveh	= mv;
+  bs = new CBaseSmoke(25,mveh->GetOPT(VEH_DW_SMOK));  // Use 25 points
   bs->version = 2;
   GetIniVar   ("Graphics", "drawSmokeVersion", &bs->version);
   if (bs->version) bs->version -= 1;
@@ -404,7 +403,7 @@ EMessageResult CVehicleSmoke::ReceiveMessage (SMessage *msg)
   switch (msg->user.u.datatag) {
      //---- Proceed reset  ----------------------
       case 'togl':
-          globals->vehOpt.Toggle(VEH_DW_SMOK);
+          mveh->ToggleOPT(VEH_DW_SMOK);
           return MSG_PROCESSED;
   }
   return CSubsystem::ReceiveMessage(msg);
@@ -413,8 +412,9 @@ EMessageResult CVehicleSmoke::ReceiveMessage (SMessage *msg)
 //  Draw if request and camera is outside
 //-------------------------------------------------------------
 void CVehicleSmoke::Draw (void)
-{ if (globals->noEXT)  return;
-  bs->Draw ();
+{	if (globals->noEXT)  return;
+	U_INT op	= mveh->GetOPT(VEH_DW_SMOK);
+  bs->Draw (op);
   return;
 }
 
@@ -422,11 +422,12 @@ void CVehicleSmoke::Draw (void)
 /// CSubsystemSmoke:  A subsystem in amp to produce smoke
 //  JS:  Move this to external subsystem in amp as it belong to the aircraft
 ///==============================================================================
-CSubsystemSmoke::CSubsystemSmoke (void) 
+CSubsystemSmoke::CSubsystemSmoke (CVehicleObject *mv) 
 { TypeIs (SUBSYSTEM_SMOKE);
-  on = 0;
+	mveh	= mv;
+  on		= 0;
   //-----------------------------------------------------------------
-  bs = new CBaseSmoke(25);          // Use 25 points
+  bs = new CBaseSmoke(25,0);          // Use 25 points
   //! only version 1 is implemented
   bs->version = 1;
 }
@@ -487,7 +488,7 @@ EMessageResult CSubsystemSmoke::ReceiveMessage (SMessage *msg)
 void CSubsystemSmoke::Draw (void)
 { if (0 == on)          return;
   if (globals->noINT)  return;
-  bs->Draw ();
+  bs->Draw (mveh->GetOPT(VEH_DW_SMOK));
   return;
 }
 //=========================END 0F FILE ====================================================

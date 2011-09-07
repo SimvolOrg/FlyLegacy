@@ -37,10 +37,12 @@
 #include <string>
 #include <vector>
 #include <map>
+//=====================================================================================
 class CAeroControlChannel;
 class CAerodynamicModel;
 class CAeroModelWingSection;
 class CAcmFlap;
+class CAeroModelFlap;
 //=====================================================================================
 //  Structure for coefficients
 //=====================================================================================
@@ -104,45 +106,7 @@ protected:
   float           parasiteDrag;   ///< Parasite drag coefficient needs to be stored separately
 };
 
-//===================================================================================
-/*!
- * A CAeroModelFlap object represents a trailing edge flap, a trimmer or
- * a spoiler attached to a WingSection
- */
-//===================================================================================
-class CAeroModelFlap : public CStreamObject
-{
-public:
-  // Constructor
-  CAeroModelFlap (CAeroModelWingSection *w);
- ~CAeroModelFlap();
-  // CStreamObject methods
-  int   Read (SStream *stream, Tag tag);
 
-  // CAeroModelFlap methods
-  const char* GetChannelName (void);
-  float       GetLiftInc (void);            ///< Return lift coeff increment
-  float       GetDragInc (void);            ///< Return drag coeff increment
-  float       GetMomentInc (void);          ///< Return moment coeff increment
-  void        Print3D (void);
-  void        ReadChannel();
-  void        GetPhyCoeff(char *name);
-  //---------------------------------------------------------------------------
-  inline void Store(CAeroControlChannel *p)  {aero = p;}
-  //---------------------------------------------------------------------------
-protected:
-  char                      type;           // Type of surface (F,S,T)
-  CAeroModelWingSection    *wing;           // Mother wing
-  CAeroControlChannel *aero;           // Corresponding channel
-  std::string           channel;            ///< Aero model channel name
-  std::set<std::string> parts;              ///< Set of external model part names
-  CFmtxMap             *mlift;              // Lift coef = f(deflec)
-  CFmtxMap             *mdrag;              // Drag coef = f(deflec)
-  CFmtxMap             *mmoment;            // Moment coef = f(deflec)
-  bool                  invert;             ///< Invert animation keyframes
-  float                 deflectRadians;     ///< Control surface deflection in radians
-  AERO_ADJ              adj;                // Adjust coefficients
-};
 
 //==================================================================================
 /*!
@@ -172,7 +136,9 @@ public:
    * and distance to ground hAgl */
   // Luc's comment : Modifying ComputeForces()
   void  ComputeForces(SVector &v, double rho, double soundSpeed, double hAgl);
-
+	//---------------------------------------------------------------------
+	void	PhyCoef(char *name,AERO_ADJ &itm);
+	//---------------------------------------------------------------------
   /// Get the results from the latest call to computeforces
   const SVector& GetLiftVector() const;
   const SVector& GetDragVector() const;
@@ -235,7 +201,44 @@ protected:
   SVector             dragVector;     ///< Resultant drag force vector
   SVector             momentVector;   ///< Resultant moment vector
 };
+//===================================================================================
+//
+// A CAeroModelFlap object represents a trailing edge flap, a trimmer or
+// a spoiler attached to a WingSection
+//
+//===================================================================================
+class CAeroModelFlap : public CStreamObject
+{
+public:
+  // Constructor
+  CAeroModelFlap (CAeroModelWingSection *w);
+ ~CAeroModelFlap();
+  // CStreamObject methods
+  int   Read (SStream *stream, Tag tag);
 
+  // CAeroModelFlap methods
+  const char* GetChannelName (void);
+  float       GetLiftInc (void);            ///< Return lift coeff increment
+  float       GetDragInc (void);            ///< Return drag coeff increment
+  float       GetMomentInc (void);          ///< Return moment coeff increment
+  void        Print3D (void);
+  void        ReadChannel();
+  //---------------------------------------------------------------------------
+  inline void Store(CAeroControlChannel *p)		{aero = p;}
+  //---------------------------------------------------------------------------
+protected:
+  char                      type;           // Type of surface (F,S,T)
+  CAeroModelWingSection    *wing;           // Mother wing
+  CAeroControlChannel *aero;           // Corresponding channel
+  std::string           channel;            ///< Aero model channel name
+  std::set<std::string> parts;              ///< Set of external model part names
+  CFmtxMap             *mlift;              // Lift coef = f(deflec)
+  CFmtxMap             *mdrag;              // Drag coef = f(deflec)
+  CFmtxMap             *mmoment;            // Moment coef = f(deflec)
+  bool                  invert;             ///< Invert animation keyframes
+  float                 deflectRadians;     ///< Control surface deflection in radians
+  AERO_ADJ              adj;                // Adjust coefficients
+};
 //====================================================================================
 /*!
  * The CAerodynamicModel is a container for the aerodynamic model of an aircraft.

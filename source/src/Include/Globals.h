@@ -235,13 +235,14 @@ typedef struct {
   CCamera               *cam;           // Current camera
   char                inside;           //  True when inside view
   char                  bTyp;           // Drawing type for Aircraft blue print
+	//-------- Situation file ------------------------------------------
+	char                  sitFilename[PATH_MAX];  /// Filename of .SIT file to load
   //-------- Various global objects ----------------------------------
   CClock                *clk;           // Global clock
   CTimeManager          *tim;           // Time manager
   CCursorManager        *cum;           // Cursor manager           
   CTestBed              *tsb;           // Test bed
   CJoysticksManager     *jsm;           // Joystick handler
-  char                  sitFilename[PATH_MAX];  /// Filename of .SIT file to load
   CSituation            *sit;           // Current situation
   CDbCacheMgr		        *dbc;						// Cache database manager
   TCacheMGR             *tcm;           // Terrain cache manager
@@ -267,7 +268,6 @@ typedef struct {
   CPanel                *pan;           /// Active panel
   CFuelSystem           *gas;           /// Fuel system
   CCockpitManager       *pit;           /// Cockpit manager
-  CPhysicModelAdj       *uph;           /// aircraft additional physics data pointer
   CFuiFuel              *wfl;           /// Fuel window
   CFuiLoad              *wld;           /// Load window
   CFuiRadioBand         *rdb;           // Radio band
@@ -321,7 +321,6 @@ typedef struct {
 	COption       Trace;					// Trace options
   COption       aptOpt;         // Airport options
   COption       scnOpt;         // Scenary options
-  COption       vehOpt;         // Vehicle options
   COption       vmpOpt;					// VMap    options
   //-------------Vector map parameter --------------------------------
   float         vmapZoom;   // Vector map zoom

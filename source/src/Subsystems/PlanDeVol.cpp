@@ -438,6 +438,18 @@ bool PlaneCheckList::IntMessage(char *txt)
 	return true;
 }
 //-------------------------------------------------------------------------
+//	Prepare message for autostart
+//-------------------------------------------------------------------------
+void PlaneCheckList::PrepareMsg(CVehicleObject *veh)
+{	int end = autoM.size();
+	for (int k=0; k<end; k++)
+	{ SMessage *msg = autoM[k];
+		msg->sender = unId;
+		veh->FindReceiver(msg);
+	}
+	return;
+}
+//-------------------------------------------------------------------------
 //	Decode message for autostart
 //-------------------------------------------------------------------------
 bool PlaneCheckList::FltMessage(char *txt)

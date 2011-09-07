@@ -117,6 +117,8 @@ protected:
 public:
   PlaneCheckList(CVehicleObject *v);
  ~PlaneCheckList();
+	//------------------------------------------------------------
+	void PrepareMsg(CVehicleObject *veh);
   //------------------------------------------------------------
 	bool		FltMessage(char *txt);
 	bool		IntMessage(char *txt);

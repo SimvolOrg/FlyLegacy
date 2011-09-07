@@ -174,8 +174,8 @@ int CEngineModel::Read (SStream *stream, Tag tag)
 //
 // CPistonJSBSim model
 //
-CPistonJSBSim::CPistonJSBSim (CPropellerModel *prop,CEngineData *ed)
-: CPiston (prop)
+CPistonJSBSim::CPistonJSBSim (CVehicleObject *v,CPropellerModel *prop,CEngineData *ed)
+: CPiston (v,prop)
 {
 
 }
@@ -826,13 +826,6 @@ CPropellerModel::CPropellerModel (void)
   pFac = 1;
   eRPM = 0;
   //
-  lift = 0.0f, drag = 0.0f, pirt = 0.0f, rift = 0.0f, dmge = 0.0f;
-  mlift = 0;
-  mdrag = 0;
-  mpirt = 0;
-  mrift = 0;
-  mfacP = 0;
-  pdmge = NULL;
 
   RPM = 0.0;
   Thrust = PowerRequired = Torque = 0.0;
@@ -850,6 +843,19 @@ CPropellerModel::~CPropellerModel (void)
   SAFE_DELETE (mfacP);
 
   SAFE_DELETE (pdmge);
+}
+//---------------------------------------------------------------------------
+//  Reset computed values
+//---------------------------------------------------------------------------
+void CPropellerModel::Reset()
+{ lift = 0.0f, drag = 0.0f, pirt = 0.0f, rift = 0.0f, dmge = 0.0f;
+  mlift = 0;
+  mdrag = 0;
+  mpirt = 0;
+  mrift = 0;
+  mfacP = 0;
+  pdmge = NULL;
+	return;
 }
 //---------------------------------------------------------------------------
 //  Read Propeller parameters
@@ -1076,9 +1082,10 @@ CPropellerTRIModel::CPropellerTRIModel (CVehicleObject *v,int eNo)
   tmp_lift    = 0.0f;
   tmp_drag    = 0.0f;
   magic_number= 100.0;
-  // 
-  if (globals->uph) {
-    magic_number = globals->uph->Kpmn;
+  //--- Init PHY coefficients ---------------------
+	CPhysicModelAdj *phy = mveh->GetPHY();
+  if (phy) {
+    magic_number = phy->Kpmn;
 #ifdef _DEBUG
     DEBUGLOG ("PHY : Kpmn=%f", magic_number);
 #endif
@@ -1089,7 +1096,7 @@ CPropellerTRIModel::CPropellerTRIModel (CVehicleObject *v,int eNo)
 #endif
   }
   //---Read values from PHY file ---------------------------------------
-  if (globals->uph) PfcK = static_cast<double> (globals->uph->KfcP); /// PHY file
+  if (phy) PfcK = double(phy->KfcP); /// PHY file
     
 #ifdef _DEBUG
   DEBUGLOG ("CPropellerTRIModel::CPropellerTRIModel PfacK=%.2f", PfcK);
@@ -1111,9 +1118,10 @@ CPropellerTRIModel::~CPropellerTRIModel (void)
 //  the final value
 //---------------------------------------------------------------------
 void  CPropellerTRIModel::ReadFinished (void)
-{ if (!globals->uph)    return;
-  Ixx       *= globals->uph->Kixx;
-  GearRatio *= globals->uph->KgrR; 
+{ CPhysicModelAdj *phy = mveh->GetPHY();
+	if (0 == phy)    return;
+  Ixx       *= phy->Kixx;
+  GearRatio *= phy->KgrR; 
   #ifdef _DEBUG
     DEBUGLOG ("PHY : prop inertia = %f gear ratio = %f", Ixx, GearRatio);
   #endif
@@ -1343,6 +1351,7 @@ void CPropellerTRIModel::Reset()
   tmp_lift    = 0;
   tmp_drag    = 0;
 	CT	= CQ = 0;
+	CPropellerModel::Reset();
 	return;
 }
 //----------------------------------------------------------------------------

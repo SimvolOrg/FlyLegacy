@@ -78,10 +78,9 @@ class CGearOpal : public CGear {
 public:
   CGearOpal                      (CVehicleObject *v,CSuspension *s);
   virtual ~CGearOpal             (void);
-  ///< CGearMixJL methods
   ///< =============
   /*! gear compression value calc in ft : Timesliced */
-  char           GCompr__Timeslice (void);
+  char           GCompression (char p);
   /*! gear compression velocity : Timesliced
    *  With the gear compression length We can get the compression velocity
    *  (used to determine the damping force)*/
@@ -92,7 +91,6 @@ public:
   /*! compute the vector lateral forces on the wheel in pound-force lbf*/
   void        DirectionForce_Timeslice (float dT);
   /*! compute the vector brake forces on the wheel in pound-force lbf*/
-  void        BrakeForce_Timeslice ();
 	void				BrakeForce(float dT);
   /*! transform the forces back to the body frame : Timesliced
    * therefore the reference should be 'body' */
@@ -163,12 +161,10 @@ public:
   virtual ~CTailGearOpal                   (void);
 
   /*! gear compression value calc in ft : Timesliced */
-  virtual char           GCompr__Timeslice (void);
+  virtual char           GCompression (char p);
   virtual void           VtForce_Timeslice (float dT);
   /*! compute the vector lateral forces on the wheel in pound-force lbf*/
   virtual void            DirectionForce_Timeslice (float dT);
-  /*! compute the vector brake forces on the wheel in pound-force lbf*/
-  virtual void            BrakeForce_Timeslice ();
   /*! transform the forces back to the body frame : Timesliced
    * therefore the reference should be 'body' */
   virtual void            GearL2B_Timeslice (void);

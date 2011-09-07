@@ -35,7 +35,7 @@ class CFuiPlot;
 //=============================================================================
 class CPiston : public CEngineModel {
 public:
-  CPiston ( CPropellerModel *prop);
+  CPiston (CVehicleObject *v, CPropellerModel *prop);
   virtual ~CPiston (void);
 
   // CSubsystem methods
@@ -141,7 +141,7 @@ const int FG_MAX_BOOST_SPEEDS = 3;          // tmp = 0 (no boost) fix later
 
 class CPistonJSBSim : public CPiston {
 public:
-  CPistonJSBSim ( CPropellerModel *prop,CEngineData *ed);
+  CPistonJSBSim (CVehicleObject *v, CPropellerModel *prop,CEngineData *ed);
   virtual ~CPistonJSBSim (void);
 
   // CSubsystem methods
@@ -190,7 +190,7 @@ private:
 //=========================================================================
 class CPistonTRI1 : public CPiston {
 public:
-  CPistonTRI1 ( CPropellerModel *prop,CEngineData *ed);
+  CPistonTRI1 (CVehicleObject *v, CPropellerModel *prop,CEngineData *ed);
   virtual ~CPistonTRI1 (void);
 
   // CSubsystem methods
@@ -254,8 +254,10 @@ public:
   void        Plot(PLOT_PP &pp);
   //------------------------------------------------------------------------
   inline CPropellerModel *GetProp()     {return e_prop;}
-  inline   void           Abort()       {e_prop->SetRPM(400);}
-  inline   void           Idle()        {e_prop->SetRPM(600);}
+  inline  void		Abort()       {e_prop->SetRPM(400);}
+  inline	void		Idle()        {e_prop->SetRPM(600);}
+	//--- Reset --------------------------------------------------------
+	inline	void		Reset()	{e_prop->Reset();}
   //--  Attributes ---------------------------------------------------------
 protected:
   CPropellerModel *e_prop;

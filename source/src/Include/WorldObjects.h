@@ -82,7 +82,9 @@ protected:
 	void     *phyMod;
   //----Global state ----------------------------------------
   char    State;
-	float		Time;				// State timer
+	float		Time;									// State timer
+	//---------------------------------------------------------
+	COption       vehOpt;         // Vehicle options
   //----Aircraft parameters ---------------------------------
   //  NOTE: Those fields should be dupplicated in globals
   //---------------------------------------------------------
@@ -102,6 +104,15 @@ public:
   bool  NotState(char c)    {return (State != c);}
   void  SetState(char c)    {State = c;}
   char  GetState()          {return State;}
+	//--- Options ----------------------------------------------
+  inline	U_INT GetOPT(U_INT p)			{return vehOpt.Get(p);}		// Return property
+  inline	void  RepOPT(U_INT p)     {vehOpt.Rep(p);}          // Replace property
+  inline	void  SetOPT(U_INT p)     {vehOpt.Set(p);}          // Set property
+  inline  void  RazOPT(U_INT p)     {vehOpt.Raz(p);}					// Clear property
+	inline  void  ToggleOPT(U_INT p)  {vehOpt.Toggle(p);}       // Swap property
+  //-------------------------------------------------------------
+  inline	char  HasOPT(U_INT p)     {return vehOpt.Has(p);}
+  inline  char  NotOPT(U_INT p)     {return vehOpt.Not(p);}
 	//----METHODS ----------------------------------------------
 public:
   CWorldObject (void);
@@ -266,7 +277,6 @@ public:
   virtual void              Print                    (FILE *f);
   virtual void              TimeSlice(float dT,U_INT frame) {}
   virtual void              Update(float dT,U_INT FrNo);		        // JSDEV*
-  virtual void              ResetVehicle(void) {;} 
   //! Returns altitude above ground in feet
 	float                     GetUserAGL()	{return 0;}
   //! Returns vehicle mass (kg)
@@ -444,6 +454,7 @@ public:
 	inline  CRobot           *GetRobot()			{return amp->GetRobot(); }
 	inline  CFPlan           *GetFlightPlan() {return amp->GetFlightPlan();}
   inline  char             *GetPID()        {return (nfo)?(nfo->GetPID()):(0);}
+	inline  CPhysicModelAdj  *GetPHY()				{return phy;} 
 	//-----------------------------------------------------------------------------------------
 protected:
   char   nEng;															// Engine number
@@ -551,7 +562,6 @@ public:
   // CSimulatedObject methods
 	virtual void Simulate(float dT, U_INT FrNo) {;}		///< Override 
 	virtual void UpdateOrientationState(float dT, U_INT FrNo) {;}		///< Override
-  virtual void ResetVehicle();
   //----JSDEV* Message preparation --------------------------------------------
   virtual	void			PrepareMsg(void);	// Prepare all subsystem messages
   virtual	bool			FindReceiver(SMessage *msg);			

@@ -40,7 +40,6 @@
 
 #include "../Include/Fui.h"
 #include "../Include/FuiParts.h"
-#include "../Include/FlightPlan.h"
 #include <list>
 #include <vector>
 #include <stack>

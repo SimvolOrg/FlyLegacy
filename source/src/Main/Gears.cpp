@@ -93,17 +93,12 @@ void CSuspension::InitGear()
   if (0 == strncmp (buffer, "jsbsim", 128)) 
   { gear = new CGearJSBSim(mveh,this); 
     return;}
-  if (0 == strncmp (buffer, "mix-jsbsim-lasrs", 128))
-  { gear = new CGearMixJL(mveh,this);
-    return; }
-#ifdef HAVE_OPAL
   if ((0 == strncmp (buffer, "opal", 128)) && (TRICYCLE == type))
   { gear = new CGearOpal(mveh,this);
     return; }
   if ((0 == strncmp (buffer, "opal", 128)) && (TAIL_DRAGGER == type))
   { gear = new CTailGearOpal(mveh,this);
     return; }
-#endif
   gear = new CGearJSBSim(mveh,this);
 }
 //----------------------------------------------------------------------------------
@@ -301,7 +296,7 @@ void CSuspension::GearDamaged(char nsk)
 //  grd is the ground altitude
 //-----------------------------------------------------------------------
 char CSuspension::GearShock(char pw)
-{ if (globals->vehOpt.Not(VEH_D_CRASH)) return 1;
+{ if (mveh->NotOPT(VEH_D_CRASH)) return 1;
   PlayTire(0);
   //-------------------------------------------------
   gear_data.shok += pw;
@@ -334,7 +329,7 @@ void CSuspension::Timeslice (float dT)
   // 
   // get the gear compression value
   // and update the WOW flag (Weight-on-heels)
-  gear_data.onGd = gear->GCompr__Timeslice ();
+  gear_data.onGd = gear->GCompression (gear_data.onGd);
   // 4)
   // compute ground physics only if needed
   if (IsOnGround()) { // weight on wheels is verified
@@ -347,10 +342,6 @@ void CSuspension::Timeslice (float dT)
     //
     gear->DirectionForce_Timeslice(dT); // 
     gear->VtForce_Timeslice (dT);
-
-    // 7) friction and braking forces
-    
-    gear->BrakeForce_Timeslice ();
 
     // 8) compute force and moment
     gear->GearL2B_Timeslice ();

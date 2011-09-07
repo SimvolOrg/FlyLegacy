@@ -4178,7 +4178,7 @@ public:
   virtual CDependent *GetPart() {return 0;}
   // CSubsystem methods
   virtual const char* GetClassName (void) { return "CPropellerModel"; }
-	virtual void        Reset() {;}
+	virtual void        Reset();
   void                TimeSlice (float dT);
 	
   /** Sets the Revolutions Per Minute for the propeller. Normally the propeller

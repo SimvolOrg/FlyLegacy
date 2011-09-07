@@ -150,7 +150,7 @@ CFuiAxis::~CFuiAxis()
 //  Select vehicle type
 //---------------------------------------------------------------------------
 void CFuiAxis::SelectVehicle(int No)
-{ vehOpt  = No;
+{ vehNo  = No;
   vehPOP->SetButtonText((char*)vehMEN.aText[No]);
   return;
 }
@@ -158,7 +158,7 @@ void CFuiAxis::SelectVehicle(int No)
 //  Change vehicle axis
 //--------------------------------------------------------------------------
 void CFuiAxis::NewVehicleType(U_INT No)
-{ vehOpt  = No;
+{ vehNo  = No;
   vehPOP->SetButtonText((char*)vehMEN.aText[No]);
   FillAxes(No);
 	AxeSelect(0);

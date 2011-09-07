@@ -223,15 +223,13 @@ public :
    *  therefore the reference should be 'local' : still in ft */
   virtual void GearB2L_Timeslice (void);
   /*! gear compression value calc in ft : Timesliced */
-  virtual char GCompr__Timeslice (void) {return 0;}
+  virtual char GCompression(char p) {return 0;}
   /*! gear compression velocity : Timesliced */
   virtual void GComprV_Timeslice (void) {};
   /*! compute the vector force on the wheel in pound-force lbf */
   virtual void VtForce_Timeslice (float dT) {;}
   /*! compute the vector lateral forces on the wheel in pound-force lbf */
   virtual void DirectionForce_Timeslice (float dT) {};
-  /*! compute the vector brake forces on the wheel in pound-force lbf*/
-  virtual void BrakeForce_Timeslice () {};
   /*! transform the forces back to the body frame : Timesliced
    * therefore the reference should be 'body' */
   virtual void GearL2B_Timeslice (void) {};
@@ -477,60 +475,7 @@ protected:
                 mWPos;            // Main wheel position In feet
 
 };
-//==========================================================================================
-// \class * Based upon JSBSim code
-//   see copyright in cpp file
-////==========================================================================================
-class CGearMixJL : public CGear {
-public:
-  CGearMixJL                      (CVehicleObject *v,CSuspension *s);
-  virtual ~CGearMixJL             (void);
-  ///< CGearMixJL methods
-  ///< =============
-  /*! gear compression value calc in ft : Timesliced */
-  char						GCompr__Timeslice (void);
-  /*! gear compression velocity : Timesliced
-   *  With the gear compression length We can get the compression velocity
-   *  (used to determine the damping force)*/
-  void						GComprV_Timeslice (void);
-  /*! compute the vector force on the wheel in pound-force lbf 
-   * (using square-law damping for Y) : Timesliced */
-  void						VtForce_Timeslice (float dT);
-  /*! compute the vector lateral forces on the wheel in pound-force lbf*/
-  void						DirectionForce_Timeslice (float dT);
-  /*! compute the vector brake forces on the wheel in pound-force lbf*/
-  void						BrakeForce_Timeslice ();
-  /*! transform the forces back to the body frame : Timesliced
-   * therefore the reference should be 'body' */
-  void						GearL2B_Timeslice (void);
-  /*! compute the vector moment for this wheel in lb.ft: Timesliced */
-  void						VtMoment_Timeslice (void);
 
-  ///< Utilities
-  ///< =========
-   
-  /*! moment in lb.ft */
-  const SVector& GetBodyGearMoment     (void) {return vMoment;}    
-  /*! force in Newton */
-  const SVector& GetBodyGearForce_ISU  (void);    
-  /*! moment in Kg.m */
-  const SVector& GetBodyGearMoment_ISU (void);
-  /*! */
-
-
-private:
-  ///< CGear members
-  ///< =============
-  double    wheel_base;      // In meters
-
-  float     brakeFcoeff,
-            bad_pres_resis;
-  float     rolling_whl_vel,
-            side_whl_vel;
-  float     rolling_force,
-            rolling_whl_dir,
-            side_force;
-};
 //==========================================================================================
 //  class * Based upon JSBSim code
 //   see copyright in cpp file
@@ -544,7 +489,7 @@ public:
   /*! gear compression value calc in ft : Timesliced
    *  JSBSim = the gear compression value is the local frame gear Y location value minus the height AGL
    *  Currently, we assume that the gear is oriented - and the deflection occurs in - the Y axis */
-  char						GCompr__Timeslice (void);
+  char						GCompression (char p);
   /*! gear compression velocity : Timesliced
    *  With the gear compression length We can get the compression velocity
    *  (used to determine the damping force)*/
@@ -554,8 +499,6 @@ public:
   void						VtForce_Timeslice (float dT);
   /*! compute the vector lateral forces on the wheel in pound-force lbf*/
   void						DirectionForce_Timeslice (float dT);
-  /*! compute the vector brake forces on the wheel in pound-force lbf*/
-  void						BrakeForce_Timeslice ();
   /*! transform the forces back to the body frame : Timesliced
    * therefore the reference should be 'body' */
   void						GearL2B_Timeslice (void);

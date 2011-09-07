@@ -48,8 +48,9 @@ CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
   int crash = 1;                    // enabled
   GetIniVar ("PHYSICS", "enableCrashDetect", &crash);
   U_INT prop = (crash)?(VEH_D_CRASH):(0);
-  globals->vehOpt.Set(prop);
-  if (!globals->uph) {             /// PHY file
+  mveh->SetOPT(prop);
+	CPhysicModelAdj *phy = mveh->GetPHY();
+  if (!phy) {             /// PHY file
     GetIniFloat ("PHYSICS", "adjustSteeringConst", &sideK);
     GetIniFloat ("PHYSICS", "adjustGroundBankingConst", &damp_ground_rot);
     GetIniVar   ("PHYSICS", "gearType", &gear_type);
@@ -58,13 +59,13 @@ CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
       sideK, damp_ground_rot, gear_type);
 #endif
   } else {
-    cmprL = globals->uph->Kcpr;
-    powlK = globals->uph->Kpow; 
-    brakK = globals->uph->Kbrk;
-    diffK = globals->uph->Kdff;
-    sideK = globals->uph->Kstr;
-    damp_ground_rot = globals->uph->KrlR;
-    gear_type = globals->uph->sGer;
+    cmprL = phy->Kcpr;
+    powlK = phy->Kpow; 
+    brakK = phy->Kbrk;
+    diffK = phy->Kdff;
+    sideK = phy->Kstr;
+    damp_ground_rot = phy->KrlR;
+    gear_type = phy->sGer;
 #ifdef _DEBUG
     DEBUGLOG ("CGearOpal start PHY : steerK%f brakK%f bankDamp%f gearType%d\n\
               cmpr%f powl%f diffB%f",
@@ -167,9 +168,9 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
 //  gPos is the wheel contact point relative to the CoG (in feet)
 //  bagl = altitude - ground altitude  => Body above ground level
 //  wagl = bagl + ROT(gPos) is the wheel contact AGL after rotation
-//  When wagl is negative, the wheel is on ground
+//  When wagl is slightly negative, the wheel is on ground
 //==============================================================================
-char CGearOpal::GCompr__Timeslice  (void)//082911
+char CGearOpal::GCompression(char pp)
 { //-- Apply aircraft rotation to contact point --------------------
   double  grd = globals->tcm->GetGroundAltitude();  
   SVector   V;                                 // Local rotated coordinates
@@ -193,7 +194,6 @@ char CGearOpal::GCompr__Timeslice  (void)//082911
   if (lim && (mass> lim) )                return susp->GearShock(10);   // Gear destroyed
   //----Check for compression -(in feet) --------------------------
   double lim1 = -gearData->maxC;
-  double lim2 = -gearData->maxC * 0.2;
   ////
   //#ifndef _DEBUG	
   //{	FILE *fp_debug;
@@ -206,9 +206,9 @@ char CGearOpal::GCompr__Timeslice  (void)//082911
   //#endif
   
   if (wagl < lim1)                        return susp->GearShock(1);    // Gear impaired
-  if (wagl < lim2)  susp->PlayTire(0);
+	//--- Check for ground transition ------------------------------
+  if (pp == 0)  susp->PlayTire(0);
   return 1;
-
 }
 //-----------------------------------------------------------------------
 //  Repair the wheel
@@ -253,20 +253,6 @@ void CGearOpal::VtForce_Timeslice (float dT)
 	vLocalForce.y = ay;
 	vLocalForce.z = az;
 
-	/*
-	ab[cur].x = 0.0;
-	ab[cur].y = 0.0;
-  if (vb[cur].z < 0.0) {
-    if (vb[cur].z - vb[prv].z < 0.0)    ab[cur].z = (vb[prv].z - vb[cur].z) / dT;
-    else																ab[cur] = ab[prv];
-  } else {
-    ab[cur].z = 0.0;
-  }
-
-  ab[cur].y = (vb[cur].y - vb[prv].y) / dT;
-
-  vLocalForce = ab[cur];
-	*/
   double mass  = mveh->GetMassInKgs();
   vLocalForce.Times(mass * cMass);    // was * gearData->damR);
 
@@ -379,62 +365,6 @@ void CGearOpal::ProbeBrake(CFuiCanva *cnv)
   return;
 }
 
-//-------------------------------------------------------------------------
-//* compute the brake forces on the wheel
-//* force = applied force in [0,1];
-//* btbl= brake coef from table: The more speed the less coefficient
-//* vLocalForce = local forces applied to the aircraft in body frame
-//* body frame : in lbs
-//-------------------------------------------------------------------------
-void CGearOpal::BrakeForce_Timeslice ()
-{ char  side  = gearData->Side;
-  float btbl  = gearData->btbl;                 // Gear coefficient
-  float force = mveh->GetBrakeForce(side);
-  float brake_fudge_factor = 1.0f;
-  float mn = 10.0f * brakK;
-  bool  roll = ((rolling_whl_vel) > 0.1f/*1e-3*/);
-  if (mn)	return;
-  if (force) brake_fudge_factor = (roll) ? mn * btbl : 1.0f; // mn = magic number
-
-  float rollingFCoeff = 0.25f; // 1.0f // 0.05f // was 0.02f;
-  float staticFCoeff  = gearData->brkF; 
-  float tirePressureNorm = 1.0f;
-
-  brakeFcoeff    =  rollingFCoeff * (1.0 - force) + staticFCoeff * force; // 0.25f,
-  bad_pres_resis =  (1.0f - tirePressureNorm) * -30.0f;
-
-  rolling_force   = 0.0f;
-  float mass_ = float(mveh->GetMassInKgs());
-  if (roll) {
-    rolling_force = (bad_pres_resis * min ((rolling_whl_vel), 1.0f)
-                              - fabs (vLocalForce.y) * brakeFcoeff)
-                           * rolling_whl_dir;
-
-    if  (rolling_force < 0.0f) rolling_force = max (-mass_, rolling_force);
-    else rolling_force = min (mass_, rolling_force);
-    if (gear_type && force) body_velocity.y *= static_cast<opal::real> (0.99f); //
-  } else 
-  { if (force) {
-      local_velocity.set(0,0,0);          
-      rolling_force = gearData->brak * max (-mass_,float(-mveh->eng->GetForceISU ().z /** -2.0*/)); // LH
-      if (gear_type)  body_velocity.set(0,0,0);
-    }
-  }
-  glf.vec.y = static_cast<opal::real> (rolling_force * brake_fudge_factor) /* mass on a tricycle wheel*/;
-  //----Store values for probe -------------------------------
-  gearData->inpB = force;
-  gearData->locV = body_velocity.y;
-  gearData->rBKF = rolling_force;
-  gearData->cBKF = brakeFcoeff;
-	//--- Compute force coefficient ----------------------------
-  gearData->ffac = force * btbl;
-  // brakes difference
-    brak_diff += (
-      rolling_force * diffK *
-      FeetToMetres (static_cast<float> (gearData->bPos.x)) / 
-      mass_
-    );
-}
 //---------------------------------------------------------------
 //	Compute breaking force based on the following data
 //	Brake force should stop the aircraft at full loaded
@@ -466,7 +396,6 @@ void CGearOpal::BrakeForce(float dT)
 	//--- Is proportional to pedal ----------------------------
 	bf *= force;
 	//--- Check velocity -------------------------------------
-//	opal::Vec3r vel = phyM->getLocalLinearVelAtLocalPos(glf.pos);
 	double lv  = local_velocity.y;				
 	if (fabs(lv) < 0.001) lv = 0;
 	if (lv <= 0)	bf = 0;
@@ -556,9 +485,9 @@ CTailGearOpal::~CTailGearOpal (void)
 //  Compute wheel above ground level 
 //   When wagl is negative, the wheel is on ground
 //------------------------------------------------------------------
-char CTailGearOpal::GCompr__Timeslice  (void)
+char CTailGearOpal::GCompression  (char pp)
 { 
-  return CGearOpal::GCompr__Timeslice();
+  return CGearOpal::GCompression(pp);
 }
 
 //------------------------------------------------------------------
@@ -581,16 +510,6 @@ void CTailGearOpal::VtForce_Timeslice (float dT)
 void CTailGearOpal::DirectionForce_Timeslice (float dT)
 {
   CGearOpal::DirectionForce_Timeslice (dT);
-}
-
-//------------------------------------------------------------------
-///* compute the brake forces on the wheel
-///* vLocalForce = local forces applied to the aircraft in body frame
-///* body frame : in lbs
-//------------------------------------------------------------------
-void CTailGearOpal::BrakeForce_Timeslice ()
-{
-  CGearOpal::BrakeForce_Timeslice ();
 }
 
 //------------------------------------------------------------------
@@ -664,7 +583,7 @@ void COpalSuspension::Timeslice (float dT)
   // 
   // get the gear compression value
   // and update the WOW flag (Weight-on-heels)
-  gear_data.onGd = gear->GCompr__Timeslice();
+  gear_data.onGd = gear->GCompression(gear_data.onGd);
   // 4)
   // compute ground physics only if needed
   if (IsOnGround ()) { // weight on wheels is verified
@@ -678,18 +597,6 @@ void COpalSuspension::Timeslice (float dT)
     gear->VtForce_Timeslice (dT);
     gear->DirectionForce_Timeslice (dT); 
 
-    // 7) friction and braking forces
-    gear->BrakeForce_Timeslice ();
-    //
-    //#ifdef _DEBUG	
-    //{	FILE *fp_debug;
-	   // if(!(fp_debug = fopen("__DDEBUG_to.txt", "a")) == NULL)
-	   // {
-		  //  int test = 0;
-		  //  fprintf(fp_debug, "%f\n", gear_data.btbl);
-		  //  fclose(fp_debug); 
-    //}	}
-    //#endif
 
     // 8) compute force and moment
     gear->GearL2B_Timeslice ();

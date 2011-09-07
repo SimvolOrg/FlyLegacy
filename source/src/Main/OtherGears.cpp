@@ -46,7 +46,7 @@ CGearJSBSim::~CGearJSBSim (void)
 //* = the difference between the AGL and the wheel position
 //* returns the WOW flag
 //------------------------------------------------------------------------
-char CGearJSBSim::GCompr__Timeslice  (void)
+char CGearJSBSim::GCompression  (char pp)
 {
   return 0;
 }
@@ -79,14 +79,6 @@ void CGearJSBSim::DirectionForce_Timeslice (float dT)
 {}
 
 //------------------------------------------------------------------------
-//* compute the brake forces on the wheel
-//* vLocalForce = local forces applied to the aircraft in body frame
-//* body frame : in lbs
-//------------------------------------------------------------------------
-void CGearJSBSim::BrakeForce_Timeslice ()
-{}
-
-//------------------------------------------------------------------------
 //* transform the forces back to the inertial frame : in lbs
 //------------------------------------------------------------------------
 void CGearJSBSim::GearL2B_Timeslice (void)
@@ -115,87 +107,6 @@ const SVector& CGearJSBSim::GetBodyGearMoment_ISU (void)
   vLocalMoment_ISU.z = vLocalMoment.z * konst;
   return vLocalMoment_ISU;
 } 
-//===================================================================================
-// CGearMixJL
-//===================================================================================
-CGearMixJL::CGearMixJL (CVehicleObject *v,CSuspension *s) : CGear (v,s)
-{ }
-//------------------------------------------------------------------------
 
-CGearMixJL::~CGearMixJL (void)
-{}
-//------------------------------------------------------------------------
-//* calculate the gear compression if the weight is acting on strut.
-//* = the difference between the AGL and the wheel position
-//* returns the WOW flag
-//------------------------------------------------------------------------
-char CGearMixJL::GCompr__Timeslice  (void)
-{
-    return 0;
-}
-
-//------------------------------------------------------------------------
-//* calculates the gear strut compression speed
-//* vWhlVelVec = instantaneous velocity vector in body frame (m/s)
-//* compression speed in body frame = Z-component vWhlVelVec.z
-//------------------------------------------------------------------------
-void CGearMixJL::GComprV_Timeslice (void)
-{}
-
-//------------------------------------------------------------------------
-//* compute the vertical force on the wheel using square-law damping
-//* vLocalForce = local forces applied to the aircraft in body frame
-//* body frame : in lbs
-//------------------------------------------------------------------------
-void CGearMixJL::VtForce_Timeslice (float dT)
-{}
-
-//------------------------------------------------------------------------
-//* compute the steering forces on the wheel with yaw
-//* vLocalForce = local forces applied to the aircraft in body frame
-//* body frame : in lbs
-//  JS NOTE: Is that an additional force to the actual steeirng by the pilot
-//            if such, it must be added, and not replacing the
-//            steering
-//          Simplify fabs(rolling_whl_vel) as it is used everywhere as
-//          fabs value
-//------------------------------------------------------------------------
-void CGearMixJL::DirectionForce_Timeslice (float dT)
-{}
-
-//------------------------------------------------------------------------
-//* compute the brake forces on the wheel
-//* vLocalForce = local forces applied to the aircraft in body frame
-//* body frame : in lbs
-//------------------------------------------------------------------------
-void CGearMixJL::BrakeForce_Timeslice ()
-{}
-
-//------------------------------------------------------------------------
-//* transform the forces back to the inertial frame : in lbs
-//------------------------------------------------------------------------
-void CGearMixJL::GearL2B_Timeslice (void)
-{}
-
-//------------------------------------------------------------------------
-//* compute moment in body coordinates : in lbs.ft
-//------------------------------------------------------------------------
-void CGearMixJL::VtMoment_Timeslice (void)
-{}
-//------------------------------------------------------------------------
-///< force in Newton
-//------------------------------------------------------------------------
-const SVector& CGearMixJL::GetBodyGearForce_ISU  (void)
-{ vForce_ISU.x = vForce.x * LBS_TO_NEWTON;
-  vForce_ISU.y = vForce.y * LBS_TO_NEWTON;
-  vForce_ISU.z = vForce.z * LBS_TO_NEWTON;
-  return vForce_ISU;
-} 
-//------------------------------------------------------------------------
-///< moment in Kg.m
-//------------------------------------------------------------------------
-const SVector& CGearMixJL::GetBodyGearMoment_ISU (void)
-{ return CGear::GetBodyGearMoment_ISU ();
-} 
 
 //=======END of FILE =================================================================
