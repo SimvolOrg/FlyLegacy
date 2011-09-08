@@ -63,6 +63,8 @@ struct SGearData {
   CVector gPos;                       //  Tire contact point (CG relative)
   float dvvd;                         //< -- Design Visual Vertical Displacement (ft) --
   std::vector<std::string> vfx_;      //< -- Visual Effects --
+	//--- Wheel above ground level (feet) ------------------------------------
+	double wagl;
 	///-------Vertical damping for ground contact ----------------------------
   double damR;                        ///< -- damping ratio --
 	double damF;												// Damping factor
@@ -235,7 +237,7 @@ public :
   virtual void GearL2B_Timeslice (void) {};
   /*! compute the vector moment for this wheel in lb.ft: Timesliced */
   virtual void VtMoment_Timeslice (void) {};
-
+  
 public:
   ///< Utilities
   ///< =========
@@ -263,6 +265,7 @@ public:
 //  opal::JointData *gjointData;
 #endif
   //------ Probe functions ----------------------------------------
+	virtual void    Probe(CFuiCanva *cnv) {;}
   virtual void    ProbeBrake(CFuiCanva *cnv) {;}
   virtual void    ResetForce()    {;}
   //---------------------------------------------------------------
@@ -520,8 +523,7 @@ private:
   ///< CGear members
   ///< =============
 
-  float     brakeFcoeff,
-            bad_pres_resis;
+  float     bad_pres_resis;
   float     rolling_whl_vel,
             side_whl_vel;
   float     rolling_force,

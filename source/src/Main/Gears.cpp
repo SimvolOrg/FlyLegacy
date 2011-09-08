@@ -397,6 +397,7 @@ char **CSuspension::GetProbeOptions()
 void CSuspension::Probe(CFuiCanva *cnv)
 {   cnv->AddText( 1,gear_data.susp_name,1);
     if (popt == 1)  return gear->ProbeBrake(cnv);
+		if (popt == 0)	return gear->Probe(cnv);
     return;
 }
 //=====================================================================================

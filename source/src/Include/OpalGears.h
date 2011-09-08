@@ -116,12 +116,12 @@ public:
   void    Repair();
   void    GetGearPosition(CVector &mp,double  &rad);
   //-----Probe datas --------------------------------------------------
+	void    Probe(CFuiCanva *cnv);
   void    ProbeBrake(CFuiCanva *cnv);
 	void    TraceForce();
   //-----Attributes ---------------------------------------------------
 protected:
   //-------------------------------------------------------------------
-  CVehicleObject *mveh;               // Mother vehicle
   ///< CGear members
   ///< =============
   opal::SphereShapeData box;
@@ -129,8 +129,7 @@ protected:
   double    Radius;                   // In meters (rim + tire)
   //--------------------------------------------------------------------
 	double    speed;										// Rolling speed
-  float     brakeFcoeff,					
-            bad_pres_resis;
+  float     bad_pres_resis;
   float     rolling_whl_vel,
             side_whl_vel;
   float     rolling_force,

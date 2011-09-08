@@ -37,8 +37,7 @@ using namespace std;
 float  CGearOpal::brak_diff = 0.0f;
 
 CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
-{ mveh        = v;
-  cmprL = ADJ_CMPR_LNGT;            // 2.0
+{ cmprL = ADJ_CMPR_LNGT;            // 2.0
   powlK = ADJ_POWL_CNST;            // 5.0 
   sideK = ADJ_STRG_CONST;           // 0.125f;
   brakK = ADJ_BRAK_CONST;           // 1.0f 
@@ -72,7 +71,7 @@ CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
       sideK, brakK, damp_ground_rot, gear_type, cmprL, powlK, diffK);
 #endif
   }
-  brakeFcoeff  = bad_pres_resis = 0.0f;
+  bad_pres_resis = 0.0f;
   rolling_whl_vel = 0.0f;
   side_whl_vel = rolling_force  = side_force      = 0.0f; 
   glf.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
@@ -103,9 +102,12 @@ void  CGearOpal::GetGearPosition(CVector &mp,double  &rad)
 }
 //---------------------------------------------------------------------------------
 //  Compute wheel shape and contact point relative to COG
-//  NOTE: mPos.y is the contact point (a negative number as it is below the GOG
-//        while the wheel radius is positive, so the wheel axis is at 
+//  NOTE: mPos.y is the contact point relative to visual center VC
+//	(a negative number as it is below the VC while the wheel radius is positive, 
+//	so the wheel axis is at 
 //        (mPos.y + wheel Radius) (in meter)
+//	main_pos: Is the wheel axis position relative to the Center of Gravity (GOG)
+//						This is the point where Opal Forces are applied to the wheel
 //---------------------------------------------------------------------------------
 void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
@@ -178,9 +180,10 @@ char CGearOpal::GCompression(char pp)
   gearData->gPos.MultMatGL(M,V);               // Rotate
   //---Wheel AGL is local contact + body AGL -----------------------
   double bagl = mveh->GetAltitude() - grd;
-  double wagl = bagl + V.z;
+  double wagl = bagl + V.z;										// Compute wheel AGL
+	gearData->wagl = wagl;											// Save it
   susp->SetWheelAGL(wagl);
-  //----------------------------------------------------------------
+  //----Check that wheel is just above ground ----------------------
   //U_INT fr    = globals->sit->GetFrameNo();//082911
   //TRACE("%06d: WHeel GRND=%.04f bagl=%.04f wagl=%.04f %s",fr,grd,bagl,wagl,gearData->susp_name);
   if (wagl > 0.5)   return 0;
@@ -316,52 +319,40 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
   local_velocity.x = static_cast<opal::real> (0.0f);
 	return;
 }
-
+//-------------------------------------------------------------------------
+//  Display gear parameters
+//-------------------------------------------------------------------------
+void CGearOpal::Probe(CFuiCanva *cnv)
+{ cnv->AddText(1,1,"OnGr: %d",gearData->onGd);
+	cnv->AddText(1,1,"sABS: %d",gearData->sABS);
+	cnv->AddText(1,1,"wagl: %.4f(ft)",gearData->wagl);
+	cnv->AddText(1,1,"powL: %.4f",gearData->powL);
+	cnv->AddText(1,1,"imPW: %.4f(flbs)",gearData->imPW);
+	return;
+}
 //-------------------------------------------------------------------------
 //  Display brake parameters
 //-------------------------------------------------------------------------
 void CGearOpal::ProbeBrake(CFuiCanva *cnv)
-{ char edt[32];
-	//---speed -----------------------------
-  _snprintf(edt,16,"sped:  %.04f",speed);
-  cnv->AddText(1,edt,1);
+{ //---speed -----------------------------
+  cnv->AddText(1,1,"sped:  %.04f",speed);
 	//---Break force -----------------------------
-  _snprintf(edt,16,"bdif:  %.04f",brak_diff);
-  cnv->AddText(1,edt,1);
+  cnv->AddText(1,1,"bdif:  %.04f",brak_diff);
   //--- Acceleration ----------------------------
-  _snprintf(edt,30,"sideF:  %.04f",side_force);
-  edt[31] = 0;        // Temp until we find what's wrong
-  cnv->AddText(1,edt,1);
+  cnv->AddText(1,1,"sideF:  %.04f",side_force);
 	//--- Table ----------------------------
-  _snprintf(edt,30,"stbl:  %.04f",gearData->stbl);
-  edt[31] = 0;        // Temp until we find what's wrong
-  cnv->AddText(1,edt,1);
-
+  cnv->AddText(1,1,"stbl:  %.04f",gearData->stbl);
   //--- Torque ----------------------------
-  _snprintf(edt,30,"Torq:  %.04f",gt_.vec.z);
-  edt[31] = 0;        // Temp until we find what's wrong
-  cnv->AddText(1,edt,1);
-
+  cnv->AddText(1,1,"Torq:  %.04f",gt_.vec.z);
 	//---Rolling force ----------------------------
-  _snprintf(edt,30,"vel.y:  %.04f",local_velocity.y);
-  edt[16] = 0;        // Temp until we find what's wrong
-  cnv->AddText(1,edt,1);
+  cnv->AddText(1,1,"vel.y:  %.04f",local_velocity.y);
   //---Local force -----------------------------
-  _snprintf(edt,16,"locF:  %.05f",vLocalForce.y);
-  edt[16] = 0;
-  cnv->AddText(1,edt,1);
+  cnv->AddText(1,1,"locF:  %.04f",vLocalForce.y);
 
   //---Final force ------------------------------
-  _snprintf(edt,16,"%.04f",glf.vec.x);
-  cnv->AddText(1,"glf.x",0);
-  cnv->AddText(6,edt,1);
-	_snprintf(edt,16,"%.04f",glf.vec.y);
-  cnv->AddText(1,"glf.y",0);
-  cnv->AddText(6,edt,1);
-  _snprintf(edt,16,"%.04f",glf.vec.z);
-  cnv->AddText(1,"glf.z",0);
-  cnv->AddText(6,edt,1);
-
+  cnv->AddText(1,1,"glf.x %.4f",glf.vec.x);
+  cnv->AddText(1,1,"glf.y %.4f",glf.vec.y);
+  cnv->AddText(1,1,"glf.z %.4f",glf.vec.z);
   return;
 }
 
