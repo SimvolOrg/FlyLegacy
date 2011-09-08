@@ -356,10 +356,10 @@ int CDataTMS::Read (CStreamFile *sf, Tag tag)
       
       case 'lowl':
         { sf->ReadDouble(nd);
-          llc.lon = TC_ARCS_FROM_FEET(nd * cp);
+          llc.lon = FN_ARCS_FROM_FEET(nd * cp);
           sf->ReadDouble(nd);
           sf->ReadDouble(nd);
-          llc.lat = TC_ARCS_FROM_FEET(nd);
+          llc.lat = FN_ARCS_FROM_FEET(nd);
           apo->SetLLC(llc);
           return TAG_READ;
         }
@@ -477,13 +477,13 @@ void CTileTMS::ReadData(CStreamFile *sf)
   for (int k = 0; k != nbv; k++)
   { sf->ReadLong(ns);
 		double xf = double (ns >> 8) * cp;						// Divide by 256
-    double xv  = TC_ARCS_FROM_FEET(xf) + x0;			// Longitude
+    double xv  = FN_ARCS_FROM_FEET(xf) + x0;			// Longitude
     dst->VT_X  = xv;                    
     sf->ReadLong(ns);
     dst->VT_Z  = 0;																//double(ns); 
     sf->ReadLong(ns);
 		double yf = double (ns >> 8);									// Divide by 256
-    double yv  = TC_ARCS_FROM_FEET(yf) + y0;			// Latitude
+    double yv  = FN_ARCS_FROM_FEET(yf) + y0;			// Latitude
     dst->VT_Y  = yv;
     //------Set Texture coordinates ---------------
     dst->VT_S  = (dst->VT_X - llc.lon) * PavFac;
@@ -655,8 +655,8 @@ int CTileTMS::ReadLightParam(CStreamFile *sf)
   sf->ReadFloat(vx);
   sf->ReadFloat(vy);
   nbr += (sizeof(float) << 1);                              // 2 float read
-  vx   = TC_ARCS_FROM_FEET(vx * cp) + x0;      
-  vy   = TC_ARCS_FROM_FEET(vy)      + y0;      
+  vx   = FN_ARCS_FROM_FEET(vx * cp) + x0;      
+  vy   = FN_ARCS_FROM_FEET(vy)      + y0;      
   spot[inx].wx = vx;                                         // Light X
   spot[inx].wy = vy;                                         // Light Y
   SpotElevation(inx);
@@ -671,8 +671,8 @@ int CTileTMS::ReadLightParam(CStreamFile *sf)
   nbr += (sizeof(float) << 1);                                // 2 float read
   sf->ReadFloat(ht);
   nbr +=  sizeof(float);
-  vx   = TC_ARCS_FROM_FEET(vx * cp) + x0;      
-  vy   = TC_ARCS_FROM_FEET(vy)      + y0;      
+  vx   = FN_ARCS_FROM_FEET(vx * cp) + x0;      
+  vy   = FN_ARCS_FROM_FEET(vy)      + y0;      
   spot[inx].wx = vx;                                           // Light X
   spot[inx].wy = vy;                                           // Light Y
   SpotElevation(inx);

@@ -808,7 +808,7 @@ double AutoPilot::GetAOS()
 //  The error is the difference between actual slope and target one (in radian)
 //------------------------------------------------------------------------------------
 void AutoPilot::VSPerror()
-{ double fpm  = TC_FEET_FROM_MILE(kSPD) / 60;  // In feet per minute 
+{ double fpm  = FN_FEET_FROM_MILE(kSPD) / 60;  // In feet per minute 
   if (kSPD < 10) return;                       // No more speed 
   double val  = rVSI / fpm;                    // Sine of angle of slope
   double phi  = asin(val);

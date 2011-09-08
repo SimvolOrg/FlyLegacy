@@ -217,8 +217,8 @@ CPicQUAD::~CPicQUAD()
 void CPicQUAD::GetBitmap(char *bn)
 { xOBJ = globals->txw->LoadIconPNG("PICON");
   //---------------------------------------------------
-  float w2 = float(TC_ARCS_FROM_FEET(200));         // Half width in feet
-  float h2 = float(TC_ARCS_FROM_FEET(200));         // half height in feet
+  float w2 = float(FN_ARCS_FROM_FEET(200));         // Half width in feet
+  float h2 = float(FN_ARCS_FROM_FEET(200));         // half height in feet
   //---Allocate QUAD coordinates ----------------------
   TC_VTAB *tab = quad.GetVTAB();
   //--SW corner ---------------------------------------
@@ -334,30 +334,30 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   float dd  = 24;                         // Default (nm)for detection
   GetIniFloat("W3D","ObjectDetectDistance",&dd);
   globals->nmDET  = dd;                   // Limit in miles
-  globals->ftDET  = TC_FEET_FROM_MILE(dd);
+  globals->ftDET  = FN_FEET_FROM_MILE(dd);
   //-------------------------------------------------------------
   float dw   = 12;                         // Default for drawing
   GetIniFloat("W3D","ObjectDrawDistance",&dw);
   globals->nmDRW = dw;                    // Limit in miles
-  globals->ftDRW = TC_FEET_FROM_MILE(dw);
+  globals->ftDRW = FN_FEET_FROM_MILE(dw);
   //----Level of details -----------------------------------------
   float d1   = 1.5;                    
   GetIniFloat("W3D","Lod1",&d1);
   if (d1 < 0)     d1  = 1.5;
   if (d1 > dw)    d1  = 1.5;
-  globals->ftLD1      = TC_FEET_FROM_MILE(d1);
+  globals->ftLD1      = FN_FEET_FROM_MILE(d1);
   //--------------------------------------------------------------
   float d2   = 2.5;
   GetIniFloat("W3D","Lod2",&d2);
   if (d2 < 0)     d2  = 2.5;
   if (d2 < d1)    d2  = d1 * 2;
-  globals->ftLD2      = TC_FEET_FROM_MILE(d2);
+  globals->ftLD2      = FN_FEET_FROM_MILE(d2);
   //--------------------------------------------------------------
   float d3   = 5;
   GetIniFloat("W3D","Lod3",&d3);
   if (d3 < 0)     d3  = 5;
   if (d3 < d2)    d3  = d2 * 2;
-  globals->ftLD3      = TC_FEET_FROM_MILE(d3);
+  globals->ftLD3      = FN_FEET_FROM_MILE(d3);
   //--------------------------------------------------------------
   int lf    = 100;                        // Decoding factor default
   GetIniVar("W3D","ObjectLoadFactor",&lf);

@@ -164,31 +164,33 @@
 #define TC_FEET_PER_MILE    (double(TC_FULL_WRD_FEET) / TC_FULL_WRD_MILE)
 #define TC_FEET_PER_METER    double(3.2808399)
 #define TC_XB_ARCS          ( 45 * 3600)
+//=====TRANSFORMATION / CONVERTIONS ====================================
 //------PRESURE--------------------------------------------------------
-#define TC_INHG_FROM_MBAR(X) (double(X) * 0.029529983071)   
+#define FN_INHG_FROM_MBAR(X) (double(X) * 0.029529983071)   
 //---------------------------------------------------------------------
-#define TC_FEET_FROM_ARCS(X) ((double(X) * TC_FULL_WRD_FEET) / TC_FULL_WRD_ARCS)
-#define TC_FEET_FROM_QGT(X)  ((double(X) * TC_FULL_WRD_FEET) / 512)
-#define TC_FEET_FROM_MILE(X) ((double(X) * TC_FULL_WRD_FEET) / TC_FULL_WRD_MILE)
-#define TC_FEET_FROM_INCH(X) ((double(X) * 0.083333333333))
-#define TC_FEET_FROM_METER(X)((double(X) * 3.2808399))
-#define TC_MILE_FROM_FEET(X) ((double(X) * 0.000164))
-#define TC_MILE_FROM_METER(X)((double(X) * 0.000539))
+#define FN_FEET_FROM_ARCS(X) ((double(X) * TC_FULL_WRD_FEET) / TC_FULL_WRD_ARCS)
+#define FN_FEET_FROM_MILE(X) ((double(X) * TC_FULL_WRD_FEET) / TC_FULL_WRD_MILE)
+#define FN_FEET_FROM_INCH(X) ((double(X) * 0.083333333333))
+#define FN_FEET_FROM_METER(X)((double(X) * 3.2808399))
+#define FN_MILE_FROM_FEET(X) ((double(X) * 0.000164))
+#define FN_MILE_FROM_METER(X)((double(X) * 0.000539))
 //------------------------------------------------------------------------------
-#define TC_ARCS_FROM_FEET(X) ((double(X) * TC_FULL_WRD_ARCS) / TC_FULL_WRD_FEET)
-#define TC_ARCS_FROM_MILE(X) ((double(X) * 60))
-#define TC_ARCS_FROM_QGT(X)  ((double(X) * TC_FULL_WRD_ARCS) / 512)
-#define TC_ARCS_FROM_GBT(X)  ((double(X) * TC_FULL_WRD_ARCS) / 256)
-#define TC_ARCS_FROM_SUB(X)  ((double(X) * TC_FULL_WRD_ARCS) / TC_FULL_WRD_SUBD)
+#define FN_METRE_FROM_FEET(X)	(double(X) * 0.304799999)
+//------------------------------------------------------------------------------
+#define FN_ARCS_FROM_FEET(X) ((double(X) * TC_FULL_WRD_ARCS) / TC_FULL_WRD_FEET)
+#define FN_ARCS_FROM_MILE(X) ((double(X) * 60))
+#define FN_ARCS_FROM_QGT(X)  ((double(X) * TC_FULL_WRD_ARCS) / 512)
+#define FN_ARCS_FROM_GBT(X)  ((double(X) * TC_FULL_WRD_ARCS) / 256)
+#define FN_ARCS_FROM_SUB(X)  ((double(X) * TC_FULL_WRD_ARCS) / TC_FULL_WRD_SUBD)
 //----------------------------------------------------------------------
-#define TC_RAD_FROM_ARCS(X)  ( double(X) * (PI / 648000))      
+#define FN_RAD_FROM_ARCS(X)  ( double(X) * (PI / 648000))      
 //------------LONGITUDE BAND PARAMETERS --------------------------------
-#define TC_ABS_QGT_DET(X)		 (X >> TC_BY1024)
-#define TC_QGT_FROM_INDX(X)  (X >> (TC_BY1024 + TC_BY32))       
-#define TC_DET_FROM_INDX(X)  ((X >> TC_BY1024) & 31)
-#define TC_DET_FROM_XZ(X,Z)  ((Z << TC_BY32) | X)
-#define TC_BAND_FROM_QGT(X)  (X >> TC_BY64)
-#define TC_BAND_FROM_INX(X)  (X >> (TC_BY1024 + TC_BY32 + TC_BY64))
+#define FN_ABS_QGT_DET(X)		 (X >> TC_BY1024)
+#define FN_QGT_FROM_INDX(X)  (X >> (TC_BY1024 + TC_BY32))       
+#define FN_DET_FROM_INDX(X)  ((X >> TC_BY1024) & 31)
+#define FN_DET_FROM_XZ(X,Z)  ((Z << TC_BY32) | X)
+#define FN_BAND_FROM_QGT(X)  (X >> TC_BY64)
+#define FN_BAND_FROM_INX(X)  (X >> (TC_BY1024 + TC_BY32 + TC_BY64))
 //---------------------------------------------------------------------
 #define TC_BANDMOD   ((64 * 32 * 1024)-1)
 //------HORIZON PARAMETERS --------------------------------------------
@@ -304,6 +306,7 @@
 //---------------------------------------------------------------------
 #define SIN_5DEG                             (0.08715574)
 #define SIN_3DEG                             (0.05233595)
+#define ONE_DEGRE_RADIAN		(double(PI / 180))
 //==============================================================================
 //  RUNWAY LIGHTS
 //==============================================================================

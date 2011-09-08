@@ -711,7 +711,7 @@ GLuint CCloudSystem::ImpFBO(GLuint tex,int dim)
 double CCloudSystem::RandValue(float sd)
 { int     rdm = RandomNumber(100);
   double  fac = 1.0 + (float(rdm) * 0.01);
-  double  arc = TC_ARCS_FROM_FEET(sd * fac);
+  double  arc = FN_ARCS_FROM_FEET(sd * fac);
   return  WrapArcs(arc);
 }
 //------------------------------------------------------------------------------
@@ -1072,7 +1072,7 @@ void CCloudPuff::FormFlatCloud()
   p.y         = rand() % 600;
   part->ID    = 0;
   part->ofs   = p;
-  part->size  = TC_FEET_FROM_ARCS(csys->RandValue(24000));
+  part->size  = FN_FEET_FROM_ARCS(csys->RandValue(24000));
   part->MakeHorizontalQuad(cbb,p);
   Parts.push_back(part);
   nPart       = 1;

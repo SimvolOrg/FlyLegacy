@@ -1337,7 +1337,7 @@ void C_SEA::Init(U_INT key)
   qgx = gx << 1;                                        // base QGT X indice
   qgz = gz << 1;                                        // Base QGT Z indice
   //---------Init the Globe Tile coordinates ------------------------
-  wLon  = TC_ARCS_FROM_QGT(qgx);                           // Base longitude
+  wLon  = FN_ARCS_FROM_QGT(qgx);                           // Base longitude
   sLat  = GetQgtSouthLatitude(qgz);                        // Base latitude
   //---------Init Globe tile coordinates in ARCSEC ---------------------------------
   gbtSL = GetGbtSouthLatitude(gz);
@@ -1544,8 +1544,8 @@ COAST_VERTEX *C_SEA::Finalize(COAST_VERTEX *vtx, char *pid,SEA_VERTEX *vtb)
         cx        = vtb[ind].cx;
         cz        = vtb[ind].cz;
         //------Compute absolute feet cordinates of vertex ----
-//        dsn->wx   = TC_FEET_FROM_ARCS(cx) + wLon;
-//        dsn->wy   = TC_FEET_FROM_ARCS(cz) + sLat;
+//        dsn->wx   = FN_FEET_FROM_ARCS(cx) + wLon;
+//        dsn->wy   = FN_FEET_FROM_ARCS(cz) + sLat;
         //-------Compute pixel coordinates in Detail tile -----
         dsn->xPix = GetPixXcoord(cx);
         dsn->zPix = GetPixZcoord(cz);

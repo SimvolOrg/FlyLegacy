@@ -374,7 +374,7 @@ int CSimulatedVehicle::Read (SStream *stream, Tag tag)
 //-------------------------------------------------------------------------------
 void CSimulatedVehicle::ReadFinished (void)
 { //--- Read checklist if any ------------
-	double bfs =  TC_FEET_FROM_MILE(approachspeed)/ 3600;		// Brake speed feet/sec
+	double bfs =  FN_FEET_FROM_MILE(approachspeed)/ 3600;		// Brake speed feet/sec
 	accBrake = (bfs * bfs) / (2 * brakeDist);									
   return;
 }
@@ -398,11 +398,11 @@ void CSimulatedVehicle::Timeslice (float dT)
 void CSimulatedVehicle::CalcNewCG_ISU (void)
 {
   //newCG_ISU = CofG + *(globals->sit->uveh->wgh->wb.GetCGOffset()); // lc 052910 -
-  //newCG_ISU.Times (FeetToMetres (1.0)); // lc 052910 -
+  //newCG_ISU.Times (FN_METRE_FROM_FEET (1.0)); // lc 052910 -
   mveh->wgh->GetVisualCG (newCG_ISU); // lc 052910 +
-  newCG_ISU.x = FeetToMetres (-newCG_ISU.x); // lc 052910 +
-  newCG_ISU.y = FeetToMetres (+newCG_ISU.y); // lc 052910 +
-  newCG_ISU.z = FeetToMetres (+newCG_ISU.z); // lc 052910 +
+  newCG_ISU.x = FN_METRE_FROM_FEET (-newCG_ISU.x); // lc 052910 +
+  newCG_ISU.y = FN_METRE_FROM_FEET (+newCG_ISU.y); // lc 052910 +
+  newCG_ISU.z = FN_METRE_FROM_FEET (+newCG_ISU.z); // lc 052910 +
 }
 
 void CSimulatedVehicle::PrintInfo (int bar_cycle)
@@ -3080,9 +3080,9 @@ const SVector& CEngine::GetThrustPosInM (void)
 {
   //SVector bPosThrustInM;
 
-  TPosISU.x = FeetToMetres (bPos.x);
-  TPosISU.y = FeetToMetres (bPos.y);
-  TPosISU.z = FeetToMetres (bPos.z);
+  TPosISU.x = FN_METRE_FROM_FEET (bPos.x);
+  TPosISU.y = FN_METRE_FROM_FEET (bPos.y);
+  TPosISU.z = FN_METRE_FROM_FEET (bPos.z);
   return TPosISU;
 }
 //----------------------------------------------------------------------

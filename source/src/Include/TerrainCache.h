@@ -518,7 +518,7 @@ public:
 	inline short xCln()								{return (xKey & TC_1024MOD);}
 	inline short zRow()								{return (zKey & TC_1024MOD);}
   //---------------------------------------------------
-  inline double GetAbsoluteLongitude()        {return TC_ARCS_FROM_SUB(xKey);}
+  inline double GetAbsoluteLongitude()        {return FN_ARCS_FROM_SUB(xKey);}
   //---------------------------------------------------
   inline CVertex *GetEdge(U_SHORT cnr)  {return Edge[cnr];}
   inline CVertex *GetCorner(U_SHORT cnr){return Edge[cnr];}

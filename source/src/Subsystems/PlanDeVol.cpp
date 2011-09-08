@@ -704,7 +704,7 @@ float CWPoint::GoDirect(CVehicleObject *veh)
 //	Estimation is based on a 3% climbing slope
 //----------------------------------------------------------------------
 int CWPoint::BestAltitudeFrom(int a0)
-{	float		ft = TC_FEET_FROM_MILE(legDis) *  CLIMB_SLOPE;
+{	float		ft = FN_FEET_FROM_MILE(legDis) *  CLIMB_SLOPE;
 	int			a1 = a0 + int(ft);
 	int     ax = fplan->actCEIL();		// Current Ceil
 	int     sa = min(a1,ax);
@@ -1963,7 +1963,7 @@ void CFPlan::Save()
 //=======================================================================
 void CRouteEXT::SetPosition(SPosition *p)
 { if (wpt)	wpt->SetPosition(*p);
-  double lr   = TC_RAD_FROM_ARCS(p->lat);					// Latittude in Radian
+  double lr   = FN_RAD_FROM_ARCS(p->lat);					// Latittude in Radian
   nmFactor    = cos(lr) / 60;                     // 1 nm at latitude lr
 }
 //-------------------------------------------------------------

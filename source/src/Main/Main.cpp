@@ -1322,7 +1322,7 @@ void PrepareSimulation (void)
  */
 int main (int argc, char **argv)
 { double pxr = double(1) / 72;                // Pixel radius in inch
-  double hpx = TC_FEET_FROM_INCH(pxr);        // Pixel radius in feet
+  double hpx = FN_FEET_FROM_INCH(pxr);        // Pixel radius in feet
   double nrp = 20;                            // Near clip plane
   globals = new SGlobals;	                    // Create global structure
 
@@ -1401,7 +1401,7 @@ int main (int argc, char **argv)
   //---Terrain parameters --------------------------------------------
   globals->maxView  = 40;                     // Default Maximum view (miles)
   globals->highRAT  = 0.32;                   // Hight resolution (ratio of maxView)
-  globals->skyDist  = TC_FEET_FROM_MILE(60);  // Sky distance
+  globals->skyDist  = FN_FEET_FROM_MILE(60);  // Sky distance
   //---SQL databases -------------------------------------------------
   globals->genDB = 0;
   globals->elvDB = 0;

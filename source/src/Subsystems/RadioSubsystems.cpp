@@ -54,7 +54,7 @@ void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
 	opoP		= (ils)?(&ils->opoP):(0);
 	refD    = (ils)?(ils->lnDIR):(0);
 	//--- compute feet factor at given latitude ---------------
-	double lr   = TC_RAD_FROM_ARCS(spos.lat);					//DegToRad  
+	double lr   = FN_RAD_FROM_ARCS(spos.lat);					//DegToRad  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
 	//--- Refresh distance and direction -----------------------
 	Refresh(frm);

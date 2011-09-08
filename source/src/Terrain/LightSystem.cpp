@@ -346,7 +346,7 @@ bool CBaseLITE::SameSide(SIDE_POINT &sp,SVector &pc)
 //  Draw a square for test. HELP TO LOCALIZATION
 //----------------------------------------------------------------------------
 void CBaseLITE::TestDraw(int k,int mode)
-{ float    ech = (mode == 0)?(1):(TC_ARCS_FROM_FEET(1));
+{ float    ech = (mode == 0)?(1):(FN_ARCS_FROM_FEET(1));
   TC_VTAB &ent = tab[k];
   TC_VTAB sw;
   TC_VTAB nw;
@@ -1147,9 +1147,9 @@ int C3DLight::Read(SStream *st, Tag tag)
   //----Object offset ----------------------
     case 'offs':
       ReadDouble(&db,st);       // X
-      oPos.lon = TC_ARCS_FROM_FEET(db);
+      oPos.lon = FN_ARCS_FROM_FEET(db);
       ReadDouble(&db,st);       // Y
-      oPos.lat = TC_ARCS_FROM_FEET(db);
+      oPos.lat = FN_ARCS_FROM_FEET(db);
       ReadDouble(&db,st);       // Z
       oPos.alt = db;
       return TAG_READ;

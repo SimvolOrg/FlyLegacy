@@ -1567,7 +1567,7 @@ void CExport::ScanDirectory(int x, int z)
   double nLat = GetQgtNorthLatitude(z);
   SPosition pos;
 	pos.lat =  0.5 * (sLat + nLat);
-  pos.lon =  TC_ARCS_FROM_QGT(x + 0.5);
+  pos.lon =  FN_ARCS_FROM_QGT(x + 0.5);
   pos.alt =  0;
 	//---Register the QGT for scenery --------------------
   //CScenerySetDatabase::Instance().Register (pos);

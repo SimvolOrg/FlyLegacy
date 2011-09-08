@@ -128,9 +128,9 @@ void CLoadCell::Write (SStream *stream)
 
 const SVector* CWeightBalance::GetCGOffset_ISU (void) 
 {
-  CGOffset_ISU.x = FeetToMetres (CGOffset.x); // 
-  CGOffset_ISU.y = FeetToMetres (CGOffset.y); // 
-  CGOffset_ISU.z = FeetToMetres (CGOffset.z); // 
+  CGOffset_ISU.x = FN_METRE_FROM_FEET (CGOffset.x); // 
+  CGOffset_ISU.y = FN_METRE_FROM_FEET (CGOffset.y); // 
+  CGOffset_ISU.z = FN_METRE_FROM_FEET (CGOffset.z); // 
   return &CGOffset_ISU;
 }
 

@@ -430,7 +430,7 @@ void CDatabaseOBS::DecodeRecord(U_LONG offset,CmHead *obj)
   d = LittleEndian (d);
   obs->ofrq = float(d);
   //-------------------------------------
-  double lr     = TC_RAD_FROM_ARCS(obs->pos.lat);					//DegToRad (obs->pos.lat / 3600.0); 
+  double lr     = FN_RAD_FROM_ARCS(obs->pos.lat);					//DegToRad (obs->pos.lat / 3600.0); 
   obs->nmFactor = cos(lr) / 60;                           // 1 nm at latitude lr
   return;
 }
@@ -1594,7 +1594,7 @@ CCOM::CCOM(OTYPE qo,QTYPE qa)
 //-----------------------------------------------------------------------
 void CCOM::SetAttributes()
 { comInx = GetComINDEX(ctyp);
-  double lr   = TC_RAD_FROM_ARCS(pos.lat);	//DegToRad (pos.lat / 3600.0);         
+  double lr   = FN_RAD_FROM_ARCS(pos.lat);	//DegToRad (pos.lat / 3600.0);         
   nmFactor = cos(lr) / 60;                           // 1 nm at latitude lr
   return;
 }
@@ -1668,7 +1668,7 @@ CWPT::CWPT(OTYPE qo,QTYPE qa)
 //  Set additional attributes
 //-----------------------------------------------------------------
 void CWPT::SetAttributes()
-{ double lr   = TC_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
+{ double lr   = FN_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
   return;
 }
@@ -1700,7 +1700,7 @@ void	CWPT::Init(char *idn,SPosition *pos)
 	wpos		= *pos;
 	wtyp		= 2;
 	//--- Set reduction factor --------------
-	double lr   = TC_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
+	double lr   = FN_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
 	return;
 }
@@ -1710,7 +1710,7 @@ void	CWPT::Init(char *idn,SPosition *pos)
 void CWPT::SetPosition(SPosition p)
 {	wpos = p;
 	//--- Set reduction factor --------------
-	double lr   = TC_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
+	double lr   = FN_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
 	return;
 }
@@ -1742,7 +1742,7 @@ void CNavaid::SetAttributes()
   if (IsNDB())  qAct = NDB;                     // Set Type
   sprintf(efrq,"%3.2f",freq);                   // Edit frequency
   //-------Compute distance reduction factor -----------------   
-  double lr = TC_RAD_FROM_ARCS(pos.lat);				//DegToRad (pos.lat / 3600.0);     
+  double lr = FN_RAD_FROM_ARCS(pos.lat);				//DegToRad (pos.lat / 3600.0);     
   nmFactor  = cos(lr) / 60;                     // 1 nm at latitude lr
   return;
 }
@@ -1878,7 +1878,7 @@ CAirport::~CAirport()
 //-----------------------------------------------------------------
 void CAirport::SetAttributes()
 { //--------Compute distance reduction factor ------------------
-  double lr   = TC_RAD_FROM_ARCS(apos.lat);				//DegToRad (apos.lat / 3600.0);  
+  double lr   = FN_RAD_FROM_ARCS(apos.lat);				//DegToRad (apos.lat / 3600.0);  
   nmFactor = cos(lr) / 60;                        // 1 nm at latitude lr
 }
 //-----------------------------------------------------------------
@@ -2144,7 +2144,7 @@ CILS::CILS(OTYPE qo,QTYPE qa)
 //  Set additional attributes
 //------------------------------------------------------------------------
 void  CILS::SetAttributes()
-{ double lr = TC_RAD_FROM_ARCS(pos.lat);			//DegToRad (pos.lat / 3600.0); 
+{ double lr = FN_RAD_FROM_ARCS(pos.lat);			//DegToRad (pos.lat / 3600.0); 
   nmFactor  = cos(lr) / 60;                   // 1 nm at latitude lr
   return;
 }
@@ -2344,7 +2344,7 @@ void CRunway::SetAttributes()
 	pID[RWY_HI_END].opos	 = &pID[RWY_LO_END];
 	pID[RWY_LO_END].opos	 = &pID[RWY_HI_END];
   //-------Compute distance reduction factor -------------
-  double lr   = TC_RAD_FROM_ARCS(pshi.lat);					//DegToRad (pshi.lat / 3600.0);
+  double lr   = FN_RAD_FROM_ARCS(pshi.lat);					//DegToRad (pshi.lat / 3600.0);
   nmFactor = cos(lr) / 60;													// 1 nm at latitude lr
   return;
 }
@@ -3811,7 +3811,7 @@ float CDbCacheMgr::GetFlatDistance(CmHead *obj)
 void CDbCacheMgr::GetFeetDistance(int *dx, int *dy,SPosition org, SPosition des)
 {   double disLat = (des.lat - org.lat) / 60.0;               // Lattitude Distance in nm
     double difLon = (des.lon - org.lon);                      // Longitude difference in arcsec
-    double latRad = TC_RAD_FROM_ARCS(org.lat);								// Latitude in Radian
+    double latRad = FN_RAD_FROM_ARCS(org.lat);								// Latitude in Radian
     double circle = cos(latRad) * MILE_CIRCUMFERENCE;         // Circle in nm
     double disLon = (circle * difLon) / (3600 * 360);         // Longitude distance in nm
     *dx = int(disLon * FEET_PER_NM);                          // Distance in feet

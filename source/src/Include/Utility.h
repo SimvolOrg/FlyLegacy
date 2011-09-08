@@ -512,11 +512,6 @@ template <class T> static inline T NmToMi (T nm)
   return nm / (T)MILES_PER_NM;
 }
 
-template <class T> static inline T MiToNm (T mi)
-{
-  return mi * (T)MILES_PER_NM;
-}
-
 template <class T> static inline T FeetToNm (T feet)
 {
   return feet / (T)FEET_PER_NM;

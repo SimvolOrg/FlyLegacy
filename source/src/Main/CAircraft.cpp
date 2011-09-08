@@ -1255,13 +1255,13 @@ COPALObject::~COPALObject (void)
 //---------------------------------------------------------------------------------------
 void COPALObject::PlaneShape()
 { //
-  // shape of aircraft:  A box is created to avoid aircraft penetrating the ground
+  // JS: shape of aircraft:  A box is created to avoid aircraft penetrating the ground
   //  The box size is made with the body dimension
   //===============================================================================
   TRACE("COPALObject::PlaneShape");
   Plane->setName(planeID);
   //----Compute cog offset --------------------------
-  double ftm  = FeetToMetres(float(1));
+  double ftm  = FN_METRE_FROM_FEET(float(1));
   CVector cog = wgh->svh_cofg;
   cog.Times(ftm);
   opal::Vec3r   cms(cog.x, cog.z, cog.y);
@@ -1378,7 +1378,7 @@ void COPALObject::ReadFinished (void)
   }
   ///
   CVector   Cg   = wgh->svh_cofg;
-  double    cy   = FeetToMetres(Cg.z);
+  double    cy   = FN_METRE_FROM_FEET(Cg.z);
   double    ix   = (wgh->svh_mine.x*(1.0f / pitchMine) * LBFT2_TO_KGM2);
   double    iy   = (wgh->svh_mine.z*(1.0f / rollMine)  * LBFT2_TO_KGM2);
   double    iz   = (wgh->svh_mine.y*(1.0f / yawMine)   * LBFT2_TO_KGM2);
@@ -1494,7 +1494,7 @@ void COPALObject::PositionAGL()
 { opal::Point3r bpos;
 	double cgz  =  wgh->GetCGHeight();
   bagl =  geop.alt - globals->tcm->GetGroundAltitude() + cgz;  
-  bpos.z      =  FeetToMetres(bagl);
+  bpos.z      =  FN_METRE_FROM_FEET(bagl);
   Plane->setPosition (bpos);
   return;
 }
@@ -1554,7 +1554,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   if (lod->AreGearDown() &&  !WheelsAreOnGround())
   { // gear down
     // create a torque with engine position
-    engines_pos.y += FeetToMetres (whl->GetMaxWheelHeight () * 0.5); // meters
+    engines_pos.y += FN_METRE_FROM_FEET (whl->GetMaxWheelHeight () * 0.5); // meters
     /// \todo verify if 2.5% thrust reduction is correct
     fake_gear_drag = static_cast<double> (gear_drag); // thrust reduction
   }
@@ -1667,7 +1667,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
       wm.pos.set (  static_cast<opal::real> (0.0),
                     static_cast<opal::real> (
                     wind_pos /** 0.5*/
-                    /*FeetToMetres (-22.0)*/),                              // LH to RH
+                    /*FN_METRE_FROM_FEET (-22.0)*/),                              // LH to RH
                     static_cast<opal::real> (0.0)
                  );
       wm.duration = static_cast<opal::real> (dT);
@@ -1724,7 +1724,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   if (wind_effect) Plane->addForce (wm); 
   if (globals->caging_fixed_sped) {
     opal::Vec3r fixed_vel = Plane->getLocalLinearVel ();  // RH  
-    fixed_vel.y = FeetToMetres (KtToFps (globals->caging_fixed_sped_fval));  
+    fixed_vel.y = FN_METRE_FROM_FEET(KtToFps (globals->caging_fixed_sped_fval));  
     Plane->setLocalLinearVel (fixed_vel);  
   }
   if (turbulence_effect) Plane->addForce (yf);
@@ -1752,12 +1752,12 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
     opal::Vec3r local_vel2 = Plane->getLocalAngularVel (); ///< RH
     wb[cur] = Vec3rToCVector (local_vel2);
     VectorOrientLeftToRight (wb[cur]); //                           ///< LH
-    wb[cur].Times (DegToRad (1.0)); // 
+    wb[cur].Times (ONE_DEGRE_RADIAN);											// JS Change ot constant DegToRad (1.0)); // 
     //
     local_vel2 = Plane->getGlobalAngularVel ();            ///< RH
     wi[cur] = Vec3rToCVector (local_vel2);
     VectorOrientLeftToRight (wi[cur]); //                           ///< LH
-    wi[cur].Times (DegToRad (1.0)); // 
+    wi[cur].Times (ONE_DEGRE_RADIAN); // 
 
    /*!
     *   set linear and angular acceleration both local

@@ -1384,7 +1384,7 @@ int METARparser::ParseEUvis(FILE *f)
 { int vm = 0;
   long pos = ftell(f);
   if (1 == fscanf(f," %4d ",&vm))
-  { info->vMIL = TC_MILE_FROM_METER(vm);
+  { info->vMIL = FN_MILE_FROM_METER(vm);
     fscanf(f,"NDV ");                 
     return 1;}
   fseek(f,pos,0);

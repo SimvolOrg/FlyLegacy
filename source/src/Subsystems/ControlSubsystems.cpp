@@ -1621,6 +1621,8 @@ int CFlapControl::Read (SStream *stream, Tag tag)
       ReadInt (&nb, stream);
       if (nb > nPos)    gtfo("Too much Speed for flpS");
       for (int i=0; i < nb; i++) ReadInt (&aPos[i].speed, stream);
+			//-- For 0 deg, set a max speed to avoid error -----------
+			if (aPos[0].degre == 0)	aPos[0].speed = 10000;
       return TAG_READ;
     }
   case 'flod':

@@ -80,7 +80,6 @@ void test_geodesy (void)
 //#define ARCSEC_TO_RAD       (PI_2 / ARCSEC_360DEG)
 //#define ONE_ARCSEC          (ARCSEC_TO_RAD)
 //#define EQUATORIAL_RADIUS_FEET    (3963.19 * 5280)
-//#define EQUATORIAL_RADIUS_M     (EQUATORIAL_RADIUS_FEET * METRES_PER_FOOT)
 //#define EQ_RAD_SQUARE_M       (EQUATORIAL_RADIUS_M * EQUATORIAL_RADIUS_M)
 
 // Value of earth flattening parameter from ref [8] 
@@ -105,7 +104,7 @@ SPosition GeocToGeod (SPosition pos)
   // Input SPosition is in geocentric coordinates just need to convert
   //   altitude from feet to meters for compatibility with the algorithm
   double lat_geoc = pos.lat;
-  double radius = FeetToMetres (pos.alt);
+  double radius = FN_METRE_FROM_FEET (pos.alt);
 
   // Define output parameters for algorithm
   double lat_geod, alt, sea_level_r;
@@ -169,7 +168,7 @@ SPosition GeodToGeoc (SPosition pos)
 {
   // Prepare arguments for the algorithm
   double lat_geod = pos.lat * ARCSEC_TO_RAD;
-  double alt = FeetToMetres (pos.alt);
+  double alt = FN_METRE_FROM_FEET (pos.alt);
 
   // Declare return values from algorithm
   double sl_radius, lat_geoc;
@@ -384,7 +383,7 @@ SPosition GreatCirclePosition(SPosition *from, SVector *polar)
   //  double  lon2    Destination longitude in degrees
   //  double  az2     Destination azimuth in degrees
   //
-  double alt = FeetToMetres (from->alt);
+  double alt = FN_METRE_FROM_FEET (from->alt);
   double lat1 = from->lat / 3600;
   double lon1 = from->lon / 3600;
   double az1 = polar->h;
@@ -522,7 +521,7 @@ static int geo_inverse_wgs_84(const double& alt, const double& lat1,
 
 SVector GreatCirclePolar(SPosition *from, SPosition *to)
 {
-  double alt = FeetToMetres (from->alt);
+  double alt = FN_METRE_FROM_FEET (from->alt);
   double lat1 = from->lat / 3600;
   double lon1 = from->lon / 3600;
   double lat2 = to->lat / 3600;

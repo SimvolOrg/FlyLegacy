@@ -225,7 +225,7 @@ inline double GetYTRANS(U_CHAR a,U_CHAR q)
 //  return reduction factor
 //-----------------------------------------------------------------------------
 inline double GetReductionFactor(double lat)
-{ double rad = TC_RAD_FROM_ARCS(lat);				// DegToRad(lat / 3600);
+{ double rad = FN_RAD_FROM_ARCS(lat);				// DegToRad(lat / 3600);
   return cos(rad);}
 //-----------------------------------------------------------------------------
 //  Return the band longitude of vertex
@@ -234,7 +234,7 @@ inline double GetReductionFactor(double lat)
 //-----------------------------------------------------------------------------
 inline float GetBandLongitude(U_INT vx)
 { U_INT bm = (vx & TC_BANDMOD);                   // Modulo Band
-  return float(TC_ARCS_FROM_SUB(bm));
+  return float(FN_ARCS_FROM_SUB(bm));
 }
 //-----------------------------------------------------------------------------
 //  Compute COAST File index from QGT(X-Z) key

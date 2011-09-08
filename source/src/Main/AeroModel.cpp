@@ -72,8 +72,8 @@ CAerodynamicModel::CAerodynamicModel (CVehicleObject *v, char* svhFilename)
   dofa.x = dofa.y = dofa.z = 0.0;
   laca =  ADJ_AERO_CENTR; // 0.0f;
   GetIniFloat ("PHYSICS", "adjustAeroCenter", &laca);
-  laca = FeetToMetres (laca); // convert to meter
-  cd   =  ADJ_TOTL_DRAG; // 1.0f;
+  laca = FN_METRE_FROM_FEET (laca); // convert to meter
+  cd   = ADJ_TOTL_DRAG; // 1.0f;
   GetIniFloat ("PHYSICS", "adjustTotalDrag", &cd);
 #ifdef _DEBUG
   DEBUGLOG ("CAerodynamicModel laca=%f cd=%f", laca, cd);
@@ -121,8 +121,6 @@ CAerodynamicModel::~CAerodynamicModel (void)
 //----------------------------------------------------------------------
 int CAerodynamicModel::Read (SStream *stream, Tag tag)
 {
-  int rc = TAG_IGNORED;
-
   switch (tag) {
   case 'dofa':
   case 'DofA':
@@ -131,14 +129,12 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
  	  // Luc's comment : This statement is RH (for an LH version. remove the statement)
     // VectorDistanceLeftToRight  (dofa); // 
     VectorScale(dofa, METRES_PER_FOOT); // convert to meter
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case '+ac+':
     // longitudinal aerodynamic center adjust (ft)
     ReadFloat (&laca, stream);
-    laca = FeetToMetres (laca); // convert to meter
-    rc = TAG_READ;
-    break;
+    laca = FN_METRE_FROM_FEET(laca); // convert to meter
+    return TAG_READ;
   case 'grnd':
     // Global ground effect enabled
     {
@@ -147,30 +143,25 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
       if (ge_) grnd = true;
       DEBUGLOG ("groundEffect = %d", ge_);
     }
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'geff':
     // Global ground effect factor
-    {
-      ReadFloat (&geff, stream);
+    { ReadFloat (&geff, stream);
       float geff_K = 1.0f;
       GetIniFloat ("PHYSICS", "groundEffectAdjust", &geff_K);
       geff *= geff_K;
       DEBUGLOG ("groundEffectAdjust = %f", geff_K);
     }
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'gAGL':
     // Global ground effect altitude
     ReadFloat (&gAGL, stream);
-    gAGL = FeetToMetres (gAGL); // convert to meter
-    rc = TAG_READ;
-    break;
+    gAGL = FN_METRE_FROM_FEET(gAGL); // convert to meter
+    return TAG_READ;
   case '+cd+':
     // Global drag coefficient fudge factor
     ReadFloat (&cd, stream);
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'foil':
     // Airfoil
     { //MEMORY_LEAK_MARKER ("foil");
@@ -180,8 +171,7 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
       string name = foil->GetAirfoilName ();
       airfoilMap[name] = foil;
     }
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'wing':
     // Wing section
     {
@@ -193,21 +183,16 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
       ReadFrom (wing, stream);
       wingMap[name] = wing;
     }
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'outp':
     // Enable real-time debug output
     debugOutput = true;
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   }
 
-  if (rc != TAG_READ) {
     // Tag was not processed by this object, it is unrecognized
-    WARNINGLOG ("CAerodynamicModel::Read : Unrecognized tag <%s>", TagToString(tag));
-  }
-
-  return rc;
+  WARNINGLOG ("CAerodynamicModel::Read : Unrecognized tag <%s>", TagToString(tag));
+  return TAG_IGNORED;
 }
 //----------------------------------------------------------------------
 //  All parameters are read
@@ -313,12 +298,12 @@ void CAerodynamicModel::Timeslice(float dT) {
 	//		For now, I work towards getting ComputeForces() independant of the unit system.
 	//		It will compute forces as per the unit matching the unti of rho*relV*relV*area as made available.
 	// Luc's comment : Modifying ComputeForces()
-  double hAgl = FeetToMetres ((double)mveh->GetUserAGL()); ///< meters;
+  double hAgl = FN_METRE_FROM_FEET (double(mveh->GetUserAGL())); ///< meters;
   // value rho 1.16->1.34 at 1 atm
   double rho = globals->atm->GetDensityKgM3 ();             ///< GetDensitySlugsFt3() * 515.317882;
   // value soundspeed : In SI Units with dry air at 20 °C (68 °F), the speed of sound is 343 m/s.
   // This also equates to 1235 km/h, 767 mph, 1125 ft/s, 343.055 m/s
-  double soundSpeed = globals->atm->GetSoundSpeed_ISU ();   ///< GetSoundSpeed() * METRES_PER_FOOT;
+  double soundSpeed = globals->atm->GetSoundSpeed_ISU ();   ///< GetSoundSpeed() * FN_METRE_FROM_FEET;
 
   // Get input data : body frame
   const SVector *cgPos = static_cast<const SVector *> (mveh->svh->GetNewCG_ISU ()); ///< meters (ISU)
@@ -851,7 +836,7 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
   case 'span':
     // Wingspan (ft)
     ReadFloat (&span, stream);
-    span = (float)(span*METRES_PER_FOOT); // convert to meter
+    span = float(FN_METRE_FROM_FEET(span));		 // convert to meter
     return TAG_READ;
   case 'area':
     // Wing section area (sq. ft.)
@@ -935,7 +920,7 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
     // Ground effect altitude
     ReadFloat (&gAGL, stream);
     rc = TAG_READ;
-    gAGL = (float)(gAGL*METRES_PER_FOOT); // convert to meter
+    gAGL = float(FN_METRE_FROM_FEET(gAGL));			//(gAGL*METRES_PER_FOOT); // convert to meter
     return TAG_READ;
   case 'effL':
     // Effective Lift

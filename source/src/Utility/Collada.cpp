@@ -587,7 +587,7 @@ bool ColladaParser::ParseUnit()
  // if (nf != 2) return Backup();
 	//--- Compute feet ratio ------------------------
 	fRat	 = strtod(pm1,0);
-	fRat	 = TC_FEET_FROM_METER(fRat);
+	fRat	 = FN_FEET_FROM_METER(fRat);
   //----Trace token -------------------------------
   if (tr)
   { sprintf(ztr,"%s unit",zlv);

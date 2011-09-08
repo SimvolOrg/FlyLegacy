@@ -88,7 +88,7 @@ void CInertialFrame::SetInitPos (void) {
   // Get position in SI units
   SPosition tmp_geop = globals->geop;
   // Get the distance from the center of earth
-  double r_alt = FeetToMetres (tmp_geop.alt) + EARTH_RADIUS_SI;
+  double r_alt = FN_METRE_FROM_FEET (tmp_geop.alt) + EARTH_RADIUS_SI;
   //
   #ifdef _DEBUG_FRAME_MANAGER	
   {	FILE *fp_debug;
@@ -148,7 +148,7 @@ void CInertialFrame::SetInitPos (void) {
 void CInertialFrame::geop2ipos (const SPosition &pos, CVector &ifpos_) {
  
   // Get the distance from the center of earth
-  double r_alt = FeetToMetres (pos.alt) + EARTH_RADIUS_SI;
+  double r_alt = FN_METRE_FROM_FEET (pos.alt) + EARTH_RADIUS_SI;
   // convert lat, lon to radians
   double latRad = arcseconds_lat2radians (pos.lat);
   double lonRad = arcseconds_lon2radians (pos.lon);

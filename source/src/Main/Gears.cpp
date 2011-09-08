@@ -443,9 +443,9 @@ void CGear::ResetValues (void)
 
 void CGear::GearLoc2CG_ISU(void)
 {
-  vGearLoc2CG_ISU.x = FeetToMetres (vGearLoc2CG.x);
-  vGearLoc2CG_ISU.y = FeetToMetres (vGearLoc2CG.y);
-  vGearLoc2CG_ISU.z = FeetToMetres (vGearLoc2CG.z);
+  vGearLoc2CG_ISU.x = FN_METRE_FROM_FEET (vGearLoc2CG.x);
+  vGearLoc2CG_ISU.y = FN_METRE_FROM_FEET (vGearLoc2CG.y);
+  vGearLoc2CG_ISU.z = FN_METRE_FROM_FEET (vGearLoc2CG.z);
 }
 //-----------------------------------------------------------------------
 //  check if point is inside the gear volume arround contact point

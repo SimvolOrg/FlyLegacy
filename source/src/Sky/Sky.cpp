@@ -80,7 +80,7 @@ CSkyManager::CSkyManager (void)
   old_phase = PHASE_INVALID;
 
   // Initialize effective visibility to 60 miles
-  effective_visibility = float(TC_FEET_FROM_MILE(60));              //60.0 * 5280.0;
+  effective_visibility = float(FN_FEET_FROM_MILE(60));              //60.0 * 5280.0;
   skyDistance = effective_visibility;
 
   // Initialize sub-object pointers

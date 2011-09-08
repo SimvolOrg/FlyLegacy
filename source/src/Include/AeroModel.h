@@ -162,8 +162,8 @@ protected:
   std::string               foil;             ///< Airfoil name
   float                     area;             ///< Wing area (sq. m.)
   float                     span;             ///< Wing span (m.)
-  SVector                   bPos;             ///< Aerodynamic center
-  SVector                   bAng;             ///< Incidence angles (deg)
+  CVector                   bPos;             ///< Aerodynamic center
+  CVector                   bAng;             ///< Incidence angles (deg)
   bool                      orie;             ///< Control surface oriention (H/V)
   bool                      grnd;             ///< Ground effect enabled
   float                     geff;             ///< Ground effect factor
@@ -271,7 +271,7 @@ public:
 
 protected:
   CVehicleObject *mveh;   // Parent vehicle
-  SVector   dofa;         ///< Vector distance from empty CG to aerodynamic datum (ft)
+  CVector   dofa;         ///< Vector distance from empty CG to aerodynamic datum (ft)
   float     laca;         ///< longitudinal aerodynamic center adjust
   bool      grnd;         ///< Global ground effect enabled
   float     geff;         ///< Global ground effect factor

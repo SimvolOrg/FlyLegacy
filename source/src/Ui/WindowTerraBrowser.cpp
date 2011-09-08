@@ -388,7 +388,7 @@ void CFuiMBROS::SetZoom()
 void CFuiMBROS::ChangeZoom()
 { double rat = zSLD->GetValue() * 0.01;
   double dst = oCam->ZoomBy(rat);
-  double nml = TC_MILE_FROM_FEET(dst);
+  double nml = FN_MILE_FROM_FEET(dst);
   zLAB->EditText("View from distance %04d feet (%.02f mile)",int(dst),nml);
   return;
 }

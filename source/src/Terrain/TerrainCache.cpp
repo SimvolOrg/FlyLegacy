@@ -510,7 +510,7 @@ void CGroundTile::SetParameters(CTextureDef *t)
 void CGroundTile::Draw(U_INT dOBJ)
 {	U_INT qx = (ax >> 5);										// QGT X indice
 	char hba = globals->tcm->GetHband();
-	char hbq = TC_BAND_FROM_QGT(qx) << TC_BY08;
+	char hbq = FN_BAND_FROM_QGT(qx) << TC_BY08;
 	glTranslated(GetXTRANS(hba,hbq),0,0);
 	glBindTexture(GL_TEXTURE_2D,dOBJ);
 	quad->DrawTile(1);
@@ -1192,17 +1192,17 @@ CmQUAD *CmQUAD::Locate2D(CVector &p)
 /// Return Super Tile number where this QUAD resides [0-63]
 //-------------------------------------------------------------------------
 U_INT CmQUAD::GetSuperNo()
-{ U_INT sx = TC_DET_FROM_INDX(Center.xKey) >> TC_BY04;
-  U_INT sz = TC_DET_FROM_INDX(Center.zKey) >> TC_BY04;
+{ U_INT sx = FN_DET_FROM_INDX(Center.xKey) >> TC_BY04;
+  U_INT sz = FN_DET_FROM_INDX(Center.zKey) >> TC_BY04;
   return (sz << TC_BY08) | sx;
 }
 //-------------------------------------------------------------------------
 /// Return internal Tile in QGT in [0-1023]
 //-------------------------------------------------------------------------
 U_INT CmQUAD::GetTileNo()
-{ U_INT tx = TC_DET_FROM_INDX(Center.xKey);				// Tile X index
-	U_INT tz = TC_DET_FROM_INDX(Center.zKey);				// Tile Z index
-	return TC_DET_FROM_XZ(tx,tz);
+{ U_INT tx = FN_DET_FROM_INDX(Center.xKey);				// Tile X index
+	U_INT tz = FN_DET_FROM_INDX(Center.zKey);				// Tile Z index
+	return FN_DET_FROM_XZ(tx,tz);
 }
 //-------------------------------------------------------------------------
 /// Return tile world tile key : Concatenation of
@@ -1210,8 +1210,8 @@ U_INT CmQUAD::GetTileNo()
 //	QGT(Z)-DET(Z): 14 bits    lower half world
 //-------------------------------------------------------------------------
 U_INT CmQUAD::WorldTileKey()
-{	U_INT wx = TC_ABS_QGT_DET(Center.xKey);				// QGT-DET index
-	U_INT wz = TC_ABS_QGT_DET(Center.zKey);				// QGT_DET index
+{	U_INT wx = FN_ABS_QGT_DET(Center.xKey);				// QGT-DET index
+	U_INT wz = FN_ABS_QGT_DET(Center.zKey);				// QGT_DET index
 	return (wx << 16 | wz);
 }
 //-------------------------------------------------------------------------
@@ -1837,8 +1837,8 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
 	vbu			= opt;
 	elv			= 0;							// No elevation yet
   //------Set coordinate bands ---------------
-  xBand  = TC_BAND_FROM_QGT(cx) << TC_BY08;
-  yBand  = TC_BAND_FROM_QGT(cz) << TC_BY08;
+  xBand  = FN_BAND_FROM_QGT(cx) << TC_BY08;
+  yBand  = FN_BAND_FROM_QGT(cz) << TC_BY08;
   //----Cloud counters by type ---------------
   cloud[0] = cloud[1] = cloud[2] = cloud[3] = 0;
   //-----Corners -----------------------------
@@ -1855,8 +1855,8 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
   //------Locate the QGT parameters   ------------
   double sLat = GetQgtSouthLatitude(cz);
   double nLat = GetQgtNorthLatitude(cz);
-  double wLon = TC_ARCS_FROM_QGT(cx);
-  double eLon = TC_ARCS_FROM_QGT(nx);
+  double wLon = FN_ARCS_FROM_QGT(cx);
+  double eLon = FN_ARCS_FROM_QGT(nx);
   dLat   = GetLatitudeDelta(cz);
   dLon   = (TC_ARCS_PER_DET);
   this->aLon   = wLon;
@@ -1866,7 +1866,7 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
  
   //-----Compute center coordinates for scenery --------
   mPoint.lat =  0.5 * (sLat + nLat);
-  mPoint.lon =  TC_ARCS_FROM_QGT(cx + 0.5);
+  mPoint.lon =  FN_ARCS_FROM_QGT(cx + 0.5);
   Scene.lat  =  GetMidLat();
   Scene.lon  =  GetMidLon();
   Scene.alt  =  0;
@@ -1996,8 +1996,8 @@ int C_QGT::StepINI()
   sw->NorthLink(nw);
   se->NorthLink(ne);
   //---------Compute the QGT  dim in arcsecs -----------
-  Bound.x  = (Center.x - sw->GetWX()) * TC_FEET_FROM_ARCS(1);
-  Bound.y  = (Center.y - sw->GetWY()) * TC_FEET_FROM_ARCS(1);
+  Bound.x  = (Center.x - sw->GetWX()) * FN_FEET_FROM_ARCS(1);
+  Bound.y  = (Center.y - sw->GetWY()) * FN_FEET_FROM_ARCS(1);
   //---------Init the super tiles ----------------------
   InitSuperTiles();
   SetStep(TC_QT_MSH);
@@ -2345,9 +2345,9 @@ int C_QGT::CenterTile(CVertex *sw,CVertex *nw,CVertex *ne,CVertex *se)
   U_INT cx    = sw->xKey + 512;
   U_INT cz    = sw->zKey + 512;
   //--- Locate Quad slot from sw indices -------------------
-  U_INT kx    = TC_DET_FROM_INDX(sw->xKey);
-  U_INT kz    = TC_DET_FROM_INDX(sw->zKey);
-  U_INT No    = TC_DET_FROM_XZ(kx,kz);
+  U_INT kx    = FN_DET_FROM_INDX(sw->xKey);
+  U_INT kz    = FN_DET_FROM_INDX(sw->zKey);
+  U_INT No    = FN_DET_FROM_XZ(kx,kz);
   CmQUAD  *qd = qTAB + No;
   CVertex *ct = qd->GetCenter();
   ct->Init(cx,cz);
@@ -2480,7 +2480,7 @@ CSuperTile *C_QGT::GetSuperTile(int tx,int tz)
 //-------------------------------------------------------------------------
 void C_QGT::DetailElevation(U_INT tx,U_INT tz,float elev)
 { if ((tx >= 32) || (tz >= 32)) Abort("Tile index > 31");
-  U_INT No = TC_DET_FROM_XZ(tx,tz);
+  U_INT No = FN_DET_FROM_XZ(tx,tz);
   CVertex   *ct = qTAB[No].GetCenter();
   CSuperTile *sp = GetSuperTile(tx,tz);
   //-------Update Super Tile mini max  ------------------
@@ -2529,7 +2529,7 @@ void C_QGT::SetElvFromTRN(U_INT bx,U_INT bz,float *el)
     for (int x=0; x<TC_DETAIL_PER_SPT; x++)
     { int tx      = bx | x;										// DET(X)
       int tz      = bz | z;										// DET(Z)
-      int No      = TC_DET_FROM_XZ(tx,tz);		// DET(No)
+      int No      = FN_DET_FROM_XZ(tx,tz);		// DET(No)
       CmQUAD *qd  = qTAB + No;								// QUAD
       if (qd->IsArray())                continue;
       int Ne      = (Nr + x);									// Elevation index
@@ -2561,7 +2561,7 @@ void C_QGT::SetElvFromTRN(U_INT bx,U_INT bz,float *el)
   int fx = bx + TC_DETAIL_PER_SPT;
   for   (int z=bz; z<fz; z++)
   { for (int x=bx; x<fx; x++)
-    {int No      = TC_DET_FROM_XZ(x,z);
+    {int No      = FN_DET_FROM_XZ(x,z);
      CmQUAD *qd  = qTAB + No;
      if (qd->IsArray())     continue;
      CVertex *ct = qd->GetCenter();
@@ -2778,7 +2778,7 @@ CVertex *C_QGT::CreateCenter(CVertex *sw,CVertex *se,CVertex *ne,CVertex *nw,CVe
 void C_QGT::DivideHDTL(TRN_HDTL *hd)
 { U_INT tx    = hd->GetTileX();             // Tile X index
   U_INT tz    = hd->GetTileZ();             // Tile Z index
-  U_INT No    = TC_DET_FROM_XZ(tx,tz);      ///(tz << TC_BY32) | tx;
+  U_INT No    = FN_DET_FROM_XZ(tx,tz);      ///(tz << TC_BY32) | tx;
   CmQUAD  *qd = qTAB + No;                  // Quad to divide
   if (qd->IsArray())          return;       // Already divided
   //---Init Tile division into sublevel QUADS------------------------------
@@ -3223,7 +3223,7 @@ TCacheMGR::TCacheMGR()
   magRF   = 1;
   //------Init horizon parameters ------------------------
   higRAT  = rt;
-  medRAD  = 0;  //TC_FEET_FROM_MILE(mv);        // Near Distance
+  medRAD  = 0;  //FN_FEET_FROM_MILE(mv);        // Near Distance
   higRAD  = 0;  //mv * higRAT;                  // Hi resolution max            
   fDens   = 0;
   cCam    = 0;
@@ -3444,7 +3444,7 @@ void TCacheMGR::CheckTeleport()
   if ((qx < 0) || (qx > 511)) return;
   if ((qz < 0) || (qz > 511)) return;
   Port.lat  = GetQgtSouthLatitude(qz);
-  Port.lon  = TC_ARCS_FROM_QGT(qx);
+  Port.lon  = FN_ARCS_FROM_QGT(qx);
   Port.alt  = 15000;
   globals->geop = Port;
   return;
@@ -3574,7 +3574,7 @@ void TCacheMGR::FormatName(C_QGT *qt,CSuperTile *sp)
         //----------------------------------------------------------
         tx          = SuperDT[sp->NoSP].dx | nx;         // Tile X index in QGT
         tz          = SuperDT[sp->NoSP].dz | nz;         // Tile Z index in QGT
-        U_INT   No  = TC_DET_FROM_XZ(tx,tz);             //(tz << TC_BY32) | tx;
+        U_INT   No  = FN_DET_FROM_XZ(tx,tz);             //(tz << TC_BY32) | tx;
         CmQUAD *qd  = qt->GetQUAD(No);                   // Detail tile center
         CTextureDef *txn = &sp->Tex[nd];
         txn->quad   = qd;
@@ -3736,8 +3736,8 @@ void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   //--------Update aircraft position in feet ------------------------------
   rFactor   = GetReductionFactor(aPos.lat);
   cFactor   = 1 / rFactor;
-  geow.x    = TC_FEET_FROM_ARCS(aPos.lon) * rFactor;
-  geow.y    = TC_FEET_FROM_ARCS(aPos.lat);
+  geow.x    = FN_FEET_FROM_ARCS(aPos.lon) * rFactor;
+  geow.y    = FN_FEET_FROM_ARCS(aPos.lat);
   geow.z    = aPos.alt;
   //-----Scan for Action Queue -------------------------------------------
   clock++;                                              // Internal clock
@@ -3865,8 +3865,8 @@ int TCacheMGR::RefreshCache()
   if (tr) TRACE("TCM: -- AIRCRAFT ENTER %d-%d=================================================================",
           globals->qgtX,globals->qgtZ);
   //----------Compute aircraft new bands -----------------------------
-  xBand   = TC_BAND_FROM_QGT(cx);
-  yBand   = TC_BAND_FROM_QGT(cz);
+  xBand   = FN_BAND_FROM_QGT(cx);
+  yBand   = FN_BAND_FROM_QGT(cz);
   //----------Get the X reduction factor at this latitude ------------
   scale.x = rFactor * TC_FEET_PER_ARCSEC;   // Scaling parameter 1
 	//----------scan all surrounding QGT tiles for new position --------
@@ -3945,8 +3945,8 @@ void TCacheMGR::GetObjLines(CListBox *box)
 //  Distance in feet between aircraft to position
 //-----------------------------------------------------------------------------
 float TCacheMGR::AircraftFeetDistance(SPosition &pos)
-{ double dx = TC_FEET_FROM_ARCS(LongitudeDifference(aPos.lon,pos.lon));
-  double dy = TC_FEET_FROM_ARCS(aPos.lat - pos.lat);
+{ double dx = FN_FEET_FROM_ARCS(LongitudeDifference(aPos.lon,pos.lon));
+  double dy = FN_FEET_FROM_ARCS(aPos.lat - pos.lat);
   double dz = aPos.alt - pos.alt;
   dx *= rFactor;
   float dq = float((dx * dx) + (dy *dy) + (dz * dz));
@@ -3970,7 +3970,7 @@ void TCacheMGR::GetTerrainInfo(TC_GRND_INFO &inf,SPosition &pos)
   inf.qgt     = qgt;
   inf.sup     = qgt->GetSuperTile(inf.tx,inf.tz);
   //----Compute location elevation -----------
-  U_INT No    = TC_DET_FROM_XZ(inf.tx,inf.tz);           
+  U_INT No    = FN_DET_FROM_XZ(inf.tx,inf.tz);           
   CmQUAD *dt  = qgt->GetQUAD(No);
   CVector  p(LongitudeInBand(qgt->xKey,pos.lon),pos.lat,0);
   CmQUAD *qd  = dt->Locate2D(p);
@@ -3990,7 +3990,7 @@ double TCacheMGR::SetGroundAt(GroundSpot &gns)
   C_QGT *qgt = gns.qgt;
 	gns.ClampLon();
   if (!qgt->GetTileIndices(gns)) gtfo("Position error");
-  U_INT No		= TC_DET_FROM_XZ(gns.tx,gns.tz);       
+  U_INT No		= FN_DET_FROM_XZ(gns.tx,gns.tz);       
   CmQUAD *dt  = qgt->GetQUAD(No);
  
   CVector  p(LongitudeInBand(qgt->xKey,gns.lon),gns.lat,dt->CenterElevation());
@@ -4070,7 +4070,7 @@ CmQUAD *TCacheMGR::GetTileQuad(SPosition pos)
   C_QGT  *qgt = GetQGT(qx,qz);
   if (0 == qgt) Abort("No QGT for position");
   if(!qgt->GetTileIndices(pos,tx,tz)) gtfo("Position error");;
-  U_INT nq = TC_DET_FROM_XZ(tx,tz);
+  U_INT nq = FN_DET_FROM_XZ(tx,tz);
   CmQUAD *qd = qgt->GetQUAD(nq);
   return qd;
 }
@@ -4082,7 +4082,7 @@ CmQUAD *TCacheMGR::GetTileQuad(U_INT ax,U_INT az)
   U_INT qz = az >> TC_BY32;
   U_INT tx = ax &  TC_032MODULO;
   U_INT tz = az &  TC_032MODULO;
-  U_INT nq = TC_DET_FROM_XZ(tx,tz);
+  U_INT nq = FN_DET_FROM_XZ(tx,tz);
   C_QGT  *qgt = GetQGT(qx,qz);
   if (0 == qgt) return 0;
   CmQUAD *qd = qgt->GetQUAD(nq);
@@ -4694,8 +4694,8 @@ U_CHAR TCacheMGR::SetLuminosity()
 void TCacheMGR::RelativeFeetTo(SPosition &pos,SVector &v)
 { double dx = LongitudeDifference(pos.lon,aPos.lon);
   //------ tx and ty in feet ------------------------------
-  v.x = TC_FEET_FROM_ARCS(dx) * rFactor;
-  v.y = TC_FEET_FROM_ARCS(pos.lat - aPos.lat);
+  v.x = FN_FEET_FROM_ARCS(dx) * rFactor;
+  v.y = FN_FEET_FROM_ARCS(pos.lat - aPos.lat);
   v.z = pos.alt - aPos.alt;
   return;
 }
@@ -5198,7 +5198,7 @@ void TCacheMGR::DrawSun (void)
 void TCacheMGR::GetSunPosition (void)
 { double el = CSkyManager::Instance().GetSolElevation();
   double az = CSkyManager::Instance().GetSolOrientation();
-  double ds = TC_FEET_FROM_MILE(210);
+  double ds = FN_FEET_FROM_MILE(210);
   sunP.x    = ds * sin(az);                     // World x coordinate
   sunP.y    = ds * cos(az);                     // World y coordinate
   sunP.z    = ds * cos(el);                     // world z coordinate

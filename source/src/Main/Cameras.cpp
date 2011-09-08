@@ -1385,13 +1385,13 @@ void CCameraObserver::UpdateCamera (SPosition tpos, SVector tgtOrient,float dT)
 // Pan Left - rotate clockwise
 //-------------------------------------------------------------------------------
 void CCameraObserver::PanLeft (void)
-{ theta = WrapTwoPi (theta - DegToRad (1.0f)); 
+{ theta = WrapTwoPi (theta - ONE_DEGRE_RADIAN); 
 	return;	}
 //-------------------------------------------------------------------------------
 // Pan Right - rotate counterclockwise
 //-------------------------------------------------------------------------------
 void CCameraObserver::PanRight (void)
-{ theta = WrapTwoPi (theta + DegToRad (1.0f)); 
+{ theta = WrapTwoPi (theta + ONE_DEGRE_RADIAN); 
 	return;	}
 //-------------------------------------------------------------------------------
 // Pan Up - rotate towards top of model, clamping at 90 degrees
@@ -1755,7 +1755,7 @@ void CCameraOrbit::PanRight (void)
 // Pan Up - rotate towards top of model
 //------------------------------------------------------------------------------------
 void CCameraOrbit::PanUp (void)
-{ phi += DegToRad (1.0f);
+{ phi += ONE_DEGRE_RADIAN;
   if (phi > clamp) phi = clamp;
   return;
 }
@@ -1775,7 +1775,7 @@ void CCameraOrbit::Rotate(double deg)
 //
 //-----------------------------------------------------------------------
 void CCameraOrbit::PanDown (void)
-{ double ang = phi - DegToRad (1.0f);
+{ double ang = phi - ONE_DEGRE_RADIAN;
   if (GoodHeight(ang))  phi = ang;
   return;
 }
@@ -1875,10 +1875,10 @@ void CCameraRunway::Zoom(int zf)
 //  Move about 20 feet per pixel at 4nm up
 //-------------------------------------------------------------------------------
 void CCameraRunway::MoveBy(float dx,float dy)
-{ double mx = (20 * dx) * (offset.z / TC_FEET_FROM_MILE(4));
-  double my = (20 * dy) * (offset.z / TC_FEET_FROM_MILE(4));;
-  Tgt.lon  -= TC_ARCS_FROM_FEET(mx);
-  Tgt.lat  += TC_ARCS_FROM_FEET(my);
+{ double mx = (20 * dx) * (offset.z / FN_FEET_FROM_MILE(4));
+  double my = (20 * dy) * (offset.z / FN_FEET_FROM_MILE(4));;
+  Tgt.lon  -= FN_ARCS_FROM_FEET(mx);
+  Tgt.lat  += FN_ARCS_FROM_FEET(my);
   GroundSpot spot(Tgt.lon,Tgt.lat);
   Tgt.alt   = globals->tcm->SetGroundAt(spot);
   return;

@@ -158,7 +158,7 @@ double WrapArcsec (double arcsec)
 //==================================================================================
 double FeetPerLonArcsec (double lat)
 {
-  double latRad = TC_RAD_FROM_ARCS(lat);		// Latitude in radian
+  double latRad = FN_RAD_FROM_ARCS(lat);		// Latitude in radian
   double circumference = cos(latRad) * TC_FULL_WRD_FEET;
   double feetPerLonArcsec = circumference / (360.0 * 3600.0);
 

@@ -119,11 +119,11 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
   gearData->gPos.y  = gy;
   gearData->gPos.z  = gz;
   //--- Compute in metre -----------------------------------
-  double tx   = FeetToMetres(gx);
-  double ty   = FeetToMetres(gy);
-  double tz   = FeetToMetres(gz);
+  double tx   = FN_METRE_FROM_FEET(gx);
+  double ty   = FN_METRE_FROM_FEET(gy);
+  double tz   = FN_METRE_FROM_FEET(gz);
   //---- Wheel radius --------------------------------------
-  double wradius = FeetToMetres (gearData->whrd);
+  double wradius = FN_METRE_FROM_FEET (gearData->whrd);
   double axeAGL  = tz + wradius;
   Radius      = wradius;
   //--- Set wheel axis position AGL-------------------------
@@ -706,7 +706,7 @@ void COpalGroundSuspension::ReadFinished (void)
   DEBUGLOG ("COpalGroundSuspension::ReadFinished");
 #endif
   CGroundSuspension::ReadFinished ();
-  double base = FeetToMetres(wheel_base);
+  double base = FN_METRE_FROM_FEET(wheel_base);
   std::vector<CSuspension *>::const_iterator it_whel; 
   for (it_whel = whl_susp.begin (); it_whel != whl_susp.end (); it_whel++) {
     CSuspension *ssp = (CSuspension *)(*it_whel);
@@ -809,7 +809,7 @@ void COpalGroundSuspension::Timeslice (float dT)
     CVector mass_moment;
     CVector mass_force (0, 0, -mveh->GetMassInKgs() * GRAVITY_MTS * massCF);   //, 0.0);
     CVector mass_pos, main_gear;
-    //  main_gear.Set (0.0, FeetToMetres (-max_wheel_height), FeetToMetres (max_gear));
+    //  main_gear.Set (0.0, FN_METRE_FROM_FEET (-max_wheel_height), FN_METRE_FROM_FEET (max_gear));
     //  mass_pos = *mveh->svh->GetNewCG_ISU () - main_gear;
     //  VectorCrossProduct (mass_moment, mass_pos, mass_force);
     VectorCrossProduct (mass_moment, mainVM, mass_force);

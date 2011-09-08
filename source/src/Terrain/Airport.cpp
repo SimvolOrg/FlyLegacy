@@ -829,11 +829,11 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   //-----SQL option ----------------------------------------------
   txy     = globals->sqm->SQLtxy();
   //-----Compute scale factor for designator ---------------------
-  scl.x = TC_ARCS_FROM_FEET(1.4) * cpf;
-  scl.y = TC_ARCS_FROM_FEET(1.4);
+  scl.x = FN_ARCS_FROM_FEET(1.4) * cpf;
+  scl.y = FN_ARCS_FROM_FEET(1.4);
   //-----Scale factor for threshold bands ------------------------
-  sct.x = TC_ARCS_FROM_FEET(cpf);
-  sct.y = TC_ARCS_FROM_FEET(1);
+  sct.x = FN_ARCS_FROM_FEET(cpf);
+  sct.y = FN_ARCS_FROM_FEET(1);
   //-----Add profile to POD ---------------------------------------
   AddPOD();
   //-----Lighting control -----------------------------------------
@@ -1557,7 +1557,7 @@ void CAptObject::OnePavement(CPaveRWY *p,U_INT n)
 //  Airport beacon
 //---------------------------------------------------------------------------------
 void CAptObject::BeaconLight()
-{ float ofs = float(TC_ARCS_FROM_FEET(100));
+{ float ofs = float(FN_ARCS_FROM_FEET(100));
   U_CHAR inx = Airp->GetBeacon();
   if ((inx == 0) || (inx  > 7)) return;
   CFlshLITE *lit = new CFlshLITE();
@@ -2378,8 +2378,8 @@ void CAptObject::LocateGround()
   double   x1 = ne->GetAbsoluteLongitude();
   double   y1 = ne->GetWY();
   //-----Compute extension in arcsecs ------------------------
-  gBound.x = (x1 - x0) * TC_FEET_FROM_ARCS(1);
-  gBound.y = (y1 - y0) * TC_FEET_FROM_ARCS(1);
+  gBound.x = (x1 - x0) * FN_FEET_FROM_ARCS(1);
+  gBound.y = (y1 - y0) * FN_FEET_FROM_ARCS(1);
   gBound.z = 0;
   //-----Adjust to airport origin -----------------------------
   x0       = LongitudeDifference(x0,org.lon);
@@ -2773,8 +2773,8 @@ void CAptObject::DrawLights(CCamera *cc)
 //-----------------------------------------------------------------------------------------
 void CAptObject::SetCameraPosition()
 { cam->GetOffset(cpos);                          // In feet relative to aircraft
-  cpos.x = AddLongitude(TC_ARCS_FROM_FEET(cpos.x) * cpf,apos.lon);
-  cpos.y = TC_ARCS_FROM_FEET(cpos.y) + apos.lat;
+  cpos.x = AddLongitude(FN_ARCS_FROM_FEET(cpos.x) * cpf,apos.lon);
+  cpos.y = FN_ARCS_FROM_FEET(cpos.y) + apos.lat;
   cpos.x = LongitudeDifference(cpos.x,org.lon);
   cpos.y = cpos.y - org.lat;
   return;
@@ -2863,7 +2863,7 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
 	Limit   = Dist;
   //--- Taxi texture scale -------------------------
   PavSize = 50;
-  PavArc  = 1 / TC_ARCS_FROM_FEET(PavSize);
+  PavArc  = 1 / FN_ARCS_FROM_FEET(PavSize);
 	//--- Allocate VBO for band and letters ----------
 	int tot	= sizeof(vboBUF);
 	glGenBuffers(1,&oVBO);

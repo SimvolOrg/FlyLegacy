@@ -594,8 +594,8 @@ double GetQgtNorthLatitude(short cz)
 void GetQgtMidPoint(int gx,int gz,SPosition &p)
 { double lat  = GetQgtNorthLatitude(gz);
          lat += GetQgtSouthLatitude(gz);
-  double lon  = TC_ARCS_FROM_QGT(gx);
-         lon += TC_ARCS_FROM_QGT(gx + 1);
+  double lon  = FN_ARCS_FROM_QGT(gx);
+         lon += FN_ARCS_FROM_QGT(gx + 1);
   p.lat = 0.5 * lat;
   p.lon = 0.5 * lon;
   return;
@@ -616,7 +616,7 @@ double GetTileSWcorner(U_INT ax,U_INT az,SVector &v)
 //  Return coordinates for vertex (vx,vz)
 //-----------------------------------------------------------------------------
 void GetVertexCoordinates(U_INT vx,U_INT vz,SVector &v)
-{ v.x = TC_ARCS_FROM_SUB(vx);
+{ v.x = FN_ARCS_FROM_SUB(vx);
   v.y = GetLatitudeArcs (vz);
   return;
 }
@@ -654,7 +654,7 @@ double GetReductionFactor(U_INT cz)
 //  Return compensation factor for the latitude
 //-----------------------------------------------------------------------------
 void GetLatitudeFactor(double lat,double &rf,double &cp)
-{ double rad = TC_RAD_FROM_ARCS(lat);			// DegToRad(lat / 3600);
+{ double rad = FN_RAD_FROM_ARCS(lat);			// DegToRad(lat / 3600);
   rf = cos(rad);
   cp = 1/ rf;
   return;
@@ -724,9 +724,9 @@ void GetRRtoLDOrientation(SVector &ld)
 //-----------------------------------------------------------------------------
 void AddToPosition(SPosition &pos,SVector &v)
 { double exf = 1 / GetReductionFactor(pos.lat);  // expansion
-  double acx = TC_ARCS_FROM_FEET(v.x) * exf;
+  double acx = FN_ARCS_FROM_FEET(v.x) * exf;
   pos.lon    = AddLongitude(pos.lon,acx);
-  pos.lat   += TC_ARCS_FROM_FEET(v.y);
+  pos.lat   += FN_ARCS_FROM_FEET(v.y);
   pos.alt   += v.z;
   return;
 }
@@ -748,7 +748,7 @@ void  AddToPosition(SPosition *pos, float dx, float dy)
 //  QGT-DET-SUBD
 //-----------------------------------------------------------------------------
 double GetLatitudeArcs(U_INT vz)
-{ U_INT qz    = TC_QGT_FROM_INDX(vz);               // Isolate QGT Z number
+{ U_INT qz    = FN_QGT_FROM_INDX(vz);               // Isolate QGT Z number
   U_INT nz    = (qz >= 256)?(qz - 256):(256 - qz);  // Table entry        
   double bl   =  qgt_latitude[nz].lats;             // Base south latitude arcsec
   double sb   = (vz & TC_DTSUBMOD);                 // Number of subdivisions
@@ -764,8 +764,8 @@ double GetLatitudeArcs(U_INT vz)
 void FeetCoordinates(SPosition &pos,SVector &v)
 { double rdf  = GetReductionFactor(pos.lat);
   //------ tx and ty in feet ------------------------------
-  v.x = TC_FEET_FROM_ARCS(pos.lon) * rdf;
-  v.y = TC_FEET_FROM_ARCS(pos.lat);
+  v.x = FN_FEET_FROM_ARCS(pos.lon) * rdf;
+  v.y = FN_FEET_FROM_ARCS(pos.lat);
   v.z = pos.alt;
   return;
 }
@@ -784,7 +784,7 @@ double GetLatitudeDelta(U_INT qz)
 //  return local longitude in current band
 //-----------------------------------------------------------------------------
 double LongitudeInBand(U_INT qx, double lon)
-{ U_INT bm   = TC_BAND_FROM_QGT(qx);
+{ U_INT bm   = FN_BAND_FROM_QGT(qx);
   double dta = double(bm) * TC_XB_ARCS;
   return (lon - dta);
 }
@@ -796,9 +796,9 @@ double LongitudeInBand(U_INT qx, double lon)
 double GetAngleFromGeoPosition(SPosition &p1,SPosition &p2)
 {	double dlon = LongitudeDifference(p2.lon,p1.lon);
 	double dlat	= p2.lat - p1.lat;
-	double rad  = TC_RAD_FROM_ARCS(p2.lat);
-	double f1   = TC_FEET_FROM_ARCS(dlat);							// Vertical feet
-	double f2   = TC_FEET_FROM_ARCS(dlon) * cos(rad);		// Horizontal feet
+	double rad  = FN_RAD_FROM_ARCS(p2.lat);
+	double f1   = FN_FEET_FROM_ARCS(dlat);							// Vertical feet
+	double f2   = FN_FEET_FROM_ARCS(dlon) * cos(rad);		// Horizontal feet
 	double alf  = atan2(f2,f1);												// atan2(Y,X)
 	double deg  = RadToDeg(alf);
 	return deg;
@@ -810,7 +810,7 @@ double GetAngleFromGeoPosition(SPosition &p1,SPosition &p2)
 //  return local latitude in current band
 //-----------------------------------------------------------------------------
 double LatitudeInBand(U_INT qz, double lat)
-{ U_INT bm   = TC_BAND_FROM_QGT(qz);
+{ U_INT bm   = FN_BAND_FROM_QGT(qz);
   double sud = LatBASE[bm];
   return (lat - sud);
 }
@@ -857,10 +857,10 @@ SVector SubtractPosition(SPosition &from, SPosition &to)
 //  transformed from miles
 //-----------------------------------------------------------------------------
 void AddMilesTo(SPosition &pos,double mx,double my)
-{ pos.lat   += TC_ARCS_FROM_MILE(my);
-  double rad = TC_RAD_FROM_ARCS(pos.lat);				// Latitude in radian
+{ pos.lat   += FN_ARCS_FROM_MILE(my);
+  double rad = FN_RAD_FROM_ARCS(pos.lat);				// Latitude in radian
   double cpf = 1 / cos(rad);
-  pos.lon   += TC_ARCS_FROM_MILE(mx) * cpf;
+  pos.lon   += FN_ARCS_FROM_MILE(mx) * cpf;
   return;
 }
 //-----------------------------------------------------------------------------
@@ -940,7 +940,7 @@ float GetFlatDistance(SPosition *To)
 {   SPosition pos = globals->geop;															// Aircraft position  
 		double	disLat	= (To->lat - pos.lat) / 60.0;								// Lattitude Distance in nm
     double	difLon	= LongitudeDifference(To->lon,pos.lon);			// Longitude difference in arcsec
-		double   lr			= TC_RAD_FROM_ARCS(pos.lat);								// Latitude in radian
+		double   lr			= FN_RAD_FROM_ARCS(pos.lat);								// Latitude in radian
 		double  factor	= cos(lr) / 60;															// 1 nm at latitude lr
     double	disLon	= factor * difLon;													// Reduce x component
 		double	sq			= ((disLon * disLon) + (disLat * disLat));  // squarred distance
@@ -1043,7 +1043,7 @@ char  GroundSpot::GetTerrain()
 { if (0 == qgt)           return 0;
   if ( qgt->NoQuad())     return 0;
   if (!qgt->GetTileIndices(*this))      gtfo("Position error");
-  U_INT No    = TC_DET_FROM_XZ(tx,tz);    
+  U_INT No    = FN_DET_FROM_XZ(tx,tz);    
   CmQUAD  *dt = qgt->GetQUAD(No);             // Detail tile QUAD
   Type        = dt->GetGroundType();          // Ground Type
   Quad        = dt;
@@ -1080,7 +1080,7 @@ bool GroundSpot::InvalideQuad()
 //  Compute arcs distance to vertex
 //-------------------------------------------------------------------------
 void GroundSpot::ArcDistanceTo(CVertex *vtx,CVector &v)
-{ double xband = TC_BAND_FROM_QGT(qx) * TC_ARCS_PER_BAND;
+{ double xband = FN_BAND_FROM_QGT(qx) * TC_ARCS_PER_BAND;
 	double xwest = ((qx == 511) && (vx == 0))?(TC_XB_ARCS):(0); 
 	double arcx  = vtx->GetWX() + xband + xwest;		// Vertex Absolute longitude
 	double arcy  = vtx->GetWY();
@@ -1094,7 +1094,7 @@ void GroundSpot::ArcDistanceTo(CVertex *vtx,CVector &v)
 //  Compute feet distance to vertex
 //-------------------------------------------------------------------------
 void GroundSpot::FeetDistanceTo(CVertex *vtx,CVector &v)
-{ double xband = TC_BAND_FROM_QGT(qx) * TC_ARCS_PER_BAND;
+{ double xband = FN_BAND_FROM_QGT(qx) * TC_ARCS_PER_BAND;
 	double xwest = ((qx == 511) && (vtx->keyX() == 0))?(TC_XB_ARCS):(0); 
 	double arcx  = vtx->GetWX() + xband + xwest;		// Vertex Absolute longitude
 	double arcy  = vtx->GetWY();										// Vertex Absolute latitude
