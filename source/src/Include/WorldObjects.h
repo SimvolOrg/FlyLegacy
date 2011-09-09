@@ -424,6 +424,8 @@ public:
  	AutoPilot						 *aPIL;							// Autopilot 
 	GPSRadio             *GPSR;							// GPS
 	CRadio               *mRAD;							// Master Radio
+	//--- Wheel interface ---------------------------------------------------------
+	float									brkDIF;						// Differential brake force
   //-----Sound object collection ------------------------------------------------
   std::map<Tag,CSoundOBJ*> sounds;            // Sound objects related to vehicle
 	//====== METHODS ==============================================================
@@ -448,6 +450,10 @@ public:
   bool          WheelsAreOnGround()     {return whl->WheelsAreOnGround();}
   char          NbWheelsOnGround()      {return whl->GetNbWheelOnGround();}  
 	bool					AllWheelsOnGround()			{return whl->AllWheelsOnGround();}
+	//--- Brake interface -------------------------------------------------------------
+	float					GetDifBrake()						{return brkDIF;}
+	void					RazDifBrake()						{brkDIF  = 0;}
+	void					AddDifBrake(float b)		{brkDIF += b;}
   //--- Fuel Management -------------------------------------------------------------
   inline void   GetFuelCell(std::vector<CFuelCell*> &vf)  {if (wgh) wgh->GetFuelCell(vf);}
   inline void   GetLoadCell(std::vector<CLoadCell*> &vl)  {if (wgh) wgh->GetLoadCell(vl);}

@@ -523,10 +523,8 @@ private:
   ///< =============
 
   float     bad_pres_resis;
-  float     rolling_whl_vel,
-            side_whl_vel;
+  float     side_whl_vel;
   float     rolling_force,
-            rolling_whl_dir,
             side_force;
 };
 

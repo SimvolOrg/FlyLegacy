@@ -34,45 +34,30 @@ using namespace std;
 //  CGearOpal
 //=====================================================================
 
-float  CGearOpal::brak_diff = 0.0f;
-
 CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
-{ cmprL = ADJ_CMPR_LNGT;            // 2.0
-  powlK = ADJ_POWL_CNST;            // 5.0 
-  sideK = ADJ_STRG_CONST;           // 0.125f;
-  brakK = ADJ_BRAK_CONST;           // 1.0f 
-  diffK = ADJ_DIFF_CONST;           // 1.0f
+{ diffK = ADJ_DIFF_CONST;           // 1.0f
   damp_ground_rot = ADJ_GRND_BANK;  // 10.0f
-  gear_type = 0;                    // standard type
   int crash = 1;                    // enabled
   GetIniVar ("PHYSICS", "enableCrashDetect", &crash);
   U_INT prop = (crash)?(VEH_D_CRASH):(0);
   mveh->SetOPT(prop);
 	CPhysicModelAdj *phy = mveh->GetPHY();
   if (!phy) {             /// PHY file
-    GetIniFloat ("PHYSICS", "adjustSteeringConst", &sideK);
     GetIniFloat ("PHYSICS", "adjustGroundBankingConst", &damp_ground_rot);
-    GetIniVar   ("PHYSICS", "gearType", &gear_type);
 #ifdef _DEBUG
-    DEBUGLOG ("CGearOpal start steerK%f bankDamp%f gearType%d",
-      sideK, damp_ground_rot, gear_type);
+    DEBUGLOG ("CGearOpal start bankDamp%f",
+      damp_ground_rot);
 #endif
   } else {
-    cmprL = phy->Kcpr;
-    powlK = phy->Kpow; 
-    brakK = phy->Kbrk;
     diffK = phy->Kdff;
-    sideK = phy->Kstr;
     damp_ground_rot = phy->KrlR;
-    gear_type = phy->sGer;
 #ifdef _DEBUG
-    DEBUGLOG ("CGearOpal start PHY : steerK%f brakK%f bankDamp%f gearType%d\n\
-              cmpr%f powl%f diffB%f",
-      sideK, brakK, damp_ground_rot, gear_type, cmprL, powlK, diffK);
+    DEBUGLOG ("CGearOpal start PHY : bankDamp%f \n\
+              diffB%f",
+      damp_ground_rot, diffK);
 #endif
   }
   bad_pres_resis = 0.0f;
-  rolling_whl_vel = 0.0f;
   side_whl_vel = rolling_force  = side_force      = 0.0f; 
   glf.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
   gt_.type = opal::LOCAL_TORQUE;
@@ -186,7 +171,6 @@ char CGearOpal::GCompression(char pp)
   //U_INT fr    = globals->sit->GetFrameNo();//082911
   //TRACE("%06d: WHeel GRND=%.04f bagl=%.04f wagl=%.04f %s",fr,grd,bagl,wagl,gearData->susp_name);
   if (wagl > 0.5)   return 0;
-
   //----Compute impact power in pound per feet per sec ------------
   float mass = mveh->wgh->GetTotalMassInLbs();
   mass      *= MetresToFeet (vWhlVelVec.z);
@@ -229,7 +213,6 @@ void CGearOpal::GComprV_Timeslice (void)
   prv = cur;
   cur = (cur + 1) & 1;
   local_velocity = phyM->getLocalLinearVelAtLocalPos (main_pos); // m/s RH
-  if (gear_type) body_velocity = phyM->getLocalLinearVel ();
   if (_isnan(body_velocity.z)) gtfo("Physical engine HS");                // JS
   vb[cur].x = double(local_velocity.x);
   vb[cur].y = double(local_velocity.y);
@@ -289,24 +272,20 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
     steer_angle_rad = DegToRad (gearData->deflect * gearData->mStr); // JS * gearData->mStr * 5.0f);
   }
   else gearData->deflect = 0.5f;
-
-  rolling_whl_vel = vWhlVelVec.y ;        
-  rolling_whl_dir = (rolling_whl_vel < 0)?(-1):(+1);    // JS avoid zero divide
-  rolling_whl_vel = fabs(rolling_whl_vel);
-  susp->MoveWheelTo(rolling_whl_vel,dT);                // JS: Interface to wheel
+  double wvel = fabs(vWhlVelVec.y);					// JS: wheel velocity
+  susp->MoveWheelTo(wvel,dT);               // JS: Interface to wheel
   side_whl_vel    = vWhlVelVec.x;
 	speed						= vWhlVelVec.y + fabs (vWhlVelVec.x);
-//  float K = 1.0f; // kind of amplifier for low speed see <>
+  //--- process steering wheel ----------------------------------
   if (gearData->ster) {
     double base = gearData->wheel_base;
     // JS: Correction for bug in excessive rate turn ---------------------
     double turn_rate   = speed * tan (steer_angle_rad) * base;      
-    double lat_acc     = speed * (turn_rate + brak_diff);
+    double lat_acc     = speed * (turn_rate + mveh->GetDifBrake());
     side_force         = lat_acc * mveh->GetMassInKgs() * gearData->stbl;;
     //-- turn nose wheel ----------------------------------------
     susp->TurnWheelTo(gearData->kframe);
-    // fudge factor
-    brak_diff = 0.0f;
+    mveh->RazDifBrake();
   }
 	//--- Create torque with lateral force (only nose wheel)-------
   gt_.vec.z = (opal::real)(side_force); /// K)      /* mass on a tricycle wheel*/;
@@ -336,7 +315,7 @@ void CGearOpal::ProbeBrake(CFuiCanva *cnv)
 { //---speed -----------------------------
   cnv->AddText(1,1,"sped:  %.04f",speed);
 	//---Break force -----------------------------
-  cnv->AddText(1,1,"bdif:  %.04f",brak_diff);
+  cnv->AddText(1,1,"bdif:  %.04f",mveh->GetDifBrake());
   //--- Acceleration ----------------------------
   cnv->AddText(1,1,"sideF:  %.04f",side_force);
 	//--- Table ----------------------------
@@ -402,7 +381,7 @@ void CGearOpal::BrakeForce(float dT)
 	if (lv <= 0)	bf = 0;
 	gearData->brakF	= bf;													// Brake force to apply
 		//--- Compute a torque value to add to steering one -----
-	brak_diff += (bf * diffK * gearData->bPos.x / ms);
+	mveh->AddDifBrake(bf * diffK * gearData->bPos.x / ms);
 	return;
 }
 //-------------------------------------------------------------------------

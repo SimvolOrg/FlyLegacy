@@ -603,7 +603,8 @@ CVehicleObject::CVehicleObject (void)
   GetIniVar ("PHYSICS", "hasFakeEngine", &val);
   has_fake_engine_thrust = val ? true : false;
   DEBUGLOG ("hasFakeEngine = %d", val);
-
+	//-------------------------------------------------------
+	RazDifBrake();
   main_wing_incid = 0.0;                ///< stocking the main wing incidence value DEG
   main_wing_aoa_min = 0.0f;             ///< stocking AoA min RAD
   main_wing_aoa_max = 0.0f;             ///< stocking AoA max RAD

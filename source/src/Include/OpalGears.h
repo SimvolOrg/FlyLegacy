@@ -130,15 +130,10 @@ protected:
   //--------------------------------------------------------------------
 	double    speed;										// Rolling speed
   float     bad_pres_resis;
-  float     rolling_whl_vel,
-            side_whl_vel;
+  float     side_whl_vel;
   float     rolling_force,
-            rolling_whl_dir,
             side_force;
-  float     sideK, brakK, diffK;
-  float     cmprL, powlK;
-  int       gear_type;
-  static float brak_diff;
+  float     diffK;
   opal::Force      glf;                       ///< linear force
   opal::Force      gt_;
   CVector vb[2];        ///< Acceleration in body fram (m/s^2)
