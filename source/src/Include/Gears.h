@@ -439,7 +439,6 @@ public:
   inline char     GetNbWheelOnGround(){return nWonG;}
   inline bool     WheelsAreOnGround() {return (nWonG != 0);}
 	inline bool			AllWheelsOnGround()	{return (nWonG == wheels_num);}
-  inline double   GetWBase()          {return wheel_base;}
   //----------------------------------------------------------------------------------
   ///
   float                      rMas;                         ///< rated mass

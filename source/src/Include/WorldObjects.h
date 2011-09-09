@@ -484,7 +484,6 @@ protected:
   //---Wheels functions ----------------------------------------------------------
 public:    
   inline  float GetGSpeed()               {return 0;}
-  inline  double GetWBase()               {return whl->GetWBase();}
 	//---Engine internal interface -------------------------------------------------
 	inline  void RazEngR()										{engR	= 0;}
 	inline  void IncEngR()										{engR++;}
