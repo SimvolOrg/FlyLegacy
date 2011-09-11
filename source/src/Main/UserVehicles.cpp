@@ -134,7 +134,9 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
   mRpm.id = MSG_GETDATA;
   mMap.id = MSG_GETDATA;
 	//----------------------------------------------
-	elapsed = 0;
+	elapsed = 0.0f;
+  brakeDist = 1200.0f;
+  accBrake = 0.0;
 }
 //----------------------------------------------------------------------
 //  Delete this object
@@ -375,6 +377,9 @@ int CSimulatedVehicle::Read (SStream *stream, Tag tag)
 void CSimulatedVehicle::ReadFinished (void)
 { //--- Read checklist if any ------------
 	double bfs =  FN_FEET_FROM_MILE(approachspeed)/ 3600;		// Brake speed feet/sec
+  // since the constructor is read after this function we must
+  // verify if brakeDist is defined ...
+  if (brakeDist < FLT_EPSILON) brakeDist = 1200.0f; // default
 	accBrake = (bfs * bfs) / (2 * brakeDist);									
   return;
 }
