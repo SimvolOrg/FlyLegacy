@@ -1158,10 +1158,10 @@ public:
   inline  SPosition *GetLandingPoint()  {return &ilsD->lndP;}
   inline  SPosition *ObjPosition()      {return &pos;}
   inline  SPosition *GetFarPoint()      {return &ilsD->farP;}
-	inline  SPosition *GetOpposite()			{return &ilsD->opoP;}
   inline  float GetFeetDistance()       {return ilsD->disF;}
   inline  float GetGlide(void)          {return ilsD->errG;}
 	inline  float GetVrtDeviation()				{return ilsD->errG;}
+	inline  ILS_DATA  *GetLandSpot()			{return ilsD;}
 	//-----------------------------------------------------------------
 	inline  double	Sensibility()					{return 20;}
 	inline	U_CHAR	SignalType()					{return SIGNAL_ILS;}
@@ -1273,6 +1273,7 @@ protected:
   SVector     scl;                        // Scale letter
   RwyID       pID[2];                     // Ident parameters both end
   //----------------------------------------------------------------
+	VECTOR_DIR	vdir;												// Vector director
   ILS_DATA    ilsD[2];                    // Ils data for both ends
   U_CHAR      ilsT;                       // ils type (HI or LO)
   //-------------Private methods -----------------------------------
@@ -1281,16 +1282,17 @@ protected:
   //------------ Public methods ------------------------------------
 protected:
   void    SetAttributes();
+	void		EndAttributes(ILS_DATA &d,SPosition &p);
 public:
   CRunway(OTYPE qo,QTYPE qa);
  ~CRunway();
  //------------------------------------------------------------------
- CRunway *GetNext()     {return (CRunway*)CmHead::Cnext;}
+  CRunway *GetNext()     {return (CRunway*)CmHead::Cnext;}
  //------------------------------------------------------------------
  	ILS_DATA  *GetLandDirection(char *e);
+	double     DistanceToLane(SPosition &p);
  //------------------------------------------------------------------
   void    InitILS(CILS *ils);
-	void		UpdateILS(float dir);
   void		Trace(char *op,U_INT FrNo,U_INT key);
   int     GetCode();
   int     GetLetter();
@@ -1302,7 +1304,6 @@ public:
   inline  U_CHAR    *GetLoLightSys()    {return rl8l;}
   inline  SPosition *GetLandPos(char p) {return &ilsD[p].lndP;}
 	inline  float			 GetLandDir(char p)	{return  ilsD[p].lnDIR;}
-	inline  SPosition *GetOppoPos(char p)	{return &ilsD[p].opoP;}
   inline  char       GetIlsIndex()      {return ilsT;}
   inline  ILS_DATA  *GetIlsData(char p) {return (ilsD + p);}
   //----------------------------------------------------------------
@@ -1324,6 +1325,7 @@ public:
   inline U_CHAR      GroundIndex() {return Grnd; }
   inline U_CHAR      GetWiCode() {return wiCode;}
   inline U_CHAR      GetLgCode() {return lgCode;}
+	inline VECTOR_DIR	*GetVDIR()	 {return &vdir;}
   //---------Runway category       --------------------------------
   inline bool        NoCenter()     {return (rhcl  == 0);}
   inline bool        HasCenter()    {return (rhcl  != 0);}

@@ -891,7 +891,7 @@ void debug_dump_time_cb (puObject* obj)
 
 void debug_dump_camera_cb (puObject* obj)
 {
-  CCameraManager *camera = globals->sit->GetUserVehicle()->GetCameraManager ();
+  CCameraManager *camera = globals->pln->GetCameraManager ();
   if (camera != NULL) {
     FILE *f = fopen ("Debug/camera.txt", "w");
     if (f) {
@@ -925,24 +925,24 @@ void debug_dump_sky_cb (puObject* obj)
 
 void debug_dump_user_cb (puObject* obj)
 {
-  CVehicleObject *user = globals->sit->GetUserVehicle ();
-  if (user) {
+  CVehicleObject *veh = globals->pln;
+  if (veh) {
     FILE *f = fopen ("Debug/user.txt", "w");
     if (f) {
-      user->Print (f);
+      veh->Print (f);
       fclose (f);
-      DrawNoticeToUser ("User vehicle dumped to \"user.txt\"", 5);
+      DrawNoticeToUser ("Vehicle dumped to \"user.txt\"", 5);
     }
   }
 }
 
 void debug_dump_aeromodel_cb (puObject* obj)
 {
-  CVehicleObject *user = globals->sit->GetUserVehicle ();
-  if (user) {
+  CVehicleObject *veh = globals->pln;
+  if (veh) {
     FILE *f = fopen ("Debug/DumpedAeromodel.txt", "w");
     if (f) {
-      user->Print (f);
+      veh->Print (f);
       fclose (f);
     }
   }
@@ -965,18 +965,16 @@ void debug_breakpoint_cb (puObject* obj)
 
 void debug_dump_electrical_cb (puObject* obj)
 {
-  CVehicleObject *user = globals->sit->GetUserVehicle ();
-  if (user != NULL) {
-    if (user->GetType () == TYPE_FLY_AIRPLANE) {
-      CAirplane *pObj = (CAirplane *)user;
-      if (pObj) {
-        CElectricalSystem *amp = pObj->amp;
-        if (amp != NULL) {
-          FILE *f = fopen ("Debug/electrical.txt", "w");
-          if (f) {
-            amp->Print (f);
-            fclose (f);
-          }
+  CAirplane *pln = globals->pln;
+  if (pln != NULL) {
+    if (pln->GetType () == TYPE_FLY_AIRPLANE) 
+		{	CElectricalSystem *amp = pln->amp;
+      if (amp != NULL) 
+			{	FILE *f = fopen ("Debug/electrical.txt", "w");
+        if (f) 
+				{	amp->Print (f);
+          fclose (f);
+          
         }
       }
     }

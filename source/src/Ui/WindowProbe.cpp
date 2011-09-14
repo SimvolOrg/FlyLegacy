@@ -113,7 +113,7 @@ CFuiProbe::CFuiProbe(Tag idn, const char *filename)
   childList.push_back(cPID);
   //--------Display subsystems ------------------------------
   CFuiWindow::ReadFinished();
-  veh = globals->sit->uVeh;
+  veh = globals->pln;
   if (veh)  Init();
   else      Close();
 }

@@ -37,7 +37,7 @@ void CrashDetector::handleCollisionEvent(const opal::CollisionEvent& e )
   opal::Solid *pln  = e.thisSolid;
   opal::Solid *oth  = e.otherSolid;
   opal::Point3r pnt = e.pos;
-  CVehicleObject *veh = globals->sit->uVeh;
+  CVehicleObject *veh = globals->pln;
   CVector p(-pnt.x, -pnt.y, -pnt.z);
   switch (e.uType)  {
       case SHAPE_BODY:

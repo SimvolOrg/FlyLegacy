@@ -63,7 +63,7 @@ int CLoadCell::Read (SStream *stream, Tag tag)
   case 'bPos':
     // Offset from default center of gravity
     ReadVector (&bPos, stream);
-    bPos = bPos + globals->sit->GetUserVehicle ()->wgh->svh_cofg;
+    bPos = bPos + globals->pln->wgh->svh_cofg;
     bPos.InvertXY();         
     rc = TAG_READ;
     break;

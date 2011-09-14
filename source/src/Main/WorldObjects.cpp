@@ -485,7 +485,7 @@ void  CDLLSimulatedObject::SetOrientation (SVector orientation)
   CMagneticModel::Instance().GetElements (this->GetPosition (), decl_degrees_, hor_field_);
   iang_.z += DegToRad (static_cast<double> (decl_degrees_)); 
   // if object is from simulated situation set global ori 
-//  if (globals->sit->sVeh) CWorldObject::SetOrientation (orientation);
+//  if (globals->pln) CWorldObject::SetOrientation (orientation);
 //  else
   CWorldObject::SetOrientation (iang_);
 }
@@ -519,12 +519,12 @@ void CDLLSimulatedObject::DrawExternal (void)
   glPushMatrix ();
   // Draw all externally visible objects associated with this object
   if (lod) {
-    //if (globals->sit->dVeh) { // 
+    //if (globals->pln) { // 
     //if (globals->sit->sdk_flyobject_list.fo_list.size () > 1) {
     if (sim_objects_active) {
       if (draw_flag) {
-        draw_flag = false;
-        globals->sit->dVeh = this;
+        draw_flag    = false;
+        globals->pln = (CAirplane*)this;
         lod->Draw (BODY_TRANSFORM);       // 1 = simulated DLL object
         globals->sit->dVeh = NULL;
       }
@@ -1224,7 +1224,7 @@ void CVehicleObject::GetGearChannel(SGearData *gdt)
 {	if (0 == amp)	return;
 	CAeroControl *p = amp->pRuds;
 	if (0 == p)		return;
-  gdt->deflect = p->Val();
+  gdt->deflect = p->UnBias();
   gdt->scaled  = 0;
 	return;
 }
@@ -1258,7 +1258,7 @@ void  CVehicleObject::GetAircraftWindEffect (void)
   CVector wind_angle (sin (w_angle), 0.0, cos (w_angle));             // LH
   wind_angle.Times (w_spd);
   SVector or_m = {0.0, 0.0, 0.0};                                     // 
-  or_m.y = -globals->sit->uVeh->GetOrientation ().z; // + is left     // RH to LH
+  or_m.y = -globals->pln->GetOrientation ().z; // + is left     // RH to LH
   matx.Setup (or_m);                                                  // LH
   matx.ParentToChild (w_dir_for_body, wind_angle);                    // LH
   //

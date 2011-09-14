@@ -2293,6 +2293,7 @@ public:
 	virtual void    ModBias(float v)	{;}
 	//------------------------------------------------------------
   void						Modify(float dt);
+	void						Transfer();
   //------------------------------------------------------------
   void            Probe(CFuiCanva *cnv);
   //--- For all controls ---------------------------------------
@@ -2302,6 +2303,7 @@ public:
   //---- for value ---------------------------------------------
   inline  float    Val()   {return data.raw;}
   inline  float Deflect()  {return data.deflect;};
+	inline  float UnBias()	 {return data.deflect - Bias;}
   //--- For autopilot ------------------------------------------
 	inline  void	   Neutral()	{vPID = 0; data.raw = 0;} 
   inline  void     PidValue(double v)   {vPID = v;}
@@ -2373,7 +2375,7 @@ protected:
 //====================================================================
 struct FLAP_POS{
   int   degre;          // FLAP degre for the position
-  int   speed;          // Speed limit before dammage
+  float speed;          // Speed limit before dammage
   float kFrame;         // Related keyframe
 };
 //====================================================================
@@ -2394,6 +2396,7 @@ public:
   void    NewPosition(int pos);
   void    SetPosition(SMessage *msg);
 	void		SetPosition(int pos);
+	float   GetMaxSpeed(int pos);
   // CSubsystem methods
   const char* GetClassName (void) { return "CFlapControl"; }
   EMessageResult  ReceiveMessage (SMessage *msg);

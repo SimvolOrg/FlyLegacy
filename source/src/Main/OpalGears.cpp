@@ -165,6 +165,7 @@ char CGearOpal::GCompression(char pp)
   //---Wheel AGL is local contact + body AGL -----------------------
   double bagl = mveh->GetAltitude() - grd;
   double wagl = bagl + V.z;										// Compute wheel AGL
+	if (wagl < 0.1)	 wagl	= 0;
 	gearData->wagl = wagl;											// Save it
   susp->SetWheelAGL(wagl);
   //----Check that wheel is just above ground ----------------------
@@ -172,12 +173,13 @@ char CGearOpal::GCompression(char pp)
   //TRACE("%06d: WHeel GRND=%.04f bagl=%.04f wagl=%.04f %s",fr,grd,bagl,wagl,gearData->susp_name);
   if (wagl > 0.5)   return 0;
   //----Compute impact power in pound per feet per sec ------------
-  float mass = mveh->wgh->GetTotalMassInLbs();
-  mass      *= MetresToFeet (vWhlVelVec.z);
+	double vert = vWhlVelVec.z;
+  double mass = mveh->wgh->GetTotalMassInLbs();
+	if (fabs(vert) < 0.1)		vert = 0; 
+  mass       *= MetresToFeet (vert);
   gearData->imPW = mass;                      // Impact on wheel
-  float lim  = gearData->powL;
-
-  if (lim && (mass> lim) )                return susp->GearShock(10);   // Gear destroyed
+  double lim  = gearData->powL;
+  if (lim && (mass > lim) )		return susp->GearShock(10);   // Gear destroyed
   //----Check for compression -(in feet) --------------------------
   double lim1 = -gearData->maxC;
   ////
@@ -234,7 +236,10 @@ void CGearOpal::VtForce_Timeslice (float dT)
   if (fabs(ay) < 0.01)	ay = 0;
 	double az = (vb[cur].z - vb[prv].z) / dT;
 	if (fabs(az) < 0.01)  az = 0;
-	vLocalForce.x = 0;
+	double ax = (vb[cur].x - vb[prv].x) / dT;
+	if (fabs(ax) < 0.01)  ax = 0;
+
+	vLocalForce.x = ax;
 	vLocalForce.y = ay;
 	vLocalForce.z = az;
 
@@ -255,23 +260,15 @@ void CGearOpal::VtForce_Timeslice (float dT)
 //-----------------------------------------------------------------------
 void CGearOpal::DirectionForce_Timeslice (float dT)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
-	int deflection;
-  int defl_ = int(gearData->deflect * 1000); // 0 --> 1000 (inverted)
-  gearData->kframe  = 0.5f;//kframe;
-  
-  // rudder mixer sends angle value from -1 to 1
-  // mStr clamp steering value to a fixed limit, i.e. 8.0
   float steer_angle_rad = 0.0f;
+  // rudder mixer sends angle value from -1 to 1
 
-  // simplified system 
   if (gearData->ster) {
-    deflection = 15 * defl_ / 1000;
-    gearData->kframe += float(deflection) / 30.0f;
-    gearData->deflect = float(deflection) / 15.0f;
+		float kfr = 0.5 * (1 + gearData->deflect);
+		gearData->kframe	= kfr;
     //--JS fix bugs: mStr is in degre and should be inside, not outside of DegToRad
-    steer_angle_rad = DegToRad (gearData->deflect * gearData->mStr); // JS * gearData->mStr * 5.0f);
+    steer_angle_rad		= DegToRad (gearData->deflect * gearData->mStr); // JS * gearData->mStr * 5.0f);
   }
-  else gearData->deflect = 0.5f;
   double wvel = fabs(vWhlVelVec.y);					// JS: wheel velocity
   susp->MoveWheelTo(wvel,dT);               // JS: Interface to wheel
   side_whl_vel    = vWhlVelVec.x;
@@ -306,6 +303,8 @@ void CGearOpal::Probe(CFuiCanva *cnv)
 	cnv->AddText(1,1,"wagl: %.4f(ft)",gearData->wagl);
 	cnv->AddText(1,1,"powL: %.4f",gearData->powL);
 	cnv->AddText(1,1,"imPW: %.4f(flbs)",gearData->imPW);
+	cnv->AddText(1,1,"dflect:%.4f",gearData->deflect );
+	cnv->AddText(1,1,"amor: %.4f",gearData->amor);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -326,7 +325,7 @@ void CGearOpal::ProbeBrake(CFuiCanva *cnv)
   cnv->AddText(1,1,"vel.y:  %.04f",local_velocity.y);
   //---Local force -----------------------------
   cnv->AddText(1,1,"locF:  %.04f",vLocalForce.y);
-
+	//---------------------------------------------
   //---Final force ------------------------------
   cnv->AddText(1,1,"glf.x %.4f",glf.vec.x);
   cnv->AddText(1,1,"glf.y %.4f",glf.vec.y);
@@ -387,12 +386,14 @@ void CGearOpal::BrakeForce(float dT)
 //-------------------------------------------------------------------------
 //* transform the forces back to the inertial frame : in lbs
 //	-Damp vertical force to simulate suspension shock
+//	damR is set to the percentage of shock absortion
 //-------------------------------------------------------------------------
 void CGearOpal::GearL2B_Timeslice (void)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
   /// \to do ? transform the forces back to the body frame
 	//--- compute opposite vertical force -----------------
-	glf.vec.z		= -(glf.vec.z) * gearData->damR;
+  gearData->amor  = (glf.vec.z) * gearData->damR;
+	glf.vec.z	      = -gearData->amor;
 	//--- Apply anti skid if request ----------------------
 	if (gearData->sABS)	glf.vec.x = -glf.vec.x;
 	//--- Apply brake -------------------------------------
@@ -429,6 +430,7 @@ void CGearOpal::ResetForce()
   vb[1].Set(0,0,0);
   ab[0].Set(0,0,0);
   ab[1].Set(0,0,0);
+	glf.vec.set(0,0,0);
 }
 
 ///< force in Newton
@@ -805,7 +807,7 @@ void COpalGroundSuspension::Timeslice (float dT)
               SumGearMoments.x, SumGearMoments.y, SumGearMoments.z
              );
             fprintf(fp_debug, " cg(%f %f %f) mg(%f %f %f) mp(%f %f %f)\n mf(%f %f %f) mm(%f %f %f) (mwh%f Mg%f mg%f)\n",
-              globals->sit->uVeh->svh->GetNewCG_ISU ()->x,  globals->sit->uVeh->svh->GetNewCG_ISU ()->y,  globals->sit->uVeh->svh->GetNewCG_ISU ()->z,
+              globals->pln->svh->GetNewCG_ISU ()->x,  globals->sit->uVeh->svh->GetNewCG_ISU ()->y,  globals->sit->uVeh->svh->GetNewCG_ISU ()->z,
               main_gear.x, main_gear.y, main_gear.z,
               mass_pos.x, mass_pos.y, mass_pos.z,
               mass_force.x, mass_force.y, mass_force.z,

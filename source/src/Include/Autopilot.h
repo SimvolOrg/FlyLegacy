@@ -348,7 +348,8 @@ protected:
 	double     nTDP;							// Touch down point
 	double     dTDP;							// Distance to touch down point
 	//--- Ground target ---------------------------------------------------
-	SPosition	*gPOS;							// Ground position
+	ILS_DATA  *rend;							// Runway end
+	//SPosition	*gPOS;							// Ground position
 	//--- Autothrottle parameters -----------------------------------------
 	double     cRAT;							// Current rate to maintain
 	double     xRAT;							// Cruise rate
@@ -385,7 +386,7 @@ protected:
   double      cALT;                         // Current altitude
   double      cAGL;                         // Current AGL
   double      afps;                         // Aircraft feet per second
-	double      kSPD;													// Current speed KTS
+	double      aSPD;													// Current speed KTS
   //-------------------------------------------------------------------
   double     vTime;                         // VSP timer
   //--------------------------------------------------------------------
@@ -430,7 +431,6 @@ public:
   void            TimeSlice(float dT,U_INT FrNo);
 	//-------------------------------------------------------------------
 	void		DisplayGroundDeviation(double p1);
-	void		SetGroundMode(SPosition *p);
   //-------------------------------------------------------------------
   void            Probe(CFuiCanva *cnv);
   void            ReadPID(char *fn);
@@ -455,7 +455,6 @@ public:
 	void				SetTKOopt(double s, double a);
   void        SetFLRopt(double a, double b,double d);
   void        SetMISopt(double a);
-	inline void SetGroundPos(SPosition *p)	{gPOS		= p;}
 	//--- External interface --------------------------------------------
 	bool				Init();
 	bool 				Engage();

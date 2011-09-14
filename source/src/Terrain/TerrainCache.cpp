@@ -3453,7 +3453,7 @@ void TCacheMGR::CheckTeleport()
 //  Teleport to requested position
 //-------------------------------------------------------------------------
 void TCacheMGR::Teleport(SPosition &dst)
-{ CVehicleObject *veh = globals->sit->uVeh;
+{ CVehicleObject *veh = globals->pln;
   if (0 == veh)											return;
   if (veh->HasState(VEH_INOP))			return;
 	if (globals->aPROF & PROF_NO_TEL)	return;
@@ -3474,7 +3474,7 @@ void TCacheMGR::NoteTeleport()
   //----End of teleporting ---------------------
   Tele = 0;
   Spot.PopQGT();
-  CVehicleObject *veh = globals->sit->uVeh;
+  CVehicleObject *veh = globals->pln;
   if (0 == veh)         return;
 	bool grnd  = veh->WheelsAreOnGround();
   if (!grnd)            return;
@@ -4796,7 +4796,7 @@ void TCacheMGR::UpdateGroundPlane()
 //         this is contrary to the objective. This is to avoid extensive GL commands
 //=================================================================================
 void TCacheMGR::Draw(CCamera *cam)
-{	CVehicleObject *veh = globals->sit->uVeh;
+{	CVehicleObject *veh = globals->pln;
   bbox->Enter('Draw',cam,0);
 	//----Prepare OpenGL for drawing ---------------------------------
   glMatrixMode (GL_MODELVIEW);

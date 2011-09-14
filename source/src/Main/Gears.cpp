@@ -513,7 +513,7 @@ const SVector& CGear::GetBodyGearForce_ISU  (void)
   
   // fake : remove
   // Get input data
-  //CAirplane *userVehicle = (CAirplane*)(globals->sit->GetUserVehicle());
+  //CAirplane *userVehicle = (CAirplane*)(globals->pln);
   // aircraft inertial-frame velocity in meters/sc
   //CVector acc = *(userVehicle->GetInertialVelocityVector());
   //acc.Times (-1.0 / 3.0);
@@ -776,10 +776,7 @@ void CGroundSuspension::Timeslice (float dT)
     // is it a steering wheel ?
     CSuspension *ssp = (CSuspension*)(*it_whel);
 		SGearData   *gdt = ssp->GetGearData();
-    if (ssp->IsSteerWheel ()) 
-		{	mveh->GetGearChannel(gdt);
-      }
-
+    if (ssp->IsSteerWheel ()) 	mveh->GetGearChannel(gdt);
     // is it a braking wheel ?
     /// \todo .../...
     // ... and finally timeslice

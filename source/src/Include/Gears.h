@@ -67,7 +67,7 @@ struct SGearData {
 	double wagl;
 	///-------Vertical damping for ground contact ----------------------------
   double damR;                        ///< -- damping ratio --
-	double damF;												// Damping factor
+	double amor;												// Amortizing force
   ///-------Brake parameters -----------------------------------------------
 	double	brakF;											// Brake force	
   float brak;                         // 0 not brake 1= brake
@@ -83,7 +83,7 @@ struct SGearData {
   float deflect;
   float scaled;
   float kframe;
-  /// wheelBase
+	///--- wheelBase (inter wheel lenght between axis) ------------------------
   float wheel_base;
 
   SGearData (void) {
@@ -105,6 +105,7 @@ struct SGearData {
     maxC              = 0.0f;        // -- max compression --
 		masR							= 0.33f;
     damR              = 0.0f;        // -- damping ratio --
+		amor							= 0;
     tirR              = 0.0f;        // -- Tire Radius (ft) --
     rimR              = 0.0f;        // -- Rim Radius (ft) --
     drag              = 0.0f;

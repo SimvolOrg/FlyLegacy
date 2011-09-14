@@ -51,8 +51,8 @@ void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
 	//--- Any ILS to set --------------------------------------
 	ilsD		= ils;
 	vdev		= 0;
-	opoP		= (ils)?(&ils->opoP):(0);
 	refD    = (ils)?(ils->lnDIR):(0);
+	if (ils)	spos = ils->refP;
 	//--- compute feet factor at given latitude ---------------
 	double lr   = FN_RAD_FROM_ARCS(spos.lat);					//DegToRad  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
@@ -64,7 +64,8 @@ void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
 //	Refresh distance and direction to aircraft
 //--------------------------------------------------------------------------
 void CExtSource::Refresh(U_INT fram)
-{	//----compute WPT relative position -------------
+{	if (NeedUpdate(fram) == false)	return;
+	//----compute WPT relative position -------------
 	SPosition *acp  = mveh->GetAdPosition();
 	SPosition *ref  = (ilsD)?(&ilsD->refP):(&spos);
   SVector	v	      = GreatCirclePolar(acp, ref);

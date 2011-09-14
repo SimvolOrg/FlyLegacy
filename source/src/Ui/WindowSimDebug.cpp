@@ -326,7 +326,7 @@ CSimDebugWings::~CSimDebugWings (void)
 }
 
 void CSimDebugWings::Draw (void)
-{ CVehicleObject *veh = globals->sit->GetUserVehicle();
+{ CVehicleObject *veh = globals->pln;
   
   // don't draw anything if pointer is not ready
   if (!surface) return;

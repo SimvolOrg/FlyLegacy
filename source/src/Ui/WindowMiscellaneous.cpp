@@ -57,7 +57,7 @@ CFuiKLN89::CFuiKLN89(Tag idn,const char *filename)
 //  Init the GPS Window
 //-------------------------------------------------------------------------
 void CFuiKLN89::InitGPS()
-{ CVehicleObject* veh = globals->sit->GetUserVehicle();
+{ CVehicleObject* veh = globals->pln;
   GPSRadio *gps = veh->GetGPS();
 	if (0 == gps)									return Close();
 	if ('k89g' != gps->GetUnId())	return Close();

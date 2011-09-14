@@ -127,7 +127,7 @@ CFuiLoad::~CFuiLoad()
 //    Get all stations
 //---------------------------------------------------------------------------
 void CFuiLoad::GetStations()
-{ veh = globals->sit->uVeh;
+{ veh = globals->pln;
   if (0 == veh) return;
   //---------------------------------
   veh->GetLoadCell(vlod);

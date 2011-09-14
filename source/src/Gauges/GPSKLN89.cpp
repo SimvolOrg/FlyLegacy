@@ -2584,7 +2584,7 @@ bool CK89gps::EditFPLSlot(short lin,CWPoint *wpt)
 //	Notification coming from current flight plan
 //---------------------------------------------------------------------
 void CK89gps::ModifiedPlan()
-{	FPL     =  mveh->GetFlightPlan();
+{	FPL     = mveh->GetFlightPlan();
 	Mode		= GPS_MODE_FPLAN;
 	actWP		= FPL->GetActiveNode();
 	basWP		= FPL->HeadNode();									// Base waypoint
@@ -4241,7 +4241,7 @@ void  CK89gps::TimeSlice (float dT,U_INT FrNo)
   aPos  = mveh->GetPosition();					//globals->geop;
   //-----Refresh active waypoint --------------------------
   if (aState >= K89_APTP1)
-  { //UpdateWaypointData();
+  { UpdNavigationData(actWP);
     RefreshActiveWPT();
     RefreshVNAVpoint();
   }
@@ -4486,13 +4486,8 @@ void GPSRadio::EnterSBY()
 void GPSRadio::EnterAPR()
 { //--- Check  if APR allowed ---------------------------
 	if (0 == aprON)	return EnterSBY();
-	//--- Return landing data -----------------------------
-	ILS_DATA *ils = wTRK->GetLandingData();
-	//--- Change navigation parameters to ILS -------------
-	if (0 == ils)	  return EnterSBY();
-	wTRK->SetLandingMode();
-	//-----------------------------------------------------
-	RAD->ModeEXT(wTRK->GetDBobject(),ils);	
+	//--- Configure Landing mode --------------------------
+	if (!wTRK->EnterLanding(RAD))	return EnterSBY();
 	//--- Configure autopilot for landing ------------------
 	APL->SetLandingMode();
 	gpsTK = GPSR_LAND;

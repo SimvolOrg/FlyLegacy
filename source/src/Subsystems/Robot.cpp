@@ -368,6 +368,7 @@ void VPilot::EnterTakeOff()
 {	State = VPL_TAKE_OFF;
   apil->Engage();
 	apil->EnterTakeOFF();
+	gc		= 1;
 	return;
 }
 //--------------------------------------------------------------
@@ -404,13 +405,8 @@ void VPilot::ModeCLM()
 void VPilot::EnterFinal()
 { //TRACE("VPL: Enter Final: %s",wayP->GetName());
 	char *edt = globals->fui->PilotNote();
-	float frq = wayP->GetILSFrequency();
-	//--- If frequency, use as ILS ------------------------
-	//--- Return landing data -----------------------------
-	ILS_DATA *ils = wayP->GetLandingData();
-	if (0 == ils)	{Error(9); return HandleBack();}
-	Radio->ModeEXT(wayP->GetDBobject(),ils);	
-	//--- Configure autopilot for landing ------------------
+	//--- Configure Landing mode --------------------------
+	if (!wayP->EnterLanding(Radio))	return HandleBack();
 	apil->SetLandingMode();
 	State = VPL_LANDING;
 	//--- Advise user --------------------------------------
@@ -440,7 +436,6 @@ void VPilot::ChangeWaypoint()
 	float rad = 0;
 	wayP	= fpln->GetActiveNode();
 	if (wayP->IsFirst())			return;  // wait next
-//	TRACE("VPL: Change WPT to %s",wayP->GetName());
 	if (fpln->IsOnFinal())		return EnterFinal();
 	//--- Advise user -------------------------------------
 	float dir = SetDirection();
@@ -476,8 +471,9 @@ void VPilot::Refresh()
 //	Tracking Waypoint
 //--------------------------------------------------------------
 void VPilot::ModeTracking()
-{ bool tc		= apil->HasGasControl();
-	if (!tc) Warn(10);
+{ bool tc	= apil->HasGasControl();
+	if ((tc == 0) && (gc == 1)) Warn(10);
+	gc			= tc;
 	if (apil->IsDisengaged())	return HandleBack();
 	if (wayP->IsActive())	    return Refresh();
 	ChangeWaypoint();

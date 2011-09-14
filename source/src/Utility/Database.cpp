@@ -2318,6 +2318,19 @@ CRunway::~CRunway()
 { if (lpf)  delete lpf;
 }
 //-----------------------------------------------------------------
+//  Init end
+//-----------------------------------------------------------------
+void CRunway::EndAttributes(ILS_DATA &d,SPosition &p)
+{  //---Init landing parameters ---------------------------
+  double alti = rwyATHR[lgCode];
+	d.rwy	  = this;
+  d.ils   = 0;
+  d.lndP  = p;
+  d.altT  = alti;
+	d.gTan  = float(TANGENT_3DEG);
+	return;
+}
+//-----------------------------------------------------------------
 //  Set Additional attributes
 //-----------------------------------------------------------------
 void CRunway::SetAttributes()
@@ -2325,16 +2338,9 @@ void CRunway::SetAttributes()
   wiCode = GetLetter();
   Grnd   = GetGroundIndex();
   //---Init landing parameters ---------------------------
-  double alti = rwyATHR[lgCode];
-  ilsD[RWY_HI_END].ils   = 0;
-  ilsD[RWY_HI_END].lndP  = pshi;
-  ilsD[RWY_HI_END].altT  = alti;
-	ilsD[RWY_HI_END].gTan  = float(TANGENT_3DEG);
+	EndAttributes(ilsD[RWY_HI_END],pshi);
 	//----------------------------
-  ilsD[RWY_LO_END].ils   = 0;
-  ilsD[RWY_LO_END].lndP  = pslo;
-  ilsD[RWY_LO_END].altT  = alti;
-	ilsD[RWY_LO_END].gTan  = float(TANGENT_3DEG);
+	EndAttributes(ilsD[RWY_LO_END],pslo);
 	//----------------------------
   pID[RWY_HI_END].LetID  = GetIdentIndex(rhid[2]);
   pID[RWY_LO_END].LetID  = GetIdentIndex(rlid[2]);
@@ -2345,20 +2351,8 @@ void CRunway::SetAttributes()
 	pID[RWY_LO_END].opos	 = &pID[RWY_HI_END];
   //-------Compute distance reduction factor -------------
   double lr   = FN_RAD_FROM_ARCS(pshi.lat);					//DegToRad (pshi.lat / 3600.0);
-  nmFactor = cos(lr) / 60;													// 1 nm at latitude lr
+  nmFactor    = cos(lr) / 60;													// 1 nm at latitude lr
   return;
-}
-//-----------------------------------------------------------------
-//  Update landing parametres 
-//-----------------------------------------------------------------
-void CRunway::UpdateILS(float dir)
-{	float mdev = rhhd - rhmh;
-  float hlnd = 360 - pID[RWY_HI_END].aRot;
-	float hdir = Wrap360(hlnd - mdev);
-	ilsD[RWY_HI_END].lnDIR = hdir;
-	float ldir = Wrap360(hdir + 180);
-	ilsD[RWY_LO_END].lnDIR = ldir;
-	return;
 }
 //-----------------------------------------------------------------
 //  Return Ground Index
@@ -2421,6 +2415,20 @@ ILS_DATA  *CRunway::GetLandDirection(char *e)
 	//--- landing in lo end --------------
 	if (0 == strcmp(e,rlid))  return (ilsD + RWY_LO_END); 
 	return 0;
+}
+//---------------------------------------------------------------------------------
+//  return distance to runway center line (the distance is not normalized, as it
+//	must be used only for comparizon)
+//	Vector must be in arcsecs, relative to airport origin
+//  p is set to feet coordinates after been used
+//---------------------------------------------------------------------------------
+double CRunway::DistanceToLane(SPosition &p)
+{	CVector v;
+	v.x			= LongitudeDifference(p.lon,vdir.org.lon);
+	v.y			= p.lat - vdir.org.lat;
+	FeetCoordinates(v,vdir.rdf);
+	double n =  (vdir.afa * v.x) + (vdir.bta * v.y) + vdir.gma;
+	return (n / vdir.lgn);
 }
 //---------------------------------------------------------------------------------
 //  Compute runway code (ref TP312E)

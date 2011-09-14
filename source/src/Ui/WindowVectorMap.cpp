@@ -1536,7 +1536,7 @@ int CFuiVectorMap::ClickMapMENU(short itm)
 //  Tune com radio to the frequency of selected com
 //-------------------------------------------------------------------------
 int CFuiVectorMap::ClickRadLIST(int k)
-{ CVehicleObject *veh = globals->sit->uVeh;
+{ CVehicleObject *veh = globals->pln;
   if (0 == veh)       return 0;
   //---Get corresponding tag ----------
   int   No    = k - RadioLST.dep ;
@@ -1787,7 +1787,7 @@ void CFuiNavDetail::Initialize(CmHead *obj,U_SHORT tp,U_SHORT No)
 //  Frequency is allready set
 //----------------------------------------------------------------------
 void CFuiNavDetail::TuneRadioNav()
-{ CVehicleObject *veh = globals->sit->uVeh;
+{ CVehicleObject *veh = globals->pln;
   if (0 == veh)           return;
   switch (type) {
     case VOR:
@@ -2130,7 +2130,7 @@ void CFuiAptDetail::Draw()
 bool CFuiAptDetail::TuneRadioCom()
 { CComLine *slot  = (CComLine*)comBOX.GetSelectedSlot();
   if (0 == slot)      return true;
-  CVehicleObject *veh = globals->sit->uVeh;
+  CVehicleObject *veh = globals->pln;
   if (0 == veh)       return false;
   Tag radio = 0; 
   Tag tag   = 0;

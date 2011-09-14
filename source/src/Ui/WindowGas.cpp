@@ -76,7 +76,7 @@ CFuiFuel::CFuiFuel(Tag idn, const char* filename)
   sCel  = &Tot;
   cBOX  = 0;
   //---------------------------------------------------
-  CVehicleObject *veh  = globals->sit->GetUserVehicle();
+  CVehicleObject *veh  = globals->pln;
   gas = (veh)?(veh->gas):(0);
   //---Init title --------------------------------------
   if (veh)   veh->gas->GetAllCells(fcel);

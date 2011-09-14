@@ -219,8 +219,8 @@ class CAptObject : public CqItem, public CDrawByCamera {
   SVector   ofap;                                 // Airport origin offset from aircraft
   SVector  *scale;                                // Scale factor
   //------COMPENSATION FACTORS AT AIRPORT LATITUDE -------------------------
-  double    cpf;
-  double    rdf;
+	double    xpf;																// Expension factor
+  double    rdf;																// Reduction factor
   //------AIRPORT COMPONENTS  ----------------------------------------------
 	std::vector<CTarmac*> tmcQ;										// Tarmac queue
   CPaveQ    pavQ;                               // Pavement Queue
@@ -249,7 +249,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   //--------------------------------------------------------------------
   SPoint  mid;                                  // Runway mid point
   SPoint  lpt;                                  // Light point
-  //--------------------------------------------------------------------
+  //---Metric parameters ------------------------------------------
   double  dx;                                   // dx in arcsec
   double  dy;                                   // dy in arcsec
   double  dz;                                   // dz in arcsec
@@ -422,7 +422,7 @@ public:
   inline double    GetXnormal(double f)       {return (f * ppx);}
   inline double    GetYnormal(double f)       {return (f * ppy);}
   inline double    GetRDF()                   {return rdf;}
-  inline double    GetCPF()                   {return cpf;}
+  inline double    GetXPF()                   {return xpf;}
   inline SPosition GetOrigin()                {return org;}
 	inline float		 GetNmiles()								{return nmiles;}
 	//---------------------------------------------------------------------
@@ -546,7 +546,7 @@ public:
 	inline void					SwapILSdraw()						{dILS ^= 1;}
 	//-----------------------------------------------------------------
 	inline CAptObject  *GetNearestAPT()					{return nApt;}
-	inline SPosition   *GetDepartingEND()				{return (rdep)?(&rdep->opoP):(0);}
+	inline ILS_DATA    *GetDepartingEND()				{return rdep;}
 };
 //============================END OF FILE =================================================
 

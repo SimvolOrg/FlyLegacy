@@ -326,7 +326,7 @@ bool CDataTMS::DecodeBinary(char *fname)
 //------------------------------------------------------------------
 int CDataTMS::Read (CStreamFile *sf, Tag tag)    
 { double nd;
-  double cp = apo->GetCPF();                     // Compensation factor
+  double cp = apo->GetXPF();                     // Compensation factor
   switch (tag) {
     //---Polygon origin -------------------------------
       case 'orgn':
@@ -456,7 +456,7 @@ int CTileTMS::Read(CStreamFile *sf, Tag tag)
 //  All coordinates are transformed to relative arcseconds from airport origin
 //-------------------------------------------------------------------------------
 void CTileTMS::ReadData(CStreamFile *sf)
-{ double cp  = apo->GetCPF();
+{ double cp  = apo->GetXPF();
   double x0 = tms->GetXorigin();
   double y0 = tms->GetYorigin();
   double z0 = tms->GetZorigin();
@@ -637,7 +637,7 @@ void CTileTMS::ReadLight(CStreamFile *sf)
 //-------------------------------------------------------------------------------
 int CTileTMS::ReadLightParam(CStreamFile *sf)
 { double gr = apo->GetGround();                               // Airport ground
-  double cp = apo->GetCPF();                                  // Compensation factor
+  double cp = apo->GetXPF();                                  // Compensation factor
   double x0 = tms->GetXorigin();
   double y0 = tms->GetYorigin();
   int   nbr = 0;                                              // Number item read

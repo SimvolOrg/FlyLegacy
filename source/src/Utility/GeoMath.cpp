@@ -769,6 +769,16 @@ void FeetCoordinates(SPosition &pos,SVector &v)
   v.z = pos.alt;
   return;
 }
+//---------------------------------------------------------------------------------
+//  Convert vector from arcsecs into feet, 
+//  taking in account the correction factor for X longitude
+//---------------------------------------------------------------------------------
+void FeetCoordinates(SVector &v, double rdf)
+{ //------ tx and ty in feet ------------------------------
+  v.x = FN_FEET_FROM_ARCS(v.x) * rdf;
+  v.y = FN_FEET_FROM_ARCS(v.y);
+  return;
+}
 //-----------------------------------------------------------------------------
 //  Return Latitude increment per detail tile for this QGT
 //-----------------------------------------------------------------------------

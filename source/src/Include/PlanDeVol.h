@@ -154,9 +154,11 @@ private:
   char                      dbKey[10];    // Database key value
 	char                      userT[6];			// User tag
 	//---------------------------------------------------------------------
-	SPosition                *airp;					// Aircraft position
-	//---------------------------------------------------------------------
-	float						ilsF;								// ILS Frequency if any							
+	float						ilsF;								// ILS Frequency if any		
+	//--- True waypoint representative ------------------------------------
+	SPosition        spot;							// waypoint reference
+	double					dfeet;							// Distance in feet
+	double					magdv;							// Magnetic deviation
   //---------------------------------------------------------------------
   CFPlan					*fplan;							// Mother flight plan
 	//--- AREA TO EDIT VALUES   --------------------------------------------
@@ -170,7 +172,7 @@ private:
 	//---------------------------------------------------------------------
 	float						dDir;			// Direct Direction to waypoint
 	float						rDir;			// Direction to this waypoint from previous
-	float						pDis;			// Plane distance
+	float						mDis;			// Plane distance in miles
 	float						sDis;			// Summmed distance
   float           legDis;		// Distance from previous in nm
   //---------------------------------------------------------------------
@@ -187,7 +189,7 @@ private:
   CObjPtr                   DBwpt;        // Way point from database
   //------Edit parameter ------------------------------------------------
   char             mTxt[2];								// Marker
-  //--- METHODS -------------------------------------------------
+  //--- METHODS ---------------------------------------------------------
 public:
 	CWPoint(CFPlan *fp,Tag t);		    			// Constructor
 	CWPoint();
@@ -202,6 +204,7 @@ public:
 	void		PopulateUser();
 	//-------------------------------------------------------------
 	ILS_DATA	*GetLandingData();
+	bool		EnterLanding(CRadio *rad);
 	//-------------------------------------------------------------
 	void		SetSeq(U_SHORT s);
 	void		NodeOne(CWPoint *n);
@@ -262,7 +265,7 @@ public:
   inline char*      GetName()             {return Name;}
 	inline float			GetLegDistance()      {return legDis;}
 	inline float			GetSumDistance()			{return (*Mark == 'X')?(0):(sDis);}
-	inline float			GetPlnDistance()			{return pDis;}
+	inline float			GetPlnDistance()			{return mDis;}
 	inline int				GetAltitude()         {return altitude;}
 	inline CmHead*    GetDBobject()         {return DBwpt.Pointer();}
 	inline  Tag       GetType()             {return type;}
@@ -283,7 +286,6 @@ public:
 	//--------------------------------------------------------------
 	inline bool				HasTkoRWY() {return (strcmp("NONE",tkoRWY) != 0);}
 	inline bool				HasLndRWY()	{return (strcmp("NONE",lndRWY) != 0);}
-	inline bool       IsPopulated()         {return DBwpt.Assigned();}
   inline bool       IsVisited()						{return (*Mark == 'X');}
 	inline bool				IsActive()						{return (activ != 0);}
 	inline bool       NotAirport()          {return (type != 'airp');}

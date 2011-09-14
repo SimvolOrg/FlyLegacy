@@ -92,15 +92,15 @@ EMessageResult Send_Message (SMessage *msg)
   //---------------------------------------------------------------
 
   //---Send message to the user vehicle ---------------------------	
-	CVehicleObject *user = globals->sit->GetUserVehicle ();
-  if (user) rc = user->ReceiveMessage(msg);
+	CVehicleObject *veh = globals->pln;
+  rc = veh->ReceiveMessage(msg);
   TagToString(msg->dst,msg->group);
 	if (msg->receiver)    return rc;
   //--- Send message to the CheckList -----------------------------
   //rc = user->ckl->ReceiveMessage(msg);
   //if (msg->receiver)    return rc;
   //--- Warning has not been generated for this message yet--
-  msg->receiver	= user->GetNullSubsystem();			// Set Null Sub as receiver
+  msg->receiver	= veh->GetNullSubsystem();			// Set Null Sub as receiver
   //---Ignore when group is null -----------------------------------
   if (0 == msg->group)    return rc;
 	char sendr_id[8];
