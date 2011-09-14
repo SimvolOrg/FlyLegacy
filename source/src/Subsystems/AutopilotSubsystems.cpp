@@ -1426,18 +1426,12 @@ void	AutoPilot::ModeTGA()
 //	
 //-----------------------------------------------------------------------
 void AutoPilot::ModeGND()
-{	//--- Distance to center line -------------------------
- 	rDIS				= rend->rwy->DistanceToLane(*mveh->GetAdPosition());
-	double val	= 0;
-	//--- Compute error -----------------------------------
-	/*
+{	//--- Compute error -----------------------------------
 	aHDG	  = mveh->GetDirection();				// Actual Heading
 	rHDG		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),rend->refP);
-	hERR		= Wrap180(rHDG - aHDG );
+	hERR		= Wrap180(rHDG - aHDG) * 100;
   double val  = pidL[PID_RUD]->Update(dTime,hERR,0);     // to controller
-	*/
-	val  = -pidL[PID_RUD]->Update(dTime,rDIS,0);
-  rudS->PidValue(val);                         // result to rudder
+  rudS->SetValue(val);                         // result to rudder
 	//TRACE("rHDG=%.5f DIR=%.5f hERR=%.5f val=%.5f",rHDG,aHDG,hERR,val);
 	//---- hold level ---------------------------
 	ModeROL();
@@ -2200,13 +2194,16 @@ void AutoPilot::SwapGasControl()
 //  GAS control
 //-----------------------------------------------------------------------
 void AutoPilot::SetGasControl(char s)
-{	if (0 == gazS)						return;
+{	U_INT ctrl = (JS_THRO_BIT + JS_RUDR_BIT);
+	if (0 == gazS)						return;
 	if (AP_DISENGD == lStat)	return;
-	//--- Set gas control -------------
+	//--- Set gas control ------------------
 	ugaz	= s;
-	if (0 == ugaz)	globals->jsm->Reconnect (JS_THRO_BIT);
-  else						globals->jsm->Disconnect(JS_THRO_BIT);
+	if (0 == ugaz)	globals->jsm->Reconnect (ctrl);
+  else						globals->jsm->Disconnect(ctrl);
 	if (0 == ugaz)	ailS->Neutral();
+	//--- Lock rudder if control is set ----
+
 	return;
 }
 //-----------------------------------------------------------------------

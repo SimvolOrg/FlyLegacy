@@ -279,7 +279,8 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
     // JS: Correction for bug in excessive rate turn ---------------------
     double turn_rate   = speed * tan (steer_angle_rad) * base;      
     double lat_acc     = speed * (turn_rate + mveh->GetDifBrake());
-    side_force         = lat_acc * mveh->GetMassInKgs() * gearData->stbl;;
+    side_force         = lat_acc * mveh->GetMassInKgs() * gearData->stbl;
+		TRACE("GEAR turn %.4f",gearData->deflect);
     //-- turn nose wheel ----------------------------------------
     susp->TurnWheelTo(gearData->kframe);
     mveh->RazDifBrake();

@@ -235,28 +235,11 @@ void CAeroControl::Transfer()
 //  Edit controller data
 //--------------------------------------------------------------------
 void CAeroControl::Probe(CFuiCanva *cnv)
-{ char edt[64];
-  CDependent::Probe(cnv,0);
-  _snprintf(edt,63,"%.05f",data.raw);
-  cnv->AddText( 1,"raw");
-  cnv->AddText(10,edt);
-  cnv->NewLine();
-
-  _snprintf(edt,63,"%.05f",(indn * data.scal));
-  cnv->AddText( 1,"scaled");
-  cnv->AddText(10,edt);
-  cnv->NewLine();
-
-  _snprintf(edt,63,"%.05f",vPID);
-  cnv->AddText( 1,"vpid");
-  cnv->AddText(10,edt);
-  cnv->NewLine();
-
-  _snprintf(edt,63,"%.05f",Bias);
-  cnv->AddText( 1,"Bias");
-  cnv->AddText(10,edt);
-  cnv->NewLine();
-
+{ CDependent::Probe(cnv,0);
+  cnv->AddText( 1,1,"raw... %.5f",data.raw);
+  cnv->AddText( 1,1,"dflect %.5f",data.deflect);
+  cnv->AddText( 1,1,"vpid.. %.5f",vPID);
+  cnv->AddText( 1,1,"Bias.. %.5f", Bias);
   return;
 }
 
@@ -266,7 +249,7 @@ void CAeroControl::Probe(CFuiCanva *cnv)
 //-----------------------------------------------------------------------
 void CAeroControl::TimeSlice (float dT,U_INT FrNo)				// JSDEV*
 { CDependent::TimeSlice (dT,FrNo);								        // JSDEV*
-  indnTarget = Clamp(data.raw + vPID+Bias);
+  indnTarget = Clamp(data.raw + vPID + Bias);
   return;
 }
 //================================================================================
