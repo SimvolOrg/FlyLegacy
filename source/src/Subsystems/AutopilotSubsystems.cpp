@@ -1164,6 +1164,7 @@ void AutoPilot::Disengage(char gr)
 	mveh->SetABS(0);
   ailS->Neutral();							// Aileron to O
   rudS->Neutral();
+	flpS->SetPosition(0);
 	globals->jsm->ConnectAll();
 	ugaz		= 0;
 	rend		= 0;
@@ -1446,7 +1447,6 @@ void AutoPilot::ModeGND()
 		case AP_VRT_FIN:
 			if (aSPD > dSPD)							return;
 			Disengage(1);
-			flpS->SetPosition(0);
 			return;
 	}
 	return;
@@ -1602,12 +1602,16 @@ void AutoPilot::ModeFLR()
 void AutoPilot::ModeFIN()
 {	//----------------------------------------------------------------
 	//  TRACE("GRN: kts=%.2f agl=%.4f AoA=%.4f",spd,cAGL,-GetAOS());
-	//--- push plane on ground ---------------------------------
+	//--- Let lateral mode do the work --------------------
+	/*
 	ailS->Neutral();
 	elvT->SetValue(0);
 	elvS->SetValue(0.1f);
 	rudS->Neutral();
-	lStat		= AP_LAT_GND;						
+	lStat		= AP_LAT_GND;
+	if (rend)		return;
+	Disengage(1);
+	*/
 	return;
 }
 
@@ -1901,13 +1905,21 @@ void AutoPilot::EnterFLR()
 //
 //-----------------------------------------------------------------------
 void AutoPilot::EnterFIN()
-{	//--- disengage and set aircraft level --------------- 
+{	//--- Disengage and set aircraft level --------------- 
 	lStat   = AP_LAT_ROL;
   vStat   = AP_VRT_FIN;
   StateChanged(AP_VRT_FIN);
   ailS->PidValue(0);							// Set Level
   rudS->PidValue(0);							// Rudder to 0
 	mveh->SetABS(0);
+	//--- push plane on ground ---------------------------------
+	ailS->Neutral();
+	elvT->SetValue(0);
+	elvS->SetValue(0.1f);
+	rudS->Neutral();
+	lStat		= AP_LAT_GND;
+	if (rend)		return;
+	Disengage(1);
 	return;
 }
 //-----------------------------------------------------------------------
