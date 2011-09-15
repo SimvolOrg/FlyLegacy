@@ -174,6 +174,7 @@ private:
 	float						rDir;			// Direction to this waypoint from previous
 	float						mDis;			// Plane distance in miles
 	float						sDis;			// Summmed distance
+	float           pDis;			// Previous distance
   float           legDis;		// Distance from previous in nm
   //---------------------------------------------------------------------
   U_CHAR                    State;        // State

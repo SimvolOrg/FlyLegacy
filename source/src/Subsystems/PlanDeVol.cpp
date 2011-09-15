@@ -1099,7 +1099,9 @@ void CWPoint::EditArrival()
 //	Check if we are going away
 //-----------------------------------------------------------------
 char CWPoint::CheckAway()
-{	if (mDis < 3)		return 0;		// Still inside
+{	float pd = pDis;
+	pDis		 = mDis;
+	if (mDis < pd)		return 0;		// Still inside
 	//--- Going away -----------------------
 	State = WPT_STA_OUT;
 	SetActive(0);
@@ -1129,6 +1131,7 @@ char CWPoint::Outside()
 {	float lim = fplan->GetInDIS();
 	if (mDis > lim) 		return 0;
 	//--- we are now inside --------------
+	pDis	= mDis;
 	State = WPT_STA_INS;
 	strcpy(Mark,"O");
 	fplan->Refresh();

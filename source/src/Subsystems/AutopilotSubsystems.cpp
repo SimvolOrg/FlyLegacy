@@ -1768,7 +1768,8 @@ void AutoPilot::GetCrossHeading()
 	//--- normal approach ------------------------
   if ((aprm) && (sect))
 	{	lStat = AP_LAT_LT1;
-		double cor	= (Radio->hDEV > 0)?(-90):(+90);
+	  double side = Wrap180(Radio->radi - Radio->hREF);
+		double cor	= (side > 0)?(+90):(-90);
 		double haf  = cor * 0.5;
 		xHDG				= Wrap360(Radio->hREF + cor);
 		xCOR				= Wrap360(Radio->hREF + haf);
