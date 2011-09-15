@@ -64,8 +64,7 @@ void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
 //	Refresh distance and direction to aircraft
 //--------------------------------------------------------------------------
 void CExtSource::Refresh(U_INT fram)
-{	if (NeedUpdate(fram) == false)	return;
-	//----compute WPT relative position -------------
+{	//----compute WPT relative position -------------
 	SPosition *acp  = mveh->GetAdPosition();
 	SPosition *ref  = (ilsD)?(&ilsD->refP):(&spos);
   SVector	v	      = GreatCirclePolar(acp, ref);
@@ -384,7 +383,7 @@ void CRadio::ChangeRefDirection(float d)
 void CRadio::TimeSlice (float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
 	bool exs = EXT.IsActive();
-  if (exs)	EXT.Refresh(FrNo);
+  if (exs)	 EXT.Refresh(FrNo);
 	Frame				= FrNo;
   Synchronize();
 	//--- Call derived radios -----------------------
@@ -409,8 +408,8 @@ void	CRadio::Synchronize()
       Radio.mdis = sys->GetNmiles();
       Radio.mdev = sys->GetMagDev();
       Radio.hREF = sys->GetRefDirection();				//Radio.xOBS;
-			Radio.rDEV = Wrap360(rad - Radio.hREF);
-      Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,sPower);
+			Radio.rDEV = Wrap180(Radio.radi - Radio.hREF);
+      Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,1);    //sPower);
       Radio.gDEV = sys->GetVrtDeviation();				//0;
       Radio.fdis = sys->GetFeetDistance();
       Radio.sens = sys->Sensibility();						//10;

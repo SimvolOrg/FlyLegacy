@@ -1607,7 +1607,6 @@ void AutoPilot::ModeFIN()
 	elvT->SetValue(0);
 	elvS->SetValue(0.1f);
 	rudS->Neutral();
-	rend		= Radio->nav->GetLandSpot();
 	lStat		= AP_LAT_GND;						
 	return;
 }
@@ -1768,11 +1767,11 @@ void AutoPilot::GetCrossHeading()
 	//--- normal approach ------------------------
   if ((aprm) && (sect))
 	{	lStat = AP_LAT_LT1;
-	  double side = Wrap180(Radio->radi - Radio->hREF);
-		double cor	= (side > 0)?(+90):(-90);
+	  double cor	= (Radio->rDEV > 0)?(+90):(-90);
 		double haf  = cor * 0.5;
 		xHDG				= Wrap360(Radio->hREF + cor);
 		xCOR				= Wrap360(Radio->hREF + haf);
+	  TRACE("CROSS hREF=%.4f rDEV=%.4f xHDG=%.4f",Radio->hREF,Radio->rDEV,xHDG);
 		return;
 	}
 	//--- Approach in sector FR -----------------------
@@ -1835,6 +1834,8 @@ void AutoPilot::EnterAPR()
 	rHDG	= aHDG;											// Target heading = actual
   StateChanged(AP_STATE_APR);
   sEVN  = AP_STATE_ATK;             // next state
+	//--- Get landing data  ---------------------------------
+	rend		= Radio->nav->GetLandSpot();
   //---Compute a direction perpendicular to the radial ----
   GetCrossHeading();
   //--Init vertical mode -----

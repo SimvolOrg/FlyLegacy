@@ -4508,6 +4508,7 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 		//--- Tracking active waypoint -------------
 		case GPSR_TRAK:
 			if (APL->IsDisengaged())	return EnterSBY();
+			if (0 == wTRK)						return;
 			if (wTRK->IsActive())	    return Refresh();
 			NextNODE();
 			return;
