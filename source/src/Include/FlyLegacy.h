@@ -2248,6 +2248,17 @@ struct TC_SPOINT {
   int type;
 };
 //=============================================================================
+//  Structure to describe coefficient for vector director 
+//=============================================================================
+struct VECTOR_DIR {
+	double		afa;											// Alpha coefficient (normal x)
+	double		bta;											// Beta coefficient (norma y)
+	double		gma;											// Gamma coefficient
+	double		lgn;											// Lenght of normal
+	SPosition org;											// Origin
+	double    rdf;											// Reduction factor
+};
+//=============================================================================
 //  PIXEL DEFINITION
 //=============================================================================
 #define NE_PIX (0)
@@ -2883,6 +2894,28 @@ enum OTYPE {  ANY = 0x00,       // Any
 #define SIGNAL_ILS 2
 #define SIGNAL_COM 4
 #define SIGNAL_WPT 8
+//====================================================================
+//  Data to control ILS
+//====================================================================
+typedef struct {
+		CRunway   *rwy;														// Related runway
+    CILS      *ils;                           // ILS object
+    SPosition  lndP;                          // Landing point (on tarmac)
+    SPosition  refP;                          // reference point
+    SPosition  farP;                          // Far point for drawing
+    float      disF;                          // Distance in feet
+    float      errG;                          // Glide error (in tan unit)
+    float      gTan;                          // Tan of glide slope
+    float      altT;                          // altitude above threshold
+		//--- LAnding direction ------------------------
+		float      lnDIR;												  // Landing direction
+		float      tkDIR;													// Take OFF direction
+    //---Distances to define this ILS --------------
+    float      d1;                            // Landing distance
+    float      d2;                            // reference distance
+    float      d3;                            // Far distance
+		float      d4;														// Opposite
+} ILS_DATA;
 //===================================================================================
 //  NOTE:  dLon and dLat are working area used for several purposes 
 //===================================================================================
@@ -2942,7 +2975,8 @@ public:
   virtual SPosition  GetPosition();
   virtual SPosition *ObjPosition()    {return 0;}
 	virtual SPosition *GetFarPoint()    {return 0;}
-	virtual SPosition *GetOpposite()		{return 0;}
+	//------------------------------------------------------------
+	virtual ILS_DATA  *GetLandSpot()		{return 0;}
 	//------------------------------------------------------------
 	virtual void			 SetNavOBS(float d)   {;}
 	virtual void       SetRefDirection(float d)	{;}
@@ -2996,28 +3030,7 @@ struct RWEND {
 		RWEND::RWEND()
 		{	ifrq = 0; ilsD[0] = 0;}
 };
-//====================================================================
-//  Data to control ILS
-//====================================================================
-typedef struct {
-    CILS      *ils;                           // ILS object
-    SPosition  lndP;                          // Landing point (on tarmac)
-    SPosition  refP;                          // reference point
-    SPosition  farP;                          // Far point for drawing
-		SPosition  opoP;													// Opposite position
-    float      disF;                          // Distance in feet
-    float      errG;                          // Glide error (in tan unit)
-    float      gTan;                          // Tan of glide slope
-    float      altT;                          // altitude above threshold
-		//--- LAnding direction ------------------------
-		float      lnDIR;												  // Landing direction
-		float      tkDIR;													// Take OFF direction
-    //---Distances to define this ILS --------------
-    float      d1;                            // Landing distance
-    float      d2;                            // reference distance
-    float      d3;                            // Far distance
-		float      d4;														// Opposite
-} ILS_DATA;
+
 //====================================================================
 #define RWY_HI_END 0
 #define RWY_LO_END 1

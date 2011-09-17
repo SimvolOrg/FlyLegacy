@@ -403,7 +403,7 @@ CAirplane::~CAirplane (void)
 //	JSDEV* All parameters are read
 //-----------------------------------------------------------------------------
 void CAirplane::ReadFinished (void)
-{ 
+{ globals->pln	= this;
   CVehicleObject::ReadFinished ();
   //---Init rudder parameters ------------------------
   RudderBankMap(svh->GetAcrd ());
@@ -431,8 +431,7 @@ void CAirplane::ReadFinished (void)
 //-----------------------------------------------------------------------------
 void CAirplane::BindKeys()
 { CKeyMap *km = globals->kbd;
-  globals->pln = this;
-	globals->jsm->Connect();
+	globals->jsm->ConnectAll();
   km->BindGroup('plne',KeyAirGroup);
   //---Control surfaces ----------------------------------------------------
   km->Bind('adel',aKeyADEL,KEY_REPEAT);
@@ -1503,13 +1502,13 @@ void COPALObject::PositionAGL()
 //------------------------------------------------------------------------------------------
 void COPALObject::RestOnGround()
 { double    grn = globals->tcm->GetGroundAltitude();
-	SetAltPosition(grn + GetPositionAGL());
-  PositionAGL();
   //--- Zero Forces and Moments --------------------------
   ResetSpeeds ();
   Plane->zeroForces ();
   //--- Clear wheels forces ------------------------------
   whl->ResetForce();
+	SetAltPosition(grn + GetPositionAGL());
+  PositionAGL();
   return;
 }
 //------------------------------------------------------------------------------------------

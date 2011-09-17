@@ -35,6 +35,25 @@
 //=============================================================================
 class CKeyDefinition;
 class SJoyDEF;
+class CSimAxe;
+//=====================================================================================
+//  CONTROL CONNECTOR MASK
+//	Used for locking associated axis when autopilot is ON
+//=====================================================================================
+enum JoyConnector {
+		JS_AILR_BIT	= 0x0001,								// Ailerons
+		JS_ELVR_BIT = 0x0002,								// Elevator
+		JS_RUDR_BIT = 0x0004,								// Rudder
+		JS_AILT_BIT = 0x0008,								// Aileron trim
+		JS_ELVT_BIT	= 0x0010,								// Elevator trim	
+		JS_RUDT_BIT = 0x0020,								// Rudder trim
+		JS_THRO_BIT = 0x0040,								// THROTTLE lever
+		JS_OTHR_BIT = 0x8000,								// Other axis
+		//-----------------------------------------------------------
+		JS_SURF_PIL = (JS_AILR_BIT + JS_ELVR_BIT + JS_AILT_BIT + JS_ELVT_BIT),
+		JS_SURF_ALL = (JS_AILR_BIT + JS_ELVR_BIT + JS_RUDR_BIT),
+		JS_TRIM_ALL = (JS_AILT_BIT + JS_ELVT_BIT + JS_RUDT_BIT),
+};
 //=====================================================================================
 //  Neutral definition
 //=====================================================================================
@@ -51,7 +70,7 @@ typedef struct {
 class CSimButton: public CStreamObject
 {
 public:
-  SJoyDEF *     pjoy;          // Joystick descriptor
+  SJoyDEF *      pjoy;          // Joystick descriptor
   int            joyn;          // Joystick numer
   Tag            kset;          // Ket set
   Tag            cmde;          // Key command
@@ -95,7 +114,7 @@ public:
  ~SJoyDEF();
 	void	UpdateSDL();
 	bool	CreateSDL(int k);
-	char  HasMoved(int k);
+	U_INT HasMoved(CSimAxe *axe);
   //-------------------------------------------------------------------------
 	inline char   *getDevName()     {return dName;}
 	inline void	PushVal()	{int dim = nax * sizeof(float); memcpy(axePrev,axeData,dim); }
@@ -118,6 +137,8 @@ public:
   U_CHAR      type;     // 0 plane 1 heli
   U_CHAR      end;      // Last entry
   U_CHAR      group;    // Group name
+	//---------------------------------------------------------
+	U_INT	      msk;			// Connecting mask
 	//---------------------------------------------------------
 	char			  idn[8];		// Tag name for debug
 	//---------------------------------------------------------
@@ -145,6 +166,9 @@ public:
 	float RawVal(JOY_NULL_AREA *n);
 	void	Assign(CSimAxe *axn);
 	void  Assignment(char *edt);
+	//--------------------------------------------------------------
+	bool	IsConnected(U_INT m)
+	{	char sel = m & msk;	return ((sel) && (pJoy != 0));  }
 	//--------------------------------------------------------------
 	inline void				 SetATTN(float v)	{attn = v;}
 	inline float			 GetATTN()			{return attn;}
@@ -244,14 +268,18 @@ public:
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
 	//--------------------------------------------------------------------
-  void            InitAxe (int nx,U_CHAR t,char *nm,Tag c,int gp, bool p,float inv = +1);
+  void            InitAxe (int nx,U_CHAR t,U_INT msk,char *nm,Tag c,int gp, bool p,float inv = +1);
   void            SetMessage(int m,Tag des,int unit,Tag cmd);
   void            EndMark(int nx);
   void            NeutralMark(int nx,U_CHAR type);
 	//--------------------------------------------------------------------
   void            Update();
 	void						DetectMove(SJoyDEF * p);
-	char            CheckControl();
+	void            CheckControl(Tag tag);
+	//--------------------------------------------------------------------
+	void						ConnectAll();
+	void						Disconnect(U_INT m);
+	void						Reconnect(U_INT m);
 	//--------------------------------------------------------------------
   float           Neutral(float f, int nx);
   float           AxeVal(CSimAxe *pa);
@@ -273,7 +301,7 @@ public:
   //------------------------------------------------------------------------
   inline  void    ClearAxe(int nx) {AxesList[nx].pJoy = 0;}
   //------------------------------------------------------------------------
-  CSimAxe *Axe(EAllAxes tag)  {return GetAxe(tag);}
+  CSimAxe *Axe(Tag tag)  {return GetAxe(tag);}
   CSimAxe *NextAxe(CSimAxe *from,int type);
   //--- READ CONFIG FILE ---------------------------------------------------
 	void						ProcessHat(SStream *stream);
@@ -287,7 +315,7 @@ public:
 	void						UseHat(SJoyDEF *jsp,char s);
   //------------------------------------------------------------------------
   bool            ProcessAxe(CSimAxe *from);
-  CSimAxe        *GetAxe(EAllAxes tag);
+  CSimAxe        *GetAxe(Tag tag);
   bool            HasAxe(EAllAxes axe);
   void            Invert(CSimAxe *axn,U_CHAR all);
   void            ClearAxe(EAllAxes tag);
@@ -307,10 +335,7 @@ public:
   //------------------------------------------------------------------------
   inline float    GetNulleArea()				{return nValue;}
 	inline void  		Modifier()						{modify = 1;}
-  //------------------------------------------------------------------------
-	inline void Connect()			{cnx = (0xFF & use);}
-	inline void	Disconnect()	{cnx = 0;}
-	inline char Off()		      {return (cnx^1);}
+	inline char			GasDisconnected()		  {return (axeCNX & JS_THRO_BIT)?(0):(1);}
   //------------------------------------------------------------------------
 protected:
 	void					EnumSDL();
@@ -319,7 +344,9 @@ protected:
 	bool					HandleHat(U_INT hat);
   //----ATTRIBUTES ----------------------------------------------------------
 private:
-	char    cnx;		// Connected
+	//-------------------------------------------------------------------------
+	U_INT		axeCNX;					// Connected axis
+	//-------------------------------------------------------------------------
 	char    modify;
   char		busy;		// Library used 0 = PU 1 = SDL
 	char		use;		// Joystick use

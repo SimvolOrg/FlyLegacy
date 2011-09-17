@@ -135,9 +135,10 @@ void SJoyDEF::UpdateSDL()
 //----------------------------------------------------------------
 //	Check if axe has moved 
 //----------------------------------------------------------------
-char SJoyDEF::HasMoved(int k)
-{	float dta = fabs(axeData[k] - axePrev[k]);
-	return (dta > 0.1)?(1):(0);
+U_INT SJoyDEF::HasMoved(CSimAxe *axe)
+{	int k = axe->iAxe;						// Internal number
+	float dta = fabs(axeData[k] - axePrev[k]);
+	return (dta > 0.1)?(axe->msk):(0);
 }
 //==============================================================================
 //  CREATE AN AXE DESCRIPTOR
@@ -350,44 +351,44 @@ void CJoysticksManager::PreInit()
   AxeMoved.iAxe  = -1;
   AxeMoved.pJoy  = 0;
   //--------Assign plane axe name ----------------
-  InitAxe( 0,JOY_TYPE_PLAN, "Aileron  (Bank)",  JS_AILERON     , 0, true); 
-  InitAxe( 1,JOY_TYPE_PLAN, "Elevator (Pitch)", JS_ELEVATOR    , 0, true, -1);
-  InitAxe( 2,JOY_TYPE_PLAN, "Rudder (Heading)", JS_RUDDER      , 0, true, -1);
-  InitAxe( 3,JOY_TYPE_PLAN, "Elevator Trim",    JS_TRIM        , 0, true);
+  InitAxe( 0,JOY_TYPE_PLAN, JS_AILR_BIT,"Aileron  (Bank)",  JS_AILERON     , 0, true); 
+  InitAxe( 1,JOY_TYPE_PLAN, JS_ELVR_BIT,"Elevator (Pitch)", JS_ELEVATOR    , 0, true, -1);
+  InitAxe( 2,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)", JS_RUDDER      , 0, true, -1);
+  InitAxe( 3,JOY_TYPE_PLAN, JS_ELVT_BIT,"Elevator Trim",    JS_TRIM        , 0, true);
 	//---Group toes -------------------------------------------------------------------
-  InitAxe( 4,JOY_TYPE_PLAN, "Right Toe-brake",  JS_RIGHT_TOE   , JOY_GROUP_TOES, false);
-  InitAxe( 5,JOY_TYPE_PLAN, "Left  Toe-brake",  JS_LEFT_TOE    , JOY_GROUP_TOES, false);
+  InitAxe( 4,JOY_TYPE_PLAN, JS_OTHR_BIT,"Right Toe-brake",  JS_RIGHT_TOE   , JOY_GROUP_TOES, false);
+  InitAxe( 5,JOY_TYPE_PLAN, JS_OTHR_BIT,"Left  Toe-brake",  JS_LEFT_TOE    , JOY_GROUP_TOES, false);
 	//---Group throttle ---------------------------------------------------------------
-  InitAxe( 6,JOY_TYPE_PLAN, "Throttle 1",       JS_THROTTLE_1  , JOY_THROTTLE, false,-1);
-  InitAxe( 7,JOY_TYPE_PLAN, "Throttle 2",       JS_THROTTLE_2  , JOY_THROTTLE, false,-1);
-  InitAxe( 8,JOY_TYPE_PLAN, "Throttle 3",       JS_THROTTLE_3  , JOY_THROTTLE, false,-1);
-  InitAxe( 9,JOY_TYPE_PLAN, "Throttle 4",       JS_THROTTLE_4  , JOY_THROTTLE, false,-1);
+  InitAxe( 6,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",       JS_THROTTLE_1  , JOY_THROTTLE, false,-1);
+  InitAxe( 7,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 2",       JS_THROTTLE_2  , JOY_THROTTLE, false,-1);
+  InitAxe( 8,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 3",       JS_THROTTLE_3  , JOY_THROTTLE, false,-1);
+  InitAxe( 9,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 4",       JS_THROTTLE_4  , JOY_THROTTLE, false,-1);
 	//---Group mixture -----------------------------------------------------------------
-  InitAxe(10,JOY_TYPE_PLAN, "Mixture 1",        JS_MIXTURE_1   , JOY_MIXTURE, false);
-  InitAxe(11,JOY_TYPE_PLAN, "Mixture 2",        JS_MIXTURE_2   , JOY_MIXTURE, false);
-  InitAxe(12,JOY_TYPE_PLAN, "Mixture 3",        JS_MIXTURE_3   , JOY_MIXTURE, false);
-  InitAxe(13,JOY_TYPE_PLAN, "Mixture 4",        JS_MIXTURE_4   , JOY_MIXTURE, false);
+  InitAxe(10,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 1",        JS_MIXTURE_1   , JOY_MIXTURE, false);
+  InitAxe(11,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 2",        JS_MIXTURE_2   , JOY_MIXTURE, false);
+  InitAxe(12,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 3",        JS_MIXTURE_3   , JOY_MIXTURE, false);
+  InitAxe(13,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 4",        JS_MIXTURE_4   , JOY_MIXTURE, false);
 	//---Group Propellor ---------------------------------------------------------------
-  InitAxe(14,JOY_TYPE_PLAN, "Prop 1",           JS_PROP_1      , JOY_PROPEL, false);
-  InitAxe(15,JOY_TYPE_PLAN, "Prop 2",           JS_PROP_2      , JOY_PROPEL, false);
-  InitAxe(16,JOY_TYPE_PLAN, "Prop 3",           JS_PROP_3      , JOY_PROPEL, false);
-  InitAxe(17,JOY_TYPE_PLAN, "Prop 4",           JS_PROP_4      , JOY_PROPEL, false);
+  InitAxe(14,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 1",           JS_PROP_1      , JOY_PROPEL, false);
+  InitAxe(15,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 2",           JS_PROP_2      , JOY_PROPEL, false);
+  InitAxe(16,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 3",           JS_PROP_3      , JOY_PROPEL, false);
+  InitAxe(17,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 4",           JS_PROP_4      , JOY_PROPEL, false);
 	//--- Mark controls with neutral area ----------------------------------------------
   NeutralMark(0,JOY_NEUTRAL_STICK);
   NeutralMark(1,JOY_NEUTRAL_STICK);
   NeutralMark(2,JOY_NEUTRAL_STICK);
   EndMark(17);
   //----Init helicopter axis ----------------------------------------
-  InitAxe(18,JOY_TYPE_HELI, "Roll Cyclic",  JS_ROLL_CYCLIC,  0, false);
-  InitAxe(19,JOY_TYPE_HELI, "Pitch Cyclic", JS_PITCH_CYCLIC, 0, false);
-  InitAxe(20,JOY_TYPE_HELI, "Tail Rotor",   JS_TAIL_ROTOR,   0, false);
-  InitAxe(21,JOY_TYPE_HELI, "Trim",         JS_PITCHTRIM,    0, false);
-  InitAxe(22,JOY_TYPE_HELI, "Collective",   JS_COLLECTIVE,   0, true);
-  InitAxe(23,JOY_TYPE_HELI, "Throttle",     JS_THROTTLE,     0, true);
+  InitAxe(18,JOY_TYPE_HELI, JS_OTHR_BIT,"Roll Cyclic",  JS_ROLL_CYCLIC,  0, false);
+  InitAxe(19,JOY_TYPE_HELI, JS_OTHR_BIT,"Pitch Cyclic", JS_PITCH_CYCLIC, 0, false);
+  InitAxe(20,JOY_TYPE_HELI, JS_OTHR_BIT,"Tail Rotor",   JS_TAIL_ROTOR,   0, false);
+  InitAxe(21,JOY_TYPE_HELI, JS_OTHR_BIT,"Trim",         JS_PITCHTRIM,    0, false);
+  InitAxe(22,JOY_TYPE_HELI, JS_OTHR_BIT,"Collective",   JS_COLLECTIVE,   0, true);
+  InitAxe(23,JOY_TYPE_HELI, JS_OTHR_BIT,"Throttle",     JS_THROTTLE,     0, true);
   EndMark(23);
   //------------------------------------------------------------------
-  InitAxe(24,JOY_TYPE_GVEH, "Throttle",     JS_GAS,        0, true);
-  InitAxe(25,JOY_TYPE_GVEH, "STEER",        JS_STEER ,     0, true);
+  InitAxe(24,JOY_TYPE_GVEH, JS_OTHR_BIT,"Throttle",     JS_GAS,        0, true);
+  InitAxe(25,JOY_TYPE_GVEH, JS_OTHR_BIT,"STEER",        JS_STEER ,     0, true);
   //------------------------------------------------------------------
   EndMark(25);
 	//------------------------------------------------------------------
@@ -493,17 +494,18 @@ void CJoysticksManager::SetMessage(int m,Tag des,int unit,Tag cmd)
 // NOTE: all axis are entered into the map table "mapAxe" so they can
 //      be retrieved by the generic name 't'
 //-------------------------------------------------------------------------------
-void CJoysticksManager::InitAxe(int nx,U_CHAR tp,char *nm,Tag t,int gp, bool p,float inv)
+void CJoysticksManager::InitAxe(int nx,U_CHAR tp,U_INT ms,char *nm,Tag t,int gp, bool p,float inv)
 { if (nx > JOY_AXIS_NUMBER) gtfo("Increase axe table"); 
 	CSimAxe *axe = &AxesList[nx]; 
 	TagToString(axe->idn,t);
   axe->No    = nx;                // Entry number
   axe->name  = nm;                // Axe name
+	axe->msk	 = ms;
   axe->gen   = t;                 // Function tag
   axe->group = gp;                // Group link
   axe->pos   = p;                 // Positive indicator
   axe->type  = tp;                // Type
-	axe->inv		= inv;
+	axe->inv	 = inv;
   mapAxe[t]  = axe;
   return;
 }
@@ -543,10 +545,28 @@ void CJoysticksManager::Init( )
   }
   else WARNINGLOG("CJoystickManager : can't open %s",s.filename);
 }
+//-------------------------------------------------------------------------
+//	Connect all axis
+//-------------------------------------------------------------------------
+void CJoysticksManager::ConnectAll()
+{	axeCNX = JS_SURF_ALL + JS_TRIM_ALL + JS_THRO_BIT + JS_OTHR_BIT;
+	return;	}
+//-------------------------------------------------------------------------
+//	Disconnect requested axis
+//-------------------------------------------------------------------------
+void CJoysticksManager::Disconnect(U_INT m)
+{	axeCNX &= (-1 - m);								// Remove bit from connector mask
+	return;	}
+//-------------------------------------------------------------------------
+//	Reconnect requested axis
+//-------------------------------------------------------------------------
+void CJoysticksManager::Reconnect(U_INT m)
+{	axeCNX |= m;											// Add bit to connector mask
+	return;	}
 //----------------------------------------------------------------------------------
 //  Locate plane axe by tag
 //----------------------------------------------------------------------------------
-CSimAxe * CJoysticksManager::GetAxe(EAllAxes tag)
+CSimAxe * CJoysticksManager::GetAxe(Tag tag)
 { std::map<Tag,CSimAxe *>::iterator it = mapAxe.find(tag);
   return (it == mapAxe.end())?(0):((*it).second);
 }
@@ -782,7 +802,6 @@ void CJoysticksManager::EnumSDL()
 		else											delete pJINF;
 	}
 	use	= joyQ.size();
-	Connect();
 	Time	= 0;
 	return;
 }
@@ -832,11 +851,11 @@ SJoyDEF *CJoysticksManager::Find(char * name,int jn)
   return 0;
 }
 //-------------------------------------------------------------------------------
-//  Poll Axe value
+//  Poll Axe value:  Used by all control surface to get raw value of control
 //-------------------------------------------------------------------------------
 void CJoysticksManager::Poll(EAllAxes axe, float &v)
 {	CSimAxe *pa = GetAxe(axe);
-  if (pa && cnx && pa->pJoy )	v = pa->Value(nZON);
+  if (pa && pa->IsConnected(axeCNX))	v = pa->Value(nZON);
 	return;
 }
 //--------------------------------------------------------------------------------
@@ -869,26 +888,32 @@ float CJoysticksManager::RawVal(CSimAxe *pa)
 //--------------------------------------------------------------------------------
 //	Check if throttle is moved
 //--------------------------------------------------------------------------------
-char CJoysticksManager::CheckControl()
-{	CSimAxe *axe = AxesList + JOY_FIRST_PMT;
-  SJoyDEF *joy = axe->pJoy;
-	if (joy) return joy->HasMoved(axe->iAxe);
-	return 0;
+void CJoysticksManager::CheckControl(Tag tag)
+{	CSimAxe *axe  = GetAxe(tag);
+	if (!axe)			return;
+  SJoyDEF *joy  = axe->pJoy;
+	if (!joy)			return;
+	axeCNX  |= joy->HasMoved(axe);						// Reconnect if moved
+	return;
 }
 //--------------------------------------------------------------------------------
 //  Send messages related to PMT group (Prop-Mixture-Throttle)
+//	This function is called from the aircraft TimeSlice() routine
+//	to get the joystick values for above controls
 //  Any  control in above groups that have an axe assigned to them
 //  receive a message with the corresponding axe value.
 //--------------------------------------------------------------------------------
 void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
 { Update();										// Refresh values
-	if (!cnx)	{cnx = CheckControl(); return; }
+	if (GasDisconnected())	return CheckControl('thr1');
 	CSimAxe * axe = 0;
   for (int k=JOY_FIRST_PMT; k!=JOY_AXIS_NUMBER; k++)
   { axe = AxesList + k;
     if (0 == (axe->group & JOY_GROUP_PMT))  return;
-    if (0 == axe->pJoy)           continue;
+    if (0 == axe->pJoy)                   continue;
+		//--- If disconnected check for reconnection ------
     SMessage *msg = &axe->msg;
+		//--- Skip non existing engine or control ---------
     if (msg->user.u.engine > nbu) continue;
     msg->realData = axe->Value(nZON);			//AxeVal(axe);
     msg->user.u.datatag = axe->cmd;
@@ -899,13 +924,13 @@ void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
 //--------------------------------------------------------------------------------
 //  Send messages related to given group (Prop or Mixture or Throttle)
 //  Any  control in requested group receives a message with the corresponding
-//  datatag commande. This is reserved to a keyboard key that for instance may
+//  datatag command. This is reserved to a keyboard key that for instance may
 //  increase or decrease all controls in the group in one command
 //  NOTE:  We use the same message receiver as in the SendGroupPMT because the 
 //         same controls are adressed (i;e Throttle or Mixture or Prop pitch)
 //--------------------------------------------------------------------------------
 void CJoysticksManager::SendGroup(U_INT ng,Tag cmd,U_CHAR nbu)
-{ if (!cnx)	return;
+{ if (GasDisconnected())					return;
 	CSimAxe *axe	= 0;
   U_INT    grp	= AxesList[ng].group;             // Name of the group
 	cmde					= cmd;														// Store command
@@ -1106,7 +1131,7 @@ void CJoysticksManager::ProcessHat(SStream *stream)
 //  Process the axe
 //-----------------------------------------------------------------------------------
 bool CJoysticksManager::ProcessAxe(CSimAxe *from)
-{ CSimAxe *axe = GetAxe((EAllAxes)from->gen);     // plane axe ?
+{ CSimAxe *axe = GetAxe(from->gen);     // plane axe ?
   if (axe)  {axe->Copy(from); return true;}
   WARNINGLOG("CJoysticksManager::Read : device not connected");
   return true;

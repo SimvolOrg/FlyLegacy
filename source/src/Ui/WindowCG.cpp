@@ -104,7 +104,7 @@ CFuiWinCG::CFuiWinCG(Tag idn, const char* filename)
   //---- Create the window ---------------------------
   CFuiWindow::ReadFinished();
   SetWinTitle(DRAWING_COFG);
-  veh = globals->sit->GetUserVehicle();
+  veh = globals->pln;
   if (0 == veh)   Close();
   veh->GetFuelCell(fcel);
   veh->GetLoadCell(lcel);

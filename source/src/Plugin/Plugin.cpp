@@ -652,15 +652,15 @@ void CPluginMain::On_Instantiate (const long,const long,SDLLObject**) const
         //  std::map<Tag,CPanel*>::const_iterator iter;
         //  Tag ckpt_tag = 0;
         //  int count_gauges = 0;
-        //  for (iter = globals->sit->uveh->pit->GetMapCkpt ().begin();
-        //       iter!= globals->sit->uveh->pit->GetMapCkpt ().end(); iter++) {
+        //  for (iter = globals->pln->pit->GetMapCkpt ().begin();
+        //       iter!= globals->pln->pit->GetMapCkpt ().end(); iter++) {
         //    ckpt_tag = (*iter).first;
         //    #ifdef _DEBUG_DLLGAUGES
         //    char pnl_buff [8] = {0};//'frnt'
         //    TagToString (pnl_buff, ckpt_tag);
         //    TRACE ("ckpt %s", pnl_buff);
         //    #endif
-        //    count_gauges += globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.size ();
+        //    count_gauges += globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.size ();
         //  }
         //  if (count_gauges)
         //    (*itdll)->DLLInstantiate ( types[1]->type,
@@ -749,8 +749,8 @@ void CPluginMain::On_Instantiate (const long,const long,SDLLObject**) const
             std::map<Tag,CPanel*>::const_iterator iter;
             char pnl_buff [8] = {0};//'frnt'
             Tag ckpt_tag = 0;
-            for (iter = globals->sit->uveh->pit->GetMapCkpt ().begin();
-                 iter!= globals->sit->uveh->pit->GetMapCkpt ().end(); iter++) {
+            for (iter = globals->pln->pit->GetMapCkpt ().begin();
+                 iter!= globals->pln->pit->GetMapCkpt ().end(); iter++) {
               ckpt_tag = (*iter).first;
               TagToString (pnl_buff, ckpt_tag);
               #ifdef _DEBUG
@@ -760,15 +760,15 @@ void CPluginMain::On_Instantiate (const long,const long,SDLLObject**) const
 //
             /// search for a DLL gauge type to link with
             std::vector<CDLLGauge *>::iterator it =
-              globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.begin ();
-            for (it; it != globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end (); ++it) {
+              globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.begin ();
+            for (it; it != globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end (); ++it) {
               if ((*it)->GetSignature () == static_cast <const long> (types[1]->signature)) {
                break;
               }
             }
             char buff [8] = {0};
             TagToString (buff, types[1]->signature);
-            if (it != globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end ()) {
+            if (it != globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end ()) {
               plg_object [0]->flyObject.superSig = types [1];
               (*it)->SetObject (plg_object [0]);
               (*it)->dll = *itdll;
@@ -799,7 +799,7 @@ void CPluginMain::On_Instantiate (const long,const long,SDLLObject**) const
             //  new_g->SetObject (plg_object [0]);
             //  new_g->SetSignature (types[1]->signature);
             //  new_g->dll = *itdll;
-            //  globals->sit->uveh->pit->GetPanelByTag ('frnt')->dll_gauge.push_back (new_g);
+            //  globals->pln->pit->GetPanelByTag ('frnt')->dll_gauge.push_back (new_g);
             //}
 /*/
             //#ifdef _DEBUG_dll2
@@ -879,8 +879,8 @@ void CPluginMain::On_Link_DLLGauges (const long,const long,SDLLObject**) const
             char pnl_buff [8] = {0};//'frnt'
             Tag ckpt_tag = 0;
             //int test = 0;
-            for (iter = globals->sit->uveh->pit->GetMapCkpt ().begin();
-                 iter!= globals->sit->uveh->pit->GetMapCkpt ().end(); iter++) {
+            for (iter = globals->pln->pit->GetMapCkpt ().begin();
+                 iter!= globals->pln->pit->GetMapCkpt ().end(); iter++) {
               ckpt_tag = (*iter).first;
               TagToString (pnl_buff, ckpt_tag);
               #ifdef _DEBUG_DLLGAUGES
@@ -889,15 +889,15 @@ void CPluginMain::On_Link_DLLGauges (const long,const long,SDLLObject**) const
             //}
 
               std::vector<CDLLGauge *>::iterator it =
-                globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.begin ();
-              for (it; it != globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end (); ++it) {
+                globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.begin ();
+              for (it; it != globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end (); ++it) {
                 if ((*it)->GetSignature () == static_cast <const long> ((*idll_data).ityp_obj->first->signature)) {
                 break;
                 }
               }
               char buff [8] = {0};
               TagToString (buff, (*idll_data).ityp_obj->first->signature);
-              if (it != globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end ()) {
+              if (it != globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end ()) {
 //                *plg_object = NULL;
 //                (*itdll)->DLLInstantiate ( types[1]->type,
 //                                           types[1]->signature,
@@ -1048,8 +1048,8 @@ void On_Instantiate_DLLGauges (const long,const long,SDLLObject**) const
             std::map<Tag,CPanel*>::const_iterator iter;
             char pnl_buff [8] = {0};//'frnt'
             Tag ckpt_tag = 0;
-            for (iter = globals->sit->uveh->pit->GetMapCkpt ().begin();
-                 iter!= globals->sit->uveh->pit->GetMapCkpt ().end(); iter++) {
+            for (iter = globals->pln->pit->GetMapCkpt ().begin();
+                 iter!= globals->pln->pit->GetMapCkpt ().end(); iter++) {
               ckpt_tag = (*iter).first;
               TagToString (pnl_buff, ckpt_tag);
               #ifdef _DEBUG_DLLGAUGES
@@ -1058,15 +1058,15 @@ void On_Instantiate_DLLGauges (const long,const long,SDLLObject**) const
             //}
 
               std::vector<CDLLGauge *>::iterator it =
-                globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.begin ();
-              for (it; it != globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end (); ++it) {
+                globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.begin ();
+              for (it; it != globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end (); ++it) {
                 if ((*it)->GetSignature () == static_cast <const long> ((*idll_data).ityp_obj->first->signature)) {
                  break;
                 }
               }
               char buff [8] = {0};
               TagToString (buff, (*idll_data).ityp_obj->first->signature);
-              if (it != globals->sit->uveh->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end ()) {
+              if (it != globals->pln->pit->GetPanelByTag (ckpt_tag)->dll_gauge.end ()) {
 
                 // delete any former gauge
                 #ifdef _DEBUG_DLLGAUGES

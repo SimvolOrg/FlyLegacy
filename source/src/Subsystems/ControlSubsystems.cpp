@@ -223,33 +223,23 @@ void CAeroControl::Modify(float dt)
 { data.raw  +=  dt;
   data.raw   =  Clamp(data.raw);
 }
-
+//--------------------------------------------------------------------
+// Transfert autopilot value and clear auto value
+//--------------------------------------------------------------------
+void CAeroControl::Transfer()
+{	data.raw	= vPID;
+	vPID			= 0;
+	return;
+}
 //--------------------------------------------------------------------
 //  Edit controller data
 //--------------------------------------------------------------------
 void CAeroControl::Probe(CFuiCanva *cnv)
-{ char edt[64];
-  CDependent::Probe(cnv,0);
-  _snprintf(edt,63,"%.05f",data.raw);
-  cnv->AddText( 1,"raw");
-  cnv->AddText(10,edt);
-  cnv->NewLine();
-
-  _snprintf(edt,63,"%.05f",(indn * data.scal));
-  cnv->AddText( 1,"scaled");
-  cnv->AddText(10,edt);
-  cnv->NewLine();
-
-  _snprintf(edt,63,"%.05f",vPID);
-  cnv->AddText( 1,"vpid");
-  cnv->AddText(10,edt);
-  cnv->NewLine();
-
-  _snprintf(edt,63,"%.05f",Bias);
-  cnv->AddText( 1,"Bias");
-  cnv->AddText(10,edt);
-  cnv->NewLine();
-
+{ CDependent::Probe(cnv,0);
+  cnv->AddText( 1,1,"raw... %.5f",data.raw);
+  cnv->AddText( 1,1,"dflect %.5f",data.deflect);
+  cnv->AddText( 1,1,"vpid.. %.5f",vPID);
+  cnv->AddText( 1,1,"Bias.. %.5f", Bias);
   return;
 }
 
@@ -259,7 +249,7 @@ void CAeroControl::Probe(CFuiCanva *cnv)
 //-----------------------------------------------------------------------
 void CAeroControl::TimeSlice (float dT,U_INT FrNo)				// JSDEV*
 { CDependent::TimeSlice (dT,FrNo);								        // JSDEV*
-  indnTarget = Clamp(data.raw + vPID+Bias);
+  indnTarget = Clamp(data.raw + vPID + Bias);
   return;
 }
 //================================================================================
@@ -1620,7 +1610,7 @@ int CFlapControl::Read (SStream *stream, Tag tag)
       if (0 == aPos)    gtfo("No Flap array for flpS");
       ReadInt (&nb, stream);
       if (nb > nPos)    gtfo("Too much Speed for flpS");
-      for (int i=0; i < nb; i++) ReadInt (&aPos[i].speed, stream);
+      for (int i=0; i < nb; i++) ReadFloat(&aPos[i].speed, stream);
 			//-- For 0 deg, set a max speed to avoid error -----------
 			if (aPos[0].degre == 0)	aPos[0].speed = 10000;
       return TAG_READ;
@@ -1667,6 +1657,14 @@ void CFlapControl::NewPosition(int pos)
 	mveh->DamageEvent(&msg);
 	state = 0;								// Flaps out of service
   return;
+}
+//----------------------------------------------------------------------
+//	Get maximum speed for requested position
+//----------------------------------------------------------------------
+float CFlapControl::GetMaxSpeed(int p)
+{	if (0 == aPos)	return 10000;
+	if (p >= nPos)	return 10000;
+	return aPos[p].speed;
 }
 //----------------------------------------------------------------------
 //  Set a new position

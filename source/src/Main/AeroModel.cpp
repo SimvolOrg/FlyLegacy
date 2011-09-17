@@ -428,7 +428,7 @@ void CAerodynamicModel::DrawAerodelData (const double &lenght)
   //
 #ifdef _DEBUG_SCREEN_LINES
   //DebugScreenAero (NULL/*sf*/, "test");
-  CAeroControl *p = globals->sit->uVeh->amp->eTrim;
+  CAeroControl *p = globals->pln->amp->eTrim;
   if (p) {
     char buffer [128] = {0};
     float txt = p->Val ();
@@ -713,10 +713,10 @@ void CAeroModelFlap::ReadChannel()
   //TRACE("--Channel %s: defl=%-.5f rad=%-.5f",(char*)channel.c_str(),deflectRadians);
   //----------------------------------------------------
   // Set keyframe of all associated animated parts
-  CVehicleObject *pObj = globals->sit->GetUserVehicle();
+  CVehicleObject *mveh = globals->pln;
   set<string>::iterator i;
   for (i=parts.begin(); i!=parts.end(); i++) {
-    pObj->SetPartKeyframe ((char*)i->c_str(), keyframe);
+    mveh->SetPartKeyframe ((char*)i->c_str(), keyframe);
   }
   return;
 }
@@ -1154,7 +1154,7 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
   if (CAerodynamicModel::log) {
     CAerodynamicModel::LogVector(speedVector, "  speedVector");
     CAerodynamicModel::log->Write("    rho = %f, cf_speed = %f, Mach = %f", rho, cf_speed, mach);
-    CAerodynamicModel::log->Write("    aoa = %f d(%f) ori(%f)", aoa, RadToDeg (aoa), RadToDeg ((globals->sit->uVeh->GetOrientation ()).y));
+    CAerodynamicModel::log->Write("    aoa = %f d(%f) ori(%f)", aoa, RadToDeg (aoa), RadToDeg ((globals->pln->GetOrientation ()).y));
     CAerodynamicModel::log->Write("    cl = %f, cdi = %f, cdp = %f, cm = %f", cl, cdi, cdp, cm);
   }
 #endif

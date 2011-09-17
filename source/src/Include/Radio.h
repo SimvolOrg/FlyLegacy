@@ -55,7 +55,6 @@ protected:
   float			dsfeet;                       // Distance in feet
 	float			vdev;													// Vertical deviation
 	double    refD;													// Reference direction
-	SPosition *opoP;												// opposite position
 	//--- METHODS -------------------------------------
 public:
 	CExtSource(): CmHead(ANY,OTH) {active = 0;}
@@ -68,9 +67,9 @@ public:
 	inline	void			Stop()				{	active = 0;}
 	inline	U_CHAR		SignalType()	{ return signal;}
 	//--------------------------------------------------
-	inline  SPosition *GetOpposite()	  {return opoP;}
 	inline	void			SetRefDirection(float d) {refD = d;}
 	inline	void			SetPosition(SPosition *p)	{spos = *p;}
+	inline	ILS_DATA  *GetLandSpot()		{return ilsD;}
 	//--------------------------------------------------
 	inline  float			GetFeetDistance()	{ return dsfeet;}
 	inline	float     GetNmiles()				{ return nmiles; }

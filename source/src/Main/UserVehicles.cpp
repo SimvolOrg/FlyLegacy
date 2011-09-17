@@ -402,7 +402,7 @@ void CSimulatedVehicle::Timeslice (float dT)
 // CalcNewCG_ISU RH meters
 void CSimulatedVehicle::CalcNewCG_ISU (void)
 {
-  //newCG_ISU = CofG + *(globals->sit->uveh->wgh->wb.GetCGOffset()); // lc 052910 -
+  //newCG_ISU = CofG + *(globals->pln->wgh->wb.GetCGOffset()); // lc 052910 -
   //newCG_ISU.Times (FN_METRE_FROM_FEET (1.0)); // lc 052910 -
   mveh->wgh->GetVisualCG (newCG_ISU); // lc 052910 +
   newCG_ISU.x = FN_METRE_FROM_FEET (-newCG_ISU.x); // lc 052910 +
@@ -2553,7 +2553,7 @@ int CEngine::Read (SStream *stream, Tag tag)
     return TAG_READ;
   case 'bPos':
     ReadVector(&bPos,stream);
-    bPos = bPos + globals->sit->GetUserVehicle ()->wgh->svh_cofg;
+    bPos = bPos + globals->pln->wgh->svh_cofg;
     return TAG_READ;
   case 'mPos':
     ReadVector (&mPos, stream);

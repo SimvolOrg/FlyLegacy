@@ -51,8 +51,8 @@ void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
 	//--- Any ILS to set --------------------------------------
 	ilsD		= ils;
 	vdev		= 0;
-	opoP		= (ils)?(&ils->opoP):(0);
 	refD    = (ils)?(ils->lnDIR):(0);
+	if (ils)	spos = ils->refP;
 	//--- compute feet factor at given latitude ---------------
 	double lr   = FN_RAD_FROM_ARCS(spos.lat);					//DegToRad  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
@@ -383,7 +383,7 @@ void CRadio::ChangeRefDirection(float d)
 void CRadio::TimeSlice (float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
 	bool exs = EXT.IsActive();
-  if (exs)	EXT.Refresh(FrNo);
+  if (exs)	 EXT.Refresh(FrNo);
 	Frame				= FrNo;
   Synchronize();
 	//--- Call derived radios -----------------------
@@ -408,8 +408,8 @@ void	CRadio::Synchronize()
       Radio.mdis = sys->GetNmiles();
       Radio.mdev = sys->GetMagDev();
       Radio.hREF = sys->GetRefDirection();				//Radio.xOBS;
-			Radio.rDEV = Wrap360(rad - Radio.hREF);
-      Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,sPower);
+			Radio.rDEV = Wrap180(Radio.radi - Radio.hREF);
+      Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,1);    //sPower);
       Radio.gDEV = sys->GetVrtDeviation();				//0;
       Radio.fdis = sys->GetFeetDistance();
       Radio.sens = sys->Sensibility();						//10;

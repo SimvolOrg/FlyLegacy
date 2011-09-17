@@ -169,7 +169,7 @@ CFuiPlot::CFuiPlot(Tag idn, const char *filename)
   lwr2->SetRepeat(0.25);
   gBOX->AddChild('lwr2',lwr2,"-");
   //---  Init mother vehicle -----------------------------
-  mveh  = globals->sit->GetUserVehicle();
+  mveh  = globals->pln;
   if (0 == mveh)  Close();
   //------------------------------------------------------
   CFuiWindow::ReadFinished();

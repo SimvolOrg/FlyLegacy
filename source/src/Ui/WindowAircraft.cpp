@@ -160,7 +160,7 @@ void CFuiSetAir::MakeSlot(char *cpln, bool alloc,char *nfo)
 //  it matches the filter
 //-------------------------------------------------------------------------
 void  CFuiSetAir::ScanAllNFO()
-{ CVehicleObject *veh = globals->sit->GetUserVehicle();
+{ CVehicleObject *veh = globals->pln;
   cPlane  = "";
   if (veh)
   { CVehicleInfo   *inf = veh->nfo;
@@ -186,9 +186,6 @@ void CFuiSetAir::ChangeAircraft()
 { CAirLine *slot = (CAirLine*)airBOX.GetSelectedSlot();
   char     *nfo  = slot->GetNFO();
   globals->sit->ClearUserVehicle();
-  // sdk : remove any left behind object
-  //if (globals->plugins_num) globals->plugins.On_DeleteObjects ();//
-
 	// Release camera constraints ---------------------------------
 	globals->sit->SetAircraftFrom(nfo);
   Close();

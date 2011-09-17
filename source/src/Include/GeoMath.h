@@ -144,6 +144,7 @@ inline  U_INT   QGTKEY(U_INT cx,U_INT cz) {return ((cx << 16) | (cz));}
 double  GetCompensationFactor(short cz);
 double  GetReductionFactor(U_INT cz);
 void    FeetCoordinates(SPosition &pos,SVector &v);
+void		FeetCoordinates(SVector &v, double rdf);
 //-----------------------------------------------------------------------------
 void    InitGlobeTileTable ();
 void    InitQgtTable(float vmax);

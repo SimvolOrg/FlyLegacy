@@ -378,7 +378,7 @@ void CCamera::Restore(CAMERA_CTX &ctx)
   phi   = ctx.phi;
   fov   = ctx.fov;
 	//--- Restore vehicle position ----
-  CVehicleObject *veh = globals->sit->uVeh;
+  CVehicleObject *veh = globals->pln;
   if (veh) veh->SetPosition(ctx.pos);
 	if (veh) veh->SetOrientation(ctx.ori);
   return;
@@ -1676,7 +1676,7 @@ CCameraOverhead::CCameraOverhead (void)
   Up.z = 0;
   Up.y = 1.0f;
   // Increase rmax to allow very high zoom range
-  rmax = NmToFeet (15.0f);
+  rmax = NmToFeet (20.0f);
   
   // Initialize orientation to point straight down
   orient.x = DegToRad (90.0);
@@ -2842,7 +2842,7 @@ CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx)
 	//---Change to rabit camera -------------
   aCam					= new CRabbitCamera();
 	globals->cam	= aCam;
-	CVehicleObject *veh = globals->sit->uVeh;
+	CVehicleObject *veh = globals->pln;
   if (veh) veh->SetOrientation(ori);
 	if (veh) veh->SetPosition(pos);
 	//--- Set drawing constraints -----------

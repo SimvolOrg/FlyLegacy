@@ -74,7 +74,7 @@ void GlobalsClean (void)
 //  Return model to draw
 //--------------------------------------------------------------------------------
 CModelACM *GetDayModelACM()
-{ CVehicleObject   *veh = globals->sit->GetUserVehicle();
+{ CVehicleObject   *veh = globals->pln;
   if (0 == veh)     return 0;
   CAnimatedModel *lod = veh->GetLOD();
   if (0 == lod)     return 0;
@@ -195,7 +195,7 @@ bool KeySlewGroup(CKeyDefinition *kdf,int code)
   U_INT mod = (code >> 16);           // Modifier
   if (kid == 'slew')    return globals->slw->Swap();
   if (!globals->slw->IsEnabled ())  return false;
-  if (globals->sit->sVeh)           return false;
+  if (!globals->pln)								return false;
   return kdf->GetCallback() (kid,key,mod);
 }
 
@@ -237,9 +237,8 @@ bool sKeySRGT (int id, int code, int mod)
 bool sKeySBNL (int id, int code, int mod)
 { // Bank left 1° -------------------------------------
 	if (globals->aPROF & PROF_RABIT)	return true;	
-  CVehicleObject *veh = globals->sit->GetUserVehicle();
   CVector v(0,-1,0);
-  veh->AddOrientationInDegres(v);
+  globals->pln->AddOrientationInDegres(v);
   return true;
 }
 //----------------------------------------------------------------------------
@@ -248,11 +247,9 @@ bool sKeySBNL (int id, int code, int mod)
 bool sKeySBNR (int id, int code, int mod)
 {	//--- Bank right 1° ---------------------------------
 	if (globals->aPROF & PROF_RABIT)	return true;
-	CVehicleObject *veh = globals->sit->GetUserVehicle();
-	//if (veh->NbWheelsOnGround())	return true;
 	CVector v(0,+1,0);
-	veh->AddOrientationInDegres(v);
- return true;
+	globals->pln->AddOrientationInDegres(v);
+	return true;
 }
 //----------------------------------------------------------------------------
 //  Rotate left 'srtl'
@@ -260,9 +257,8 @@ bool sKeySBNR (int id, int code, int mod)
 bool sKeySRTL (int id, int code, int mod)
 { // Left rotate 1° ----------------------------------
 	if (globals->aPROF & PROF_RABIT)	return true;
-  CVehicleObject *veh = globals->sit->GetUserVehicle();
   CVector v(0,0,+1);
-  veh->AddOrientationInDegres(v);
+  globals->pln->AddOrientationInDegres(v);
   return true;
 }
 //----------------------------------------------------------------------------
@@ -271,9 +267,8 @@ bool sKeySRTL (int id, int code, int mod)
 bool sKeySRTR (int id, int code, int mod)
 { // Right rotate 1° ----------------------------------
 	if (globals->aPROF & PROF_RABIT)	return true;
-  CVehicleObject *veh = globals->sit->GetUserVehicle();
   CVector v(0,0,-1);
-  veh->AddOrientationInDegres(v);
+  globals->pln->AddOrientationInDegres(v);
   return true;
 }
 //----------------------------------------------------------------------------
@@ -282,9 +277,8 @@ bool sKeySRTR (int id, int code, int mod)
 bool sKeySRL4 (int id, int code, int mod)
 { //Left Rotate 45 ° ----------------------------------
 	if (globals->aPROF & PROF_RABIT)	return true;
-  CVehicleObject *veh = globals->sit->GetUserVehicle();
   CVector v(0,0,+45);
-  veh->AddOrientationInDegres(v);
+  globals->pln->AddOrientationInDegres(v);
   return true;
 }
 //----------------------------------------------------------------------------
@@ -293,9 +287,8 @@ bool sKeySRL4 (int id, int code, int mod)
 bool sKeySRR4 (int id, int code, int mod)
 { //--- Rigth rotate 45° ------------------------------
 	if (globals->aPROF & PROF_RABIT)	return true;
-  CVehicleObject *veh = globals->sit->GetUserVehicle();
   CVector v(0,0,-45);
-  veh->AddOrientationInDegres(v);
+  globals->pln->AddOrientationInDegres(v);
   return true;
 }
 //----------------------------------------------------------------------------
@@ -304,10 +297,8 @@ bool sKeySRR4 (int id, int code, int mod)
 bool sKeySPTU (int id, int code, int mod)
 { //pitch up 0.25° ------------------------------------
 	if (globals->aPROF & PROF_RABIT)	return true;
-  CVehicleObject *veh = globals->sit->GetUserVehicle();
-	//if (veh->NbWheelsOnGround())	return true;
   CVector v(+0.25,0,0);
-  veh->AddOrientationInDegres(v);
+  globals->pln->AddOrientationInDegres(v);
   return true;
 } 
 //----------------------------------------------------------------------------
@@ -316,10 +307,8 @@ bool sKeySPTU (int id, int code, int mod)
 bool sKeySPTD (int id, int code, int mod)
 { //--- Pitch Down 0.25° -----------------------------
 	if (globals->aPROF & PROF_RABIT)	return true;
-  CVehicleObject *veh = globals->sit->GetUserVehicle();
-	//if (veh->NbWheelsOnGround())	return true;
   CVector v(-0.25,0,0);
-  veh->AddOrientationInDegres(v);
+  globals->pln->AddOrientationInDegres(v);
   return true;
 }
 //----------------------------------------------------------------------------
@@ -343,11 +332,11 @@ bool sKeySLDN (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySREO(int id, int code, int mod)
 { // Get current user vehicle orientation
-  CVehicleObject *vehicle = globals->sit->GetUserVehicle();
+  CVehicleObject *veh = globals->pln;
   CVector v;
   v.x = v.y = v.z = 0.0;
-  vehicle->SetOrientation (v);
-  vehicle->SetPhysicalOrientation (v);
+  veh->SetOrientation (v);
+  veh->SetPhysicalOrientation (v);
   return true;
 }
 
@@ -357,7 +346,6 @@ bool sKeySREO(int id, int code, int mod)
 bool sKeySSTP(int id, int code, int mod)
 { //
   globals->slw->StopMove ();
-  //globals->ccm->ZeroRate ();
   return true;
 }
 
@@ -407,7 +395,7 @@ void CSlewManager::Disable (void)
 //  swap slew mode
 //------------------------------------------------------------------------
 bool CSlewManager::Swap()
-{  veh = globals->sit->GetUserVehicle ();
+{  veh = globals->pln;
   if (0 == veh)   return true;
   switch (mode) {
     //--- Inactive => Moving ---
@@ -442,7 +430,7 @@ void CSlewManager::StartSlew()
 void CSlewManager::StopSlew()
 {	ZeroRate();
 	if (globals->aPROF & PROF_RABIT)	return;
-  veh = globals->sit->GetUserVehicle ();
+  veh = globals->pln;
   if (0 == veh)											return;
   //---------------------------------------------
   mode = SLEW_STOP;
@@ -505,7 +493,7 @@ void CSlewManager::NormalMove(float dT)
 //  Update aircraft position
 //------------------------------------------------------------------------
 void CSlewManager::Update (float dT)
-{ veh = globals->sit->GetUserVehicle ();
+{ veh = globals->pln;
   if (0 == veh)   return;
   switch (mode) {
     case SLEW_STOP:

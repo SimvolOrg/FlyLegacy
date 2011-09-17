@@ -813,7 +813,7 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 	if (0 == qgt)	gtfo("No QGT for Airport %s",apt->GetName());
 	//--------------------------------------------------------------
   apt->SetAPO(this);
-  GetLatitudeFactor(org.lat,rdf,cpf);
+  GetLatitudeFactor(org.lat,rdf,xpf);
   ground  = org.alt;
   oTAXI   = globals->txw->GetTaxiTexture();
   cutOF   = 1500;                         // Altitude cut-off
@@ -829,10 +829,10 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   //-----SQL option ----------------------------------------------
   txy     = globals->sqm->SQLtxy();
   //-----Compute scale factor for designator ---------------------
-  scl.x = FN_ARCS_FROM_FEET(1.4) * cpf;
+  scl.x = FN_ARCS_FROM_FEET(1.4) * xpf;
   scl.y = FN_ARCS_FROM_FEET(1.4);
   //-----Scale factor for threshold bands ------------------------
-  sct.x = FN_ARCS_FROM_FEET(cpf);
+  sct.x = FN_ARCS_FROM_FEET(xpf);
   sct.y = FN_ARCS_FROM_FEET(1);
   //-----Add profile to POD ---------------------------------------
   AddPOD();
@@ -857,7 +857,7 @@ CAptObject::CAptObject(CAirport *apt)
   Airp    = apt;
   org     = apt->GetPosition();
   ground  = org.alt;
-  GetLatitudeFactor(org.lat,rdf,cpf);
+  GetLatitudeFactor(org.lat,rdf,xpf);
   txy     = 0;
   tcm     = globals->tcm;
   scale   = tcm->GetScale();
@@ -1027,12 +1027,30 @@ void CAptObject::SetRunwayData(CRunway *rwy)
   arcX    = dx / rlgt;
   arcY    = dy / rlgt;
   //---Compute edge normal component (longitude compensated)
-  ppx = (width * arcY * cpf);
+  ppx = (width * arcY * xpf);
   ppy = (width * arcX * rdf);
   //---Compute (edge + 5 feet) normal component -----------
   double rw = width + 5;
-  egx  = rw * arcY * cpf;
+  egx  = rw * arcY * xpf;
   egy  = rw * arcX * rdf;
+	//--- Compute coefficients for vector director ----------
+	//	Vector director is the line starting at Hi position and
+	//	going throught lo position
+	CVector ps0 = p0;
+	CVector ps1 = p1;
+	FeetCoordinates(ps0,rdf);
+	FeetCoordinates(ps1,rdf);
+	VECTOR_DIR *vdr = rwy->GetVDIR();
+	double a  = -(ps1.y - ps0.y);
+	double b  = +(ps1.x - ps0.x);
+	vdr->rdf	= rdf;
+	vdr->org  = org;
+	vdr->afa	= a;
+	vdr->bta  = b;
+	vdr->gma  = -((a * ps0.x) + (b * ps0.y));
+	vdr->lgn  = sqrt((a * a) + (b * b));
+	//double t1 = (a * ps1.x) + (b * ps1.y) + vdr->gma;
+	//double t2 = (a * ps0.x) + (b * ps0.y) + vdr->gma;
   //-------------------------------------------------------
   //  We compute a point inside the runway
   //  some feet after the threshold.  This will be
@@ -1045,7 +1063,6 @@ void CAptObject::SetRunwayData(CRunway *rwy)
   ils->d2   = rlgt;
   ils->d3   = ils->d1 - 15000;
 	ils->d4   = 0;							// Not used
-	ils->opoP = rwy->GetLoPos();
   SetLandingPRM(ils,rwy->GetHmDir(),rwy->GetLmDir());
   //---- same for lo end ---------------------------------
   ils       = rwy->GetIlsData(RWY_LO_END);
@@ -1053,7 +1070,6 @@ void CAptObject::SetRunwayData(CRunway *rwy)
   ils->d2   = 0;
   ils->d3   = ils->d1 + 15000;
 	ils->d4   = 0;							// Not used
-	ils->opoP = rwy->GetHiPos();
   SetLandingPRM(ils,rwy->GetLmDir(),rwy->GetHmDir());
   //--- SetRunway texture offset in packed texture -------
   wTex  = (rwy->GetPaved() == TC_RWY_PAVED)?(float(1)/8):(float(1)/5);
@@ -1099,7 +1115,7 @@ void CAptObject::SetLandingPRM(ILS_DATA *ils,float ln,float tk)
   fpn->lat  = p0.y + (arcY * d3) + org.lat;  // Y coord
   fpn->alt  = land->alt + (fabs(d3 - d1) * ils->gTan);
   //--- Set landing direction for normal runway ---
-	ils->tkDIR	= ln;										// Take off direction
+	ils->tkDIR	= ln;											// Take off direction
 	if (0 == ils->ils) ils->lnDIR = ln;		// Landing direction
   return;
 }
@@ -1733,7 +1749,7 @@ void CAptObject::BuildDualTBAR(LITE_MODEL &seg,CLitSYS &ls)
   //--Generate the light bar starting from edge light---------------
   int lgb = seg.wOfs;                         // Start at extremity
   for (int k = 0; k < nbl; k++)
-  { double sx = (arcY * lgb * cpf);
+  { double sx = (arcY * lgb * xpf);
     double sy = (arcX * lgb * rdf);
     //---Compute left light position -(at orthogonal direction) -------
     ent.VT_X = lpt.x - sx;
@@ -1810,7 +1826,7 @@ void CAptObject::BuildFlashTBAR(LITE_MODEL &seg,CLitSYS &ls)
   //---Spot generation ------------------------------
   int lgb = seg.wOfs;                         // Start at extremity
   for (int k = 0; k < seg.nbo; k++)
-  { double sx = (arcY * lgb * cpf);
+  { double sx = (arcY * lgb * xpf);
     double sy = (arcX * lgb * rdf);
     //---Compute left light position -(at orgonal direction) -------
     ent.VT_X = lpt.x - sx;
@@ -1857,7 +1873,7 @@ void CAptObject::BuildPAPIBAR(LITE_MODEL &seg,CLitSYS &ls)
   //---Build light bar ------------------------------
   int lgb = seg.wOfs;                         // Start at extremity
   for (int k = 0; k < seg.nbo; k++)
-  { double sx = (arcY * lgb * cpf);
+  { double sx = (arcY * lgb * xpf);
     double sy = (arcX * lgb * rdf);
     //---Compute left light position -(at orgonal direction) -------
     ent.VT_X = lpt.x - sx;
@@ -2694,7 +2710,7 @@ void CAptObject::CamDraw(CCamera *ac)
   double rot = globals->dang.z;
   glPopMatrix();                            // Back to aircraft position
   glTranslated(trs.x,trs.y,trs.z);          // Plane origin
-  glScaled(cpf,1.0, 1.0);                   // T1 Scale X,Y to feet coordinate
+  glScaled(xpf,1.0, 1.0);                   // T1 Scale X,Y to feet coordinate
   glRotated(rot,0,0,1);
   //--- Draw pictogram --------------------------------------------------
   CPicQUAD *icp = apm->GetIcon();
@@ -2722,7 +2738,7 @@ void CAptObject::Update3Dstate()
   return;
 }
 //-----------------------------------------------------------------------------------------
-//  Compute offset of position to airport origin
+//  Compute offset of position to airport origin in arcsecs
 //-----------------------------------------------------------------------------------------
 void CAptObject::Offset(SPosition &p, SVector &v)
   {v.x = LongitudeDifference(p.lon,org.lon);
@@ -2773,7 +2789,7 @@ void CAptObject::DrawLights(CCamera *cc)
 //-----------------------------------------------------------------------------------------
 void CAptObject::SetCameraPosition()
 { cam->GetOffset(cpos);                          // In feet relative to aircraft
-  cpos.x = AddLongitude(FN_ARCS_FROM_FEET(cpos.x) * cpf,apos.lon);
+  cpos.x = AddLongitude(FN_ARCS_FROM_FEET(cpos.x) * xpf,apos.lon);
   cpos.y = FN_ARCS_FROM_FEET(cpos.y) + apos.lat;
   cpos.x = LongitudeDifference(cpos.x,org.lon);
   cpos.y = cpos.y - org.lat;
@@ -2888,6 +2904,7 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
 	//--- Current location ---------------------------
 	nApt				= 0;
 	endp				= 0;
+	rdep				= 0;
   //-----For test. ------------------------------------------------
   int op = 0;
   GetIniVar("TRACE","DrawILS",&op);
@@ -3000,7 +3017,6 @@ bool CAirportMgr::GetTakeOffDirection(SPosition **opp,SPosition *p)
 	if (0 == dep)			return false;
 	ILS_DATA *ils = dep->GetNearestRwyEnd(p,opp);
 	if (0 == ils)			return false;
-//	*opp   = &ils->opoP;
 	return true;
 }
 //----------------------------------------------------------------------------------

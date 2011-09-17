@@ -1271,7 +1271,7 @@ int	APIGetUserObject(SFlyObjectRef *object)
 */
   std::list<SFlyObjectList>::iterator it = globals->sit->sdk_flyobject_list.fo_list.begin ();
   object->objectPtr = (*it).ref.objectPtr;
-  object->classSig = globals->sit->uVeh->GetTypePointer ();
+  object->classSig = globals->pln->GetTypePointer ();
   if (object->objectPtr) return 0;
   return 1;
 }
@@ -1354,7 +1354,7 @@ int	APISetObjectPosition(SFlyObjectRef *object, SPosition *pos)
       default :
       //case TYPE_FLY_VEHICLE:
       //  static_cast<CVehicleObject *> (object->objectPtr)->SetPosition (*pos);
-        globals->sit->uVeh->SetPosition (*pos);
+        globals->pln->SetPosition (*pos);
         return 0;
     }
   }
@@ -1385,7 +1385,7 @@ int	APISetObjectOrientation(SFlyObjectRef *object, SVector *orientation)
       default:
       //case TYPE_FLY_VEHICLE:
       //  static_cast<CVehicleObject *> (object->objectPtr)->SetOrientation (*orientation);
-        globals->sit->uVeh->SetOrientation (*orientation);
+        globals->pln->SetOrientation (*orientation);
         return 0;
     }
   }

@@ -395,8 +395,8 @@ template <class T> static inline T Wrap360 (T deg)
 template <class T> static inline T Wrap180 (T deg)
 {
   // First wrap 0..360
-  deg = Wrap360 (deg);
-
+  // deg = Wrap360 (deg);
+	while (deg < (T)0) deg  += (T)360;
   // Negate if greater than 180 deg
   if (deg > (T)180)  deg  -= (T)360;
   return deg;

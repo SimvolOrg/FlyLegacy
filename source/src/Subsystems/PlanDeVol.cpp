@@ -624,7 +624,6 @@ void CWPoint::Build(Tag t)
   fplan     = 0;
 	Modif			= 0;
 	mode			= WPT_MOD_LEG;
-	airp			= 0;
 	activ			= 0;
   position.lat = position.lon = position.alt = 0;
   altitude  = 0;
@@ -635,7 +634,7 @@ void CWPoint::Build(Tag t)
 	rDir			= 0;
 	dDir			= 0;
 	sDis			= 0;
-	pDis			= 0;
+	mDis			= 0;
 	ilsF			= 0;
 	strcpy(tkoRWY,"NONE");
 	strcpy(lndRWY,"NONE");
@@ -688,12 +687,11 @@ char *CWPoint::ChangeAltitude(int a)
 //-----------------------------------------------------------
 float CWPoint::GoDirect(CVehicleObject *veh)
 {	if (IsLanding())	return rDir;
-	airp = veh->GetAdPosition();
 	mode = WPT_MOD_DIR;
 	SVector v = {0,0,0};
   CmHead *obj	= DBwpt.Pointer();
 	if (0 == obj)	return rDir;
-	v	= GreatCirclePolar(airp, obj->ObjPosition());
+	v	= GreatCirclePolar(veh->GetAdPosition(), obj->ObjPosition());
 	double mdev = obj->GetMagDev();
 	double ndir = Wrap360((float)v.h - mdev);
 	return ndir;
@@ -771,6 +769,9 @@ void  CWPoint::FillWPT(CmHead *obj)
   SetPosition(obj->GetPosition());
   SetDbKey   (obj->GetKey());
   SetAltitude(fplan->actCEIL());
+	spot	= obj->GetPosition();
+	magdv = obj->GetMagDev();
+	dfeet = 0;
   return;
 }
 //-------------------------------------------------------------------------
@@ -903,6 +904,18 @@ ILS_DATA *CWPoint::GetLandingData()
 	return ils;
 }
 //--------------------------------------------------------------------
+//  Set Landing configuration
+//--------------------------------------------------------------------
+bool CWPoint::EnterLanding(CRadio *rad)
+{ ILS_DATA *ils = GetLandingData();
+	if (0 == ils)		return false;
+	//--- Set landing mode -------------
+	spot	= ils->refP;
+	mode	= WPT_MOD_LND;
+	rad->ModeEXT(GetDBobject(),ils);
+	return true;
+}
+//--------------------------------------------------------------------
 //  Process first node
 //	-Check for speed and altitude
 //--------------------------------------------------------------------
@@ -1008,6 +1021,9 @@ void CWPoint::UpdateMark(char m)
 void CWPoint::NodeNAV(CWPoint *prv,char m)
 {	activ	= 0;
 	Modif	= 0;
+	CmHead *obj	= DBwpt.Pointer();
+	spot	= obj->GetPosition();
+	magdv = obj->GetMagDev();
 	//--- Update if requested ----------------
 	UpdateMark(m);
 	//--- check for altitude -----------------
@@ -1083,7 +1099,9 @@ void CWPoint::EditArrival()
 //	Check if we are going away
 //-----------------------------------------------------------------
 char CWPoint::CheckAway()
-{	if (pDis < 3)		return 0;		// Still inside
+{	float pd = pDis;
+	pDis		 = mDis;
+	if (mDis < pd)		return 0;		// Still inside
 	//--- Going away -----------------------
 	State = WPT_STA_OUT;
 	SetActive(0);
@@ -1094,7 +1112,7 @@ char CWPoint::CheckAway()
 //-----------------------------------------------------------------
 char CWPoint::Inside()
 { double tds = fplan->TurningPoint();
-	if (pDis > tds)	return CheckAway();
+	if (mDis > tds)	return CheckAway();
 	//--- Waypoint is terminated now ------
 	SetActive(0);
 	State = WPT_STA_TRM;
@@ -1111,8 +1129,9 @@ char CWPoint::Inside()
 //-----------------------------------------------------------------
 char CWPoint::Outside()
 {	float lim = fplan->GetInDIS();
-	if (pDis > lim) 		return 0;
+	if (mDis > lim) 		return 0;
 	//--- we are now inside --------------
+	pDis	= mDis;
 	State = WPT_STA_INS;
 	strcpy(Mark,"O");
 	fplan->Refresh();
@@ -1125,7 +1144,7 @@ char CWPoint::Outside()
 //-----------------------------------------------------------------
 char CWPoint::UpdateState()
 {	if (0 == activ)	return WPT_STA_TRM;		// External termination
-	sDis	= pDis;
+	sDis	= mDis;
 	switch(State)	{
 		case WPT_STA_OUT:
 			return Outside();
@@ -1142,20 +1161,17 @@ return 0;
 //	-Direct direction to waypoint
 //-----------------------------------------------------------------
 void CWPoint::UpdateRange(CVehicleObject *veh,U_INT frame)
-{	airp = veh->GetAdPosition();
-	//--- Compute distance from aircraft --------------
-	CmHead *obj = DBwpt.Pointer();
-	//--- Update distance and radial to Waypoint ------
-	obj->Refresh(frame);
-	pDis = obj->GetNmiles();
-	//--- Compute direct direction to waypoint -
-	dDir = obj->GetRadial();
+{	//--- Compute distance from aircraft --------------
+	SVector	v	= GreatCirclePolar(veh->GetAdPosition(), &spot);
+  dDir		= Wrap360((float)v.h - magdv);		// Direct direction
+	mDis		= (float)v.r * MILE_PER_FOOT;
+  dfeet		=  v.r;
 	//--- Check for a direct to waypoint --------------
 	if (0 == nSeq)	rDir = dDir;
 	//--- Update total distance -----------------------
 	int as = fplan->GetActSequence();
 	if (nSeq <  as)		sDis = 0;
-	if (nSeq == as)		sDis = pDis;
+	if (nSeq == as)		sDis = mDis;
 	if (nSeq >  as)		sDis = GetPrevDistance() + legDis;
 	return;
 }
@@ -1681,7 +1697,6 @@ void CFPlan::UpdateDirectNode(U_INT frm)
 //-----------------------------------------------------------------
 void CFPlan::UpdateActiveNode(U_INT frm)
 {	aWPT->UpdateRange(mveh,frm);
-	if (GPS)	GPS->UpdNavigationData(aWPT);
 	//---------------------------------------
 	if (0 == aWPT->UpdateState())			return;
 	//--- Waypoint is terminated ------------
@@ -1750,7 +1765,7 @@ void  CFPlan::RestoreNode()
 void CFPlan::Probe(CFuiCanva *cnv)
 { if (0 == aWPT)		return;
 	cnv->AddText( 1,1,"aWPT: %s",aWPT->GetIdentity());
-	cnv->AddText( 1,1,"pDis: %.2fnm",aWPT->GetPlnDistance());
+	cnv->AddText( 1,1,"mDis: %.2fnm",aWPT->GetPlnDistance());
 	cnv->AddText( 1,1,"State: %d",aWPT->GetState());
 	return;
 }
