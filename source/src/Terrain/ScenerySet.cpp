@@ -43,14 +43,11 @@ CScenerySet::CScenerySet (const char* scfFolder,
   strcat (fullname, scfFilename);
 
   // Attempt to open scenery file stream
-  SStream *s = new SStream;
-  strcpy (s->filename, fullname);
-  strcpy (s->mode, "r");
-  if (OpenStream (s)) {
-    ReadFrom (this, s);
-    CloseStream (s);
+  SStream s;
+  if (OpenRStream (fullname,s)) {
+    ReadFrom (this, &s);
+    CloseStream (&s);
   }
-  delete s;
 	//-------------------------------------------------------------------
 	//	We assign the scenery to a QGT:  
 	//	The QGT is defined by the center point described by the area

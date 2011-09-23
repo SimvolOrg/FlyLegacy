@@ -819,6 +819,7 @@ GLubyte *CArtParser::MergeNight(GLubyte *tex)
 //  Return a full day texture RGBA
 //  opt = 1 =>  This texture is a dedicated texture that may be associated
 //               with a OPA mask for water merging
+//	TODO:  Do something when texture is missing
 //-----------------------------------------------------------------------------
 GLubyte *CArtParser::GetRawTexture(TEXT_INFO &txd,char opt)
 { GLubyte   *tex = 0;
@@ -2299,14 +2300,15 @@ CWater3D::~CWater3D()
 //  This function is called once per frame as all water tiles share this
 //  texture.
 //--------------------------------------------------------------------
+/*
 void CWater3D::BuildAnimation()
 { cam->DebDrawFBOinOrthoMode(dim,dim);
   glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
   //--- Set direction - ------------------------------------
   glFrontFace(GL_CW);
   //--------------------------------------------------------
-  float   *vtx   = &qad[0].VT_X;
-  float    col[] = {1,1,1,1};
+  COORD_UNIT   *vtx   = &qad[0].VT_X;
+  COORD_UNIT    col[] = {1,1,1,1};
   //--------------------------------------------------------
   glMatrixMode(GL_TEXTURE);
   glPushMatrix();
@@ -2333,6 +2335,7 @@ void CWater3D::BuildAnimation()
   cam->EndDrawFBO();
   return;
 }
+*/
 //--------------------------------------------------------------------
 //  Load Water textures
 //  The 16 images are loaded and are used to make the 3D texture
@@ -2446,7 +2449,7 @@ U_INT CWater3D::MoveWater()
   //-------------------------------------------------
   vit += 0.005f;
   if (vit > 1)  vit = 0;
-  BuildAnimation();
+//  BuildAnimation();
   return cam->TextureObject();
 }
 

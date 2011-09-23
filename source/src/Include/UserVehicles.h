@@ -86,7 +86,7 @@ protected:
 class CVehicleSound : public CStreamObject {
 public:
   // Constructors / destructor
-  CVehicleSound (const char *sfxFilename);
+  CVehicleSound (char *sfxFilename);
   virtual ~CVehicleSound (void);
 
   // CStreamObject methods
@@ -746,7 +746,7 @@ protected:
 //========================================================================
 class CRadioManager : public CStreamObject {
 public:
-  CRadioManager (const char* rdoFilename);
+  CRadioManager (char* rdoFilename);
 
   int   Read (SStream *stream, Tag tag);
 //  void  ReadFinished (void);
@@ -855,19 +855,6 @@ public:
 };
 
 
-//===========================================================================
-// Checklists
-//===========================================================================
-class CChecklists : public CStreamObject {
-public:
-  CChecklists (const char* eltFilename);
-
-  int   Read (SStream *stream, Tag tag);
-  void  ReadFinished (void);
-  void  Write (SStream *stream);
-
-public:
-};
 
 
 

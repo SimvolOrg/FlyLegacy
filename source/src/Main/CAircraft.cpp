@@ -805,6 +805,7 @@ void CAirplane::EndLevelling()
   globals->fui->RazCrash();
   State = VEH_OPER;
   RestOnGround();
+	CenterControls();
   return;
 }
 

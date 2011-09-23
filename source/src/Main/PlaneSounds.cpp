@@ -31,7 +31,7 @@
 //===========================================================================
 // CVehicleSound
 //===========================================================================
-CVehicleSound::CVehicleSound (const char *sfxFilename)
+CVehicleSound::CVehicleSound (char *sfxFilename)
 { sample  = 0;
   NbFlap  = 0;
   NbTire  = 0;
@@ -41,10 +41,7 @@ CVehicleSound::CVehicleSound (const char *sfxFilename)
   pMin    = 0.8f;
   //---------------------------------------
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, sfxFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",sfxFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -53,9 +50,7 @@ CVehicleSound::CVehicleSound (const char *sfxFilename)
 //  Destroy this object
 //-------------------------------------------------------------------------
 CVehicleSound::~CVehicleSound (void)
-{
-
-  // Clean up engine sound sub-object instances
+{ // Clean up engine sound sub-object instances
   std::vector<CEngineSound*>::iterator i;
   for (i=engineSounds.begin(); i!=engineSounds.end(); i++) {
     delete (*i);

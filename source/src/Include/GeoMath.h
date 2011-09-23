@@ -233,9 +233,9 @@ inline double GetReductionFactor(double lat)
 //  vx = full vertex indice
 //  Band longitude is the relative longitude in current band (64 QGT)
 //-----------------------------------------------------------------------------
-inline float GetBandLongitude(U_INT vx)
+inline double GetBandLongitude(U_INT vx)
 { U_INT bm = (vx & TC_BANDMOD);                   // Modulo Band
-  return float(FN_ARCS_FROM_SUB(bm));
+  return FN_ARCS_FROM_SUB(bm);
 }
 //-----------------------------------------------------------------------------
 //  Compute COAST File index from QGT(X-Z) key
@@ -290,9 +290,9 @@ class WCoord {
 friend class CVertex;
 protected:
   //-----BOX Coordinate -------------------------------------------
-  float WX;                           // Coordinate X
-  float WY;                           // Coordinate Y
-  float WZ;                           // Coordinate Z
+  double WX;                           // Coordinate X
+  double WY;                           // Coordinate Y
+  double WZ;                           // Coordinate Z
   //----Band indice -----------------------------------------------
   char  xB;                           // X band
   char  yB;                           // Y band
@@ -306,14 +306,15 @@ public:
   double  GetMX();
   double  GetMY();      
   //---------------------------------------------------------------
-  void  AssignNE(TC_VTAB *tab);       // Assign NE vertex
-  void  AssignNB(TC_VTAB *tab);       // Assign North border
-  void  AssignNW(TC_VTAB *tab);       // Assign NW vertex
-  void  AssignWB(TC_VTAB *tab);       // Assign West  border
-  void  AssignSW(TC_VTAB *tab);       // Assign SW vertex
-  void  AssignSB(TC_VTAB *tab);       // Assign South border
-  void  AssignSE(TC_VTAB *tab);       // Assign SE vertex
-  void  AssignEB(TC_VTAB *tab);       // Assign East border
+  void  AssignNE(TC_GTAB *tab);       // Assign NE vertex
+  void  AssignNB(TC_GTAB *tab);       // Assign North border
+  void  AssignNW(TC_GTAB *tab);       // Assign NW vertex
+  void  AssignWB(TC_GTAB *tab);       // Assign West  border
+  void  AssignSW(TC_GTAB *tab);       // Assign SW vertex
+  void  AssignSB(TC_GTAB *tab);       // Assign South border
+  void  AssignSE(TC_GTAB *tab);       // Assign SE vertex
+  void  AssignEB(TC_GTAB *tab);       // Assign East border
+	void	AssignCT(TC_GTAB *tab);				// Assign center
   //---------------------------------------------------------------
   void  Assign(double *ft);
   void  SetTour(F3_VERTEX *t,char v);
@@ -322,11 +323,11 @@ public:
   inline void   SetWY(double y)  {WY = y;}
   inline void   SetWZ(double z)  {WZ = z;}
 		//---------------------------------------------------------------
-	inline void		AssignHT(TC_VTAB *tab)	{tab->VT_Z = WZ;}
+	inline void		AssignHT(TC_GTAB *tab)	{tab->GT_Z = WZ;}
   //-----Return World coordinate (band relative)-------------------
-  inline float  GetWX()          {return WX;}
-  inline float  GetWY()          {return WY;}
-  inline float  GetWZ()          {return WZ;}
+  inline double  GetWX()          {return WX;}
+  inline double  GetWY()          {return WY;}
+  inline double  GetWZ()          {return WZ;}
 };
 //=============================================================================
 

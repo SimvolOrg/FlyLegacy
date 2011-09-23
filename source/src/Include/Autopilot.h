@@ -330,7 +330,7 @@ protected:
   double     vLim;              // VSP limit
   double     aLND;              // Decision altitude for landing
   double     aMIS;              // Decision altitude for miss landing
-	double     cMIS;							// Lateral missing coeff/ feet AGL
+	double     cMIS;							// Lateral missing coeff/ per feet AGL
   double     hMIS;              // Lateral miss error
   double     vMIS;              // Vertical miss error
 	double     rAGL;							// AGL reference
@@ -338,6 +338,7 @@ protected:
 	//--- GO ARROUND ------------------------------------------------------
 	double			TGA0;							// Distance for LEG 1
 	double			TGA1;							// Distance for LEG 2
+	double			aTGA;							// TGA altitude
 	//--- Flap control ----------------------------------------------------
 	char			 tkoFP;							// Take off flap position
 	double		 tkoFA;							// Altitude for retracting flaps
@@ -454,7 +455,7 @@ public:
 	void				SetTkoFLP(char p,double a)  {tkoFP = p; tkoFA = a;}
 	void				SetTKOopt(double s, double a);
   void        SetFLRopt(double a, double b,double d);
-  void        SetMISopt(double a);
+  void        SetAMIS(double a,double b);
 	//--- External interface --------------------------------------------
 	bool				Init();
 	bool 				Engage();
@@ -609,7 +610,7 @@ class CPIDdecoder: public CStreamObject {
   AutoPilot *apil;                          // Autopilot
   //--------------------------------------------------------------
 public:
-  CPIDdecoder(const char *fn,AutoPilot *ap);
+  CPIDdecoder(char *fn,AutoPilot *ap);
  ~CPIDdecoder();
   int     Read(SStream *st,Tag tag);
   void    DecodeLanding(SStream *st);
@@ -617,6 +618,7 @@ public:
 	void		DecodeTHRO(char *txt);
 	void		DecodeVROT(char *txt);
 	void		DecodeFlap(char *txt);
+	void		DecodeAMIS(char *txt);
 };
 
 //====================================================================================

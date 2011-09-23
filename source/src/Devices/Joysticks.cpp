@@ -33,8 +33,6 @@
 #include "../Include/KeyMap.h"
 #include "../Include/globals.h"
 
-
-#define JOY_STREAMFILE "System/FlyLegacyControls.txt"
 //==============================================================================
 //  Table to locate first entry of a given type 
 //==============================================================================
@@ -535,9 +533,7 @@ void CJoysticksManager::Init( )
 { PreInit();
   if (0 == use)			return;
 	SStream s;
-  strcpy (s.filename, JOY_STREAMFILE);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s))
+  if (OpenRStream ("System/FlyLegacyControls.txt",s))
   {
     // Successfully opened stream
     ReadFrom (this, &s);

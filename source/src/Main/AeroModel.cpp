@@ -86,12 +86,9 @@ CAerodynamicModel::CAerodynamicModel (CVehicleObject *v, char* svhFilename)
   force.x = force.y = force.z = 0.0;
   moment.x = moment.y = moment.z = 0.0;
 
-  // Read from stream file
+  //--- Read from stream file -----------
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, svhFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",svhFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -1323,10 +1320,7 @@ CPhysicModelAdj::CPhysicModelAdj (CVehicleObject *v,char* phyFilename)
   Ghgt = 0.0f;           // 0.00f   /// gear adjust const
   //-- Read from stream file --------------------------------
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, phyFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",phyFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }

@@ -1157,9 +1157,7 @@ CRLParser::CRLParser(CAirportMgr *ap, char *fn)
 //----------------------------------------------------------------------------------
 void CRLParser::Decode(char *fk)
 { SStream s;
-  strcpy (s.filename, fk);
-  strcpy (s.mode, "r");
-  if (!OpenStream (&globals->pfs,&s))  return;
+  if (!OpenRStream (fk,s))  return;
   ReadFrom (this, &s);
   CloseStream (&s);
   return;

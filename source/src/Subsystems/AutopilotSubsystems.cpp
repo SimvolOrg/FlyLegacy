@@ -386,13 +386,10 @@ void CPIDbox::Probe(CFuiCanva *cnv)
 //  CLASS CPIDdecoder
 //        Class to decode all PID controllers
 //===============================================================================================
-CPIDdecoder::CPIDdecoder(const char *fn,AutoPilot *ap)
+CPIDdecoder::CPIDdecoder(char *fn,AutoPilot *ap)
 { SStream s;
   apil  = ap;
-  strcpy (s.filename, "WORLD/");
-  strcat (s.filename, fn);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",fn,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -403,6 +400,16 @@ CPIDdecoder::CPIDdecoder(const char *fn,AutoPilot *ap)
 //------------------------------------------------------------------------------------
 CPIDdecoder::~CPIDdecoder()
 { 
+}
+//------------------------------------------------------------------------------------
+//  Decode throttle control
+//------------------------------------------------------------------------------------
+void CPIDdecoder::DecodeAMIS(char *txt)
+{ float pm1;
+  float pm2;
+	int nf = sscanf(txt,"check %f ft , to %f ft",&pm1, &pm2);
+	if (nf == 2) apil->SetAMIS(pm1,pm2);
+	return;
 }
 //------------------------------------------------------------------------------------
 //  Decode Landing option
@@ -493,8 +500,8 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 			return TAG_READ;
 		//---MISS LANDING PARAMETERS ---------------
 		case 'miss':
-			ReadDouble(&prm,st);
-			apil->SetMISopt(prm);
+			ReadString(txt,128,st);
+			DecodeAMIS(txt);
 			return TAG_READ;
 		//---Heading coefficient --------------------------------
 		case 'bias':              // Head adjust
@@ -645,7 +652,7 @@ AutoPilot::AutoPilot (void)
 	//--Lateral error is 2.5° whatever the distance -----------
   aMIS    = 400;							// Misslanding altitude check
   hMIS    = 2;
-	cMIS    = hMIS / aMIS;
+	cMIS    = 2 / aMIS;
   //--Vertical error is tangent(1) * 1000 units -------------
   vMIS  = 2.5;
   //---Default limits ------------------------------------
@@ -974,9 +981,10 @@ void AutoPilot::SetTKOopt(double s, double a)
 //  a is the decision altitude
 //  r is the cone radius to catch the signal
 //-----------------------------------------------------------------------
-void AutoPilot::SetMISopt(double a)
-{ if (a > 100)  aMIS  = a;
-  cMIS = hMIS / a;
+void AutoPilot::SetAMIS(double a,double b)
+{ aMIS	= RoundValue(a,100);
+  cMIS  = 2 / a;
+	aTGA = RoundValue(b,100);
   return;
 }
 //---------------------------------------------------------------------
@@ -1394,10 +1402,11 @@ void AutoPilot::ModeLT2()
 //					Make some distance and then enter approach
 //-----------------------------------------------------------------------
 void	AutoPilot::ModeTGA()
-{	switch (step)	{
-		//--- climb to 500 AGL -----------------------
+{	double amin = aMIS + 100;
+	switch (step)	{
+		//--- climb to (aMISS + 100) AGL -----------
 		case AP_TGA_UP5:
-			if (cAGL < 500)					return LateralHold();
+			if (cAGL < amin)			 return LateralHold();
 			flpS->SetPosition(0);
 			//--- Set direction to 90° left of runway --
 			rHDG	= Wrap360(Radio->hREF - 90);
@@ -1555,7 +1564,7 @@ bool AutoPilot::AbortLanding(char r)
   Alarm();
   EnterALT();
   EnterROL();
-	rALT	= RoundAltitude(globals->tcm->GetGroundAltitude() + 1500);
+	rALT	= RoundAltitude(globals->tcm->GetGroundAltitude() + aTGA);
 	StateChanged(AP_STATE_ALT);
 	lStat	= AP_LAT_TGA;
 	step	= AP_TGA_UP5;
@@ -1597,23 +1606,11 @@ void AutoPilot::ModeFLR()
   return;
 }
 //-----------------------------------------------------------------------
-//	Final groung segment
+//	Final groung segment:  Do nothing
+//	Everything is managed from lateral ground mode (ModeGND)
 ///-----------------------------------------------------------------------
 void AutoPilot::ModeFIN()
-{	//----------------------------------------------------------------
-	//  TRACE("GRN: kts=%.2f agl=%.4f AoA=%.4f",spd,cAGL,-GetAOS());
-	//--- Let lateral mode do the work --------------------
-	/*
-	ailS->Neutral();
-	elvT->SetValue(0);
-	elvS->SetValue(0.1f);
-	rudS->Neutral();
-	lStat		= AP_LAT_GND;
-	if (rend)		return;
-	Disengage(1);
-	*/
-	return;
-}
+{	return;	}
 
 
 //-----------------------------------------------------------------------

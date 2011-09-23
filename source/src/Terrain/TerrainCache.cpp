@@ -487,35 +487,7 @@ void CTextureDef::GetTileIndices(U_INT &tx,U_INT &tz)
   tz  =  quad->GetTileAZ();
   return;
 }
-//==========================================================================
-//  Ground Detail tile 
-//==========================================================================
-CGroundTile::CGroundTile(U_INT x,U_INT z)
-{ ax  = x;
-  az  = z;
-  txn = 0;
-}
-//-------------------------------------------------------------
-//	Set Ground parameters
-//-------------------------------------------------------------
-void CGroundTile::SetParameters(CTextureDef *t)
-{	txn		= t;
-	quad	= t->GetQUAD();
-	quad->MarkGround();
-	return;
-}
-//-------------------------------------------------------------
-//	Draw with band translation
-//-------------------------------------------------------------
-void CGroundTile::Draw(U_INT dOBJ)
-{	U_INT qx = (ax >> 5);										// QGT X indice
-	char hba = globals->tcm->GetHband();
-	char hbq = FN_BAND_FROM_QGT(qx) << TC_BY08;
-	glTranslated(GetXTRANS(hba,hbq),0,0);
-	glBindTexture(GL_TEXTURE_2D,dOBJ);
-	quad->DrawTile(1);
-	return;
-}
+
 //==========================================================================
 //  Initialize the Vertex descriptor
 //==========================================================================
@@ -685,6 +657,16 @@ bool  CmQUAD::AreWe(U_INT qx,U_INT tx,U_INT qz,U_INT tz)
   return true;
 }
 //-------------------------------------------------------------------------
+//  Check if we are for requested tile (testing purpose)
+//-------------------------------------------------------------------------
+bool  CmQUAD::AreWe(U_INT ax,U_INT az)
+{ U_INT cx = Center.keyX();
+  U_INT cz = Center.keyZ();
+  if ((ax != cx) || (az != cz)) return false;
+  cx = cx;                                      // For breakpoint when true
+  return true;
+}
+//-------------------------------------------------------------------------
 //  Make a Quad with the center vertex
 //-------------------------------------------------------------------------
 void CmQUAD::SetParameters(CVertex *ct,U_CHAR lv)
@@ -770,14 +752,21 @@ void CmQUAD::Clean()
 //	b) A count of vertices in each subquad.
 //	Those two items are then used in the glMultiDrawArray() primitive
 //-------------------------------------------------------------------------
-void CmQUAD::InitVTAB(U_CHAR res)
-{ CmQUAD *qad	= qARR;
+int CmQUAD::InitVTAB(TC_GTAB *vbo,int deb, U_CHAR res)
+{ CmQUAD  *qad	= qARR;
+  TC_GTAB	*dst	= vbo;
+	int      tot  = 0;
+	int      inx  = deb;
 	//--- Update first and count lists -------
 	for (U_SHORT k = 0; k != qDim; k++,qad++)
-	{ iBUF[k]				= msp->GetFirstIndex();
-		iBUF[qDim+k]	= qad->InitVertexCoord(msp,TexRES[res]);
+	{ iBUF[k]			= inx;
+	  int nbv			= qad->InitVertexCoord(dst,TexRES[res]);
+		iBUF[qDim+k]= nbv;
+		inx        += nbv;
+		tot        += nbv;
+		dst        += nbv;
 	}
-  return;
+  return tot;
 }
 //-------------------------------------------------------------------------
 //    Allocate vertex table
@@ -788,7 +777,7 @@ void CmQUAD::InitVTAB(U_CHAR res)
 //		It is used each time the texture coordinates need to be
 //		refreshed due to a change in resolution.
 //-------------------------------------------------------------------------
-int  CmQUAD::InitVertexCoord(CSuperTile *sp,float *txt)
+int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
 {	char       sh = globals->tcm->GetFactEV();			// Shift factor	
 	char			 fx = globals->tcm->GetLastEVindex();
 	CVertex   *ct = GetCenter();
@@ -797,25 +786,23 @@ int  CmQUAD::InitVertexCoord(CSuperTile *sp,float *txt)
   CVertex   *ne = ct->GetEdge(TC_NECORNER);
   CVertex   *nw = ct->GetEdge(TC_NWCORNER);
 	//--- Request vertex space ----------------------------------
-	vTab					= sp->GetVertexSpace();
-  TC_VTAB  *dst = vTab;
+	vTab					= vbo;						//sp->GetVertexSpace();
+  TC_GTAB  *dst = vTab;
 	//-----------------------------------------------------------
 	float			S;														// S coordinate
 	float			T;														// T coordinate
   //----Store center values -----------------------------------
-  dst->VT_S  = txt[ct->S_Coord(sh)];			// S coordinate
-  dst->VT_T  = txt[ct->T_Coord(sh)];			// T coordinate
-  dst->VT_X  = ct->GetWX();								// X coordinate
-  dst->VT_Y  = ct->GetWY();								// Y coordinate
-  dst->VT_Z  = ct->GetWZ();								// Elevation
+  dst->GT_S  = txt[ct->S_Coord(sh)];			// S coordinate
+  dst->GT_T  = txt[ct->T_Coord(sh)];			// T coordinate
+	ct->AssignCT(dst);
   dst++;																	// Next entry
   //----Process South border ----------------------------------
   CVertex *vt = sw;												// Start with SW corner
 	T		= txt[sw->T_Coord(sh)];							// T value
 	vt	= sw;
 	while (vt != se)												// Stop at SE corner
-	{	dst->VT_S  = txt[vt->S_Coord(sh)];		// S coordinate
-		dst->VT_T  = T;												// T coordinate
+	{	dst->GT_S  = txt[vt->S_Coord(sh)];		// S coordinate
+		dst->GT_T  = T;												// T coordinate
 		vt->AssignSB(dst);										// World coordinates
 		vt         = vt->Edge[TC_EAST];				// Next vertex
 		dst++;																// Next slot
@@ -823,8 +810,8 @@ int  CmQUAD::InitVertexCoord(CSuperTile *sp,float *txt)
   //----Process EAST border -----------------------------------
 	S		= txt[vt->ES_Coord(sh,fx)];					// S value
   while (vt != ne)												// Stop at NE corner
-  { dst->VT_S  = S;												// S coordinate
-    dst->VT_T  = txt[vt->T_Coord(sh)];		// T coordinate
+  { dst->GT_S  = S;												// S coordinate
+    dst->GT_T  = txt[vt->T_Coord(sh)];		// T coordinate
     vt->AssignEB(dst);										// World coordinates
     vt         = vt->Edge[TC_NORTH];			// Next vertex
     dst++;																// Next slot
@@ -832,15 +819,15 @@ int  CmQUAD::InitVertexCoord(CSuperTile *sp,float *txt)
   //----Process North border -----------------------------------
 	T			= txt[vt->NT_Coord(sh,fx)];				// T value
 	//--- NE corner is special. it must have previous S coord----
-	dst->VT_S	= S;													// S value
-	dst->VT_T	= T;													// T value
+	dst->GT_S	= S;													// S value
+	dst->GT_T	= T;													// T value
 	vt->AssignNE(dst);
 	vt				= vt->Edge[TC_WEST];					// Next vertice
 	dst++;																	// Next slot
 	//--- process other north vetices ----------------------------
 	while (vt != nw)												// Stop at NW corner
-	{	dst->VT_S  = txt[vt->S_Coord(sh)];		// S coordinate
-		dst->VT_T  = T;												// T coordinate
+	{	dst->GT_S  = txt[vt->S_Coord(sh)];		// S coordinate
+		dst->GT_T  = T;												// T coordinate
 		vt->AssignNB(dst);										// World coordinates
 		vt         = vt->Edge[TC_WEST];				// Next vertex
 		dst++;																// Next entry
@@ -848,25 +835,61 @@ int  CmQUAD::InitVertexCoord(CSuperTile *sp,float *txt)
 	//----Process West border ------------------------------------
 	S			= txt[vt->S_Coord(sh)];						// S value
 	//--- NW corner is special. it must have previous T coord----
-	dst->VT_S	= S;													// S value
-	dst->VT_T	= T;													// T value
+	dst->GT_S	= S;													// S value
+	dst->GT_T	= T;													// T value
 	vt->AssignNW(dst);
 	vt				= vt->Edge[TC_SOUTH];					// Next vertice
 	dst++;																	// Next slot
 	//--- Process other WEST vertices ----------------------------
 	while (vt != sw)												// Stop at SW corner
-	{	dst->VT_S	= S;												// S coordinate
-		dst->VT_T = txt[vt->T_Coord(sh)];			// T coordinate
+	{	dst->GT_S	= S;												// S coordinate
+		dst->GT_T = txt[vt->T_Coord(sh)];			// T coordinate
 		vt->AssignWB(dst);										// World coordinates
 		vt				= vt->Edge[TC_SOUTH];				// Next vertex
 		dst++;																// Next entry
 		}
   //----Duplicate SW corner ------------------------------------
 	*dst	= vTab[1];
-	 sp->ReserveSpace(nvtx);
   //------------------------------------------------------------
   return nvtx;
 }
+//-------------------------------------------------------------------------
+//	Transpose vertices for each subquad of the detail tile
+//-------------------------------------------------------------------------
+int CmQUAD::TransposeTile(TC_GTAB *vbo,SPosition *org)
+{	CmQUAD  *qd		= qARR;
+  TC_GTAB *dst	= vbo;
+	int			 tot  = 0;
+  for (int k = 0; k != qDim; k++,qd++)
+	{	int nbv  = qd->TransposeVertices(dst,org);
+		tot += nbv;
+		dst += nbv;
+	}
+	return tot;
+}
+//-------------------------------------------------------------------------
+//	Transpose vertices for airport ground
+//	Vertex parameter X and Y are recomputed to be relative to airport
+//	origin
+//-------------------------------------------------------------------------
+int CmQUAD::TransposeVertices(TC_GTAB *vbo,SPosition *org)
+{	double   ofs = Center.LongitudeOffset();
+	TC_GTAB *src = vTab;
+  TC_GTAB *dst = vbo;
+//TRACE("QUAD %d-%d -----",Center.keyX(),Center.keyZ());
+	for (int k=0; k< nvtx; k++)
+	{	dst->GT_S	= src->GT_S;
+		dst->GT_T = src->GT_T;
+		dst->GT_X = LongitudeDifference((src->GT_X + ofs),org->lon);
+		dst->GT_Y = src->GT_Y - org->lat;
+		dst->GT_Z = src->GT_Z - org->alt;
+//TRACE("   DST= %10d   X=%.5f Y=%.5f Z=%.5f",(int)dst,dst->GT_X,dst->GT_Y,dst->GT_Z);
+		dst++;
+		src++;
+	}
+	return nvtx;
+}
+
 //-------------------------------------------------------------------------
 //  Allocate QUAD vertex table
 //  trs:    Texture coordinates table
@@ -899,64 +922,64 @@ void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
   CVertex   *se = ct->GetEdge(TC_SECORNER);
   CVertex   *ne = ct->GetEdge(TC_NECORNER);
   CVertex   *nw = ct->GetEdge(TC_NWCORNER);
-  TC_VTAB  *dst = vTab;
+  TC_GTAB  *dst = vTab;
 	//-----------------------------------------------------------
 	float			S;														// S coordinate
 	float			T;														// T coordinate
   //----Store center values -----------------------------------
-  dst->VT_S  = txt[ct->indS];							// S coordinate
-  dst->VT_T  = txt[ct->indT];							// T coordinate
-	dst->VT_Z  = ct->GetWZ();								// Z coordinate
+  dst->GT_S  = txt[ct->indS];							// S coordinate
+  dst->GT_T  = txt[ct->indT];							// T coordinate
+	dst->GT_Z  = ct->GetWZ();								// Z coordinate
   dst++;																	// Next entry
   //----Process South border ----------------------------------
   CVertex *vt = sw;												// Start with sSW corner
 	T		= txt[sw->indT];										// T value
 	vt	= sw;
 	while (vt != se)												// Stop at SE corner
-	{	dst->VT_S  = txt[vt->indS];						// S coordinate
-		dst->VT_T  = T;												// T coordinate
-		dst->VT_Z  = vt->GetWZ();							// Z coordinate
+	{	dst->GT_S  = txt[vt->indS];						// S coordinate
+		dst->GT_T  = T;												// T coordinate
+		dst->GT_Z  = vt->GetWZ();							// Z coordinate
 		vt         = vt->Edge[TC_EAST];				// Next vertex
 		dst++;																// Next slot
 	}
   //----Process EAST border -----------------------------------
 	S		= txt[vt->inES];										// S value
   while (vt != ne)												// Stop at NE corner
-  { dst->VT_S  = S;												// S coordinate
-    dst->VT_T  = txt[vt->indT];						// T coordinate
-		dst->VT_Z  = vt->GetWZ();							// Z coordinate
+  { dst->GT_S  = S;												// S coordinate
+    dst->GT_T  = txt[vt->indT];						// T coordinate
+		dst->GT_Z  = vt->GetWZ();							// Z coordinate
     vt         = vt->Edge[TC_NORTH];			// Next vertex
     dst++;																// Next slot
   }
   //----Process North border -----------------------------------
 	T			= txt[vt->inNT];									// T value
 	//--- NE corner is special. it must have previous S coord----
-	dst->VT_S	= S;													// S value
-	dst->VT_T	= T;													// T value
-	dst->VT_Z  = vt->GetWZ();							  // Z coordinate
+	dst->GT_S	= S;													// S value
+	dst->GT_T	= T;													// T value
+	dst->GT_Z = vt->GetWZ();							  // Z coordinate
 	vt				= vt->Edge[TC_WEST];					// Next vertice
 	dst++;																	// Next slot
 	//--- process other north vetices ----------------------------
 	while (vt != nw)												// Stop at NW corner
-	{	dst->VT_S  = txt[vt->indS];						// S coordinate
-		dst->VT_T  = T;												// T coordinate
-		dst->VT_Z  = vt->GetWZ();							// Z coordinate
+	{	dst->GT_S  = txt[vt->indS];						// S coordinate
+		dst->GT_T  = T;												// T coordinate
+		dst->GT_Z  = vt->GetWZ();							// Z coordinate
 		vt         = vt->Edge[TC_WEST];				// Next vertex
 		dst++;																// Next entry
 	}
 	//----Process West border ------------------------------------
 	S			= txt[vt->indS];									// S value
 	//--- NW corner is special. it must have previous T coord----
-	dst->VT_S	= S;													// S value
-	dst->VT_T	= T;													// T value
-	dst->VT_Z = vt->GetWZ();							  // Z coordinate
+	dst->GT_S	= S;													// S value
+	dst->GT_T	= T;													// T value
+	dst->GT_Z = vt->GetWZ();							  // Z coordinate
 	vt				= vt->Edge[TC_SOUTH];					// Next vertice
 	dst++;																	// Next slot
 	//--- Process other WEST vertices ----------------------------
 	while (vt != sw)												// Stop at SW corner
-	{	dst->VT_S	= S;												// S coordinate
-		dst->VT_T = txt[vt->indT];						// T coordinate
-		dst->VT_Z = vt->GetWZ();							// Z coordinate
+	{	dst->GT_S	= S;												// S coordinate
+		dst->GT_T = txt[vt->indT];						// T coordinate
+		dst->GT_Z = vt->GetWZ();							// Z coordinate
 		vt				= vt->Edge[TC_SOUTH];				// Next vertex
 		dst++;																// Next entry
 		}
@@ -965,7 +988,7 @@ void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
   //------------------------------------------------------------
   return;
 }
-//-----------------------------------------------------------------------
+//-------------------------------------------------------------------------
 //  Locate P in one of the triangle Quad
 //  p   => Point coordinates relative to the XZ bandes
 //  ct  => Quad center
@@ -1121,10 +1144,10 @@ void  CmQUAD::SetArray(CmQUAD *qd,U_SHORT dm)
   return;
 }
 //-------------------------------------------------------------------------
-//    Count vertices in the quad
+//    Count vertices in the elementary quad
 //	NOTE: It is important that vertices should be counted in the same
 //				order as they are allocated in the VBO. If not, the vertex
-//				indices in iBUF wont correspond the the vertex coordinates
+//				indices in iBUF wont correspond to the vertex coordinates
 //-------------------------------------------------------------------------
 int  CmQUAD::CountVertices()
 {	CVertex *sw = GetCorner(TC_SWCORNER);
@@ -1158,6 +1181,15 @@ int CmQUAD::InitIndices(CSuperTile *sp,char opt)
 	iBUF	= new GLint[dim];
 	for (int n=0; n<dim; n++) iBUF[n] = '@';
 	if (opt)	RenderVBO();
+	return nbv;
+}
+//-------------------------------------------------------------------------
+//	Return the total vertices in the Detail Tile
+//-------------------------------------------------------------------------
+int CmQUAD::NbrVerticesInTile()
+{	int    nbv = 0;
+  CmQUAD *qd = qARR;
+	for (int k=0; k < qDim; k++,qd++)	nbv += qd->nvtx;
 	return nbv;
 }
 //-------------------------------------------------------------------------
@@ -1217,14 +1249,14 @@ U_INT CmQUAD::WorldTileKey()
 //-------------------------------------------------------------------------
 //  Draw the ground detail in normal mode (no VBO)
 //-------------------------------------------------------------------------
-void CmQUAD::DrawNML(char opt)
+void CmQUAD::DrawNML()
 { //--- For final quad, draw the detail tile ---------------
 	CmQUAD *qd = qARR;
 	for (U_INT k = 0; k != qDim; k++,qd++)
-	{	TC_VTAB *tab = qd->GetVTAB();
+	{	TC_GTAB *tab = qd->GetVTAB();
 		int			 nbv = qd->GetNbrVTX();
-		glVertexPointer  (3,GL_FLOAT,sizeof(TC_VTAB),&tab[0].VT_X);
-		glTexCoordPointer(2,GL_FLOAT,sizeof(TC_VTAB),tab);
+		glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),&tab[0].GT_X);
+		glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),tab);
 		glDrawArrays(GL_TRIANGLE_FAN,0,nbv);
 	}
   //---- Draw contour if Terra Browser is active -----------
@@ -1235,12 +1267,12 @@ void CmQUAD::DrawNML(char opt)
 //-------------------------------------------------------------------------
 //  Draw the ground detail with list of indices
 //-------------------------------------------------------------------------
-void CmQUAD::DrawIND(char opt)
+void CmQUAD::DrawIND()
 { int  *count = iBUF + qDim;
-	TC_VTAB *vt	= msp->GetVertexTable();
+	TC_GTAB *vt	= msp->GetVertexTable();
 	//--- For final quad, draw the detail tile ---------------
-	glVertexPointer  (3,GL_FLOAT,sizeof(TC_VTAB),&vt[0].VT_X);
-	glTexCoordPointer(2,GL_FLOAT,sizeof(TC_VTAB), vt);
+	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),&vt[0].GT_X);
+	glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB), vt);
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
   //---- Draw contour if Terra Browser is active -----------
   if (0 == (globals->aPROF & PROF_DR_DET))	return;
@@ -1250,14 +1282,10 @@ void CmQUAD::DrawIND(char opt)
 //-------------------------------------------------------------------------
 //  Draw the ground detail with VBO
 //-------------------------------------------------------------------------
-void CmQUAD::DrawVBO(char opt)
-{ if (opt)	msp->BindVBO();
-	int  *count = iBUF + qDim;
+void CmQUAD::DrawVBO()
+{ int  *count = iBUF + qDim;
 	//--- For final quad, draw the detail tile ---------------
-	glVertexPointer  (3,GL_FLOAT,sizeof(TC_VTAB),OFFSET_VBO(2 * sizeof(float)) );
-	glTexCoordPointer(2,GL_FLOAT,sizeof(TC_VTAB),0);
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
-	if (opt)	glBindBuffer(GL_ARRAY_BUFFER,0);
   //---- Draw contour if Terra Browser is active -----------
   if (0 == (globals->aPROF & PROF_DR_DET))	return;
   if (!globals->tcm->PlaneQuad(this))				return;
@@ -1341,7 +1369,7 @@ void CmQUAD::PatchVertices(ELV_PATCHE &p)
 //-------------------------------------------------------------------------
 //  Patche elevations
 //	dir = 0 ==>  Store elevation from vertex to patche
-//	dir = 1 =>   Strore patche into vertex elevation 
+//	dir = 1 =>   Store patche into vertex elevation 
 //-------------------------------------------------------------------------
 CVertex *CmQUAD::Patche(CVertex *vt,ELV_PATCHE &p,int nxt)
 {	U_INT key			= vt->VertexKey();
@@ -1439,7 +1467,7 @@ CSuperTile::~CSuperTile()
 //-------------------------------------------------------------------------
 void CSuperTile::LoadVBO()
 { if (0 == aVBO)		return;
-	int	dm = nbVTX * sizeof(TC_VTAB);
+	int	dm = nbVTX * sizeof(TC_GTAB);
 	glBindBuffer(GL_ARRAY_BUFFER,aVBO);
 	glBufferData(GL_ARRAY_BUFFER,dm,vBUF,GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -1458,7 +1486,6 @@ void CSuperTile::Reallocate(char opt)
 	if (vBUF)	delete [] vBUF;
 	nbVTX	= 0;
 	vBUF	= 0;
-	cBUF	= 0;
 	glDeleteBuffers(1,&aVBO);
 	AllocateVertices(opt);
 	return;
@@ -1482,18 +1509,20 @@ void CSuperTile::AllocateVertices(char opt)
 			tn += qd->InitIndices(this,opt);
 		}
 	//--- Allocate memory ------------------------------
-	vBUF		= new TC_VTAB[tn];
-	cBUF		= vBUF;
+	vBUF		= new TC_GTAB[tn];
   nbVTX		= tn;
-	usVTX		= 0;
 	//--- Build vertex table for each Detail Tile ------
+	TC_GTAB *dst = vBUF;
+	int      inx = 0;
 	for (U_INT no = 0; no != TC_TEXSUPERNBR; no++)
     { CmQUAD *qd = Tex[no].quad;
-			qd->InitVTAB(TC_MEDIUM);
+			int nbv		= qd->InitVTAB(dst,inx,TC_MEDIUM);
+			inx			 += nbv;
+			dst      += nbv;
 		}
 	//--- Allocate a VBO -------------------------------
 	if (opt)
-	{	int	dm = nbVTX * sizeof(TC_VTAB);
+	{	int	dm = nbVTX * sizeof(TC_GTAB);
 		glGenBuffers(1,&aVBO);
 		glBindBuffer(GL_ARRAY_BUFFER,aVBO);
 		glBufferData(GL_ARRAY_BUFFER,dm,vBUF,GL_STATIC_COPY);
@@ -1502,14 +1531,14 @@ void CSuperTile::AllocateVertices(char opt)
 	//--------------------------------------------------
 	return;
 }
-//-------------------------------------------------------------------------
-//  Compute remaining vertices
-//-------------------------------------------------------------------------
-int CSuperTile::ReserveSpace(int nbv)
-{ cBUF	 += nbv;
-	usVTX  += nbv;
-	if (usVTX > nbVTX)	gtfo("CSuperTile allocation problem");
-	return nbv;
+//-----------------------------------------------------------------------------
+//  Bind VBO
+//-----------------------------------------------------------------------------
+void CSuperTile::BindVBO()
+{	glBindBuffer(GL_ARRAY_BUFFER,aVBO);
+	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2 * UNIT_SIZE) );
+	glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),0);
+	return;
 }
 //-------------------------------------------------------------------------
 //  Check if Super Tile needs medium resolution
@@ -1698,9 +1727,9 @@ void CSuperTile::DrawInnerSuperTile()
       //--Avoid ground airport ------------------------------------------------
       if (qd->IsAptGround())  continue;
       //-----Draw sea or land texture -----------------------------------------
-			if (aVBO)	glBindBuffer(GL_ARRAY_BUFFER,aVBO);
+			if (aVBO)	BindVBO();									//glBindBuffer(GL_ARRAY_BUFFER,aVBO);
 			glBindTexture(GL_TEXTURE_2D,txn->dOBJ);
-			qd->DrawTile(0);
+			qd->DrawTile();
       //-----Draw night texture -----------------------------------------------
       TCacheMGR *tcm = globals->tcm;
       if (tcm->IsNight() && txn->nOBJ)
@@ -1708,7 +1737,7 @@ void CSuperTile::DrawInnerSuperTile()
             glEnable(GL_BLEND);
             glMaterialfv (GL_FRONT, GL_EMISSION, tcm->GetNightEmission()); 
 						glBindTexture(GL_TEXTURE_2D,txn->nOBJ);
-						qd->DrawTile(0);
+						qd->DrawTile();
             glMaterialfv (GL_FRONT, GL_EMISSION, tcm->GetDeftEmission());
             glEnable(GL_DEPTH_TEST);
             glDisable(GL_BLEND);
@@ -2061,10 +2090,8 @@ int C_QGT::HasTRN()
   _snprintf (fn,64,"DATA/D%03d%03d/G%01d%01d.TRN", gx,gz,qx, qz);
   //---------Create a TRN object -------------------------------
   SStream s;                                // Stream file
-  strcpy (s.filename, fn);
-  strcpy (s.mode, "r");
   if (!pexists(&globals->pfs, fn)) return 0;						///
-  if (!OpenStream (&globals->pfs, &s))  Abort("Can read TRN");
+  if (!OpenRStream (fn,s))  Abort("Can read TRN");
   trn = new C_TRN(this,tr);
   if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d Open TRN %s",
           tcm->Time(),xKey,zKey,fn);
@@ -4156,7 +4183,8 @@ void TCacheMGR::DrawAirportGround(std::vector<CGroundTile*> &grnd)
       gnd->Draw(txn->dOBJ);
       glPopMatrix();
     }
-  glPopMatrix();                                // Back to T0
+  glPopMatrix();										// Back to T0
+	glBindBuffer(GL_ARRAY_BUFFER,0);			
 /*
   {GLenum e = glGetError ();
    if (e != GL_NO_ERROR) 
@@ -4801,7 +4829,7 @@ void TCacheMGR::Draw(CCamera *cam)
 	//----Prepare OpenGL for drawing ---------------------------------
   glMatrixMode (GL_MODELVIEW);
   glPushAttrib (mask);
-	glDepthRange(0.00001,1);
+	glDepthRange(0.00001,100);
   //-------- Extract parameters from camera -------------------------
   orient = cam->GetAzimuth();
   cCam   = cam;

@@ -544,19 +544,6 @@ int CTurbopropEngineModel::Read (SStream *stream, Tag tag)
 
 void CTurbopropEngineModel::ReadFinished (void)
 {
-/* CW commented since this is now implemented in CEngine [UserVehicles.cpp]
-  if (strlen (engine_filename) != 0 && read_file_flag) {
-    read_file_flag = false;
-    SStream s;
-    strcpy (s.filename, "World/");
-    strcat (s.filename, engine_filename);
-    strcpy (s.mode, "r");
-    if (OpenStream (&s)) {
-      ReadFrom (this, &s);
-      CloseStream (&s);
-    }
-  }
-*/
 }
 
 void CTurbopropEngineModel::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
@@ -600,19 +587,7 @@ int CTurbofanEngineModel::Read (SStream *stream, Tag tag)
 
 void CTurbofanEngineModel::ReadFinished (void)
 {
-/*
-  if (strlen (engine_filename) != 0 && read_file_flag) {
-    read_file_flag = false;
-    SStream s;
-    strcpy (s.filename, "World/");
-    strcat (s.filename, engine_filename);
-    strcpy (s.mode, "r");
-    if (OpenStream (&s)) {
-      ReadFrom (this, &s);
-      CloseStream (&s);
-    }
-  }
-*/
+
 }
 
 void CTurbofanEngineModel::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
@@ -657,19 +632,7 @@ int CTurbineEngineModel::Read (SStream *stream, Tag tag)
 
 void CTurbineEngineModel::ReadFinished (void)
 {
-/*
-  if (strlen (engine_filename) != 0 && read_file_flag) {
-    read_file_flag = false;
-    SStream s;
-    strcpy (s.filename, "World/");
-    strcat (s.filename, engine_filename);
-    strcpy (s.mode, "r");
-    if (OpenStream (&s)) {
-      ReadFrom (this, &s);
-      CloseStream (&s);
-    }
-  }
-*/
+
 }
 
 void CTurbineEngineModel::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
@@ -713,19 +676,7 @@ int CTurboshaftAPUEngineModel::Read (SStream *stream, Tag tag)
 
 void CTurboshaftAPUEngineModel::ReadFinished (void)
 {
-/*
-  if (strlen (engine_filename) != 0 && read_file_flag) {
-    read_file_flag = false;
-    SStream s;
-    strcpy (s.filename, "World/");
-    strcat (s.filename, engine_filename);
-    strcpy (s.mode, "r");
-    if (OpenStream (&s)) {
-      ReadFrom (this, &s);
-      CloseStream (&s);
-    }
-  }
-*/
+
 }
 
 void CTurboshaftAPUEngineModel::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
@@ -769,19 +720,7 @@ int CSimplisticJetEngineModel::Read (SStream *stream, Tag tag)
 
 void CSimplisticJetEngineModel::ReadFinished (void)
 {
-/*
-  if (strlen (engine_filename) != 0 && read_file_flag) {
-    read_file_flag = false;
-    SStream s;
-    strcpy (s.filename, "World/");
-    strcat (s.filename, engine_filename);
-    strcpy (s.mode, "r");
-    if (OpenStream (&s)) {
-      ReadFrom (this, &s);
-      CloseStream (&s);
-    }
-  }
-*/
+
 }
 
 void CSimplisticJetEngineModel::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
@@ -971,10 +910,7 @@ void CPropellerModel::ReadFinished (void)
   if (read_PRP_file_flag) {
     read_PRP_file_flag = false;
     SStream s;
-    strcpy (s.filename, "World/");
-    strcat (s.filename, propeller_filename);
-    strcpy (s.mode, "r");
-    if (OpenStream (&s)) {
+    if (OpenRStream ("WORLD",propeller_filename,s)) {
       ReadFrom (this, &s);
       CloseStream (&s);
     }

@@ -41,6 +41,9 @@
 class CAptObject;
 class CCameraRunway;
 class CPicQUAD;
+class CTaxiNode;
+class CTaxiEdge;
+class CDataBGR;
 //============================================================================
 //  GENERAL DEFINITIONS 
 //============================================================================
@@ -193,6 +196,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   friend class CAirportMgr;
 	friend class CRunway;
   //--------------Attributes ---------------------------------------------
+	U_CHAR					bgr;																// BGR indicator
 	U_CHAR					tr;																	// Trace option
   U_CHAR          txy;                                // Taxiway in SQL
   U_CHAR          visible;                            // Visibility
@@ -205,8 +209,8 @@ class CAptObject : public CqItem, public CDrawByCamera {
   SPosition       apos;                               // Aircraft position
   SVector         cpos;                               // Camera position
 	float						nmiles;															// Distance in miles
-	//------------------------------------------------------------------------
-	C_QGT					 *qgt;																// Airport QGT
+	//--- Taxiway nodes ------------------------------------------------------
+	CDataBGR       *txBGR;															// Taxiway nodes
   //------------------------------------------------------------------------
   TCacheMGR      *tcm;
   //------COLORS -----------------------------------------------------------
@@ -239,7 +243,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   CLitSYS   becS;                               // Beacon
   CLitSYS   taxS;                               // Taxiways
   //-----SURFACE DEFINITIONS -------------------------------------------
-  SPosition org;                                // Airport origin
+  SPosition Org;                                // Airport origin
   SPosition llc;                                // Texture left corner
   //----Runway working area --------------------------------------------
   double width;                                 // Runway half wide (feet)
@@ -280,9 +284,14 @@ class CAptObject : public CqItem, public CDrawByCamera {
   double    egx;                                // X edge generator
   double    egy;                                // Y edge generator
   double    rot;                                // Angle of rotation for runway
- //------------------------------------------------------------------
+  //---Ground tile management -----------------------------------------
   TC_BOUND  glim;                               // Ground limit
   std::vector<CGroundTile*> grnd;               // Airport ground
+	//--- Vertex buffer -------------------------------------------------
+	U_INT			 Time;
+  U_SHORT    nGVT;										// Number of ground vertices
+	TC_GTAB		*gBUF;										// Ground Buffer
+	U_INT			 gVBO;										// Vertex Buffer Object
   //------------------------------------------------------------------
   SVector   scl;                                // Scale factor for letter
   SVector   sct;                                // Scale factor for threshold bands
@@ -312,9 +321,9 @@ public:
     CAptObject(CAirport *apt);                // For export only
    ~CAptObject();
    bool   InitBound();
-   //----TIME SLICE ------------------------------------------------------
+   //---TIME SLICE ----------------------------------------------------
    void   TimeSlice(float dT);
-   //----RUNWAY BUILDING -------------------------------------------------
+   //--- RUNWAY BUILDING ----------------------------------------------
 	 void		TraceRWY(CRunway *rwy);
 	 void		CompactRWY();
    int    BuildTaxiways();
@@ -326,15 +335,18 @@ public:
    void   BuildOtherRunway(CRunway *rwy);
    void   AptExtension(GroundSpot &gs);
    void   SegmentBase(int k);
-   void   LocateGround();
-   void   MarkGround(TC_BOUND &bnd);
-   void   UnmarkGround();
    void   BuildRunwayMidPoints(CRunway *rwy,TC_RSEG_DESC *model);
 	 void		SetTxCoord(TC_VTAB *tab,int No, char grnd);
+	 //--- Airport ground management -------------------------------------
+   void   LocateGround();
+	 void		BuildGroundVBO();
+	 void		FillGroundVBO();
+   void   MarkGround(TC_BOUND &bnd);
+   void   UnmarkGround();
 	 //-------------------------------------------------------------------
 	 inline void AddTarmac(CTarmac *st)	{tmcQ.push_back(st);}
 	 //--- Compact a queue into a VBO ------------------------------------
-	 TC_VTAB *BuildVBO(CPaveQ &hq,U_INT n);
+	 TC_VTAB *PutInVBO(CPaveQ &hq,U_INT n);
    //-------------------------------------------------------------------
    void   SetHiThreshold(int k,CRunway *rwy);
    void   SetLoThreshold(int k,CRunway *rwy);
@@ -401,6 +413,7 @@ public:
    void  RemPOD();                  // Remove File profile from POD
    void  ChangeLights(char ls);     // Switch lights ON/OFF
    void  UpdateLights(float dT);    // Update light state
+	 void  ReadTaxiNodes();						// Taxiway node & edges
 	//-----Identifier ------------------------------------------------------
    inline bool      SameApt(CAirport *a)      {return (a == Airp);}
 	//--- Toatl triangles --------------------------------------------------
@@ -423,7 +436,7 @@ public:
   inline double    GetYnormal(double f)       {return (f * ppy);}
   inline double    GetRDF()                   {return rdf;}
   inline double    GetXPF()                   {return xpf;}
-  inline SPosition GetOrigin()                {return org;}
+  inline SPosition GetOrigin()                {return Org;}
 	inline float		 GetNmiles()								{return nmiles;}
 	//---------------------------------------------------------------------
   inline void      SetScale(float sc)         {grid = sc;}
@@ -448,14 +461,13 @@ public:
   inline CPaveQ   *GetCntQ()    {return &cntQ;}
   inline CLiteQ   *GetLitQ()    {return  taxS.GetLitQ();}
   //----------------------------------------------------------------------
- // inline bool      NoRunway()  {return rwyQ.IsEmpty();}
- // inline bool      HasRunway() {return rwyQ.NotEmpty();}
 	inline bool NoRunway()	{return (tmcQ.size() == 0);}
 	inline bool HasRunway()	{return (tmcQ.size() != 0);}
   //----------------------------------------------------------------------
   inline char *GetKey()        {return (Airp)?(Airp->GetKey()):(0);}
   //--------DRAW Airport --------------------------------------------------
   void    Draw();
+	void		DrawGround();
 	void		DrawVBO(U_INT vbo,U_INT n);
   void    DrawLights(CCamera *cam);
   void    DrawGrid();
@@ -496,7 +508,7 @@ class CAirportMgr {
   char            dILS;                       // Drawing ILS indicator
 	//--- Letter and band VBO -----------------------------------------
 	U_INT						xOBJ;												// yellow texture
-	U_INT						oVBO;												// VBO buffer
+	U_INT						bVBO;												// Band & letter VBO buffer
 	//--- Departing runway --------------------------------------------
 	ILS_DATA       *rdep;												// Departing spot
   //-----------------------------------------------------------------
@@ -522,7 +534,7 @@ public:
   CAirportMgr(TCacheMGR *tm);
  ~CAirportMgr();
   void    TimeSlice(float dT);                // Update Airport List
-	void		bindVBO();
+	void		bindLETTERs();
 	void		SaveNearest(CAptObject *apo);
 	//--- EXTERNAL INTERFACE ------------------------------------------
 	bool		AreWeAt(char *key);

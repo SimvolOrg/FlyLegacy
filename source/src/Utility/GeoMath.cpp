@@ -1222,7 +1222,8 @@ double WCoord::GetMY()
 //  Given cx and cz indices, compute the band coordinates
 //-----------------------------------------------------------------------------
 void WCoord::Set(U_INT cx,U_INT cz)
-{ WX  = GetBandLongitude(cx);
+{ xB  = FN_BAND_FROM_INX(cx);
+	WX  = GetBandLongitude(cx);
   WY  = GetLatitudeArcs(cz);
   return;
 }
@@ -1236,76 +1237,85 @@ void WCoord::Assign2D(SVector &v1)
   return;
 }
 //-------------------------------------------------------------------------
+//  Assign Center vertex in Quad
+//-------------------------------------------------------------------------
+void WCoord::AssignCT(TC_GTAB *tab)
+{ tab->GT_X = WX;
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
+  return;
+}
+//-------------------------------------------------------------------------
 //  Assign NE vertex in Quad. If x = 0, the vertex is along the 0 meridien
 //	The we retrun the eastmost coordinate in the horizontal band 
 //-------------------------------------------------------------------------
-void WCoord::AssignNE(TC_VTAB *tab)
-{ tab->VT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
-  tab->VT_Y = WY;
-  tab->VT_Z = WZ;
+void WCoord::AssignNE(TC_GTAB *tab)
+{ tab->GT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
   return;
 }
 //-------------------------------------------------------------------------
 //  Assign North vertex in Quad
 //-------------------------------------------------------------------------
-void WCoord::AssignNB(TC_VTAB *tab)
-{ tab->VT_X = WX;
-  tab->VT_Y = WY;
-  tab->VT_Z = WZ;
+void WCoord::AssignNB(TC_GTAB *tab)
+{ tab->GT_X = WX;
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
   return;
 }
 //-------------------------------------------------------------------------
 //  Assign NW vertex in Quad
 //-------------------------------------------------------------------------
-void WCoord::AssignNW(TC_VTAB *tab)
-{ tab->VT_X = WX;
-  tab->VT_Y = WY;
-  tab->VT_Z = WZ;
+void WCoord::AssignNW(TC_GTAB *tab)
+{ tab->GT_X = WX;
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
   return;
 }
 //-------------------------------------------------------------------------
 //  Assign West vertex in Quad
 //-------------------------------------------------------------------------
-void WCoord::AssignWB(TC_VTAB *tab)
-{ tab->VT_X = WX;
-  tab->VT_Y = WY;
-  tab->VT_Z = WZ;
+void WCoord::AssignWB(TC_GTAB *tab)
+{ tab->GT_X = WX;
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
   return;
 }
 //-------------------------------------------------------------------------
 //  Assign SW vertex in Quad
 //-------------------------------------------------------------------------
-void WCoord::AssignSW(TC_VTAB *tab)
-{ tab->VT_X = WX;
-  tab->VT_Y = WY;
-  tab->VT_Z = WZ;
+void WCoord::AssignSW(TC_GTAB *tab)
+{ tab->GT_X = WX;
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
   return;
 }
 //-------------------------------------------------------------------------
 //  Assign South vertex in Quad
 //-------------------------------------------------------------------------
-void WCoord::AssignSB(TC_VTAB *tab)
-{ tab->VT_X = WX;
-  tab->VT_Y = WY;
-  tab->VT_Z = WZ;
+void WCoord::AssignSB(TC_GTAB *tab)
+{ tab->GT_X = WX;
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
   return;
 }
 //-------------------------------------------------------------------------
 //  Assign SE vertex in Quad
 //-------------------------------------------------------------------------
-void WCoord::AssignSE(TC_VTAB *tab)
-{ tab->VT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
-  tab->VT_Y = WY;
-  tab->VT_Z = WZ;
+void WCoord::AssignSE(TC_GTAB *tab)
+{ tab->GT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
   return;
 }
 //-------------------------------------------------------------------------
 //  Assign East vertex in Quad
 //-------------------------------------------------------------------------
-void WCoord::AssignEB(TC_VTAB *tab)
-{ tab->VT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
-  tab->VT_Y = WY;
-  tab->VT_Z = WZ;
+void WCoord::AssignEB(TC_GTAB *tab)
+{ tab->GT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
+  tab->GT_Y = WY;
+  tab->GT_Z = WZ;
   return;
 }
 

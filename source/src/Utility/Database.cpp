@@ -3809,7 +3809,7 @@ float CDbCacheMgr::GetFlatDistance(CmHead *obj)
     double difLon = LongitudeDifference(To->lon,aPos.lon);    // Longitude difference in arcsec
     double disLon = obj->GetNmFactor() * difLon;              // Compute x component
     obj->SetDistLon(short(disLon * 128));                     // Store longitude component scaled by 128
-    obj->SetDistLat(short(disLat * 128));                     // Store latitude component scaled by 128
+    obj->SetDistLat(short(disLat * 128));                     // Store latitude  component scaled by 128
     return ((disLon * disLon) + (disLat * disLat));           // Return squarred distance
 }
 //-----------------------------------------------------------------------------

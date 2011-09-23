@@ -622,9 +622,7 @@ CSituation::CSituation()
 //-------------------------------------------------------------------------
 void CSituation::OpenSitFile()
 { SStream s;
-  strcpy (s.filename, globals->sitFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream (globals->sitFilename,s)) {
     // Successfully opened stream
     ReadFrom (this, &s);
     CloseStream (&s);

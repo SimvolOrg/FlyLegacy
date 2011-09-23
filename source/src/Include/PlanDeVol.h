@@ -42,21 +42,20 @@ class CFPlan;
 #define WPT_MOD_DIR (1)										// Direct mode
 #define WPT_MOD_LND (2)										// Mode landing
 //============================================================================
-//  Flight Plan route extremity
+//  Vector Map Node
 //============================================================================
-class CRouteEXT: public CmHead {
+class VMnode 
+{
   //----ATTRIBUTES-----------------------------------------------
 	CWPoint   *wpt;
   //-------------------------------------------------------------
 public:
-	CRouteEXT() {wpt = 0;}
+	VMnode() {wpt = 0;}
 	//-------------------------------------------------------------
-  void       SetPosition(SPosition *p);
 	SPosition *ObjPosition();
 	void       SetObject(CmHead *x);
-	void			 SetNodeDistance(float d);
 	CmHead    *GetOBJ();
-	float			 GetLegDistance();
+	void			 SetNodeDistance();
 	//-------------------------------------------------------------
 	inline void	SetNode(CWPoint *w)		{wpt = w;}
 
@@ -342,8 +341,8 @@ private:
 	int 						mALT;												// max Ceiling
 	int							cALT;												// Current ceil
 	//----------Route parameters ----------------------------------
-  CRouteEXT       rOrg;                       // Origin
-  CRouteEXT       rExt;                       // Destination
+  VMnode       rOrg;                       // Origin
+  VMnode       rExt;                       // Destination
 	//--- LIST OF WAYPOINTS -----------------------------------------
 	CFlpLine        head;												// Title
   CListBox        wPoints;                    // List of way points

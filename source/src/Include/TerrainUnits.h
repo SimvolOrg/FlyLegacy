@@ -288,9 +288,6 @@
 #define TC_COORD_Z    2
 #define TC_COORD_S    3
 #define TC_COORD_T    4
-//---------------------------------------------------------
-#define TC_VTCOORD_SIZ (3 * sizeof(float))
-#define TC_TXCOORD_SIZ (2 * sizeof(float))
 //----MAKE ABSOLUTE TILE KEY ------------------------------
 #define TC_ABSOLUTE_DET(Q,T)  ((Q << TC_BY32) | T)
 //---------------------------------------------------------

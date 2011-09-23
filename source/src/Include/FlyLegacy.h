@@ -2313,6 +2313,12 @@ struct TC_SCREEN {
   int   my;                     // Y max
 };
 //=============================================================================
+//	UNIT SIZE
+//=============================================================================
+#define UNIT_OPENGL GL_DOUBLE
+#define UNIT_COORD double
+#define UNIT_SIZE (sizeof(UNIT_COORD))
+//=============================================================================
 //  VERTEX TABLE
 //=============================================================================
 struct TC_VTAB {
@@ -2324,6 +2330,22 @@ struct TC_VTAB {
   //----Copy from another table -------------------------
   void  TC_VTAB::Dupplicate(TC_VTAB *s, int n)
   { TC_VTAB *dst = this;
+  for (int k = 0; k<n; k++)  *dst++  = *s++;
+  return; }
+  //------------------------------------------------------
+};
+//=============================================================================
+//  VERTEX TABLE for ground description
+//=============================================================================
+struct TC_GTAB {
+  UNIT_COORD GT_S;                                     // S coordinate
+  UNIT_COORD GT_T;                                     // T coordinate
+  UNIT_COORD GT_X;                                     // X corrdinate
+  UNIT_COORD GT_Y;                                     // Y coordinate
+  UNIT_COORD GT_Z;                                     // Z coordinate
+  //----Copy from another table -------------------------
+  void  TC_GTAB::Dupplicate(TC_GTAB *s, int n)
+  { TC_GTAB *dst = this;
   for (int k = 0; k<n; k++)  *dst++  = *s++;
   return; }
   //------------------------------------------------------
@@ -2757,7 +2779,8 @@ protected:
 
 int   DoesFileExist(const char *filename, EFileSearchLocation where);
 int   DoesPodVolumeExist(const char *volumeName);
-
+int   OpenRStream(char *pn,char *fn, SStream &s);
+int   OpenRStream(char *fn, SStream &s);
 int   OpenStream(SStream *stream);
 int   OpenStream(PFS *pfs, SStream *stream);
 void  CloseStream(SStream *stream);
