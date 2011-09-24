@@ -131,7 +131,7 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
 	//----------------------------------------------
 	elapsed = 0.0f;
   brakeDist = 1200.0f;
-  accBrake = 0.0;
+  //accBrake = 0.0; // 
 }
 //----------------------------------------------------------------------
 //  Delete this object
@@ -375,7 +375,8 @@ void CSimulatedVehicle::ReadFinished (void)
   // since the constructor is read after this function we must
   // verify if brakeDist is defined ...
   if (brakeDist < FLT_EPSILON) brakeDist = 1200.0f; // default
-	accBrake = (bfs * bfs) / (2 * brakeDist);									
+	accBrake = (bfs * bfs) / (2 * brakeDist);	
+  //TRACE ("brakes %f %f", bfs, accBrake);
   return;
 }
 //-------------------------------------------------------------------------------
