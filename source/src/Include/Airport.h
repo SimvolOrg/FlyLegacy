@@ -242,7 +242,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   //------Light systems ------------------------------------------------
   CLitSYS   becS;                               // Beacon
   CLitSYS   taxS;                               // Taxiways
-  //-----SURFACE DEFINITIONS -------------------------------------------
+  //----- Positions ----------------------------------------------------
   SPosition Org;                                // Airport origin
   SPosition llc;                                // Texture left corner
   //----Runway working area --------------------------------------------
@@ -253,7 +253,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   //--------------------------------------------------------------------
   SPoint  mid;                                  // Runway mid point
   SPoint  lpt;                                  // Light point
-  //---Metric parameters ------------------------------------------
+  //---Metric parameters -----------------------------------------------
   double  dx;                                   // dx in arcsec
   double  dy;                                   // dy in arcsec
   double  dz;                                   // dz in arcsec
@@ -287,7 +287,9 @@ class CAptObject : public CqItem, public CDrawByCamera {
   //---Ground tile management -----------------------------------------
   TC_BOUND  glim;                               // Ground limit
   std::vector<CGroundTile*> grnd;               // Airport ground
-	//--- Vertex buffer -------------------------------------------------
+	//---Ground Vertex buffer -------------------------------------------
+	char			 gRES;										// Ground resolution
+	char       rfu2;										// Reserved
 	U_INT			 Time;
   U_SHORT    nGVT;										// Number of ground vertices
 	TC_GTAB		*gBUF;										// Ground Buffer

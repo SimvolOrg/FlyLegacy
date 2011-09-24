@@ -760,6 +760,7 @@ int CmQUAD::InitVTAB(TC_GTAB *vbo,int deb, U_CHAR res)
 	//--- Update first and count lists -------
 	for (U_SHORT k = 0; k != qDim; k++,qad++)
 	{ iBUF[k]			= inx;
+	  qad->SetGTAB(dst);
 	  int nbv			= qad->InitVertexCoord(dst,TexRES[res]);
 		iBUF[qDim+k]= nbv;
 		inx        += nbv;
@@ -786,8 +787,7 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
   CVertex   *ne = ct->GetEdge(TC_NECORNER);
   CVertex   *nw = ct->GetEdge(TC_NWCORNER);
 	//--- Request vertex space ----------------------------------
-	vTab					= vbo;						//sp->GetVertexSpace();
-  TC_GTAB  *dst = vTab;
+  TC_GTAB  *dst = vbo;
 	//-----------------------------------------------------------
 	float			S;														// S coordinate
 	float			T;														// T coordinate
@@ -849,23 +849,9 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
 		dst++;																// Next entry
 		}
   //----Duplicate SW corner ------------------------------------
-	*dst	= vTab[1];
+	*dst	= vbo[1];
   //------------------------------------------------------------
   return nvtx;
-}
-//-------------------------------------------------------------------------
-//	Transpose vertices for each subquad of the detail tile
-//-------------------------------------------------------------------------
-int CmQUAD::TransposeTile(TC_GTAB *vbo,SPosition *org)
-{	CmQUAD  *qd		= qARR;
-  TC_GTAB *dst	= vbo;
-	int			 tot  = 0;
-  for (int k = 0; k != qDim; k++,qd++)
-	{	int nbv  = qd->TransposeVertices(dst,org);
-		tot += nbv;
-		dst += nbv;
-	}
-	return tot;
 }
 //-------------------------------------------------------------------------
 //	Transpose vertices for airport ground
@@ -889,7 +875,24 @@ int CmQUAD::TransposeVertices(TC_GTAB *vbo,SPosition *org)
 	}
 	return nvtx;
 }
-
+//-------------------------------------------------------------------------
+//	Relocate vertices for airport ground
+//	Vertex parameter X and Y are recomputed to be relative to airport
+//	origin
+//-------------------------------------------------------------------------
+int CmQUAD::RelocateVertices(TC_GTAB *vbo,SPosition *org)
+{	double   ofs = Center.LongitudeOffset();
+  TC_GTAB *dst = vbo;
+//TRACE("QUAD %d-%d -----",Center.keyX(),Center.keyZ());
+	for (int k=0; k< nvtx; k++)
+	{	dst->GT_X = LongitudeDifference((dst->GT_X + ofs),org->lon);
+		dst->GT_Y = dst->GT_Y - org->lat;
+		dst->GT_Z = dst->GT_Z - org->alt;
+//TRACE("   DST= %10d   X=%.5f Y=%.5f Z=%.5f",(int)dst,dst->GT_X,dst->GT_Y,dst->GT_Z);
+		dst++;
+	}
+	return nvtx;
+}
 //-------------------------------------------------------------------------
 //  Allocate QUAD vertex table
 //  trs:    Texture coordinates table
@@ -1988,7 +1991,8 @@ int C_QGT::CheckSeaSQL(int k)
 //  Cloud generator
 //-----------------------------------------------------------------------
 void C_QGT::TimeSlice(float dT)
-{ demux++;
+{ //----------------------------------------------------------------
+	demux++;
   char tm = (demux & 0x03);
   if (0 == tm)  {UpdateInnerCircle(); return;}    // Update textures
   if (1 == tm)  {w3D.TimeSlice(dT);   return;}    // Update 3D object
@@ -2972,7 +2976,8 @@ int C_QGT::PutOutside()
 //         Order relation is preserved provided limits are also squared
 //-------------------------------------------------------------------------
 int C_QGT::UpdateInnerCircle()
-{ tcm->Enter('UpdI',this,0);
+{ //----------------------------------------------------------	
+	tcm->Enter('UpdI',this,0);
 	SPosition *pos = tcm->PlaneArcsPos();
   NearQ.Lock();
   CSuperTile *sp  = NearQ.GetFirst();
@@ -3882,7 +3887,7 @@ void TCacheMGR::GetRange(U_INT cz,U_SHORT &up,U_SHORT &dn)
 //        any more front tiles that are in the non -flyable area
 //-------------------------------------------------------------------------
 int TCacheMGR::RefreshCache()
-{ U_INT cx = globals->qgtX;
+{	U_INT cx = globals->qgtX;
   U_INT cz = globals->qgtZ;
   if (nKEY == rKEY)  return 0;
 
@@ -3932,8 +3937,8 @@ int TCacheMGR::RefreshCache()
   magRF = 1;                                              // Refresh mag deviation
   //----Set horizon parameters -------------------------------------------
   fDens     = GetFogDensity(cz);                          // Fog density
-  medRAD    = GetMediumCircle(cz);                        // Medium circle
-  higRAD    = medRAD * higRAT;
+  medRAD    = GetMediumCircle(cz);                        // Medium circle (feet)
+  higRAD    = medRAD * higRAT;														// Hi resolution (feet)
   //----Initial state --------------------------------------------------------
   return 1;
 }
@@ -4123,14 +4128,18 @@ CTextureDef *TCacheMGR::GetTexDescriptor()
 //-----------------------------------------------------------------------
 //  Locate texture descriptor for  tile (x,z)
 //-----------------------------------------------------------------------
-CTextureDef *TCacheMGR::GetTexDescriptor(U_INT ax,U_INT az)
-{ U_INT qx = ax >> TC_BY32;
+void TCacheMGR::FillGroundTile(CGroundTile *gnt)
+{ U_INT ax = gnt->GetAX();
+	U_INT az = gnt->GetAZ();
+	U_INT qx = ax >> TC_BY32;
   U_INT qz = az >> TC_BY32;
   U_INT tx = ax &  TC_032MODULO;
   U_INT tz = az &  TC_032MODULO;
   C_QGT  *qgt = GetQGT(qx,qz);
-  if (0 == qgt) return 0;
-  aTran  = qgt->qTran;
+	gnt->SetQGT(qgt);
+  if (0 == qgt) gtfo("Timing problem with AP manager");
+	//--- Reserve one reference to QGT ---------
+	qgt->IncUser();
   //----Access the Super Tile ----------------
   CSuperTile   *sp  = qgt->GetSuperTile(tx,tz);
   //----Local  tile number -------------------
@@ -4138,7 +4147,8 @@ CTextureDef *TCacheMGR::GetTexDescriptor(U_INT ax,U_INT az)
   U_INT lz = tz & TC_004MODULO;
   U_INT nt = (lz << TC_BY04) | lx;
   CTextureDef *txn = &sp->Tex[nt];
-  return txn;
+	gnt->StoreData(txn);
+  return;
 }
 //-----------------------------------------------------------------------
 //  Locate texture descriptor for  tile (x,z) in qgt
@@ -4154,45 +4164,6 @@ CTextureDef *TCacheMGR::GetTexDescriptor(C_QGT *qgt,U_INT tx,U_INT tz)
   return txn;
 }
 
-//-----------------------------------------------------------------------
-//  Draw Airport Ground
-//  Camera is set at aircraft position (trans vector)
-//  NOTE: 1)	No night texture is drawn for airport ground
-//				2) Client vertex array must be enabled before calling
-//-----------------------------------------------------------------------
-void TCacheMGR::DrawAirportGround(std::vector<CGroundTile*> &grnd)
-{ std::vector<CGroundTile*>::iterator it;
-  glPushMatrix();                                 // Mark T0;
-  glTranslated(cTran.x, cTran.y, cTran.z);				// Camera to aircraft
-  glColor4fv(fogC);                                //
- 
-  glMaterialfv (GL_FRONT, GL_EMISSION, GetDeftEmission()); 
-	glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  for (it = grnd.begin(); it != grnd.end(); it++)
-    { CGroundTile *gnd = (*it);
-      CTextureDef *txn = GetTexDescriptor(gnd->GetAX(),gnd->GetAZ());
-      if ((txn == 0) || (txn->NotRDY()))  continue;
-      //---Stop on a given detail tile ---------------------------
-      /*
-      if (txn->AreWe(TC_ABSOLUTE_DET(509,17),TC_ABSOLUTE_DET(333,24)))
-      bool dr = 0;                  // Set break point here
-      */
-      //----------------------------------------------------------
-      glPushMatrix();
-      gnd->Draw(txn->dOBJ);
-      glPopMatrix();
-    }
-  glPopMatrix();										// Back to T0
-	glBindBuffer(GL_ARRAY_BUFFER,0);			
-/*
-  {GLenum e = glGetError ();
-   if (e != GL_NO_ERROR) 
-    WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
-  }
-*/
-  return;
-}
 //-----------------------------------------------------------------
 //  Create a New QGT in stack
 //  NOTE:   a)The four corner vertices are searched in adjacent QGT

@@ -191,8 +191,8 @@ void TextureLoad(C_QGT *qgt)
   //--------Load Texture in Load Queue ------------------------------------
   CSuperTile *sp = 0;
   for (sp = qgt->PopLoad(); sp != 0; sp = qgt->PopLoad())
-    { if (sp->NeedLOD())  txw->LoadTextures(0,sp->Reso,qgt,sp);
-      if (sp->NeedALT())  txw->LoadTextures(1,sp->aRes,qgt,sp);
+    {	if (sp->NeedALT())  txw->LoadTextures(1,sp->aRes,qgt,sp);
+			if (sp->NeedLOD())  txw->LoadTextures(0,sp->Reso,qgt,sp);
       qgt->EnterNearQ(sp);
 			sp->RenderINR();
     }
@@ -270,10 +270,33 @@ void *FileThread(void *p)
 				mod->Finalize();
         mod->DecUser();
       }
-
       // end of thread loop -- check for stop -------------------
     }
   return 0;
+}
+//=================================================================================
+//  PARTS OF TEXTURE MANAGER
+//=================================================================================
+//-----------------------------------------------------------------------
+//  Get a Texture with coast line
+//  1) Allocate a canvas (msk) on which the coast is drawn
+//  2) Allocate the land texture
+//  3) Allocate the water texture
+//  4) Using a simple IN/OUT scan algorithm on the canvas
+//     Set a texture pixel as
+//     IN=> From land
+//    OUT=> From water
+//-----------------------------------------------------------------------
+int CTextureWard::GetSeaTexture(CTextureDef *txn)
+{ GetMixTexture(txn,0);       // Get Land Texture with transition
+  //-------Draw the polygon on the mask data ------------------
+  MakeStencil(txn->coast);
+	//-------Now build the night texture ------------------------
+  int rt	= NightGenTexture(txn);
+  if (rt)		BuildNightTexture((U_INT*)nTEX);      // Build Night texture
+  //----Build sea texture (fixed or animated) -----------------
+  rt		+=	BuildCoastTexture(dTEX);
+  return rt;
 }
 //=================================================================================
 //  PARTS OF TEXTURE MANAGER
@@ -300,12 +323,13 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
   Resn              = res;                    // Requested Resolution
   gx  = (qgt->GetXkey() >> TC_BY02);          // Globe Tile X composite
   gz  = (qgt->GetZkey() >> TC_BY02);          // Globe Tile Z composite
+
   //---- Load the textures for each detail tile -------------
   for (int Nd = 0; Nd != TC_TEXSUPERNBR; Nd++)
       { txn   = &sp->Tex[Nd];
         qad   = txn->quad;
         //---Uncomment and set Tile indices for stop on tile -
-//        qad->AreWe(508,28,336,6);
+ //       qad->AreWe(508,28,336,6);
         //-----Clear  descriptor ----------------------------
         dTEX = 0;
         nTEX = 0;
@@ -323,9 +347,9 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
                 GetRawTexture(txn);
                 break;
           //---Raw from EPD ------------------
-          case TC_TEXRAWEP:
-                GetEPDTexture(txn);
-                break;
+          //case TC_TEXRAWEP:
+          //      GetEPDTexture(txn);
+          //      break;
           //---Dedicated texture -------------
           case TC_TEXGENER:
                 GetGenTexture(txn);
@@ -344,27 +368,7 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
   sp->SetState(popSTA[lev]);         // Next State is set objects
   return 0;
 }
-//-----------------------------------------------------------------------
-//  Get a Texture with coast line
-//  1) Allocate a canvas (msk) on which the coast is drawn
-//  2) Allocate the land texture
-//  3) Allocate the water texture
-//  4) Using a simple IN/OUT scan algorithm on the canvas
-//     Set a texture pixel as
-//     IN=> From land
-//    OUT=> From water
-//-----------------------------------------------------------------------
-int CTextureWard::GetSeaTexture(CTextureDef *txn)
-{ GetMixTexture(txn,0);       // Get Land Texture with transition
-  //-------Draw the polygon on the mask data ------------------
-  MakeStencil(txn->coast);
-	//-------Now build the night texture ------------------------
-  int rt	= NightGenTexture(txn);
-  if (rt)		BuildNightTexture((U_INT*)nTEX);      // Build Night texture
-  //----Build sea texture (fixed or animated) -----------------
-  rt		+=	BuildCoastTexture(dTEX);
-  return rt;
-}
+
 //-----------------------------------------------------------------------------
 //  Build a Night texture matching the resolution for a generic tile
 //  When day texture is 256 wide, the night texture is giving 4 pixels from

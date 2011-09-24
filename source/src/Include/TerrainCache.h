@@ -269,14 +269,17 @@ class CGroundTile {
   //--- Attributes --------------------------------------------
   U_INT         ax;                       //  Tile ident X
   U_INT         az;                       //  Tile ident Z
+	C_QGT       *qgt;												// Tile QGT
   CTextureDef *txn;                       //  Tile descriptor
 	CmQUAD      *quad;
+	int          dim;												// Quad number
 	GLint        sIND[QUAD_RESOLUTION];			//   Start indices
-	GLint				 nIND[QUAD_RESOLUTION];			// Count of indices
+	GLint				 nIND[QUAD_RESOLUTION];			//   Count of indices
   //--- Methods ------------------------------------------------
 public:
   CGroundTile(U_INT x,U_INT z);
   //------------------------------------------------------------
+	void		Free();
   int		  StoreData(CTextureDef *d);
 	int			TransposeTile(TC_GTAB *d,int s, SPosition *o);
 	//--- VBO management -----------------------------------------
@@ -287,6 +290,10 @@ public:
   inline CmQUAD      *GetQUAD()		{return quad;}
   inline U_INT        GetAX()			{return ax;}
   inline U_INT        GetAZ()     {return az;}
+	//------------------------------------------------------------
+	inline void	SetQGT(C_QGT *q)			{qgt = q;}
+	inline void SetTXD(CTextureDef *t){txn = t;} 
+	inline void SetQUAD(CmQUAD *q)		{quad = q;}
 };
 //============================================================================
 //  SUPERTILE  DESCRIPTOR
@@ -620,8 +627,8 @@ public:
 	int					InitVertexCoord(TC_GTAB *vbo,float *txt);
 	void				RefreshVTAB(CSuperTile *sp,U_CHAR res);
 	void				RefreshVertexCoord(CSuperTile *sp,float *txt);
-	int         TransposeTile(TC_GTAB *vbo,SPosition *org);
-	int					TransposeVertices(TC_GTAB *dst,SPosition *org);
+	int         TransposeVertices(TC_GTAB *vbo,SPosition *org);
+	int					RelocateVertices(TC_GTAB *vbo,SPosition *org);
   //-------------------------------------------------------
   bool        AreWe(U_INT qx,U_INT tx,U_INT qz,U_INT tz);
 	bool        AreWe(U_INT ax,U_INT az);
@@ -665,6 +672,7 @@ public:
   inline U_INT    GetTileTZ()     {return (Center.zKey >> TC_BY1024) & TC_032MODULO;}
   inline int      GetNbrVTX()     {return nvtx;}
   //--------------------------------------------------------------------
+	inline void SetGTAB(TC_GTAB *t)				{vTab = t;}
   inline void SetGroundType(U_CHAR t)   {Center.gType = t;}
   inline void MarkAsGround()            {Flag |= QUAD_GND;}
   inline void ClearGround()             {Flag &= (-1 - QUAD_GND);}
@@ -1221,9 +1229,9 @@ public:
   CmQUAD      *GetTileQuad(SPosition pos);
   CmQUAD      *GetTileQuad(U_INT ax,U_INT az);
   CTextureDef *GetTexDescriptor();
-  CTextureDef *GetTexDescriptor(U_INT tx,U_INT tz);
+ // CTextureDef *GetTexDescriptor(U_INT tx,U_INT tz);
   CTextureDef *GetTexDescriptor(C_QGT *qtg,U_INT ax,U_INT az);
-  void         DrawAirportGround(std::vector<CGroundTile*> &grnd);
+	void				FillGroundTile(CGroundTile *gnt);
   //--------METAR MANAGEMENT -------------------------------------
   void         AssignMetar(CMeteoArea *ma);
   //---------Helper --------------------------------------------

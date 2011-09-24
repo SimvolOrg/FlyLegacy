@@ -53,6 +53,7 @@
 #include "../Include/FileParser.h"
 #include <math.h>
 //=============================================================================
+extern float *TexRES[];
 //=============================================================================
 //  Runway distance for PAPI
 //=============================================================================
@@ -835,8 +836,7 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 	//--- VBO Management -------------------------------------------
 	nGVT	= 0;
 	gBUF	= 0;
-	gVBO	= 0;
-	Time	= 120 * 25;
+	glGenBuffers(1,&gVBO);
   //----Add profile to POD ---------------------------------------
   AddPOD();
   //-----Lighting control -----------------------------------------
@@ -2454,10 +2454,9 @@ void CAptObject::MarkGround(TC_BOUND &bnd)
   //-----Mark all tiles making airport ground ----
   for   (lz = bnd.zmin; lz != tze; lz = TC_NEXT_INDICE(lz))
   { for (cx = bnd.xmin; cx != txe; cx = TC_NEXT_INDICE(cx))
-    { txn = tcm->GetTexDescriptor(cx,lz);
-      //---Add a ground tile to list ------------
+    { //---Add a ground tile to list ------------
       CGroundTile *gnd = new CGroundTile(cx,lz);
-      gnd->StoreData(txn);
+			tcm->FillGroundTile(gnd);
       grnd.push_back(gnd);
     }
   }
@@ -2484,12 +2483,12 @@ void CAptObject::BuildGroundVBO()
 	}
 	if (0 == tot)		return;
 	//--- Now allocate the ground VBO --------------
+	gRES  = 0;
 	nGVT  = tot;
 	gBUF	= new TC_GTAB[tot];
 	FillGroundVBO();
 	//--- Request handle from OpenGL ---------------
 	int dim = tot * sizeof(TC_GTAB);
-	glGenBuffers(1,&gVBO);
 	glBindBuffer(GL_ARRAY_BUFFER,gVBO);
 	glBufferData(GL_ARRAY_BUFFER,dim,gBUF,GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -2501,6 +2500,7 @@ void CAptObject::BuildGroundVBO()
 void CAptObject::FillGroundVBO()
 {	TC_GTAB   *dst = gBUF;
 	int				 inx = 0;
+	int        tot = 0;
 //TRACE("FillVBO for %s  org.x= %.5f org.y = %.5f",Airp->GetAptName(),Org.lon,Org.lat);
 	std::vector<CGroundTile*>::iterator it;
 	for (it = grnd.begin();it != grnd.end(); it++)
@@ -2508,9 +2508,12 @@ void CAptObject::FillGroundVBO()
 		int nbv = gnd->TransposeTile(dst,inx,&Org);
 		dst		 += nbv;
 		inx    += nbv;
+		tot    += nbv;
 	}
+	if (tot != nGVT)	gtfo("FillGroundVBO Count error");
 	return;
 }
+
 //-----------------------------------------------------------------------
 //  UnMark the ground tiles
 //  NOTE:  Check for txn existence (teleport case)
@@ -2519,10 +2522,7 @@ void CAptObject::UnmarkGround()
 { std::vector<CGroundTile*>::iterator it;
   for (it = grnd.begin();it != grnd.end(); it++)
     { CGroundTile *gnd = (*it);
-      CmQUAD      *qd  = 0;
-      CTextureDef *txn = globals->tcm->GetTexDescriptor(gnd->GetAX(),gnd->GetAZ());
-      if (txn)  qd = txn->GetQUAD();
-      if (qd)   qd->ClearGround();
+	    gnd->Free();
       delete gnd;
     }
   grnd.clear();
@@ -2571,15 +2571,17 @@ void CAptObject::ReadTaxiNodes()
   CloseStream (&s);
   return;
 }
+
 //-----------------------------------------------------------------------
 //  Time slice
 //  
 //-----------------------------------------------------------------------
 void CAptObject::TimeSlice(float dT)
-{ //--- Process BGR request -----------------------------
+{ //-----------------------------------------------------	
+	//--- Process BGR request -----------------------------
 	if (bgr)	ReadTaxiNodes();
-	//--- Process Ground VBO ------------------------------
-	//if (0 == gVBO)	BuildGroundVBO();
+	//--- Process Ground resolution -----------------------
+	if (0 == gBUF)	BuildGroundVBO();
 	//--- Process lighting order --------------------------
 	float lum = globals->tcm->GetLuminosity();
   if (lrwy)           return UpdateLights(dT) ;
@@ -2681,9 +2683,7 @@ void CAptObject::Draw()
   //-------Draw the ground tiles first ------------------------------------
 	glDisable(GL_BLEND);
   glEnable(GL_TEXTURE_2D);
-
-  globals->tcm->DrawAirportGround(grnd);
-  //DrawGround();						// EN ESSAI!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  if (gBUF)	DrawGround();						// Draw the airport tiles first
   if (globals->noAPT)     return;
   //-----Prepare taxiway drawing ------------------------------------------
   SetAlphaColor(alpha);
@@ -2821,13 +2821,12 @@ void CAptObject::EndDraw(CCamera *cam)
 //	DRAW GROUND
 //	Camera is set at airport position
 //==========================================================================================
-void	CAptObject::DrawGround()
-{ glColor4f(1,1,1,1);
+void CAptObject::DrawGround()
+{ glMaterialfv (GL_FRONT, GL_EMISSION, tcm->GetDeftEmission()); 
 	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
   glFrontFace(GL_CCW);
 	glPushMatrix();
-	//glTranslated(Org.lon,Org.lat,Org.alt);             // Camera to airport
-	glTranslated(ofap.x, ofap.y, ofap.z);
+	glTranslated(ofap.x, ofap.y, ofap.z);			// Camera to airport
 	//--- Activate ground VBO ------------------------------
 	glBindBuffer(GL_ARRAY_BUFFER,gVBO);
   glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),0);
@@ -2836,10 +2835,10 @@ void	CAptObject::DrawGround()
 	std::vector<CGroundTile*>::iterator it;
 	for (it = grnd.begin();it != grnd.end(); it++)
 	{	CGroundTile *gnd	= (*it);
-	  CTextureDef *txn  = globals->tcm->GetTexDescriptor(gnd->GetAX(),gnd->GetAZ());
-    if ((txn == 0) || (txn->NotRDY()))  continue;
+	//  CTextureDef *txn  = globals->tcm->GetTexDescriptor(gnd->GetAX(),gnd->GetAZ());
+  //  if ((txn == 0) || (txn->NotRDY()))  continue;
 
-	  gnd->DrawGround(txn->dOBJ);
+	  gnd->DrawGround(0);
 	}
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 	glPopMatrix();
@@ -3044,7 +3043,7 @@ CAirportMgr::~CAirportMgr()
 //        must scan for runway presence after airport are introduced in the aptQ
 //=========================================================================================
 void CAirportMgr::TimeSlice(float dT)
-{ if (globals->noAPT)  return;
+{	if (globals->noAPT)  return;
   CAptObject *apo = 0;
   CAptObject *prv = 0;
   CAirport   *apt = 0;
@@ -3158,7 +3157,7 @@ void CAirportMgr::bindLETTERs()
 //	Camera is at T1:  Scaled for arsec conversion to ffet
 //----------------------------------------------------------------------------------
 void CAirportMgr::Draw(SPosition pos)
-{ //--- Prepare client state ----------------------------------------------
+{	//--- Prepare client state ----------------------------------------------
   glPushClientAttrib (GL_CLIENT_ALL_ATTRIB_BITS);
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -3167,11 +3166,9 @@ void CAirportMgr::Draw(SPosition pos)
   for (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
   { apo->SetAircraft(pos);
     apo->Draw();
-
   }
 	//--- Restore state ----------------------------------------------------
   glPopClientAttrib();
-
   return;
 }
 
@@ -3199,12 +3196,20 @@ CGroundTile::CGroundTile(U_INT x,U_INT z)
   txn = 0;
 }
 //-------------------------------------------------------------
+//	Free resources
+//-------------------------------------------------------------
+void CGroundTile::Free()
+{	quad->ClearGround();
+	qgt->DecUser();
+	return;
+}
+//-------------------------------------------------------------
 //	Set Ground parameters
 //-------------------------------------------------------------
 int CGroundTile::StoreData(CTextureDef *t)
 {	txn		= t;
 	quad	= t->GetQUAD();
-	quad->MarkAsGround();
+	if (0 == quad)	gtfo("Timing error in Airport MGR");
 	return quad->GetNbrVTX();
 }
 //-------------------------------------------------------------
@@ -3231,27 +3236,31 @@ void CGroundTile::Draw(U_INT dOBJ)
 //-------------------------------------------------------------------------
 int CGroundTile::TransposeTile(TC_GTAB *vbo,int dep,SPosition *ori)
 {	CmQUAD  *qd		= quad->GetArray();
-  int      dim  = quad->GetSize();
   TC_GTAB *dst	= vbo;
 	int			 tot  = 0;
 	int      inx  = dep;
 //TRACE("TRANSPOSE TILE-------------------");
+  dim  = quad->GetSize();
   for (int k = 0; k != dim; k++,qd++)
 	{	sIND[k]  = inx;
-		int nbv  = qd->TransposeVertices(dst,ori);
+		int nbv  = qd->InitVertexCoord(dst,TexRES[TC_HIGHTR]);
+		qd->RelocateVertices(dst,ori);
 		nIND[k]  = nbv;
 		inx += nbv;
 		tot += nbv;
 		dst += nbv;
 	}
+	quad->MarkAsGround();
 	return tot;
 }
+
 //-------------------------------------------------------------
 //	Draw ground tiles
+//	NOTE: Use quad with caution as teleport may have already
+//				deleted the detail tile
 //-------------------------------------------------------------
-void CGroundTile::DrawGround(U_INT xOBJ)
-{ int dim  = quad->GetSize();
-	glBindTexture(GL_TEXTURE_2D,xOBJ);
+void CGroundTile::DrawGround(U_INT x)
+{ glBindTexture(GL_TEXTURE_2D,txn->dOBJ);
 	//--- For final quad, draw the detail tile ---------------
 	glMultiDrawArrays(GL_TRIANGLE_FAN,sIND,nIND,dim);
   //---- Draw contour if Terra Browser is active -----------

@@ -935,6 +935,7 @@ float GetRealFlatDistance(CmHead *obj)
 		float  sq     = float((disLon * disLon) + (disLat * disLat));
     float  ds     = SquareRootFloat(sq);                      // Return real distance
 		obj->SetNmiles(ds);
+		obj->SetFeet(FN_FEET_FROM_MILE(ds));
 		return ds;
 }
 //-----------------------------------------------------------------------------

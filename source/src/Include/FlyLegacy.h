@@ -3004,6 +3004,7 @@ public:
 	virtual void			 SetNavOBS(float d)   {;}
 	virtual void       SetRefDirection(float d)	{;}
 	virtual void			 SetNmiles(float m) {;}
+	virtual void			 SetFeet(float f)   {;}
 	//------------------------------------------------------------
 	        void  IncUser(void);					    // Increment user count
 	        void  DecUser();				          // Decrement user count

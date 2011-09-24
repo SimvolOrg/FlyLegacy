@@ -1542,6 +1542,7 @@ public:
   inline  U_CHAR    GetBeacon()       {return (alen & 0x07);}
   //-----------------------------------------------------------------
 	inline  void			SetNmiles(float m){nmiles = m;}
+	inline  void			SetFeet(float f)  {dsfeet = f;}
 	inline  void      SetLongRWY(void)  {Prop |= TC_LONG_RWY;}
   inline  void      SetHardRWY(void)  {Prop |= TC_HARD_RWY;}
   inline  void      SetInEDIT(void)   {Prop |= TC_EDIT_BOX;}
