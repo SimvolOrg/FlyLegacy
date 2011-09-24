@@ -1615,10 +1615,7 @@ CExternalLightManager::CExternalLightManager (CVehicleObject *mv, char *fn)
 { mveh  = mv;
   xLit  = 0;
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, fn);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",fn,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }

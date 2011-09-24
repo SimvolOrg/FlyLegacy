@@ -52,7 +52,7 @@
 //===================================================================================
 class CCameraRunway;
 class CPIDbox;
-class CRouteEXT;
+class VMnode;
 //===================================================================================
 // Forward declare all class types
 //===================================================================================
@@ -68,6 +68,9 @@ class CFuiTheme;
 class CFuiThemeWidget;
 class CFuiPage;
 class CFloatMenu;
+class CDataBGR;
+class CTaxiNode;
+class CTaxiEdge;
 //================================================================================
 // CFuiVectorMap
 //================================================================================
@@ -174,7 +177,8 @@ class CFuiVectorMap : public CFuiWindow
                 WPTBLK    = 11,
                 VOTHER    = 12,            // Other vehicle
                 USERVEH   = 13,            // User vehicle
-                BM_NBR    = 14,
+								TXNODE    = 14,						 // Taxiway node
+                BM_NBR    = 15,						 // Total
   };
   //---------FSlot format for screen table -------------------------
   typedef struct  { CmHead *Obj;       // Pointer to object
@@ -211,27 +215,20 @@ protected:
   void        LoadOthBitmap(char *art,VM_BMP no);
   void        RelocateBox(CFuiGroupBox* box,short ht);               
   //--------------Mouse & Popup menu Functionss --------------------------
-	bool				ClickWptOBJ(int mx,int my,EMouseButton button);
-  bool        MovePopMAP(int mx, int my);
+  bool        MoveOverMAP(int mx, int my);
   bool        InsideClick (int x, int y, EMouseButton button);
   bool        StopClickInside(int x, int y, EMouseButton button);
   bool        InsideMove(int x, int y);
 	bool				OpenPOP(int mx,int my);
-	bool				OpenWptOBJ(int mx,int my);
   bool        OpenPopOBJ(int mx,int my);
-  bool        OpenPopDOC(int mx,int my);
-  bool        OpenPopLST(int mx,int my);
-  bool        OpenPopRWY(int mx,int my);
-  bool        OpenWptMEN(int mx,int my);
   //-------MENU EDITION --------------------------------------------------
-	int					SetRWYends(char k);
   int         SetRWYitem(char k);
   int         SetLITitem(char k);
   int         SetCOMitem(char k);
   int         SetILSitem(char k);
   int         EditILS(ILS_DATA *dat, int k);
-  void        EditPopITM();
-  void        EditPopAPT(CmHead *obj);
+  bool        EditPopITM();
+  bool        EditPopAPT(CmHead *obj);
   void        EditPopDistance(int mx,int my);
   void        EditCoordinates(int mx,int my);
   void        AddToFlightPlan();
@@ -258,47 +255,61 @@ protected:
   void        DrawILS();
   void        DrawRose(CNavaid *vor,int xc, int yc);
   void        DrawRadial(CNavaid *vor,int xc, int yc);
-  void        Scale();
+  void        Scale(float zm);
   void        DrawMark(int type, int xc, int yc, U_INT col);
   void        DrawRoseDir(int xc, int yc, U_INT col);
-  //----------Runway drawing -----------------------------------
-  void        Teleport();
-  void        DrawDiagram();
-  void        OpenMetar(CmHead *obj);
-  bool        ClickDOC(int mx,int my);
-  bool        ClickRWY(int mx,int my);
-  bool        MoveDOC(int mx,int my);
-  bool        MoveRWY(int mx,int my);
-	bool				MoveWPT(int mx,int my);
+	//--- Document list ------------------------------------------------
   int         SearchDOC();
-  int         ClickMapMENU(short ln);
+  bool        OpenDocLIST(int mx,int my);
   int         ClickDocLIST(short ln);
+	//--- Document management ------------------------------------------
   int         ClickDocMENU(short ln);
+  bool        OpenPopDOC(int mx,int my);
+  void        DrawDocument();
+  bool        DragDOC(int mx,int my);
+  bool        MoveDOC(int mx,int my);
+	//--- Runway List --------------------------------------------------
+  bool        OpenRwyLIST(int mx,int my);
+	int					SetRWYends(char k);
+  void        DrawRunways();
+  void        DrawByCamera(CCamera *cam);
+	//--- Runway Management --------------------------------------------
+  bool        DragRWY(int mx,int my);
+  bool        MoveRWY(int mx,int my);
   int         ClickRwyMENU(short ln);
+	int					StartonRWY(short itm);
+	//--- Waypoint management ------------------------------------------
+	int					CreateWPT();
+  bool        OpenWptMENU(int mx,int my);
 	int					ClickWptMENU(short ln);
+	bool				MoveWPT(int mx,int my);
+	void				WaypointMoved();
+	bool				ClickWptOBJ(int mx,int my,EMouseButton button);
+	bool				OpenWptINFO(int mx,int my);
+	//--- Taxiways management ------------------------------------------
+	void				DrawTaxiNodes();
+  //--- Various items ------------------------------------------------
+  void        Teleport();
+  void        OpenMetar(CmHead *obj);
+  int         ClickMapMENU(short ln);
 	int					ClickWptOBJM(short itm);
   int         ClickRadLIST(int k);
   void        ClickLitITEM();
-	int					StartonRWY(short itm);
-	int					CreateWPT();
   //----------ILS helper ------------------------------------------------
   void        IlsPixel(int No,int x,int y);
   void        UpdateILS();
   //---------------------------------------------------------------------
-  void        DrawTopView();
-  void        DrawByCamera(CCamera *cam);
-  //---------------------------------------------------------------------
   void        NotifyResize(short dx,short dy);
   //----------Interface to flight plan ---------------------------------
 public:
-  void        DrawRoute(CRouteEXT &org,CRouteEXT &ext);
+  void        DrawRoute(VMnode &org,VMnode &ext);
 	void				DrawWayPoint(CWPT *wpt);
-	void				WaypointMoved();
   //--------------------Attributes -------------------------------------
 protected:
   SVector     vmapOrient;                   ///< User vehicle orientation
   //-------Drawing item size --------------------------------------------
-  float       Zoom;                         ///< Zoom level. In nm for 800 pixels
+  float       Zoom;                         // Zoom level. In nm for 800 pixels
+	float       pZom;													// Previous zoom
   float       Diag;                         // Screen Diagonal In nautical miles
   float       MaxNM;                        // Maximum nautical miles (squared)
   float       pixNM;                        // Pixels per nautical mile * 128
@@ -363,20 +374,21 @@ protected:
   //------ Coordinates under cursor -----------------------------
   SPosition   geop;                         // geo Position
   SPosition   wpos;                         // Waypoint position
-  //------Diagram management ------------------------------------
+  //------Document management -----------------------------------
   S_IMAGE     DocInfo;                      // Diagram image
   char        dStat;                        // Draw state
   float       rScale;                       // Scale factor to draw runways
-  //------Secondary view managemnt ------------------------------
+  //------Runway view management --------------------------------
+	CDataBGR   *txDATA;												// Taxiways data
   void       *obView;                       // Airport object to view
   CAirport   *obAirp;                       // Airport description
   int         heading;                      // Plane heading (°)
-  CCameraRunway *Cam;                      // Airport camera
+  CCameraRunway *Cam;                       // Airport camera
   //-----ILS Drawing --------------------------------------------
   CILS        *aILS;                        // actual ils
   U_SHORT      rILS;                        // Range
   TC_SPOINT    oILS;                        // ILS origin in pixel
-	//----- Viewport ------------------------------------------------
+	//----- Viewport ----------------------------------------------
   VIEW_PORT				vp;
 };
 //====================================================================================

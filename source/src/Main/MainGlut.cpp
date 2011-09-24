@@ -601,7 +601,7 @@ void redraw ()
     __except(EXCEPTION_EXECUTE_HANDLER)										//(std::exception &e)
     { FatalExit();
 			exit(-1);	} 
-			*/
+		*/
 			break; 
 
   case APP_EXIT_SCREEN:

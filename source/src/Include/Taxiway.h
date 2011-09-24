@@ -36,24 +36,18 @@
 //============================================================================
 //  Node structure for runway and taxiways
 //============================================================================
-class CTaxiNode: public CStreamObject
+class CTaxiNode: public CStreamObject 
 { //---------------------------------------------------------------
-  SVector       offset;                     // Offset from origin. 1 unit = 16 feets
+  SPosition     pos;                        // Offset from origin. 1 unit = 16 feets
   U_SHORT       direction;                  // Direction for ????
-  int           nx;                         // x origin in feet
-  int           ny;                         // y dito
   //-----------Methods --------------------------------------------
 public:
    CTaxiNode();
   ~CTaxiNode();
   int           Read (CStreamFile *sf, Tag tag);    // Read method
-  void          Scale(float scale);
   //----------------------------------------------------------------
-  inline  void  SetVector(SVector &v)       {offset = v;}
+	inline  SPosition *AdPosition()						{return &pos;}				
   inline  void  SetDirection(U_INT d)       {direction = d;}
-  inline  void  SetInFeet(short x,short y)  {nx = x; ny= y;}
-  inline  int   GetXfeet()                  {return nx;}
-  inline  int   GetYfeet()                  {return ny;}
 };
 //============================================================================
 //  Edge structure for runway and taxiways
@@ -82,14 +76,11 @@ public:
 //============================================================================
 class CDataBGR: public CStreamObject
 { //-------------Attributes ---------------------------------------------
-  SPosition       org;                                // Origin
+	CAptObject		 *apo;																// Airport object
+  SPosition       pos;                                // File Origin
+  SPosition       dpo;																// Polygon origin
   std::vector<CTaxiNode *>  nodelist;                 // List of nodes
   std::vector<CTaxiEdge *>  edgelist;                 // List of edges
-  //-------------Coordinate extension in the 4 directions (feet)---------
-  int             nExt;                               // North extension
-  int             sExt;                               // South extension
-  int             eExt;                               // east
-  int             wExt;                               // west
   //-------------Scale factor -------------------------------------
   float           scale;
   //------------ Color --------------------------------------------
@@ -99,14 +90,13 @@ public:
    CDataBGR(CAptObject *apo);
   ~CDataBGR();
   void        EmptyAll();
-  bool        DecodeBinary(char *fname);
+	void				AdjustOrigin();
   int         Read (CStreamFile *sf, Tag tag);    // Read method
-  void        StoreExtension(CTaxiNode *nod);
-  U_INT       GetExtension();
+	void				ProcessNode(CStreamFile *sf);
+	//---------------------------------------------------------------
   CTaxiNode  *GetNode(U_INT No);
   CTaxiEdge  *GetEdge(U_INT No);
   bool        GetLine(U_INT No,int &x0,int &y0,int &x1,int &y1);
-  void        Rescale(float scale);
   bool        DrawSegment(U_INT No,SSurface *sf,int xm,int ym);
   //-----------------------------------------------------------------
   U_INT       GetEdgeNumber()     {return edgelist.size();}

@@ -62,11 +62,9 @@ CPlaneIdent::CPlaneIdent()
 //-------------------------------------------------------------------------------
 bool  CPlaneIdent::ScanInfoFile(const char *filname)
 { SStream s;
-  strcpy (s.filename, filname);
-  strcpy (s.mode, "r");
   make[0] = 0;
   icon[0] = 0;
-  if (OpenStream(&s) == 0)    return false;
+  if (OpenRStream((char *)filname,s) == 0)    return false;
   item    = 0;
   ReadFrom (this, &s);
   CloseStream (&s);

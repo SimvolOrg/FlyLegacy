@@ -752,7 +752,8 @@ void CAirplane::BodyCollision(CVector &p)
 //          we will have to make some adaptation
 //-----------------------------------------------------------------------------
 void CAirplane::TimeSlice(float dT,U_INT frame)
-{ pit->TimeSlice(dT);
+{ //--------------------------------------------------------
+	pit->TimeSlice(dT);
 	CJoysticksManager *jsm = globals->jsm;
   switch (State)  {
     //-- At start up wait for terrain to be stable ---------
@@ -805,6 +806,7 @@ void CAirplane::EndLevelling()
   globals->fui->RazCrash();
   State = VEH_OPER;
   RestOnGround();
+	CenterControls();
   return;
 }
 

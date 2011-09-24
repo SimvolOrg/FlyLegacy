@@ -3230,7 +3230,8 @@ U_INT	CDbCacheMgr::MakeKey(int gtx,int gty)
 //      while the terrain cache is working every odd frame
 //------------------------------------------------------------------------
 void CDbCacheMgr::TimeSlice(float dT,U_INT FrNo)
-{	if (1 == (FrNo & 1))  return;
+{	//----------------------------------------------------------------------
+	if (1 == (FrNo & 1))  return;
   cFrame	= FrNo;
   CTileCache *tc = (CTileCache*)ActQ.GetFirst();
   //-----------If action queue not empty, do one action --------------------
@@ -3406,7 +3407,8 @@ void CDbCacheMgr::RefreshCache(U_INT FrNo)
 //  Dispatch action in Tile until one is executed
 //------------------------------------------------------------------------
 void CDbCacheMgr::DispatchAction(CTileCache *tc)
-{ while (0 == ExecuteAction(tc))  continue;
+{ //--------------------------------------------
+	while (0 == ExecuteAction(tc))  continue;
   return;
 }
 //------------------------------------------------------------------------
@@ -3809,7 +3811,7 @@ float CDbCacheMgr::GetFlatDistance(CmHead *obj)
     double difLon = LongitudeDifference(To->lon,aPos.lon);    // Longitude difference in arcsec
     double disLon = obj->GetNmFactor() * difLon;              // Compute x component
     obj->SetDistLon(short(disLon * 128));                     // Store longitude component scaled by 128
-    obj->SetDistLat(short(disLat * 128));                     // Store latitude component scaled by 128
+    obj->SetDistLat(short(disLat * 128));                     // Store latitude  component scaled by 128
     return ((disLon * disLon) + (disLat * disLat));           // Return squarred distance
 }
 //-----------------------------------------------------------------------------
@@ -4259,7 +4261,6 @@ void CDbCacheMgr::ComputeDistance(CRwyLine *slot,SPosition org)
   GetFeetDistance(&lx,&ly,slot->Hend.pos,slot->Lend.pos);
   return;
 }
-
 //-------------------------------------------------------------------------
 //  Get all Comm matching filter for a given airport
 //-------------------------------------------------------------------------
@@ -4839,7 +4840,8 @@ void  CDbCacheMgr::PostRequest(CDataBaseREQ *req)
 //  Execute the first database request
 //-------------------------------------------------------------------------
 void CDbCacheMgr::ExecuteREQ()
-{ SqlMGR *sqm = globals->sqm;
+{ //-----------------------------------------------
+	SqlMGR *sqm = globals->sqm;
   CDataBaseREQ *req = (CDataBaseREQ*)reqQ.GetFirst();
   switch (req->Code)  {
     case COM_BY_AIRPORT:

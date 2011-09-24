@@ -726,65 +726,42 @@ Tag    snexttag (char* s, int maxLength, SStream *stream)
   }
   return tag;
 }
-/*
-//
-// DoesFileExist - verify wheter a file exists or not in the main FlyLegacyRoot
-//
-// The function returns 1 if the file exists, 0 otherwise
-//
-int   DoesFileExist(const char *filename, EFileSearchLocation _where)
-{
-  // temporary workaround : to be "tuned"
 
-  switch (_where) {
-
-    case SEARCH_PODS:
-//      if (existsinpod (globals->pfs, filename)) return 1;
-      return 0;
-
-    case SEARCH_ALL_:
-//      if (existsinpod (globals->pfs, filename)) return 1;
-      if (pexists (&globals->pfs, filename)) return 1;
-      return 0;
-
-    case SEARCH_DISK:
-      if (pexists (&globals->pfs, filename)) return 1;
-      return 0;
-
-    default :
-      gtfo ("EFileSearchLocation error");
-      return 0;
-  }
-  return 0;
-}
-
-//
-// DoesPodVolumeExist - verify wheter a pod volume exists or not in the main FlyLegacyRoot
-//
-// The function returns 1 if the pod exists, 0 otherwise
-//
-int   DoesPodVolumeExist(const char *volumeName)
-{
-  // to do yet
-  return 1;
-}
-*/
-//
+//===========================================================================
 // OpenStream - Open a stream file for reading
 //
 // The function returns 1 if the stream was successfully opened, 0 otherwise
-//
-int   OpenStream(SStream *stream)
+//==========================================================================
+int OpenStream(SStream *stream)
 {
   return OpenStream (&globals->pfs, stream);
 }
-
-
-//
+//===========================================================================
 // OpenStream - Open a stream file for reading
 //
 // The function returns 1 if the stream was successfully opened, 0 otherwise
+//==========================================================================
+int OpenRStream(char *fn,SStream &s)
+{ strcpy (s.filename, fn);
+  strcpy (s.mode, "r");
+	return OpenStream (&globals->pfs, &s);
+}
+//===========================================================================
+// OpenStream - Open a stream file for reading from WORLD DIRECTORY
 //
+// The function returns 1 if the stream was successfully opened, 0 otherwise
+//==========================================================================
+int OpenRStream(char *pn,char *fn,SStream &s)
+{ _snprintf(s.filename,PATH_MAX-1,"%s/%s",pn,fn);
+  strcpy (s.mode, "r");
+	return OpenStream (&globals->pfs, &s);
+}
+
+//==========================================================================
+// OpenStream - Open a stream file for reading
+//
+// The function returns 1 if the stream was successfully opened, 0 otherwise
+//==========================================================================
 int   OpenStream(PFS *pfs, SStream *stream)
 {
   int rc = 0;
@@ -800,12 +777,12 @@ int   OpenStream(PFS *pfs, SStream *stream)
     if (sf->IsReadable()) {
       // OK
       stream->stream = sf;
-      rc = 1;
+      return 1;
     } else {
       // Error opening stream file for reading
       WARNINGLOG ("OpenStream : Could not open %s in read mode", stream->filename);
       delete sf;
-      rc = 0;
+      return 0;
     }
   } else if (stricmp (stream->mode, "w") == 0) {
     // Open writeable stream
@@ -814,7 +791,7 @@ int   OpenStream(PFS *pfs, SStream *stream)
     if (sf->IsWriteable()) {
       // OK
       stream->stream = sf;
-      rc = 1;
+      return 1;
     } else {
       // Error opening stream file for writing
       WARNINGLOG ("OpenStream : Could not open %s in write mode", stream->filename);

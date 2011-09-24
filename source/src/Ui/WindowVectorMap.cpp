@@ -115,6 +115,10 @@ char *AptMENU[] =
   0,                                //21 = 0 (END)
 };
 //=======================================================================
+//	Runway idents
+//=======================================================================
+char rwyIDN[16 * 8] = {0};
+//=======================================================================
 //  MENUS FOR LIGHT PROFILE
 //  Changing item here must also change TC_APR_XXXX definitions in LightSystem.h
 //=======================================================================
@@ -221,10 +225,8 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   Focus = 0;
   //----- Initialize vector map status -------------------
   vmapOrient.p = vmapOrient.h = vmapOrient.r = 0;
-  Zoom      = globals->vmapZoom;;                      
-  pixNM     = (VM_SCALE / (Zoom * 128));
   RoseZm    = 1.0f;;
-  Scale();
+  Scale(globals->vmapZoom);
   //---Init all colors -----------------------------------
   green   = 0;
   grlim   = (8 * 255);
@@ -279,12 +281,12 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   sTable.xSlot  = sTable.sList;
   pthread_mutex_init (&sTable.mux,  NULL);
   //-----Load Stock bitmap -------------------------------
-  OthBMAP[0]  = 0;                                        // Unknown navaid
+  OthBMAP[0]			= 0; 
+	OthBMAP[VOTHER]	= 0;																		// Unknown navaid
   LoadOthBitmap("ART/MAPICONX.PBG",   USERVEH);           // User vehicle 32 frames
-  LoadOthBitmap("ART/MAPSMALL.PBG",   VOTHER);            // Other vehicle 32 frames 
-  LoadOthBitmap("ICONS/FP-ICO01.BMP", NDBDME);
-  LoadOthBitmap("ICONS/FP-ICO02.BMP", NDB___);
-  LoadOthBitmap("ICONS/FP-ICO03.BMP", VORTAC);
+  LoadOthBitmap("ICONS/BM_NDBDM.BMP", NDBDME);
+  LoadOthBitmap("ICONS/BM_NDBNN.BMP", NDB___);
+  LoadOthBitmap("ICONS/BM_VORTA.BMP", VORTAC);
   LoadOthBitmap("ICONS/FP-ICO03.BMP", TACAN_);
   LoadOthBitmap("ICONS/FP-ICO04.BMP", VORDME);
   LoadOthBitmap("ICONS/FP-ICO05.BMP", VOR___);
@@ -293,6 +295,7 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   LoadOthBitmap("ICONS/FP-ICOW3.BMP", WPTYEL);
   LoadOthBitmap("ICONS/FP-ICOW4.BMP", WPTGRN);
   LoadOthBitmap("ICONS/FP-ICOWP.BMP", WPTBLK);
+	LoadOthBitmap("ICONS/BM_TNODE.BMP", TXNODE);
   //----------Init Airport stack ---------------------------
   LoadAptBitmap("ICONS/FP-ICO06.BMP",TYP01);
   LoadAptBitmap("ICONS/FP-ICO07.BMP",TYP02);
@@ -305,6 +308,7 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   LoadAptBitmap("ICONS/FP-ICO14.BMP",TYP09);
   LoadAptBitmap("ICONS/FP-ICO15.BMP",TYP10);
   //----------------------------------------------------------
+	txDATA	= 0;
   ilsBMP  = 0;
   //----------------------------------------------------------
   InitMenu();
@@ -346,7 +350,7 @@ void  CFuiVectorMap::LoadAptBitmap(char *bmp,VM_ANB no)
 //  Fill PolSIZE with half bitmap size
 //---------------------------------------------------------------
 void  CFuiVectorMap::LoadOthBitmap(char *bmp,VM_BMP no)
-{ int wd;
+{	int wd;
   int ht;
   OthBMAP[no] = new CBitmap(bmp);
   OthBMAP[no]->GetBitmapSize(&wd, &ht);
@@ -372,6 +376,8 @@ CFuiVectorMap::~CFuiVectorMap (void)
   //----IMAGE ----------------------
   if (DocInfo.rgba)  delete [] DocInfo.rgba;
   DocInfo.rgba = 0;
+	//--- Taxiways -------------------
+	if (txDATA)  delete txDATA;
 	//--- Flight plan ----------------
 	fPlan->Save();
 }
@@ -658,26 +664,25 @@ void  CFuiVectorMap::DrawAPT(void)
 //  Distance from aircraft (center of window) to origin (org) and extremity (ext)
 //  is stored in temporary objects (fpOrg and fpExt) to draw the line between waypoints
 //---------------------------------------------------------------------------------------------
-void CFuiVectorMap::DrawRoute(CRouteEXT &org,CRouteEXT &ext)
+void CFuiVectorMap::DrawRoute(VMnode &org,VMnode &ext)
 { //----Compute distance to aircraft for both extremities --------
-  float d1  = dbc->GetFlatDistance(&org);
-  float d2  = dbc->GetFlatDistance(&ext);
+	CmHead *no	= org.GetOBJ();
+	CmHead *nx  = ext.GetOBJ();
+	float d1		= dbc->GetFlatDistance(no);
+  float d2		= dbc->GetFlatDistance(nx);
+
   if ((d1 > MaxNM) && (d2 > MaxNM)) return;
   //----One node visible -----------------------------------------
   int x1,y1;
-  GetScreenCoordinates(&org,x1,y1);
+	GetScreenCoordinates(no,x1,y1);
   int x2,y2;
-  GetScreenCoordinates(&ext,x2,y2);
+	GetScreenCoordinates(nx,x2,y2);
   DrawFastLine(surface,x1, y1, x2, y2, white);
 	//--- Check if extremity is a waypoint from flight plan --------
-	CmHead *obj = ext.GetOBJ();
-	if (0 == obj)									return;
-	if (obj->GetActiveQ() != WPT)	return;
+	if (nx->GetActiveQ() != WPT)	return;
 	//--------------------------------------------------------------
-	float dis = ext.GetLegDistance();
-	ext.SetNodeDistance(dis);
-	dbc->GetFlatDistance(obj);
-	DrawWayPoint((CWPT *)obj);
+	ext.SetNodeDistance();
+	DrawWayPoint((CWPT *)nx);
   return;
 }
 //---------------------------------------------------------------------------------------------
@@ -721,8 +726,8 @@ void CFuiVectorMap::Draw (void)
 { 
   EraseSurfaceRGBA (surface,black);
   //---Draw according to State --------------------------------------
-  if (dStat == VWIN_DOC) { DrawDiagram(); return;}
-  if (dStat == VWIN_RWY) { DrawTopView(); return;}
+  if (dStat == VWIN_DOC) return DrawDocument();
+  if (dStat == VWIN_RWY) return DrawRunways();
   //----Compute Drawing order ---------------------------------------
   ndis   = 1000000;
   napt   = 0;
@@ -762,10 +767,11 @@ void CFuiVectorMap::Draw (void)
   DrawFastLine(surface,10,10,110,10,white);
   DrawFastLine(surface,10, 5, 10,10,white);
   DrawFastLine(surface,110,5,110,10,white);
+  fnts->DrawNText(surface,116,2,white,eScal);
+	//--- Draw country name -----------------------------------
   char *ctk = (napt)?(napt->GetCountry()):(0);
   char *cty = (ctk) ?(globals->tcm->GetCountry(ctk)):(0);
   if (cty) fnts->DrawNText(surface,200,2,white,cty);
-  fnts->DrawNText(surface,116,2,white,eScal);
   //----------Draw cursor coordinates -----------------------
   char edt[128];
   EditLat2DMS(geop.lat,edt);
@@ -839,20 +845,21 @@ CmHead* CFuiVectorMap::LookForScreenHit(short x, short y)
 //  finding objects by distance.
 //  vmapDiag is a function of screen diagonal in pixel
 //---------------------------------------------------------------------------------
-void CFuiVectorMap::Scale()
-{   RoseRd  = int((VM_SCALE *  4.0f * RoseZm) / Zoom);
-    Mark10  = int((VM_SCALE *  0.8f * RoseZm) / Zoom);
-    Mark05  = int((VM_SCALE *  0.5f * RoseZm) / Zoom);
-    float diag = SquareRootFloat(float(halfW * halfW) + float(halfH * halfH));
-    Diag = (diag * Zoom) / VM_SCALE;
-    sprintf(eScal,"%.2f nm",(Zoom / 8));
-    MaxNM   = Diag * Diag;
-    pixNM   = (VM_SCALE / (Zoom * 128));
-    globals->tcm->SetPPM((VM_SCALE / Zoom),halfW,halfH);
-    globals->vmapZoom   = Zoom;
-    globals->vmapScrn.x = w;
-    globals->vmapScrn.y = h;
-    return;
+void CFuiVectorMap::Scale(float zm)
+{ Zoom		= zm;  
+	RoseRd  = int((VM_SCALE *  4.0f * RoseZm) / Zoom);
+  Mark10  = int((VM_SCALE *  0.8f * RoseZm) / Zoom);
+  Mark05  = int((VM_SCALE *  0.5f * RoseZm) / Zoom);
+  float diag = SquareRootFloat(float(halfW * halfW) + float(halfH * halfH));
+  Diag = (diag * Zoom) / VM_SCALE;
+  sprintf(eScal,"%.2f nm",(Zoom / 8));
+  MaxNM   = Diag * Diag;
+  pixNM   = (VM_SCALE / (Zoom * 128));
+  globals->tcm->SetPPM((VM_SCALE / Zoom),halfW,halfH);
+  globals->vmapZoom   = Zoom;
+  globals->vmapScrn.x = w;
+  globals->vmapScrn.y = h;
+  return;
 }
 //---------------------------------------------------------------------------------
 //  SetILS Pixel
@@ -904,17 +911,17 @@ void CFuiVectorMap::TrnsLess()
 //  Event notification: Zoom Out
 //---------------------------------------------------------------------------------
 void CFuiVectorMap::ZoomLess()
-{ switch (dStat)  {
+{switch (dStat)  {
   case VWIN_MAP:
     if (Zoom >= 200.0f)   return;
     Zoom  += 2.0f;
-    Scale();
-    return;
+    break;
 
   case VWIN_RWY:
-    Cam->MoveUp(+1);
-    return;
+    Zoom = Cam->MoveUp(+1);
+    break;
   }
+	Scale(Zoom);
   return;
 }
 //---------------------------------------------------------------------------------
@@ -926,13 +933,13 @@ void CFuiVectorMap::ZoomPlus()
   case VWIN_MAP:
     if (Zoom <= 10.0f)    return;
     Zoom  -= 2.0f;
-    Scale();
-    return;
+    break;
 
   case VWIN_RWY:
-    Cam->MoveUp(-1);
-    return;
+    Zoom = Cam->MoveUp(-1);
+    break;
   }
+	Scale(Zoom);
   return;
 }
 
@@ -957,13 +964,13 @@ void  CFuiVectorMap::NotifyChildEvent(Tag idw,Tag itm,EFuiEvents evn)
     if (dStat != VWIN_MAP)    return;
     if (RoseZm >= 2.0)        return;
     RoseZm  += 0.05f;
-    Scale();
+    Scale(Zoom);
     break;
   case 'rin ':
     if (dStat != VWIN_MAP)    return;
     if (RoseZm <= 1.0)        return;
     RoseZm  -= 0.05f;
-    Scale();
+    Scale(Zoom);
     break;
 
   case 'sysb':
@@ -1037,7 +1044,7 @@ void CFuiVectorMap::NotifyMenuEvent(Tag idm, Tag itm)
 //---------------------------------------------------------------------------------
 //  Mouse move over the Popup menu
 //---------------------------------------------------------------------------------
-bool CFuiVectorMap::MovePopMAP(int mx, int my)
+bool CFuiVectorMap::MoveOverMAP(int mx, int my)
 { if (Focus.IsNull())		return true;
   if (Focus->Isa(WPT))	return true;
   EditPopDistance(mx,my);
@@ -1049,7 +1056,7 @@ bool CFuiVectorMap::MovePopMAP(int mx, int my)
 //  If object is Hit assign it to smart pointer Focus. This will manage user count
 //---------------------------------------------------------------------------------
 bool CFuiVectorMap::InsideMove(int mx,int my)
-{ if ((VWIN_MAP == dStat) && (MyPop))     return MovePopMAP(mx,my);
+{ if ((VWIN_MAP == dStat) && (MyPop))     return MoveOverMAP(mx,my);
   if  (VWIN_DOC == dStat)                 return MoveDOC(mx,my);
   if  (VWIN_LST == dStat)                 return true;
   if  (VWIN_RWY == dStat)                 return MoveRWY(mx,my);
@@ -1072,7 +1079,7 @@ bool CFuiVectorMap::InsideClick (int mx, int my, EMouseButton button)
   switch (dStat)    {
   //-----NORMAL VECTOR WINDOWS ---------------------------------------------
   case VWIN_MAP:
-    if (Focus == 0)                   return OpenWptMEN(mx,my);
+    if (Focus == 0)                   return OpenWptMENU(mx,my);
 		if (Focus->Isa(WPT))							return ClickWptOBJ(mx,my,button);
     if (button == MOUSE_BUTTON_LEFT)  return OpenWinDET(Focus.Pointer(),0);
     if (button == MOUSE_BUTTON_RIGHT) return OpenPopOBJ(mx,my);
@@ -1080,7 +1087,7 @@ bool CFuiVectorMap::InsideClick (int mx, int my, EMouseButton button)
   //----DOCUMENT WINDOW ---------------------------------------------------
   case VWIN_DOC:
     if  (button == MOUSE_BUTTON_MIDDLE) return ResetImage(DocInfo);
-    if  (button == MOUSE_BUTTON_LEFT)   return ClickDOC(mx,my);
+    if  (button == MOUSE_BUTTON_LEFT)   return DragDOC(mx,my);
     if  (button == MOUSE_BUTTON_RIGHT)  return OpenPopDOC(mx,my);
     break;
   //----DOCUMENT LIST----------------------------------------------------
@@ -1088,8 +1095,8 @@ bool CFuiVectorMap::InsideClick (int mx, int my, EMouseButton button)
     break;
   //----TOP VIEW -------------------------------------------------------
   case VWIN_RWY:
-    if  (button == MOUSE_BUTTON_LEFT)  return ClickRWY(mx,my);
-    if  (button == MOUSE_BUTTON_RIGHT) return OpenPopRWY(mx,my);
+    if  (button == MOUSE_BUTTON_LEFT)  return DragRWY(mx,my);
+    if  (button == MOUSE_BUTTON_RIGHT) return OpenRwyLIST(mx,my);
     break;
   }
   return  (!HasProperty(FUI_TRANSPARENT));
@@ -1108,7 +1115,7 @@ bool CFuiVectorMap::StopClickInside(int x, int y, EMouseButton button)
 //  Recompute diagonal
 //----------------------------------------------------------------------------------
 void CFuiVectorMap::NotifyResize(short dx,short dy)
-{ Scale();
+{ Scale(Zoom);
   return;
 }
 //----------------------------------------------------------------------------------
@@ -1136,7 +1143,7 @@ void CFuiVectorMap::EditCoordinates(int sx,int sy)
 //----------------------------------------------------------------------------------
 //  Edit Menu Item for NAV,NDB or AIRPORT
 //----------------------------------------------------------------------------------
-void CFuiVectorMap::EditPopITM()
+bool CFuiVectorMap::EditPopITM()
 { //----Build menu lines ------------------------------
   CmHead*obj      = Focus.Pointer();
   char   typ      = (APT == obj->GetActiveQ())?(1):(0);
@@ -1156,7 +1163,7 @@ void CFuiVectorMap::EditPopITM()
   smen.aText[0]   = namHD;
   smen.aText[1]   = disHD;
   smen.aText[6]   = frqHD;
-  return;
+  return true;
 }
 //----------------------------------------------------------------------------------
 //  Set view runway item
@@ -1228,12 +1235,14 @@ int CFuiVectorMap::EditILS(ILS_DATA *dat, int k)
 //  Edit Menu Item for an AIRPORT
 //  Enter one ATIS frequency
 //----------------------------------------------------------------------------------
-void CFuiVectorMap::EditPopAPT(CmHead *obj)
+bool CFuiVectorMap::EditPopAPT(CmHead *obj)
 { CAirport *apt  = (CAirport *)obj;
   void     *apo  = apt->GetAPO();
   obView         = apo;
   obAirp         = apt;
-  if (apo)  Cam->SetOrigin(apt->ObjPosition());
+	smen.aText[0]  = 0;
+//  if (0 == apo)  return false;
+	//--- Edit menu -----------------------------------
   _snprintf(namHD,31," %s",apt->GetName());
   EditPopDistance(xOrg,yOrg);
   int itm       = 6;              // Item index
@@ -1250,7 +1259,7 @@ void CFuiVectorMap::EditPopAPT(CmHead *obj)
   itm = SetLITitem(itm);
   smen.aText[itm++] = "RETURN";
   smen.aText[itm] = 0;
-  return;
+  return true;
 }
 //----------------------------------------------------------------------------------
 //  Open Popup menu
@@ -1263,31 +1272,69 @@ bool CFuiVectorMap::OpenPOP(int mx,int my)
   RegisterFocus(MyPop);
 	return true;
 }
-//----------------------------------------------------------------------------------
-//  Open a floating menu for WPT
-//----------------------------------------------------------------------------------
-bool CFuiVectorMap::OpenWptOBJ(int mx, int my)
-{ CWPT *wpt   = (CWPT*)Focus.Pointer();
-	smen.Ident	= 'mowp';
-	smen.aText  = WayMENU;
-	char *nam   = wpt->GetName();
-	smen.aText[0]	= nam;
-	sprintf(disHD,"%s: %.1f nm to next",nam,wpt->GetDistance());
-	smen.aText[1] = disHD;
-	return OpenPOP(mx,my);
+//==================================================================================
+//	DOCUMENT List 
+//==================================================================================
+//---------------------------------------------------------------------------------
+//  Build a list of file for this airport
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::SearchDOC()
+{ CAirport *apt = (CAirport*)Focus.Pointer();
+  char       fn[PATH_MAX];
+  sprintf(fn,"DOCUMENTS/%s*.PNG",apt->GetAptName());
+  char* name = (char*)pfindfirst (&globals->pfs,fn);
+  char **men = DocMENU;
+  int    nbr = 0;
+  while (name)
+  { *men++ = strchr(name,'/') + 1;
+     nbr++;
+     name  = (char*)pfindnext (&globals->pfs);
+     if (nbr == 16) break;
+  }
+  *men = 0;
+  return nbr;
 }
 //----------------------------------------------------------------------------------
-//  Open a floating menu for APT, NAV or NDB
+//  Open a floating menu with the list of documents
 //----------------------------------------------------------------------------------
-bool CFuiVectorMap::OpenPopOBJ(int mx,int my)
-{ smen.aText  = cMENU;
-  //--- Save teleport position ---------
-  CmHead *obj = Focus.Pointer();
-  wpos        = obj->GetPosition();
-  //--- Edit Menu ----------------------
-	smen.Ident	= 'mmap';
-  EditPopITM();
-	return OpenPOP(mx,my);
+bool CFuiVectorMap::OpenDocLIST(int mx,int my)
+{ smen.Ident = 'ldoc';
+	smen.aText = DocMENU;
+  dStat = VWIN_LST;
+  return OpenPOP(mx,my);
+}
+//---------------------------------------------------------------------------------
+//  dStat = 2 => We are selecting a document
+//  Select a document.  Enter Document Windows
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::ClickDocLIST(short itm)
+{ char *m1 = smen.aText[0];
+  if (strcmp(m1,noDOC) == 0) return ClosePopMenu();
+  //---Select the document and display ---------------
+  char       fn[PATH_MAX];
+  sprintf(fn,"DOCUMENTS/%s",smen.aText[itm]);
+  if (globals->txw->LoadImagePNG(fn,DocInfo))
+  //----CHANGE VECTORMAP STATE --------------------------------
+  { dStat = VWIN_DOC;
+    DocInfo.state  = 0;
+    DocInfo.x0     = 0;
+    DocInfo.y0     = 5;
+  }
+  ClosePopMenu();
+  return 1;
+}
+//==================================================================================
+//	DOCUMENT Management 
+//==================================================================================
+//---------------------------------------------------------------------------------
+//  Click over a document
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::ClickDocMENU(short itm)
+{ dStat = VWIN_MAP;
+  delete [] DocInfo.rgba;
+  DocInfo.rgba = 0;
+  ClosePopMenu();
+  return 1;
 }
 //----------------------------------------------------------------------------------
 //  Open a floating menu over a document
@@ -1300,36 +1347,39 @@ bool CFuiVectorMap::OpenPopDOC(int mx,int my)
 	return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
-//  Open a floating menu with the list of documents
+//  Draw the document
 //----------------------------------------------------------------------------------
-bool CFuiVectorMap::OpenPopLST(int mx,int my)
-{ smen.Ident = 'ldoc';
-	smen.aText = DocMENU;
-  dStat = VWIN_LST;
-  return OpenPOP(mx,my);
+void CFuiVectorMap::DrawDocument()
+{   DrawImage(surface,DocInfo);
+  //--------- Render map surface-------------------------------------------------
+    BlitTransparentSurface (surface, 0, 0, 0);
+  //---Draw window decoration -------------------------------
+    CFuiWindow::Draw();
+    return;
 }
 //----------------------------------------------------------------------------------
-//  Get ILS Radio (object is an airport)
+//  Start to Drag the document
 //----------------------------------------------------------------------------------
-int CFuiVectorMap::SetRWYends(char k)
-{ CAirport *apt = obAirp;
-  ClQueue  *qhd = &apt->rwyQ;
-  CRunway *rwy;
-  for (rwy = (CRunway*)qhd->GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
-  { char *end = rwy->GetHiEnd();
-		smen.aText[k]	= end;
-		k++;
-		end	= rwy->GetLoEnd();
-		smen.aText[k]	= end;
-		k++;
-  }
-  return k;
+bool CFuiVectorMap::DragDOC(int mx,int my)
+{ DocInfo.state  = 1;
+  DocInfo.mx     = mx;
+  DocInfo.my     = my;
+  return true;
 }
+//----------------------------------------------------------------------------------
+//  Move the Document
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::MoveDOC(int mx,int my)
+{  return CFuiWindow::MoveImage(mx,my,DocInfo);
+}
+//==================================================================================
+//	RUNWAY List 
+//==================================================================================
 //----------------------------------------------------------------------------------
 //  Open a floating menu over the Runway View
 //	-Create a list of runway ends
 //----------------------------------------------------------------------------------
-bool CFuiVectorMap::OpenPopRWY(int mx,int my)
+bool CFuiVectorMap::OpenRwyLIST(int mx,int my)
 { smen.Ident = 'lrwy';
 	smen.aText = cMENU;
 	smen.aItem = pMENU;
@@ -1340,9 +1390,124 @@ bool CFuiVectorMap::OpenPopRWY(int mx,int my)
   return OpenPOP(mx,my);
 }
 //----------------------------------------------------------------------------------
+//  Build a list of runway ends
+//----------------------------------------------------------------------------------
+int CFuiVectorMap::SetRWYends(char k)
+{ char     *dst = rwyIDN;
+	CAirport *apt = obAirp;
+  ClQueue  *qhd = &apt->rwyQ;
+  CRunway *rwy;
+  for (rwy = (CRunway*)qhd->GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
+  { char *end = rwy->GetHiEnd();
+	  sprintf(dst,"*%s",end);
+		smen.aText[k]	= dst;
+		dst	+= 8;
+		k++;
+		end	= rwy->GetLoEnd();
+		sprintf(dst,"*%s",end);
+		smen.aText[k]	= dst;
+		dst	+= 8;
+		k++;
+  }
+  return k;
+}
+//----------------------------------------------------------------------------------
+//  Draw Top runway View
+//  Open a camera on top of aircraft.
+//  -Draw runways and taxiways
+//  -Draw aircraft icon
+//----------------------------------------------------------------------------------
+void CFuiVectorMap::DrawRunways()
+{ WindowViewPort(vp);
+  //---------------------------------------------------------
+  Cam->DrawObject(0,vp,this);
+	//-------- Draw the scale -----------------------------------------------------
+  DrawFastLine(surface,10,10,110,10,white);
+  DrawFastLine(surface,10, 5, 10,10,white);
+  DrawFastLine(surface,110,5,110,10,white);
+  fnts->DrawNText(surface,116,2,white,eScal);
+  //--------- Render map surface-----------------------------
+  BlitTransparentSurface (surface, 0, 0, 0);
+  //---Draw window decoration -------------------------------
+  CFuiWindow::Draw();
+  // Check for an OpenGL error
+  GLenum e = glGetError ();
+  if (e != GL_NO_ERROR) 
+    WARNINGLOG ("CFuiManager::Draw - GL Error 0x%04X", e);
+  return;
+}
+//----------------------------------------------------------------------------------
+//  Draw By camera
+//----------------------------------------------------------------------------------
+void CFuiVectorMap::DrawByCamera(CCamera *cam)
+{ CAptObject *apo = (CAptObject*)obView;
+  apo->PreDraw(cam);
+  apo->CamDraw(cam);
+  apo->EndDraw(cam);
+  return;
+}
+//==================================================================================
+//	RUNWAY Management 
+//==================================================================================
+//----------------------------------------------------------------------------------
+//  Start to Drag the Tarmac
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::DragRWY(int mx,int my)
+{ DocInfo.state  = 1;
+  DocInfo.mx     = mx;
+  DocInfo.my     = my;
+  return true;
+}
+//----------------------------------------------------------------------------------
+//  Move the Tarmac
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::MoveRWY(int mx,int my)
+{ if (DocInfo.state != 1)  return true;
+  short dx  = mx - DocInfo.mx;
+  short dy  = my - DocInfo.my;
+  DocInfo.mx   = mx;
+  DocInfo.my   = my;
+  Cam->MoveBy(dx,dy);
+  return true;
+}
+//---------------------------------------------------------------------------------
+//  Click over a runway list to set aircraft on the runway end
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::ClickRwyMENU(short itm)
+{ char ch = *smen.aText[itm];
+	if (itm == 0)			return 1;
+  if (ch	== '*')		return StartonRWY(itm);
+	dStat = VWIN_MAP;
+  ClosePopMenu();
+	//--- Reset zoom factor -------------------
+	Scale(pZom);
+  return 1;
+}
+//---------------------------------------------------------------------------------
+//  Position aircraft for start on runway
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::StartonRWY(short itm)
+{ char *idn = smen.aText[itm] + 1;
+	globals->apm->SetOnRunway(obAirp,idn);
+	return 1;
+}
+//==================================================================================
+//	WAYPOINT Management 
+//==================================================================================
+//---------------------------------------------------------------------------------
+//  Create a waypoint at cursor position and add it to flight plan
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::CreateWPT()
+{	CWPT *wpt = fPlan->CreateUserWPT(&wpos);
+	Focus		  = wpt;
+	CFuiFlightLog *nwin = dbc->GetLOGwindow();
+  nwin->NotifyFromDirectory(Focus.Pointer());
+	return 1;
+}
+//----------------------------------------------------------------------------------
 //  Open a floating menu to create a user waypoint
 //----------------------------------------------------------------------------------
-bool CFuiVectorMap::OpenWptMEN(int mx,int my)
+bool CFuiVectorMap::OpenWptMENU(int mx,int my)
 { if (0 == dbc->GetLOGwindow())		return true;
   if (fPlan->IsUsed())						return true;
 	smen.Ident = 'mwpt';
@@ -1351,25 +1516,21 @@ bool CFuiVectorMap::OpenWptMEN(int mx,int my)
 	wpos.alt	 = 0;
   return OpenPOP(mx,my);
 }
-//----------------------------------------------------------------------------------
-//  Close the floating menu
-//----------------------------------------------------------------------------------
-int CFuiVectorMap::ClosePopMenu()
-{ if (0 == MyPop) return 0;
-  MyPop->SetState(0);
-  ClearFocus(MyPop);
-  delete MyPop;
-  MyPop     = 0;
-  Focus     = 0;
-  //---When closing popup, we cant stay in state 2 ----------
-  if (VWIN_LST == dStat)  dStat = VWIN_MAP;
+//---------------------------------------------------------------------------------
+//  Click waypoint menu
+//	Check for waypoint creation
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::ClickWptMENU(short itm)
+{ if (*smen.aText[itm]	== 'A')	CreateWPT();
+	dStat = VWIN_MAP;
+  ClosePopMenu();
   return 1;
 }
 //----------------------------------------------------------------------------------
 //  Click over a waypoint
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::ClickWptOBJ(int mx,int my,EMouseButton button)
-{	if (button == MOUSE_BUTTON_RIGHT)	return OpenWptOBJ(mx,my);
+{	if (button == MOUSE_BUTTON_RIGHT)	return OpenWptINFO(mx,my);
 	dStat = VWIN_WPT;
 	//--- prepare to move the waypoint ----------------------
 	DocInfo.state = 1;
@@ -1401,36 +1562,62 @@ void CFuiVectorMap::WaypointMoved()
 	nwin->Refresh();
 	return;
 }
+//----------------------------------------------------------------------------------
+//  Open a floating menu for WPT
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::OpenWptINFO(int mx, int my)
+{ CWPT *wpt   = (CWPT*)Focus.Pointer();
+	smen.Ident	= 'mowp';
+	smen.aText  = WayMENU;
+	char *nam   = wpt->GetName();
+	smen.aText[0]	= nam;
+	sprintf(disHD,"%s: %.1f nm from previous",nam,wpt->GetDistance());
+	smen.aText[1] = disHD;
+	return OpenPOP(mx,my);
+}
+
+//=================================================================================
+//  Draw taxiway Nodes
+//=================================================================================
+
 //---------------------------------------------------------------------------------
-//  Go back to Vector Map from document view
+//	Draw the taxiway nodes
 //---------------------------------------------------------------------------------
-int CFuiVectorMap::ClickDocMENU(short itm)
-{ dStat = VWIN_MAP;
-  delete [] DocInfo.rgba;
-  DocInfo.rgba = 0;
-  ClosePopMenu();
+void CFuiVectorMap::DrawTaxiNodes()
+{
+}
+
+//==================================================================================
+//	SCREEN OBJECTS Management 
+//==================================================================================
+//----------------------------------------------------------------------------------
+//  Open a floating menu for APT, NAV or NDB
+//----------------------------------------------------------------------------------
+bool CFuiVectorMap::OpenPopOBJ(int mx,int my)
+{ smen.aText  = cMENU;
+  //--- Save teleport position ---------
+  CmHead *obj = Focus.Pointer();
+  wpos        = obj->GetPosition();
+  //--- Edit Menu ----------------------
+	smen.Ident	= 'mmap';
+  if (!EditPopITM()) return true;
+	return OpenPOP(mx,my);
+}
+//----------------------------------------------------------------------------------
+//  Close the floating menu
+//----------------------------------------------------------------------------------
+int CFuiVectorMap::ClosePopMenu()
+{ if (0 == MyPop) return 0;
+  MyPop->SetState(0);
+  ClearFocus(MyPop);
+  delete MyPop;
+  MyPop     = 0;
+  Focus     = 0;
+  //---When closing popup, we cant stay in state 2 ----------
+  if (VWIN_LST == dStat)  dStat = VWIN_MAP;
   return 1;
 }
-//---------------------------------------------------------------------------------
-//  Go back to Vector Map from Top View
-//---------------------------------------------------------------------------------
-int CFuiVectorMap::ClickRwyMENU(short itm)
-{ if (itm == 0)			return 1;
-  if (*smen.aText[itm]	!= 'C')	return StartonRWY(itm);
-	dStat = VWIN_MAP;
-  ClosePopMenu();
-  return 1;
-}
-//---------------------------------------------------------------------------------
-//  Click waypoint menu
-//	Check for waypoint creation
-//---------------------------------------------------------------------------------
-int CFuiVectorMap::ClickWptMENU(short itm)
-{ if (*smen.aText[itm]	== 'A')	CreateWPT();
-	dStat = VWIN_MAP;
-  ClosePopMenu();
-  return 1;
-}
+
 //---------------------------------------------------------------------------------
 //  Click waypoint Object
 //---------------------------------------------------------------------------------
@@ -1439,44 +1626,7 @@ int CFuiVectorMap::ClickWptOBJM(short itm)
   ClosePopMenu();
   return 1;
 }
-//---------------------------------------------------------------------------------
-//  Position aircraft for start on runway
-//---------------------------------------------------------------------------------
-int CFuiVectorMap::StartonRWY(short itm)
-{ char *idn = smen.aText[itm];
-	globals->apm->SetOnRunway(obAirp,idn);
-	return 1;
-}
-//---------------------------------------------------------------------------------
-//  Create a waypoint at cursor position and add it to flight plan
-//---------------------------------------------------------------------------------
-int CFuiVectorMap::CreateWPT()
-{	CWPT *wpt = fPlan->CreateUserWPT(&wpos);
-	Focus		  = wpt;
-	CFuiFlightLog *nwin = dbc->GetLOGwindow();
-  nwin->NotifyFromDirectory(Focus.Pointer());
-	return 1;
-}
-//---------------------------------------------------------------------------------
-//  dStat = 2 => We are selecting a document
-//  Select a document.  Enter Document Windows
-//---------------------------------------------------------------------------------
-int CFuiVectorMap::ClickDocLIST(short itm)
-{ char *m1 = smen.aText[0];
-  if (strcmp(m1,noDOC) == 0) return ClosePopMenu();
-  //---Select the document and display ---------------
-  char       fn[PATH_MAX];
-  sprintf(fn,"DOCUMENTS/%s",smen.aText[itm]);
-  if (globals->txw->LoadImagePNG(fn,DocInfo))
-  //----CHANGE VECTORMAP STATE --------------------------------
-  { dStat = VWIN_DOC;
-    DocInfo.state  = 0;
-    DocInfo.x0     = 0;
-    DocInfo.y0     = 5;
-  }
-  ClosePopMenu();
-  return 1;
-}
+
 //----------------------------------------------------------------------------------
 //  Open Metar for airport
 //----------------------------------------------------------------------------------
@@ -1518,6 +1668,10 @@ int CFuiVectorMap::ClickMapMENU(short itm)
     //--View Runway -----------------------------------------------
     case 'V':
       dStat   = VWIN_RWY; 
+			//--- Save current zoom and init runway view -----
+			pZom	= Zoom;							
+			Zoom  = Cam->SetOrigin(obAirp->ObjPosition());
+			Scale(Zoom);
       break;
     //---- Tune a radio -------------------------------------------
     case '*':
@@ -1529,7 +1683,7 @@ int CFuiVectorMap::ClickMapMENU(short itm)
       break;
   }
   ClosePopMenu();
-  if (doc)  OpenPopLST(xOrg,yOrg);
+  if (doc)  OpenDocLIST(xOrg,yOrg);
   return 1;
 }
 //-------------------------------------------------------------------------
@@ -1608,101 +1762,6 @@ void CFuiVectorMap::AddToFlightPlan()
 void CFuiVectorMap::Teleport()
 { globals->tcm->Teleport(wpos);
   return;
-}
-//---------------------------------------------------------------------------------
-//  Build a list of file for this airport
-//---------------------------------------------------------------------------------
-int CFuiVectorMap::SearchDOC()
-{ CAirport *apt = (CAirport*)Focus.Pointer();
-  char       fn[PATH_MAX];
-  sprintf(fn,"DOCUMENTS/%s*.PNG",apt->GetAptName());
-  char* name = (char*)pfindfirst (&globals->pfs,fn);
-  char **men = DocMENU;
-  int    nbr = 0;
-  while (name)
-  { *men++ = strchr(name,'/') + 1;
-     nbr++;
-     name  = (char*)pfindnext (&globals->pfs);
-     if (nbr == 16) break;
-  }
-  *men = 0;
-  return nbr;
-}
-//=================================================================================
-//  Draw Airport Diagram
-//=================================================================================
-void CFuiVectorMap::DrawDiagram()
-{   DrawImage(surface,DocInfo);
-  //--------- Render map surface-------------------------------------------------
-    BlitTransparentSurface (surface, 0, 0, 0);
-  //---Draw window decoration -------------------------------
-    CFuiWindow::Draw();
-    return;
-}
-//----------------------------------------------------------------------------------
-//  Start to Drag the Diagram
-//----------------------------------------------------------------------------------
-bool CFuiVectorMap::ClickDOC(int mx,int my)
-{ DocInfo.state  = 1;
-  DocInfo.mx     = mx;
-  DocInfo.my     = my;
-  return true;
-}
-//----------------------------------------------------------------------------------
-//  Move the Diagram
-//----------------------------------------------------------------------------------
-bool CFuiVectorMap::MoveDOC(int mx,int my)
-{  return CFuiWindow::MoveImage(mx,my,DocInfo);
-}
-//=================================================================================
-//  Draw Top runway View
-//  Open a camera on top of aircraft.
-//  -Draw runways and taxiways
-//  -Draw aircraft icon
-//=================================================================================
-void CFuiVectorMap::DrawTopView()
-{ 
-  WindowViewPort(vp);
-  //---------------------------------------------------------
-  Cam->DrawObject(0,vp,this);
-  //---Draw window decoration -------------------------------
-  CFuiWindow::Draw();
-  // Check for an OpenGL error
-  GLenum e = glGetError ();
-  if (e != GL_NO_ERROR) 
-    WARNINGLOG ("CFuiManager::Draw - GL Error 0x%04X", e);
-  return;
-}
-//----------------------------------------------------------------------------------
-//  Draw By camera
-//----------------------------------------------------------------------------------
-void CFuiVectorMap::DrawByCamera(CCamera *cam)
-{ CAptObject *apo = (CAptObject*)obView;
-  apo->PreDraw(cam);
-  apo->CamDraw(cam);
-  apo->EndDraw(cam);
-  return;
-}
-//----------------------------------------------------------------------------------
-//  Start to Drag the Tarmac
-//----------------------------------------------------------------------------------
-bool CFuiVectorMap::ClickRWY(int mx,int my)
-{ DocInfo.state  = 1;
-  DocInfo.mx     = mx;
-  DocInfo.my     = my;
-  return true;
-}
-//----------------------------------------------------------------------------------
-//  Move the Tarmac
-//----------------------------------------------------------------------------------
-bool CFuiVectorMap::MoveRWY(int mx,int my)
-{ if (DocInfo.state != 1)  return true;
-  short dx  = mx - DocInfo.mx;
-  short dy  = my - DocInfo.my;
-  DocInfo.mx   = mx;
-  DocInfo.my   = my;
-  Cam->MoveBy(dx,dy);
-  return true;
 }
 
 //==================================================================================

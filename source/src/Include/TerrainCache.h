@@ -27,8 +27,18 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-
-
+//=============================================================================
+// THE FOLLOWING PARAMETER DEFINE the MAXIMUM RESOLUTION OF THE TERRAIN CACHE
+//	in term of number of QUADs in a DETAIL TILE
+//	Level 0=>  1 QUAD					ARRAY of   5 elevations
+//	Level 1=>  4 QUADs				ARRAY of  25 (5 * 5) elevations
+//	Level 2=> 16 QUADs				ARRAY of  81 (9 * 9) elevations
+//	Level 3=> 64 QUADs				ARRAY of 289 (17 * 17) elevations
+//	Level k=>  4 Power(k)
+//	For each QUAD there are 10 vertices to render in a TRIANGLE_FAN mode
+//=============================================================================
+#define QUAD_RESOLUTION (16)
+//=============================================================================
 #include "../Include/FlyLegacy.h"
 #include "../Include/Model3D.h"
 #include "../Include/FileThread.h"
@@ -259,18 +269,31 @@ class CGroundTile {
   //--- Attributes --------------------------------------------
   U_INT         ax;                       //  Tile ident X
   U_INT         az;                       //  Tile ident Z
+	C_QGT       *qgt;												// Tile QGT
   CTextureDef *txn;                       //  Tile descriptor
 	CmQUAD      *quad;
+	int          dim;												// Quad number
+	GLint        sIND[QUAD_RESOLUTION];			//   Start indices
+	GLint				 nIND[QUAD_RESOLUTION];			//   Count of indices
   //--- Methods ------------------------------------------------
 public:
   CGroundTile(U_INT x,U_INT z);
   //------------------------------------------------------------
-  void		SetParameters(CTextureDef *d);
+	void		Free();
+  int		  StoreData(CTextureDef *d);
+	int			TransposeTile(TC_GTAB *d,int s, SPosition *o);
+	//--- VBO management -----------------------------------------
+	int 		GetNbrVTX();
 	void		Draw(U_INT obj);
+	void		DrawGround(U_INT xo);
 	//------------------------------------------------------------
-  inline CmQUAD      *GetQUAD()             {return quad;}
-  inline U_INT        GetAX()               {return ax;}
-  inline U_INT        GetAZ()               {return az;}
+  inline CmQUAD      *GetQUAD()		{return quad;}
+  inline U_INT        GetAX()			{return ax;}
+  inline U_INT        GetAZ()     {return az;}
+	//------------------------------------------------------------
+	inline void	SetQGT(C_QGT *q)			{qgt = q;}
+	inline void SetTXD(CTextureDef *t){txn = t;} 
+	inline void SetQUAD(CmQUAD *q)		{quad = q;}
 };
 //============================================================================
 //  SUPERTILE  DESCRIPTOR
@@ -306,11 +329,8 @@ public:
     U_CHAR        LOD;                    // Level of Detail
 		//--- Vertex buffer ---------------------------------------------
     U_SHORT      nbVTX;                   // Number of vertices
-		U_SHORT			 usVTX;										// Used vertices
-		TC_VTAB			*vBUF;										// Buffer
-		TC_VTAB     *cBUF;										// Current value
+		TC_GTAB			*vBUF;										// Buffer
 		U_INT				 aVBO;										// Vertex Buffer Object
-		U_INT				 bVBO;										// Binded VBO
     //----3D management ---------------------------------------------
     float        dEye;            // True eye distance
     float       alpha;            // Alpha chanel
@@ -337,7 +357,6 @@ public:
     int           Update3Dstate();
 		//-----------------------------------------------------------
 		void					LoadVBO();
-		int						ReserveSpace(int nbv);
 		//-----------------------------------------------------------
 		void					Reallocate(char opt);
     void					AllocateVertices(char opt);
@@ -350,7 +369,8 @@ public:
     void          DrawInnerSuperTile();
     void          DrawTour();
     int           Draw3D(U_CHAR tod);
-    void          Add3DObject(CWobj *obj);  
+    void          Add3DObject(CWobj *obj); 
+		void					BindVBO();
     //-----------------------------------------------------------
     inline CTextureDef *GetTexDesc(int nd)  {return (Tex + nd);}
     //-----------------------------------------------------------
@@ -360,11 +380,7 @@ public:
     inline float  GetTrueDistance()       {return dEye;}
     inline float  GetAlpha()              {return alpha;}
 		//--- Vertex buffer manageement -----------------------------
-		inline TC_VTAB* GetVertexTable()			{return vBUF;}
-		inline TC_VTAB* GetVertexSpace()			{return cBUF;}
-		inline U_SHORT  GetFirstIndex()				{return usVTX;}
-		//--- Bind the vertex
-		inline void   BindVBO()	{glBindBuffer(GL_ARRAY_BUFFER,aVBO);}
+		inline TC_GTAB* GetVertexTable()			{return vBUF;}
     //-----------------------------------------------------------
     inline U_CHAR GetLOD()  {return LOD;}
     inline void zrSwap()  {swap = 0;}
@@ -472,16 +488,17 @@ public:
   inline void Assign(double *ft)        {Coord.Assign(ft);}
   inline void Tour(F3_VERTEX *t,char v) {Coord.SetTour(t,v);}
   //------------------------------------------------------
-  inline void AssignNE(TC_VTAB *tab){Coord.AssignNE(tab);}
-  inline void AssignNB(TC_VTAB *tab){Coord.AssignNB(tab);}
-  inline void AssignNW(TC_VTAB *tab){Coord.AssignNW(tab);}
-  inline void AssignWB(TC_VTAB *tab){Coord.AssignWB(tab);}
-  inline void AssignSW(TC_VTAB *tab){Coord.AssignSW(tab);}
-  inline void AssignSB(TC_VTAB *tab){Coord.AssignSB(tab);}
-  inline void AssignSE(TC_VTAB *tab){Coord.AssignSE(tab);}
-  inline void AssignEB(TC_VTAB *tab){Coord.AssignEB(tab);}
+  inline void AssignNE(TC_GTAB *tab){Coord.AssignNE(tab);}
+  inline void AssignNB(TC_GTAB *tab){Coord.AssignNB(tab);}
+  inline void AssignNW(TC_GTAB *tab){Coord.AssignNW(tab);}
+  inline void AssignWB(TC_GTAB *tab){Coord.AssignWB(tab);}
+  inline void AssignSW(TC_GTAB *tab){Coord.AssignSW(tab);}
+  inline void AssignSB(TC_GTAB *tab){Coord.AssignSB(tab);}
+  inline void AssignSE(TC_GTAB *tab){Coord.AssignSE(tab);}
+  inline void AssignEB(TC_GTAB *tab){Coord.AssignEB(tab);}
+	inline void AssignCT(TC_GTAB *tab){Coord.AssignCT(tab);}
 	//-------------------------------------------------------
-	inline void AssignHT(TC_VTAB *tab){Coord.AssignHT(tab);}
+	inline void AssignHT(TC_GTAB *tab){Coord.AssignHT(tab);}
   //-------------------------------------------------------
   void    InsertNorth(CVertex *vn);
   void    InsertEast(CVertex *vn);
@@ -504,9 +521,10 @@ public:
   inline double GetMY()                       {return Coord.GetMY();}
   //--------World    coordinates -------------------------------------
   inline void   SetWZ(float elv)       {Coord.SetWZ(elv);}
-  inline float  GetWX()                       {return Coord.GetWX();}
-  inline float  GetWY()                       {return Coord.GetWY();}
-  inline float  GetWZ()                       {return Coord.GetWZ();}
+	inline double  GetWX()               {return Coord.GetWX();}
+  inline double  GetWY()               {return Coord.GetWY();}
+  inline double  GetWZ()               {return Coord.GetWZ();}
+	//------------------------------------------------------------------
   inline void   SetEdge(U_CHAR e,CVertex *v)  {Edge[e] = v;}
   inline void   SetCornerHeight()             {Coord.SetWZ(Ground / nElev);}
   inline void   SetCorner(U_CHAR c,CVertex *v){Edge[c] = v; if (v) v->IncUse();}
@@ -519,6 +537,7 @@ public:
 	inline short zRow()								{return (zKey & TC_1024MOD);}
   //---------------------------------------------------
   inline double GetAbsoluteLongitude()        {return FN_ARCS_FROM_SUB(xKey);}
+	inline double LongitudeOffset()   {return TC_ARCS_PER_BAND * FN_BAND_FROM_INX(xKey);}
   //---------------------------------------------------
   inline CVertex *GetEdge(U_SHORT cnr)  {return Edge[cnr];}
   inline CVertex *GetCorner(U_SHORT cnr){return Edge[cnr];}
@@ -573,7 +592,7 @@ public:
 class CmQUAD {
 	friend class TCacheMGR;
 	//--- Define render vector -----------------------------
-	typedef void (CmQUAD::*VREND)(char n);	// Rendering vector
+	typedef void (CmQUAD::*VREND)();	// Rendering vector
 	//--- ATTRIBUTES ---------------------------------------------------
   U_CHAR      subL;                   // Subdivision level
   U_CHAR      Flag;                   // Indicators
@@ -583,7 +602,7 @@ class CmQUAD {
   CmQUAD     *qARR;										// Array of CmQUAD
   CVertex     Center;                 // Quad Center
 	CSuperTile *msp;										// Mother super tile
-  TC_VTAB    *vTab;                   // Pointer in Vertex table
+  TC_GTAB    *vTab;                   // Pointer in Vertex table
 	GLint      *iBUF;										// VBO indices
 	VREND       Rend;										// Rendering vector
   //---- METHODS  -----------------------------------------------------
@@ -591,9 +610,11 @@ public:
   CmQUAD();
  ~CmQUAD();
   //--------------------------------------------------------
+  double      LongitudeOffset();
   void        SetArray(CmQUAD *cp,U_SHORT dim);
   void        SetParameters(CVertex *ct,U_CHAR l);
   int         CountVertices();
+	int					NbrVerticesInTile();
 	int					InitIndices(CSuperTile *s,char opt);
   void        GetTileIndices(U_INT &tx,U_INT &tz);
   CmQUAD     *Locate2D(CVector &p);
@@ -602,12 +623,15 @@ public:
 	U_INT				WorldTileKey();
 	//--- Vertex buffer management --------------------------
 	void				Clean();
-	void				InitVTAB(U_CHAR r);
-	int					InitVertexCoord(CSuperTile *sp,float *txt);
+	int 				InitVTAB(TC_GTAB *vbo,int d, U_CHAR r);
+	int					InitVertexCoord(TC_GTAB *vbo,float *txt);
 	void				RefreshVTAB(CSuperTile *sp,U_CHAR res);
 	void				RefreshVertexCoord(CSuperTile *sp,float *txt);
+	int         TransposeVertices(TC_GTAB *vbo,SPosition *org);
+	int					RelocateVertices(TC_GTAB *vbo,SPosition *org);
   //-------------------------------------------------------
   bool        AreWe(U_INT qx,U_INT tx,U_INT qz,U_INT tz);
+	bool        AreWe(U_INT ax,U_INT az);
   //-------------------------------------------------------
   bool        PointHeight(CVector &p,CVector &nm);
   //-------------------------------------------------------
@@ -617,9 +641,9 @@ public:
   bool        PointInNW(CVector &p, CVector nm);
   //-------------------------------------------------------
   void        Contour();
-  void        DrawNML(char opt);			// Draw normal mode
-	void				DrawIND(char opt);			// Draw with indices
-	void				DrawVBO(char opt);			// Draw with VBO
+  void        DrawNML();			// Draw normal mode
+	void				DrawIND();			// Draw with indices
+	void				DrawVBO();			// Draw with VBO
 	//--- For terrain editor interface ----------------------
 	void				GetVertices(TRACK_EDIT &w);
 	void				PutVertices(TRACK_EDIT &w, CmQUAD  *qd);
@@ -629,7 +653,7 @@ public:
 	CVertex    *Patche(CVertex *vt,ELV_PATCHE &p,int dir);
   //-------------------------------------------------------
   inline CmQUAD  *GetArray()                {return qARR;}
-  inline TC_VTAB *GetVTAB()                 {return vTab;}
+  inline TC_GTAB *GetVTAB()                 {return vTab;}
   inline U_INT    GetSize()                 {return qDim;}
   inline float    CenterElevation()         {return Center.GetWZ();}
   inline void     SetCorner(U_CHAR c,CVertex *v) {Center.SetCorner(c,v);}
@@ -648,15 +672,16 @@ public:
   inline U_INT    GetTileTZ()     {return (Center.zKey >> TC_BY1024) & TC_032MODULO;}
   inline int      GetNbrVTX()     {return nvtx;}
   //--------------------------------------------------------------------
+	inline void SetGTAB(TC_GTAB *t)				{vTab = t;}
   inline void SetGroundType(U_CHAR t)   {Center.gType = t;}
-  inline void MarkGround()              {Flag |= QUAD_GND;}
+  inline void MarkAsGround()            {Flag |= QUAD_GND;}
   inline void ClearGround()             {Flag &= (-1 - QUAD_GND);}
   inline bool IsAptGround()             {return ((Flag & QUAD_GND) != 0);}
   //--------------------------------------------------------------------
 	inline void			RenderNML()			{Rend = &CmQUAD::DrawNML;}
 	inline void			RenderIND()			{Rend = &CmQUAD::DrawIND;}
 	inline void			RenderVBO()			{Rend = &CmQUAD::DrawVBO;}
-	inline void			DrawTile(char n){(this->*Rend)(n);}
+	inline void			DrawTile(){(this->*Rend)();}
 	//--------------------------------------------------------------------
 	inline CSuperTile *GetSuperTile()	{return msp;}
 };
@@ -1204,9 +1229,9 @@ public:
   CmQUAD      *GetTileQuad(SPosition pos);
   CmQUAD      *GetTileQuad(U_INT ax,U_INT az);
   CTextureDef *GetTexDescriptor();
-  CTextureDef *GetTexDescriptor(U_INT tx,U_INT tz);
+ // CTextureDef *GetTexDescriptor(U_INT tx,U_INT tz);
   CTextureDef *GetTexDescriptor(C_QGT *qtg,U_INT ax,U_INT az);
-  void         DrawAirportGround(std::vector<CGroundTile*> &grnd);
+	void				FillGroundTile(CGroundTile *gnt);
   //--------METAR MANAGEMENT -------------------------------------
   void         AssignMetar(CMeteoArea *ma);
   //---------Helper --------------------------------------------

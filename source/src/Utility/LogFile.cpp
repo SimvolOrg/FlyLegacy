@@ -61,7 +61,7 @@ FILE *CLogFile::GetFile (void)
 
 
 void CLogFile::Write (const char* fmt, va_list argp)
-{
+{if (0 == fmt)	return;
   if (f) {
 		vfprintf(f, fmt, argp);
     fprintf (f, "\n");

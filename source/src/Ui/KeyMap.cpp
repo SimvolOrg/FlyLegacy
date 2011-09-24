@@ -285,13 +285,10 @@ CKeyMap::CKeyMap ()
 //  Check for file name and open it
 //--------------------------------------------------------------------------
 void CKeyMap::OpenKey(char *fn)
-{ SStream *s = new SStream;
-  strcpy (s->filename, fn);
-  strcpy (s->mode, "r");
-  if (OpenStream (s)) {
-    ReadFrom (this, s);
-    CloseStream (s);
-    delete s;
+{ SStream s;
+  if (OpenRStream (fn,s)) {
+    ReadFrom (this, &s);
+    CloseStream (&s);
     return;
   }
   gtfo ("ERROR : Could not read key mappings from %s",fn);

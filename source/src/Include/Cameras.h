@@ -217,6 +217,7 @@ protected:
 	//--------Camera parameters ----------------------------------
   SPosition Tgt;        // Camera target world position 
   float     fov;        // Horizontal field of view in degrees
+	double    tgf;				// Tangent of FOV
   double    range;      // Range
   double    dmin;       // Minimum distance
   double    rmin, rmax; // Min/max range
@@ -526,12 +527,13 @@ public:
   // Constructors/Destructors
   CCameraRunway (void);
   void    UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
-  void    SetOrigin(SPosition *org);
   void    SetView();
-  void    MoveUp(int df);
   void    MoveBy(float nx,float ny);
   void    Zoom(int zf);
   void    GetLookatPoint(SVector &v);
+	//-----------------------------------------------------------------
+  double  SetOrigin(SPosition *org);
+  double  MoveUp(int df);
   //-----------------------------------------------------------------
   inline  double GetUPF()         {return offset.z;}
 };

@@ -1785,7 +1785,7 @@ void CCameraOrbit::PanDown (void)
 //==============================================================================
 CCameraRunway::CCameraRunway (void)
 : CCamera()
-{ Prof.Set(CAM_MAY_MOVE + CAM_MAY_ZOOM);
+{ Prof.Set(CAM_MAY_MOVE);
   // Increase rmax to allow very high zoom range
   rmax = NmToFeet (10.0f);
   rmin = 100;
@@ -1805,8 +1805,9 @@ CCameraRunway::CCameraRunway (void)
   Up.x  = 0;
   Up.y  = 1;
   Up.z  = 0;
-  //----FOV is 35°----------------------------------
-  fov = 35.0f;
+  //----FOV is 40°----------------------------------
+  fov = 40.0f;
+	tgf = tan(DegToRad(fov * 0.5));
 }
 //-------------------------------------------------------------------------------
 //  Update camera position relative to 0rigin
@@ -1815,10 +1816,13 @@ void CCameraRunway::UpdateCamera (SPosition tgtPos, SVector tgtOrient,float Dt)
 {}
 //-------------------------------------------------------------------------------
 //  Set camera to airport origin
-//  Camera is placed 4 miles above ground
+//  Camera is placed 3.2 miles above ground
+//	return the horizontal extend in miles
 //-------------------------------------------------------------------------------
-void CCameraRunway::SetOrigin(SPosition *org)
-{ Tgt.lon = org->lon;
+double CCameraRunway::SetOrigin(SPosition *org)
+{ double magl = 3.2;				// 3.2 miles above ground
+	//----------------------------------------------
+	Tgt.lon = org->lon;
   Tgt.lat = org->lat;
   Tgt.alt = org->alt;
   //---Compute zoom range ------------------------
@@ -1827,8 +1831,8 @@ void CCameraRunway::SetOrigin(SPosition *org)
   //---Set offset --------------------------------
   offset.x  = 0;
   offset.y  = 0;
-  offset.z  = org->alt + NmToFeet(4.0f);
-  return;
+  offset.z  = org->alt + FN_FEET_FROM_MILE(magl);
+  return (2 * magl * tgf);
 }
 //-------------------------------------------------------------------------------
 //  Set camera target
@@ -1853,20 +1857,21 @@ void CCameraRunway::SetView()
 //-------------------------------------------------------------------------------
 //  Move up or down by inc (feet)
 //-------------------------------------------------------------------------------
-void CCameraRunway::MoveUp(int df)
+double CCameraRunway::MoveUp(int df)
 { offset.z += 100 * df;
   if (offset.z < rmin)  offset.z = rmin;
   if (offset.z > rmax)  offset.z = rmax;
-  return;
+	double magl = FN_MILE_FROM_FEET(offset.z);
+  return (2 * magl * tgf);
 }
 //-------------------------------------------------------------------------------
-//  Move up or down by inc (feet)
+//  Dont process
 //-------------------------------------------------------------------------------
 void CCameraRunway::Zoom(int zf)
-{ float df  = float(zf) * 0.5;
-  fov += df;
-  if (fov < 20)      fov = 20;
-  else if (fov > 90) fov = 90;
+{ //float df  = float(zf) * 0.5;
+  //fov += df;
+  //if (fov < 20)      fov = 20;
+  //else if (fov > 90) fov = 90;
 }
 
 //-------------------------------------------------------------------------------
@@ -2590,10 +2595,7 @@ CCameraManager::CCameraManager (CVehicleObject *veh,char* fn)
   aCam    = 0;
   globals->ccm = this;
   SStream s;
-  strcpy (s.filename, "WORLD/");
-  strcat (s.filename, fn);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",fn,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   } else {

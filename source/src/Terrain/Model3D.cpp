@@ -653,9 +653,7 @@ void C3Dfile::Decode(char *fname)
   namef[63] = 0;
   //---Open the file -------------------------------
   SStream s;
-  strncpy (s.filename,fname, PATH_MAX);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s))
+  if (OpenRStream (fname,s))
   { // Successfully opened stream
     ReadFrom (this, &s);                 
     CloseStream (&s);

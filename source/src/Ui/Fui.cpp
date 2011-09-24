@@ -1125,9 +1125,7 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
 	FindThemeWidget ();
   // Open stream ----------------------------------
   SStream stream;
-  strcpy (stream.filename, winFilename);
-  strcpy (stream.mode, "r");
-  if (OpenStream (&globals->pfs, &stream)) {
+  if (OpenRStream ((char*)winFilename, stream)) {
     ReadFrom (this, &stream);
     CloseStream (&stream);
   }

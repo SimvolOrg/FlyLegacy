@@ -626,12 +626,10 @@ void CObjLine::Print(CFuiList *w,U_CHAR ln)
 //  Key file parser
 //================================================================================
 CKeyFile::CKeyFile(char *fname)
-{ SStream *s = new SStream;
-  strcpy (s->filename, fname);
-  strcpy (s->mode, "r");
-  if (OpenStream (s)) {
-    ReadFrom (this, s);
-    CloseStream (s);
+{ SStream s;
+  if (OpenRStream (fname,s)) {
+    ReadFrom (this, &s);
+    CloseStream (&s);
   }
 }
 //--------------------------------------------------------------------------------

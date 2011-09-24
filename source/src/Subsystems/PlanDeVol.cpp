@@ -1320,12 +1320,10 @@ bool CFPlan::AssignPlan(char *fn,char opt)
   if (!pexists(&globals->pfs,name)) return false;
   ClearPlan();
   SStream s;
-  strncpy (s.filename,name, PATH_MAX);
-  strcpy (s.mode, "r");
 	WarnGPS(modif);				 // Advise GPS
 	UpdatePlan();
 	//--- Read plan and set loaded state ------
-  if (!OpenStream (&s))   return false;
+  if (!OpenRStream (name,s))   return false;
   option	= opt;
 	format  = '0000';
 	ReadFrom (this, &s);                 
@@ -1896,10 +1894,10 @@ void CFPlan::DrawOnMap(CFuiVectorMap *win)
 		ext = (CWPoint *)wPoints.NextPrimary(org);
 		//----Init route origin ------------------
 		rOrg.SetNode(org);
-    rOrg.SetPosition(org->GetGeoP());
+//    rOrg.SetPosition(org->GetGeoP());
     if (0 == ext) break;
 		rExt.SetNode(ext);
-    rExt.SetPosition(ext->GetGeoP());
+//    rExt.SetPosition(ext->GetGeoP());
     win->DrawRoute(rOrg,rExt);
 		rExt.SetNode(0);
   }
@@ -1976,33 +1974,23 @@ void CFPlan::Save()
 //=======================================================================
 //  Fill parameters to compute distance
 //=======================================================================
-void CRouteEXT::SetPosition(SPosition *p)
-{ if (wpt)	wpt->SetPosition(*p);
-  double lr   = FN_RAD_FROM_ARCS(p->lat);					// Latittude in Radian
-  nmFactor    = cos(lr) / 60;                     // 1 nm at latitude lr
-}
 //-------------------------------------------------------------
 //	return position
 //-------------------------------------------------------------
-SPosition *CRouteEXT::ObjPosition()
+SPosition *VMnode::ObjPosition()
 {return wpt->GetGeoP();}
 //-------------------------------------------------------------
 //	return database object
 //-------------------------------------------------------------
-CmHead *CRouteEXT::GetOBJ()
+CmHead *VMnode::GetOBJ()
 {	return wpt->GetDBobject();	}
 //-------------------------------------------------------------
-//	return Leg Distance 
+//	Set Node distance  
 //-------------------------------------------------------------
-float CRouteEXT::GetLegDistance()
-{	return wpt->GetLegDistance();}
-//-------------------------------------------------------------
-//	Set node distance 
-//-------------------------------------------------------------
-void	CRouteEXT::SetNodeDistance(float d)
+void VMnode::SetNodeDistance()
 {	CmHead *obj = wpt->GetDBobject();
-	if (0 == obj)					return;
-	if (obj->IsNot(WPT))	return;
+  if (obj->IsNot(WPT))	return;
+	float d = wpt->GetLegDistance();
 	CWPT   *nod = (CWPT*) obj;
 	nod->SetDIS(d);
 	return;

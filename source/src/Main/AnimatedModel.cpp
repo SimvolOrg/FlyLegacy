@@ -59,10 +59,7 @@ CAnimatedModel::CAnimatedModel (CVehicleObject *v,char* lodFilename,Tag t)
   for (int k=0; k<ENGINE_MAX; k++) aSpin[k] = 0;
   //-------Read the parameters -------------------------
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, lodFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",lodFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }

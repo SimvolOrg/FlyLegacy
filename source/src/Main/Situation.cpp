@@ -493,7 +493,9 @@ void CSlewManager::NormalMove(float dT)
 //  Update aircraft position
 //------------------------------------------------------------------------
 void CSlewManager::Update (float dT)
-{ veh = globals->pln;
+{ 
+	//--------------------------------------------------
+	veh = globals->pln;
   if (0 == veh)   return;
   switch (mode) {
     case SLEW_STOP:
@@ -622,9 +624,7 @@ CSituation::CSituation()
 //-------------------------------------------------------------------------
 void CSituation::OpenSitFile()
 { SStream s;
-  strcpy (s.filename, globals->sitFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream (globals->sitFilename,s)) {
     // Successfully opened stream
     ReadFrom (this, &s);
     CloseStream (&s);

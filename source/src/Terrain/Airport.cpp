@@ -53,6 +53,7 @@
 #include "../Include/FileParser.h"
 #include <math.h>
 //=============================================================================
+extern float *TexRES[];
 //=============================================================================
 //  Runway distance for PAPI
 //=============================================================================
@@ -740,7 +741,7 @@ void CRunway::DrawBand(int nbp)
 void CRunway::DrawDesignators(CAptObject *apo)
 { if (GetPaved() != TC_RWY_PAVED)  return;
   glDisable(GL_TEXTURE_2D);
-	apo->apm->bindVBO();
+	apo->apm->bindLETTERs();
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   DrawRID(apo,TC_HI,GetHiEnd());
   DrawRID(apo,TC_LO,GetLoEnd());
@@ -797,8 +798,7 @@ CAptQueue::~CAptQueue()
 //  Build Airport Object
 //=========================================================================================
 CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
-{ U_INT qx,qz;													// QGT indices
-	apm     = md;
+{	apm     = md;
   pApt    = apt;
   Airp    = apt;
 	nmiles  = apt->GetNmiles();
@@ -807,17 +807,16 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 	eVBO		= 0;
 	cVBO		= 0;
 	//---- Locate QGT ----------------------------------------------
-  org     = Airp->GetPosition();
-	IndicesInQGT (org, qx, qz);
-	qgt			= globals->tcm->GetQGT(qx,qz);
-	if (0 == qgt)	gtfo("No QGT for Airport %s",apt->GetName());
+  Org     = Airp->GetPosition();
 	//--------------------------------------------------------------
   apt->SetAPO(this);
-  GetLatitudeFactor(org.lat,rdf,xpf);
-  ground  = org.alt;
+  GetLatitudeFactor(Org.lat,rdf,xpf);
+  ground  = Org.alt;
   oTAXI   = globals->txw->GetTaxiTexture();
   cutOF   = 1500;                         // Altitude cut-off
   //--------------------------------------------------------------
+	bgr			= 1;
+	txBGR   = 0;
   tcm     = globals->tcm;
   scale   = tcm->GetScale();
   //-----Colors --------------------------------------------------
@@ -834,7 +833,11 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   //-----Scale factor for threshold bands ------------------------
   sct.x = FN_ARCS_FROM_FEET(xpf);
   sct.y = FN_ARCS_FROM_FEET(1);
-  //-----Add profile to POD ---------------------------------------
+	//--- VBO Management -------------------------------------------
+	nGVT	= 0;
+	gBUF	= 0;
+	glGenBuffers(1,&gVBO);
+  //----Add profile to POD ---------------------------------------
   AddPOD();
   //-----Lighting control -----------------------------------------
   lTim    = 0;                              // Light timer
@@ -846,7 +849,8 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   GetIniVar ("TRACE", "Airport", &op);
   tr			= op;
 	if (tr) TRACE("===AIRPORT CONSTRUCTION: %s",apt->GetName());
-
+	//--- Generate a sphere for test ------------------------------
+	sphere = gluNewQuadric();
 }
 //----------------------------------------------------------------------------------
 //  Constructor for export only
@@ -855,9 +859,9 @@ CAptObject::CAptObject(CAirport *apt)
 { apm     = 0;
   pApt    = 0;
   Airp    = apt;
-  org     = apt->GetPosition();
-  ground  = org.alt;
-  GetLatitudeFactor(org.lat,rdf,xpf);
+  Org     = apt->GetPosition();
+  ground  = Org.alt;
+  GetLatitudeFactor(Org.lat,rdf,xpf);
   txy     = 0;
   tcm     = globals->tcm;
   scale   = tcm->GetScale();
@@ -866,7 +870,7 @@ CAptObject::CAptObject(CAirport *apt)
 //  Init position
 //----------------------------------------------------------------------------------
 bool CAptObject::InitBound()
-{ GroundSpot spot(org.lon,org.lat);
+{ GroundSpot spot(Org.lon,Org.lat);
   globals->tcm->SetGroundAt(spot);
 	Airp->SetElevation(spot.alt);					// Set terrain altitude			
   glim.xmax = glim.xmin = AbsoluteTileKey(spot.qx,spot.tx);
@@ -914,14 +918,21 @@ CAptObject::~CAptObject()
   if (pVBO)	glDeleteBuffers(1,&pVBO);
 	if (eVBO)	glDeleteBuffers(1,&eVBO);
 	if (cVBO)	glDeleteBuffers(1,&cVBO);
+	if (gVBO) glDeleteBuffers(1,&gVBO);
   //--- free tarmac segments ------------------
 	std::vector<CTarmac *>::iterator it;
 	for (it=tmcQ.begin(); it!=tmcQ.end(); it++)
 	{	CTarmac *tmac = (*it);
 		delete tmac;
 	}
+	//--- Free ground VBO -----------------------
+	if (gBUF)		delete [] gBUF;
+	//--- free BGR ------------------------------
+	if (txBGR)	delete txBGR;
+	//-------------------------------------------
 	tmcQ.clear();
   UnmarkGround();
+	gluDeleteQuadric(sphere);
 }
 //---------------------------------------------------------------------------------
 //  Compute airport extension in term of Detail Tiles
@@ -994,7 +1005,7 @@ void CAptObject::BuildRunwayLight(CRunway *rwy)
 }
 //---------------------------------------------------------------------------------
 //  Compute Runway Parameters
-//  NOTE: All coordinates are in arrsec relatives to airport origin 
+//  NOTE: All coordinates are in arcsec relative to airport origin 
 //        All the computed parameters can be used to build various parts of
 //        the current runway:
 //        -Segment of tarmac
@@ -1044,7 +1055,7 @@ void CAptObject::SetRunwayData(CRunway *rwy)
 	double a  = -(ps1.y - ps0.y);
 	double b  = +(ps1.x - ps0.x);
 	vdr->rdf	= rdf;
-	vdr->org  = org;
+	vdr->org  = Org;
 	vdr->afa	= a;
 	vdr->bta  = b;
 	vdr->gma  = -((a * ps0.x) + (b * ps0.y));
@@ -1105,14 +1116,14 @@ void CAptObject::SetLandingPRM(ILS_DATA *ils,float ln,float tk)
   //---- Compute origin point ---------------------
   double d2 = ils->d2;
   SPosition  *ref  = &ils->refP;
-  ref->lon  = p0.x + (arcX * d2) + org.lon;  // X coord
-  ref->lat  = p0.y + (arcY * d2) + org.lat;  // Y coord
+  ref->lon  = p0.x + (arcX * d2) + Org.lon;  // X coord
+  ref->lat  = p0.y + (arcY * d2) + Org.lat;  // Y coord
   ref->alt  = land->alt - (fabs(d2 - d1) * ils->gTan);
   //---- Compute far point at 15000 feet ----------
   SPosition  *fpn  = &ils->farP;
   double d3 = ils->d3;
-  fpn->lon  = p0.x + (arcX * d3) + org.lon;  // X coord
-  fpn->lat  = p0.y + (arcY * d3) + org.lat;  // Y coord
+  fpn->lon  = p0.x + (arcX * d3) + Org.lon;  // X coord
+  fpn->lat  = p0.y + (arcY * d3) + Org.lat;  // Y coord
   fpn->alt  = land->alt + (fabs(d3 - d1) * ils->gTan);
   //--- Set landing direction for normal runway ---
 	ils->tkDIR	= ln;											// Take off direction
@@ -1400,18 +1411,18 @@ void CAptObject::SegmentBase(int k)
   bsw           = vsw;                              // Save previous
   vsw.VT_X      = xl - ppx;
   vsw.VT_Y      = yl + ppy;
-  psw.lon       = vsw.VT_X + org.lon;
-  psw.lat       = vsw.VT_Y + org.lat;
+  psw.lon       = vsw.VT_X + Org.lon;
+  psw.lat       = vsw.VT_Y + Org.lat;
   globals->tcm->SetGroundAt(psw);
-  vsw.VT_Z      = psw.alt - org.alt;
+  vsw.VT_Z      = psw.alt - Org.alt;
   //--Compute SE base --------------------------------------
   bse           = vse;                              // Save previous
   vse.VT_X      = xl + ppx;
   vse.VT_Y      = yl - ppy;
-  pse.lon       = vse.VT_X + org.lon;
-  pse.lat       = vse.VT_Y + org.lat;
+  pse.lon       = vse.VT_X + Org.lon;
+  pse.lat       = vse.VT_Y + Org.lat;
   globals->tcm->SetGroundAt(pse);
-  vse.VT_Z      = pse.alt - org.alt;
+  vse.VT_Z      = pse.alt - Org.alt;
   //--Compute Mid point elevation --------------------------
   RwyMID[k].pz  = (vsw.VT_Z + vse.VT_Z) * 0.5;
   return;
@@ -1421,11 +1432,11 @@ void CAptObject::SegmentBase(int k)
 //  TODO must check for world wrap arround the 0 meridian
 //-------------------------------------------------------------------------------
 void CAptObject::ComputeElevation(TC_VTAB *tab)
-{ double lon = tab->VT_X + org.lon;
-  double lat = tab->VT_Y + org.lat;
+{ double lon = tab->VT_X + Org.lon;
+  double lat = tab->VT_Y + Org.lat;
   GroundSpot spot(lon,lat);
   globals->tcm->SetGroundAt(spot);
-  tab->VT_Z  = (spot.alt - org.alt);
+  tab->VT_Z  = (spot.alt - Org.alt);
   return;
 }
 //--------------------------------------------------------------------------------
@@ -1433,8 +1444,8 @@ void CAptObject::ComputeElevation(TC_VTAB *tab)
 //  Adjust longitude and latitude to absolute value
 //--------------------------------------------------------------------------------
 void CAptObject::ComputeElevation(SPosition &pos)
-{ pos.lon += org.lon;
-  pos.lat += org.lat;
+{ pos.lon += Org.lon;
+  pos.lat += Org.lat;
   GroundSpot lnd(pos.lon,pos.lat);
   pos.alt  = globals->tcm->SetGroundAt(lnd);
   return;
@@ -1474,7 +1485,7 @@ void CAptObject::CompactRWY()
 {	U_INT     tot = 0;
 	TC_VTAB  *buf = 0;
 	//--- Pavement VBO ---------------------------
-	buf		= BuildVBO(pavQ,nPAV);
+	buf		= PutInVBO(pavQ,nPAV);
 	if (buf)
 	{	tot = nPAV * sizeof(TC_VTAB);
 		glGenBuffers(1,&pVBO);
@@ -1483,7 +1494,7 @@ void CAptObject::CompactRWY()
 		delete [] buf;
 	}
 	//--- Edge VBO --------------------------------
-	buf		= BuildVBO(edgQ,nEDG);
+	buf		= PutInVBO(edgQ,nEDG);
 	if (buf)
 	{	tot = nEDG * sizeof(TC_VTAB);
 		glGenBuffers(1,&eVBO);
@@ -1492,7 +1503,7 @@ void CAptObject::CompactRWY()
 		delete [] buf;
 	}
 	//--- Center VBO ------------------------------
-	buf		= BuildVBO(cntQ,nCTR);
+	buf		= PutInVBO(cntQ,nCTR);
 	if (buf)
 	{	tot = nCTR * sizeof(TC_VTAB);
 		glGenBuffers(1,&cVBO);
@@ -1506,7 +1517,7 @@ void CAptObject::CompactRWY()
 //---------------------------------------------------------------------------------
 //  Build one VBO from the Queue
 //---------------------------------------------------------------------------------
-TC_VTAB *CAptObject::BuildVBO(CPaveQ &hq, U_INT n)
+TC_VTAB *CAptObject::PutInVBO(CPaveQ &hq, U_INT n)
 { if (0 == n)	return 0;
 	TC_VTAB   *vbo  = new TC_VTAB[n];
 	TC_VTAB   *dst	= vbo;
@@ -1614,7 +1625,7 @@ void CAptObject::BuildOmniLBAR(LITE_MODEL &seg,CLitSYS &ls)
   for (int k = 0; k != seg.nbo; k++)
   { ent.VT_X = p0.x + (arcX * total);
     ent.VT_Y = p0.y + (arcY * total);
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
     lit->SpotAt(k,ent);
     total += seg.pace;
    }
@@ -1658,13 +1669,13 @@ void CAptObject::BuildDualLLIN(LITE_MODEL &seg,CLitSYS &ls)
   //----compute light L1 coordinates ---------------
   ent.VT_X = p0.x + (arcX * total);
   ent.VT_Y = p0.y + (arcY * total);
-  LsComputeElevation(ent,org);
+  LsComputeElevation(ent,Org);
   lit->Lit1At(ent);
   total += seg.pace;
   //----compute light L2 coordinates ---------------
   ent.VT_X = p0.x + (arcX * total);
   ent.VT_Y = p0.y + (arcY * total);
-  LsComputeElevation(ent,org);
+  LsComputeElevation(ent,Org);
   lit->Lit2At(ent);
   total += seg.pace;
   lpt.x       = lit->LT[1].VT_X;
@@ -1708,14 +1719,14 @@ void CAptObject::BuildEdgeOmni(LITE_MODEL &seg,CLitSYS &ls)
     //----compute left light coordinates ---------------
     ent.VT_X = xc - egx;
     ent.VT_Y = yc + egy;
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
     ent.VT_Z += 1;                          // One feet up
     lit->SpotAt(k,ent);
     //----Compute right light cordinates ----------------
     k++;
     ent.VT_X = xc + egx;
     ent.VT_Y = yc - egy;
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
     ent.VT_Z += 1;                            // One feet up
     lit->SpotAt(k,ent);
     //----------------------------------------------------
@@ -1754,13 +1765,13 @@ void CAptObject::BuildDualTBAR(LITE_MODEL &seg,CLitSYS &ls)
     //---Compute left light position -(at orthogonal direction) -------
     ent.VT_X = lpt.x - sx;
     ent.VT_Y = lpt.y + sy;
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
     lit->SpotAt(k,ent);
     //---Compute right light position -(opposite from center) ---
     k++;
     ent.VT_X = lpt.x + sx;
     ent.VT_Y = lpt.y - sy;
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
     lit->SpotAt(k,ent);
     //--Next inward position -------------------------
     lgb  -= seg.pace;
@@ -1792,7 +1803,7 @@ void CAptObject::BuildFlashRAIL(LITE_MODEL &seg,CLitSYS &ls)
   for (int k = 0; k != seg.nbo; k++)
   { ent.VT_X = p0.x + (arcX * lgb);
     ent.VT_Y = p0.y + (arcY * lgb);
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
     lit->SpotAt(k,ent);
     lgb += seg.pace;
   }
@@ -1831,14 +1842,14 @@ void CAptObject::BuildFlashTBAR(LITE_MODEL &seg,CLitSYS &ls)
     //---Compute left light position -(at orgonal direction) -------
     ent.VT_X = lpt.x - sx;
     ent.VT_Y = lpt.y + sy;
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
 
     lit->SpotAt(k,ent);
     //---Compute right light position -(opposite from center) ---
     k++;
     ent.VT_X = lpt.x + sx;
     ent.VT_Y = lpt.y - sy;
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
 
     lit->SpotAt(k,ent);
     //--Next inward position -------------------------
@@ -1878,7 +1889,7 @@ void CAptObject::BuildPAPIBAR(LITE_MODEL &seg,CLitSYS &ls)
     //---Compute left light position -(at orgonal direction) -------
     ent.VT_X = lpt.x - sx;
     ent.VT_Y = lpt.y + sy;
-    LsComputeElevation(ent,org);
+    LsComputeElevation(ent,Org);
     lit->SpotAt(k,ent);
     lgb  -= seg.pace;
   }
@@ -2378,6 +2389,13 @@ int CAptObject::ApproachLight(CRunway *rwy)
   if (papi == TC_PAPI_4L) LoPAPI4System(rwy);
   return 0;
 }
+//=================================================================================
+//	AIRPORT GROUND MANAGEMENT
+//	NOTE: Airport ground must be drawed first as tarmac, bands, letters, taxiway, 
+//				etc, are set uppon the ground with no Z buffer test.  Mountains in near
+//				range may overlay an airport drawing. If we where drawing tarmacs after
+//			  drawin all the terrain, then airport features  would be placated uppon 
+//				the near mountain.
 //---------------------------------------------------------------------------------
 //  Locate the set of ground tiles
 //  Bounding coordinates are relatives to airport origin
@@ -2393,15 +2411,15 @@ void CAptObject::LocateGround()
   double   y0 = sw->GetWY();
   double   x1 = ne->GetAbsoluteLongitude();
   double   y1 = ne->GetWY();
-  //-----Compute extension in arcsecs ------------------------
+  //-----Compute extension in feet ------------------------
   gBound.x = (x1 - x0) * FN_FEET_FROM_ARCS(1);
   gBound.y = (y1 - y0) * FN_FEET_FROM_ARCS(1);
   gBound.z = 0;
   //-----Adjust to airport origin -----------------------------
-  x0       = LongitudeDifference(x0,org.lon);
-  y0       = y0 - org.lat;
-  x1       = LongitudeDifference(x1,org.lon);
-  y1       = y1 - org.lat;
+  x0       = LongitudeDifference(x0,Org.lon);
+  y0       = y0 - Org.lat;
+  x1       = LongitudeDifference(x1,Org.lon);
+  y1       = y1 - Org.lat;
   //----Center coordinates -------------------------------------
   center.x = (x0 + x1) * 0.5;               // X relative airport
   center.y = (y0 + y1) * 0.5;               // Y relative airport
@@ -2409,11 +2427,11 @@ void CAptObject::LocateGround()
   return;
 }
 //---------------------------------------------------------------------------------
-//  Draw airport grid
+//  Draw airport grid (Used for test only)
 //---------------------------------------------------------------------------------
 void CAptObject::DrawGrid()
-{ double x0 = llc.lon - org.lon;
-  double y0 = llc.lat - org.lat;
+{ double x0 = llc.lon - Org.lon;
+  double y0 = llc.lat - Org.lat;
   glColor3f(1,0,0);
   glBegin(GL_LINE_LOOP);
   glVertex3f(x0,y0,0);
@@ -2424,6 +2442,7 @@ void CAptObject::DrawGrid()
 }
 //-----------------------------------------------------------------------
 //  Mark the ground tiles
+//	Number of vertice is collected for VBO allocation
 //-----------------------------------------------------------------------
 void CAptObject::MarkGround(TC_BOUND &bnd)
 { U_INT  txe = TC_NEXT_INDICE(bnd.xmax);
@@ -2435,15 +2454,66 @@ void CAptObject::MarkGround(TC_BOUND &bnd)
   //-----Mark all tiles making airport ground ----
   for   (lz = bnd.zmin; lz != tze; lz = TC_NEXT_INDICE(lz))
   { for (cx = bnd.xmin; cx != txe; cx = TC_NEXT_INDICE(cx))
-    { txn = tcm->GetTexDescriptor(cx,lz);
-      //---Add a ground tile to list ------------
+    { //---Add a ground tile to list ------------
       CGroundTile *gnd = new CGroundTile(cx,lz);
-      gnd->SetParameters(txn);
+			tcm->FillGroundTile(gnd);
       grnd.push_back(gnd);
     }
   }
   return;
 }
+//-----------------------------------------------------------------------
+//  Build ground VBO
+//	We build a VBO for all ground tiles.  
+//	NOTE: Vertices in Tile are allocated when the tile enters the inner ring
+//				of visibility.  If only one tile is not yet ready, the VBO build
+//				is deffered until the tile is ready.  
+//				Without VBO, the airport is not drawed, but this is not important
+//				as this is occurring for airport in the remote ring of visibility
+//	
+//-----------------------------------------------------------------------
+void CAptObject::BuildGroundVBO()
+{	int tot = 0;
+	std::vector<CGroundTile*>::iterator it;
+  for (it = grnd.begin();it != grnd.end(); it++)
+	{	CGroundTile *gnd	= (*it); 
+		int nbv	= gnd->GetNbrVTX();
+		if (nbv == 0)	return;
+		tot += nbv;
+	}
+	if (0 == tot)		return;
+	//--- Now allocate the ground VBO --------------
+	gRES  = 0;
+	nGVT  = tot;
+	gBUF	= new TC_GTAB[tot];
+	FillGroundVBO();
+	//--- Request handle from OpenGL ---------------
+	int dim = tot * sizeof(TC_GTAB);
+	glBindBuffer(GL_ARRAY_BUFFER,gVBO);
+	glBufferData(GL_ARRAY_BUFFER,dim,gBUF,GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER,0);
+	return;
+}
+//-----------------------------------------------------------------------
+//	Fill the ground VBO
+//-----------------------------------------------------------------------
+void CAptObject::FillGroundVBO()
+{	TC_GTAB   *dst = gBUF;
+	int				 inx = 0;
+	int        tot = 0;
+//TRACE("FillVBO for %s  org.x= %.5f org.y = %.5f",Airp->GetAptName(),Org.lon,Org.lat);
+	std::vector<CGroundTile*>::iterator it;
+	for (it = grnd.begin();it != grnd.end(); it++)
+	{	CGroundTile *gnd	= (*it);
+		int nbv = gnd->TransposeTile(dst,inx,&Org);
+		dst		 += nbv;
+		inx    += nbv;
+		tot    += nbv;
+	}
+	if (tot != nGVT)	gtfo("FillGroundVBO Count error");
+	return;
+}
+
 //-----------------------------------------------------------------------
 //  UnMark the ground tiles
 //  NOTE:  Check for txn existence (teleport case)
@@ -2452,10 +2522,7 @@ void CAptObject::UnmarkGround()
 { std::vector<CGroundTile*>::iterator it;
   for (it = grnd.begin();it != grnd.end(); it++)
     { CGroundTile *gnd = (*it);
-      CmQUAD      *qd  = 0;
-      CTextureDef *txn = globals->tcm->GetTexDescriptor(gnd->GetAX(),gnd->GetAZ());
-      if (txn)  qd = txn->GetQUAD();
-      if (qd)   qd->ClearGround();
+	    gnd->Free();
       delete gnd;
     }
   grnd.clear();
@@ -2488,11 +2555,34 @@ void CAptObject::UpdateLights(float dT)
   return;
 }
 //-----------------------------------------------------------------------
+//	Read Taxiway nodes
+//-----------------------------------------------------------------------
+void CAptObject::ReadTaxiNodes()
+{ char  pn[PATH_MAX];
+	char *fn = Airp->GetIdentity();
+	//--- Check if already open ---------------
+	bgr		= 0;
+  _snprintf(pn,64,"DATA/%s.BGR",fn);
+  SStream s;
+  if (OpenRStream(pn,s) == 0)    return;
+  CStreamFile *sf = (CStreamFile*)s.stream;
+  txBGR = new CDataBGR(this);
+	sf->ReadFrom (txBGR);
+  CloseStream (&s);
+  return;
+}
+
+//-----------------------------------------------------------------------
 //  Time slice
 //  
 //-----------------------------------------------------------------------
 void CAptObject::TimeSlice(float dT)
-{ //---Process lighting order ---------------------------
+{ //-----------------------------------------------------	
+	//--- Process BGR request -----------------------------
+	if (bgr)	ReadTaxiNodes();
+	//--- Process Ground resolution -----------------------
+	if (0 == gBUF)	BuildGroundVBO();
+	//--- Process lighting order --------------------------
 	float lum = globals->tcm->GetLuminosity();
   if (lrwy)           return UpdateLights(dT) ;
   bool nowl     = (lum < 1.2145) || (lreq);       //
@@ -2579,9 +2669,9 @@ void CAptObject::DrawVBO(U_INT vbo,U_INT n)
 void CAptObject::Draw()
 { TCacheMGR *tcm = globals->tcm;
   //----Compute translation offset from aircraft to airport origin --------
-  ofap.x  = LongitudeDifference(org.lon,apos.lon);
-  ofap.y  = org.lat - apos.lat;
-  ofap.z  = org.alt - apos.alt;
+  ofap.x  = LongitudeDifference(Org.lon,apos.lon);
+  ofap.y  = Org.lat - apos.lat;
+  ofap.z  = Org.alt - apos.alt;
   Alt     = -ofap.z;
   //----Cull airport based on ground tile corners -------------------------
   glPushMatrix();                                   // Mark T1
@@ -2593,7 +2683,7 @@ void CAptObject::Draw()
   //-------Draw the ground tiles first ------------------------------------
 	glDisable(GL_BLEND);
   glEnable(GL_TEXTURE_2D);
-  globals->tcm->DrawAirportGround(grnd);
+  if (gBUF)	DrawGround();						// Draw the airport tiles first
   if (globals->noAPT)     return;
   //-----Prepare taxiway drawing ------------------------------------------
   SetAlphaColor(alpha);
@@ -2668,9 +2758,9 @@ void CAptObject::PreDraw(CCamera *cam)
 void CAptObject::CamDraw(CCamera *ac)
 { SVector    trs;
   //----Compute translation to airport origin -----------------------------
-  trs.x = LongitudeDifference(org.lon,ac->GetTargetLon());
-  trs.y = org.lat - ac->GetTargetLat();
-  trs.z = org.alt;
+  trs.x = LongitudeDifference(Org.lon,ac->GetTargetLon());
+  trs.y = Org.lat - ac->GetTargetLat();
+  trs.z = Org.alt;
 	//--- Prepare client state ----------------------------------------------
   glPushClientAttrib (GL_CLIENT_ALL_ATTRIB_BITS);
   glEnableClientState(GL_VERTEX_ARRAY);
@@ -2727,6 +2817,33 @@ void CAptObject::EndDraw(CCamera *cam)
   glPopClientAttrib ();
   return;
 }
+//==========================================================================================
+//	DRAW GROUND
+//	Camera is set at airport position
+//==========================================================================================
+void CAptObject::DrawGround()
+{ glMaterialfv (GL_FRONT, GL_EMISSION, tcm->GetDeftEmission()); 
+	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+  glFrontFace(GL_CCW);
+	glPushMatrix();
+	glTranslated(ofap.x, ofap.y, ofap.z);			// Camera to airport
+	//--- Activate ground VBO ------------------------------
+	glBindBuffer(GL_ARRAY_BUFFER,gVBO);
+  glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),0);
+	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2*UNIT_SIZE));
+	//-------------------------------------------------------
+	std::vector<CGroundTile*>::iterator it;
+	for (it = grnd.begin();it != grnd.end(); it++)
+	{	CGroundTile *gnd	= (*it);
+	//  CTextureDef *txn  = globals->tcm->GetTexDescriptor(gnd->GetAX(),gnd->GetAZ());
+  //  if ((txn == 0) || (txn->NotRDY()))  continue;
+
+	  gnd->DrawGround(0);
+	}
+	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glPopMatrix();
+	return;
+}
 //-----------------------------------------------------------------------------------------
 //  update alpha chanel
 //-----------------------------------------------------------------------------------------
@@ -2741,9 +2858,9 @@ void CAptObject::Update3Dstate()
 //  Compute offset of position to airport origin in arcsecs
 //-----------------------------------------------------------------------------------------
 void CAptObject::Offset(SPosition &p, SVector &v)
-  {v.x = LongitudeDifference(p.lon,org.lon);
-   v.y = p.lat - org.lat;
-   v.z = p.alt - org.alt;
+  {v.x = LongitudeDifference(p.lon,Org.lon);
+   v.y = p.lat - Org.lat;
+   v.z = p.alt - Org.alt;
   }
 //-----------------------------------------------------------------------------------------
 //  Draw all lights when airport is visible.
@@ -2791,8 +2908,8 @@ void CAptObject::SetCameraPosition()
 { cam->GetOffset(cpos);                          // In feet relative to aircraft
   cpos.x = AddLongitude(FN_ARCS_FROM_FEET(cpos.x) * xpf,apos.lon);
   cpos.y = FN_ARCS_FROM_FEET(cpos.y) + apos.lat;
-  cpos.x = LongitudeDifference(cpos.x,org.lon);
-  cpos.y = cpos.y - org.lat;
+  cpos.x = LongitudeDifference(cpos.x,Org.lon);
+  cpos.y = cpos.y - Org.lat;
   return;
 }
 //-----------------------------------------------------------------------------------------
@@ -2818,7 +2935,7 @@ void CAptObject::DrawCenter()
   glDisable(GL_BLEND);
   glFrontFace(GL_CCW);
   glScaled((1/v->x),(1/v->y),1);
-  gluSphere(sphere,400,32,32);
+  gluSphere(sphere,100,32,32);
   glPopAttrib();
   glPopMatrix();
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -2882,8 +2999,8 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
   PavArc  = 1 / FN_ARCS_FROM_FEET(PavSize);
 	//--- Allocate VBO for band and letters ----------
 	int tot	= sizeof(vboBUF);
-	glGenBuffers(1,&oVBO);
-	glBindBuffer(GL_ARRAY_BUFFER,oVBO);
+	glGenBuffers(1,&bVBO);
+	glBindBuffer(GL_ARRAY_BUFFER,bVBO);
 	glBufferData(GL_ARRAY_BUFFER,tot,vboBUF,GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 	//--- Load yellow texture -------------------------
@@ -2916,7 +3033,7 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
 CAirportMgr::~CAirportMgr()
 {   globals->apm = 0;
     if (avion)  delete avion;
-		if (oVBO)		glDeleteBuffers(1,&oVBO);
+		if (bVBO)		glDeleteBuffers(1,&bVBO);
 		if (xOBJ)		glDeleteTextures(1,&xOBJ);
 }
 //=========================================================================================
@@ -2926,20 +3043,22 @@ CAirportMgr::~CAirportMgr()
 //        must scan for runway presence after airport are introduced in the aptQ
 //=========================================================================================
 void CAirportMgr::TimeSlice(float dT)
-{ if (globals->noAPT)  return;
+{	if (globals->noAPT)  return;
   CAptObject *apo = 0;
   CAptObject *prv = 0;
   CAirport   *apt = 0;
   char       *fn  = 0;
   //---Update the timers ---------------------------------------
   clock = ++clock & 0x03;
-  if (clock)          return;
+  if (clock)								return;
+	if (tcm->MeshBusy())			return;
   //----scan airport queue for Airport leaving the radius ------
   for ( apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
       { apt = apo->GetAirport();
 				float dst = GetRealFlatDistance(apt);
 				apo->SetMiles(dst);
         apo->TimeSlice(dT);
+				SaveNearest(apo);																	// Save nearest airport
         if (dst <= Limit)   continue;
         //---------Remove entry --------------------------------
 				if (apo == nApt)	nApt = 0;				// No more nearest
@@ -2958,7 +3077,6 @@ void CAirportMgr::TimeSlice(float dT)
       apo = new CAptObject(this,apt);                   // Create airport object
       apo->SetCamera(cam);                              // Current camera
       aptQ.PutEnd(apo);                                 // Enter new Airport in Queue
-			SaveNearest(apo);																	// Save nearest airport
     }
   //----Update runway for current airports in queue -------------
   for   (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
@@ -2988,7 +3106,7 @@ bool CAirportMgr::AreWeAt(char *key)
 	return false;
 }
 //----------------------------------------------------------------------------------
-//	Position aircarft at the runway threshold
+//	Position aircraft at the runway threshold
 //----------------------------------------------------------------------------------
 bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
 {	endp					= 0;
@@ -3028,8 +3146,8 @@ char *CAirportMgr::NearestIdent()
 //----------------------------------------------------------------------------------
 //	Bind buffer
 //----------------------------------------------------------------------------------
-void CAirportMgr::bindVBO()
-{	glBindBuffer(GL_ARRAY_BUFFER,oVBO);
+void CAirportMgr::bindLETTERs()
+{	glBindBuffer(GL_ARRAY_BUFFER,bVBO);
 	glVertexPointer  (3,GL_FLOAT,sizeof(TC_WORLD),0);
 	return;
 }
@@ -3039,7 +3157,7 @@ void CAirportMgr::bindVBO()
 //	Camera is at T1:  Scaled for arsec conversion to ffet
 //----------------------------------------------------------------------------------
 void CAirportMgr::Draw(SPosition pos)
-{ //--- Prepare client state ----------------------------------------------
+{	//--- Prepare client state ----------------------------------------------
   glPushClientAttrib (GL_CLIENT_ALL_ATTRIB_BITS);
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -3048,11 +3166,9 @@ void CAirportMgr::Draw(SPosition pos)
   for (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
   { apo->SetAircraft(pos);
     apo->Draw();
-
   }
 	//--- Restore state ----------------------------------------------------
   glPopClientAttrib();
-
   return;
 }
 
@@ -3070,6 +3186,87 @@ void CAirportMgr::DrawLights()
   }
   glDisable(GL_TEXTURE_2D);
   return;
+}
+//==========================================================================
+//  Ground Detail tile 
+//==========================================================================
+CGroundTile::CGroundTile(U_INT x,U_INT z)
+{ ax  = x;
+  az  = z;
+  txn = 0;
+}
+//-------------------------------------------------------------
+//	Free resources
+//-------------------------------------------------------------
+void CGroundTile::Free()
+{	quad->ClearGround();
+	qgt->DecUser();
+	return;
+}
+//-------------------------------------------------------------
+//	Set Ground parameters
+//-------------------------------------------------------------
+int CGroundTile::StoreData(CTextureDef *t)
+{	txn		= t;
+	quad	= t->GetQUAD();
+	if (0 == quad)	gtfo("Timing error in Airport MGR");
+	return quad->GetNbrVTX();
+}
+//-------------------------------------------------------------
+//	Return number of vertices
+//-------------------------------------------------------------
+int CGroundTile::GetNbrVTX()
+{ return quad->NbrVerticesInTile(); }
+//-------------------------------------------------------------
+//	Draw with band translation
+//-------------------------------------------------------------
+void CGroundTile::Draw(U_INT dOBJ)
+{	U_INT qx = (ax >> 5);										// QGT X indice
+	char hba = globals->tcm->GetHband();
+	char hbq = FN_BAND_FROM_QGT(qx) << TC_BY08;
+	glTranslated(GetXTRANS(hba,hbq),0,0);
+	glBindTexture(GL_TEXTURE_2D,dOBJ);
+	CSuperTile *sp = quad->GetSuperTile();
+	sp->BindVBO();
+	quad->DrawTile();
+	return;
+}
+//-------------------------------------------------------------------------
+//	Transpose vertices for each subquad of the detail tile
+//-------------------------------------------------------------------------
+int CGroundTile::TransposeTile(TC_GTAB *vbo,int dep,SPosition *ori)
+{	CmQUAD  *qd		= quad->GetArray();
+  TC_GTAB *dst	= vbo;
+	int			 tot  = 0;
+	int      inx  = dep;
+//TRACE("TRANSPOSE TILE-------------------");
+  dim  = quad->GetSize();
+  for (int k = 0; k != dim; k++,qd++)
+	{	sIND[k]  = inx;
+		int nbv  = qd->InitVertexCoord(dst,TexRES[TC_HIGHTR]);
+		qd->RelocateVertices(dst,ori);
+		nIND[k]  = nbv;
+		inx += nbv;
+		tot += nbv;
+		dst += nbv;
+	}
+	quad->MarkAsGround();
+	return tot;
+}
+
+//-------------------------------------------------------------
+//	Draw ground tiles
+//	NOTE: Use quad with caution as teleport may have already
+//				deleted the detail tile
+//-------------------------------------------------------------
+void CGroundTile::DrawGround(U_INT x)
+{ glBindTexture(GL_TEXTURE_2D,txn->dOBJ);
+	//--- For final quad, draw the detail tile ---------------
+	glMultiDrawArrays(GL_TRIANGLE_FAN,sIND,nIND,dim);
+  //---- Draw contour if Terra Browser is active -----------
+  if (0 == (globals->aPROF & PROF_DR_DET))	return;
+  if (!globals->tcm->PlaneQuad(quad))				return;
+  return quad->Contour();
 }
 
 //============================END OF FILE =================================================

@@ -1673,9 +1673,7 @@ void CExport::ExportTRNSceneries()
 //---------------------------------------------------------------------------
 void CExport::ExportTRN(char *fn)
 { SStream s;                                // Stream file
-  strcpy (s.filename, fn);
-  strcpy (s.mode, "r");
-  if (!OpenStream (&globals->pfs, &s))  return;
+  if (!OpenRStream (fn, s))  return;
   C_TRN *trn = new C_TRN(0,0);
 	trn->Export();
   ReadFrom (trn, &s);

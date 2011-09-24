@@ -1061,7 +1061,6 @@ int RedrawSimulation ()
 
   // The global CSituation object contains all informations about the current
   //   simulation state, user vehicle, camera mode, etc.
-  /// \todo Balance sim update and draw cycles
   globals->sit->Draw ();
 
   // Draw UI only on main screen at this time

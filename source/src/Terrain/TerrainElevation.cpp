@@ -1197,9 +1197,7 @@ void C_CTEX::Abort(char *fn, char *em)
 void C_CTEX::DecodeTEX(char *fname)
 { char tex[128];
   SStream s;                                // Stream file
-  strcpy (s.filename, fname);
-  strcpy (s.mode, "r");
-  if (!OpenStream (&globals->pfs, &s))  Abort(fname,"Can read");
+  if (!OpenRStream (fname,s))  Abort(fname,"Can read");
   ReadUInt(&nbt,&s);                        // Number of textures
   for (U_INT k = 0; k != nbt; k++) 
   { ReadString (tex, 16, &s);
@@ -1218,9 +1216,7 @@ void C_CTEX::DecodeREF(char *fname)
   U_INT tx  = 0;
   U_INT tz  = 0;
   SStream s;                                // Stream file
-  strcpy (s.filename, fname);
-  strcpy (s.mode, "r");
-  if (!OpenStream (&globals->pfs, &s))  Abort(fname,"Can read");
+  if (!OpenRStream (fname, s))  Abort(fname,"Can read");
   while (ReadUInt(&ref,&s))
   { if (ref >= nbt) Abort(fname,"Bad ref");
     Assign(text[ref],tx,tz);

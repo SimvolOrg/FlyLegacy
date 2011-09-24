@@ -702,10 +702,7 @@ int CVehicleObject::Read (SStream *stream, Tag tag)
 //-----------------------------------------------------------------------------------
 void CVehicleObject::ReadParameters(CStreamObject *obj,char *fn)
 { SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, fn);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",fn,s)) {
     ReadFrom (obj, &s);
     CloseStream (&s);
   }

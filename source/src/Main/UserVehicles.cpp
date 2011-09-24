@@ -115,18 +115,13 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
   mMag.sender = 'simu';
   mRpm.sender = 'simu';
   mMap.sender = 'simu';
+	//--- Read the SVH file -------------------------
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, svhFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",svhFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
-
-//  user_info.clear ();
-//  user_message.clear ();
-
+	//--- Init messages -----------------------------
   mAlt.id = MSG_GETDATA;
   mSpd.id = MSG_GETDATA;
   mVsi.id = MSG_GETDATA;
@@ -479,10 +474,7 @@ CFuelSystem::CFuelSystem (CVehicleObject *v,char* gasFilename, CEngineManager *e
   Tr  = char(t);
   // Populate data members from GAS stream file
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, gasFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",gasFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -905,11 +897,8 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
   pEngineManager = engine_manager;
   // Read from AMP file stream-----------------------------
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, ampFilename);
-  strcpy (s.mode, "r");
   //---Read all subsystems --------------------------------
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",ampFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -1845,16 +1834,13 @@ CPitotStaticSystem::CPitotStaticSystem (CVehicleObject *v, char* pssFilename)
   _total_pressure_node = 0.0;
 
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, pssFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",pssFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
 
 }
-
+//--------------------------------------------------------------------
 CPitotStaticSystem::~CPitotStaticSystem (void)
 {
   std::vector<CPitotStaticPort*>::iterator i;
@@ -1950,10 +1936,7 @@ CVariableLoadouts::CVariableLoadouts (CVehicleObject *v,char* vldFilename,  CWei
   vld_wgh = wgh;
 
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, vldFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",vldFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -2014,10 +1997,7 @@ CCockpitManager::CCockpitManager (CVehicleObject *v,char* pitFilename)
 	lite[0]						= lit;
   //-----  Read cockpit manager stream ---------
   SStream s;
-  strcpy (s.filename, "WORLD/");
-  strcat (s.filename, pitFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",pitFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -2338,23 +2318,20 @@ const int CCameraViewsList::PosCameraTag (const char *tag)
  * CRadioManager
  */
 //==================================================================================
-CRadioManager::CRadioManager (const char* rdoFilename)
+CRadioManager::CRadioManager (char* rdoFilename)
 {
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, rdoFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",rdoFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
 }
 
 
-// *
+//------------------------------------------------------------------------
 // * The Radio Manager provides a mapping between radio subsystems and the
 // *   API functions GetRadio... ???
-// *
+//------------------------------------------------------------------------
 
 
 int CRadioManager::Read (SStream *stream, Tag tag)
@@ -2589,15 +2566,11 @@ int CEngine::Read (SStream *stream, Tag tag)
 void CEngine::ReadEngineParameters()
 { if (0 == *ngnFilename) return;
   ngnModel->SetEngineData(eData);
-  SStream* ngnStream = new SStream;
-  strcpy (ngnStream->filename, "World/");
-  strcat (ngnStream->filename, ngnFilename);
-  strcpy (ngnStream->mode, "r");
-  if (OpenStream (ngnStream)) {
-      ReadFrom (ngnModel, ngnStream);
-      CloseStream (ngnStream);
+  SStream st; 
+  if (OpenRStream ("WORLD",ngnFilename,st)) {
+      ReadFrom (ngnModel, &st);
+      CloseStream (&st);
       }
-  SAFE_DELETE (ngnStream);
   return;
 }
 //-----------------------------------------------------------------------
@@ -3146,10 +3119,7 @@ CEngineManager::CEngineManager (CVehicleObject *v,char* ngnFilename)
   thrust_X_offset = 0.0f;
 
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, ngnFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",ngnFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -3570,10 +3540,7 @@ CControlMixer::CControlMixer (CVehicleObject *v,char* mixFilename)
   rPos  = 0.05f;          // Coupled rudder default value 
   rNeg  = 0.05f;          // Coupled rudder default value
   SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, mixFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
+  if (OpenRStream ("WORLD",mixFilename,s)) {
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -3657,51 +3624,6 @@ void CControlMixer::Timeslice (float dT,U_INT FrNo)
   for (i=mixerMap.begin(); i!=mixerMap.end(); i++) i->second->Timeslice (dT,FrNo);
   return;
 }
-
-
-/*
- * CChecklists
- */
-
-CChecklists::CChecklists (const char* cklFilename)
-{
-  SStream s;
-  strcpy (s.filename, "World/");
-  strcat (s.filename, cklFilename);
-  strcpy (s.mode, "r");
-  if (OpenStream (&s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
-}
-
-
-int CChecklists::Read (SStream *stream, Tag tag)
-{
-  int rc = TAG_IGNORED;
-
-
-  if (rc != TAG_READ) {
-    // Tag was not processed by this object, it is unrecognized
-    WARNINGLOG ("CChecklists::Read : Unrecognized tag <%s>", TagToString(tag));
-  }
-
-  return rc;
-}
-
-
-void CChecklists::ReadFinished (void)
-{
-
-}
-
-
-void CChecklists::Write (SStream *stream)
-{
-
-}
-
-
 //=======================================================================
 //
 // Slope Wind Data
@@ -3896,10 +3818,7 @@ CVehicleInfo::CVehicleInfo (char* nfoFilename)
   strcpy (s.mode, "r");
   bool success = OpenStream(&s) != 0;
   if (!success) {
-    // Try prepending "World/" to NFO filename
-    strcpy (s.filename, "WORLD/");
-    strcat (s.filename, nfoFilename);
-    success = OpenStream(&s) != 0;
+    success = OpenRStream("WORLD",nfoFilename,s) != 0;
   }
 
   if (success) {

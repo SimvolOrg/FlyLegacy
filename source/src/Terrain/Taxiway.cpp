@@ -49,18 +49,17 @@
 //  Node structure 
 //============================================================================
 CTaxiNode::CTaxiNode()
-{ offset.x  = 0;
-  offset.y  = 0;
-  offset.z  = 0;
+{ pos.lon  = 0;
+  pos.lat  = 0;
+  pos.alt  = 0;
   direction = 0;
-  nx        = 0;
-  ny        = 0;
 }
 //------------------------------------------------------------------
 //  Destroy it
 //------------------------------------------------------------------
 CTaxiNode::~CTaxiNode()
 {}
+
 //------------------------------------------------------------------
 //  read the tags
 //------------------------------------------------------------------
@@ -69,14 +68,12 @@ int CTaxiNode::Read (CStreamFile *sf, Tag tag)    // Read method
   long    ln;
   switch (tag) {
   case 'vloc':
+    sf->ReadDouble(nd);			// X coordinate in unit 16 feet
+    pos.lon   = nd * 16;		
+    sf->ReadDouble(nd);			// Y coordinate in unit 16 feet
+    pos.alt   = nd * 16;
     sf->ReadDouble(nd);
-    offset.x   = nd;
-    nx  = int(offset.x * 16);
-    sf->ReadDouble(nd);
-    offset.y   = nd;
-    sf->ReadDouble(nd);
-    offset.z   = nd;
-    ny  = int(offset.z * 16);
+    pos.lat   = nd * 16;
     return TAG_READ;
 
   case 'flow':
@@ -87,14 +84,6 @@ int CTaxiNode::Read (CStreamFile *sf, Tag tag)    // Read method
   return TAG_READ;
 }
 
-//-----------------------------------------------------------------
-//  Rescale coordinates for pixels (change to left hand)
-//------------------------------------------------------------------
-void CTaxiNode::Scale(float scale)
-{ nx  = +int(offset.x * 16 * scale);
-  ny  = -int(offset.z * 16 * scale);
-  return;
-}
 //============================================================================
 //  Edge structure 
 //============================================================================
@@ -129,11 +118,8 @@ int CTaxiEdge::Read (CStreamFile *sf, Tag tag)    // Read method
 //============================================================================
 //  Class CDataBGR for Taxiway line definition
 //============================================================================
-CDataBGR::CDataBGR(CAptObject *apo)
-{ nExt    = 0;
-  sExt    = 0;
-  eExt    = 0;
-  wExt    = 0;
+CDataBGR::CDataBGR(CAptObject	*ap)
+{ apo			= ap;
   white   = MakeRGB(255,255,255);
 }
 //------------------------------------------------------------------
@@ -160,40 +146,15 @@ CTaxiNode* CDataBGR::GetNode(U_INT No)
 //  Return line number No
 //------------------------------------------------------------------
 bool CDataBGR::GetLine(U_INT nber,int &x0,int &y0,int &x1,int &y1)
-{ CTaxiEdge *edg  = (nber >= edgelist.size())?(0):(edgelist[nber]);
-  if (0 == edg)               return false;
-  if (2 <=  edg->GetType())   return false;
-  U_SHORT norg    = edg->GetOrigin();
-  CTaxiNode *org  = (norg >= nodelist.size())?(0):(nodelist[norg]);
-  if (0 == org)     return false;
-  U_SHORT next    = edg->GetExtrem();
-  CTaxiNode *ext  = (next >= nodelist.size())?(0):(nodelist[next]);
-  if (0 == ext)     return false;
-  x0  = org->GetXfeet();
-  y0  = org->GetYfeet();
-  x1  = ext->GetXfeet();
-  y1  = ext->GetYfeet();
-  return true;
+{ 
+  return false;
 }
 //------------------------------------------------------------------
 //  Draw segment No
 //------------------------------------------------------------------
 bool CDataBGR::DrawSegment(U_INT No,SSurface *sf,int xm,int ym)
-{ CTaxiEdge *edg  = (No >= edgelist.size())?(0):(edgelist[No]);
-  if (0 == edg)               return false;
-  U_SHORT norg    = edg->GetOrigin();
-  CTaxiNode *org  = (norg >= nodelist.size())?(0):(nodelist[norg]);
-  if (0 == org)     return false;
-  U_SHORT next    = edg->GetExtrem();
-  CTaxiNode *ext  = (next >= nodelist.size())?(0):(nodelist[next]);
-  if (0 == ext)     return false;
-  //---------Draw runway line ------------------------
-  int x0  = org->GetXfeet() + xm;
-  int y0  = org->GetYfeet() + ym;
-  int x1  = ext->GetXfeet() + xm;
-  int y1  = ext->GetYfeet() + ym;
-  DrawFastLine(sf,x0,y0,x1,y1,white);
-  return true;
+{ 
+  return false;
 }
 //------------------------------------------------------------------
 //  Destroy the BGR items
@@ -205,49 +166,54 @@ void  CDataBGR::EmptyAll()
   std::vector<CTaxiEdge *>::iterator ed;
   for (ed = edgelist.begin(); ed != edgelist.end();ed++) delete (*ed);
   edgelist.clear();
-  nExt  = sExt = eExt = wExt = 0;
   return;
 }
 //------------------------------------------------------------------
-//  Open and read the file
+//  Adjust origin to airport origin
 //------------------------------------------------------------------
-bool CDataBGR::DecodeBinary(char *fn)
-{ SStream s;
-  strcpy (s.filename, fn);
-  strcpy (s.mode, "r");
-  if (OpenStream(&s) == 0)    return false;
-  CStreamFile *sf = (CStreamFile*)s.stream;
-  sf->ReadFrom (this);
-  CloseStream (&s);
-  return true;
+void CDataBGR::AdjustOrigin()
+{	SPosition org = apo->GetOrigin();
+  dpo.lat = pos.lat - org.lat;
+  dpo.lon = LongitudeDifference(pos.lon,org.lon);
+	dpo.alt = 0;
+	return;
 }
-
+//------------------------------------------------------------------
+//  Process a node
+//------------------------------------------------------------------
+void CDataBGR::ProcessNode(CStreamFile *sf)
+{ CTaxiNode *txn = new CTaxiNode();
+  sf->ReadFrom(txn);
+	SPosition *loc = txn->AdPosition();
+	double     xpf = apo->GetXPF();
+	loc->lon = FN_ARCS_FROM_FEET(loc->lon * xpf) + dpo.lon;
+	loc->lat = FN_ARCS_FROM_FEET(loc->lat)       + dpo.lat;
+  nodelist.push_back(txn);
+	return;
+}
 //------------------------------------------------------------------
 //  read the tags
 //------------------------------------------------------------------
 int CDataBGR::Read (CStreamFile *sf, Tag tag)    // Read method
 { long    nb;
   double  nd;
-  CTaxiNode *txn = 0;
+  
   CTaxiEdge *edg = 0;
   switch (tag) {
-
+	//--- origin of coordinates ------------------
   case 'orgn':
-    sf->ReadDouble(nd);
-    org.lat = nd;
-    sf->ReadDouble(nd);
-    org.lon = nd;
+    sf->ReadDouble(nd);		// Y coordinate
+    pos.lat = nd;
+    sf->ReadDouble(nd);		// X coordinate
+    pos.lon = nd;
     sf->ReadLong(nb);
     sf->ReadLong(nb);
     sf->ReadLong(nb);
+		AdjustOrigin();
     return TAG_READ;
 
   case 'node':
-    txn = new CTaxiNode();
-    sf->ReadFrom(txn);
-//TRACE("NODE %03u x= %04d y=%04d",nodelist.size(),txn->GetXfeet(),txn->GetYfeet());
-    nodelist.push_back(txn);
-    StoreExtension(txn);
+    ProcessNode(sf);
     return TAG_READ;
 
   case 'edge':
@@ -267,35 +233,6 @@ int CDataBGR::Read (CStreamFile *sf, Tag tag)    // Read method
   return TAG_READ;
 }
 
-//----------------------------------------------------------------------------
-//  Store extension in feet
-//----------------------------------------------------------------------------
-void CDataBGR::StoreExtension(CTaxiNode *nod)
-{ int x = nod->GetXfeet();
-  int y = nod->GetYfeet();
-  if (x < wExt)   wExt  = x;
-  if (x > eExt)   eExt  = x;
-  if (y > nExt)   nExt  = y;
-  if (y < sExt)   sExt  = y;
-  return;
-}
-//----------------------------------------------------------------------------
-//  Return the largest extension
-//----------------------------------------------------------------------------
-U_INT CDataBGR::GetExtension()
-{ U_INT dx  = eExt - wExt;
-  U_INT dy  = nExt - sExt;
-  return (dx > dy)?(dx):(dy);
-}
-//----------------------------------------------------------------------------
-//  Rescale all nodes coordinates
-//----------------------------------------------------------------------------
-void  CDataBGR::Rescale(float sc)
-{ scale   = sc;
-  std::vector<CTaxiNode*>::iterator in;
-  for (in = nodelist.begin();in != nodelist.end();in++) (*in)->Scale(sc);
-  return;
-}
 
 //============================================================================
 //
@@ -312,9 +249,7 @@ CDataTMS::CDataTMS(CAptObject *apo)
 //------------------------------------------------------------------
 bool CDataTMS::DecodeBinary(char *fname)
 { SStream s;
-  strcpy (s.filename, fname);
-  strcpy (s.mode, "r");
-  if (OpenStream(&s) == 0)          return false;
+  if (OpenRStream(fname,s) == 0)   return false;
   CStreamFile *sf = (CStreamFile*)s.stream;
   sf->ReadFrom (this);
   CloseStream (&s);
