@@ -609,6 +609,10 @@ CVehicleObject::CVehicleObject (void)
   main_wing_aoa_min = 0.0f;             ///< stocking AoA min RAD
   main_wing_aoa_max = 0.0f;             ///< stocking AoA max RAD
   kias = 0.0;
+  // set aircraft's shadow depending on ini file
+  val = 0;
+  GetIniVar ("Graphics", "drawAircraftShadow", &val);
+  if (val) SetOPT (VEH_DW_SHAD);
 }
 //------------------------------------------------------------------------
 //  Store NFO file name

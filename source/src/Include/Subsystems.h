@@ -4236,6 +4236,7 @@ protected:
   bool   is_fixed_speed_prop;
   float  thrust_displ;        // displacement of thrust along the X vect (P fact)
   float  eRPM;
+  bool   torque_effect_enabled;
 };
 
 //=======================================================================

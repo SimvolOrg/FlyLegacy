@@ -1079,7 +1079,7 @@ CUFOObject::CUFOObject (void)
   DEBUGLOG ("Starting CUFOObject");
   is_ufo_object = true;
   int val = 0;
-  GetIniVar ("Sim", "showPosition", &val);
+  GetIniVar ("Sim", "showUFOPosition", &val);
   show_position = val ? true : false;
 }
 
