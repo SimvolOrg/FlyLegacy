@@ -113,7 +113,11 @@ CWorldObject::CWorldObject (void)
 	phyMod	= 0;
 	//--- Default options -------------------
 	SetOPT(VEH_AP_LAND);
-  SetOPT(VEH_D_CRASH);
+  int crash = 1;                    // enabled
+  GetIniVar ("PHYSICS", "enableCrashDetect", &crash);
+  U_INT prop = (crash)?(VEH_D_CRASH):(0);
+  SetOPT(prop);
+  //SetOPT(VEH_D_CRASH);
   SetOPT(VEH_PN_HELP);
 
 }

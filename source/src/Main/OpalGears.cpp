@@ -37,10 +37,10 @@ using namespace std;
 CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
 { diffK = ADJ_DIFF_CONST;           // 1.0f
   damp_ground_rot = ADJ_GRND_BANK;  // 10.0f
-  int crash = 1;                    // enabled
-  GetIniVar ("PHYSICS", "enableCrashDetect", &crash);
-  U_INT prop = (crash)?(VEH_D_CRASH):(0);
-  mveh->SetOPT(prop);
+  //int crash = 1;                    // enabled
+  //GetIniVar ("PHYSICS", "enableCrashDetect", &crash);
+  //U_INT prop = (crash)?(VEH_D_CRASH):(0);
+  //mveh->SetOPT(prop);
 	CPhysicModelAdj *phy = mveh->GetPHY();
   if (!phy) {             /// PHY file
     GetIniFloat ("PHYSICS", "adjustGroundBankingConst", &damp_ground_rot);
@@ -380,7 +380,8 @@ void CGearOpal::BrakeForce(float dT)
 	if (fabs(lv) < 0.001) lv = 0;
 	if (lv <= 0)	bf = 0;
 	gearData->brakF	= bf;													// Brake force to apply
-		//--- Compute a torque value to add to steering one -----
+  //TRACE ("brak %d %f %f %f %f %f %f", side, btbl, force, ac, ms, bf, lv);
+  //--- Compute a torque value to add to steering one -----
 	mveh->AddDifBrake(bf * diffK * gearData->bPos.x / ms);
 	return;
 }
