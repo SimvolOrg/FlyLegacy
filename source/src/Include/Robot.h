@@ -196,8 +196,6 @@ public:
 	void	EnterTakeOff();
 	void	EnterFinal();
 	void	ChangeWaypoint();
-	void	Refresh();
-	float SetDirection();
 	//--- State routines ----------------------------------
 	void	Start();
 	void	HandleBack();

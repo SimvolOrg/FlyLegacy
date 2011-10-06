@@ -50,8 +50,8 @@
 //=============================================================================================
 class CFmtxMap;
 //=============================================================================================
-//	Define WINDOW PROFILE
-//	WINDOW PROFILE is used by specifics windows like editors.
+//	Define APPILCATION PROFILE
+//	APPILCATION PROFILE is used by specifics windows like editors.
 //	Option to prevent drawing and changing camera are set
 //=============================================================================================
 #define PROF_NO_TER			(0x00000001)				// No terrain drawing
@@ -60,11 +60,20 @@ class CFmtxMap;
 #define PROF_NO_EXT			(0x00000008)				// No external plane drawing
 #define PROF_NO_OBJ			(0x00000010)				// No Object drawing
 #define PROF_NO_MET			(0x00000020)				// No Meteo effect
+#define PROF_NO_FPL     (0x00000040)				// No flight plan
+#define PROF_NO_PLN			(0x00000080)				// No aircraft
 #define PROF_RABIT			(0x01000000)				// Rabbit camera
 #define PROF_DR_DET			(0x02000000)				// Draw detail tour	
 #define PROF_DR_ELV			(0x04000000)				// Draw elevations
 #define PROF_TRACKE			(0x08000000)				// Track elevation
+#define PROF_DRAWRB			(0x10000000)				// Draw rabbit
 #define PROF_NO_TEL			(0x20000000)				// No teleport
+#define PROF_ACBUSY			(0x80000000)				// Aircraft busy
+//-------------------------------------------------------------------------
+//	Basic editor profile
+//	no view, no meteo, use a rabbit camera, draw tile tour,no flight plan
+//-------------------------------------------------------------------------
+#define PROF_EDITOR (PROF_NO_INT+PROF_NO_EXT+PROF_NO_MET+PROF_DR_DET+PROF_RABIT+PROF_NO_FPL+PROF_NO_PLN)
 //=======================================================================================
 //  Edit column for statistics
 //=======================================================================================
@@ -134,6 +143,8 @@ typedef enum {
   VM_VORF = 0x1000,                 // VOR Frequencies
   VM_NDBN = 0x2000,                 // NDB names
   VM_NDBI = 0x4000,                 // NDB ID
+	//--------------------------------------------------
+	VM_PLAN = 0x8000,									// Mode plan
   //--------------------------------------------------
   VM_IDEN = (VM_APTI | VM_VORI | VM_NDBI),
   VM_NAME = (VM_APTN | VM_VORN | VM_NDBN),
@@ -182,6 +193,7 @@ typedef struct {
   int       NbVTX;  // Number of vertices
   //----APPLICATION PROFILE -----------------------------------------
 	U_INT				aPROF;										// Application profile
+	U_INT				iPROF;										// Initial profile
   U_CHAR      noAWT;                    // No animated water
   U_CHAR      noTER;                    // No terrain
   U_CHAR      noEXT;                    // No external aircraft
@@ -189,8 +201,6 @@ typedef struct {
   U_CHAR      noOBJ;                    // No Objects
   U_CHAR      noAPT;                    // No Airport
   U_CHAR      noMET;                    // No Meteo
-  U_CHAR      noTEL;                    // No Teleport
-  U_CHAR      spWIN;                    // Special window active
   CWobj       *wObj;										// Current object in focus
   //----SQL database detected ---------------------------------------
   char        genDB;                    // Generic database
@@ -200,7 +210,6 @@ typedef struct {
   char        m3dDB;                    // 3D model database
   char        texDB;                    // Terra texture database
   char        objDB;                    // World Object
-	char        elvPT;										// Elevation patch
   //-----------------------------------------------------------------
   char        MapName[SLOT_NAME_DIM];   /// Selected Map Name
   char        NulChar;                  /// Null Char
@@ -368,7 +377,9 @@ typedef struct {
 } SGlobals;
 
 extern SGlobals *globals;   // Declared in Main.cpp
-
+//==========================================================================
+void		InitialProfile();
+void		SpecialProfile(Tag wnd,U_INT p);
 //================ END OF FILE =========================================================
 #endif // GLOBALS_H
 

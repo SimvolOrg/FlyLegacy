@@ -129,7 +129,7 @@ public:
   virtual void EndLevelling()				{;}
   virtual void ResetCrash (char p); 
   virtual void Print (FILE *f);
-	//--- Dammage management --------------------------------------------------------------
+	//--- Dammage management -----------------------------------
   void    DamageEvent(DAMAGE_MSG *msg);
   void    CrashEvent(DAMAGE_MSG *msg);
   //------------------------------------------------------------
@@ -169,8 +169,6 @@ public:
   double    GetRRtoLDBank()       {return  -dang.y;}
   double    GetBank()             {return  -iang.y;}
   //-------------------------------------------------------------------------------
-
-
 };
 //====================================================================================
 // The CSimulatedObject object has some behaviour tied to the real-time simulation.
@@ -337,12 +335,11 @@ public:
   virtual void              BodyCollision(CVector &p) {;}
   //------------------------------------------------------------------------
   virtual void              GetAllEngines(std::vector<CEngine*> &engs) {}
-  //----------------------Drawing ------------------------------------------
-  virtual void  DrawExternal();
-  virtual void  DrawInside(CCamera *cam);
-	virtual void  DrawOutsideLights();
-  //------------------------------------------------------------------------
-  void          DrawExternalFeatures();
+	//--- Vehicle drawing -----------------------------------------------------
+  void  DrawExternal();
+  void  DrawInside(CCamera *cam);
+	void  DrawOutsideLights();
+  void  DrawExternalFeatures();
   //-------Keyboard messages ------------------------------------------------
   virtual void  SetNaviMSG(Tag t) {}
   virtual void  SetTaxiMSG(Tag t) {}
@@ -438,11 +435,17 @@ public:
   inline char              *GetNFOname()            { return nfoFilename;}
   inline void               GetVisualCG(SVector &v) {if (wgh) wgh->GetVisualCG(v);}
   //-----Engine management ---------------------------------------------------------
+	inline  int   GetEngNb()							{return nEng;}
 	inline bool		AllEngineOn()						{return (engR == eng->GetEngineNbr());}
+	inline bool   OneEngineOn()						{return (engR != 0);}
+	inline bool   AllEngineOff()					{return (!OneEngineOn());}
+	//---Engine internal interface -------------------------------------------------
+	inline  void RazEngR()								{engR	= 0;}
+	inline  void IncEngR()								{engR++;}
+	inline  void DecEngR()								{engR--;}
   //---------------------------------------------------------------------------------
   inline  CAnimatedModel        *GetLOD()     {return lod;}
   inline  CWeightManager        *GetWGH()     {return wgh;}
-	inline  int                    GetEngNb()		{return nEng;}
 	//--- Gear Management -------------------------------------------------------------
 	void					SetABS(char p)					{whl->SetABS(p);}
 	float         GetBrakeForce(int p)    {return amp->GetBrakeForce(p);}
@@ -487,13 +490,6 @@ protected:
   //---Wheels parameters ---------------------------------------------------------
   char    WOW_nber;                         // Wheel number
   char    rfuw;                             // Reserved
-  //---Wheels functions ----------------------------------------------------------
-public:    
-  inline  float GetGSpeed()               {return 0;}
-	//---Engine internal interface -------------------------------------------------
-	inline  void RazEngR()										{engR	= 0;}
-	inline  void IncEngR()										{engR++;}
-	inline  void DecEngR()										{engR--;}
 protected:
   //--- PLOT parameter table -----------------------------------------------------
   PLOT_PM   plotPM[16];                    // Plot parameters table
@@ -592,6 +588,8 @@ public:
   inline void       SetLandMSG(Tag t) {Land.group = t;}
   inline void       SetTaxiMSG(Tag t) {Taxi.group = t;}
   inline void       SetStrbMSG(Tag t) {Strb.group = t;}
+	//-----------------------------------------------------------------------------
+	bool							AtRest();
   //-----------------------------------------------------------------------------
   void              GetAllEngines(std::vector<CEngine*> &engs);
   void              CutAllEngines()     {eng->CutAllEngines();}

@@ -659,7 +659,6 @@ void GetLatitudeFactor(double lat,double &rf,double &cp)
   cp = 1/ rf;
   return;
 }
-
 //-----------------------------------------------------------------------------
 //  return the maximum inner circle in feet
 //-----------------------------------------------------------------------------
@@ -874,6 +873,19 @@ void AddMilesTo(SPosition &pos,double mx,double my)
   return;
 }
 //-----------------------------------------------------------------------------
+//  Add feet to position
+//  Position should be in absolute world coordinates
+//  Horizontal arcsec are inflated by a latitude coefficent when 
+//  transformed from feet
+//-----------------------------------------------------------------------------
+void AddFeetTo(SPosition &pos,SVector &v)
+{ pos.lat   += FN_ARCS_FROM_FEET(v.y);
+  double rad = FN_RAD_FROM_ARCS(pos.lat);				// Latitude in radian
+  double cpf = 1 / cos(rad);
+  pos.lon   += FN_ARCS_FROM_FEET(v.x) * cpf;
+  return;
+}
+//-----------------------------------------------------------------------------
 //  Make an absolute tile key with QGT index[0-512] and Detail index [0-32]
 //-----------------------------------------------------------------------------
 inline U_INT AbsoluteTileKey(int qx, int dx)
@@ -1063,7 +1075,7 @@ char  GroundSpot::GetTerrain()
   CVector  p(lbd,lat,0);
   CmQUAD  *qd = dt->Locate2D(p);              // Smaller QUAD in Detail Tile
   //----Locate the triangle where p reside --------------------
-  if (!qd->PointHeight(p,gNM)) p.z = qd->CenterElevation();
+  if (!qd->PointHeight(p,gNM)) 	p.z = qd->CenterElevation();
   alt         = p.z;
   return 1;
 }
@@ -1246,6 +1258,16 @@ void WCoord::AssignCT(TC_GTAB *tab)
   tab->GT_Z = WZ;
   return;
 }
+//-------------------------------------------------------------------------
+//  Assign Center vertex in Quad
+//-------------------------------------------------------------------------
+void WCoord::AssignCT(TC_GTAB *tab,SPosition *org)
+{ tab->GT_X = LongitudeDifference(WX,org->lon);
+	tab->GT_Y = WY - org->lat;
+	tab->GT_Z = WZ - org->alt;
+  return;
+}
+
 //-------------------------------------------------------------------------
 //  Assign NE vertex in Quad. If x = 0, the vertex is along the 0 meridien
 //	The we retrun the eastmost coordinate in the horizontal band 
@@ -1471,5 +1493,7 @@ float GetHEIGHT(TC_VTAB *qd)
   float h2 = qd[1].VT_Y + qd[2].VT_Y;
   return (h1 + h2) * 0.5;
 }
+
+
 //=======================END OF FILE ======================================================
 

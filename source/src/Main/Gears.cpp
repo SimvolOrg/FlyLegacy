@@ -281,9 +281,11 @@ void CSuspension::GearDamaged(char nsk)
 { U_INT f = globals->Frame;
   TRACE("%06d: Wheel %s Dammaged (%d) at %.4f",f,gear_data.susp_name,nsk,mveh->GetAltitude());
   char dam1[64];
-  sprintf(dam1,"Gear %s shoked",gear_data.susp_name);
+  _snprintf(dam1,63,"Gear %s shoked",gear_data.susp_name);
+	dam1[63] = 0;
   char dam2[64];
-  sprintf(dam2,"Gear %s destroyed",gear_data.susp_name);
+  _snprintf(dam2,63,"Gear %s destroyed",gear_data.susp_name);
+	dam2[63] = 0;
   DAMAGE_MSG msg = {1,0,0};
   msg.Severity = (nsk < 2)?(1):(2);
   msg.msg      = (nsk < 2)?(dam1):(dam2);
@@ -584,7 +586,7 @@ CGroundSuspension::CGroundSuspension (CVehicleObject *v,char* whlFilename,  CWei
   SumGearForces.y = SumGearMoments.y = 0.0;
   SumGearForces.z = SumGearMoments.z = 0.0;
   //---------------------------------------------------------
-  mainW.Set(0,0,0);
+  mainW.Raz();
   mainR  = 0;
   max_wheel_height = 0.0;
   max_gear = min_gear = mWPos = 0.0;

@@ -324,9 +324,7 @@ void CAnimatedModel::AddGear(CAcmGears *w)
   //---Init landing gear sound --------------
   CVector pos(0,0,0);
   Tag ids = 'gear';
-  //MEMORY_LEAK_MARKER ("soundobj");
   sGear = new CSoundOBJ(ids,pos);
-  //MEMORY_LEAK_MARKER ("soundobj");
   sGear->AddSound(0,'gerd');
   sGear->AddSound(1,'geru');
   return;

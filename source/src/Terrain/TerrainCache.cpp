@@ -569,7 +569,14 @@ bool CVertex::IsAbove(float y)
 //-------------------------------------------------------------------------
 bool CVertex::ToRight(float x)
 { return (Coord.GetWX() > x);}
-
+//-------------------------------------------------------------------------
+//  Check if we are this vertex
+//-------------------------------------------------------------------------
+bool CVertex::AreWe(U_INT ax,U_INT az)
+{	if ((xKey == ax) && (zKey == az))
+	int a = 0;
+	return true;
+ }
 //-------------------------------------------------------------------------
 //  Copy Edges
 //-------------------------------------------------------------------------
@@ -881,7 +888,7 @@ int CmQUAD::TransposeVertices(TC_GTAB *vbo,SPosition *org)
 //	origin
 //-------------------------------------------------------------------------
 int CmQUAD::RelocateVertices(TC_GTAB *vbo,SPosition *org)
-{	double   ofs = Center.LongitudeOffset();
+{	double    ofs = Center.LongitudeOffset();
   TC_GTAB *dst = vbo;
 //TRACE("QUAD %d-%d -----",Center.keyX(),Center.keyZ());
 	for (int k=0; k< nvtx; k++)
@@ -2118,7 +2125,7 @@ int C_QGT::StepTIL()
 //  Check for elevation in SQL database
 //---------------------------------------------------------------------
 int C_QGT::StepPCH()
-{	if (0 == globals->elvPT)	return StepSEA();
+{	if (0 == globals->elvDB)	return StepSEA();
   ELV_PATCHE  p;
 	p.dir		= 1;
 	globals->sqm->ReadPatches(this,p);
@@ -2852,7 +2859,8 @@ void C_QGT::DivideHDTL(TRN_HDTL *hd)
 //  Duplicate the center Vertex
 //-------------------------------------------------------------------------
 CVertex *C_QGT::DuplicateCenter(CVertex *ct,TRN_HDTL *hd)
-{ CVertex *nc = CreateVertex(ct->xKey,ct->zKey);
+{ //ct->AreWe(0x00047600,0x0A4F200);
+	CVertex *nc = CreateVertex(ct->xKey,ct->zKey);
   nc->Use     = ct->Use;
   nc->CopyEdge(ct);       // Dupplicate corner
   //---Duplicate world coordinates -------------
@@ -2861,7 +2869,9 @@ CVertex *C_QGT::DuplicateCenter(CVertex *ct,TRN_HDTL *hd)
   //---Set elevation from middle region array --
   U_SHORT ed    = hd->GetDim();
   U_SHORT md    = (ed * ed) >> 1;
-  nc->Coord.SetWZ(hd->Elevation(md));
+	double  el    = hd->Elevation(md);
+  nc->Coord.SetWZ(el);
+	ct->Coord.SetWZ(el);
   return nc;
 }
 
@@ -3235,19 +3245,7 @@ TCacheMGR::TCacheMGR()
   GetIniFloat("Terrain","HighResRatio",&rt);
   globals->highRAT = rt;
   //---Check for Terrain Wire Frame -----------------------
-  hi      = 0;
-  GetIniVar("Sim", "NoTerrain", &hi);
-  wire    = hi;
-  if (wire) globals->noTER++;
-  if (wire) globals->noAPT++;
-  if (wire) globals->noOBJ++;
-  if (wire) globals->noMET++;
-  if (wire) globals->noAWT++;
-	//------Check for elevation patches --------------------
-	int  ep = 1;
-	GetIniVar("SQL","ElvPatche",&ep);
-	char sql	= globals->elvDB;
-	globals->elvPT = ep & sql;
+  wire    = globals->noTER;
   //------------------------------------------------------
   GetIniVar("W3D","Display",&hi);
   Disp    = hi;
@@ -3496,6 +3494,17 @@ void TCacheMGR::Teleport(SPosition &dst)
   return;
 }
 //-------------------------------------------------------------------------
+//  Teleport to requested position
+//-------------------------------------------------------------------------
+void TCacheMGR::MoveRabbit(SPosition &dst)
+{ if (globals->aPROF & PROF_NO_TEL)	return;
+  globals->m3d->ReleaseVOR();
+  globals->geop = dst;
+  Tele          = 0;
+  Terrain       = 0;
+  return;
+}
+//-------------------------------------------------------------------------
 //  Advise for teleporting
 //-------------------------------------------------------------------------
 void TCacheMGR::NoteTeleport()
@@ -3736,7 +3745,7 @@ void TCacheMGR::Probe(CFuiCanva *cnv)
 //  Edit ground position
 //-------------------------------------------------------------------------
 void TCacheMGR::EditGround(char *txt)
-{ sprintf(txt,"QGT (%03d-%03d) TILE(%02d-%02d)",xKey,zKey,Spot.xDet(),Spot.zDet());
+{ sprintf_s(txt,127,"QGT (%03d-%03d) TILE(%02d-%02d)",xKey,zKey,Spot.xDet(),Spot.zDet());
   return;
 }
 //-------------------------------------------------------------------------

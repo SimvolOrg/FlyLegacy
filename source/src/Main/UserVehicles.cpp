@@ -2219,7 +2219,8 @@ void CCockpitManager::GetStats(CFuiCanva *cnv)
     CPanel *pnl = iter->second;
     tg += pnl->TotalGauges();
   }
-  sprintf(edt,"% 8d",tg);
+  _snprintf(edt,63,"% 8d",tg);
+	edt[63]	= 0;
   cnv->AddText(1,"Gauges:");
   cnv->AddText(STATS_NUM,edt,1);
   return;

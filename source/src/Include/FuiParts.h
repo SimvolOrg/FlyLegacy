@@ -890,6 +890,9 @@ class CFuiFlightLog : public CFuiRwyEXT, public CFuiWindow
   //--------------------------------------------------------------
   CFuiLabel          *eWIN;                 // Error Label
 	CFuiLabel          *ilsF;                 // ils frequency
+	//--- Mode management ------------------------------------------
+	char								Mode;									// Current mode
+	char								rfu1;									// Reserved
   //-------------Database Request ---------------------------------
   CDataBaseREQ  Req;
   //-----------Vertical list box ---------------------------------
@@ -911,7 +914,10 @@ public:
   //------------Methods ------------------------------------------
    CFuiFlightLog(Tag idn, const char *filename);
   ~CFuiFlightLog(void);
-  //------------Notification -------------------------------------
+	//--- Mode management ------------------------------------------
+	void		SetMode();
+	void		SwapMode();
+  //--- Notifications --------------------------------------------
   bool    OpenDetail();
   void    OpenDirectory();
   void    CloseMe();
@@ -919,15 +925,15 @@ public:
   bool    NotifyFromDirectory(CmHead *obj);
   void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 	void		NotifyFromPopup (Tag idm,Tag itm,EFuiEvents evn);
-  //------FlightPlan management-----------------------------------
+  //--- FlightPlan management-------------------------------------
   void    FillCurrentPlan();
 	void		Select();
 	void		EditCeil(int a);
-	//--- Runway management --------------------------------------
+	//--- Runway management ----------------------------------------
 	void		GetRunway();
 	void		AddDBrecord(void *rec,DBCODE cd);
 	void		EndOfRequest(CDataBaseREQ *req);
-  //------------Waypoint management ------------------------------
+  //--- Waypoint management -------------------------------------
   void    CreateAPTwaypoint();
   void    CreateNAVwaypoint();
 	void		CreateWPTwaypoint();
@@ -938,11 +944,13 @@ public:
 	void		Error(char No);
 	void		ModifAlti(int inc);
 	void		ModifCeil(int inc);
+	void		Teleport();
+	//--------------------------------------------------------------
+	void		Refresh();
   //--------------------------------------------------------------
   bool    ValidInsert();
   //--------------------------------------------------------------
-  inline  void  Reset()   {FillCurrentPlan();}
-	inline  void  Refresh()	{flpBOX->Refresh();}
+  inline  void	Reset()			{FillCurrentPlan();}
   //--------------------------------------------------------------
   void    Draw();
 };

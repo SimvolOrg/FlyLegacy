@@ -473,9 +473,8 @@ public:
 	void	SwitchNAV(char parm);
 	void	SwitchAPR(char parm);
 	//--------------------------------------------------------
-	float	SelectDirection();
 	void	UpdateTracking(float dT,U_INT frm);
-	void	Refresh();
+//	void	Refresh();
 	//--------------------------------------------------------
 	void	PowerON();
 	void	EnterTRK();

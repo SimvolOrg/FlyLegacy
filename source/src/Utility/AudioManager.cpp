@@ -395,11 +395,17 @@ void CAudioManager::Cleanup (void)
   int er = alutGetError ();
   if (!alutExit ()) {
     ALenum error = alutGetError ();
-    gtfo ("CAudioManager::Cleanup : Error 0x%08X", error);
+    WARNINGLOG ("CAudioManager::Cleanup : Error 0x%08X", error);
   }
   return;
 }
-
+//--------------------------------------------------------------------------------------
+//		Warning
+//--------------------------------------------------------------------------------------
+void CAudioManager::Warn(char * msg,ALint error=0)
+{	WARNINGLOG (msg, error);
+return;
+}
 //--------------------------------------------------------------------------------------
 // Initialization
 // 
@@ -407,28 +413,26 @@ void CAudioManager::Cleanup (void)
 // manager class
 //--------------------------------------------------------------------------------------
 void CAudioManager::Init (void)
-{
-    ALint error;
-
+{ ALint error;
   // put alut in an Initialized state
   alutGetError ();
   if (!alutInitWithoutContext (NULL, NULL)) {
     ALenum error = alutGetError();
-    gtfo ("CAudioManager::Init : Init error 0x%08X", error);
+    return Warn ("CAudioManager::Init : Init error 0x%08X", error);
   }
 
   // Open default AL device
   device = alcOpenDevice (NULL);
-  if (device == NULL) gtfo ("CAudioManager: No default audio device");
+  if (device == NULL) return Warn ("CAudioManager: No default audio device");
 
   // Create context
   context = alcCreateContext (device, NULL);
-  if (context == NULL) gtfo ("CAudioManager: Could not create context");
+  if (context == NULL) return Warn ("CAudioManager: Could not create context");
 
   // Set context as the active one
   alcGetError (device);
   alcMakeContextCurrent (context);
-  if (alcGetError (device) != ALC_NO_ERROR) gtfo ("CAudioManager: Could not make context current");
+  if (alcGetError (device) != ALC_NO_ERROR) return Warn("CAudioManager: Could not make context current");
 
   // Clear error code
   alGetError ();
@@ -438,20 +442,20 @@ void CAudioManager::Init (void)
   // All sound effects must be position relative to the origin
   ALfloat listenerPos[] = {0.0, 0.0, 0.0};
   alListenerfv (AL_POSITION, listenerPos);
-  if ((error = alGetError ()) != AL_NO_ERROR) gtfo ("CAudioManager:  Could not set listener position");
+  if ((error = alGetError ()) != AL_NO_ERROR) return Warn("CAudioManager:  Could not set listener position");
 
   // Default listener velocity is zero.
   ALfloat listenerVel[] = {0.0, 0.0, 0.0};
   alListenerfv (AL_VELOCITY, listenerVel);
 
-  if ((error = alGetError ()) != AL_NO_ERROR) gtfo ("CAudioManager:  Could not set listener velocity");
+  if ((error = alGetError ()) != AL_NO_ERROR) return Warn("CAudioManager:  Could not set listener velocity");
 
   // Listener orientation is facing "into" the screen, towards +z axis
   // with +y axis as the up vector
   ALfloat listenerOrient[] = {0.0, 0.0, -1.0, 0.0, 1.0, 0.0}; // Fwd, up
   alListenerfv (AL_ORIENTATION, listenerOrient);
 
-  if ((error = alGetError ()) != AL_NO_ERROR) gtfo ("CAudioManager:  Could not set listener orientation");
+  if ((error = alGetError ()) != AL_NO_ERROR) return Warn("CAudioManager:  Could not set listener orientation");
   alGetError();
 }
 //-------------------------------------------------------------------
@@ -483,17 +487,16 @@ void CAudioManager::AllocateSources(char n)
 void CAudioManager::Check()
 { ALenum error = alGetError();
   if (error != AL_NO_ERROR)  {
-  WARNINGLOG ("CAudioManager::Error 0x%08X", error);
+  return Warn("CAudioManager::Error 0x%08X", error);
    }
 }
 //------------------------------------------------------------
 // Check ALUT error
 //------------------------------------------------------------
 void CAudioManager::CheckALUT()
-{ 
-  ALenum error;
+{ ALenum error;
   if ((error = alutGetError()) != ALUT_ERROR_NO_ERROR) {
-      gtfo ("CAudioManager::CreateSfx : Load WAV error 0x%08X", error);
+      return Warn("CAudioManager::CreateSfx : Load WAV error 0x%08X", error);
     }
 }
 //---------------------------------------------------------------------

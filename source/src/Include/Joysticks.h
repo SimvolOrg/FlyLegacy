@@ -165,7 +165,7 @@ public:
 	float	Value (JOY_NULL_AREA *n);
 	float RawVal(JOY_NULL_AREA *n);
 	void	Assign(CSimAxe *axn);
-	void  Assignment(char *edt);
+	void  Assignment(char *edt,int s);
 	//--------------------------------------------------------------
 	bool	IsConnected(U_INT m)
 	{	char sel = m & msk;	return ((sel) && (pJoy != 0));  }

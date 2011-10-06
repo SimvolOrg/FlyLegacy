@@ -1148,8 +1148,9 @@ int CBINparser::Concatenate(PODFILE *p)
 CRLParser::CRLParser(CAirportMgr *ap, char *fn)
 { char fkey[PATH_MAX];
   apm = ap;
+	int d = PATH_MAX - 1;
   //---TRY to locate profile ---------------------------------
-  sprintf(fkey,"%s.RLP",fn);
+  sprintf_s(fkey,d,"%s.RLP",fn);
   Decode(fkey);
 }
 //----------------------------------------------------------------------------------
@@ -1266,8 +1267,9 @@ int METARparser::Parse()
 { int  nf;
   int  en;
   char mask[PATH_MAX];
+	int  d = PATH_MAX - 1;
   //----Parse the METAR DATA --------------------------------
-  sprintf(mask,"%s %%dZ",info->iden);
+  sprintf_s(mask,d,"%s %%dZ",info->iden);
   //----Clear all infos -------------------------------------
   nf = fscanf(filr,mask,&en);
   if (1 != nf)  return Warn("PB ident");   // Ident and date

@@ -223,9 +223,11 @@ void CSimAxe::Assign(CSimAxe *axn)
 //------------------------------------------------------------------------
 //  Return axe assignement
 //------------------------------------------------------------------------
-void CSimAxe::Assignment(char *edt)
-{ if (0 == pJoy)  *edt = 0;
-  else	sprintf(edt,"(J%d): Axe %02d",joyn,iAxe);
+void CSimAxe::Assignment(char *edt,int s)
+{ int d = s-1;
+	if (0 == pJoy)  *edt = 0;
+  else	_snprintf(edt,d,"(J%d): Axe %02d",joyn,iAxe);
+	edt[d] = 0;
   return;
 }
 //------------------------------------------------------------------------
@@ -485,7 +487,7 @@ void CJoysticksManager::SetMessage(int m,Tag des,int unit,Tag cmd)
 //  Init a plane axis
 //  nx = axe number
 //  tp = vehicle type
-//  nm = axe mane
+//  nm = axe namee
 //  t  = generic name
 //  gp = group
 //  p  = positive indicator
@@ -1228,7 +1230,8 @@ void CJoysticksManager::SaveConfiguration()
   SJoyDEF *jsd;
   std::vector<SJoyDEF *>::iterator it;
 	if (0 == modify)				return;
-	modify	= 0;
+	modify		= 0;
+	txt[127]	= 0;
   //---Open a stream file -----------------------------------
   strcpy (s.filename, fn);
   strcpy (s.mode, "w");
@@ -1237,7 +1240,7 @@ void CJoysticksManager::SaveConfiguration()
   WriteTag('bgno', " === Begin Joystick Definition File =====" , &s); 
   //-- Write global setting ---------------------------------
 	WriteTag('vHat', " -- Hat is used to change cockpit view ---",&s);
-	sprintf(txt,"J%d, %d",jsh,uht);
+	_snprintf(txt,126,"J%d, %d",jsh,uht);
 	WriteString(txt,&s);
   //-- Write neutral coefficient ----------------------------
   WriteTag('neut', " -- Neutral [0-1] stick coefficient ------", &s);

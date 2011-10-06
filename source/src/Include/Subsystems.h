@@ -2291,6 +2291,9 @@ public:
   virtual void    SetValue      (float fv);
   virtual void    Zero()        {data.raw = 0;}
 	virtual void    ModBias(float v)	{;}
+	//--- Adjust step values -------------------------------------
+	void						SetStep(float v)	{data.step = v;}
+	void						ModStep(float v);
 	//------------------------------------------------------------
   void						Modify(float dt);
 	void						Transfer();
@@ -2967,20 +2970,16 @@ protected:
 class CElevatorTrimControl : public CAeroControl {
 public:
   CElevatorTrimControl (void);
-
-  // CStreamObject methods
-
-  // CSubsystem methods
+  //--- CSubsystem methods
   virtual const char* GetClassName (void) { return "CElevatorTrimControl"; }
 	void								ReadFinished();
   void                TimeSlice (float dT,U_INT FrNo = 0);					// SDEV*
-
 protected:
 };
 
-//
+//======================================================================
 // CAileronTrimControl
-//
+//======================================================================
 class CAileronTrimControl : public CAeroControl {
 public:
   CAileronTrimControl (void);

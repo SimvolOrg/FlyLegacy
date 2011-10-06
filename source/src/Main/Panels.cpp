@@ -181,8 +181,8 @@ CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
     int wrkrnd = 768;
     // end workaround
     char ext[16];
-    sprintf (ext, ".%d", wrkrnd);
-    strcat (s.filename, ext);
+    _snprintf (ext,15,".%d", wrkrnd);
+    strncat (s.filename, ext,4);
   }
 	TRACE("Read panel %s",filename);
   if (OpenStream (&s)) {
@@ -1625,6 +1625,7 @@ void CPanel::DrawCaTour()
   glEnd();
   glPopAttrib();
   glPopMatrix();
+	glPolygonMode(GL_FRONT,GL_FILL);
 }
 //===========================================================================
 // Draw the panel, including all contained gauges

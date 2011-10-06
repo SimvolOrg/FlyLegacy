@@ -137,21 +137,13 @@ public:
 	CFlyObjectListManager Clone(void);                                    // inactivated
 };
 //===========================================================================
-//  Define SLEW mode
-//===========================================================================
-typedef enum {
-  SLEW_STOP = 0,      // NO SLEW
-  SLEW_MOVE = 1,      // Moving
-  SLEW_LEVL = 2,      // Leveling
-  SLEW_DAMP = 3,      // Damping slew
-} SLEW_MODE;
-//===========================================================================
 //    class CSlewManager
 //============================================================================
 class CSlewManager {
 public:
   // Constructor
   CSlewManager (void);
+ ~CSlewManager();
 protected:
   void    SetLevel(CVehicleObject *user);
   bool    ZeroRate (void);
@@ -162,28 +154,29 @@ public:
   bool    Swap();
   bool    Reset();
   void    Level(char opt);
-  void    StartSlew();
+  void    StartMode(CAMERA_CTX *ctx);
+	void		StartSlew();
   void    StopSlew();
   void    SetAltitude(SPosition *p);
+	//--- Moving ---------------------------------------------------
 	void		NormalMove(float dT);
+	void		RabbitMove(float dT);
+	void		RabbitMove(double x,double y, double z);
   //--------------------------------------------------------------
   void    BindKeys();
   //---------------------------------------------------------------
-  inline void   IncAltRate(float d)   {aRate += d; grnd = 0;}
-  inline void   DecAltRate(float d)   {aRate -= d; grnd = 0;}
   inline void   StateAs(int i)        {mode = (i == 0)?(SLEW_STOP):(SLEW_MOVE);}
   //---------------------------------------------------------------
   inline bool   IsEnabled()           {return (SLEW_STOP != mode);}
   inline bool   IsOn()                {return (SLEW_STOP != mode);}
-  inline CVector *GetVelocity()       {return &velo;}
-  //---------------------------------------------------------------
-  bool   MoveForward();
-  bool   MoveBackward();        
-  bool   MoveLeft();            
-  bool   MoveRight();
+  //---Moving management  -----------------------------------------
+  void   MoveOnZ(float d);
+  bool   MoveOnY(float d);
+  bool   MoveOnX(float d);            
   bool   StopMove (); // stop any movement
 	//----------------------------------------------------------------
 protected:
+	CFPlan *flpn;			// Flight plan
   U_INT   vopt;     // Vehicle option
   char    mode;     // mode indicator
   char    call;     // Option call
@@ -192,10 +185,9 @@ protected:
   float   time;     // Stabilizator
   float   fRate;    // Forward motion
   float   lRate;    // Lateral motion
-  float   hRate;    // heading motion
   float   aRate;    // Altitude rate in feet/sec
+	//--- Aircraft ---------------------------------------------------
   CVehicleObject *veh;
-  CVector velo;     // Incremental velocity (m/sec)
 };
 
 //===========================================================================================
@@ -282,7 +274,6 @@ public:
   void              DrawExternal       (void);
   void              DrawVehicleFeatures(void);
   void              ClearUserVehicle   (void);
-  void              ResetUserVehicle   (void);
   void              OpalGlobalsClean   (void);
   void              ChangeUserVehicle  (char * name, bool bPlane);
   U_INT             GetFrameNo         (void) {return FrameNo; }

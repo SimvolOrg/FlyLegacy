@@ -976,11 +976,6 @@ EKeyboardModifiers glutModifiersToFlyLegacyModifiers (int glutmod)
 bool glutKeyToFlyLegacyKey (int glutkey, EKeyboardKeys *flykey)
 {
   *flykey = glutKeyboard[glutkey].flylegacy;
-
-//  char debug[80];
-//  sprintf (debug, "glut=%d flylegacy=%d", glutkey, *flykey);
-//  DrawNoticeToUser (debug, 2);
-
   return (*flykey != KB_KEY_META);
 }
 

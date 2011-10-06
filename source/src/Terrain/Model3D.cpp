@@ -320,10 +320,6 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   GetIniVar("TRACE", "3DModel", &nb);
   tr  = (nb)?(1):(0);
   nb  = 0;
-  //----Check for no Models -----------------------
-  int NoMD = 0;
-  GetIniVar("Sim", "NoModel", &NoMD);        // Skip 3D objects
-  if (NoMD) globals->noOBJ++;
   //----Register in globals --------
   dbm = globals->dbc;
   globals->m3d = this;
@@ -785,7 +781,7 @@ void C3Dfile::AutoGen(SStream *st)
       TRACE ("rad. %f", autobj->GetYRotation ()); 
       U_INT flag = 33077;
       autobj->SetFlag (flag);
-      sprintf (name, "test%d", i); 
+      sprintf_s (name,15, "test%d", i); 
       autobj->SetObjName (name);
       CKmm dOBJ (autobj, MODEL_DAY);
       //

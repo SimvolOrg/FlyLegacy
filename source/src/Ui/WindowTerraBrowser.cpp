@@ -31,8 +31,8 @@ extern char *HexTAB;
 //=================================================================================
 //  Window profile
 //=================================================================================
-#define TBROS_PROF (PROF_NO_INT + PROF_NO_EXT + PROF_NO_MET + PROF_DR_DET + PROF_RABIT)
-#define MBROS_PROF (PROF_NO_INT + PROF_NO_EXT + PROF_NO_MET + PROF_DR_DET + PROF_RABIT)
+#define TBROS_PROF (PROF_EDITOR)
+#define MBROS_PROF (PROF_EDITOR)
 //=================================================================================
 //  Button text
 //=================================================================================
@@ -117,17 +117,16 @@ CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
   aBOX->GoToKey(&tex);
   GetSelection();
 	//--- Set application profile -------------------
-  globals->ccm->SetRabbitCamera(ctx);
-	
-	SpecialProfile(WINDOW_TBROS,TBROS_PROF);
+  ctx.prof	= TBROS_PROF;
+	ctx.mode	= SLEW_RCAM;
+  globals->ccm->SetRabbitCamera(ctx,this);
 
 }
 //-----------------------------------------------------------------------
 //  Release any resource
 //-----------------------------------------------------------------------
 CFuiTBROS::~CFuiTBROS()
-{ SpecialProfile(0,TBROS_PROF);					// Clear profile
-  globals->noOBJ -= obtn;
+{ globals->noOBJ -= obtn;
   globals->noAPT -= abtn;
   if (inf.xOBJ) glDeleteTextures(1,&inf.xOBJ);
   if (inf.mADR) delete [] inf.mADR;
@@ -350,8 +349,9 @@ CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
   //---Allocate a camera orbit ----------------------------
   sCam = new CCameraOrbit();
 	//---Create application profile -------------------------
-  globals->ccm->SetRabbitCamera(ctx);			// Change camera
-	SpecialProfile(WINDOW_MBROS,MBROS_PROF);
+	ctx.prof	= MBROS_PROF;
+	ctx.mode	= SLEW_RCAM;
+  globals->ccm->SetRabbitCamera(ctx,this);			// Change camera
 	//---Set focus on first object --------------------------
 	NewSelection();
   ChangeZoom();
@@ -360,8 +360,7 @@ CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
 //  Free all resources
 //--------------------------------------------------------------------------------
 CFuiMBROS::~CFuiMBROS()
-{ SpecialProfile(0,MBROS_PROF);
-  globals->wObj   = 0;
+{ globals->wObj   = 0;
   oDSP->RegisterCamera(0);
   if (oCam) delete oCam;
   globals->m3d->ReleaseVOR();

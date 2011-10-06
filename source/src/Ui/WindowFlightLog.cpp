@@ -40,6 +40,48 @@ char *errFPWIN[] = {
 	"CANNOT MODIFY ACTIVE FLIGHT PLAN",							// MS05
 };
 //==================================================================================
+//	Mode structure 
+//==================================================================================
+struct FPL_MODE {
+		Tag            tag;									// Component
+		char          *idn;									// Identity
+		char           vis[2];							// visibility
+		char           mod[2];							// Saved modifier
+};
+//==================================================================================
+//	Mode table 
+//	NOTE: In protected mode, keyboard entry is prohibited
+//==================================================================================
+FPL_MODE fplMOD[] = {
+	{'mvup',"mvup",									    {0,1}},		// 1 Up button
+	{'mvdn',"mvdn",											{0,1}},		// 2 Down button
+	{'rset',"rset",											{0,1}},		// 3 Clear all marks
+	{'zero',"zero",											{1,1}},		// 4 New plan (RAZ)
+	{'name',"name",											{1,1}},		// 5 Plan name
+	{'desc',"desc",											{1,1}},		// 6 Description
+	{'addw',"addw",											{0,1}},		// 7 Add waypoint
+	{'delw',"delw",											{0,1}},		// 8 Delete waypoint
+	{'mcel',"mcel",											{0,1}},		// 9 dec ceil
+	{'pcel',"pcel",											{0,1}},		// 11 inc cell 
+	{'malt',"malt",											{0,1}},		// 12 dec altitude
+	{'palt',"palt",											{0,1}},		// 14 inc altitude
+	{0},
+};
+//==================================================================================
+char *fplEDT[] = {
+	"Edit Plan",
+	"Protect",
+};
+//==================================================================================
+//	Mode table for group box
+//	NOTE: In protected mode, keyboard entry is prohibited
+//==================================================================================
+FPL_MODE fplREND[] = {
+	{'ptko',"ptko",											{0,1}},		// Take off runway
+	{'plnd',"plnd",											{0,1}},		// Landing runway
+	{0},
+};
+//==================================================================================
 //
 //  NAVIGATION LOG:  List a detailled Flight Plan
 //
@@ -76,6 +118,7 @@ CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
 	lndID	= "NUL";
 	plnd	= (CFuiPopupMenu*)rend->GetComponent('plnd');
 	if (0 == plnd)	gtfo(erm);
+	Mode	= -1;
   //-----------Init the list box-----------------------
   eWIN->SetText("");
 	flpBOX		 = fpln->GetFBOX();
@@ -84,23 +127,73 @@ CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
   globals->dbc->RegisterLOGwindow(this);
 	//--- Select first node ----------------------------
 	FillCurrentPlan();
-
 }
 //--------------------------------------------------------------------------
 //  Destroy the nav log
 //--------------------------------------------------------------------------
 CFuiFlightLog::~CFuiFlightLog()
 { fpln->Register(0);
+  globals->dbc->RegisterLOGwindow(0);
+}
+//--------------------------------------------------------------------------
+//  Set the Mode
+//	NOTE: When flight plan is used, edit is prohibited
+//--------------------------------------------------------------------------
+void CFuiFlightLog::SetMode()
+{	char *erm = "FlightPlanLog.WIN file. Missing tag %s";
+	char  m   = fpln->GetEdMode();
+	Mode			= m;
+	//--- Change mode ----------------------------------
+	CFuiComponent *cps = GetComponent('edpl');
+	if (0 == cps)	gtfo(erm);
+	cps->SetText(fplEDT[m]);
+	//--- Initialize all buttons and menus -------------
+	FPL_MODE *src = fplMOD;
+	while (src->tag)
+	{	cps = GetComponent(src->tag);
+		if (0 == cps)	gtfo(erm,src->idn);
+		if (src->vis[m])	cps->Show();
+		else							cps->Hide();
+		src++;
+	}
+	//--- Initialize popups ----------------------------
+	CFuiGroupBox *grp = (CFuiGroupBox*)GetComponent('rend');
+	if (0 == grp)		gtfo(erm,'rend');
+	src = fplREND;
+	while (src->tag)
+	{	cps = grp->GetComponent(src->tag);
+		if (0 == cps)	gtfo(erm,src->idn);
+		if (src->vis[m])	cps->RazProperty(FUI_IS_LOCKED);
+		else							cps->SetProperty(FUI_IS_LOCKED);
+		src++;
+	}
+	return;
+}
+//--------------------------------------------------------------------------
+//	Swap the edit mode
+//--------------------------------------------------------------------------
+void CFuiFlightLog::SwapMode()
+{	if (fpln->SwapMode())	return SetMode();
+	return Error(5);	
 }
 //--------------------------------------------------------------------------
 //  Select first node
 //--------------------------------------------------------------------------
 void CFuiFlightLog::Select()
 {	sWPT = (CWPoint*)flpBOX->GetSelectedSlot();
+  fpln->SetSelection(sWPT);
 	GetRunway();
 	//--- Edit altitude ----------------------------
 	char *alti = (sWPT)?(sWPT->GetEdAltitude()):("");
 	wALT->SetText(alti);
+	return;
+}
+//--------------------------------------------------------------------------
+//  Teleport to selected point
+//--------------------------------------------------------------------------
+void CFuiFlightLog::Teleport()
+{	if (globals->aPROF & PROF_ACBUSY)	return;
+	if (sWPT)	sWPT->Teleport();
 	return;
 }
 //--------------------------------------------------------------------------
@@ -121,6 +214,8 @@ void CFuiFlightLog::FillCurrentPlan()
 	EditCeil(fpln->actCEIL());
   flpBOX->Display();
 	Select();
+	//--- Change mode according to plan ----------
+	SetMode();
   return;
 }
 //-------------------------------------------------------------------------
@@ -128,6 +223,8 @@ void CFuiFlightLog::FillCurrentPlan()
 //-------------------------------------------------------------------------
 void CFuiFlightLog::Draw()
 { if (Req.EndOfReq())  EndOfRequest(&Req);
+	char m = fpln->GetEdMode();
+	if (Mode != m)	SetMode();
 	CFuiWindow::Draw();
   return;
 }
@@ -172,6 +269,13 @@ void  CFuiFlightLog::InsertWaypoint(CWPoint *wpt)
 	flpBOX->Refresh();
 	Select();
   return;
+}
+//-------------------------------------------------------------------------
+//  Refresh page
+//-------------------------------------------------------------------------
+void CFuiFlightLog::Refresh()
+{	flpBOX->Refresh();
+	Select();
 }
 //-------------------------------------------------------------------------
 //  Create an Airport waypoint
@@ -243,7 +347,7 @@ bool CFuiFlightLog::NotifyFromDirectory(CmHead *obj)
   return true;
 }
 //-------------------------------------------------------------------------
-//  Dispaly error message
+//  Display error message
 //-------------------------------------------------------------------------
 void CFuiFlightLog::Error(char No)
 {	eWIN->RedText(errFPWIN[No]);
@@ -360,6 +464,7 @@ void CFuiFlightLog::ModifAlti(int inc)
 	char *alti = sWPT->ModifyAltitude(inc);
 	wALT->SetText(alti);
 	flpBOX->LineRefresh();
+	return;
 }
 //----------------------------------------------------------------------
 //  Modify Ceil
@@ -396,38 +501,44 @@ void CFuiFlightLog::ChangeFileName()
 //-------------------------------------------------------------------------
 void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 { switch (idm)  {
+	//--- System events ----------------------------
   case 'sysb':
     if (EVENT_CLOSEWINDOW == evn) CloseMe();
     else  SystemHandler(evn);
     return;
+	//--- Change Mode ------------------------------
+	case 'edpl':
+		SwapMode();
+		return;
+	//--- List events ------------------------------
   case 'list':
     flpBOX->VScrollHandler((U_INT)itm,evn);
 		Select();
     return;
-  //--- Open info on waypoint -----------------
+  //--- Open info on waypoint --------------------
   case 'info':
     OpenDetail();
     return;
   //--- Add a waypoint after the current one --
   case 'addw':
-		if (fpln->IsUsed())	return Error(5);
     OpenDirectory();
     return;
   //--- Delete a waypoint ---------------------
   case 'delw':
-		if (fpln->IsUsed())	return Error(5);
     DeleteWaypoint();
     return;
   //--- Move waypoint up ----------------------
   case 'mvup':
-		if (fpln->IsUsed())	return Error(5);
     MoveUpWaypoint();
     return;
   //--- Move waypoint down -------------------
   case 'mvdn':
-		if (fpln->IsUsed())	return Error(5);
     MoveDwWaypoint();
     return;
+	//--- Teleport to waypoint -----------------
+	case 'goto':
+		Teleport();
+		return;
   //---- Name is modified --------------------
   case 'name':
 		ChangeFileName();
@@ -438,14 +549,13 @@ void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
     return;
   //---  Reset marks ------------------------
   case 'rset':
-		if (fpln->IsUsed())	return Error(5);
     fpln->Reorder(1);
+		Refresh();
     return;
   //---  Clear the plan ----------------------
   case 'zero':
 		if (fpln->IsUsed())	return Error(5);
     fpln->ClearPlan();
-		fpln->UpdatePlan();
 		fpln->WarnGPS(1);
     FillCurrentPlan();
     return;

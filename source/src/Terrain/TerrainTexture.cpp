@@ -1112,13 +1112,12 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
   NT    = (i == 1);
   //--------Initialize Library --------------------------------------
   FreeImage_Initialise(TRUE);
+	anSEA	= 0;
   //----Check for animated water ------------------------------------
-  int NoAW     = 0;
-  GetIniVar("Sim", "NoAnimatedWater", &NoAW);
-  if (NoAW) globals->noAWT++;
-  //MEMORY_LEAK_MARKER ("CWater3D");
-  anSEA = new CWater3D(256);
-  //MEMORY_LEAK_MARKER ("CWater3D");
+  //	int NoAW     = 0;
+  //	GetIniVar("Sim", "NoAnimatedWater", &NoAW);
+  //	if (NoAW) globals->noAWT++;
+  //anSEA = new CWater3D(256);
   kaf   = int (double(1 - 0.62f) * 255);
   kaf   = kaf << 24;
   //--------Build the medium Water Texture --------------------------
@@ -1178,7 +1177,7 @@ CTextureWard::~CTextureWard()
   }
   t3dMAP.clear();
   globals->txw = 0;
-  delete anSEA;
+  if (anSEA)	delete anSEA;
 }
 //----------------------------------------------------------------------
 //  ABORT ERROR
@@ -2247,7 +2246,7 @@ CWater3D::CWater3D(int sz)
   vit   = 0;
   once  = 1;
   //---Build the 3D animation --------------------------------
-  if (0 == globals->noAWT)  LoadWater3D();
+  //if (0 == globals->noAWT)  LoadWater3D();
   //---Create a camera object --------------------------------
   CVector  ofs(0,0,0);
   RGBA_COLOR blk = {0,0,0,0};

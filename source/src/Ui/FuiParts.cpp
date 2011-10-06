@@ -466,7 +466,7 @@ void CKeyLine::Print(CFuiList *w,U_CHAR ln)
 //================================================================================
 void CAxeLine::Print(CFuiList *w,U_CHAR ln)
 { char edt[128];
-	axe->Assignment(edt);
+	axe->Assignment(edt,128);
 	w->NewLine(ln);
   w->AddText(ln, 1, 0, GetName());
   w->AddText(ln,10, 0, edt);

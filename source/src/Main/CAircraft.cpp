@@ -116,10 +116,13 @@ extern DAMAGE_MSG damMSG[];
 //------------------------------------------------------------------------------
 bool KeyAirGroup (CKeyDefinition *kdf, int code)
 { Tag kid = kdf->GetTag();
-  if (kid == 'actr') return globals->pln->CenterControls();
+  bool ac = (globals->pln != 0);
+	if (0 == ac)				return false;
+  if (kid == 'actr')	return globals->pln->CenterControls();
   // Inhibit aircraft control when in slew mode
-  if (globals->slw->IsEnabled ()) return false;
-  if (kdf->NoPCB())               return false;
+  if (globals->slw->IsEnabled ())		return false;
+	if (globals->aPROF & PROF_NO_PLN)	return false;
+  if (kdf->NoPCB())									return false;
   U_INT key = code & 0x0000FFFF;      // Key code
   U_INT mod = (code >> 16);           // Modifier
   return kdf->GetCallback() (kid,key,mod);
@@ -313,7 +316,9 @@ bool aKeyOUCH(int kid,int code,int mod)
 { return true; }
 //--- Damage reset ----------------------------------------
 bool aKeyRSET(int kid,int code,int mod)
-{ globals->sit->ResetUserVehicle();
+{ CAirplane *pln = globals->pln;
+	if (pln)	pln->ResetCrash(1);
+	InitialProfile();
   return true; }
 //--- Aero vector  ----------------------------------------
 bool aKeyAERV(int kid,int code,int mod)
@@ -712,6 +717,14 @@ EMessageResult CAirplane::SendMessageToExternals (SMessage *msg)
   return rc;
 }
 //-------------------------------------------------------------------------------
+//	Plane is at rest on ground 
+//--------------------------------------------------------------------------------
+bool CAirplane::AtRest()
+{	bool ok  =  AllWheelsOnGround();
+       ok &= (GetPreCalculedKIAS() < 10);
+	return ok;
+}
+//-------------------------------------------------------------------------------
 //	Return engine subsystems
 //--------------------------------------------------------------------------------
 void CAirplane::GetAllEngines(std::vector<CEngine*> &engs)
@@ -737,6 +750,10 @@ void CAirplane::BodyCollision(CVector &p)
 { if (NotOPT(VEH_D_CRASH)) return;
   DAMAGE_MSG msg = {3,0,'crby',"STRUCTURAL DAMAGE"};
   DamageEvent(&msg);
+	//--- Trace location -----------------------------
+	int gnd = globals->tcm->GetGroundAltitude();
+	int alt = globals->geop.alt;
+	TRACE("CRASH: alti: %05d ground: %05d",alt,gnd);
   return;
 }
 //-----------------------------------------------------------------------------
@@ -752,7 +769,13 @@ void CAirplane::BodyCollision(CVector &p)
 //          we will have to make some adaptation
 //-----------------------------------------------------------------------------
 void CAirplane::TimeSlice(float dT,U_INT frame)
-{ //--------------------------------------------------------
+{ //---update the aircraft busy profile --------------------
+	bool  rs = AtRest();
+	U_INT pf = globals->aPROF;
+	if (rs) pf &= (-1 - PROF_ACBUSY);
+	else		pf |= (PROF_ACBUSY);
+	globals->aPROF = pf;
+	//--------------------------------------------------------
 	pit->TimeSlice(dT);
 	CJoysticksManager *jsm = globals->jsm;
   switch (State)  {
@@ -769,8 +792,7 @@ void CAirplane::TimeSlice(float dT,U_INT frame)
     //--- Aircraft is operational or damaged----------------
     case VEH_INOP:
     case VEH_OPER:
-      { 
-        int  nbEng = amp->pEngineManager->HowMany();
+      { int  nbEng = amp->pEngineManager->HowMany();
         jsm->SendGroupPMT(nbEng);               // Send Prop-mixture and throttle
         Update (dT,frame);
         return;
@@ -1147,7 +1169,7 @@ int	CUFOObject::UpdateNewPositionState(float dT, float spd)
         char edt2 [128] = {'\0'};
         EditLon2DMS(pos_to.lon, edt1);
         EditLat2DMS(pos_to.lat, edt2);
-        sprintf (buff, "@1 %.2f %.2f %.2f [%s] [%s] alt=%.0f\n",
+        _snprintf (buff,126, "@1 %.2f %.2f %.2f [%s] [%s] alt=%.0f\n",
                                     orientation.x, orientation.y, orientation.z,
                                     edt1, edt2, pos_from.alt
                                     );
@@ -1536,7 +1558,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   Plane->setMass (mm, mm.inertia);														// 
 
   // 1) wing & engine forces
-  fb.Set (0,0,0); // JS: Replace Times(0) because when #NAND or #IND, then fb is not reset
+  fb.Raz();						// JS: Replace Times(0) because when #NAND or #IND, then fb is not reset
   if (globals->caging_fixed_wings) fb.Add (wng->GetForce ()); // LH
   VectorDistanceLeftToRight  (fb); // LH=>RH
 
@@ -1547,7 +1569,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   float s_p_d = 0.0f;
 	if (1 == GetEngNb())	
 				engines_pos = eng->GetEnginesPosISU (); // LH
-  else  engines_pos.Set (0,0,0);                // engines_pos = 0
+  else  engines_pos.Raz();                // engines_pos = 0
 
   // simulate gear down drag and moment
   // modifying the thrust value and position
@@ -1586,7 +1608,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   ed.duration = static_cast<opal::real> (dT);
 
   // 2)  wing, mine & engine moments
-  tb.Set(0,0,0);  // JS: Replace Times(0) because when #NAND or #IND, then tb is not reset
+  tb.Raz();  // JS: Replace Times(0) because when #NAND or #IND, then tb is not reset
   if (globals->caging_fixed_wings) tb.Add (wng->GetMoment ());// 
   VectorOrientLeftToRight (tb); // 
 
@@ -1877,7 +1899,7 @@ void COPALObject::Print (FILE *f)
 
     if (!log) {
       char buffer [128] = {0};
-      sprintf (buffer, "Debug/DumpedAeromodel_%d.txt", ++print_counter);
+      _snprintf (buffer,126,"Debug/DumpedAeromodel_%d.txt", ++print_counter);
       log = new CLogFile(buffer, "w");
       if (log) {
         SAFE_DELETE (wng->log);

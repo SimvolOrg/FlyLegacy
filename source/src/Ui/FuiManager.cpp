@@ -261,10 +261,12 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
     //---LIST OF FLIGHT PLAN --------------------------------------------
     case FUI_WINDOW_FPLAN_LIST:
+			if (globals->aPROF & PROF_NO_FPL)	return 0;
       window  = new CFuiListPlan (windowId,"UI/TEMPLATES/FlightPlanList.WIN");
       break;
     //---FLIGHT PLAN LOG     --------------------------------------------
     case FUI_WINDOW_FPLAN_LOG:
+			if (globals->aPROF & PROF_NO_FPL)	return 0;
       window  = new CFuiFlightLog (windowId,"UI/TEMPLATES/FlightPlanLog.WIN");
       break;
     //---GENERAL DIRECTORY -----------------------------------------------
@@ -302,11 +304,11 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
     //---Globals OPTIONS-----------------------------------------
     case FUI_WINDOW_CAMERA_CONTROL:
       window  = new CFuiCamControl(windowId,"UI/TEMPLATES/CAMERACONTROL.WIN");
-      window->MoveTo(580,150);
+      window->MoveTo(1036,840);
       break;
 		//---Terra editor -------------------------------------------
     case FUI_WINDOW_TEDITOR:
-			if (globals->spWIN)   return 0;
+			if (globals->aPROF & PROF_ACBUSY)	return 0;
       window  = new CFuiTED(windowId,"UI/TEMPLATES/TERRAEDITOR.WIN");
       window->MoveTo(580,50);
       break;
@@ -350,13 +352,13 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
     //---- TERRA BROWSER --------------------------------------
     case FUI_WINDOW_TBROS:
-      if (globals->spWIN)   return 0;
+      if (globals->aPROF & PROF_ACBUSY)	return 0;
       window  = new CFuiTBROS (windowId, "UI/TEMPLATES/TBROS.WIN");
       window->MoveTo(20,100);
       break;
     //---- MODEL BROWSER --------------------------------------
     case FUI_WINDOW_MBROS:
-      if (globals->spWIN)   return 0;
+      if (globals->aPROF & PROF_ACBUSY)	return 0;
       window  = new CFuiMBROS (windowId, "UI/TEMPLATES/MBROS.WIN");
       window->MoveTo(20,200);
       break;

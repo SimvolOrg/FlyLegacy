@@ -305,24 +305,6 @@ static WORD savedGammaRamp[3][0x100];
 static HDC  hdc = 0;
 #endif // _WIN32
 //========================================================================================
-//  Some trace of computing
-//========================================================================================
-/*
-void ArcTangente()
-{	double deg  = 0;
-	double rad	= 0;
-	for (deg=0; deg < 360; deg +=10)
-	{	rad = DegToRad(deg);
-		double x  = cos(rad);
-		double y  = sin(rad);
-		double a  = atan2(-x,y);
-		double b  = RadToDeg(a);
-		TRACE("Deg=%.0f A=%.2f",deg,b);
-	}
-	return;
-}
-*/
-//========================================================================================
 //  Restaure gamma ramp from file
 //========================================================================================
 void RestoreGamma()
@@ -349,6 +331,64 @@ void RestoreGamma()
   // Set the new gamma ramp
   BOOL ok = SetDeviceGammaRamp (hdc, ramp);
   return;
+}
+//============================================================================
+//  Set Initial profile from ini file 
+//	Lock, unlock individual feature 
+//	NOTE: globals->aPROF is used to lock various items when some
+//				windows are activated.  For example using TERRA browser prevent
+//				aircraft display and other features.
+//============================================================================
+void InitialProfile()
+{ globals->noTER = 0;
+	globals->noAPT = 0;
+	globals->noOBJ = 0;
+	globals->noEXT = 0;
+	globals->noINT = 0;
+	globals->noMET = 0;
+	//-----------------------------------------------------
+	int nt   = 0;
+	//--- Check for terrain rendition ---------------------
+  GetIniVar("Sim", "NoTerrain", &nt);
+  if (nt) globals->noTER = 1;
+  if (nt) globals->noAPT = 1;
+  if (nt) globals->noOBJ = 1;
+  if (nt) globals->noMET = 1;
+  if (nt) globals->noAWT = 1;
+	//--- Check for airport rendition ---------------------
+	int na = 0;
+  GetIniVar("Sim", "NoAirport", &na);
+  if (na) globals->noAPT = 1;
+	//--- Check for Object rendition ----------------------
+	int no = 0;
+  GetIniVar("Sim", "NoModel", &no);        // Skip 3D objects
+  if (no) globals->noOBJ = 1;
+	//--- Check for plane rendition ------------------------
+	int np = 0;
+  GetIniVar("Sim", "NoAircraft", &np);
+  if (np)	globals->noEXT = 1;									// No external aircraft
+	if (np)	globals->noINT = 1;									// No internal aircraft
+  //----Check for meteo rendition  -----------------------
+  int nm = 0;
+  GetIniVar("Sim","NoMeteo",&nm);
+  if (nm) globals->noMET = 1;
+	//--- Reset global profile lock -------------------------
+	globals->aPROF = 0;
+	return;
+}
+//============================================================================
+//  Set special application profile
+//============================================================================
+void SpecialProfile(Tag wnd,U_INT p)
+{ int	dta		= (wnd)?(+1):(-1);
+	U_INT pf	= (wnd)?(p):(0);
+	globals->aPROF	= pf;
+	if (p & PROF_NO_TER)	globals->noTER += dta;
+	if (p & PROF_NO_APT)	globals->noAPT += dta;
+	if (p & PROF_NO_INT)	globals->noINT += dta;
+	if (p & PROF_NO_EXT)	globals->noEXT += dta;
+	if (p & PROF_NO_OBJ)	globals->noOBJ += dta;
+	if (p & PROF_NO_MET)	globals->noMET += dta;
 }
 //========================================================================================
 //  Generic initialization of the graphics engine.
@@ -419,9 +459,7 @@ void InitGraphics (void)
 
     // Get current gamma ramp to be restored at exit
     hdc = wglGetCurrentDC ();
-    if (!GetDeviceGammaRamp (hdc, savedGammaRamp)) {
-      WARNINGLOG ("Failed to get Win32 gamma ramp");
-    }
+    if (!GetDeviceGammaRamp (hdc, savedGammaRamp)) WARNINGLOG ("Failed to get Win32 gamma ramp"); 
 
     // Calculate gamma ramp table
     double invgamma = 1.0 / gamma;
@@ -436,8 +474,7 @@ void InitGraphics (void)
     }
 
     // Set the new gamma ramp
-    if (!SetDeviceGammaRamp (hdc, ramp)) {
-      WARNINGLOG ("Failed to set Win32 gamma ramp");
+    if (!SetDeviceGammaRamp (hdc, ramp)) { WARNINGLOG ("Failed to set Win32 gamma ramp");
     }
   }
 #endif // _WIN32
@@ -492,12 +529,12 @@ void CleanupFonts (void)
   FreeFont (&globals->fonts.ftasci10);
 }
 
-/**
- *  Initialize global variables that are not dependent upon files in the POD Filesystem.
- *
- *  Code in this function may be dependent on INI settings, but not on any contents of the
- *    POD filesystem.
- */
+//======================================================================================
+//  Initialize global variables that are not dependent upon files in the POD Filesystem.
+//
+//  Code in this function may be dependent on INI settings, but not on any contents of the
+//    POD filesystem.
+//======================================================================================
 void InitGlobalsNoPodFilesystem (char *root)
 { //MEMORY_LEAK_MARKER ("globalinit");
   // Allocate NULL bitmap
@@ -613,9 +650,6 @@ void InitGlobalsNoPodFilesystem (char *root)
   globals->tim->Prepare ();
   globals->tim->SetTimeScale (1.0);
   
-  // Magnetic model
-  //CMagneticModel::Instance().Init (2007.5);
-
   // Initialize various application object pointers
   // sdk: toggle plugin feature usage from ini file
   int plugin_allowed = 0;
@@ -727,9 +761,9 @@ void InitGlobalsNoPodFilesystem (char *root)
 }
 
 
-/**
- *  Cleanup settings in the Global data structure
- */
+//======================================================================================
+//  Cleanup settings in the Global data structure
+//======================================================================================
 void CleanupGlobals (void)
 {
 #ifdef _DEBUG
@@ -794,7 +828,7 @@ _CrtMemState memoryState;
  *  close open files, etc.
  */
 void ShutdownAll (void)
-{ //RestoreGamma();
+{ 
 #ifdef _DEBUG
   DEBUGLOG ("ShutdownAll start");
 #endif
@@ -864,17 +898,17 @@ void ShutdownAll (void)
   #endif
 }
 
-/**
- *  Initialize OpenGL camera for 2D rendering of an image surface.
- *
- *  When the application is not in realtime simulation mode, it is generally
- *  displaying a static image (e.g. splash screen or exit screen).  This
- *  function is called to initialize the OpenGL camera and blit the provided
- *  image surface to the 2D scene.
- *
- *  @param surf
- *    Drawing surface to blit onto the 2D screen
- */
+//======================================================================================
+//  Initialize OpenGL camera for 2D rendering of an image surface.
+//
+//  When the application is not in realtime simulation mode, it is generally
+//  displaying a static image (e.g. splash screen or exit screen).  This
+//  function is called to initialize the OpenGL camera and blit the provided
+//  image surface to the 2D scene.
+//
+//  @param surf
+//    Drawing surface to blit onto the 2D screen
+//======================================================================================
 void Draw2D (SSurface *surf)
 { // Set projection matrix to 2D screen size
   if (0 == surf)  return;
@@ -903,11 +937,12 @@ void Draw2D (SSurface *surf)
   return;
 }
 
-/**
- *  Primary entry point for application initialization
- */
+//======================================================================================
+//  Primary entry point for application initialization
+//======================================================================================
 void InitApplication (void)
-{ globals->Frame	= 0;
+{ InitialProfile();
+	globals->Frame	= 0;
 	globals->aMax		= 1.0E+5;
   globals->magDEV = 0;
   globals->NbVTX  = 0;
@@ -1309,16 +1344,18 @@ void PrepareSimulation (void)
   globals->sit->Prepare ();
 }
 
-/**
- *  Initial application entry point.
- *
- *  @param argc
- *    Number of command-line arguments passed to the application.
- *  @param argv
- *    List of command-line arguments passed to the application
- *  @return
- *    Return code provided back to operating system on application termination
- */
+//==================================================================================
+//==================================================================================
+//  Initial application entry point.
+//
+//  @param argc
+//    Number of command-line arguments passed to the application.
+//  @param argv
+//    List of command-line arguments passed to the application
+//  @return
+//    Return code provided back to operating system on application termination
+//==================================================================================
+//==================================================================================
 int main (int argc, char **argv)
 { double pxr = double(1) / 72;                // Pixel radius in inch
   double hpx = FN_FEET_FROM_INCH(pxr);        // Pixel radius in feet
@@ -1387,15 +1424,13 @@ int main (int argc, char **argv)
   globals->MapName[0] = 0;
   globals->NulChar    = 0;
   //---Profile init --------------------------------------------------
-  globals->noAWT    = 0;                      // No animated water
+  globals->noAWT    = 1;                      // No animated water
   globals->noTER    = 0;                      // Allow Terrain
   globals->noEXT    = 0;                      // Allow aircraft external drawing
 	globals->noINT		= 0;											// Allow aircraft internal drawing
   globals->noAPT    = 0;                      // Allow Airport
   globals->noOBJ    = 0;                      // Allow Object
   globals->noMET    = 0;                      // Allow Meteo
-  globals->noTEL    = 0;                      // Allow teleport
-  globals->spWIN    = 0;                      // Special window
 	globals->aPROF		= 0;											// current profile
   //---Terrain parameters --------------------------------------------
   globals->maxView  = 40;                     // Default Maximum view (miles)
@@ -1409,7 +1444,6 @@ int main (int argc, char **argv)
   globals->m3dDB = 0;
   globals->texDB = 0;
   globals->objDB = 0;
-	globals->elvPT = 0;
   //---Master radio interface ----------------------------------------
   globals->cILS  =  0;
   //---Object pointer ------------------------------------------------

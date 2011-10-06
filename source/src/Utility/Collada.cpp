@@ -358,7 +358,7 @@ bool ColladaParser::SkipToken(char *token)
   if (strcmp(a1,token) != 0)  return Backup();
   //---Trace token ---------------------------------
   if (tr) 
-  { sprintf(ztr,"%sSKIP %s",zlv,token);
+  { sprintf_s(ztr,127,"%sSKIP %s",zlv,token);
     TRACE(ztr,0);
   }
   //---Skip token until intro < --------------------
@@ -410,7 +410,7 @@ bool ColladaParser::ParseToken(char *token)
   if (strcmp(a1,token)!= 0) return Backup();
   //---- Trace token -------------------------
   if (tr)
-  { sprintf(ztr,"%s %s",zlv--,token);
+  { sprintf_s(ztr,127,"%s %s",zlv--,token);
     TRACE(ztr,0);
   }
   return true;
@@ -428,7 +428,7 @@ bool ColladaParser::FullToken(char *token)
   if (strcmp(a1,token)!= 0) return Backup();
   //-------Trace token ---------------------------
   if (tr)
-  { sprintf(ztr,"%s %s",zlv--,token);
+  { sprintf_s(ztr,127,"%s %s",zlv--,token);
     TRACE(ztr,0);
   }
   return true;
@@ -449,7 +449,7 @@ bool ColladaParser::ParseIdName(char *token,char *idd,char *nmm)
   fscanf(file," > ");
   //------Trace node ---------------------------
   if (tr)
-  { sprintf(ztr,"%s %s ID %s",zlv--,token,idd);
+  { sprintf_s(ztr,127,"%s %s ID %s",zlv--,token,idd);
     TRACE(ztr,0);
   }
   return true;
@@ -514,7 +514,7 @@ bool ColladaParser::ParseFloatArray()
   ReadFloat(srce.vtab,nbv);
 	//---- Trace token -------------------------
   if (tr)
-  { sprintf(ztr,"%sArray %s count %d",zlv,pm1,nbv);
+  { sprintf_s(ztr,127,"%sArray %s count %d",zlv,pm1,nbv);
     TRACE(ztr,0);
   }
   //-- Parse end -----------------------------------
@@ -565,7 +565,7 @@ bool ColladaParser::ParseCreated()
 	char pm1[128];
 	ParseAttribute(" %128[^>< ]s ",pm1,127);
 	if (tr)
-  { sprintf(ztr,"  %s",pm1);
+  { sprintf_s(ztr,127,"  %s",pm1);
     TRACE(ztr,0);
   }
 	return ParseEnd(token);
@@ -590,9 +590,9 @@ bool ColladaParser::ParseUnit()
 	fRat	 = FN_FEET_FROM_METER(fRat);
   //----Trace token -------------------------------
   if (tr)
-  { sprintf(ztr,"%s unit",zlv);
+  { sprintf_s(ztr,127,"%s unit",zlv);
     TRACE(ztr,0);
-		sprintf(ztr,"%sis %s",zlv,pm2);
+		sprintf_s(ztr,127,"%sis %s",zlv,pm2);
 		TRACE(ztr,0);
   }
   //----------------------------------------------
@@ -832,10 +832,10 @@ bool ColladaParser::ParseParam()
   //----------------------------------------
   srce.prop |= SetSrcProperty(pm1);
 	if (0 == tr)	return true;
-	if (p1)	{sprintf(ztr,"%sname %s",			zlv,pm1); TRACE(ztr,0);	}
-	if (p2) {sprintf(ztr,"%sSID  %s",			zlv,pm2); TRACE(ztr,0); }
-	if (p3) {sprintf(ztr,"%stype %s",			zlv,pm3); TRACE(ztr,0); }
-	if (p4) {sprintf(ztr,"%ssemantic %s",	zlv,pm4); TRACE(ztr,0); }
+	if (p1)	{sprintf_s(ztr,127,"%sname %s",			zlv,pm1); TRACE(ztr,0);	}
+	if (p2) {sprintf_s(ztr,127,"%sSID  %s",			zlv,pm2); TRACE(ztr,0); }
+	if (p3) {sprintf_s(ztr,127,"%stype %s",			zlv,pm3); TRACE(ztr,0); }
+	if (p4) {sprintf_s(ztr,127,"%ssemantic %s",	zlv,pm4); TRACE(ztr,0); }
 	zlv++;
   return true;
 }
@@ -860,7 +860,7 @@ bool ColladaParser::ParseAccessor()
 	int nbr = atoi(pm1);
 	int str = atoi(pm4);
 	if (tr)
-	{	sprintf(ztr,"%ssource %s count %d stride %d",zlv,pm3,nbr,str);
+	{	sprintf_s(ztr,127,"%ssource %s count %d stride %d",zlv,pm3,nbr,str);
 		TRACE(ztr,0);
 	}
   //----Parse child nodes -------------------
@@ -1032,10 +1032,10 @@ bool ColladaParser::ParseInput()
   fscanf(file," / > ");
   //-------------------------------------------
 	if (0 == tr)							return true;
-	if (p1) {sprintf(ztr,"%s offset %s",		zlv,offset);		TRACE(ztr,0);}
-	if (p2) {sprintf(ztr,"%s semantic %s",	zlv,semantic);	TRACE(ztr,0);}
-	if (p3)	{sprintf(ztr,"%s source %s",		zlv,source);		TRACE(ztr,0);}
-	if (p4)	{sprintf(ztr,"%s set %s",				zlv,set);				TRACE(ztr,0);}
+	if (p1) {sprintf_s(ztr,127,"%s offset %s",		zlv,offset);		TRACE(ztr,0);}
+	if (p2) {sprintf_s(ztr,127,"%s semantic %s",	zlv,semantic);	TRACE(ztr,0);}
+	if (p3)	{sprintf_s(ztr,127,"%s source %s",		zlv,source);		TRACE(ztr,0);}
+	if (p4)	{sprintf_s(ztr,127,"%s set %s",				zlv,set);				TRACE(ztr,0);}
   zlv++;
   return true;
 }
@@ -1216,9 +1216,9 @@ bool ColladaParser::ParseGeomItem()
   fscanf(file," > ");
 	//-------------------------------------------
 	if (tr)
-	{	if (p1) {sprintf(ztr,"%s name %s",zlv,name);				TRACE(ztr,0);}
-		if (p2) {sprintf(ztr,"%s count %s", zlv,count);			TRACE(ztr,0);}
-		if (p3) {sprintf(ztr,"%s material %s",zlv,material);TRACE(ztr,0);}
+	{	if (p1) {sprintf_s(ztr,127,"%s name %s",zlv,name);				TRACE(ztr,0);}
+		if (p2) {sprintf_s(ztr,127,"%s count %s", zlv,count);			TRACE(ztr,0);}
+		if (p3) {sprintf_s(ztr,127,"%s material %s",zlv,material);TRACE(ztr,0);}
 	}
 	zlv++;
   //---Compute polygon count ------------------
@@ -1576,10 +1576,10 @@ bool ColladaParser::ParseNode()
   fscanf(file," > ");
 	//-------------------------------------------
 	if (tr)
-	{	if (p1) {sprintf(ztr,"%s id %s",				zlv,nid);		TRACE(ztr,0);}
-		if (p2) {sprintf(ztr,"%s name %s",			zlv,nam);		TRACE(ztr,0);}
-		if (p3) {sprintf(ztr,"%s sid  %s",			zlv,sid);		TRACE(ztr,0);}
-		if (p4) {sprintf(ztr,"%s type %s",			zlv,typ);		TRACE(ztr,0);}
+	{	if (p1) {sprintf_s(ztr,127,"%s id %s",				zlv,nid);		TRACE(ztr,0);}
+		if (p2) {sprintf_s(ztr,127,"%s name %s",			zlv,nam);		TRACE(ztr,0);}
+		if (p3) {sprintf_s(ztr,127,"%s sid  %s",			zlv,sid);		TRACE(ztr,0);}
+		if (p4) {sprintf_s(ztr,127,"%s type %s",			zlv,typ);		TRACE(ztr,0);}
 	}
   //----allocate a part -----------------------
   CAcmPart *part = new CAcmPart(model,31,0,1);

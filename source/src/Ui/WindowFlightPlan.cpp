@@ -112,7 +112,7 @@ void CFuiListPlan::SelectPlan()
   strncpy(fn,lin->GetFile(),MAX_PATH);
   char *end = strrchr(fn,'.');
   if (end) *end = 0;
-	fpln->AssignPlan(fn,0);
+	if (!fpln->AssignPlan(fn,0))			return Close();
   //---Open or refresh detail -------------------------
   CFuiFlightLog *win = globals->dbc->GetLOGwindow();
   if (win)  win->Reset();

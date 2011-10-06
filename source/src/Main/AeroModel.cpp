@@ -83,8 +83,8 @@ CAerodynamicModel::CAerodynamicModel (CVehicleObject *v, char* svhFilename)
   gAGL =  0.0f;
   debugOutput = false;
 
-  force.x = force.y = force.z = 0.0;
-  moment.x = moment.y = moment.z = 0.0;
+  force.Raz();													// JS was: x = force.y = force.z = 0.0;
+  moment.Raz();												  // JS wasx = moment.y = moment.z = 0.0;
 
   //--- Read from stream file -----------
   SStream s;
@@ -331,9 +331,8 @@ void CAerodynamicModel::Timeslice(float dT) {
   //
   }
 #endif
-
-  VectorScale(force, 0.0); // clear old force and moment
-  VectorScale(moment, 0.0);
+  force.Raz();											// JS replace VectorScale(force, 0.0); // clear old force and moment
+  moment.Raz();											// JS Replace VectorScale(moment, 0.0);
 
   // compute, and add up forces and moments from the WingSections
   for (iter=wingMap.begin(); iter!=wingMap.end(); iter++) {

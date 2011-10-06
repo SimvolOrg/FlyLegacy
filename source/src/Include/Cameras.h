@@ -138,6 +138,8 @@ public:
                                     const float &distanceInFeet) {}
   virtual double GetLevel()         {return 0;}
   virtual void  ChangeResolution();
+	//--- Rabbit methods -----------------------------------------
+	virtual void	RabbitMoveTo(SPosition *pos)  {;}
 	//--- Picking methods ----------------------------------------
 	virtual void  StartPicking()	{;}
 	virtual void	StopPicking()		{;}
@@ -254,7 +256,7 @@ protected:
 //====================================================================================
 class CRabbitCamera : public CCamera {
 	//--- ATTRIBUTES ---------------------------------------------
-	CAMERA_CTX       ctx;										// Original context
+	CAMERA_CTX    *ctx;										  // Original context
 	//--- Picking parameters -------------------------------------
 	int		px;																// Screen cursor
 	int		py;																// Screen cursor
@@ -266,14 +268,19 @@ public:
 	void		SetPicking(int x,int y);
 	void		StartPicking();
 	void		StopPicking()        {pick = 0;}
+	void		RabbitLeft();
+	void		RabbitRight();
+	void		RabbitMoveTo(SPosition *pos);
+	void		TurnRabbit(SVector v);
 	//-------------------------------------------------------------
 	void	UpdateCamera (SPosition tpos, SVector tori,float dT);
  	//-------------------------------------------------------------
-	void  PanLeft()		{RoundLeft();}
-	void  PanRight()	{RoundRight();}
+	void  PanLeft()		{RabbitLeft();}
+	void  PanRight()	{RabbitRight();}
 	void  PanUp()			{RoundUp();}
 	void  PanDown()   {RoundDown();}
 	//-------------------------------------------------------------
+	inline void Store(CAMERA_CTX *t) {ctx = t;}
 };
 //====================================================================================
 // Cockpit (vehicle interior) camera
