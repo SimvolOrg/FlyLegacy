@@ -37,8 +37,7 @@ using namespace std;
 //==========================================================================
 CScenerySet::CScenerySet (const char* scfFolder,
                           const char* scfFilename)
-{
-  char fullname[PATH_MAX];
+{ char fullname[PATH_MAX];
   strcpy (fullname, scfFolder);
   strcat (fullname, scfFilename);
 
@@ -74,6 +73,8 @@ CScenerySet::CScenerySet (const char* scfFolder,
   // Default state is unloaded
   refCount = 0;
   loaded = false;
+	SCENE ("QGT(%03d-%03d) Init:%s", xk,zk,scfFilename);
+
 }
 //---------------------------------------------------------------------
 //	Close scenery set
@@ -165,13 +166,16 @@ void CScenerySet::Load (char tr)
       ///       scenery files, but this raises complications when instantiating
       ///       models in .SXX files.
       paddpod (&globals->pfs, podName);
+			int ax = (Key >> 16);
+			int az = (Key & 0xFFFF);
+			SCENE("..QGT(%03d-%03d) load %s",ax,az,i->c_str());
     }
 
     // Set loaded flag
     loaded = true;
   }
 
-  if (tr) TRACE("Load scenery set %s, ref count = %d", scfFilename, refCount);
+	SCENE("Set loaded: %s, ref=%02d", scfFilename, refCount);
 }
 //-----------------------------------------------------------------
 //	The scenery pod is removed from the pod file system
@@ -196,7 +200,7 @@ void CScenerySet::Unload (void)
       // Clear loaded flag
       loaded = false;
 
-      DEBUGLOG ("Unload scenery set %s, ref count = %d", scfFilename, refCount);
+      SCENE ("Unload Set %s, ref=%02d", scfFilename, refCount);
     }
   }
 }
@@ -213,7 +217,7 @@ CScenerySetDatabase CScenerySetDatabase::instance;
 //   that describe sliced scenery areas.  Scenery files are stream files
 //   with the .SCF extension that reside in any sub-directory from the
 //   /Scenery folder.
-//
+//----------------------------------------------------------------------------------
 void CScenerySetDatabase::Init (void)
 {
   // Buffer for the current search path
@@ -225,7 +229,7 @@ void CScenerySetDatabase::Init (void)
   GetIniString ("UI", "flyRootFolder", base, PATH_MAX);
   if (strlen (base) == 0) {
     // Could not get Fly! II root folder
-    WARNINGLOG ("Cannot get Fly! II root folder name");
+    SCENE ("Cannot get Fly! II root folder name");
   } else {
     // Fly! II root folder was found
     strcpy (searchPath, base);
@@ -248,7 +252,7 @@ void CScenerySetDatabase::Init (void)
   DWORD driveNameSize = GetLogicalDriveStrings (bufferSize, driveNames);
   if (driveNameSize == 0) {
     // Error reading drive names
-    WARNINGLOG ("GetLogicalDriveStrings : Error %d", GetLastError ());
+    SCENE ("GetLogicalDriveStrings : Error %d", GetLastError ());
   } else {
     // Check to see if drive names exceeded buffer size
     if (driveNameSize > bufferSize) {
@@ -259,7 +263,7 @@ void CScenerySetDatabase::Init (void)
       driveNameSize = GetLogicalDriveStrings (bufferSize, driveNames);
       if (driveNameSize == 0) {
         // Failed for some other reason
-        WARNINGLOG ("GetLogicalDriveStrings : Error %d", GetLastError());
+        SCENE ("GetLogicalDriveStrings : Error %d", GetLastError());
       }
     }
 
@@ -283,6 +287,7 @@ void CScenerySetDatabase::Init (void)
     }
   }
   delete[] driveNames;
+	SCENE("========END INITIAL LOAD==================");
 #endif // _WIN32
 }
 //--------------------------------------------------------------------------------
@@ -313,7 +318,7 @@ void CScenerySetDatabase::Cleanup (void)
 //--------------------------------------------------------------
 void CScenerySetDatabase::LoadInFolder (const char *path)
 {
-  DEBUGLOG ("CScenerySetDatabase::LoadFolder : %s", path);
+  SCENE("LoadFolder : %s", path);
 
   // Iterate over all files in this folder.  Sub-folders are ignored
   ulDir* dirp = ulOpenDir (path);
@@ -327,7 +332,6 @@ void CScenerySetDatabase::LoadInFolder (const char *path)
         // Check for file extension .SCF
         char *c = strrchr (dp->d_name, '.');
         if (stricmp (c, ".SCF") == 0) {
-          DEBUGLOG ("CScenerySetDatabase : Loading %s", dp->d_name);
           CScenerySet *set = new CScenerySet (path, dp->d_name);
           //---Register scenery ----------------------------------
 						 AddSet(set);												

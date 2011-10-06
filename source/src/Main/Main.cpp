@@ -801,6 +801,7 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->logWarning);
   SAFE_DELETE (globals->logTrace);
   SAFE_DELETE (globals->logTerra);
+	SAFE_DELETE (globals->logScene);
 //  ---------------------------------------
 //   Clean up POD filesystems
   pshutdown (&globals->pfs);
@@ -1292,7 +1293,11 @@ void ExitApplication (void)
 //
 // pthread mutexes for warning, debug and gtfo logging
 //
-static pthread_mutex_t mutexWarn, mutexTrace, mutexDebug, mutexGtfo;  // JSDEV* add trace
+static pthread_mutex_t	mutexWarn, 
+												mutexTrace,
+												mutexScene,
+												mutexDebug, 
+												mutexGtfo;  // JSDEV* add trace
 
 /**
  *  Initialize tracing options.
@@ -1368,6 +1373,7 @@ int main (int argc, char **argv)
   pthread_mutex_init (&mutexDebug, NULL);
   pthread_mutex_init (&mutexGtfo,  NULL);
   pthread_mutex_init (&mutexTrace, NULL);		  // JSDEV* add trace
+	pthread_mutex_init (&mutexScene, NULL);
   //--------- Load application settings from INI file -----------------
   LoadIniSettings ();
 
@@ -1393,6 +1399,7 @@ int main (int argc, char **argv)
   InitTraces();
   globals->logTerra	= new CLogFile ("logs/ChangedTiles.log", "a+");
   TRACE("TRACE FILE CREATED"); 
+	globals->logScene = new CLogFile ("logs/Scenery.log", "w");
   //----------- Init global databank -------------------------------------
   globals->tmzTAB = tmzTAB;
   globals->comTAB = comTAB;
@@ -1744,6 +1751,19 @@ TRACE::TRACE(const char *fmt,...)
 		va_end(argp);	}
 	pthread_mutex_unlock (&mutexTrace);
 }
+//-------------------------------------------------------------------------
+//	JSDEV* Implement Scenery log
+//-------------------------------------------------------------------------
+SCENE::SCENE(const char *fmt,...)
+{	pthread_mutex_lock (&mutexScene);
+	if (globals->logScene != NULL) {
+		va_list argp;
+		va_start(argp, fmt);
+		globals->logScene->Write (fmt, argp);
+		va_end(argp);	}
+	pthread_mutex_unlock (&mutexScene);
+}
+
 //-------------------------------------------------------------------------
 //	JSDEV* Implement TERRA log
 //-------------------------------------------------------------------------

@@ -3432,6 +3432,17 @@ public:
 	TRACE(const char *fmt = NULL, ...);
 };
 //-------------------------------------------------------------------------
+//	JSDEV* Scenery log.   This log serve to trace scenery process
+//
+//--------------------------------------------------------------------------
+class SCENE {
+private:
+	char msg[1024];
+public:
+	SCENE(const char *fmt = NULL, ...);
+};
+#define SCENERYLOG (SCENE(__FILE__, __LINE__))
+//-------------------------------------------------------------------------
 /*! \brief Log a debugging message
  *
  * If debug logging is enabled, then referencing the \a DEBUGLOG macro will

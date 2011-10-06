@@ -359,6 +359,12 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   GetIniVar("W3D","ObjectLoadFactor",&lf);
   dFactor   = lf;
   //--------------------------------------------------------------
+	int lp    = 0;
+	GetIniVar("W3D","LookInPodtoo",&lp);
+	lpod			= lp;
+	//--------------------------------------------------------------
+	sql	= globals->objDB;
+	if (0 == sql)	lpod = 1;
   return;
 }
 //--------------------------------------------------------------------
@@ -432,9 +438,9 @@ void C3DMgr::LightToDraw(C3DLight *lit)
 //  Objects are loaded from the SQL database OBJ.db
 //--------------------------------------------------------------------
 void C3DMgr::LocateObjects(C_QGT *qgt)
-{ char sql	= globals->objDB;
-	//--- Search in SQL database----------------------
-  if (sql)	return globals->sqm->ReadWOBJ(qgt);
+{ //--- Search in SQL database----------------------
+	if (sql)	globals->sqm->ReadWOBJ(qgt);
+	if (0 == lpod)	return;
 	//--- Search in files ----------------------------
   C3Dfile    scf(this,qgt);
   char dir[128];

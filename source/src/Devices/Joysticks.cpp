@@ -105,6 +105,7 @@ bool SJoyDEF::CreateSDL(int k)
 		//-- get number of buttons and hat ----------
 		nbt	= SDL_JoystickNumButtons(spj);
 		nht	= SDL_JoystickNumHats(spj);
+		TRACE("JOYSTICK: %s axes=%d buttons=%d",dName,nba,nbt);
 		return true;
 	}
 //----------------------------------------------------------------

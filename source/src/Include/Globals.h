@@ -299,6 +299,7 @@ typedef struct {
   CLogFile          *logWarning;
   CLogFile			    *logTrace;
   CLogFile          *logTerra;
+	CLogFile					*logScene;
   //-------- Internal counters for tests -----------------------------
   U_INT              cnt1;
   U_INT              cnt2;
