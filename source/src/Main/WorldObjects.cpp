@@ -189,9 +189,6 @@ void  CWorldObject::ReadFinished (void)
   }
   return;
 }
-
-
-
 //--------------------------------------------------------------
 //  Set aircraft position
 //--------------------------------------------------------------
@@ -249,8 +246,6 @@ void CWorldObject::SetOrientation(SVector v)
   //----Save position at global level ----------------
   globals->iang = iang;
   globals->dang = dang;
-	//--- To trap a specific bug -----------------------
-	double *ad = &globals->dang.z;
   //--- Load openGL rotation matrix -----------------
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
@@ -371,6 +366,8 @@ void CWorldObject::DamageEvent(DAMAGE_MSG *msg)
 void CWorldObject::ResetCrash(char p)
 { for (U_INT k=0; k<damL.size(); k++) delete damL[k];
 	damL.clear();
+	//--- Reset global profile ---------------------
+	SpecialProfile(0,globals->aPROF);
 	return;
 }
 //-------------------------------------------------------------
@@ -446,16 +443,11 @@ void CSimulatedObject::Timeslice (float dT,U_INT FrNo)
 //------------------------------------------------------------------ 
 //    Draw external parts
 //------------------------------------------------------------------
-
 void CSimulatedObject::DrawExternal(void)
-{
-  // Draw all externally visible objects associated with this object
-  if (lod) {
-    lod->Draw (BODY_TRANSFORM);       // 0 = sobj from SIT file                 
-  }
+{  // Draw all externally visible objects associated with this object
+  if (lod)  lod->Draw (BODY_TRANSFORM);                       
   return;
 }
-
 //========================================================================
 //    CDLLSimulated Object
 //========================================================================
@@ -592,13 +584,6 @@ CVehicleObject::CVehicleObject (void)
 	ckl	= NULL;
 	//-------------------------------------------------------
   globals->rdb = new CFuiRadioBand;
-  //----Check for No AIrcraft in Sim section --------------
-  int  NoAC = 0;
-  GetIniVar("Sim", "NoAircraft", &NoAC);
-  if (NoAC)
-	{	globals->noEXT++;									// No external aircraft
-		globals->noINT++;									// No internal aircraft
-	}
   //-------------------------------------------------------
   is_ufo_object =  false;                // 
   is_opal_object = false;
@@ -869,8 +854,9 @@ void CVehicleObject::PrepareMsg (void)
 //  -Profile allows aircraft
 //----------------------------------------------------------------------------
 void CVehicleObject::DrawExternal(void)
-{ elt->DrawSpotLights();
+{	GetFlightPlan()->DrawOn3DW();
 	if (globals->noEXT)                       return;
+	elt->DrawSpotLights();
   //// Draw all externally visible objects associated with the vehicle
   if (lod) lod->Draw (BODY_TRANSFORM);
   return;

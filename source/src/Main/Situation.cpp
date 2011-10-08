@@ -58,7 +58,7 @@
 #include "../Include/Atmosphere.h"
 #include "../Include/DrawVehiclePosition.h"
 #include "../Include/DrawVehicleSmoke.h"
-
+#include "../Include/PlanDeVol.h"
 using namespace std;
 //=====================================================================================
 //    GLOBAL CLEANUP
@@ -211,25 +211,25 @@ bool sKeySLEW(int id, int code, int mod)
 // increase speed in aircraft direction 'sfwd'
 //--------------------------------------------------------------------------
 bool sKeySFWD(int id, int code, int mod)
-{ return globals->slw->MoveForward();
+{ return globals->slw->MoveOnY(+1);
 } 
 //--------------------------------------------------------------------------
 //  Decrease speed from aircraft direction 'sbkw'
 //--------------------------------------------------------------------------
 bool sKeySBKW(int id, int code, int mod)
-{ return globals->slw->MoveBackward();
+{ return globals->slw->MoveOnY(-1);
 }
 //--------------------------------------------------------------------------
 //  Head left 'slft'
 //---------------------------------------------------------------------------
 bool sKeySLFT (int id, int code, int mod)
-{ return globals->slw->MoveLeft();
+{ return globals->slw->MoveOnX(+1);
 }
 //---------------------------------------------------------------------------
 //  Head Right 'srgt'
 //---------------------------------------------------------------------------
 bool sKeySRGT (int id, int code, int mod)
-{ return globals->slw->MoveRight(); 
+{ return globals->slw->MoveOnX(-1); 
 }
 //----------------------------------------------------------------------------
 // Slew bank left 'sbnl'
@@ -315,16 +315,16 @@ bool sKeySPTD (int id, int code, int mod)
 //  Slew Up 'slup'
 //----------------------------------------------------------------------------
 bool sKeySLUP (int id, int code, int mod)
-{ if (globals->aPROF & PROF_RABIT)	return true;
-	globals->slw->IncAltRate(10.0f);
+{ if (globals->aPROF & PROF_TRACKE)	return true;
+	globals->slw->MoveOnZ(+10.0f);
   return true;
 }
 //----------------------------------------------------------------------------
 //  Slew down 'sldn'
 //----------------------------------------------------------------------------
 bool sKeySLDN (int id, int code, int mod)
-{ if (globals->aPROF & PROF_RABIT)	return true;
-	globals->slw->DecAltRate(10.0f);
+{ if (globals->aPROF & PROF_TRACKE)	return true;
+	globals->slw->MoveOnZ(-10.0f);
   return true;
 }
 //----------------------------------------------------------------------------
@@ -355,10 +355,16 @@ bool sKeySSTP(int id, int code, int mod)
 CSlewManager::CSlewManager (void)
 { veh   = 0;
   aRate = 0.0f;
-  fRate = hRate = lRate = 0.0f;
+  fRate = lRate = 0.0f;
   mode  = SLEW_STOP;
+	//--- Bind all  keys -------------------------------------------
   BindKeys();
 }
+//------------------------------------------------------------------------
+//  Destroy resources
+//------------------------------------------------------------------------
+CSlewManager::~CSlewManager()
+{		}
 //------------------------------------------------------------------------
 //  Bind Slew Keys
 //------------------------------------------------------------------------
@@ -395,8 +401,9 @@ void CSlewManager::Disable (void)
 //  swap slew mode
 //------------------------------------------------------------------------
 bool CSlewManager::Swap()
-{  veh = globals->pln;
-  if (0 == veh)   return true;
+{ if (mode == SLEW_RCAM)	return ZeroRate(); 
+	veh = globals->pln;
+  if (0 == veh)						return true;
   switch (mode) {
     //--- Inactive => Moving ---
     case SLEW_STOP:
@@ -424,6 +431,17 @@ void CSlewManager::StartSlew()
   return;
 }
 //------------------------------------------------------------------------
+//  Start slew mode for rabbit camera
+//------------------------------------------------------------------------
+void CSlewManager::StartMode(CAMERA_CTX *ctx)
+{	vopt	= globals->pln->GetOPT(VEH_D_CRASH);
+	grnd	= 0;
+	mode	= ctx->mode;
+	flpn  = ctx->fpln;
+	ZeroRate();
+	return;
+}
+//------------------------------------------------------------------------
 //  Stop slew mode
 //  Check that aircraft is above ground
 //------------------------------------------------------------------------
@@ -442,8 +460,7 @@ void CSlewManager::StopSlew()
 //  Clear all rates
 //------------------------------------------------------------------------
 bool CSlewManager::ZeroRate ()
-{ aRate = fRate = hRate = lRate = 0.0f;
-  velo.Set(0,0,0);
+{ aRate = fRate = lRate = 0.0f;
   return true;
 }
 //------------------------------------------------------------------------
@@ -483,12 +500,31 @@ void CSlewManager::NormalMove(float dT)
   pos.lon = WrapLongitude (pos.lon);
   SetAltitude(&pos);
   veh->SetPosition (pos);
-  dir.z   += hRate;
-  WrapTwoPi(dir.z);
-  veh->SetOrientation(dir);
-  veh->SetPhysicalOrientation(dir);
   return;
 }
+//------------------------------------------------------------------------
+//  Rabbit move: Update  position
+//------------------------------------------------------------------------
+void CSlewManager::RabbitMove(float dT)
+{ // Update rabbit position
+  SPosition pos = globals->geop;
+	SVector   dir = globals->iang;
+  // Range checking against latitude and altitude extremes is done in
+  //   CWorldObject::SetPosition
+  pos.alt += (aRate * dT);
+  pos.lat += ((cos(dir.z) * fRate) + (cos(dir.z + HALF_PI) * lRate)) * dT;
+  pos.lon -= ((sin(dir.z) * fRate) + (sin(dir.z + HALF_PI) * lRate)) * dT;
+  pos.lon  = WrapLongitude (pos.lon);
+	//--- compute altitude -----------------------------
+	double grd = globals->tcm->GetGroundAltitude();
+	if (pos.alt < grd)	{aRate = 0; pos.alt = grd; }
+	//--- set new rabbit position ----------------------
+	globals->geop = pos;
+  return;
+}
+//------------------------------------------------------------------------
+//  Flight plan move
+//------------------------------------------------------------------------
 //------------------------------------------------------------------------
 //  Update aircraft position
 //------------------------------------------------------------------------
@@ -504,15 +540,16 @@ void CSlewManager::Update (float dT)
     case SLEW_MOVE:
 				NormalMove(dT);
 				return;
+		//--- Rabbit is moving ---------------------------
+		case SLEW_RCAM:
+				RabbitMove(dT);
+				return;
+		//--- 3D flight plan -----------------------------
+		case SLEW_FPLM:
+				return;
     //---Aircraft is leveling --------------------------
     case SLEW_LEVL:
         return SetLevel(veh);
-    //---Wait to stabilization -------------------------
-    case SLEW_DAMP:
-        time -= dT;
-        if (time > 0) return;
-        mode   = pmde;          // Restore previous mode
-        return;
   }
   return;
 };
@@ -555,33 +592,36 @@ void CSlewManager::Level(char opt)
   mode  = SLEW_LEVL;                // New mode
   return;
 }
-
+//------------------------------------------------------------------------
+//	Transform move by 100 feets and convert into arcsec
+//------------------------------------------------------------------------
+void	CSlewManager::RabbitMove(double x,double y, double z)
+{	CVector v((x * 100),(y * 100) , (z * 10));
+	flpn->MoveSelectedWPT(v);
+	return;
+}
+//------------------------------------------------------------------------
+//  Modify altitude rate
+//------------------------------------------------------------------------
+void CSlewManager::MoveOnZ(float d)
+{	if (SLEW_FPLM == mode)	RabbitMove(0,0,d);
+	aRate += d; 
+	grnd = 0;
+	return;	}
 //------------------------------------------------------------------------
 //  Move Forward
 //------------------------------------------------------------------------
-bool CSlewManager::MoveForward()
-{ fRate += 1.0f;
-  return true;
-}
-//------------------------------------------------------------------------
-//  Move Backward
-//------------------------------------------------------------------------
-bool CSlewManager::MoveBackward()
-{ fRate -= 1.0f; 
+bool CSlewManager::MoveOnY(float d)
+{ if (SLEW_FPLM == mode)	RabbitMove(0,d,0);
+	fRate += d;
   return true;
 }
 //------------------------------------------------------------------------
 //  Move Left
 //------------------------------------------------------------------------
-bool CSlewManager::MoveLeft()
-{ lRate += 1.0f;
-  return true;
-}
-//------------------------------------------------------------------------
-//  Move Right
-//------------------------------------------------------------------------
-bool CSlewManager::MoveRight()
-{ lRate -= 1.0f;
+bool CSlewManager::MoveOnX(float d)
+{ if (SLEW_FPLM == mode)	RabbitMove(d,0,0);
+	lRate += d;
   return true;
 }
 //------------------------------------------------------------------------
@@ -592,7 +632,6 @@ bool CSlewManager::StopMove()
   lRate = 0.0f;
   aRate = 0.0f;
   fRate = 0.0f;
-  hRate = 0.0f;
   return true;
 }
 //=========================================================================
@@ -783,9 +822,10 @@ void CSituation::StoreVEH(CVehicleObject *veh)
 void CSituation::SetAircraftFrom(char *nfo)
 { if (uVeh)             return;
   //---Set aircraft from nfo ---------------------
-  uVeh  = GetAnAircraft();
-  uVeh->StoreNFO(nfo);
-  uVeh->ReadFinished();
+  CVehicleObject *veh  = GetAnAircraft();
+  veh->StoreNFO(nfo);
+  veh->ReadFinished();
+	uVeh			= veh;
   AdjustCameras();
   return;
 }
@@ -813,7 +853,6 @@ CAirplane* CSituation::GetAnAircraft (void)
       // for simplified aerodynamics and 3d rendering
       plan = (CUFOObject *) new CUFOObject (); // 
     } 
-#ifdef HAVE_OPAL
     else if (!strcmp (buffer_, "aero-opal")) {
       // tmp : use COPALObject instead of CAirplane
       //MEMORY_LEAK_MARKER ("OPALObject start")
@@ -821,7 +860,6 @@ CAirplane* CSituation::GetAnAircraft (void)
       plan = new COPALObject (); // 
       //MEMORY_LEAK_MARKER ("OPALObject end")
     } 
-#endif
     else if (!strcmp (buffer_, "normal")) {
       // Instantiate new CAirplane
       plan = new CAirplane (); // 
@@ -946,7 +984,9 @@ void CSituation::SetPosition(SPosition &pos)
 //      Change user vehicle
 //----------------------------------------------------------------------------
 void CSituation::ClearUserVehicle()
-{ //---Reset orientation ----------------------------------
+{ CAirplane *pln = globals->pln;
+	if (0 == pln)		return;
+	//---Reset orientation ----------------------------------
   CVector nul(0,0,0);
   nul.z  = globals->iang.z;         
   globals->iang   = nul;
@@ -955,8 +995,8 @@ void CSituation::ClearUserVehicle()
   globals->dang.z = RadToDeg(nul.z);
   globals->jsm->ClearGroupPMT();
   //--- Stop engines --------------------------------------
-  if (uVeh) uVeh->eng->CutAllEngines();
-  if (uVeh) delete uVeh;
+  pln->eng->CutAllEngines();
+  delete pln;
   uVeh = 0;
   //----Change to default camera -------------------------
   globals->cam = globals->csp;
@@ -964,25 +1004,18 @@ void CSituation::ClearUserVehicle()
   GlobalsClean ();
   return;
 }
-//----------------------------------------------------------------------------
-//      Reset user vehicle
-//----------------------------------------------------------------------------
-void CSituation::ResetUserVehicle()
-{ if (0 == uVeh)				return;
-  uVeh->ResetCrash(1);	return;
-  return;
-}
 //==============================================================================
 // JS:  Move Draw vehicle code here in CSituation where it belongs 
 //  Draw all animated vehicles in the situation
 //===============================================================================
 void CSituation::DrawExternal()
-{ //-------------------------------------------------------------
+{ CAirplane *pln = globals->pln;
+	//-------------------------------------------------------------
   //  Aircraft 
   //  Draw outside depending on camera type
   //  Camera at origin
   //-------------------------------------------------------------
-  if (uVeh) uVeh->DrawExternal();
+  if (pln) pln->DrawExternal();
   //-------------------------------------------------------------
   //  Simulated Objects 
   //  both from saved simulation 'sVeh'
@@ -1005,8 +1038,8 @@ void CSituation::DrawExternal()
 //  Draw user position and vehicle smoke
 //-------------------------------------------------------------------------------
 void CSituation::DrawVehicleFeatures()
-{ if (0 == uVeh)        return;
-  uVeh->DrawExternalFeatures();
+{ CAirplane *pln = globals->pln;
+	if (pln)	 pln->DrawExternalFeatures();
   return;
 }
 //-------------------------------------------------------------------------------

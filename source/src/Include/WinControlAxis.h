@@ -42,7 +42,6 @@ class CFuiAxis: public CFuiWindow
   CFuiLabel          *labWIN;               // Label windows
   CFuiCheckbox       *chkWIN;               // Full checkbox
 	//------ Group box for axe --------------------------------
-  CFuiGroupBox			 *gp1AXE;								// Group box 1
 	CFuiLabel          *devAXE;               // Label  device
 	CFuiLabel          *labAXE;               // Label  axe
 	CFuiSlider         *valAXE;								// slider value 
@@ -58,7 +57,6 @@ class CFuiAxis: public CFuiWindow
 	CFuiPopupMenu     *devPOP;                // Vehicle popup
 	FL_MENU            devMEN;                // Vehicle menu
 	CListBox           butBOX;								// Button list
-	CFuiGroupBox		  *grpHAT;								// Hat group
 	CFuiCheckbox      *chkHAT;                // Hat checkbox
   //-------Detected axe -------------------------------------
   int                axeNo;                 // Selected axe

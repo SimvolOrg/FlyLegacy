@@ -1825,7 +1825,7 @@ int	APIGetObjectGroundSpeed(SFlyObjectRef *object, float *speed)
   if (object->objectPtr) {
     CVehicleObject *os = static_cast<CVehicleObject *> (object->objectPtr);
     if (os) {
-      *speed = os->GetGSpeed ();
+      *speed = 0;
       return 0;
     }
     return 1;

@@ -284,7 +284,7 @@ public:
 	int			TransposeTile(TC_GTAB *d,int s, SPosition *o);
 	//--- VBO management -----------------------------------------
 	int 		GetNbrVTX();
-	void		Draw(U_INT obj);
+	void		Draw();
 	void		DrawGround(U_INT xo);
 	//------------------------------------------------------------
   inline CmQUAD      *GetQUAD()		{return quad;}
@@ -466,6 +466,7 @@ public:
 	CVector DistanceFrom(CVertex &a);
   bool    IsAbove(float y);
   bool    ToRight(float x);
+	bool    AreWe(U_INT ax,U_INT az);
   //------Border vertices ----------- --------------------
   CVertex *VertexNB()  {return Edge[TC_NORTH];}
   CVertex *VertexSB()  {return Edge[TC_SOUTH];}
@@ -1398,6 +1399,7 @@ public:
   GLUquadricObj  *GetSphere()   {return sphere;}
   void        CheckW3D();
   //----------Teleport -----------------------------------------
+	void				MoveRabbit(SPosition &dst);
   void        CheckTeleport();
   void        Teleport(SPosition &dst);
   void        NoteTeleport();

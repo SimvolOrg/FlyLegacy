@@ -380,6 +380,7 @@ template <class T> static inline T RadFromNorth(T rad)
 // Wrap a value to the range [0, 360), typically used to normalize
 //   an angle in degrees
 //----------------------------------------------------------------------
+/*
 template <class T> static inline T Wrap360 (T deg)
 {
   while (deg <  (T)0)
@@ -388,16 +389,38 @@ template <class T> static inline T Wrap360 (T deg)
     deg -= (T)360;
   return deg;
 }
+*/
+//----------------------------------------------------------------------
+// Wrap a value to the range [0, 360), typically used to normalize
+//   an angle in degrees
+//----------------------------------------------------------------------
+template <class T> static inline T Wrap360 (T deg)
+{ int k = 10;
+  while (deg <  (T)0)		{deg += (T)360; k--; if (0 > k) gtfo("WRAP360");}
+	while (deg >= (T)360) {deg -= (T)360; k--; if (0 > k) gtfo("WRAP360");}
+  return deg;
+}
+//----------------------------------------------------------------------
+// Wrap a value to the range [-180, 180), typically used to normalize
+//   an angle in degrees
+//----------------------------------------------------------------------
+/*
+template <class T> static inline T Wrap180 (T deg)
+{	while (deg < (T)0) deg  += (T)360;
+  // Negate if greater than 180 deg
+  if (deg > (T)180)  deg  -= (T)360;
+  return deg;
+}
+*/
 //----------------------------------------------------------------------
 // Wrap a value to the range [-180, 180), typically used to normalize
 //   an angle in degrees
 //----------------------------------------------------------------------
 template <class T> static inline T Wrap180 (T deg)
-{
-  // First wrap 0..360
-  // deg = Wrap360 (deg);
-	while (deg < (T)0) deg  += (T)360;
+{	int k = 10;
+	while (deg < (T)0)		{deg  += (T)360; k--; if (0 > k) gtfo("Wrap180");}
   // Negate if greater than 180 deg
+	while (deg >= (T)360) {deg  -= (T)360; k--; if (0 > k) gtfo("Wrap180");}
   if (deg > (T)180)  deg  -= (T)360;
   return deg;
 }

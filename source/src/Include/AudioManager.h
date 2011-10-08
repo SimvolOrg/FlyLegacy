@@ -195,6 +195,7 @@ public:
   CAudioManager (void);
  ~CAudioManager();
   // CAudioManager methods
+  void Warn(char * msg,ALint error);	
   void Init (void);
   void AllocateSources(char n);
   void Cleanup (void);

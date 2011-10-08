@@ -240,6 +240,7 @@ VPilot::VPilot()
 void VPilot::Error(int No)
 {	globals->fui->DialogError(vpMSG[No],"VIRTUAL PILOT");
   State = VPL_IS_IDLE;
+	globals->aPROF = 0;
 	return;
 }
 //--------------------------------------------------------------
@@ -256,6 +257,7 @@ void VPilot::HandleBack()
 {	if (Radio)	Radio->ModeEXT(0);
 	Error(0);
 	fpln->Stop();
+	globals->aPROF = 0;
 	return;
 }
 //--------------------------------------------------------------
@@ -281,7 +283,11 @@ bool VPilot::GetRadio()
 //	Request to start the virtual pilot
 //--------------------------------------------------------------
 void VPilot::Start()
-{	pln			= (CAirplane*)mveh;
+{	//--- Check if aircraft busy --------------
+	if (globals->aPROF & PROF_ACBUSY)	return;
+	globals->aPROF |= PROF_ACBUSY;
+	//-----------------------------------------
+	pln			= (CAirplane*)mveh;
 	apil	  = pln->GetAutoPilot();
 	CAirportMgr *apm = globals->apm;
 	fpln		= pln->GetFlightPlan();
@@ -300,6 +306,7 @@ void VPilot::Start()
 	if (!ok)							return Error(3);
 	ok	= fpln->HasLandingRunway();
 	if (!ok)							return Error(4);
+	fpln->Protect();
 	//--- Position on runway ------------------
 	char *idr = fpln->GetDepartingRWY();
 	ok  = apm->SetOnRunway(0,idr);
@@ -378,7 +385,7 @@ void VPilot::EnterTakeOff()
 void VPilot::ModeTKO()
 {	if (apil->IsDisengaged())	return HandleBack();
 	if (apil->BellowAGL(200))	return;
-	fpln->ActivatePlan();
+	fpln->StartPlan();
 	//--- Climb to 1500 -----------
 	State = VPL_CLIMBING;
 	return;
@@ -415,56 +422,23 @@ void VPilot::EnterFinal()
 	return;
 }
 //--------------------------------------------------------------
-//	Compute direction
-//	If leg distance is under 12 miles, head direct to station
-//
-//--------------------------------------------------------------
-float VPilot::SetDirection()
-{	float dis = wayP->GetLegDistance();
-  float seg = wayP->GetDirection();
-	float dev = Radio->GetDeviation();
-	float rdv = fabs(dev);
-	if ((dis > 12) || (rdv < 5))	return seg;
-	//--- Compute direct-to direction to waypoint -----
-  return wayP->GoDirect(mveh);
-}
-//--------------------------------------------------------------
 //	Change to next Waypoint
 //--------------------------------------------------------------
 void VPilot::ChangeWaypoint()
 {	char *edt = globals->fui->PilotNote();
-	float rad = 0;
 	wayP	= fpln->GetActiveNode();
 	if (wayP->IsFirst())			return;  // wait next
 	if (fpln->IsOnFinal())		return EnterFinal();
 	//--- Advise user -------------------------------------
-	float dir = SetDirection();
+	float dir = fpln->DirectionToActive(Radio);
 	_snprintf(edt,128,"Heading %03d to %s",int(dir),wayP->GetName());
 	globals->fui->PilotToUser();
-	//--- Set Waypoint on external source -----------------
-	CmHead *obj = wayP->GetDBobject();
-	Radio->ModeEXT(obj);
-	//--- Set Reference direction --------------------------
-	Radio->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
-	double alt = double(wayP->GetAltitude());
-	apil->ChangeALT(alt);							// Set target altitude
-	apil->SetNavMode();								// Set NAV mode 
+	apil->GoToWaypoint(wayP);
+	//double alt = double(wayP->GetAltitude());
+	//apil->ChangeALT(alt);							// Set target altitude
+	//apil->SetNavMode();								// Set NAV mode 
 	State = VPL_TRACKING;
-	return;
-}
-//--------------------------------------------------------------
-//	Refresh direction to waypoint if needed
-//--------------------------------------------------------------
-void VPilot::Refresh()
-{	float dev = Radio->GetDeviation();
-	float rdv = fabs(dev);
-	bool  dto = ((rdv > 5) || (wayP->IsDirect()));
-	//--- check if Direct to is active ----------
-	if (!dto)	return; 
-  float dir = wayP->GoDirect(mveh);
-	Radio->ChangePosition(wayP->GetGeoP());
-	Radio->ChangeRefDirection(dir);
 	return;
 }
 //--------------------------------------------------------------
@@ -475,8 +449,8 @@ void VPilot::ModeTracking()
 	if ((tc == 0) && (gc == 1)) Warn(10);
 	gc			= tc;
 	if (apil->IsDisengaged())	return HandleBack();
-	if (wayP->IsActive())	    return Refresh();
-	ChangeWaypoint();
+	if (wayP->IsActive())	    return fpln->RefreshDirection(Radio);
+	else 	ChangeWaypoint();
 	return;
 }
 //--------------------------------------------------------------

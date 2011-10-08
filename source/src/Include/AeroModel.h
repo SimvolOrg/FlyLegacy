@@ -285,8 +285,8 @@ protected:
   std::map<std::string,CAeroModelWingSection*>  wingMap;    ///< Map of wing sections
 
   // aerodynamic state data
-  SVector force;
-  SVector moment;
+  CVector force;
+  CVector moment;
 
 public:
   // logging

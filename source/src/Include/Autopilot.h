@@ -502,7 +502,7 @@ public:
   void            DecVSP();
   void            IncALT();
   void            DecALT();
-	void						ChangeALT(double a);
+	void						GoToWaypoint(CWPoint *wpt);
 	void						HoldAOA(double v);
 	void						SetLandingMode();
   //----Lateral modes --------------------------------------------------

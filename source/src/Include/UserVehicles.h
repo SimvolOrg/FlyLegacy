@@ -718,7 +718,7 @@ public:
   CCameraCockpit *GetCockpitCamera();
 	void			RestoreCamera(CAMERA_CTX &ctx);
 	//----------------------------------------------------------------------------
-	CRabbitCamera *SetRabbitCamera(CAMERA_CTX &ctx);
+	CRabbitCamera *SetRabbitCamera(CAMERA_CTX &ctx,CFuiWindow *w);
   //----------------------------------------------------------------------------
   void      KbEvent(Tag id);                // Keyboard command
   bool      KeyCameraCockpitEvent(int id);

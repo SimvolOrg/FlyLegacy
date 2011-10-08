@@ -320,10 +320,6 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   GetIniVar("TRACE", "3DModel", &nb);
   tr  = (nb)?(1):(0);
   nb  = 0;
-  //----Check for no Models -----------------------
-  int NoMD = 0;
-  GetIniVar("Sim", "NoModel", &NoMD);        // Skip 3D objects
-  if (NoMD) globals->noOBJ++;
   //----Register in globals --------
   dbm = globals->dbc;
   globals->m3d = this;
@@ -363,6 +359,12 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   GetIniVar("W3D","ObjectLoadFactor",&lf);
   dFactor   = lf;
   //--------------------------------------------------------------
+	int lp    = 0;
+	GetIniVar("W3D","LookInPodtoo",&lp);
+	lpod			= lp;
+	//--------------------------------------------------------------
+	sql	= globals->objDB;
+	if (0 == sql)	lpod = 1;
   return;
 }
 //--------------------------------------------------------------------
@@ -436,9 +438,9 @@ void C3DMgr::LightToDraw(C3DLight *lit)
 //  Objects are loaded from the SQL database OBJ.db
 //--------------------------------------------------------------------
 void C3DMgr::LocateObjects(C_QGT *qgt)
-{ char sql	= globals->objDB;
-	//--- Search in SQL database----------------------
-  if (sql)	return globals->sqm->ReadWOBJ(qgt);
+{ //--- Search in SQL database----------------------
+	if (sql)	globals->sqm->ReadWOBJ(qgt);
+	if (0 == lpod)	return;
 	//--- Search in files ----------------------------
   C3Dfile    scf(this,qgt);
   char dir[128];
@@ -785,7 +787,7 @@ void C3Dfile::AutoGen(SStream *st)
       TRACE ("rad. %f", autobj->GetYRotation ()); 
       U_INT flag = 33077;
       autobj->SetFlag (flag);
-      sprintf (name, "test%d", i); 
+      sprintf_s (name,15, "test%d", i); 
       autobj->SetObjName (name);
       CKmm dOBJ (autobj, MODEL_DAY);
       //

@@ -428,10 +428,10 @@ bool CGearOpal::ResetCrash()
 //  Reset all forces
 //---------------------------------------------------------------------------------
 void CGearOpal::ResetForce()
-{ vb[0].Set(0,0,0);
-  vb[1].Set(0,0,0);
-  ab[0].Set(0,0,0);
-  ab[1].Set(0,0,0);
+{ vb[0].Raz();
+  vb[1].Raz();
+  ab[0].Raz();
+  ab[1].Raz();
 	glf.vec.set(0,0,0);
 }
 

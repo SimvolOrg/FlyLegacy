@@ -28,6 +28,7 @@
 #include "../Include/FuiParts.h"
 #include "../Include/FuiUser.h"
 #include "../Include/Joysticks.h"
+#include "../Include/PlanDeVol.h"
 using namespace std;
 //============================================================================
 #define VSI_SAMPLE (double(0.05))
@@ -650,7 +651,7 @@ AutoPilot::AutoPilot (void)
   aprm    = 0;
 	ugaz		= 0;
 	//--Lateral error is 2.5° whatever the distance -----------
-  aMIS    = 400;							// Misslanding altitude check
+  SetAMIS(400,1500);						// Misslanding altitude check
   hMIS    = 2;
 	cMIS    = 2 / aMIS;
   //--Vertical error is tangent(1) * 1000 units -------------
@@ -1929,13 +1930,13 @@ void AutoPilot::IncALT()
   return;
 }
 //-----------------------------------------------------------------------
-//  Change Altitude
+//  Configuration to go to waypoint
 //-----------------------------------------------------------------------
-void AutoPilot::ChangeALT(double a)
-{ if (aprm)									return;
-  if (vStat != AP_VRT_ALT)	return;
-  rALT  = RoundAltitude(a);
-  StateChanged(AP_STATE_ALT);       // Warn Panel
+void AutoPilot::GoToWaypoint(CWPoint *wpt)
+{ double alt = double(wpt->GetAltitude());
+  rALT  = RoundAltitude(alt);
+	EnterALT();
+	SetNavMode();								// Set NAV mode 
   return;
 }
 //-----------------------------------------------------------------------

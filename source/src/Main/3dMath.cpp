@@ -4,6 +4,7 @@
 
 #include "../Include/3dMath.h"
 #include "../Include/Utility.h"
+#include "../Include/GeoMath.h"
 #include <math.h>
 
 #ifdef  _DEBUG
@@ -240,8 +241,9 @@ float CVector::FastLength()
 { double dg = (x*x) + (y*y) + (z*z);
   return SquareRootFloat(dg);
 }
-
-//--------------------------------------------------------------------------
+//----------------------------------------------------------------
+//	Set from values
+//----------------------------------------------------------------
 void CVector::Set(double x, double y, double z) {
   this->x = x;
   this->y = y;
@@ -486,6 +488,35 @@ void CVector::Set(C3_VTAB &t)
 	z=  t.VT_Z;
 	return;
 }
+//---------------------------------------------------------------
+//  Compute translation from p1 to p2
+//---------------------------------------------------------------
+void	CVector::Translation(SPosition &p1, SPosition &p2)
+{	x = LongitudeDifference(p2.lon, p1.lon);
+	y = p2.lat - p1.lat;
+	z = p2.alt - p1.alt;
+}
+//---------------------------------------------------------------
+//  Compute translation from p1 to p2 in feet
+//---------------------------------------------------------------
+void	CVector::FeetTranslation(SPosition &p1, SPosition &p2)
+{	double rdf = GetReductionFactor(p2.lat);
+	double dx  = LongitudeDifference(p2.lon, p1.lon);
+	double dy  = p2.lat - p1.lat;
+	x = FN_FEET_FROM_ARCS(dx) * rdf;
+	y = FN_FEET_FROM_ARCS(dy);
+	z = p2.alt - p1.alt;
+}
+//---------------------------------------------------------------
+//  Compute translation from p1 to p2 in feet
+//---------------------------------------------------------------
+void	CVector::FeetTranslation(double rdf,SPosition &p1, SPosition &p2)
+{	double dx  = LongitudeDifference(p2.lon, p1.lon);
+	double dy  = p2.lat - p1.lat;
+	x = FN_FEET_FROM_ARCS(dx) * rdf;
+	y = FN_FEET_FROM_ARCS(dy);
+	z = p2.alt - p1.alt;
+}
 //==========================================================================
 //  Homogeneous vector
 //==========================================================================
@@ -554,7 +585,8 @@ void EditLat2DMS(float lat, char *edt)
   val   = (val % 360000);
   min   = (val / 6000);
   val   = (val % 6000);
-  sprintf(edt,"Lat: %s %3u %2u' %2.2f\"",pole,int(deg),int(min),(float(val) / 100));
+  sprintf_s(edt,31,"Lat: %s %3u %2u' %2.2f\"",pole,int(deg),int(min),(float(val) / 100));
+	edt[31] = 0;
   return;
 }
 //==========================================================================
@@ -570,7 +602,8 @@ void EditLon2DMS(float lon, char *edt)
   val   = (val % 360000);
   min   = (val / 6000);
   val   = (val % 6000);
-  sprintf(edt,"Lon: %s %3u %2u' %3.2f\"",meri,int(deg),int(min),(float(val) / 100));
+  sprintf_s(edt,31,"Lon: %s %3u %2u' %3.2f\"",meri,int(deg),int(min),(float(val) / 100));
+	edt[31] = 0;
   return;
 }
 //================================================================================

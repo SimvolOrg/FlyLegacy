@@ -166,8 +166,8 @@ void MouseForSImulation(int x,int y,EMouseButton b,int u,int but)
     //---Send mouse event to panel for potential processing--------------
     if (FUuse)            break;
     if (!sit )            break;
-    if (globals->noINT)   break;
-    VHuse = sit->uVeh->MouseClick(b,u,x,y);
+		if (!globals->pln)    break;
+    VHuse = globals->pln->MouseClick(b,u,x,y);
     break;
 
   case GLUT_UP:
@@ -177,8 +177,8 @@ void MouseForSImulation(int x,int y,EMouseButton b,int u,int but)
     if (FUuse)  {globals->fui->MouseStopClick (x, y, b); break;}
     //--Used by vehicle -------------------------------------------
     if (!VHuse)           break;
-    if (!sit->uVeh)       break;
-    sit->uVeh->MouseClick(b,u,x,y);
+    if (!globals->pln)    break;
+    globals->pln->MouseClick(b,u,x,y);
     break;
    }
   //----------------------------------------------------------------

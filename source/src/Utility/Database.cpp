@@ -1740,7 +1740,7 @@ CNavaid::CNavaid(OTYPE qo,QTYPE qa)
 void CNavaid::SetAttributes()
 { SetNavIndex();                                // Set icon index
   if (IsNDB())  qAct = NDB;                     // Set Type
-  sprintf(efrq,"%3.2f",freq);                   // Edit frequency
+  sprintf_s(efrq,15,"%3.2f",freq);                   // Edit frequency
   //-------Compute distance reduction factor -----------------   
   double lr = FN_RAD_FROM_ARCS(pos.lat);				//DegToRad (pos.lat / 3600.0);     
   nmFactor  = cos(lr) / 60;                     // 1 nm at latitude lr
@@ -1841,7 +1841,7 @@ void CNavaid::Trace(char *op,U_INT FrNo,U_INT key)
 	U_INT y = (key & 0x0000FFFF);
   const char *idn = (type & NAVAID_TYPE_NDB)?("NDB"):("VOR");
   char edit[8];
-  sprintf(edit,"%s",idn);
+  sprintf_s(edit,7,"%s",idn);
 	TRACE("        %s %s %15s iD %4s type %2x Freq %.2f Range %.2f",
 		  op,edit,name,nkey,type,freq,rang);
 
@@ -2069,9 +2069,10 @@ void CAirport::SaveProfile()
   char path[MAX_PATH];
   SStream   s;
   char     *fn = GetAptName();
+	int			  d  = MAX_PATH-1;
   U_CHAR   mod = Prop & TC_PCHANGES;
   if (0 == mod) return;
-  sprintf(path,"Runways/%s.RLP",fn);
+  sprintf_s(path,d,"Runways/%s.RLP",fn);
   //---Open a stream file -----------------------------------
   strcpy (s.filename, path);
   strcpy (s.mode, "w");
@@ -3631,7 +3632,7 @@ void CDbCacheMgr::Populate(CTileCache *tc,CDatabase *db,QTYPE qx)
   char key[16];
 	int kx = (tc->GetTileKey() >> 16);
 	int	kz = (tc->GetTileKey() & 0x0000FFFF);
-	sprintf (key, "%03d%03d", kx, kz);
+	sprintf_s (key,15, "%03d%03d", kx, kz);
 	unsigned long offset = db->Search ('nltl', key);
   int nb = 0;
 	if (offset == 0)    return;
@@ -3662,7 +3663,7 @@ void CDbCacheMgr::IlsFromPOD(CTileCache *tc,CDatabase *db)
 {	char key[16];
 	int kx = (tc->GetTileKey() >> 16);
 	int	kz = (tc->GetTileKey() & 0x0000FFFF);
-	sprintf (key, "%03d%03d", kx, kz);
+	sprintf_s (key,15, "%03d%03d", kx, kz);
 	U_LONG offset = db->Search ('nltl', key);
   int no = 0;
 	if (offset == 0)    return;

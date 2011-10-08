@@ -778,7 +778,7 @@ void CCamera::Projection(VIEW_PORT &vp,TEXT_INFO &inf)
 //-------------------------------------------------------------------------
 void CCamera::RockArround (SPosition tpos, SVector tori,float dT)
 { // Update offset to target position in world coordinates.  Note that spot camera
-  //   follows target vehicle orientation in heading only, not pitch or bank
+  // follows target vehicle orientation in heading only, not pitch or bank
   double atheta = WrapTwoPi(double(tori.z) + theta);
   double cosphi = cos(phi);
   offset.x =  range * sin (atheta) * cosphi;
@@ -1264,14 +1264,14 @@ void CCameraCockpit::HeadPitchDown (void)
 CRabbitCamera::CRabbitCamera()
 : CCamera()
 { Prof.Set(CAM_IS_SPOT);
-  theta = DegToRad (30.0f);
+  theta = DegToRad (0.0f);
   phi   = DegToRad (30.0f);
   //--- Link to cameras -------------------------
   cIden = CAMERA_RABBIT;
   cNext = 0;
   cPrev = 0;
 	rmax	= 12000;
-	range = 10000;
+	range = 5000;
 }
 //--------------------------------------------------------------------------
 //  Release camera and restore contexte
@@ -1298,6 +1298,44 @@ void CRabbitCamera::StartPicking()
 	glGetIntegerv(GL_VIEWPORT,vp);
 	int   hy = vp[3] - py + vp[1];
 	gluPickMatrix(double(px),double(hy),10,10,vp);
+	return;
+}
+//-------------------------------------------------------------------------
+//	Set Rabbit orientation
+//-------------------------------------------------------------------------
+void	CRabbitCamera::TurnRabbit(SVector v)
+{ SVector d;
+  d.x = RadToDeg(v.x);
+  d.y = RadToDeg(v.y);
+  d.z = RadToDeg(v.z);
+  //----Save position at global level ----------------
+  globals->iang = v;
+  globals->dang = d;
+	return;
+}
+//-------------------------------------------------------------------------
+//  Rabbit camera intercept slew move to new position
+//-------------------------------------------------------------------------
+void CRabbitCamera::RabbitMoveTo(SPosition *pos)
+{	return;		}
+//-------------------------------------------------------------------------
+//  Rabbit camera does not turn arround veh but rather turns the veh
+//	so the slew always face the camera
+//-------------------------------------------------------------------------
+void CRabbitCamera::RabbitLeft()
+{	SVector ori = globals->iang;
+	ori.z       = WrapTwoPi (ori.z - DegToRad (double(0.5)));	
+	TurnRabbit(ori);
+	return;
+}
+//-------------------------------------------------------------------------
+//  Rabbit camera does not turn arround veh but rather turns the veh
+//	so the slew always face the camera
+//-------------------------------------------------------------------------
+void CRabbitCamera::RabbitRight()
+{	SVector ori = globals->iang;
+	ori.z       = WrapTwoPi (ori.z + DegToRad (double(0.5)));	
+	TurnRabbit(ori);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -2833,27 +2871,27 @@ CCamera *CCameraManager::SelectCamera (Tag id)
 //  Save current camera context
 //  Allocate a new spot camera during editing
 //---------------------------------------------------------------
-CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx)
-{ CVector ori(0,0,0);
-	SPosition pos;
-	globals->tcm->GetPlaneSpot(pos);
-	aCam->Save(ctx);			// Save actual context
+CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx,CFuiWindow *win)
+{ aCam->Save(ctx);			// Save actual context
 	//--- Relax drawing from current camera -
 	globals->noEXT -= aCam->GetINTMOD();
 	globals->noINT -= aCam->GetEXTMOD();
 	//---Change to rabit camera -------------
-  aCam					= new CRabbitCamera();
-	globals->cam	= aCam;
-	CVehicleObject *veh = globals->pln;
-  if (veh) veh->SetOrientation(ori);
-	if (veh) veh->SetPosition(pos);
+	CRabbitCamera *rcam = new CRabbitCamera();
+  aCam					= rcam;
+	globals->cam	= rcam;
+	rcam->Store(&ctx);
 	//--- Set drawing constraints -----------
 	globals->noEXT += aCam->GetINTMOD();
 	globals->noINT += aCam->GetEXTMOD();
 	//--- Lock in slew mode -----------------
-	globals->slw->StartSlew();							// Slew mode
+	globals->slw->StartMode(&ctx);							// Slew mode
+	//--- Set profile to AIRCRAF BUSY -------
+	ctx.prof |= PROF_ACBUSY;
+	SpecialProfile('busy',ctx.prof);
+	//--- Create camera window --------------
 	globals->fui->CreateOneWindow('ccam',0);
-  return (CRabbitCamera*)aCam;
+  return rcam;
 }
 //---------------------------------------------------------------
 //  Restore camera from context
@@ -2865,7 +2903,10 @@ void CCameraManager::RestoreCamera(CAMERA_CTX &ctx)
 	//--- Set new camera and relax constraints --
   SelectCamera(ctx.iden);
   aCam->Restore(ctx);
-	//--- Now Rabbit camera may be deleted --------
+	//--- Restore profile -----------------------
+	SpecialProfile(0,ctx.prof);					// Clear profile
+	//--- Now stop slew mode --------------------
+	globals->slw->StopSlew();
   return;
 }
 //---------------------------------------------------------------

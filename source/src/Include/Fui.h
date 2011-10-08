@@ -580,6 +580,7 @@ public:
   bool        MouseMove (int x, int y);
   bool        MouseClick (int x, int y, EMouseButton button);
   bool        MouseStopClick (int x, int y, EMouseButton button);
+	void				FocusLost();
  //---------------------------------------------------------------------
   inline void NotifyOnStop()      {stop = 1;}
  //--------------------------------------------------------------------
@@ -747,7 +748,6 @@ public:
           bool        MoveImage(int mx,int my,S_IMAGE &info);
           bool        ResetImage(S_IMAGE &info);
           void        RegisterPopup(CFuiPage *pge);
-					void				SpecialProfile(Tag wnd,U_INT p);
   CFuiGroupBox       *BuildGroupEdit(int x,int y);
 	int									SwapGroupButton(Tag btn, char *zbt);
   //------------System button handler -----------------------------
@@ -1147,7 +1147,8 @@ public:
   void        AddItem (Tag itemID, const char* label);
   void        AddSeparator (void);
   void        ClearItems (void);
-  void        CheckSelectedPart(Tag itm);
+  void        CheckSelectedPart(Tag idn);
+	void				ChangeState(Tag idn,char st);
   SMenuPart  *GetMenuPart(Tag itm);
   //-------------Mouse management -------------------------------
   bool  MouseMove(int x,int y);
@@ -1214,6 +1215,7 @@ public:
   bool      SelectMenu(int x,int y);
   void      NotifyMenuEvent(Tag idm, Tag itm); 
   void      CheckSelectedPart(Tag idm,Tag itm);
+	void			ChangePartState(Tag idm,Tag itm,char st);
   //------------------------------------------------------------------------
   // CFuiMenuBar methods
   void          SetState(U_CHAR st) {state = st;}
@@ -1582,7 +1584,7 @@ public:
   int   GetLength (void);
   void  SetText (char *text);
   void  SetEditMode(U_CHAR md);
-  void  SetSelection(int firstChar, int lastChar);
+  void  SetSelection(int  firstChar, int lastChar);
   void  GetSelection(int *firstChar, int *lastChar);
   void  SetMaxChars(int mc);
   //----------------------------------------------------------------

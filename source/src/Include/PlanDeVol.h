@@ -141,6 +141,9 @@ public:
 };
 //===========================================================================
 //  CWPoint defines a node in the current flight plan
+//	NOTE:		The position is the waypoint position with flying altitude
+//					it may differ from the ground position of the waypoint
+//					given by the Database object
 //===========================================================================
 class CWPoint : public CSlot, public CStreamObject {
 private:
@@ -155,7 +158,6 @@ private:
 	//---------------------------------------------------------------------
 	float						ilsF;								// ILS Frequency if any		
 	//--- True waypoint representative ------------------------------------
-	SPosition        spot;							// waypoint reference
 	double					dfeet;							// Distance in feet
 	double					magdv;							// Magnetic deviation
   //---------------------------------------------------------------------
@@ -163,9 +165,9 @@ private:
 	//--- AREA TO EDIT VALUES   --------------------------------------------
   char            Iden[6];            // Identity
   char            Mark[2];            // Crossed marker
-  char            Dist[10];           // Distance
+  char            Dist[12];           // Distance
 	char						Dirt[6];						// Direction to
-  char            Alti[16];           // Altitude
+  char            Alti[12];           // Altitude
   char            Elap[16];           // Elapse time
   char            Etar[16];           // Arrival time
 	//---------------------------------------------------------------------
@@ -177,7 +179,7 @@ private:
   float           legDis;		// Distance from previous in nm
   //---------------------------------------------------------------------
   U_CHAR                    State;        // State
-	U_CHAR										Modif;				// Modifier indicator
+	U_CHAR										last;				  // Last waypoint
 	U_CHAR										mode;					// Leg mode
 	U_CHAR										activ;				// Active indicator
 	//---------------------------------------------------------------------
@@ -202,25 +204,33 @@ public:
 	char*   GetSQLtab();
 	void		Populate();
 	void		PopulateUser();
-	//-------------------------------------------------------------
+	//----------------------------------------------------------
 	ILS_DATA	*GetLandingData();
 	bool		EnterLanding(CRadio *rad);
-	//-------------------------------------------------------------
+	//---HELPERS -----------------------------------------------
 	void		SetSeq(U_SHORT s);
 	void		NodeOne(CWPoint *n);
 	void		NodeTwo(CWPoint *p);
 	void		NodeEnd();
 	void		NodeNAV(CWPoint *p, char m);
 	void		UpdateMark(char m);
-	char*		ModifyAltitude(int inc);
-	char*   ChangeAltitude(int a);
-	int			BestAltitudeFrom(int a0);
-	void    SetAltitude(int a);
 	void    SetPosition(SPosition p);
   void		SetReferenceDIR(double d);
 	float		GoDirect(CVehicleObject *v);
-	//-------------------------------------------------------------
+	//--- Position Management ----------------------------------
+	bool		CannotChange();
+	bool		HorizontalMove(SPosition *pos);
+	void		ModifyLocation(SVector &v);
+	void		Teleport();
+	//--- Altitude management ----------------------------------
+	char*		ModifyAltitude(int inc);
+	int			BestAltitudeFrom(int a0);
+	void    SetOverAltitude(int a);
+	int			NormeAltitude(int a);
+	void		UpdAltitude(int a);
+	//----------------------------------------------------------
 	bool		IsLast();
+	bool		SameAPT(char *idn);
 	char		CheckAway();
 	char		Outside();
 	char		Inside();
@@ -249,7 +259,6 @@ public:
 	//--- Edition -------------------------------------------------
 	inline void				SetFlightPlan(CFPlan *p)	{fplan = p;}
 	inline void				SetActive(U_CHAR a)		{activ = a;}
-	inline void				SetModif(U_CHAR m)		{Modif = m;}
 	inline void				SetIlsFrequency(float f)				{ilsF	= f;}
 	inline void				SetMark(char *mk)			{strncpy(Mark,mk, 2);}
 	inline void       SetIden(char *id)			{strncpy(Iden,id, 5); Iden[5]  = 0;}
@@ -267,6 +276,7 @@ public:
 	inline float			GetSumDistance()			{return (*Mark == 'X')?(0):(sDis);}
 	inline float			GetPlnDistance()			{return mDis;}
 	inline int				GetAltitude()         {return altitude;}
+	inline int        GetElevation()				{return position.alt;}
 	inline CmHead*    GetDBobject()         {return DBwpt.Pointer();}
 	inline  Tag       GetType()             {return type;}
   inline char*      GetDbKey()            {return dbKey;}
@@ -282,21 +292,25 @@ public:
 	inline double			GetDirection()				{return rDir;}
 	inline CWPoint   *GetOrgWPT()						{return (CWPoint*)DBwpt->GetUPTR();}
 	//--------------------------------------------------------------
+	inline void				SetLast()							{last = 1;}
 	inline void				SetLandingMode()			{mode = WPT_MOD_LND;}
+	inline void				SetDirectMode()				{mode = WPT_MOD_DIR;}
+	inline void				SetLegMode()					{mode = WPT_MOD_LEG;}
 	//--------------------------------------------------------------
 	inline bool				HasTkoRWY() {return (strcmp("NONE",tkoRWY) != 0);}
 	inline bool				HasLndRWY()	{return (strcmp("NONE",lndRWY) != 0);}
   inline bool       IsVisited()						{return (*Mark == 'X');}
 	inline bool				IsActive()						{return (activ != 0);}
+	inline bool				Inactive()						{return (activ == 0);}
 	inline bool       NotAirport()          {return (type != 'airp');}
 	inline bool				IsFirst()							{return (nSeq == 1);}
 	inline bool				IsaWaypoint()					{return (type != 'snav');}
-	inline char				IsDirect() 						{return (Modif | mode);}
 	inline bool				IsInside()						{return (WPT_STA_INS == State);}
 	//----------------------------------------------------------------------
 	inline bool				NotFromFPL()	{return GetDBobject()->NoUPTR();}
 	inline bool				IsFromFPL()		{return GetDBobject()->HasUPTR();}
 	inline bool       IsLanding()		{return (mode == WPT_MOD_LND);}
+	inline char				IsDirect() 		{return (mode == WPT_MOD_DIR);}
 	//-----------------------------------------------------------------------
 	};
 //===========================================================================
@@ -307,17 +321,20 @@ class CFPlan : public CSubsystem {
 private:
 	CVehicleObject *mveh;												// Mother vehicle
 	CFuiFlightLog  *win;												// Handling window
+	//--- Rabbit -----------------------------------------------------
+	GLUquadricObj *sphere;
 	//----------Serial used by GPS to detect flight plan change ---
   U_INT           serial;
   //----------Logical state --------------------------------------
   U_CHAR          State;                      // State
+	U_CHAR          edMOD;											// protected or editable
   //--------------------------------------------------------------
 	Tag							format;											// Actual format
 	//--------------------------------------------------------------
 	char						genWNO;											// Waypoint number
   char            option;                     // 1=>Just descriptor
   char            modify;                     // Modified indicator
-	bool						endir;											// Direct waypoint terminated
+	char						rfu1;											  // rfu
 	//---------------------------------------------------------------------
 	char 					  dapt[6];										// Departing airport
 	//---------------------------------------------------------------
@@ -330,6 +347,7 @@ private:
 	CWPoint        *aWPT;												// Active waypoint
 	CWPoint        *uWPT;												// Updated waypoint
 	CWPoint        *nWPT;												// Nearest waypoint
+	CWPoint        *sWPT;												// Selected waypoint
 	//-------------------------------------------------------------
 	char						nul[6];											// Null ident
 	//--- Waypoint for direct mode --------------------------------
@@ -366,11 +384,16 @@ public:
 	void	UpdateDirectNode(U_INT fr);
 	void	UpdateActiveNode(U_INT fr);
 	void	ActivateNode(CWPoint *wpt);
+	float DirectionToActive(CRadio *rad);
+	void	RefreshDirection(CRadio *rad);
 	void	RestoreNode();
+	//---------------------------------------------------------------
+	char	ChangeMode(char m);
+	bool	SwapMode();
 	//---------------------------------------------------------------
 	double TurningPoint();
 	//--- Robot / GPS interface -------------------------------------
-	int	  ActivatePlan();				// Form GPS or VPIL
+	int	  StartPlan();				// Form GPS or VPIL
 	void	Stop();
 	//--- Helpers ---------------------------------------------------
 	int		CheckError();
@@ -380,7 +403,9 @@ public:
 	char *GetDepartingRWY();
 	bool  HasTakeOffRunway();
 	bool	HasLandingRunway();
+	bool	AtDepAirport();
 	bool	IsOnFinal();
+	bool	NotFor3D();
 	void	SaveNearest(CWPoint *w);
 	char *PreviousIdent(CWPoint *wpt);
 	//--- Direct mode management ------------------------------------
@@ -395,6 +420,9 @@ public:
 	CWPoint *CreateWPTwaypoint(CWPT		*pnt);
 	CWPoint *NextStep(CWPoint *n);
 	CWPoint *BaseWPT(CWPoint *w);
+	//--- Tracking flight plan --------------------------------------
+	CWPoint *GetSelectedNode()			{return sWPT;}
+	void	SetSelection(CWPoint *p)	{sWPT = p;}
 	//--- Change parameters -----------------------------------------
 	void  SetFileName(char *n);
 	void	SetDescription(char *d);
@@ -407,14 +435,21 @@ public:
 	void	MovedWaypoint(CWPoint *wpt);
 	void	Probe(CFuiCanva *cnv);
 	//---------------------------------------------------------------
+	void  GoToNextNode();
+	void	GoToPrevNode();
 	CWPoint   *NextNode(CWPoint *w);
 	CWPoint   *PrevNode(CWPoint *w);
+	void			 MoveSelectedWPT(SVector &v);
 	bool	Exist(int No);
 	//---------------------------------------------------------------
 	void	DrawOnMap(CFuiVectorMap *win);
+	void	DrawNode();
+	void	DrawOn3DW();
+	//---Interface to window FlightLog ------------------------------
+	void	Register(CFuiFlightLog *w);
 	//---------------------------------------------------------------
-	inline void	Register(CFuiFlightLog *w)	{win = w;}
-	//--------------------------------------------------------------
+	inline char				GetEdMode()				{return  edMOD;}							
+	inline CFuiFlightLog *GetWinPlan()	{return win;}
 	inline int        GetActSequence()	{return (aWPT)?(aWPT->GetSequence()):(0);}
 	inline CListBox	 *GetFBOX()         {	return &wPoints;}
 	inline void				Modify(char m)		{	modify |= m;}
@@ -430,6 +465,9 @@ public:
 	inline int        maxCEIL()					{return mALT;}
 	inline int				actCEIL()					{return cALT;}
 	inline float			GetInDIS()				{return insDIS;}
+	//---------------------------------------------------------------
+	inline void				Protect()					{edMOD = 0;}
+	inline bool				IsProtected()			{return (edMOD == 0);}
 	//---------------------------------------------------------------
 	inline bool       IsUsed()					{return (State != FPL_STA_NUL);}
 	inline bool				IsEmpty()					{return (0 == NbWPT);}

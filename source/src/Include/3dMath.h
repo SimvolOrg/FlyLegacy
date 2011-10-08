@@ -89,6 +89,9 @@ public:
   double  DistanceTo(SVector &v);
   float   GroundDistance(SVector &v);
 	double  GroundDistance();
+	void		Translation(SPosition &o, SPosition &d);
+	void		FeetTranslation(SPosition &p1, SPosition &p2);
+	void		FeetTranslation(double rdf,SPosition &p1, SPosition &p2);
   CVector& operator= (const CVector &aCopy) {Copy(aCopy); return *this;}
 	//----VERTEX OPERATIONS ----------------------------------------------
 	void		Set(C3_VTAB &t);
@@ -100,8 +103,9 @@ private:
   friend CVector operator- (const CVector &val);
   friend CVector operator- (const CVector &val1, const CVector &val2);
   friend CVector operator+ (const CVector &val1, const CVector &val2);
-  //friend CVector operator- (const SVector &val1, const SVector &val2);
-  //friend CVector operator+ (const SVector &val1, const SVector &val2);
+	//--------------------------------------------------------------------
+public:
+	inline void Raz() {x = y = z = 0;}
 };
 //========================================================================================
 //	Class HVector:   Homogeneous vector for projection

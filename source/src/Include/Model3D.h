@@ -661,6 +661,8 @@ class C3DMgr  {
   CDbCacheMgr *dbm;
   std::map<std::string,C3Dmodel *> mapMOD;
   U_CHAR     tr;                      // Trace indicator
+	U_CHAR     lpod;										// Look also in pod
+	U_CHAR		  sql;										// SQL database
   TCacheMGR *tcm;                     // Terrain cache
   C_QGT     *qgt;                     // Current QGT
   U_INT      NbMOD;                   // Number of models

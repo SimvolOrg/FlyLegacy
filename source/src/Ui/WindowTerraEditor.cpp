@@ -291,9 +291,9 @@ void CElvTracker::DrawMark(TVertex *vdf)
 	return;
 }
 //=================================================================================
-//  Window profile
+//  Terra editor profile
 //=================================================================================
-#define TED_PROF (PROF_NO_INT+PROF_NO_EXT+PROF_NO_MET+PROF_DR_DET+PROF_RABIT+PROF_TRACKE+PROF_NO_TEL)
+#define TED_PROF (PROF_EDITOR+PROF_TRACKE+PROF_NO_TEL)
 //========================================================================================
 //  Window for terrain editor
 //========================================================================================
@@ -364,8 +364,9 @@ CFuiTED::CFuiTED(Tag idn, const char *filename)
 	//-----------------------------------------------
 	SetTitle("TERRAIN EDITOR");
   //--- Set application profile -------------------
-	cam	= globals->ccm->SetRabbitCamera(ctx);
-	SpecialProfile(FUI_WINDOW_TEDITOR,TED_PROF);
+	ctx.prof = TED_PROF;
+	ctx.mode	= SLEW_RCAM;
+	cam	= globals->ccm->SetRabbitCamera(ctx,this);
 }
 //----------------------------------------------------------------------
 //	Delete all resources
@@ -376,7 +377,6 @@ CFuiTED::~CFuiTED()
 	trak->Register(0);
 	globals->noOBJ -= obtn;
   globals->noAPT -= abtn;
-	SpecialProfile(0,TED_PROF);					// Clear profile
   globals->ccm->RestoreCamera(ctx);
 }
 //----------------------------------------------------------------------

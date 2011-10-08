@@ -3079,7 +3079,7 @@ int CK89gps::RefreshALTpage02()
   return 1;
 }
 //-----------------------------------------------------------------------------
-//  ChangeALT cursor on Page 02
+//  Change ALT cursor on Page 02
 //  Skip ident if not a FPL waypoint
 //-----------------------------------------------------------------------------
 int CK89gps::ChangeALTcursor()
@@ -4406,7 +4406,7 @@ void GPSRadio::PowerON()
 void GPSRadio::EnterTRK()
 {	if (GPSR_NONE == gpsTK)				return;		// No tracking
   if (APL->IsDisengaged())			return;   // But disengaged
-	FPL->ActivatePlan();
+	FPL->StartPlan();
 	APL->SetGasControl(1);
 	//--- Set Tracking mode -------------------------
 	gpsTK	= GPSR_TRAK;
@@ -4415,53 +4415,21 @@ void GPSRadio::EnterTRK()
 	return;
 }
 //----------------------------------------------------------------------------------
-//  Get next Waypoint
+//  KLN89: Get next Waypoint
 //	Set RADIO BUS to EXTERNAL SOURCE
 //----------------------------------------------------------------------------------
 void GPSRadio::NextNODE()
-{ float rad = 0;
-	wTRK	= FPL->GetActiveNode();
+{ wTRK	= FPL->GetActiveNode();
 	if (0 == wTRK)						return;
 	if (wTRK->IsFirst())			return;  // wait next
 	if (FPL->IsOnFinal())			return EnterAPR();
 	//--- Set Waypoint On External Source ------------------
-	float   dir = SelectDirection();
-	CmHead *obj = wTRK->GetDBobject();
-  RAD->ModeEXT(obj);								// Set EXT mode
-	RAD->ChangeRefDirection(dir);
+	float   dir = FPL->DirectionToActive(RAD);
 	//--- Configure autopilot ------------------------------
-	double alt = double(wTRK->GetAltitude());
-	APL->ChangeALT(alt);							// Set target altitude
-	APL->SetNavMode();								// Set NAV mode 
-	return;
-}
-//--------------------------------------------------------------
-//	Compute direction
-//	If leg distance is under 12 miles, head direct to station
-//  or if deviation is too much
-//--------------------------------------------------------------
-float GPSRadio::SelectDirection()
-{	float dis = wTRK->GetLegDistance();
-  float seg = wTRK->GetDirection();
-	float dev = RAD->GetDeviation();
-	float rdv = fabs(dev);
-	if ((dis > 12) || (rdv < 5))	return seg;
-	//--- Compute direct-to direction to waypoint -----
-  return wTRK->GoDirect(mveh);
-}
-//--------------------------------------------------------------
-//	Refresh direction to waypoint if needed
-//	Correct any drift due to long legs
-//--------------------------------------------------------------
-void GPSRadio::Refresh()
-{	float dev = RAD->GetDeviation();
-	float rdv = fabs(dev);
-	bool  dto = ((rdv > 5) || (wTRK->IsDirect()));
-	//--- check if Direct to is active ----------
-	if (!dto)	return; 
-  float dir = wTRK->GoDirect(mveh);
-	RAD->ChangePosition(wTRK->GetGeoP());
-	RAD->ChangeRefDirection(dir);
+	APL->GoToWaypoint(wTRK);
+	//double alt = double(wTRK->GetAltitude());
+	//APL->ChangeALT(alt);							// Set target altitude
+	//APL->SetNavMode();								// Set NAV mode 
 	return;
 }
 //--------------------------------------------------------------
@@ -4503,14 +4471,13 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 			return;
 		//--- Get aircraft parameters to FPL --
 		case GPSR_STBY:
-			FPL->UpdatePlan();
 			return;
 		//--- Tracking active waypoint -------------
 		case GPSR_TRAK:
 			if (APL->IsDisengaged())	return EnterSBY();
 			if (0 == wTRK)						return;
-			if (wTRK->IsActive())	    return Refresh();
-			NextNODE();
+			if (wTRK->IsActive())	    return FPL->RefreshDirection(RAD);
+			else NextNODE();
 			return;
 		//--- Just watch the auto pilot ------------
 		case GPSR_LAND:

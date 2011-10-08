@@ -2820,6 +2820,14 @@ void CAptObject::EndDraw(CCamera *cam)
 //==========================================================================================
 //	DRAW GROUND
 //	Camera is set at airport position
+//	NOTE:  Due to a precision problem, we must draw terrain elevation as a near airport
+//				object, otherwise, ground and lights are flickering and this is a visible
+//				artefact.  To do so, all tiles that belong to an airports are isolated and
+//				relative coordinates (to airport center) are computed, and tiles are drawed
+//				first. However, as second artifact is also present, at the junction of 
+//				airport Tiles and normal terrain. So we must draw draw over hte texture agin
+//				this time, using the normal terrain coordinates.
+//				May be some better way is to be found to get better performances.
 //==========================================================================================
 void CAptObject::DrawGround()
 { glMaterialfv (GL_FRONT, GL_EMISSION, tcm->GetDeftEmission()); 
@@ -2835,13 +2843,14 @@ void CAptObject::DrawGround()
 	std::vector<CGroundTile*>::iterator it;
 	for (it = grnd.begin();it != grnd.end(); it++)
 	{	CGroundTile *gnd	= (*it);
-	//  CTextureDef *txn  = globals->tcm->GetTexDescriptor(gnd->GetAX(),gnd->GetAZ());
-  //  if ((txn == 0) || (txn->NotRDY()))  continue;
-
 	  gnd->DrawGround(0);
 	}
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 	glPopMatrix();
+	//-------------------------------------------------------
+	glDisable(GL_DEPTH_TEST);
+	DrawTextureGround();
+	glEnable(GL_DEPTH_TEST);
 	return;
 }
 //-----------------------------------------------------------------------------------------
@@ -2982,6 +2991,36 @@ void CAptObject::DrawILS()
   glPopMatrix();
   return;
 }
+//-----------------------------------------------------------------------
+//  Draw texture Ground
+//  Camera is set at aircraft position (trans vector)
+//  NOTE: 1)	No night texture is drawn for airport ground
+//				2) Client vertex array must be enabled before calling
+//-----------------------------------------------------------------------
+void CAptObject::DrawTextureGround()
+{ std::vector<CGroundTile*>::iterator it;
+  glPushMatrix();                                 // Mark T0;
+	SVector *trs = tcm->GetTerrainTrans();
+  glTranslated(trs->x, trs->y, trs->z);				// Camera to aircraft
+	float *fog = tcm->GetFogColor();
+  glColor4fv(fog);                                //
+  glMaterialfv (GL_FRONT, GL_EMISSION, tcm->GetDeftEmission()); 
+  for (it = grnd.begin(); it != grnd.end(); it++)
+    { CGroundTile *gnd = (*it);
+      //----------------------------------------------------------
+      glPushMatrix();
+      gnd->Draw();
+      glPopMatrix();
+    }
+  glPopMatrix();                                // Back to T0
+/*
+  {GLenum e = glGetError ();
+   if (e != GL_NO_ERROR) 
+    WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
+  }
+*/
+  return;
+}
 //=========================================================================================
 //  CAirportMgr constructor
 //  Airport model collects all airports in a given radius and
@@ -3014,10 +3053,6 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
   avion->GetBitmap("ART/PICON.BMP");
   //----Register in globals ------------------------
   globals->apm = this;
-  //----Check for No Airport -----------------------
-  int NoAP    = 0;
-  GetIniVar("Sim", "NoAirport", &NoAP);
-  if (NoAP) globals->noAPT++;
 	//--- Current location ---------------------------
 	nApt				= 0;
 	endp				= 0;
@@ -3217,20 +3252,7 @@ int CGroundTile::StoreData(CTextureDef *t)
 //-------------------------------------------------------------
 int CGroundTile::GetNbrVTX()
 { return quad->NbrVerticesInTile(); }
-//-------------------------------------------------------------
-//	Draw with band translation
-//-------------------------------------------------------------
-void CGroundTile::Draw(U_INT dOBJ)
-{	U_INT qx = (ax >> 5);										// QGT X indice
-	char hba = globals->tcm->GetHband();
-	char hbq = FN_BAND_FROM_QGT(qx) << TC_BY08;
-	glTranslated(GetXTRANS(hba,hbq),0,0);
-	glBindTexture(GL_TEXTURE_2D,dOBJ);
-	CSuperTile *sp = quad->GetSuperTile();
-	sp->BindVBO();
-	quad->DrawTile();
-	return;
-}
+
 //-------------------------------------------------------------------------
 //	Transpose vertices for each subquad of the detail tile
 //-------------------------------------------------------------------------
@@ -3255,18 +3277,33 @@ int CGroundTile::TransposeTile(TC_GTAB *vbo,int dep,SPosition *ori)
 }
 
 //-------------------------------------------------------------
-//	Draw ground tiles
+//	Draw ground tiles (draw only elevations)
 //	NOTE: Use quad with caution as teleport may have already
 //				deleted the detail tile
 //-------------------------------------------------------------
 void CGroundTile::DrawGround(U_INT x)
 { glBindTexture(GL_TEXTURE_2D,txn->dOBJ);
-	//--- For final quad, draw the detail tile ---------------
+	//--- Draw only elevations ---------------
 	glMultiDrawArrays(GL_TRIANGLE_FAN,sIND,nIND,dim);
   //---- Draw contour if Terra Browser is active -----------
-  if (0 == (globals->aPROF & PROF_DR_DET))	return;
-  if (!globals->tcm->PlaneQuad(quad))				return;
-  return quad->Contour();
+	//  NOTE : this is done in DrawTile();
+  //if (0 == (globals->aPROF & PROF_DR_DET))	return;
+  //if (!globals->tcm->PlaneQuad(quad))				return;
+  //quad->Contour();
+	return;
 }
-
+//-------------------------------------------------------------
+//	Draw with band translation
+//-------------------------------------------------------------
+void CGroundTile::Draw()
+{	U_INT qx = (ax >> 5);										// QGT X indice
+	char hba = globals->tcm->GetHband();
+	char hbq = FN_BAND_FROM_QGT(qx) << TC_BY08;
+	glTranslated(GetXTRANS(hba,hbq),0,0);
+	glBindTexture(GL_TEXTURE_2D,txn->dOBJ);
+	CSuperTile *sp = quad->GetSuperTile();
+	sp->BindVBO();
+	quad->DrawTile();
+	return;
+}
 //============================END OF FILE =================================================

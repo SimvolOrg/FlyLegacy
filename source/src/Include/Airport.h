@@ -470,6 +470,7 @@ public:
   //--------DRAW Airport --------------------------------------------------
   void    Draw();
 	void		DrawGround();
+	void		DrawTextureGround();
 	void		DrawVBO(U_INT vbo,U_INT n);
   void    DrawLights(CCamera *cam);
   void    DrawGrid();

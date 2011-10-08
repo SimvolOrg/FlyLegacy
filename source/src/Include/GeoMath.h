@@ -127,6 +127,7 @@ double	GetAngleFromGeoPosition(SPosition &p1,SPosition &p2);
 void    GetVertexCoordinates(U_INT vx,U_INT vz,SVector &v);
 void    Add2dPosition(SPosition &p1,SPosition &p2, SPosition &r);
 void    AddMilesTo(SPosition &pos,double mx,double my);
+void		AddFeetTo(SPosition &pos,SVector &v);
 void    GetLatitudeFactor(double lat,double &rf,double &cp);
 void    GetQgtMidPoint(int gx,int gz,SPosition &p);
 int     GetRounded(float nb);
@@ -135,6 +136,7 @@ int			RoundAltitude(int a);
 U_INT   AbsoluteTileKey(int qx, int dx);
 U_INT   GetTileFromLatitude(double lat);
 bool    TileIsLeft(U_INT k1,U_INT k2);
+//-----------------------------------------------------------------------------
 bool    PointInTriangle(CVector &p,CVector &a,CVector &b,CVector &c,CVector &n);
 U_INT   NextVertexKey(U_INT vk,U_INT inc);
 U_INT   GetSEAindex(U_INT cx,U_INT cz);       
@@ -315,6 +317,8 @@ public:
   void  AssignSE(TC_GTAB *tab);       // Assign SE vertex
   void  AssignEB(TC_GTAB *tab);       // Assign East border
 	void	AssignCT(TC_GTAB *tab);				// Assign center
+	//---------------------------------------------------------------
+	void	AssignCT(TC_GTAB *tab,SPosition *org);
   //---------------------------------------------------------------
   void  Assign(double *ft);
   void  SetTour(F3_VERTEX *t,char v);

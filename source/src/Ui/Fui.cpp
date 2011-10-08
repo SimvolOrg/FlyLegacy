@@ -179,10 +179,8 @@ CFuiComponent::~CFuiComponent (void)
 //  Read all tags
 //------------------------------------------------------------------------
 int CFuiComponent::Read (SStream *stream, Tag tag)
-{ int rx;
-  int ry;
-  int rw;
-  int rh;
+{ int rx,ry,rw,rh;
+  int pm;
   char rsz[4];
   switch (tag) {
   case 'ID  ':
@@ -231,7 +229,8 @@ int CFuiComponent::Read (SStream *stream, Tag tag)
     if (!e) RazProperty(FUI_IS_ENABLE);
     return TAG_READ;
   case 'modf':
-    SetEditMode(1);
+		ReadInt (&pm,stream);
+    SetEditMode(pm);
     return TAG_READ;
   case 'uper':
     UpperCase();
@@ -391,7 +390,7 @@ void CFuiComponent::SetQuad(int wd,int ht)
 //  Set the text
 //-------------------------------------------------------------------------------
 void CFuiComponent::SetText (char *txt)
-{ if (txt) strncpy (this->text, txt, 255); else strcpy (this->text, "");
+{ if (txt) strncpy (this->text, txt, 254); else strcpy (this->text, "");
   return;
 }
 //---------------------------------------------------------------------------------
@@ -1800,22 +1799,6 @@ void CFuiWindow::RegisterPopup(CFuiPage *pop)
   return;
 }
 //------------------------------------------------------------------------------
-//  Set special window profile
-//------------------------------------------------------------------------------
-void CFuiWindow::SpecialProfile(Tag wnd,U_INT p)
-{ int	dta		= (wnd)?(+1):(-1);
-	U_INT pf	= (wnd)?(p):(0);
-	globals->spWIN	= wnd;
-	globals->aPROF	= pf;
-	if (p & PROF_NO_TER)	globals->noTER += dta;
-	if (p & PROF_NO_APT)	globals->noAPT += dta;
-	if (p & PROF_NO_INT)	globals->noINT += dta;
-	if (p & PROF_NO_EXT)	globals->noEXT += dta;
-	if (p & PROF_NO_OBJ)	globals->noOBJ += dta;
-	if (p & PROF_NO_MET)	globals->noMET += dta;
-	if (p & PROF_NO_TEL)	globals->noTEL += dta;
-}
-//------------------------------------------------------------------------------
 //  Build groupbox with Airport and Object Hide button
 //------------------------------------------------------------------------------
 CFuiGroupBox *CFuiWindow::BuildGroupEdit(int x,int y)
@@ -2231,6 +2214,14 @@ bool CFuiButton::MouseStopClick (int x, int y, EMouseButton button)
     if (stop) MoWind->NotifyChildEvent(id,id,EVENT_BUTTONRELEASE);
     return true;
 }
+//-------------------------------------------------------------------------------
+//  Lost focus: stop repeat
+//-------------------------------------------------------------------------------
+void CFuiButton::FocusLost()
+{	pres = 0;
+	return;
+}
+
 //==================================================================================
 // CFuiPopupMenu
 //==================================================================================
@@ -5318,10 +5309,19 @@ SMenuPart *CFuiMenu::GetMenuPart(Tag itm)
 //---------------------------------------------------------------------------------
 //  Check Selected Part
 //---------------------------------------------------------------------------------
-void CFuiMenu::CheckSelectedPart(Tag itm)
+void CFuiMenu::CheckSelectedPart(Tag idn)
 { if (0 == mPart)         return;
-  if (mPart->Iden != itm) return;
+  if (mPart->Iden != idn) return;
   mPart->Check ^= 1;
+  return; 
+}
+//---------------------------------------------------------------------------------
+//  Set Selected Part
+//---------------------------------------------------------------------------------
+void CFuiMenu::ChangeState(Tag idn,char st)
+{ SMenuPart *mp = GetMenuPart(idn);
+	if (0 == mp)         return;
+  mPart->Check = st;
   return; 
 }
 //---------------------------------------------------------------------------------
@@ -5639,6 +5639,15 @@ void CFuiMenuBar::AddMenuSeparator (Tag menuID)
 void CFuiMenuBar::CheckSelectedPart(Tag idm,Tag itm)
 { if ((0 == mSel) || (mSel->GetId() != idm))  return;
   mSel->CheckSelectedPart(itm);
+  return;
+}
+//---------------------------------------------------------------------------
+//  Check current menu Item
+//---------------------------------------------------------------------------
+void CFuiMenuBar::ChangePartState(Tag idm,Tag itm,char st)
+{ CFuiMenu *mn = GetMenu(idm);
+	if (0 == mn)		return;
+  mn->ChangeState(itm,st);
   return;
 }
 //---------------------------------------------------------------------------

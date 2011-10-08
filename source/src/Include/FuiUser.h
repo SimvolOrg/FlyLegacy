@@ -116,7 +116,7 @@ class CNavaid;
 class CDbCacheMgr;
 class CObjPtr;
 class COldFlightPlan;
-class CWayPoint;
+class CWPoint;
 //================================================================================
 //  Structure for Radio description
 //================================================================================
@@ -215,7 +215,7 @@ protected:
   void        LoadOthBitmap(char *art,VM_BMP no);
   void        RelocateBox(CFuiGroupBox* box,short ht);               
   //--------------Mouse & Popup menu Functionss --------------------------
-  bool        MoveOverMAP(int mx, int my);
+  bool        MoveOverPOP(int mx, int my);
   bool        InsideClick (int x, int y, EMouseButton button);
   bool        StopClickInside(int x, int y, EMouseButton button);
   bool        InsideMove(int x, int y);
@@ -232,7 +232,12 @@ protected:
   void        EditPopDistance(int mx,int my);
   void        EditCoordinates(int mx,int my);
   void        AddToFlightPlan();
+	bool				ModePlan();
   int         ClosePopMenu();
+	//--- Mode plan management --------------------------------------------
+	void				EnterModePlan();
+	void				LeaveModePlan();
+	void				TrackPlan();
   //-------NOTIFICATIONS ------------------------------------------------
   void        ZoomLess();
   void        ZoomPlus();
@@ -279,11 +284,11 @@ protected:
   int         ClickRwyMENU(short ln);
 	int					StartonRWY(short itm);
 	//--- Waypoint management ------------------------------------------
+	void				SetElevation(SPosition &p);
 	int					CreateWPT();
   bool        OpenWptMENU(int mx,int my);
 	int					ClickWptMENU(short ln);
 	bool				MoveWPT(int mx,int my);
-	void				WaypointMoved();
 	bool				ClickWptOBJ(int mx,int my,EMouseButton button);
 	bool				OpenWptINFO(int mx,int my);
 	//--- Taxiways management ------------------------------------------
@@ -321,22 +326,24 @@ protected:
   //-------Options -------------------------------------------------
   COption     option;
   //-------Screen Table --------------------------------------------
-  SC_TABLE      sTable;                   // Screen table
-  SC_SLOT      *hSlot;                    // Selected slot
+  SC_TABLE      sTable;											// Screen table
+  SC_SLOT      *hSlot;											// Selected slot
   //-------Flight plan parameters ----------------------------------
-  CFPlan       *fPlan;                       // Flight Plan
+  CFPlan       *fpln;                      // Flight Plan
+	CWPoint      *snode;											// Selected node
   //--------Math parameters ----------------------------------------
   CRoseMatrix mRose;                        // Rotation Matrix
   //--------Airport stock of bitmaps --------------------------------
   CBitmap*    AptBMAP[APNBR];               // Array of airport bitmaps
   COORD       AptSIZE[APNBR];               // Array of dimensions
   //--------Tuning message ----------------------------------------
-  SMessage mesg;                          // Tune message
+  SMessage mesg;														// Tune message
   //-------Other stack o bitmap -----------------------------------
   U_INT       ilsBMP;                       // Ils director
   CBitmap*    OthBMAP[BM_NBR];              // Array of bitmap
   COORD       OthSIZE[BM_NBR];              // Array of dimension
   //-----color section ------------------------------------------
+	char        eCor;													// Edit coordinates
   char        Fade;                         // Fading action
   U_INT       green;                        // Green color
   U_INT       grlim;                        // Green limit                   
@@ -355,6 +362,7 @@ protected:
   U_CHAR      selOPT;                       // Selected option
   int         xOrg;                         // Pop Origin
   int         yOrg;                         // Pop Origin
+	char       *vpln;													// FPlan variation
   //----Nearest airport ----------------------------------------
   CAirport   *napt;                         // Nearest airport
   float       ndis;                         // Distance
@@ -365,6 +373,7 @@ protected:
   CFuiGroupBox *rBox;                       // Rose button
   CFuiGroupBox *zBox;                       // Zoom button
   CFuiGroupBox *bBox;                       // Background
+	CFuiGroupBox *pBox;												// FPL box
   //-----Editing Attribute -------------------------------------
   CDbCacheMgr *dbc;                         // Data base  cache Manager
   CObjPtr       Focus;                      // smart ptr to focus
@@ -389,7 +398,11 @@ protected:
   U_SHORT      rILS;                        // Range
   TC_SPOINT    oILS;                        // ILS origin in pixel
 	//----- Viewport ----------------------------------------------
-  VIEW_PORT				vp;
+  VIEW_PORT				 vp;
+	//--- Mode plan management ------------------------------------
+  CAMERA_CTX       oCTX;										// Original context
+	CRabbitCamera   *rCAM;										// Rabbit camera
+
 };
 //====================================================================================
 //  TELEPORT:  Window setting the teleport position

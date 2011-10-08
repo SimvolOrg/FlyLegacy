@@ -2156,6 +2156,7 @@ class CFuiPage;
 class CFuiCanva;
 class CChkLine;
 class CListBox;
+class CFPlan;
 //----WINDOWS --------------------------------------------------
 class CFuiCkList;                 // Window check list
 class CFuiFuel;                   // Fuel loadout
@@ -2411,7 +2412,16 @@ struct VT_VTAB {
 		VT_X	= VT_Y = VT_Z = 0;
 	}
 };
-
+//===========================================================================
+//  Define SLEW mode
+//===========================================================================
+typedef enum {
+  SLEW_STOP = 0,      // NO SLEW
+  SLEW_MOVE = 1,      // Moving
+  SLEW_LEVL = 2,      // Leveling
+  SLEW_RCAM = 3,      // Rabbit cam slew
+	SLEW_FPLM = 4,			// Flight plan node
+} SLEW_MODE;
 //=============================================================================
 //  CAMERA CONTEXTE
 //=============================================================================
@@ -2424,6 +2434,10 @@ struct CAMERA_CTX {
   double  theta;                                  // Angle theta (horizontal)
   double  phi;                                    // Angle phi   (vertical)
   float   fov;                                    // Field of view
+	char		mode;
+	//---------------------------------------------------------------
+	CFPlan *fpln;																		// Flight plan
+	U_INT		prof;																		// Profile
 	//---------------------------------------------------------------
 	SVector		ori;																	// World orientation
 	SPosition pos;																	// World position
@@ -3417,6 +3431,17 @@ private:
 public:
 	TRACE(const char *fmt = NULL, ...);
 };
+//-------------------------------------------------------------------------
+//	JSDEV* Scenery log.   This log serve to trace scenery process
+//
+//--------------------------------------------------------------------------
+class SCENE {
+private:
+	char msg[1024];
+public:
+	SCENE(const char *fmt = NULL, ...);
+};
+#define SCENERYLOG (SCENE(__FILE__, __LINE__))
 //-------------------------------------------------------------------------
 /*! \brief Log a debugging message
  *

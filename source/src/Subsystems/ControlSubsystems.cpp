@@ -224,6 +224,13 @@ void CAeroControl::Modify(float dt)
   data.raw   =  Clamp(data.raw);
 }
 //--------------------------------------------------------------------
+// Modify the step
+//--------------------------------------------------------------------
+void CAeroControl::ModStep(float m)
+{ data.step  +=  m;
+  data.step   =  Clamp(data.step);
+}
+//--------------------------------------------------------------------
 // Transfert autopilot value and clear auto value
 //--------------------------------------------------------------------
 void CAeroControl::Transfer()
@@ -1926,7 +1933,9 @@ CElevatorTrimControl::CElevatorTrimControl (void)
 {
   TypeIs (SUBSYSTEM_ELEVATOR_TRIM_CONTROL);
 }
-
+//-----------------------------------------------------------------------
+//	Time slice
+//-----------------------------------------------------------------------
 void CElevatorTrimControl::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
 { globals->jsm->Poll(JS_TRIM,data.raw);
   CAeroControl::TimeSlice(dT,FrNo);								// JSDEV*
@@ -1938,9 +1947,9 @@ void	CElevatorTrimControl::ReadFinished()
 {	globals->jsm->MapTo(JS_TRIM,unId);
 }
 
-//-----------------------------------------------------------------------
+//================================================================================
 // CRudderTrimControl
-//-----------------------------------------------------------------------
+//================================================================================
 CRudderTrimControl::CRudderTrimControl (void)
 {
   TypeIs (SUBSYSTEM_RUDDER_TRIM_CONTROL);
