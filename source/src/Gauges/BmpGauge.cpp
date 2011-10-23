@@ -1740,8 +1740,7 @@ void C_SimpleSwitch::DoState(int snd)
 // Increment switch state
 //------------------------------------------------------------------------
 void C_SimpleSwitch::IncState (void)
-{
-  // Check upper bound and increment index
+{ // Check upper bound and increment index
   if (cIndx < (stat_n - 1))
   { cIndx++;
     //---- Play sound effect -----------
@@ -1778,7 +1777,9 @@ void C_SimpleSwitch::DecState (void)
 void C_SimpleSwitch::ChangeState()
 { //--- advise subsystem --------------
 	mesg.index = cIndx;
-	Send_Message (&mesg); 
+	Send_Message (&mesg);
+  TRACE ("C_SimpleSwitch::ChangeState (%d // %s %d)",             // lc 101611
+    mesg.index, TagToString (mesg.user.u.datatag), mesg.intData); // lc 101611
 	return;
 }
 //----------------------------------------------------------------------

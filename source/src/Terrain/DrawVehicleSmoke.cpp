@@ -424,23 +424,27 @@ void CVehicleSmoke::Draw (void)
 ///==============================================================================
 CSubsystemSmoke::CSubsystemSmoke (CVehicleObject *mv) 
 { TypeIs (SUBSYSTEM_SMOKE);
+  //
+  hwId    = HW_SWITCH;
+  //
 	mveh	= mv;
-  on		= 0;
+  on		= 1;
   //-----------------------------------------------------------------
   bs = new CBaseSmoke(25,0);          // Use 25 points
   //! only version 1 is implemented
   bs->version = 1;
+  TRACE ("CSubsystemSmoke::CSubsystemSmoke");
 }
 
 CSubsystemSmoke::~CSubsystemSmoke (void)
-{ //TRACE ("CSubsystemSmoke::~CSubsystemSmoke %p", vs);
-  SAFE_DELETE (bs);
+{ TRACE ("CSubsystemSmoke::~CSubsystemSmoke");
+  SAFE_DELETE (bs); // lc 101611
 }
 //------------------------------------------------------------------
 //  Read parameters
 //------------------------------------------------------------------
 int CSubsystemSmoke::Read (SStream *stream, Tag tag)
-{
+{ TRACE ("CSubsystemSmoke::Read");
   switch (tag) {
   case 'posn':
 		//
@@ -461,34 +465,45 @@ int CSubsystemSmoke::Read (SStream *stream, Tag tag)
     ReadUInt (&bs->nb, stream);
 		return  TAG_READ;
   }
-  return  CDependent::Read (stream, tag);
+  return  CSwitchSet::Read (stream, tag);
 }
 //------------------------------------------------------------------
 //  All parameters are read. Finalize
 //------------------------------------------------------------------
 void CSubsystemSmoke::ReadFinished (void)
-{ bs->Init();
+{ bs->Init(); TRACE ("CSubsystemSmoke::ReadFinished");
 }
 //------------------------------------------------------------------
 //  Process receive message
 //------------------------------------------------------------------
 EMessageResult CSubsystemSmoke::ReceiveMessage (SMessage *msg)
 { if (msg->id != MSG_SETDATA ) return CDependent::ReceiveMessage(msg);
+  //TRACE ("CSubsystemSmoke::ReceiveMessage '%s' - %d", TagToString (msg->user.u.datatag), on);
   switch (msg->user.u.datatag) {
      //---- Return voltage ----------------------
-      case 'swap':
+      case 'indx':
           on ^= 1;
+          TRACE ("CSubsystemSmoke::ReceiveMessage OK %d", on);
+          ChangePosition(msg->intData);
+          SetState(msg->intData);
+					indx	=  msg->index;
           return MSG_PROCESSED;
   }
-  return CDependent::ReceiveMessage(msg);
+  return CSwitchSet::ReceiveMessage(msg);
 }
 //------------------------------------------------------------------
 //  Draw if allowed and camera is outside
 //------------------------------------------------------------------
 void CSubsystemSmoke::Draw (void)
-{ if (0 == on)          return;
-  if (globals->noINT)  return;
-  bs->Draw (mveh->GetOPT(VEH_DW_SMOK));
+{ //TRACE ("CSubsystemSmoke::Draw %d %d", on, globals->noINT); // lc 101611
+  if (0 == on) return;
+  if (globals->noINT) //return; // lc 101611
+  bs->Draw (1); //bs->Draw (mveh->GetOPT(VEH_DW_SMOK)); // lc 101611
   return;
+}
+
+void CSubsystemSmoke::TimeSlice (float dT, U_INT FrNo)
+{ CSwitchSet::TimeSlice (dT, FrNo);
+	return;
 }
 //=========================END 0F FILE ====================================================

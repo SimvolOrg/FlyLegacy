@@ -890,7 +890,7 @@ EMessageResult CDependent::ReceiveMessage (SMessage *msg)
           msg = msg;            // Put break point here
   EMessageResult rc = MSG_IGNORED;
   //---Process get data --------------------------
-  if  (msg->id == MSG_GETDATA ) {
+    if  (msg->id == MSG_GETDATA ) {
       switch (msg->user.u.datatag) {
         //----State value -------------------
         case 0:

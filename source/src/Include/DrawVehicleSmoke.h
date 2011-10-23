@@ -154,7 +154,7 @@ public:
 //  SubsystemSmoke are entered into the sext list in ElectricalSystems. 
 //  So they can be Time Sliced and drawed like any other.
 ///============================================================================
-class CSubsystemSmoke : public CDependent {
+class CSubsystemSmoke : public CSwitchSet { //CDependent
 protected:
   //---Attributes ---------------------------------------------------
   CBaseSmoke *bs;
@@ -168,6 +168,7 @@ public:
   void    ReadFinished       (void);
   EMessageResult  ReceiveMessage     (SMessage *msg);
   void    Draw               (void);
+  void    TimeSlice          (float dT,U_INT FrNo);
   //-------------------------------------------------------------------
   char    on;                 // On / Off switch
 };

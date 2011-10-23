@@ -920,13 +920,20 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
 CElectricalSystem::~CElectricalSystem (void)
 { //--delete all amp subsystems -------------
   std::vector<CSubsystem*>::iterator i;
-  for (i=subs.begin(); i!=subs.end(); i++) delete (*i);
+  std::vector<CSubsystem*>::iterator p;
+  for (i=subs.begin(); i!=subs.end(); i++) {
+    // LC note : "s" is added in both vectors "sext" 
+    // and "subs" so we have to verify which vector has 
+    // deleted the pointer to avoid a crash when quitting
+    if (SUBSYSTEM_SMOKE == (*i)->GetType ()) continue;
+    //
+    delete (*i);
+  }
+  //--delete all external subsystems --------
+  for (p=sext.begin(); p!=sext.end(); p++) delete (*p);
   //--delete all dlls -----------------------
   std::vector<CDLLSubsystem*>::iterator d;
   for (d=sdll.begin(); d!=sdll.end(); d++) delete (*d);
-  //--delete all external subsystems --------
-  std::vector<CSubsystem*>::iterator p;
-  for (p=sext.begin(); p!=sext.end(); p++) delete (*p);
 }
 //-----------------------------------------------------------
 //  Free DLL resources
@@ -940,7 +947,7 @@ void CElectricalSystem::FreeDLLSubsystem (void)
   // delete all pointers in dll_gauge
   std::vector <CDLLSubsystem *>::iterator idllS;
   for (idllS = sdll.begin (); idllS != sdll.end (); ++idllS) {
-    SAFE_DELETE (*idllS);
+    delete (*idllS); /*SAFE_DELETE*/
   }
   sdll.clear (); // 
 }
@@ -1697,11 +1704,17 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
         //MEMORY_LEAK_MARKER ("electr*14")
         break;
       case SUBSYSTEM_SMOKE:
-         //MEMORY_LEAK_MARKER ("smoke_sys");
-         s = new CSubsystemSmoke(mveh);
-         AddExternal(s,stream);
-         return TAG_READ;
-         //MEMORY_LEAK_MARKER ("smoke_sys");
+        //MEMORY_LEAK_MARKER ("smoke_sys");
+        s = new CSubsystemSmoke (mveh);
+        // TRACE ("new CSubsystemSmoke %p", s); // lc 101611
+        // LC note : "s" is added in both vectors "sext" 
+        // and "subs" so we have to verify which vector has 
+        // deleted the pointer to avoid a crash when quitting
+        // in CElectricalSystem::~CElectricalSystem (void)
+        AddExternal (s, 0/*stream*/); // lc 101611
+        break; // lc 101611
+        //return TAG_READ; // lc 101611
+        //MEMORY_LEAK_MARKER ("smoke_sys");
 
       default:
         { // Not identified: Create a DLL gauge
@@ -1754,6 +1767,7 @@ void CElectricalSystem::AddExternal(CSubsystem *sy,SStream *st)
   sext.push_back (sy);
   return;
 }
+
 //---------------------------------------------------------------------------
 //  All is read
 //---------------------------------------------------------------------------
