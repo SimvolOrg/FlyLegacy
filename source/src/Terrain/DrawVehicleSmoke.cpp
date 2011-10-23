@@ -426,26 +426,31 @@ CSubsystemSmoke::CSubsystemSmoke (CVehicleObject *mv)
 { TypeIs (SUBSYSTEM_SMOKE);
   //
   hwId    = HW_SWITCH;
-  //
+  //-----------------------------------------------------------------
 	mveh	= mv;
   on		= 1;
+  //-----------------------------------------------------------------
+  Indx = 0;
+  sync = false;
+  zBase     = 0;
+  onState   = 1;
+  offState  = 0;
   //-----------------------------------------------------------------
   bs = new CBaseSmoke(25,0);          // Use 25 points
   //! only version 1 is implemented
   bs->version = 1;
-  TRACE ("CSubsystemSmoke::CSubsystemSmoke");
+  //TRACE ("CSubsystemSmoke::CSubsystemSmoke");
 }
 
 CSubsystemSmoke::~CSubsystemSmoke (void)
-{ TRACE ("CSubsystemSmoke::~CSubsystemSmoke");
+{ //TRACE ("CSubsystemSmoke::~CSubsystemSmoke");
   SAFE_DELETE (bs); // lc 101611
 }
 //------------------------------------------------------------------
 //  Read parameters
 //------------------------------------------------------------------
 int CSubsystemSmoke::Read (SStream *stream, Tag tag)
-{ TRACE ("CSubsystemSmoke::Read");
-  switch (tag) {
+{ switch (tag) {
   case 'posn':
 		//
     { char smkpos [32] = "0.0,0.0,-15.0";
@@ -465,27 +470,33 @@ int CSubsystemSmoke::Read (SStream *stream, Tag tag)
     ReadUInt (&bs->nb, stream);
 		return  TAG_READ;
   }
-  return  CSwitchSet::Read (stream, tag);
+
+  // See if the tag can be processed by the parent class type
+  return CSwitchSet::Read (stream, tag);
 }
 //------------------------------------------------------------------
 //  All parameters are read. Finalize
 //------------------------------------------------------------------
 void CSubsystemSmoke::ReadFinished (void)
-{ bs->Init(); TRACE ("CSubsystemSmoke::ReadFinished");
+{ CSwitchSet::ReadFinished();
+  state = 1;
+  Indx -= zBase;
+  //
+  bs->Init(); 
+  return;
 }
 //------------------------------------------------------------------
 //  Process receive message
 //------------------------------------------------------------------
 EMessageResult CSubsystemSmoke::ReceiveMessage (SMessage *msg)
-{ if (msg->id != MSG_SETDATA ) return CDependent::ReceiveMessage(msg);
-  //TRACE ("CSubsystemSmoke::ReceiveMessage '%s' - %d", TagToString (msg->user.u.datatag), on);
+{ if (msg->id != MSG_SETDATA ) return CSwitchSet::ReceiveMessage(msg);
   switch (msg->user.u.datatag) {
      //---- Return voltage ----------------------
       case 'indx':
           on ^= 1;
-          TRACE ("CSubsystemSmoke::ReceiveMessage OK %d", on);
-          ChangePosition(msg->intData);
-          SetState(msg->intData);
+          //TRACE ("CSubsystemSmoke::ReceiveMessage OK %d %d %d", on, msg->intData, msg->index);
+          ChangePosition (msg->intData);
+				  SetState (msg->intData);
 					indx	=  msg->index;
           return MSG_PROCESSED;
   }
@@ -502,8 +513,8 @@ void CSubsystemSmoke::Draw (void)
   return;
 }
 
-void CSubsystemSmoke::TimeSlice (float dT, U_INT FrNo)
-{ CSwitchSet::TimeSlice (dT, FrNo);
-	return;
-}
+//void CSubsystemSmoke::TimeSlice (float dT, U_INT FrNo)
+//{ CSwitchSet::TimeSlice (dT, FrNo);
+//	return;
+//}
 //=========================END 0F FILE ====================================================

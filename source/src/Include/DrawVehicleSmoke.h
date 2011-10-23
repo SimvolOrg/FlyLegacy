@@ -168,7 +168,7 @@ public:
   void    ReadFinished       (void);
   EMessageResult  ReceiveMessage     (SMessage *msg);
   void    Draw               (void);
-  void    TimeSlice          (float dT,U_INT FrNo);
+  //void    TimeSlice          (float dT,U_INT FrNo);
   //-------------------------------------------------------------------
   char    on;                 // On / Off switch
 };

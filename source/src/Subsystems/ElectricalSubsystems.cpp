@@ -821,7 +821,7 @@ int CSwitchSet::Read (SStream *stream, Tag tag)
     return TAG_READ;
   }
 
-    // See if the tag can be processed by the parent class type
+  // See if the tag can be processed by the parent class type
   return CDependent::Read (stream, tag);
 }
 //----------------------------------------------------------------------------
