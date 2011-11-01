@@ -117,6 +117,7 @@ int  CFuiChart::Read (SStream *stream, Tag tag)
     ReadInt (&upltX, stream);
     ReadInt (&upltY, stream);
     ReadLatLon (&uPos, stream);
+    uPos.lon = Wrap180Longitude (uPos.lon); 
     return TAG_READ;
 
   case 'lwrt':
@@ -159,13 +160,16 @@ void CFuiChart::Draw ()
       // draw plot for aircraft position
       //
       SPosition airPos = globals->sit->uVeh->GetPosition ();
+      airPos.lon = Wrap180Longitude (airPos.lon);
       // int posx = 1152 + MapInfo.x0;
       // int posy =  752 + MapInfo.y0;
       //
       int posx = (airPos.lon * lonx + lony) + MapInfo.x0;
       int posy = (airPos.lat * latx + laty) + MapInfo.y0;
-      DrawFastLine (surface, posx-10, posy, posx+10, posy, MakeRGB (255, 0, 0)); 
-      DrawFastLine (surface, posx, posy-10, posx, posy+10, MakeRGB (255, 0, 0)); 
+      // TRACE ("\t\tpos %d %d", posx, posy);
+      U_INT red = MakeRGB (255, 0, 0);
+      DrawFastLine (surface, posx-10, posy, posx+10, posy, red); 
+      DrawFastLine (surface, posx, posy-10, posx, posy+10, red); 
       // DrawFastLine (surface, 100, 100-10, 100, 100+10, MakeRGB (255, 0, 0)); 
       // DrawFastLine (surface, 100-10, 100, 100+10, 100, MakeRGB (255, 0, 0)); 
       //
