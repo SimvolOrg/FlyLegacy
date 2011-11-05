@@ -527,6 +527,17 @@ void C3DMgr::Draw(char tod)
   SVector tr;
   tcm->RelativeFeetTo(*oVOR->ObjPosition(),tr);
   //--------------------------------------------------------
+  // draw a line for the VOR position
+  // LC 110111
+  // glPushMatrix();
+  // glColor3f (250.0f, 0.0f, 0.0f);
+  // glLineWidth (5.0f);
+  // glBegin (GL_LINES);
+  // glVertex3d (tr.x, tr.y, tr.z);
+  // glVertex3d (tr.x, tr.y, tr.z + 10000.0);
+  // glEnd ();
+  // glPopMatrix();
+  //
   if (oVOR->GetUserParam())
   { glPushMatrix();
     glTranslated(tr.x,tr.y,tr.z);
