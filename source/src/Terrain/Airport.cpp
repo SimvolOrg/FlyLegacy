@@ -2966,7 +2966,7 @@ void CAptObject::DrawILS()
   SVector v2 = {0,0,0};
   SPosition *farp = ils->GetFarPoint();
   Offset(*farp,v2);
-  SVector *s = globals->tcm->GetScale();
+  //SVector *s = globals->tcm->GetScale();
   glPushMatrix();
   glPushAttrib(GL_ALL_ATTRIB_BITS);
   glShadeModel(GL_FLAT);

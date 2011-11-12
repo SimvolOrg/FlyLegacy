@@ -508,7 +508,7 @@ class CAirportMgr {
   //-----Attributes ------------------------------------------------
   U_CHAR          nProf;                      // Profile Stack index
   U_CHAR          clock;                      // Refresh clock
-  char            dILS;                       // Drawing ILS indicator
+  //char            dILS;                       // Drawing ILS indicator
 	//--- Letter and band VBO -----------------------------------------
 	U_INT						xOBJ;												// yellow texture
 	U_INT						bVBO;												// Band & letter VBO buffer
@@ -534,6 +534,7 @@ class CAirportMgr {
   CPicQUAD       *avion;                      // Aircraft icon
   //-----Methods ---------------------------------------------------
 public:
+  char    dILS;                       // Drawing ILS indicator
   CAirportMgr(TCacheMGR *tm);
  ~CAirportMgr();
   void    TimeSlice(float dT);                // Update Airport List
