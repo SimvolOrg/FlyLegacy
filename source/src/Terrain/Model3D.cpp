@@ -359,9 +359,9 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   GetIniVar("W3D","ObjectLoadFactor",&lf);
   dFactor   = lf;
   //--------------------------------------------------------------
-	int lp    = 0;
-	GetIniVar("W3D","LookInPodtoo",&lp);
-	lpod			= lp;
+	lpod    = 1;
+	if (GetIniKey("W3D","LookInPodtoo"))  lpod = 1;
+	if (GetIniKey("W3D","LookOnlyInSQL"))	lpod = 0;
 	//--------------------------------------------------------------
 	sql	= globals->objDB;
 	if (0 == sql)	lpod = 1;

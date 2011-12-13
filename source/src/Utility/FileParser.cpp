@@ -436,7 +436,7 @@ int  CTIFFparser::Decode(char *fn)
     Dir.type   = Read16 (p);
     Dir.count  = Read32 (p);
     Dir.offset = Read32 (p);
-TRACE("Tag %u Type %u Count %u Offset %u",Dir.tag, Dir.type, Dir.count, Dir.offset);
+	//TRACE("Tag %u Type %u Count %u Offset %u",Dir.tag, Dir.type, Dir.count, Dir.offset);
     //-------PROCESS TAG -------------------------------------------------
     switch (Dir.tag) {
       //----Bitmap width in pixels --------------------

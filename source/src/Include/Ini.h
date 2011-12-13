@@ -95,7 +95,8 @@ public:
   void    Get (const char* key, int *i);
   void    Get (const char* key, char *s, int maxLength);
   const char *GetValue(const char *key);
-  void    Save (FILE *f);
+	bool		GetKey(char *key);
+	void    Save (FILE *f);
   void    Remove (const char* key);
 
 protected:
@@ -132,6 +133,7 @@ public:
   void      Get (const char* section, const char* key, int* i);
   void      Get (const char* section, const char* key, char* s, int maxLength);
   const char *GetValue (const char* section, const char* key);
+	bool			GetKey(char *section, char *key);
   void      Remove (const char* section, const char* key);
   int       GetNumSections (void);
   char*     GetSectionName (int i);

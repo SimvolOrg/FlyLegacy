@@ -2055,6 +2055,7 @@ int SearchILS(char *airportKey, char *runwayEndID, SILS **ils);
 void LoadIniSettings (void);
 void UnloadIniSettings (void);
 void SaveIniSettings (void);
+bool GetIniKey(char *section,char *key);
 void GetIniVar (const char *section, const char *varname, int *value);
 void GetIniFloat (const char *section, const char *varname, float *value);
 void GetIniString (const char *section, const char *varname, char *strvar, int maxLength);

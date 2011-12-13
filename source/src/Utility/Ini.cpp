@@ -110,8 +110,7 @@ void CIniSetting::Get (float *f)
 // Get an integer INI setting
 //
 void CIniSetting::Get (int *i)
-{
-  type = INI_INT_SETTING;
+{ type = INI_INT_SETTING;
   *i = (int)value;
 }
 
@@ -188,10 +187,7 @@ CIniSetting* CIniSection::FindSetting (const char* key)
 {
   CIniSetting *rc = NULL;
   std::map<string,CIniSetting*>::iterator i = setting.find(key);
-  if (i != setting.end()) {
-    // Found the setting, copy to the return value
-    rc = i->second;
-  }
+  if (i != setting.end())  rc = i->second;
   return rc;
 }
 
@@ -283,15 +279,26 @@ void CIniSection::Get (const char* key, char* s, int maxLength)
     setting->Get (s, maxLength);
   }
 }
+//---------------------------------------------------------------------
 //	JSDEV* return a pointer to the value
+//---------------------------------------------------------------------
 const char *CIniSection::GetValue(const char *key)
 {	CIniSetting *set = FindSetting(key);
 	if (set == NULL) return NULL;
 	return set->GetValue();	
 }
-//
+//---------------------------------------------------------------------
+//	JSDEV* return a keyword
+//---------------------------------------------------------------------
+bool CIniSection::GetKey(char *key)
+{ CIniSetting *set = FindSetting(key);
+	if (0 == set)	return false;
+	const char *val = set->GetValue();
+	return (strcmp(val, "*empty*") == 0);
+}
+//---------------------------------------------------------------------
 // Save contents of the section to file
-//
+//---------------------------------------------------------------------
 void CIniSection::Save (FILE *f)
 {
   fprintf (f, "[%s]\n", section);
@@ -341,7 +348,7 @@ void CIniFile::Clear (void)
   }
 }
 
-//
+//-------------------------------------------------------------------------------
 // Protected method to find the index of the specified INI section if it exists,
 //   and to create it if it doesn't
 //
@@ -351,28 +358,23 @@ void CIniFile::Clear (void)
 // Return Code:
 //  CIniSection*  Pointer to CIniSection. This should never be NULL; if the
 //          section of the specified name does not exist it will be created
-//
+//--------------------------------------------------------------------------------
 CIniSection* CIniFile::FindSection (const char* sectname)
 {
   CIniSection *rc = NULL;
-
   std::map<string,CIniSection*>::iterator i = section.find(sectname);
-  if (i != section.end()) {
-    // Found the section, copy to the return value
-    rc = i->second;
-  }
+  if (i != section.end())   rc = i->second;
   return rc;
 }
-
+//-------------------------------------------------------------------------------
+//	Find section or create one
+//-------------------------------------------------------------------------------
 CIniSection* CIniFile::FindSectionOrCreate (const char* sectname)
-{
-  CIniSection *rc = FindSection (sectname);
-  if (rc == NULL) {
-    // Section not found, create it
-    rc = new CIniSection (sectname);
-    section[sectname] = rc;
-  }
-
+{ CIniSection *rc = FindSection (sectname);
+  if (rc)		return rc;
+  // Section not found, create it
+  rc = new CIniSection (sectname);
+  section[sectname] = rc;
   return rc;
 }
 //==============================================================================
@@ -395,7 +397,7 @@ void TrimTrailingWhitespace (char* s)
   while ((i >= 0) && WhiteSpace(s[i])) s[i--] = '\0';
 }
 
-//
+//------------------------------------------------------------------------------
 // Local function which parses the supplied line, looking for a new INI section
 //   header of the form [Section].
 //
@@ -407,7 +409,7 @@ void TrimTrailingWhitespace (char* s)
 //
 // Return code:
 //  bool    true if a new [Section] was found
-//
+//-----------------------------------------------------------------------
 static bool ParseSection (char* s, char* section)
 {
   bool rc = false;
@@ -433,14 +435,12 @@ static bool ParseSection (char* s, char* section)
   return rc;
 }
 
-//
+//-------------------------------------------------------------------------------
 // Local function which parses the supplied line and returns the key and value
 //   (strings) if the line conforms to the standard INI format key=value
-//
+//-------------------------------------------------------------------------------
 static bool ParseKeyValue (char* s, char* key, char* value)
 {
-  bool rc = false;
-
   TrimTrailingWhitespace (s);
 
   char *p = strchr (s, '=');
@@ -448,18 +448,24 @@ static bool ParseKeyValue (char* s, char* key, char* value)
     // Copy key string
     int len = strlen(s) - strlen(p);
     strncpy (key, s, len);
-    key[len] = '\0';
+    key[len] = 0;
 
     // Copy value string
     strcpy (value, p+1);
-
-    rc = true;
+		return true;
   }
-
-  return rc;
+	//--- Just check for the parameter name
+	int len = strlen(s);
+	if (len)
+	{	strncpy(key,s,len);
+		key[len] = 0;
+		strcpy(value,"*empty*");
+		return true;
+	}
+  return false;
 }
 
-//
+//-------------------------------------------------------------------------------------------
 // Load (or re-load) the INI settings from disk file.  All existing settings are cleared.
 //
 // Input parameters:
@@ -467,11 +473,10 @@ static bool ParseKeyValue (char* s, char* key, char* value)
 //
 // Return code:
 //  int       1 if settings were successfully loaded; 0 if file could not be opened
-//
+//--------------------------------------------------------------------------------------------
 int CIniFile::Load (const char* iniFilename)
 { char buf[1024];
   _getcwd( buf,1024);
-  int rc = 0;
 
   // Clear all existing INI settings
   Clear ();
@@ -481,44 +486,32 @@ int CIniFile::Load (const char* iniFilename)
   char key[64];
   char value[PATH_MAX];
   float f_value;
-
   // Open normal (non-POD) file
   FILE *f = fopen (iniFilename, "r");
-  if (f) {
-    // Begin parsing file
-    char s[PATH_MAX];
-    while (!feof (f)) {
-      fgets (s, PATH_MAX, f);
+  if (0 == f) return 0;
+  // Begin parsing file
+  char s[PATH_MAX];
+  while (!feof (f)) {
+		fgets (s, PATH_MAX, f);
+		// ignore empty lines
+	  if ((strncmp (s, "\n", 1) == 0))		continue;
 
-      // ignore empty lines
-	  if ((strncmp (s, "\n", 1) == 0)) {	
-        continue;
-      } ;
+    // First check for a new section header : [Section]
+    if (ParseSection (s, section))			fgets (s, PATH_MAX, f);
+    // New section header found
+    // No new section header found, parse for key/value pair
+		
+    if (!ParseKeyValue (s, key, value)) continue;
+    //  Store the string anyway
+    Set (section, key, value);
+    // Parse the value to determine whether it is numeric (int/float)
+    //   or string.
+		if (sscanf (value, "%f", &f_value) == 1) Set (section, key, f_value); 
+	 }
+   fclose (f);
 
-      // First check for a new section header : [Section]
-      if (ParseSection (s, section)) {
-        // New section header found
-      } else {
-        // No new section header found, parse for key/value pair
-        if (ParseKeyValue (s, key, value)) {
-          //  Store the string anyway
-          Set (section, key, value);
-          // Parse the value to determine whether it is numeric (int/float)
-          //   or string.
-          if (sscanf (value, "%f", &f_value) == 1) {
-            // Value may be numeric
-            Set (section, key, f_value);
-          } 
-        }
-      }
-    }
-    fclose (f);
-
-    // Set success return code
-    rc = 1;
-  }
-
-  return rc;
+   // Set success return code
+   return 1;
 }
 
 //
@@ -560,56 +553,43 @@ int CIniFile::Save (const char* iniFilename)
 }
 
 
-//
+//-----------------------------------------------------------------------
 // Set a float INI setting
-//
+//-----------------------------------------------------------------------
 void CIniFile::Set (const char* section, const char* key, float f)
-{
-  // Get reference to CIniSection, or create it if it does not exist
+{ // Get reference to CIniSection, or create it if it does not exist
   CIniSection* sect = FindSectionOrCreate (section);
-
-  if (sect == NULL) {
-    WARNINGLOG ("CIniFile::Set : Cannot add section %s", section);
-  } else {
-    sect->Set (key, f);
-  }
+  sect->Set (key, f);
+	return;
 }
 
 
-//
+//-----------------------------------------------------------------------
 // Set an integer INI setting
-//
+//-----------------------------------------------------------------------
 void CIniFile::Set (const char* section, const char* key, int i)
-{
-  // Get reference to CIniSection, or create it if it does not exist
+{ // Get reference to CIniSection, or create it if it does not exist
   CIniSection* sect = FindSectionOrCreate (section);
-  if (sect == NULL) {
-    WARNINGLOG ("CIniFile::Set : Cannot add section %s", section);
-  } else {
-    // Set the key/value attribute in the section
-    sect->Set (key, i);
-  }
+  // Set the key/value attribute in the section
+  sect->Set (key, i);
+  return;
 }
 
 
-//
+//------------------------------------------------------------------------
 // Set a string INI setting
-//
+//------------------------------------------------------------------------
 void CIniFile::Set (const char* section, const char* key, const char* s)
-{
-  // Get reference to CIniSection, or create it if it does not exist
+{ // Get reference to CIniSection, or create it if it does not exist
   CIniSection* sect = FindSectionOrCreate (section);
-  if (sect == NULL) {
-    WARNINGLOG ("CIniFile::Set : Cannot add section %s", section);
-  } else {
-    // Set the key/value attribute in the section
-    sect->Set (key, s);
-  }
+  // Set the key/value attribute in the section
+  sect->Set (key, s);
+  return;
 }
 
-//
+//------------------------------------------------------------------------
 // Get a float INI setting
-//
+//-----------------------------------------------------------------------
 void CIniFile::Get (const char* section, const char* key, float* f)
 {
   // Get reference to CIniSection, or create it if it does not exist
@@ -620,9 +600,9 @@ void CIniFile::Get (const char* section, const char* key, float* f)
   }
 }
 
-//
+//-----------------------------------------------------------------------
 // Get an integer INI setting
-//
+//-----------------------------------------------------------------------
 void CIniFile::Get (const char* section, const char* key, int* i)
 {
   // Get reference to CIniSection, or create it if it does not exist
@@ -633,9 +613,9 @@ void CIniFile::Get (const char* section, const char* key, int* i)
   }
 }
 
-//
+//-----------------------------------------------------------------------
 // Get an string INI setting
-//
+//-----------------------------------------------------------------------
 void CIniFile::Get (const char* section, const char* key, char* s, int maxLength)
 {
   // Get reference to CIniSection, or create it if it does not exist
@@ -645,7 +625,9 @@ void CIniFile::Get (const char* section, const char* key, char* s, int maxLength
     sect->Get (key, s, maxLength);
   }
 }
-// JSDEV* return a pointer to value
+//---------------------------------------------------------------------
+//	Return a pointer to string value
+//--------------------------------------------------------------------
 const char *CIniFile::GetValue (const char* section, const char* key)
 {
   // Get reference to CIniSection, or create it if it does not exist
@@ -654,9 +636,17 @@ const char *CIniFile::GetValue (const char* section, const char* key)
     // Section exists, update the return parameter
    return sect->GetValue (key);
   }
-//
+//---------------------------------------------------------------------
+//	Return a keyword
+//--------------------------------------------------------------------
+bool CIniFile::GetKey(char *section, char *key)
+{	 CIniSection* sect = FindSection (section);
+	 if (0 == sect)		return false;
+	 return sect->GetKey(key);
+}
+//-------------------------------------------------------------------
 // Remove a setting from the INI file
-//
+//-------------------------------------------------------------------
 void CIniFile::Remove (const char* section, const char* key)
 {
   // Get reference to CIniSection, or create it if it does not exist
@@ -672,10 +662,10 @@ int CIniFile::GetNumSections (void)
   return section.size();
 }
 
-/*!
- * \todo This should be restructured as GetFirst/GetNext to align better with
- *       STL map<> implementation rather than flat array implementation
- */
+//---------------------------------------------------------------------------------
+//	todo This should be restructured as GetFirst/GetNext to align better with
+//     STL map<> implementation rather than flat array implementation
+//----------------------------------------------------------------------------------
 char* CIniFile::GetSectionName (int i)
 {
   char* rc = NULL;
@@ -716,28 +706,34 @@ void SaveIniSettings (void)
   ini->Save ("System/FlyLegacy.ini");
 }
 
-
+//----------------------------------------------------------------------
+//	Return integer value from [sect] parm=value
+//----------------------------------------------------------------------
 void  GetIniVar(const char *section, const char *varname, int *value)
 {
   ini->Get (section, varname, value);
 }
-
-
+//----------------------------------------------------------------------
+//	Return float value
+//----------------------------------------------------------------------
 void  GetIniFloat(const char *section, const char *varname, float *value)
-{
-  ini->Get (section, varname, value);
-}
-
-
+{  ini->Get (section, varname, value);	}
+//----------------------------------------------------------------------
+//	Return string value
+//----------------------------------------------------------------------
 void  GetIniString(const char *section, const char *varname, char *strvar, int maxLength)
-{
-  ini->Get (section, varname, strvar, maxLength);
-}
+{  ini->Get (section, varname, strvar, maxLength);	}
+//----------------------------------------------------------------------
+//	Return string pointer
+//----------------------------------------------------------------------
 const char *GetIniValue(const char *section, const char *key)
-{
-	return ini->GetValue(section,key);
-}
-
+{	return ini->GetValue(section,key);	}
+//----------------------------------------------------------------------
+//	Return parameter
+//----------------------------------------------------------------------
+bool  GetIniKey(char *section, char *key)
+{	return ini->GetKey(section,key);	}
+//======================================================================
 void  SetIniVar(const char *section, const char *varname, int value)
 {
   ini->Set (section, varname, value);
