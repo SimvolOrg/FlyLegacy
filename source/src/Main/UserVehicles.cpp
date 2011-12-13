@@ -129,9 +129,7 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
   mRpm.id = MSG_GETDATA;
   mMap.id = MSG_GETDATA;
 	//----------------------------------------------
-	elapsed = 0.0f;
-  brakeDist = 1200.0f;
-  //accBrake = 0.0; // 
+	elapsed = 0;
 }
 //----------------------------------------------------------------------
 //  Delete this object
@@ -372,11 +370,7 @@ int CSimulatedVehicle::Read (SStream *stream, Tag tag)
 void CSimulatedVehicle::ReadFinished (void)
 { //--- Read checklist if any ------------
 	double bfs =  FN_FEET_FROM_MILE(approachspeed)/ 3600;		// Brake speed feet/sec
-  // since the constructor is read after this function we must
-  // verify if brakeDist is defined ...
-  if (brakeDist < FLT_EPSILON) brakeDist = 1200.0f; // default
-	accBrake = (bfs * bfs) / (2 * brakeDist);	
-  //TRACE ("brakes %f %f", bfs, accBrake);
+	accBrake = (bfs * bfs) / (2 * brakeDist);									
   return;
 }
 //-------------------------------------------------------------------------------
@@ -920,20 +914,13 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
 CElectricalSystem::~CElectricalSystem (void)
 { //--delete all amp subsystems -------------
   std::vector<CSubsystem*>::iterator i;
-  std::vector<CSubsystem*>::iterator p;
-  for (i=subs.begin(); i!=subs.end(); i++) {
-    // LC note : "s" is added in both vectors "sext" 
-    // and "subs" so we have to verify which vector has 
-    // deleted the pointer to avoid a crash when quitting
-    if (SUBSYSTEM_SMOKE == (*i)->GetType ()) continue;
-    //
-    delete (*i);
-  }
-  //--delete all external subsystems --------
-  for (p=sext.begin(); p!=sext.end(); p++) delete (*p);
+  for (i=subs.begin(); i!=subs.end(); i++) delete (*i);
   //--delete all dlls -----------------------
   std::vector<CDLLSubsystem*>::iterator d;
   for (d=sdll.begin(); d!=sdll.end(); d++) delete (*d);
+  //--delete all external subsystems --------
+  std::vector<CSubsystem*>::iterator p;
+  for (p=sext.begin(); p!=sext.end(); p++) delete (*p);
 }
 //-----------------------------------------------------------
 //  Free DLL resources
@@ -947,7 +934,7 @@ void CElectricalSystem::FreeDLLSubsystem (void)
   // delete all pointers in dll_gauge
   std::vector <CDLLSubsystem *>::iterator idllS;
   for (idllS = sdll.begin (); idllS != sdll.end (); ++idllS) {
-    delete (*idllS); /*SAFE_DELETE*/
+    SAFE_DELETE (*idllS);
   }
   sdll.clear (); // 
 }
@@ -1704,17 +1691,11 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
         //MEMORY_LEAK_MARKER ("electr*14")
         break;
       case SUBSYSTEM_SMOKE:
-        //MEMORY_LEAK_MARKER ("smoke_sys");
-        s = new CSubsystemSmoke (mveh);
-        // TRACE ("new CSubsystemSmoke %p", s); // lc 101611
-        // LC note : "s" is added in both vectors "sext" 
-        // and "subs" so we have to verify which vector has 
-        // deleted the pointer to avoid a crash when quitting
-        // in CElectricalSystem::~CElectricalSystem (void)
-        AddExternal (s, 0/*stream*/); // lc 101611
-        break; // lc 101611
-        //return TAG_READ; // lc 101611
-        //MEMORY_LEAK_MARKER ("smoke_sys");
+         //MEMORY_LEAK_MARKER ("smoke_sys");
+         s = new CSubsystemSmoke(mveh);
+         AddExternal(s,stream);
+         return TAG_READ;
+         //MEMORY_LEAK_MARKER ("smoke_sys");
 
       default:
         { // Not identified: Create a DLL gauge
@@ -1767,7 +1748,6 @@ void CElectricalSystem::AddExternal(CSubsystem *sy,SStream *st)
   sext.push_back (sy);
   return;
 }
-
 //---------------------------------------------------------------------------
 //  All is read
 //---------------------------------------------------------------------------

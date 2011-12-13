@@ -120,9 +120,8 @@ bool KeyAirGroup (CKeyDefinition *kdf, int code)
 	if (0 == ac)				return false;
   if (kid == 'actr')	return globals->pln->CenterControls();
   // Inhibit aircraft control when in slew mode
-  if (globals->slw->IsEnabled ())		return false;
-	if (globals->aPROF & PROF_NO_PLN)	return false;
-  if (kdf->NoPCB())									return false;
+  if (globals->slw->IsEnabled ()) return false;
+  if (kdf->NoPCB())               return false;
   U_INT key = code & 0x0000FFFF;      // Key code
   U_INT mod = (code >> 16);           // Modifier
   return kdf->GetCallback() (kid,key,mod);
@@ -284,7 +283,7 @@ bool aKeyAMFL(int kid,int key, int mod)
   return true; }
 //---Autopilot Takeoff---------------------------------------
 bool aKeyTKOF(int kid,int key, int mod)
-{	globals->pln->aPIL->EnterTakeOFF();
+{	globals->pln->aPIL->EnterTakeOFF(0);
 	return true;
 }
 //---Open GPS window (TODO: must check the correct GPS) -----
@@ -318,7 +317,6 @@ bool aKeyOUCH(int kid,int code,int mod)
 bool aKeyRSET(int kid,int code,int mod)
 { CAirplane *pln = globals->pln;
 	if (pln)	pln->ResetCrash(1);
-	InitialProfile();
   return true; }
 //--- Aero vector  ----------------------------------------
 bool aKeyAERV(int kid,int code,int mod)
@@ -717,14 +715,6 @@ EMessageResult CAirplane::SendMessageToExternals (SMessage *msg)
   return rc;
 }
 //-------------------------------------------------------------------------------
-//	Plane is at rest on ground 
-//--------------------------------------------------------------------------------
-bool CAirplane::AtRest()
-{	bool ok  =  AllWheelsOnGround();
-       ok &= (GetPreCalculedKIAS() < 10);
-	return ok;
-}
-//-------------------------------------------------------------------------------
 //	Return engine subsystems
 //--------------------------------------------------------------------------------
 void CAirplane::GetAllEngines(std::vector<CEngine*> &engs)
@@ -769,13 +759,7 @@ void CAirplane::BodyCollision(CVector &p)
 //          we will have to make some adaptation
 //-----------------------------------------------------------------------------
 void CAirplane::TimeSlice(float dT,U_INT frame)
-{ //---update the aircraft busy profile --------------------
-	bool  rs = AtRest();
-	U_INT pf = globals->aPROF;
-	if (rs) pf &= (-1 - PROF_ACBUSY);
-	else		pf |= (PROF_ACBUSY);
-	globals->aPROF = pf;
-	//--------------------------------------------------------
+{ //--------------------------------------------------------
 	pit->TimeSlice(dT);
 	CJoysticksManager *jsm = globals->jsm;
   switch (State)  {
@@ -792,7 +776,8 @@ void CAirplane::TimeSlice(float dT,U_INT frame)
     //--- Aircraft is operational or damaged----------------
     case VEH_INOP:
     case VEH_OPER:
-      { int  nbEng = amp->pEngineManager->HowMany();
+      { 
+        int  nbEng = amp->pEngineManager->HowMany();
         jsm->SendGroupPMT(nbEng);               // Send Prop-mixture and throttle
         Update (dT,frame);
         return;
@@ -1101,7 +1086,7 @@ CUFOObject::CUFOObject (void)
   DEBUGLOG ("Starting CUFOObject");
   is_ufo_object = true;
   int val = 0;
-  GetIniVar ("Sim", "showUFOPosition", &val);
+  GetIniVar ("Sim", "showPosition", &val);
   show_position = val ? true : false;
 }
 

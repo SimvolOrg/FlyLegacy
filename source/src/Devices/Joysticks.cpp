@@ -105,7 +105,7 @@ bool SJoyDEF::CreateSDL(int k)
 		//-- get number of buttons and hat ----------
 		nbt	= SDL_JoystickNumButtons(spj);
 		nht	= SDL_JoystickNumHats(spj);
-		TRACE("JOYSTICK: %s axes=%d buttons=%d",dName,nba,nbt);
+		WARNINGLOG("JOYSTICK: %s axes=%d buttons=%d",dName,nba,nbt);
 		return true;
 	}
 //----------------------------------------------------------------
@@ -273,10 +273,10 @@ CSimButton::~CSimButton()
 //----------------------------------------------------------------------
 //  Check transition from 0 to 1
 //----------------------------------------------------------------------
-bool CSimButton::Tr01(char st)
-{ char old  = Stat;
-  Stat      = st;
-  return ((0 == old) && (0 != st))?(1):(0);
+bool CSimButton::Tr01(U_INT st)
+{ U_INT old  = Stat;
+  Stat       = st;
+  return ((0 == old) && (0 != st));
 }
 //----------------------------------------------------------------------
 //  Read Parameters from button description
@@ -357,7 +357,7 @@ void CJoysticksManager::PreInit()
   InitAxe( 2,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)", JS_RUDDER      , 0, true, -1);
   InitAxe( 3,JOY_TYPE_PLAN, JS_ELVT_BIT,"Elevator Trim",    JS_TRIM        , 0, true);
 	//---Group toes -------------------------------------------------------------------
-  InitAxe( 4,JOY_TYPE_PLAN, JS_OTHR_BIT,"Right Toe-brake",  JS_RIGHT_TOE   , JOY_GROUP_TOES, false);
+  InitAxe( 4,JOY_TYPE_PLAN, JS_OTHR_BIT,"Right Toe-brake",  JS_RITE_TOE		 , JOY_GROUP_TOES, false);
   InitAxe( 5,JOY_TYPE_PLAN, JS_OTHR_BIT,"Left  Toe-brake",  JS_LEFT_TOE    , JOY_GROUP_TOES, false);
 	//---Group throttle ---------------------------------------------------------------
   InitAxe( 6,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",       JS_THROTTLE_1  , JOY_THROTTLE, false,-1);
@@ -394,7 +394,7 @@ void CJoysticksManager::PreInit()
   EndMark(25);
 	//------------------------------------------------------------------
 	SetMessage(4, SUBSYSTEM_BRAKE_CONTROL,BRAKE_LEFT,'btoe');
-	SetMessage(4, SUBSYSTEM_BRAKE_CONTROL,BRAKE_RITE,'btoe');
+	SetMessage(5, SUBSYSTEM_BRAKE_CONTROL,BRAKE_RITE,'btoe');
   //------------------------------------------------------------------
   SetMessage( 6,SUBSYSTEM_THROTTLE_CONTROL,1,'thro');
   SetMessage( 7,SUBSYSTEM_THROTTLE_CONTROL,2,'thro');
@@ -411,7 +411,7 @@ void CJoysticksManager::PreInit()
   SetMessage(16,SUBSYSTEM_PROPELLER_CONTROL, 3,'blad');
   SetMessage(17,SUBSYSTEM_PROPELLER_CONTROL, 4,'blad');
   //------------------------------------------------------------------
-	use	= 0;
+	use		= 0;
 	SDL_Init( SDL_INIT_JOYSTICK ); 
 	EnumSDL();
 	return;
@@ -537,8 +537,7 @@ void CJoysticksManager::Init( )
   if (0 == use)			return;
 	SStream s;
   if (OpenRStream ("System/FlyLegacyControls.txt",s))
-  {
-    // Successfully opened stream
+  { // Successfully opened stream
     ReadFrom (this, &s);
     CloseStream (&s);
   }
@@ -857,6 +856,7 @@ void CJoysticksManager::Poll(EAllAxes axe, float &v)
   if (pa && pa->IsConnected(axeCNX))	v = pa->Value(nZON);
 	return;
 }
+
 //--------------------------------------------------------------------------------
 //  Check For Axe
 //--------------------------------------------------------------------------------
@@ -886,13 +886,15 @@ float CJoysticksManager::RawVal(CSimAxe *pa)
 }
 //--------------------------------------------------------------------------------
 //	Check if throttle is moved
+//	If moved by user, then give gas control to user
 //--------------------------------------------------------------------------------
 void CJoysticksManager::CheckControl(Tag tag)
 {	CSimAxe *axe  = GetAxe(tag);
-	if (!axe)			return;
+	if (!axe)									return;
   SJoyDEF *joy  = axe->pJoy;
-	if (!joy)			return;
-	axeCNX  |= joy->HasMoved(axe);						// Reconnect if moved
+	if (!joy)									return;
+	//--- Reconnect gas control --------------------
+	axeCNX |= joy->HasMoved(axe);
 	return;
 }
 //--------------------------------------------------------------------------------

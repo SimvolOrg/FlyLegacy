@@ -152,8 +152,7 @@ short CTIFFparser::Read16 (PODFILE *p)
 long CTIFFparser::Read32 (PODFILE *p)
 { long v;
   int nr = pread (&v, sizeof(long), 1, p);
-  if (1 != nr)  
-    gtfo("Bad file");
+  if (1 != nr)     gtfo("Bad file");
   return (Big)?(BigEndian(v)):(LittleEndian(v));
 }
 //----------------------------------------------------------------------------
@@ -437,7 +436,7 @@ int  CTIFFparser::Decode(char *fn)
     Dir.type   = Read16 (p);
     Dir.count  = Read32 (p);
     Dir.offset = Read32 (p);
-
+TRACE("Tag %u Type %u Count %u Offset %u",Dir.tag, Dir.type, Dir.count, Dir.offset);
     //-------PROCESS TAG -------------------------------------------------
     switch (Dir.tag) {
       //----Bitmap width in pixels --------------------
@@ -459,7 +458,7 @@ int  CTIFFparser::Decode(char *fn)
       //---Compressed not supprted ---------------------
       case TIF_TAG_COMPRESSION:
         if (Dir.offset == 1)         continue;
-        return Warning(p,"Compressed not supported");
+        return Warning(p,"Compression not supported");
       //---Decode format --------------------------------
       case TIF_TAG_INTERPRETATION:
         if (GetFormat(p,Dir.offset))  continue;
@@ -489,6 +488,11 @@ int  CTIFFparser::Decode(char *fn)
         CMdim = Dir.count / 3;
         CMofs = Dir.offset;
         continue;
+			//--- Tag to ignore -------------------------------
+
+			default:
+				continue;
+//				gtfo("TIF %s invalid tag %u", fn, Dir.tag);
     }
     }
   //--NOW BUILD THE RGB MAP -------------------------------

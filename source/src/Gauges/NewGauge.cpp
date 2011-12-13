@@ -398,27 +398,33 @@ int CBasicDigitalClockGauge::Read (SStream *stream, Tag tag)
 //======================================================================
 CNavGpsSwitchT0::CNavGpsSwitchT0 (CPanel *mp)
 : C_SimpleInOutStateSwitch(mp)
-{	gbus = GAUGE_BUS_INT04;
+{	usas = 0;
 }
 //------------------------------------------------------------------
-//	Read All parameters throught Simple Switch
+//	Read All parameters through Simple Switch
 //------------------------------------------------------------------
-int CNavGpsSwitchT0::Read (SStream *stream, Tag tag)
-{ int pm = GAUGE_BUS_INT04;
-	switch (tag) {
-	case 'gbus':
-		ReadInt(&pm,stream);
-		gbus	= pm;
-		return TAG_READ;
+void CNavGpsSwitchT0::ReadFinished ()
+{ C_SimpleInOutStateSwitch::ReadFinished();
+	switch (mesg.user.u.datatag) {
+	//-- used for track mode ---------
+	case 'navp':
+		usas = 'trak';
+		return;
+	//--- used for autoland --------
+	case 'aprp':
+		usas = 'land';
+		return;
 	}
-	return C_SimpleInOutStateSwitch::Read (stream, tag);
+	return; 
 }
 //-----------------------------------------------------------------------------
 //  Draw the gauge
 //-----------------------------------------------------------------------------
 void CNavGpsSwitchT0::DrawAmbient()
 {	//---- Update state -----------------------
-	char val	= subS->GaugeBusINNO(gbus);
+	int val	= 0;
+	if ('trak' == usas) val = subS->GaugeBusIN04();
+	if ('land' == usas) val = subS->GaugeBusIN05();
 	Draw(val);
   return;
   }

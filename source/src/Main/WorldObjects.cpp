@@ -113,11 +113,7 @@ CWorldObject::CWorldObject (void)
 	phyMod	= 0;
 	//--- Default options -------------------
 	SetOPT(VEH_AP_LAND);
-  int crash = 1;                    // enabled
-  GetIniVar ("PHYSICS", "enableCrashDetect", &crash);
-  U_INT prop = (crash)?(VEH_D_CRASH):(0);
-  SetOPT(prop);
-  //SetOPT(VEH_D_CRASH);
+  SetOPT(VEH_D_CRASH);
   SetOPT(VEH_PN_HELP);
 
 }
@@ -289,7 +285,7 @@ void	CWorldObject::GetRRtoLDOrientation (SVector *vec)
 float	CWorldObject::GetMagneticDirection()
 {	float zdir	= -dang.z;
   //---work in aircraft local coordinate Left hand in degre -----
-  return Norme360(zdir - globals->magDEV);
+  return Wrap360(zdir - globals->magDEV);
 }
 //------------------------------------------------------------
 //	From gauges that work in right hand coordinate and degres
@@ -367,7 +363,7 @@ void CWorldObject::ResetCrash(char p)
 { for (U_INT k=0; k<damL.size(); k++) delete damL[k];
 	damL.clear();
 	//--- Reset global profile ---------------------
-	SpecialProfile(0,globals->aPROF);
+	InitialProfile();
 	return;
 }
 //-------------------------------------------------------------
@@ -584,6 +580,13 @@ CVehicleObject::CVehicleObject (void)
 	ckl	= NULL;
 	//-------------------------------------------------------
   globals->rdb = new CFuiRadioBand;
+  //----Check for No AIrcraft in Sim section --------------
+  int  NoAC = 0;
+  GetIniVar("Sim", "NoAircraft", &NoAC);
+  if (NoAC)
+	{	globals->noEXT++;									// No external aircraft
+		globals->noINT++;									// No internal aircraft
+	}
   //-------------------------------------------------------
   is_ufo_object =  false;                // 
   is_opal_object = false;
@@ -598,10 +601,6 @@ CVehicleObject::CVehicleObject (void)
   main_wing_aoa_min = 0.0f;             ///< stocking AoA min RAD
   main_wing_aoa_max = 0.0f;             ///< stocking AoA max RAD
   kias = 0.0;
-  // set aircraft's shadow depending on ini file
-  val = 0;
-  GetIniVar ("Graphics", "drawAircraftShadow", &val);
-  if (val) SetOPT (VEH_DW_SHAD);
 }
 //------------------------------------------------------------------------
 //  Store NFO file name

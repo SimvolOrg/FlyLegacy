@@ -50,7 +50,7 @@ enum JoyConnector {
 		JS_THRO_BIT = 0x0040,								// THROTTLE lever
 		JS_OTHR_BIT = 0x8000,								// Other axis
 		//-----------------------------------------------------------
-		JS_SURF_PIL = (JS_AILR_BIT + JS_ELVR_BIT + JS_AILT_BIT + JS_ELVT_BIT),
+		JS_SURF_APL = (JS_AILR_BIT + JS_ELVR_BIT + JS_AILT_BIT + JS_ELVT_BIT + JS_THRO_BIT),
 		JS_SURF_ALL = (JS_AILR_BIT + JS_ELVR_BIT + JS_RUDR_BIT),
 		JS_TRIM_ALL = (JS_AILT_BIT + JS_ELVT_BIT + JS_RUDT_BIT),
 };
@@ -75,14 +75,14 @@ public:
   Tag            kset;          // Ket set
   Tag            cmde;          // Key command
   int            nBut;          // Button number
-  int            Stat;          // ON-OFF state
+  U_INT          Stat;          // ON-OFF state
   CKeyDefinition *kdf;          // Associated key
   //----Public methods ---------------------------------
 public:
   CSimButton();
  ~CSimButton();
   int   Read(SStream * stream, Tag tag);
-  bool  Tr01(char st);
+  bool  Tr01(U_INT st);
   //---Inline -----------------------------------------
   inline void LinkTo(CKeyDefinition *d) {kdf = d;}
   inline CKeyDefinition *GetKey() {return kdf;}
@@ -168,7 +168,7 @@ public:
 	void  Assignment(char *edt,int s);
 	//--------------------------------------------------------------
 	bool	IsConnected(U_INT m)
-	{	char sel = m & msk;	return ((sel) && (pJoy != 0));  }
+	{	U_INT sel = m & msk;	return ((sel) && (pJoy != 0));  }
 	//--------------------------------------------------------------
 	inline void				 SetATTN(float v)	{attn = v;}
 	inline float			 GetATTN()			{return attn;}
@@ -189,7 +189,7 @@ typedef enum
   JS_ELEVATOR  = 'elev',
   JS_RUDDER    = 'rudr',
   JS_TRIM      = 'trim',
-  JS_RIGHT_TOE = 'rtoe',
+  JS_RITE_TOE	 = 'rtoe',
   JS_LEFT_TOE  = 'ltoe',
   JS_THROTTLE_0= 'thr0',  // Not a real AXE
   JS_THROTTLE_1= 'thr1',
@@ -350,17 +350,20 @@ private:
 	char    modify;
   char		busy;		// Library used 0 = PU 1 = SDL
 	char		use;		// Joystick use
-  std::vector<SJoyDEF *>   joyQ;
+	char		rfu1;		//reserved
+	//--- HAT control -------------------------------------
+	char    uht;										// Hat used
+	char		jsh;										// Hat joystick
+	//--- list of components -------------------------------
+	std::vector<SJoyDEF *>   joyQ;
   std::map<Tag,CSimAxe *>   mapAxe;
   CSimAxe AxesList[JOY_AXIS_NUMBER];
   CSimAxe AxeMoved;
+	//------------------------------------------------------
   Tag     wmID;											// CFuiWindow ID for move callback
   Tag     wbID;											// CFuiWindow ID for button detect callback
   AxeDetectCB    *pAxeCB;						// function callback for axe move detection
   ButtonDetectCB *pButCB;						// function callback for button detection
-	//--- HAT control -------------------------------------
-	char    uht;										// Hat used
-	char		jsh;										// Hat joystick
 	//-----Control commande -------------------------------
 	Tag			cmde;										// Current command
 	int 		Time;										// Hat timer

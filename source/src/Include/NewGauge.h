@@ -959,14 +959,13 @@ protected:
 class CNavGpsSwitchT0 : public C_SimpleInOutStateSwitch {
 	//--- ATTRIBUTES ----------------------------------------------
 protected:
-	char	gbus;					// Gauge bus for state
+	Tag	usas;					// Gauge bus for state
 	//-------------------------------------------------------------
 public:
   CNavGpsSwitchT0 (CPanel *mp);
 
   // CStreamObject methods
-  int   Read (SStream *stream, Tag tag);
-
+	void ReadFinished();
   // CGauge methods
   virtual const char* GetClassName (void) { return "CNavGpsSwitchT0"; }
 	//--------------------------------------------------------------------

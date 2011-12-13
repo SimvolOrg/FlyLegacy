@@ -240,7 +240,7 @@ VPilot::VPilot()
 void VPilot::Error(int No)
 {	globals->fui->DialogError(vpMSG[No],"VIRTUAL PILOT");
   State = VPL_IS_IDLE;
-	globals->aPROF = 0;
+	globals->aPROF.Rep(0);
 	return;
 }
 //--------------------------------------------------------------
@@ -254,10 +254,10 @@ void VPilot::Warn(int No)
 //	Handle back the aircraft
 //--------------------------------------------------------------
 void VPilot::HandleBack()
-{	if (Radio)	Radio->ModeEXT(0);
+{	apil->ReleaseControl();
+	if (Radio)	Radio->ModeEXT(0);
 	Error(0);
-	fpln->Stop();
-	globals->aPROF = 0;
+	fpln->StopPlan();
 	return;
 }
 //--------------------------------------------------------------
@@ -284,8 +284,8 @@ bool VPilot::GetRadio()
 //--------------------------------------------------------------
 void VPilot::Start()
 {	//--- Check if aircraft busy --------------
-	if (globals->aPROF & PROF_ACBUSY)	return;
-	globals->aPROF |= PROF_ACBUSY;
+	if (globals->aPROF.Has(PROF_ACBUSY))	return;
+	globals->aPROF.Set(PROF_ACBUSY);
 	//-----------------------------------------
 	pln			= (CAirplane*)mveh;
 	apil	  = pln->GetAutoPilot();
@@ -374,7 +374,7 @@ void VPilot::PreStart(float dT)
 void VPilot::EnterTakeOff()
 {	State = VPL_TAKE_OFF;
   apil->Engage();
-	apil->EnterTakeOFF();
+	apil->EnterTakeOFF(1);
 	gc		= 1;
 	return;
 }
@@ -383,9 +383,9 @@ void VPilot::EnterTakeOff()
 //	 TODO: Put AGL in parameter
 //--------------------------------------------------------------
 void VPilot::ModeTKO()
-{	if (apil->IsDisengaged())	return HandleBack();
-	if (apil->BellowAGL(200))	return;
-	fpln->StartPlan();
+{	if (apil->IsDisengaged())		return HandleBack();
+	if (apil->BellowAGL(200))		return;
+	if (!fpln->StartPlan(0))		return;
 	//--- Climb to 1500 -----------
 	State = VPL_CLIMBING;
 	return;
@@ -422,23 +422,56 @@ void VPilot::EnterFinal()
 	return;
 }
 //--------------------------------------------------------------
+//	Compute direction
+//	If leg distance is under 12 miles, head direct to station
+//
+//--------------------------------------------------------------
+float VPilot::SetDirection()
+{	float dis = wayP->GetLegDistance();
+  float seg = wayP->GetDirection();
+	float dev = Radio->GetDeviation();
+	float rdv = fabs(dev);
+	if ((dis > 12) || (rdv < 5))	return seg;
+	//--- Compute direct-to direction to waypoint -----
+  return wayP->GoDirect(mveh);
+}
+//--------------------------------------------------------------
 //	Change to next Waypoint
 //--------------------------------------------------------------
 void VPilot::ChangeWaypoint()
 {	char *edt = globals->fui->PilotNote();
+	float rad = 0;
 	wayP	= fpln->GetActiveNode();
 	if (wayP->IsFirst())			return;  // wait next
 	if (fpln->IsOnFinal())		return EnterFinal();
 	//--- Advise user -------------------------------------
-	float dir = fpln->DirectionToActive(Radio);
+	float dir = SetDirection();
 	_snprintf(edt,128,"Heading %03d to %s",int(dir),wayP->GetName());
 	globals->fui->PilotToUser();
+	//--- Set Waypoint on external source -----------------
+	CmHead *obj = wayP->GetDBobject();
+	Radio->ModeEXT(obj);
+	//--- Set Reference direction --------------------------
+	Radio->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
-	apil->GoToWaypoint(wayP);
-	//double alt = double(wayP->GetAltitude());
-	//apil->ChangeALT(alt);							// Set target altitude
-	//apil->SetNavMode();								// Set NAV mode 
+	double alt = double(wayP->GetAltitude());
+	apil->ChangeALT(alt);							// Set target altitude
+	apil->SetNavMode();								// Set NAV mode 
 	State = VPL_TRACKING;
+	return;
+}
+//--------------------------------------------------------------
+//	Refresh direction to waypoint if needed
+//--------------------------------------------------------------
+void VPilot::Refresh()
+{	float dev = Radio->GetDeviation();
+	float rdv = fabs(dev);
+	bool  dto = ((rdv > 5) || (wayP->IsDirect()));
+	//--- check if Direct to is active ----------
+	if (!dto)	return; 
+  float dir = wayP->GoDirect(mveh);
+	Radio->ChangePosition(wayP->GetGeoP());
+	Radio->ChangeRefDirection(dir);
 	return;
 }
 //--------------------------------------------------------------
@@ -449,8 +482,8 @@ void VPilot::ModeTracking()
 	if ((tc == 0) && (gc == 1)) Warn(10);
 	gc			= tc;
 	if (apil->IsDisengaged())	return HandleBack();
-	if (wayP->IsActive())	    return fpln->RefreshDirection(Radio);
-	else 	ChangeWaypoint();
+	if (wayP->IsActive())	    return Refresh();
+	ChangeWaypoint();
 	return;
 }
 //--------------------------------------------------------------

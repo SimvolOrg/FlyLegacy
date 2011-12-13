@@ -98,6 +98,12 @@ typedef struct {
 #define TIF_TAG_STRIPBYTECOUNTS     (0x0117)
 #define TIF_TAG_PLANARCONFIGURATION (0x011C)
 #define TIF_TAG_COLORMAP            (0x0140)
+#define TIF_TAG_XRESOLUTION					(0x011A)
+#define TIF_TAG_YRESOLUTION					(0x011B)
+#define TIF_TAG_RESOLUTION_UNIT			(0x0128)
+#define TIF_TAG_SOFTWARE						(0x0131)
+#define TIF_TAG_DATE								(0x0132)
+#define TIF_TAG_ExtraSamples				(0x0152)
 #define TIF_TAG_NEWSUBFILETYPE      (0x00FE)
 //------------------------------------------------------------------------
 #define PTIF_LITTLE_ENDIAN  (0x4949)

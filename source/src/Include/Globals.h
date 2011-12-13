@@ -50,8 +50,8 @@
 //=============================================================================================
 class CFmtxMap;
 //=============================================================================================
-//	Define APPILCATION PROFILE
-//	APPILCATION PROFILE is used by specifics windows like editors.
+//	Define APPLICATION PROFILE
+//	APPLICATION PROFILE is used by specifics windows like editors.
 //	Option to prevent drawing and changing camera are set
 //=============================================================================================
 #define PROF_NO_TER			(0x00000001)				// No terrain drawing
@@ -192,7 +192,7 @@ typedef struct {
   double    magDEV; // Magnetic deviation at position
   int       NbVTX;  // Number of vertices
   //----APPLICATION PROFILE -----------------------------------------
-	U_INT				aPROF;										// Application profile
+	COption			aPROF;										// Application profile
 	U_INT				iPROF;										// Initial profile
   U_CHAR      noAWT;                    // No animated water
   U_CHAR      noTER;                    // No terrain

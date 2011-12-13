@@ -170,8 +170,8 @@ protected:
 //  reference value and supplies an output value used to act on a control surface
 //  Autopilot are built by cascading a set of PID
 //  This particular PID controler is based on Flightgear PID controller
-//  Thanks to Roy Ovesen for permission to use its formulea
-//  It use the following inputs ---------------------------------------------
+//  Thanks to Roy Ovesen for permission to use his formulea
+//  It uses the following inputs ---------------------------------------------
 //    Yn  is the sampled value to control at step n
 //    Rn  is the target  value to reach at step n
 //    Kp  is the proportional gain coefficient
@@ -290,23 +290,24 @@ class AutoPilot : public CDependent {
 protected:
   U_CHAR     inUse;                         // Use autopilot
   U_CHAR     lStat;                         // Lateral state
-	U_CHAR		 step;													// TGA step
+	U_CHAR		 stga;													// TGA step
   U_CHAR     vStat;                         // Vertical state
   U_CHAR     land;                          // landing option
-  //-------------------------------------------------------------------
-  char       Powr;                          // Power indicator
+  //--------Indicators and options -------------------------------------
+	char			 xCtl;													// Externally controlled				
+	char       Powr;                          // Power indicator
   char       uvsp;                          // use VSP
   char       aprm;                          // Approach mode
   char       ugaz;                          // Use autothrottle
 	char       wgrd;													// Wheel on ground
-	char			 redz;													// Red zone
-	char       sect;													// Sector TO
+	char			 redz;													// Red zone in lateral mode
+	char       sect;													// current VOR/ILS Sector 
   //-----------Lights--------------------------------------------------
   char       alta;                          // Altitude armed
   char       flsh;                          // Flash
   //-----------Flasher ------------------------------------------------
-  U_CHAR      timFS;                            // Flasher timer
-  U_CHAR      mskFS;                            // Flasher mask
+  U_CHAR      timFS;                        // Flasher timer
+  U_CHAR      mskFS;                        // Flasher mask
 	//---Subsystems ------------------------------------------------------
 	CSubsystem	 *altS;												// Altimeter
 	CSubsystem   *cmpS;												// Compass
@@ -459,7 +460,9 @@ public:
 	//--- External interface --------------------------------------------
 	bool				Init();
 	bool 				Engage();
-	bool				EnterTakeOFF();
+	bool				EnterTakeOFF(char x);
+	bool				EnterGPSMode();
+	void				ReleaseControl()		{xCtl = 0;}
 	void				SetNavMode();
   //-------------------------------------------------------------------
   double          RoundValue(double v,double p);
@@ -502,7 +505,7 @@ public:
   void            DecVSP();
   void            IncALT();
   void            DecALT();
-	void						GoToWaypoint(CWPoint *wpt);
+	void						ChangeALT(double a);
 	void						HoldAOA(double v);
 	void						SetLandingMode();
   //----Lateral modes --------------------------------------------------

@@ -373,22 +373,23 @@ void InitialProfile()
   GetIniVar("Sim","NoMeteo",&nm);
   if (nm) globals->noMET = 1;
 	//--- Reset global profile lock -------------------------
-	globals->aPROF = 0;
+	globals->aPROF.Rep(0);
 	return;
 }
 //============================================================================
 //  Set special application profile
 //============================================================================
-void SpecialProfile(Tag wnd,U_INT p)
-{ int	dta		= (wnd)?(+1):(-1);
-	U_INT pf	= (wnd)?(p):(0);
-	globals->aPROF	= pf;
+void SpecialProfile(Tag set,U_INT p)
+{ int	dta		= (set)?(+1):(-1);
+	U_INT pf	= (set)?(p):(0);
+	globals->aPROF.Rep(pf);
 	if (p & PROF_NO_TER)	globals->noTER += dta;
 	if (p & PROF_NO_APT)	globals->noAPT += dta;
 	if (p & PROF_NO_INT)	globals->noINT += dta;
 	if (p & PROF_NO_EXT)	globals->noEXT += dta;
 	if (p & PROF_NO_OBJ)	globals->noOBJ += dta;
 	if (p & PROF_NO_MET)	globals->noMET += dta;
+	return;
 }
 //========================================================================================
 //  Generic initialization of the graphics engine.
@@ -1438,7 +1439,6 @@ int main (int argc, char **argv)
   globals->noAPT    = 0;                      // Allow Airport
   globals->noOBJ    = 0;                      // Allow Object
   globals->noMET    = 0;                      // Allow Meteo
-	globals->aPROF		= 0;											// current profile
   //---Terrain parameters --------------------------------------------
   globals->maxView  = 40;                     // Default Maximum view (miles)
   globals->highRAT  = 0.32;                   // Hight resolution (ratio of maxView)

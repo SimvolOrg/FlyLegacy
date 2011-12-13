@@ -173,7 +173,7 @@ void CFuiFlightLog::SetMode()
 //	Swap the edit mode
 //--------------------------------------------------------------------------
 void CFuiFlightLog::SwapMode()
-{	if (fpln->SwapMode())	return SetMode();
+{	if (fpln->SwapEditMode())	return SetMode();
 	return Error(5);	
 }
 //--------------------------------------------------------------------------
@@ -192,7 +192,7 @@ void CFuiFlightLog::Select()
 //  Teleport to selected point
 //--------------------------------------------------------------------------
 void CFuiFlightLog::Teleport()
-{	if (globals->aPROF & PROF_ACBUSY)	return;
+{	if (globals->aPROF.Has(PROF_ACBUSY))	return;
 	if (sWPT)	sWPT->Teleport();
 	return;
 }
@@ -251,11 +251,10 @@ bool CFuiFlightLog::OpenDetail()
 //  Open the directory window and wait for action
 //-------------------------------------------------------------------------
 void CFuiFlightLog::OpenDirectory()
-{ CFuiDirectory *dir = globals->dbc->GetDIRwindow();
-  if (NULL == dir)
-    dir = (CFuiDirectory *)globals->fui->CreateFuiWindow(FUI_WINDOW_WAYPOINT_DIRECTORY);
-  if (NULL != dir)
-    dir->RegisterMe(this);
+{ if (fpln->IsUsed())	return Error(5);
+	CFuiDirectory *dir = globals->dbc->GetDIRwindow();
+  if (NULL == dir)  dir = (CFuiDirectory *)globals->fui->CreateFuiWindow(FUI_WINDOW_WAYPOINT_DIRECTORY);
+  if (NULL != dir)  dir->RegisterMe(this);
   return;
 }
 //-------------------------------------------------------------------------
@@ -357,10 +356,9 @@ void CFuiFlightLog::Error(char No)
 //  Delete the selected Waypoint
 //-------------------------------------------------------------------------
 void CFuiFlightLog::DeleteWaypoint()
-{ if (fpln->IsEmpty())   return;
-	eWIN->SetText("");
+{ if (fpln->IsEmpty())  return;
+  if (fpln->IsUsed())		return Error(5);
   CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
-  if (wpt->IsVisited())  return Error(2);
   flpBOX->DeleteItem();
   fpln->Reorder(1);
 	Select();
@@ -371,31 +369,38 @@ void CFuiFlightLog::DeleteWaypoint()
 //-------------------------------------------------------------------------
 void CFuiFlightLog::MoveUpWaypoint()
 { //--- Check that selected waypoint may move ---------------
-	eWIN->SetText("");
-  if (fpln->IsEmpty())         return;
+	if (fpln->IsUsed())			return Error(5);
+  if (fpln->IsEmpty())    return;
   CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
-  if (wpt->IsVisited())        return Error(4);
-  //--- Check that the previous is not terminated -----------
+  //--- Check that the previous node exist ------------------
   wpt = (CWPoint*)flpBOX->PrevPrimary(wpt);
-  if (wpt && wpt->IsVisited()) return Error(3);
+  if (0 == wpt)						return;
   flpBOX->MoveUpItem();
   fpln->Reorder(1);
   return;
 }
 //-------------------------------------------------------------------------
-//  Mouve down current selected waypoint
+//  Move down current selected waypoint
 //-------------------------------------------------------------------------
 void CFuiFlightLog::MoveDwWaypoint()
 { //--- Check that selected waypoint may move ---------------
-	eWIN->SetText("");
-  if (fpln->IsEmpty())          return;
-  CWPoint *wpt = (CWPoint*)flpBOX->GetPrimary();
-  if (wpt->IsVisited())					return Error(4);
-  //--- Check that the next is not terminated -----------
-  wpt = (CWPoint*)flpBOX->NextPrimToSelected();
-  if (wpt && wpt->IsVisited())	return Error(3);
+	if (fpln->IsUsed())			return Error(5);
+  if (fpln->IsEmpty())    return;
+  //--- Check that the next node exist ----------------------
+  CWPoint *wpt = (CWPoint*)flpBOX->NextPrimToSelected();
+  if (0 == wpt)						return;
   flpBOX->MoveDwItem();
   fpln->Reorder(1);
+  return;
+}
+//-------------------------------------------------------------------------
+//  Clear plan
+//-------------------------------------------------------------------------
+void CFuiFlightLog::ClearPlan()
+{	if (fpln->IsUsed())	return Error(5);
+  fpln->ClearPlan();
+	fpln->WarnGPS(1);
+  FillCurrentPlan();
   return;
 }
 //----------------------------------------------------------------------
@@ -491,7 +496,6 @@ void CFuiFlightLog::CloseMe()
 //-------------------------------------------------------------------------
 void CFuiFlightLog::ChangeFileName()
 {	char *nm = nWIN->GetText();
-  eWIN->SetText("");
 	fpln->SetFileName(nm);
 	if (0 == *nm) Error(1);
 	return;
@@ -500,7 +504,8 @@ void CFuiFlightLog::ChangeFileName()
 //  Event notification
 //-------------------------------------------------------------------------
 void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
-{ switch (idm)  {
+{ eWIN->SetText("");
+	switch (idm)  {
 	//--- System events ----------------------------
   case 'sysb':
     if (EVENT_CLOSEWINDOW == evn) CloseMe();
@@ -550,14 +555,10 @@ void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
   //---  Reset marks ------------------------
   case 'rset':
     fpln->Reorder(1);
-		Refresh();
     return;
   //---  Clear the plan ----------------------
   case 'zero':
-		if (fpln->IsUsed())	return Error(5);
-    fpln->ClearPlan();
-		fpln->WarnGPS(1);
-    FillCurrentPlan();
+		ClearPlan();
     return;
 	//--- Increment altitude -------------------
 	case 'palt':

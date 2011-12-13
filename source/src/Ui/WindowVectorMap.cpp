@@ -885,9 +885,9 @@ CmHead* CFuiVectorMap::LookForScreenHit(short x, short y)
 //=================================================================================
 void CFuiVectorMap::EnterModePlan()
 { //--- Set application profile -------------------
-	if (globals->aPROF & PROF_ACBUSY)	return;
-	if (rCAM)													return;
-	if (fpln->NotFor3D())						return;
+	if (globals->aPROF.Has(PROF_ACBUSY))	return;
+	if (rCAM)															return;
+	if (fpln->NotFor3D())									return;
 	//--- Activate mode plan ------------------------
 	pBox->Show();
 	oCTX.fpln		= fpln;
@@ -1597,8 +1597,7 @@ int CFuiVectorMap::ClickRwyMENU(short itm)
 //  Position aircraft for start on runway
 //---------------------------------------------------------------------------------
 int CFuiVectorMap::StartonRWY(short itm)
-{ if (globals->aPROF & PROF_ACBUSY)	return 1;
-	char *idn = smen.aText[itm] + 1;
+{ char *idn = smen.aText[itm] + 1;
 	globals->apm->SetOnRunway(obAirp,idn);
 	return 1;
 }
@@ -1661,7 +1660,7 @@ bool CFuiVectorMap::ClickWptOBJ(int mx,int my,EMouseButton button)
 // Move a Waypoint on the MAP
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::MoveWPT(int mx,int my)
-{ if (globals->aPROF & PROF_RABIT) return true;
+{ if (globals->aPROF.Has(PROF_RABIT)) return true;
 	int xorg = halfW + surface->xScreen;
   int yorg = halfH + surface->yScreen;
   double dx = +((mx - xorg) * Zoom) / VM_SCALE;

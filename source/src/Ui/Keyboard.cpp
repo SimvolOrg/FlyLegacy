@@ -526,8 +526,6 @@ bool gKeyDBGS(int kid, int code, int mod)
 //-----------------------------------------------------------------
 bool gKeySTAT(int kid, int code, int mod)
 { globals->sBar ^= 1;
-  //globals->sBar += 1;
-  //if (globals->sBar > 2) globals->sBar = 0; 
   return true;
 }
 //-----------------------------------------------------------------

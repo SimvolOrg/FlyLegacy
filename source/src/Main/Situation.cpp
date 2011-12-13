@@ -236,7 +236,7 @@ bool sKeySRGT (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySBNL (int id, int code, int mod)
 { // Bank left 1° -------------------------------------
-	if (globals->aPROF & PROF_RABIT)	return true;	
+	if (globals->aPROF.Has(PROF_RABIT))	return true;	
   CVector v(0,-1,0);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -246,7 +246,7 @@ bool sKeySBNL (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySBNR (int id, int code, int mod)
 {	//--- Bank right 1° ---------------------------------
-	if (globals->aPROF & PROF_RABIT)	return true;
+	if (globals->aPROF.Has(PROF_RABIT))	return true;
 	CVector v(0,+1,0);
 	globals->pln->AddOrientationInDegres(v);
 	return true;
@@ -256,7 +256,7 @@ bool sKeySBNR (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySRTL (int id, int code, int mod)
 { // Left rotate 1° ----------------------------------
-	if (globals->aPROF & PROF_RABIT)	return true;
+	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(0,0,+1);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -266,7 +266,7 @@ bool sKeySRTL (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySRTR (int id, int code, int mod)
 { // Right rotate 1° ----------------------------------
-	if (globals->aPROF & PROF_RABIT)	return true;
+	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(0,0,-1);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -276,7 +276,7 @@ bool sKeySRTR (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySRL4 (int id, int code, int mod)
 { //Left Rotate 45 ° ----------------------------------
-	if (globals->aPROF & PROF_RABIT)	return true;
+	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(0,0,+45);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -286,7 +286,7 @@ bool sKeySRL4 (int id, int code, int mod)
 //-----------------------------------------------------------------------------
 bool sKeySRR4 (int id, int code, int mod)
 { //--- Rigth rotate 45° ------------------------------
-	if (globals->aPROF & PROF_RABIT)	return true;
+	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(0,0,-45);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -296,7 +296,7 @@ bool sKeySRR4 (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySPTU (int id, int code, int mod)
 { //pitch up 0.25° ------------------------------------
-	if (globals->aPROF & PROF_RABIT)	return true;
+	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(+0.25,0,0);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -306,7 +306,7 @@ bool sKeySPTU (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySPTD (int id, int code, int mod)
 { //--- Pitch Down 0.25° -----------------------------
-	if (globals->aPROF & PROF_RABIT)	return true;
+	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(-0.25,0,0);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -315,7 +315,7 @@ bool sKeySPTD (int id, int code, int mod)
 //  Slew Up 'slup'
 //----------------------------------------------------------------------------
 bool sKeySLUP (int id, int code, int mod)
-{ if (globals->aPROF & PROF_TRACKE)	return true;
+{ if (globals->aPROF.Has(PROF_TRACKE))	return true;
 	globals->slw->MoveOnZ(+10.0f);
   return true;
 }
@@ -323,7 +323,7 @@ bool sKeySLUP (int id, int code, int mod)
 //  Slew down 'sldn'
 //----------------------------------------------------------------------------
 bool sKeySLDN (int id, int code, int mod)
-{ if (globals->aPROF & PROF_TRACKE)	return true;
+{ if (globals->aPROF.Has(PROF_TRACKE))	return true;
 	globals->slw->MoveOnZ(-10.0f);
   return true;
 }
@@ -447,9 +447,9 @@ void CSlewManager::StartMode(CAMERA_CTX *ctx)
 //------------------------------------------------------------------------
 void CSlewManager::StopSlew()
 {	ZeroRate();
-	if (globals->aPROF & PROF_RABIT)	return;
+	if (globals->aPROF.Has(PROF_RABIT))	return;
   veh = globals->pln;
-  if (0 == veh)											return;
+  if (0 == veh)												return;
   //---------------------------------------------
   mode = SLEW_STOP;
   if (grnd)  veh->RestOnGround();

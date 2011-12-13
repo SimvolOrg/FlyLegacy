@@ -2966,7 +2966,7 @@ void CAptObject::DrawILS()
   SVector v2 = {0,0,0};
   SPosition *farp = ils->GetFarPoint();
   Offset(*farp,v2);
-  //SVector *s = globals->tcm->GetScale();
+  SVector *s = globals->tcm->GetScale();
   glPushMatrix();
   glPushAttrib(GL_ALL_ATTRIB_BITS);
   glShadeModel(GL_FLAT);
@@ -3053,6 +3053,10 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
   avion->GetBitmap("ART/PICON.BMP");
   //----Register in globals ------------------------
   globals->apm = this;
+  //----Check for No Airport -----------------------
+  int NoAP    = 0;
+  GetIniVar("Sim", "NoAirport", &NoAP);
+  if (NoAP) globals->noAPT++;
 	//--- Current location ---------------------------
 	nApt				= 0;
 	endp				= 0;

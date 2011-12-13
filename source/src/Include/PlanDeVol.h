@@ -29,14 +29,16 @@
 
 //===============================================================================
 class CFPlan;
-//===========================================================================
+//===============================================================================
+#define FPL_EDITABLE  (1)
+#define FPL_PROTECTED (0)
+//===============================================================================
 #define FPL_STA_NUL	(0)										// Empty state
 #define FPL_STA_OPR (1)										// Operational
 //---Waypoint states --------------------------------------------------
 #define WPT_STA_OUT (1)										// outside of waypoint
 #define WPT_STA_INS (2)										// Inside waypoint
 #define WPT_STA_TRM	(3)										// Terminated
-#define WPT_STA_AWA (4)										// Going away
 //---------------------------------------------------------------------
 #define WPT_MOD_LEG	(0)										// Leg Mode
 #define WPT_MOD_DIR (1)										// Direct mode
@@ -60,6 +62,124 @@ public:
 	inline void	SetNode(CWPoint *w)		{wpt = w;}
 
 };
+//==================================================================================
+// Detail of current FLIGHT PLAN
+//==================================================================================
+class CFuiFlightLog : public CFuiRwyEXT, public CFuiWindow
+{ //------------Attributes ---------------------------------------
+	CFPlan             *fpln;									// Flight plan
+  //-----------Title line ----------------------------------------
+  CRwyLine           *line;                 // Current line
+  //--------------------------------------------------------------
+  CFuiLabel          *eWIN;                 // Error Label
+	CFuiLabel          *ilsF;                 // ils frequency
+	//--- Mode management ------------------------------------------
+	char								Mode;									// Current mode
+	char								rfu1;									// Reserved
+  //-------------Database Request ---------------------------------
+  CDataBaseREQ  Req;
+  //-----------Vertical list box ---------------------------------
+  CListBox           *flpBOX;								// Node list
+  //----------Edit fields ----------------------------------------
+  CFuiTextField       *nWIN;                // Name window
+  CFuiTextField       *dWIN;                // Description
+	//----------Ceil component -------------------------------------
+	CFuiTextField				*wCEL;								// Ceil edit
+	//--- Altitude components --------------------------------------
+	CFuiTextField       *wALT;								// Altitude edit
+  //----------Waypoint management --------------------------------
+  CObjPtr            selOBJ;                // Selected object pointer
+  U_INT               noWPT;                // Waypoint number
+  QTYPE               tyWPT;                // Waypoint type
+	CWPoint            *sWPT;									// Selected waypoint
+	//--- METHODS --------------------------------------------------
+public:
+  //------------Methods ------------------------------------------
+   CFuiFlightLog(Tag idn, const char *filename);
+  ~CFuiFlightLog(void);
+	//--- Mode management ------------------------------------------
+	void		SetMode();
+	void		SwapMode();
+  //--- Notifications --------------------------------------------
+  bool    OpenDetail();
+  void    OpenDirectory();
+  void    CloseMe();
+	void		ChangeFileName();
+  bool    NotifyFromDirectory(CmHead *obj);
+  void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
+	void		NotifyFromPopup (Tag idm,Tag itm,EFuiEvents evn);
+  //--- FlightPlan management-------------------------------------
+  void    FillCurrentPlan();
+	void		Select();
+	void		EditCeil(int a);
+	//--- Runway management ----------------------------------------
+	void		GetRunway();
+	void		AddDBrecord(void *rec,DBCODE cd);
+	void		EndOfRequest(CDataBaseREQ *req);
+  //--- Waypoint management -------------------------------------
+  void    CreateAPTwaypoint();
+  void    CreateNAVwaypoint();
+	void		CreateWPTwaypoint();
+  void    InsertWaypoint(CWPoint *w);
+  void    DeleteWaypoint();
+  void    MoveUpWaypoint();
+  void    MoveDwWaypoint();
+	void		ClearPlan();
+	void		Error(char No);
+	void		ModifAlti(int inc);
+	void		ModifCeil(int inc);
+	void		Teleport();
+	//--------------------------------------------------------------
+	void		Refresh();
+  //--------------------------------------------------------------
+  bool    ValidInsert();
+  //--------------------------------------------------------------
+  inline  void			Reset()						{FillCurrentPlan();}
+	inline	CWPoint  *GetSelectedNode()	{return sWPT;}		
+  //--------------------------------------------------------------
+  void    Draw();
+};
+
+//==================================================================================
+//  List of FLIGHT PLANS
+//==================================================================================
+class CFuiListPlan : public CFuiWindow
+{ //------------Attributes ---------------------------------------
+  U_INT               frame;
+	CFPlan						 *fpln;									// Airplane FlightPlan
+  //----------List of plans --------------------------------------
+  CListBox            allBOX;
+  //----------List of Charts -------------------------------------
+  CListBox            mapBOX;
+  //----------Waypoint management --------------------------------
+  CObjPtr            selOBJ;                // Selected object pointer
+  U_INT               noWPT;                // Waypoint number
+  QTYPE               tyWPT;                // Waypoint type
+  CWPoint            *obWPT;                // WayPoint object
+  float               speed;                // average Cruise speed
+  float               alti;                 // average ceiling
+public:
+  //------------Methods ------------------------------------------
+   CFuiListPlan(Tag idn, const char *filename);
+  ~CFuiListPlan(void);
+  //------------Notification -------------------------------------
+  void    CloseMe();
+  void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
+  //------FlightPlan management-----------------------------------
+  void    TitlePlan();
+  void    FillPlans();
+  void    SelectPlan();
+  //------Chart management ---------------------------------------
+  void    FillChartList();
+  void    FillOneList(char *ext);
+  void    AddChart(char *map);
+  void    SelectChart();
+  //--------------------------------------------------------------
+  void    Draw();
+};
+
+
+
 //==========================================================================================
 //  CheckList chapters
 //==========================================================================================
@@ -221,6 +341,7 @@ public:
 	bool		CannotChange();
 	bool		HorizontalMove(SPosition *pos);
 	void		ModifyLocation(SVector &v);
+	void		SetAltitudeAGL();
 	void		Teleport();
 	//--- Altitude management ----------------------------------
 	char*		ModifyAltitude(int inc);
@@ -231,7 +352,7 @@ public:
 	//----------------------------------------------------------
 	bool		IsLast();
 	bool		SameAPT(char *idn);
-	char		CheckAway();
+	char		GoingAway();
 	char		Outside();
 	char		Inside();
 	char		UpdateState();
@@ -301,7 +422,6 @@ public:
 	inline bool				HasLndRWY()	{return (strcmp("NONE",lndRWY) != 0);}
   inline bool       IsVisited()						{return (*Mark == 'X');}
 	inline bool				IsActive()						{return (activ != 0);}
-	inline bool				Inactive()						{return (activ == 0);}
 	inline bool       NotAirport()          {return (type != 'airp');}
 	inline bool				IsFirst()							{return (nSeq == 1);}
 	inline bool				IsaWaypoint()					{return (type != 'snav');}
@@ -375,26 +495,24 @@ protected:
 	int 	Read (SStream *stream, Tag tag);
 	void	ReadFormat(SStream *stream);
 	void	ReadFinished();
+	void	InitPlan();
 	//---------------------------------------------------------------
 public:
 	void	TimeSlice(float dT, U_INT fr);
-	void	UpdatePlan();
 	void	WarnGPS(char m);
 	int 	ModifyCeil(int inc);
 	void	UpdateDirectNode(U_INT fr);
 	void	UpdateActiveNode(U_INT fr);
 	void	ActivateNode(CWPoint *wpt);
-	float DirectionToActive(CRadio *rad);
-	void	RefreshDirection(CRadio *rad);
 	void	RestoreNode();
 	//---------------------------------------------------------------
-	char	ChangeMode(char m);
-	bool	SwapMode();
+	bool	SwapEditMode();
+	bool  CannotEdit();
 	//---------------------------------------------------------------
-	double TurningPoint();
-	//--- Robot / GPS interface -------------------------------------
-	int	  StartPlan();				// Form GPS or VPIL
-	void	Stop();
+	float TurningPoint();
+	//--- External interface -------------------------------------
+	bool  StartPlan(CWPoint *wp);				// From GPS or VPIL
+	void	StopPlan();
 	//--- Helpers ---------------------------------------------------
 	int		CheckError();
 	int		NodeType(CWPoint *wp);
@@ -420,6 +538,7 @@ public:
 	CWPoint *CreateWPTwaypoint(CWPT		*pnt);
 	CWPoint *NextStep(CWPoint *n);
 	CWPoint *BaseWPT(CWPoint *w);
+	CWPoint *StartingNode();
 	//--- Tracking flight plan --------------------------------------
 	CWPoint *GetSelectedNode()			{return sWPT;}
 	void	SetSelection(CWPoint *p)	{sWPT = p;}
@@ -466,8 +585,9 @@ public:
 	inline int				actCEIL()					{return cALT;}
 	inline float			GetInDIS()				{return insDIS;}
 	//---------------------------------------------------------------
-	inline void				Protect()					{edMOD = 0;}
-	inline bool				IsProtected()			{return (edMOD == 0);}
+	inline void				Unprotect()				{edMOD = FPL_EDITABLE;}
+	inline void				Protect()					{edMOD = FPL_PROTECTED;}
+	inline bool				IsProtected()			{return (edMOD == FPL_PROTECTED);}
 	//---------------------------------------------------------------
 	inline bool       IsUsed()					{return (State != FPL_STA_NUL);}
 	inline bool				IsEmpty()					{return (0 == NbWPT);}
@@ -486,6 +606,5 @@ public:
 	inline CWPoint   *LastNode()				{return (CWPoint*)wPoints.LastPrimary();}
 	//----------------------------------------------------------------
 };
-
 //=======================END OF FILE ======================================================================
 #endif //PLANDEVOL_H

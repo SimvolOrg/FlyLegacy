@@ -758,7 +758,7 @@ int	APIHasJoystickAxis(EJoystickAxis axis)
     return (globals->jsm->HasAxe(JS_TRIM     ));
 
   case RBRAKE_AXIS_INDEX :
-    return (globals->jsm->HasAxe(JS_RIGHT_TOE));
+    return (globals->jsm->HasAxe(JS_RITE_TOE));
 
   case LBRAKE_AXIS_INDEX :
     return (globals->jsm->HasAxe(JS_LEFT_TOE));
@@ -827,7 +827,7 @@ float	APIGetJoystickAxis(EJoystickAxis axis)
 		globals->jsm->Poll(JS_TRIM,v);
 		return v;
   case RBRAKE_AXIS_INDEX :
-		globals->jsm->Poll(JS_RIGHT_TOE,v);
+		globals->jsm->Poll(JS_RITE_TOE,v);
 		return v;
   case LBRAKE_AXIS_INDEX :
 		globals->jsm->Poll(JS_LEFT_TOE,v);
@@ -1825,7 +1825,7 @@ int	APIGetObjectGroundSpeed(SFlyObjectRef *object, float *speed)
   if (object->objectPtr) {
     CVehicleObject *os = static_cast<CVehicleObject *> (object->objectPtr);
     if (os) {
-      *speed = 0;
+      *speed = os->GetGSpeed ();
       return 0;
     }
     return 1;

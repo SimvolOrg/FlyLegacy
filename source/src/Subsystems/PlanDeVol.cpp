@@ -745,7 +745,7 @@ void  CWPoint::FillWPT(CmHead *obj)
 	SetIden    (obj->GetIdent());
   SetPosition(obj->GetPosition());
   SetDbKey   (obj->GetKey());
-  UpdAltitude(fplan->actCEIL());
+  SetAltitudeAGL();
 	magdv = obj->GetMagDev();
 	dfeet = 0;
   return;
@@ -824,8 +824,6 @@ int CWPoint::Read (SStream *stream, Tag tag)
     // Read termination marker ---------------
   case 'mark':
     ReadString(mTxt,2,stream);
-    if (mTxt[0] != 'X') return TAG_READ;
-    State = WPT_STA_TRM;
     return TAG_READ;
 
   default:
@@ -985,7 +983,7 @@ void CWPoint::Populate()
 		char   *idn = GetIdentity();
 		SetIden(idn);
 	}
-TRACE("POPULATE WP with %s",GetDBobject()->GetName());
+//TRACE("POPULATE WP with %s",GetDBobject()->GetName());
 	SetOverAltitude(altitude);
 	return;
 }
@@ -1051,23 +1049,6 @@ void CWPoint::UpdAltitude(int a)
 	return;
 }
 //----------------------------------------------------------------------
-//	Modify waypoint location
-//	Exception:
-//	Node is the first node and it is an airport
-//	Node is the last node and it is an airport
-//----------------------------------------------------------------------
-void CWPoint::ModifyLocation(SVector &v)
-{	if (CannotChange())	return;
-  //--- Compute new coordinates ---------------------
-	CmHead *obj = DBwpt.Pointer();
-	SPosition *pos = obj->ObjPosition();
-	AddFeetTo(*pos,v);
-	HorizontalMove(pos);
-	//--- Now update altitude -------------------------
-	UpdAltitude(v.z + altitude);
-	return;
-}
-//----------------------------------------------------------------------
 //	Save horizontal coordinate if waypoint can move
 //----------------------------------------------------------------------
 bool CWPoint::HorizontalMove(SPosition *pos)
@@ -1085,6 +1066,35 @@ bool CWPoint::HorizontalMove(SPosition *pos)
 	return true;
 }
 //----------------------------------------------------------------------
+//	Modify waypoint location
+//	Exception:
+//	Node is the first node and it is an airport
+//	Node is the last node and it is an airport
+//----------------------------------------------------------------------
+void CWPoint::ModifyLocation(SVector &v)
+{	if (CannotChange())	return;
+  //--- Compute new coordinates ---------------------
+	CmHead *obj = DBwpt.Pointer();
+	SPosition *pos = obj->ObjPosition();
+	AddFeetTo(*pos,v);
+	HorizontalMove(pos);
+	//--- Now update altitude -------------------------
+	UpdAltitude(v.z + altitude);
+	return;
+}
+//----------------------------------------------------------------------
+//	Altitude AGL
+//----------------------------------------------------------------------
+void CWPoint::SetAltitudeAGL()
+{ if (CannotChange())	return;
+	double agl  = fplan->actCEIL();
+	CmHead *obj = DBwpt.Pointer();
+	agl += obj->GetElevation();
+	UpdAltitude(agl);
+	return;
+}
+
+//----------------------------------------------------------------------
 //	Teleport to the waypoint
 //	Use the ground position to go to the waypoint
 //----------------------------------------------------------------------
@@ -1096,13 +1106,15 @@ void CWPoint::Teleport()
 //  Update mark
 //----------------------------------------------------------------------
 void CWPoint::UpdateMark(char m)
-{	if (0 == m)						return;
+{	if (fplan->IsUsed())	return;
+	if (0 == m)						return;
 	strcpy(Mark," ");
 	State		= WPT_STA_OUT;
  *Etar	  = 0;
 	SetLegMode();
 	return;
 }
+
 //----------------------------------------------------------------------
 //	EDIT values
 //----------------------------------------------------------------------
@@ -1166,25 +1178,10 @@ void CWPoint::EditArrival()
   return;
 }
 //-----------------------------------------------------------------
-//	Check if we are going away
+//	Waypoint is terminated now
 //-----------------------------------------------------------------
-char CWPoint::CheckAway()
-{	float pd = pDis;
-	pDis		 = mDis;
-	if (mDis < pd)		return 0;		// Still inside
-	//--- Going away -----------------------
-	State = WPT_STA_OUT;
-	SetActive(0);
-	return  WPT_STA_TRM;
-}
-//-----------------------------------------------------------------
-//	Inside waypoint
-//-----------------------------------------------------------------
-char CWPoint::Inside()
-{ double tds = fplan->TurningPoint();
-	if (mDis > tds)	return CheckAway();
-	//--- Waypoint is terminated now ------
-	SetActive(0);
+char CWPoint::GoingAway()
+{	SetActive(0);
 	State = WPT_STA_TRM;
 	strcpy(Mark,"X");
 	EditArrival();
@@ -1193,14 +1190,29 @@ char CWPoint::Inside()
 	return WPT_STA_TRM;
 }
 //-----------------------------------------------------------------
+//	Inside waypoint
+//	Check when we are going out 
+//-----------------------------------------------------------------
+char CWPoint::Inside()
+{ //-- Check for decision point --------------
+	float dpt = fplan->TurningPoint();
+	if (mDis < dpt)		return GoingAway();
+	//-- Are we still inside -------------------
+	float lim	= fplan->GetInDIS();
+	if (mDis > lim)   return GoingAway();
+	//--- Check if we go away -----------------
+	if (mDis > pDis)	return GoingAway();
+	pDis	= mDis;
+	return 0;
+}
+//-----------------------------------------------------------------
 //	Outside waypoint
-//	Check in which cercle are we
-//  Inner circle is 2.5 nmiles radius
+//	Check when we are in inner circle (60 sec away from waypoint)
 //-----------------------------------------------------------------
 char CWPoint::Outside()
 {	float lim = fplan->GetInDIS();
 	if (mDis > lim) 		return 0;
-	//--- we are now inside --------------
+	//--- we are now inside inner circle --------------
 	pDis	= mDis;
 	State = WPT_STA_INS;
 	strcpy(Mark,"O");
@@ -1278,8 +1290,6 @@ void CWPoint::Save(SStream *s)
 	{	WriteTag('ILS_', "---ILS FREQUENCY -------------", s);
 		WriteFloat(&ilsF,s);
 	}
-  WriteTag('mark', "---Terminated mark- ----------", s);
-  WriteString(mrk,s);
   WriteTag('endo', "========== END OBJECT ============", s);
 
   return;
@@ -1308,7 +1318,6 @@ CFPlan::CFPlan(CVehicleObject *m)
 	mveh		= m;
   serial	= 0;
 	State		= FPL_STA_NUL;
-	edMOD		= 0;									// Protected
 	modify	= 0;
 	GPS 		= mveh->GetGPS(); 
 	dWPT.SetFlightPlan(this);
@@ -1332,11 +1341,12 @@ CFPlan::CFPlan(CVehicleObject *m)
 	//------------------------------------------------
 	mALT		= 5000;
 	cALT		= 4500;
-	UpdatePlan();
+	InitPlan();
 	//------------------------------------------------
 	strcpy(nul,"    ");
 	//------------------------------------------------
 	format = '0';
+	edMOD	 = FPL_EDITABLE;
 }
 //-----------------------------------------------------------------
 //  Flight Plan is destroyed
@@ -1384,7 +1394,7 @@ void CFPlan::ClearPlan()
 	NbWPT			= 0;
 	genWNO		= 0;
  *dapt			= 0;
-	edMOD			= 1;
+	edMOD			= FPL_EDITABLE;
   return;
 }
 //-------------------------------------------------------------------------
@@ -1392,17 +1402,16 @@ void CFPlan::ClearPlan()
 //-------------------------------------------------------------------------
 bool CFPlan::AssignPlan(char *fn,char opt)
 { char name[PATH_MAX];
-  bool nok = ((opt == 0) && (globals->aPROF & PROF_ACBUSY));
-  if (nok)														return false;
+  if (IsProtected())					return false;
   char modif = opt ^ 1;
 	_strupr(fn);
   _snprintf(name,(PATH_MAX-1),"FLIGHTPLAN/%s.FPL",fn);
-  if (!pexists(&globals->pfs,name))		return false;
+  if (!pexists(&globals->pfs,name)) return false;
   ClearPlan();
   SStream s;
 	WarnGPS(modif);				 // Advise GPS
 	//--- Read plan and set loaded state ------
-  if (!OpenRStream (name,s))					return false;
+  if (!OpenRStream (name,s))	return false;
   option	= opt;
 	format  = '0000';
 	ReadFrom (this, &s);                 
@@ -1484,35 +1493,31 @@ int CFPlan::Read (SStream *stream, Tag tag)
 void CFPlan::ReadFinished()
 {	Reorder(0);
 	sWPT	= (CWPoint*)wPoints.HeadPrimary();
-	edMOD = (sWPT)?(0):(1);
+	edMOD = (NbWPT)?(FPL_PROTECTED):(FPL_EDITABLE);
 }
 //-----------------------------------------------------------------
-//	Change mode request from external source
-//	return  0=> OK
-//					1=> FPL is used for navigation
+//	Check if flight plan may be edited
 //-----------------------------------------------------------------
-char CFPlan::ChangeMode(char m)
-{	if (m && IsUsed())	return 1;
-  edMOD	= m;
-	return 0;
-}
+bool CFPlan::CannotEdit()
+{	bool cne = IsUsed() || IsEmpty();
+	return cne;	}
 //-----------------------------------------------------------------
 //	SWAP EDIT MODE
 //	return  mode
 //-----------------------------------------------------------------
-bool CFPlan::SwapMode()
+bool CFPlan::SwapEditMode()
 {	char nm = edMOD ^ 1;					// New mode
 	//--- process new mode request -----------
 	switch (nm)
 	{	//-- New mode is protected -------
-		case 0:
-			edMOD = 0;
+		case FPL_PROTECTED:
+			edMOD = FPL_PROTECTED;
 		  return true;
 		//--- New mode is editable -------
-		case 1:
-			if (IsUsed())											return false;
-			if (globals->aPROF & PROF_ACBUSY) return false;
-		  edMOD = 1;
+		case FPL_EDITABLE:
+			if (IsUsed())													return false;
+			if (globals->aPROF.Has(PROF_ACBUSY))	return false;
+		  edMOD = FPL_EDITABLE;
 			return true;
 	}
 	return false;
@@ -1645,10 +1650,10 @@ void CFPlan::WarnGPS(char m)
 
 //-----------------------------------------------------------------
 //	Reinit flight plan and possibly save it
-//	Inner distance is such that the aircarft is about 60 secondes
-//	from crossing the waypoint
+//	Inner distance is defined based on a 60 second leg at
+//	cruise airspeed
 //-----------------------------------------------------------------
-void CFPlan::UpdatePlan()
+void CFPlan::InitPlan()
 {	//--- Get values for this aircraft -------------
 	CSimulatedVehicle     *svh = mveh->svh;
 	nmlSPD	=  svh->GetCruiseSpeed();
@@ -1725,9 +1730,9 @@ bool CFPlan::Exist(int No)
 //	When aircraft if at this distance of the NAV station, then we
 //	say that the waypoint is terminated
 //----------------------------------------------------------------------
-double CFPlan::TurningPoint()
+float CFPlan::TurningPoint()
 {	double spd = mveh->GetPreCalculedKIAS();
-	return (spd * 0.005);
+	return float(spd * 0.005);
 }
 //----------------------------------------------------------------------
 //	Modify ceil
@@ -1844,8 +1849,8 @@ void CFPlan::ActivateNode(CWPoint *nxt)
 	//--- Now activate the new one ---------------------
 	aWPT	= nxt;
 	if (nxt)	nxt->SetActive(1);
-	if (GPS)	GPS->ActiveWaypoint(nxt,endir);
-	if (0 == nxt)		return Stop();
+	if (GPS)	GPS->TrackWaypoint(nxt,endir);
+	if (0 == nxt)		return StopPlan();
 	nxt->SetLegMode();
 	return;
 }
@@ -1860,44 +1865,6 @@ CWPoint *CFPlan::NextStep(CWPoint *wpt)
 	return (CWPoint*)wPoints.NextPrimary(org);
 }
 //-----------------------------------------------------------------
-//	return direction to active waypoint aWPT
-//	When the leg is less than 10 miles or deviation is greater
-//	than 5°, the segment is not tracked. Rather the airplane
-//	if going directly to the target node
-//-----------------------------------------------------------------
-float CFPlan::DirectionToActive(CRadio *rad)
-{	float dis = aWPT->GetLegDistance();
-  float leg = aWPT->GetDirection();
-	float dev = rad->GetDeviation();
-	float rdv = fabs(dev);
-	float dir = 0;
-	bool  lgo = (dis > 10) || (rdv < 5);
-	if (lgo)	dir = leg;
-	else			dir = aWPT->GoDirect(mveh);
-	//--- Set radio to external source ----------
-	CmHead *obj = aWPT->GetDBobject();
-	rad->ModeEXT(obj);
-	//--- Set Reference direction --------------------------
-	rad->ChangeRefDirection(dir);
-	return dir;
-}
-//--------------------------------------------------------------
-//	Refresh direction to waypoint if needed
-//	Correct any drift due to long legs
-//--------------------------------------------------------------
-void CFPlan::RefreshDirection(CRadio *rad)
-{	if (aWPT->Inactive())	return;
-	float dev = rad->GetDeviation();
-	float rdv = fabs(dev);
-	bool  dto = ((rdv > 5) || (aWPT->IsDirect()));
-	//--- check if Direct WPT is active ----------
-	if (!dto)	return; 
-  float dir = aWPT->GoDirect(mveh);
-	rad->ChangePosition(aWPT->GetGeoP());
-	rad->ChangeRefDirection(dir);
-	return;
-}
-//-----------------------------------------------------------------
 //	Compute Base Waypoint from flight plan
 //	Base WPT is the one preceding the active Waypoint
 //	if the waypoint is from Flight Plan
@@ -1909,6 +1876,18 @@ CWPoint *CFPlan::BaseWPT(CWPoint *b)
 	//--- Original waypoint ---------------------
 	CWPoint *org = b->GetOrgWPT();
 	return  PrevNode(org);
+}
+//-----------------------------------------------------------------
+//	Starting node is the first active node when GPS is switched to
+//	navigation mode.
+//	-If theFlightPlan window is on, it is the node indicated by the
+//	 selection
+//	Otherwise, it is the first node
+//-----------------------------------------------------------------
+CWPoint *CFPlan::StartingNode()
+{	if (0 == win)		return (CWPoint *)wPoints.HeadPrimary();
+	CWPoint *wp =  win->GetSelectedNode();
+	return PrevNode(wp);
 }
 //-----------------------------------------------------------------
 //	Restore a waypoint from plan
@@ -1962,19 +1941,29 @@ int CFPlan::CheckError()
 //	Activate the flight plan
 //	Check for completness
 //-----------------------------------------------------------------
-int	CFPlan::StartPlan()
-{	if (FPL_STA_OPR == State)	return 1;
+bool	CFPlan::StartPlan(CWPoint *wp)
+{	if (FPL_STA_OPR == State)	return true;
 	Reorder(1);
-	if (CheckError())					return 0;
+	if (CheckError())					return false;
 	//--- FPL is operational & protected -----
 	State = FPL_STA_OPR;
-	edMOD = 0;						
+	edMOD = FPL_PROTECTED;						
 	uWPT	= 0;
 	nWPT	= 0;
-	if (dWPT.IsActive())			return 1;
+	if (dWPT.IsActive())			return true;
 	aWPT	= (CWPoint*)wPoints.HeadPrimary();
+	if (wp)	aWPT	= wp;
 	dWPT.Unassign();
-	return 1;
+	return true;
+}
+//-----------------------------------------------------------------
+//	DeActivate the flight plan
+//-----------------------------------------------------------------
+void CFPlan::StopPlan()
+{	State = FPL_STA_NUL;
+	ClearDirect();
+	aWPT	= 0;	
+	return;
 }
 //-----------------------------------------------------------------
 //	Return a node type related to active state
@@ -1995,14 +1984,7 @@ int CFPlan::NodeType(CWPoint *wp)
 	CWPoint *org	= aWPT->GetOrgWPT();
 	if (org == wp)				return 2;			// TO waypoint
 	return 0;		}												// any waypoint
-//-----------------------------------------------------------------
-//	DeActivate the flight plan
-//	Check for completness
-//-----------------------------------------------------------------
-void CFPlan::Stop()
-{	State = FPL_STA_NUL;
-	ClearDirect();
-	aWPT	= 0;	}
+
 //-----------------------------------------------------------------
 //	Return airport departing key
 //-----------------------------------------------------------------
@@ -2100,7 +2082,7 @@ void CFPlan::DrawOnMap(CFuiVectorMap *vmp)
 //  Draw Rabbit at aircraft position
 //------------------------------------------------------------------------
 void CFPlan::DrawNode()
-{	bool ok = ((globals->aPROF & PROF_DRAWRB) != 0);
+{	bool ok = (globals->aPROF.Has(PROF_DRAWRB)) != 0;
 	if (!ok)					return;
   glPushAttrib(GL_ALL_ATTRIB_BITS);
 	
@@ -2116,7 +2098,7 @@ void CFPlan::DrawNode()
 //  Draw fplan in 3D
 //------------------------------------------------------------------------
 void CFPlan::DrawOn3DW()
-{ bool ok = ((globals->aPROF & PROF_DRAWRB) != 0);
+{ bool ok = (globals->aPROF.Has(PROF_DRAWRB)) != 0;
 	if (!ok)					return;
 	CWPoint *prv  = 0;
 	CWPoint *head = (CWPoint*)wPoints.HeadPrimary();
@@ -2186,7 +2168,7 @@ void CFPlan::Register(CFuiFlightLog *w)
 	if (win)		return;
 	//--- protect flight plan ------------
 	Save();								// Save any modification
-	edMOD = 0;
+	edMOD = (NbWPT)?(FPL_PROTECTED):(FPL_EDITABLE);
 	return;
 }
 //--------------------------------------------------------------------

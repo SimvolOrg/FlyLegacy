@@ -1278,6 +1278,7 @@ size_t pread (void* buffer, size_t size, size_t count, PODFILE* f)
     case PODFILE_SOURCE_DISK:
       _lock_file(f->pFile);                     // JS Make thread safe
       rc = fread (buffer, size, count, f->pFile);
+			f->pos = ftell (f->pFile);
       _unlock_file(f->pFile);                   // JS Make thread safe
       break;
     }
@@ -1432,8 +1433,7 @@ int pseek (PODFILE* f, long offset, int origin)
 //  store current position
 //======================================================================
 long ptell (PODFILE* f)
-{
-  long rc = -1;
+{ long rc = -1;
   if (f) rc = f->pos - f->offset;
   return rc;
 }

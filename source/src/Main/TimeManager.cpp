@@ -323,7 +323,7 @@ double CTimeManager::GetGreenwichSiderealTime (void)
   double gmst = 6.697374558 +
               (0.06570982441908 * d0) +
           (1.00273790935 * hrs);
-  gmst = Wrap24 (gmst);
+	while (gmst >= 24) gmst -= 24;
 
   return gmst;
 }

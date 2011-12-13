@@ -89,16 +89,16 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
   chkWIN    = (CFuiCheckbox*) GetComponent('alla');
   if (0 == chkWIN )  gtfo(err);
 	//--- Group box axes ------------------------------
-	CFuiGroupBox*gp1		= (CFuiGroupBox*) GetComponent('axes');
-  if (0 == gp1)   gtfo(err);
-	devAXE		= (CFuiLabel*)		gp1->GetComponent('devn');
+	gp1AXE		= (CFuiGroupBox*) GetComponent('axes');
+  if (0 == gp1AXE)   gtfo(err);
+	devAXE		= (CFuiLabel*)		gp1AXE->GetComponent('devn');
 	if (0 == devAXE)	gtfo(err);
-	labAXE		= (CFuiLabel*)		gp1->GetComponent('axen');
+	labAXE		= (CFuiLabel*)		gp1AXE->GetComponent('axen');
 	if (0 == labAXE)	gtfo(err);
-	valAXE    = (CFuiSlider*)   gp1->GetComponent('axev');
+	valAXE    = (CFuiSlider*)   gp1AXE->GetComponent('axev');
   if (0 == valAXE)   gtfo(err);
 	valAXE->SetProperty(FUI_NO_MOUSE);
-  invAXE = (CFuiCheckbox*)gp1->GetComponent('chka');
+  invAXE = (CFuiCheckbox*)gp1AXE->GetComponent('chka');
   if (0 == invAXE)   gtfo(err);
 	//--- Group box tune -------------------------------
 	grpFOR		= (CFuiGroupBox*) GetComponent('tune');
@@ -115,9 +115,9 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
 	//--- Button control -------------------------------
 	devPOP    = (CFuiPopupMenu*)GetComponent('devl');
   if (0 == devPOP )  gtfo(err);
-	CFuiGroupBox *gp2		= (CFuiGroupBox*) GetComponent('hatg');
-  if (0 == gp2)   gtfo(err);
-	chkHAT    = (CFuiCheckbox*)gp2->GetComponent('useH');
+	grpHAT		= (CFuiGroupBox*) GetComponent('hatg');
+  if (0 == grpHAT)   gtfo(err);
+	chkHAT    = (CFuiCheckbox*)grpHAT->GetComponent('useH');
 	if (0 == chkHAT)   gtfo(err);
 	//--------------------------------------------------
   axeBOX.SetParameters(this,'list',0,0);
@@ -201,6 +201,7 @@ void CFuiAxis::AxeAssign()
   axn.iAxe = axeNo;
   jsm->AssignAxe(axe,&axn,all);
   jsd      = 0;
+	labWIN->SetText("Move JOYSTICK on Selection, then Assign");
 	axeBOX.Refresh();
   return;
 }

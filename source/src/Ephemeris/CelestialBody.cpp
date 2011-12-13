@@ -259,10 +259,10 @@ void CCelestialBody::UpdateOrbElements(double mjd)
 {
   double actTime = CalcActTime(mjd);
 
-  M = WrapTwoPi (SGD_DEGREES_TO_RADIANS * (Mf + (Ms * actTime)));
-  w = WrapTwoPi (SGD_DEGREES_TO_RADIANS * (wf + (ws * actTime)));
-  N = WrapTwoPi (SGD_DEGREES_TO_RADIANS * (Nf + (Ns * actTime)));
-  i = WrapTwoPi (SGD_DEGREES_TO_RADIANS * (If + (Is * actTime)));
+  M = Norme2PI (SGD_DEGREES_TO_RADIANS * (Mf + (Ms * actTime)));
+  w = Norme2PI (SGD_DEGREES_TO_RADIANS * (wf + (ws * actTime)));
+  N = Norme2PI (SGD_DEGREES_TO_RADIANS * (Nf + (Ns * actTime)));
+  i = Norme2PI (SGD_DEGREES_TO_RADIANS * (If + (Is * actTime)));
   e = ef + (es * actTime);
   a = af + (as * actTime);
 }

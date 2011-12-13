@@ -2170,23 +2170,25 @@ class CImport;
 //============================================================================
 //  Define GAUGE BUS VALUES
 //============================================================================
-#define GAUGE_BUS_INT01	(1)
-#define GAUGE_BUS_INT02	(2)
-#define GAUGE_BUS_INT03	(3)
-#define GAUGE_BUS_INT04	(4)
-#define GAUGE_BUS_INT05	(5)
-#define GAUGE_BUS_INT06	(6)
-#define GAUGE_BUS_INT07	(7)
-#define GAUGE_BUS_INT08	(8)
+#define GAUGE_BUS_INT00 (0)					// must always return 0
+#define GAUGE_BUS_INT01	(1)					// Must always return subsystem 'state'  value
+#define GAUGE_BUS_INT02	(2)					// Must always return subsystem 'active' value
+#define GAUGE_BUS_INT03	(3)					// Must always return subsystem 'indx'   value
+//-----------------------------------------------------------------------------
+#define GAUGE_BUS_INT04	(4)					// Specific to subsystem
+#define GAUGE_BUS_INT05	(5)					// Specific to subsystem
+#define GAUGE_BUS_INT06	(6)					// Specific to subsystem
+#define GAUGE_BUS_INT07	(7)					// Specific to subsystem
+#define GAUGE_BUS_INT08	(8)					// Specific to subsystem
 //--------------------------------------
-#define GAUGE_BUS_FLT01	(1)
-#define GAUGE_BUS_FLT02	(2)
-#define GAUGE_BUS_FLT03	(3)
-#define GAUGE_BUS_FLT04	(4)
-#define GAUGE_BUS_FLT05	(5)
-#define GAUGE_BUS_FLT06	(6)
-#define GAUGE_BUS_FLT07	(7)
-#define GAUGE_BUS_FLT08	(8)
+#define GAUGE_BUS_FLT01	(1)					// Specific to subsystem
+#define GAUGE_BUS_FLT02	(2)					// Specific to subsystem
+#define GAUGE_BUS_FLT03	(3)					// Specific to subsystem
+#define GAUGE_BUS_FLT04	(4)					// Specific to subsystem
+#define GAUGE_BUS_FLT05	(5)					// Specific to subsystem
+#define GAUGE_BUS_FLT06	(6)					// Specific to subsystem
+#define GAUGE_BUS_FLT07	(7)					// Specific to subsystem
+#define GAUGE_BUS_FLT08	(8)					// Specific to subsystem
 
 //=============================================================================
 //  Define VBO offset

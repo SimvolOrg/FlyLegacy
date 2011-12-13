@@ -772,9 +772,6 @@ CPropellerModel::CPropellerModel (void)
   minRPM = 0.0;
   thrust_displ = 0.0f;
   is_fixed_speed_prop = false;
-  int val = 1;
-  GetIniVar ("PHYSICS", "enableTorque", &val);
-  torque_effect_enabled = val ? true : false;
 }
 
 CPropellerModel::~CPropellerModel (void)
@@ -1209,10 +1206,8 @@ double CPropellerTRIModel::Calculate(double PowerAvailable)
   Thrust = facT * CT * dyso;                        // JS: was: dynamic_pressure * solidity; // 
   Torque = facQ * CQ * dyso * diam * 0.5;           // JS: was: dynamic_pressure * solidity * diam * 0.5; //
 
-  // adjust P fact //
-  if (torque_effect_enabled) {
-    if (mfacP) thrust_displ = mfacP->Lookup (float(blade_AoA)) * pFac * PfcK;
-  } else thrust_displ = 0.0f;
+  // adjust P fact // 
+  if (mfacP) thrust_displ = mfacP->Lookup (float(blade_AoA)) * pFac * PfcK;
   //
   double RPS = RPM / 60.0; // 
   omega = RPS * TWO_PI; // rate of rotation rad per sec

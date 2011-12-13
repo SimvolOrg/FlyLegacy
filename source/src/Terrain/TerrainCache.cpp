@@ -1270,8 +1270,8 @@ void CmQUAD::DrawNML()
 		glDrawArrays(GL_TRIANGLE_FAN,0,nbv);
 	}
   //---- Draw contour if Terra Browser is active -----------
-  if (0 == (globals->aPROF & PROF_DR_DET))	return;
-  if (!globals->tcm->PlaneQuad(this))				return;
+  if (globals->aPROF.Not(PROF_DR_DET))	return;
+  if (!globals->tcm->PlaneQuad(this))		return;
   return Contour();
 }
 //-------------------------------------------------------------------------
@@ -1285,8 +1285,8 @@ void CmQUAD::DrawIND()
 	glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB), vt);
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
   //---- Draw contour if Terra Browser is active -----------
-  if (0 == (globals->aPROF & PROF_DR_DET))	return;
-  if (!globals->tcm->PlaneQuad(this))				return;
+  if (globals->aPROF.Not(PROF_DR_DET))	return;
+  if (!globals->tcm->PlaneQuad(this))		return;
   return Contour();
 }
 //-------------------------------------------------------------------------
@@ -1297,8 +1297,8 @@ void CmQUAD::DrawVBO()
 	//--- For final quad, draw the detail tile ---------------
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
   //---- Draw contour if Terra Browser is active -----------
-  if (0 == (globals->aPROF & PROF_DR_DET))	return;
-  if (!globals->tcm->PlaneQuad(this))				return;
+  if (globals->aPROF.Not(PROF_DR_DET))	return;
+  if (!globals->tcm->PlaneQuad(this))		return;
   return Contour();
 }
 //-------------------------------------------------------------------------
@@ -3245,7 +3245,14 @@ TCacheMGR::TCacheMGR()
   GetIniFloat("Terrain","HighResRatio",&rt);
   globals->highRAT = rt;
   //---Check for Terrain Wire Frame -----------------------
-  wire    = globals->noTER;
+  hi      = 0;
+  GetIniVar("Sim", "NoTerrain", &hi);
+  wire    = hi;
+  if (wire) globals->noTER++;
+  if (wire) globals->noAPT++;
+  if (wire) globals->noOBJ++;
+  if (wire) globals->noMET++;
+  if (wire) globals->noAWT++;
   //------------------------------------------------------
   GetIniVar("W3D","Display",&hi);
   Disp    = hi;
@@ -3484,9 +3491,9 @@ void TCacheMGR::CheckTeleport()
 //-------------------------------------------------------------------------
 void TCacheMGR::Teleport(SPosition &dst)
 { CVehicleObject *veh = globals->pln;
-  if (0 == veh)											return;
-  if (veh->HasState(VEH_INOP))			return;
-	if (globals->aPROF & PROF_NO_TEL)	return;
+  if (0 == veh)													return;
+  if (veh->HasState(VEH_INOP))					return;
+	if (globals->aPROF.Has(PROF_NO_TEL))	return;
   globals->m3d->ReleaseVOR();
   veh->SetPosition(dst);
   Tele          = 1;
@@ -3497,7 +3504,7 @@ void TCacheMGR::Teleport(SPosition &dst)
 //  Teleport to requested position
 //-------------------------------------------------------------------------
 void TCacheMGR::MoveRabbit(SPosition &dst)
-{ if (globals->aPROF & PROF_NO_TEL)	return;
+{ if (globals->aPROF.Has(PROF_NO_TEL))	return;
   globals->m3d->ReleaseVOR();
   globals->geop = dst;
   Tele          = 0;

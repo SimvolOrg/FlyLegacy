@@ -551,8 +551,6 @@ class CFuiChart : public CFuiWindow {
 public:
   CFuiChart(Tag idn, const char *filename);
  ~CFuiChart();
-  // CStreamObject methods
-  virtual int Read (SStream *stream, Tag tag);
   //------------------------------------------------------------
   void  OpenChart(char *fn);
   //------------------------------------------------------------
@@ -561,20 +559,6 @@ public:
   bool  InsideClick (int mx, int my, EMouseButton button); 
   bool  InsideMove(int mx,int my); 
   bool  StopClickInside(int x, int y, EMouseButton button);
-  //----Attribute
-  int sizeX;
-  int sizeY;
-  char filename_ [64];
-  int upltX;
-  int upltY;
-  int lwrtX;
-  int lwrtY;
-  SPosition lPos;
-  SPosition uPos;
-  double lonx;
-  double lony;
-  double latx;
-  double laty;
 };
 //===========================================================================================
 //  Class CFuiRadioBand to display radio communication

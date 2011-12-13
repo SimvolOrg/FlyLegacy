@@ -83,6 +83,7 @@ void CFuiListPlan::FillPlans()
   TitlePlan();
   sprintf(pn,"*.FPL");
   char *fn = (char*)pfindfirst (&globals->pfs,pn);
+	fpn.Unprotect();
   while (fn)
   { strncpy(nfile,fn,MAX_PATH);
     if (0 == slot)  slot = new CFpnLine;
@@ -171,8 +172,6 @@ void CFuiListPlan::Draw()
 { CFuiWindow::Draw();
   return;
 }
-
-
 //-------------------------------------------------------------------------
 //  Close this window
 //-------------------------------------------------------------------------

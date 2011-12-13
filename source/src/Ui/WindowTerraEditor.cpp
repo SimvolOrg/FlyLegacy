@@ -162,10 +162,10 @@ void CElvTracker::FixElevation()
 //		Detail Tile where the Rabbit spot is.
 //------------------------------------------------------------------------
 void CElvTracker::TimeSlice(float dT)
-{	if (0 == (globals->aPROF & PROF_TRACKE))	return;
+{	if (globals->aPROF.Not(PROF_TRACKE))	return;
 	spot = tcm->GetSpot();			// Rabbit spot
-	if (spot->InvalideQuad())									return;
-	if (tile == spot->Quad)										return;
+	if (spot->InvalideQuad())							return;
+	if (tile == spot->Quad)								return;
 	//--- Update to new Tile -------------------
 	tile			= spot->Quad;
 	tile->GetVertices(wrk);
@@ -244,9 +244,9 @@ float CElvTracker::SetElevation(float elv)
 //----------------------------------------------------------------------
 void CElvTracker::Draw()
 {	//--- Check if no more tracking -----------------
-	if (0 == (globals->aPROF & PROF_TRACKE))	return;
-	if (spot->InvalideQuad())									return;
-	if (tile != spot->Quad)										return;
+	if (globals->aPROF.Not(PROF_TRACKE))	return;
+	if (spot->InvalideQuad())							return;
+	if (tile != spot->Quad)								return;
 	return DrawAll();
 }
 //----------------------------------------------------------------------
@@ -291,9 +291,9 @@ void CElvTracker::DrawMark(TVertex *vdf)
 	return;
 }
 //=================================================================================
-//  Terra editor profile
+//  Window profile
 //=================================================================================
-#define TED_PROF (PROF_EDITOR+PROF_TRACKE+PROF_NO_TEL)
+#define TED_PROF (PROF_NO_INT+PROF_NO_EXT+PROF_NO_MET+PROF_DR_DET+PROF_RABIT+PROF_TRACKE+PROF_NO_TEL)
 //========================================================================================
 //  Window for terrain editor
 //========================================================================================

@@ -527,31 +527,6 @@ void C3DMgr::Draw(char tod)
   SVector tr;
   tcm->RelativeFeetTo(*oVOR->ObjPosition(),tr);
   //--------------------------------------------------------
-  // draw a line for the VOR position
-  // LC 110111
-  if (globals->apm->dILS) {
-    glPushMatrix();
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glShadeModel(GL_FLAT);
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_TEXTURE_2D);
-    glEnable(GL_BLEND);
-    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-    glDisable(GL_CULL_FACE);
-    //----------------------------------------------
-    float col[4] = {1.0f, 0.0f, 0.0f, 1.0f};
-    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE,col);
-    glColor4fv(col);
-    glLineWidth (15.0f);
-    glBegin (GL_LINES);
-    glVertex3d (tr.x, tr.y, tr.z);
-    glVertex3d (tr.x, tr.y, tr.z + 10000.0);
-    glEnd ();
-    //----------------------------------------------
-    glPopAttrib();
-    glPopMatrix();
-  }
-  // end LC 110111
   if (oVOR->GetUserParam())
   { glPushMatrix();
     glTranslated(tr.x,tr.y,tr.z);

@@ -715,6 +715,7 @@ public:
   void    SortAndDisplay();
   void    Display();
   void    EmptyIt();
+	void		Trace();
   //----NEW INTERFACE --------------------------------------------
   void    GoToKey(void *key);
 	void		GoToItem(int No);
@@ -879,120 +880,6 @@ public:
   //--------------------------------------------------------------
   inline void SetRunwayVersion()  {vers = 1;}
 };
-//==================================================================================
-// Detail of current FLIGHT PLAN
-//==================================================================================
-class CFuiFlightLog : public CFuiRwyEXT, public CFuiWindow
-{ //------------Attributes ---------------------------------------
-	CFPlan             *fpln;									// Flight plan
-  //-----------Title line ----------------------------------------
-  CRwyLine           *line;                 // Current line
-  //--------------------------------------------------------------
-  CFuiLabel          *eWIN;                 // Error Label
-	CFuiLabel          *ilsF;                 // ils frequency
-	//--- Mode management ------------------------------------------
-	char								Mode;									// Current mode
-	char								rfu1;									// Reserved
-  //-------------Database Request ---------------------------------
-  CDataBaseREQ  Req;
-  //-----------Vertical list box ---------------------------------
-  CListBox           *flpBOX;								// Node list
-  //----------Edit fields ----------------------------------------
-  CFuiTextField       *nWIN;                // Name window
-  CFuiTextField       *dWIN;                // Description
-	//----------Ceil component -------------------------------------
-	CFuiTextField				*wCEL;								// Ceil edit
-	//--- Altitude components --------------------------------------
-	CFuiTextField       *wALT;								// Altitude edit
-  //----------Waypoint management --------------------------------
-  CObjPtr            selOBJ;                // Selected object pointer
-  U_INT               noWPT;                // Waypoint number
-  QTYPE               tyWPT;                // Waypoint type
-	CWPoint            *sWPT;									// Selected waypoint
-	//--- METHODS --------------------------------------------------
-public:
-  //------------Methods ------------------------------------------
-   CFuiFlightLog(Tag idn, const char *filename);
-  ~CFuiFlightLog(void);
-	//--- Mode management ------------------------------------------
-	void		SetMode();
-	void		SwapMode();
-  //--- Notifications --------------------------------------------
-  bool    OpenDetail();
-  void    OpenDirectory();
-  void    CloseMe();
-	void		ChangeFileName();
-  bool    NotifyFromDirectory(CmHead *obj);
-  void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
-	void		NotifyFromPopup (Tag idm,Tag itm,EFuiEvents evn);
-  //--- FlightPlan management-------------------------------------
-  void    FillCurrentPlan();
-	void		Select();
-	void		EditCeil(int a);
-	//--- Runway management ----------------------------------------
-	void		GetRunway();
-	void		AddDBrecord(void *rec,DBCODE cd);
-	void		EndOfRequest(CDataBaseREQ *req);
-  //--- Waypoint management -------------------------------------
-  void    CreateAPTwaypoint();
-  void    CreateNAVwaypoint();
-	void		CreateWPTwaypoint();
-  void    InsertWaypoint(CWPoint *w);
-  void    DeleteWaypoint();
-  void    MoveUpWaypoint();
-  void    MoveDwWaypoint();
-	void		Error(char No);
-	void		ModifAlti(int inc);
-	void		ModifCeil(int inc);
-	void		Teleport();
-	//--------------------------------------------------------------
-	void		Refresh();
-  //--------------------------------------------------------------
-  bool    ValidInsert();
-  //--------------------------------------------------------------
-  inline  void	Reset()			{FillCurrentPlan();}
-  //--------------------------------------------------------------
-  void    Draw();
-};
-
-//==================================================================================
-//  List of FLIGHT PLANS
-//==================================================================================
-class CFuiListPlan : public CFuiWindow
-{ //------------Attributes ---------------------------------------
-  U_INT               frame;
-	CFPlan						 *fpln;									// Airplane FlightPlan
-  //----------List of plans --------------------------------------
-  CListBox            allBOX;
-  //----------List of Charts -------------------------------------
-  CListBox            mapBOX;
-  //----------Waypoint management --------------------------------
-  CObjPtr            selOBJ;                // Selected object pointer
-  U_INT               noWPT;                // Waypoint number
-  QTYPE               tyWPT;                // Waypoint type
-  CWPoint            *obWPT;                // WayPoint object
-  float               speed;                // average Cruise speed
-  float               alti;                 // average ceiling
-public:
-  //------------Methods ------------------------------------------
-   CFuiListPlan(Tag idn, const char *filename);
-  ~CFuiListPlan(void);
-  //------------Notification -------------------------------------
-  void    CloseMe();
-  void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
-  //------FlightPlan management-----------------------------------
-  void    TitlePlan();
-  void    FillPlans();
-  void    SelectPlan();
-  //------Chart management ---------------------------------------
-  void    FillChartList();
-  void    FillOneList(char *ext);
-  void    AddChart(char *map);
-  void    SelectChart();
-  //--------------------------------------------------------------
-  void    Draw();
-};
-
 //=============================================================================
 //  Class CFuiGPS to control the GPS in a dedicated window
 //=============================================================================

@@ -28,7 +28,6 @@
 #include "../Include/FuiParts.h"
 #include "../Include/FuiUser.h"
 #include "../Include/Joysticks.h"
-#include "../Include/PlanDeVol.h"
 using namespace std;
 //============================================================================
 #define VSI_SAMPLE (double(0.05))
@@ -165,6 +164,10 @@ int CPIDbox::Read(SStream *st,Tag tag)
   case 'Kp__':
     ReadDouble(&Kp,st);
     return TAG_READ;
+	//--- TimK ---------------------------------
+	case 'timK':
+		ReadFloat(&timK,st);
+	  return TAG_READ;
   //---Integrator time -----------------------
   case 'iTim':
     ReadDouble(&val,st);
@@ -607,14 +610,15 @@ AutoPilot::AutoPilot (void)
   glide   = 0.5;                     // Default catching glide angle
   Radio   = 0;
   Powr    = 0;
-  land    = LAND_DISCT;
-	rend		= 0;
-	//--- Final approch parameters -------------------------
-	Turn		= 1;
+  land    = LAND_DISCT;			// Landing option
+	rend		= 0;							// No runway end
+	xCtl		= 0;							// No external control
+	//--- Final leg parameters -------------------------
+	Turn		= 1;							// Turning anticipation factor
 	gain		= 2.5;
 	//--- TGA parameters -----------------------------------
 	TGA0		= 2.5;						// 2.5 miles for Leg0
-	TGA1		= 6.0;						// 6.0 miles for Leg1
+	TGA1		= 5.0;						// 6.0 miles for Leg1
 	//---Flap parameters -----------------------------------
 	tkoFP		= 0;
 	tkoFA		= -100;
@@ -1369,7 +1373,7 @@ double AutoPilot::AdjustHDG()
 	cFAC	=  (21  - era) * gain;
 	if (era < 0.4)	cFAC = 18;
   cFAC  =  (cFAC * Radio->hDEV) + bias;
-	double dir  = Norme360(Radio->radi - cFAC);     // New direction;
+	double dir  = Wrap360(Radio->radi - cFAC);     // New direction;
 	return dir;
 }
 //-----------------------------------------------------------------------
@@ -1404,25 +1408,25 @@ void AutoPilot::ModeLT2()
 //-----------------------------------------------------------------------
 void	AutoPilot::ModeTGA()
 {	double amin = aMIS + 100;
-	switch (step)	{
+	switch (stga)	{
 		//--- climb to (aMISS + 100) AGL -----------
 		case AP_TGA_UP5:
 			if (cAGL < amin)			 return LateralHold();
 			flpS->SetPosition(0);
 			//--- Set direction to 90° left of runway --
 			rHDG	= Wrap360(Radio->hREF - 90);
-			step  = AP_TGA_HD1;
+			stga  = AP_TGA_HD1;
 			return  LateralHold();
 		//--- Go back to heading mode --------------
 		case AP_TGA_HD1:
 			if (Radio->mdis < TGA0)	return LateralHold();
-			step	= AP_TGA_HD2;
+			stga	= AP_TGA_HD2;
 			return LateralHold();
 		//--- wait for some distance --------------
 		case AP_TGA_HD2:
 			//--- Set Direction along the runway ----
 			rHDG	= Wrap360(Radio->hREF - 180);
-			step  = AP_TGA_HD3;
+			stga  = AP_TGA_HD3;
 			return  LateralHold();
 		case AP_TGA_HD3:
 			if (Radio->mdis < TGA1)		return LateralHold();
@@ -1442,7 +1446,8 @@ void AutoPilot::ModeGND()
 	rHDG		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),rend->refP);
 	hERR		= Wrap180(rHDG - aHDG) * 100;
   double val  = pidL[PID_RUD]->Update(dTime,hERR,0);     // to controller
-  rudS->SetValue(val);                         // result to rudder
+ // rudS->SetValue(val);                         // result to rudder
+	rudS->PidValue(val);
 	//TRACE("rHDG=%.5f DIR=%.5f hERR=%.5f val=%.5f",rHDG,aHDG,hERR,val);
 	//---- hold level ---------------------------
 	ModeROL();
@@ -1568,7 +1573,7 @@ bool AutoPilot::AbortLanding(char r)
 	rALT	= RoundAltitude(globals->tcm->GetGroundAltitude() + aTGA);
 	StateChanged(AP_STATE_ALT);
 	lStat	= AP_LAT_TGA;
-	step	= AP_TGA_UP5;
+	stga	= AP_TGA_UP5;
   return true;
 }
 //-----------------------------------------------------------------------
@@ -1675,9 +1680,7 @@ void AutoPilot::EnterINI()
 	elvT->Neutral();
 	EnterROL();
   EnterVSP();
-	step	= 0;
-	//--- Disconnect joystick axis ------------------
-	globals->jsm->Disconnect(JS_SURF_PIL);
+	stga	= 0;
   return;
 }
 //-----------------------------------------------------------------------
@@ -1930,13 +1933,13 @@ void AutoPilot::IncALT()
   return;
 }
 //-----------------------------------------------------------------------
-//  Configuration to go to waypoint
+//  Change Altitude
 //-----------------------------------------------------------------------
-void AutoPilot::GoToWaypoint(CWPoint *wpt)
-{ double alt = double(wpt->GetAltitude());
-  rALT  = RoundAltitude(alt);
-	EnterALT();
-	SetNavMode();								// Set NAV mode 
+void AutoPilot::ChangeALT(double a)
+{ if (aprm)									return;
+  if (vStat != AP_VRT_ALT)	return;
+  rALT  = RoundAltitude(a);
+  StateChanged(AP_STATE_ALT);       // Warn Panel
   return;
 }
 //-----------------------------------------------------------------------
@@ -2132,11 +2135,11 @@ bool AutoPilot::Engage()
 //	External interface to enter take-off mode
 //	Check all pre-conditions
 //-----------------------------------------------------------------------
-bool AutoPilot::EnterTakeOFF()
+bool AutoPilot::EnterTakeOFF(char x)
 {	wgrd  = mveh->WheelsAreOnGround();
 	rend	= globals->apm->GetDepartingEND();
 	if (vROT <= 0)						return false;					// Vrot present
-	if (0 == rend)						return false;					// Ground position
+	if (0 == rend)						return false;					// Runway end position
 	if (!wgrd)								return false;					// Wheels on ground
 	if (0 == gazS)						return false;					// Gas controller
   if (aSPD > 20)						return false;					// Speed lower then 20KTS
@@ -2151,6 +2154,22 @@ bool AutoPilot::EnterTakeOFF()
 	//---- Lateral state to steer mode --
 	lStat	= AP_LAT_GND;
 	vStat = AP_VRT_TKO;
+	//--- externally controlled ---------
+	xCtl	= x;
+	return true;
+}
+//-----------------------------------------------------------------------
+//	GPS interface to enter automatic mode
+//	Check all pre-conditions
+//-----------------------------------------------------------------------
+bool AutoPilot::EnterGPSMode()
+{	//--- Try Take-off ---------------------------
+	if (0 != xCtl)						return false;
+	if (cAGL < 500)						return false;
+	if (AP_DISENGD == vStat)	return false;
+	if (AP_VRT_TKO == vStat)	return false;
+	SetGasControl(1);
+	if (ugaz == 0)						return false;
 	return true;
 }
 //-----------------------------------------------------------------------
@@ -2204,18 +2223,18 @@ void AutoPilot::SwapGasControl()
 }
 //-----------------------------------------------------------------------
 //  GAS control
+//	NOTE: When throttle is controlled by autopilot, ailerons
+//	and elevators are disconnected from pilot control.
+//	To recover control, throttle must be moved
 //-----------------------------------------------------------------------
 void AutoPilot::SetGasControl(char s)
-{	U_INT ctrl = (JS_THRO_BIT + JS_RUDR_BIT);
-	if (0 == gazS)						return;
+{	if (0 == gazS)						return;
 	if (AP_DISENGD == lStat)	return;
 	//--- Set gas control ------------------
 	ugaz	= s;
-	if (0 == ugaz)	globals->jsm->Reconnect (ctrl);
-  else						globals->jsm->Disconnect(ctrl);
+	if (0 == ugaz)	globals->jsm->ConnectAll();
+  else						globals->jsm->Disconnect(JS_SURF_APL);
 	if (0 == ugaz)	ailS->Neutral();
-	//--- Lock rudder if control is set ----
-
 	return;
 }
 //-----------------------------------------------------------------------
@@ -2240,7 +2259,7 @@ void AutoPilot::ALTalertSET()
 //  Edit Autopilot data
 //--------------------------------------------------------------------
 void AutoPilot::Probe(CFuiCanva *cnv)
-{ cnv->AddText(1,1,"%s(%d)-%s-ABRT:%d",autoTB1[lStat],step,autoTB2[vStat],abrt);
+{ cnv->AddText(1,1,"%s(%d)-%s-ABRT:%d",autoTB1[lStat],stga,autoTB2[vStat],abrt);
 	//------------------------------------------------------------------
   cnv->AddText( 1,1,"GAS:%d-SPEED:%.02f",ugaz,cRAT);
 	cnv->AddText( 1,1,"rHDG: %.5f",rHDG);

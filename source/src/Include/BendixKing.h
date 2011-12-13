@@ -683,7 +683,7 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   int               DispatchNRSmode();
   int               EditNRSoptions();
   //-------FLIGHT PLAN Notifications -------------------------
-	void							ActiveWaypoint(CWPoint *wpt,bool e);
+	void							TrackWaypoint(CWPoint *wpt,bool e);
 	void							ModifiedPlan();
   //-------FLIGHT PLAN Management    -------------------------
 	int               BrowseFPLnode();

@@ -465,7 +465,7 @@ public:
 	virtual void  TimeSlice(float dT,U_INT FrNo)	{;}
 	//--- Notifications from flight plan --------------------
 	virtual void  ModifiedPlan()	{;}
-	virtual void	ActiveWaypoint(CWPoint *wpt,bool e) {;}
+	virtual void	TrackWaypoint(CWPoint *wpt,bool e) {;}
 	virtual void	UpdNavigationData(CWPoint *w) {;}
 	//--- Tracking management --------------------------------
 	void	TrackGPSEvent(U_CHAR evn, char prm);
@@ -473,8 +473,9 @@ public:
 	void	SwitchNAV(char parm);
 	void	SwitchAPR(char parm);
 	//--------------------------------------------------------
+	float	SelectDirection();
 	void	UpdateTracking(float dT,U_INT frm);
-//	void	Refresh();
+	void	Refresh();
 	//--------------------------------------------------------
 	void	PowerON();
 	void	EnterTRK();
@@ -483,10 +484,11 @@ public:
 	void	EnterSBY();
 	//--------------------------------------------------------
 	void	GPSRadio::Probe(CFuiCanva *cnv);
-	//--- GAUGE BUS  -----------------------------------------
-  int   GaugeBusINNO(char no);		// Get data bus number no
 	//--- Message interface ----------------------------------
   EMessageResult  ReceiveMessage (SMessage *msg);
+	//--- Mode state -----------------------------------------
+	inline int  GaugeBusIN04()	{return navON;}
+	inline int	GaugeBusIN05()	{return aprON;}
 
 };
 //==========END OF THIS FILE ==================================================

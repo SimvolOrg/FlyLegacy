@@ -224,13 +224,6 @@ void CAeroControl::Modify(float dt)
   data.raw   =  Clamp(data.raw);
 }
 //--------------------------------------------------------------------
-// Modify the step
-//--------------------------------------------------------------------
-void CAeroControl::ModStep(float m)
-{ data.step  +=  m;
-  data.step   =  Clamp(data.step);
-}
-//--------------------------------------------------------------------
 // Transfert autopilot value and clear auto value
 //--------------------------------------------------------------------
 void CAeroControl::Transfer()
@@ -1783,6 +1776,7 @@ CBrakeControl::CBrakeControl (void)
   hwId          = HW_OTHER;
   Park          = 0;
   Hold          = 0;
+	bKey					= 0;
   indnTarget    = 0;
   rate          = 0.05f;
   Brake[BRAKE_NONE] = 0;
@@ -1794,8 +1788,7 @@ CBrakeControl::CBrakeControl (void)
   turn = 0;
   br_timer = 0.0f;
   rf_timer = 0.1f;
-  GetIniFloat ("PHYSICS", "adjustBrakesTimer", &rf_timer);
-}
+ }
 //------------------------------------------------------------------
 //  Parameters are read. Init CGroundBrake message
 //------------------------------------------------------------------
@@ -1807,27 +1800,24 @@ void CBrakeControl::ReadFinished()
 //  Increase brake force
 //------------------------------------------------------------------
 void CBrakeControl::PressBrake(char pos)
-{ Incr(pos & BRAKE_LEFT);
-  Incr(pos & BRAKE_RITE);
-  Force[BRAKE_LEFT] = (Park)?(1):(Brake[BRAKE_LEFT]);
-  Force[BRAKE_RITE] = (Park)?(1):(Brake[BRAKE_RITE]);
+{ Incr((pos & BRAKE_LEFT), rate);
+  Incr((pos & BRAKE_RITE), rate);
   Hold = 0;
-  char txt[128];
-  _snprintf(txt,127,"L-Brake %.03f R-Brake %.03f",Force[BRAKE_LEFT],Force[BRAKE_RITE]);
-  globals->fui->DrawBrake(txt,0.2f,800,660);
+	bKey =Hold;
+ // char txt[128];
+ // _snprintf(txt,127,"L-Brake %.03f R-Brake %.03f",Force[BRAKE_LEFT],Force[BRAKE_RITE]);
+ // globals->fui->DrawBrake(txt,0.2f,800,660);
   return;
 }
 //------------------------------------------------------------------
 //  Release brake force
 //------------------------------------------------------------------
 void CBrakeControl::ReleaseBrakes()
-{ char action  = Decr(BRAKE_LEFT) + Decr(BRAKE_RITE);
-  if (0 == action) return;
-  Force[BRAKE_LEFT] = (Park)?(1):(Brake[BRAKE_LEFT]);
-  Force[BRAKE_RITE] = (Park)?(1):(Brake[BRAKE_RITE]);
-  char txt[128];
-  _snprintf(txt,127,"L-Brake %.03f R-Brake %.03f",Force[BRAKE_LEFT],Force[BRAKE_RITE]);
-  globals->fui->DrawBrake(txt,0.2f,800,660);
+{ Decr(BRAKE_LEFT,rate);
+	Decr(BRAKE_RITE,rate);
+ // char txt[128];
+ // _snprintf(txt,127,"L-Brake %.03f R-Brake %.03f",Force[BRAKE_LEFT],Force[BRAKE_RITE]);
+ // globals->fui->DrawBrake(txt,0.2f,800,660);
   return;
 }
 //------------------------------------------------------------------
@@ -1835,18 +1825,17 @@ void CBrakeControl::ReleaseBrakes()
 //            held in keypress position
 //            The rate K is used as an increment factor
 //-------------------------------------------------------------------
-void CBrakeControl::Incr (char pos)
-{ if (BRAKE_NONE == pos)	return;
-	Brake[pos] += rate;
+void CBrakeControl::Incr (char pos,float rt)
+{ Brake[pos] += rt;
   if (Brake[pos] >= 1.0f)  Brake[pos] = 1.0f;
 }
 //-----------------------------------------------------------------------
 //  Decrease brake force until it reach zero
 //-----------------------------------------------------------------------
-int CBrakeControl::Decr (char pos)
+int CBrakeControl::Decr (char pos,float rt)
 { float val  = Brake[pos];
   if (0.0f == val) return 0;
-  val       -= (rate * 4.0f);
+  val       -= (rt);
   if (val < FLT_EPSILON)  val = 0.0f;
   Brake[pos] = val;
   return 1;
@@ -1899,15 +1888,21 @@ EMessageResult CBrakeControl::ReceiveMessage (SMessage *msg)
 //  Time slice the brakes
 //----------------------------------------------------------------------
 void  CBrakeControl::TimeSlice (float dT,U_INT FrNo)		// 
-{  //TRACE ("TS %d", turn);
-   br_timer += dT;
-   if (br_timer > rf_timer) {
-     br_timer -= rf_timer;
-     CDependent::TimeSlice (dT, FrNo);
-     if (Hold || Park)  PressBrake(Hold);
-     else               ReleaseBrakes();
-   }
-   return;
+{ CDependent::TimeSlice (dT, FrNo);
+	//--- poll any connected axis ----------------------
+	globals->jsm->Poll(JS_LEFT_TOE,Brake[BRAKE_LEFT]);
+	globals->jsm->Poll(JS_RITE_TOE,Brake[BRAKE_RITE]);
+	//--- Poll keyboard brake keys --------------------
+	br_timer += dT;
+	if (br_timer > rf_timer) {
+			br_timer -= rf_timer;
+			if (Hold)  PressBrake(Hold);
+		  else       ReleaseBrakes();
+	}
+	//--- Set force on each brake ------------------------
+	Force[BRAKE_LEFT] = (Park)?(1):(Brake[BRAKE_LEFT]);
+	Force[BRAKE_RITE] = (Park)?(1):(Brake[BRAKE_RITE]);
+  return;
 }
 //----------------------------------------------------------------------
 //  probe brakes
@@ -1933,9 +1928,7 @@ CElevatorTrimControl::CElevatorTrimControl (void)
 {
   TypeIs (SUBSYSTEM_ELEVATOR_TRIM_CONTROL);
 }
-//-----------------------------------------------------------------------
-//	Time slice
-//-----------------------------------------------------------------------
+
 void CElevatorTrimControl::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
 { globals->jsm->Poll(JS_TRIM,data.raw);
   CAeroControl::TimeSlice(dT,FrNo);								// JSDEV*
@@ -1947,9 +1940,9 @@ void	CElevatorTrimControl::ReadFinished()
 {	globals->jsm->MapTo(JS_TRIM,unId);
 }
 
-//================================================================================
+//-----------------------------------------------------------------------
 // CRudderTrimControl
-//================================================================================
+//-----------------------------------------------------------------------
 CRudderTrimControl::CRudderTrimControl (void)
 {
   TypeIs (SUBSYSTEM_RUDDER_TRIM_CONTROL);

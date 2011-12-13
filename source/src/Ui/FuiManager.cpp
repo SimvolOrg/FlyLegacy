@@ -33,7 +33,9 @@
 #include "../Include/Globals.h"   // For globals->pfs
 #include "../Include/Utility.h"   // For stream functions
 #include "../Include/WinControlAxis.h"
+#include "../Include/PlanDeVol.h"
 #include "../Include/Ui.h"
+
 #include <malloc.h>
 #include <map>
 
@@ -261,12 +263,10 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
     //---LIST OF FLIGHT PLAN --------------------------------------------
     case FUI_WINDOW_FPLAN_LIST:
-			if (globals->aPROF & PROF_NO_FPL)	return 0;
       window  = new CFuiListPlan (windowId,"UI/TEMPLATES/FlightPlanList.WIN");
       break;
     //---FLIGHT PLAN LOG     --------------------------------------------
     case FUI_WINDOW_FPLAN_LOG:
-			if (globals->aPROF & PROF_NO_FPL)	return 0;
       window  = new CFuiFlightLog (windowId,"UI/TEMPLATES/FlightPlanLog.WIN");
       break;
     //---GENERAL DIRECTORY -----------------------------------------------
@@ -308,7 +308,7 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
 		//---Terra editor -------------------------------------------
     case FUI_WINDOW_TEDITOR:
-			if (globals->aPROF & PROF_ACBUSY)	return 0;
+			if (globals->aPROF.Has(PROF_ACBUSY))	return 0;
       window  = new CFuiTED(windowId,"UI/TEMPLATES/TERRAEDITOR.WIN");
       window->MoveTo(580,50);
       break;
@@ -352,13 +352,13 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
     //---- TERRA BROWSER --------------------------------------
     case FUI_WINDOW_TBROS:
-      if (globals->aPROF & PROF_ACBUSY)	return 0;
+      if (globals->aPROF.Has(PROF_ACBUSY))	return 0;
       window  = new CFuiTBROS (windowId, "UI/TEMPLATES/TBROS.WIN");
       window->MoveTo(20,100);
       break;
     //---- MODEL BROWSER --------------------------------------
     case FUI_WINDOW_MBROS:
-      if (globals->aPROF & PROF_ACBUSY)	return 0;
+      if (globals->aPROF.Has(PROF_ACBUSY))	return 0;
       window  = new CFuiMBROS (windowId, "UI/TEMPLATES/MBROS.WIN");
       window->MoveTo(20,200);
       break;

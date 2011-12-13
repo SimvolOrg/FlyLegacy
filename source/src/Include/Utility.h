@@ -311,29 +311,8 @@ public:
    void ChildToParent(SVector& parent, const SVector& child) const;
 };
 
-//----------------------------------------------------------------------
-// Wrap a value to the range [0, 2*PI), typically used to normalize
-//   an angle in radians
-//----------------------------------------------------------------------
-template <class T> static inline T WrapTwoPi (T rad)
-{ while (rad < (T)0)
-    rad += (T)TWO_PI;
-  while (rad >= TWO_PI)
-    rad -= (T)TWO_PI;
-  return rad;
-}
-//----------------------------------------------------------------------
-// Wrap a value to the range [0, PI), typically used to normalize
-//   an angle in radians
-//----------------------------------------------------------------------
-template <class T> static inline T WrapPI (T rad)
-{
-  while (rad < (T)0)
-    rad += (T)PI;
-  while (rad >= (T)PI)
-    rad -= (T)PI;
-  return rad;
-}
+
+
 //----------------------------------------------------------------------
 // Wrap a value to the range [-PI, PI), typically used to normalize
 //   an angle in radians
@@ -391,36 +370,79 @@ template <class T> static inline T Wrap360 (T deg)
 }
 */
 //----------------------------------------------------------------------
+// Wrap a value to the range [0, 2*PI), typically used to normalize
+//   an angle in radians
+//----------------------------------------------------------------------
+/*
+template <class T> static inline T WrapTwoPi (T rad)
+{ while (rad < (T)0)
+    rad += (T)TWO_PI;
+  while (rad >= TWO_PI)
+    rad -= (T)TWO_PI;
+  return rad;
+}
+*/
+//----------------------------------------------------------------------
+// Wrap a value to the range [0, PI), typically used to normalize
+//   an angle in radians
+//----------------------------------------------------------------------
+/*
+template <class T> static inline T WrapPI (T rad)
+{
+  while (rad < (T)0)
+    rad += (T)PI;
+  while (rad >= (T)PI)
+    rad -= (T)PI;
+  return rad;
+}
+*/
+//----------------------------------------------------------------------
+// Wrap a value to the range [0, PI), typically used to normalize
+//   an angle in radians
+//----------------------------------------------------------------------
+template <class T> static inline T WrapPI (T rad)
+{ int k = 4;
+	while (rad < (T)0)		{rad += (T)PI; k--; if (0 > k) gtfo("WrapPi infinite");}
+	while (rad >= (T)PI)  {rad -= (T)PI; k--; if (0 > k) gtfo("WrapPi infinite");}
+  return rad;
+}
+//----------------------------------------------------------------------
+// Wrap a value to the range [0, 2*PI), typically used to normalize
+//   an angle in radians
+//----------------------------------------------------------------------
+template <class T> static inline T WrapTwoPi (T rad)
+{ int k = 4;
+	while (rad <  (T)0)				{ rad += (T)TWO_PI; k--; if (0 > k) gtfo("WrapTwoPi infinite");}
+	while (rad >= (T)TWO_PI)	{ rad -= (T)TWO_PI; k--; if (0 > k) gtfo("WrapTwoPi infinite");}
+  return rad;
+}
+//----------------------------------------------------------------------
 // Wrap a value to the range [0, 360), typically used to normalize
 //   an angle in degrees
 //----------------------------------------------------------------------
 template <class T> static inline T Wrap360 (T deg)
-{ int k = 10;
-  while (deg <  (T)0)		{deg += (T)360; k--; if (0 > k) gtfo("WRAP360");}
-	while (deg >= (T)360) {deg -= (T)360; k--; if (0 > k) gtfo("WRAP360");}
+{ int k = 4;
+  while (deg <  (T)0)		{deg += (T)360; k--; if (0 > k) gtfo("WRAP360 infinite");}
+	while (deg >= (T)360) {deg -= (T)360; k--; if (0 > k) gtfo("WRAP360 infinite");}
   return deg;
 }
 //----------------------------------------------------------------------
 // Wrap a value to the range [-180, 180), typically used to normalize
 //   an angle in degrees
 //----------------------------------------------------------------------
-/*
-template <class T> static inline T Wrap180 (T deg)
-{	while (deg < (T)0) deg  += (T)360;
-  // Negate if greater than 180 deg
-  if (deg > (T)180)  deg  -= (T)360;
-  return deg;
+template <class T> static inline T Norme2PI (T rad)
+{	while (rad <  (T)0)				rad  += (T)TWO_PI;
+  while (rad >= (T)TWO_PI)	rad  -= (T)TWO_PI;
+  return rad;
 }
-*/
 //----------------------------------------------------------------------
 // Wrap a value to the range [-180, 180), typically used to normalize
 //   an angle in degrees
 //----------------------------------------------------------------------
 template <class T> static inline T Wrap180 (T deg)
-{	int k = 10;
-	while (deg < (T)0)		{deg  += (T)360; k--; if (0 > k) gtfo("Wrap180");}
-  // Negate if greater than 180 deg
-	while (deg >= (T)360) {deg  -= (T)360; k--; if (0 > k) gtfo("Wrap180");}
+{	int k = 4;
+	while (deg < (T)0)		{deg  += (T)360; k--; if (0 > k) gtfo("Wrap180 infinite");}
+	while (deg >= (T)360) {deg  -= (T)360; k--; if (0 > k) gtfo("Wrap180 infinite");}
   if (deg > (T)180)  deg  -= (T)360;
   return deg;
 }
@@ -429,10 +451,9 @@ template <class T> static inline T Wrap180 (T deg)
 //   a value representing hours of the day
 //----------------------------------------------------------------------
 template <class T> static inline T Wrap24 (T hrs)
-{
-  while (hrs <  (T)0)
-    hrs += (T)24;
-  while (hrs >= (T)24)  hrs -= (T)24;
+{ int k = 4;
+	while (hrs <  (T)0)   {hrs += (T)24; k--; if (0 > k)	gtfo("Wrap24 infinite");}
+	while (hrs >= (T)24)  {hrs -= (T)24; k--; if (0 > k)	gtfo("Wrap24 infinite");}
   return hrs;
 }
 //----------------------------------------------------------------------
@@ -440,10 +461,9 @@ template <class T> static inline T Wrap24 (T hrs)
 //   a value representing minutes in an hour or seconds in a minute
 //----------------------------------------------------------------------
 template <class T> static inline T Wrap60 (T min)
-{
-  while (min <  (T)0)
-    min += (T)60;
-  while (min >= (T)60)   min -= (T)60;
+{ int k = 4;
+	while (min <  (T)0)		{min += (T)60; k--; if (0 > k)	gtfo("Wrap60 infinite");}
+	while (min >= (T)60)  {min -= (T)60; k--; if (0 > k)  gtfo("Wrap60 infinite");}
   return min;
 }
 //----------------------------------------------------------------------
@@ -451,8 +471,9 @@ template <class T> static inline T Wrap60 (T min)
 //   a value representing arcsec in world coordinates
 //----------------------------------------------------------------------
 template <class T> static inline T WrapArcs (T arcs)
-{ while (arcs <  (T)0)         arcs += (T)(1296000);
-  while (arcs >= (T)(1296000)) arcs -= (T)(1296000);
+{ int k = 4;
+	while (arcs <  (T)0)         {arcs += (T)(1296000);	k--; if (0 > k) gtfo("WrapArc infinite");}
+	while (arcs >= (T)(1296000)) {arcs -= (T)(1296000); k--; if (0 > k) gtfo("WrapArc infinite");}
   return arcs;
 }
 //----------------------------------------------------------------------
@@ -708,10 +729,13 @@ template <class T> static inline T max3 (T v1, T v2, T v3)
 int GreatestCommonDivisor (int i, int j);
 void AspectRatio (int w, int h, int &num, int &denom);
 //==============================================================================
+/*
 	inline	float	Norme360(float deg) 
-  {	while (deg >= 360) (deg -= 360);
+  {	int k = 4;
+		while (deg >= 360) {deg -= 360; k--; if (0 >k) gtfo("Norme360 infinite");
 		while (deg <    0) (deg += 360);	
 		return deg;}
+		*/
   inline  float Norme180(float deg)
   { if (deg < -180) deg += 360;
     if (deg > +180) deg -= 360;

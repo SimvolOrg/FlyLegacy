@@ -1117,6 +1117,22 @@ void CListBox::SetFocus(int lin)
   return;
 }
 //-------------------------------------------------------------------------
+//  Trace all items
+//-------------------------------------------------------------------------
+void CListBox::Trace()
+{ TRACE("=== LISTBOX ===========================");
+  TRACE("mLIN=%d (Maximum line in list)",mLIN);
+	TRACE("eLIN=%d (Last selectable line)",eLIN);
+	TRACE("sLIN=%d (Start line)"					,sLIN);
+	TRACE("zLIN=%d (Last line)"						,zLIN);
+	TRACE("aLIN=%d (First selected line)"	,aLIN);
+	TRACE("bLIN=%d (Last  selected line)" ,bLIN);
+	TRACE("hNOD=%d (Head node)"						,hNOD);
+	TRACE("nNOD=%d (Total node inc Title)",nNOD);
+	TRACE("nCAP=%d (Node capacity)"				,nCAP);
+	return;
+}
+//-------------------------------------------------------------------------
 //  Decrement focus
 //-------------------------------------------------------------------------
 void CListBox::DecFocus()
@@ -1387,6 +1403,7 @@ void CListBox::DeleteItem()
   Renum(top,nNOD);      // Reset sequence to this range
   //---Update parameters depending on number of nodes --------
   InitP2();
+	if (IsEmpty())		bLIN = aLIN;
   if (IsEmpty())    return ShowPage(sLIN);
   //--- Set selection to previous item if last was deleted --
   if (top < nNOD)   return ShowPage(top);

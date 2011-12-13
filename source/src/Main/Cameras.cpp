@@ -2886,7 +2886,7 @@ CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx,CFuiWindow *win)
 	globals->noINT += aCam->GetEXTMOD();
 	//--- Lock in slew mode -----------------
 	globals->slw->StartMode(&ctx);							// Slew mode
-	//--- Set profile to AIRCRAF BUSY -------
+	//--- Set profile -----------------------
 	ctx.prof |= PROF_ACBUSY;
 	SpecialProfile('busy',ctx.prof);
 	//--- Create camera window --------------

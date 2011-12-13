@@ -754,10 +754,16 @@ public:
 	virtual void	SetActive(char a)	{;}
 	virtual void	SetState (char s)	{;}
 	//--- GAUGE BUS -------------------------------------------------------------
+	//	Subsystem must implement the virtual function returning the requested
+	//	value
+	//	INxx must return integer value
+	//	FTyy must return a float value
+	//---------------------------------------------------------------------------
 	virtual int   GaugeBusINNO(char no)	{return 0;}				// Get data bus number no
 	virtual int   GaugeBusIN01()				{return 0;}				// State
 	virtual int   GaugeBusIN02()				{return 0;}				// Activity
 	virtual int   GaugeBusIN03()				{return 0;}				// Index
+	//---------------------------------------------------------------------------
 	virtual	int   GaugeBusIN04()				{return 0;}				// Specific to systems
 	virtual int   GaugeBusIN05()				{return 0;}				// Specific to system
 	virtual int   GaugeBusIN06()				{return 0;}				// Specific to system
@@ -2291,9 +2297,6 @@ public:
   virtual void    SetValue      (float fv);
   virtual void    Zero()        {data.raw = 0;}
 	virtual void    ModBias(float v)	{;}
-	//--- Adjust step values -------------------------------------
-	void						SetStep(float v)	{data.step = v;}
-	void						ModStep(float v);
 	//------------------------------------------------------------
   void						Modify(float dt);
 	void						Transfer();
@@ -2970,16 +2973,20 @@ protected:
 class CElevatorTrimControl : public CAeroControl {
 public:
   CElevatorTrimControl (void);
-  //--- CSubsystem methods
+
+  // CStreamObject methods
+
+  // CSubsystem methods
   virtual const char* GetClassName (void) { return "CElevatorTrimControl"; }
 	void								ReadFinished();
   void                TimeSlice (float dT,U_INT FrNo = 0);					// SDEV*
+
 protected:
 };
 
-//======================================================================
+//
 // CAileronTrimControl
-//======================================================================
+//
 class CAileronTrimControl : public CAeroControl {
 public:
   CAileronTrimControl (void);
@@ -3023,8 +3030,8 @@ public:
   // CStreamObject methods
   void    ReadFinished();
   // CAeroControl SET methods
-  void    Incr (char pos);
-  int     Decr (char pos);
+  void    Incr (char pos, float rt);
+  int     Decr (char pos, float rt);
   void    PressBrake(char pos);
   void    ReleaseBrakes();
   void    SwapPark();
@@ -3044,6 +3051,7 @@ public:
 protected:
   char  Park;
   char  Hold;         // Brake on
+	char  bKey;					// Brake key
   float rate;
   float Brake[3];     // Brake force
   float Force[3];     // Real force
@@ -4235,7 +4243,6 @@ protected:
   bool   is_fixed_speed_prop;
   float  thrust_displ;        // displacement of thrust along the X vect (P fact)
   float  eRPM;
-  bool   torque_effect_enabled;
 };
 
 //=======================================================================

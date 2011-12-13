@@ -2589,7 +2589,7 @@ void CK89gps::ModifiedPlan()
 	actWP		= FPL->GetActiveNode();
 	basWP		= FPL->HeadNode();									// Base waypoint
   fpMax   = FPL->Size();
-	ActiveWaypoint(actWP,false);
+	TrackWaypoint(actWP,false);
 	return;
 }
 //---------------------------------------------------------------------
@@ -2601,7 +2601,7 @@ void CK89gps::ModifiedPlan()
 //	Otherwise, the next waypoint from the flight plan or 0
 //
 //---------------------------------------------------------------------
-void CK89gps::ActiveWaypoint(CWPoint *wpt,bool endir)
+void CK89gps::TrackWaypoint(CWPoint *wpt,bool endir)
 {	actWP	= wpt;														// Save it
 	UpdNavigationData(wpt);
 	prvIDN		= FPL->PreviousIdent(wpt);
@@ -3079,7 +3079,7 @@ int CK89gps::RefreshALTpage02()
   return 1;
 }
 //-----------------------------------------------------------------------------
-//  Change ALT cursor on Page 02
+//  ChangeALT cursor on Page 02
 //  Skip ident if not a FPL waypoint
 //-----------------------------------------------------------------------------
 int CK89gps::ChangeALTcursor()
@@ -4364,9 +4364,7 @@ void GPSRadio::PowerEVN(char parm)
 //  Switch EVENT
 //----------------------------------------------------------------------------------
 void GPSRadio::SwitchNAV(char parm)
-{	if (GPSR_PWOF == gpsTK)	return;			// Power OFF ignore
-	//--- Change state -----------------------------------
-	navON	= parm;
+{	//--- Change state -----------------------------------
 	if (parm)			EnterTRK();
 	else					EnterSBY();
 	return;
@@ -4375,7 +4373,7 @@ void GPSRadio::SwitchNAV(char parm)
 //  Switch EVENT
 //----------------------------------------------------------------------------------
 void GPSRadio::SwitchAPR(char parm)
-{	if (GPSR_PWOF == gpsTK)	return;			// Power OFF ignore
+{	if (0 == navON)	return;			// Power OFF ignore
 	//--- Change state -----------------------------------
 	aprON	= parm;
 	return;
@@ -4386,50 +4384,65 @@ void GPSRadio::SwitchAPR(char parm)
 //----------------------------------------------------------------------------------
 void GPSRadio::PowerON()
 {	gpsTK = GPSR_STBY;
-	navON	= 0;
 	pln		= (CAirplane*)mveh;
 	APL	  = pln->GetAutoPilot();
 	RAD		= pln->GetMRAD();
   BUS   = mveh->GetRadioBUS();
-	FPL   =  mveh->GetFlightPlan();	
+	FPL   = mveh->GetFlightPlan();	
 	FPL->ClearDirect();
 	bool ok = (APL) && (BUS);
 	if (!ok)	gpsTK	= GPSR_NONE;
 	return;
 }
+
 //----------------------------------------------------------------------------------
-//  Enter tracking
-//	Autopilot must be engaged
-//	Then
-//	Activate Plan if any and get first node to track
-//----------------------------------------------------------------------------------
-void GPSRadio::EnterTRK()
-{	if (GPSR_NONE == gpsTK)				return;		// No tracking
-  if (APL->IsDisengaged())			return;   // But disengaged
-	FPL->StartPlan();
-	APL->SetGasControl(1);
-	//--- Set Tracking mode -------------------------
-	gpsTK	= GPSR_TRAK;
-	//---Get first waypoint to track ----------------
-	NextNODE();
-	return;
-}
-//----------------------------------------------------------------------------------
-//  KLN89: Get next Waypoint
+//  Get next Waypoint
 //	Set RADIO BUS to EXTERNAL SOURCE
 //----------------------------------------------------------------------------------
 void GPSRadio::NextNODE()
-{ wTRK	= FPL->GetActiveNode();
+{ float rad = 0;
+	wTRK	= FPL->GetActiveNode();
 	if (0 == wTRK)						return;
 	if (wTRK->IsFirst())			return;  // wait next
 	if (FPL->IsOnFinal())			return EnterAPR();
 	//--- Set Waypoint On External Source ------------------
-	float   dir = FPL->DirectionToActive(RAD);
+	float   dir = SelectDirection();
+	CmHead *obj = wTRK->GetDBobject();
+  RAD->ModeEXT(obj);								// Set EXT mode
+	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
-	APL->GoToWaypoint(wTRK);
-	//double alt = double(wTRK->GetAltitude());
-	//APL->ChangeALT(alt);							// Set target altitude
-	//APL->SetNavMode();								// Set NAV mode 
+	double alt = double(wTRK->GetAltitude());
+	APL->ChangeALT(alt);							// Set target altitude
+	APL->SetNavMode();								// Set NAV mode 
+	return;
+}
+//--------------------------------------------------------------
+//	Compute direction
+//	If leg distance is under 12 miles, head direct to station
+//  or if deviation is too much
+//--------------------------------------------------------------
+float GPSRadio::SelectDirection()
+{	float dis = wTRK->GetLegDistance();
+  float seg = wTRK->GetDirection();
+	float dev = RAD->GetDeviation();
+	float rdv = fabs(dev);
+	if ((dis > 12) || (rdv < 5))	return seg;
+	//--- Compute direct-to direction to waypoint -----
+  return wTRK->GoDirect(mveh);
+}
+//--------------------------------------------------------------
+//	Refresh direction to waypoint if needed
+//	Correct any drift due to long legs
+//--------------------------------------------------------------
+void GPSRadio::Refresh()
+{	float dev = RAD->GetDeviation();
+	float rdv = fabs(dev);
+	bool  dto = ((rdv > 5) || (wTRK->IsDirect()));
+	//--- check if Direct to is active ----------
+	if (!dto)	return; 
+  float dir = wTRK->GoDirect(mveh);
+	RAD->ChangePosition(wTRK->GetGeoP());
+	RAD->ChangeRefDirection(dir);
 	return;
 }
 //--------------------------------------------------------------
@@ -4439,8 +4452,12 @@ void GPSRadio::NextNODE()
 //	Let AUTOPILOT in current state
 //--------------------------------------------------------------
 void GPSRadio::EnterSBY()
-{	gpsTK	= GPSR_STBY;
+{	if (GPSR_PWOF == gpsTK)		return;
+	if (GPSR_NONE == gpsTK)		return;
+	if (GPSR_STBY == gpsTK)		return;
+	gpsTK	= GPSR_STBY;
 	navON	= 0;
+	aprON = 0;
 	if (RAD) RAD->ModeEXT(0);
 	return;
 }
@@ -4453,12 +4470,30 @@ void GPSRadio::EnterSBY()
 //--------------------------------------------------------------
 void GPSRadio::EnterAPR()
 { //--- Check  if APR allowed ---------------------------
-	if (0 == aprON)	return EnterSBY();
+	if (0 == aprON)								return EnterSBY();
 	//--- Configure Landing mode --------------------------
 	if (!wTRK->EnterLanding(RAD))	return EnterSBY();
 	//--- Configure autopilot for landing ------------------
 	APL->SetLandingMode();
 	gpsTK = GPSR_LAND;
+	return;
+}
+//----------------------------------------------------------------------------------
+//  Enter tracking
+//	Autopilot must be engaged
+//	Then
+//	Activate Plan if any and get first node to track
+//----------------------------------------------------------------------------------
+void GPSRadio::EnterTRK()
+{	CWPoint *wp = FPL->StartingNode();
+	if (GPSR_STBY != gpsTK)				return;   // Not the good state
+ 	if (!FPL->StartPlan(wp))			return;
+	if (!APL->EnterGPSMode())			return;
+	navON	= 1;
+	//--- Set Tracking mode -------------------------
+	gpsTK	= GPSR_TRAK;
+	//---Get first waypoint to track ----------------
+	NextNODE();
 	return;
 }
 //--------------------------------------------------------------
@@ -4468,20 +4503,22 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 { 
 	switch (gpsTK)	{
 		case GPSR_PWOF:
+			navON	= 0;
+			aprON	= 0;
 			return;
-		//--- Get aircraft parameters to FPL --
+		//--- Standby mode: Nothing to do ----------
 		case GPSR_STBY:
 			return;
 		//--- Tracking active waypoint -------------
 		case GPSR_TRAK:
-			if (APL->IsDisengaged())	return EnterSBY();
+			if (APL->IsDisengaged())	EnterSBY();
 			if (0 == wTRK)						return;
-			if (wTRK->IsActive())	    return FPL->RefreshDirection(RAD);
-			else NextNODE();
+			if (wTRK->IsActive())	    return Refresh();
+			NextNODE();
 			return;
 		//--- Just watch the auto pilot ------------
 		case GPSR_LAND:
-			if (APL->IsDisengaged())	return EnterSBY();
+			if (APL->IsDisengaged())	EnterSBY();
 			if (APL->ModeGround())	  return EnterSBY();
 			return;
 		case GPSR_NONE:
@@ -4489,14 +4526,6 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 	}
 	//-------------------------------------------
 	return;
-}
-//--------------------------------------------------------------
-//	Return switch position
-//--------------------------------------------------------------
-int GPSRadio::GaugeBusINNO(char No)
-{	if (No == GAUGE_BUS_INT04)	return navON;
-  if (No == GAUGE_BUS_INT05)	return aprON;
-	return 0;
 }
 //--------------------------------------------------------------
 //	Probe values

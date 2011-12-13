@@ -31,8 +31,8 @@ extern char *HexTAB;
 //=================================================================================
 //  Window profile
 //=================================================================================
-#define TBROS_PROF (PROF_EDITOR)
-#define MBROS_PROF (PROF_EDITOR)
+#define TBROS_PROF (PROF_NO_INT + PROF_NO_EXT + PROF_NO_MET + PROF_DR_DET + PROF_RABIT)
+#define MBROS_PROF (PROF_NO_INT + PROF_NO_EXT + PROF_NO_MET + PROF_DR_DET + PROF_RABIT)
 //=================================================================================
 //  Button text
 //=================================================================================

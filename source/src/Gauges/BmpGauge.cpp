@@ -1689,7 +1689,6 @@ int C_SimpleSwitch::Read (SStream *stream, Tag tag)
 //---------------------------------------------------------------------
 void C_SimpleSwitch::ReadFinished (void)
 { CTexturedGauge::ReadFinished ();
-  //TRACE ("C_SimpleSwitch::ReadFinished %d", stat_n);
   //---  Initialize default state ---------------------
   if (stat_n == 0)
   { // No <stat> tag was specified, default to two states, 0 (off) and 1 (on)
@@ -1697,7 +1696,6 @@ void C_SimpleSwitch::ReadFinished (void)
     stat = new int[2];
     stat[0] =  0;
     stat[1] =  1;
-    //TRACE ("C_SimpleSwitch::ReadFinished");
   }
   //--Set message default values ---------------------
   //  JSNOTE: Gauge must define datatag  
@@ -1742,15 +1740,14 @@ void C_SimpleSwitch::DoState(int snd)
 // Increment switch state
 //------------------------------------------------------------------------
 void C_SimpleSwitch::IncState (void)
-{ // Check upper bound and increment index
-  //TRACE ("C_SimpleSwitch::IncState %d %d %d", cIndx, stat_n, stat_n - 1);
+{
+  // Check upper bound and increment index
   if (cIndx < (stat_n - 1))
   { cIndx++;
     //---- Play sound effect -----------
     globals->snd->Play(sbuf[GAUGE_ON__POS]);
     //---- Send index value  -------------
     mesg.intData	= stat[cIndx];
-    //TRACE ("C_SimpleSwitch::IncState %d %d", cIndx, mesg.intData);
     if (sstr) DisplayHelp(sstr[cIndx]);
     //---- Send message  ---------------
     return ChangeState();
@@ -1763,14 +1760,12 @@ void C_SimpleSwitch::IncState (void)
 //----------------------------------------------------------------------
 void C_SimpleSwitch::DecState (void)
 { // Check upper bound and increment index
-  //TRACE ("C_SimpleSwitch::DecState %d %d %d", cIndx, stat_n, stat_n - 1);
   if (cIndx > 0)
   { cIndx--;
     //---- Play sound effect ----------
     globals->snd->Play(sbuf[GAUGE_OFF_POS]);
     //---- Send index value- ----------
     mesg.intData	= stat[cIndx];
-    //TRACE ("C_SimpleSwitch::DecState %d %d", cIndx, mesg.intData);
     if (sstr) DisplayHelp(sstr[cIndx]);
     //---- Send message ---------------
     return ChangeState(); 
@@ -1783,9 +1778,7 @@ void C_SimpleSwitch::DecState (void)
 void C_SimpleSwitch::ChangeState()
 { //--- advise subsystem --------------
 	mesg.index = cIndx;
-	Send_Message (&mesg);
-  //TRACE ("C_SimpleSwitch::ChangeState (%d // %s %d)",             // lc 101611
-  //  mesg.index, TagToString (mesg.user.u.datatag), mesg.intData); // lc 101611
+	Send_Message (&mesg); 
 	return;
 }
 //----------------------------------------------------------------------

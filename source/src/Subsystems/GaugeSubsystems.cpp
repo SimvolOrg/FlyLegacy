@@ -618,7 +618,7 @@ float CAttitudeIndicator::GaugeBusFT01()
 //  Return roll as a float
 //----------------------------------------------------------------------------------
 float CAttitudeIndicator::GaugeBusFT02()
-{	return Norme360(Uatt.z);	}
+{	return Wrap360(Uatt.z);	}
 //----------------------------------------------------------------------------------
 //  receive message
 //----------------------------------------------------------------------------------
@@ -635,7 +635,7 @@ EMessageResult CAttitudeIndicator::ReceiveMessage (SMessage *msg)
 
       case 'roll':
         // returns roll in deg (0..360)
-		    msg->intData  = Norme360(int(Uatt.z));
+		    msg->intData  = Wrap360(int(Uatt.z));
         return MSG_PROCESSED;
 
       case 'pich':
@@ -924,7 +924,7 @@ void CDirectionalGyro::TimeSlice (float dT,U_INT FrNo)
   ori.h  = 0;
 	mveh->GetRRtoLDOrientation(&ori);
 	if (!autoAlign) Error = eRate * dT;						            // proportional error
-	tYaw	= Norme360(ori.h + Error + gyro - globals->magDEV); // target yaw
+	tYaw	= Wrap360(ori.h + Error + gyro - globals->magDEV);	// target yaw
 	//-----Compute actual yaw ----------------------------
 	float fac	= (aRat)?(dT / aRat):(0.25);					    // Correction factor
 	if (fac >= 1)	fac = 0.25;								            // dont overshoot target
@@ -932,8 +932,8 @@ void CDirectionalGyro::TimeSlice (float dT,U_INT FrNo)
   if (df < -180) df += 360;
   if (df > +180) df -= 360;
 	aYaw		+=  df * fac;		                            // converge to target
-  aYaw     = Norme360(aYaw);
-  abug     = int(Norme360(360 - aYaw + rbug));              // Bug position on plate
+  aYaw     = Wrap360(aYaw);
+  abug     = int(Wrap360(360 - aYaw + rbug));         // Bug position on plate
 	return;
   }
 
