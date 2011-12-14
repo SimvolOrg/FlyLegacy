@@ -399,7 +399,7 @@ void CFuiFlightLog::MoveDwWaypoint()
 void CFuiFlightLog::ClearPlan()
 {	if (fpln->IsUsed())	return Error(5);
   fpln->ClearPlan();
-	fpln->WarnGPS(1);
+	fpln->WarnGPS();
   FillCurrentPlan();
   return;
 }

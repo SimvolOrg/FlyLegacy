@@ -2448,6 +2448,7 @@ int CK89gps::BrowseFPLpage()
   if (curPOS == 6)  curPOS = 1;
   if (curPOS == 5)  return 1;
 	//--- On empty line column 9 is a space rather than ':'  -----
+	wptTO	= 0;
   if (IsChar(' ',(curPOS - 1), K89_CLN09)) curPOS = 5;
   else wptTO = Stack[curPOS - 1];
   return 1;
@@ -2579,65 +2580,7 @@ bool CK89gps::EditFPLSlot(short lin,CWPoint *wpt)
   StoreText(edt,lin,K89_CLN16);
   return rs;
 }
-//---------------------------------------------------------------------
-//  Flight Plan is modified
-//	Notification coming from current flight plan
-//---------------------------------------------------------------------
-void CK89gps::ModifiedPlan()
-{	FPL     = mveh->GetFlightPlan();
-	Mode		= GPS_MODE_FPLAN;
-	actWP		= FPL->GetActiveNode();
-	basWP		= FPL->HeadNode();									// Base waypoint
-  fpMax   = FPL->Size();
-	TrackWaypoint(actWP,false);
-	return;
-}
-//---------------------------------------------------------------------
-//  Active waypoint is modified
-//	Notification coming from active flight plan
-//	NOTE when a direct TO waypoint is terminated then the next waypoint 
-//			is:
-//	Same waypoint if the waypoint is not part of the flight plan
-//	Otherwise, the next waypoint from the flight plan or 0
-//
-//---------------------------------------------------------------------
-void CK89gps::TrackWaypoint(CWPoint *wpt,bool endir)
-{	actWP	= wpt;														// Save it
-	UpdNavigationData(wpt);
-	prvIDN		= FPL->PreviousIdent(wpt);
-	insDIS		= FPL->GetInDIS();
-	//--- Check for end of DIRECT TO mode -------------
-	if (endir)	PushMode(GPS_MODE_FPLAN);
-	//--- Now assign the active waypoint --------------
-	actWPT = (wpt)?(wpt->GetDBobject()):(0);
-	if (0 == wpt)		return;									// Ignore it
-	//--- first inhibit user scrol mode ---------------
-	if (aState == K89_FPLP1)	curPOS	= 0;
-	if (0 == basWP)	return;
-	//--- check if base waypoint is still OK ----------
-	int asq = wpt->GetSequence();
-	int bsq = basWP->GetSequence();
-	//-- check if active is in range of base ----------
-	bool ok = (asq >= bsq) &&  (asq < (bsq+3));
-	if (ok)					return;			//Still visible
-	//--- Check for scrolling one position ------------
-	ok = (asq == (bsq + 3));
-	if (ok) {basWP = FPL->NextNode(basWP); return;}
-	//--- Change base waypoint ------------------------
-	basWP	= FPL->BaseWPT(basWP);
-	return;
-}
-//------------------------------------------------------------------
-//  Refresh Navigation data
-//------------------------------------------------------------------
-void CK89gps::UpdNavigationData(CWPoint *wpt)
-{ Speed			= mveh->GetPreCalculedKIAS();
-	aCAP			= mveh->GetMagneticDirection();
-	actRTE		= (wpt)?(wpt->GetDTK()):(0);  
-	actRAD		= (wpt)?(wpt->GetCAP()):(0);
-	actDIS		= (wpt)?(wpt->GetPlnDistance()):(-1);
-  return;
-}
+
 //=============================================================================
 //  WPT mode
 //=============================================================================
@@ -4270,6 +4213,97 @@ void CK89gps::Probe(CFuiCanva *cnv)
 	GPSRadio::Probe(cnv);
   return;
 }
+//==============================================================================================
+//	INTERFACE WITH REAL GPS
+//==============================================================================================
+//---------------------------------------------------------------------
+//	Get selected node in flight plan
+//	
+//---------------------------------------------------------------------
+CWPoint *CK89gps::SelectedNode()
+{ if ((curPOS < 1) || (curPOS > 4))     return 0;
+  if (IsChar(' ',(curPOS-1),K89_CLN09)) return 0;
+	if (0 == basWP)												return 0;
+	//--- Compute sequence number -------------------
+	int seq = basWP->GetSequence() + curPOS - 2;
+  return FPL->GetWaypoint(seq);  
+}
+//---------------------------------------------------------------------
+// Select the starting node in flight plan
+//	The starting node is the selected node in the flight plan page
+//---------------------------------------------------------------------
+CWPoint *CK89gps::StartingNode()
+{ CWPoint *hdn = FPL->HeadNode();
+	if (K89_FPLP1 != aState)		return hdn;
+	CWPoint *stn = SelectedNode();
+	if (stn)			return stn;
+	return hdn;
+}
+//---------------------------------------------------------------------
+//  Flight Plan is modified
+//	Notification coming from current flight plan
+//---------------------------------------------------------------------
+void CK89gps::ModifiedPlan()
+{	FPL     = mveh->GetFlightPlan();
+	Mode		= GPS_MODE_FPLAN;
+	actWP		= FPL->GetActiveNode();
+	basWP		= FPL->HeadNode();									// Base waypoint
+  fpMax   = FPL->Size();
+	TrackWaypoint(actWP,false);
+	return;
+}
+//---------------------------------------------------------------------
+//  Active waypoint is modified
+//	Notification coming from active flight plan
+//	NOTE when a direct TO waypoint is terminated then the next waypoint 
+//			is:
+//	Same waypoint if the waypoint is not part of the flight plan
+//	Otherwise, the next waypoint from the flight plan or 0
+//
+//---------------------------------------------------------------------
+void CK89gps::TrackWaypoint(CWPoint *wpt,bool endir)
+{	actWP	= wpt;														// Save it
+	UpdNavigationData(wpt);
+	prvIDN		= FPL->PreviousIdent(wpt);
+	insDIS		= FPL->GetInDIS();
+	//--- Check for end of DIRECT TO mode -------------
+	if (endir)	PushMode(GPS_MODE_FPLAN);
+	//--- Now assign the active waypoint --------------
+	actWPT = (wpt)?(wpt->GetDBobject()):(0);
+	if (0 == wpt)		return;									// Ignore it
+	//--- first inhibit user scrol mode ---------------
+	if (aState == K89_FPLP1)	curPOS	= 0;
+	if (0 == basWP)	return;
+	//--- check if base waypoint is still OK ----------
+	int asq = wpt->GetSequence();
+	int bsq = basWP->GetSequence();
+	//-- check if active is in range of base ----------
+	bool ok = (asq >= bsq) &&  (asq < (bsq+3));
+	if (ok)					return;			//Still visible
+	//--- Check for scrolling one position ------------
+	ok = (asq == (bsq + 3));
+	if (ok) {basWP = FPL->NextNode(basWP); return;}
+	//--- Change base waypoint ------------------------
+	basWP	= FPL->BaseWPT(basWP);
+	return;
+}
+//------------------------------------------------------------------
+//  Refresh Navigation data
+//------------------------------------------------------------------
+void CK89gps::UpdNavigationData(CWPoint *wpt)
+{ Speed			= mveh->GetPreCalculedKIAS();
+	aCAP			= mveh->GetMagneticDirection();
+	actRTE		= (wpt)?(wpt->GetDTK()):(0);  
+	actRAD		= (wpt)?(wpt->GetCAP()):(0);
+	actDIS		= (wpt)?(wpt->GetPlnDistance()):(-1);
+  return;
+}
+//------------------------------------------------------------------
+//  Navigation is now active
+//------------------------------------------------------------------
+void CK89gps::NavIsActive()
+{	EnterNAVpage01();
+}
 //=====================================================================================
 //	GPSR State table
 //=====================================================================================
@@ -4485,12 +4519,16 @@ void GPSRadio::EnterAPR()
 //	Activate Plan if any and get first node to track
 //----------------------------------------------------------------------------------
 void GPSRadio::EnterTRK()
-{	CWPoint *wp = FPL->StartingNode();
+{	CWPoint *wp = StartingNode();
+	if (0 == wp)									return;
 	if (GPSR_STBY != gpsTK)				return;   // Not the good state
- 	if (!FPL->StartPlan(wp))			return;
 	if (!APL->EnterGPSMode())			return;
-	navON	= 1;
+	//--- Stop current plan and start new one ------
+	FPL->StopPlan();
+ 	if (!FPL->StartPlan(wp))			return;
+	APL->	SetGasControl(1);
 	//--- Set Tracking mode -------------------------
+	navON	= 1;
 	gpsTK	= GPSR_TRAK;
 	//---Get first waypoint to track ----------------
 	NextNODE();
@@ -4500,8 +4538,7 @@ void GPSRadio::EnterTRK()
 //	Refresh tracking
 //--------------------------------------------------------------
 void GPSRadio::UpdateTracking(float dT,U_INT frm)
-{ 
-	switch (gpsTK)	{
+{	switch (gpsTK)	{
 		case GPSR_PWOF:
 			navON	= 0;
 			aprON	= 0;

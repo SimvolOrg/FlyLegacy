@@ -28,6 +28,8 @@
 #include "../Include/FuiUser.h"
 #include "../Include/FuiParts.h"
 #include "../Include/PlanDeVol.h"
+//----------------------------------------------------------------------------------
+#include <io.h>
 //==================================================================================
 //
 //  FlightPlan List:  List of available flight plans
@@ -74,33 +76,28 @@ void CFuiListPlan::TitlePlan()
 //				 the description tag
 //-------------------------------------------------------------------------
 void CFuiListPlan::FillPlans()
-{ char nfile[MAX_PATH];
+{ _finddata_t fileinfo;
   CFPlan  fpn(globals->pln);
   CFpnLine *slot = 0;
   char     *ds   = 0;     
-  char pn[MAX_PATH];
   allBOX.EmptyIt();
   TitlePlan();
-  sprintf(pn,"*.FPL");
-  char *fn = (char*)pfindfirst (&globals->pfs,pn);
-	fpn.Unprotect();
-  while (fn)
-  { strncpy(nfile,fn,MAX_PATH);
-    if (0 == slot)  slot = new CFpnLine;
-    char *deb = strrchr(nfile,'/');
-    char *end = strrchr(nfile,'.');
-    if (deb)
-    { deb++;
-      slot->SetFile(deb);
-      if (end) *end = 0;
-			if (!fpn.AssignPlan(deb,1)) break;
-			ds	= fpn.GetDescription();
-      slot->SetName(ds);
-      allBOX.AddSlot(slot);
-      slot = 0;
-    }
-    fn = (char*)pfindnext (&globals->pfs);
+  intptr_t h1 = _findfirst("FlightPlan/*.FPL",&fileinfo);
+	int      fh = h1;
+	//--- loop through the file list ----------
+  while (fh != -1)
+  { if (0 == slot)  slot = new CFpnLine;
+    char *end = strrchr(fileinfo.name,'.');
+    slot->SetFile(fileinfo.name);
+    if (end) *end = 0;
+		if (!fpn.AssignPlan(fileinfo.name,0)) break;
+		ds	= fpn.GetDescription();
+    slot->SetName(ds);
+    allBOX.AddSlot(slot);
+    slot = 0;
+    fh = _findnext (h1,&fileinfo);
   }
+	_findclose(h1);
   allBOX.Display();
   return;
 }
@@ -113,7 +110,7 @@ void CFuiListPlan::SelectPlan()
   strncpy(fn,lin->GetFile(),MAX_PATH);
   char *end = strrchr(fn,'.');
   if (end) *end = 0;
-	if (!fpln->AssignPlan(fn,0))			return Close();
+	if (!fpln->AssignPlan(fn,1))			return Close();
   //---Open or refresh detail -------------------------
   CFuiFlightLog *win = globals->dbc->GetLOGwindow();
   if (win)  win->Reset();

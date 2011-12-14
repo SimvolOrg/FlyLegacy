@@ -2990,7 +2990,7 @@ int C_QGT::UpdateInnerCircle()
 	tcm->Enter('UpdI',this,0);
 	SPosition *pos = tcm->PlaneArcsPos();
   NearQ.Lock();
-  CSuperTile *sp  = NearQ.GetFirst();
+  CSuperTile *sp = NearQ.GetFirst();
   float     ndis = tcm->GetMedDist();
   float     hird = tcm->GetHigDist();
   bool      hiok = tcm->HiResPermited();

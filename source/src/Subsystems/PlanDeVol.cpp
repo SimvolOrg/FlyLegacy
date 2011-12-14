@@ -1402,22 +1402,21 @@ void CFPlan::ClearPlan()
 //-------------------------------------------------------------------------
 bool CFPlan::AssignPlan(char *fn,char opt)
 { char name[PATH_MAX];
-  if (IsProtected())					return false;
-  char modif = opt ^ 1;
+  if (IsUsed())								return false;
 	_strupr(fn);
   _snprintf(name,(PATH_MAX-1),"FLIGHTPLAN/%s.FPL",fn);
-  if (!pexists(&globals->pfs,name)) return false;
   ClearPlan();
   SStream s;
-	WarnGPS(modif);				 // Advise GPS
 	//--- Read plan and set loaded state ------
-  if (!OpenRStream (name,s))	return false;
-  option	= opt;
-	format  = '0000';
-	ReadFrom (this, &s);                 
-  CloseStream (&s);
-	strncpy(Name,fn,64);
-	WarnGPS(modif);				 // Advise GPS
+  if (OpenRStream (name,s))
+	{ realp		= opt;
+		format  = '0000';
+		ReadFrom (this, &s);                 
+		CloseStream (&s);
+		strncpy(Name,fn,64);
+	}
+	//--- Advise GPS of changed plan ----------
+	if (opt) WarnGPS();				 
 	return true;
 }
 //-----------------------------------------------------------------
@@ -1447,7 +1446,7 @@ void CFPlan::ReadFormat(SStream *stream)
 }
 //-----------------------------------------------------------------
 //  Read all tags
-//	When option is set, we are just interested by the description
+//	When realp is 0, we are just interested by the description
 //-----------------------------------------------------------------
 int CFPlan::Read (SStream *stream, Tag tag)
 { switch (tag) {
@@ -1457,8 +1456,8 @@ int CFPlan::Read (SStream *stream, Tag tag)
   case 'desc':
 		if (format != 'FM01') return TAG_EXIT;
     ReadString(Desc,128,stream);
-    Desc[128] = 0;
-    return (1 == option)?(TAG_EXIT):(TAG_READ);
+    Desc[127] = 0;
+    return (0 == realp)?(TAG_EXIT):(TAG_READ);
   case 'vers':
     ReadInt((int*)(&Version),stream);
     return TAG_READ;
@@ -1468,7 +1467,7 @@ int CFPlan::Read (SStream *stream, Tag tag)
 	//--- Waypoint description ---------------
   case 'wpnt':
     // Read flight plan waypoint sub-object
-    { if (option) return TAG_EXIT;
+    { if (0 == realp) return TAG_EXIT;
       Tag tp;
       ReadTag (&tp, stream);
 			CWPoint *wp     = new CWPoint(this,tp);
@@ -1629,7 +1628,7 @@ void CFPlan::Reorder(char m)
 	//--- Mark last node --------------
 	if (prv)	prv->SetLast();	
 	//---------------------------------
-	WarnGPS(m);
+	WarnGPS();
 	//--- Check for modifications -----
 	if (0 == m)		return;
 	if (np1)	np1->NodeOne(np1);
@@ -1641,13 +1640,11 @@ void CFPlan::Reorder(char m)
 //-------------------------------------------------------------------------
 //	Warn GPS if needed 
 //-------------------------------------------------------------------------
-void CFPlan::WarnGPS(char m)
+void CFPlan::WarnGPS()
 {	//--- Compute GPS warning -----------------
-	bool wn = (GPS != 0) && (m);
-	if (wn) GPS->ModifiedPlan();
+	if (GPS) GPS->ModifiedPlan();
 	return;
 }
-
 //-----------------------------------------------------------------
 //	Reinit flight plan and possibly save it
 //	Inner distance is defined based on a 60 second leg at
@@ -1889,6 +1886,14 @@ CWPoint *CFPlan::StartingNode()
 	CWPoint *wp =  win->GetSelectedNode();
 	return PrevNode(wp);
 }
+//-----------------------------------------------------------------
+//	Get Waypoint by sequence number
+//	NOTE: This function assume that there is only one slot to define
+//				a waypoint
+//-----------------------------------------------------------------
+CWPoint *CFPlan::GetWaypoint(int No)
+{	int index = (No < 1)?(1):(No);
+  return (CWPoint *)wPoints.GetSlot(index); }
 //-----------------------------------------------------------------
 //	Restore a waypoint from plan
 //	Find the nearest waypoint not already visited

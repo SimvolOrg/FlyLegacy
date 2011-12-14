@@ -360,7 +360,6 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   dFactor   = lf;
   //--------------------------------------------------------------
 	lpod    = 1;
-	if (GetIniKey("W3D","LookInPodtoo"))  lpod = 1;
 	if (GetIniKey("W3D","LookOnlyInSQL"))	lpod = 0;
 	//--------------------------------------------------------------
 	sql	= globals->objDB;

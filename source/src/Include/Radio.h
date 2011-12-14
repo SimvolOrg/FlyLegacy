@@ -463,10 +463,13 @@ public:
 	//--------------------------------------------------------
   virtual void  ReadFinished (void);
 	virtual void  TimeSlice(float dT,U_INT FrNo)	{;}
-	//--- Notifications from flight plan --------------------
-	virtual void  ModifiedPlan()	{;}
-	virtual void	TrackWaypoint(CWPoint *wpt,bool e) {;}
-	virtual void	UpdNavigationData(CWPoint *w) {;}
+	//--- Interface with real GPS ----------------------------
+	//	Real GPS must supplies those functions ---------------
+	virtual void			ModifiedPlan()	{;}
+	virtual void			TrackWaypoint(CWPoint *wpt,bool e) {;}
+	virtual void			UpdNavigationData(CWPoint *w) {;}
+	virtual CWPoint  *StartingNode()		{return 0;}
+	virtual void			NavIsActive()	{;}
 	//--- Tracking management --------------------------------
 	void	TrackGPSEvent(U_CHAR evn, char prm);
 	void	PowerEVN (char parm);

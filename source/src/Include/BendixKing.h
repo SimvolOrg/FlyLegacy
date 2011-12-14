@@ -682,9 +682,6 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   int               CursorNRSchange();
   int               DispatchNRSmode();
   int               EditNRSoptions();
-  //-------FLIGHT PLAN Notifications -------------------------
-	void							TrackWaypoint(CWPoint *wpt,bool e);
-	void							ModifiedPlan();
   //-------FLIGHT PLAN Management    -------------------------
 	int               BrowseFPLnode();
   int               BrowseFPLpage();
@@ -822,6 +819,12 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   int               CALpage01(K89_EVENT evn);   // State 32 CAL mode Page 01
   int               NULpage01(K89_EVENT evn);   // State 33 NUL mode no data page
   int               SETpage01(K89_EVENT evn);   // State 34 SET mode page 01
+	//-------INTERFACE WITH REAL GPS ----- -------------------------
+	void							TrackWaypoint(CWPoint *wpt,bool e);
+	void							ModifiedPlan();
+	CWPoint          *StartingNode();
+	CWPoint          *SelectedNode();
+	void							NavIsActive();
   //-----------Dispatcher ----------------------------------------
   void   Dispatch(K89_EVENT evn)  {(this->*sfn[aState])(evn);}
   //-----------Radio control -------------------------------------

@@ -1045,38 +1045,31 @@ static bool existsondisk (PFS *pPfs, const char* filename)
 //---------------------------------------------------------------------------
 // Test for a file
 //
-// Returns: true if the file exists on disk, false otherwise
+// Returns: true if the file exists somewhere
 //---------------------------------------------------------------------------
 
 bool pexists (PFS* pPfs, const char* filename)
-{
+{ char	localFilename[PATH_MAX];
   bool rc = false;
-
+	char type = (pPfs->searchPodFilesFirst)?(1):(0);
   // Make local copy of filename, normalize path separators
-  char *localFilename = new char[strlen(filename) + 1];
   strcpy (localFilename, filename);
   NormalizeName(localFilename);
   strupper (localFilename);			// JSDEV* key is upper case
-  if (pPfs->searchPodFilesFirst) {
-    // Search for filename in all mounted PODs.
-    rc = existsinpod (pPfs, localFilename);
-    if (!rc) {
-      // Not found in a POD, search disk files
-      rc = existsondisk (pPfs, localFilename);
-    }
-  } else {
-    // Search for filename in disk files
-    rc = existsondisk (pPfs, localFilename);
-    if (!rc) {
-      // Not found on disk, search all mounted PODs
-      rc = existsinpod (pPfs, localFilename);
-    }
-  }
-
-  // Delete local copy of filename
-  delete[] localFilename;
-
-  return rc;
+	//--- look into podfile first ----------------------------
+	switch (type)	{
+		//--- Search first in disk files -----------------------
+		case 0:
+			 if (existsondisk (pPfs, localFilename))  return true;
+			 if (existsinpod  (pPfs, localFilename))	return true;
+			 break;
+		//--- Search first in pod files ------------------------
+		case 1:
+			 if (existsinpod  (pPfs, localFilename))	return true;
+			 if (existsondisk (pPfs, localFilename))  return true;
+			 break;
+	}
+  return false;
 }
 
 /*!

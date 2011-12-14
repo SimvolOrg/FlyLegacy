@@ -275,8 +275,8 @@ void CStreamFile::OpenRead (const char *filename, PFS *pfs)
   if (podfile != NULL) {
     // File was opened from the POD filesystem
     readable = true;
-  } else {
-    // Attempt to open from normal (non-POD) filesystem
+  } else 
+	{ // Attempt to open from normal (non-POD) filesystem
     f = fopen (filename, "r");
     if (f != NULL) readable = true;
   }

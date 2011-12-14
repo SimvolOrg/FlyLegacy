@@ -2168,8 +2168,7 @@ bool AutoPilot::EnterGPSMode()
 	if (cAGL < 500)						return false;
 	if (AP_DISENGD == vStat)	return false;
 	if (AP_VRT_TKO == vStat)	return false;
-	SetGasControl(1);
-	if (ugaz == 0)						return false;
+	if (0 == gazS)						return false;
 	return true;
 }
 //-----------------------------------------------------------------------

@@ -452,7 +452,7 @@ private:
 	Tag							format;											// Actual format
 	//--------------------------------------------------------------
 	char						genWNO;											// Waypoint number
-  char            option;                     // 1=>Just descriptor
+  char            realp;                      // 0=>Just descriptor
   char            modify;                     // Modified indicator
 	char						rfu1;											  // rfu
 	//---------------------------------------------------------------------
@@ -499,7 +499,7 @@ protected:
 	//---------------------------------------------------------------
 public:
 	void	TimeSlice(float dT, U_INT fr);
-	void	WarnGPS(char m);
+	void	WarnGPS();
 	int 	ModifyCeil(int inc);
 	void	UpdateDirectNode(U_INT fr);
 	void	UpdateActiveNode(U_INT fr);
@@ -539,6 +539,7 @@ public:
 	CWPoint *NextStep(CWPoint *n);
 	CWPoint *BaseWPT(CWPoint *w);
 	CWPoint *StartingNode();
+	CWPoint *GetWaypoint(int No);
 	//--- Tracking flight plan --------------------------------------
 	CWPoint *GetSelectedNode()			{return sWPT;}
 	void	SetSelection(CWPoint *p)	{sWPT = p;}
