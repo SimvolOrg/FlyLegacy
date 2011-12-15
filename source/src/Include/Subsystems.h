@@ -2317,9 +2317,10 @@ public:
   //---ATTRIBUTS -----------------------------------------------
 protected:
   CAeroControl    *Cont;        // Associated control for trim
-  MIXER_DATA       data;
-  double  vPID;       ///< FCS value (autopilot)
-  double  Bias;       // Trim deviation
+  MIXER_DATA       data;				// mixer data
+  double  vPID;									///< FCS value (autopilot)
+  double  Bias;									// Trim deviation
+	float		timer;								// available for controls
 public:
 };
 //=====================================================================
@@ -2980,13 +2981,17 @@ public:
   virtual const char* GetClassName (void) { return "CElevatorTrimControl"; }
 	void								ReadFinished();
   void                TimeSlice (float dT,U_INT FrNo = 0);					// SDEV*
-
+	//--- Overloaded ---------------------------------------
+	void Incr();
+	void Decr();
+	//--- Attribute ----------------------------------------
 protected:
+	char ok;
 };
 
-//
+//======================================================================
 // CAileronTrimControl
-//
+//======================================================================
 class CAileronTrimControl : public CAeroControl {
 public:
   CAileronTrimControl (void);

@@ -54,8 +54,7 @@ U_INT rignTAB[] = {
 //  Provides factorization for all surfaces and equipement control (trim)
 //=================================================================================
 CAeroControl::CAeroControl (void)
-{
-  TypeIs (SUBSYSTEM_AERO_CONTROL);
+{ TypeIs (SUBSYSTEM_AERO_CONTROL);
   hwId = HW_SWITCH;
   data.scal = 1.0f;
   data.step = 0.01f;
@@ -73,6 +72,7 @@ CAeroControl::CAeroControl (void)
   vPID          = 0;
   Bias          = 0;
   Cont          = 0;
+	timer					= 0;
 }
 //---------------------------------------------------------------------------------
 //  Read parameters for control
@@ -252,13 +252,7 @@ void CAeroControl::TimeSlice (float dT,U_INT FrNo)				// JSDEV*
   indnTarget = Clamp(data.raw + vPID + Bias);
   return;
 }
-//================================================================================
-// CAileronTrimControl
-//================================================================================
-CAileronTrimControl::CAileronTrimControl (void)
-{
-  TypeIs (SUBSYSTEM_AILERON_TRIM_CONTROL);
-}
+
 //=================================================================================
 // CAileronControl
 //=================================================================================
@@ -1925,13 +1919,19 @@ void CBrakeControl::Probe(CFuiCanva *cnv)
 // CElevatorTrimControl
 //================================================================================
 CElevatorTrimControl::CElevatorTrimControl (void)
-{
-  TypeIs (SUBSYSTEM_ELEVATOR_TRIM_CONTROL);
+{ TypeIs (SUBSYSTEM_ELEVATOR_TRIM_CONTROL);
+	timer = 0.5;
+	ok	  = 1;
 }
-
-void CElevatorTrimControl::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
-{ globals->jsm->Poll(JS_TRIM,data.raw);
-  CAeroControl::TimeSlice(dT,FrNo);								// JSDEV*
+//------------------------------------------------------------------------
+//	Poll joystick to get value from any assigned axis
+//-----------------------------------------------------------------------
+void CElevatorTrimControl::TimeSlice (float dT,U_INT FrNo)		
+{ CAeroControl::TimeSlice(dT,FrNo);								// JSDEV*
+  timer -= dT;
+	if (timer < 0)	{timer += dT; ok ^= 1;}
+	globals->jsm->Poll(JS_TRIM,data.raw);
+	return;
 }
 //-----------------------------------------------------------------------
 //	All parameters are read, remap joystick
@@ -1939,20 +1939,37 @@ void CElevatorTrimControl::TimeSlice (float dT,U_INT FrNo)		// JSDEV*
 void	CElevatorTrimControl::ReadFinished()
 {	globals->jsm->MapTo(JS_TRIM,unId);
 }
-
 //-----------------------------------------------------------------------
+//	Slow down increment
+//-----------------------------------------------------------------------
+void CElevatorTrimControl::Incr()
+{	if (ok)	return;
+	return CAeroControl::Incr();	} 
+//-----------------------------------------------------------------------
+//	Slow down decrement
+//-----------------------------------------------------------------------
+void CElevatorTrimControl::Decr()
+{	if (ok)	return;
+	return CAeroControl::Decr();	} 
+//================================================================================
 // CRudderTrimControl
-//-----------------------------------------------------------------------
+//================================================================================
 CRudderTrimControl::CRudderTrimControl (void)
 {
   TypeIs (SUBSYSTEM_RUDDER_TRIM_CONTROL);
 }
 
+//================================================================================
+// CAileronTrimControl
+//================================================================================
+CAileronTrimControl::CAileronTrimControl (void)
+{
+  TypeIs (SUBSYSTEM_AILERON_TRIM_CONTROL);
+}
 
-
-//=======================================================================
+//================================================================================
 // CGearControl
-//=======================================================================
+//================================================================================
 CGearControl::CGearControl (void)
 {
   TypeIs (SUBSYSTEM_GEAR_CONTROL);
@@ -2393,3 +2410,4 @@ int COxygen::Read (SStream *stream, Tag tag)
 
   return rc;
 }
+//=============================END OF FILE ===================================================================
