@@ -1442,13 +1442,12 @@ void	AutoPilot::ModeTGA()
 //-----------------------------------------------------------------------
 void AutoPilot::ModeGND()
 {	//--- Compute error -----------------------------------
-	aHDG	  = mveh->GetDirection();				// Actual Heading
+	gHDG	  = mveh->GetHeading();				// Actual Heading
 	rHDG		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),rend->refP);
-	hERR		= Wrap180(rHDG - aHDG) * 100;
-  double val  = pidL[PID_RUD]->Update(dTime,hERR,0);     // to controller
- // rudS->SetValue(val);                         // result to rudder
-	rudS->PidValue(val);
-	//TRACE("rHDG=%.5f DIR=%.5f hERR=%.5f val=%.5f",rHDG,aHDG,hERR,val);
+	hERR		= Wrap180(rHDG - gHDG) * 100;
+  double val  = pidL[PID_RUD]->Update(dTime,hERR,0);			// to controller
+	rudS->PidValue(val);																		// To rudder
+	//TRACE("rHDG=%.5f DIR=%.5f hERR=%.5f val=%.5f",rHDG,gHDG,hERR,val);
 	//---- hold level ---------------------------
 	ModeROL();
 	//---- Proceed according to vertical mode ---
@@ -1713,7 +1712,8 @@ void AutoPilot::ExitAPR()
 //         In this case, new mode is ROL + ALT
 //-----------------------------------------------------------------------
 void AutoPilot::EnterALT()
-{ aprm	= 0;
+{ if (vStat == AP_VRT_ALT)	return;
+	aprm	= 0;
   StateChanged(AP_STATE_ALT);       // Warn Panel
   vStat = AP_VRT_ALT;               // Lock on altitude
   pidL[PID_ALT]->Init();            // init PID

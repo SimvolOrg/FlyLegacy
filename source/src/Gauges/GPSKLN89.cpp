@@ -4233,10 +4233,7 @@ CWPoint *CK89gps::SelectedNode()
 //	The starting node is the selected node in the flight plan page
 //---------------------------------------------------------------------
 CWPoint *CK89gps::StartingNode()
-{ CWPoint *hdn = FPL->HeadNode();
-	if (K89_FPLP1 != aState)		return hdn;
-	CWPoint *stn = SelectedNode();
-	if (stn)			return stn;
+{ CWPoint *hdn = 0;
 	return hdn;
 }
 //---------------------------------------------------------------------
@@ -4446,6 +4443,7 @@ void GPSRadio::NextNODE()
 	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wTRK->GetAltitude());
+	APL->EnterALT();
 	APL->ChangeALT(alt);							// Set target altitude
 	APL->SetNavMode();								// Set NAV mode 
 	return;
@@ -4519,7 +4517,7 @@ void GPSRadio::EnterAPR()
 //	Activate Plan if any and get first node to track
 //----------------------------------------------------------------------------------
 void GPSRadio::EnterTRK()
-{	CWPoint *wp = StartingNode();
+{	CWPoint *wp = FPL->GetBestWaypoint();
 	if (0 == wp)									return;
 	if (GPSR_STBY != gpsTK)				return;   // Not the good state
 	if (!APL->EnterGPSMode())			return;

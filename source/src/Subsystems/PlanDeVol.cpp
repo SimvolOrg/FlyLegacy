@@ -1156,7 +1156,7 @@ float CWPoint::GetPrevDistance()
 //	Check for last node
 //----------------------------------------------------------------------
 bool CWPoint::IsLast()							
-{return (nSeq == fplan->Size());}
+{ return (fplan->IsLast(nSeq)); }
 //-----------------------------------------------------------------
 //	Check for airport ident
 //-----------------------------------------------------------------
@@ -1242,7 +1242,7 @@ return 0;
 //	-Remaining distance to last waypoint
 //	-Direct direction to waypoint
 //-----------------------------------------------------------------
-void CWPoint::UpdateRange(CVehicleObject *veh,U_INT frame)
+void CWPoint::UpdateRange(CVehicleObject *veh)
 {	//--- Compute distance from aircraft --------------
 	SVector	v	= GreatCirclePolar(veh->GetAdPosition(), &position);
   dDir		= Wrap360((float)v.h - magdv);		// Direct direction
@@ -1312,7 +1312,7 @@ void CWPoint::Print(CFuiList *w,U_CHAR ln)
 //===============================================================================
 //	FLIGHT PLAN
 //===============================================================================
-CFPlan::CFPlan(CVehicleObject *m)
+CFPlan::CFPlan(CVehicleObject *m,char rp)
 {	TypeIs('FPLN');
 	SetIdent('-FP-');	
 	mveh		= m;
@@ -1321,6 +1321,7 @@ CFPlan::CFPlan(CVehicleObject *m)
 	modify	= 0;
 	GPS 		= mveh->GetGPS(); 
 	dWPT.SetFlightPlan(this);
+	realp   = rp;
 	//---Init title ---------------------------------
   head.FixeIt();
   head.SetName("Waypoint name");
@@ -1336,8 +1337,8 @@ CFPlan::CFPlan(CVehicleObject *m)
 	serial = 0;
 	win		 = 0;
  //--- Generate a sphere for rabbit ------------------------------
-	sphere = gluNewQuadric();
-	gluQuadricNormals(sphere,GLU_SMOOTH);
+	if (realp)	sphere = gluNewQuadric();
+	if (realp)  gluQuadricNormals(sphere,GLU_SMOOTH);
 	//------------------------------------------------
 	mALT		= 5000;
 	cALT		= 4500;
@@ -1400,7 +1401,7 @@ void CFPlan::ClearPlan()
 //-------------------------------------------------------------------------
 //	Assign a new flight plan from file name
 //-------------------------------------------------------------------------
-bool CFPlan::AssignPlan(char *fn,char opt)
+bool CFPlan::AssignPlan(char *fn)
 { char name[PATH_MAX];
   if (IsUsed())								return false;
 	_strupr(fn);
@@ -1409,14 +1410,13 @@ bool CFPlan::AssignPlan(char *fn,char opt)
   SStream s;
 	//--- Read plan and set loaded state ------
   if (OpenRStream (name,s))
-	{ realp		= opt;
-		format  = '0000';
+	{ format  = '0000';
 		ReadFrom (this, &s);                 
 		CloseStream (&s);
 		strncpy(Name,fn,64);
 	}
 	//--- Advise GPS of changed plan ----------
-	if (opt) WarnGPS();				 
+	if (realp) WarnGPS();				 
 	return true;
 }
 //-----------------------------------------------------------------
@@ -1769,6 +1769,46 @@ char *CFPlan::PreviousIdent(CWPoint *wpt)
 	return prv->GetIdentity();
 }
 //-----------------------------------------------------------------
+//  Update all nodes
+//	-Compute distance to aircraft and save nearest waypoint
+//-----------------------------------------------------------------
+void CFPlan::UpdateAllNodes()
+{	if (IsEmpty())		return;
+	uWPT	= (CWPoint*)wPoints.NextPrimary(uWPT);
+	//--- Recycle plan if needed ------------
+	if (0 == uWPT)	
+	{ uWPT = (CWPoint*)wPoints.HeadPrimary();
+		nWPT	= uWPT;}
+	if (0 == uWPT)		return;
+	//--- Update one waypoint ----------------
+	uWPT->UpdateRange(mveh);
+	SaveNearest(uWPT);
+	return;
+}
+//-----------------------------------------------------------------
+//  Get the best waypoint to catch up with
+//  The computation takes in account the time for the aircraft to turn
+//	to the waypoint.  It should be 1/3 of the time to go to the waypoint
+//	If it take more, then the next waypoint is selected as the
+//	best candidate
+//-----------------------------------------------------------------
+CWPoint *CFPlan::GetBestWaypoint()
+{ if (nWPT == 0)							return 0;
+	CWPoint *p0 = nWPT;
+	if (p0->GetSequence() == 1) p0 = NextStep(p0);
+	if (0 == p0)								return 0;
+	//--- compute angle from aircraft to P0 -----------
+	float s0 = Wrap180(p0->GetCAP() - float(mveh->GetHeading()));
+	float a0 = fabs(s0);
+	if (a0 > 90)		return NextStep(p0);
+	//--- Compute time to turn to P0 -----------------
+	float spd = mveh->GetPreCalculedKIAS();
+  float t0  = a0 / 3;					// Degre per second
+	float t1  = (p0->GetPlnDistance() * 1200) / spd;
+	if (t0 > t1)	p0 = NextStep(p0);
+	return PrevNode(p0);
+}
+//-----------------------------------------------------------------
 //	Update parameters
 //	Each node is updated relative to aircraft position:
 //	-Node state
@@ -1789,6 +1829,8 @@ void	CFPlan::TimeSlice(float dT, U_INT frm)
 	char nw  = mveh->NbWheelsOnGround();
   //--- Update non FP direct TO waypoint ------
 	UpdateDirectNode(frm);
+	//--- Update one node at a time ---------
+	UpdateAllNodes();
 	//--- Update according to current state -----
 	switch (State)	{
 		//--- No flight plan loaded. Update departing airport ---
@@ -1797,17 +1839,6 @@ void	CFPlan::TimeSlice(float dT, U_INT frm)
 			return;
 		//--- Flight plan operational -------------
 		case FPL_STA_OPR:
-			//--- Check for an empty flight plan ----
-			if (IsEmpty())		return;
-			uWPT	= (CWPoint*)wPoints.NextPrimary(uWPT);
-			//--- Recycle plan if needed ------------
-			if (0 == uWPT)	
-			{ uWPT = (CWPoint*)wPoints.HeadPrimary();
-			  nWPT	= uWPT;}
-			if (0 == uWPT)		return;
-			//--- Update one waypoint ----------------
-			uWPT->UpdateRange(mveh,frm);
-			SaveNearest(uWPT);
 			//--- Now update active waypoint --------
 			UpdateActiveNode(frm);
 			return;
@@ -1826,7 +1857,7 @@ void CFPlan::UpdateDirectNode(U_INT frm)
 //	Update Active node
 //-----------------------------------------------------------------
 void CFPlan::UpdateActiveNode(U_INT frm)
-{	aWPT->UpdateRange(mveh,frm);
+{	aWPT->UpdateRange(mveh);
 	//---------------------------------------
 	if (0 == aWPT->UpdateState())			return;
 	//--- Waypoint is terminated ------------
@@ -1874,6 +1905,9 @@ CWPoint *CFPlan::BaseWPT(CWPoint *b)
 	CWPoint *org = b->GetOrgWPT();
 	return  PrevNode(org);
 }
+//-----------------------------------------------------------------
+//	
+//-----------------------------------------------------------------
 //-----------------------------------------------------------------
 //	Starting node is the first active node when GPS is switched to
 //	navigation mode.
@@ -1927,7 +1961,11 @@ void CFPlan::MovedWaypoint(CWPoint *wpt)
 //	Probe Flight Plan
 //-----------------------------------------------------------------
 void CFPlan::Probe(CFuiCanva *cnv)
-{ if (0 == aWPT)		return;
+{ CWPoint *p1 = nWPT;
+	if (p1)		cnv->AddText( 1,1,"Near: %s",p1->GetIdentity());
+	CWPoint *p0 = GetBestWaypoint();
+	if (p0)		cnv->AddText( 1,1,"Best: %s",p0->GetIdentity());
+	if (0 == aWPT)		return;
 	cnv->AddText( 1,1,"aWPT: %s",aWPT->GetIdentity());
 	cnv->AddText( 1,1,"mDis: %.2fnm",aWPT->GetPlnDistance());
 	cnv->AddText( 1,1,"State: %d",aWPT->GetState());

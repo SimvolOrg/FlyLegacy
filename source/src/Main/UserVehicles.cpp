@@ -898,7 +898,7 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
     CloseStream (&s);
   }
 	//-- Add Fligth Plan subsystem ----------------------
-	CFPlan	*fp = new CFPlan(mveh);
+	CFPlan	*fp = new CFPlan(mveh,1);
 	subs.push_back (fp);
 	fpln	= fp;
 

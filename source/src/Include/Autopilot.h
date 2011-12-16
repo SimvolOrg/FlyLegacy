@@ -369,6 +369,7 @@ protected:
 	//--- Lateral control values ----------------------------------------
   double     rHDG;                          // Target Heading
   double     aHDG;                          // Actual heading (yaw)
+	double     gHDG;													// ground heading
   double     xHDG;                          // cross heading
 	double     xCOR;													// 45° correction
 	double     nHDG;													// Next heading

@@ -40,7 +40,7 @@
 #include <string>
 #include "../Include/FlyLegacy.h"
 #include "LogFile.h"
-
+//================================================================================================
 #ifdef _MSC_VER
 #pragma warning( disable : 4786 )
 #endif
@@ -56,8 +56,7 @@
 #include <windows.h>
 #endif
 
-
-
+//================================================================================================
 // Pod format signatures
 //static const unsigned int PodSignatureEpd  = 'extd';
 static const unsigned int PodSignatureEpd  = 'dtxe';      // JS
@@ -72,9 +71,9 @@ typedef enum {
   PodFormatPod3
 } EPodFormat;
 
-//
+//================================================================================================
 // EPD/POD macro definitions
-//
+//================================================================================================
 
 #define EPD_VOLUME_LENGTH        (0x100)
 #define EPD_FILENAME_LENGTH       (0x40)
@@ -193,7 +192,12 @@ typedef struct {
 public:
 } PODFILE;
 
-
+//================================================================================================
+//	Function prototype for file processing
+//	User must call ApplyToFile with a pattern, a callback function and a user parameter
+//================================================================================================
+typedef int (*FileCB)(char *fn,void *upm);
+void	ApplyToFiles(char *pat, FileCB cb, void *upm);
 //=====================================================================================
 // Initialize a new pod filesystem.  The application owns the pod filesystem
 //   represented by the PFS struct.  It must be statically or dynamically

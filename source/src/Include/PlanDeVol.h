@@ -169,6 +169,8 @@ public:
   void    TitlePlan();
   void    FillPlans();
   void    SelectPlan();
+	//--- Add a plan to the list -----------------------------------
+	int			AddToList(char *fn);
   //------Chart management ---------------------------------------
   void    FillChartList();
   void    FillOneList(char *ext);
@@ -356,7 +358,7 @@ public:
 	char		Outside();
 	char		Inside();
 	char		UpdateState();
-	void		UpdateRange(CVehicleObject *veh,U_INT frame);
+	void		UpdateRange(CVehicleObject *veh);
 	void		EditArrival();
 	float		GetPrevDistance();
 	//-------------------------------------------------------------
@@ -486,7 +488,7 @@ private:
   CListBox        wPoints;                    // List of way points
 	//--- METHODS ---------------------------------------------------
 public:
-	CFPlan(CVehicleObject *m);
+	CFPlan(CVehicleObject *m,char rp);
  ~CFPlan();
 	//---------------------------------------------------------------
 protected:
@@ -501,6 +503,7 @@ public:
 	void	TimeSlice(float dT, U_INT fr);
 	void	WarnGPS();
 	int 	ModifyCeil(int inc);
+	void	UpdateAllNodes();
 	void	UpdateDirectNode(U_INT fr);
 	void	UpdateActiveNode(U_INT fr);
 	void	ActivateNode(CWPoint *wpt);
@@ -530,7 +533,7 @@ public:
 	void	AssignDirect(CmHead *obj);				// From GPS
 	void	ClearDirect();										// From GPS
 	//---Flight plan management -------------------------------------
-	bool		AssignPlan(char *fn,char opt);
+	bool		AssignPlan(char *fn);
 	void		AddNode(CWPoint *wpt);
 	CWPT    *CreateUserWPT(SPosition *p);
 	CWPoint *CreateAPTwaypoint(CAirport *apt);
@@ -539,6 +542,7 @@ public:
 	CWPoint *NextStep(CWPoint *n);
 	CWPoint *BaseWPT(CWPoint *w);
 	CWPoint *StartingNode();
+	CWPoint *GetBestWaypoint();
 	CWPoint *GetWaypoint(int No);
 	//--- Tracking flight plan --------------------------------------
 	CWPoint *GetSelectedNode()			{return sWPT;}

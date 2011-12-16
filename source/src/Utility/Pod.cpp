@@ -46,7 +46,7 @@
 #include "../Include/Pod.h"
 #include "../Include/Endian.h"
 #include "../Include/Utility.h"
-
+#include <io.h>
 using namespace std;
 //=================================================================================
 enum XMLmark {
@@ -228,7 +228,22 @@ static void plog (PFS *pPfs, const char* fmt, ...)
 		va_end(argp);
   }  
 }
-
+//=====================================================================================
+//	APPLY a function to each file mactching the pattern pat
+//  This is a Windows dependancy
+//=====================================================================================
+void	ApplyToFiles(char *pat, FileCB cbFN, void *upm)
+{ _finddata_t fileinfo;
+  intptr_t h1 = _findfirst(pat,&fileinfo);
+	int      fh = h1;
+	//--- loop through the file list ----------
+  while (fh != -1)
+  { if (0 == (*cbFN)(fileinfo.name,upm)) break;
+    fh = _findnext (h1,&fileinfo);
+  }
+	_findclose(h1);
+	return;
+}
 ///////////////////////////////////////////////////////////////////
 //
 // Standard C pod filesystem implementation

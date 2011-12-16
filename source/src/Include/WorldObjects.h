@@ -142,7 +142,7 @@ public:
   inline    SPosition  GetOriginalPosition()								{return orgp;}  
   inline    SPosition *GetAdPosition()											{return &geop;}           
   inline    SPosition  GetPosition()												{return geop;}
-  inline    double     GetDirection()												{return -dang.z;}
+	inline		double		 GetHeading()													{return -dang.z;}	
   inline    double     GetAltitude()												{return geop.alt;}
   inline    void       SetAltPosition(double a)		          {geop.alt = a;}
   //----------------------------------------------------------------------------

@@ -31,6 +31,13 @@
 //----------------------------------------------------------------------------------
 #include <io.h>
 //==================================================================================
+//	Global function to add a flightplan
+//==================================================================================
+int FlightPlanCB(char *fn,void *upm)
+{	CFuiListPlan *win = (	CFuiListPlan *)upm;
+	return win->AddToList(fn);
+}
+//==================================================================================
 //
 //  FlightPlan List:  List of available flight plans
 //
@@ -76,30 +83,27 @@ void CFuiListPlan::TitlePlan()
 //				 the description tag
 //-------------------------------------------------------------------------
 void CFuiListPlan::FillPlans()
-{ _finddata_t fileinfo;
-  CFPlan  fpn(globals->pln);
-  CFpnLine *slot = 0;
-  char     *ds   = 0;     
-  allBOX.EmptyIt();
+{ allBOX.EmptyIt();
   TitlePlan();
-  intptr_t h1 = _findfirst("FlightPlan/*.FPL",&fileinfo);
-	int      fh = h1;
-	//--- loop through the file list ----------
-  while (fh != -1)
-  { if (0 == slot)  slot = new CFpnLine;
-    char *end = strrchr(fileinfo.name,'.');
-    slot->SetFile(fileinfo.name);
-    if (end) *end = 0;
-		if (!fpn.AssignPlan(fileinfo.name,0)) break;
-		ds	= fpn.GetDescription();
-    slot->SetName(ds);
-    allBOX.AddSlot(slot);
-    slot = 0;
-    fh = _findnext (h1,&fileinfo);
-  }
-	_findclose(h1);
-  allBOX.Display();
-  return;
+	ApplyToFiles("FlightPlan/*.FPL",FlightPlanCB,this);
+	allBOX.Display();
+	return;
+}
+//-------------------------------------------------------------------------
+//  Add a plan to the list
+//-------------------------------------------------------------------------
+int CFuiListPlan::AddToList(char *fn)
+{ CFPlan  fpn(globals->pln,0);
+	char *end = strrchr(fn,'.');
+	if (0 == end)						return 1;
+ *end  = 0;						// Remove extension
+	if (!fpn.AssignPlan(fn)) return 1;
+	//--- Add a line to selection box ----------
+	CFpnLine *slot = new CFpnLine;
+	slot->SetFile(fn);
+	slot->SetName(fpn.GetDescription());
+	allBOX.AddSlot(slot);
+	return 1;
 }
 //-------------------------------------------------------------------------
 //  Select plan from Directory
@@ -110,7 +114,7 @@ void CFuiListPlan::SelectPlan()
   strncpy(fn,lin->GetFile(),MAX_PATH);
   char *end = strrchr(fn,'.');
   if (end) *end = 0;
-	if (!fpln->AssignPlan(fn,1))			return Close();
+	if (!fpln->AssignPlan(fn))			return Close();
   //---Open or refresh detail -------------------------
   CFuiFlightLog *win = globals->dbc->GetLOGwindow();
   if (win)  win->Reset();
