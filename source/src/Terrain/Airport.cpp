@@ -888,9 +888,6 @@ void CAptObject::AddPOD()
   _snprintf(key,(PATH_MAX-1),"%s.RLP",GetAptName());
   _snprintf(fnm,(PATH_MAX-1),"RUNWAYS/%s",key);
   pAddDisk(&globals->pfs,key,fnm);
-  _snprintf(key,(PATH_MAX-1),"%s.PNG",GetAptName());
-  _snprintf(fnm,(PATH_MAX-1),"DIAGRAMS/%s",key);
-  pAddDisk(&globals->pfs,key,fnm);
   return;
 }
 //---------------------------------------------------------------------------------
@@ -901,9 +898,6 @@ void CAptObject::RemPOD()
   char  key[PATH_MAX];
   _snprintf(key,(PATH_MAX-1),"%s.RLP",GetAptName());
   _snprintf(fnm,(PATH_MAX-1),"RUNWAYS/%s",key);
-  pRemDisk(&globals->pfs,key,fnm);
-  _snprintf(key,(PATH_MAX-1),"%s.PNG",GetAptName());
-  _snprintf(fnm,(PATH_MAX-1),"DIAGRAMS/%s",key);
   pRemDisk(&globals->pfs,key,fnm);
   return;
 }

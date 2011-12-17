@@ -136,7 +136,7 @@ typedef struct {
 } RADIO_LST;
 //================================================================================
 class CFuiVectorMap : public CFuiWindow
-{
+{ friend int VMapCB(char *dn, void *upm);
   #define VMAP_MENU_SIZE (17)
 	//---------------------------------------------------------------------
 	#define VM_SCALE 800                // Nmber of pixel for the current nautical miles zoom
@@ -210,6 +210,7 @@ public:
   virtual void        Draw (void);
   //---------------------------------------------------------------------
 protected:
+	
   int  GetScreenCoordinates(CmHead *obj, int& x, int& y, int bm = 0,int cor = 0);
   void        LoadAptBitmap(char *art,VM_ANB no);
   void        LoadOthBitmap(char *art,VM_BMP no);
@@ -265,6 +266,7 @@ protected:
   void        DrawRoseDir(int xc, int yc, U_INT col);
 	//--- Document list ------------------------------------------------
   int         SearchDOC();
+	int					AddDocName(char *dn);
   bool        OpenDocLIST(int mx,int my);
   int         ClickDocLIST(short ln);
 	//--- Document management ------------------------------------------
@@ -387,6 +389,9 @@ protected:
   S_IMAGE     DocInfo;                      // Diagram image
   char        dStat;                        // Draw state
   float       rScale;                       // Scale factor to draw runways
+	char				nxDoc;												// Index document
+	char			 *nmDoc;												// Current doc name
+	int					rmDoc;												// Remaining space
   //------Runway view management --------------------------------
 	CDataBGR   *txDATA;												// Taxiways data
   void       *obView;                       // Airport object to view

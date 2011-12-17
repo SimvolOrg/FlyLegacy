@@ -1580,8 +1580,6 @@ int main (int argc, char **argv)
   padddiskfolder (pfs, ".", "Art");
   padddiskfolder (pfs, ".", "Charts");
   padddiskfolder (pfs, ".", "Data");
-  padddiskfolder (pfs, ".", "Documents");
-//  padddiskfolder (pfs, ".", "FlightPlan");
   padddiskfolder (pfs, ".", "Saved Simulations");
   padddiskfolder (pfs, ".", "System");
   padddiskfolder (pfs, ".", "UI");

@@ -230,12 +230,14 @@ public:
  ~CArtParser();
   void      Abort(char *fn,char *er);
   int       SetSide(int s);
-  bool      NoFile(char *fn);
+  void      NoFile(char *fn);
   bool      LoadPOD(char *rnm,char tsp);            // Load from POD
   bool      LoadFIM(char *rnm,char tsp,FREE_IMAGE_FORMAT ff);
 	GLubyte  *LoadRaw(TEXT_INFO &txd,char opt);       // Load texture
   //---------------------------------------------------------------------
   bool      LoadFFF(char *rnm,char tsp,FREE_IMAGE_FORMAT ff);
+	void		  TryaPOD(char *fnm,U_CHAR **buf,int &sz);
+	void			TryFILE(char *fnm,U_CHAR **buf,int &sz);
   //---------------------------------------------------------------------
   int       ConvertRGBA(U_CHAR alf);                // Convert in RGBA
   int       ByteRGBA(U_CHAR opt);

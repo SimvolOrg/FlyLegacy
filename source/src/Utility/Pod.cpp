@@ -1199,12 +1199,6 @@ PODFILE* popen (PFS* pPfs, const char* fname, char *md)
 {
   PODFILE *p = NULL;
 
-#ifdef POD_PERFORMANCE_METRICS
-  // Get timestamp
-  LARGE_INTEGER start, stop, delta;
-  QueryPerformanceCounter (&start);
-#endif
-
   // Make local copy of filename, and normalize path separators
   char filename[PATH_MAX];
   strcpy (filename, fname);
@@ -1226,33 +1220,6 @@ PODFILE* popen (PFS* pPfs, const char* fname, char *md)
       p = findinpod (pPfs, filename);
     }
   }
-
-#ifdef POD_PERFORMANCE_METRICS
-  // Get final timestamp and update performance metrics (logging time should not
-  //   be included in measurements
-  delta.QuadPart = 0;
-  QueryPerformanceCounter (&stop);
-  if (stop.QuadPart < start.QuadPart) {
-#ifdef HAVE_MAXLONGLONG
-      delta.QuadPart = stop.QuadPart + (MAXLONGLONG - start.QuadPart);
-#else
-      gtfo ("popen : Performance counter wraparound\n");
-#endif // HAVE_MAXLONGLONG
-  } else {
-    delta.QuadPart = stop.QuadPart - start.QuadPart;
-  }
-
-  // Record measured interval against either success or failure metric
-  if (p == NULL) {
-    // popen failure
-    pPfs->popenFailure++;
-    pPfs->popenFailureTotalTime.QuadPart += delta.QuadPart;
-  } else {
-    // popen success
-    pPfs->popenSuccess++;
-    pPfs->popenSuccessTotalTime.QuadPart += delta.QuadPart;
-  }
-#endif
 
   // Generate log if file not found
   if (p == NULL) {

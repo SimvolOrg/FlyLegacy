@@ -68,6 +68,7 @@ char vmapNSTAT[] =
 //=======================================================================
 //  MENU FOR VECTOR MAP
 //=======================================================================
+char  DocPILE[16 * 64];
 char *DocMENU[] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,""};
 char  WptALTI[128];									// Waypoint altitude
 char *WptMENU[] = {"IGNORE",WptALTI,0, 0,0,0};
@@ -231,6 +232,12 @@ TC_VTAB     tabILS[] = {
   {0,0, -10,  20,0},              // 6 Left arrow 1
   {0,0,   0,   0,0},              // 7 origin
   };  // ILS map
+//=======================================================================
+//  Global function to add a doc name
+//=======================================================================
+int VMapCB(char *dn, void *upm)
+{	CFuiVectorMap *win = (CFuiVectorMap*)upm;
+	return win->AddDocName(dn);	}
 //=======================================================================
 //  JSDEV* CFuiVectorMap constructor
 //  NOTES:
@@ -1386,23 +1393,32 @@ bool CFuiVectorMap::OpenPOP(int mx,int my)
 //	DOCUMENT List 
 //==================================================================================
 //---------------------------------------------------------------------------------
+//  Add Doc name to the list
+//---------------------------------------------------------------------------------
+int CFuiVectorMap::AddDocName(char *dn)
+{	int lgr = strlen(dn);
+	rmDoc	 -= lgr;
+	if (rmDoc <= 0)		return 0;
+	//--- copy the name into name space -----------
+	strcpy(nmDoc,dn);
+	DocMENU[nxDoc++] = nmDoc;
+	nmDoc	+= (lgr + 1);
+	return (nxDoc < 16)?(1):(0);
+}
+//---------------------------------------------------------------------------------
 //  Build a list of file for this airport
 //---------------------------------------------------------------------------------
 int CFuiVectorMap::SearchDOC()
 { CAirport *apt = (CAirport*)Focus.Pointer();
-  char       fn[PATH_MAX];
-  sprintf(fn,"DOCUMENTS/%s*.PNG",apt->GetAptName());
-  char* name = (char*)pfindfirst (&globals->pfs,fn);
-  char **men = DocMENU;
-  int    nbr = 0;
-  while (name)
-  { *men++ = strchr(name,'/') + 1;
-     nbr++;
-     name  = (char*)pfindnext (&globals->pfs);
-     if (nbr == 16) break;
-  }
-  *men = 0;
-  return nbr;
+  char       pat[PATH_MAX];
+  sprintf(pat,"DOCUMENTS/%s*.PNG",apt->GetAptName());
+	//--- init name space ----------------------------
+	rmDoc	= sizeof(DocPILE);
+	nxDoc	= 0;
+	nmDoc	= DocPILE;
+	ApplyToFiles(pat,VMapCB,this);
+	DocMENU[nxDoc] = 0;
+	return nxDoc;
 }
 //----------------------------------------------------------------------------------
 //  Open a floating menu with the list of documents

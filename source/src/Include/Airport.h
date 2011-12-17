@@ -195,11 +195,12 @@ public:
 class CAptObject : public CqItem, public CDrawByCamera {
   friend class CAirportMgr;
 	friend class CRunway;
-  //--------------Attributes ---------------------------------------------
+  //--------------Attributes -----------------------------------------------
 	U_CHAR					bgr;																// BGR indicator
 	U_CHAR					tr;																	// Trace option
   U_CHAR          txy;                                // Taxiway in SQL
   U_CHAR          visible;                            // Visibility
+	//------------------------------------------------------------------------
   CAirportMgr    *apm;                                // Airport Manager
   CObjPtr         pApt;                               // Airport smart pointer
   CAirport       *Airp;                               // Airport pointer
@@ -276,7 +277,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   int     loDSP;                                // Low displacement
   int     hiDSP;                                // hig Displacement
   int     tlgr;                                 // true runway lenght
-  //----Runway parameters ----------------------------------------------
+  //----Generator parameters -------------------------------------------
   U_CHAR    eInd;                               // Ending index (number of textured seg)
   U_CHAR    rInd;                               // Restart index
   double    ppx;                                // X norme generator

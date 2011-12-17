@@ -519,20 +519,47 @@ int CArtParser::IndxRGBA(U_CHAR alf)
 //--------------------------------------------------------------------
 //  No file
 //--------------------------------------------------------------------
-bool CArtParser::NoFile(char *fn)
+void CArtParser::NoFile(char *fn)
 { if (abt) gtfo("No such file: %s",fn);
-  return false;
+  return;
 }
 //--------------------------------------------------------------------
-//  Load a pod file in memory
+// Load a file
+//--------------------------------------------------------------------
+void CArtParser::TryFILE(char *fnm,U_CHAR **buf,int &sz)
+{ FILE *pf = 0;
+	if (fopen_s(&pf,fnm,"rb"))		return NoFile(fnm);
+	if (fseek(pf,0,SEEK_END))			return NoFile(fnm);
+	long rdz = ftell(pf);
+	if (fseek(pf,0,SEEK_SET))			return NoFile(fnm);
+ *buf = new U_CHAR[rdz];
+  sz	= fread(*buf,1,rdz,pf);
+	if (sz != rdz)								return NoFile(fnm);
+	fclose(pf);
+	return;
+}
+//--------------------------------------------------------------------
+// Load POD file
+//--------------------------------------------------------------------
+void CArtParser::TryaPOD(char *fnm,U_CHAR **buf,int &sz)
+{	PODFILE* pod = popen(&globals->pfs, fnm);
+  if (0 == pod)		return;
+  //--- we have a pod file -------------------------------
+ *buf = new U_CHAR[pod->size];
+  int rdz = pread(*buf,1,pod->size,pod);
+  if (rdz!= pod->size) gtfo("File error: %s",fnm);
+  pclose(pod);
+  sz = rdz;
+	return;
+}
+//--------------------------------------------------------------------
+//  Load a full file in memory
 //--------------------------------------------------------------------
 bool CArtParser::LoadFFF(char *rnm,char azp,FREE_IMAGE_FORMAT ff)
-{ PODFILE* pod = popen(&globals->pfs, rnm);
-  if (0 == pod) return NoFile(rnm);
-  U_CHAR *buf = new U_CHAR[pod->size];
-  int rdz =pread(buf,1,pod->size,pod);
-  if (rdz!= pod->size) gtfo("File error: %s",rnm);
-  pclose(pod);
+{	U_CHAR *buf = 0;
+	int     rdz = 0;
+	TryaPOD(rnm,&buf,rdz);
+	if (0 == buf)	TryFILE(rnm,&buf,rdz);
   //----Wrap it with Freeimage --------------------
   FIMEMORY *hmem  = FreeImage_OpenMemory(buf,rdz);
   ffm  = ff;
@@ -552,7 +579,6 @@ bool CArtParser::LoadFFF(char *rnm,char azp,FREE_IMAGE_FORMAT ff)
   ref = 0;
   return true;
 }
-
 //--------------------------------------------------------------------
 //  Load a free file in the requested resolution
 //  tsp:  transparent option 
