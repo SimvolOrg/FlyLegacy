@@ -677,6 +677,7 @@ void CSituation::OpenSitFile()
 //-------------------------------------------------------------------------
 void CSituation::ReloadAircraft()
 {	ClearUserVehicle();
+	InitialProfile();
 	OpenSitFile();
 	return;
 }

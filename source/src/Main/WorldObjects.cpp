@@ -363,7 +363,6 @@ void CWorldObject::ResetCrash(char p)
 { for (U_INT k=0; k<damL.size(); k++) delete damL[k];
 	damL.clear();
 	//--- Reset global profile ---------------------
-	InitialProfile();
 	return;
 }
 //-------------------------------------------------------------
