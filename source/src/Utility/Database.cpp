@@ -42,7 +42,7 @@
 #include "../Include/MagneticModel.h"
 using namespace std;
 //=====================================================================
-extern double rwyATHR[];
+extern double rwyATHR[];		// In Airport.cpp
 //=====================================================================
 // Forward declaration of local functions
 std::map<int,std::string> g_vecAirportTypeS;

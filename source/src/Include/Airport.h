@@ -44,6 +44,7 @@ class CPicQUAD;
 class CTaxiNode;
 class CTaxiEdge;
 class CDataBGR;
+class CRunway;
 //============================================================================
 //  GENERAL DEFINITIONS 
 //============================================================================
@@ -90,6 +91,12 @@ class CDataBGR;
 #define PAVE_USE_TAXI    1
 #define PAVE_USE_PARK    2
 //=============================================================================
+#define TC_HD1SEGINDEX  0
+#define TC_HD2SEGINDEX  1
+#define TC_MIDSEGINDEX 19
+#define TC_LD2SEGINDEX 36
+#define TC_LD1SEGINDEX 37
+//=============================================================================
 //  Runway segment descriptor
 //=============================================================================
 struct TC_RSEG_DESC {
@@ -98,6 +105,17 @@ struct TC_RSEG_DESC {
   U_CHAR segTX;                             // Segment texture code
   U_CHAR segRF;                             // Future use
   U_INT  segLG;                             // Segment length
+};
+//=============================================================================
+//  MID POINT DESCRIPTOR
+//=============================================================================
+struct TC_RMP_DEF {
+  U_CHAR segID;                             // Segment identifier
+  U_CHAR segTX;                             // Segment texture
+  U_INT  segLG;                             // Segment length
+  double px;                                // X coordinate
+  double py;                                // Y coordinate
+  double pz;                                // Z coordinate
 };
 //============================================================================
 //  class CPaveRWY to store pavement polygons
@@ -182,7 +200,6 @@ public:
   inline CPaveRWY *GetFirst()                 {return (CPaveRWY*)CQueue::GetFirst();}
   inline CPaveRWY *GetNext(CPaveRWY *pav)     {return (CPaveRWY*)CQueue::GetNext(pav);}
 };
-
 //=========================================================================================
 //  CLASS CAptObject
 //        Class to describe one airport
@@ -226,6 +243,8 @@ class CAptObject : public CqItem, public CDrawByCamera {
   //------COMPENSATION FACTORS AT AIRPORT LATITUDE -------------------------
 	double    xpf;																// Expension factor
   double    rdf;																// Reduction factor
+  SVector   scl;                                // Scale factor for letter
+  SVector   sct;                                // Scale factor for threshold bands
   //------AIRPORT COMPONENTS  ----------------------------------------------
 	std::vector<CTarmac*> tmcQ;										// Tarmac queue
   CPaveQ    pavQ;                               // Pavement Queue
@@ -246,45 +265,6 @@ class CAptObject : public CqItem, public CDrawByCamera {
   //----- Positions ----------------------------------------------------
   SPosition Org;                                // Airport origin
   SPosition llc;                                // Texture left corner
-  //----Runway working area --------------------------------------------
-  double width;                                 // Runway half wide (feet)
-  double rlgt;                                  // Runway length (feet)
-  SVector p0;                                   // Runway Hi position
-  SVector p1;                                   // Runway Lo position
-  //--------------------------------------------------------------------
-  SPoint  mid;                                  // Runway mid point
-  SPoint  lpt;                                  // Light point
-  //---Metric parameters -----------------------------------------------
-  double  dx;                                   // dx in arcsec
-  double  dy;                                   // dy in arcsec
-  double  dz;                                   // dz in arcsec
-  double altF;                                  // Altitude factor
-  double arcX;                                  // Arcs / feet along X
-  double arcY;                                  // Arcs / feet along Y
-  short  rhwd;                                  // Runway half width
-  //---Segment base points ---------------------------------------------
-  TC_VTAB  vsw;                                 // SW vertex (current)
-  TC_VTAB  vse;                                 // SE vertex (current)
-  TC_VTAB  bsw;                                 // NW vertex (base)
-  TC_VTAB  bse;                                 // NE vertex (base)
-  GroundSpot psw;                               // SW corner
-  GroundSpot pse;                               // SE corner
-  //---Runway segment generator ----------------------------------------
-  float   wTex;                                 // SubTexture width
-  int     xsr;                                  // source index
-  int     xds;                                  // destination index
-  int     total;                                // Total generated
-  int     loDSP;                                // Low displacement
-  int     hiDSP;                                // hig Displacement
-  int     tlgr;                                 // true runway lenght
-  //----Generator parameters -------------------------------------------
-  U_CHAR    eInd;                               // Ending index (number of textured seg)
-  U_CHAR    rInd;                               // Restart index
-  double    ppx;                                // X norme generator
-  double    ppy;                                // Y norme generator
-  double    egx;                                // X edge generator
-  double    egy;                                // Y edge generator
-  double    rot;                                // Angle of rotation for runway
   //---Ground tile management -----------------------------------------
   TC_BOUND  glim;                               // Ground limit
   std::vector<CGroundTile*> grnd;               // Airport ground
@@ -296,10 +276,8 @@ class CAptObject : public CqItem, public CDrawByCamera {
 	TC_GTAB		*gBUF;										// Ground Buffer
 	U_INT			 gVBO;										// Vertex Buffer Object
   //------------------------------------------------------------------
-  SVector   scl;                                // Scale factor for letter
-  SVector   sct;                                // Scale factor for threshold bands
   CVector   center;                             // Ground center
-  CVector   gBound;                             // ground bound             
+  CVector   gBound;                             // ground bound   
   GLuint    oTAXI;                              // Pavement Texture Object
   //------Grid parameters ------------------------------------------------
   int     gx;                                 // X number
@@ -314,10 +292,6 @@ class CAptObject : public CqItem, public CDrawByCamera {
   double ground;   // Common ground elevation
   //-----For test- -------------------------------------------------------
   GLUquadricObj *sphere;
-  //--------------Vector table -------------------------------------------
-  typedef int (CAptObject::*ctlFN)(CRunway *rwy);
-  static ctlFN      ctlVECTOR[];              // Center light process
-  static ctlFN      edgVECTOR[];              // Center light process
   //--------------Methods ------------------------------------------------
 public:
     CAptObject(CAirportMgr *m, CAirport *apt);
@@ -332,14 +306,8 @@ public:
    int    BuildTaxiways();
    int    GetTaxiways();
    void   SetRunway();
-   void   SetRunwayData(CRunway *rwy);
-   void   SetLandingPRM(ILS_DATA *ils,float ln,float tk);
    void   SetCameraPosition();
-   void   BuildOtherRunway(CRunway *rwy);
    void   AptExtension(GroundSpot &gs);
-   void   SegmentBase(int k);
-   void   BuildRunwayMidPoints(CRunway *rwy,TC_RSEG_DESC *model);
-	 void		SetTxCoord(TC_VTAB *tab,int No, char grnd);
 	 //--- Airport ground management -------------------------------------
    void   LocateGround();
 	 void		BuildGroundVBO();
@@ -350,66 +318,13 @@ public:
 	 inline void AddTarmac(CTarmac *st)	{tmcQ.push_back(st);}
 	 //--- Compact a queue into a VBO ------------------------------------
 	 TC_VTAB *PutInVBO(CPaveQ &hq,U_INT n);
-   //-------------------------------------------------------------------
-   void   SetHiThreshold(int k,CRunway *rwy);
-   void   SetLoThreshold(int k,CRunway *rwy);
-   //-------------------------------------------------------------------
-	 void		BuildTarmacSegs(CRunway *rwy);
 	 //-------------------------------------------------------------------
-   void   BuildPavedRunway(CRunway *rwy);
-   void   BuildRunwayLight(CRunway *rwy);
    void   ComputeElevation(TC_VTAB *tab);
-   void   ComputeElevation(SPosition &pos);
-   void   GenerateRwyPoint (TC_RSEG_DESC *model);
-   void   BreakMidSegment(TC_RSEG_DESC *model,int lg);
    void   RebuildLight(CRunway *rwy);
   //-----LIGHTS  BUILDING-------------------------------------------------
    void  BeaconLight();
-   int   CenterLightModel0(CRunway *rwy);
-   int   CenterLightModel1(CRunway *rwy);
-   int   CenterLightModel2(CRunway *rwy);
-   int   CenterLightModel3(CRunway *rwy);
-   int   CenterLightModel4(CRunway *rwy);
-   //---------------------------------------------------------------------
-   void  BuildCenterDual(LITE_MODEL &seg,CLitSYS &ls);
-   void  BuildOmniLBAR  (LITE_MODEL &seg,CLitSYS &ls);
-   void  BuildDualLLIN  (LITE_MODEL &seg,CLitSYS &ls);
-   void  BuildDualTBAR  (LITE_MODEL &seg,CLitSYS &ls);
-   void  BuildEdgeOmni  (LITE_MODEL &seg,CLitSYS &ls);
-   void  BuildPAPIBAR   (LITE_MODEL &seg,CLitSYS &ls);
-   //---------------------------------------------------------------------
-   void  BuildFlashRAIL(LITE_MODEL &seg,CLitSYS &ls);
-   void  BuildFlashTBAR(LITE_MODEL &seg,CLitSYS &ls);
-   //---------------------------------------------------------------------
-   int   EdgeLightModel0(CRunway *rwy);
-   int   EdgeLightModel1(CRunway *rwy);
-   int   EdgeLightModel2(CRunway *rwy);
-   int   EdgeLightModel3(CRunway *rwy);
-   int   EdgeLightModel4(CRunway *rwy);
    //---------------------------------------------------------------------
    void  OnePavement(CPaveRWY *p,U_INT n);
-   //---------------------------------------------------------------------
-   int   MaxTBarLights(CRunway *rwy);
-   int   ThresholdBarLights(CRunway *rwy);
-   //---------------------------------------------------------------------
-   void  BuildTDZbar(CRunway *rwy,LITE_MODEL &seg,int row);
-   int   WingBarLights(CRunway *rwy);
-   int   TouchDWLights(CRunway *rwy);
-   //----APPROACH LIGHTS SYSTEM --------------------------------------------
-	 int	 REILSystem(CRunway *rwy,int dis);
-   int   HiODALSystem(CRunway *rwy);
-   int   LoODALSystem(CRunway *rwy);
-   int   HiSALRSystem(CRunway *rwy);
-   int   LoSALRSystem(CRunway *rwy);
-   int   HiALSF1System(CRunway *rwy);
-   int   LoALSF1System(CRunway *rwy);
-   int   HiALSF2System(CRunway *rwy);
-   int   LoALSF2System(CRunway *rwy);
-   int   ApproachLight(CRunway *rwy);
-   int   HiPAPI4System(CRunway *rwy);
-   int   LoPAPI4System(CRunway *rwy);
-   //---------------------------------------------------------------------
-   void  StoreDecision(CBaseLITE *lit);
   //-----AIRPORT Management ----------------------------------------------
    char *GetApName();
    void  AddPOD();                  // ADD File profile to POD
@@ -435,8 +350,8 @@ public:
   inline void      LightPlease()              {lreq ^= 1;}
   //----------------------------------------------------------------------
   inline double    GetGround()                {return ground;}
-  inline double    GetXnormal(double f)       {return (f * ppx);}
-  inline double    GetYnormal(double f)       {return (f * ppy);}
+//  inline double    GetXnormal(double f)       {return (f * ppx);}
+//  inline double    GetYnormal(double f)       {return (f * ppy);}
   inline double    GetRDF()                   {return rdf;}
   inline double    GetXPF()                   {return xpf;}
   inline SPosition GetOrigin()                {return Org;}
@@ -564,6 +479,7 @@ public:
 	inline CAptObject  *GetNearestAPT()					{return nApt;}
 	inline ILS_DATA    *GetDepartingEND()				{return rdep;}
 };
+
 //============================END OF FILE =================================================
 
 #endif  AIRPORT_H

@@ -289,6 +289,7 @@ public:
 //  camera position into CVector pc.  
 //=============================================================================
 class CBaseLITE : public CqItem {
+	friend class CRwyGenerator;
 public:
   //-----Attributes -----------------------------------------
   U_CHAR    ltyp;                     // Light Type
@@ -384,6 +385,7 @@ public:
 //=========================================================================================
 class CStrobeLITE: public CBaseLITE {
   friend class CAptObject;
+	friend class CRwyGenerator;
   //---ATTRIBUTES -------------------------------------------
   float Time;                         // Current time
   float eTim[2];                      // Elapse T1-T2
@@ -428,6 +430,8 @@ public:
 //=========================================================================================
 class CPapiLITE: public CBaseLITE {
   friend class CAptObject;
+	friend class CRwyGenerator;
+protected:
   //---ATTRIBUTES --------------------------------------------
   SPosition *lnd;                     // Landing position
   double *dTAB;                       // Decision table

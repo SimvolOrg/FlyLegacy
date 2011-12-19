@@ -233,9 +233,9 @@ static void plog (PFS *pPfs, const char* fmt, ...)
 //  This is a Windows dependancy
 //=====================================================================================
 void	ApplyToFiles(char *pat, FileCB cbFN, void *upm)
-{ _finddata_t fileinfo;
+{	_finddata_t fileinfo;
   intptr_t h1 = _findfirst(pat,&fileinfo);
-	int      fh = h1;
+	intptr_t fh = h1;
 	//--- loop through the file list ----------
   while (fh != -1)
   { if (0 == (*cbFN)(fileinfo.name,upm)) break;
