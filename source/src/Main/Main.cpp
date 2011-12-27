@@ -401,9 +401,7 @@ void InitGraphics (void)
 {
   // Initialize GLEW
   GLenum e = glewInit ();
-  if (e != GLEW_OK) {
-    WARNINGLOG ("GLEW Initialization error : 0x%04X", e);
-  }
+  if (e != GLEW_OK)  WARNINGLOG ("GLEW Initialization error : 0x%04X", e);
 
   // Check the availability of various GL extensions on the host machine, and set
   //   global flags accordingly
@@ -448,37 +446,6 @@ void InitGraphics (void)
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable (GL_CULL_FACE);
   glEnable (GL_DEPTH_TEST);
-
-#ifdef _WIN32
-  // If application is running fullscreen, set display gamma to INI setting
-  int i = 0;
-  // GetIniVar ("Graphics", "autoFullScreen", &i);
-  if (i != 0) {
-    // Get display gamma value from graphics INI settings
-    float gamma = 1.0f;
-    GetIniFloat ("Graphics", "displayGamma", &gamma);
-
-    // Get current gamma ramp to be restored at exit
-    hdc = wglGetCurrentDC ();
-    if (!GetDeviceGammaRamp (hdc, savedGammaRamp)) WARNINGLOG ("Failed to get Win32 gamma ramp"); 
-
-    // Calculate gamma ramp table
-    double invgamma = 1.0 / gamma;
-    WORD ramp[3][0x100];
-    for (int i=0; i<0x100; i++) {
-      float factor = (float)pow((double)i / 256.0, invgamma);
-      if (factor > 1.0f) factor = 1.0f;
-      WORD value = (WORD)((factor * 65535.0f) + 0.5f);
-      ramp[0][i] = value;
-      ramp[1][i] = value;
-      ramp[2][i] = value;
-    }
-
-    // Set the new gamma ramp
-    if (!SetDeviceGammaRamp (hdc, ramp)) { WARNINGLOG ("Failed to set Win32 gamma ramp");
-    }
-  }
-#endif // _WIN32
 
   DumpOpenGLDriver ("Debug/OpenGL_Driver.txt");
   DumpOpenGLState ("Debug/OpenGL_Init.txt");
@@ -837,9 +804,7 @@ void ShutdownAll (void)
 
 #ifdef _WIN32
   // Restore saved gamma ramp
-  if (!SetDeviceGammaRamp (hdc, savedGammaRamp)) {
-    WARNINGLOG ("Failed to set Win32 gamma ramp");
-  }
+  // if (!SetDeviceGammaRamp (hdc, savedGammaRamp))  WARNINGLOG ("Failed to set Win32 gamma ramp");
 #endif // _WIN32
 
   // Clean up singletons
@@ -1524,22 +1489,22 @@ int main (int argc, char **argv)
   // Mount folders from Fly! II filesystem
   char folder[PATH_MAX];
   strcpy (folder, flyRootFolder);
-  strcat (folder, "/System");
+  strcat (folder, "/SYSTEM");
   paddpodfolder (pfs, folder);
   //------------------------------------------
   strcpy (folder, flyRootFolder);
-  strcat (folder, "/Aircraft");
+  strcat (folder, "/AIRCRAFT");
   paddpodfolder (pfs, folder, true);      ///< Add subfolders too
   //------------------------------------------
   strcpy (folder, flyRootFolder);
-  strcat (folder, "/Taxiways");
+  strcat (folder, "/TAXIWAYS");
   paddpodfolder (pfs, folder);
   //------------------------------------------
   strcpy (folder, flyRootFolder);
-  strcat (folder, "/Scenery/Shared");
+  strcat (folder, "/SCENERY/SHARED");			// Must be Uppercases
   paddpodfolder (pfs, folder);
 
-  //------ Add disk files from Fly! II folders ----------------------
+  //------ Add any disk files except pod -----
   padddiskfolder (pfs, flyRootFolder, "Art");
   padddiskfolder (pfs, flyRootFolder, "Aircraft");
   padddiskfolder (pfs, flyRootFolder, "Data");
@@ -1550,9 +1515,14 @@ int main (int argc, char **argv)
   padddiskfolder (pfs, flyRootFolder, "World");
   padddiskfolder (pfs, flyRootFolder, "Sound");
 
-  //-------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+	//	JS: I suppress this because it is confusing
+	//	We now must have only one root folder with legacy and we dont need
+	//	to override files from somewhere else
+	//------------------------------------------------------------------------------
   // Add disk files from Fly! Legacy folders; these files will override any in the
   //  Fly! II folders with the same name
+	/*
   paddpodfolder (pfs, "./Aircraft");
   paddpodfolder (pfs, "./System");
 
@@ -1585,7 +1555,7 @@ int main (int argc, char **argv)
   padddiskfolder (pfs, ".", "UI");
   padddiskfolder (pfs, ".", "World");
 	padddiskfolder (pfs, ".", "Updates");
-  
+  */
   // Initialize subsystems so that mouse and keyboard callbacks can be handled
  
   // sdk: load and initialize the dll plugins

@@ -523,32 +523,23 @@ void export_gtx_cb(puObject* obj)
 //  World object  database.  
 //-------------------------------------------------------------------------
 void export_wob_cb(puObject* obj)
-{ globals->exm->ExportWOBJ();
+{ globals->exm->ExportSceneryOBJ();
   return;
 }
 //-------------------------------------------------------------------------
 //  Export all sceneries  
 //-------------------------------------------------------------------------
 void export_trn_cb(puObject* obj)
-{ globals->exm->ExportTRNSceneries();
-  return;
-}
-
-//-------------------------------------------------------------------------
-//  Compress TRN textures  
-//-------------------------------------------------------------------------
-void compress_tex_cb(puObject* obj)
-{ globals->exm->CompressTextures();
+{ globals->exm->ExportTRNfiles();
   return;
 }
 //-------------------------------------------------------------------------
-//  Update 3D models  
+// Check all sceneries  file in db
 //-------------------------------------------------------------------------
-void update_3dm_cb(puObject* obj)
-{ globals->exm->Update3DModels();
+void export_pod_in_db(puObject* obj)
+{	 globals->exm->CheckSceneryFiles();
   return;
 }
-
 /*
 void import_elv_cb(puObject* obj)
 { globals->imp->ImportElevations();
@@ -557,12 +548,9 @@ void import_elv_cb(puObject* obj)
 */
 //---Menu items ----------------------------------
 char *export_legends[] =
-{// "Import elevations (.bt)",
-	"Update 3D models",
-	"-------------------------",
-	"Compress scenery Textures",
+{ "Check Database for POD files",
   "-------------------------",
-	"Export all Sceneries",
+	"Export TRN Sceneries",
   "Export World Objects",
   "Export Generic Textures",
   "Export Taxiwway",
@@ -575,10 +563,8 @@ char *export_legends[] =
 };
 //---Associated call back ------------------------
 puCallback export_cb[] =
-{ update_3dm_cb,
+{ export_pod_in_db, 
 	NULL,
-	compress_tex_cb,
-  NULL,
 	export_trn_cb,
   export_wob_cb,
   export_gtx_cb,
@@ -591,10 +577,8 @@ puCallback export_cb[] =
 };
 //--- Associated keyword in ini file ------------
 char *keySQL[] = {
-	"UpdM3D",							// Update M3D models
-	"",										// Separator
-	"CmpTEX",							// Compressed textures
-	"",										// Separator
+	"*",									// Check for pod
+	"*",									// Separator
 	"ExpTRN",							// Export sceneries
 	"ExpOBJ",							// Export object
 	"ExpTEX",							// Export generic texture
@@ -615,6 +599,7 @@ void CheckExportAccess(puCallback cb,puObject *itm)
 	while (keySQL[k])
 	{	if (cb != export_cb[k++])	continue;
 		int m = k-1;
+		if ('*' == *keySQL[m])		return;
 		GetIniVar("SQL",keySQL[m],&a);
 		if (0==a)		itm->greyOut();
 		return;
@@ -1085,7 +1070,7 @@ void CheckTuningMenu(puObject *itm,char *iden,char st)
 	{	const char *name = sub->getLegend();
 		itm							 = sub;
 		sub							 = sub->getNextObject();
-		if (strcmp(iden,iden) != 0)	continue;
+		if (strcmp(name,iden) != 0)	continue;
 		//--- Process according to item -----------
 		if (0==st)		itm->greyOut();
 		return;

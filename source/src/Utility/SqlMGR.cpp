@@ -37,7 +37,7 @@
 #include "../Include/Airport.h"
 #include "../Include/LightSystem.h"
 #include "../Include/PlanDeVol.h"
-
+#include <io.h>
 //==================================================================================
 //  Database request to compile
 //==================================================================================
@@ -152,8 +152,9 @@ void ELVtoSlots(REGION_REC &reg)
 //  Init SQL object 
 //-----------------------------------------------------------------------------
 SqlOBJ::SqlOBJ()
-{	qgt = 0;
-	sup	= 0;
+{	qgt		= 0;
+	sup		= 0;
+	expf	= 0;
 }
 //-----------------------------------------------------------------------------
 //  Close all bases
@@ -171,94 +172,120 @@ SqlOBJ::~SqlOBJ()
 //  Initialize databases
 //-----------------------------------------------------------------------------
 void SqlOBJ::Init()
-{ char  name[PATH_MAX];
+{ int   lgr = (MAX_PATH - 1);
   //---Generic database ---------------------------------------------
-  strcpy(name,"SQL");
-  GetIniString("SQL","GENDB",name,PATH_MAX);
-  _snprintf(genDBE.path,(MAX_PATH-1),"%s/GEN.db",name);
+	genDBE.vers	= 0;																// Minimum version
+  strcpy(genDBE.path,"SQL");
+  GetIniString("SQL","GENDB",genDBE.path,lgr);
+	strcpy(genDBE.name,"GEN*.db");
   genDBE.mgr = SQL_MGR;
   genDBE.dbn = "Generic files";
+	
   //---Waypoint database -------------------------------------------
-  strcpy(name,"SQL");
-  GetIniString("SQL","WPTDB",name,PATH_MAX);
-  _snprintf(wptDBE.path,(MAX_PATH-1),"%s/WPT.db",name);
+	wptDBE.vers	= 0;																// Minimum version
+  strcpy(wptDBE.path,"SQL");
+  GetIniString("SQL","WPTDB",wptDBE.path,lgr);
+	strcpy(wptDBE.name,"WPT*.db");
   wptDBE.mgr = SQL_MGR;
   wptDBE.dbn = "Waypoints";
+
   //---Elevation database ------------------------------------------
-  strcpy(name,"SQL");
-  GetIniString("SQL","ELVDB",name,PATH_MAX);
-  _snprintf(elvDBE.path,(MAX_PATH-1),"%s/ELV.db",name);
+	elvDBE.vers	= 1;																// Minimum version
+  strcpy(elvDBE.path,"SQL");
+  GetIniString("SQL","ELVDB",elvDBE.path,lgr);
+	strcpy(elvDBE.name,"ELV*.db");
   elvDBE.mgr = SQL_THR | SQL_MGR; 
   elvDBE.dbn = "Elevation Data";
 	elvDBE.mode= SQLITE_OPEN_READWRITE;
+
   //---Coast data database -----------------------------------------
-  strcpy(name,"SQL");
-  GetIniString("SQL","SEADB",name,PATH_MAX);
-  _snprintf(seaDBE.path,(MAX_PATH-1),"%s/SEA.db",name);
+	seaDBE.vers	= 0;																// Minimum version
+  strcpy(seaDBE.path,"SQL");
+  GetIniString("SQL","SEADB",seaDBE.path,lgr);
+	strcpy(seaDBE.name,"SEA*.db");
   seaDBE.mgr = SQL_THR;
   seaDBE.dbn = "Coast data";
+
   //---Taxiways database ------------------------------------------
-  strcpy(name,"SQL");
-  GetIniString("SQL","TXYDB",name,PATH_MAX);
-  _snprintf(txyDBE.path,(MAX_PATH-1),"%s/TXY.db",name);
+	txyDBE.vers	= 0;																// Minimum version
+  strcpy(txyDBE.path,"SQL");
+  GetIniString("SQL","TXYDB",txyDBE.path,lgr);
+	strcpy(txyDBE.name,"TXY*.db");
   txyDBE.mgr = SQL_MGR;
   txyDBE.dbn = "Taxiway data";
+
   //---Model 3D database ------------------------------------------
-  strcpy(name,"SQL");
-  GetIniString("SQL","M3DDB",name,PATH_MAX);
-  _snprintf(modDBE.path,(MAX_PATH-1),"%s/M3D.db",name);
+	modDBE.vers	= 0;																// Minimum version
+  strcpy(modDBE.path,"SQL");
+  GetIniString("SQL","M3DDB",modDBE.path,lgr);
+	strcpy(modDBE.name,"M3D*.db");
   modDBE.mgr =  SQL_THR;
   modDBE.dbn = "Model3D data";
+
   //---Generic textures database ----------------------------------
-  strcpy(name,"SQL");
-  GetIniString("SQL","TEXDB",name,PATH_MAX);
-  _snprintf(texDBE.path,(MAX_PATH-1),"%s/TEX.db",name);
+	texDBE.vers	= 0;																// Minimum version
+  strcpy(texDBE.path,"SQL");
+  GetIniString("SQL","TEXDB",texDBE.path,lgr);
+	strcpy(texDBE.name,"TEX*.db");
   texDBE.mgr =  SQL_THR + SQL_MGR;
   texDBE.dbn = "Generic Textures";
+
   //---World Object database --------------------------------------
-  strcpy(name,"SQL");
-  GetIniString("SQL","OBJDB",name,PATH_MAX);
-  _snprintf(objDBE.path,(MAX_PATH-1),"%s/OBJ.db",name);
+	objDBE.vers	= 0;																// Minimum version
+  strcpy(objDBE.path,"SQL");
+  GetIniString("SQL","OBJDB",objDBE.path,lgr);
+	strcpy(objDBE.name,"OBJ*.db");
   objDBE.mgr =  SQL_MGR;
   objDBE.dbn = "World Objects";
+
   //--- Process  export flags -------------------------------------
   int exp = 0;
   GetIniVar("SQL","ExpGEN",&exp);           
   genDBE.exp = exp;
 	if (exp)	genDBE.mgr = SQL_MGR;
+	expf	|= exp;
    //---------Check for export elevation data ----------------------
   exp = 0;
   GetIniVar("SQL","ExpELV",&exp);
   elvDBE.exp = exp;
 	if (exp)	elvDBE.mgr = SQL_MGR;
+	expf  |= exp;
   //---------Check for export coast data ---------------------
   exp = 0;
   GetIniVar("SQL","ExpSEA",&exp);
   seaDBE.exp = exp;
   if (exp)	seaDBE.mgr = SQL_MGR;
+	expf  |= exp;
   //---------Check for export model3D data -------------------
   exp = 0;
   GetIniVar("SQL","ExpM3D",&exp);
   modDBE.exp  = exp;
   if (exp) modDBE.mgr = SQL_MGR;
+	expf  |= exp;
+	//---------Check for update model3D data -------------------
+	exp	= 0;
 	GetIniVar("SQL","UpdM3D",&exp);
   modDBE.exp |= exp;
   if (exp)	modDBE.mgr = SQL_MGR;
+	expf  |= exp;
   //---------Check for export taxiway data -------------------
   exp = 0;
   GetIniVar("SQL","ExpTXY",&exp);
   txyDBE.exp = exp;
   if (exp) txyDBE.mgr = SQL_MGR;
+	expf  |= exp;
   //---------Check for export textures data ------------------
   exp = 0;
   GetIniVar("SQL","ExpTEX",&exp);
   texDBE.exp = exp;
   if (exp) texDBE.mgr = SQL_MGR;
+	expf  |= exp;
   //---------Check for export object data ------------------
   exp = 0;
   GetIniVar("SQL","ExpOBJ",&exp);
   objDBE.exp = exp;
   if (exp) objDBE.mgr = SQL_MGR;
+	expf  |= exp;
   //---------Check for export TRN files ------------------
 	exp = 0;
   GetIniVar("SQL","ExpTRN",&exp);
@@ -267,6 +294,7 @@ void SqlOBJ::Init()
 	if (exp) texDBE.mgr = SQL_MGR;
 	if (exp) elvDBE.mgr = SQL_MGR;
 	trn	= exp;
+	expf  |= exp;
   return;
 }
 //-----------------------------------------------------------------------------
@@ -297,15 +325,29 @@ void SqlOBJ::OpenBases()
 //  
 //-----------------------------------------------------------------------------
 int SqlOBJ::Open(SQL_DB &db)
-{ int   flg = (db.exp)?(SQLITE_OPEN_READWRITE):(db.mode);
+{ char fnm[MAX_PATH];
+  int lgr   = (MAX_PATH-1);
+	int   flg = (db.exp)?(SQLITE_OPEN_READWRITE):(db.mode);
   int   mop = (db.mgr & sqlTYP);        // Manager type
   if (0 == mop)				return 0;
+	//--- Check if file exist ---------------------------
+	_snprintf(fnm,lgr,"%s/%s",db.path,db.name);
+	_finddata_t fileinfo;
+	strcpy(fileinfo.name,"NONE");
+	intptr_t h1 = _findfirst(fnm,&fileinfo);
+	_snprintf(fnm,lgr,"%s/%s",db.path,fileinfo.name);
+	fnm[lgr] = 0;
+	strcpy(db.path,fnm);
 	//--- For file thread, open in read only mode -------
   if (SQL_THR == mop)	flg = SQLITE_OPEN_READONLY;
-  int rep = sqlite3_open_v2(db.path,  &db.sqlOB,flg,0 );
+  int rep = sqlite3_open_v2(fnm,  &db.sqlOB,flg,0 );
   if (rep)  WarnE(db);
   else      Warn1(db);
   db.use  = (db.opn == 1) && (db.exp == 0); 
+	_findclose(h1);
+	//--- Now check for minimum version -----------------
+	if (0 == db.opn)		return 0;
+	db.use = ReadVersion(db);
   return db.use;
 }
 //-----------------------------------------------------------------------------
@@ -351,7 +393,19 @@ void SqlOBJ::Abort(SQL_DB &db)
 { gtfo("SQL Database %s error %s",db.path,(char*)sqlite3_errmsg(db.sqlOB));
   return;
 }
-
+//==============================================================================
+// Read version
+//==============================================================================
+int SqlOBJ::ReadVersion(SQL_DB &db)
+{ int  vers	  = -1;
+	char *query = "PRAGMA user_version;*";
+  sqlite3_stmt *stm = CompileREQ(query,db);
+	if (SQLITE_ROW == sqlite3_step(stm)) vers = sqlite3_column_int(stm,0);
+	if (vers >= db.vers)		return 1;
+	//--- warning ------------------------------------------
+	WARNINGLOG("Database %s obsolete. Get version %d",db.path,db.vers);
+	return 0;
+}
 //==============================================================================
 //  ELEVATION DATABASE
 //==============================================================================
@@ -1598,13 +1652,43 @@ void SqlMGR::WriteElevationRecord(REGION_REC &reg)
   return;
 }
 //==============================================================================
+//  Check for POD in Database
+//==============================================================================
+bool SqlMGR::FileInELV(char *fn)
+{	char rq[1024];
+	_snprintf(rq,1023,"SELECT * from FNM where file = '%s';*",fn);
+	sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
+	bool in = (SQLITE_ROW == sqlite3_step(stm));
+	sqlite3_finalize(stm);                      // Close statement
+	return in;
+}
+//==============================================================================
+//  Write POD in Database
+//==============================================================================
+int SqlMGR::WriteTRNname(char *fn)
+{	char rq[1024];
+	_snprintf(rq,1023,"INSERT INTO FNM (file) VALUES(?1);*");
+	sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
+	//--- Origin file ---------------------------------------
+  int rep = sqlite3_bind_text(stm,1,fn,-1,SQLITE_TRANSIENT);
+  if (rep != SQLITE_OK) Abort(elvDBE);
+  //---Execute insert -------------------------------------------------------
+  rep      = sqlite3_step(stm);               // Insert value in database
+  if (rep != SQLITE_DONE) Abort(elvDBE);
+	sqlite3_finalize(stm);                      // Close statement
+	//--- return rowid --------------------------------------------------------
+  int seq  = sqlite3_last_insert_rowid(elvDBE.sqlOB);   // Last ROWID
+  return seq;
+}
+
+//==============================================================================
 //  Insert Elevation record
 //==============================================================================
-void SqlMGR::WriteElevationTRN(C_STile &sup,char *fn)
+void SqlMGR::WriteElevationTRN(C_STile &sup,char *fn,U_INT row)
 { int  rep = 0;
   char txn[TEX_NAME_DIM*16 + 2];
-  char *rq =  "INSERT INTO TRN (qgt,sup,det,file,flag,sub,user,water,nite,txn,nbe,elv) "  
-              "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12);*";
+  char *rq =  "INSERT INTO TRN (qgt,sup,det,file,npod,spt,sub,user,water,nite,txn,nbe,elv) "  
+              "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13);*";
   sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
 	//--- QGT Key -------------------------------------------
   rep = sqlite3_bind_int(stm, 1,sup.GetKey());
@@ -1616,37 +1700,41 @@ void SqlMGR::WriteElevationTRN(C_STile &sup,char *fn)
   rep = sqlite3_bind_int(stm, 3, 0);
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Origin file ---------------------------------------
-  rep = sqlite3_bind_text(stm,4,fn,-1,SQLITE_TRANSIENT);
+  rep =  sqlite3_bind_int(stm, 4, row);
+  if (rep != SQLITE_OK) Abort(elvDBE);
+	//--- Pod name -----------------------------------------
+	rep = sqlite3_bind_int(stm, 5, 0);				// Not used
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Default or detail flag ----------------------------
-  rep = sqlite3_bind_int(stm, 5,ELV_DEFAULT);
+	U_INT f0 = sup.GetTextureOrg();
+  rep = sqlite3_bind_int(stm, 6,f0);
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Subdivision level ---------------------------------
-  rep = sqlite3_bind_int(stm, 6,(sup.side - 1));
+  rep = sqlite3_bind_int(stm, 7,(sup.side - 1));
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- User texture flags --------------------------------
-	U_INT f1 = sup.GetFlag(TC_TEXRAWTN);
-  rep = sqlite3_bind_int(stm, 7,f1);
+	U_INT f1 = sup.GetTextureType(TC_TEXRAWTN);
+  rep = sqlite3_bind_int(stm, 8,f1);
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Water texture flags -------------------------------
-	U_INT f2 = sup.GetFlag(TC_TEXWATER);
-  rep = sqlite3_bind_int(stm, 8,f2);
+	U_INT f2 = sup.GetTextureType(TC_TEXWATER);
+  rep = sqlite3_bind_int(stm, 9,f2);
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Night flags ---------------------------------------
 	U_INT f3 = sup.GetNite();
-  rep = sqlite3_bind_int(stm, 9,f3);
+  rep = sqlite3_bind_int(stm, 10,f3);
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Get texture names ---------------------------------
 	sup.PackTexName(txn);
-  rep = sqlite3_bind_text(stm, 10,txn,-1,SQLITE_TRANSIENT);
+  rep = sqlite3_bind_text(stm, 11,txn,-1,SQLITE_TRANSIENT);
 	if (rep != SQLITE_OK) Abort(elvDBE);
   //----Number of elevations ------------------------------
 	int	nbe = sup.GetSide() * sup.GetSide();	
-  rep = sqlite3_bind_int(stm,11,nbe);
+  rep = sqlite3_bind_int(stm, 12,nbe);
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Array of elevations -------------------------------
 	int siz  = nbe * sizeof(float);
-  rep = sqlite3_bind_blob(stm,12,sup.GetElvArray(), siz, SQLITE_TRANSIENT);
+  rep = sqlite3_bind_blob(stm,13,sup.GetElvArray(), siz, SQLITE_TRANSIENT);
 
   //---Execute insert -------------------------------------------------------
   rep      = sqlite3_step(stm);               // Insert value in database
@@ -2092,6 +2180,7 @@ GLubyte *SqlMGR::GetGenTexture(TEXT_INFO &txd)
   char *typ = dot - 1;
   char *res = typ - 1;
   char *tab = 0;
+	if (dot == 0)		gtfo("GetGenTexture bad name");
   char *txn = strrchr(name,'/') + 1;
   if (*res == '4')  {tab = "DAY128";}
   if (*res == '5')  {tab = "DAY256";}
@@ -2318,7 +2407,7 @@ void SqlMGR::WriteLightsFrom(CWobj *obj)
 //---------------------------------------------------------------------------------
 //  check for the object reference
 //---------------------------------------------------------------------------------
-bool SqlMGR::CheckOBJ(CWobj *obj)
+bool SqlMGR::CheckWOBJ(CWobj *obj)
 { char req[1024];
   int xk    = obj->GetIntLongitude();
   int yk    = obj->GetIntLatitude();
@@ -2360,6 +2449,19 @@ void SqlMGR::ReadWOBJ(C_QGT *qgt)
   //---Free statement ------------------------------------------
   sqlite3_finalize(stm);
   return;
+}
+//---------------------------------------------------------------------------------
+//  Select al objects from the same file name
+//---------------------------------------------------------------------------------
+int  SqlMGR::SearchWOBJ(char *fn)
+{ int nb = 0;
+	char req[1024];
+  _snprintf(req,1024,"SELECT qgt FROM OBJ where fobj LIKE '%%%s%%';*",fn);
+	sqlite3_stmt *stm = CompileREQ(req,objDBE);
+//	while (SQLITE_ROW == sqlite3_step(stm)) nb++; 
+	nb = (SQLITE_ROW == sqlite3_step(stm))?(1):(0);
+	sqlite3_finalize(stm);
+	return nb;
 }
 //---------------------------------------------------------------------------------
 //  Decode the current object
@@ -2451,7 +2553,8 @@ void SqlMGR::Decode3DLight(sqlite3_stmt *stm,CWobj *obj)
 //  Decode all TRN elevations for a given QGT
 //===================================================================================
 int SqlMGR::GetTRNElevations(C_QGT *qgt)
-{	char req[1024];
+{	if (!SQLobj())		return 0;
+	char req[1024];
 	U_INT key = qgt->FullKey();
 	count			= 0;
 	this->qgt	= qgt;
@@ -2489,14 +2592,15 @@ int SqlMGR::DecodeTRNrow()
 	sup->SetList(txd);
 	//--- Extract names and flags --------------------
 	char *name  = (char*)sqlite3_column_text(stm,CLN_ETR_TXN);
+	U_INT fg    = (U_INT)sqlite3_column_int(stm,CLN_ETR_FLG);
 	U_INT us    = (U_INT)sqlite3_column_int(stm,CLN_ETR_USR);
 	U_INT	wt		= (U_INT)sqlite3_column_int(stm,CLN_ETR_WTR);
 	U_INT	nt		= (U_INT)sqlite3_column_int(stm,CLN_ETR_NIT);
 	U_INT	tokn	= 0x00000001;
 	//--- TextureDef Reconstruction ------------------
 	for (int k=0; k<TC_TEXSUPERNBR; k++,txd++)
-	{	txd->SetFlag(TC_USRTEX);
-		name	+= txd->CopyName(name);
+	{	name	+= txd->CopyName(name);
+		if (fg & tokn)  txd->SetFlag(TC_USRTEX);
 		if (us & tokn)	txd->SetType(TC_TEXRAWTN);
 		if (wt & tokn)	txd->SetType(TC_TEXWATER);
 		if (nt & tokn)	txd->SetFlag(TC_NITTEX);

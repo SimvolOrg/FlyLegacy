@@ -25,16 +25,6 @@
  * @brief Implements Pod filesystem API functions
  */
 
-/*!
- * \todo An occasional memory leak exists when pmount() is called, probably
- *       due to a leak in the multimap<> STL implementation.  The leak
- *       only occurs when many pod files are added to the podfile map of
- *       a given filesystem, and subsequent leaks grow in size, starting
- *       around 90K, increasing to 96K, then approx. 100K etc.  Code inspection
- *       does not reveal any potential problems, so perhaps dynamic resizing
- *       of the multimap is causing the leak to occur.
- */
-
 
 #ifdef _MSC_VER
 #pragma warning (disable:4189)    // Local variable initialized but not used
@@ -48,6 +38,10 @@
 #include "../Include/Utility.h"
 #include <io.h>
 using namespace std;
+//=================================================================================
+//	Vector to process a pod file
+//=================================================================================
+PodFileCB VectorPOD = paddpodfile;  // Normal process is to add the pod file
 //=================================================================================
 enum XMLmark {
   X_SP   = 0x00000001,                    // This is a separator
@@ -214,11 +208,11 @@ static unsigned int freadLittleUnsignedInt (FILE* f)
   return LittleEndian (rc);
 }
 
-/**
- * @brief Generate pod filesystem debugging log
- *
- * @param fmt... Variable arguments specifying log message
- */
+//=====================================================================================
+// @brief Generate pod filesystem debugging log
+//
+// @param fmt... Variable arguments specifying log message
+//=====================================================================================
 static void plog (PFS *pPfs, const char* fmt, ...)
 {
   if (pPfs->log != NULL) {
@@ -229,7 +223,7 @@ static void plog (PFS *pPfs, const char* fmt, ...)
   }  
 }
 //=====================================================================================
-//	APPLY a function to each file mactching the pattern pat
+//	APPLY a function to each file matching the pattern pat
 //  This is a Windows dependancy
 //=====================================================================================
 void	ApplyToFiles(char *pat, FileCB cbFN, void *upm)
@@ -244,7 +238,7 @@ void	ApplyToFiles(char *pat, FileCB cbFN, void *upm)
 	_findclose(h1);
 	return;
 }
-///////////////////////////////////////////////////////////////////
+//=====================================================================================
 //
 // Standard C pod filesystem implementation
 //
@@ -260,66 +254,69 @@ void	ApplyToFiles(char *pat, FileCB cbFN, void *upm)
 // padddiskfolder ("C:/Fly! II", "World");
 // PFSFILE* f = popen ("World/Flyhawk.svh");
 //...
-//
-
-/**
- * @brief Initialize pod filesystem
- *
- * @param pPfs  Pointer to PFS pod filesystem struct
- * @param searchPodFilesFirst If true, then calls to popen() and pexists() will check
- *                            PODs for the existence fo the file before checking disk
- *                            files.  If false, then the disk is searched first.
- */ 
+//=====================================================================================
+// @brief Initialize pod filesystem
+//  JS: TODO Make the PFS a fuul classs.
+// @param pPfs  Pointer to PFS pod filesystem struct
+// @param searchPodFilesFirst If true, then calls to popen() and pexists() will check
+//                            PODs for the existence fo the file before checking disk
+//                            files.  If false, then the disk is searched first.
+// 
 // JSDEV* add logfile name to get distinct log file (normal and scenery)
 //        add a lock for multithread access
-void pinit (PFS* pPfs, const char *logfile,char *mod)
-{ pthread_mutex_init (&pPfs->pfsMux,  NULL);             // Init lock
-  pPfs->searchPodFilesFirst = false;
+//=====================================================================================
+void pinit (PFS* pfs, const char *logfile,char *mod)
+{ pthread_mutex_init (&pfs->mux,  NULL);             // Init lock
+  pfs->searchPodFilesFirst = false;
+	pfs->ticket = 1;
   // Get INI setting and open log if necessary
-  pPfs->log = NULL;
-  int i = 0;
-  GetIniVar ("Logs", "logPodFilesystem", &i);
-  pPfs->tlg   = i;
-  if (i != 0) {
-    pPfs->log = new CLogFile (logfile, mod);
-  }
-
-#ifdef POD_PERFORMANCE_METRICS
-  // Initialize performance metrics
-  pPfs->popenSuccess = pPfs->popenFailure = 0;
-  pPfs->popenSuccessTotalTime.QuadPart = 0;
-  pPfs->popenFailureTotalTime.QuadPart = 0;
-#endif
+  pfs->log = new CLogFile (logfile, mod);
 }
-
-/**
- * @brief Shut down pod filesystem
- *
- * @param pPfs  Pointer to PFS filesystem struct
- */
-void pshutdown (PFS* pPfs)
+//=====================================================================================
+//	Get a PFS ticket
+//=====================================================================================
+unsigned int 	GetTicket(PFS *pfs)
+{ pthread_mutex_lock   (&pfs->mux);
+  U_INT no = pfs->ticket++;
+  pthread_mutex_unlock (&pfs->mux);
+	return no;
+}
+//=====================================================================================
+// @brief Shut down pod filesystem
+//
+// @param pPfs  Pointer to PFS filesystem struct
+//=====================================================================================
+void pshutdown (PFS* pfs)
 {
-  plog (pPfs, "Shutting down...");
+  plog (pfs, "=== SHUT DOWN podList");
 
-  // Deallocate all entries in the pod list
+  //----- Deallocate all entries in the pod list -----------------------
   std::map<string,PFSPOD*>::iterator iPod;
-  for (iPod=pPfs->podList.begin(); iPod!=pPfs->podList.end(); iPod++) {
+  for (iPod=pfs->podList.begin(); iPod!=pfs->podList.end(); iPod++) {
     PFSPOD *pPod = iPod->second;
     if (pPod->file != NULL) fclose (pPod->file);
     delete pPod;
   }
-  
-  // Delete all entries in the pod file list
+
+  pfs->podList.clear();
+  //----- Delete all entries in the pod file list ----------------------
+	plog (pfs, "=== SHUT DOWN podFileList");
   std::multimap<string,PFSPODFILE*>::iterator i;
-  for (i=pPfs->podFileList.begin(); i!=pPfs->podFileList.end(); i++) {
+  for (i=pfs->podFileList.begin(); i!=pfs->podFileList.end(); i++) {
     PFSPODFILE *pf = i->second;
     delete pf;
   }
-
-  plog (pPfs, "Shutdown complete");
-  
+	pfs->podFileList.clear();
+	//----- delete all entries in disk list ------------------------------
+	plog (pfs, "=== SHUT DOWN diskFileList");
+	pfs->diskFileList.clear();
+	//---- Clear master list ---------------------------------------------
+	plog (pfs, "=== SHUT DOWN masterFileList");
+	pfs->masterFileList.clear();
+	//--------------------------------------------------------------------
+  plog (pfs, "Shutdown complete");
   // Close log file
-  SAFE_DELETE (pPfs->log);
+  SAFE_DELETE (pfs->log);
 }
 //-------------------------------------------------------------------------------
 //  Normalize pathName
@@ -336,33 +333,37 @@ void NormalizeName(char *name)
 //-------------------------------------------------------------------------------
 //  Add a single file into the POD file system
 //-------------------------------------------------------------------------------
-static bool paddpodfile (PFS *pfs, PFSPODFILE *p)
-{
-  bool rc = true;
-  NormalizeName(p->name);
-  // Create pairing of filename with PFSPODFILE*
+int paddpodfile (PFS *pfs, PFSPODFILE *p)
+{ // Create pairing of filename with PFSPODFILE*
+	p->share	= pfs->mode;
   pair<string,PFSPODFILE*>  pr;
-  pr.first = p->name;
+  pr.first  = p->name;
   pr.second = p;
   // JSDEV: Lock the PFS for multithread
-  pthread_mutex_lock   (&pfs->pfsMux);             // Lock access
+  pthread_mutex_lock   (&pfs->mux);             // Lock access
   pfs->podFileList.insert(pr);
   // Also insert filename into master filename set
-  pfs->masterFileList.insert (p->name);
+	pfs->masterFileList[p->name] = p;
   // JSDEV Unlock PFS
-  pthread_mutex_unlock   (&pfs->pfsMux);           // Lock access
-  if (pfs->tlg > 1) plog (pfs,"......ADD file %s",p->name);
-  return rc;
+  pthread_mutex_unlock   (&pfs->mux);           // Lock access
+  plog (pfs,"......ADD file KEY %s",p->name);
+  return 0;
 }
 //-------------------------------------------------------------------------------
 //  Remove the file from the POD file system
+//	NOTE:  Shared files are not removed
 //-------------------------------------------------------------------------------
 void prempodfile (PFS *pfs, char *fn)
-{   pthread_mutex_lock   (&pfs->pfsMux);             // Lock access
-    pfs->podFileList.erase(fn);
-    pfs->masterFileList.erase(fn);
-    pthread_mutex_unlock   (&pfs->pfsMux);           // Lock access
-    if (pfs->tlg > 1) plog (pfs,"......REM file %s",fn);
+{   pthread_mutex_lock   (&pfs->mux);             // Lock access
+		std::multimap<string,PFSPODFILE*>::iterator i = pfs->podFileList.find(fn);
+		bool del = (i != pfs->podFileList.end()) && (0 == i->second->share);
+		if (del)
+			{	pfs->podFileList.erase(fn);
+				pfs->masterFileList.erase(fn);
+			}
+    pthread_mutex_unlock   (&pfs->mux);           // Lock access
+    if (del) plog (pfs,"......REM file %s",fn);
+		else     plog (pfs,"......SHARED   %s",fn);
     return;
 }
 //-------------------------------------------------------------------------------
@@ -374,19 +375,19 @@ void prempodfile (PFS *pfs, char *fn)
 //-------------------------------------------------------------------------------
 void padddiskfile (PFS *pfs, string key, string fullFn,char rep)
 { // Search if file already exists; if so, generate log
-  pthread_mutex_lock   (&pfs->pfsMux);             // Lock access
+  pthread_mutex_lock   (&pfs->mux);             // Lock access
   std::map<string,string>::iterator i = pfs->diskFileList.find(key);
   if  (i == pfs->diskFileList.end())
-      { plog (pfs, "  Add key %s with file %s", key.c_str(), fullFn.c_str());
+      { plog (pfs, "    ADD key %s", key.c_str());
         pfs->diskFileList[key] = fullFn;
-        pfs->masterFileList.insert (key);         
+				pfs->masterFileList[key] = 0;
       }
   else if (1 == rep)
-      { plog (pfs, "  Rep key %s with file %s", key.c_str(), fullFn.c_str());
+      { plog (pfs, "    REP key %s", key.c_str());
         pfs->diskFileList[key] = fullFn;
-        pfs->masterFileList.insert (key); 
+				pfs->masterFileList[key] = 0;
       }
-  pthread_mutex_unlock   (&pfs->pfsMux);           // Lock access
+  pthread_mutex_unlock   (&pfs->mux);           // Lock access
   return;
 }
 //--------------------------------------------------------------------------------
@@ -434,23 +435,22 @@ static void pmountepd (PFS *pPfs, PFSPOD* pPod)
   // Read EPD directory and add PFSPODFILE structs to the POD file list
   for (unsigned int i=0; i<pPod->nEntries; i++) {
     // Instantiate new PFSPODFILE struct
-    PFSPODFILE* pFile = new PFSPODFILE;
+    PFSPODFILE* p = new PFSPODFILE;
 
     // Populate struct with EPD directory entry fields
-    pFile->pod = pPod;
-    fread (pFile->name, 1, EPD_FILENAME_LENGTH, f);
-    pFile->size       = freadLittleUnsignedInt (f);
-    pFile->offset     = freadLittleUnsignedInt (f);
-    pFile->timestamp  = freadLittleUnsignedInt (f);
-    pFile->checksum   = freadLittleUnsignedInt (f);
+    p->pod = pPod;
+    fread (p->name, 1, EPD_FILENAME_LENGTH, f);
+    p->size       = freadLittleUnsignedInt (f);
+    p->offset     = freadLittleUnsignedInt (f);
+    p->timestamp  = freadLittleUnsignedInt (f);
+    p->checksum   = freadLittleUnsignedInt (f);
     // EPD files do not support mount priority, so use default of 1000
-    pFile->priority = 1000;
-
-    if (!paddpodfile (pPfs, pFile)) {
-      // Pod file was rejected; delete it
-      delete pFile;
-    }
+    p->priority = 1000;
+		NormalizeName(p->name);
+		int stop = (*VectorPOD)(pPfs,p);  // call paddpodfile
+		if (stop)	break;
   }
+	return;
 }
 ///--------------------------------------------------------------------
 // Unmount an EPD format pod from the specified pod filesystem
@@ -507,17 +507,17 @@ static void pmountpod2 (PFS *pPfs, PFSPOD* pPod)
   pPod->Directory = ftell(f);
   for (i=0; i<(int)pPod->nEntries; i++) {
     // Instantiate new PFSPODFILE struct
-    PFSPODFILE* pFile = new PFSPODFILE;
+    PFSPODFILE* p = new PFSPODFILE;
 
-    pFile->pod = pPod;
+    p->pod = pPod;
     unsigned int offsetFilename = freadLittleUnsignedInt (f);
-    pFile->size = freadLittleUnsignedInt (f);
-    pFile->offset = freadLittleUnsignedInt (f);
-    pFile->timestamp = freadLittleUnsignedInt (f);
-    pFile->checksum = freadLittleUnsignedInt (f);
+    p->size = freadLittleUnsignedInt (f);
+    p->offset = freadLittleUnsignedInt (f);
+    p->timestamp = freadLittleUnsignedInt (f);
+    p->checksum = freadLittleUnsignedInt (f);
 
     // Mount priority is not supported by the POD2 format, use default of 1000
-    pFile->priority = 1000;
+    p->priority = 1000;
 
     // Reposition file pointer to location in string table of the filename,
     //   read the filename then reposition back to the next directory entry
@@ -527,16 +527,15 @@ static void pmountpod2 (PFS *pPfs, PFSPOD* pPod)
     for (j=0; j<POD_FILENAME_LENGTH; j++) {
       fread (&c, 1, 1, f);
       if (c == '\0') break;
-      pFile->name[j] = c;
+      p->name[j] = c;
     }
-    pFile->name[j] = '\0';
+    p->name[j] = '\0';
     fseek (f, pos, SEEK_SET);
-
-    if (!paddpodfile (pPfs, pFile)) {
-      // Pod file was rejected; delete it
-      delete pFile;
-    }
+		NormalizeName(p->name);
+		int stop = (*VectorPOD)(pPfs,p);	// Call paddpodfile
+		if (stop)	break;
   }
+	return;
 }
 ///--------------------------------------------------------------------
 // Unmount an POD2 format pod from the specified pod filesystem
@@ -616,36 +615,35 @@ static void pmountpod3 (PFS *pPfs, PFSPOD* pPod)
   fseek (f, offsetDirectory, SEEK_SET);
   for (i=0; i<(int)pPod->nEntries; i++) {
     // Instantiate new PFSPODFILE struct
-    PFSPODFILE* pFile = new PFSPODFILE;
+    PFSPODFILE* p = new PFSPODFILE;
 
-    pFile->pod = pPod;
+    p->pod = pPod;
     unsigned int offsetFilename = freadLittleUnsignedInt (f);
-    pFile->size = freadLittleUnsignedInt (f);
-    pFile->offset = freadLittleUnsignedInt (f);
-    pFile->priority = pPod->priority;
-    pFile->timestamp = freadLittleUnsignedInt (f);
-    pFile->checksum  = freadLittleUnsignedInt (f);
+    p->size				= freadLittleUnsignedInt (f);
+    p->offset			= freadLittleUnsignedInt (f);
+    p->priority		= pPod->priority;
+    p->timestamp	= freadLittleUnsignedInt (f);
+    p->checksum		= freadLittleUnsignedInt (f);
 
     // Reposition file pointer to location in string table of the filename,
     //   read the filename then reposition back to the next directory entry
     long pos = ftell (f);
     fseek (f, offsetStringTable + offsetFilename, SEEK_SET);
-    strcpy (pFile->name, "");
+    strcpy (p->name, "");
     char c;
     for (j=0; j<POD_FILENAME_LENGTH; j++) {
       fread (&c, 1, 1, f);
       if (c == '\0') break;
-      pFile->name[j] = c;
+      p->name[j] = c;
     }
-    pFile->name[j] = '\0';
+    p->name[j] = '\0';
     //-------------------------------------
     fseek (f, pos, SEEK_SET);
-
-    if (!paddpodfile (pPfs, pFile)) {
-      // Pod file was rejected; delete it
-      delete pFile;
-    }
+		NormalizeName(p->name);
+		int stop = (*VectorPOD)(pPfs,p);	// Call paddpodfile
+		if (stop)	break;
   }
+	return;
 }
 ///--------------------------------------------------------------------
 // Unmount an POD3 format pod from the specified pod filesystem
@@ -764,24 +762,38 @@ void pUnMount (PFS *pfs, PFSPOD *pod)
 //  Add a POD file to the File SYSTEM
 //  NOTE:  ONLY .POD should be supplied here
 //--------------------------------------------------------------------------------
-void paddpod (PFS *pPfs, const char* filename)
-{ 
-  PFSPOD *pPod = pmount (pPfs, filename);
-  pPfs->podList[filename] = pPod;
-  plog (pPfs, "Adding POD: %s", filename);
+unsigned int  paddpod (PFS *pfs, const char* filename)
+{ U_INT No = GetTicket(pfs);
+	plog (pfs, "(%06d)ADD POD: %s",No, filename);
+  PFSPOD *pPod = pmount (pfs, filename);
+  pfs->podList[filename] = pPod;
+	return No;
 }
+//--------------------------------------------------------------------------------
+//  Scan a POD file for file names
+//  NOTE:  Use only at startup while no thread are running
+//--------------------------------------------------------------------------------
+void scanpod(PFS *pPfs, const char* filename,PodFileCB cb)
+{ PodFileCB sv	= VectorPOD;							// Save standard process
+	VectorPOD			= cb;
+	SCENE ("    SCAN POD: %s", filename);
+  PFSPOD *pod	  = pmount (pPfs, filename);
+	VectorPOD			= sv;
+	delete  pod;
+	return;
+}
+
 //-------------------------------------------------------------------------------
 //  Remove POD from the File System
 //  NOTE: Only .POD should be supplied here
 //  Question: The file is not removed from podFileList
 //-------------------------------------------------------------------------------
-void premovepod (PFS *pfs, const char* fn)
-{
-  plog (pfs, "Removing POD: %s", fn);
-
+unsigned int premovepod (PFS *pfs, const char* fn)
+{ U_INT No = GetTicket(pfs);
+  plog (pfs, "(%06d)REMOVE POD: %s",No, fn);
   //---- Remove entry from the pod list -----------
   std::map<string,PFSPOD*>::iterator iter = pfs->podList.find(fn);
-  if (iter == pfs->podList.end()) return;
+  if (iter == pfs->podList.end()) return No;
   PFSPOD *pod = iter->second;
   pfs->podList.erase(fn);
     
@@ -789,24 +801,17 @@ void premovepod (PFS *pfs, const char* fn)
   if (pod->format != PodFormatUnknown) pUnMount(pfs,pod);
   if (pod->file) fclose (pod->file);
   delete pod;
-  return;
+  return No;
 }
 
 //-------------------------------------------------------------------------------
 // All POD files (with .POD or .EPD extension) in the specified folder are added
 //   to the POD filesystem.
 //-------------------------------------------------------------------------------
-void paddpodfolder (PFS* pPfs, const char* folder, bool addSubdirs)
-{
-  plog (pPfs, "Adding POD folder: %s", folder);
-
-/*
-  // Create full POD folder by concatenating root folder with sub-folder name
-  char path[PATH_MAX];
-  strcpy (path, pPfs->root);
-  strcat (path, "/");
-  strcat (path, folder);
-*/
+void paddpodfolder (PFS* pPfs, const char* folder, bool sub, char sh)
+{ 
+  plog (pPfs, "ADD POD folder: %s", folder);
+	pPfs->mode	= sh;
   // Iterate over all files and subdirectories in this folder.
   ulDir* dirp = ulOpenDir (folder);
   if (dirp != NULL) {
@@ -816,13 +821,13 @@ void paddpodfolder (PFS* pPfs, const char* folder, bool addSubdirs)
       if (dp->d_isdir) {
         // If addSubdirs flag is set and this is not current or parent directory,
         //   recursively add it too
-        if (addSubdirs) {
+        if (sub) {
           if ((strcmp (dp->d_name, ".") != 0) && (strcmp (dp->d_name, "..") != 0)) {
             char subFolder[PATH_MAX];
             strcpy (subFolder, folder);
             strcat (subFolder, "/");
             strcat (subFolder, dp->d_name);
-            paddpodfolder (pPfs, subFolder, addSubdirs);
+            paddpodfolder (pPfs, subFolder, sub, sh);
           }
         }
       } else {
@@ -836,18 +841,11 @@ void paddpodfolder (PFS* pPfs, const char* folder, bool addSubdirs)
           strcat (podfilename, "/");
           strcat (podfilename, dp->d_name);
 
-          /// \todo Why not use paddpod?
-
+          ///--- mount the POD file ---------------
+          plog (pPfs, "MOUNT POD: %s", podfilename);
           PFSPOD *pPod = pmount (pPfs, podfilename);
           pPfs->podList[podfilename] = pPod;
 
-          plog (pPfs, "Adding POD: %s", podfilename);
-
-            // Update podFileList
-//          std::map<string,PFSPODFILE*>::iterator i;
-//          for (i=pPod->fileList.begin(); i!=pPod->fileList.end(); i++) {
-//            pPfs->podFileList[i->second->name] = pPod;
-//          }
         }
       }
     }
@@ -861,7 +859,7 @@ void paddpodfolder (PFS* pPfs, const char* folder, bool addSubdirs)
 //---------------------------------------------------------------------------------
 void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
 {
-  plog (pPfs, "Adding disk folder: \"%s\" \"%s\"", root, folder);
+  plog (pPfs, "ADD DISK folder: \"%s\" \"%s\"", root, folder);
 
   // Create full folder name by concatenating root folder with sub-folder name
   char path[PATH_MAX];
@@ -924,8 +922,6 @@ void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
           }
           strcat (fullFilename, dp->d_name);
           NormalizeName(fullFilename);
-          plog (pPfs, "Adding disk file  : \"%s\" \"%s\"", keyFilename, fullFilename);
-
           padddiskfile (pPfs, keyFilename, fullFilename,1);
         }
       }
@@ -938,9 +934,8 @@ void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
 //  WARNING:  This routine is locked for multithread
 //-----------------------------------------------------------------------
 static PODFILE* findinpod (PFS* pPfs, const char* filename)
-{
-  PODFILE* p = NULL;
-  pthread_mutex_lock   (&pPfs->pfsMux);             // Lock access
+{ PODFILE* p = NULL;
+  pthread_mutex_lock   (&pPfs->mux);             // Lock access
   // POD filenames are case-insensitive, normalize case
   char keyFilename[PATH_MAX];
   strcpy (keyFilename, filename);
@@ -987,7 +982,7 @@ static PODFILE* findinpod (PFS* pPfs, const char* filename)
     // Increment reference counter of containing POD
     pf->pod->refs++;
   }
-  pthread_mutex_unlock   (&pPfs->pfsMux);             // Lock access
+  pthread_mutex_unlock   (&pPfs->mux);             // Lock access
   return p;
 }
 //----------------------------------------------------------------------
@@ -997,7 +992,7 @@ static PODFILE* findinpod (PFS* pPfs, const char* filename)
 static PODFILE* findondisk (PFS* pPfs, const char* keyFilename,char *md)
 { char *mode  = (md)?(md):("rb");
   PODFILE* p = NULL;
-  pthread_mutex_lock   (&pPfs->pfsMux);             // Lock access
+  pthread_mutex_lock   (&pPfs->mux);             // Lock access
   std::map<string,string>::iterator i = pPfs->diskFileList.find(keyFilename);
   if (i != pPfs->diskFileList.end()) {
     // Found it, attempt to open the disk file
@@ -1018,7 +1013,7 @@ static PODFILE* findondisk (PFS* pPfs, const char* keyFilename,char *md)
       rewind (p->pFile);
     }
   }
-  pthread_mutex_unlock   (&pPfs->pfsMux);           // Lock access
+  pthread_mutex_unlock   (&pPfs->mux);           // Lock access
   return p;
 }
 
@@ -1033,14 +1028,33 @@ static bool existsinpod (PFS *pPfs, const char* filename)
 {
   bool rc = false;
   //JSDEV:  Add a lock for multi thread
-  pthread_mutex_lock   (&pPfs->pfsMux);             // Lock access
+  pthread_mutex_lock   (&pPfs->mux);             // Lock access
   // Search pod file list for normalized filename
   std::multimap<string,PFSPODFILE*>::iterator i = pPfs->podFileList.find(filename);
   rc = (i != pPfs->podFileList.end());
-  pthread_mutex_unlock   (&pPfs->pfsMux);           // Unlock access
+  pthread_mutex_unlock   (&pPfs->mux);           // Unlock access
   return rc;
 }
-
+//---------------------------------------------------------------------------
+// Search mounted pod files only in POD list.  Reserved for export
+//
+// Returns: true if the file exists in a pod, false otherwise
+//  WARNING:  This routine is locked for multithread
+//---------------------------------------------------------------------------
+bool LookOnlyInPOD (PFS *pfs, char* filename, char **pn)
+{	bool rc = false;
+  *pn			= 0;
+	pthread_mutex_lock   (&pfs->mux);             // Lock access
+  // Search pod file list for normalized filename
+  std::multimap<string,PFSPODFILE*>::iterator i = pfs->podFileList.find(filename);
+  rc = (i != pfs->podFileList.end());
+  pthread_mutex_unlock   (&pfs->mux);           // Unlock access
+	if (!rc)	return false;
+	//--- Extract pod name -----------------------------------
+	PFSPODFILE *pf = (*i).second;
+	*pn = pf->pod->name;													// Name of POD
+	return true;
+}
 //---------------------------------------------------------------------------
 // Search the disk file list for the given filename
 //
@@ -1050,11 +1064,11 @@ static bool existsinpod (PFS *pPfs, const char* filename)
 static bool existsondisk (PFS *pPfs, const char* filename)
 {
   bool rc = false;
-  pthread_mutex_lock   (&pPfs->pfsMux);             // Lock access
+  pthread_mutex_lock   (&pPfs->mux);             // Lock access
   // Search for existence of the filename in the disk file list set
   std::map<string,string>::iterator i = pPfs->diskFileList.find(filename);
   rc = (i != pPfs->diskFileList.end());
-  pthread_mutex_unlock   (&pPfs->pfsMux);           // Unlock access
+  pthread_mutex_unlock   (&pPfs->mux);           // Unlock access
   return rc;
 }
 //---------------------------------------------------------------------------
@@ -1150,43 +1164,37 @@ static bool compare_wildcard (const char *pattern, const char *s)
 
 const char* pfindfirst (PFS* pPfs, const char* pattern)
 {
-  const char* rc = NULL;
+  //const char* rc = NULL;
   
   // Assign search pattern to PFS member
   memset (pPfs->patternFind, 0, POD_FILENAME_LENGTH+1);
   strncpy (pPfs->patternFind, pattern, POD_FILENAME_LENGTH);
   strupper (pPfs->patternFind);
   
-  // Search master file list for matches
-  pPfs->iterFind = pPfs->masterFileList.begin();   
-  while (pPfs->iterFind != pPfs->masterFileList.end() && (rc == NULL)) {
-    if (compare_wildcard (pPfs->patternFind, pPfs->iterFind->c_str())) {
-      // Match was found
-      rc = pPfs->iterFind->c_str();
-    }
 
+	pPfs->iterFind = pPfs->masterFileList.begin();   
+  while (pPfs->iterFind != pPfs->masterFileList.end()) 
+	{ const char *key = (*pPfs->iterFind).first.c_str();
+    if (compare_wildcard (pPfs->patternFind,key)) return key;
     // Step to next member of the set
     pPfs->iterFind++;
   }
-  
-  return rc;
+  return 0;
 }
 
 const char* pfindnext (PFS* pPfs)
-{
-  const char* rc = NULL;
-
+{// const char* rc = NULL;
+	 pPfs->iterFind++;
   // Search master file list for matches
-  while (pPfs->iterFind != pPfs->masterFileList.end() && (rc == NULL)) {
-    if (compare_wildcard (pPfs->patternFind, pPfs->iterFind->c_str())) {
-      // Match was found
-      rc = pPfs->iterFind->c_str();
-    }
+  while (pPfs->iterFind != pPfs->masterFileList.end()) 
+	{
+		const char *key = (*pPfs->iterFind).first.c_str();
+    if (compare_wildcard (pPfs->patternFind, key))		return key;
     // Step to next member of the set
     pPfs->iterFind++;
   }
 
-  return rc;
+  return 0;
 }
 //------------------------------------------------------------------------
 //  Open File:
@@ -1222,12 +1230,12 @@ PODFILE* popen (PFS* pPfs, const char* fname, char *md)
   }
 
   // Generate log if file not found
-  if (p == NULL) {
-    plog (pPfs, "popen() : Failed to open %s", filename);
-  } else {
-    if (p->source == PODFILE_SOURCE_POD) plog (pPfs, "popen() : Successful open %s (%s)", filename, p->pPod->name);
-      else    plog (pPfs, "popen() : Successful open %s (%s)", filename, p->fullFilename);
-  }
+  //if (p == NULL) {
+  //  plog (pPfs, "popen() : Failed to open %s", filename);
+  //} else {
+  //  if (p->source == PODFILE_SOURCE_POD) plog (pPfs, "popen() : Successful open %s (%s)", filename, p->pPod->name);
+  //    else    plog (pPfs, "popen() : Successful open %s (%s)", filename, p->fullFilename);
+  //}
 
   return p;
 }
@@ -1510,29 +1518,5 @@ void pfsdump (PFS *pfs, FILE *f)
   // Total number of files
   fprintf (f, "Total files in POD Filesystem : %d\n\n", nTotalFiles);
 
-#ifdef POD_PERFORMANCE_METRICS
-  // Calculate and display popen() statistics
-  LARGE_INTEGER perf_freq;
-  if (!QueryPerformanceFrequency (&perf_freq)) {
-    gtfo ("CTimeManager : QueryPerformanceFrequency failed");
-  }
-  float freq = (float)perf_freq.QuadPart;
-
-  float avgTicks = 0;
-  if (pfs->popenSuccess != 0) {
-    avgTicks = (float)pfs->popenSuccessTotalTime.QuadPart / (float)pfs->popenSuccess;
-  }
-  float avg = (avgTicks / freq) * 1000.0f;
-  fprintf (f, "Number of successful popen()  : %d\n", pfs->popenSuccess);
-  fprintf (f, "Avg. ms per popen() success   : %f\n\n", avg);
-
-  avgTicks = 0;
-  if (pfs->popenFailure != 0) {
-    avgTicks = (float)pfs->popenFailureTotalTime.QuadPart / (float)pfs->popenFailure;
-  }
-  avg = (avgTicks / freq) * 1000.0f;
-  fprintf (f, "Number of failed popen()   : %d\n", pfs->popenFailure);
-  fprintf (f, "Avg. ms per popen() failure: %f\n\n", avg);
-#endif
 }
 

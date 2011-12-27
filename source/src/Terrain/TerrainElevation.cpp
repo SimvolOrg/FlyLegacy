@@ -34,6 +34,21 @@ U_INT TrefTAB[] = {
   2, 6,10, 14,
   3, 7,11, 15,
  };
+//---- TABLE DES MODULO Z to compute DT index Z ---------------------
+U_INT TinzTAB[] = {
+	0, 0, 0, 0,
+	1, 1, 1, 1,
+	2, 2, 2, 2,
+	3, 3, 3, 3,
+};
+//---- TABLE DES MODULO X to compute DT index X ---------------------
+U_INT TinxTAB[] = {
+	0, 1, 2, 3,
+	0, 1, 2, 3,
+	0, 1, 2, 3,
+	0, 1, 2, 3,
+};
+
 //========================================================================================
 //  List of QTR_REGION
 //========================================================================================
@@ -744,8 +759,13 @@ void C_TRN::ReadSUPR(SStream *stream)
   ReadUInt (&stz, stream);
   if ((stx > 7) || (stz > 7)) Abort("ST indices > 7");
   U_INT No = (stz << TC_BY08) | stx;
+	//--- Compute current detail tile base ------------
+	cx	= ax + (stx << 2);				// Multiply n°SP by 4
+	cz  = az + (stz << 2);				// idem
   //----USE a SUPERTILE DECODER to hold data --------
   C_STile *spt = &aST[stx][stz];
+	spt->SetAX(cx);
+	spt->SetAZ(cz);
 	//--- Allocate a texture def list -----------------
 	if (0 == mode)  txl = qgt->GetTexList(No);	// Real
 	else						txl = spt->GetTexList();		// Export
@@ -769,8 +789,8 @@ int C_TRN::Read (SStream *stream, Tag tag)
 
   case 'lowr':
     // Detail tile indices for lower-left corner
-    ReadUInt (&nb, stream);
-    ReadUInt (&nb, stream);
+    ReadUInt (&ax, stream);
+    ReadUInt (&az, stream);
     return  TAG_READ;
 
   case 'supr':
@@ -854,7 +874,6 @@ void C_STile::Abort(char *msg)
 { gtfo("ERROR in TRN:%s",msg);
 return;
 }
-
 //--------------------------------------------------------------------------------
 //  READ SuperTile PARAMETERS from TRN FILE
 //  TODO: See if <tref> is associated to each of <txtl> and <ntxl> tags
@@ -914,17 +933,21 @@ int C_STile::Read (SStream *stream, Tag tag)
   case 'tref':
     { if (0 == DayList)  Abort ("No <txtl> for <tref>");
       for (short nt = 0; nt != Dim; nt++)
-        { U_INT Order = TrefTAB[nt];
+        { //--- compute current Detail Tile indices ------
+					U_INT Order = TrefTAB[nt];
+			    cx					= ax + TinxTAB[Order];
+					cz					= az + TinzTAB[Order];
+//--- Debugg: Use statement to check a specific detail tile ------------
+//				bool ok = (cx == TC_ABSOLUTE_DET(341,0)) && (cz == TC_ABSOLUTE_DET(317,0));
+//				if (ok)
+//								int a = 0;				// Put breakpoint here
+//--- end debuging -----------------------------------------------------
           ReadInt(&nr,stream);
           CTextureDef *src = &DayList[nr];
           CTextureDef *txn = &qList[Order];
           txn->xFlag  = src->xFlag;
           txn->TypTX  = src->TypTX;
           strncpy(txn->Name,src->Name,TC_TEXNAMESIZE);
-          //--- Just for debug --------------------------------
-          //if (strncmp(txn->Name,"977ED478",8) == 0)
-          //txn = txn;
-
           _strupr(txn->Name);
           //-----Normalize GEN TEXTURE INDICES -----------------
           if (txn->IsGener())
@@ -989,9 +1012,9 @@ void C_STile::FlagDayTexture(CTextureDef *txn)
   return;
 }
 //--------------------------------------------------------------------------------
-//  Return User Flag
+//  Return Texture type
 //--------------------------------------------------------------------------------
-U_INT C_STile::GetFlag(U_CHAR t)
+U_INT C_STile::GetTextureType(U_CHAR t)
 {	CTextureDef *txd = qList;
 	U_INT flag = 0;
 	U_INT	tokn = 0x00000001;
@@ -1001,6 +1024,20 @@ U_INT C_STile::GetFlag(U_CHAR t)
 	}
 	return flag;
 }
+//--------------------------------------------------------------------------------
+//  Return Texture type
+//--------------------------------------------------------------------------------
+U_INT C_STile::GetTextureOrg()
+{	CTextureDef *txd = qList;
+	U_INT flag = 0;
+	U_INT	tokn = 0x00000001;
+  for (int k = 0; k != TC_TEXSUPERNBR; k++,txd++)
+	{	if (txd->UserTEX()) flag |= tokn;
+		tokn = tokn << 1;
+	}
+	return flag;
+}
+
 //--------------------------------------------------------------------------------
 //  Return Night Flag
 //--------------------------------------------------------------------------------
@@ -1092,7 +1129,7 @@ void CTxtDecoder::NormeName(char *txt,CTextureDef *txd)
   char *src = (sep)?(sep+1):(txt);
   *end  = 0;                                        // Set limit
   strncpy(txd->Name,src,TC_TEXNAMESIZE);
-  txd->xFlag |= TC_USRTEX;                          // Set user texture
+	if ((nbx > 16) || dot) txd->SetFlag(TC_USRTEX);		// Set user texture
   return;
 }
 //--------------------------------------------------------------------------------

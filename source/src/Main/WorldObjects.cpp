@@ -175,7 +175,15 @@ int   CWorldObject::Read (SStream *stream, Tag tag)
 //  All parameters are read
 //-------------------------------------------------------------------------
 void  CWorldObject::ReadFinished (void)
-{//---- Receive position and orientation from globals -----
+{ //--- Check configuration for a Goto ---------------------
+	char txt[128];
+	*txt = '*';
+	GetIniString("Sim","goto",txt,127);
+	int qx = 0;
+	int qz = 0;
+	int nf = sscanf(txt," QGT ( %03d , %03d )",&qx, &qz);
+	if (nf == 2)	GetQgtMidPoint(qx,qz,orgp);
+	//---- Receive position and orientation from globals -----
   SetPosition(orgp);
   SetOrientation(globals->iang);
 

@@ -214,6 +214,8 @@ public:
   int     FreeDOBJ();
   void    PopTextures(U_CHAR opt);
   void    GetTileIndices(U_INT &tx,U_INT &tz);
+  //-----QUAD identifier for test purpose ------------------------
+  bool		AreWe(U_INT tx,U_INT tz);
 	//--- Name --------------------------------------------------
 	inline  char *GetName()		{return Name;}
 	//--- Set Type ----------------------------------------------
@@ -246,7 +248,6 @@ public:
   inline  void   SetCoast(char *d)  {coast = d;}
   inline  void   SetQUAD(CmQUAD *q) {quad  = q;}
   //--------------------------------------------------------------
-  inline  void   AddFlag(U_CHAR f)  {xFlag |= f;}
   inline  void   SetResolution(U_CHAR n,U_CHAR r)   {Reso[n] = r;}
   inline  U_CHAR GetResolution()    {return Reso[0];}
   //--------------------------------------------------------------
@@ -255,8 +256,6 @@ public:
   inline  bool   HasADTX()    {return (dTEX[1] != 0);}
   inline  bool   HasDOBJ()    {return (dOBJ != 0);}
   inline  bool   NoCoast()    {return (0 == coast);}
-  //-----QUAD identifier for test purpose ------------------------
-  inline  bool   AreWe(U_INT tx,U_INT tz);
 	//--- copy name ------------------------------------------------
 	inline  int		 CopyName(char *n)	
 		{strncpy(Name,n,TEX_NAME_DIM); return TEX_NAME_DIM;}

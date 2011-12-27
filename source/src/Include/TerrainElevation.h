@@ -187,7 +187,14 @@ class C_STile: public CStreamObject {
   friend class C_TRN;
 public:
   //---------ATTRIBUTES -------------------------------------------------
+	U_INT					ax;													// Absolute X indice of SW Det
+	U_INT					az;													// Absolute Z indice of SW Det
+	//----------------------------------------------------------------------
+	U_INT					cx;													// Current DET x index
+	U_INT					cz;													// Current DET z index
+	//----------------------------------------------------------------------	
 	U_INT					qKey;												// QGT key
+	//---------------------------------------------------------------------
   short         tr;                         // Trace indicator
 	short         side;												// elevation side
   U_INT         No;                         // Super Tile Number
@@ -210,14 +217,17 @@ public:
   void    GetHdltElevations(U_INT sx,U_INT sz,C_QGT *qgt);
   void    FlagDayTexture(CTextureDef *txn);
 	void		PackTexName(char *tn);
-	//--------------------------------------------------------------------
-	U_INT		GetFlag(U_CHAR t);
+	//---Helper to pack 16 flags for SQL ---------------------------------
+	U_INT		GetTextureType(U_CHAR t);
+	U_INT		GetTextureOrg();
 	U_INT   GetNite();
   //--------inline -----------------------------------------------------
   void    SetTrace(C_TRN *trn,U_INT tra){tr = tra; this->trn = trn;}
   void    SetList(CTextureDef *lst)       {qList = lst;}
 	void		SetKey(U_INT k)									{qKey	= k;}
 	//--------------------------------------------------------------------
+	inline void				SetAX(U_INT x)				{ax = x;}
+	inline void				SetAZ(U_INT z)				{az = z;}
 	//--------------------------------------------------------------------
 	inline int				GetKey()							{return qKey;}
 	inline int				GetNo()								{return No;}
@@ -267,6 +277,12 @@ public:
 //===================================================================================
 class  C_TRN: public CStreamObject {
   friend class TCacheMGR;
+	//---------------------------------------------------------------------
+	U_INT		ax;																					// SW corner of QGT
+	U_INT		az;																					// SW corner of QGT
+	//---------------------------------------------------------------------
+	U_INT		cx;																					// Current DT
+	U_INT		cz;																					// Current dt
   //---------ATTRIBUTES -------------------------------------------------
   U_INT   tr;                                         // Trace indicator
   C_QGT  *qgt;                                        // Quarter Global Tile

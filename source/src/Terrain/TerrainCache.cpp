@@ -352,6 +352,8 @@ CTextureDef::CTextureDef()
   quad      = 0;
   dOBJ      = 0;
   nOBJ      = 0;
+	Name[0]		= 0;
+	Name[10]		= '$';
   dTEX[0]   = 0;
   dTEX[1]   = 0;
   nTEX[0]   = 0;
@@ -368,7 +370,8 @@ CTextureDef::~CTextureDef()
 //  Texture identifier
 //-------------------------------------------------------------------------
 bool CTextureDef::AreWe(U_INT ax,U_INT az)
-{ if (quad->GetTileAX() != ax)  return false;
+{ if (0 == quad)								return false;
+	if (quad->GetTileAX() != ax)  return false;
   if (quad->GetTileAZ() != az)  return false;
   return true;
 }
@@ -1865,6 +1868,7 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
   trn   = 0;                // TRN file
   xKey  = cx;
   zKey  = cz;
+	qKey	= QGTKEY(cx,cz);
   Step  = TC_QT_INI;
   nStp  = 0;
   qSTAT = 1;
@@ -1914,15 +1918,17 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
   Center.y   = Scene.lat;
   Center.x   = LongitudeInBand(cx,clon);
   Center.z   = Scene.alt;
+	//---Register the QGT for scenery --------------------
+	CSceneryDBM::Instance().Register(qKey);
 }
+
 //----------------------------------------------------------------------------
 //  Delete this Quarter Global Tile
 //  CmQUAD destructor are automaticaly called
 //----------------------------------------------------------------------------
 C_QGT::~C_QGT()
 { //--------Deregister Scenery ---------------------------
- // CScenerySetDatabase::Instance().Deregister(Scene);
-	CScenerySetDatabase::Instance().Deregister(qKey);
+	CSceneryDBM::Instance().Deregister(qKey);
 	if (0 == qSTAT) FreeAllVertices();
   if (trn)  delete trn;
   tcm->FreeSEA(this);
@@ -3355,7 +3361,7 @@ TCacheMGR::TCacheMGR()
   //-----Check for teleport directive ---------------------------
   CheckTeleport();
   //-----Init scenery database ----------------------------------
-  CScenerySetDatabase::Instance().Init ();
+  CSceneryDBM::Instance().Init ();
 	//-----Init elevation Tracker ---------------------------------
 	eTrack.SetTCM(this);
 }
@@ -3661,18 +3667,24 @@ char  TCacheMGR::GetTileType(char tn,int dir)
 void TCacheMGR::SetTransitionMask(C_QGT *qgt,CTextureDef *txn)
 { ax  = txn->quad->GetTileAX();
   az  = txn->quad->GetTileAZ();
+//--- Debugg: Use statement to check a specific detail tile ------------
+//    if (txn->AreWe(TC_ABSOLUTE_DET(341,3),TC_ABSOLUTE_DET(317,23)))
+//          txn = txn;                  // Set break point here
+//				int ok = strcmp(txn->Name,"656C0F03");
+//				if (ok ==  0)
+//					int	a = 1;
+
+//--- end debuging -----------------------------------------------------
   U_INT kc      = (ax << 16) | az;
   char *cdt     = (globals->seaDB)?(GetCDTdata(kc)):(GetSEAdata(ax,az));
   txn->SetCoast(cdt);
-  if (txn->UserTEX())   return;
+//  if (txn->Name[10]	== '*')   return;								 // This is a user texture
+	if (txn->UserTEX())					return;
   if (cdt)      {txn->TypTX = TC_TEXCOAST;}          // this is a coast tile
   char *nam     = txn->Hexa;
 //--- Debugg ---------------------------------------------------------------
 //  if (strncmp(txn->Name,"0C8C0C0C",8) == 0)
 //    int a = 0;                          // Break here
-//--- Debugg: Use statement to check a specific detail tile ----------------
-//    if (txn->AreWe(TC_ABSOLUTE_DET(510,9),TC_ABSOLUTE_DET(336,18)))
-//          txn = txn;                  // Set break point here
    
   //------Init the current tile coast  type---------------------------------
   char TA   =   GetTileType(nam[0],TC_TILE_A);  // Type of (this) A Tile
@@ -3713,7 +3725,7 @@ U_CHAR TCacheMGR::GetLandTransition(char *hex)
 //  Set the transition mask for the Super Tile
 //-------------------------------------------------------------------------
 int TCacheMGR::GetTransitionMask(C_QGT *qgt,CSuperTile *sp)
-{ for (U_INT nd = 0;nd != TC_TEXSUPERNBR;nd++)  SetTransitionMask(qgt,&sp->Tex[nd]);
+{	for (U_INT nd = 0;nd != TC_TEXSUPERNBR;nd++)  SetTransitionMask(qgt,&sp->Tex[nd]);
   return 1;
 }
 //-------------------------------------------------------------------------
@@ -4062,6 +4074,7 @@ void TCacheMGR::UpdateAGL(SPosition &pos)
 	//--- Update AGL and ground plane ---------------------
 	fAGL			=		pos.alt - Spot.alt;
   gplan[3]	=  float(fAGL);			// Ground plane OK
+	//--- Check for aircraft altitude ---------------------
   return;
 }
 //-----------------------------------------------------------------------------
@@ -4200,12 +4213,8 @@ void TCacheMGR::CreateQGT(U_SHORT cx, U_SHORT cz)
   NbQGT++;
   ActQ.PutLast(qgt);
   //---Enter QGT in map --------------------------------
-  U_INT key = QGTKEY(cx,cz);
-  qgtMAP[key] = qgt;
-  qgt->qKey = key;
+  qgtMAP[qgt->qKey] = qgt;
   qRDY++;               // One QGT waiting ready
-	//---Register the QGT for scenery --------------------
-	CScenerySetDatabase::Instance().Register (qgt->qKey,tr);
   return;
 }
 

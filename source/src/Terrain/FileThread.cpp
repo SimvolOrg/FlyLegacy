@@ -330,6 +330,9 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
         qad   = txn->quad;
         //---Uncomment and set Tile indices for stop on tile -
  //       qad->AreWe(508,28,336,6);
+//				int ok = strcmp(txn->Name,"656C0F03");
+//				if (ok ==  0)
+//					int	a = 1;
         //-----Clear  descriptor ----------------------------
         dTEX = 0;
         nTEX = 0;
@@ -414,7 +417,7 @@ int CTextureWard::GetRawTexture(CTextureDef *txn)
   CArtParser img(Resn);
   img.SetWaterRGBA(GetWaterRGBA(Resn));
   dTEX = img.GetRawTexture(xsp,1);
-  txn->AddFlag(img.lay);
+  txn->SetFlag(img.lay);
   //-------Check for night texture ----------------------------------
   U_CHAR nt = txn->IsNight() & NT;      // Nitght texture
   if  (nt == 0)         return 1;

@@ -376,7 +376,7 @@ void CmvalMap::Recompute(U_INT k)
       e->dw = (e->w - ep->w) / dx;
     }
   }
-  if (k < tab.size())
+  if (k < (tab.size()-1))
   { //--Update next from current entry -------------
     C3valSlot *en = &tab[k+1];      // Previous slot
     float dx = (en->x - e->x);

@@ -75,70 +75,53 @@ protected:
   int           baseIndex;              ///< First index of land elevations
   int           maxIndex;               ///< Last index of land elevations
 };
-
-
-//===========================================================================
-// CScenerySet
-//
-// Implementation : ScenerySet.cpp
-//
-// A CScenerySet encompasses a chunk of sliced scenery of any arbitrary size.
-//   The stream file that defines a scenery set is located in a sub-directory
-//   of any \Scenery folder.
-//  JS: As there is only one scenery file per QGT, might as well register each
-//      scenery in a map with the QGT coordinates as a key
-//============================================================================
-class CScenerySet : public CStreamObject {
-public:
-  // Constructors / Destructor
-  CScenerySet (const char* scfFolder, const char* scfFilename);
-  ~CScenerySet (void);
-
-  // CStreamObject methods
-  int Read (SStream *stream, Tag tag);
-
-  // CScenerySet methods
-  bool    IsLoaded (void);
-  void    Load (char tr);
-  void    Unload (void);
-  int     GetRefCount (void);
-  void    IncRefCount (void);
-  void    DecRefCount (void);
-	//-------------------------------------------------------------------------------
-	bool		SameKey(U_INT k)	{return (k == Key);}
-	//-------------------------------------------------------------------------------
-	inline  U_INT GetKey()		{return Key;}
-  //-------------------------------------------------------------------------------
+//===================================================================================
+class CSceneryDBM;
+//==================================================================================
+//	Class CSceneryPOD to hold a scenery POD associated to a QGT or a GBT
+//==================================================================================
+class CSceneryPOD {
+	//--- ATTRIBUTES --------------------------------------------
 protected:
-  U_INT                     Key;                       ///< Scenery QGT key
-  char                      name[80];                  ///< Descriptive name
-  SPosition                 call, caur;                ///< Coverage area lower-left / upper-right
-  SPosition                 ldll, ldur;                ///< Load area lower-left / upper-right
-  std::vector<std::string>  podList;                   ///< List of POD names
-  char                      scfFolder[PATH_MAX];       ///< SCF folder name
-  char                      scfFilename[FILENAME_MAX]; ///< SCF filename
-  bool                      loaded;                    ///< Whether scenery set is loaded
-  int                       refCount;                  ///< Number of references
+	int			users;											// User count
+	U_INT		Key;												// QGT key
+	char    fName[PATH_MAX];						/// Pod Full name
+	//--- Methods -----------------------------------------------
+public:
+	CSceneryPOD(U_INT key, char *fn);
+	//------------------------------------------------------------
+	void		Mount();
+	void		Remove();
+	int     MoreUsers();
+	//------------------------------------------------------------
+	inline U_INT GetKey()							{return Key;}
+  inline char *GetName()						{return fName;}
+	inline void  IncUser()						{users++;}
 };
 //==================================================================================
 //	Class CSceneryPack to hold all scenery associated to a QGT
+//	A list of ScenerySet is maintain in this Pack
 //==================================================================================
 class CSceneryPack {
+	friend class CSceneryDBM;
 private:
 	//--- ATTRIBUTES ------------------------------------
 	U_INT key;												// QGT key
-	std::vector<CScenerySet*> pack;
+	U_INT	gx;													// X index
+	U_INT gz;													// Z index
+	std::vector<CSceneryPOD*> apod;
 	//----------------------------------------------------
 public:
 	CSceneryPack(U_INT key);
  ~CSceneryPack();
   //-----------------------------------------------------
-  void	AddSet(CScenerySet *scn) {pack.push_back(scn);}
-	void	Load(char t);
-	void  Unload();
+	void	AddPod(CSceneryPOD *pod) {apod.push_back(pod);}
+	//-----------------------------------------------------
+	void	MountPODs (CSceneryDBM *dbm);
+	void	RemovePODs(CSceneryDBM *dbm);
 	};
 //==================================================================================
-// CScenerySetDatabase
+// CSceneryDBM
 //
 // The scenery set database contains information about sliced scenery areas read
 //   from .SCF (Scenery Control Files).  Each SCF is encapsulated by a CScenerySet
@@ -149,29 +132,42 @@ public:
 //  JS: As one scenery file is located in a QGT, might as well register each
 //      scenery in a map with the QGT coordinates as a key
 //============================================================================
-	class CScenerySetDatabase {
+class CSceneryDBM {
+	friend class CSceneryPack;
 private:
-  static CScenerySetDatabase instance;
+  static CSceneryDBM instance;
 
 public:
   // Return a reference to the singleton instance
-  static CScenerySetDatabase& Instance() { return instance; }
-
-  // CScenerySetDatabase methods
+  static CSceneryDBM& Instance() { return instance; }
+  // CSceneryDBM methods
   void    Init (void);
   void    Cleanup (void);
-	void		AddSet(CScenerySet *scn);
+	void		AddPodToQGT(CSceneryPOD *pod);
+	void		AddPodToGBT(CSceneryPOD *pod);
+	int		  CheckForScenery(PFSPODFILE *p);
 	//-----------------------------------------------------------------------
-  void    Register(U_INT key, char tr);
+	void		MountAll();
+  void    Register(U_INT key);
 	void    Deregister(U_INT key);
   //  Load initial files --------------------------------------------------
 protected:
-  void    LoadInFolder (const char *path);
   void    LoadInFolderTree (const char *path);
+	//------------------------------------------------------------------------
+	bool		LookSceneryInSQl(char *fn);
+	void		LookForPOD(char *path);
+	void		ProcessPOD(char *path,char *fn);
+	int			GetSceneryType(char *path);
+	int 		SceneryForGBT(PFSPODFILE *p,int gx,int gz);
+	void		MountPOD (CSceneryPOD *pod);
+	void		RemovePOD(CSceneryPOD *pod);
   //------------------------------------------------------------------------
 protected:
+	PFS *pfs;
 	U_CHAR	tr;													// Trace indicator
-	std::map<U_INT,CSceneryPack*> scene;
+	std::map<U_INT,CSceneryPack*> sqgt;
+	std::map<U_INT,CSceneryPack*> sgbt;
+	std::map<std::string,CSceneryPOD*>  mount;
 };
 
 

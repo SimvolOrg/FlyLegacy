@@ -444,12 +444,14 @@ void InitQgtTable (float vmax)
   qgt_latitude[0].dfog  = GetQgtFog(0,vmax,vmax);
   qgt_latitude[0].hzr   = 2;
   for (nz =1; nz < 257; nz++) {
+		int np = nz-1;
     double prevRad         = DegToRad (lat);
     if (nz & 0x01)   lat   = lat + k * cos(prevRad);
     else             lat   = globe_tile_lat[(nz >> 1)].lat;
     lats                   = lat * 3600;
     qgt_latitude[nz].lat   = lat;                               // Lat in °
     qgt_latitude[nz].lats  = lats;                              // Lat in arcsec
+		qgt_latitude[np].mid = (lats + qgt_latitude[np].lats) * 0.5;
     det                    = lats - qgt_latitude[nz-1].lats;    // Delta in arcsec
     qgt_latitude[nz-1].dta = det;
     qgt_latitude[nz-1].det = det / TC_DET_PER_QGT;

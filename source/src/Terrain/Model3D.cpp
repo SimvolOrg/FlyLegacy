@@ -736,7 +736,6 @@ int C3Dfile::Read(SStream *st,Tag tag)
       if (MarkHold(obj))                  return TAG_READ;
       C3Dworld *w3d = oQGT->Get3DW();
       w3d->AddToWOBJ(obj);
-      // MEMORY_LEAK_MARKER ("C3Dfile")
       return TAG_READ;}
   case 'auto': // lc added 05.29.11 test for autogen
     AutoGen (st);
@@ -2044,14 +2043,6 @@ void C3Dworld::TimeSlice(float dT)
         //---- verify water
         if (globals->num_of_autogen) {
           SPosition pos = obj->GetPosition ();
-          //GroundSpot spot (pos.lon, pos.lat);
-          //globals->tcm->SetGroundAt (spot);
-          //spot.GetTerrain ();
-          //char terrain_type = spot.Type;
-          //int  terrain_alt  = spot.alt;
-          //U_CHAR terrain_type = globals->tcm->GetGroundType ();
-          //TRACE ("terr2. %d ** %f", terrain_type, pos.alt);
-          //if (terrain_type == TERRAIN_WATER_OCEAN) continue;
           if (pos.alt < 215.0) continue; // DBL_EPSILON
         }
         //---- detach from waiting queue and decode ----------

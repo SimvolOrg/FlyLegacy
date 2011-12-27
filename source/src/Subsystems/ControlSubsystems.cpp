@@ -1798,9 +1798,6 @@ void CBrakeControl::PressBrake(char pos)
   Incr((pos & BRAKE_RITE), rate);
   Hold = 0;
 	bKey =Hold;
- // char txt[128];
- // _snprintf(txt,127,"L-Brake %.03f R-Brake %.03f",Force[BRAKE_LEFT],Force[BRAKE_RITE]);
- // globals->fui->DrawBrake(txt,0.2f,800,660);
   return;
 }
 //------------------------------------------------------------------
@@ -1809,9 +1806,6 @@ void CBrakeControl::PressBrake(char pos)
 void CBrakeControl::ReleaseBrakes()
 { Decr(BRAKE_LEFT,rate);
 	Decr(BRAKE_RITE,rate);
- // char txt[128];
- // _snprintf(txt,127,"L-Brake %.03f R-Brake %.03f",Force[BRAKE_LEFT],Force[BRAKE_RITE]);
- // globals->fui->DrawBrake(txt,0.2f,800,660);
   return;
 }
 //------------------------------------------------------------------

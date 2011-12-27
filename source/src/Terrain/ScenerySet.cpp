@@ -30,187 +30,56 @@
 #include "../Include/Ui.h"
 #include "../Include/Terrain.h"
 #include "../Include/Fui.h"
+#include "../Include/Pod.h"
 
 using namespace std;
 //==========================================================================
-//	Scenery set to held parameters
+//   Global function to process a file from a POD 
 //==========================================================================
-CScenerySet::CScenerySet (const char* scfFolder,
-                          const char* scfFilename)
-{ char fullname[PATH_MAX];
-  strcpy (fullname, scfFolder);
-  strcat (fullname, scfFilename);
-
-  // Attempt to open scenery file stream
-  SStream s;
-  if (OpenRStream (fullname,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
-	//-------------------------------------------------------------------
-	//	We assign the scenery to a QGT:  
-	//	The QGT is defined by the center point described by the area
-	//	covered.
-	//-------------------------------------------------------------------
-  // JS: When the scenary is accross the 0 meridian, the East Longitude
-  //  should be corrected for the scenary to load.
-  if (ldur.lon < ldll.lon) ldur.lon += TC_FULL_WRD_ARCS;
-  if (caur.lon < call.lon) caur.lon += TC_FULL_WRD_ARCS;
-	//--- Compute the QGT key where is the scenery center ----------------
-	SPosition ctr;
-	U_INT			xk;
-	U_INT			zk;
-	ctr.lon	= (ldll.lon + ldur.lon) * 0.5;
-	ctr.lat = (ldll.lat + ldur.lat) * 0.5;
-  IndicesInQGT (ctr, xk, zk);
-  Key     = QGTKEY(xk, zk);
-	//-------------------------------------------------------------------
-  // Save base pathname, SCF pathname and SCF filename
-  strcpy (this->scfFolder, scfFolder);
-  strupper((char*)scfFolder);
-  strcpy (this->scfFilename, scfFilename);
-  strupper((char*)scfFilename);
-  // Default state is unloaded
-  refCount = 0;
-  loaded = false;
-	SCENE ("QGT(%03d-%03d) Init:%s", xk,zk,scfFilename);
-
+int ScnpodCB(PFS *pfs, PFSPODFILE *p)
+{	int stop = CSceneryDBM::Instance().CheckForScenery(p);
+	delete p;
+	return stop;
 }
-//---------------------------------------------------------------------
-//	Close scenery set
-//---------------------------------------------------------------------
-CScenerySet::~CScenerySet (void)
-{
-  // Ensure scenery set is unloaded
-  if (loaded) Unload ();
+//==========================================================================
+//	Scenery POD to define a POD for scenery
+//==========================================================================
+CSceneryPOD::CSceneryPOD(U_INT key, char *fn)
+{	users	= 0;
+	Key		= key;
+	strncpy(fName,fn,PATH_MAX-1);
 }
-//---------------------------------------------------------------------
-//	Read parameters
-//---------------------------------------------------------------------
-int CScenerySet::Read (SStream *stream, Tag tag)
-{
-  int rc = TAG_IGNORED;
-
-  char file[PATH_MAX];
-
-  switch (tag) {
-  case 'name':
-    ReadString (name, 80, stream);
-    rc = TAG_READ;
-    break;
-  case 'call':
-    ReadLatLon (&call, stream);
-    rc = TAG_READ;
-    break;
-  case 'caur':
-    ReadLatLon (&caur, stream);
-    rc = TAG_READ;
-    break;
-  case 'ldll':
-    ReadLatLon (&ldll, stream);
-    rc = TAG_READ;
-    break;
-  case 'ldur':
-    ReadLatLon (&ldur, stream);
-    rc = TAG_READ;
-    break;
-  case 'file':
-    {
-      ReadString (file, PATH_MAX, stream);
-      podList.push_back (file);
-    }
-    rc = TAG_READ;
-    break;
-  }
-
-  return rc;
+//---------------------------------------------------------------
+//	Mount the POD file
+//---------------------------------------------------------------
+void CSceneryPOD::Mount()
+{	users    = 1;
+	U_INT No = paddpod (&globals->pfs, fName);
+	SCENE("   (%06d) Mount %s",No,fName);
+	return;
 }
-
-
-bool CScenerySet::IsLoaded (void)
-{
-  return loaded;
+//---------------------------------------------------------------
+//	Remove the POD file
+//	Decrement user count and unmout when no more users
+//---------------------------------------------------------------
+void CSceneryPOD::Remove()
+{	U_INT No = premovepod (&globals->pfs, fName);
+	SCENE("   (%06d) Unmount %s",No,fName);
+	return;
 }
-
-int  CScenerySet::GetRefCount (void)
-{
-  return refCount;
+//---------------------------------------------------------------
+//	Remove one user and return count
+//---------------------------------------------------------------
+int CSceneryPOD::MoreUsers()
+{	users--;
+	return users;
 }
-
-void CScenerySet::IncRefCount (void)
-{
-  refCount++;
-}
-
-void CScenerySet::DecRefCount (void)
-{
-  --refCount;
-}
-//-----------------------------------------------------------------
-//	The scenery pod is added to the pod file system
-//	So it will be detected by the 3D manager
-//-----------------------------------------------------------------
-void CScenerySet::Load (char tr)
-{
-  IncRefCount();
-
-  // Check if set is already loaded
-  if (!IsLoaded()) {
-    // Add individual pods to the filesystem
-    std::vector<string>::iterator i;
-    for (i=podList.begin(); i!=podList.end(); i++) {
-      char podName[1024];
-      strcpy (podName, scfFolder);
-      strcat (podName, i->c_str());
-      /// @TODO It would be preferable to maintain a separate pod filesystem for
-      ///       scenery files, but this raises complications when instantiating
-      ///       models in .SXX files.
-      paddpod (&globals->pfs, podName);
-			int ax = (Key >> 16);
-			int az = (Key & 0xFFFF);
-			SCENE("..QGT(%03d-%03d) load %s",ax,az,i->c_str());
-    }
-
-    // Set loaded flag
-    loaded = true;
-  }
-
-	SCENE("Set loaded: %s, ref=%02d", scfFilename, refCount);
-}
-//-----------------------------------------------------------------
-//	The scenery pod is removed from the pod file system
-//	So it will be detected by the 3D manager
-//-----------------------------------------------------------------
-void CScenerySet::Unload (void)
-{
-  if (IsLoaded()) {
-    // Decrement reference count and unload if necessary
-    DecRefCount();
-    if (GetRefCount() <= 0) {
-      // Remove individual pods from the scenery filesystem
-      std::vector<string>::iterator i;
-      for (i=podList.begin(); i!=podList.end(); i++) {
-              char podName[1024];
-              strcpy (podName, scfFolder);
-              strcat (podName, i->c_str());
-
-        premovepod (&globals->pfs, podName);
-      }
-  
-      // Clear loaded flag
-      loaded = false;
-
-      SCENE ("Unload Set %s, ref=%02d", scfFilename, refCount);
-    }
-  }
-}
-
 //=================================================================================
-// CScenerySetDatabase
+// CSceneryDBM
 //
 //=================================================================================
 // Define the singleton instance of the scenery set database
-CScenerySetDatabase CScenerySetDatabase::instance;
+CSceneryDBM CSceneryDBM::instance;
 
 //
 // "Constructor" for scenery set database singleton.  Search for any scenery files
@@ -218,11 +87,11 @@ CScenerySetDatabase CScenerySetDatabase::instance;
 //   with the .SCF extension that reside in any sub-directory from the
 //   /Scenery folder.
 //----------------------------------------------------------------------------------
-void CScenerySetDatabase::Init (void)
+void CSceneryDBM::Init (void)
 {
   // Buffer for the current search path
   char searchPath[PATH_MAX];
-
+	pfs = &globals->pfs;
   // Load SCF files from Fly! II /Scenery folder
   char base[PATH_MAX];
   strcpy (base, "");
@@ -230,8 +99,8 @@ void CScenerySetDatabase::Init (void)
   if (strlen (base) == 0) {
     // Could not get Fly! II root folder
     SCENE ("Cannot get Fly! II root folder name");
-  } else {
-    // Fly! II root folder was found
+  } else 
+	{ // Fly! II root folder was found
     strcpy (searchPath, base);
     strcat (searchPath, "/Scenery/");
     LoadInFolderTree (searchPath);
@@ -291,64 +160,153 @@ void CScenerySetDatabase::Init (void)
 #endif // _WIN32
 }
 //--------------------------------------------------------------------------------
-//	Add a set to the pack
+//	Add a pod to the QGT pack
 //--------------------------------------------------------------------------------
-void	CScenerySetDatabase::AddSet(CScenerySet *scn)
-{	U_INT key = scn->GetKey();
-	std::map<U_INT,CSceneryPack*>::iterator ip = scene.find(key);
-	if (ip != scene.end())	{(*ip).second->AddSet(scn); return;}
+void	CSceneryDBM::AddPodToQGT(CSceneryPOD *pod)
+{	U_INT key = pod->GetKey();
+	std::map<U_INT,CSceneryPack*>::iterator ip = sqgt.find(key);
+	if (ip != sqgt.end())	{(*ip).second->AddPod(pod); return;}
 	//---- create a new pack ----------------------------------
 	CSceneryPack *pak = new CSceneryPack(key);
-	pak->AddSet(scn);
-	scene[key] = pak;
+	pak->AddPod(pod);
+	sqgt[key] = pak;
 	return;
 }
+//--------------------------------------------------------------------------------
+//	Add a pod to the GBT pack
+//--------------------------------------------------------------------------------
+void	CSceneryDBM::AddPodToGBT(CSceneryPOD *pod)
+{	U_INT key = pod->GetKey();
+	std::map<U_INT,CSceneryPack*>::iterator ip = sgbt.find(key);
+	if (ip != sgbt.end())	{(*ip).second->AddPod(pod); return;}
+	//---- create a new pack ----------------------------------
+	CSceneryPack *pak = new CSceneryPack(key);
+	pak->AddPod(pod);
+	sgbt[key] = pak;
+	return;
+}
+
 //--------------------------------------------------------------------------------
 // "Destructor" for scenery set database singleton.  This method should be called
 //   when the database is no longer needed to avoid an apparent memory leak.
 //--------------------------------------------------------------------------------
-void CScenerySetDatabase::Cleanup (void)
-{	//--------------------------------------------------------
+void CSceneryDBM::Cleanup (void)
+{	//----Clean QGT list -------------------------
 	std::map<U_INT,CSceneryPack*>::iterator ip;
-	for (ip=scene.begin(); ip!=scene.end(); ip++) delete (*ip).second;
+	for (ip=sqgt.begin(); ip!=sqgt.end(); ip++) delete (*ip).second;
+	//----Clean GBT list -------------------------
+	std::map<U_INT,CSceneryPack*>::iterator ig;
+	for (ig=sgbt.begin(); ig!=sgbt.end(); ip++) delete (*ip).second;
 }
 
 //--------------------------------------------------------------
-// Search a directory for any scenery control files
+// Search for POD in this directory 
 //--------------------------------------------------------------
-void CScenerySetDatabase::LoadInFolder (const char *path)
-{
-  SCENE("LoadFolder : %s", path);
-
+void CSceneryDBM::LookForPOD(char *path)
+{	
+	SCENE("SEARCH POD in: %s", path);
   // Iterate over all files in this folder.  Sub-folders are ignored
-  ulDir* dirp = ulOpenDir (path);
-  if (dirp != NULL) {
-    ulDirEnt* dp;
-    while ((dp = ulReadDir(dirp)) != NULL ) {
-      if (dp->d_isdir) {
-        // This is a sub-folder, ignore it
-        continue;
-      } else {
-        // Check for file extension .SCF
-        char *c = strrchr (dp->d_name, '.');
-        if (stricmp (c, ".SCF") == 0) {
-          CScenerySet *set = new CScenerySet (path, dp->d_name);
-          //---Register scenery ----------------------------------
-						 AddSet(set);												
-        }
-      }
+  ulDir*  dirp = ulOpenDir (path);
+	ulDirEnt* dp = 0;
+  if (dirp) {
+    
+    while ((dp = ulReadDir(dirp)) != NULL )
+		{ if (dp->d_isdir)						continue;
+			//--- Bypass shared scenery (already mounted) ---------
+			if (GetSceneryType(path))		continue;
+			//--- a file is found ---------------------------------
+      // Check for file extension .POD
+      char *ext = strrchr (dp->d_name, '.');
+			if (0 == ext)								continue;
+      if ((_stricmp (ext, ".EPD") == 0) || (_stricmp(ext, ".POD") == 0))
+			{	ProcessPOD(path,dp->d_name);				}
     }
-    ulCloseDir(dirp);
   }
+    ulCloseDir(dirp);
+		return;
+}
+//--------------------------------------------------------------
+// Check for shared scenery
+//--------------------------------------------------------------
+int	CSceneryDBM::GetSceneryType(char *path)
+{	char *sdr = "/SCENERY/SHARED";
+	int   lgr = strlen(sdr);
+	_strupr(path);
+	char *deb = path + 3;				// Bypass drive letter
+	deb = strchr(deb,'/');			// Bypass
+	//--- Search for SHARED directory ------------------
+	while (deb)	
+	{	if (strncmp(deb,sdr,lgr)== 0)		return 1;
+		deb	= strchr(deb+1,'/');
+	}
+	return 0;
+}
+//--------------------------------------------------------------
+// Process this POD file 
+//--------------------------------------------------------------
+void CSceneryDBM::ProcessPOD(char *path,char *fn)
+{	char name[PATH_MAX];
+  _snprintf(name,511,"%s%s",path,fn);
+	scanpod(pfs,name,ScnpodCB);
+}
+//--------------------------------------------------------------
+// Check for file in database 
+//--------------------------------------------------------------
+bool CSceneryDBM::LookSceneryInSQl(char *fn)
+{	if (!globals->objDB)		return false;
+	int   nb = globals->sqm->SearchWOBJ(fn);
+	if (0 == nb)						return false;
+	SCENE("      SCENERY %s already in SQL base",fn);
+	return true;
+}
+//--------------------------------------------------------------
+// Check for scenery to process
+//	return 0 => Continue to look into POD
+//	return 1 => Stop to look
+//--------------------------------------------------------------
+int CSceneryDBM::CheckForScenery(PFSPODFILE *p)
+{	char *fn = p->name;
+	int   gx = 0;										// Global tile X
+	int   gz = 0;										// Global tile Z
+	int   sx = 0;										// QGT Y
+	int		sz = 0;										// QGT Z
+	if (strncmp(fn,"DATA/",5) != 0)	return 0;
+	char *fn1 = fn + 5;
+	int nf	= sscanf(fn1,"D%3u%3u/",&gx,&gz);
+	if (nf != 2)		return 0;
+	char *dot = strchr(fn1,'.');
+	if (0 == dot)		return SceneryForGBT(p,gx,gz);
+	nf			= sscanf(dot,".S%1u%1u",&sx,&sz);
+	if (nf != 2)		return SceneryForGBT(p,gx,gz);
+	//--- Compute QGT key ----------------------------------
+	gx = (gx << 1) + sx;						// QGT X index
+	gz = (gz << 1) + sz;						// QGT Z index
+	U_INT	key = QGTKEY(gx,gz);			// QGT key
+	//--- Look in database for loaded file -----------------
+	fn	= p->name;
+	if (LookSceneryInSQl(fn1))		return 0;
+	CSceneryPOD *pod = new CSceneryPOD(key,p->pod->name);
+	AddPodToQGT(pod);
+	SCENE("      ***** ADD QGT(%03d-%03d) SCENERY %s",gx,gz,fn);
+	return 1;
 }
 //-----------------------------------------------------------------
 //	Load the scenery from path
 //-----------------------------------------------------------------
-void CScenerySetDatabase::LoadInFolderTree (const char *path)
+int CSceneryDBM::SceneryForGBT(PFSPODFILE *p,int gx,int gz)
+{	U_INT key					= QGTKEY((gx << 1),(gz << 1));
+	CSceneryPOD *pod	= new CSceneryPOD(key,p->pod->name);
+	AddPodToGBT(pod);
+	SCENE("      ***** ADD GBT(%03d-%03d) SCENERY %s",gx,gz,p->pod->name);
+	return 1;
+}
+//-----------------------------------------------------------------
+//	Load the scenery from path
+//-----------------------------------------------------------------
+void CSceneryDBM::LoadInFolderTree (const char *path)
 {
   // Load SCF files from this folder
-  LoadInFolder (path);
-
+	LookForPOD((char*)path);
   // Recursively load SCF files from subdirectories
   ulDir* dirp = ulOpenDir (path);
   if (dirp != NULL) {
@@ -378,54 +336,122 @@ void CScenerySetDatabase::LoadInFolderTree (const char *path)
 //=============================================================================
 //	Register by QGT key
 //------------------------------------------------------------------------------
-
-void CScenerySetDatabase::Register (U_INT key,char t)
-{	tr	= t;
-	std::map<U_INT,CSceneryPack*>::iterator pk = scene.find(key);
-	if (pk == scene.end())	return;
-	//--- Activate all sceneries in QGT ---------------
- 	(*pk).second->Load(t);
+void CSceneryDBM::Register (U_INT key)
+{	char reg = 1;
+	U_INT gx = (key >> 16);
+	U_INT gz = (key & 0xFFFF);
+	std::map<U_INT,CSceneryPack*>::iterator p1 = sqgt.find(key);
+	if (p1 != sqgt.end())
+	{//--- Activate all sceneries in QGT --------------------
+		if (reg)		{SCENE("QGT (%03d-%03d) REGISTER",gx,gz); reg = 0;}
+		(*p1).second->MountPODs(this);
+	}
+	//--- Look for global tile scenery ----------------------
+	U_INT gbk = key & 0xFFFEFFFE;
+	std::map<U_INT,CSceneryPack*>::iterator p2 = sgbt.find(gbk);
+	if (p2 == sgbt.end())	 return;
+	CSceneryPack *pak = (*p2).second;
+	if (reg)	SCENE("GBT (%03d-%03d) REGISTER",gx,gz);
+	pak->MountPODs(this);
+	return;
+}
+//------------------------------------------------------------------------------
+//	Mount all sceneries
+//------------------------------------------------------------------------------
+void CSceneryDBM::MountAll()
+{	std::map<U_INT,CSceneryPack*>::iterator p1;
+	for (p1 == sqgt.begin(); p1 != sqgt.end(); p1++)
+	{	CSceneryPack *pak = (*p1).second;
+	  U_INT key = pak->key;
+		Register( key);
+	}
 	return;
 }
 //------------------------------------------------------------------------------
 //	Deregister by Key
 //------------------------------------------------------------------------------
-void CScenerySetDatabase::Deregister (U_INT key)
-{	std::map<U_INT,CSceneryPack*>::iterator pk = scene.find(key);
-	if (pk == scene.end())	return;
-	//--- Activate all sceneries in QGT ---------------
-	(*pk).second->Unload();
+void CSceneryDBM::Deregister (U_INT key)
+{	U_INT gx = (key >> 16);
+	U_INT gz = (key & 0xFFFF);
+	int  reg = 1;
+	std::map<U_INT,CSceneryPack*>::iterator p1 = sqgt.find(key);
+	if (p1 != sqgt.end())	
+	{	//--- Activate all sceneries in QGT ---------------
+		if (reg)	{	SCENE("QGT (%03d-%03d) UNREGISTER",gx,gz); reg = 0; }
+		(*p1).second->RemovePODs(this);
+	}
+	//--- Look for global tile scenery ----------------------
+	U_INT gbk = key & 0xFFFEFFFE;
+	std::map<U_INT,CSceneryPack*>::iterator p2 = sgbt.find(gbk);
+	if (p2 == sgbt.end())	return;
+	if (reg)	SCENE("GBT (%03d-%03d) UNREGISTER",gx,gz); 
+	(*p2).second->RemovePODs(this);
 	return;
 }
-
+//------------------------------------------------------------------------------
+//	Check if pod can be mounted
+//	If already mounted, just increment user count
+//------------------------------------------------------------------------------
+void	CSceneryDBM::MountPOD(CSceneryPOD *pod)
+{	char *name = pod->GetName();
+	std::map<std::string,CSceneryPOD *>::iterator it = mount.find(name);
+	if (it != mount.end())		return pod->IncUser();
+	//--- Mount all files in the pod ---------------
+	mount[name] = pod;
+	pod->Mount();
+	return;
+}
+//------------------------------------------------------------------------------
+//	Remove the POD
+//------------------------------------------------------------------------------
+void CSceneryDBM::RemovePOD(CSceneryPOD *pod)
+{ char *name = pod->GetName();
+	std::map<std::string,CSceneryPOD *>::iterator it = mount.find(name);
+	if (it == mount.end())			return;
+	//--- check for users ---------------------------------
+	if (pod->MoreUsers())				return;
+	//--- remove from map and unmount all files -----------
+	mount.erase(name);
+	pod->Remove();
+	return;
+}
 //==============================================================================
 //	Scenery pack:  held all sceneries for a given QGT
 //==============================================================================
 CSceneryPack::CSceneryPack(U_INT k)
 {	key	= k;
+	gx	= (k >> 16);
+	gz  = k & 0xFFFF;
 }
 //------------------------------------------------------------------
 //	Destroy everything
 //------------------------------------------------------------------
 CSceneryPack::~CSceneryPack()
-{	std::vector<CScenerySet*>::iterator ip;
-	for (ip=pack.begin(); ip!=pack.end(); ip++)	delete (*ip);
-	pack.clear();
+{	std::vector<CSceneryPOD*>::iterator ip;
+	for (ip=apod.begin(); ip!=apod.end(); ip++)	delete (*ip);
+	apod.clear();
 }
 //------------------------------------------------------------------
-//	Load all sceneries in this pack
+//	Mount all pods not already mounted
 //------------------------------------------------------------------
-void CSceneryPack::Load(char t)
-{	std::vector<CScenerySet*>::iterator ip;
-  for (ip=pack.begin(); ip!=pack.end(); ip++) (*ip)->Load(t);
+void CSceneryPack::MountPODs(CSceneryDBM *dbm)
+{	std::vector<CSceneryPOD*>::iterator ip;
+  for (ip=apod.begin(); ip!=apod.end(); ip++)
+	{	CSceneryPOD *pod = (*ip);
+		dbm->MountPOD(pod);
+	}
 	return;
 }
+
 //------------------------------------------------------------------
-//	Unload all sceneries
+//	remove all pods found
 //------------------------------------------------------------------
-void CSceneryPack::Unload()
-{	std::vector<CScenerySet*>::iterator ip;
-  for (ip=pack.begin(); ip!=pack.end(); ip++) (*ip)->Unload();
+void CSceneryPack::RemovePODs(CSceneryDBM *dbm)
+{	std::vector<CSceneryPOD*>::iterator ip;
+  for (ip=apod.begin(); ip!=apod.end(); ip++)
+	{	CSceneryPOD *pod = (*ip);
+		dbm->RemovePOD(pod);
+	}
 	return;
 }
 //===================END OF FILE ===============================================================

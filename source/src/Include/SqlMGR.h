@@ -383,14 +383,15 @@ struct ELV_PATCHE;
 #define CLN_ETR_SUP		1						// SUper Tile No
 #define CLN_ETR_DET		2						// Detail Tile No
 #define CLN_ETR_FIL		3						// File name
-#define CLN_ETR_FLG		4						// Flag
-#define CLN_ETR_SUB		5						// Subdivision level
-#define CLN_ETR_USR   6						// User texture indicator
-#define CLN_ETR_WTR		7						// Water flag
-#define CLN_ETR_NIT		8						// Night flag
-#define CLN_ETR_TXN		9						// Texture name
-#define CLN_ETR_NBE	 10						// Number of elevations
-#define CLN_ETR_ELV	 11						// Elevation array
+#define CLN_ETR_POD   4						// POD NAME
+#define CLN_ETR_FLG		5						// Flag
+#define CLN_ETR_SUB		6						// Subdivision level
+#define CLN_ETR_USR   7						// User texture indicator
+#define CLN_ETR_WTR		8						// Water flag
+#define CLN_ETR_NIT		9						// Night flag
+#define CLN_ETR_TXN	 10						// Texture name
+#define CLN_ETR_NBE	 11						// Number of elevations
+#define CLN_ETR_ELV	 12						// Elevation array
 //-----TRN DETAIL TILE --------------------------------------
 #define CLN_TIL_SUP   1						// Super Tile No
 #define CLN_TIL_DET		2						// Detail Tile
@@ -416,8 +417,10 @@ struct ELV_PATCHE;
 //  Define a database
 //=====================================================================================
 struct SQL_DB {
+		int				vers;								// Minimum version
 		int				mode;								// Open mode
-    char      path[MAX_PATH];     // File name
+    char      path[MAX_PATH];     // path name
+		char      name[64];						// File name
     sqlite3  *sqlOB;              // Object database
     char      exp;                // Export indicator
     char      opn;                // Open indicator
@@ -430,6 +433,7 @@ struct SQL_DB {
 			exp		= 0;
 			opn		= 0;
 			use		= 0;
+			vers	= 0;
 		}
 		//----------------------------------------------
 };
@@ -475,6 +479,8 @@ protected:
 	char			rfu;													// Reserved
 	U_INT			count;
 	C_QGT			*qgt;
+	//--- Export flag -------------------------------------------------
+	char       expf;
 	//------Attributes ------------------------------------------------
 	sqlite3_stmt *stm;
 	C_STile      *sup;
@@ -505,7 +511,8 @@ public:
   int           Open(SQL_DB &db);
   void          WarnE(SQL_DB &db);
   void          Warn1(SQL_DB &db);
-  //-----------------------------------------------------------------
+	int						ReadVersion(SQL_DB &db);
+	//-----------------------------------------------------------------
   sqlite3_stmt *CompileREQ(char *req,SQL_DB &db);
   void          Abort(SQL_DB &db);
   //---Elevation management -----------------------------------------
@@ -515,6 +522,8 @@ public:
   void          DeleteElvDetail(U_INT key);
   void          DeleteElvRegion(U_INT key);
   void          DeleteElevation(U_INT key);
+	//-----------------------------------------------------------------
+	inline bool   Exporting()		{return (expf != 0);}
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD
@@ -602,10 +611,11 @@ public:
   int      WriteElevationBlob  (REGION_REC &reg);
   void     WriteElevationRegion(REGION_REC &reg);
   void     WriteElevationRecord(REGION_REC &reg);
-	void		 WriteElevationTRN(C_STile &sup,char *fn);
+	void		 WriteElevationTRN(C_STile &sup,char *fn,U_INT row);
 	void		 WriteElevationDET(U_INT key,TRN_HDTL &hdl,char *fn);
   void     ELVtransaction();
   void     ELVcommit();
+	int      WriteTRNname(char *fn);
   //----WRITING FOR COAST DATA ---------------------------------------------
   void     SEAtransaction();
   void     SEAcommit();
@@ -634,7 +644,8 @@ public:
   void    WriteWOBJ(U_INT qgt,CWobj *obj);
   void    Write3DLight(CWobj *obj,C3DLight *lit);
   void    WriteLightsFrom(CWobj *obj);
-  bool    CheckOBJ(CWobj *obj);
+  bool    CheckWOBJ(CWobj *obj);
+	int 		SearchWOBJ(char *fn);
   void    ReadWOBJ(C_QGT *qgt);
   void    ReadObjLite(CWobj *obj,int xk,int yk);
   void    DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj);
@@ -644,6 +655,7 @@ public:
   GLubyte *GetGenTexture(TEXT_INFO &inf);
   GLubyte *GetAnyTexture(TEXT_INFO &inf);
   //--- SPECIFIC TRN ELEVATIONS -----------------------------------------
+	bool	FileInELV(char *fn);
 	int		GetTRNElevations(C_QGT *qgt);
 	int		DecodeTRNrow();
 	int		GetTILElevations(C_QGT *qgt);

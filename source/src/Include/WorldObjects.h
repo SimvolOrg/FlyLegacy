@@ -653,6 +653,8 @@ public:
   float        AileronTrim         (void);      ///< Get aileron trim position
   float        ElevatorTrim        (void);      ///< Get elevator trim position
   float        RudderTrim          (void);      ///< Get rudder trim position
+	//--------------------------------------------------------------------------
+	void				 GroundAt(double alt);
 	//--- ACCES TO SUBSYSTEMS --------------------------------------------------
 	inline    void				 VirtualPilot()	{amp->vpil->Start();}
   //------Message interface --------------------------------------------------

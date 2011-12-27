@@ -37,6 +37,7 @@ class CAirport;
 class CPaveQ;
 class CPolyShop;
 class C_TRN;
+class SqlMGR;
 //============================================================================
 #define EXP_MSG1 0
 #define EXP_INIT 1
@@ -57,6 +58,8 @@ class C_TRN;
 //============================================================================
 class CExport {
   typedef void(CExport::*partFN)(M3D_PART_INFO &pif);  // Part function
+	SqlMGR *sqm;
+	U_INT   rowid;
   //-----ATTRIBUTES ---------------------------------------------
   char Mode;
   TEXT_INFO  inf;                         // Texture info
@@ -71,6 +74,7 @@ class CExport {
   char wob;                               // World Objects
   char Sep[8];                            // Separator
 	char edt[PATH_MAX];
+	char *Pod;															// POD file
   //----3D Model control -----------------------------------------
   char *mName;                            // Model Name
   char  mStat;                            // Export state
@@ -145,8 +149,6 @@ public:
   //----3D MODELS ---------------------------------------------
   void  InitModelPosition();
   void  DrawModel();
-  void  ExportBIN();
-  void  ExportSMF();
   void  Export3Dmodels();
   bool  Prepare3Dmodel(char *fn,Tag type);
   void  WriteTheModel();
@@ -182,11 +184,14 @@ public:
   //-----------------------------------------------------------
   int   TimeSlice(float dT);
   void  Keyboard(U_INT key,U_INT mod);
-  //----3D OBJECTS --------------------------------------------
-  void  ExportWOBJ();
+  //----Scenery OBJECTS --------------------------------------------
+  void  ExportSceneryOBJ();
+	void	MountScenery();
   void  WriteQgtOBJ();
+	void	CheckSceneryFiles();
+	void	CheckThisFile(char *fn);
 	//--- SCENERY FILES (TRN) -----------------------------------
-	void	ExportTRNSceneries();
+	void	ExportTRNfiles();
 	void	ExportTRN(char *fn);
 	void	ExportSUP(C_STile *asp);
 };

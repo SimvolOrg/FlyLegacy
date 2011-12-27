@@ -139,7 +139,7 @@ void CFuiManager::Init (void)
   note1 = new CFuiTextPopup;
   note1->SetPosition (12, globals->cScreen->Height - NOTE_OFFSET);
   
-  noteb  = new CFuiTextPopup;
+  notex  = new CFuiTextPopup;
   notec  = new CFuiTextPopup;
   help   = new CFuiTextPopup;
   //---------------------------------------------------
@@ -147,6 +147,10 @@ void CFuiManager::Init (void)
   notec->SetText(" *** AIRCRAFT DAMAGED ***");
   notec->SetPosition (600, 40);
   //---------------------------------------------------
+	notex->RedBack();
+	notex->SetText("You are configured for EXPORT of data in Database");
+	notex->SetPosition (200,60);
+	//---------------------------------------------------
   tClick  = 0;
   //--- Assign one texture object ---------------
 	glGenTextures(1,&xOBJ);
@@ -189,7 +193,7 @@ void CFuiManager::Cleanup (void)
   SAFE_DELETE (slew);
   SAFE_DELETE (notep);
   SAFE_DELETE (note1);
-  SAFE_DELETE (noteb);
+  SAFE_DELETE (notex);
   SAFE_DELETE (notec);
   SAFE_DELETE (help);
 }
@@ -638,9 +642,10 @@ void CFuiManager::Draw ()
   //--- Draw user messages -------------------------------
 	if (notep->IsActive())		notep->Draw();
   if (note1->IsActive())    note1->Draw();
-  if (noteb->IsActive())    noteb->Draw();
   if (notec->IsActive())    notec->DrawIt();
   if (help->IsActive())     help->Draw();
+	//------------------------------------------------------
+	if (globals->sqm->Exporting())	notex->DrawIt();
   //--- Draw Radio communications ------------------------
   CFuiRadioBand *rdb = globals->rdb;
   if (rdb)  rdb->Draw();
@@ -726,21 +731,6 @@ void CFuiManager::DrawHelp (float time,int x, int y)
   help->MoveTo(x,y);
   help->SetActive(time);
   return;
-}
-//------------------------------------------------------------------------------
-/// Display a state on screen
-//------------------------------------------------------------------------------
-void CFuiManager::DrawBrake(char *text, float time,int x, int y)
-{ if (0 == *text) return;
-  CPanel* pan = globals->pit->GetCurrentPanel();
-  if (0 == pan) return;
-  int     sh  = globals->cScreen->Height;
-  int     ph  = pan->GetHeight();
-  x -= pan->GetXOffset();
-  y  = sh -  pan->GetYOffset() - ph + y ;
-  noteb->MoveTo(x,y);
-  noteb->SetText (text);
-  noteb->SetActive(time);
 }
 //------------------------------------------------------------------------------
 /// Display a error window

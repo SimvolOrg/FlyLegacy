@@ -1941,7 +1941,7 @@ protected:
   CFuiTextPopup                   *slew;
   CFuiTextPopup                   *notep;					// Virtual pilot
   CFuiTextPopup                   *note1;         // User note
-  CFuiTextPopup                   *noteb;         // Brake states
+  CFuiTextPopup                   *notex;         // Export state
   CFuiTextPopup                   *notec;         // Crash windows
   CFuiTextPopup                   *help;          // For gauge help
   //-------------------------------------------------------------------------
@@ -1986,7 +1986,6 @@ public:
   void    DrawNoticeToUser  (char *text,float time);
 	void		PilotToUser();
   void    DrawHelp          (float time,int x, int y);
-  void    DrawBrake         (char *text, float time,int x, int y);
   void    ScreenResize();
   //--------------------------------------------------------------------------
   // Mouse tracking methods

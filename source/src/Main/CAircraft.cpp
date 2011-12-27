@@ -1064,7 +1064,14 @@ float CAirplane::Flaps (void)
  // if (p) fv = p->Val( );
   return fv;
 }
-
+//-----------------------------------------------------------------------------
+//	Check plane above ground
+//-----------------------------------------------------------------------------
+void CAirplane::GroundAt(double alt)
+{	if (geop.alt > alt)			return;
+	SetAltitude(alt);
+	return;
+}
 
 void CAirplane::Print (FILE *f)
 {

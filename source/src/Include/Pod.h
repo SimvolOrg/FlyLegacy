@@ -112,14 +112,15 @@ typedef struct {
   int         refs;           // Number of active references to the POD
 } PFSPOD;
 
-//
+//==================================================================================
 // The following structure summarizes information about a single file within
 //   a POD archive.  Instances of this struct are contained in the fileList
 //   member of the PFSPOD struct.  The (relative) filename, the starting offset
 //   of the file within the pod, its size in bytes and its mount priority are
 //   recorded.
-//
-typedef struct {
+//==================================================================================
+struct PFSPODFILE {
+	unsigned int	share;												// Sharing usage
   PFSPOD*       pod;                          // Reference to containing POD
   char          name[POD_FILENAME_LENGTH+1];  // Name of file within the POD
   unsigned int  offset;                       // Starting offset within the POD
@@ -127,19 +128,24 @@ typedef struct {
   unsigned int  timestamp;                    // Timestamp
   unsigned int  checksum;                     // Checksum
   unsigned int  priority;                     // Mount priority
-} PFSPODFILE;
+	//----------------------------------------------------------------------
+	PFSPODFILE::PFSPODFILE()	{share = 0; }
+};
 
-//
+//===================================================================================
 // The following data structure is the top-level representation of a pod filesystem.
 //   Applications must first create an instance of this struct and pass it to
 //   pinit() for initialization, specifying the policy of whether popen() should
 //   look first in PODs or on disk when opening a file, and the root folder for
 //   the filesystem.
-//
+//	Note:  Mode is used for mouting/unmounting  POD files from main thread and
+//				should not be used when working in other thread
+//===================================================================================
 typedef struct {
-  pthread_mutex_t	pfsMux;                 // JS: protection Mutex for multithread
+	char					mode;											// Shared mode
+	unsigned int  ticket;										// Event number
+	pthread_mutex_t	mux;										// JS: protection Mutex for multithread
   bool      searchPodFilesFirst;          // Whether to open from PODs or disk first
-  char      tlg;                          // Log Type
   CLogFile *log;                          // Optional activity logging
   std::map<std::string,PFSPOD*> podList;  // Map of pods in the filesystem
 
@@ -151,17 +157,11 @@ typedef struct {
   std::map<std::string,std::string>       diskFileList;
 
   // Master set of filenames in the POD filesystem
-  std::set<std::string>                   masterFileList;
+	std::map<std::string,PFSPODFILE*>				masterFileList;
   // Members to support pfindfirst() and pfindnext() methods
-  std::set<std::string>::iterator         iterFind;
+	std::map<std::string,PFSPODFILE*>::iterator iterFind;
   char                                    patternFind[POD_FILENAME_LENGTH+1];
   
-#ifdef POD_PERFORMANCE_METRICS
-  // Performance statistics
-  int            popenSuccess, popenFailure;
-  LARGE_INTEGER  popenSuccessTotalTime;
-  LARGE_INTEGER  popenFailureTotalTime;
-#endif
 } PFS;
 
 //=====================================================================================
@@ -198,6 +198,11 @@ public:
 //================================================================================================
 typedef int (*FileCB)(char *fn,void *upm);
 void	ApplyToFiles(char *pat, FileCB cb, void *upm);
+//================================================================================================
+//	Function prototype for file processing in a POD file
+//================================================================================================
+typedef int (*PodFileCB)(PFS *pfs, PFSPODFILE *p);
+int paddpodfile (PFS *pfs, PFSPODFILE *p);
 //=====================================================================================
 // Initialize a new pod filesystem.  The application owns the pod filesystem
 //   represented by the PFS struct.  It must be statically or dynamically
@@ -225,13 +230,10 @@ void    pshutdown (PFS* pPfs);
 // Add a new pod to the existing pod filesystem.  The pod filename is relative
 //   to the root folder for the filesystem
 //
-void paddpod (PFS *pPfs, const char* filename);
-
-//
-// Remove the specified pod from the filesystem.  The pod filename is relative
-//   to the root folder for the filesystem
-//
-void premovepod (PFS *pPfs, const char* filename);
+void	scanpod(PFS *pPfs, const char* filename,PodFileCB cb);
+unsigned int	GetTicket(PFS *pfs);
+unsigned int	paddpod(PFS *p, const char* filename);
+unsigned int  premovepod (PFS *p, const char* filename);
 
 //------------------------------------------------------------------------------
 // Add a new folder to an existing pod filesystem.  The folder name is relative
@@ -239,7 +241,7 @@ void premovepod (PFS *pPfs, const char* filename);
 //   "C:\Fly! II" and the folder argument was "Aircraft", then all pods in the
 //   "C:\Fly! II\Aircraft" folder would be mounted in the filesystem.
 //-----------------------------------------------------------------------------
-void paddpodfolder (PFS* pPfs, const char* folder, bool addSubdirs = false);
+void paddpodfolder (PFS* pPfs, const char* folder, bool addSubdirs = false,char sh = 0);
 
 //----------------------------------------------------------------------------
 // Add a new folder to an existing pod filesystem
@@ -259,6 +261,7 @@ void pRemDisk(PFS *pfs,char *key,char *fn);
 //   is done.
 //----------------------------------------------------------------------------
 bool    pexists (PFS* pPfs, const char* filename);
+bool LookOnlyInPOD (PFS *pfs, char* filename, char **pn);
 
 /*!
  * Find the first filename in the POD filesystem matching the pattern string
