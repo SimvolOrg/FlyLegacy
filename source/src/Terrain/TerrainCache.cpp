@@ -2086,7 +2086,6 @@ int C_QGT::StepHDT()
   if(tr)  TRACE("TCM: -- Time: %04.2f QGT %03d-%03d Creates %05d vertices.  (TRN file)",
           tcm->Time(),xKey,zKey,nbc);
   //----Next is check for elevation patches --------------
-	char db = globals->elvDB;
 	SetStep(TC_QT_PCH);								// Check for patche
   return 1;
 }

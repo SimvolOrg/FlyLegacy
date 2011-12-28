@@ -524,6 +524,7 @@ public:
   void          DeleteElevation(U_INT key);
 	//-----------------------------------------------------------------
 	inline bool   Exporting()		{return (expf != 0);}
+  inline char   UseELV()			{return elvDBE.use;}
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD
@@ -611,8 +612,8 @@ public:
   int      WriteElevationBlob  (REGION_REC &reg);
   void     WriteElevationRegion(REGION_REC &reg);
   void     WriteElevationRecord(REGION_REC &reg);
-	void		 WriteElevationTRN(C_STile &sup,char *fn,U_INT row);
-	void		 WriteElevationDET(U_INT key,TRN_HDTL &hdl,char *fn);
+	void		 WriteElevationTRN(C_STile &sup,U_INT row);
+	void		 WriteElevationDET(U_INT key,TRN_HDTL &hdl,int row);
   void     ELVtransaction();
   void     ELVcommit();
 	int      WriteTRNname(char *fn);

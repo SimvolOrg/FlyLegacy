@@ -39,6 +39,8 @@ class CPolyShop;
 class C_TRN;
 class SqlMGR;
 //============================================================================
+//	Export M3D models
+//============================================================================
 #define EXP_MSG1 0
 #define EXP_INIT 1
 #define EXP_FBIN 2
@@ -50,18 +52,31 @@ class SqlMGR;
 #define EXP_END  8
 #define EXP_OUT  9
 #define EXP_RLAX 10
+//============================================================================
+//	Export TRN files
+//============================================================================
+#define EXP_TRN_INIT  1	
+#define EXP_TRN_MOUNT	2										// Initial mounting sceneries
+#define EXP_TRN_FFILE 3										// First file
+#define EXP_TRN_NFILE 4										// Next file
+#define EXP_TRN_WRITE 5										// Export one file
+#define EXP_TRN_EXIT	6
 //---------------------------------------------------------------
-#define EXP_MNOT 0
-#define EXP_MW3D 1
+#define EXP_MNOT	0
+#define EXP_MW3D	1												// Export M3D models
+#define EXP_TRNF	2												// Export TRN files
 //============================================================================
 //  Class to export DATA for SQL Database
 //============================================================================
 class CExport {
   typedef void(CExport::*partFN)(M3D_PART_INFO &pif);  // Part function
+	PFS    *pfs;
 	SqlMGR *sqm;
 	U_INT   rowid;
   //-----ATTRIBUTES ---------------------------------------------
   char Mode;
+	int  State;															// State routine
+	char Clear;															// Clear request
   TEXT_INFO  inf;                         // Texture info
   M3D_PART_INFO pif;                      // Part info
   //-------------------------------------------------------------
@@ -72,12 +87,12 @@ class CExport {
   char m3d;                               // Export model3D
   char gtx;                               // Generic texture
   char wob;                               // World Objects
+	char trn;																// Export TRN
   char Sep[8];                            // Separator
 	char edt[PATH_MAX];
 	char *Pod;															// POD file
   //----3D Model control -----------------------------------------
   char *mName;                            // Model Name
-  char  mStat;                            // Export state
   char  rStat;                            // State to restart
   char  mRed;                             // Reduction ON
   U_INT mCnt;                             // Model count
@@ -85,7 +100,12 @@ class CExport {
   U_INT minp;                             // Minimum to keep
   CPolyShop *Polys;                       // PolyShop 
   C3Dmodel  *Mod;                         // Model
-  //----Generic parameters -----------------------------------------
+	//--- TRN control ----------------------------------------------
+	char eof;																// End of file
+	char *pod;
+	char *fName;														// File name
+	char  podN[PATH_MAX];										// Pod name
+  //----Generic parameters ---------------------------------------
 	U_INT	count;
 	U_INT qKey;															// QGT key
   U_INT bx;                               // Base QGT X
@@ -109,7 +129,7 @@ class CExport {
   U_INT noRec;                            // Record number
   C_QTR *qtr;                             // QTR file
   int    qNo;                             // QTR index
-	C_TRN	*trn;															// TRN file
+	C_TRN	*ftrn;														// TRN file
   //---Resources to free after usage ----------------------------
   CCamera    *Cam;                        // Camera
   //-------------------------------------------------------------
@@ -150,7 +170,7 @@ public:
   void  InitModelPosition();
   void  DrawModel();
   void  Export3Dmodels();
-  bool  Prepare3Dmodel(char *fn,Tag type);
+  bool  Prepare3Dmodel(char *fn,char opt);
   void  WriteTheModel();
   void  OneM3DPart(M3D_PART_INFO &pif);
   void  Export3DMlodQ(char * name, int n);
@@ -191,6 +211,13 @@ public:
 	void	CheckSceneryFiles();
 	void	CheckThisFile(char *fn);
 	//--- SCENERY FILES (TRN) -----------------------------------
+	int		ExecuteTRN();
+	void	ExportAllTRNs();
+	void	InitTRNmsg();
+	int		BuildTRNname(char *fn);
+	int 	GetFirstTRN();
+	int		GetNextTRN();
+	void	WriteTRN();
 	void	ExportTRNfiles();
 	void	ExportTRN(char *fn);
 	void	ExportSUP(C_STile *asp);

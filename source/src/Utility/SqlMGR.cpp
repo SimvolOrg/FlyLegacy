@@ -190,7 +190,7 @@ void SqlOBJ::Init()
   wptDBE.dbn = "Waypoints";
 
   //---Elevation database ------------------------------------------
-	elvDBE.vers	= 1;																// Minimum version
+	elvDBE.vers	= 2;																// Minimum version
   strcpy(elvDBE.path,"SQL");
   GetIniString("SQL","ELVDB",elvDBE.path,lgr);
 	strcpy(elvDBE.name,"ELV*.db");
@@ -289,10 +289,9 @@ void SqlOBJ::Init()
   //---------Check for export TRN files ------------------
 	exp = 0;
   GetIniVar("SQL","ExpTRN",&exp);
+	if (exp)	elvDBE.mgr = SQL_MGR;
   texDBE.exp |= exp;
 	elvDBE.exp |= exp;
-	if (exp) texDBE.mgr = SQL_MGR;
-	if (exp) elvDBE.mgr = SQL_MGR;
 	trn	= exp;
 	expf  |= exp;
   return;
@@ -1684,7 +1683,7 @@ int SqlMGR::WriteTRNname(char *fn)
 //==============================================================================
 //  Insert Elevation record
 //==============================================================================
-void SqlMGR::WriteElevationTRN(C_STile &sup,char *fn,U_INT row)
+void SqlMGR::WriteElevationTRN(C_STile &sup,U_INT row)
 { int  rep = 0;
   char txn[TEX_NAME_DIM*16 + 2];
   char *rq =  "INSERT INTO TRN (qgt,sup,det,file,npod,spt,sub,user,water,nite,txn,nbe,elv) "  
@@ -1746,7 +1745,7 @@ void SqlMGR::WriteElevationTRN(C_STile &sup,char *fn,U_INT row)
 //  Insert Elevation record
 //	NOTE: parameter txn (?10) is skipped
 //==============================================================================
-void SqlMGR::WriteElevationDET(U_INT key,TRN_HDTL &hdl,char *fn)
+void SqlMGR::WriteElevationDET(U_INT key,TRN_HDTL &hdl,int row)
 { int  rep = 0;  
   char *rq =  "INSERT INTO TILE (qgt,sup,det,file,flag,sub,nbe,elv) "  
               "VALUES(?1,?2,?3,?4,?5,?6,?7,?8);*";
@@ -1761,7 +1760,7 @@ void SqlMGR::WriteElevationDET(U_INT key,TRN_HDTL &hdl,char *fn)
   rep = sqlite3_bind_int(stm, 3, hdl.GetTile());
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Origin file -----------------------------------
-  rep = sqlite3_bind_text(stm,4,fn,-1,SQLITE_TRANSIENT);
+  rep = sqlite3_bind_int(stm,4,row);
   if (rep != SQLITE_OK) Abort(elvDBE);
 	//--- Detail elevation flag -------------------------
   rep = sqlite3_bind_int(stm, 5,ELV_DETAIL);

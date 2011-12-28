@@ -920,6 +920,7 @@ void InitApplication (void)
   //   dependent on INI settings and/or POD filesystem
   globals->kbd = new CKeyMap();
   globals->slw = new CSlewManager();
+	globals->exm = new CExport();
   //---Latitude tables for Globe tiles and QGTs --------
   InitGlobeTileTable ();
   //-- Initialize singletons----------------------------
@@ -1440,7 +1441,7 @@ int main (int argc, char **argv)
   globals->mag  = 0;                          // Magnetic Model
   globals->cld  = 0;                          // Cloud system
   globals->slw  = 0;                          // Slew manager
-  globals->exm  = new CExport();              // Export manager
+  globals->exm  = 0;													// Export manager
   globals->imp  = new CImport();              // Import manager
   globals->atm  = 0;                          // Atmosphere
   //---Aircraft objects -----------------------------------------------

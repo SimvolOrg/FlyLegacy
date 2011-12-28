@@ -360,11 +360,22 @@ void CSceneryDBM::Register (U_INT key)
 //------------------------------------------------------------------------------
 void CSceneryDBM::MountAll()
 {	std::map<U_INT,CSceneryPack*>::iterator p1;
-	for (p1 == sqgt.begin(); p1 != sqgt.end(); p1++)
+	for (p1 = sqgt.begin(); p1 != sqgt.end(); p1++)
 	{	CSceneryPack *pak = (*p1).second;
-	  U_INT key = pak->key;
-		Register( key);
+	  pak->MountPODs(this);
+		U_INT gx	= pak->gx;
+		U_INT gz  = pak->gz;
+		SCENE("SCENERY MOUNTED for QGT (%03d-%03d)",gx,gz);
 	}
+	//--------------------------------------------------
+	for (p1 = sgbt.begin(); p1 != sgbt.end(); p1++)
+	{ CSceneryPack *pak = (*p1).second;
+	  pak->MountPODs(this);
+		U_INT gx	= pak->gx;
+		U_INT gz  = pak->gz;
+		SCENE("SCENERY MOUNTED for GBT (%03d-%03d)",gx,gz);
+	}
+
 	return;
 }
 //------------------------------------------------------------------------------

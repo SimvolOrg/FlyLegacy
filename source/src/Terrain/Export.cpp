@@ -327,7 +327,9 @@ CExport::CExport()
   strcpy(Sep,", ");                     // Default separator for SQLITE
   noRec   = 0;                          // Record
   GetIniVar("SQL","ExpGEN",&opt);
-  gen = opt;
+  gen		= opt;
+	sqm		=  globals->sqm;
+	pfs		= &globals->pfs;	
   //------------------------------------------------------------
   opt = 0;
   GetIniVar("SQL","ExpELV",&opt);
@@ -357,8 +359,12 @@ CExport::CExport()
   GetIniVar("SQL","ExpOBJ",&opt);
   wob = opt;
   //--------------------------------------------------------------
+  opt = 0;
+  GetIniVar("SQL","ExpTRN",&opt);
+  trn = opt;
+  //--------------------------------------------------------------
   qtr = 0;
-	trn	= 0;
+	ftrn	= 0;
   //----Load a camera for 3D object export -----------------------
   Cam = new CCameraSpot();
 }
@@ -914,7 +920,7 @@ void CExport::Export3Dmodels()
 { int red = 0;
   if (0 == m3d)       return;
   Mode  = EXP_MW3D;
-  mStat = EXP_MSG1;
+  State = EXP_MSG1;
   mName = 0;
   mRed  = 0;
   mCnt  = 0;
@@ -941,10 +947,12 @@ void CExport::InitModelPosition()
   globals->dang = ori;
   return;
 }
+
 //-----------------------------------------------------------------------------------------
-//  Model preparation
+//  Model preparation:
+//	 Build a model and prepare to compute the 3 LOD details models
 //-----------------------------------------------------------------------------------------
-bool CExport::Prepare3Dmodel(char *fn,Tag type)
+bool CExport::Prepare3Dmodel(char *fn, char opt)
 { char tx[MAX_PATH];
   char *op   = (mRed)?("CRUNCHING"):("STORING");
   char *slh  = strchr(fn,'/');
@@ -965,7 +973,7 @@ bool CExport::Prepare3Dmodel(char *fn,Tag type)
   face = Polys->GetNbFaces();
   sprintf(tx,"%s No %05d (%05d triangles):   %s",op,mCnt,face,mName);
   globals->fui->DrawNoticeToUser(tx,200);
-  DrawModel();
+	if (opt)  DrawModel();
   return true;
 }
 //-----------------------------------------------------------------------------------------
@@ -1093,72 +1101,65 @@ void CExport::CloseSceneries()
   return;
 }
 //-----------------------------------------------------------------------------------------
-//  Dispatch export action
+//  Dispatch export M3D action
 //-----------------------------------------------------------------------------------------
 int  CExport::ExecuteW3D()
 { char fn[PATH_MAX];
   char *mte = "FREEING SCENERIES";
   char *mrx = "PAUSE. Type any key to continue. To stop type s";
-  switch(mStat) {
+	Clear			= 0;
+  switch(State) {
 		//--- Intro message ------------------
 		case EXP_MSG1:
 			M3DMsgIntro();
-			mStat = EXP_INIT;
-			return 0;
+			return EXP_INIT;					
 		//--- Collect all sceneries ----------
 		case EXP_INIT:
 			ExportAllSceneries();
-			mStat = EXP_FBIN;
-			return 1;
+			Clear = 1;
+			return EXP_FBIN;
 		//--- Init for BIN files ----------
 		case EXP_FBIN:
 			sprintf(fn,"MODELS/*.BIN");
 			mName = (char*)pfindfirst (&globals->pfs,fn);
-			mStat = EXP_NBIN;
-			return 1;
+			Clear = 1;
+			return EXP_NBIN;
 		//--- Prepare one BIN file ------------
 		case EXP_NBIN:
-			if (0 == mName) {mStat = EXP_FSMF; return 1;} 
-			if (Prepare3Dmodel(mName,'bin_'))
-			{     mStat = EXP_WBIN;
-						return 0;
-			}
-			else  mStat = EXP_NBIN;
+			if (0 == mName)		{Clear = 1;		return EXP_FSMF;} 
+			if (Prepare3Dmodel(mName,1))		return EXP_WBIN;
 			mName = (char*)pfindnext (&globals->pfs);
-			return 1;
+			Clear = 1;
+			return EXP_NBIN;
 		//--- Write the bin model --------------
 		case EXP_WBIN:
 			WriteTheModel();
 			mName = (char*)pfindnext (&globals->pfs);
-			mStat = EXP_NBIN;
-			return 1;
+			Clear = 1;
+			return EXP_NBIN;
 		//--- Init for SMF files --------------
 		case EXP_FSMF:
 			sprintf(fn,"MODELS/*.SMF");
 			mName = (char*)pfindfirst (&globals->pfs,fn);
-			mStat = EXP_NSMF;
-			return 0;
+			return EXP_NSMF;
 		//--- Prepare one SMF file -------------
 		case EXP_NSMF:
-			if (0 == mName) {mStat = EXP_END; return 1;} 
-			if (Prepare3Dmodel(mName,'smf_'))
-			{     mStat = EXP_WSMF;
-						return 0;
-			 }
-			else  mStat = EXP_NSMF;
+			if (0 == mName)		{Clear = 1; return EXP_END;} 
+			if (Prepare3Dmodel(mName,1))	return EXP_WSMF;
 			mName = (char*)pfindnext (&globals->pfs);
-			return 1;
+			Clear = 1;
+			return EXP_NSMF;
 		//--- Write one SMF file --------------
 		case EXP_WSMF:
 			WriteTheModel();
 			mName = (char*)pfindnext (&globals->pfs);
-			mStat = EXP_NSMF;
-			return 1;
+			Clear = 1;
+			return EXP_NSMF;
 		//--- End of process ------------------
 		case EXP_END:
 			CloseSceneries();
-			mStat = EXP_OUT;
-			return 1;
+			Clear = 1;
+			return EXP_OUT;
 		//---- Set pause mode -----------------
 		case EXP_RLAX:
 			globals->fui->DrawNoticeToUser(mrx,10);
@@ -1166,17 +1167,18 @@ int  CExport::ExecuteW3D()
   }       //END OF SWITCH
   //------- STOP SIMU ------------------
 	globals->appState = APP_EXIT_SCREEN;
-  return 1;
+	Clear = 1;
+  return 0;
   }
 //------------------------------------------------------------------------------------
 //  Keyboard intercept
 //------------------------------------------------------------------------------------
 void CExport::KeyW3D(U_INT key,U_INT mod)
-{ if (mStat != EXP_RLAX) {rStat = mStat; mStat = EXP_RLAX;          return;}
+{ if (State != EXP_RLAX) {rStat = State; State = EXP_RLAX;          return;}
   //--- skey will stop the processus --------------------------------
   if (0x73 == key)       {globals->appState = APP_EXIT;             return;}
   //----Resume the processus ----------------------------------------
-  mStat = rStat;
+  State = rStat;
   return;
 }
 //=========================================================================================
@@ -1563,10 +1565,10 @@ void CExport::ScanDirectory(int x, int z)
 //  Export Time Slice
 //=========================================================================================
 int CExport::TimeSlice(float dT)
-{ int ret = 1;
-  if (EXP_MW3D == Mode)  ret = ExecuteW3D();
+{ if (EXP_MW3D == Mode)		State = ExecuteW3D();
+  if (EXP_TRNF == Mode)		State =	ExecuteTRN();
   globals->fui->DrawOnlyNotices();
-  return ret;
+  return Clear;
 }
 //=========================================================================================
 //  Export Keyboard
@@ -1667,6 +1669,128 @@ void CExport::CheckThisFile(char *fn)
 //---------------------------------------------------------------------------
 //  Export all TRN files
 //---------------------------------------------------------------------------
+void CExport::ExportAllTRNs()
+{	if (0 == trn)       return;
+	if (!sqm->SQLelv())	return;
+  Mode  = EXP_TRNF;
+  State = EXP_TRN_INIT;
+  fName = 0;
+  globals->appState = APP_EXPORT;
+	globals->fui->SetNoticeFont(&globals->fonts.ftmono20);
+	mCnt	= 0;
+	eof		= 0;
+	SCENE("================ START EXPORT =================");
+	return;
+}
+//-----------------------------------------------------------------------------------------
+//  Initial step
+//-----------------------------------------------------------------------------------------
+void CExport::InitTRNmsg()
+{	char *msg = "MOUNTING SCENERY FILES ";
+	globals->fui->DrawNoticeToUser(msg,200);
+	Clear = 1;
+	return;
+}
+//-----------------------------------------------------------------------------------------
+//  Dispatch export TRN action
+//-----------------------------------------------------------------------------------------
+int  CExport::ExecuteTRN()
+{ Clear = 0;
+	switch (State)	{
+		//--- Initial state -----------------------
+		case EXP_TRN_INIT:
+			  InitTRNmsg();
+				return EXP_TRN_MOUNT;
+		//--- Mount scenry files ------------------
+		case EXP_TRN_MOUNT:
+				CSceneryDBM::Instance().MountAll();
+				return EXP_TRN_FFILE;
+		//--- Get first file ----------------------
+		case EXP_TRN_FFILE:
+			  GetFirstTRN();
+				if (eof)		return EXP_TRN_EXIT;
+				else				return EXP_TRN_WRITE;
+		//--- Get next file -----------------------
+		case EXP_TRN_NFILE:
+				GetNextTRN();
+				if (eof)		return EXP_TRN_EXIT;
+				else				return EXP_TRN_WRITE;
+		//--- Write a file ------------------------
+		case EXP_TRN_WRITE:
+				WriteTRN();
+				Clear = 1;
+			  return EXP_TRN_NFILE;
+	}
+	globals->appState = APP_EXIT_SCREEN;
+	return 0;
+}
+//-----------------------------------------------------------------------------------------
+//  Build TRN full name
+//-----------------------------------------------------------------------------------------
+int CExport::BuildTRNname(char *fn)
+{	char *scn = "SCENERY/";
+	if (0 == fn)	return 0;
+	int nf  =  sscanf(fn,"DATA/D%3d%3d/G%1d%1d.TRN",&gx,&gz,&bx,&bz);
+	if (nf != 4)	return 0;
+	//--- Compute QGT key -------------------------------------
+	qx = (gx << 1) + bx;
+	qz = (gz << 1) + bz;
+	qKey  = QGTKEY(qx, qz);
+	//--- build pod name --------------------------------------
+	char *dbn = fn + strlen("DATA/");
+	char *dbp = strstr(pod,scn);
+	if (0 == dbp)	return 0;
+	dbp += strlen(scn);
+	_snprintf(podN,(PATH_MAX-1),"(%s)-(%s)",dbn,dbp);
+	fName	= fn;
+	//---------------------------------------------------------
+	char msg[1024];
+	_snprintf(msg,1023,"PROCESS %s",podN);
+	globals->fui->DrawNoticeToUser(msg,200);
+	return 1;
+}
+//-----------------------------------------------------------------------------------------
+//  Find the first file
+//-----------------------------------------------------------------------------------------
+int CExport::GetFirstTRN()
+{ char *fp	= "DATA/D??????/G??.TRN";
+	char *fn	= pfindfirst(pfs,fp, &pod);
+	fName			= 0;
+	if (0 == fn)	eof = 1;
+	BuildTRNname(fn);
+	return EXP_TRN_WRITE;
+}
+
+//-----------------------------------------------------------------------------------------
+//  Find the next file
+//-----------------------------------------------------------------------------------------
+int CExport::GetNextTRN()
+{ char *fn  = pfindnext(pfs,&pod);
+	fName			= 0;
+	if (0 == fn)	eof = 1;
+	BuildTRNname(fn);
+	return EXP_TRN_WRITE;
+}
+
+//-----------------------------------------------------------------------------------------
+//  Find the first file
+//-----------------------------------------------------------------------------------------
+void  CExport::WriteTRN()
+{	if (0 == fName)		return;
+	//--- check if file already in data base
+	bool in		= sqm->FileInELV(podN);
+	if (in)					 return;
+	//--- Write file name in database ----------------------
+	rowid = sqm->WriteTRNname(podN);
+	//--- Insert TRN in database ---------------------------
+	SCENE("Export %s from %s:", fName,pod);
+	ExportTRN(fName);
+	return;
+}
+
+//---------------------------------------------------------------------------
+//  Export all TRN files
+//---------------------------------------------------------------------------
 void CExport::ExportTRNfiles()
 {	char *sny = "SCENERY/";
 	char	name[MAX_PATH];
@@ -1717,19 +1841,19 @@ void CExport::ExportTRNfiles()
 void CExport::ExportTRN(char *fn)
 { SStream s;                                // Stream file
   if (!OpenRStream (fn, s))  return;
-  C_TRN *trn = new C_TRN(0,0);
-	trn->Export();
-  ReadFrom (trn, &s);
+  ftrn = new C_TRN(0,0);
+	ftrn->Export();
+  ReadFrom (ftrn, &s);
   CloseStream (&s);
   //--- Process all Super tile -----------------------------
 	for (short   sz = 0; sz != TC_SUPERT_PER_QGT; sz++)
   { for (short sx = 0; sx != TC_SUPERT_PER_QGT; sx++)
-		{	C_STile *asp = trn->GetSupTile(sx,sz);
+		{	C_STile *asp = ftrn->GetSupTile(sx,sz);
 			ExportSUP(asp);
 		}
 	}
-	delete trn;
-	trn	= 0;
+	delete ftrn;
+	ftrn	= 0;
 	return;
 }
 //---------------------------------------------------------------------------
@@ -1737,12 +1861,12 @@ void CExport::ExportTRN(char *fn)
 //---------------------------------------------------------------------------
 void CExport::ExportSUP(C_STile *asp)
 {	asp->SetKey(qKey);
-  globals->sqm->WriteElevationTRN(*asp,edt,rowid);
+  globals->sqm->WriteElevationTRN(*asp,rowid);
 	//--- Now, export all detail tiles from supertile ------
 	
 	TRN_HDTL *hd = asp->PopDetail();
 	while (hd)
-	{	globals->sqm->WriteElevationDET(qKey,*hd,edt);
+	{	globals->sqm->WriteElevationDET(qKey,*hd,rowid);
 		delete hd;
 		hd	= asp->PopDetail();
 	}

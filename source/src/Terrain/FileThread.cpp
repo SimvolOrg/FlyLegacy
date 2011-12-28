@@ -224,13 +224,14 @@ void GetQTRfile(C_QGT *qgt,TCacheMGR *tcm)
 //  FILE THREAD LOOP
 //=================================================================================
 void *FileThread(void *p)
-{ C3DMgr    *m3d = globals->m3d;
-  TCacheMGR *tcm = (TCacheMGR*) p;
-  SqlTHREAD sql;                                                 // Local instance of SQL manager
-  C_QGT    *qgt = 0;
-  C3Dmodel *mod = 0;
-  globals->sql  = &sql;
-  U_INT     key = 0;
+{ C3DMgr    *m3d	= globals->m3d;
+  TCacheMGR *tcm	= (TCacheMGR*) p;
+  SqlTHREAD sql;												// Local instance of SQL manager
+	globals->elvDB	= sql.UseELV();
+  C_QGT    *qgt		= 0;
+  C3Dmodel *mod		= 0;
+  globals->sql		= &sql;
+  U_INT     key		= 0;
   //--- Region parameters ----------------
   REGION_REC  reg;
   while (p)

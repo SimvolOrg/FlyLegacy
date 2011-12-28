@@ -1161,37 +1161,51 @@ static bool compare_wildcard (const char *pattern, const char *s)
   // If end of pattern has been reached then compare was successful
   return (*pattern == '\0');
 }
-
-const char* pfindfirst (PFS* pPfs, const char* pattern)
+//=========================================================================================
+//	Find the first file matching the pattern
+//=========================================================================================
+char* pfindfirst (PFS* pfs, char* pattern, char **pod)
 {
   //const char* rc = NULL;
   
   // Assign search pattern to PFS member
-  memset (pPfs->patternFind, 0, POD_FILENAME_LENGTH+1);
-  strncpy (pPfs->patternFind, pattern, POD_FILENAME_LENGTH);
-  strupper (pPfs->patternFind);
+  memset  (pfs->patternFind, 0, POD_FILENAME_LENGTH+1);
+  strncpy (pfs->patternFind, pattern, POD_FILENAME_LENGTH);
+  strupper(pfs->patternFind);
   
 
-	pPfs->iterFind = pPfs->masterFileList.begin();   
-  while (pPfs->iterFind != pPfs->masterFileList.end()) 
-	{ const char *key = (*pPfs->iterFind).first.c_str();
-    if (compare_wildcard (pPfs->patternFind,key)) return key;
+	pfs->iterFind = pfs->masterFileList.begin();   
+  while (pfs->iterFind != pfs->masterFileList.end()) 
+	{ char *key = (char*)(*pfs->iterFind).first.c_str();
+    if (compare_wildcard (pfs->patternFind,key))
+			{ if (0 == pod)			return key;
+				PFSPODFILE *fp = (*pfs->iterFind).second;
+			 *pod = fp->pod->name;
+				return key;
+		  }
     // Step to next member of the set
-    pPfs->iterFind++;
+    pfs->iterFind++;
   }
   return 0;
 }
-
-const char* pfindnext (PFS* pPfs)
+//=========================================================================================
+//	Find the next file matching the pattern
+//=========================================================================================
+char* pfindnext (PFS* pfs, char **pod)
 {// const char* rc = NULL;
-	 pPfs->iterFind++;
+	 pfs->iterFind++;
   // Search master file list for matches
-  while (pPfs->iterFind != pPfs->masterFileList.end()) 
+  while (pfs->iterFind != pfs->masterFileList.end()) 
 	{
-		const char *key = (*pPfs->iterFind).first.c_str();
-    if (compare_wildcard (pPfs->patternFind, key))		return key;
+		char *key = (char*)(*pfs->iterFind).first.c_str();
+    if (compare_wildcard (pfs->patternFind, key))
+			{	if (0 == pod)			return key;
+		    PFSPODFILE *fp = (*pfs->iterFind).second;
+			 *pod = fp->pod->name;
+				return key;
+			}
     // Step to next member of the set
-    pPfs->iterFind++;
+    pfs->iterFind++;
   }
 
   return 0;

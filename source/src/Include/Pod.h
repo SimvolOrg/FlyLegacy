@@ -272,7 +272,7 @@ bool LookOnlyInPOD (PFS *pfs, char* filename, char **pn);
  * \returns Const pointer to filename string of first match found, or
  *            NULL if none found.
  */
-const char* pfindfirst (PFS* pPfs, const char* pattern);
+char* pfindfirst (PFS* pPfs, char* pattern, char **pod = 0);
 
 /*!
  * Find the next filename in the POD filesystem matching the pattern string
@@ -281,7 +281,7 @@ const char* pfindfirst (PFS* pPfs, const char* pattern);
  *   search pattern to use.
  * \returns Const pointer to filename of next match found, or NULL if no more.
  */
-const char* pfindnext (PFS* pPfs);
+char* pfindnext (PFS* pPfs, char **pod = 0);
 
 //
 // This function mimics the stdio function "fopen" and opens a file for read

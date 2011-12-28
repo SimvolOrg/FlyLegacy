@@ -530,7 +530,7 @@ void export_wob_cb(puObject* obj)
 //  Export all sceneries  
 //-------------------------------------------------------------------------
 void export_trn_cb(puObject* obj)
-{ globals->exm->ExportTRNfiles();
+{ globals->exm->ExportAllTRNs();
   return;
 }
 //-------------------------------------------------------------------------
