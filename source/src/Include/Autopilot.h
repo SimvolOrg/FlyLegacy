@@ -398,7 +398,7 @@ protected:
   //---Lateral leg parameters ------------------------------------------
   U_CHAR     mode;                          // Autopilot mode
   U_CHAR     signal;                        // NAV Signal (VOR/ILS)
-  U_CHAR     rfu1;                          // TO/ FROM
+  U_CHAR     trace;                         // TO/ FROM
   U_CHAR     sEVN;                          // STate Event
   //--------------------------------------------------------------------
   char       abrt;                          // Abort land

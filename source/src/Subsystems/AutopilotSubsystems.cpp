@@ -613,6 +613,7 @@ AutoPilot::AutoPilot (void)
   land    = LAND_DISCT;			// Landing option
 	rend		= 0;							// No runway end
 	xCtl		= 0;							// No external control
+	trace   = 0;
 	//--- Final leg parameters -------------------------
 	Turn		= 1;							// Turning anticipation factor
 	gain		= 2.5;
@@ -1226,7 +1227,7 @@ void AutoPilot::LateralHold()
   double   trn = hbox->Update(dTime,err,0);					// Input to Head controller
   double   avl = bbox->Update(dTime,turn,trn);      // Banking to controller
   ailS->PidValue(avl);                              // result to ailerons
-	//  TRACE("HOLD: aHDG=%.2f rHDG=%.2f",aHDG,rHDG);
+	if (trace)  TRACE("HOLD: aHDG=%.2f rHDG=%.2f",aHDG,rHDG);
   return;
 }
 //-----------------------------------------------------------------------
@@ -1340,10 +1341,10 @@ void AutoPilot::ModeLT1()
   double aAB  = DegToRad(dev);
   vHRZ        = fabs((aSPD / 3600) * sin(aAB));     // Velocity X component (miles/sec)
   vTIM1       = (vHRZ > FLT_EPSILON)?(dREF / vHRZ):(SEC_IN_DAY);
-	//if (aprm)		TRACE("T0=%.4f T1=%.4f T2=%.4f hRF=%.4f rHDG=%.4f aHDG=%.4f",vTIM0,vTIM1,vTIM2,Radio->hREF,rHDG,aHDG);
+	if (trace)		TRACE("T0=%.4f T1=%.4f hRF=%.4f rHDG=%.4f aHDG=%.4f",vTIM0,vTIM1,Radio->hREF,rHDG,aHDG);
   if (vTIM1 > vTIM0) return CrossDirection();
   //----Enter second leg ------------------------------------------------
-	TRACE("ENter LT2");
+  if (trace)	TRACE("ENter LT2");
   lStat = AP_LAT_LT2;
   StateChanged(sEVN);
 	return;
@@ -1355,7 +1356,7 @@ void AutoPilot::ModeLT1()
 //-----------------------------------------------------------------------
 void AutoPilot::CrossDirection()
 { rHDG	= xHDG;
-	if (aprm) TRACE("rHDG to %.1f", rHDG);
+	if (trace) TRACE("rHDG to %.1f", rHDG);
   return LateralHold();
 }
 //-----------------------------------------------------------------------
@@ -1394,8 +1395,8 @@ void AutoPilot::ModeLT2()
 { if (BadSignal(signal))  return ExitLT2();
   //--Compute heading factor ---------------
 	rHDG	= AdjustHDG();     // New direction;
-	TRACE("LT2: aHDG=%.4f RADI=%.4f hERR=%.4f, cFAC=%.4f rHDG=%.4f",
-		aHDG,Radio->radi,hERR,cFAC,rHDG);
+	//	TRACE("LT2: aHDG=%.4f RADI=%.4f hERR=%.4f, cFAC=%.4f rHDG=%.4f",
+	//	aHDG,Radio->radi,hERR,cFAC,rHDG);
 	//-- check for final leg ----------------
 	return LateralHold();
 }
@@ -1778,6 +1779,7 @@ void AutoPilot::GetCrossHeading()
 		xHDG				= Wrap360(Radio->hREF + cor);
 		xCOR				= Wrap360(Radio->hREF + haf);
 	  TRACE("CROSS (aprm) hREF=%.4f rDEV=%.4f xHDG=%.4f",Radio->hREF,Radio->rDEV,xHDG);
+	  //	trace = 1;
 		return;
 	}
 	//--- Approach in sector FR -----------------------
@@ -1842,13 +1844,13 @@ void AutoPilot::EnterAPR()
   sEVN  = AP_STATE_ATK;             // next state
 	//--- Get landing data  ---------------------------------
 	rend		= Radio->nav->GetLandSpot();
-	TRACE("EnterAPR lndDIR=%.4f",rend->lnDIR);
+	//TRACE("EnterAPR lndDIR=%.4f",rend->lnDIR);
   //---Compute a direction perpendicular to the radial ----
   GetCrossHeading();
   //--Init vertical mode -----
   pidL[PID_GLS]->Init();
   vStat = AP_VRT_GSW;
-//	TRACE("EnterAPR elvT=%.4f eVRT=%.4f AOA=%.4f",elvT->Val(),eVRT,pidL[PID_AOA]->GetVN());
+	//	TRACE("EnterAPR elvT=%.4f eVRT=%.4f AOA=%.4f",elvT->Val(),eVRT,pidL[PID_AOA]->GetVN());
   return;
 }
 //-----------------------------------------------------------------------
