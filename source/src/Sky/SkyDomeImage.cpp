@@ -309,9 +309,14 @@ SPerezParameters DefaultPerezParameters =
     {+0.26688f, +0.06670f, -0.26756f, +0.15346f}, // 1
   }
 };
-
+//============================================================================
+//	Constructor
+//==============================================================================
 CSkyDomeImage::CSkyDomeImage (double distance)
-{
+{ dPhi = (SG_PI * 2.0f) / float(SKYDOME_SLICES);		// Radian per slice
+  thetaExtent = (SG_PI *0.5f) * (float)SKYDOME_HEMISPHERE_SCALE; 
+	dTheta = thetaExtent / SKYDOME_STACKS;						// Radian per stack
+	//---------------------------------------------------------
   int i, j;
   
   // Add default Perez parameters
@@ -373,9 +378,6 @@ CSkyDomeImage::CSkyDomeImage (double distance)
   domeVertex[2] = 1.0f;
 
   // Iterate over all vertices of all rings
-  double thetaExtent = (SGD_PI / 2.0) * SKYDOME_HEMISPHERE_SCALE;
-  double dTheta = thetaExtent / SKYDOME_STACKS;
-  double dPhi = (SGD_PI * 2.0) / SKYDOME_SLICES;
   int iVertex = 1;
   for (i=0; i<SKYDOME_STACKS+1; i++) {
     // Calculate zenith angle theta for all vertices in this ring
@@ -576,14 +578,11 @@ void CSkyDomeImage::GetDomeColour (float theta, float phi, float &r, float &g, f
   r = g = b = 0.0f;
 
   // Convert phi index of vertex slice that precedes phi around the azimuth
-  float dPhi = (SG_PI * 2.0f) / (float)SKYDOME_SLICES;
   float fSlice = floor(phi / dPhi);
   float s = (phi - (fSlice * dPhi)) / dPhi;
   int slice = (int)(fSlice);
 
   // Convert phi to a pair of CW/CCW vertex slice indices
-  float thetaExtent = (SG_PI / 2.0f) * (float)SKYDOME_HEMISPHERE_SCALE;
-  float dTheta = thetaExtent / SKYDOME_STACKS;
   float fStack = floor(theta / dTheta);
   float t = (theta - (fStack * dTheta)) / dTheta;
   int stack = (int)(fStack);
@@ -599,19 +598,20 @@ void CSkyDomeImage::GetDomeColour (float theta, float phi, float &r, float &g, f
   //
   //        slice              slice+1
   //
-
+	int lim = nDomeVertices - 1;
   // Linearly interpolate point A between vertices of upper row (stack-1)
   int indexA = ((stack-1) * SKYDOME_SLICES) + slice;
-	if (indexA > nDomeVertices) indexA = nDomeVertices - 1;
+	if (indexA > lim) indexA = lim - 1;
+	if (indexA < 0)		indexA = 0;
   sgVec3 A;
-  sgCopyVec3 (A, &domeColour[indexA*3]);
+  sgCopyVec3  (A, &domeColour[indexA*3]);
   sgScaleVec3 (A, (1.0-s));
   sgAddScaledVec3 (A, &domeColour[(indexA+1)*3], s);
 
   // Linearly interpolate point B between vertices of lower row (stack)
   int indexB = (stack * SKYDOME_SLICES) + slice;
-	if (indexB > nDomeVertices) indexB = nDomeVertices - 1;
-
+	if (indexB > lim) indexB = lim - 1;
+	if (indexB < 0)		indexB = 0;
   sgVec3 B;
   sgCopyVec3 (B, &domeColour[indexB*3]);
   sgScaleVec3 (B, (1.0-s));
@@ -626,6 +626,7 @@ void CSkyDomeImage::GetDomeColour (float theta, float phi, float &r, float &g, f
   r = C[0];
   g = C[1];
   b = C[2];
+	//TRACE("THETA=%.4f PHI=%.4f R=%.4f G=%.4f B=%.4f  Nv=%d Ax=%d Bx=%d",theta,phi,r,g,b,nDomeVertices,indexA,indexB);
 }
 
 /**

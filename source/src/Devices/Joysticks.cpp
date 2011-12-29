@@ -32,7 +32,7 @@
 #include "../Include/Utility.h"
 #include "../Include/KeyMap.h"
 #include "../Include/globals.h"
-
+#include "../Include/fui.h"
 //==============================================================================
 //  Table to locate first entry of a given type 
 //==============================================================================
@@ -895,6 +895,7 @@ void CJoysticksManager::CheckControl(Tag tag)
 	if (!joy)									return;
 	//--- Reconnect gas control --------------------
 	axeCNX |= joy->HasMoved(axe);
+	globals->fui->DrawNoticeToUser("Joystick: Reconnect controls",5);
 	return;
 }
 //--------------------------------------------------------------------------------

@@ -933,6 +933,7 @@ void CExport::Export3Dmodels()
   InitModelPosition();
   globals->fui->SetNoticeFont(&globals->fonts.ftmono20);
 	pif.mode= 0;								// Adding mode
+	SCENE("========== START OF MODEL EXPORT ==========");
   return;
 }
 //-----------------------------------------------------------------------------------------
@@ -991,6 +992,8 @@ void CExport::WriteTheModel()
   Export3DMlodQ(name,1);
   Export3DMlodQ(name,2);
   Export3DMlodQ(name,3);
+	SCENE("EXPORT %s",mName);
+	//--- Delete resources -----------------------
   delete Polys;
   Polys = 0;
   delete Mod;

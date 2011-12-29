@@ -168,7 +168,7 @@ protected:
 	//--- ATTRIBUTES --------------------------------------
 	char							 State;
 	char							 cnt;
-	char							 gc;				// Gas control
+	bool							 gc;				// Gas control
 	U_CHAR						 msgNo;
 	//-----------------------------------------------------
 	U_INT							 FrNo;

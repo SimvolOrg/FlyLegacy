@@ -480,7 +480,7 @@ protected:
 	U_INT			count;
 	C_QGT			*qgt;
 	//--- Export flag -------------------------------------------------
-	char       expf;
+	char      *expf;
 	//------Attributes ------------------------------------------------
 	sqlite3_stmt *stm;
 	C_STile      *sup;

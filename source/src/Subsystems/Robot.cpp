@@ -286,6 +286,7 @@ void VPilot::Start()
 {	//--- Check if aircraft busy --------------
 	if (globals->aPROF.Has(PROF_ACBUSY))	return;
 	globals->aPROF.Set(PROF_ACBUSY);
+	gc			= 0;
 	//-----------------------------------------
 	pln			= (CAirplane*)mveh;
 	apil	  = pln->GetAutoPilot();
@@ -395,9 +396,7 @@ void VPilot::ModeTKO()
 //	 TODO: Put AGL in parameter
 //--------------------------------------------------------------
 void VPilot::ModeCLM()
-{	bool tc		= apil->HasGasControl();
-	if (!tc) Error(10);
-	if (apil->IsDisengaged())	  return HandleBack();
+{	if (apil->IsDisengaged())	  return HandleBack();
 	if (apil->BellowAGL(1200))	return;
 	//--- Drive toward next waypoint -----------
 	ChangeWaypoint();
@@ -478,10 +477,7 @@ void VPilot::Refresh()
 //	Tracking Waypoint
 //--------------------------------------------------------------
 void VPilot::ModeTracking()
-{ bool tc	= apil->HasGasControl();
-	if ((tc == 0) && (gc == 1)) Warn(10);
-	gc			= tc;
-	if (apil->IsDisengaged())	return HandleBack();
+{	if (apil->IsDisengaged())	return HandleBack();
 	if (wayP->IsActive())	    return Refresh();
 	ChangeWaypoint();
 	return;
@@ -501,8 +497,12 @@ void VPilot::TimeSlice (float dT,U_INT frm)
 {	if (State == VPL_IS_IDLE)	return;
 	FrNo			= frm;
 	T01			 -= dT;
+	bool  on = (State >= VPL_TAKE_OFF);
+	bool  ok = on && (apil->HasGasControl());
+	if (ok != gc) Warn(10);
+	gc	= ok;
 	switch (State)	{
-		//--- Statring aircraft -------------
+		//--- Starting aircraft -------------
 		case VPL_PREFLT01:
 			PreFlight(dT);
 			return;

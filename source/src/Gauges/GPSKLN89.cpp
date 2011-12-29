@@ -450,6 +450,7 @@ int CK89gps::PowerONd(K89_EVENT evn)
   DrawCDI(K89_LINE0,K89_CLN12);
   BaroVL = globals->atm->GetPressureInHG();      
   _snprintf(edt,16,"Baro:%.02f\"",BaroVL);
+	edt[15] = 0;
   StoreText(edt,        K89_LINE1,K89_CLN00);
   StoreText("Alt",      K89_LINE1,K89_CLN12);
   StoreText("RMI 130°", K89_LINE2,K89_CLN00);
@@ -472,10 +473,12 @@ int CK89gps::PowerONg(K89_EVENT evn)
     case K89_CLOCK:
       //------------ALTITUDE ------------------------
       _snprintf(edt,16,"%.0fft",aPos.alt);
+			edt[15] = 0;
       StoreText(edt,K89_LINE1,K89_CLN17);
       //--------------OBS from navigation radio ------
       obs   = (BUS)?(int(BUS->hREF)):(0);
       _snprintf(edt,16,"%03u°",obs);
+			edt[15] = 0;
       StoreText(edt,K89_LINE2,K89_CLN17);
       FlashWord("Ok ?",K89_LINE3,K89_CLN17);
       return 1;
@@ -512,6 +515,7 @@ int CK89gps::PowerONh(K89_EVENT evn)
       strncpy(mon,month,3);
       mon[3]  = 0;
       _snprintf(edt,16,"%02u %s %02u",sd.date.day,mon,(sd.date.year - 100));
+			edt[15] = 0;
       StoreText(edt,K89_LINE0,K89_CLN00);
       //-------TIME --------------------------------------
       _snprintf(edt,16,"%02u:%02u UTC",sd.time.hour,sd.time.minute);

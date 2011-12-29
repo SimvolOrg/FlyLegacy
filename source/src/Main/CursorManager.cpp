@@ -362,6 +362,7 @@ void CFlyCursor::ReadFinished (void)
 { // Load image bitmap
   char fn[64];
   _snprintf(fn,63,"ART/%s",imag);
+	fn[63] = 0;
   if (imag[0]) LoadCursor(fn);
   return;
 }
@@ -459,6 +460,7 @@ Tag CCursorManager::BindFuiCursor(char *name,Tag key)
   if (crsr) return crsr->GetKey();
   // Load Cursor from FUI directory
   _snprintf(fui,63,"UI/CURSORS/%s",name);
+	fui[63] = 0;
   // MEMORY_LEAK_MARKER ("crsr2");
   crsr = new CCursor();
   // MEMORY_LEAK_MARKER ("crsr2");

@@ -182,6 +182,7 @@ CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
     // end workaround
     char ext[16];
     _snprintf (ext,15,".%d", wrkrnd);
+		ext[15] = 0;
     strncat (s.filename, ext,4);
   }
 	TRACE("Read panel %s",filename);

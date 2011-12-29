@@ -1963,6 +1963,7 @@ public:
   void Init (void);
   void Cleanup (void);
   Tag  GenTag();
+	void						 ExportMessage(char *msg);
   //----- CFuiManager methods ------------------------------------------------
   CFuiWindow*      CreateFuiWindow(Tag id,int lim=0);
   CFuiWindow*      CreateOneWindow(Tag id,int lim=0);

@@ -145,8 +145,15 @@ typedef struct {
 
 #define SKYDOME_SLICES            (64)
 #define SKYDOME_STACKS            (32)
-
+//===============================================================================
+//	Sky dome image 
+//================================================================================
 class CSkyDomeImage {
+protected:
+	//--- ATTRIBUTES ------------------------------------
+	float dPhi;								// RADIAN per SLICE (horizontal)
+	float dTheta;							// RADIAN per stack
+	float thetaExtent;				// RADIAN in elevation (Vertical)
 public:
   CSkyDomeImage (double distance);
   ~CSkyDomeImage (void);

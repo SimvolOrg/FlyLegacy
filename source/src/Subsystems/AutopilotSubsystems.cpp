@@ -1101,7 +1101,8 @@ void AutoPilot::LateralMode()
 		case AP_LAT_GND:
 			return ModeGND();
   }
-return;
+	gtfo("AUTOPILOT error");
+	return;
 }
 //-----------------------------------------------------------------------
 //  Manage Vertical mode
@@ -1112,6 +1113,9 @@ void AutoPilot::VerticalMode()
       //--- Disengaged ---------
       case AP_DISENGD:          
         return;
+			//--- Take off -----------
+			case AP_VRT_TKO:
+				return;
       //--- Maintain altitude --
       case AP_VRT_ALT:
         ModeALT();
@@ -1137,6 +1141,7 @@ void AutoPilot::VerticalMode()
 				ModeFIN();
         return;
    }
+	gtfo("AUTOPILOT error");
   return;
 }
 //-----------------------------------------------------------------------

@@ -429,6 +429,7 @@ void CSimulatedVehicle::PrintInfo (int bar_cycle)
     if (globals->dST) fps = (1 / globals->dST) + 1;
     _snprintf (buff,255, "Alt = %-5.0f\t\t  Speed = %-4.0f\t\t Vsi = %-5.0f\t\t Yaw = %-3.0f\t\t Rpm = %-5.0f\t\t fps = %03d",
       altitude, speed, vert_speed, magn_compass, rpm, fps);
+		buff[255] = 0;
     DrawNoticeToUser (buff, 1.0f);
   }
   //
@@ -445,6 +446,7 @@ void CSimulatedVehicle::PrintInfo (int bar_cycle)
              RadToDeg (orientation.x), RadToDeg (orientation.y), RadToDeg (orientation.z),
              edt1, edt2, pos_to.alt
              );
+		buff[127] = 0;
     DrawNoticeToUser (buff, 1);
   }
 }
@@ -2261,7 +2263,7 @@ int CCameraViewsList::ReadCamerasFile (void)
 	FILE *fp_;
   char file[PATH_MAX] = {0};
   /// try to find cameras_legacy.txt in the Fly!2 folder
-  _snprintf (file,(PATH_MAX-1),"%s\\data\\cameras_legacy.txt", globals->FlyRoot);
+  _snprintf (file,(PATH_MAX-1),"%s\\DATA\\cameras_legacy.txt", globals->FlyRoot);
   if((fp_ = fopen(file, "rt")) == NULL) {
     /// cameras_legacy.txt isn't in the Fly!2 folder
     /// try now in the Fly!Legacy folder

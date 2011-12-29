@@ -165,7 +165,8 @@ int CGaugeNeedle::Read (SStream *stream, Tag tag)
 void CGaugeNeedle::DecodeName(char *nn)
 { char name[128];
   if (0 == *base)     return;
-  _snprintf(name,60,"ART/%s",base);
+  _snprintf(name,59,"ART/%s",base);
+	name[63] = 0;
   char *dot = strrchr(name,'.');
   if (0 == dot) strcat(name,".PBG");
   strncpy(nn,name,64);
@@ -224,6 +225,7 @@ void CGaugeNeedle::LoadExtBitmap (const char *bitmap_name)
   if (bitmap_name[0])
   {
     _snprintf(name,63,"ART/%s", bitmap_name);
+		name[63] = 0;
     bmap = new CBitmap(name);
   }
   strncpy(base, bitmap_name, 64); // only 64 bytes
@@ -578,6 +580,7 @@ void CGaugeKnob::SetBitmap(SStream *str)
   ReadString (name, 64, str);
 	if (name[0] == 0)	return;
 	_snprintf(kart,63,"ART/%s", name);
+	kart[63] = 0;
   bmKnob = new CBitmap(kart);
 	NbFrame = bmKnob->NumBitmapFrames();
 	return;
@@ -790,6 +793,7 @@ int CKnob::Read(SStream *stream, Tag tag)
         ReadString (name, 64, stream);
 	      if (name[0] == 0)	TAG_READ;
 	      _snprintf(art,63, "ART/%s", name);
+				art[63] = 0;
         bmap = new CBitmap(art);
 	      nFrame = bmap->NumBitmapFrames() - 1;
         return TAG_READ;  }
@@ -844,6 +848,7 @@ void CKnob::ReadParameters(CGauge *mg,SStream *str)
   if (wd & 1) wd += 1;
   if (ht & 1) ht += 1;
 	_snprintf(art,63,"ART/%s", name);
+	art[63] = 0;
 	CBitmap *map = new CBitmap(art);
   bmap = map;
   nFrame  = map->NumBitmapFrames() - 1;
@@ -877,7 +882,8 @@ void CKnob::Share(CGauge *gage)
 //---------------------------------------------------------------------
 void CKnob::AssignNeedle(char *bmn)
 { char art[128];
-  _snprintf(art,128,"ART/%s",bmn);
+  _snprintf(art,63,"ART/%s",bmn);
+	art[63] = 0;
   bmap = new CBitmap(art);
   nFrame = bmap->NumBitmapFrames() - 1;
   //---Compute needle position ---------
@@ -1009,6 +1015,7 @@ void  CAniMAP::Read(SStream *str, int nbp)
 void CAniMAP::Fill(char *name)
 { char	art[128];
   _snprintf(art,63,"ART/%s", name);
+	art[63] = 0;
   CBitmap *map = new CBitmap(art);
   bmap = map;
   NbFrame = (U_SHORT)map->NumBitmapFrames();
@@ -1210,6 +1217,7 @@ void CGauge::ReadLightMask(SStream *str)
   ReadString (name, 64, str);
   if (name[0] == 0)	return;
 	_snprintf(art,63,"ART/%s", name);
+	art[63] = 0;
   mask = new CMaskImage(w,h,art);
   mask = mask->Validate();
   return;
@@ -3843,6 +3851,7 @@ void CDigitalReadoutGauge::Draw()
   int   val = int(value);
   char  dig[16];
   _snprintf(dig,16,"%0*u",nDig,val);
+	dig[15] = 0;
   //--- Edit digit on surface ------
   int No = nDig - 1;
   while (No != -1)
@@ -10581,6 +10590,7 @@ void CIndicatorGauge::SetBitmap(SStream *str)
   ReadString (name, 64, str);
 	if (name[0] == 0)	return;
 	_snprintf(kart,63, "ART/%s", name);
+	kart[63] = 0;
   bmap = new CBitmap(kart);
 	NbFr = bmap->NumBitmapFrames();
 	return;

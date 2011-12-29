@@ -243,49 +243,42 @@ void SqlOBJ::Init()
   GetIniVar("SQL","ExpGEN",&exp);           
   genDBE.exp = exp;
 	if (exp)	genDBE.mgr = SQL_MGR;
-	expf	|= exp;
    //---------Check for export elevation data ----------------------
   exp = 0;
   GetIniVar("SQL","ExpELV",&exp);
   elvDBE.exp = exp;
 	if (exp)	elvDBE.mgr = SQL_MGR;
-	expf  |= exp;
   //---------Check for export coast data ---------------------
   exp = 0;
   GetIniVar("SQL","ExpSEA",&exp);
   seaDBE.exp = exp;
   if (exp)	seaDBE.mgr = SQL_MGR;
-	expf  |= exp;
   //---------Check for export model3D data -------------------
   exp = 0;
   GetIniVar("SQL","ExpM3D",&exp);
   modDBE.exp  = exp;
   if (exp) modDBE.mgr = SQL_MGR;
-	expf  |= exp;
 	//---------Check for update model3D data -------------------
 	exp	= 0;
 	GetIniVar("SQL","UpdM3D",&exp);
   modDBE.exp |= exp;
   if (exp)	modDBE.mgr = SQL_MGR;
-	expf  |= exp;
   //---------Check for export taxiway data -------------------
   exp = 0;
   GetIniVar("SQL","ExpTXY",&exp);
   txyDBE.exp = exp;
   if (exp) txyDBE.mgr = SQL_MGR;
-	expf  |= exp;
+	expf   = txyDBE.path;
   //---------Check for export textures data ------------------
   exp = 0;
   GetIniVar("SQL","ExpTEX",&exp);
   texDBE.exp = exp;
   if (exp) texDBE.mgr = SQL_MGR;
-	expf  |= exp;
   //---------Check for export object data ------------------
   exp = 0;
   GetIniVar("SQL","ExpOBJ",&exp);
   objDBE.exp = exp;
   if (exp) objDBE.mgr = SQL_MGR;
-	expf  |= exp;
   //---------Check for export TRN files ------------------
 	exp = 0;
   GetIniVar("SQL","ExpTRN",&exp);
@@ -293,7 +286,6 @@ void SqlOBJ::Init()
   texDBE.exp |= exp;
 	elvDBE.exp |= exp;
 	trn	= exp;
-	expf  |= exp;
   return;
 }
 //-----------------------------------------------------------------------------
@@ -331,6 +323,7 @@ int SqlOBJ::Open(SQL_DB &db)
   if (0 == mop)				return 0;
 	//--- Check if file exist ---------------------------
 	_snprintf(fnm,lgr,"%s/%s",db.path,db.name);
+	db.path[lgr] = 0;
 	_finddata_t fileinfo;
 	strcpy(fileinfo.name,"NONE");
 	intptr_t h1 = _findfirst(fnm,&fileinfo);
@@ -344,6 +337,8 @@ int SqlOBJ::Open(SQL_DB &db)
   else      Warn1(db);
   db.use  = (db.opn == 1) && (db.exp == 0); 
 	_findclose(h1);
+	//--- Warn fui manager ----------------------------------
+	if (db.exp) globals->fui->ExportMessage(fnm);
 	//--- Now check for minimum version -----------------
 	if (0 == db.opn)		return 0;
 	db.use = ReadVersion(db);

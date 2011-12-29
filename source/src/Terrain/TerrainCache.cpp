@@ -3220,6 +3220,7 @@ TCacheMGR::TCacheMGR()
   NbTEX   = 0;
   aTime   = 0;
   Disp    = 0;
+	lumn    = 0;
   int ter = 0;
 	GetIniVar("TRACE","TerrainCache",&ter);
 	tr			= ter;

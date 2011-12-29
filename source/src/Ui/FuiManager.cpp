@@ -51,6 +51,8 @@ CFuiManager::CFuiManager(void)
   wTop    = 0;
 	wCap		= 0;
 	xOBJ		= 0;
+	notex		= 0;
+
 }
 //------------------------------------------------------------------------
 //    Close Fui Manager
@@ -139,7 +141,6 @@ void CFuiManager::Init (void)
   note1 = new CFuiTextPopup;
   note1->SetPosition (12, globals->cScreen->Height - NOTE_OFFSET);
   
-  notex  = new CFuiTextPopup;
   notec  = new CFuiTextPopup;
   help   = new CFuiTextPopup;
   //---------------------------------------------------
@@ -147,9 +148,6 @@ void CFuiManager::Init (void)
   notec->SetText(" *** AIRCRAFT DAMAGED ***");
   notec->SetPosition (600, 40);
   //---------------------------------------------------
-	notex->RedBack();
-	notex->SetText("You are configured for EXPORT of data in Database");
-	notex->SetPosition (200,60);
 	//---------------------------------------------------
   tClick  = 0;
   //--- Assign one texture object ---------------
@@ -457,6 +455,19 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
   return window;
 }
 //------------------------------------------------------------------------------
+// Create a window for export message
+//------------------------------------------------------------------------------
+void CFuiManager::ExportMessage(char *fn)
+{ char txt[210];
+	_snprintf(txt,127,"YOU ARE CONFIGURED TO EXPORT IN %s",fn);
+	txt[200] = 0;
+	notex  = new CFuiTextPopup;
+ 	notex->RedBack();
+	notex->SetText(txt);
+	notex->SetPosition (200,60);
+	return;
+}
+//------------------------------------------------------------------------------
 // Activate the window
 //  NOTE: The windows is just added to the windows lit with the state = INIT
 //        Real activation will occurs in the Draw routine to avoid iterator
@@ -645,7 +656,7 @@ void CFuiManager::Draw ()
   if (notec->IsActive())    notec->DrawIt();
   if (help->IsActive())     help->Draw();
 	//------------------------------------------------------
-	if (globals->sqm->Exporting())	notex->DrawIt();
+	if (notex)	notex->DrawIt();
   //--- Draw Radio communications ------------------------
   CFuiRadioBand *rdb = globals->rdb;
   if (rdb)  rdb->Draw();

@@ -2038,6 +2038,7 @@ void CCloudPuff::EditParameters()
 { float wd = globals->wtm->WindRoseDirection();
   char tex[256];
   _snprintf(tex,255,"Wind from %.f   Cloud x=%.2f y=%.2f z=%.2f",wd,geol.x,geol.y,geol.z);
+	tex[255] = 0;
   DrawNoticeToUser(tex,0.5);
   return;
 }
