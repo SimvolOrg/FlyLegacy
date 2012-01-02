@@ -99,6 +99,7 @@ typedef enum {
 //   struct is composed a list of these structs.
 //
 typedef struct {
+	unsigned int  users;					// Users count
   char          name[PATH_MAX]; // Full path and filename of the POD
   EPodFormat    format;         // Specific POD format
   unsigned long Directory;     // Directory position
@@ -260,9 +261,10 @@ void pRemDisk(PFS *pfs,char *key,char *fn);
 //   Only the cached directories are searched; no actual POD file access
 //   is done.
 //----------------------------------------------------------------------------
+bool		podexist (PFS *pPfs, const char* filename);
 bool    pexists (PFS* pPfs, const char* filename);
-bool LookOnlyInPOD (PFS *pfs, char* filename, char **pn);
-
+bool		LookOnlyInPOD (PFS *pfs, char* filename, char **pn);
+char   *GetSceneryPOD(char *pn);
 /*!
  * Find the first filename in the POD filesystem matching the pattern string
  *

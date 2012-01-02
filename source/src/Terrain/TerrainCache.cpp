@@ -1638,17 +1638,6 @@ int CSuperTile::Outside3DRing()
 }
 
 //-------------------------------------------------------------------------
-//  Update 3D state
-//  lim is the drawing limit
-//-------------------------------------------------------------------------
-int CSuperTile::Update3Dstate()
-{ float lim = globals->ftDRW;         //nm Limit (real feet)
-  //--- Update LOD ------------------------------
-  if (dEye < lim) return Inside3DRing();
-  if (dEye > lim) return Outside3DRing();
-  return 0;
-}
-//-------------------------------------------------------------------------
 //  Clear All texture name (TERRA BROWSER usage)
 //-------------------------------------------------------------------------
 void CSuperTile::RazNames()
@@ -1765,25 +1754,28 @@ void CSuperTile::DrawInnerSuperTile()
 //  SuperTile Draw 3D Objects Here
 //  Alpha chanel for color is taken from this supertile for fade in/out
 //-------------------------------------------------------------------------
-int CSuperTile::Draw3D(U_CHAR tod)
-{ U_CHAR     mod = ('N' == tod)?(MODEL_NIT):(MODEL_DAY);
+int CSuperTile::Draw3D(U_CHAR mod)
+{ float lim = globals->ftDRW;         //nm Limit (real feet)
+  //--- Update LOD -------------------------------------------
+  if (dEye > lim)  return Outside3DRing();
+	Inside3DRing();
+	//----------------------------------------------------------
   CWobj     *obj = 0;
   int        nbo = 0;
   white[3]       = alpha;
+  glMaterialfv (GL_FRONT_AND_BACK, GL_DIFFUSE, white);
+	//----------------------------------------------------------
   for (obj = woQ.GetFirst(); obj!=0; obj = woQ.GetNext(obj))
   { //----Translate to object origin -------------------------
     obj->Update(mod);
     SVector tr;
     globals->tcm->RelativeFeetTo(*obj->ObjPosition(),tr);
     //--------------------------------------------------------
-    double ry = obj->GetYRotation();
     glPushMatrix();
     glTranslated(tr.x,tr.y,tr.z);     // To object origin
-    glRotated(ry,0,0,1);
+    glRotated(obj->GetYRotation(),0,0,1);
     //---Draw object ----------------------------------------
     if (obj->NoZB())    glDisable(GL_DEPTH_TEST);			
-    //--- Set diffuse property --------------------------------
-    glMaterialfv (GL_FRONT_AND_BACK, GL_DIFFUSE, white);
     obj->DrawModel(mod,LOD);
     if (obj->NoZB())    glEnable(GL_DEPTH_TEST);		
     //----------------------------------------------------------------
@@ -4903,7 +4895,9 @@ void TCacheMGR::Draw(CCamera *cam)
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glShadeModel(GL_SMOOTH);
   glPushMatrix();                             // Mark T0
+	glCullFace (GL_BACK);
   objMGR->SetDrawingState();
+	glEnable(GL_TEXTURE_2D);
 	bbox->Enter('dW3D',0,0);
   for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
   { C_QGT *qt = (*im).second;

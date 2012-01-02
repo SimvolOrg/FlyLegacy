@@ -303,7 +303,7 @@ void CFuiTBROS::Draw()
 #define MBROS_HTR (252)
 #define MBROS_HLF (MBROS_WID / 2)
 CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
-:CFuiWindow(idn,filename,360,720,0)
+:CFuiWindow(idn,filename,360,730,0)
 { strcpy(text,"3D-MODELS BROWSER");
   title = 1;
   close = 1;
@@ -338,6 +338,13 @@ CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
   //---Create Total label ---------------------------------
   wTOT =            new CFuiLabel (8,650,MBROS_WID, 16,this);
   AddChild('wtot',wTOT);
+  //---Create Object origin -------------------------------
+  wOrg =            new CFuiLabel (8,670,MBROS_WID, 16,this);
+  AddChild('worg',wOrg);
+	//---ZB option ------------------------------------------
+  wZbo  = new CFuiCheckBox(8,  690, 300,20,this);
+  wZbo->IniState(0);
+  AddChild('zbop',wZbo,"Flat object on ground (No ZB)");
   //----Create surface for windows ------------------------
   CFuiWindow::ReadFinished();
   //----Create object list --------------------------------
@@ -415,6 +422,8 @@ void CFuiMBROS::NewSelection()
   EditLat2DMS(pos.lat,lat);
   EditLon2DMS(pos.lon,lon);
   mPOS->EditText("POS: %s %s at=%.0f feet",lat,lon,pos.alt);
+	wOrg->EditText("Origin: %s",obj->GetFileOBJ());
+	wZbo->SetState(obj->GetZB());
   //----Edit object model data ---------------------
   oINF->BeginPage();
   obj->GetInfo(oINF);
@@ -438,6 +447,17 @@ void CFuiMBROS::Teleport()
   globals->m3d->ReleaseVOR();
   globals->pln->SetPosition(pos);
   return;
+}
+//--------------------------------------------------------------------------------
+//  ZB option is changed
+//--------------------------------------------------------------------------------
+void CFuiMBROS::ChangeZB()
+{	if (0 == wObj)						return;
+	char zb = wZbo->GetState();
+	wObj->SetNOZB(zb);
+	if (0 == globals->objDB)	return;
+	globals->sqm->UpdateOBJzb(wObj);
+	return;
 }
 //--------------------------------------------------------------------------------
 //  Draw
@@ -469,14 +489,19 @@ void  CFuiMBROS::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
     case 'sysb':
       SystemHandler(evn);
       return;
+		//--- Zoom is changing ------------------
     case 'zsld':
       ChangeZoom();
       return;
+		//--- A new selection is occuring -------
     case 'olst':
       oBOX.VScrollHandler((U_INT)itm,evn);
       NewSelection();
       return;
-
+		//--- The ZB option is modified ---------
+		case 'zbop':
+			ChangeZB();
+			return;
   }
   return;
 }

@@ -231,13 +231,13 @@ void SqlOBJ::Init()
   texDBE.dbn = "Generic Textures";
 
   //---World Object database --------------------------------------
-	objDBE.vers	= 0;																// Minimum version
+	objDBE.vers	= 1;																// Minimum version
   strcpy(objDBE.path,"SQL");
   GetIniString("SQL","OBJDB",objDBE.path,lgr);
 	strcpy(objDBE.name,"OBJ*.db");
-  objDBE.mgr =  SQL_MGR;
-  objDBE.dbn = "World Objects";
-
+  objDBE.mgr	=  SQL_MGR;
+  objDBE.dbn	= "World Objects";
+	objDBE.mode = SQLITE_OPEN_READWRITE;
   //--- Process  export flags -------------------------------------
   int exp = 0;
   GetIniVar("SQL","ExpGEN",&exp);           
@@ -1646,7 +1646,7 @@ void SqlMGR::WriteElevationRecord(REGION_REC &reg)
   return;
 }
 //==============================================================================
-//  Check for POD in Database
+//  Check for POD-TRN in Database
 //==============================================================================
 bool SqlMGR::FileInELV(char *fn)
 {	char rq[1024];
@@ -1657,7 +1657,7 @@ bool SqlMGR::FileInELV(char *fn)
 	return in;
 }
 //==============================================================================
-//  Write POD in Database
+//  Write POD-TRN in Database
 //==============================================================================
 int SqlMGR::WriteTRNname(char *fn)
 {	char rq[1024];
@@ -2278,7 +2278,7 @@ void SqlMGR::GetTerraSQL(TCacheMGR *tcm)
 //=================================================================================
 //  Write a World Object model
 //=================================================================================
-void SqlMGR::WriteWOBJ(U_INT qgt,CWobj *obj)
+void SqlMGR::WriteWOBJ(U_INT qgt,CWobj *obj,int row)
 { char req[1024];
   strcpy(req,"INSERT INTO OBJ (qgt,xk,yk,kind,flag,mday,nday,lon,lat,alt,xori,yori,zori,fobj,nozb,nozu,pm1,pm2,name,desc)" 
     "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20);*");
@@ -2317,8 +2317,8 @@ void SqlMGR::WriteWOBJ(U_INT qgt,CWobj *obj)
   if (rep != SQLITE_OK) Abort(objDBE);
   rep      = sqlite3_bind_double(stm,13, ori->z);           // Y (head)
   if (rep != SQLITE_OK) Abort(objDBE);
-  //-----Mother file ----------------------------------------------------
-  rep      = sqlite3_bind_text(stm,  14, obj->GetFileOBJ(), -1, SQLITE_TRANSIENT);
+  //-----Mother file index -------------------------------------------
+  rep      = sqlite3_bind_int(stm,  14, row);
   if (rep != SQLITE_OK) Abort(objDBE);
   //-----ATTRIBUTES -----------------------------------------------------
   rep      = sqlite3_bind_int (stm,  15, obj->GetZB());     // Object flag
@@ -2399,20 +2399,49 @@ void SqlMGR::WriteLightsFrom(CWobj *obj)
   return;
 }
 //---------------------------------------------------------------------------------
-//  check for the object reference
+//  Update the nozb flag
 //---------------------------------------------------------------------------------
-bool SqlMGR::CheckWOBJ(CWobj *obj)
-{ char req[1024];
-  int xk    = obj->GetIntLongitude();
-  int yk    = obj->GetIntLatitude();
-  char *mod = obj->DayName();
-  sprintf_s(req,1024,"SELECT (qgt) FROM OBJ WHERE xk='%d' and yk='%d' and mday='%s';*",xk,yk,mod);
+void SqlMGR::UpdateOBJzb(CWobj *obj)
+{	char req[1024];
+	int zb = obj->GetZB();
+	char *mod = obj->DayName();
+  _snprintf(req,1024,"UPDATE obj SET nozb = %d WHERE mday = '%s';*",zb,mod);
   sqlite3_stmt *stm = CompileREQ(req,objDBE);
-  //-----Execute statement -----------------------------------------------
-  int rep = sqlite3_step(stm);                  // Search database
-  sqlite3_finalize(stm);                        // Close statement
-  return (rep == SQLITE_ROW)?(true):(false);
+	int rep = sqlite3_step(stm);
+  if (SQLITE_ERROR == rep)	Abort(objDBE);
+	sqlite3_finalize(stm);                      // Close statement
+	return;;
 }
+//==============================================================================
+//  Check for POD-OBJ in Database
+//==============================================================================
+bool SqlMGR::FileInOBJ(char *fn)
+{	char rq[1024];
+	_snprintf(rq,1023,"SELECT * from FNM where file = '%s';*",fn);
+	sqlite3_stmt *stm = CompileREQ(rq,objDBE);
+	bool in = (SQLITE_ROW == sqlite3_step(stm));
+	sqlite3_finalize(stm);                      // Close statement
+	return in;
+}
+//==============================================================================
+//  Write POD-OBJ in Database
+//==============================================================================
+int SqlMGR::WriteOBJname(char *fn)
+{	char rq[1024];
+	_snprintf(rq,1023,"INSERT INTO FNM (file) VALUES(?1);*");
+	sqlite3_stmt *stm = CompileREQ(rq,objDBE);
+	//--- Origin file ---------------------------------------
+  int rep = sqlite3_bind_text(stm,1,fn,-1,SQLITE_TRANSIENT);
+  if (rep != SQLITE_OK) Abort(objDBE);
+  //---Execute insert -------------------------------------------------------
+  rep      = sqlite3_step(stm);               // Insert value in database
+  if (rep != SQLITE_DONE) Abort(objDBE);
+	sqlite3_finalize(stm);                      // Close statement
+	//--- return rowid --------------------------------------------------------
+  int seq  = sqlite3_last_insert_rowid(objDBE.sqlOB);   // Last ROWID
+  return seq;
+}
+
 //=================================================================================
 //  Read a set of World Object model
 //=================================================================================
@@ -2436,7 +2465,7 @@ void SqlMGR::ReadWOBJ(C_QGT *qgt)
       int xk = sqlite3_column_int (stm,CLN_OBJ_XKP);
       int yk = sqlite3_column_int (stm,CLN_OBJ_YKP);
       DecodeWOBJ(stm,obj);
-      ReadObjLite(obj,xk,yk);
+      ReadOBJLite(obj,xk,yk);
       C3Dworld *w3d = qgt->Get3DW();
       w3d->AddToWOBJ(obj);
     }
@@ -2458,6 +2487,20 @@ int  SqlMGR::SearchWOBJ(char *fn)
 	return nb;
 }
 //---------------------------------------------------------------------------------
+//  Select a POD file name
+//---------------------------------------------------------------------------------
+bool  SqlMGR::SearchPODinOBJ(char *pn)
+{ int nb = 0;
+	char req[1024];
+  _snprintf(req,1024,"SELECT file FROM FNM where file LIKE '%%%s%%';*",pn);
+	sqlite3_stmt *stm = CompileREQ(req,objDBE);
+//	while (SQLITE_ROW == sqlite3_step(stm)) nb++; 
+	nb = (SQLITE_ROW == sqlite3_step(stm))?(1):(0);
+	sqlite3_finalize(stm);
+	return (nb != 0);
+}
+
+//---------------------------------------------------------------------------------
 //  Decode the current object
 //---------------------------------------------------------------------------------
 void SqlMGR::DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj)
@@ -2477,9 +2520,6 @@ void SqlMGR::DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj)
   ori->x  = sqlite3_column_double(stm, CLN_OBJ_ORX); 
   ori->y  = sqlite3_column_double(stm, CLN_OBJ_ORY);
   ori->z  = sqlite3_column_double(stm, CLN_OBJ_ORZ);
-  //---Mother file ---------------------------------------------
-  char *fob = (char*)sqlite3_column_text(stm,CLN_OBJ_FOB);
-  obj->SetFileName(fob);
   //---Other flags ---------------------------------------------
   int zb =  sqlite3_column_int (stm,CLN_OBJ_NZB);
   obj->SetNOZB(zb);
@@ -2495,12 +2535,15 @@ void SqlMGR::DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj)
   if (nam)  obj->SetObjName(nam);
   char *dsc = (char*)sqlite3_column_text(stm,CLN_OBJ_DSC);
   if (dsc) obj->SetObjDesc(dsc);
+  //---Mother file ---------------------------------------------
+  int fob = sqlite3_column_int(stm,CLN_OBJ_FOB);
+	ReadOBJFile(obj,fob);
   return;
 }
 //---------------------------------------------------------------------------------
 //  Read object lights
 //---------------------------------------------------------------------------------
-void SqlMGR::ReadObjLite(CWobj *obj,int xk, int yk)
+void SqlMGR::ReadOBJLite(CWobj *obj,int xk, int yk)
 { //---Extract parameters -------------------------------------
   char *mod = obj->DayName();
   char req[1024];
@@ -2513,6 +2556,23 @@ void SqlMGR::ReadObjLite(CWobj *obj,int xk, int yk)
   sqlite3_finalize(stm);
   return;
 }
+//---------------------------------------------------------------------------------
+//  Read object lights
+//---------------------------------------------------------------------------------
+void SqlMGR::ReadOBJFile(CWobj *obj,int row)
+{ //---Extract parameters -------------------------------------
+  char req[1024];
+  _snprintf(req,1024,"SELECT * FROM fnm where rowid=%d;*",row);
+  sqlite3_stmt *stm = CompileREQ(req,objDBE);
+  if (SQLITE_ROW == sqlite3_step(stm))
+  { char *fob = (char*)sqlite3_column_text(stm,0);
+	  if (fob)	obj->SetFileName(fob);
+  }
+  //---Free statement ------------------------------------------
+  sqlite3_finalize(stm);
+  return;
+}
+
 //---------------------------------------------------------------------------------
 //  Decode the current light
 //---------------------------------------------------------------------------------
@@ -2604,6 +2664,20 @@ int SqlMGR::DecodeTRNrow()
 	qgt->IndElevation();
 	return 0;
 }
+//---------------------------------------------------------------------------------
+//  Select a POD file name
+//---------------------------------------------------------------------------------
+bool  SqlMGR::SearchPODinTRN(char *pn)
+{ int nb = 0;
+	char req[1024];
+  _snprintf(req,1024,"SELECT file FROM FNM where file LIKE '%%%s%%';*",pn);
+	sqlite3_stmt *stm = CompileREQ(req,elvDBE);
+//	while (SQLITE_ROW == sqlite3_step(stm)) nb++; 
+	nb = (SQLITE_ROW == sqlite3_step(stm))?(1):(0);
+	sqlite3_finalize(stm);
+	return (nb != 0);
+}
+
 //===================================================================================
 //  Decode TILE TABLE elevations for a given QGT
 //	Each row defines a detailled tile with a subdivision level with a
@@ -2885,6 +2959,9 @@ GLubyte *SqlTHREAD::GetGenTexture(TEXT_INFO &txd)
   sqlite3_finalize(stm);
   return txd.mADR;
 }
+//===================================================================================
+// Search a POD file in a database
+//===================================================================================
 
 
 //=============END OF FILE ==========================================================

@@ -1144,11 +1144,13 @@ class CFuiMBROS: public CFuiWindow {
     CFuiCanva       *oINF;                        // Object Canva
     CListBox         oBOX;                        // object box
     CFuiLabel       *wTOT;                        // Total object
+		CFuiLabel       *wOrg;												// Object origin
+		CFuiCheckBox    *wZbo;												// ZBuffer option
     //---Original position -----------------------------------------
     CAMERA_CTX       ctx;                         // Original camera
     //---MODEL PARAMETERS ------------------------------------------
     CObjLine        *Lin;                         // Current line
-    CWobj           *wObj;                        // Object
+    CWobj           *wObj;                        // Selected Object
     C3Dmodel        *Mod;                         // Current model
     //---Camera Parameters -----------------------------------------
     CCameraObject   *oCam;
@@ -1165,6 +1167,7 @@ public:
     void  NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
     void  ChangeZoom();
     void  SetZoom();
+		void	ChangeZB();
     //----------------------------------------------------------------
     void  Draw();
     void  DrawByCamera(CCamera *cam);

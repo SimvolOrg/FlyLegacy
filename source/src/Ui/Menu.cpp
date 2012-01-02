@@ -1159,7 +1159,7 @@ void tune_probe_cb(puObject *obj)
 char *tune_legends[] =
 { "TERRA Editor",
 	"----------------",
-	"MODEL Browser",
+	"OBJECT Browser",
   "TERRA Browser",
   "Statistics",
   "Plot data",

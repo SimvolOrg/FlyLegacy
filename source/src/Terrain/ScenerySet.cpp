@@ -53,8 +53,9 @@ CSceneryPOD::CSceneryPOD(U_INT key, char *fn)
 //	Mount the POD file
 //---------------------------------------------------------------
 void CSceneryPOD::Mount()
-{	users    = 1;
-	U_INT No = paddpod (&globals->pfs, fName);
+{	U_INT No = paddpod (&globals->pfs, fName);
+	if (0 == No)		return;
+	//--- A new pod is mouted ---------------------
 	SCENE("   (%06d) Mount %s",No,fName);
 	return;
 }
@@ -64,15 +65,9 @@ void CSceneryPOD::Mount()
 //---------------------------------------------------------------
 void CSceneryPOD::Remove()
 {	U_INT No = premovepod (&globals->pfs, fName);
+  if (0 == No)		return;
 	SCENE("   (%06d) Unmount %s",No,fName);
 	return;
-}
-//---------------------------------------------------------------
-//	Remove one user and return count
-//---------------------------------------------------------------
-int CSceneryPOD::MoreUsers()
-{	users--;
-	return users;
 }
 //=================================================================================
 // CSceneryDBM
@@ -88,76 +83,14 @@ CSceneryDBM CSceneryDBM::instance;
 //   /Scenery folder.
 //----------------------------------------------------------------------------------
 void CSceneryDBM::Init (void)
-{
-  // Buffer for the current search path
+{ // Buffer for the current search path
   char searchPath[PATH_MAX];
 	pfs = &globals->pfs;
-  // Load SCF files from Fly! II /Scenery folder
-  char base[PATH_MAX];
-  strcpy (base, "");
-  GetIniString ("UI", "flyRootFolder", base, PATH_MAX);
-  if (strlen (base) == 0) {
-    // Could not get Fly! II root folder
-    SCENE ("Cannot get Fly! II root folder name");
-  } else 
-	{ // Fly! II root folder was found
-    strcpy (searchPath, base);
-    strcat (searchPath, "/Scenery/");
-    LoadInFolderTree (searchPath);
-  }
-
   // Load SCF files from FlyLegacy /Scenery folder
-  strcpy (searchPath, "./Scenery/");
+  strcpy (searchPath, "SCENERY/");
   LoadInFolderTree (searchPath);
-
-#ifdef _WIN32
-  // On Windows systems, also search the /Scenery folders on the top-level mount points
-  // for fixed disks (removable and network drives may be optionally added at a later
-  // date).
-
-  // Enumerate volumes
-  DWORD bufferSize = 1024;
-  char* driveNames = new char[bufferSize];
-  DWORD driveNameSize = GetLogicalDriveStrings (bufferSize, driveNames);
-  if (driveNameSize == 0) {
-    // Error reading drive names
-    SCENE ("GetLogicalDriveStrings : Error %d", GetLastError ());
-  } else {
-    // Check to see if drive names exceeded buffer size
-    if (driveNameSize > bufferSize) {
-      // Reallocate buffer and try again
-      delete[] driveNames;
-      bufferSize = driveNameSize + 1;
-      driveNames = new char[bufferSize];
-      driveNameSize = GetLogicalDriveStrings (bufferSize, driveNames);
-      if (driveNameSize == 0) {
-        // Failed for some other reason
-        SCENE ("GetLogicalDriveStrings : Error %d", GetLastError());
-      }
-    }
-
-    // Iterate over logical drive names, loading SCF files from any top-level
-    //   /Scenery folders
-    unsigned int offset = 0;
-    while (offset < driveNameSize) {
-      // Get this drive name and its type
-      char* nextDriveName = driveNames + offset;
-      UINT type = GetDriveType (nextDriveName);
-
-      // Load SCF files from top-level /Scenery folder on fixed drives only
-      if (type == DRIVE_FIXED) {
-        strcpy (searchPath, nextDriveName);
-        strcat (searchPath, "Scenery/");
-        LoadInFolderTree (searchPath);
-      }
-
-      // Advance to the next drive name
-      offset += strlen(nextDriveName) + 1;
-    }
-  }
-  delete[] driveNames;
 	SCENE("========END INITIAL LOAD==================");
-#endif // _WIN32
+	return;
 }
 //--------------------------------------------------------------------------------
 //	Add a pod to the QGT pack
@@ -242,22 +175,31 @@ int	CSceneryDBM::GetSceneryType(char *path)
 	return 0;
 }
 //--------------------------------------------------------------
+// Pod in database 
+//--------------------------------------------------------------
+void CSceneryDBM::Warn01(char *fn)
+{	SCENE("      POD %s already in SQL base",fn);
+	return;
+}
+//--------------------------------------------------------------
 // Process this POD file 
 //--------------------------------------------------------------
 void CSceneryDBM::ProcessPOD(char *path,char *fn)
-{	char name[PATH_MAX];
-  _snprintf(name,511,"%s%s",path,fn);
+{	char *scn = "SCENERY/";
+  int   lgr = strlen(scn);
+	int   lim = PATH_MAX - 1;
+	char name[PATH_MAX];
+	//--- First search pod in databases ------
+	char *pn  = strstr(path,scn) + lgr;
+	_snprintf(name,lim,"%s%s",pn,fn);
+	int   in  = CheckDatabase(name);
+	if (in)		return Warn01(name);
+	//--- Search the QGT ---------------------
+  _snprintf(name,lim,"%s%s",path,fn);
+	char *dbp = strstr(name,scn) + lgr;
+	strncpy(podn,dbp,lim);
+	podn[lim] = 0;
 	scanpod(pfs,name,ScnpodCB);
-}
-//--------------------------------------------------------------
-// Check for file in database 
-//--------------------------------------------------------------
-bool CSceneryDBM::LookSceneryInSQl(char *fn)
-{	if (!globals->objDB)		return false;
-	int   nb = globals->sqm->SearchWOBJ(fn);
-	if (0 == nb)						return false;
-	SCENE("      SCENERY %s already in SQL base",fn);
-	return true;
 }
 //--------------------------------------------------------------
 // Check for scenery to process
@@ -274,21 +216,31 @@ int CSceneryDBM::CheckForScenery(PFSPODFILE *p)
 	char *fn1 = fn + 5;
 	int nf	= sscanf(fn1,"D%3u%3u/",&gx,&gz);
 	if (nf != 2)		return 0;
+	//---- There is a DATA indication ----------------------
 	char *dot = strchr(fn1,'.');
 	if (0 == dot)		return SceneryForGBT(p,gx,gz);
 	nf			= sscanf(dot,".S%1u%1u",&sx,&sz);
 	if (nf != 2)		return SceneryForGBT(p,gx,gz);
-	//--- Compute QGT key ----------------------------------
+	//--- This is a scenery file XXX.s00 to .S11 -----------
 	gx = (gx << 1) + sx;						// QGT X index
 	gz = (gz << 1) + sz;						// QGT Z index
 	U_INT	key = QGTKEY(gx,gz);			// QGT key
-	//--- Look in database for loaded file -----------------
+	//--- New file for QGT -----------------
 	fn	= p->name;
-	if (LookSceneryInSQl(fn1))		return 0;
 	CSceneryPOD *pod = new CSceneryPOD(key,p->pod->name);
 	AddPodToQGT(pod);
 	SCENE("      ***** ADD QGT(%03d-%03d) SCENERY %s",gx,gz,fn);
 	return 1;
+}
+//--------------------------------------------------------------
+//	We check the database (if any) for this pod file
+//	0 => Not in database
+//--------------------------------------------------------------
+int CSceneryDBM::CheckDatabase(char *pn)
+{	//--- Search in scenery database ------------------
+	if (0 == globals->objDB)			return 0;
+	bool in = globals->sqm->SearchPODinOBJ(pn);
+	return (in != 0);
 }
 //-----------------------------------------------------------------
 //	Load the scenery from path
@@ -328,7 +280,7 @@ void CSceneryDBM::LoadInFolderTree (const char *path)
     ulCloseDir(dirp);
   }
 }
-//------------------------------------------------------------------------------
+//=============================================================================
 //  Registration of a position is the trigger for loading of available
 //    scenery sets; this method is called whenever the terrain manager
 //    assigns a new QGT.
@@ -387,7 +339,7 @@ void CSceneryDBM::Deregister (U_INT key)
 	int  reg = 1;
 	std::map<U_INT,CSceneryPack*>::iterator p1 = sqgt.find(key);
 	if (p1 != sqgt.end())	
-	{	//--- Activate all sceneries in QGT ---------------
+	{	//--- remove all sceneries in QGT ---------------
 		if (reg)	{	SCENE("QGT (%03d-%03d) UNREGISTER",gx,gz); reg = 0; }
 		(*p1).second->RemovePODs(this);
 	}
@@ -397,33 +349,6 @@ void CSceneryDBM::Deregister (U_INT key)
 	if (p2 == sgbt.end())	return;
 	if (reg)	SCENE("GBT (%03d-%03d) UNREGISTER",gx,gz); 
 	(*p2).second->RemovePODs(this);
-	return;
-}
-//------------------------------------------------------------------------------
-//	Check if pod can be mounted
-//	If already mounted, just increment user count
-//------------------------------------------------------------------------------
-void	CSceneryDBM::MountPOD(CSceneryPOD *pod)
-{	char *name = pod->GetName();
-	std::map<std::string,CSceneryPOD *>::iterator it = mount.find(name);
-	if (it != mount.end())		return pod->IncUser();
-	//--- Mount all files in the pod ---------------
-	mount[name] = pod;
-	pod->Mount();
-	return;
-}
-//------------------------------------------------------------------------------
-//	Remove the POD
-//------------------------------------------------------------------------------
-void CSceneryDBM::RemovePOD(CSceneryPOD *pod)
-{ char *name = pod->GetName();
-	std::map<std::string,CSceneryPOD *>::iterator it = mount.find(name);
-	if (it == mount.end())			return;
-	//--- check for users ---------------------------------
-	if (pod->MoreUsers())				return;
-	//--- remove from map and unmount all files -----------
-	mount.erase(name);
-	pod->Remove();
 	return;
 }
 //==============================================================================
@@ -449,7 +374,7 @@ void CSceneryPack::MountPODs(CSceneryDBM *dbm)
 {	std::vector<CSceneryPOD*>::iterator ip;
   for (ip=apod.begin(); ip!=apod.end(); ip++)
 	{	CSceneryPOD *pod = (*ip);
-		dbm->MountPOD(pod);
+		pod->Mount();
 	}
 	return;
 }
@@ -461,7 +386,7 @@ void CSceneryPack::RemovePODs(CSceneryDBM *dbm)
 {	std::vector<CSceneryPOD*>::iterator ip;
   for (ip=apod.begin(); ip!=apod.end(); ip++)
 	{	CSceneryPOD *pod = (*ip);
-		dbm->RemovePOD(pod);
+		pod->Remove();
 	}
 	return;
 }

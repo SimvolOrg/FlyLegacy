@@ -525,6 +525,7 @@ public:
 	//-----------------------------------------------------------------
 	inline bool   Exporting()		{return (expf != 0);}
   inline char   UseELV()			{return elvDBE.use;}
+  inline bool   MainSQL()			{return (sqlTYP == SQL_MGR);}
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD
@@ -642,21 +643,26 @@ public:
   void     GetTerraList(tgxFunCB *fun);
   void     GetTerraSQL(TCacheMGR *tcm);
   //-----3D WORLD OBJECT ------------------------------------------------
-  void    WriteWOBJ(U_INT qgt,CWobj *obj);
+  void    WriteWOBJ(U_INT qgt,CWobj *obj,int row);
   void    Write3DLight(CWobj *obj,C3DLight *lit);
   void    WriteLightsFrom(CWobj *obj);
-  bool    CheckWOBJ(CWobj *obj);
+	int     WriteOBJname(char *fn);
+	bool		FileInOBJ(char *fn);
 	int 		SearchWOBJ(char *fn);
+	bool		SearchPODinOBJ(char *pn);
   void    ReadWOBJ(C_QGT *qgt);
-  void    ReadObjLite(CWobj *obj,int xk,int yk);
+  void    ReadOBJLite(CWobj *obj,int xk,int yk);
+	void		ReadOBJFile(CWobj *obj,int row);
   void    DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj);
   void    Decode3DLight(sqlite3_stmt *stm,CWobj *obj);
+	void		UpdateOBJzb(CWobj *obj);
   //---- READING TEXTURE ------------------------------------------------
   void     DecodeLinTexture(sqlite3_stmt *stm, CTgxLine *lin);
   GLubyte *GetGenTexture(TEXT_INFO &inf);
   GLubyte *GetAnyTexture(TEXT_INFO &inf);
   //--- SPECIFIC TRN ELEVATIONS -----------------------------------------
 	bool	FileInELV(char *fn);
+	bool	SearchPODinTRN(char *pn);
 	int		GetTRNElevations(C_QGT *qgt);
 	int		DecodeTRNrow();
 	int		GetTILElevations(C_QGT *qgt);

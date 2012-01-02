@@ -92,7 +92,6 @@ public:
 	//------------------------------------------------------------
 	void		Mount();
 	void		Remove();
-	int     MoreUsers();
 	//------------------------------------------------------------
 	inline U_INT GetKey()							{return Key;}
   inline char *GetName()						{return fName;}
@@ -153,21 +152,20 @@ public:
   //  Load initial files --------------------------------------------------
 protected:
   void    LoadInFolderTree (const char *path);
+	void		Warn01(char *fn);
 	//------------------------------------------------------------------------
-	bool		LookSceneryInSQl(char *fn);
+	int     CheckDatabase(char *pn);
 	void		LookForPOD(char *path);
 	void		ProcessPOD(char *path,char *fn);
 	int			GetSceneryType(char *path);
 	int 		SceneryForGBT(PFSPODFILE *p,int gx,int gz);
-	void		MountPOD (CSceneryPOD *pod);
-	void		RemovePOD(CSceneryPOD *pod);
   //------------------------------------------------------------------------
 protected:
 	PFS *pfs;
 	U_CHAR	tr;													// Trace indicator
+	char podn[PATH_MAX];
 	std::map<U_INT,CSceneryPack*> sqgt;
 	std::map<U_INT,CSceneryPack*> sgbt;
-	std::map<std::string,CSceneryPOD*>  mount;
 };
 
 

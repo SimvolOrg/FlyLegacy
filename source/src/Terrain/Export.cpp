@@ -1106,7 +1106,7 @@ void CExport::CloseSceneries()
 //-----------------------------------------------------------------------------------------
 //  Dispatch export M3D action
 //-----------------------------------------------------------------------------------------
-int  CExport::ExecuteW3D()
+int  CExport::ExecuteMOD()
 { char fn[PATH_MAX];
   char *mte = "FREEING SCENERIES";
   char *mrx = "PAUSE. Type any key to continue. To stop type s";
@@ -1568,8 +1568,9 @@ void CExport::ScanDirectory(int x, int z)
 //  Export Time Slice
 //=========================================================================================
 int CExport::TimeSlice(float dT)
-{ if (EXP_MW3D == Mode)		State = ExecuteW3D();
+{ if (EXP_MW3D == Mode)		State = ExecuteMOD();
   if (EXP_TRNF == Mode)		State =	ExecuteTRN();
+	if (EXP_WOBJ == Mode)		State = ExecuteOBJ();
   globals->fui->DrawOnlyNotices();
   return Clear;
 }
@@ -1584,55 +1585,136 @@ void CExport::Keyboard(U_INT key,U_INT mod)
 //  Export Scenery Object
 //=========================================================================================
 void CExport::ExportSceneryOBJ()
-{ if (0 == wob) return;
-	MountScenery();
-  WriteQgtOBJ();
-  return;
-}
-//---------------------------------------------------------------------------
-//  Mount the scenery folder
-//---------------------------------------------------------------------------
-void CExport::MountScenery()
-{	char base[PATH_MAX];
-  strcpy (base, "");
-  GetIniString ("UI", "flyRootFolder", base, PATH_MAX);
-  strcat (base, "/SCENERY");
-  paddpodfolder (&globals->pfs, base,1);
+{	if (0 == wob)       return;
+	if (!sqm->SQLobj())	return;
+	count	= 0;
+  Mode  = EXP_WOBJ;
+  State = EXP_OBJ_INIT;
+  fName = 0;
+  globals->appState = APP_EXPORT;
+	globals->fui->SetNoticeFont(&globals->fonts.ftmono20);
+	mCnt	= 0;
+	eof		= 0;
+	SCENE("================ START EXPORT =================");
 	return;
 }
 //---------------------------------------------------------------------------
-//  Get all file to export for this QGT
+//  Set initial message
 //---------------------------------------------------------------------------
-void CExport::WriteQgtOBJ()
-{ char dir[PATH_MAX];
-  sprintf_s(dir,PATH_MAX,"DATA/D*/*.S*");
-  char* name = (char*)pfindfirst (&globals->pfs,dir);
-  C3Dfile   sny(0,0);
-  while (name)
-  { char gx[4];
-    char gz[4];
-    char xq;
-    char zq;
-    int nf = sscanf(name,"DATA/D%3s%3s/%*[^.].S%c%c",gx,gz,&xq,&zq);
-    //----Decode all objects ------------------------------
-    sny.Decode(name);
-    //----Form the QGT key --------------------------------
-    xq  &= 1;
-    zq  &= 1;
-    int gtx = (atoi(gx) << 1) + xq;
-    int gtz = (atoi(gz) << 1) + zq;
-    U_INT key = QGTKEY(gtx,gtz);
-    //----Write all objects -------------------------------
-    CWobj *obj = sny.GetWOBJ();
-    while (obj)
-    { bool in = globals->sqm->CheckWOBJ(obj);
-      if (!in)  globals->sqm->WriteWOBJ(key,obj);
-      delete obj;
-      obj = sny.GetWOBJ();
+void CExport::InitOBJmsg()
+{	char *msg = "MOUNTING SCENERY FILES ";
+	globals->fui->DrawNoticeToUser(msg,200);
+	Clear = 1;
+	return;
+}
+//-----------------------------------------------------------------------------------------
+//  Build OBJ full name
+//-----------------------------------------------------------------------------------------
+void CExport::BuildOBJname(char *fn)
+{	if (0 == fn)	return;
+	int nf  =  sscanf(fn,"DATA/D%3d%3d/%*[^.].S%1d%1d",&gx,&gz,&bx,&bz);
+	if (nf != 4)	return;
+	//--- Compute QGT key -------------------------------------
+	qx = (gx << 1) + bx;
+	qz = (gz << 1) + bz;
+	qKey  = QGTKEY(qx, qz);
+	//--- build pod name --------------------------------------
+	char *dbn = fn + strlen("DATA/");
+	char *dbp	= GetSceneryPOD(pod);
+	_snprintf(podN,(PATH_MAX-1),"(%s)-(%s)",dbn,dbp);
+	fName	= fn;
+	//---------------------------------------------------------
+	char msg[1024];
+	_snprintf(msg,1023,"PROCESS: %s",podN);
+	globals->fui->DrawNoticeToUser(msg,200);
+	return;
+}
+
+//-----------------------------------------------------------------------------------------
+//  Find the first file
+//-----------------------------------------------------------------------------------------
+void CExport::GetFirstOBJ()
+{ char *fp	= "DATA/D*/*.S*";
+	char *fn	= pfindfirst(pfs,fp, &pod);
+	fName			= 0;
+	if (0 == fn)	eof = 1;
+	BuildOBJname(fn);
+	return;
+}
+
+//-----------------------------------------------------------------------------------------
+//  Find the next file
+//-----------------------------------------------------------------------------------------
+void CExport::GetNextOBJ()
+{ char *fn  = pfindnext(pfs,&pod);
+	fName			= 0;
+	if (0 == fn)	eof = 1;
+	BuildOBJname(fn);
+	return;
+}
+//-----------------------------------------------------------------------------------------
+//  Write the file
+//-----------------------------------------------------------------------------------------
+void  CExport::WriteOBJ()
+{	if (0 == fName)		return;
+	//--- check if file already in data base
+	bool in		= sqm->FileInOBJ(podN);
+	if (in)					 return;
+	//--- Write file name in database ----------------------
+	rowid = sqm->WriteOBJname(podN);
+	//--- Insert TRN in database ---------------------------
+	ExportOBJ(fName);
+	count++;
+	SCENE("Export %s from %s:", fName,pod);
+	Clear	= 1;
+	return;
+}
+//-----------------------------------------------------------------------------------------
+//  Export the file
+//-----------------------------------------------------------------------------------------
+void CExport::ExportOBJ(char *fn)
+{	C3Dfile   sny(0,0);
+  sny.Decode(fn,0);					// Decode all objects
+	//----Write all objects -------------------------------
+  CWobj *obj = sny.GetWOBJ();
+  while (obj)
+  {	globals->sqm->WriteWOBJ(qKey,obj,rowid);
+    delete obj;
+    obj = sny.GetWOBJ();
     }
-    name = (char*)pfindnext (&globals->pfs);
-  }
-  return;
+	return;
+}
+//---------------------------------------------------------------------------
+//  Execute step for OBJ export
+//---------------------------------------------------------------------------
+int CExport::ExecuteOBJ()
+{	 Clear = 0;
+	 switch (State)	{
+		//--- Initial message ------------
+		case EXP_OBJ_INIT:
+			InitOBJmsg();
+			return EXP_OBJ_MOUNT;
+		//--- Mount scenery---------------
+		case EXP_OBJ_MOUNT:
+			CSceneryDBM::Instance().MountAll();
+			return EXP_OBJ_FFILE;
+		//--- Search first file ----------
+		case EXP_OBJ_FFILE:
+			GetFirstOBJ();
+			return EXP_OBJ_WRITE;
+		//--- Search Next file ----------
+		case EXP_OBJ_NFILE:
+			GetNextOBJ();
+			return EXP_OBJ_WRITE;
+		//--- Write the file ------------
+		case EXP_OBJ_WRITE:
+			if (eof)	return EXP_OBJ_EXIT;
+			WriteOBJ();
+			return EXP_OBJ_NFILE;
+	 }
+	SCENE("========== Exported: %05d files ==========",count);
+	globals->appState = APP_EXIT_SCREEN;
+	return 0;
 }
 //=========================================================================================
 //  Call back to check if file is in database
@@ -1642,7 +1724,7 @@ void CExport::WriteQgtOBJ()
 //---------------------------------------------------------------------------
 void CExport::CheckSceneryFiles()
 { char *dir = "DATA/D*/*.S*";
-	MountScenery();
+	CSceneryDBM::Instance().MountAll();
   SCENE("===== SEARCH FOR SCENERY FILES ALREADY IN DATABASE OBJ ===================");
   char *n1 = "D255167/TM_FRW_B.S01";
 	char* name = (char*)pfindfirst (&globals->pfs,dir);
@@ -1675,6 +1757,7 @@ void CExport::CheckThisFile(char *fn)
 void CExport::ExportAllTRNs()
 {	if (0 == trn)       return;
 	if (!sqm->SQLelv())	return;
+	count = 0;
   Mode  = EXP_TRNF;
   State = EXP_TRN_INIT;
   fName = 0;
@@ -1724,6 +1807,7 @@ int  CExport::ExecuteTRN()
 				Clear = 1;
 			  return EXP_TRN_NFILE;
 	}
+	SCENE("========== Exported: %05d files ==========",count);
 	globals->appState = APP_EXIT_SCREEN;
 	return 0;
 }
@@ -1731,8 +1815,7 @@ int  CExport::ExecuteTRN()
 //  Build TRN full name
 //-----------------------------------------------------------------------------------------
 int CExport::BuildTRNname(char *fn)
-{	char *scn = "SCENERY/";
-	if (0 == fn)	return 0;
+{	if (0 == fn)	return 0;
 	int nf  =  sscanf(fn,"DATA/D%3d%3d/G%1d%1d.TRN",&gx,&gz,&bx,&bz);
 	if (nf != 4)	return 0;
 	//--- Compute QGT key -------------------------------------
@@ -1741,14 +1824,12 @@ int CExport::BuildTRNname(char *fn)
 	qKey  = QGTKEY(qx, qz);
 	//--- build pod name --------------------------------------
 	char *dbn = fn + strlen("DATA/");
-	char *dbp = strstr(pod,scn);
-	if (0 == dbp)	return 0;
-	dbp += strlen(scn);
+	char *dbp = GetSceneryPOD(pod);
 	_snprintf(podN,(PATH_MAX-1),"(%s)-(%s)",dbn,dbp);
 	fName	= fn;
 	//---------------------------------------------------------
 	char msg[1024];
-	_snprintf(msg,1023,"PROCESS %s",podN);
+	_snprintf(msg,1023,"PROCESS: %s",podN);
 	globals->fui->DrawNoticeToUser(msg,200);
 	return 1;
 }
@@ -1786,58 +1867,12 @@ void  CExport::WriteTRN()
 	//--- Write file name in database ----------------------
 	rowid = sqm->WriteTRNname(podN);
 	//--- Insert TRN in database ---------------------------
-	SCENE("Export %s from %s:", fName,pod);
 	ExportTRN(fName);
+	count++;
+	SCENE("Export %s from %s:", fName,pod);
 	return;
 }
 
-//---------------------------------------------------------------------------
-//  Export all TRN files
-//---------------------------------------------------------------------------
-void CExport::ExportTRNfiles()
-{	char *sny = "SCENERY/";
-	char	name[MAX_PATH];
-	U_INT  key = 0;														// QGT full key
-	sqm		= globals->sqm;
-	//--- Check that the base is used --------------------------
-	if (!sqm->SQLelv())					return;
-	//----------------------------------------------------------
-	for  (qz=0; qz!=512; qz++)
-	{for (qx=0; qx!=512; qx++)
-        { gx = qx >> 1;                     // Globe Tile X index
-					gz = qz >> 1;                     // Globe Tile Z index
-					U_SHORT sx = qx & 1;              // Quadrant X index
-					U_SHORT sz = qz & 1;              // Quadrant Z index
-					qKey      = QGTKEY(qx, qz);
-					_snprintf (name,MAX_PATH,"DATA/D%03d%03d/G%01d%01d.TRN", gx,gz,sx,sz);
-				  CSceneryDBM::Instance().Register (qKey);
-          bool ok = LookOnlyInPOD (&globals->pfs, name,&Pod);
-					if (!ok)				continue;
-					//--- Check if file already in database ----------------
-					char *dbp = strstr(Pod,sny);
-					if (0 == dbp)		continue;
-					dbp += strlen(sny);
-					//--- BYPASS SHARED SCENERY (already mounted -----------
-					int shr = strncmp(dbp,"SHARED/",7);
-					if (0 == shr)
-									continue;
-					//--- Unic name with POD and TRN -----------------------
-					char *deb = name + 5;							// Skip DATA/
-					_snprintf(edt,(MAX_PATH - 1),"(%s)-(%s)",dbp,deb);
-					ok		= sqm->FileInELV(edt);
-					if (ok)					continue;
-					//--- Write file name in database ----------------------
-					rowid = sqm->WriteTRNname(edt);
-					//--- Insert TRN in database ---------------------------
-					SCENE("Export %s from %s:", name,Pod);
-				  ExportTRN(name);
-				}
-					//--- we dont unregister to save time ------------------
-					//CSceneryDBM::Instance().Deregister (qKey);
-	}
-	globals->appState = APP_EXIT_SCREEN;
-	return;
-}
 //---------------------------------------------------------------------------
 //  Export a TRN file
 //---------------------------------------------------------------------------

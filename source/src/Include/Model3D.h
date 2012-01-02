@@ -348,6 +348,7 @@ class CWobj: public CqItem, public CStreamObject {
   friend class C3Dfile;
 protected:
   //----------------------------------------------------------
+	U_INT				serial;									// Serial number				
   pthread_mutex_t		mux;					    // Mutex for lock
   Tag         idn;
   U_INT       User;                   // Number of users
@@ -378,6 +379,7 @@ protected:
   char      *fnam;                    // File name
   char      *name;                    // 3D object name
   char      *desc;                    // Description
+	//-----------------------------------------------------------
 public:
   CWobj(Tag t);
  ~CWobj();
@@ -462,6 +464,7 @@ public:
   inline bool       NoHold()              {return (shar == 0);}
   inline bool       IsaShare()            {return (shar != 0);}
   //-------------------------------------------------------------
+	inline U_INT			GetSerial()						{return serial;}
   inline void       SetParameter(CmHead *obj) {pmOB = obj;}
   inline CmHead    *GetUserParam()        {return pmOB.Pointer();}
   inline char      *GetFileOBJ()          {return fnam;}
@@ -471,11 +474,12 @@ public:
   //-------------------------------------------------------------
   inline C_QGT     *GetQGT()    {return inf.qgt;}
   //-------------------------------------------------------------
+	inline void				SetSerial(U_INT n)		{serial = n;}
   inline void       SetFlag(U_INT f)      {flag = f;}
   inline void       SetDistance(float d)  {pDis = d;}
   inline void       SetParent(C3Dworld *w){wd3D = w;}
   inline C3DLight  *GetLight()            {return Lite;}
-  inline void       SetNOZB(char f)       {nozb = f; nozu = f;}
+  inline void       SetNOZB(char f)       {nozb = f;}
   inline void       SetNOZU(char f)       {nozu = f;}
 	inline void				SetSnap()							{snap = 1;}
 	//--------------------------------------------------------------
@@ -571,14 +575,14 @@ class C3Dfile: public CStreamObject {
   CObjQ      exQ;                     // Object queue for export
   CWhld     *hld;                     // Last place holder found
   char       namef[64];               // File name
-//  int        num_of_autogen;          // num_of_autogen objects
+  char       fullN[PATH_MAX];					// Current file ident
   //-----------------------------------------------------------
 public:
   C3Dfile(C3DMgr *m,C_QGT *qgt);     // Constructor
  ~C3Dfile();
   void  Abort(Tag tag);
   void  Abort(char *msg);
-  void  Decode(char *fname);
+  void  Decode(char *fname,char *pn);
   int   Read(SStream *st,Tag tag);
   bool  MarkHold(CWobj *obj);
 	void	AutoGen(SStream *st);
@@ -609,7 +613,10 @@ class C3Dworld {
   friend class C_QGT;
 protected:
   //---ATTRIBUTES ------------------------------------------------
-  U_CHAR          tr;                         // Trace option             
+  U_CHAR          tr;                         // Trace option
+	//---Object serial number --------------------------------------
+	U_INT						serial;
+	//--------------------------------------------------------------
   CObjQ           woQ;                        // QGT world objects
   C_QGT          *qgt;                        // Mother QGT
   CFmt1Map       *wmap;                       // Wind map for windsock

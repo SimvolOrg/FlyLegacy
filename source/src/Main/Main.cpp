@@ -1358,7 +1358,8 @@ int main (int argc, char **argv)
   }
 
   //---Put find root foldeer here to open log file in final directory
-  const char *flyRootFolder = GetIniValue("UI","flyRootFolder");
+  //const char *flyRootFolder = GetIniValue("UI","flyRootFolder");
+	const char *flyRootFolder = ".";
   //---If a test folder set it as current directory to allow debugging
   if (flyRootFolder == 0) {gtfo ("Cannot determine Fly! root folder");}
   //=========Init the global structure==================================

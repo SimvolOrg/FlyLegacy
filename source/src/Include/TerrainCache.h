@@ -353,7 +353,6 @@ public:
     bool          NeedHigResolution(float rd);
     int           Inside3DRing();
     int           Outside3DRing();
-    int           Update3Dstate();
 		//-----------------------------------------------------------
 		void					LoadVBO();
 		//-----------------------------------------------------------

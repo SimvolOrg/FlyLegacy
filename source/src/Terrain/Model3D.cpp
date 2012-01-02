@@ -442,6 +442,7 @@ void C3DMgr::LocateObjects(C_QGT *qgt)
 	if (0 == lpod)	return;
 	//--- Search in files ----------------------------
   C3Dfile    scf(this,qgt);
+	char *pod = 0;
   char dir[128];
   this->qgt = qgt;
   U_INT tx  = qgt->GetXkey();
@@ -451,10 +452,11 @@ void C3DMgr::LocateObjects(C_QGT *qgt)
   U_INT scx = tx & 0x01;
   U_INT scz = tz & 0x01;
   _snprintf(dir,128,"DATA/D%03d%03d/*.S%d%d",gtx,gtz,scx,scz);
-  char* name = (char*)pfindfirst (&globals->pfs,dir);
-	if (tr) TRACE("LOOKING FOR SCENARY FILE ==============> %s",name);
+  char* name = (char*)pfindfirst (&globals->pfs,dir,&pod);
+	if (tr) TRACE("LOOKING FOR SCENERY FILE ==============> %s",name);
+	//--------------------------------------------------
   while (name)
-  { scf.Decode(name);                 
+  { scf.Decode(name,pod);                 
     name = (char*)pfindnext (&globals->pfs);
   }
   return;
@@ -648,8 +650,12 @@ C3Dfile::~C3Dfile()
 //  the new object calls the C3DMgr (3D manager) to add this object
 //  to the corresponding QGT C3Dworld manager.
 //---------------------------------------------------------------------
-void C3Dfile::Decode(char *fname)
-{ //---Save the file name --------------------------
+void C3Dfile::Decode(char *fname,char *pn)
+{ char *dt  = "DATA/";
+	char *deb = strstr(fname,dt) + strlen(dt);
+	char *pod = GetSceneryPOD(pn);
+	//---Save the file name --------------------------
+	_snprintf(fullN,(PATH_MAX-1),"(%s)-(%s)",deb,pod);
   strncpy(namef,fname,63);
   namef[63] = 0;
   //---Open the file -------------------------------
@@ -730,7 +736,7 @@ int C3Dfile::Read(SStream *st,Tag tag)
       if (kind == 'hold') {obj = new CWhld(kind); hld = (CWhld*)obj;}
       if (0 == obj)   Abort(kind);
       //--- Process object  ----------------------
-      obj->SetFileName(namef);
+      obj->SetFileName(fullN);
       ReadFrom(obj,st);
       if (ForExport())  {exQ.PutEnd(obj); return TAG_READ;}
       if (MarkHold(obj))                  return TAG_READ;
@@ -1950,6 +1956,7 @@ C3Dworld::C3Dworld()
   nColor[3] = 1.0f;
   //----------------------------
   nOBJ      = 0;
+	serial		= 0;
   //---Build wind map ----------
   CFmt1Slot s0(  5, 80);
   CFmt1Slot s1( 10, 70);
@@ -2052,7 +2059,7 @@ void C3Dworld::TimeSlice(float dT)
         if (cnt == 100)     return;
         //--- Restart with next to first object --------------
         if (0 == prv)       obj = woQ.GetFirst();
-        else obj = prv; 
+        else								obj = prv; 
         if (0 == obj)       return;
       }
     return;
@@ -2070,12 +2077,13 @@ void C3Dworld::Check()
 //-----------------------------------------------------------------------------
 void C3Dworld::AddToWOBJ(CWobj *obj)
 { obj->SetParent(this);
+  obj->SetSerial(++serial);
 	if (tr) {
 		char la[32];
 		char lo[32];
 		char *name = obj->ModelName(MODEL_DAY);
 		obj->EditPos(la,lo);
-		TRACE("Add object %s QGT(%03d-%03d)", name,qgt->GetXkey(),qgt->GetZkey());
+		//TRACE("Add object %s QGT(%03d-%03d)", name,qgt->GetXkey(),qgt->GetZkey());
 	}
   //--- Set object localization ---------------
   if (!obj->Localize(qgt)) return;
@@ -2089,19 +2097,15 @@ void C3Dworld::AddToWOBJ(CWobj *obj)
 //-----------------------------------------------------------------------------
 void C3Dworld::Draw(U_CHAR tod)
 { if (globals->noOBJ)       return;
-  glEnable(GL_TEXTURE_2D);
-  glCullFace (GL_BACK);
+  U_CHAR     mod = ('N' == tod)?(MODEL_NIT):(MODEL_DAY);
   //----------------------------------------------------------
   CSuperTile *sup = 0;
   for (U_INT No = 0; No != TC_SUPERT_NBR; No++) 
   { sup = qgt->GetSuperTile(No);
-    sup->Update3Dstate();
     if  (!sup->IsVisible()) continue;
-    if  ( sup->IsOutside()) continue;
-    globals->cnt1 += sup->Draw3D(tod);       // Count objects          
+    globals->cnt1 += sup->Draw3D(mod);       // Count objects          
   }
   //----------------------------------------------------------
-  glDisable(GL_TEXTURE_2D);
   return;
 }
 //-----------------------------------------------------------------------------

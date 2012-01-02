@@ -61,10 +61,20 @@ class SqlMGR;
 #define EXP_TRN_NFILE 4										// Next file
 #define EXP_TRN_WRITE 5										// Export one file
 #define EXP_TRN_EXIT	6
+//============================================================================
+//	Export OBJ files
+//============================================================================
+#define EXP_OBJ_INIT	1						
+#define EXP_OBJ_MOUNT 2										// Initial mounting
+#define EXP_OBJ_FFILE 3										// First file
+#define EXP_OBJ_NFILE	4										// Next file
+#define EXP_OBJ_WRITE 5										// Write OBJ
+#define EXP_OBJ_EXIT	6										// Exit
 //---------------------------------------------------------------
 #define EXP_MNOT	0
 #define EXP_MW3D	1												// Export M3D models
 #define EXP_TRNF	2												// Export TRN files
+#define EXP_WOBJ	3												// Export world objects
 //============================================================================
 //  Class to export DATA for SQL Database
 //============================================================================
@@ -76,6 +86,7 @@ class CExport {
   //-----ATTRIBUTES ---------------------------------------------
   char Mode;
 	int  State;															// State routine
+	U_INT	count;														// Export count
 	char Clear;															// Clear request
   TEXT_INFO  inf;                         // Texture info
   M3D_PART_INFO pif;                      // Part info
@@ -106,7 +117,6 @@ class CExport {
 	char *fName;														// File name
 	char  podN[PATH_MAX];										// Pod name
   //----Generic parameters ---------------------------------------
-	U_INT	count;
 	U_INT qKey;															// QGT key
   U_INT bx;                               // Base QGT X
   U_INT bz;                               // Base QGT Z
@@ -177,7 +187,7 @@ public:
   void  M3DMsgIntro();
   void  ExportAllSceneries();
   void  CloseSceneries();
-  int   ExecuteW3D();
+  int   ExecuteMOD();
   void  KeyW3D(U_INT key,U_INT mod);
 	//--- Update 3D models -------------------------------------
 	void	Update3DModels();
@@ -205,8 +215,14 @@ public:
   int   TimeSlice(float dT);
   void  Keyboard(U_INT key,U_INT mod);
   //----Scenery OBJECTS --------------------------------------------
-  void  ExportSceneryOBJ();
-	void	MountScenery();
+	int		ExecuteOBJ();
+	void  ExportSceneryOBJ();
+	void	InitOBJmsg();
+	void	GetFirstOBJ();
+	void	GetNextOBJ();
+	void	WriteOBJ();
+	void	BuildOBJname(char *fn);
+	void	ExportOBJ(char *fn);
   void  WriteQgtOBJ();
 	void	CheckSceneryFiles();
 	void	CheckThisFile(char *fn);
@@ -218,7 +234,6 @@ public:
 	int 	GetFirstTRN();
 	int		GetNextTRN();
 	void	WriteTRN();
-	void	ExportTRNfiles();
 	void	ExportTRN(char *fn);
 	void	ExportSUP(C_STile *asp);
 };
