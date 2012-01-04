@@ -753,8 +753,7 @@ CWingModel::CWingModel (void)
 //===================================================================
 
 CPropellerModel::CPropellerModel (void)
-{
-  strcpy (propeller_filename, "");
+{*propeller_filename = 0;
   read_PRP_file_flag = false;
   //
   mode = 0,    blad = 2;

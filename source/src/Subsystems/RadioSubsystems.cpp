@@ -1360,7 +1360,7 @@ CBKKT76Radio::CBKKT76Radio (void)
   TypeIs (SUBSYSTEM_KT76_RADIO);
 
   entryMode = false;
-  strcpy (tempCode, "    ");
+  strncpy (tempCode, "    ",5);
 }
 
 
@@ -1442,7 +1442,7 @@ EMessageResult CBKKT76Radio::ReceiveMessage (SMessage *msg)
           // Transition to entry mode
           entryMode = true;
           entryDigit = 0;
-          strcpy (tempCode, "    ");
+          strncpy (tempCode, "    ",5);
         }
 
         // Check if entire code has been entered

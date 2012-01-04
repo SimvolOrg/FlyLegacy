@@ -42,8 +42,7 @@ using namespace std;
 CFuelSubsystem::CFuelSubsystem (void)
 {
   TypeIs (SUBSYSTEM_FUEL_SUBSYSTEM);
-
-  strcpy (name, "");
+ *name = 0;
   eNum  = 1;
   f_gph = 0.0f;
   gals  = 0.0;

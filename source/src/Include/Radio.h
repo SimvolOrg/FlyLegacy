@@ -402,7 +402,7 @@ public:
   virtual void            TimeSlice (float dT,U_INT FrNo = 0);		//JSDEV*
 
 protected:
-  char              tempCode[5];
+  char              tempCode[6];
   int               entryDigit;
   bool              entryMode;
   float             entryTimer;
@@ -482,7 +482,7 @@ public:
 	//--------------------------------------------------------
 	void	PowerON();
 	void	EnterTRK();
-	void	NextNODE();
+	void	SetTrack();
 	void	EnterAPR();
 	void	EnterSBY();
 	//--------------------------------------------------------

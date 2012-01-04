@@ -133,12 +133,12 @@ void CFuiThemeWidget::SetFlag (string name)
 {
   flagSet.insert (name);
 }
-
+//===========================================================================
 void CFuiThemeWidget::SetName (const char* s)
 {
-  strcpy (name, s);
+  strncpy (name, s,63);
 }
-
+//===========================================================================
 CBitmap *CFuiThemeWidget::GetBitmap (string name)
 { return bmMap[name];
 }
@@ -200,20 +200,20 @@ void CFuiThemeWidget::Print (FILE *f)
 }
 
 
-//
+//===========================================================================
 // CFuiTheme
-//
+//===========================================================================
 CFuiTheme::CFuiTheme (void)
-{
-  strcpy (name, "");
+{*name = 0;
   id = 0;
 }
-
+//===========================================================================
+//	Constructor 
+//===========================================================================
 CFuiTheme::CFuiTheme (const char *themeFilename)
-{
-  strcpy (name, "");
+{*name = 0;
   id = 0;
-  string activeWidget; // static?
+   // static?
 
   // Open .SCH file and parse lines
   PODFILE *p = popen (&globals->pfs, themeFilename);
@@ -242,63 +242,36 @@ CFuiTheme::CFuiTheme (const char *themeFilename)
       if (stricmp (token, "THEMENAME") == 0) {
         // Get the theme user-visible name
         token = strtok (NULL, "");
-        strcpy (this->name, token);
-      } else if (stricmp (token, "THEMEID") == 0) {
+        strncpy (this->name, token,63);
+      } else 
+			if (stricmp (token, "THEMEID") == 0) {
         // Get the theme unique identifier
         token = strtok (NULL, delimiters);
         this->id = StringToTag (token);
-      } else if (stricmp (token, "WIDGET") == 0) {
+			} else 
+			if (stricmp (token, "WIDGET") == 0) {
         // Set the active widget
         token = strtok (NULL, delimiters);
         activeWidget = token;
-        if (widgetMap.find(activeWidget) != widgetMap.end()) {
-          // Widget is already defined
+        if (widgetMap.find(activeWidget) != widgetMap.end()) // Widget is already defined
           WARNINGLOG ("CFuiTheme : Duplicate widget type %s", activeWidget);
-        }
         widgetMap[activeWidget] = new CFuiThemeWidget;
-      } else {
 
-        // If the active widget is valid, parse the element type and allow
-        //   the widget to parse the details
-
-        if (!activeWidget.empty()) {
-
-          // Get reference to the active widget
-          CFuiThemeWidget *widget = widgetMap[activeWidget];
-
-          if (stricmp (token, "BITMAP") == 0) {
-            widget->ParseBitmap (s);
-          } else if (stricmp (token, "COLOR") == 0) {
-            widget->ParseColour (s);
-          } else if (stricmp (token, "USESHADOW") == 0) {
-            widget->SetFlag (token);
-          } else if (stricmp (token, "FRAMERATE") == 0) {
-            widget->ParseFrameRate (s);
-          } else if (stricmp (token, "THICKNESS") == 0) {
-            widget->ParseThickness (s);
-          } else if (stricmp (token, "TITLE") == 0) {
-            widget->ParseComponentName (s, token);
-          } else if (stricmp (token, "CLOSE") == 0) {
-            widget->ParseComponentName (s, token);
-          } else if (stricmp (token, "MINIMIZE") == 0) {
-            widget->ParseComponentName (s, token);
-          } else if (stricmp (token, "ZOOM") == 0) {
-            widget->ParseComponentName (s, token);
-          } else if (stricmp (token, "BUTTONWIDTH") == 0) {
-            widget->ParseButtonWidth (s);
-          } else  WARNINGLOG("CFuiTheme : Unknown element type %s", token);
-        } else WARNINGLOG("CFuiTheme : Token %s found without valid widget", token);
-      }
-
-      // Get next line
+			} else	
+			
+      // If the active widget is valid, parse the element type and allow
+      //   the widget to parse the details
+			if (0 == Decode(token,s))	break;
+     // Get next line
+		
       pgets (s, 256, p);
-    }
+		}
     pclose (p);
   } else {
     gtfo ("CFuiTheme : Cannot open theme file %s", themeFilename);
   }
 }
-
+//======================================================================================
 CFuiTheme::~CFuiTheme (void)
 {
   std::map<string,CFuiThemeWidget*>::iterator i;
@@ -319,7 +292,27 @@ CFuiThemeWidget *CFuiTheme::GetWidget (string name)
 
   return rc;
 }
-
+//==============================================================================
+//	Decode the line
+//=================================================================================
+int CFuiTheme::Decode(char *t,char *s)
+{ if (activeWidget.empty())	return 1;;
+	CFuiThemeWidget *widget = widgetMap[activeWidget];
+	if (stricmp (t, "BITMAP") == 0)			{widget->ParseBitmap (s);		return 1;}
+	if (stricmp (t, "COLOR") == 0)			{widget->ParseColour (s);		return 1;}
+	if (stricmp (t, "USESHADOW") == 0)	{widget->SetFlag (t);				return 1;}
+	if (stricmp (t, "FRAMERATE") == 0)	{widget->ParseFrameRate(s);	return 1;}
+	if (stricmp (t, "THICKNESS") == 0)	{widget->ParseThickness(s); return 1;}
+	if (stricmp (t, "TITLE") == 0)			{widget->ParseComponentName(s, t);	return 1;}
+	if (stricmp (t, "CLOSE") == 0)			{widget->ParseComponentName(s, t);	return 1;}
+	if (stricmp (t, "MINIMIZE") == 0)		{widget->ParseComponentName(s, t);	return 1;}
+	if (stricmp (t, "ZOOM") == 0)				{widget->ParseComponentName(s, t);	return 1;}
+	if (stricmp (t, "BUTTONWIDTH") == 0){widget->ParseButtonWidth (s);			return 1;}
+	if (stricmp (t, "END") == 0)				{return 0;}
+	WARNINGLOG("CFuiTheme : Unknown element type %s", t);
+	return 1;
+}
+//==============================================================================
 void CFuiTheme::Print (FILE *f)
 {
   fprintf (f, "THEMENAME\t%s\n", name);

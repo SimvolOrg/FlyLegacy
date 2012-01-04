@@ -183,6 +183,7 @@ typedef enum {
 typedef struct {
 	//--- Frame number ------------------------------------------------
 	U_INT			Frame;
+	char     *mdule;											// Current module
 	BBM				mBox;												// Master black box
   //----World position ----------------------------------------------
 	double		aMax;		// Altitude maximum

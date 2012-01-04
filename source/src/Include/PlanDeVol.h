@@ -419,6 +419,7 @@ public:
 	inline void				SetLandingMode()			{mode = WPT_MOD_LND;}
 	inline void				SetDirectMode()				{mode = WPT_MOD_DIR;}
 	inline void				SetLegMode()					{mode = WPT_MOD_LEG;}
+	inline void				SetMaxDistance()			{mDis = 50000;}
 	//--------------------------------------------------------------
 	inline bool				HasTkoRWY() {return (strcmp("NONE",tkoRWY) != 0);}
 	inline bool				HasLndRWY()	{return (strcmp("NONE",lndRWY) != 0);}

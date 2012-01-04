@@ -38,7 +38,7 @@
 CPlanetImage::CPlanetImage (float r, float g, float b, const char* name)
 {
   // Assign planet colour with default alpha
-  strcpy (this->name, name);
+  strncpy (this->name, name,63);
   this->r = r;
   this->g = g;
   this->b = b;

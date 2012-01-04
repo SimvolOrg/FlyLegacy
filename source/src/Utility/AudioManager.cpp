@@ -649,8 +649,7 @@ void CAudioManager::LoadFile(CSoundBUF *sbf,char *fn)
 	if (dot[4])		dot[4]	= 0;				// Eliminate comment
 	PFS  *pfs	= &globals->pfs;
   char wavfilepath [256];
-  strcpy (wavfilepath, "Sound/");
-  strcat (wavfilepath, fn);
+	_snprintf(wavfilepath,255,"SOUND/%s",fn);
   //MEMORY_LEAK_MARKER ("popen")
   PODFILE *p = popen (pfs, wavfilepath);
   //MEMORY_LEAK_MARKER ("popen")

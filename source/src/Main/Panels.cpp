@@ -119,7 +119,7 @@ CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
 	pit				= pn;						// Panel manager
 	mveh			= pn->GetMVEH();
 	main			= 0;
-  strcpy (this->filename, filename);
+  strncpy (this->filename, filename,63);
   txOBJ   = 0;
   ngOBJ   = 0;
 	trn1		= 1;
@@ -169,9 +169,8 @@ CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
   //   otherwise it is static
 
   SStream s;
-  strcpy (s.filename, "DATA/");
-  strcat (s.filename, filename);
-  strcpy (s.mode, "r");
+	_snprintf(s.filename,(PATH_MAX-1),"DATA/%s",filename);
+  strncpy (s.mode, "r",3);
 
   const char *p = strrchr (filename, '.');
   if (p && (stricmp (p, ".PNL") != 0)) {

@@ -397,12 +397,11 @@ CSimulatedObject::CSimulatedObject (void)
   globals->slw->StateAs(i);
 
   nfo = NULL; lod = NULL;
-  strcpy (nfoFilename, "");
+ *nfoFilename = 0;
 }
 
 CSimulatedObject::~CSimulatedObject (void)
-{
-  strcpy (nfoFilename, "");
+{ *nfoFilename = 0;
   SAFE_DELETE (nfo);
   SAFE_DELETE (lod);
 }
@@ -461,19 +460,16 @@ CDLLSimulatedObject::CDLLSimulatedObject (void)
   lod = NULL;
   draw_flag = false;
   sim_objects_active = false;
-  strcpy (nfoFilename, "");
+ *nfoFilename = 0;
 }
 //------------------------------------------------------------------------
 //	Destroy object
 //------------------------------------------------------------------------
 CDLLSimulatedObject::~CDLLSimulatedObject (void)
-{
-  strcpy (nfoFilename, "");
+{*nfoFilename = 0;
   SAFE_DELETE (nfo);
   SAFE_DELETE (lod);
 }
-
-
 //------------------------------------------------------------------ 
 //    Set Orientation
 //------------------------------------------------------------------
@@ -577,7 +573,6 @@ CVehicleObject::CVehicleObject (void)
   pit = NULL;
   cam = NULL;
   lod = NULL;
-  rdo = NULL;
   elt = NULL;
   eng = NULL;
   mix = NULL;
@@ -625,8 +620,14 @@ CVehicleObject::~CVehicleObject (void)
 #ifdef _DEBUG
   DEBUGLOG ("CVehicleObject::~CVehicleObject dll=%d", globals->plugins_num);
 #endif
-
-  strcpy (nfoFilename, "");
+	//---Close any open window related to aircraft ------------
+  if (globals->wfl) globals->wfl->Close();      // Fuel load
+  if (globals->wld) globals->wld->Close();      // Load weight
+  if (globals->rdb) globals->rdb->Close();      // radio band
+  if (globals->wpb) globals->wpb->Close();      // Window probe
+  globals->inside        =  0;
+	//-----------------------------------------------------------
+ *nfoFilename = 0;
   SAFE_DELETE (nfo);
   SAFE_DELETE (svh);
   SAFE_DELETE (gas);
@@ -639,7 +640,6 @@ CVehicleObject::~CVehicleObject (void)
   SAFE_DELETE (pit);
   SAFE_DELETE (cam);
   SAFE_DELETE (lod);
-  SAFE_DELETE (rdo);
   SAFE_DELETE (elt);
   SAFE_DELETE (eng);
   SAFE_DELETE (mix);
@@ -651,12 +651,6 @@ CVehicleObject::~CVehicleObject (void)
   sounds.clear();
   //---JS: Clean globals area -------------------------------
   globals->simulation    = false;
-  //---Close any open window related to aircarft ------------
-  if (globals->wfl) globals->wfl->Close();      // Fuel load
-  if (globals->wld) globals->wld->Close();      // Load weight
-  if (globals->rdb) globals->rdb->Close();      // radio band
-  if (globals->wpb) globals->wpb->Close();      // Window probe
-  globals->inside        =  0;
 }
 //------------------------------------------------------------------------
 //	Read all parameters
@@ -776,11 +770,6 @@ void CVehicleObject::ReadFinished (void)
   //MEMORY_LEAK_MARKER ("cam")
   if (*nfo->GetCAM()) cam  = new CCameraManager (this,nfo->GetCAM());
   //MEMORY_LEAK_MARKER ("cam")
-
-  // Read Radio Manager
-  //MEMORY_LEAK_MARKER ("rdo")
-  if (*nfo->GetRDO()) rdo = new CRadioManager (nfo->GetRDO());
-  //MEMORY_LEAK_MARKER ("rdo")
 
   // Read External Lights
   //MEMORY_LEAK_MARKER ("elt")

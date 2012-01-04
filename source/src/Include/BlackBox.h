@@ -30,15 +30,16 @@
 #endif // _MSC_VER > 1000
 
 #include "../Include/FlyLegacy.h"
+class CFuiCanva;
 //==============================================================================
-#define BB_SIZE				(32)
+#define BB_SIZE				(16)
 #define BB_MASK				(BB_SIZE - 1)
 //==============================================================================
 //	Structur to save data
 //==============================================================================
 struct BB_SLOT {
 	U_INT	frame;													// Frame number
-	Tag		action;													// Action type
+	char *action;													// Action type
 	void *item;														// Item parameter
 	U_INT pm1;														// Parameter
 };
@@ -51,14 +52,16 @@ protected:
 	char     *name;												// Name
 	U_CHAR    dim;												// Dimension
 	U_CHAR		ind;												// Current indice
+	U_INT			use;
 	//--------------------------------------------------------------
 	BB_SLOT   buf[BB_SIZE];								// Register
 	//--- METHODS --------------------------------------------------
 public:
 	BlackBox();
 	//--------------------------------------------------------------
-	void	Enter(Tag a,void *p1, U_INT p2);
+	void	Enter(char *a,void *p1, U_INT p2);
 	void	Dump();
+	void	Probe(CFuiCanva *cnv,int nb);
 	//--------------------------------------------------------------
 	virtual void Edit()	{;}
 };
@@ -92,8 +95,8 @@ public:
 	//--- Register a new black box ---------------------------------
 	void			DumpAll();
 	//--------------------------------------------------------------
-	BBcache			*GetTcmBox(char *name);
-	BBairport		*GetAptBox(char *name);
+	BBcache			*CreateTcmBox(char *name);
+	BBairport		*CreateAptBox(char *name);
 };
 //======================= END OF FILE ==========================================
 #endif BLACKBOX_H

@@ -756,7 +756,7 @@ int C3Dfile::Read(SStream *st,Tag tag)
 void C3Dfile::AutoGen(SStream *st)
 { Tag    kind;
 	ReadTag(&kind,st);
-  MEMORY_LEAK_MARKER ("auto")
+ // MEMORY_LEAK_MARKER ("auto")
   if (kind == 'mobj') 
 	{ CWobj *autobj = 0; 
 		// Process object
@@ -811,7 +811,7 @@ void C3Dfile::AutoGen(SStream *st)
 //      }
     }	
 	}
-  MEMORY_LEAK_MARKER ("auto")
+  //MEMORY_LEAK_MARKER ("auto")
   return;
 }
 //===================================================================================

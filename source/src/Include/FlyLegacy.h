@@ -163,7 +163,7 @@
 // Memory leak marker
 //
 #ifdef _DEBUG
-#define MEMORY_LEAK_MARKER(s) { char *mark = new char[32]; strcpy (mark, s); }
+#define MEMORY_LEAK_MARKER(s) { char *mark = new char[32]; strncpy (mark, s,31), mark[31] = 0; }
 #else
 #define MEMORY_LEAK_MARKER(s) {}
 #endif
@@ -3386,7 +3386,7 @@ private:
   int       m_line;
 
 public:
-    GTFO (const char* file = NULL, int line = 0) : m_line(line) { strcpy (m_file, file); }
+    GTFO (const char* file = NULL, int line = 0) : m_line(line) { strncpy (m_file, file,1023); }
   void operator() (const char *fmt = NULL, ...);
 };
 
@@ -3408,7 +3408,7 @@ private:
   int       m_line;
 
 public:
-  WARN (const char* file = NULL, int line = 0) : m_line(line) { strcpy (m_file, file); }
+  WARN (const char* file = NULL, int line = 0) : m_line(line) { strncpy (m_file, file,1023); }
   void operator() (const char *fmt = NULL, ...);
 };
 
@@ -3459,7 +3459,7 @@ private:
   int       m_line;
 
 public:
-  DEBUG (const char* file = NULL, int line = 0) : m_line(line) { strcpy (m_file, file); }
+  DEBUG (const char* file = NULL, int line = 0) : m_line(line) { strncpy (m_file, file,1023); }
   void operator() (const char *fmt = NULL, ...);
 };
 

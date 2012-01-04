@@ -198,16 +198,13 @@ void CDatabase::Mount (PODFILE *f)
 //-------------------------------------------------------------------
 // Mount the database but do not load any of the records into memory
 //-------------------------------------------------------------------
-void CDatabase::Mount (const char* dbdFilename)
-{
-  char fullFilename[64];
-  strcpy (fullFilename, "Database/");
-  strcat (fullFilename, dbdFilename);
-  PODFILE *p = popen (&globals->pfs, fullFilename);
-  if (p) {
-    // Mount the database, PODFILE must be left open
-    Mount (p);
-  }
+void CDatabase::Mount (const char* dbn)
+{ char fn[128];
+	_snprintf(fn,127,"DATABASE/%s",dbn);
+	fn[127] = 0;
+  // Mount the database, PODFILE must be left open
+  PODFILE *p = popen (&globals->pfs, fn);
+  if (p)  Mount (p);
 }
 //-------------------------------------------------------------------
 void CDatabase::Unmount (void)

@@ -275,7 +275,7 @@ char CAnimator::GroundState()
 // CAcmPart represents a single (possibly animated) part within the model.
 //====================================================================
 CAcmPart::CAcmPart (CModelACM *md,int n, float minValue, float maxValue)
-{ strcpy (name, "");
+{*name   = 0;
   mother = 0;
   model  = md;
   // Allocate storage for keyframe data table and init 'next entry' index
@@ -374,9 +374,8 @@ double CAcmPart::GetRadius()
 //  Set part name and check for transparent glass
 //-------------------------------------------------------------------------------------
 void CAcmPart::setName (const char *s)
-{ strcpy (name, s);
+{ strncpy (name, s,63);
   if (strstr(name,"glasse") == 0) return; 
-//  SetAlpha(0.8f);
   Trans = 1;
   return;
 }
@@ -1055,7 +1054,7 @@ void  CModelACM::LoadFrom(char* acmFilename)
     char name[LINE_LENGTH];
     pgets (s, LINE_LENGTH, p);
     TrimTrailingWhitespace (s);
-    strcpy (name, s);
+    strncpy (name, s, 127);
     part->setName (name);
     //--- Part status (on/off) -----------
     pgets (s, LINE_LENGTH, p);

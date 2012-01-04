@@ -213,7 +213,7 @@ CK155radio::CK155radio()
   StoreFreq(&ActNav,108.95f);
   StoreFreq(&SbyNav,110.45f);
   MakeFrequency(&ActNav);
-  strcpy(cdiFLD,"---------------");
+  strncpy(cdiFLD,"---------------",24);
   cdiDIM  = strlen(cdiFLD);
 }
 //-------------------------------------------------------------------------

@@ -145,7 +145,7 @@ CFuiComponent::CFuiComponent (int px, int py, int wd, int ht, CFuiComponent *win
   id = 0;
   bind    = 0;
   prop    = 0;                // Default properties
-  strcpy (widgetName, "");
+  wName   = "";
   widgetTag = 'defa';
  *text = 0;
   xParent   = yParent = 0;
@@ -181,7 +181,9 @@ CFuiComponent::~CFuiComponent (void)
 int CFuiComponent::Read (SStream *stream, Tag tag)
 { int rx,ry,rw,rh;
   int pm;
+	Tag  wt;
   char rsz[4];
+	char wn[64];
   switch (tag) {
   case 'ID  ':
   case 'id  ':
@@ -195,8 +197,8 @@ int CFuiComponent::Read (SStream *stream, Tag tag)
     }
     return TAG_READ;
   case 'widg':
-    ReadString (widgetName, 64, stream);
-    ReadTag (&widgetTag, stream);
+    ReadString (wn, 64, stream);
+    ReadTag (&wt, stream);					// JS: Force 'defa'
     return TAG_READ;
   case 'text':
     ReadString (text, 256, stream);
@@ -243,10 +245,21 @@ int CFuiComponent::Read (SStream *stream, Tag tag)
   case 'font':
     ReadTag (&fontTag, stream);
     return TAG_READ;
+	case 'ok  ':
+		ReadInt(&pm,stream);					// Ignore now
+		return TAG_READ;
+	case 'lsiz':
+		ReadInt(&pm,stream);
+		ReadInt(&pm,stream);
+		return TAG_READ;
+	case 'bsiz':
+		ReadInt(&pm,stream);
+		ReadInt(&pm,stream);
+		return TAG_READ;
   }
 
   char s[8];
-  WARNINGLOG ("%s : Unknown tag %s", widgetName, TagString (s, tag));
+  WARNINGLOG ("%s : Unknown tag %s", wName, TagString (s, tag));
   return TAG_IGNORED;
 }
 //-------------------------------------------------------------------------
@@ -266,15 +279,15 @@ void CFuiComponent::ReadFinished (void)
 }
 //--------------------------------------------------------------------------
 //  Find Window Theme
+//	JS:  Force default theme for any windows
 //--------------------------------------------------------------------------
 void CFuiComponent::FindThemeWidget (void)
-{
-  // Get FUI theme for this component
-  tw = globals->fui->GetThemeWidget (widgetTag, widgetName);
+{ // Get FUI theme for this component
+  tw = globals->fui->GetThemeWidget (widgetTag, wName);
   if (tw == NULL) {
     char s[8];
     TagToString (s, widgetTag);
-    gtfo ("%s : Cannot get theme widget %s", widgetName, s);
+    gtfo ("%s : Cannot get theme widget %s", wName, s);
   }
 }
 //-------------------------------------------------------------------------
@@ -390,7 +403,7 @@ void CFuiComponent::SetQuad(int wd,int ht)
 //  Set the text
 //-------------------------------------------------------------------------------
 void CFuiComponent::SetText (char *txt)
-{ if (txt) strncpy (this->text, txt, 254); else strcpy (this->text, "");
+{ if (txt) strncpy (text, txt, 254); else *text = 0;
   return;
 }
 //---------------------------------------------------------------------------------
@@ -835,7 +848,7 @@ CFuiWindowTitle::CFuiWindowTitle (int px, int py, int w, int h, CFuiComponent *w
 : CFuiComponent (px, py, w, h, win)
 {
   widgetTag = 'defa';
-  strcpy (widgetName, "WindowTitle");
+  wName		= "WindowTitle";
   colText = MakeRGB (255, 255, 255);
   font    = FuiFont ('deff');
   fnts    = (CFont*)font->font;
@@ -930,7 +943,7 @@ CFuiCloseButton::CFuiCloseButton (int x, int y, int w, int h, CFuiComponent *win
 {
   type = COMPONENT_CLOSE_BUTTON;
   widgetTag = 'defa';
-  strcpy (widgetName, "WindowCloseButton");
+  wName		= "WindowCloseButton";
   id      = 'sysb';                         // System button
   bmBack  = 0;
   FindThemeWidget ();
@@ -981,7 +994,7 @@ CFuiMinimizeButton::CFuiMinimizeButton (int x, int y, int w, int h, CFuiComponen
 {
   type = COMPONENT_MINIMIZE_BUTTON;
   widgetTag = 'defa';
-  strcpy (widgetName, "WindowMinimizeButton");
+  wName		= "WindowMinimizeButton";
   id      = 'sysb';                         // System button
   bmBack = NULL;
   FindThemeWidget ();
@@ -1033,7 +1046,7 @@ CFuiZoomButton::CFuiZoomButton (int x, int y, int w, int h, CFuiComponent *win)
 {
   type = COMPONENT_ZOOM_BUTTON;
   widgetTag = 'defa';
-  strcpy (widgetName, "WindowZoomButton");
+  wName		= "WindowZoomButton";
   id      = 'sysb';                         // System button
   bmBack = NULL;
   FindThemeWidget ();
@@ -1088,7 +1101,7 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
   this->windowId = wId;
   type = COMPONENT_WINDOW;
   widgetTag = 'defa';
-  strcpy (widgetName, "Window");
+  wName			= "Window";
   mini = zoom = close = 0;
   mPop      = 0;
   limit     = lim;
@@ -2040,7 +2053,7 @@ CFuiButton::CFuiButton (int x, int y, int w, int h, CFuiComponent *wind)
 {
   type = COMPONENT_BUTTON;
   widgetTag = 'defa';
-  strcpy (widgetName, "Button");
+  wName	= "Button";
   ok    = 0;
   canc  = 0;
   rrpt  = 0;
@@ -2229,7 +2242,7 @@ CFuiPopupMenu::CFuiPopupMenu (int x, int y, int w, int h, CFuiComponent *win)
 : CFuiComponent (x, y, w, h, win)
 { type = COMPONENT_POPUPMENU;
   widgetTag = 'defa';
-  strcpy (widgetName, "PopupMenu");
+  wName		= "PopupMenu";
   colHili = MakeRGB(255,255,255);
   colText = MakeRGB(0,0,0);
   just1 = just2 = just3 = 0;
@@ -2459,7 +2472,7 @@ CFuiCheckbox::CFuiCheckbox (int x, int y, int w, int h, CFuiComponent *win)
 {
   type = COMPONENT_CHECKBOX;
   widgetTag = 'defa';
-  strcpy (widgetName, "CheckBox");
+  wName			= "CheckBox";
 
   bmBack = NULL;
   state = 0;
@@ -2587,7 +2600,7 @@ CFuiCheckBox::CFuiCheckBox (int x, int y, int w, int h, CFuiComponent *win)
 {
   type = COMPONENT_RADIOBUTTON;
   widgetTag = 'defa';
-  strcpy (widgetName, "CheckBox");
+  wName			= "CheckBox";
   bmBT    = 0;
   state   = 0;
 }
@@ -2682,7 +2695,7 @@ CFuiLabel::CFuiLabel (int x, int y, int w, int h, CFuiComponent *win)
 : CFuiComponent (x, y, w, h, win)
 { type = COMPONENT_LABEL;
   widgetTag = 'defa';
-  strcpy (widgetName, "Label");
+  wName	=	"Label";
   just  = JUSTIFY_H_LEFT;
   wrap  = 0;
   yText = 0;
@@ -2786,7 +2799,7 @@ CFuiTextField::CFuiTextField (int x, int y, int w, int h, CFuiComponent *win)
 : CFuiComponent (x, y, w, h, win)
 { type = COMPONENT_TEXTFIELD;
   widgetTag = 'defa';
-  strcpy (widgetName, "TextField");
+  wName			= "TextField";
   //------Init the decoration items---------------------------------
   InitFBox(fBox,RSIZ);
   input   = 0;
@@ -3180,7 +3193,7 @@ CFuiLine::CFuiLine (int x, int y, int w, int h, CFuiComponent *win)
 {
   type = COMPONENT_LINE;
   widgetTag = 'defa';
-  strcpy (widgetName, "Line");
+  wName			= "Line";
 
   direction = FUI_LINE_HORIZONTAL;
   thickness = 1;
@@ -3233,7 +3246,7 @@ CFuiBox::CFuiBox (int x, int y, int w, int h, CFuiComponent *win)
 {
   type = COMPONENT_BOX;
   widgetTag = 'defa';
-  strcpy (widgetName, "Box");
+  wName			= "Box";
 
   thickness = 0;
   colLine = MakeRGB (0, 0, 0);
@@ -3318,7 +3331,7 @@ CFuiPicture::CFuiPicture (int x, int y, int w, int h, CFuiComponent *win)
 : CFuiComponent (x, y, w, h, win)
 { type = COMPONENT_PICTURE;
   widgetTag = 'defa';
-  strcpy (widgetName, "Picture");
+  wName			= "Picture";
 	own	= 0;
   bm	= NULL;
   FindThemeWidget ();
@@ -3511,7 +3524,7 @@ return;
 CFuiScrollBTN::CFuiScrollBTN(int x, int y, int w, int h, CFuiComponent *win,char *btn)
 : CFuiComponent(x,y,w,h,win)
 { type  = COMPONENT_SCROLLBTN;
-  strncpy(widgetName,"Scrollbtn",64);
+  wName	= "Scrollbtn";
   FindThemeWidget();
   SetBox(&sBOX,btn);
   //--------------------------------------------------
@@ -3600,10 +3613,9 @@ void CFuiScrollBTN::Draw()
 //========================================================================================
 CFuiScrollBar::CFuiScrollBar(int x, int y, int w, int h, CFuiComponent *win, bool bVertical)
 : CFuiComponent (x, y, w, h, win)
-{
-  type = COMPONENT_SCROLLBAR;
+{ type = COMPONENT_SCROLLBAR;
   id = 0; // unused
-  strcpy (widgetName, "Scrollbar");
+  wName			= "Scrollbar";
   bFocus    = 0;
   m_bVertical = bVertical;
   //------------------------------
@@ -3868,7 +3880,7 @@ CFuiSlider::CFuiSlider (int x, int y, int w, int h, CFuiComponent *win)
 {
   type = COMPONENT_SLIDER;
   widgetTag = 'defa';
-  strcpy (widgetName, "Slider");
+  wName		= "Slider";
 	bCol		= MakeRGBA(129,162,184,255);
   bmBack	= NULL;
   bmThumb = NULL;
@@ -4108,10 +4120,9 @@ void CFuiSlider::FocusLost()
 //====================================================================
 CFuiGroupBox::CFuiGroupBox (int x, int y, int w, int h, CFuiComponent *win)
 : CFuiComponent (x, y, w, h, win)
-{
-  type = COMPONENT_GROUPBOX;
+{ type = COMPONENT_GROUPBOX;
   widgetTag = 'defa';
-  strcpy (widgetName, "Groupbox");
+  wName			= "Groupbox";
   InitFBox(fBox,RSIZ);
   SetProperty(FUI_TRANSPARENT);
   colText = MakeRGB (0, 0, 0);
@@ -4369,7 +4380,7 @@ CFuiList::CFuiList (int x, int y, int w, int h, CFuiComponent *win)
 {
   type = COMPONENT_LIST;
   widgetTag = 'defa';
-  strcpy (widgetName, "List");
+  wName= "List";
   usrr = 0;
   msel = 0;
   vscr = 0;
@@ -4473,7 +4484,7 @@ void CFuiList::ReadFinished (void)
   wCar    = wt;
   //--------------------------------------------
   cMark = new SBitmap;
-  strcpy (cMark->bitmapName,"ART/CHECKMARK.BMP");
+  strncpy (cMark->bitmapName,"ART/CHECKMARK.BMP",63);
   Load_Bitmap (cMark);
   NbLin   = h / hLine;
   //--------------------------------------------
@@ -4808,8 +4819,9 @@ void CFuiTextPopup::ChangeFont(SFont *f)
 //-------------------------------------------------------------------------------
 //  Build the text
 //-------------------------------------------------------------------------------
-void CFuiTextPopup::DrawText()
+void CFuiTextPopup::DrawTheText()
 { // Create surface for current text
+	text[255] = 0;
 	if (surface)	FreeSurface(surface);
   int xSpace = 12;
   int ySpace =  4;
@@ -4835,7 +4847,7 @@ void CFuiTextPopup::SetText (char* text = NULL)
 { if (0 == text) return;
   // Call parent class method
   CFuiComponent::SetText (text);
-  return DrawText();
+  return DrawTheText();
 }
 //----------------------------------------------------------------------------
 //  Draw if Active
@@ -4934,14 +4946,14 @@ void CFuiGraphTrace::Draw (SSurface *surface)
 }
 
 
-//
+//================================================================================
 // CFuiGraph
-//
+//=================================================================================
 CFuiGraph::CFuiGraph (void)
 {
   type = COMPONENT_GRAPH;
   widgetTag = 'defa';
-  strcpy (widgetName, "Graph");
+  wName			= "Graph";
 
   useGrid = false;
   minX = minY = 0;
@@ -5147,9 +5159,9 @@ CFuiMenu::CFuiMenu (Tag id, int pos, const char* label, CFuiComponent *mwin)
 {
   type = COMPONENT_MENU;
   widgetTag = 'defa';
-  strcpy (widgetName, "Menu");
+  wName			= "Menu";
   MoWind        = mwin;
-  strcpy (text,label);
+  strncpy (text,label,255);
   this->id = id;
   this->fontTag = 0;
   this->font    = &globals->fonts.ftasci10;
@@ -5254,7 +5266,7 @@ void CFuiMenu::AddItem (Tag idn, const char* label)
   mp->yPos    = vDim;
   mp->hDim    = hText;
   mp->Iden    = idn;
-  strcpy(mp->Text,label);
+  strncpy(mp->Text,label,63);
   //-----------------------------------------------------------
   vDim        +=  hText;
   Parts.push_back(mp);
@@ -5455,7 +5467,7 @@ CFuiMenuBar::CFuiMenuBar (int wd,CFuiComponent *mwin)
 {
   type = COMPONENT_MENUBAR;
   widgetTag = 'defa';
-  strcpy (widgetName, "MenuBar");
+  wName		= "MenuBar";
   mPos    = 8;
   mSel    = 0;
   width   = 8;
@@ -5748,7 +5760,7 @@ CFuiWindowMenuBar::CFuiWindowMenuBar ()
 {
   type = COMPONENT_WINDOW_MENUBAR;
   widgetTag = 'defa';
-  strcpy (widgetName, "WindowMenuBar");
+  wName     = "WindowMenuBar";
   x = 50;
   y = 50;
 }
@@ -5764,7 +5776,7 @@ CFuiCanva::CFuiCanva (int x, int y, int w, int h, CFuiComponent *win)
 {
   type = COMPONENT_RUNWAY_GRAPH;
   widgetTag = 'defa';
-  strcpy (widgetName, "Graph");
+  wName		= "Graph";
   vscr    = 0;
   hscr    = 0;
   row     = 0;
@@ -5957,7 +5969,7 @@ CFuiPage::CFuiPage (int x, int y, FL_MENU *sm, CFuiComponent *win,short sl)
 { menu    = sm;
   type = COMPONENT_PAGE;
   widgetTag = 'defa';
-  strcpy (widgetName, "List");
+  wName		= "List";
   font    = FuiFont (fontTag);
   fnts    = (CFont*)font->font;
   hCar    = fnts->TextHeight("H");
@@ -6007,7 +6019,7 @@ void CFuiPage::InitMenu(FL_MENU *sm)
 //-------------------------------------------------------------------------
 void CFuiPage::Initialize ()
 { MakeSurface ();
-  tw = globals->fui->GetThemeWidget (widgetTag, widgetName);
+  tw = globals->fui->GetThemeWidget (widgetTag, wName);
   //---------Text color ---------------------------------------
   cTxtNormal  = tw->GetColour ("TEXT");
   cTxtHLight  = tw->GetColour ("TEXTHILITE");

@@ -2289,7 +2289,8 @@ int CCameraViewsList::ReadCamerasFile (void)
         strncpy (dst->camera_name, p, 65);
         p = strtok (NULL, "\n");
         char _val[8] = {0};
-        strcpy (_val, p);
+        strncpy (_val, p,7);
+				_val[7]			 = 0;
         dst->val = atoi (_val);
         if (dst->val == 0)  continue;
         dst++;
@@ -2310,98 +2311,6 @@ const int CCameraViewsList::PosCameraTag (const char *tag)
     if (!strcmp (type[i].camera_tag, tag)) return (type[i].val * (i + 1));
   }
   return 0;
-}
-//==================================================================================
-/*
- * CRadioManager
- */
-//==================================================================================
-CRadioManager::CRadioManager (char* rdoFilename)
-{
-  SStream s;
-  if (OpenRStream ("WORLD",rdoFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
-}
-
-
-//------------------------------------------------------------------------
-// * The Radio Manager provides a mapping between radio subsystems and the
-// *   API functions GetRadio... ???
-//------------------------------------------------------------------------
-
-
-int CRadioManager::Read (SStream *stream, Tag tag)
-{
-  int rc = TAG_IGNORED;
-
-  switch (tag) {
-  case 'rdio':
-    {
-      char type_string[64];
-      ReadString (type_string, 64, stream);
-      Tag type = StringToTag (type_string);
-
-      CSubsystem *s = NULL;
-      switch (type) {
-
-      case SUBSYSTEM_NAV_RADIO:
-//        s = new CNavRadio;
-        break;
-
-      case SUBSYSTEM_RNAV_RADIO:
-//        s = new CRnavRadio;
-        break;
-
-      case SUBSYSTEM_COMM_RADIO:
-//        s = new CComRadio;
-        break;
-
-      case SUBSYSTEM_TRANSPONDER_RADIO:
-//        s = new CTransponderRadio;
-        break;
-
-      case SUBSYSTEM_ADF_RADIO:
-//        s = new CADFRadio;
-        break;
-
-
-      case SUBSYSTEM_KX155_RADIO:
-//        s = new CBKKX155Radio;
-        break;
-
-      case SUBSYSTEM_KT76_RADIO:
-//        s = new CBKKT76Radio;
-        break;
-
-      case SUBSYSTEM_KAP140_RADIO:
-//        s = new CBKKAP140Radio;
-        break;
-
-      case SUBSYSTEM_AUDIO_PANEL_RADIO:
-//        s = new CAudioPanelRadio;
-        break;
-
-      default:
-        WARNINGLOG ("CRadioManager : Unknown radio type %s",
-          type_string);
-      }
-
-      unsigned int group;
-      ReadUInt (&group, stream);
-      rc = TAG_READ;
-
-      if (s != NULL)  s->SetGroup (group);
-    }
-  }
-
-  if (rc != TAG_READ) {
-    // Tag was not processed by this object, it is unrecognized
-    WARNINGLOG ("CRadioManager::Read : Unrecognized tag <%s>", TagToString(tag));
-  }
-
-  return rc;
 }
 
 
@@ -2485,7 +2394,7 @@ CEngine::CEngine (CVehicleObject *v,int eno, char* eTyp, char* name)
   sound = 0;
   strncpy (type_string, eTyp, 8);
   strncpy (this->name, name, 56);
-  strcpy (ngnFilename, "" );
+	*ngnFilename = 0;
   SetIdent(idn);
   type        = StringToTag(type_string);
   //-----Parameters -------------------------------------------
@@ -3786,8 +3695,8 @@ float CVehicleHistory::GetRudderTrimStep (void)
 CVehicleInfo::CVehicleInfo (char* nfoFilename)
 {
   // Initialize data members
-  strcpy (make, "");
-  strcpy (iconFilename, "");
+ *make = 0;
+ *iconFilename = 0;
   classification = 0;
   usage = 0;
   *svhFilename = 0;
@@ -3812,8 +3721,8 @@ CVehicleInfo::CVehicleInfo (char* nfoFilename)
   *phyFilename = 0; // PHY file
   // Open stream for NFO file
   SStream s;
-  strcpy (s.filename, nfoFilename);
-  strcpy (s.mode, "r");
+  strncpy (s.filename, nfoFilename,511);
+  strncpy (s.mode, "r",3);
   bool success = OpenStream(&s) != 0;
   if (!success) {
     success = OpenRStream("WORLD",nfoFilename,s) != 0;

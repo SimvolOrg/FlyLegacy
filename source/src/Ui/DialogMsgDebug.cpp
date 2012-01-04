@@ -190,8 +190,8 @@ void msg_debug_dlg_create (void)
 
   // Instantiate data structure for dialog contents
   dt = new SMsgDebugDialogData;
-  strcpy (dt->strGroup, "");
-  strcpy (dt->strDatatag, "");
+ *dt->strGroup		= 0;
+ *dt->strDatatag = 0;
   dt->valInt = 0;
   dt->valFloat = 0.0f;
 

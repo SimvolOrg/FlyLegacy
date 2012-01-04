@@ -405,7 +405,6 @@ public:
   CVariableLoadouts     *vld;
   CCockpitManager       *pit;
   CCameraManager        *cam;
-  CRadioManager         *rdo;
   CExternalLightManager *elt;
   CEngineManager        *eng;
   CControlMixer         *mix;

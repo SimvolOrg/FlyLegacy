@@ -1475,7 +1475,7 @@ void C_PushPullKnobGauge::DefaultArea()
     Area[k].ybtm = int(top) + htf;
     Area[k].valu = 1.0f - (float(k) / nVal);
     Area[k].fram = (nVal - 1 - k);
-    strcpy (Area[k].help, "");
+	 *Area[k].help = 0;
   }
   //---Start at Zero -----------------------
   cVal = nVal - 1;
@@ -2712,10 +2712,10 @@ C_SimpleInOutStateSwitch::C_SimpleInOutStateSwitch (CPanel *mp)
   vin[0] = 0;
   gpos   = 0;
   mack   = 0;
-  strcpy (onht, "");
-  strcpy (ofht, "");
-  strcpy (sstr_off, "");
-  strcpy (sstr_on, "");
+ *onht	 = 0;
+ *ofht	 = 0;
+ *sstr_off = 0;
+ *sstr_on	 = 0;
   mmnt  = 0;
   time  = 0;
 }

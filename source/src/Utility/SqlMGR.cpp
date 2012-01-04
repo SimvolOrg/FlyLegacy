@@ -175,66 +175,66 @@ void SqlOBJ::Init()
 { int   lgr = (MAX_PATH - 1);
   //---Generic database ---------------------------------------------
 	genDBE.vers	= 0;																// Minimum version
-  strcpy(genDBE.path,"SQL");
+  strncpy(genDBE.path,"SQL",63);
   GetIniString("SQL","GENDB",genDBE.path,lgr);
-	strcpy(genDBE.name,"GEN*.db");
+	strncpy(genDBE.name,"GEN*.db",63);
   genDBE.mgr = SQL_MGR;
   genDBE.dbn = "Generic files";
 	
   //---Waypoint database -------------------------------------------
 	wptDBE.vers	= 0;																// Minimum version
-  strcpy(wptDBE.path,"SQL");
+  strncpy(wptDBE.path,"SQL",63);
   GetIniString("SQL","WPTDB",wptDBE.path,lgr);
-	strcpy(wptDBE.name,"WPT*.db");
+	strncpy(wptDBE.name,"WPT*.db",63);
   wptDBE.mgr = SQL_MGR;
   wptDBE.dbn = "Waypoints";
 
   //---Elevation database ------------------------------------------
 	elvDBE.vers	= 2;																// Minimum version
-  strcpy(elvDBE.path,"SQL");
+  strncpy(elvDBE.path,"SQL",63);
   GetIniString("SQL","ELVDB",elvDBE.path,lgr);
-	strcpy(elvDBE.name,"ELV*.db");
+	strncpy(elvDBE.name,"ELV*.db",63);
   elvDBE.mgr = SQL_THR | SQL_MGR; 
   elvDBE.dbn = "Elevation Data";
 	elvDBE.mode= SQLITE_OPEN_READWRITE;
 
   //---Coast data database -----------------------------------------
 	seaDBE.vers	= 0;																// Minimum version
-  strcpy(seaDBE.path,"SQL");
+  strncpy(seaDBE.path,"SQL",63);
   GetIniString("SQL","SEADB",seaDBE.path,lgr);
-	strcpy(seaDBE.name,"SEA*.db");
+	strncpy(seaDBE.name,"SEA*.db",63);
   seaDBE.mgr = SQL_THR;
   seaDBE.dbn = "Coast data";
 
   //---Taxiways database ------------------------------------------
 	txyDBE.vers	= 0;																// Minimum version
-  strcpy(txyDBE.path,"SQL");
+  strncpy(txyDBE.path,"SQL",63);
   GetIniString("SQL","TXYDB",txyDBE.path,lgr);
-	strcpy(txyDBE.name,"TXY*.db");
+	strncpy(txyDBE.name,"TXY*.db",63);
   txyDBE.mgr = SQL_MGR;
   txyDBE.dbn = "Taxiway data";
 
   //---Model 3D database ------------------------------------------
 	modDBE.vers	= 0;																// Minimum version
-  strcpy(modDBE.path,"SQL");
+  strncpy(modDBE.path,"SQL",63);
   GetIniString("SQL","M3DDB",modDBE.path,lgr);
-	strcpy(modDBE.name,"M3D*.db");
+	strncpy(modDBE.name,"M3D*.db",63);
   modDBE.mgr =  SQL_THR;
   modDBE.dbn = "Model3D data";
 
   //---Generic textures database ----------------------------------
 	texDBE.vers	= 0;																// Minimum version
-  strcpy(texDBE.path,"SQL");
+  strncpy(texDBE.path,"SQL",63);
   GetIniString("SQL","TEXDB",texDBE.path,lgr);
-	strcpy(texDBE.name,"TEX*.db");
+	strncpy(texDBE.name,"TEX*.db",63);
   texDBE.mgr =  SQL_THR + SQL_MGR;
   texDBE.dbn = "Generic Textures";
 
   //---World Object database --------------------------------------
 	objDBE.vers	= 1;																// Minimum version
-  strcpy(objDBE.path,"SQL");
+  strncpy(objDBE.path,"SQL",63);
   GetIniString("SQL","OBJDB",objDBE.path,lgr);
-	strcpy(objDBE.name,"OBJ*.db");
+	strncpy(objDBE.name,"OBJ*.db",63);
   objDBE.mgr	=  SQL_MGR;
   objDBE.dbn	= "World Objects";
 	objDBE.mode = SQLITE_OPEN_READWRITE;
@@ -329,7 +329,7 @@ int SqlOBJ::Open(SQL_DB &db)
 	intptr_t h1 = _findfirst(fnm,&fileinfo);
 	_snprintf(fnm,lgr,"%s/%s",db.path,fileinfo.name);
 	fnm[lgr] = 0;
-	strcpy(db.path,fnm);
+	strncpy(db.path,fnm,259);
 	//--- For file thread, open in read only mode -------
   if (SQL_THR == mop)	flg = SQLITE_OPEN_READONLY;
   int rep = sqlite3_open_v2(fnm,  &db.sqlOB,flg,0 );
@@ -974,7 +974,7 @@ CStaLine *SqlMGR::GetStaSlot(sqlite3_stmt *stm)
  //----------------------------------------------------------------------------
  void  SqlMGR::GetAllAirports(AptFunCB *fun)
  {	char req[1024];
-		strcpy(req,"SELECT * FROM APT;*");
+		strncpy(req,"SELECT * FROM APT;*",1023);
     stm = CompileREQ(req,genDBE);
     //-----Get the results -------------------------------------------------
     while (SQLITE_ROW == sqlite3_step(stm))

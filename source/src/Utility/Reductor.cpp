@@ -395,7 +395,7 @@ int CrTriangle::GetVKey(int k)
 void CrTriangle::EditMark(char *txt)
 { strcpy(txt,"No");
   if (0 == mark)    return;
-  sprintf(txt,"V%04d",owner);
+  _snprintf(txt,16,"V%04d",owner);
   return;
 }
 //----------------------------------------------------------------------

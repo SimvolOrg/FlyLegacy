@@ -44,7 +44,7 @@ char *prob_OP2[] = {"Base",0};
 //=======================================================================================
 CFuiProbe::CFuiProbe(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,500,600,0)
-{ strcpy(text,"SUBSYSTEM PROBE");
+{ strncpy(text,"SUBSYSTEM PROBE",255);
   title = 1;
   close = 1;
   zoom  = 0;
@@ -411,7 +411,7 @@ return;
 //=======================================================================================
 CFuiStat::CFuiStat(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,200,400,0)
-{ strcpy(text,"System statistics");
+{ strncpy(text,"System statistics",255);
   title = 1;
   close = 1;
   zoom  = 0;

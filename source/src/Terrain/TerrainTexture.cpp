@@ -1343,8 +1343,8 @@ void CTextureWard::LoadTaxiTexture(char *name,char tsp)
 //-----------------------------------------------------------------------------
 void CTextureWard::LoadMaskTexture(int No,char *name,int dim)
 { char path[MAX_PATH];
-  strcpy(xds.path,name);
-  strcpy(xds.name,name);
+  strncpy(xds.path,name,(PATH_MAX-1));
+  strncpy(xds.name,name,63);
   Blend[No].side = dim;
   _snprintf(path,(MAX_PATH-1),"SYSTEM/GLOBE/%s.RAW",name);
   //MEMORY_LEAK_MARKER ("LoadMaskTexture");

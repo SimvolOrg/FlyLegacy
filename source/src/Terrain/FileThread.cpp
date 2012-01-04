@@ -919,7 +919,7 @@ int CTextureWard::GetShdTexture(CTextureDef *txn,char *rawn)
   if (shx)            return 0;
   //------Load texture as a shared one ------------------
   TEXT_INFO txd;
-  strcpy(txd.path,rawn);
+  strncpy(txd.path,rawn,(PATH_MAX-1));
   CArtParser img(Resn);
   shx		= new CSharedTxnTex(txn->Name,Resn);
   GLubyte *tex	= img.GetDayTexture(txd,0);

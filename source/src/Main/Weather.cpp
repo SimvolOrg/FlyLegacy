@@ -230,7 +230,7 @@ void CWeatherManager::GetShadowParameters(float *c,float *a)
 //  Set Default parameters 
 //-----------------------------------------------------------------------
 void CWeatherManager::SetDefault()
-{ strcpy(Info.iden,"default"); // Default ident
+{ strncpy(Info.iden,"default",15); // Default ident
   Info.pos.lon = TC_FULL_WRD_ARCS * 2;
   Info.pos.lat = TC_FULL_WRD_ARCS * 2;
   //----Build user winds -------------------

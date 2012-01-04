@@ -604,7 +604,6 @@ void CNeedle::SetGauge(CGauge *mg)
 //----------------------------------------------------------------------
 void CNeedle::Init(CGauge *mg)
 { mgg   = mg;
-  memset(&mesg,0,sizeof(SMessage));
   cTag  = 0;
   vtab  = 0;
   ampv  = 0;

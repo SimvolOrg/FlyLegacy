@@ -2984,7 +2984,6 @@ int C_QGT::PutOutside()
 //-------------------------------------------------------------------------
 int C_QGT::UpdateInnerCircle()
 { //----------------------------------------------------------	
-	tcm->Enter('UpdI',this,0);
 	SPosition *pos = tcm->PlaneArcsPos();
   NearQ.Lock();
   CSuperTile *sp = NearQ.GetFirst();
@@ -3224,7 +3223,7 @@ TCacheMGR::TCacheMGR()
   mask    = GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_POLYGON_BIT | GL_FOG | GL_LIGHTING_BIT | GL_COLOR;
   Terrain = 0;
   Tele    = 0;
-  bbox    = globals->mBox.GetTcmBox("TCacheMGR");
+  bbox    = globals->mBox.CreateTcmBox("TCM");
   //----Sun Radius base on average apparent diameter in[0.5244°,0.5422°]------
   double alf = DegToRad(double(0.533333) * 0.5);
   sunT = tan(alf);
@@ -3779,7 +3778,8 @@ void TCacheMGR::GetTileIndices(int &tx,int &tz)
 //  Time slice.  Update the terrain cache
 //-------------------------------------------------------------------------
 void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
-{ eTime     = dT;
+{ bbox->Enter("TCM TimeSlice",0,0);
+	eTime     = dT;
   dTime    += dT;
   aPos      = globals->geop;                            // Update aircraft position
   //---Update QGT position at global level --------------------------------
@@ -3812,8 +3812,11 @@ void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
 	globals->magDEV = magDV;
   magRF = 0;
   //---Update QGT AIRPORT AND 3D MANAGER ---------------------------------
+	bbox->Enter("TCM UpdateQGT",0,0);
 	UpdateQGTs(dT);
+	bbox->Enter("APM TimeSlice",0,0);
   aptMGR->TimeSlice(dT);          // Update airports
+	bbox->Enter("OBJ TimeSlice",0,0);
   objMGR->TimeSlice(dT);          // Update 3D
   //----------------------------------------------------------------------
   if (clock1)                 return;
@@ -3910,7 +3913,6 @@ int TCacheMGR::RefreshCache()
 {	U_INT cx = globals->qgtX;
   U_INT cz = globals->qgtZ;
   if (nKEY == rKEY)  return 0;
-
   //-----------Aircraft enters a new QGT -----------------------------
   if (tr) TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d -------------------",
           dTime,NbQGT,NbQTR,NbSEA,globals->NbVTX);
@@ -4583,47 +4585,36 @@ int TCacheMGR::OneAction()
   //-----Dispatch action code -----------------------------
   switch (qgt->Step)  {
     case TC_QT_INI:
-			bbox->Enter('Qini',qgt,qgt->qKey);
 			return qgt->StepINI();
     //---- Build Detail Tile mesh -------------------------
     case TC_QT_MSH:
-			bbox->Enter('Qmsh',qgt,qgt->qKey);
       return qgt->StepMSH();
     //---- Check for TRN ----------------------------------
     case TC_QT_ELV:
-			bbox->Enter('Qelv',qgt,qgt->qKey);
 			return qgt->StepELV();
     //-----Get elevations from QTR ------------------------
     case TC_QT_QTR:
-			bbox->Enter('Qqtr',qgt,qgt->qKey);
 			return qgt->StepQTR();
     //----Get elevations from TRN file --------------------
     case TC_QT_TRN:
-			bbox->Enter('Qtrn',qgt,qgt->qKey);
       return qgt->StepTRN();
     //--- TRN elevations from <hdtl> statements -----------
     case TC_QT_HDT:
-			bbox->Enter('Qhdt',qgt,qgt->qKey);
       return qgt->StepHDT();
 		//--- Detailled elevation in database -----------------
 		case TC_QT_TIL:
-			bbox->Enter('Qtil',qgt,qgt->qKey);
 			return qgt->StepTIL();
 		//--- Check elevation patche --------------------------
 		case TC_QT_PCH:
-			bbox->Enter('Qpch',qgt,qgt->qKey);
 			return qgt->StepPCH();
     //----Get Coast Data ----------------------------------
     case TC_QT_SEA:
-			bbox->Enter('Qsea',qgt,qgt->qKey);
       return qgt->StepSEA();
     //--- Finalize the Super Tile parameters --------------
     case TC_QT_SUP:
-			bbox->Enter('Qsup',qgt,qgt->qKey);
 			return qgt->StepSUP();
     //---Locate 3D objects per QGT ------------------------
     case TC_QT_3DO:
-			bbox->Enter('Q3do',qgt,qgt->qKey);
 			objMGR->LocateObjects(qgt);
 			//----------------------------------------------------
       if (tr) TRACE("TCM: -- Time: %04.2fQGT(%3d-%3d) Load Objects",Time(),qgt->xKey,qgt->zKey);
@@ -4631,7 +4622,6 @@ int TCacheMGR::OneAction()
       return LastAction();
     //---- Delete the QGT --------------------------------
     case TC_QT_DEL:
-			bbox->Enter('Qdel',qgt,qgt->qKey);
       return FreeTheQGT(qgt);
     //----- Waiting for file -----------------------------
     case TC_QT_WFF:
@@ -4812,8 +4802,8 @@ void TCacheMGR::UpdateGroundPlane()
 //         this is contrary to the objective. This is to avoid extensive GL commands
 //=================================================================================
 void TCacheMGR::Draw(CCamera *cam)
-{	CVehicleObject *veh = globals->pln;
-  bbox->Enter('Draw',cam,0);
+{	bbox->Enter("TCM Draw",0,0);
+	CVehicleObject *veh = globals->pln;
 	//----Prepare OpenGL for drawing ---------------------------------
   glMatrixMode (GL_MODELVIEW);
   glPushAttrib (mask);
@@ -4849,6 +4839,7 @@ void TCacheMGR::Draw(CCamera *cam)
   //  Longitude Feet per Arcsec is changing with latitude while
   //  Latitude uses a steady scale.
   //------------------------------------------------------------------
+	bbox->Enter("APM Draw",0,0);
   glGetDoublev(GL_PROJECTION_MATRIX,pj);      // Save projection
   glScaled(scale.x,scale.y, 1.0);             // T1: Scale X,Y to feet coordinate
   aptMGR->Draw(aPos);													// Draw airports
@@ -4861,6 +4852,7 @@ void TCacheMGR::Draw(CCamera *cam)
   //------------------------------------------------------------------
 	//	Draw terrain: check for QGT visibility
 	//------------------------------------------------------------------
+	bbox->Enter("TER	Draw",0,0);
   glEnable(GL_TEXTURE_2D);
   glColor4fv(fogC);                           // restore color
   glMaterialfv (GL_FRONT, GL_EMISSION, GetDeftEmission());
@@ -4869,7 +4861,6 @@ void TCacheMGR::Draw(CCamera *cam)
   glDisable(GL_BLEND);
   U_CHAR vis = 0;
   std::map<U_INT,C_QGT*>::iterator im;
-	bbox->Enter('dTER',0,0);
   for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
   { C_QGT *qt = (*im).second;
     if (qt->NoQuad())  continue;
@@ -4889,6 +4880,7 @@ void TCacheMGR::Draw(CCamera *cam)
   //  Draw all 3D objects 
 	//	Camera is at aircarft origine, scale is 1 in every direction
   //------------------------------------------------------------------
+	bbox->Enter("OBJ Draw",0,0);
   glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER,0);
   glEnable(GL_BLEND);
@@ -4898,7 +4890,6 @@ void TCacheMGR::Draw(CCamera *cam)
 	glCullFace (GL_BACK);
   objMGR->SetDrawingState();
 	glEnable(GL_TEXTURE_2D);
-	bbox->Enter('dW3D',0,0);
   for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
   { C_QGT *qt = (*im).second;
     if (qt->NoQuad())       continue;
@@ -4913,12 +4904,12 @@ void TCacheMGR::Draw(CCamera *cam)
   // Draw the translucent elements (clouds etc.)
   //  Camera at origin
   //-------------------------------------------------------------
-	bbox->Enter('dCLD',0,0);
   globals->cld->Draw();
   //-------------------------------------------------------------
   // Draw all external vehicle features
   // Camera at origin
   //-------------------------------------------------------------
+	bbox->Enter("EXT Draw",0,0);
   globals->sit->DrawExternal();
   //----------------------------------------------------------------
   // Draw VOR
@@ -4933,6 +4924,7 @@ void TCacheMGR::Draw(CCamera *cam)
   //  Set Context to draw airport lights 
   //  Camera at origin
   //-----------------------------------------------------------------
+	bbox->Enter("LIT Draw",0,0);
   glDepthMask(false);
   glEnable (GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER,0);
@@ -4947,6 +4939,7 @@ void TCacheMGR::Draw(CCamera *cam)
   //-----------------------------------------------------------------
   //  Draw vehicle inside
   //-----------------------------------------------------------------
+	bbox->Enter("VEH Draw",0,0);
   glMaterialfv (GL_FRONT, GL_EMISSION, GetDeftEmission());
   glColor4f(1,1,1,1);
   if (veh) veh->DrawInside(cam);

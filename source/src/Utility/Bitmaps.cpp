@@ -522,8 +522,8 @@ CBitmapPBM::CBitmapPBM (char *pbmName)
     // Construct full names for PBM and ACT files
     char pbmFilename[256];
     char actFilename[256];
-    strcpy (pbmFilename, pbmName);
-    strcpy (actFilename, pbmName);
+    strncpy (pbmFilename, pbmName,250);
+    strncpy (actFilename, pbmName,250);
     char *pExt = strrchr (actFilename, '.');
     if (pExt != NULL) {
       pExt++;
@@ -837,9 +837,8 @@ CBitmapPBG::CBitmapPBG (char *pbgName)
     // Construct full names for PBG and ACT files
     char pbgFilename[256];
     char actFilename[256];
-    strcpy (pbgFilename, pbgName);
-
-    strcpy (actFilename, pbgFilename);
+    strncpy (pbgFilename, pbgName,250);
+    strncpy (actFilename, pbgFilename,250);
     char *pExt = strrchr (actFilename, '.');
     if (pExt != NULL) {
       pExt++;
@@ -991,7 +990,7 @@ CBitmapBMP::CBitmapBMP (char *bmpFilename)
   image = 0;
   cmap  = 0;
   wd    = ht = 0;
-  strcpy (filename, bmpFilename);
+  strncpy (filename, bmpFilename,(PATH_MAX-1));
 
   // Try to load from BMP file in POD filesystem
   PODFILE* p = popen (&globals->pfs, filename);
@@ -1448,7 +1447,7 @@ void CBitmap::ChangeType()
 }
 //=================================================================================
 bool CBitmap::Load_Bitmap(char * bname)
-{	if( bname ) strcpy(m_bm.bitmapName, bname);
+{	if( bname ) strncpy(m_bm.bitmapName, bname,63);
 	return Load();
 }
 //---------------------------------------------------------------------------------

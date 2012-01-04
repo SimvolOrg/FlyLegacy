@@ -322,7 +322,7 @@ CRawImage::CRawImage (const char* rawFilename,
   }
 
   // Initialize data members
-  strcpy (name, rawFilename);
+  strncpy (name, rawFilename,63);
   width = height = size;
 
   // Load image data
@@ -339,7 +339,7 @@ CRawImage::CRawImage (int width,
   Init ();
 
   // Initialize data members
-  strcpy (name, rawFilename);
+  strncpy (name, rawFilename,63);
   this->width = width;
   this->height = height;
   
@@ -382,7 +382,7 @@ void CRawImage::Load (const char *rawFilename,
   if (actFilename == NULL) {
     // Derive ACT filename from RAW file
     char actName[PATH_MAX];
-    strcpy (actName, rawFilename);
+    strncpy (actName, rawFilename,(PATH_MAX-5));
     char *p = strrchr (actName, '.');
     if (p) {
       strcpy (p, ".ACT");
@@ -405,7 +405,7 @@ void CRawImage::Load (const char *rawFilename,
   if (opaFilename == NULL) {
     // Derive OPA filename from RAW file
     char opaName[PATH_MAX];
-    strcpy (opaName, rawFilename);
+    strncpy (opaName, rawFilename,(PATH_MAX-5));
     char *p = strrchr (opaName, '.');
     if (p) {
       strcpy (p, ".OPA");
@@ -499,14 +499,14 @@ int CRawImage::GetHeight (void)
 
 void CRawImage::SetName (const char* name)
 {
-  strcpy (this->name, name);
+  strncpy (this->name, name,63);
 }
 
 void CRawImage::Copy (const CRawImage &src)
 {
   width = src.width;
   height = src.height;
-  strcpy (name, src.name);
+  strncpy (name, src.name,63);
   actdata = NULL;
   rawdata = NULL;
   opadata = NULL;
@@ -731,40 +731,6 @@ CSunRawImage::CSunRawImage (int width,
               const char* actFilename)
               : CRawImage (width, height, rawFilename, actFilename)
 {
-/*
-  // Initialize data members
-  strcpy (name, rawFilename);
-  this->width = width;
-  this->height = height;
-  
-  actdata = NULL;
-  rawdata = NULL;
-  opadata = NULL;
-
-  // Open ACT pod file
-  PODFILE *pAct = popen (&globals->pfs, actFilename);
-  if (!pAct) {
-    gtfo ("CSunRawImage : Cannot open file %s", actFilename);
-    return;
-  }
-
-  // Load colour map from ACT file
-  actdata = new GLubyte[0x300];
-  pread (actdata, 0x300, 1, pAct);
-  pclose (pAct);
-
-  // Open RAW pod file
-  PODFILE *pRaw = popen (&globals->pfs, rawFilename);
-  if (!pRaw) {
-    WARNINGLOG ("CRawImage : Cannot open file %s", rawFilename);
-    return;
-  }
-
-  // Load image data
-  rawdata = new GLubyte[width * height];
-  pread (rawdata, (width * height), 1, pRaw);
-  pclose (pRaw);
-*/
   opadata = new GLubyte [width * height];
   memcpy (opadata, rawdata, (width * height));
 }

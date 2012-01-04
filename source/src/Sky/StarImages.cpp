@@ -45,8 +45,7 @@ using namespace std;
 static char* getToken (char* s, char* token, int size)
 {
   // Initialize token to null string
-  strcpy (token, "");
-
+	*token = 0;
   // Get pointer to next \t delimiter
   char *p = strchr (s, '\t');
   if (p != NULL) {
@@ -210,7 +209,7 @@ void CStarImages::LoadBSCDatabase (const char* bscFilename)
       // Store this star in the database
       if (mv < userLimit) {
         SStarData* star = new SStarData;
-        strcpy (star->name, name);
+        strncpy (star->name, name,63);
         star->ra = WrapTwoPi (ra - (SGD_PI / 2));
         star->dec = dec;
         star->mv = mv;
@@ -279,7 +278,7 @@ void CStarImages::LoadConstellations (const char* txtFilename)
       if ((star1 != 1) && (star2!= -1)) {
         // Store in the constellation database
         SConstellationLine* line = new SConstellationLine;
-        strcpy (line->name, name);
+        strncpy (line->name, name,63);
         line->star1 = star1;
         line->star2 = star2;
         constellations.push_back (line);
@@ -479,12 +478,9 @@ CStarImages::CStarImages (double distance)
   drawConstellations = false;
 
   // Load stars from BSC database
-  char bscDbName[64];
-  strcpy (bscDbName, "");
+	char bscDbName[64] = {0};
   GetIniString ("Sky", "starDatabaseName", bscDbName, 64);
-  if (strlen (bscDbName) == 0) {
-    strcpy (bscDbName, "System/BSC5.CAT");
-  }
+  if (strlen (bscDbName) == 0) strncpy (bscDbName, "System/BSC5.CAT",63);
   LoadBSCDatabase (bscDbName);
 
   // Check INI setting to see if constellation figures are to be drawn
@@ -496,12 +492,10 @@ CStarImages::CStarImages (double distance)
     drawConstellations = (i != 0);
     if (drawConstellations) {
       // Get filename of constellation figures fron INI settings
-      char constDbName[64];
-      strcpy (constDbName, "");
+			char constDbName[64] = {0};
       GetIniString ("Sky", "starConstellationsName", constDbName, 64);
-      if (strlen (constDbName) == 0) {
-        strcpy (constDbName, "System/DefaultConstL.txt");
-      }
+      if (strlen (constDbName) == 0) strncpy (constDbName, "System/DefaultConstL.txt",63);
+  
 
       // Load the constellation stick figures.  This will update the class
       //   member 'constellations', a vector of star endpoints.  Only those

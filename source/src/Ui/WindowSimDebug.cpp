@@ -51,7 +51,7 @@ CSimDebugManager::CSimDebugManager (Tag windowId, const char* winFilename)
 {
   type = COMPONENT_WINDOW;
   widgetTag = 'defa';
-  strcpy (widgetName, "Sim Debug");
+  wName = "Sim Debug";
   //
   slct_wing_list = NULL;
   dfui_wing = (CFuiPopupMenu *) GetComponent ('wing');
@@ -254,7 +254,7 @@ CSimDebugWings::CSimDebugWings (Tag windowId, const char* winFilename,char *wpar
 {
   type = COMPONENT_WINDOW;
   widgetTag = 'defa';
-  strcpy (widgetName, "Wing");
+  wName = "Wing";
   if (wpart) wing_part = wpart;
   else wing_part = "wing Left w/Aileron"; //"wing Tail w/rudder";// "wing Stabilizer w/elevator";
   this->SetProperty (FUI_XY_RESIZING);
@@ -462,7 +462,7 @@ CCageDebug::CCageDebug (Tag windowId, const char* winFilename, char *wpart)
 {
   type = COMPONENT_WINDOW;
   widgetTag = 'defa';
-  strcpy (widgetName, "cage");
+  wName = "cage";
 
   this->GetPosition (&posWx, &posWy);
    //

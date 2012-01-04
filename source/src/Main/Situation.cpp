@@ -529,9 +529,7 @@ void CSlewManager::RabbitMove(float dT)
 //  Update aircraft position
 //------------------------------------------------------------------------
 void CSlewManager::Update (float dT)
-{ 
-	//--------------------------------------------------
-	veh = globals->pln;
+{	veh = globals->pln;
   if (0 == veh)   return;
   switch (mode) {
     case SLEW_STOP:

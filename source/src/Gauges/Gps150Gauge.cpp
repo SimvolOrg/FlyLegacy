@@ -36,7 +36,7 @@ CGarminGPS150Gauge::CGarminGPS150Gauge (void)
   brightness = 10;
 
   // Load GPS150 custom font
-  strcpy (font.fontName, "FTG150PT7.FNT");
+  strncpy (font.fontName, "FTG150PT7.FNT",63);
   LoadFont (&font);
 }
 

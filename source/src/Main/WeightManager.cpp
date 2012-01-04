@@ -38,12 +38,11 @@
 // Loadout Unit
 //=======================================================================
 CLoadCell::CLoadCell (void)
-{
-  strcpy (name, "");
+{*name = 0;
   bPos.x = 0;   bPos.y = 0;   bPos.z = 0;
   load = 0;
   hiLm = 0;
-  strcpy (utyp, "");
+ *utyp = 0;
 }
 //----------------------------------------------------------------------
 //  Read parameters

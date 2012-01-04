@@ -454,8 +454,7 @@ void VPilot::ChangeWaypoint()
 	Radio->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wayP->GetAltitude());
-	apil->ChangeALT(alt);							// Set target altitude
-	apil->SetNavMode();								// Set NAV mode 
+	apil->SetWPTmode(alt);
 	State = VPL_TRACKING;
 	return;
 }
@@ -494,8 +493,8 @@ void VPilot::ModeLanding()
 //	Time slice
 //--------------------------------------------------------------
 void VPilot::TimeSlice (float dT,U_INT frm)
-{	if (State == VPL_IS_IDLE)	return;
-	FrNo			= frm;
+{	FrNo			= frm;
+	if (State == VPL_IS_IDLE)	return;
 	T01			 -= dT;
 	bool  on = (State >= VPL_TAKE_OFF);
 	bool  ok = on && (apil->HasGasControl());
@@ -532,5 +531,10 @@ void VPilot::TimeSlice (float dT,U_INT frm)
 	}
 	return;
 }
-
+//--------------------------------------------------------------
+//	Probe
+//--------------------------------------------------------------
+void VPilot::Probe(CFuiCanva *cnv)
+{ cnv->AddText(1,1,"Fr %08d",FrNo);
+}
 //=======================END OF FILE ======================================================================

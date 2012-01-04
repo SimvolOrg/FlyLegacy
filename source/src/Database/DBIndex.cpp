@@ -176,12 +176,11 @@ void CDatabaseIndex::Load (PODFILE* f)
 //
 // Constructor which accepts a const char* filename of the DBI file
 //
-void CDatabaseIndex::Load (const char* dbiFilename)
+void CDatabaseIndex::Load (const char* dbi)
 {
-  char fullFilename[64];
-  strcpy (fullFilename, "Database/");
-  strcat (fullFilename, dbiFilename);
-  PODFILE *p = popen (&globals->pfs, fullFilename);
+  char fn[128];
+	_snprintf(fn,127,"DATABASE/%s",dbi);
+  PODFILE *p = popen (&globals->pfs, fn);
 
   if (p) {
     Load (p);

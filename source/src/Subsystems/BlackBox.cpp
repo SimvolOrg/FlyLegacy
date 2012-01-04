@@ -22,13 +22,14 @@
 //
 //===============================================================================
 #include "../Include/Globals.h"
+#include "../Include/Fui.h"
 //===============================================================================
 //	Master Block box
 //===============================================================================
 //-----------------------------------------------------------
 //	Return blck box for Tcache
 //-----------------------------------------------------------
-BBcache *BBM::GetTcmBox(char *n)
+BBcache *BBM::CreateTcmBox(char *n)
 { BBcache *bb = new BBcache(n);
 	boxes.push_back(bb);
 	return bb;
@@ -36,7 +37,7 @@ BBcache *BBM::GetTcmBox(char *n)
 //-----------------------------------------------------------
 //	Return blck box for airport
 //-----------------------------------------------------------
-BBairport *BBM::GetAptBox(char *n)
+BBairport *BBM::CreateAptBox(char *n)
 { BBairport *bb = new BBairport(n);
 	boxes.push_back(bb);
 	return bb;
@@ -56,11 +57,18 @@ void BBM::DumpAll()
 BlackBox::BlackBox()
 {	ind		= 0;
 	dim		= BB_SIZE;
+	use		= 0;
+	for (int k=0; k < dim; k++)
+		{ buf[k].frame  = 0;
+			buf[k].action = "NONE";
+			buf[k].item		= 0;
+			buf[k].pm1		= 0;
+	}
 }
 //-----------------------------------------------------------
 //	Trace one slot 
 //-----------------------------------------------------------
-void	BlackBox::Enter(Tag a,void *p1, U_INT p2)
+void	BlackBox::Enter(char *a,void *p1, U_INT p2)
 {	BB_SLOT *s = buf + ind++;
 	s->frame	= globals->Frame;
 	s->action	= a;
@@ -74,18 +82,30 @@ void	BlackBox::Enter(Tag a,void *p1, U_INT p2)
 //-----------------------------------------------------------
 void BlackBox::Dump()
 {	TRACE("===========> BlackBox %s",name);
-	char txt[32];
   int    k  = ind;
 	bool	go	= true;
 	while (go)
-	{	TagToString(txt,buf[k].action);
+	{	
 		TRACE("   Frame %010u %s p1=%08x p2=%u",
 						buf[k].frame,
-						txt,
+						buf[k].action,
 						buf[k].item,
 						buf[k].pm1);
 	 k	= (k+1) & BB_MASK;
 	 if (k == ind)	break;
+	}
+	return;
+}
+//-----------------------------------------------------------
+//	EDit BBox
+//-----------------------------------------------------------
+void BlackBox::Probe(CFuiCanva *cnv,int nb)
+{ int		k = ind;
+	int		n = nb;
+	while (n--)
+	{	cnv->AddText(1,buf[k].action,1);
+	  k	= (k+1) & BB_MASK;
+	  if (k == ind)	k = 0;
 	}
 	return;
 }

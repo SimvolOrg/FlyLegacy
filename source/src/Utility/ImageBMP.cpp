@@ -34,7 +34,7 @@
 
 CImageBMP::CImageBMP (const char* bmpFilename)
 {
-  strcpy (filename, bmpFilename);
+  strncpy (filename, bmpFilename,(PATH_MAX-1));
 
   image = NULL;
   PODFILE* p = popen (&globals->pfs, filename);

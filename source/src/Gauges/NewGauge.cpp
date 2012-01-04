@@ -32,7 +32,7 @@ CHawkClockGauge::CHawkClockGauge (CPanel *mp)
 :CGauge(mp)
 { Prop.Rep(NO_SURFACE);
   col   = MakeRGB (1,1,1);
-  strcpy(edNb,"+dddL");			// Number format
+  strncpy(edNb,"+dddL",8);			// Number format
   btup  = 2;
   btsl  = 0;
   btst  = 0;

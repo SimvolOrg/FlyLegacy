@@ -742,7 +742,7 @@ int OpenStream(SStream *stream)
 // The function returns 1 if the stream was successfully opened, 0 otherwise
 //==========================================================================
 int OpenRStream(char *fn,SStream &s)
-{ strcpy (s.filename, fn);
+{ strncpy (s.filename, fn,(PATH_MAX-1));
   strcpy (s.mode, "r");
 	return OpenStream (&globals->pfs, &s);
 }
@@ -753,7 +753,7 @@ int OpenRStream(char *fn,SStream &s)
 //==========================================================================
 int OpenRStream(char *pn,char *fn,SStream &s)
 { _snprintf(s.filename,PATH_MAX-1,"%s/%s",pn,fn);
-  strcpy (s.mode, "r");
+  strncpy (s.mode, "r",3);
 	return OpenStream (&globals->pfs, &s);
 }
 
@@ -1013,12 +1013,9 @@ void  ReadString (char *value, int maxLength, SStream *stream)
 
     if ((int)strlen(p) >= maxLength) {
       // String was longer than supplied buffer
-      WARNINGLOG ("ReadString : Line truncated (len=%d max=%d)\n%s",
-        strlen(p), maxLength, p);
+      WARNINGLOG ("ReadString : Line truncated (len=%d max=%d)\n%s", strlen(p), maxLength, p);
       strncpy (value, p, maxLength-1);
-    } else {
-      strcpy (value, p);
-    }
+    } else {   strcpy (value, p);    }
   }
 }
 
@@ -1295,21 +1292,19 @@ void  ReadMessage (SMessage *msg, SStream *stream)
   }
 }
 
-//
+//===================================================================
 // ReadTag - Read a four-character datatag value from the stream
-//
+//===================================================================
 void  ReadTag (Tag *tag, SStream *stream)
 {
   char s[64];
   ReadString (s, 64, stream);
   //---eliminate any delimiters ------------------
-  if (*s == 0x027)  strcpy(s,s+1);
+	char *t = s;			// Tag start
+  if (*s == 0x027)  t++;
   // Pad string with spaces to four chars in length
-  while (strlen(s) < 4) {
-    strcat (s, " ");
-  }
-
-  *tag = StringToTag (s);
+  while (strlen(t) < 4)  strcat (t, " ");
+  *tag = StringToTag (t);
 }
 //--------------------------------------------------------------------
 //	JSDEV* Read a signed Tag (with optional ~ in front
@@ -1320,12 +1315,11 @@ int  ReadInvertedTag(Tag *tag, SStream*stream)
 {	int	 invert = 0;
 	char s[64];
 	ReadString(s,64,stream);
-	if (s[0] == '~')
-	{	invert = 1;
-		strcpy(s,s+1);			// remove '~' 
-	}
-	while (strlen(s) < 4) strcat(s," ");		// Pad with space
-	*tag	= StringToTag(s);
+	s[63]	= 0;
+	char *t = s;			// Tag start
+	if (s[0] == '~')	{	invert = 1;		t++;	}		// remove '~' 
+	while (strlen(t) < 4) strcat(t," ");				// Pad with space
+ *tag	= StringToTag(t);
 	return invert;	}
 
 //--------------------------------------------------------------------

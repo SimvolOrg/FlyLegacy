@@ -93,9 +93,9 @@ int CAnimatedModel::ReadModel(SStream *st)
   //--- File name -------------------
   char filename[64];
   ReadString (filename, 64, st);
+	filename[63] = 0;
   char fullname[MAX_PATH];
-  strcpy (fullname, "MODELS/");
-  strcat (fullname, filename);
+	_snprintf(fullname,(MAX_PATH-1),"MODELS/%s",filename);
   //--- level of detail -------------
   unsigned int lod;
   ReadUInt (&lod, st);

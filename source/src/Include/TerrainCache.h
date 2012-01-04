@@ -1188,8 +1188,6 @@ class TCacheMGR {
 public:
   TCacheMGR();
  ~TCacheMGR();
-  //---- Trace in black box -------------------------------
-	void				Enter(Tag a,void *p1, U_INT p2) {bbox->Enter(a,p1,p2);}
   //---------Init -----------------------------------------
   float      *InitTextureCoord(int dim,int res);
   void        LoadPodTerra();
@@ -1255,6 +1253,7 @@ public:
   //---------STEP ROUTINES --------------------------------------
   void        CreateQGT(U_SHORT cx, U_SHORT cz);      // STEP 0
   //---------Inline ---------------------------------------------
+	inline void	ProbeBB(CFuiCanva *c,int n) {bbox->Probe(c,n);}
 	inline CElvTracker  *GetETrack()	{return &eTrack;}
   inline CTextureWard *GetTexWard() {return txw;}
   inline void   InActQ(C_QGT *qgt)  {ActQ.PutLast(qgt);}

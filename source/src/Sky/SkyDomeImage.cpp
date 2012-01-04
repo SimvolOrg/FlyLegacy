@@ -182,7 +182,7 @@ static void InitPerezParameters (SPerezParameters* p,
   memset (p, 0, sizeof(SPerezParameters));
 
   // Initialize name
-  strcpy (p->name, name);
+  strncpy (p->name, name,63);
 
   // Initialize zenith parameters
   inisky->Get (name, "zenith_Y_A", &(p->Y_zenith.A));
@@ -344,7 +344,7 @@ CSkyDomeImage::CSkyDomeImage (double distance)
   // Get default sky name from INI settings
   perezCurrent = &DefaultPerezParameters;
   char skyname[64];
-  strcpy (skyname, "");
+  strncpy (skyname, "",63);
   GetIniString ("Graphics", "skyDefaultName", skyname, 64);
   if (strlen (skyname) > 0) {
     // Parameter was specified, search available skies for the default

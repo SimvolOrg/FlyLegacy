@@ -457,7 +457,7 @@ public:
   inline int      GetYPosition(void)            {return y; }
   inline int      GetXparent(void)              {return xParent;}
   inline int      GetYparent(void)              {return yParent;}
-  inline char*    GetWdName(void)               {return widgetName;}
+  inline char*    GetWdName(void)               {return wName;}
   inline int      GetXscreen(void)              {return surface->xScreen;}
   inline int      GetYscreen(void)              {return surface->yScreen;}
   inline void     ChangeFont(SFont *nf)         {font = nf;}
@@ -477,7 +477,7 @@ protected:
   Tag                 id;               ///< Unique identifier
   char                desi[8];          ///< Designator (Tag)
   int                 bind;             ///< Parent binding flags
-  char                widgetName[64];   ///< Widget name
+  char               *wName;						///< Widget name
   Tag                 widgetTag;        ///< Widget tag
   char                text[256];        ///< Component label
   int                 xParent, yParent; ///< Absolute location of parent origin
@@ -1722,7 +1722,7 @@ public:
   void  Draw();
   void  DrawIt();
   void  ChangeFont(SFont *f);
-  void  DrawText();
+  void  DrawTheText();
   //--Inline -----------------------------------------------------
   inline  void  RedBack()             {back = red;}
   inline  void  OrangeBack()          {back = orange;}
@@ -1911,12 +1911,14 @@ public:
 
   // CFuiTheme methods
   CFuiThemeWidget* GetWidget (std::string name);
-  void             Print (FILE *f);
+	int			Decode(char *t,char *s);
+  void    Print (FILE *f);
 
 protected:
   char                                   name[64];       // Theme name
   Tag                                    id;             // Unique ID
   std::map<std::string,CFuiThemeWidget*> widgetMap;
+	std::string activeWidget;
 };
 //===============================================================================
 

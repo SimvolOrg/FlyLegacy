@@ -249,9 +249,9 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
              globals->vmapScrn.y)
 { type = COMPONENT_VECTOR_MAP;
   widgetTag = 'defa';
-  strcpy (widgetName, "VectorMap");
+  wName = "VectorMap";
   dbc   = globals->dbc;
-  fpln = 0;
+  fpln  = 0;
   Focus = 0;
   //----- Initialize vector map status -------------------
   vmapOrient.p = vmapOrient.h = vmapOrient.r = 0;
@@ -1396,13 +1396,13 @@ bool CFuiVectorMap::OpenPOP(int mx,int my)
 //  Add Doc name to the list
 //---------------------------------------------------------------------------------
 int CFuiVectorMap::AddDocName(char *dn)
-{	int lgr = strlen(dn);
+{	int lgr = strlen(dn) + 1;
 	rmDoc	 -= lgr;
 	if (rmDoc <= 0)		return 0;
 	//--- copy the name into name space -----------
-	strcpy(nmDoc,dn);
+	strncpy(nmDoc,dn,lgr);
 	DocMENU[nxDoc++] = nmDoc;
-	nmDoc	+= (lgr + 1);
+	nmDoc	+= lgr;
 	return (nxDoc < 16)?(1):(0);
 }
 //---------------------------------------------------------------------------------
@@ -1905,7 +1905,7 @@ void CFuiVectorMap::Teleport()
 //==================================================================================
 CFuiNavDetail::CFuiNavDetail(Tag idn,const char *filename, int lim)
 :CFuiWindow(idn,filename,0,0,lim)
-{ strcpy (widgetName, "NavDetail");
+{ wName = "NavDetail";
   font  = &globals->fonts.ftsmal10;       // Change Font
   nav   = 0;
   type  = (QTYPE)0;
@@ -2024,7 +2024,7 @@ return;;
 //==================================================================================
 CFuiAptDetail::CFuiAptDetail(Tag idn,const char *filename,int lim)
 :CFuiWindow(idn,filename,0,0,lim)
-{ strcpy (widgetName, "AptDetail");
+{ wName = "AptDetail";
   font  = &globals->fonts.ftsmal10;       // Change Font
   Apt   = 0;
   type  = 0;

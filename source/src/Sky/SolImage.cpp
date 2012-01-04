@@ -83,8 +83,7 @@ public:
 };
 
 CSunTextureCache::CSunTextureCache (void)
-{
-  strcpy (filename, "");
+{*filename = 0;
   raw = NULL;
   tex = 0;
 }
@@ -99,36 +98,6 @@ CSunTextureCache::~CSunTextureCache(void)
 GLuint CSolImage::GetSunTexture (const char* filename, int w)
 {
   GLuint rc = 0;
-/*
-  // Search if texture is already loaded
-  int nTextures = textures.getNumEntities ();
-  for (int i=0; i<nTextures; i++) {
-    CSunTextureCache *cache = (CSunTextureCache *)textures.getEntity (i);
-
-    if (stricmp (filename, cache->filename) == 0) {
-      // Found a match
-      rc = cache->tex;
-      break;
-    }
-  }
-
-  // Return code will be set if a match was found
-  if (rc == 0) {
-    // Create a new cache entry
-    CSunTextureCache *cache = new CSunTextureCache;
-    strcpy (cache->filename, filename);
-    textures.addEntity (cache);
-
-    // Load the RAW image
-    char raw[64];
-  sprintf (raw, "Art/%s.RAW", filename);
-    char act[64];
-  sprintf (act, "Art/%s.ACT", filename);
-    cache->raw = new CSunRawImage (w, w, raw, act);
-
-    rc = cache->tex = cache->raw->GetTexture (false);
-  }
-*/
   return rc;
 }
 

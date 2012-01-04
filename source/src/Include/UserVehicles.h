@@ -740,22 +740,6 @@ protected:
   ///--------Cameras list from DATA\CAMERAS_LEGACY.TXT --------------------------
   CCameraViewsList cam_list;
 };
-//========================================================================
-//
-// Radio Manager
-//========================================================================
-class CRadioManager : public CStreamObject {
-public:
-  CRadioManager (char* rdoFilename);
-
-  int   Read (SStream *stream, Tag tag);
-//  void  ReadFinished (void);
-//  void  Write (SStream *stream);
-
-public:
-};
-
-
 
 //===========================================================================
 // Control Mixer

@@ -127,7 +127,7 @@ char *TagString (char* s, Tag tag)
 }
 
 void TagToString (char* s, Tag tag)
-{ if (0 == tag) {strcpy(s,"*none*"); return;}
+{ if (0 == tag) {strcpy(s,"NONE"); return;}
   s[0] = (char)((tag >> 24) & 0xff);
   s[1] = (char)((tag >> 16) & 0xff);
   s[2] = (char)((tag >> 8) & 0xff);

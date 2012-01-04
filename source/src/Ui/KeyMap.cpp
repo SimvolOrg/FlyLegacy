@@ -48,7 +48,7 @@ extern bool GroupUnbind(CKeyDefinition *kdf,int code);
 CKeyDefinition::CKeyDefinition (Tag ks)
 : kyid (0), code (0), user (true), enab (true), cb (NULL)
 { kset = ks;
-  strcpy (name, "");
+ *name  = 0;
   jbtn  = 0;
   type  = 0;
   cb    = 0;
@@ -121,7 +121,7 @@ CSimButton *CKeyDefinition::LinkTo(CSimButton *bt)
 CKeySet::CKeySet (Tag tag)
 : kset (tag), user (true), enab (true)
 { gcb   = GroupUnbind;                // Group callback
-  strcpy (name, "");
+ *name  = 0;
 }
 //-------------------------------------------------------------------------
 //  Destroy and release resources
@@ -379,8 +379,8 @@ void CKeyMap::SaveCurrentConfig()
   CKeySet        * pset;
   CKeyDefinition * pkey;
 
-  strcpy (s.filename, "System/FlyLegacyKey.txt");
-  strcpy (s.mode, "w");
+  strncpy (s.filename, "System/FlyLegacyKey.txt",(PATH_MAX-1));
+  strncpy (s.mode, "w",3);
   if (OpenStream (&s))
   {
     //
@@ -811,14 +811,12 @@ static SKeyCodeFormatEntry keyCodeFormatTable[] =
 //  Edit a given key code
 //==================================================================================
 void formatKeyCode (char *s, int code)
-{
-  strcpy (s, "");
-
+{*s = 0;
   // Format modifiers
   int iMod = (code & 0xFFFF0000) >> 16;
-  if (iMod & KB_MODIFIER_CTRL) strcat (s, "Ctrl ");
-  if (iMod & KB_MODIFIER_ALT)  strcat (s, "Alt ");
-  if (iMod & KB_MODIFIER_SHIFT) strcat (s, "Shift ");
+  if (iMod & KB_MODIFIER_CTRL)  strcat (s, "Ctrl ");
+  if (iMod & KB_MODIFIER_ALT)   strcat (s, "Alt  ");
+  if (iMod & KB_MODIFIER_SHIFT) strcat (s, "Shift");
   if (iMod & KB_MODIFIER_META)  strcat (s, "Meta ");
 
   int nKeys = sizeof(keyCodeFormatTable) / sizeof(SKeyCodeFormatEntry);

@@ -421,7 +421,6 @@ bool PlaneCheckList::IntMessage(char *txt)
 	if (3 != nf)		return false;	
 	//--- Build a message ---------------------
 	SMessage *msg = new SMessage();
-	memset(msg,0,sizeof(SMessage));
 	msg->id				= MSG_SETDATA;
   msg->group		= StringToTag(ds);
 	msg->user.u.datatag = StringToTag(fn);
@@ -462,7 +461,6 @@ bool PlaneCheckList::FltMessage(char *txt)
 	if (3 != nf)		return false;	
 	//--- Build a message ---------------------
 	SMessage *msg = new SMessage();
-	memset(msg,0,sizeof(SMessage));
 	msg->id				= MSG_SETDATA;
   msg->group		= StringToTag(ds);
 	msg->user.u.datatag = StringToTag(fn);
@@ -1344,7 +1342,7 @@ CFPlan::CFPlan(CVehicleObject *m,char rp)
 	cALT		= 4500;
 	InitPlan();
 	//------------------------------------------------
-	strcpy(nul,"    ");
+	strncpy(nul,"    ",6);
 	//------------------------------------------------
 	format = '0';
 	edMOD	 = FPL_EDITABLE;
@@ -1384,7 +1382,7 @@ void CFPlan::ClearPlan()
 	wPoints.AddSlot(&head);
   wPoints.SetParameters(0,'list',type);
   GenerateName();
-  strcpy (Desc,"Default flight plan");
+  strncpy (Desc,"Default flight plan",127);
   State			= FPL_STA_NUL;
 	aWPT			= 0;
 	nWPT			= 0;
@@ -1613,7 +1611,8 @@ void CFPlan::Reorder(char m)
 	CWPoint *end  = 0;
 	U_SHORT dim   = wPoints.GetSize();
 	modify	|= m;
-	nWPT		= 0;
+	nWPT		 = StartingNode();
+	uWPT		 = 0;
 	//---- Reorder nodes and do computation ---
 	for (U_SHORT k = 1; k<dim; k++)
 	{	wpt	= (CWPoint *)wPoints.GetSlot(k);
@@ -1776,37 +1775,28 @@ void CFPlan::UpdateAllNodes()
 {	if (IsEmpty())		return;
 	uWPT	= (CWPoint*)wPoints.NextPrimary(uWPT);
 	//--- Recycle plan if needed ------------
-	if (0 == uWPT)	
-	{ uWPT = (CWPoint*)wPoints.HeadPrimary();
-		nWPT	= uWPT;}
+	if (0 == uWPT)		uWPT = (CWPoint*)wPoints.HeadPrimary();
 	if (0 == uWPT)		return;
 	//--- Update one waypoint ----------------
 	uWPT->UpdateRange(mveh);
-	SaveNearest(uWPT);
+	//--- Save nearest waypoint --------------
+	float d = uWPT->GetPlnDistance();
+  if (d < nWPT->GetPlnDistance())	nWPT	= uWPT;
 	return;
 }
 //-----------------------------------------------------------------
 //  Get the best waypoint to catch up with
-//  The computation takes in account the time for the aircraft to turn
-//	to the waypoint.  It should be 1/3 of the time to go to the waypoint
-//	If it take more, then the next waypoint is selected as the
-//	best candidate
+//	The best candidate is the next to the nearest waypoint
+//	except if it is the last
 //-----------------------------------------------------------------
 CWPoint *CFPlan::GetBestWaypoint()
 { if (nWPT == 0)							return 0;
 	CWPoint *p0 = nWPT;
-	if (p0->GetSequence() == 1) p0 = NextStep(p0);
-	if (0 == p0)								return 0;
-	//--- compute angle from aircraft to P0 -----------
-	float s0 = Wrap180(p0->GetCAP() - float(mveh->GetHeading()));
-	float a0 = fabs(s0);
-	if (a0 > 90)		return NextStep(p0);
-	//--- Compute time to turn to P0 -----------------
-	float spd = mveh->GetPreCalculedKIAS();
-  float t0  = a0 / 3;					// Degre per second
-	float t1  = (p0->GetPlnDistance() * 1200) / spd;
-	if (t0 > t1)	p0 = NextStep(p0);
-	return PrevNode(p0);
+	CWPoint *p1 = NextStep(nWPT);
+	if (0 == p1)								return p0;
+	//--- Check for last waypoint ---------------------
+	U_INT seq = p1->GetSequence();
+	return (IsLast(seq))?(nWPT):(p1);
 }
 //-----------------------------------------------------------------
 //	Update parameters
@@ -1835,7 +1825,7 @@ void	CFPlan::TimeSlice(float dT, U_INT frm)
 	switch (State)	{
 		//--- No flight plan loaded. Update departing airport ---
 		case FPL_STA_NUL:
-			if (nw)	strcpy(dapt,globals->apm->NearestIdent());
+			if (nw)	strncpy(dapt,globals->apm->NearestIdent(),6);
 			return;
 		//--- Flight plan operational -------------
 		case FPL_STA_OPR:
@@ -1906,19 +1896,15 @@ CWPoint *CFPlan::BaseWPT(CWPoint *b)
 	return  PrevNode(org);
 }
 //-----------------------------------------------------------------
-//	
-//-----------------------------------------------------------------
-//-----------------------------------------------------------------
 //	Starting node is the first active node when GPS is switched to
 //	navigation mode.
-//	-If theFlightPlan window is on, it is the node indicated by the
-//	 selection
-//	Otherwise, it is the first node
 //-----------------------------------------------------------------
 CWPoint *CFPlan::StartingNode()
-{	if (0 == win)		return (CWPoint *)wPoints.HeadPrimary();
-	CWPoint *wp =  win->GetSelectedNode();
-	return PrevNode(wp);
+{	CWPoint *wp =  (CWPoint *)wPoints.HeadPrimary();
+	if (0 == wp)			return 0;
+	//--- Set maximum distance ---------------------
+	wp->SetMaxDistance();
+	return wp;
 }
 //-----------------------------------------------------------------
 //	Get Waypoint by sequence number
@@ -1963,8 +1949,8 @@ void CFPlan::MovedWaypoint(CWPoint *wpt)
 void CFPlan::Probe(CFuiCanva *cnv)
 { CWPoint *p1 = nWPT;
 	if (p1)		cnv->AddText( 1,1,"Near: %s",p1->GetIdentity());
-	CWPoint *p0 = GetBestWaypoint();
-	if (p0)		cnv->AddText( 1,1,"Best: %s",p0->GetIdentity());
+	CWPoint *p2 = GetBestWaypoint();
+	if (p2)		cnv->AddText( 1,1,"Best: %s",p2->GetIdentity());
 	if (0 == aWPT)		return;
 	cnv->AddText( 1,1,"aWPT: %s",aWPT->GetIdentity());
 	cnv->AddText( 1,1,"mDis: %.2fnm",aWPT->GetPlnDistance());
@@ -1991,12 +1977,10 @@ bool	CFPlan::StartPlan(CWPoint *wp)
 	//--- FPL is operational & protected -----
 	State = FPL_STA_OPR;
 	edMOD = FPL_PROTECTED;						
-	uWPT	= 0;
-	nWPT	= 0;
 	if (dWPT.IsActive())			return true;
 	aWPT	= (CWPoint*)wPoints.HeadPrimary();
 	if (wp)	aWPT	= wp;
-	dWPT.Unassign();
+	ActivateNode(aWPT);
 	return true;
 }
 //-----------------------------------------------------------------
@@ -2231,8 +2215,8 @@ void CFPlan::Save()
   if (0 != Version) RenameFile(name,renm);
   Version++;
   SStream s;
-  strncpy (s.filename,name, PATH_MAX);
-  strcpy (s.mode, "w");
+  strncpy (s.filename,name, (PATH_MAX-1));
+  strncpy (s.mode, "w",3);
   if (!OpenStream (&s))     return;
   WriteTag('bgno', "========== BEGIN OBJECT ==========", &s);
 	WriteTag('form', "---- Format Type -----------------", &s);

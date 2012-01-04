@@ -1203,9 +1203,8 @@ SDLLObject*	APICreateFlyObject(char *initFile)
     //globals->sit->dVeh = sobj; // lc 121609
     sobj->sim_objects_active = true;
     SStream s;
-    strcpy (s.filename, "WorldObj/");
-    strcat (s.filename, initFile);
-    strcpy (s.mode, "r");
+		_snprintf(s.filename,(PATH_MAX-1),"WORLDOBJ/%s",initFile);
+    strncpy (s.mode, "r",3);
     if (OpenStream (&s)) {
       ReadFrom (sobj, &s);
       CloseStream (&s);
@@ -3177,9 +3176,9 @@ void	APICreateWindow2(unsigned long windowID, char *winFile, SDLLObject *notify)
   CFuiWindow *old = globals->fui->GetFuiWindow (windowID);
   if (old)  return;
   // Instantiate a new CFuiWindow object and add to the window map
-  MEMORY_LEAK_MARKER ("APICreateWindow2");
+  //MEMORY_LEAK_MARKER ("APICreateWindow2");
   CFuiWindow *window = new CFuiDLL/*CFuiWindow*/ (windowID, winFile);
-  MEMORY_LEAK_MARKER ("APICreateWindow2");
+  //MEMORY_LEAK_MARKER ("APICreateWindow2");
   #ifdef _DEBUG_CFuiDLL	
     FILE *fp_debug;
     if(!(fp_debug = fopen("__DDEBUG_CFuiDLL.txt", "a")) == NULL)

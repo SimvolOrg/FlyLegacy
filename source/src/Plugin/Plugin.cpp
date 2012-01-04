@@ -214,9 +214,9 @@ int CPluginMain::On_LoadPlugins (void) const
               HMODULE hm = LoadLibrary (path);
               DEBUGLOG ("Load Library %s", path);
               if (hm) {
-              MEMORY_LEAK_MARKER ("m_dwa");
+              //MEMORY_LEAK_MARKER ("m_dwa");
                 m_dwa.push_back (hm);
-              MEMORY_LEAK_MARKER ("m_dwa");
+              //MEMORY_LEAK_MARKER ("m_dwa");
                 #ifdef _DEBUG_dll
 	                FILE *fp_debug;
 	                if(!(fp_debug = fopen("__DDEBUG_dll.txt", "a")) == NULL)
@@ -1839,9 +1839,9 @@ void GetDLLInit (const std::vector <HMODULE>::iterator it_)
       //<SDLLRegisterTypeList*, SDLLObject*>
       tmp_dll_data.typ_obj [types[1]] = NULL;
     }
-    MEMORY_LEAK_MARKER ("dll_data");
+    //MEMORY_LEAK_MARKER ("dll_data");
     dll_data.push_back (tmp_dll_data);
-    MEMORY_LEAK_MARKER ("dll_data");
+   // MEMORY_LEAK_MARKER ("dll_data");
 //************************************************************************************//
 
   } else {

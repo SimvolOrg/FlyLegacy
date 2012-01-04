@@ -271,9 +271,10 @@ void CSceneryDBM::LoadInFolderTree (const char *path)
       {
         // This is a sub-folder, attempt to load scenery files in it
         char newPath[PATH_MAX];
-        strcpy (newPath, path);
-        strcat (newPath, dp->d_name);
-        strcat (newPath, "/");
+				_snprintf(newPath,(PATH_MAX-1),"%s%s/",path,dp->d_name);
+ //       strcpy (newPath, path);
+ //       strcat (newPath, dp->d_name);
+ //       strcat (newPath, "/");
         LoadInFolderTree (newPath);
       }
     }

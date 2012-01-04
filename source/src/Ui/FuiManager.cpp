@@ -724,7 +724,7 @@ void CFuiManager::DrawNoticeToUser (char *text, float time)
 //------------------------------------------------------------------------------
 void CFuiManager::PilotToUser()
 { notep->SetActive(5);
-	notep->DrawText();
+	notep->DrawTheText();
 	return;
 }
 //------------------------------------------------------------------------------
@@ -733,7 +733,7 @@ void CFuiManager::PilotToUser()
 void CFuiManager::DrawHelp (float time,int x, int y)
 { CPanel* pan = globals->pit->GetCurrentPanel();
   if (0 == pan) return;
-	help->DrawText();
+	help->DrawTheText();
   int     sh  = globals->cScreen->Height;
   int     ph  = pan->GetHeight();
 

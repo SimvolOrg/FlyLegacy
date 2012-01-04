@@ -81,7 +81,7 @@ CGaugeNeedle::CGaugeNeedle (void)
   offx = offy = 0;
   mind = 0;
   maxd = 360;
-  strcpy (base, "");
+ *base = 0;
   bmap = AssignNullBitmap();
 }
 //--------------------------------------------------------------
@@ -107,10 +107,8 @@ int CGaugeNeedle::Read (SStream *stream, Tag tag)
       ReadString (file, 64, stream);
       strupper(file);
       char *dot = strchr(file,'.');
-      if (dot && (strcmp(dot,".PBM") == 0))
-        strcpy(dot,".NDL");
-      if (dot && (strcmp(dot,".PBG") == 0))
-        strcpy(dot,".NDL");
+      if (dot && (strcmp(dot,".PBM") == 0))	strcpy(dot,".NDL");
+      if (dot && (strcmp(dot,".PBG") == 0))	strcpy(dot,".NDL");
       SStream s;
       if (OpenRStream ("DATA",file,s)) {
         ReadFrom (this, &s);
@@ -1055,8 +1053,8 @@ void CGauge::Init()
   gmap = 0;
   plit = 0;
   mask = 0;
-  strcpy (help, "");
-  strcpy (dfmt, "");
+ *help = 0;
+ *dfmt = 0;
   sync = 0;
 	subS = 0; 
   surf = 0;
@@ -2825,7 +2823,7 @@ CHorizonGauge::CHorizonGauge (CPanel *mp)
 	pixd                = 0;
 	moff                = 0;
   hdeg                = 0;
-	strcpy (flag_art,     "");
+ *flag_art						= 0;
   // set messages default tag
 	pich.user.u.datatag = 'pich';
   pich.sender = 'pich';
@@ -3546,7 +3544,7 @@ ECursorResult CN1TachometerGauge::MouseMoved (int x, int y)
 //======================================================================
 CExhaustGasTemperatureGauge::CExhaustGasTemperatureGauge (CPanel *mp)
 : CNeedleGauge(mp)
-{ strcpy (egtn_art, "");
+{*egtn_art = 0; 
   redf = 125;
 }
 //---------------------------------------------------------------------
@@ -3867,7 +3865,7 @@ void CDigitalReadoutGauge::Draw()
 CDigitsReadoutGauge::CDigitsReadoutGauge (CPanel *mp)
 : CGauge(mp)
 { frgb_r  = frgb_g = frgb_b = 240;
-  strcpy (just, "");
+ *just		= 0;
 }
 //--------------------------------------------------------------------
 //  read All parameters
@@ -3905,8 +3903,8 @@ CCabinPressureRateKnobGauge::CCabinPressureRateKnobGauge (CPanel *mp)
   ofxy_x = ofxy_y = 0;
   alti_min = alti_max = 0;
   rate_min = rate_max = 0;
-  strcpy (onsf, "");
-  strcpy (ofsf, "");
+ *onsf = 0;
+ *ofsf = 0;
 }
 
 
@@ -4537,9 +4535,7 @@ EClickResult CFlyhawkELTGauge::StopClick()
 //===============================================================================
 CSlipIndicatorGauge::CSlipIndicatorGauge (CPanel *mp)
 : CBitmapGauge(mp)
-{
-  strcpy (ball_art, "");
-}
+{*ball_art = 0;	}
 
 
 int CSlipIndicatorGauge::Read (SStream *stream, Tag tag)
@@ -6857,10 +6853,9 @@ int CMalybooDigitalClockGauge::Read (SStream *stream, Tag tag)
 //
 CMalybooEngineMonitorGauge::CMalybooEngineMonitorGauge (CPanel *mp)
 : CBitmapGauge(mp)
-{
-  strcpy (rlit_art, "");
-  strcpy (glit_art, "");
-  strcpy (ylit_art, "");
+{*rlit_art = 0;
+ *glit_art = 0;
+ *ylit_art = 0;
 }
 
 int CMalybooEngineMonitorGauge::Read (SStream *stream, Tag tag)
@@ -8663,10 +8658,9 @@ int CWeatherRadarGauge::Read (SStream *stream, Tag tag)
 //
 CAnalogAltPreselectGauge::CAnalogAltPreselectGauge (CPanel *mp)
 : CBitmapGauge(mp)
-{
-  strcpy (fdig_art, "");
-  strcpy (digi_art, "");
-  strcpy (zero_art, "");
+{*fdig_art = 0;
+ *digi_art = 0;
+ *zero_art = 0;
   thou_x = thou_y = 0;
   hund_x = hund_y = 0;
   ones_x = ones_y = 0;
@@ -9037,14 +9031,14 @@ EClickResult CSimpleSwitch::MouseClick (int mouseX, int mouseY, int buttons)
 CSimpleInOutStateSwitch::CSimpleInOutStateSwitch (CPanel *mp)
 : CBitmapGauge(mp)
 { type = GAUGE_SIMPLE_IN_OUT;
-  vin[1] = 1;
-  vin[0] = 0;
-  stat   = 0;
-  mack   = 0;
-  strcpy (onht, "");
-  strcpy (ofht, "");
-  strcpy (sstr_off, "");
-  strcpy (sstr_on, "");
+  vin[1]	= 1;
+  vin[0]	= 0;
+  stat		= 0;
+  mack		= 0;
+ *onht		= 0;
+ *ofht		= 0;
+ *sstr_off= 0;
+ *sstr_on	= 0;
   mmnt  = 0;
   time  = 0;
   chng  = 1;
@@ -9514,8 +9508,7 @@ ECursorResult CSwitchPairGauge::MouseMoved (int x, int y)
 
 CSimpleFloatSwitch::CSimpleFloatSwitch (CPanel *mp)
 : CGauge(mp)
-{
-  strcpy (bmap_art, "");
+{*bmap_art = 0;
   csru_tag = csrd_tag = 0;
   stat_n = 0;
   stat = NULL;
@@ -9989,7 +9982,7 @@ void CPushPullKnobGauge::DefaultArea()
     Area[k].ybtm = int(top) + htf;
     Area[k].valu = 1.0f - (float(k) / nVal);
     Area[k].fram = (nVal - 1 - k);
-    strcpy (Area[k].help, "");
+	 *Area[k].help = 0;
   }
   //---Start at Zero -----------------------
   cVal = nVal - 1;
@@ -10170,7 +10163,7 @@ int CLitLandingGearKnobGauge::Read (SStream *stream, Tag tag)
 
 CReversibleThrottleKnobGauge::CReversibleThrottleKnobGauge (CPanel *mp)
 :	CPushPullKnobGauge(mp)
-{ strcpy (rbmp_art, "");
+{*rbmp_art = 0;
   rtop = rbtm = 0;
 }
 
@@ -10507,9 +10500,7 @@ int CVerticalSliderGauge::Read (SStream *stream, Tag tag)
 
 CTrimWheelGauge::CTrimWheelGauge (CPanel *mp)
 : CGauge(mp)
-{
-  strcpy (bmap_art, "");
-}
+{*bmap_art = 0; }
 
 int CTrimWheelGauge::Read (SStream *stream, Tag tag)
 {
@@ -10673,8 +10664,8 @@ int CFlapsIndicatorGauge::Read (SStream *stream, Tag tag)
 //=================================================================
 CPushButtonGauge::CPushButtonGauge (CPanel *mp)
 :CGauge(mp)
-{ strcpy (bmap_art, "");
-  strcpy (curs_csr, "");
+{*bmap_art	= 0;
+ *curs_csr	= 0;
   mmnt = false;
 }
 
@@ -10715,8 +10706,8 @@ CLightButtonGauge::CLightButtonGauge (CPanel *mp)
 : CPushButtonGauge(mp)
 {
   stat_off = stat_on = 0;
-  strcpy (sstr_off, "");
-  strcpy (sstr_on, "");
+ *sstr_off = 0;
+ *sstr_on  = 0;
 }
 
 int CLightButtonGauge::Read (SStream *stream, Tag tag)
@@ -10777,7 +10768,7 @@ int CTurnSwitchGauge::Read (SStream *stream, Tag tag)
 
 CMasterCautionWarningButtonGauge::CMasterCautionWarningButtonGauge (CPanel *mp)
 :CGauge(mp)
-{ strcpy (bmap_art, "");}
+{*bmap_art = 0;} 
 //------------------------------------------------------
 //	JSDEV* prepare message
 //------------------------------------------------------
@@ -10875,11 +10866,10 @@ void CKAFireExtinguisherButton::ReadFinished (void)
 //===========================================================================
 CWalkerAPPanel::CWalkerAPPanel (CPanel *mp)
 :CGauge(mp)
-{
-  strcpy (enga_yd_art, "");
-  strcpy (enga_ap_art, "");
-  strcpy (knob_bnk_art, "");
-  strcpy (knob_trm_art, "");
+{*enga_yd_art		= 0;
+ *enga_ap_art		= 0;
+ *knob_bnk_art	= 0;
+ *knob_trm_art	= 0;
 }
 
 int CWalkerAPPanel::Read (SStream *stream, Tag tag)

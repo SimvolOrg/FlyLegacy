@@ -958,7 +958,7 @@ bool CPistonEngineModel::PlotParameters(PLOT_PP *pp, Tag id, Tag type)
         pp->dpnd   = this;
         pp->yUnit  = hp;
         pp->sign   = +1;
-        strcpy(pp->mask,"raw HP(%.0f)");
+        strncpy(pp->mask,"raw HP(%.0f)",63);
         return true;
       }
     //--- Engine airflow ----------------------------------
@@ -968,7 +968,7 @@ bool CPistonEngineModel::PlotParameters(PLOT_PP *pp, Tag id, Tag type)
         pp->dpnd   = this;
         pp->yUnit  = af;
         pp->sign   = +1;
-        strcpy(pp->mask,"air Flow(%.4f)");
+        strncpy(pp->mask,"air Flow(%.4f)",63);
         return true;
       }
     //--- Manifold pressure in inHg ----------------------
@@ -978,7 +978,7 @@ bool CPistonEngineModel::PlotParameters(PLOT_PP *pp, Tag id, Tag type)
         pp->dpnd   = this;
         pp->yUnit  = map;
         pp->sign   = +1;
-        strcpy(pp->mask,"MAP(%.1f) Hg");
+        strncpy(pp->mask,"MAP(%.1f) Hg",63);
         return true;
       }
     //--- TORQUE VALUE ---------------------------------
@@ -988,7 +988,7 @@ bool CPistonEngineModel::PlotParameters(PLOT_PP *pp, Tag id, Tag type)
         pp->dpnd   = this;
         pp->yUnit  = trq;
         pp->sign   = +1;
-        strcpy(pp->mask,"TORQUE(%.0f)");
+        strncpy(pp->mask,"TORQUE(%.0f)",63);
         return true;
       }
     //--- TRUST VALUE -----------------------------------
@@ -998,7 +998,7 @@ bool CPistonEngineModel::PlotParameters(PLOT_PP *pp, Tag id, Tag type)
         pp->dpnd   = this;
         pp->yUnit  = trs;
         pp->sign   = 1;
-        strcpy(pp->mask,"TRUST(%.0f)"); 
+        strncpy(pp->mask,"TRUST(%.0f)",63); 
         return true;
       }
     //--- Propeller LIFT -----------------------------------
@@ -1008,7 +1008,7 @@ bool CPistonEngineModel::PlotParameters(PLOT_PP *pp, Tag id, Tag type)
         pp->dpnd   = this;
         pp->yUnit  = val;
         pp->sign   = +1;
-        strcpy(pp->mask,"P-LIFT(%.1f)");
+        strncpy(pp->mask,"P-LIFT(%.1f)",63);
         return true;
       }
     //--- Propeller DRAG -----------------------------------
@@ -1018,7 +1018,7 @@ bool CPistonEngineModel::PlotParameters(PLOT_PP *pp, Tag id, Tag type)
         pp->dpnd   = this;
         pp->yUnit  = val;
         pp->sign   = +1;
-        strcpy(pp->mask,"P-DRAG(%.1f)");
+        strncpy(pp->mask,"P-DRAG(%.1f)",63);
         return true;
       }
 

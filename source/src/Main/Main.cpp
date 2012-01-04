@@ -466,11 +466,11 @@ void InitFonts (void)
   //-----------------------------------------------------------
   LoadVariFont(0,&globals->fonts.ftradi9);
   //-----------------------------------------------------------
-  strcpy (globals->fonts.ftsmal10.fontName, "ART/FTSMAL10.RAW");
+  strncpy (globals->fonts.ftsmal10.fontName, "ART/FTSMAL10.RAW",63);
   LoadFont (&globals->fonts.ftsmal10);
-  strcpy (globals->fonts.ftthin24.fontName, "ART/FTTHIN24.RAW");
+  strncpy (globals->fonts.ftthin24.fontName, "ART/FTTHIN24.RAW",63);
   LoadFont (&globals->fonts.ftthin24);
-  strcpy (globals->fonts.ftasci10.fontName, "ART/FTASCI10.RAW");
+  strncpy (globals->fonts.ftasci10.fontName, "ART/FTASCI10.RAW",63);
   LoadFont (&globals->fonts.ftasci10);
   
   /*!
@@ -749,16 +749,26 @@ void CleanupGlobals (void)
 
   cleanup_ui ();   
   CleanupFonts();
+	TRACE("Delete FuiManager");
   SAFE_DELETE (globals->fui);
+	TRACE("Delete CloudSystem");
   SAFE_DELETE (globals->cld);         // Delete cloud system
+	TRACE("Delete Situation");
   SAFE_DELETE (globals->sit);
+	TRACE("Delete SlewManager");
   SAFE_DELETE (globals->slw);         // Delete slew manager
+	TRACE("Delete KeyMap");
   SAFE_DELETE (globals->kbd);         // Delete keymap manager;
 //  ----Must be last ----------------------
+	TRACE("Delete TerrainCache");
   SAFE_DELETE (globals->tcm);         // Delete terrain before DBcache
+	TRACE("Delete DatabaseCache");
   SAFE_DELETE (globals->dbc);         // Delete DB cache
+	TRACE("Delete WeatherManager");
   SAFE_DELETE (globals->wtm);         // Delete weather manager,
+	TRACE("Delete Atmosphere");
   SAFE_DELETE (globals->atm);         // Delete atmosphere, 
+	TRACE("Delete SQLManager");
   SAFE_DELETE (globals->sqm);         // Delete SQL manager
   globals->nBitmap->ChangeType();
   SAFE_DELETE (globals->nBitmap);
@@ -766,18 +776,18 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->csp);
   SAFE_DELETE (globals->cap);
   SAFE_DELETE (globals->snd);
+	//---------------------------------------
+	TRACE("Shudown POD");
+  pshutdown (&globals->pfs);
+	//----------------------------------------
   SAFE_DELETE (globals->logWarning);
   SAFE_DELETE (globals->logTrace);
   SAFE_DELETE (globals->logTerra);
 	SAFE_DELETE (globals->logScene);
+  SAFE_DELETE (globals->logDebug);      // JS Must be the last if log is used
+  SAFE_DELETE (globals);                // JS Must be the last if log is used
 //  ---------------------------------------
-//   Clean up POD filesystems
-  pshutdown (&globals->pfs);
 
-
-#ifdef _DEBUG
-  DEBUGLOG ("CleanupGlobals end");
-#endif
 }
 
 
@@ -798,47 +808,50 @@ _CrtMemState memoryState;
  */
 void ShutdownAll (void)
 { 
-#ifdef _DEBUG
-  DEBUGLOG ("ShutdownAll start");
-#endif
 
 #ifdef _WIN32
   // Restore saved gamma ramp
   // if (!SetDeviceGammaRamp (hdc, savedGammaRamp))  WARNINGLOG ("Failed to set Win32 gamma ramp");
 #endif // _WIN32
-
-  // Clean up singletons
-  SAFE_DELETE(globals->cum);
-  CSkyManager::Instance().Cleanup ();
-
-  // Clean up FUI manager
-  globals->fui->Cleanup ();
-  CTextureManager::Instance().Cleanup ();
-  CDatabaseManager::Instance().Cleanup();
-
-  // Save and clean up INI settings database
+	  // Save and clean up INI settings database
+	TRACE("Save ini file");
   SaveIniSettings ();
   UnloadIniSettings ();
-
-  // Clean up global variables
-  CleanupGlobals ();
-
+	//--------------------------------------------
+	TRACE("Delete CursorManager");
+  // Clean up singletons
+  SAFE_DELETE(globals->cum);
+	//--------------------------------------------
+	TRACE("Clean SkyManager");
+  CSkyManager::Instance().Cleanup ();
+  // Clean up FUI manager
+	TRACE("Clean CFuiManager");
+  globals->fui->Cleanup ();
+	//-------------------------------------------
+	TRACE("Clean TextureManager");
+  CTextureManager::Instance().Cleanup ();
+	//--------------------------------------------
+	TRACE("Clean DatabaseManager");
+  CDatabaseManager::Instance().Cleanup();
+	//----------------------------------------------
   // sdk: clean-up dll plugins : call DLLKill ()
+	TRACE("Kill plugins");
   if (globals->plugins_num) globals->plugins.On_KillPlugins ();
-
-#ifdef _DEBUG
-  DEBUGLOG ("ShutdownAll end");
-#endif
-  SAFE_DELETE (globals->logDebug);      // JS Must be the last if log is used
-  SAFE_DELETE (globals);                // JS Must be the last if log is used
+	//---------------------------------------------
+  // Clean up global variables
+	TRACE("Clean Globals");
+  CleanupGlobals ();
 
   // try to release as much heap allocated memory as possible
   // lc 051610
   // If successful, _heapmin returns 0; otherwise, the function returns 1
   // The _heapmin function minimizes the heap by releasing unused heap memory
+	//	JS: All memory is released when the process terminates
+	/*
   int heapmin_success = _heapmin ();
   #ifdef _DEBUG	
    // Check heap status
+	 TRACE("Check Heap");
    int heapstatus = _heapchk ();
    {FILE *fp_debug;
     if (!(fp_debug = fopen ("__DDEBUG_heap.txt", "a")) == NULL)
@@ -863,6 +876,7 @@ void ShutdownAll (void)
 	    fclose(fp_debug); 
    }}
   #endif
+	*/
 }
 
 //======================================================================================
@@ -1226,7 +1240,8 @@ void ExitApplication (void)
   ShutdownAll ();
   CleanupWindowManager ();
   CleanupExitScreen ();
-
+	ExitProcess(0);
+	/*
 #ifdef MEMORY_LEAK_CRT
 #if defined(_DEBUG) && defined(HAVE_CRTDBG_H)
   // Check for memory leaks
@@ -1241,25 +1256,13 @@ void ExitApplication (void)
   CloseHandle (hfile);
 #endif
 #endif // MEMORY_LEAK_CRT
+*/
 
-//  fprintf (stdout, "Press Enter key to exit...");
-//  char s[80];
-//  gets(s);
-
-#if defined(_MSC_VER) && defined(_DEBUG)
-  // Avoid MSVC6 crash on exit() when debugging
-  TerminateProcess (GetCurrentProcess(), 0);
-#else
-  //exit (0);
-  // had to change exit(0) with Terminateprocess to avoid
-  // crash on exit in release mode
-  TerminateProcess (GetCurrentProcess(), 0);
-#endif // _WIN32 && _DEBUG
 }
 
-//
+//==================================================================================
 // pthread mutexes for warning, debug and gtfo logging
-//
+//==================================================================================
 static pthread_mutex_t	mutexWarn, 
 												mutexTrace,
 												mutexScene,
@@ -1347,27 +1350,26 @@ int main (int argc, char **argv)
   // Initialize simulation situation (.SIT) to load
   if (argc == 2) {
     // First argument is .SIT filename
-    strcpy (globals->sitFilename, argv[1]);
+    strncpy (globals->sitFilename, argv[1],511);
   } else {
     // No .SIT filename provided on command line; use INI settings
     GetIniString ("UI", "startupSituation", globals->sitFilename, (PATH_MAX-1));
     if (strlen (globals->sitFilename) == 0) {
       // No default startup situation specified in INI settings
-      strcpy (globals->sitFilename, "Saved Simulations/Default.sit");
+      strncpy (globals->sitFilename, "Saved Simulations/Default.sit",511);
     }
   }
 
   //---Put find root foldeer here to open log file in final directory
-  //const char *flyRootFolder = GetIniValue("UI","flyRootFolder");
 	const char *flyRootFolder = ".";
-  //---If a test folder set it as current directory to allow debugging
-  if (flyRootFolder == 0) {gtfo ("Cannot determine Fly! root folder");}
   //=========Init the global structure==================================
-  strcpy(globals->FlyRoot,flyRootFolder);			// Root folder
+  strncpy(globals->FlyRoot,flyRootFolder,511);			// Root folder
   InitTraces();
   globals->logTerra	= new CLogFile ("logs/ChangedTiles.log", "a+");
   TRACE("TRACE FILE CREATED"); 
 	globals->logScene = new CLogFile ("logs/Scenery.log", "w");
+	//----------------------------------------------------------------------
+	globals->mdule = "Main";
   //----------- Init global databank -------------------------------------
   globals->tmzTAB = tmzTAB;
   globals->comTAB = comTAB;
@@ -1488,76 +1490,32 @@ int main (int argc, char **argv)
   pinit (&globals->pfs, "logs/systempod.log");		// JSDEV* add file name
   //----ADD POD FROM FLYII FOLDERS -------------------------------------------
   PFS *pfs = &globals->pfs;
+	int lgr  = PATH_MAX - 1;
   // Mount folders from Fly! II filesystem
   char folder[PATH_MAX];
-  strcpy (folder, flyRootFolder);
-  strcat (folder, "/SYSTEM");
+	_snprintf(folder,lgr,"%s/SYSTEM",flyRootFolder);
   paddpodfolder (pfs, folder);
   //------------------------------------------
-  strcpy (folder, flyRootFolder);
-  strcat (folder, "/AIRCRAFT");
+	_snprintf(folder,lgr,"%s/AIRCRAFT",flyRootFolder);
   paddpodfolder (pfs, folder, true);      ///< Add subfolders too
   //------------------------------------------
-  strcpy (folder, flyRootFolder);
-  strcat (folder, "/TAXIWAYS");
+	_snprintf(folder,lgr,"%s/TAXIWAYS",flyRootFolder);
   paddpodfolder (pfs, folder);
   //------------------------------------------
-  strcpy (folder, flyRootFolder);
-  strcat (folder, "/SCENERY/SHARED");			// Must be Uppercases
+	_snprintf(folder,lgr,"%s/SCENERY/SHARED",flyRootFolder);
   paddpodfolder (pfs, folder);
 
   //------ Add any disk files except pod -----
-  padddiskfolder (pfs, flyRootFolder, "Art");
-  padddiskfolder (pfs, flyRootFolder, "Aircraft");
-  padddiskfolder (pfs, flyRootFolder, "Data");
-  padddiskfolder (pfs, flyRootFolder, "Models");
-  padddiskfolder (pfs, flyRootFolder, "Saved Simulations");
-  padddiskfolder (pfs, flyRootFolder, "System");
-  padddiskfolder (pfs, flyRootFolder, "Ui");
-  padddiskfolder (pfs, flyRootFolder, "World");
-  padddiskfolder (pfs, flyRootFolder, "Sound");
+  padddiskfolder (pfs, flyRootFolder, "ART");
+  padddiskfolder (pfs, flyRootFolder, "AIRCRAFT");
+  padddiskfolder (pfs, flyRootFolder, "DATA");
+  padddiskfolder (pfs, flyRootFolder, "MODELS");
+  padddiskfolder (pfs, flyRootFolder, "SAVED SIMULATION");
+  padddiskfolder (pfs, flyRootFolder, "SYSTEM");
+  padddiskfolder (pfs, flyRootFolder, "UI");
+  padddiskfolder (pfs, flyRootFolder, "WORLD");
+  padddiskfolder (pfs, flyRootFolder, "SOUND");
 
-  //------------------------------------------------------------------------------
-	//	JS: I suppress this because it is confusing
-	//	We now must have only one root folder with legacy and we dont need
-	//	to override files from somewhere else
-	//------------------------------------------------------------------------------
-  // Add disk files from Fly! Legacy folders; these files will override any in the
-  //  Fly! II folders with the same name
-	/*
-  paddpodfolder (pfs, "./Aircraft");
-  paddpodfolder (pfs, "./System");
-
-  // Add aircraft subfolders
-  strcpy (folder, "./Aircraft");
-  ulDir* dirp = ulOpenDir (folder);
-  if (dirp != NULL) {
-    ulDirEnt* dp;
-    while ( (dp = ulReadDir(dirp)) != NULL ) {
-      if (dp->d_isdir) {
-        // This is a sub-folder, recursively add it
-        if ((strcmp (dp->d_name, ".") != 0) && (strcmp (dp->d_name, "..") != 0)) {
-          char subfolder[PATH_MAX];
-          strcpy (subfolder, folder);
-          strcat (subfolder, "/");
-          strcat (subfolder, dp->d_name);
-          padddiskfolder (pfs, subfolder, "");
-        }
-      }
-    }
-    ulCloseDir(dirp);
-  }
-
-  // Add other Fly! Legacy disk folders
-  padddiskfolder (pfs, ".", "Art");
-  padddiskfolder (pfs, ".", "Charts");
-  padddiskfolder (pfs, ".", "Data");
-  padddiskfolder (pfs, ".", "Saved Simulations");
-  padddiskfolder (pfs, ".", "System");
-  padddiskfolder (pfs, ".", "UI");
-  padddiskfolder (pfs, ".", "World");
-	padddiskfolder (pfs, ".", "Updates");
-  */
   // Initialize subsystems so that mouse and keyboard callbacks can be handled
  
   // sdk: load and initialize the dll plugins
@@ -1616,12 +1574,10 @@ void GTFO::operator() (const char* fmt, ...)
   if (fmt != NULL) {
     va_list argp;
     va_start(argp, fmt);
-    vsprintf(usermsg, fmt, argp);
+    vsnprintf (usermsg,1023, fmt, argp);
+		usermsg[1023];
     va_end(argp);
-  } else {
-    // NULL user message format string
-    strcpy (usermsg, "");
-  }
+  } else  strcpy (usermsg, "");
 
   // Trim all but last two path components from filename
 #ifdef _WIN32
@@ -1670,7 +1626,8 @@ void WARN::operator() (const char* fmt, ...)
     if (fmt != NULL) {
       va_list argp;
       va_start(argp, fmt);
-      vsprintf(usermsg, fmt, argp);
+      vsnprintf(usermsg,2047, fmt, argp);
+			usermsg[2047] = 0;
       va_end(argp);
     } else {
       // NULL user message format string
@@ -1760,7 +1717,8 @@ void DEBUG::operator() (const char* fmt, ...)
     if (fmt != NULL) {
       va_list argp;
       va_start(argp, fmt);
-      vsprintf(usermsg, fmt, argp);
+      vsnprintf(usermsg,1023, fmt, argp);
+			usermsg[1023] = 0;
       va_end(argp);
     } else {
       // NULL user message format string

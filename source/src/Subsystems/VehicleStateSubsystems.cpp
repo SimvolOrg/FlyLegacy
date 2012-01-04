@@ -64,8 +64,7 @@ CSpeedMonitor::CSpeedMonitor (void)
 CStallWarning::CStallWarning (void)
 {
   TypeIs (SUBSYSTEM_STALL_WARNING);
-
-  strcpy (wing, "");
+ *wing = 0;
   enableStateAnnouncer = false;
 }
 

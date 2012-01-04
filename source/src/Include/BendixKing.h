@@ -822,7 +822,6 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
 	//-------INTERFACE WITH REAL GPS ----- -------------------------
 	void							TrackWaypoint(CWPoint *wpt,bool e);
 	void							ModifiedPlan();
-	CWPoint          *StartingNode();
 	CWPoint          *SelectedNode();
 	void							NavIsActive();
   //-----------Dispatcher ----------------------------------------

@@ -41,6 +41,7 @@
 #include "../Include/Export.h"
 #include <GL/glut.h>
 #include <stdexcept>
+#include <exception>
 //=====================================================================================
 // GLUT callback functions for primary screen
 #ifdef _WIN32
@@ -69,11 +70,14 @@ Tag           Cursor = 0;
 //===========================================================================
 // Terminate function
 //===========================================================================
-void FatalExit()
-{	TRACE("=====FATAL Error===================");
-	globals->mBox.DumpAll();
+void FatalError(int code)
+{ TRACE("=====FATAL Error===================");
+  TRACE("CODE = %d", code);
+ 	globals->mBox.DumpAll();
   exit(-1);
 }
+//=====================================================================================
+_EXCEPTION_POINTERS *excp = 0;
 //=====================================================================================
 //  Data used by the mouse management
 //=====================================================================================
@@ -595,15 +599,14 @@ void redraw ()
 
   case APP_SIMULATION:
     // Run simulation
-		globals->appState = (EAppState)RedrawSimulation ();
-		/*
+		//globals->appState = (EAppState)RedrawSimulation ();
+	
     __try {globals->appState = (EAppState)RedrawSimulation ();}
     __except(EXCEPTION_EXECUTE_HANDLER)										//(std::exception &e)
-    { FatalExit();
+    { int code = GetExceptionCode();
+			FatalError(code);
 			exit(-1);	} 
-		*/
 			break; 
-
   case APP_EXIT_SCREEN:
     // Display exit screen
     InitExitScreen ();

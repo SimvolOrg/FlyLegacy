@@ -77,7 +77,7 @@ inline int CBitmappedFontChar::GetHeight (void) { return h; }
 CBitmappedFont::CBitmappedFont (const char* fntFilename)
 {
   // Initialize
-  strcpy (rawFilename, "");
+ *rawFilename = 0;
   w = h = 0;
   start = end = 0;
   transparent = 255;
@@ -475,7 +475,7 @@ int LoadFont (SFont *font)
       CBitmappedFont *newfont = new CBitmappedFont ();
 
       // Populate with required data
-      strcpy (newfont->rawFilename, font->fontName);
+      strncpy (newfont->rawFilename, font->fontName,63);
       newfont->w = d->w;
       newfont->h = d->h;
       newfont->start = d->start;

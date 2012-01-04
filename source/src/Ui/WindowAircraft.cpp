@@ -134,15 +134,13 @@ void CFuiSetAir::MakeSlot(char *cpln, bool alloc,char *nfo)
 { if (strcmp(cpln,airInfo.GetMake()) == 0)      return;
   if (airInfo.HasNotClass(mask[selOpt]))        return;
   if (airInfo.NotComplete())                    return;
-  CAirLine *slot = (alloc)?new CAirLine:(&fSlot);
+  CAirLine *slot = (alloc)?(new CAirLine):(&fSlot);
   slot->SetBitmap(0);
   slot->SetName(airInfo.GetMake());
   char  *icon = airInfo.GetIcon();
   if (0 == icon)          return;
-//  MEMORY_LEAK_MARKER ("bmp");
   SBitmap *bmp = new SBitmap;
-//  MEMORY_LEAK_MARKER ("bmp");
-  strcpy (bmp->bitmapName, icon);
+  strncpy (bmp->bitmapName, icon,63);
   Load_Bitmap (bmp);
   slot->SetBitmap(bmp);
   //----Trim nfo file name ----------------------

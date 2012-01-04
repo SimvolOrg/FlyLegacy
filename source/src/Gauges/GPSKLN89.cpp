@@ -209,10 +209,10 @@ CK89gps::CK89gps (CVehicleObject *v,CK89gauge *g)
   vState  = K89_VNA_OFF;
 	v->RegisterGPSR(this);
   //---------Set delimiter fields -----------------------------------
-  strcpy(Ident,"....");
-  strcpy(Name,"12345678901234567");
-  strcpy(IdFR,"....");
-  strcpy(IdTO,"....");
+  strncpy(Ident,"....",6);
+  strncpy(Name,"12345678901234567",20);
+  strncpy(IdFR,"....",5);
+  strncpy(IdTO,"....",5);
   //---------Warning Table ------------------------------------------
   wrnTAB[0]     = "   ";
   wrnTAB[1]     = "Ent";
@@ -1736,7 +1736,7 @@ int CK89gps::EditFlyDirection()
 { char  edt[16];
   char  to  = ' ';
   float dis = 0;
-  if (K89_FLAG_NONE == cdiST) strcpy(edt," Fly _   __._nm");
+  if (K89_FLAG_NONE == cdiST) strncpy(edt," Fly _   __._nm",16);
   else  
   { float rad = DegToRad(cdiDEV);
     dis = actDIS * sin(rad);
@@ -1767,7 +1767,7 @@ void CK89gps::EditLegETE(char *edt,float dis,float speed)
   int sec     = int (dur * 3600);
   int hor     = int (dur);
   int min     = (sec - (hor * 3600)) / 60;
-  if ((dis <= 0) || (speed < 30))   strcpy(edt,"__:__");
+  if ((dis <= 0) || (speed < 30))   strncpy(edt,"__:__",16);
   else  if (hor >= 100) _snprintf(edt,16,"%4uh",hor);
   else                  _snprintf(edt,16,"%02u:%02u",hor,min);
   return;
@@ -1918,7 +1918,7 @@ int CK89gps::NAVpage03(K89_EVENT evn)
 //-----------------------------------------------------------------------------
 void CK89gps::EditDepartTime(char *edt)
 { //SDateTime sd;									// = FPL->GetFPLDepTime();
-	strcpy(edt,"__:__");
+	strncpy(edt,"__:__",16);
  // if (0 == fState)  strcpy(edt,"__:__");
  // else _snprintf(edt,16,"%02u:%02u",sd.time.hour,sd.time.minute);
   return;
@@ -2863,7 +2863,7 @@ void CK89gps::EditVNAVstate()
           int sec = tim % 60;
           _snprintf(edt,32,"Vnv in %02u:%02u    ",min,sec);
         }
-        else  strcpy(edt,"Vnv Armed       ");
+        else  strncpy(edt,"Vnv Armed       ",32);
         StoreText(edt,K89_LINE0,K89_CLN06);
         //---------Save time to VNAV ---------------------
         StoreText("ALT 2 ",K89_LINE3,K89_CLN00);
@@ -2880,7 +2880,7 @@ int CK89gps::EditVNAVstatus(short lin,short col)
 { char edt[16];
   switch (vState) {
   case K89_VNA_OFF:
-    strcpy(edt,"Vnv Off  ");
+    strncpy(edt,"Vnv Off  ",16);
     break;
   case K89_VNA_ALT:
     { int alt = GetTargetVnavALT();
@@ -2894,7 +2894,7 @@ int CK89gps::EditVNAVstatus(short lin,short col)
           int sec = tim % 60;
           _snprintf(edt,16,"Vnv %02u:%02u",min,sec);
         }
-        else  strcpy(edt,"Vnv Armed");
+        else  strncpy(edt,"Vnv Armed",16);
       break;
     }
   }
@@ -3853,7 +3853,7 @@ void CK89gps::RefreshVNAVpoint()
 //  Edit Distance 
 //-----------------------------------------------------------------------------
 void CK89gps::EditDistance(char *edt,float dis)
-{ if ((-1 == dis) || (dis > 9999)) strcpy(edt,"__._nm");
+{ if ((-1 == dis) || (dis > 9999)) strncpy(edt,"__._nm",16);
   else  if (dis >= 1000)   _snprintf(edt,16,"%.0fnm",  dis);
   else  if (dis >=  100)   _snprintf(edt,16," %.0fnm", dis);
   else  if (dis >=   10)   _snprintf(edt,16,"%.1fnm",  dis);
@@ -3875,7 +3875,7 @@ int CK89gps::Round100(int val)
 void CK89gps::EditRadial(char *dst,float rad,U_CHAR flag)
 { if (K89_FLAG_FROM == flag)  rad = Wrap360(rad + 180);
   int dir   = Round(rad);
-  if (K89_FLAG_NONE == flag)  strcpy(dst,".FLAG.");
+  if (K89_FLAG_NONE == flag)  strncpy(dst,".FLAG.",16);
   else _snprintf(dst,16,"%03u°%s",dir,Flag[flag]);
   return;
 }
@@ -3901,7 +3901,7 @@ int CK89gps::EditBearing(float brg,short lin,short col)
 { char edt[16];
   float cap = (K89_FLAG_FROM == OpFlag)?(Wrap360(brg + 180)):(brg);
   int dir   = Round(cap);
-  if (K89_FLAG_NONE == OpFlag) strcpy(edt,"___°To   ");
+  if (K89_FLAG_NONE == OpFlag) strncpy(edt,"___°To   ",16);
   else                         _snprintf(edt,16,"%03u°%s   ",dir,Flag[OpFlag]);
   StoreText(edt,lin,col);
   return 1;
@@ -3974,10 +3974,10 @@ void CK89gps::EditTrack()
 { char edt[16];
   int     dtk = Round(wOBS);        // Desired track
   int     atk = Round(aCAP);        // Actual bearing
-  if (cdiST == K89_FLAG_NONE)  strcpy(edt,"___°");
+  if (cdiST == K89_FLAG_NONE)  strncpy(edt,"___°",16);
   else                        _snprintf(edt,16,"%03u°",dtk);
   StoreText(edt,K89_LINE2,K89_CLN10);
-  if (cdiST == K89_FLAG_NONE)  strcpy(edt,"___°");
+  if (cdiST == K89_FLAG_NONE)  strncpy(edt,"___°",16);
   else                        _snprintf(edt,16,"%03u°",atk);
   StoreText(edt,K89_LINE2,K89_CLN18);
 	U_SHORT *test= disLN[K89_LINE2] + K89_CLN16;
@@ -4233,14 +4233,6 @@ CWPoint *CK89gps::SelectedNode()
   return FPL->GetWaypoint(seq);  
 }
 //---------------------------------------------------------------------
-// Select the starting node in flight plan
-//	The starting node is the selected node in the flight plan page
-//---------------------------------------------------------------------
-CWPoint *CK89gps::StartingNode()
-{ CWPoint *hdn = 0;
-	return hdn;
-}
-//---------------------------------------------------------------------
 //  Flight Plan is modified
 //	Notification coming from current flight plan
 //---------------------------------------------------------------------
@@ -4253,6 +4245,29 @@ void CK89gps::ModifiedPlan()
 	TrackWaypoint(actWP,false);
 	return;
 }
+//----------------------------------------------------------------------------------
+//  Enter tracking
+//	Autopilot must be engaged
+//	Then
+//	Activate Plan if any and get first node to track
+//----------------------------------------------------------------------------------
+void GPSRadio::EnterTRK()
+{	CWPoint *wp = FPL->GetBestWaypoint();
+	if (0 == wp)									return;
+	if (GPSR_STBY != gpsTK)				return;   // Not the good state
+	if (!APL->EnterGPSMode())			return;
+	//--- Stop current plan and start new one ------
+	FPL->StopPlan();
+ 	if (!FPL->StartPlan(wp))			return;
+	APL->	SetGasControl(1);
+	//--- Set Tracking mode -------------------------
+	navON	= 1;
+	gpsTK	= GPSR_TRAK;
+	//---Get first waypoint to track ----------------
+	SetTrack();
+	return;
+}
+
 //---------------------------------------------------------------------
 //  Active waypoint is modified
 //	Notification coming from active flight plan
@@ -4434,7 +4449,7 @@ void GPSRadio::PowerON()
 //  Get next Waypoint
 //	Set RADIO BUS to EXTERNAL SOURCE
 //----------------------------------------------------------------------------------
-void GPSRadio::NextNODE()
+void GPSRadio::SetTrack()
 { float rad = 0;
 	wTRK	= FPL->GetActiveNode();
 	if (0 == wTRK)						return;
@@ -4447,9 +4462,7 @@ void GPSRadio::NextNODE()
 	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wTRK->GetAltitude());
-	APL->EnterALT();
-	APL->ChangeALT(alt);							// Set target altitude
-	APL->SetNavMode();								// Set NAV mode 
+	APL->SetWPTmode(alt);
 	return;
 }
 //--------------------------------------------------------------
@@ -4514,28 +4527,6 @@ void GPSRadio::EnterAPR()
 	gpsTK = GPSR_LAND;
 	return;
 }
-//----------------------------------------------------------------------------------
-//  Enter tracking
-//	Autopilot must be engaged
-//	Then
-//	Activate Plan if any and get first node to track
-//----------------------------------------------------------------------------------
-void GPSRadio::EnterTRK()
-{	CWPoint *wp = FPL->GetBestWaypoint();
-	if (0 == wp)									return;
-	if (GPSR_STBY != gpsTK)				return;   // Not the good state
-	if (!APL->EnterGPSMode())			return;
-	//--- Stop current plan and start new one ------
-	FPL->StopPlan();
- 	if (!FPL->StartPlan(wp))			return;
-	APL->	SetGasControl(1);
-	//--- Set Tracking mode -------------------------
-	navON	= 1;
-	gpsTK	= GPSR_TRAK;
-	//---Get first waypoint to track ----------------
-	NextNODE();
-	return;
-}
 //--------------------------------------------------------------
 //	Refresh tracking
 //--------------------------------------------------------------
@@ -4553,7 +4544,7 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 			if (APL->IsDisengaged())	EnterSBY();
 			if (0 == wTRK)						return;
 			if (wTRK->IsActive())	    return Refresh();
-			NextNODE();
+			SetTrack();
 			return;
 		//--- Just watch the auto pilot ------------
 		case GPSR_LAND:

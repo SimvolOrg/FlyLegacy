@@ -67,7 +67,7 @@ CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
   inf.xOBJ = 0;
   inf.res  = TC_HIGHTR;
   mode     = 1;
-  strcpy(text,"TERRA BROWSER");
+  strncpy(text,"TERRA BROWSER",255);
   title = 1;
   close = 1;
   zoom  = 0;
@@ -145,7 +145,7 @@ void CFuiTBROS::GetSelection()
   Type  =   ntp;
   if (0 == Type)              return;
   //---Get the texture  ------------------------
-  strcpy(name,"XX005D");
+  strncpy(name,"XX005D",(PATH_MAX-1));
   name[0] = HexTAB[Type >> TC_BY16];
   name[1] = HexTAB[Type &  TC_016MODULO];
   sprintf(inf.path,"SYSTEM/GLOBE/%s.RAW",name);
@@ -304,7 +304,7 @@ void CFuiTBROS::Draw()
 #define MBROS_HLF (MBROS_WID / 2)
 CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,360,730,0)
-{ strcpy(text,"3D-MODELS BROWSER");
+{ strncpy(text,"3D-MODELS BROWSER",255);
   title = 1;
   close = 1;
   zoom  = 0;

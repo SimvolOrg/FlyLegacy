@@ -46,6 +46,26 @@ class CAeroControl;
 class CAirplane;
 class CSoundBUF;
 //====================================================================================
+//	Class to linearize changing values
+//====================================================================================
+class VLinear {
+protected:
+	//--- ATTRIBUTES -----------------------------------
+	float		Time;														// Lag time
+	double  cVal;														// Current value
+	double  tVal;														// Target value
+	//--- Method ---------------------------------------
+public:
+	VLinear() {Time = 1; tVal = 0; cVal = 0;}
+	//---------------------------------------------------
+	double	Get()										{return cVal;}
+	double  Tvl()										{return tVal;}
+	void		Upd(double dT);																	// Update value
+	void		Set(double v,float t)		{tVal  = v, Time = t;}		// Set target value
+	void    Inc(double v,double t)	{tVal += v; Time = t;}
+	void    Dec(double v,double lim){tVal -= v; if (tVal < lim) tVal = v;}
+};
+//====================================================================================
 // *
 // * Autopilot proxy
 // * This object intercept message destinated to AXIS and redirect them to
@@ -381,9 +401,10 @@ protected:
   double     Vref;                          // VSP Reference
   double     eVRT;                          // Vertical error (glide)
   double     vAMP;                          // Vertical amplifier
-  double     rALT;                          // Reference altitude
   double     eVSP;                          // VSP error 
-  double     rVSI;                          // Reference VSI
+  double     rVSP;                          // Reference VSP
+//  double     rALT;                          // Reference altitude
+	VLinear     rALT;													// Reference altitude	
   //---Current parameters -------------------------------------------
 	double      cFAC;												  // Current factor
   double      cALT;                         // Current altitude
@@ -464,13 +485,14 @@ public:
 	bool				EnterTakeOFF(char x);
 	bool				EnterGPSMode();
 	void				ReleaseControl()		{xCtl = 0;}
-	void				SetNavMode();
+	void				SetWPTmode(double alt);
   //-------------------------------------------------------------------
   double          RoundValue(double v,double p);
   double          GetAOS();
   void            LateralMode();
   void            VerticalMode();
   void            CatchVSP();
+	float						GetVSPCoef();
   //-------------------------------------------------------------------
   int             PowerLost();
   void            Disengage(char op);
@@ -507,7 +529,6 @@ public:
   void            IncALT();
   void            DecALT();
 	void						ChangeALT(double a);
-	void						HoldAOA(double v);
 	void						SetLandingMode();
   //----Lateral modes --------------------------------------------------
 	double					AdjustHDG();

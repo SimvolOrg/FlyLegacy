@@ -260,7 +260,7 @@ static void DecodeAirportRecord (char* rec, SAirport *airport)
   strncpy (airport->country, rec+63, 3);
   strncpy (airport->state, rec+66, 3);
   strncpy (airport->county, rec+69, 20);
-  strcpy (airport->city, "");
+ *airport->city = 0;
 
   i = *(unsigned long*)(rec+109);
   i = LittleEndian (i);
@@ -2074,8 +2074,8 @@ void CAirport::SaveProfile()
   if (0 == mod) return;
   sprintf_s(path,d,"Runways/%s.RLP",fn);
   //---Open a stream file -----------------------------------
-  strcpy (s.filename, path);
-  strcpy (s.mode, "w");
+  strncpy (s.filename, path,511);
+  strncpy (s.mode, "w",3);
   if (!OpenStream (&s)) {WARNINGLOG("CAptObject : can't write %s", path); return;}
   WriteTag('bgno', "========== BEGIN FILE ==========" , &s);
   for (rwy = GetNextRunway(rwy); rwy != 0;rwy = GetNextRunway(rwy))
@@ -4311,7 +4311,7 @@ void CDbCacheMgr::AirportCOMforGPS(CGPSrequest *req,CAirport *apt)
 //-------------------------------------------------------------------------
 void CDbCacheMgr::MakeILSkey(char *edt,char *akey,char *end)
 { int nb  = 0;
-  strcpy(edt,akey);
+  strncpy(edt,akey,9);
   while (nb++ != 4) if (*end != ' ') break; else end++;
   strcat(edt,end);
   edt[10] = 0;
@@ -5291,21 +5291,21 @@ void CDatabaseManager::Init (void)
   if (0 == globals->sqm->SQLgen())
   { TRACE("------------DB Loading AIRPORTS");
     CDatabase *dbAirport = new CDatabaseAPT ("Airport.dbt");
-    dbAirport->Mount ("Airport.dbd");
-    dbAirport->AddIndex ("Airport.dbi");
-    dbAirport->AddIndex ("AprtCtry.dbi");
-    dbAirport->AddIndex ("AprtStat.dbi");
-    dbAirport->AddIndex ("AprtFaa.dbi");
-    dbAirport->AddIndex ("AprtIcao.dbi");
-    dbAirport->AddIndex ("AprtGlob.dbi");
-    dbAirport->AddIndex ("AprtName.dbi");
+    dbAirport->Mount    ("AIRPORT.DBD");
+    dbAirport->AddIndex ("AIRPORT.DBI");
+    dbAirport->AddIndex ("APRTCTRY.DBI");
+    dbAirport->AddIndex ("APRTSTAT.DBI");
+    dbAirport->AddIndex ("APRTFAA.DBI");
+    dbAirport->AddIndex ("APRTICAO.DBI");
+    dbAirport->AddIndex ("APRTGLOB.DBI");
+    dbAirport->AddIndex ("APRTNAME.DBI");
     db[DB_AIRPORT] = dbAirport;
     TRACE("APT     count %u",dbAirport->GetNumRecords());
   }
   // Load ATS (Air Traffic System) Routing database
   TRACE("------------DB Loading ATS");
-  CDatabase *dbAtsRoute = new CDatabase ("AtsRoute.dbt");
-  dbAtsRoute->Mount ("AtsRoute.dbd");
+  CDatabase *dbAtsRoute = new CDatabase ("ATSROUTE.DBT");
+  dbAtsRoute->Mount ("ATSROUTE.DBD");
   db[DB_ATS_ROUTE] = dbAtsRoute;
   TRACE("ATS     count %u",dbAtsRoute->GetNumRecords());
 
@@ -5313,9 +5313,9 @@ void CDatabaseManager::Init (void)
   { // Load Comm facility database
     TRACE("------------DB Loading COMM FACILITY");
     CDatabase *dbComm = new CDatabaseCOM ("Comm.dbt");
-    dbComm->Mount ("Comm.dbd");
-    dbComm->AddIndex ("Comm.dbi");
-    dbComm->AddIndex ("CommGlob.dbi");
+    dbComm->Mount    ("COMM.DBD");
+    dbComm->AddIndex ("COMM.DBI");
+    dbComm->AddIndex ("COMMGLOB.DBI");
     db[DB_COMM] = dbComm;
     TRACE("COM     count %u",dbComm->GetNumRecords());
   }
@@ -5323,9 +5323,9 @@ void CDatabaseManager::Init (void)
   { // Load Country name database
     TRACE("------------DB Loading COUNTRY");
     CDatabase *dbCountry = new CDatabaseCTY ("Country.dbt");
-    dbCountry->Mount ("Country.dbd");
-    dbCountry->AddIndex ("Country.dbi");
-    dbCountry->AddIndex ("CtryName.dbi");
+    dbCountry->Mount		("COUNTRY.DBD");
+    dbCountry->AddIndex ("COUNTRY.DBI");
+    dbCountry->AddIndex ("CTRYNAME.DBI");
     db[DB_COUNTRY] = dbCountry;
     TRACE("COUNTRY count %u",dbCountry->GetNumRecords());
   }

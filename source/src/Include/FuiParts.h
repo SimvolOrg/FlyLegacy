@@ -481,8 +481,8 @@ public:
 class CKeyLine: public CSlot {
   //--------Attributes ------------------------------------
   CKeyDefinition *kdef;                 // Key definition        
-  char    ktext[20];                    // keyboard designation
-  char    jtext[20];                    // Joystick assignation
+  char    ktext[32];                    // keyboard designation
+  char    jtext[32];                    // Joystick assignation
   Tag     iden;                         // Key tag
   int     code;                         // Key code
   //-------------------------------------------------------

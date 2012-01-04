@@ -86,14 +86,14 @@ void CDatabaseTemplate::Load(PODFILE* f)
 
     // Parse input line into individual fields
     char sId[8], cType, sLeft[256], sRight[256];
-    memset (sId, 0, 8*sizeof(char));
+    memset (sId, 0, 8);
     unsigned long rawOffset, rawLength;
 
     // Split input line at point of final comma separator
     char *sSplit = strrchr (buffer, ',');
     int nLeft = sSplit - buffer;
     strncpy (sLeft, buffer, nLeft);
-    strcpy (sRight, sSplit+1);
+    strncpy (sRight, sSplit+1,255);
 
     // Parse left-hand portion of input line into data fields
     if (sscanf (sLeft, "%4s,%lu,%lu,%c", sId, &rawOffset, &rawLength, &cType) != 4) {
@@ -120,7 +120,7 @@ void CDatabaseTemplate::Load(PODFILE* f)
         break;
       }
     }
-    strcpy (ti->name, sRight);
+    strncpy (ti->name, sRight,255);
 
     // Add the new template item to the vector
     item.push_back (ti);
@@ -131,12 +131,11 @@ void CDatabaseTemplate::Load(PODFILE* f)
 //
 // Constructor which accepts a const char* filename of the DBT file
 //
-void CDatabaseTemplate::Load (const char* dbtFilename)
+void CDatabaseTemplate::Load (const char* dbn)
 {
-  char fullFilename[64];
-  strcpy (fullFilename, "Database/");
-  strcat (fullFilename, dbtFilename);
-  PODFILE *p = popen (&globals->pfs, fullFilename);
+  char fn[128];
+	_snprintf(fn,127,"DATABASE/%s",dbn);
+  PODFILE *p = popen (&globals->pfs, dbn);
 
   if (p) {
     Load (p);

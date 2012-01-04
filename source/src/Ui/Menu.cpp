@@ -822,20 +822,6 @@ void debug_dump_fui_cb (puObject* obj)
   sprintf (debug, "FUI Manager dumped to %s", debugFilename);
   DrawNoticeToUser (debug, 5);
 }
-/*
-void debug_dump_scenery_pfs_cb (puObject* obj)
-{
-  char filename[PATH_MAX];
-  strcpy (filename, "Debug/pfsScenery.txt");
-  FILE *f = fopen (filename, "w");
-  if (f) {
-    pfsdump (&globals->pfsScenery, f);
-    fclose (f);
-  }
-
-  DrawNoticeToUser ("Scenery POD filesystem dumped to \"pfsScenery.txt\"", 5);
-}
-*/
 void debug_dump_system_pfs_cb (puObject* obj)
 {
   FILE *f = fopen ("Debug/pfs.txt", "w");
@@ -971,8 +957,8 @@ void debug_dump_electrical_cb (puObject* obj)
 void debug_stream_test_cb (puObject* obj)
 {
   SStream* s = new SStream;
-  strcpy (s->filename, "teststream.txt");
-  strcpy (s->mode, "w");
+  strncpy (s->filename, "teststream.txt",(PATH_MAX-1));
+  strncpy (s->mode, "w",3);
   OpenStream (s);
 
   WriteComment ("Comment...testing testing testing", s);

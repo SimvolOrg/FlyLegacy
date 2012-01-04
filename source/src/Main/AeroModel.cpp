@@ -161,9 +161,7 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
     return TAG_READ;
   case 'foil':
     // Airfoil
-    { //MEMORY_LEAK_MARKER ("foil");
-      CAeroModelAirfoil *foil = new CAeroModelAirfoil;
-      //MEMORY_LEAK_MARKER ("foil");
+    { CAeroModelAirfoil *foil = new CAeroModelAirfoil;
       ReadFrom (foil, stream);
       string name = foil->GetAirfoilName ();
       airfoilMap[name] = foil;
@@ -174,9 +172,7 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
     {
       char name[80];
       ReadString (name, 80, stream);
-      //MEMORY_LEAK_MARKER ("wing");
       CAeroModelWingSection *wing = new CAeroModelWingSection(mveh,name);
-      //MEMORY_LEAK_MARKER ("wing");
       ReadFrom (wing, stream);
       wingMap[name] = wing;
     }
@@ -855,31 +851,26 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
     //VectorOrientLeftToRight (bAng); // 
     return TAG_READ;
   case 'flap':
-    { //MEMORY_LEAK_MARKER ("flap");
-      CAeroModelFlap* flap = new CAeroModelFlap(this);
+    { CAeroModelFlap* flap = new CAeroModelFlap(this);
       ReadFrom (flap, stream);
       char name[80];
-      strcpy (name, flap->GetChannelName());
+      strncpy (name, flap->GetChannelName(),79);
+			name[79] = 0;
       flapMap[name] = flap;
-      //MEMORY_LEAK_MARKER ("flap");
     }
     return TAG_READ;
   case 'splr':
-    { //MEMORY_LEAK_MARKER ("splr");
-      has_splr = true;
+    { has_splr = true;
       CAeroModelFlap* splr = new CAeroModelFlap(this);
       ReadFrom (splr, stream);
       spoilerMap[splr->GetChannelName()] = splr;
-      //MEMORY_LEAK_MARKER ("splr");
     }
     return TAG_READ;
   case 'trim':
-    { //MEMORY_LEAK_MARKER ("trim");
-      has_trim = true;
+    { has_trim = true;
       CAeroModelFlap* trim = new CAeroModelFlap(this);
       ReadFrom (trim, stream);
       trimMap[trim->GetChannelName()] = trim;
-      //MEMORY_LEAK_MARKER ("trim");
     }
     return TAG_READ;
   case 'orie':

@@ -299,7 +299,7 @@ unsigned int 	GetTicket(PFS *pfs)
 //=====================================================================================
 void pshutdown (PFS* pfs)
 {
-  plog (pfs, "=== SHUT DOWN podList");
+  TRACE ("   SHUT DOWN podList");
 
   //----- Deallocate all entries in the pod list -----------------------
   std::map<string,PFSPOD*>::iterator iPod;
@@ -311,7 +311,8 @@ void pshutdown (PFS* pfs)
 
   pfs->podList.clear();
   //----- Delete all entries in the pod file list ----------------------
-	plog (pfs, "=== SHUT DOWN podFileList");
+	TRACE ("   SHUT DOWN podFileList");
+	plog(pfs,"--------SHUT DOWN podFileList");
   std::multimap<string,PFSPODFILE*>::iterator i;
   for (i=pfs->podFileList.begin(); i!=pfs->podFileList.end(); i++) {
     PFSPODFILE *pf = i->second;
@@ -319,13 +320,15 @@ void pshutdown (PFS* pfs)
   }
 	pfs->podFileList.clear();
 	//----- delete all entries in disk list ------------------------------
-	plog (pfs, "=== SHUT DOWN diskFileList");
+	TRACE ("   SHUT DOWN diskFileList");
+	plog(pfs,"--------SHUT DOWN diskFileList");
+
 	pfs->diskFileList.clear();
 	//---- Clear master list ---------------------------------------------
-	plog (pfs, "=== SHUT DOWN masterFileList");
-	pfs->masterFileList.clear();
+	TRACE ("   SHUT DOWN masterFileList");
+  plog(pfs,"--------SHUT DOWN masterFileList");	pfs->masterFileList.clear();
 	//--------------------------------------------------------------------
-  plog (pfs, "Shutdown complete");
+  plog (pfs, "------SHUTDOWN complete");
   // Close log file
   SAFE_DELETE (pfs->log);
 }
@@ -641,7 +644,7 @@ static void pmountpod3 (PFS *pPfs, PFSPOD* pPod)
     //   read the filename then reposition back to the next directory entry
     long pos = ftell (f);
     fseek (f, offsetStringTable + offsetFilename, SEEK_SET);
-    strcpy (p->name, "");
+	 *p->name = 0;
     char c;
     for (j=0; j<POD_FILENAME_LENGTH; j++) {
       fread (&c, 1, 1, f);
@@ -712,7 +715,7 @@ static PFSPOD* pmount (PFS *pPfs, const char* podname)
 {
   PFSPOD* pPod = new PFSPOD;
 	pPod->users	= 1;
-  strcpy (pPod->name, podname);
+  strncpy (pPod->name, podname,511);
   pPod->file = NULL;
   pPod->format = PodFormatUnknown;
   pPod->refs = 0;
@@ -847,9 +850,7 @@ void paddpodfolder (PFS* pPfs, const char* folder, bool sub, char sh)
         if (sub) {
           if ((strcmp (dp->d_name, ".") != 0) && (strcmp (dp->d_name, "..") != 0)) {
             char subFolder[PATH_MAX];
-            strcpy (subFolder, folder);
-            strcat (subFolder, "/");
-            strcat (subFolder, dp->d_name);
+						_snprintf(subFolder,(PATH_MAX-1),"%s/%s",folder,dp->d_name);
             paddpodfolder (pPfs, subFolder, sub, sh);
           }
         }
@@ -860,10 +861,7 @@ void paddpodfolder (PFS* pPfs, const char* folder, bool sub, char sh)
           // This is a POD file, create a new PFSPOD instance and add
           //   it to the POD list for the filesystem
           char podfilename[PATH_MAX];
-          strcpy (podfilename, folder);
-          strcat (podfilename, "/");
-          strcat (podfilename, dp->d_name);
-
+					_snprintf(podfilename,(PATH_MAX-1),"%s/%s",folder,dp->d_name);
           ///--- mount the POD file ---------------
           plog (pPfs, "MOUNT POD: %s", podfilename);
           PFSPOD *pPod = pmount (pPfs, podfilename);
@@ -886,11 +884,7 @@ void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
 
   // Create full folder name by concatenating root folder with sub-folder name
   char path[PATH_MAX];
-  strcpy (path, root);
-  if (strlen(folder) > 0) {
-    strcat (path, "/");
-    strcat (path, folder);
-  }
+  if (strlen(folder) > 0)  _snprintf(path,(PATH_MAX-1),"%s/%s",root,folder);
 
   // Iterate over all files in this folder.
   ulDir* dirp = ulOpenDir (path);
@@ -904,13 +898,12 @@ void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
           char subfolder[1024];
           if (strlen(folder) > 0) {
             // Initial folder name is non-empty, concatenate subfolder name with slash
-            strcpy (subfolder, folder);
-            strcat (subfolder, "/");
-            strcat (subfolder, dp->d_name);
+						_snprintf(subfolder,1023,"%s/%s",folder,dp->d_name);
           } else {
             // Initial folder name is empty, don't prepend opening slash
-            strcpy (subfolder, dp->d_name);
+            strncpy (subfolder, dp->d_name,1023);
           }
+					subfolder[1023] = 0;
           padddiskfolder (pPfs, root, subfolder);
         }
       } else {
@@ -925,12 +918,10 @@ void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
           char keyFilename[PATH_MAX];
           if (strlen(folder) > 0) {
             // Folder name is non-empty, concatenate filename after folder name with slash
-            strcpy (keyFilename, folder);
-            strcat (keyFilename, "/");
-            strcat (keyFilename, dp->d_name);
+						_snprintf(keyFilename,(PATH_MAX-1),"%s/%s",folder,dp->d_name);
           } else {
             // Folder name is empty, initialize to filename only
-            strcpy (keyFilename, dp->d_name);
+            strncpy (keyFilename, dp->d_name,511);
           }
           strupper (keyFilename);
           NormalizeName(keyFilename);
@@ -961,7 +952,7 @@ static PODFILE* findinpod (PFS* pPfs, const char* filename)
   pthread_mutex_lock   (&pPfs->mux);             // Lock access
   // POD filenames are case-insensitive, normalize case
   char keyFilename[PATH_MAX];
-  strcpy (keyFilename, filename);
+  strncpy (keyFilename, filename,(PATH_MAX-1));
   strupper (keyFilename);
 
   PFSPODFILE *pf = NULL;
@@ -994,8 +985,8 @@ static PODFILE* findinpod (PFS* pPfs, const char* filename)
     p = new PODFILE;
     
     // Link this PODFILE struct to the underlying POD
-    strcpy (p->fullFilename, "");
-    strcpy (p->filename, keyFilename);
+    strncpy (p->fullFilename, "",4);
+    strncpy (p->filename, keyFilename,(PATH_MAX-1));
     p->source = PODFILE_SOURCE_POD;
     p->pPod   = pf->pod;
     p->pFile  = pf->pod->file;
@@ -1025,8 +1016,8 @@ static PODFILE* findondisk (PFS* pPfs, const char* keyFilename,char *md)
     if (f != NULL) {
       // File was successfully opened; create PODFILE for return value
       p = new PODFILE;
-      strcpy (p->fullFilename, fullFilename);
-      strcpy (p->filename, keyFilename);
+      strncpy (p->fullFilename, fullFilename,(PATH_MAX-1));
+      strncpy (p->filename, keyFilename,(PATH_MAX-1));
       p->pFile = f;
       p->pPod = NULL;
       p->source = PODFILE_SOURCE_DISK;
@@ -1124,7 +1115,7 @@ bool pexists (PFS* pPfs, const char* filename)
   bool rc = false;
 	char type = (pPfs->searchPodFilesFirst)?(1):(0);
   // Make local copy of filename, normalize path separators
-  strcpy (localFilename, filename);
+  strncpy (localFilename, filename,(PATH_MAX-1));
   NormalizeName(localFilename);
   strupper (localFilename);			// JSDEV* key is upper case
 	//--- look into podfile first ----------------------------
@@ -1268,7 +1259,7 @@ PODFILE* popen (PFS* pPfs, const char* fname, char *md)
 
   // Make local copy of filename, and normalize path separators
   char filename[PATH_MAX];
-  strcpy (filename, fname);
+  strncpy (filename, fname,(PATH_MAX-1));
   // TODO: Optimize with one-pass upper case and path separator conversion?
   strupper (filename);
   NormalizeName(filename);
