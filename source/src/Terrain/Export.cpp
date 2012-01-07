@@ -924,6 +924,7 @@ void CExport::Export3Dmodels()
   mName = 0;
   mRed  = 0;
   mCnt  = 0;
+	count = 0;
   GetIniVar("SQL", "CrunchModels", &red);
   mRed  = red;
   minp  = 300;                    // default minimum polygons to keep
@@ -993,6 +994,7 @@ void CExport::WriteTheModel()
   Export3DMlodQ(name,2);
   Export3DMlodQ(name,3);
 	SCENE("EXPORT %s",mName);
+	count++;
 	//--- Delete resources -----------------------
   delete Polys;
   Polys = 0;
@@ -1077,19 +1079,6 @@ void CExport::M3DMsgIntro()
   return;
 }
 //-----------------------------------------------------------------------------------------
-//  Activate all sceneries
-//-----------------------------------------------------------------------------------------
-void CExport::ExportAllSceneries()
-{ if (0 == m3d) return;
-  for   (int z=0; z<512; z++)
-  {  for(int x=0; x<512; x++)
-      { U_INT key = QGTKEY(x,z);
-        CSceneryDBM::Instance().Register (key);
-      }
-  }
-  return;
-}
-//-----------------------------------------------------------------------------------------
 //  Close all sceneries
 //-----------------------------------------------------------------------------------------
 void CExport::CloseSceneries()
@@ -1118,7 +1107,6 @@ int  CExport::ExecuteMOD()
 			return EXP_INIT;					
 		//--- Collect all sceneries ----------
 		case EXP_INIT:
-			ExportAllSceneries();
 			Clear = 1;
 			return EXP_FBIN;
 		//--- Init for BIN files ----------

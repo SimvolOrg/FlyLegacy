@@ -311,8 +311,6 @@ private:
   SDateTime                 dptime;       // Departure time
   SDateTime                 artime;       // Arrival time
   CObjPtr                   DBwpt;        // Way point from database
-  //------Edit parameter ------------------------------------------------
-  char             mTxt[2];								// Marker
   //--- METHODS ---------------------------------------------------------
 public:
 	CWPoint(CFPlan *fp,Tag t);		    			// Constructor

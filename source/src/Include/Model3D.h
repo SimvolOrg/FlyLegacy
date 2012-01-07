@@ -350,7 +350,7 @@ protected:
   //----------------------------------------------------------
 	U_INT				serial;									// Serial number				
   pthread_mutex_t		mux;					    // Mutex for lock
-  Tag         idn;
+  U_INT       type;										// Object type
   U_INT       User;                   // Number of users
   //----ATTRIBUTES -------------------------------------------
   C3Dworld   *wd3D;                   // Parent system
@@ -395,7 +395,7 @@ public:
   void            DecUser();
   void            IncUser()     {User++;}
   //----------------------------------------------------------
-  void  EditModel(CFuiCanva *c,char *tp,char *n, M3D_PART_INFO &inf);
+  void  EditModel(CFuiCanva *c,char *n, M3D_PART_INFO &inf);
 	void	EditPos(char *t1,char *t2);				// edit object position
   //----------------------------------------------------------
   bool            NoPlace();
@@ -465,6 +465,7 @@ public:
   inline bool       IsaShare()            {return (shar != 0);}
   //-------------------------------------------------------------
 	inline U_INT			GetSerial()						{return serial;}
+	inline U_INT			GetType()						  {return type;}
   inline void       SetParameter(CmHead *obj) {pmOB = obj;}
   inline CmHead    *GetUserParam()        {return pmOB.Pointer();}
   inline char      *GetFileOBJ()          {return fnam;}
@@ -474,6 +475,7 @@ public:
   //-------------------------------------------------------------
   inline C_QGT     *GetQGT()    {return inf.qgt;}
   //-------------------------------------------------------------
+	inline void				SetType(U_INT t)			{type		= t;}
 	inline void				SetSerial(U_INT n)		{serial = n;}
   inline void       SetFlag(U_INT f)      {flag = f;}
   inline void       SetDistance(float d)  {pDis = d;}

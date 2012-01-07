@@ -626,14 +626,13 @@ void CWPoint::Build(Tag t)
   position.lat = position.lon = position.alt = 0;
   altitude  = 0;
   DBwpt     = 0;
-  mTxt[0]   = ' ';
-  mTxt[1]   = 0;
   legDis    = 0;
 	rDir			= 0;
 	dDir			= 0;
 	sDis			= 0;
 	mDis			= 0;
 	ilsF			= 0;
+	Mark[1]		= 0;
 	strcpy(tkoRWY,"NONE");
 	strcpy(lndRWY,"NONE");
 	strcpy(dbKey, "NONE");
@@ -821,7 +820,7 @@ int CWPoint::Read (SStream *stream, Tag tag)
 		return TAG_READ;
     // Read termination marker ---------------
   case 'mark':
-    ReadString(mTxt,2,stream);
+    ReadString(txt,2,stream);
     return TAG_READ;
 
   default:
@@ -1106,7 +1105,7 @@ void CWPoint::Teleport()
 void CWPoint::UpdateMark(char m)
 {	if (fplan->IsUsed())	return;
 	if (0 == m)						return;
-	strcpy(Mark," ");
+ *Mark = ' ';
 	State		= WPT_STA_OUT;
  *Etar	  = 0;
 	SetLegMode();
@@ -1122,7 +1121,6 @@ void CWPoint::Edit()
   U_INT dd = 0;
   U_INT mo = 0;
   char edt[16];
-  SetMark(mTxt);
   _snprintf(edt,12,"%.1f", legDis);
   SetDist(edt);
   return;
@@ -1181,7 +1179,7 @@ void CWPoint::EditArrival()
 char CWPoint::GoingAway()
 {	SetActive(0);
 	State = WPT_STA_TRM;
-	strcpy(Mark,"X");
+ *Mark = 'X';
 	EditArrival();
 	fplan->Refresh();
 	sDis	= 0;
@@ -1213,7 +1211,7 @@ char CWPoint::Outside()
 	//--- we are now inside inner circle --------------
 	pDis	= mDis;
 	State = WPT_STA_INS;
-	strcpy(Mark,"O");
+ *Mark  = 'O';
 	fplan->Refresh();
 	return 0;
 }

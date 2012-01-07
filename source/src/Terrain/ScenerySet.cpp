@@ -81,12 +81,25 @@ CSceneryDBM CSceneryDBM::instance;
 //   that describe sliced scenery areas.  Scenery files are stream files
 //   with the .SCF extension that reside in any sub-directory from the
 //   /Scenery folder.
+//	NOTE: When configured to export Objects, Models or TRN files, all POD are mounted
 //----------------------------------------------------------------------------------
 void CSceneryDBM::Init (void)
 { // Buffer for the current search path
   char searchPath[PATH_MAX];
+	int pm;
 	pfs = &globals->pfs;
-  // Load SCF files from FlyLegacy /Scenery folder
+	//--- Check for export ---------------------------
+	exp	= 0;
+	pm	= 0;
+	GetIniVar("SQL","ExpM3D",&pm);			// Models
+	exp |= pm;
+	pm	= 0;
+	GetIniVar("SQL","ExpOBJ",&pm);			// Objects
+	exp |= pm;
+	pm	= 0;
+	GetIniVar("SQL","ExpTRN",&pm);
+	exp |= pm;
+  //--- Load SCF files from FlyLegacy /Scenery folder
   strcpy (searchPath, "SCENERY/");
   LoadInFolderTree (searchPath);
 	SCENE("========END INITIAL LOAD==================");
@@ -182,6 +195,14 @@ void CSceneryDBM::Warn01(char *fn)
 	return;
 }
 //--------------------------------------------------------------
+// Mount pod 
+//--------------------------------------------------------------
+void CSceneryDBM::SendPOD(char *pn)
+{	paddpod(pfs,pn);
+  SCENE("   Mount %s",pn);
+	return;
+}
+//--------------------------------------------------------------
 // Process this POD file 
 //--------------------------------------------------------------
 void CSceneryDBM::ProcessPOD(char *path,char *fn)
@@ -189,6 +210,9 @@ void CSceneryDBM::ProcessPOD(char *path,char *fn)
   int   lgr = strlen(scn);
 	int   lim = PATH_MAX - 1;
 	char name[PATH_MAX];
+	//--- mount pod if exporting -------------
+	_snprintf(name,lim,"%s%s",path,fn);
+	if  (exp)	 return SendPOD(name); 
 	//--- First search pod in databases ------
 	char *pn  = strstr(path,scn) + lgr;
 	_snprintf(name,lim,"%s%s",pn,fn);
@@ -199,7 +223,9 @@ void CSceneryDBM::ProcessPOD(char *path,char *fn)
 	char *dbp = strstr(name,scn) + lgr;
 	strncpy(podn,dbp,lim);
 	podn[lim] = 0;
+	//--- Look into each files ---------------
 	scanpod(pfs,name,ScnpodCB);
+
 }
 //--------------------------------------------------------------
 // Check for scenery to process

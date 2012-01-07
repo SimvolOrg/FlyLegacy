@@ -185,7 +185,6 @@ public:
   void  OneM3DPart(M3D_PART_INFO &pif);
   void  Export3DMlodQ(char * name, int n);
   void  M3DMsgIntro();
-  void  ExportAllSceneries();
   void  CloseSceneries();
   int   ExecuteMOD();
   void  KeyW3D(U_INT key,U_INT mod);

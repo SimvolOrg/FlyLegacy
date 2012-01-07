@@ -348,7 +348,8 @@ public:
     F3_VERTEX    Tour[TC_SPTBORDNBR + 2];     // SP contour
     //------Methods ---------------------------------------------
     CSuperTile();
-   ~CSuperTile();   
+   ~CSuperTile();
+	  bool					Update();	
     bool          NeedMedResolution(float rd);
     bool          NeedHigResolution(float rd);
     int           Inside3DRing();

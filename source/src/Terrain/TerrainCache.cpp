@@ -1751,19 +1751,30 @@ void CSuperTile::DrawInnerSuperTile()
   return;
 }
 //-------------------------------------------------------------------------
+//	Update distance and alpha blending
+//-------------------------------------------------------------------------
+bool CSuperTile::Update()
+{	if (!IsVisible())		return false;
+	float lim = globals->ftDRW;         //nm Limit (real feet)
+  //--- Update LOD -------------------------------------------
+  if (dEye > lim)		Outside3DRing();
+	else							Inside3DRing();
+	return (!woQ.IsEmpty());
+}
+//-------------------------------------------------------------------------
 //  SuperTile Draw 3D Objects Here
 //  Alpha chanel for color is taken from this supertile for fade in/out
+//	NOTE:  All ground objects that need polygon offset (noZB) must
+//				 be queued in front of queue
 //-------------------------------------------------------------------------
 int CSuperTile::Draw3D(U_CHAR mod)
-{ float lim = globals->ftDRW;         //nm Limit (real feet)
-  //--- Update LOD -------------------------------------------
-  if (dEye > lim)  return Outside3DRing();
-	Inside3DRing();
-	//----------------------------------------------------------
+{	//----------------------------------------------------------
+	char       pof = 1;									// Polygon offset on
   CWobj     *obj = 0;
   int        nbo = 0;
   white[3]       = alpha;
   glMaterialfv (GL_FRONT_AND_BACK, GL_DIFFUSE, white);
+	glPolygonOffset(0.0F,5);
 	//----------------------------------------------------------
   for (obj = woQ.GetFirst(); obj!=0; obj = woQ.GetNext(obj))
   { //----Translate to object origin -------------------------
@@ -1775,9 +1786,8 @@ int CSuperTile::Draw3D(U_CHAR mod)
     glTranslated(tr.x,tr.y,tr.z);     // To object origin
     glRotated(obj->GetYRotation(),0,0,1);
     //---Draw object ----------------------------------------
-    if (obj->NoZB())    glDisable(GL_DEPTH_TEST);			
+		if (pof & obj->GetZB())	{pof = 0; glPolygonOffset(0,0);}
     obj->DrawModel(mod,LOD);
-    if (obj->NoZB())    glEnable(GL_DEPTH_TEST);		
     //----------------------------------------------------------------
     glPopMatrix();
     nbo++;
@@ -3990,7 +4000,7 @@ void TCacheMGR::GetObjLines(CListBox *box)
 { std::map<U_INT,C_QGT *>::iterator iq;
   for (iq = qgtMAP.begin(); iq != qgtMAP.end(); iq++)
   {  C_QGT *qgt = (*iq).second;
-     if (qgt->NotAlive()) continue;
+     if (qgt->NotReady()) continue;
      qgt->w3D.GetLine(box);
   }
   return;
@@ -4883,7 +4893,8 @@ void TCacheMGR::Draw(CCamera *cam)
 	bbox->Enter("OBJ Draw",0,0);
   glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER,0);
-  glEnable(GL_BLEND);
+ // glEnable(GL_BLEND);
+	glDisable(GL_BLEND);
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glShadeModel(GL_SMOOTH);
   glPushMatrix();                             // Mark T0
@@ -4900,6 +4911,7 @@ void TCacheMGR::Draw(CCamera *cam)
   glPopClientAttrib();
   glFrontFace(GL_CCW);
   glDisable(GL_ALPHA_TEST);
+  glEnable(GL_BLEND);
   //-------------------------------------------------------------
   // Draw the translucent elements (clouds etc.)
   //  Camera at origin

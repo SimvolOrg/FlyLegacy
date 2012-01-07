@@ -538,7 +538,8 @@ CFuiWindow* CFuiManager::CreateOneWindow(Tag id,int lim)
 //------------------------------------------------------------------------------
 void CFuiManager::ToggleFuiWindow (Tag windowId)
 { if (IsWindowCreated (windowId))   DestroyFuiWindow (windowId);
-  else                              CreateFuiWindow (windowId);
+  else  	if (globals->aPROF.Has(PROF_RABIT)) return ;
+  CreateFuiWindow (windowId);
   return;
 }
 //-------------------------------------------------------------------------------

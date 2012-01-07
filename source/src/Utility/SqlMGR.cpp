@@ -154,7 +154,6 @@ void ELVtoSlots(REGION_REC &reg)
 SqlOBJ::SqlOBJ()
 {	qgt		= 0;
 	sup		= 0;
-	expf	= 0;
 }
 //-----------------------------------------------------------------------------
 //  Close all bases
@@ -231,7 +230,7 @@ void SqlOBJ::Init()
   texDBE.dbn = "Generic Textures";
 
   //---World Object database --------------------------------------
-	objDBE.vers	= 1;																// Minimum version
+	objDBE.vers	= 2;																// Minimum version
   strncpy(objDBE.path,"SQL",63);
   GetIniString("SQL","OBJDB",objDBE.path,lgr);
 	strncpy(objDBE.name,"OBJ*.db",63);
@@ -268,7 +267,6 @@ void SqlOBJ::Init()
   GetIniVar("SQL","ExpTXY",&exp);
   txyDBE.exp = exp;
   if (exp) txyDBE.mgr = SQL_MGR;
-	expf   = txyDBE.path;
   //---------Check for export textures data ------------------
   exp = 0;
   GetIniVar("SQL","ExpTEX",&exp);
@@ -2280,7 +2278,7 @@ void SqlMGR::GetTerraSQL(TCacheMGR *tcm)
 //=================================================================================
 void SqlMGR::WriteWOBJ(U_INT qgt,CWobj *obj,int row)
 { char req[1024];
-  strcpy(req,"INSERT INTO OBJ (qgt,xk,yk,kind,flag,mday,nday,lon,lat,alt,xori,yori,zori,fobj,nozb,nozu,pm1,pm2,name,desc)" 
+  strcpy(req,"INSERT INTO OBJ (qgt,type,xk,yk,kind,flag,mday,nday,lon,lat,xori,yori,zori,fobj,nozb,nozu,pm1,pm2,name,desc)" 
     "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20);*");
   sqlite3_stmt *stm = CompileREQ(req,objDBE);
   //---Extract all value from this object ----------------------
@@ -2291,24 +2289,25 @@ void SqlMGR::WriteWOBJ(U_INT qgt,CWobj *obj,int row)
   //---Write the record ----------------------------------------
   int rep  = sqlite3_bind_int (stm, 1, qgt);                // QGT Key
   if (rep != SQLITE_OK) Abort(objDBE);
-  rep      = sqlite3_bind_int (stm, 2, xk);                 // integer longitude 
+	int typ  = obj->GetType();
+	rep			 = sqlite3_bind_int (stm, 2, typ);                 // object type
+	if (rep != SQLITE_OK) Abort(objDBE);
+  rep      = sqlite3_bind_int (stm, 3, xk);                 // integer longitude 
   if (rep != SQLITE_OK) Abort(objDBE);
-  rep      = sqlite3_bind_int (stm, 3, yk);                 // integer latitude 
+  rep      = sqlite3_bind_int (stm, 4, yk);                 // integer latitude 
   if (rep != SQLITE_OK) Abort(objDBE);
-  rep      = sqlite3_bind_int (stm, 4, obj->GetKind());     // Object kind 
+  rep      = sqlite3_bind_int (stm, 5, obj->GetKind());     // Object kind 
   if (rep != SQLITE_OK) Abort(objDBE);
-  rep      = sqlite3_bind_int (stm, 5, obj->GetFlag());     // Object flag
+  rep      = sqlite3_bind_int (stm, 6, obj->GetFlag());     // Object flag
   if (rep != SQLITE_OK) Abort(objDBE);
-  rep      = sqlite3_bind_text(stm, 6, obj->DayName(), -1, SQLITE_TRANSIENT);
+  rep      = sqlite3_bind_text(stm, 7, obj->DayName(), -1, SQLITE_TRANSIENT);
   if (rep != SQLITE_OK) Abort(objDBE);
-  rep      = sqlite3_bind_text(stm, 7, obj->NitName(), -1, SQLITE_TRANSIENT);
+  rep      = sqlite3_bind_text(stm, 8, obj->NitName(), -1, SQLITE_TRANSIENT);
   if (rep != SQLITE_OK) Abort(objDBE);
   //------World coordinates --------------------------------------------
-  rep      = sqlite3_bind_double(stm, 8, pos->lon);         // Longitude
+  rep      = sqlite3_bind_double(stm, 9, pos->lon);         // Longitude
   if (rep != SQLITE_OK) Abort(objDBE);
-  rep      = sqlite3_bind_double(stm, 9, pos->lat);         // Latitude
-  if (rep != SQLITE_OK) Abort(objDBE);
-  rep      = sqlite3_bind_double(stm,10, pos->alt);         // Altitude
+  rep      = sqlite3_bind_double(stm, 10, pos->lat);         // Latitude
   if (rep != SQLITE_OK) Abort(objDBE);
   //------Object orientation -------------------------------------------
   rep      = sqlite3_bind_double(stm,11, ori->x);           // X (pitch)
@@ -2510,25 +2509,27 @@ void SqlMGR::DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj)
   obj->SetDayRef(day);
   char *nit = (char*)sqlite3_column_text(stm,CLN_OBJ_NIT);
   if (*nit) obj->SetNitRef(nit);
+	//---Type ----------------------------------------------------
+	int	t			= sqlite3_column_int (stm,CLN_OBJ_TYP);
+	obj->SetType(t);
   //---Get position --------------------------------------------
   SPosition *pos = obj->ObjPosition();
-  pos->lon = sqlite3_column_double(stm, CLN_OBJ_LON);
-  pos->lat = sqlite3_column_double(stm, CLN_OBJ_LAT);
-  pos->alt = sqlite3_column_double(stm, CLN_OBJ_ALT);
+  pos->lon	= sqlite3_column_double(stm, CLN_OBJ_LON);
+  pos->lat	= sqlite3_column_double(stm, CLN_OBJ_LAT);
   //---Get Orientation -----------------------------------------
   SVector *ori = obj->ObjOrientation();
-  ori->x  = sqlite3_column_double(stm, CLN_OBJ_ORX); 
-  ori->y  = sqlite3_column_double(stm, CLN_OBJ_ORY);
-  ori->z  = sqlite3_column_double(stm, CLN_OBJ_ORZ);
+  ori->x		= sqlite3_column_double(stm, CLN_OBJ_ORX); 
+  ori->y		= sqlite3_column_double(stm, CLN_OBJ_ORY);
+  ori->z		= sqlite3_column_double(stm, CLN_OBJ_ORZ);
   //---Other flags ---------------------------------------------
-  int zb =  sqlite3_column_int (stm,CLN_OBJ_NZB);
+  int zb		= sqlite3_column_int (stm,CLN_OBJ_NZB);
   obj->SetNOZB(zb);
-  int zu =  sqlite3_column_int (stm,CLN_OBJ_NZU);
+  int zu		= sqlite3_column_int (stm,CLN_OBJ_NZU);
   obj->SetNOZU(zu);
   //--- Parameters ---------------------------------------------
-  int pm1 = sqlite3_column_int (stm,CLN_OBJ_PM1);
+  int pm1		= sqlite3_column_int (stm,CLN_OBJ_PM1);
   obj->SetPM1(pm1);
-  int pm2 = sqlite3_column_int (stm,CLN_OBJ_PM2);
+  int pm2		= sqlite3_column_int (stm,CLN_OBJ_PM2);
   obj->SetPM2(pm2);
   //----Object name and description ----------------------------
   char *nam = (char*)sqlite3_column_text(stm,CLN_OBJ_NAM);
@@ -2918,7 +2919,7 @@ int SqlTHREAD::GetM3Dmodel(C3Dmodel *modl)
   _snprintf(req,1024,"SELECT * FROM mod WHERE name='%s';*",fn);
   sqlite3_stmt *stm = CompileREQ(req,modDBE);
   while (SQLITE_ROW == sqlite3_step(stm)) nf += DecodeM3DPart(stm,modl);
-  modl->SetState(M3D_LOADED);
+  if (nf)	modl->SetState(M3D_LOADED);
   //---Free statement --------------------------------------------------
   sqlite3_finalize(stm);
   return nf;

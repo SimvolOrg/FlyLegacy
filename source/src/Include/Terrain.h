@@ -153,6 +153,7 @@ public:
 protected:
   void    LoadInFolderTree (const char *path);
 	void		Warn01(char *fn);
+	void		SendPOD(char *pn);
 	//------------------------------------------------------------------------
 	int     CheckDatabase(char *pn);
 	void		LookForPOD(char *path);
@@ -163,6 +164,7 @@ protected:
 protected:
 	PFS *pfs;
 	U_CHAR	tr;													// Trace indicator
+	int		  exp;
 	char podn[PATH_MAX];
 	std::map<U_INT,CSceneryPack*> sqgt;
 	std::map<U_INT,CSceneryPack*> sgbt;

@@ -435,11 +435,11 @@ void C3DMgr::LightToDraw(C3DLight *lit)
 //--------------------------------------------------------------------
 //  Locate all models files that are related to this QGT
 //  Objects are loaded from the SQL database OBJ.db
+//	Then collected from loaded POD
 //--------------------------------------------------------------------
 void C3DMgr::LocateObjects(C_QGT *qgt)
 { //--- Search in SQL database----------------------
 	if (sql)	globals->sqm->ReadWOBJ(qgt);
-	if (0 == lpod)	return;
 	//--- Search in files ----------------------------
   C3Dfile    scf(this,qgt);
 	char *pod = 0;
@@ -1088,7 +1088,7 @@ CModQ::~CModQ()
 //  WORLD OBJECT
 //===================================================================================
 CWobj::CWobj(Tag k)                   // : CmHead(SHR,WOB)
-{ idn       = 'wobj';
+{ type       = 0;
   User      = 1;
   pthread_mutex_init (&mux,  NULL);
   wd3D      = 0;
@@ -1146,9 +1146,7 @@ void CWobj::DecUser()
 //  Check object ident
 //---------------------------------------------------------------------
 void CWobj::Check()
-{ if (idn == 'wobj')  return;
-  gtfo("wobj Destroyed");
-  return;
+{ return;
 }
 //---------------------------------------------------------------------
 //  Free the light stack
@@ -1356,16 +1354,16 @@ char *CWobj::ModelName(U_CHAR rq)
 //--------------------------------------------------------------------
 //  Edit model
 //--------------------------------------------------------------------
-void CWobj::EditModel(CFuiCanva *cnv,char * tp,char *name, M3D_PART_INFO &inf)
+void CWobj::EditModel(CFuiCanva *cnv,char *name, M3D_PART_INFO &inf)
 { char edt[128];
   int nvt = inf.NbVT;
   int npo = inf.NbIN / 3;
-  _snprintf(edt,128,"%s model(%dnz): %s ",tp,nozb,name);
-  cnv->AddText(1,edt);
+  _snprintf(edt,128,"Model: %s ",name);
+  cnv->AddText(1,edt,1);
   _snprintf(edt,128,"Vertices %d",nvt);
-  cnv->AddText(22,edt);
+  cnv->AddText(1,edt);
   _snprintf(edt,128,"Poly %d",npo);
-  cnv->AddText(36,edt,1);
+  cnv->AddText(14,edt,1);
   return;
 }
 //--------------------------------------------------------------------
@@ -1419,24 +1417,12 @@ double CWobj::GetZExtend()
 //  Get object info
 //--------------------------------------------------------------------
 void CWobj::GetInfo(CFuiCanva *cnv)
-{ char edt[128];
-  C3Dmodel *modD = modL[MODEL_DAY];
+{ C3Dmodel *modD = modL[MODEL_DAY];
   char     *name = ModelName(MODEL_DAY);
   M3D_PART_INFO inf;
   //---Edit day Model  characteristics -------------------
   modD->Counts(inf);
-  EditModel(cnv,"D",name,inf);
-  //---Edit Night model  characteristics -------------------
-  name  = ModelName(MODEL_NIT);
-  inf.NbIN = 0;
-  inf.NbVT = 0;
-  C3Dmodel *modN = modL[MODEL_NIT];
-  if (modN) modN->Counts(inf);
-  if (modN) EditModel(cnv,"N",name,inf);
-  else   
-  { strcpy(edt,"N model: None.");
-    cnv->AddText(1,edt,1);
-  }
+  EditModel(cnv,name,inf);
   return;
 }
 //--------------------------------------------------------------------
@@ -2096,13 +2082,13 @@ void C3Dworld::AddToWOBJ(CWobj *obj)
 //  Camera must be set to origin
 //-----------------------------------------------------------------------------
 void C3Dworld::Draw(U_CHAR tod)
-{ if (globals->noOBJ)       return;
+{ if (globals->noOBJ)    return;
   U_CHAR     mod = ('N' == tod)?(MODEL_NIT):(MODEL_DAY);
   //----------------------------------------------------------
   CSuperTile *sup = 0;
   for (U_INT No = 0; No != TC_SUPERT_NBR; No++) 
   { sup = qgt->GetSuperTile(No);
-    if  (!sup->IsVisible()) continue;
+    if  (!sup->Update()) continue;
     globals->cnt1 += sup->Draw3D(mod);       // Count objects          
   }
   //----------------------------------------------------------

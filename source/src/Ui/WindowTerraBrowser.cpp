@@ -329,7 +329,7 @@ CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
   zLAB  =           new CFuiLabel (8,340,MBROS_WID, 20,this);
   AddChild('zlab',zLAB);
   //----Create Canva ---------------------------------------
-  oINF  =           new CFuiCanva (8,370,MBROS_WID, 60,this);
+  oINF  =           new CFuiCanva (8,370,MBROS_WID, 30,this);
   AddChild('oinf',oINF);
   //----Create the List box --------------------------------
   oWIN  =           new CFuiList  (8,440,MBROS_WID,200,this);
@@ -407,7 +407,7 @@ void CFuiMBROS::NewSelection()
 { char lat[32];
   char lon[32];
   //----Edit total objects -------------------------
-  wTOT->EditText("Total objects found in cache: %d",oBOX.GetSize());
+  wTOT->EditText("Total objects found: %d",oBOX.GetSize());
   CObjLine *lin = (CObjLine*)oBOX.GetSelectedSlot();
   if ((Lin == lin) || (0 == lin)) return;
   //----Set a new world object ---------------------

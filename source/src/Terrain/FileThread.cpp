@@ -265,9 +265,8 @@ void *FileThread(void *p)
       for (mod = m3d->ModelToLoad(); mod != 0; mod = m3d->ModelToLoad())
       { char *mn = mod->GetFileName();
         if (!sql.SQLmod())          {mod->LoadPart(dir); mod->DecUser(); continue;}
-        if (!sql.CheckM3DModel(mn)) {mod->LoadPart(dir); mod->DecUser(); continue;}
+				if (!sql.GetM3Dmodel(mod))  {mod->LoadPart(dir); mod->DecUser(); continue;}
         //-------------------------------------------------------------------------
-        sql.GetM3Dmodel(mod);
 				mod->Finalize();
         mod->DecUser();
       }

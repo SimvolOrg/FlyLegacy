@@ -599,14 +599,16 @@ void redraw ()
 
   case APP_SIMULATION:
     // Run simulation
-		//globals->appState = (EAppState)RedrawSimulation ();
-	
+		globals->appState = (EAppState)RedrawSimulation ();
+		break;
+	/*
     __try {globals->appState = (EAppState)RedrawSimulation ();}
     __except(EXCEPTION_EXECUTE_HANDLER)										//(std::exception &e)
     { int code = GetExceptionCode();
 			FatalError(code);
 			exit(-1);	} 
 			break; 
+			*/
   case APP_EXIT_SCREEN:
     // Display exit screen
     InitExitScreen ();

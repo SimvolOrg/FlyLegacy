@@ -354,16 +354,16 @@ struct ELV_PATCHE;
 //  DEFINE COLUMN INDICES FOR  3DOBJECT LIGHTS
 //=====================================================================================
 #define CLN_OBJ_QGT  0            // QGT X-Z number
-#define CLN_OBJ_XKP  1            // X position
-#define CLN_OBJ_YKP  2            // Y Position
-#define CLN_OBJ_KND  3            // Object Kind
-#define CLN_OBJ_FLG  4            // Object flag
-#define CLN_OBJ_DAY  5            // Day model
-#define CLN_OBJ_NIT  6            // Nigth model
+#define CLN_OBJ_TYP	 1						// Object typ
+#define CLN_OBJ_XKP  2            // X position
+#define CLN_OBJ_YKP  3            // Y Position
+#define CLN_OBJ_KND  4            // Object Kind
+#define CLN_OBJ_FLG  5            // Object flag
+#define CLN_OBJ_DAY  6            // Day model
+#define CLN_OBJ_NIT  7            // Nigth model
 //-----------------------------------------------
-#define CLN_OBJ_LON  7            // Longitude
-#define CLN_OBJ_LAT  8            // Latitude
-#define CLN_OBJ_ALT  9            // Altitude
+#define CLN_OBJ_LON  8            // Longitude
+#define CLN_OBJ_LAT  9            // Latitude
 #define CLN_OBJ_ORX 10            // X Orientation
 #define CLN_OBJ_ORY 11            // Y Orientation
 #define CLN_OBJ_ORZ 12            // Z Orientation
@@ -479,8 +479,6 @@ protected:
 	char			rfu;													// Reserved
 	U_INT			count;
 	C_QGT			*qgt;
-	//--- Export flag -------------------------------------------------
-	char      *expf;
 	//------Attributes ------------------------------------------------
 	sqlite3_stmt *stm;
 	C_STile      *sup;
@@ -523,7 +521,6 @@ public:
   void          DeleteElvRegion(U_INT key);
   void          DeleteElevation(U_INT key);
 	//-----------------------------------------------------------------
-	inline bool   Exporting()		{return (expf != 0);}
   inline char   UseELV()			{return elvDBE.use;}
   inline bool   MainSQL()			{return (sqlTYP == SQL_MGR);}
 };
