@@ -148,7 +148,9 @@ CBitmap *CFuiThemeWidget::GetBitmap (string name)
 unsigned int CFuiThemeWidget::GetColour (string name)
 { U_INT col = colourMap[name];
   return (col)?(col):(black); }
-
+//------------------------------------------------------------
+//  Return component name
+//------------------------------------------------------------
 const char *CFuiThemeWidget::GetComponentName (string name)
 {
   return componentNameMap[name].c_str();

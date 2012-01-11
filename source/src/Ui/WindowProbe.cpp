@@ -410,14 +410,14 @@ return;
 //  CFuiStat:  Display statistic info
 //=======================================================================================
 CFuiStat::CFuiStat(Tag idn, const char *filename)
-:CFuiWindow(idn,filename,200,400,0)
-{ strncpy(text,"System statistics",255);
+:CFuiWindow(idn,filename,240,400,0)
+{ strncpy(text,"SYSTEM STATISTICS",255);
   title = 1;
   close = 1;
   zoom  = 0;
   mini  = 0;
   //--------Create info canvas ------------------------------
-  info  = new CFuiCanva(10,10,180,380,this);
+  info  = new CFuiCanva(10,10,220,380,this);
   info->SetId('info');
   info->ReadFinished();
   childList.push_back(info);

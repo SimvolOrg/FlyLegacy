@@ -48,8 +48,6 @@ public:
   //-----------------------------------------
   int Dcnt[2];            // std Day count
   int Ncnt[2];            // std nigth count
-  int dxcnt;              // Day object count
-  int nxcnt;              // Nit object count
   //-------------------------------------------
   CMemCount();
 };
@@ -344,9 +342,10 @@ class CTextureWard  {
   //-------Accounting -----------------------------------------
   pthread_mutex_t	ctrMux;             // State lock
   CMemCount NbTXM;                    // Texture in memory
-  int       NbSHD;                    // Number of shared textures
   int       NbCUT;                    // Cut number
-  int       Nb3DT;                    // 3D textures
+	int				NbG3D;										// GL textures Objets for 3D
+	int				NbDOB;										// Terrain day Textures object
+	int				NbNOB;										// Terrian Nit texture object
   //-------Animated water ---------------------------------------
   U_INT     kaf;
   CWater3D *anSEA;                    // Animated sea texture
@@ -432,11 +431,11 @@ public:
   int     FreeSharedSlot(CTextureDef *txn);
   int     FreeWaterSlot(CTextureDef *txn);
   void    FreeSharedKey(U_INT key);
+	void		FreeTerrainOBJ(U_INT day,U_INT nit);
   //----------------------------------------------------------
   GLuint  GetGaugeOBJ(TEXT_DEFN &txd);
   GLuint  GetMskOBJ(TEXT_INFO &inf,U_INT mip);
   GLuint  GetTexOBJ(TEXT_INFO &inf, U_INT mip,U_INT type);
-  GLuint  GetM3dOBJ(TEXT_INFO *inf);
   GLuint  GetTexOBJ(GLuint obj,int x,int y,GLubyte *tex,U_INT type);
   GLuint  GetRepeatOBJ(GLuint obj,U_CHAR res,GLubyte *tex);
   GLuint  GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex);
@@ -467,14 +466,6 @@ public:
   //--------------------------------------------------------
   //  Counters
   //--------------------------------------------------------
-  void    ModDTX(char k);
-  void    ModNTX(char k);
-  void    IncDAY(char k);
-  void    DecDAY(char k);
-  void    IncNIT(char k);
-  void    DecNIT(char k);
-  void    PopDAY();
-  void    PopNIT();
   //------Statistical data ---------------------------------
   void    GetStats(CFuiCanva *cnv);
 };

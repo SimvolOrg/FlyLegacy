@@ -376,22 +376,6 @@ bool CTextureDef::AreWe(U_INT ax,U_INT az)
   return true;
 }
 //-------------------------------------------------------------------------
-//  Set day texture
-//-------------------------------------------------------------------------
-void CTextureDef::SetDayTexture(U_CHAR n,GLubyte *t)
-{ dTEX[n] = t;
-  if (t) globals->txw->IncDAY(n);
-  return;
-}
-//-------------------------------------------------------------------------
-//  Set Nith texture
-//-------------------------------------------------------------------------
-void CTextureDef::SetNitTexture(U_CHAR n,GLubyte *t)
-{ nTEX[n] = t;
-  if (t) globals->txw->IncNIT(n);
-  return;
-}
-//-------------------------------------------------------------------------
 //  Pop alternate textures
 //-------------------------------------------------------------------------
 void CTextureDef::PopTextures(U_CHAR opt)
@@ -405,16 +389,13 @@ void CTextureDef::PopTextures(U_CHAR opt)
   dTEX[1]  = 0;
   nTEX[1]  = 0;
   Reso[1]  = 0;
-  if (bfd) globals->txw->PopDAY();
-  if (bfn) globals->txw->PopNIT();
   return;
 }
 //-------------------------------------------------------------------------
 //  Free The resources
 //-------------------------------------------------------------------------
 int CTextureDef::FreeALL()
-{ if (dOBJ)   { glDeleteTextures(1,&dOBJ); globals->txw->ModDTX(-1);}
-  if (nOBJ)   { glDeleteTextures(1,&nOBJ); globals->txw->ModNTX(-1);}
+{ globals->txw->FreeTerrainOBJ(dOBJ,nOBJ);
   dOBJ  = 0;
   nOBJ  = 0;
   //------Free level 1 textures ---------------------
@@ -427,7 +408,7 @@ int CTextureDef::FreeALL()
 //  Free night texture only
 //-------------------------------------------------------------------------
 int CTextureDef::FreeNTX()
-{ if (nOBJ) {glDeleteTextures(1,&nOBJ); globals->txw->ModNTX(-1);}
+{ globals->txw->FreeTerrainOBJ(0,nOBJ);
   nOBJ  = 0;
   FreeNIT();
   return 0;
@@ -435,20 +416,20 @@ int CTextureDef::FreeNTX()
 //-------------------------------------------------------------------------
 //  Assign a texture object and free texture Day 
 //-------------------------------------------------------------------------
-void CTextureDef::AssignDAY(U_INT obj)
+int CTextureDef::AssignDAY(U_INT obj)
 { FreeDAY();                // Release texture
-  if (dOBJ == obj)     return;
+  if (dOBJ == obj)     return 0;
   dOBJ  = obj;
-  globals->txw->ModDTX(+1);
+	return 1;
 }
 //-------------------------------------------------------------------------
 //  Assign a texture object and free texture night 
 //-------------------------------------------------------------------------
-void CTextureDef::AssignNIT(U_INT obj)
+int CTextureDef::AssignNIT(U_INT obj)
 { FreeNIT();                // Release texture
-  if (nOBJ == obj)     return;
+  if (nOBJ == obj)     return 0;
   nOBJ  = obj;
-  globals->txw->ModNTX(+1);
+	return 1;
 }
 
 //-------------------------------------------------------------------------
@@ -456,8 +437,8 @@ void CTextureDef::AssignNIT(U_INT obj)
 //-------------------------------------------------------------------------
 void CTextureDef::FreeDAY()
 { GLubyte *buf = dTEX[0];
-  if (buf)  {globals->txw->DecDAY(0); delete [] buf;} 
   dTEX[0]      = 0;
+  if (buf)  delete [] buf; 
   return;
 }
 //-------------------------------------------------------------------------
@@ -465,7 +446,7 @@ void CTextureDef::FreeDAY()
 //-------------------------------------------------------------------------
 void CTextureDef::FreeNIT()
 { GLubyte *buf = nTEX[0];
-  if (buf)  {globals->txw->DecNIT(0); delete [] buf;}
+  if (buf)   delete [] buf;
   nTEX[0]  = 0;
   return;
 }
@@ -475,8 +456,8 @@ void CTextureDef::FreeNIT()
 void CTextureDef::FreeALT()
 { GLubyte *bfd = dTEX[1];
   GLubyte *bfn = nTEX[1];
-  if (bfd)  {globals->txw->DecDAY(1); delete [] bfd;}
-  if (bfn)  {globals->txw->DecNIT(1); delete [] bfn;}
+  if (bfd)  delete [] bfd;
+  if (bfn)  delete [] bfn;
   dTEX[1]   = 0;
   nTEX[1]   = 0;
   return;

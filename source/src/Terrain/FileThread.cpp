@@ -926,7 +926,6 @@ int CTextureWard::GetShdTexture(CTextureDef *txn,char *rawn)
   //-----Register this new texture ----------------------
   pthread_mutex_lock (&txnMux);
   txnMAP[key] = shx;
-  NbSHD++;
   pthread_mutex_unlock (&txnMux);
   return 0;
 }

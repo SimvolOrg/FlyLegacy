@@ -377,6 +377,7 @@ public:
   virtual void        Close() {}
   virtual void        SetText(char* text);
   virtual void        EditText(char *fmt, ...){}
+	virtual void				EditText();
   virtual void        SetEditMode(U_CHAR md){}
   virtual void        SetPosition (int x, int y);
   virtual bool        KeyboardInput(U_INT key){return false;};
@@ -396,11 +397,16 @@ public:
   virtual void        NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn) {return; }
   virtual void        EventNotify(Tag win,Tag cpn,EFuiEvents evn,EFuiEvents sub ){};
   virtual void        NotifyFromPopup(Tag id, Tag itm, EFuiEvents evn){}
-  virtual void        Resize(short dx,short dy) {}
+	virtual bool				MoveOver(int x, int y)			{return false;}
+	virtual bool				ForResize()									{return false;}
+	virtual void				SetResize(Tag c,char t)     {}
+  virtual void        Resize(short dx,short dy)		{}
   virtual void        ResizeTo(short dx,short dy) {}
-  virtual void        ResizeVT(short dy)        {}
-  virtual void        Redim(short dx,short dy)  {}
+  virtual void        ResizeVT(short dy)					{}
+  virtual void        Redim(short dx,short dy)		{}
   virtual void        Format(WZ_SIZE cd,short dx,short dy){}
+	virtual void				ClickOver(int mx, int my)		{}
+	//--------------------------------------------------------------------
   virtual CFuiComponent *GetComponent(Tag id) {return 0;}
   //-------Focus management --------------------------------------------
   bool                RegisterFocus(CFuiComponent *comp);
@@ -438,7 +444,9 @@ public:
   virtual void        Draw (void);
   void                Draw(SSurface *sf);
   void                DrawAsQuad(U_INT obj);
-  //-------inline method -----------------------------------------
+	//--- Text handling --------------------------------------------
+	void								ColorText(U_INT rgb);
+  //----inline method --------------------------------------------
 	inline void     DrawFBoxBack(CFuiComponent *cp)	{if (cp) cp->Draw();}
   inline void     SetTransparentMode()          {prop |= FUI_TRANSPARENT;}
   inline void     SetProperty(U_INT p)          {prop |= p;}
@@ -507,13 +515,13 @@ protected:
   SSurface           *surface;
 	//---------------------------------------------------------------------------
 	U_INT								colText;						// Text color
-
 };
 
 //==================================================================================
 #define WINDOW_RESIZE_NONE 0
 #define WINDOW_RESIZE_XDIM 1
 #define WINDOW_RESIZE_YDIM 2
+#define WINDOW_RESIZE_BOTH 3
 //==================================================================================
 // CFuiPicture
 //==================================================================================
@@ -536,16 +544,18 @@ public:
   void      SetFrame (int i);
   //----Mouse events -------------------------------
   bool      MouseStopClick (int mx, int my, EMouseButton button);
-  bool      MoveOver(int mx,int my,Tag csr);
+  bool      MoveOver(int mx,int my);
   bool      Moving(int mx,int my);
-  bool      ClickOver(int mx, int my, U_CHAR mv);
+  void      ClickOver(int mx, int my);
   void      Format(WZ_SIZE code, short dx, short dy);
   //------------------------------------------------
   void      Redim(short dx,short dy);
   void      FillTheRect(short x,short y,short wd,short ht,U_INT col);
-  //-------Stop resizing ----------------------------
-  inline    void  FocusLost()			{rState = WINDOW_RESIZE_NONE;}
+	void			SetResize(Tag c,char t);
+	//-------Stop resizing ----------------------------
+  inline    void  FocusLost()			{rStat = WINDOW_RESIZE_NONE;}
 	inline    void	SetOwn(char o)	{own = o;}
+	inline    bool  ForResize()			{return (rCurs != 0);}
   //-------------------------------------------------
 protected:
 	char			own;
@@ -553,9 +563,12 @@ protected:
   short     pFrame;             ///< PBG frame number on last draw cycle
   short     cFrame;             ///< PBG frame number for this draw cycle
   //-------------------------------------------------
-  U_CHAR    rState;                     // Resize state
+	Tag				rCurs;											// Resize cursor
+	U_CHAR		rType;											// Resize type
+	U_CHAR    rStat;                     // Resize state
   short     mx;                         // Mouse coordinate
   short     my;                         // Mouse coordinate
+	//-------------------------------------------------------
 };
 
 
@@ -775,7 +788,6 @@ public:
   //----------------------------------------------------------------
   bool                WindowHit(int mx,int my);
   bool                CheckResize(int mx, int my);
-  void                InitCursor();
   void                SetXRange(short w1,short w2)  {xMini = w1; xMaxi = w2;}
   void                SetYRange(short h1,short h2)  {yMini = h1; yMaxi = h2;}
   //----------------------------------------------------------------
@@ -844,6 +856,8 @@ protected:
   CFuiCloseButton    *btc;
   CFuiZoomButton     *btz;
   CFuiMinimizeButton *btm;
+	//---- Move management -------------------------------------------
+	CFuiComponent      *edge;											// Selected edge for resize
   int               lastX, lastY;               ///< Cursor position at last move update
   //------------Popup management -----------------------------------
   CFuiPage          *mPop;

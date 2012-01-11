@@ -206,8 +206,6 @@ CMemCount::CMemCount()
   Dcnt[1] = 0;              // std Day count
   Ncnt[0] = 0;              // std nigth count
   Ncnt[1] = 0;              // std nigth count
-  dxcnt = 0;              // Day object count
-  nxcnt = 0;              // Nit object count
 }
 //=============================================================================
 //  CWaterTexture:  Parameters for Water Texture
@@ -294,7 +292,7 @@ CShared3DTex::CShared3DTex(char *tn,char tsp)
   x3d.bpp   = 4;
   x3d.xOBJ  = 0;
   x3d.mADR  = 0;
- // strncpy(x3d.path,tn,TC_LAST_INFO_BYTE);
+	x3d.type	= 0;
   _snprintf(x3d.path,512,"ART/%s",tn);
   x3d.path[TC_LAST_INFO_BYTE]   = 0;
 }
@@ -1114,9 +1112,10 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
   iBox.xmax = 0;
   iBox.zmax = 0;
   //------Init Counters ---------------------------------------
-  Nb3DT   = 0;
-  NbSHD   = 0;
   NbCUT   = 0;
+	NbG3D		= 0;
+	NbDOB		= 0;
+	NbNOB		= 0;
   //------Init working area -----------------------------------
   gx      = 0;
   gz      = 0;
@@ -1224,7 +1223,7 @@ int  CTextureWard::Warn(char *msg,char *mse)
 //----------------------------------------------------------------------
 void CTextureWard::TraceCTX()
 { pthread_mutex_lock (&ctrMux);
-//  TRACE("tcm: TEXTURES: SHD=%04d RAW=%04d EPD=%04d GEN=%04d",NbSHD,NbRAW,NbEPD,NbGEN);
+//  TRACE("tcm: TEXTURES: RAW=%04d EPD=%04d GEN=%04d",NbRAW,NbEPD,NbGEN);
   pthread_mutex_unlock (&ctrMux);
   return;
 }
@@ -1298,7 +1297,7 @@ void CTextureWard::GetShdOBJ(CTextureDef *txn)
   if (0 == shx)             return;
   if (shx->AssignOBJ(txn))  return;
 	U_INT obj = GetTerraOBJ(0,res,shx->dTEX[0]);
-  shx->AssignDAY(obj);
+  NbDOB +=shx->AssignDAY(obj);
   txn->dOBJ = obj;
   return;
 }
@@ -1334,7 +1333,6 @@ void CTextureWard::LoadTaxiTexture(char *name,char tsp)
   //-----Register this new texture -----------------
   pthread_mutex_lock (&txnMux);
   txnMAP[key] = shx;
-  NbSHD++;
   pthread_mutex_unlock (&txnMux);
   return;
 }
@@ -1380,7 +1378,6 @@ void CTextureWard::LoadRwyTexture(U_INT key,char *fn, char tsp)
   //-----Register this new texture -----------------
   pthread_mutex_lock (&txnMux);
   txnMAP[key] = shx;
-  NbSHD++;
   pthread_mutex_unlock (&txnMux);
   return;
 }
@@ -1511,13 +1508,13 @@ void *CTextureWard::GetM3DPodTexture(char *fn,U_CHAR tsp)
   if (0 == inf->mADR)  {delete shx; shx = 0;}
   //--Insert new shared object ---------------------------
   pthread_mutex_lock (&t3dMux);
-  if (shx)  {t3dMAP[idn]  = shx; Nb3DT++;}
+  if (shx)   t3dMAP[idn]  = shx;
   pthread_mutex_unlock (&t3dMux);
   return shx;
 }
 //-----------------------------------------------------------------------------
 //  Get A 3D model Texture
-//  from SQL database
+//  from SQL database.  This function runs in SQL thread
 //-----------------------------------------------------------------------------
 void *CTextureWard::GetM3DSqlTexture(char *fn,U_CHAR tsp)
 { void *ref = RefTo3DTexture(fn);
@@ -1529,7 +1526,7 @@ void *CTextureWard::GetM3DSqlTexture(char *fn,U_CHAR tsp)
   globals->sql->GetM3DTexture(inf);
   //--Insert new shared object ---------------------------
   pthread_mutex_lock (&t3dMux);
-  if (shx)  {t3dMAP[idn]  = shx; Nb3DT++;}
+  if (shx)  t3dMAP[idn]  = shx; 
   pthread_mutex_unlock (&t3dMux);
   return shx;
 }
@@ -1579,7 +1576,8 @@ void CTextureWard::Get3DRAW(TEXT_INFO *txd)
   return;
 }
 //-----------------------------------------------------------------------------
-//  Assign a 3D texture object
+//  Assign a 3D texture object:  
+//	NOTE: Call only from normal thread
 //-----------------------------------------------------------------------------
 GLuint CTextureWard::Get3DObject(void *tref)
 { if (0 == tref)          return 0;
@@ -1587,7 +1585,25 @@ GLuint CTextureWard::Get3DObject(void *tref)
   TEXT_INFO    *inf = shx->GetInfo();
   if (0 != inf->xOBJ)     return inf->xOBJ;
   if (0 == inf->mADR)     return 0;
-  return GetM3dOBJ(inf);
+	//--- Increment GL objects -------------------------------------
+	inf->type = 1;
+	NbG3D++;
+	//--- Assign and bind a texture object --------------------------
+	GLuint obj  = 0;
+  glGenTextures(1,&obj);
+  glBindTexture(GL_TEXTURE_2D,obj);
+  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,6);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D,0,GL_COMPRESSED_RGBA,inf->wd,inf->ht,0,GL_RGBA,GL_UNSIGNED_BYTE,inf->mADR);
+  glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+  inf->xOBJ = obj;
+  delete [] inf->mADR;
+  inf->mADR = 0;
+  return obj;
 }
 //-----------------------------------------------------------------------------
 //  Free a 3D texture
@@ -1599,8 +1615,10 @@ void CTextureWard::Free3DTexture(void *sht)
   pthread_mutex_lock (&t3dMux);
   if (!shx->DecUser())
     { t3dMAP.erase(shx->GetIdent());
+	    TEXT_INFO *inf = shx->GetInfo();
+			NbG3D         -= inf->type;
       delete shx;
-      Nb3DT--;
+			
     }
   pthread_mutex_unlock (&t3dMux);
   return;
@@ -1676,26 +1694,6 @@ GLuint CTextureWard::GetMskOBJ(TEXT_INFO &inf,U_INT mip)
   glTexImage2D(GL_TEXTURE_2D,0,GL_ALPHA,inf.wd,inf.ht,0,GL_ALPHA,GL_UNSIGNED_BYTE,inf.mADR);
 
   inf.xOBJ = obj;
-  return obj;
-}
-//-----------------------------------------------------------------------------
-//  Assign a 3D texture object
-//-----------------------------------------------------------------------------
-GLuint CTextureWard::GetM3dOBJ(TEXT_INFO *inf)
-{ GLuint obj  = 0;
-  if (0 == inf->xOBJ) glGenTextures(1,&obj);
-  glBindTexture(GL_TEXTURE_2D,obj);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,6);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D,0,GL_COMPRESSED_RGBA,inf->wd,inf->ht,0,GL_RGBA,GL_UNSIGNED_BYTE,inf->mADR);
-  glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-  inf->xOBJ = obj;
-  delete [] inf->mADR;
-  inf->mADR = 0;
   return obj;
 }
 
@@ -1846,29 +1844,29 @@ void CTextureWard::GetSupOBJ(CSuperTile *sp)
           case TC_TEXGENER:
             if (0 == rgb) break;
             obj = GetTerraOBJ(txn->dOBJ,res,rgb);
-            txn->AssignDAY(obj);
+            NbDOB += txn->AssignDAY(obj);
             break;
           case TC_TEXRAWTN:
             if (0 == rgb) break;
             obj = GetTerraOBJ(txn->dOBJ,res,rgb);
-            txn->AssignDAY(obj);
+            NbDOB += txn->AssignDAY(obj);
             break;
           case TC_TEXCOAST:
             if (0 == rgb) break;
             obj = GetTerraOBJ(txn->dOBJ,res,rgb);
-            txn->AssignDAY(obj);
+            NbDOB += txn->AssignDAY(obj);
             break;
           case TC_TEXRAWEP:
             if (0 == rgb) break;
             obj = GetTerraOBJ(txn->dOBJ,res,rgb);
-            txn->AssignDAY(obj);
+            NbDOB += txn->AssignDAY(obj);
             break;
       }
       //--------Assign night texture if any ----------------
       rgb = txn->nTEX[0];
       if (0 == rgb)  continue;
 			obj = GetTerraOBJ(txn->nOBJ,res,rgb);
-      txn->AssignNIT(obj);
+      NbNOB += txn->AssignNIT(obj);
     }
   //----All component are ready ----------------------------
   sp->WantRDY();
@@ -1966,7 +1964,6 @@ void CTextureWard::FreeSharedKey(U_INT key)
   if (0 == shx->Use)
     { txnMAP.erase(key);
       delete shx;
-      NbSHD--;
     }
   pthread_mutex_unlock (&txnMux);
 return;
@@ -1998,6 +1995,15 @@ int CTextureWard::FreeWaterSlot(CTextureDef *txn)
   txn->SetDOBJ(0);
   return 0;
 }
+//-----------------------------------------------------------------------------
+//  Free Terrain object
+//-----------------------------------------------------------------------------
+void CTextureWard::FreeTerrainOBJ(U_INT d,U_INT n)
+{	if (d) {glDeleteTextures(1,&d); NbDOB--;}
+	if (n) {glDeleteTextures(1,&n); NbNOB--;}
+	return;
+}
+
 //-----------------------------------------------------------------------------
 //  Free Water
 //-----------------------------------------------------------------------------
@@ -2103,108 +2109,31 @@ void CTextureWard::DrawHLine(int x1,int x2, int y0)
   return;
 }
 //-----------------------------------------------------------------------------
-//  Increment Day texture Object count
-//-----------------------------------------------------------------------------
-void CTextureWard::ModDTX(char k)
-{ pthread_mutex_lock (&ctrMux);
-  NbTXM.dxcnt += k;
-  pthread_mutex_unlock (&ctrMux);
-}
-//-----------------------------------------------------------------------------
-//  Increment Night texture Object count
-//-----------------------------------------------------------------------------
-void CTextureWard::ModNTX(char k)
-{ pthread_mutex_lock (&ctrMux);
-  NbTXM.nxcnt += k;
-  pthread_mutex_unlock (&ctrMux);
-}
-//-----------------------------------------------------------------------------
-//  Increment Day texture count
-//-----------------------------------------------------------------------------
-void CTextureWard::IncDAY(char k)
-{ pthread_mutex_lock (&ctrMux);
-  NbTXM.Dcnt[k]++;
-  pthread_mutex_unlock (&ctrMux);
-}
-//-----------------------------------------------------------------------------
-//  Decrement Day texture count
-//-----------------------------------------------------------------------------
-void CTextureWard::DecDAY(char k)
-{ pthread_mutex_lock (&ctrMux);
-  NbTXM.Dcnt[k]--;
-  pthread_mutex_unlock (&ctrMux);
-}
-//-----------------------------------------------------------------------------
-//  Increment Night texture count
-//-----------------------------------------------------------------------------
-void CTextureWard::IncNIT(char k)
-{ pthread_mutex_lock (&ctrMux);
-  NbTXM.Ncnt[k]++;
-  pthread_mutex_unlock (&ctrMux);
-}
-//-----------------------------------------------------------------------------
-//  Decrement Night texture count
-//-----------------------------------------------------------------------------
-void CTextureWard::DecNIT(char k)
-{ pthread_mutex_lock (&ctrMux);
-  NbTXM.Ncnt[k]--;
-  pthread_mutex_unlock (&ctrMux);
-}
-//-----------------------------------------------------------------------------
-//  Promote Day texture count
-//-----------------------------------------------------------------------------
-void CTextureWard::PopDAY()
-{ pthread_mutex_lock (&ctrMux);
-  NbTXM.Dcnt[0]++;
-  NbTXM.Dcnt[1]--;
-  pthread_mutex_unlock (&ctrMux);
-}
-//-----------------------------------------------------------------------------
-//  Promote Nit texture count
-//-----------------------------------------------------------------------------
-void CTextureWard::PopNIT()
-{ pthread_mutex_lock (&ctrMux);
-  NbTXM.Ncnt[0]++;
-  NbTXM.Ncnt[1]--;
-  pthread_mutex_unlock (&ctrMux);
-}
-
-//-----------------------------------------------------------------------------
 //  GetStatistical data
 //-----------------------------------------------------------------------------
 void CTextureWard::GetStats(CFuiCanva *cnv)
 { char txt[128];
-  cnv->AddText(1,"Shared Terrain:");
-  sprintf_s(txt,128,"% 8d",NbSHD);
-  cnv->AddText(STATS_NUM,txt,1);
+	//------------------------------------
+  cnv->AddText(1,"Terrain Shared Textures:");
+	sprintf_s(txt,128,"% 8d",txnMAP.size());
+	cnv->AddText(STATS_NUM,txt,1);
+	//------------------------------------
+  cnv->AddText(1,"Terrain Day Tex OBJ:");
+	sprintf_s(txt,128,"% 8d",NbDOB);
+	cnv->AddText(STATS_NUM,txt,1);
+	//------------------------------------
+  cnv->AddText(1,"Terrain Nit Tex OBJ:");
+	sprintf_s(txt,128,"% 8d",NbNOB);
+	cnv->AddText(STATS_NUM,txt,1);
+	//------------------------------------
+  cnv->AddText(1,"Object Shared Textures:");
+	sprintf_s(txt,128,"% 8d",t3dMAP.size());
+	cnv->AddText(STATS_NUM,txt,1);
   //------------------------------------
-  cnv->AddText(1,"Shared 3D texture:");
-  sprintf_s(txt,128,"% 8d",Nb3DT);
+  cnv->AddText(1,"Object Texture Objets:");
+  sprintf_s(txt,128,"% 8d",NbG3D);
   cnv->AddText(STATS_NUM,txt,1);
-  //------------------------------------
-  cnv->AddText(1,"Memory Day TEX:");
-  sprintf_s(txt,128,"% 8d",NbTXM.Dcnt[0]);
-  cnv->AddText(STATS_NUM,txt,1);
-  //------------------------------------
-  cnv->AddText(1,"Memory Day ALT:");
-  sprintf_s(txt,128,"% 8d",NbTXM.Dcnt[1]);
-  cnv->AddText(STATS_NUM,txt,1);
-  //------------------------------------
-  cnv->AddText(1,"Memory Nit TEX:");
-  sprintf_s(txt,128,"% 8d",NbTXM.Ncnt[0]);
-  cnv->AddText(STATS_NUM,txt,1);
-  //------------------------------------
-  cnv->AddText(1,"Memory Nit ALT:");
-  sprintf_s(txt,128,"% 8d",NbTXM.Ncnt[1]);
-  cnv->AddText(STATS_NUM,txt,1);
-  //------------------------------------
-  cnv->AddText(1,"Day Texture OBJ:");
-  sprintf_s(txt,128,"% 8d",NbTXM.dxcnt);
-  cnv->AddText(STATS_NUM,txt,1);
-  //------------------------------------
-  cnv->AddText(1,"Nite Texture OBJ:");
-  sprintf_s(txt,128,"% 8d",NbTXM.nxcnt);
-  cnv->AddText(STATS_NUM,txt,1);
+	//-------------------------------------
 }
 //----------------------------------------------------------------------------
 //  Write the texture:  This is used for test only

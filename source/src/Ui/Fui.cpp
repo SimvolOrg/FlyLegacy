@@ -406,6 +406,23 @@ void CFuiComponent::SetText (char *txt)
 { if (txt) strncpy (text, txt, 254); else *text = 0;
   return;
 }
+//-------------------------------------------------------------------------------
+//  Change text color
+//-------------------------------------------------------------------------------
+void CFuiComponent::ColorText(U_INT c)
+{	colText = c;
+	return EditText();
+}
+//-------------------------------------------------------------------------------
+//  simple text edition
+//-------------------------------------------------------------------------------
+void CFuiComponent::EditText()
+{	EraseSurfaceRGBA (surface,0);
+  //---- Draw the text --and bitmap ------------- 
+  if (0 == surface)		return;
+  fnts->DrawNText (surface,4, 0, colText, text);
+	return;
+}
 //---------------------------------------------------------------------------------
 // CreateHBoxPicture
 //
@@ -846,8 +863,7 @@ void CFuiComponent::DrawAsQuad(U_INT obj)
 //=======================================================================
 CFuiWindowTitle::CFuiWindowTitle (int px, int py, int w, int h, CFuiComponent *win)
 : CFuiComponent (px, py, w, h, win)
-{
-  widgetTag = 'defa';
+{ widgetTag = 'defa';
   wName		= "WindowTitle";
   colText = MakeRGB (255, 255, 255);
   font    = FuiFont ('deff');
@@ -1107,6 +1123,7 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
   limit     = lim;
   //------Init the decoration items---------------------------------
   InitFBox(fBox,MSIZ);
+	edge			= 0;
 	//----------------------------------------------------------------
 	title			= 0;
   //---Init all bitmaps to null-------------------------------------
@@ -1336,12 +1353,20 @@ void CFuiWindow::ReadFinished (void)
   char s[8];
   TagToString (s, id);
   CFuiComponent::ReadFinished ();
-  //-------create all decorations ---------------------------------
+  //--Create all decorations --------------------------------------
   CreateFBox(this,fBox,x,y,w,h);
-  //--Activate border mouse sensitivity is resize is permitted ----
-  if (HasProperty(FUI_VT_RESIZING) && fBox[RIGW]) fBox[RIGW]->RazProperty(FUI_NO_MOUSE);
-  if (HasProperty(FUI_HZ_RESIZING) && fBox[BOTW]) fBox[BOTW]->RazProperty(FUI_NO_MOUSE);
-  if (HasProperty(FUI_XY_RESIZING) && fBox[BRGW]) fBox[BOTW]->RazProperty(FUI_NO_MOUSE);
+  //--Process resize parameters is allowed -------------------- ----
+	Tag xcs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZEX.PBM",'sizr');
+  Tag ycs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZEY.PBM",'sizl');
+  Tag bcs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZE.PBM",'sizc');
+  vStat = WINDOW_SIZE_NORM;
+	CFuiComponent *cmp = 0;
+	cmp		= fBox[RIGW];					// Right edge for X redim
+	if (cmp && HasProperty(FUI_HZ_RESIZING))	cmp->SetResize(xcs,WINDOW_RESIZE_XDIM);
+	cmp		= fBox[BOTW];					// bottom edge for Y redim
+	if (cmp && HasProperty(FUI_VT_RESIZING))	cmp->SetResize(ycs,WINDOW_RESIZE_YDIM);
+  cmp		= fBox[BRGW];					// corner edge for X-Y redim
+	if (cmp && HasProperty(FUI_XY_RESIZING))	cmp->SetResize(bcs,WINDOW_RESIZE_BOTH);
   //-----------------------------------------------------------------
   // Locals for bitmap width/height
   int bmh;
@@ -1393,35 +1418,20 @@ void CFuiWindow::ReadFinished (void)
     fBox[MINI]  = btm;
     childList.push_back (btm);
   }
+  //----Resize parameters ----------------------------------------------
+  xMini = w;
+  xMaxi = w;
+  yMini = h;
+  yMaxi = h;
   // Compute mid point drawing surface --------------------------------
   halfW = (w >> 1);          // Half wide
   halfH = (h >> 1);          // Half height
   //----Relocate Menu Bar ----------------------------------------------
   bmh = (tBar)?(tBar->GetHeight()):(0);
   if (mBar) mBar->MoveTo(0,-bmh);
-  //----Resize parameters ----------------------------------------------
-  xMini = w;
-  xMaxi = 1024;
-  yMini = h;
-  yMaxi = 800;
-  if (HasProperty(FUI_XY_RESIZING)) InitCursor();
-  vStat = WINDOW_SIZE_NORM;
   //----------- Set window state to open -------------------------------
   globals->fui->ActivateWindow(this);
 }
-//----------------------------------------------------------------------
-//  Init cursor for resize
-//  Compute window minimum X size:  size of (MenuBar + Menu Title)
-//----------------------------------------------------------------------
-void CFuiWindow::InitCursor()
-{ xCurs   = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZEX.PBM",'sizr');
-  yCurs   = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZEY.PBM",'sizl');
-  cCurs   = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZE.PBM",'sizc');
-  xMini   = 250;
-  yMini   = Top + 20;
-  return;
-}
-
 //----------------------------------------------------------------------
 //  Add a zoom button if not ppresent
 //----------------------------------------------------------------------
@@ -1855,8 +1865,7 @@ bool CFuiWindow::WindowHit (int sx, int sy)
 ///
 ///-----------------------------------------------------------------------------
 bool CFuiWindow::MouseMove (int mx, int my)
-{ 
-  if (state == FUI_WINDOW_MOVE) {
+{ if (state == FUI_WINDOW_MOVE) {
     int dx = mx - lastX;
     int dy = my - lastY;
 
@@ -1869,35 +1878,26 @@ bool CFuiWindow::MouseMove (int mx, int my)
   if (mPop && (mPop->MouseMove(mx,my)))     return true;
   //-------- Otherwise send to child widget ------------------------
   std::deque<CFuiComponent*>::iterator i;
-  for (i=childList.begin(); i!=childList.end(); i++) if ((*i)->MouseMove (mx, my)) return true;
-  //---------See for inside window ---------------------------------
-  if (CheckResize(mx,my))                   return true;
-  globals->cum->SetArrow();
+  for (i=childList.begin(); i!=childList.end(); i++) if ((*i)->MouseMove(mx,my))	return true;
+	//---------See for resize on window edges ------------------------
+  if (CheckResize(mx,my))										return true;
+  if (0 == edge)	globals->cum->SetArrow();
   return (InsideMove(mx,my));
 }
 //-------------------------------------------------------------------------------
 //  Check for Resize
 //-------------------------------------------------------------------------------
 bool CFuiWindow::CheckResize(int mx, int my)
-{ bool rc = false;
-  if (HasProperty(FUI_XY_RESIZING)) {
-    CFuiPicture *pic;
-    pic = (CFuiPicture *)fBox[RIGW];
-    if ((pic) && HasProperty(FUI_HZ_RESIZING) && pic->MoveOver(mx,my,xCurs)) rc = true;
-    else {
-      pic = (CFuiPicture *)fBox[BOTW];
-      if ((pic) && HasProperty(FUI_VT_RESIZING) && pic->MoveOver(mx,my,yCurs)) rc = true;
-      else {
-        pic = (CFuiPicture *)fBox[BRGW];
-        if ((pic) && pic->MoveOver(mx,my,cCurs)) rc = true;
-      }
-    }
-  }
-  return rc;
+{	if (!HasProperty(FUI_XY_RESIZING))		return false;
+  edge	= (CFuiPicture *)fBox[RIGW];
+  if ((edge) && edge->MoveOver(mx,my))	return true;
+  edge	= (CFuiPicture *)fBox[BOTW];
+  if ((edge) && edge->MoveOver(mx,my))	return true;
+  edge	= (CFuiPicture *)fBox[BRGW];
+  if ((edge) && edge->MoveOver(mx,my))  return true;
+	edge	= 0;
+  return false;
 }
-//-------------------------------------------------------------------------------
-//  Check if the click occurs inside the window
-//-------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------
 //  Click inside
 //-------------------------------------------------------------------------------
@@ -1910,9 +1910,8 @@ bool CFuiWindow::InsideClick (int mx,int my, EMouseButton button)
 //  The MouseClick event follows a priority scheme that must not be altered
 //-------------------------------------------------------------------------------
 bool CFuiWindow::MouseClick (int mx, int my, EMouseButton button)
-{ CFuiPicture *pic;
-  if ((mPop) && (mPop->MouseClick(mx, my, button))) return RegisterFocus(mPop);
-  if ((mBar) && (mBar->MouseClick(mx, my, button))) return RegisterFocus(mBar);
+{ if ((mPop) && (mPop->MouseClick(mx, my, button)))  return RegisterFocus(mPop);
+  if ((mBar) && (mBar->MouseClick(mx, my, button)))  return RegisterFocus(mBar);
   // If mouse click has not been handled yet, send to child widgets
   CFuiComponent * comp = NULL;
   std::deque<CFuiComponent*>::iterator i;
@@ -1921,20 +1920,17 @@ bool CFuiWindow::MouseClick (int mx, int my, EMouseButton button)
     if ((*i)->MouseClick(mx, my, button)) return RegisterFocus(*i);}
   //------------Check for title move --------------------------------
   if ((tBar) && (tBar->MouseClick(mx, my, button))) return RegisterFocus(tBar);
-  //---- check if clicked inside ------------------------------------
-  if (InsideClick(mx,my,button))                    return true;
+	//--- Try resize first -------------------------------------------
+	if (edge) {edge->ClickOver(mx,my);			return RegisterFocus(edge);}
+  //----Check if clicked inside ------------------------------------
+  if (InsideClick(mx,my,button))          return true;
   if (0 == mPop)  ClearFocus(0);
   //----- Check for resize ------------------------------------------
-  if (!HasProperty(FUI_XY_RESIZING))                return MouseHit(mx,my);
-  pic = (CFuiPicture *)fBox[RIGW];
-  if ((pic) && HasProperty(FUI_HZ_RESIZING) && pic->ClickOver(mx,my,WINDOW_RESIZE_XDIM))  return RegisterFocus(pic);
-  pic = (CFuiPicture *)fBox[BOTW];
-  if ((pic) && HasProperty(FUI_VT_RESIZING) && pic->ClickOver(mx,my,WINDOW_RESIZE_YDIM))  return RegisterFocus(pic);
-  pic = (CFuiPicture *)fBox[BRGW];
-  if ((pic) && pic->ClickOver(mx,my,3))             return RegisterFocus(pic);
-  //------------------------------------------------------------------
-  return false;
-}
+ // if (0 == edge)													return MouseHit(mx,my);
+	//edge->ClickOver(mx,my);
+	//return RegisterFocus(edge);
+	return false;
+	}
 //---------------------------------------------------------------------------------
 //  Mouse stop click.  Check for which component
 //----------------------------------------------------------------------------------
@@ -2124,7 +2120,6 @@ void CFuiButton::ReadFinished (void)
   CFuiComponent::ReadFinished ();
   MoveParentTo(x,y);
   hText = fnts->TextHeight ("H");
-
   // Draw text centered within button
   fnts->DrawTextC (surface, (w>>1), (h-hText)>>1, colText, text);
 }
@@ -2861,8 +2856,7 @@ int CFuiTextField::Read (SStream *stream, Tag tag)
 //  All Tags are read
 //--------------------------------------------------------------------
 void CFuiTextField::ReadFinished (void)
-{
-  CFuiComponent::ReadFinished ();
+{  CFuiComponent::ReadFinished ();
   FindThemeWidget ();
   //-------- Compute definitive drawing surface ----------------
   halfW = (w >> 1);          // Half wide
@@ -3227,11 +3221,8 @@ int CFuiLine::Read (SStream *stream, Tag tag)
 //  All tags read
 //------------------------------------------------------------------------
 void CFuiLine::ReadFinished (void)
-{
-  CFuiComponent::ReadFinished ();
-
+{ CFuiComponent::ReadFinished ();
   FindThemeWidget ();
-
   // Get theme components
   colLine = tw->GetColour ("LINE");
   if (surface) DrawFastLine (surface, x, y, x+w, y+h, colLine);
@@ -3337,10 +3328,12 @@ CFuiPicture::CFuiPicture (int x, int y, int w, int h, CFuiComponent *win)
   FindThemeWidget ();
   // Initialize frame index, ensuring that first call to Draw() will force
   //   the bitmap to be drawn on the component surface
-  pFrame = -1;
-  cFrame = 0;
-  rState = WINDOW_RESIZE_NONE;
-  MoWind = win;
+  pFrame	= -1;
+  cFrame	= 0;
+  rStat		= WINDOW_RESIZE_NONE;
+	rCurs		= 0;
+	rType		= 0;
+  MoWind	= win;
   SetProperty(FUI_NO_MOUSE);
 }
 //------------------------------------------------------------------------
@@ -3377,6 +3370,16 @@ void CFuiPicture::ReadFinished (void)
   }
   CFuiComponent::ReadFinished();
 }
+//----------------------------------------------------------------------
+//  Set resize attributes
+//----------------------------------------------------------------------
+void	CFuiPicture::SetResize(Tag c,char t)
+{	RazProperty(FUI_NO_MOUSE);
+	rCurs	= c;
+	rType	= t;
+	return;	
+}
+
 //----------------------------------------------------------------------
 //  Init the bitmap and surface.  Edit the bitmap
 //----------------------------------------------------------------------
@@ -3443,35 +3446,35 @@ bool CFuiPicture::Moving(int xs, int ys)
   mx = xs;
   my = ys;
 
-  if ((rState == WINDOW_RESIZE_XDIM) || HasProperty(FUI_HZ_RESIZING))  dy = 0;
-  if ((rState == WINDOW_RESIZE_YDIM) || HasProperty(FUI_VT_RESIZING))  dx = 0;
+  if (rStat == WINDOW_RESIZE_XDIM)  dy = 0;
+  if (rStat == WINDOW_RESIZE_YDIM)  dx = 0;
   MoWind->ResizeTo(dx,dy);
   return true;
 }
 //--------------------------------------------------------------------
-//  Check for move over this bord
+//  Check for move over the bord represented by this picture
 //--------------------------------------------------------------------
-bool CFuiPicture::MoveOver(int mx,int my,Tag csr)
-{ if (rState)           return Moving(mx,my);
-  if (!MouseHit(mx,my)) return false; 
-  globals->cum->SetCursor(csr);
+bool CFuiPicture::MoveOver(int mx,int my)
+{ if (rStat)            return Moving(mx,my);
+  if (!MouseHit(mx,my)) return false;
+	if (0 == rCurs)				return false; 
+  globals->cum->SetCursor(rCurs);
   return true;
 }
 //--------------------------------------------------------------------
 //  Check for click in
 //--------------------------------------------------------------------
-bool CFuiPicture::ClickOver(int mx, int my, U_CHAR mv)
-{ if (!MouseHit(mx,my)) return false;
-  rState    = mv;
+void CFuiPicture::ClickOver(int mx, int my)
+{ rStat			= rType;
   this->mx  = mx;
   this->my  = my;
-  return true;
+  return;
 }
 //--------------------------------------------------------------------
 //  Stopt click. Stop rezise
 //--------------------------------------------------------------------
 bool CFuiPicture::MouseStopClick (int mx, int my, EMouseButton button)
-{ rState = WINDOW_RESIZE_NONE;
+{ rStat = WINDOW_RESIZE_NONE;
   return true;
 }
 //--------------------------------------------------------------------

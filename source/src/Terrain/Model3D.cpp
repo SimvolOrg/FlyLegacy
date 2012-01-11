@@ -489,8 +489,8 @@ void C3DMgr::LocateVOR()
 //--------------------------------------------------------------------
 int C3DMgr::LoadTheModel(C3Dmodel *mod)
 { mod->IncUser();
-  mod->SetState(M3D_INLOAD);
   modQ.Lock();
+  mod->SetState(M3D_INLOAD);
   modQ.PutEnd(mod);
   modQ.UnLock();
   globals->tcm->GoThread();
@@ -1430,7 +1430,7 @@ void CWobj::GetInfo(CFuiCanva *cnv)
 //  NOTE:  When the model(s) are loaded, the Wobj is queued
 //         to the Super Tile corresponding to the location
 //--------------------------------------------------------------------
-int CWobj::LoadModel()
+int CWobj::LoadTheModel()
 { int nbf = 0;
   C3Dmodel *modD = modL[MODEL_DAY];
   if (modD && modD->NeedLoad()) nbf += globals->m3d->LoadTheModel(modD);
@@ -1442,7 +1442,7 @@ int CWobj::LoadModel()
 //  Add Object for Drawing by SuperTile
 //-------------------------------------------------------------------------
 void CWobj::AddToSuperTile()
-{ LoadModel();
+{ LoadTheModel();
   inf.sup->Add3DObject(this);
 }
 //------------------------------------------------------------------------
@@ -1568,7 +1568,7 @@ void CWobj::UpdateWith(CNavaid *nav)
   //----Compute light position ------------------
   Lite->SetOffset(vorOFS);
   Lite->SetLocation(oPos);
-  LoadModel();
+  LoadTheModel();
   return;
 }
 //------------------------------------------------------------------------

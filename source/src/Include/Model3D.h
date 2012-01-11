@@ -417,7 +417,7 @@ public:
   C3DLight       *PopALight();
   //----------------------------------------------------------
   void            AddModel(C3Dmodel *mod,U_CHAR q);
-  int             LoadModel();
+  int             LoadTheModel();
   double          GetXExtend();
   double          GetYExtend();
   double          GetZExtend();

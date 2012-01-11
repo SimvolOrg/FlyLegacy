@@ -661,8 +661,6 @@ void CFuiManager::Draw ()
   //--- Draw Radio communications ------------------------
   CFuiRadioBand *rdb = globals->rdb;
   if (rdb)  rdb->Draw();
-  //// sdk: Draw DLL windows plugins
-  //if (globals->plugins_num) globals->sit->DrawDLLWindow ();
   ////------------------------------------------------------
   ExitDrawing();
   return;

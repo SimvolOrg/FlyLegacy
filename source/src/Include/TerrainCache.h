@@ -200,11 +200,11 @@ public:
   CTextureDef();
  ~CTextureDef();
   //---------------------------------------------------------
-  void    SetDayTexture(U_CHAR n,GLubyte *t);
-  void    SetNitTexture(U_CHAR n,GLubyte *t);
+	inline	void    SetDayTexture(U_CHAR n,GLubyte *t) {dTEX[n] = t;}
+	inline	void    SetNitTexture(U_CHAR n,GLubyte *t) {nTEX[n] = t;}
   //---------------------------------------------------------
-  void    AssignDAY(U_INT obj);
-  void    AssignNIT(U_INT obj);
+  int			AssignDAY(U_INT obj);
+  int			AssignNIT(U_INT obj);
   //---------------------------------------------------------
   int     FreeALL();
   int     FreeNTX();

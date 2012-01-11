@@ -2605,6 +2605,7 @@ struct  TEXT_INFO {
   GLubyte  *mADR;                         // RGBA Memory addresse
   char      name[TC_TEXTURE_NAME_NAM];    // Texture name
   char      path[TC_TEXTURE_NAME_DIM];    // Texture full name
+	//--- Constructor --------------------------------------------------
 	TEXT_INFO::TEXT_INFO()
 	{	key			= 0;
 		wd = ht = 0;

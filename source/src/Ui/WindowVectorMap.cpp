@@ -282,25 +282,32 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   rBox->MoveParentTo(this->x,this->y);
   RelocateBox(rBox,h);
   rBox->SetProperty(FUI_VT_RELOCATE);
+	rBox->ColorText(white);
   //-----Init zoom group box -----------------------------
   zBox = (CFuiGroupBox*)GetComponent('zoom');
   if (0 == zBox)  gtfo("Incorrect FUI vector map file");
   zBox->MoveParentTo(this->x,this->y);
   RelocateBox(zBox,h);
   zBox->SetProperty(FUI_VT_RELOCATE);
+	zBox->ColorText(white);
   //-----Init background group box -----------------------
   bBox = (CFuiGroupBox*)GetComponent('back');
   if (0 == bBox)  gtfo("Incorrect FUI vector map file");
   bBox->MoveParentTo(this->x,this->y);
   RelocateBox(bBox,h);
   bBox->SetProperty(FUI_VT_RELOCATE);
+	bBox->ColorText(white);
   //-----Init background group box -----------------------
   pBox = (CFuiGroupBox*)GetComponent('pbox');
   if (0 == pBox)  gtfo("Incorrect FUI vector map file");
   pBox->MoveParentTo(this->x,this->y);
   RelocateBox(pBox,h);
   pBox->SetProperty(FUI_VT_RELOCATE);
+	pBox->ColorText(white);
 	pBox->Hide();
+	//------ Properties ------------------------------------
+	SetXRange(100,1024);               // width
+	SetYRange( 40,800);
   //------------------------------------------------------
   geop.lon  = 0;
   geop.lat  = 0;
