@@ -335,15 +335,16 @@ CIniFile::~CIniFile (void)
   Clear ();
 }
 
-//
+//--------------------------------------------------------------------------------
 // Clear the contents of the INI settings
-//
+//--------------------------------------------------------------------------------
 void CIniFile::Clear (void)
 {
   std::map<string,CIniSection*>::iterator i;
   for (i=section.begin(); i!=section.end(); i++) {
     delete i->second;
   }
+	section.clear();
 }
 
 //-------------------------------------------------------------------------------
@@ -677,10 +678,10 @@ char* CIniFile::GetSectionName (int i)
 }
 
 
-/*
- * INI functions defined in FlyLegacy.h
- */
-static CIniFile *ini;
+//=========================================================================
+// INI functions defined in FlyLegacy.h
+//=========================================================================
+static CIniFile *ini = 0;
 //=========================================================================
 //	Load FlyLegacy.ini
 //=========================================================================
@@ -693,10 +694,13 @@ void LoadIniSettings (void)
    
    /// \todo Delete Fly! II settings that are not supported
   }
-
+//-------------------------------------------------------------------------
+//	Unload =>Delete the file
+//-------------------------------------------------------------------------
 void UnloadIniSettings (void)
 {
   delete ini;
+	ini = 0;
 }
 
 void SaveIniSettings (void)

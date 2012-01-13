@@ -596,6 +596,7 @@ void redraw ()
   case APP_SIMULATION:
     // Run simulation
 		globals->appState = (EAppState)RedrawSimulation ();
+	//	_ASSERTE(_CrtCheckMemory( ));
 		break;
 	/*
     __try {globals->appState = (EAppState)RedrawSimulation ();}

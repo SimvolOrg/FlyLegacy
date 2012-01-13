@@ -36,9 +36,6 @@
 #include <crtdbg.h>
 #endif
 //===================================================================================================
-#ifdef MEMORY_LEAK_VLD
-#include <vld.h>
-#endif // MEMORY_LEAK_VLD
 #include "../Include/FlyLegacy.h"
 #include "../Include/Globals.h"
 #include "../Include/Situation.h"
@@ -519,8 +516,7 @@ void CleanupFonts (void)
 //    POD filesystem.
 //======================================================================================
 void InitGlobalsNoPodFilesystem (char *root)
-{ //MEMORY_LEAK_MARKER ("globalinit");
-  //--- Globals counters -----------------------------------
+{ //--- Globals counters -----------------------------------
 	globals->NbOBJ	= 0;										// Total Objects
 	globals->NbMOD	= 0;										// Total Models
 	globals->NbPOL	= 0;										// Total polygons
@@ -631,10 +627,8 @@ void InitGlobalsNoPodFilesystem (char *root)
   GetIniVar ("Sim", "allowDLLFiles", &plugin_allowed);
   globals->plugins.g_plugin_allowed = (plugin_allowed != 0);
   globals->opal_sim = NULL;
-  //MEMORY_LEAK_MARKER ("opal::createSimulator start")
   globals->opal_sim = opal::createSimulator ();
   globals->opal_sim->setMaxContacts(2);
-  //MEMORY_LEAK_MARKER ("opal::createSimulator end")
   opal::Vec3r g (0.0f, 0.0f, -(GRAVITY_MTS));
   globals->opal_sim->setGravity (g);
   float step_size = ADJ_STEP_SIZE;          // 0.04f;
@@ -720,7 +714,6 @@ void InitGlobalsNoPodFilesystem (char *root)
     globals->dang.x = 0.0; 
     globals->dang.y = 0.0; 
     globals->dang.z = 0.0; 
-    //MEMORY_LEAK_MARKER ("globalinit");
 }
 
 
@@ -738,7 +731,7 @@ void CleanupGlobals (void)
   // sdk: clean-up dll plugins : call DLLKill ()
   //if (globals->plugins_num) globals->plugins.On_KillPlugins ();
 
-  cleanup_ui ();   
+  CloseUserMenu();   
   CleanupFonts();
 	TRACE("Delete FuiManager");
   SAFE_DELETE (globals->fui);
@@ -1413,9 +1406,7 @@ int main (int argc, char **argv)
   InitGlobalsNoPodFilesystem ((char*)flyRootFolder);
   TRACE("InitGlobalsNoPodFilesystem OK");
   globals->appState = APP_SPLASH_SCREEN;
-  //MEMORY_LEAK_MARKER ("CFuiManager")
   globals->fui = new CFuiManager();
-  //MEMORY_LEAK_MARKER ("CFuiManager")
   TRACE("CFuiManager CREATED");
   // Initialize graphics engine and window manager
   InitWindowManager (argc, argv);
@@ -1468,13 +1459,8 @@ int main (int argc, char **argv)
   else
     //! plugins_num is used as a plugin flag along the code
     globals->plugins_num = 0; 
-
-  // sdk: init menu with added items if any 
-  if (globals->plugins_num && !globals->plugins.On_InitGlobalMenus ()) {
-    init_user_ui (); // was init_ui (); 082711
-  } else {
-    init_user_ui ();
-  }
+	//--- Open Master menu ----------------------------------------------
+	OpenMasterMenu();
   //--- Initialize fonts and cursor manager -------------------
   InitFonts ();
   globals->cum = new CCursorManager();

@@ -26,35 +26,9 @@
  */
 
 #include "../Include/Ui.h"
+//=================================================================================
 
 
-void init_ui (void)
-{
-  puInit ();
-
-}
-
-void cleanup_ui (void)
-{
-  cleanup_menu ();
-}
-
-
-//---------------------------------------------------------------------------
-//	Init master menu
-//---------------------------------------------------------------------------
-void init_user_ui (void)
-{
-  /// \todo Remove marker tags around puInit memory leaks
-  char *mark1 = new char[32];
-  strncpy (mark1, "puInit Start",31);
-  puInit ();
-  char *mark2 = new char[32];
-  strncpy (mark2, "puInit End",31);
-
-  // Create application menu
-  init_user_menu ();
-}
 
 //---------------------------------------------------------------------------
 // CSDKMenu

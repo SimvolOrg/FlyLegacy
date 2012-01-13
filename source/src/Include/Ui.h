@@ -44,8 +44,6 @@
 // Main initialization function.  This MUST be called before any user message
 //   is displayed.
 //----------------------------------------------------------------------------
-void    init_ui (void);
-void    cleanup_ui (void);
 void		CheckTuningMenu();
 
 //----------------------------------------------------------------------------
@@ -64,7 +62,6 @@ int         VirtualKeyToGlutKey (BYTE vk, bool shift, bool ctrl, bool alt);
 //
 // Menu functions
 //
-void cleanup_menu (void);
 void hide_menu (void);
 void show_menu (void);
 void toggle_menu (void);
@@ -105,9 +102,9 @@ namespace sdkmenu {
   };
 }
 
-void init_user_ui (/*const sdkmenu::CSDKMenu &sdk_menu*/void);
-void init_user_menu (void);
-
+void	OpenMasterMenu(); 
+void	OpenUserMenu();
+void	CloseUserMenu();
 // sdk: end
 
 //

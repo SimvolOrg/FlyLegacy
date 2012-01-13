@@ -64,7 +64,7 @@ char *gmTune		= "Tuning";
 //=====================================================================
 //  Menu bar
 //=====================================================================
-static puMenuBar *menu;
+static puMenuBar *menu = 0;
 //----------------------------------------------------------------
 //  Toggle a window
 //-----------------------------------------------------------------
@@ -79,7 +79,6 @@ void toggle_window (Tag id, const char* winFilename)
     globals->fui->CreateFuiWindow (id);
   }
 }
-
 //=========================================================================================
 // File Menu
 //=========================================================================================
@@ -1188,11 +1187,6 @@ puCallback help_cb[] =
 };
 
 //=============================================================================
-void cleanup_menu (void)
-{
-  menu->empty();
-  delete menu;
-}
 
 void hide_menu (void)
 {
@@ -1212,7 +1206,19 @@ void toggle_menu (void)
     menu->reveal ();
   }
 }
-
+//==========================================================================
+//---------------------------------------------------------------------------
+//	Init master menu
+//	NOTE: There seems to exist a memory leak in puInit()
+//---------------------------------------------------------------------------
+void OpenMasterMenu (void)
+{ /// \todo Remove marker tags around puInit memory leaks
+	if (menu)			return;
+  puInit ();
+  // Create application menu
+  OpenUserMenu ();
+	return;
+}
 //============================================================================
 // sdk: Adds sub menus from APIAddUIMenu //
 //      Send data to :
@@ -1224,7 +1230,7 @@ puCallback  nul_cb[] = {0};
 //============================================================================
 // Menu initialization
 //============================================================================
-void init_user_menu (void)
+void OpenUserMenu (void)
 { std::vector <sdkmenu::SMenuData>::const_iterator i_md;
 
   menu = new puMenuBar(-1);
@@ -1269,10 +1275,7 @@ void init_user_menu (void)
       counter++;
     }
 
-    // callback are yet statically done
-//    sdk_menu_cb[0]      = _0_cb;
-//    sdk_menu_cb[1]      = _1_cb;
-
+		//----------------------------------------------------------------------
     menu->add_submenu ( i_md->str.c_str (),
                         sdk_menu_legends[addin_menus_counter],
                         sdk_menu_cb[addin_menus_counter]
@@ -1282,6 +1285,14 @@ void init_user_menu (void)
   }
 
   menu->close ();
-  // Hide menu by default
+  //--- Hide menu by default ------------------------
   hide_menu ();
 }
+//=====================================================================
+//  Close Menu
+//=====================================================================
+void CloseUserMenu()
+{	delete menu;
+	menu	= 0;
+}
+//============================END OF FILE=====================================================================
