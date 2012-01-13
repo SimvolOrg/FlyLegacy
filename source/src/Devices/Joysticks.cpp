@@ -526,7 +526,9 @@ void CJoysticksManager::NeutralMark(int nx,U_CHAR type)
 //  Free all resources
 //---------------------------------------------------------------------------------
 CJoysticksManager::~CJoysticksManager()
-{ mapAxe.clear();
+{ std::map<Tag,CSimAxe *>::iterator it;
+	for (U_INT k=0; k < mapAxe.size(); k++) delete mapAxe[k];
+  mapAxe.clear();
   FreeJoyList();
 }
 //---------------------------------------------------------------------------------

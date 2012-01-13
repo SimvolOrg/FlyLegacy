@@ -549,18 +549,12 @@ CDependent::CDependent (void)
 //-------------------------------------------------------------------
 CDependent::~CDependent (void)
 { std::vector<SMessage *>::iterator im;
-	for (im = dpnd.begin(); im != dpnd.end(); im++)
-	{	SMessage *msg = (*im);
-    delete msg;
-	}
-  for (im = pxy0m.begin(); im != pxy0m.end(); im++)
-	{	SMessage *msg = (*im);
-    delete msg;
-	}
-  for (im = pxy1m.begin(); im != pxy1m.end(); im++)
-	{	SMessage *msg = (*im);
-    delete msg;
-	}
+	for (im = dpnd.begin(); im != dpnd.end(); im++)		delete  (*im);
+	dpnd.clear();
+  for (im = pxy0m.begin(); im != pxy0m.end(); im++) delete (*im);
+	pxy0m.clear();
+  for (im = pxy1m.begin(); im != pxy1m.end(); im++) delete (*im);
+  pxy1m.clear();
 
 }
 //-------------------------------------------------------------------
@@ -1434,12 +1428,8 @@ CGenericIndicator::CGenericIndicator (void)
 }
 //--------------------------------------------------------------
 CGenericIndicator::~CGenericIndicator (void)
-{
-  std::vector<SMessage*>::iterator i;
-  for (i=mVal.begin(); i!=mVal.end(); i++) 
-  {
-    delete (*i);
-  }
+{ for (U_INT k=0; k < mVal.size(); k++) delete mVal[k];
+	mVal.clear();
   if (poly)	delete(poly);
 }
 //---------------------------------------------------------------

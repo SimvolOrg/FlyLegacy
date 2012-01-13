@@ -342,9 +342,6 @@ struct SEA_VERTEX {
 };
 //------------------------------------------------------------------------
 //  Intermediate structure to decode coast polygon
-//  ind   0 = no latitude correction
-//        1 = latitude correction
-//  corF  correction factor (1 in north) (-1 in south)
 //-----------------------------------------------------------------------
 struct SEA_COAST {
     U_LONG        Key;                                  // Detail tile Key
@@ -377,11 +374,13 @@ protected:
   double     dLat;                                  // Delta per Detail tile
   double     dLon;                                  // Delta per Detail Tile
   //-----METHODS --------------------------------------------------------
+protected:
   void          CoastVertexDistance(short px,short py,SVector &sw);
   COAST_VERTEX *CoastPolygon(COAST_VERTEX *pol,SVector &v);
   //---------------------------------------------------------------------
 public:
-  void          DrawCoastLine(SSurface *sf);
+	virtual			~CoastLine();
+  void         DrawCoastLine(SSurface *sf);
 };
 //==================================================================================
 //  Class C_SEA:   To read and Decode coast files
@@ -432,7 +431,7 @@ public:
   void         LoadPolygon();
   void         CheckCorner(U_INT px,U_INT pz);
   //---------------------------------------------------------------------
-  char         *Finalize();
+  char         *BuildCoastLine();
   COAST_VERTEX *Finalize(COAST_VERTEX *pol, char *pid,SEA_VERTEX *vtb);
   U_INT         GetPixXcoord(float cx);
   U_INT         GetPixZcoord(float cz);

@@ -166,6 +166,7 @@ SqlOBJ::~SqlOBJ()
   if (modDBE.opn) sqlite3_close(modDBE.sqlOB);
   if (texDBE.opn) sqlite3_close(texDBE.sqlOB);
   if (objDBE.opn) sqlite3_close(objDBE.sqlOB);
+	if (wptDBE.opn) sqlite3_close(wptDBE.sqlOB);
 }
 //-----------------------------------------------------------------------------
 //  Initialize databases
@@ -198,7 +199,7 @@ void SqlOBJ::Init()
 	elvDBE.mode= SQLITE_OPEN_READWRITE;
 
   //---Coast data database -----------------------------------------
-	seaDBE.vers	= 0;																// Minimum version
+	seaDBE.vers	= 1;																// Minimum version
   strncpy(seaDBE.path,"SQL",63);
   GetIniString("SQL","SEADB",seaDBE.path,lgr);
 	strncpy(seaDBE.name,"SEA*.db",63);
@@ -393,6 +394,8 @@ int SqlOBJ::ReadVersion(SQL_DB &db)
 	char *query = "PRAGMA user_version;*";
   sqlite3_stmt *stm = CompileREQ(query,db);
 	if (SQLITE_ROW == sqlite3_step(stm)) vers = sqlite3_column_int(stm,0);
+	sqlite3_finalize(stm);                      // Close statement
+
 	if (vers >= db.vers)		return 1;
 	//--- warning ------------------------------------------
 	WARNINGLOG("Database %s obsolete. Get version %d",db.path,db.vers);
@@ -2251,10 +2254,8 @@ void SqlMGR::GetTerraList(tgxFunCB *fun)
       DecodeLinTexture(stm,lin);
       if (fun)  fun(lin);
     }
-    //-----Close request ---------------------------------------------------
-    sqlite3_finalize(stm);
-    return;
-
+  //-----Close request ---------------------------------------------------
+  sqlite3_finalize(stm);
   return;
 }
 //------------------------------------------------------------------------
@@ -2618,6 +2619,8 @@ int SqlMGR::GetTRNElevations(C_QGT *qgt)
 	sup->qKey = key;
 	sup->qgt	= qgt;
 	while (SQLITE_ROW == sqlite3_step(stm))	DecodeTRNrow();
+	//---Free statement ------------------------------------------
+  sqlite3_finalize(stm);
 	return count;
 }
 //---------------------------------------------------------------------
@@ -2694,6 +2697,8 @@ int SqlMGR::GetTILElevations(C_QGT *qgt)
 	sup->qKey = key;
 	sup->qgt	= qgt;
 	while (SQLITE_ROW == sqlite3_step(stm))	DecodeDETrow();
+  //---Free statement ------------------------------------------
+  sqlite3_finalize(stm);
 	return count;
 }
 //---------------------------------------------------------------------
@@ -2736,6 +2741,8 @@ int SqlMGR::ReadPatches(C_QGT *qgt, ELV_PATCHE &p)
 		CmQUAD *qd = qgt->GetQUAD(p.dtNo);
 		qd->ProcessPatche(p);
 	}
+  //---Free statement ------------------------------------------
+  sqlite3_finalize(stm);
 	return 1;
 }
 //===================================================================================
@@ -2761,6 +2768,8 @@ int SqlMGR::WritePatche(ELV_PATCHE &p)
 	//--- Execute statement ---------------------
 	rep      = sqlite3_step(stm);               // Insert value in database
   if (rep != SQLITE_DONE) Abort(elvDBE);
+  //---Free statement ------------------------------------------
+  sqlite3_finalize(stm);
 	return 0;
 }
 //-----------------------------------------------------------------------------
@@ -2811,12 +2820,13 @@ void SqlTHREAD::DecodeCST(sqlite3_stmt *stm,COAST_REC &cst)
 //  Copy data into vertex table
 //---------------------------------------------------------------------------
 void SqlTHREAD::CopyData(COAST_REC &rec)
-{ char *mem = new char[rec.dim];
-  char *dst = mem;
+{ //-- compute a size in integer ----------------------
+	int   wdm = (rec.dim / sizeof(int)) + 1;
+	int  *buf	= new int[wdm];
+  char *dst = (char*)buf;
   char *src = rec.data;
-  //-----Copy vertice data into new memory ------------
-  for (U_INT k=0; k != rec.dim; k++) *dst++ = *src++;
-  rec.data = mem;
+  rec.data = dst;
+	memcpy(dst,src,rec.dim);
   return;
 }
 //---------------------------------------------------------------------------
@@ -2824,7 +2834,6 @@ void SqlTHREAD::CopyData(COAST_REC &rec)
 //---------------------------------------------------------------------------
 void SqlTHREAD::ReadCoast(COAST_REC &rec,C_CDT *cst)
 { char  req[1024];
-  int   nbr = 0;
   _snprintf(req,1024,"SELECT * FROM coast WHERE qgt = %d;*",rec.qtk);
   sqlite3_stmt *stm = CompileREQ(req,seaDBE);
   //---Execute select --------------------------------------------
@@ -2832,7 +2841,6 @@ void SqlTHREAD::ReadCoast(COAST_REC &rec,C_CDT *cst)
   { DecodeCST(stm,rec);
     cst->AddCoast(rec.dtk,rec.data);
     rec.data = 0;
-    nbr++;
   }
   //---Free statement --------------------------------------------
   sqlite3_finalize(stm);

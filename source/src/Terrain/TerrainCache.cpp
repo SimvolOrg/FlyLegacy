@@ -279,7 +279,7 @@ int vertNBR[] = {
 //==========================================================================
 //  Assign a shared object from pointer
 //==========================================================================
-void CPTR::operator=(CShared *p)
+void CPTR::operator=(QGTHead *p)
 { if (obj == p)   return;
   if (0 != obj)   obj->DecUser();
   obj = p;
@@ -289,7 +289,7 @@ void CPTR::operator=(CShared *p)
 //==========================================================================
 //  Assign a shared object from reference
 //==========================================================================
-void CPTR::operator=(CShared &n)
+void CPTR::operator=(QGTHead &n)
 { if (obj ==  &n) return;
   if (0 != obj)   obj->DecUser();
   obj = &n;
@@ -308,14 +308,14 @@ void CPTR::operator=(CPTR &q)
 //==========================================================================
 //  Create a shared object
 //==========================================================================
-CShared::CShared()
+QGTHead::QGTHead()
 { pthread_mutex_init (&mux,  NULL);
   Users = 1;
 }
 //-----------------------------------------------------------------------
 //	Increment user count
 //-----------------------------------------------------------------------
-void CShared::IncUser()
+void QGTHead::IncUser()
 {	//----Lock object here ---------------
   pthread_mutex_lock (&mux);
 	Users++;
@@ -326,17 +326,28 @@ void CShared::IncUser()
 //	Decrement user count
 //	When count is nul, the object is deleted
 //-----------------------------------------------------------------------
-void CShared::DecUser()
+bool QGTHead::DecUser()
 {	//--Lock object here ----------------------
   pthread_mutex_lock (&mux);
 	Users--;
   bool del = (Users == 0);
 	//--Unlock object here --------------------
   pthread_mutex_unlock (&mux);
-	if (del == false)     return;
-  TraceDelete();
+	if (del == false)     return false;
+	//--Delete this QGT ----------------------
+	globals->cnDOB	= 0;
+  int tr = 0;
+	int qx = 0;
+	int qz = 0;
+	GetTrace(&tr,&qx,&qz);
   delete this;
-	return;
+	//--- TRACE QGT deletion ---------------------------------------------------------
+	if (tr)
+	{	int		nob = globals->cnDOB;
+	 	float tim = globals->tcm->Time();
+		TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) Deleted. Release %06d Objects",tim,qx,qz,nob);
+	}
+	return true;
 }
 
 //==========================================================================
@@ -377,6 +388,8 @@ bool CTextureDef::AreWe(U_INT ax,U_INT az)
 }
 //-------------------------------------------------------------------------
 //  Pop alternate textures
+//	Textures at the top are removed
+//	Alternates textures (DAY and NIGHT) are set from the bottom stack
 //-------------------------------------------------------------------------
 void CTextureDef::PopTextures(U_CHAR opt)
 { if (opt) FreeDAY();
@@ -1902,7 +1915,7 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
   Center.x   = LongitudeInBand(cx,clon);
   Center.z   = Scene.alt;
 	//---Register the QGT for scenery --------------------
-	CSceneryDBM::Instance().Register(qKey);
+	globals->scn->Register(qKey);
 }
 
 //----------------------------------------------------------------------------
@@ -1911,7 +1924,7 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
 //----------------------------------------------------------------------------
 C_QGT::~C_QGT()
 { //--------Deregister Scenery ---------------------------
-	CSceneryDBM::Instance().Deregister(qKey);
+	globals->scn->Deregister(qKey);
 	if (0 == qSTAT) FreeAllVertices();
   if (trn)  delete trn;
   tcm->FreeSEA(this);
@@ -1923,8 +1936,17 @@ C_QGT::~C_QGT()
 //----------------------------------------------------------------------------
 void C_QGT::TraceDelete()
 { if (!tr) return;
-  TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) is deleted ----",tcm->Time(),xKey,zKey);
+	TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) Deleted. -------------",tcm->Time(),xKey,zKey);
   return;
+}
+//----------------------------------------------------------------------------
+//  Return trace data
+//----------------------------------------------------------------------------
+void C_QGT::GetTrace(int *t,int *x,int *z)
+{ *t = tr;
+	*x = xKey;
+	*z = zKey;
+	return;
 }
 //----------------------------------------------------------------------------
 //  Compute AXBY keys for this QGT
@@ -2195,7 +2217,7 @@ void C_QGT::FreeAllVertices()
   int  nb1    = globals->NbVTX;
   while (nt++ != TC_DETAIL_NBR)     FreeQuad(qd++);
   int  nb2    = nb1 - globals->NbVTX;
-  if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d delete %04d vertices",tcm->Time(),xKey,zKey,nb2);
+  if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d releases %06d vertices",tcm->Time(),xKey,zKey,nb2);
   return;
 }
 //-----------------------------------------------------------------------
@@ -3197,7 +3219,6 @@ TCacheMGR::TCacheMGR()
   eTime   = 0;
   NbQTR   = 0;
   NbSEA   = 0;
-  NbQGT   = 0;
   NbREG   = 0;
   NbTEX   = 0;
   aTime   = 0;
@@ -3342,8 +3363,6 @@ TCacheMGR::TCacheMGR()
   LoadSqlTerra();
   //-----Check for teleport directive ---------------------------
   CheckTeleport();
-  //-----Init scenery database ----------------------------------
-  CSceneryDBM::Instance().Init ();
 	//-----Init elevation Tracker ---------------------------------
 	eTrack.SetTCM(this);
 }
@@ -3366,15 +3385,23 @@ TCacheMGR::~TCacheMGR()
   std::map<U_INT,C_QGT*>::iterator im;
   for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
   { C_QGT *qt = (*im).second;
-    qt->DecUser();
+		delete (qt);			//qt->DecUser();
   }
   qgtMAP.clear();
   //---delete all countries ---------------------------
   std::map<U_INT,char*>::iterator ic;
   for (ic = ctyMAP.begin(); ic != ctyMAP.end(); ic++)
   { char  *nm = (*ic).second;
-    SAFE_DELETE_ARRAY (nm); // lc 052310 ! was delete nm;
+    SAFE_DELETE_ARRAY (nm); 
   }
+	//--- Delete unused coast data -----------------------
+	std::map<U_INT,C_SEA*>::iterator ra;
+	for (ra = seaMAP.begin(); ra != seaMAP.end(); ra++) delete (*ra).second;
+	seaMAP.clear();
+	std::map<U_INT,C_CDT*>::iterator rb;
+	for (rb = cstMAP.begin(); rb != cstMAP.end(); rb++) delete (*rb).second;
+	cstMAP.clear();
+	//---------------------------------------------------
   ctyMAP.clear();
   //---delete all terrain types -----------------------
   terBOX->EmptyIt();
@@ -3813,7 +3840,7 @@ void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   if (clock1)                 return;
   //----------------------------------------------------------------------
   if (tr) TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d -------------------",
-          dTime,NbQGT,NbQTR,NbSEA,globals->NbVTX);
+          dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
   if (tr) txw->TraceCTX();
   //----------------------------------------------------------------------
   return;
@@ -3906,7 +3933,7 @@ int TCacheMGR::RefreshCache()
   if (nKEY == rKEY)  return 0;
   //-----------Aircraft enters a new QGT -----------------------------
   if (tr) TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d -------------------",
-          dTime,NbQGT,NbQTR,NbSEA,globals->NbVTX);
+          dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
   if (tr) TRACE("TCM: -- AIRCRAFT ENTER %d-%d=================================================================",
           globals->qgtX,globals->qgtZ);
   //----------Compute aircraft new bands -----------------------------
@@ -4195,7 +4222,6 @@ CTextureDef *TCacheMGR::GetTexDescriptor(C_QGT *qgt,U_INT tx,U_INT tz)
 void TCacheMGR::CreateQGT(U_SHORT cx, U_SHORT cz)
 { C_QGT *qgt  = new C_QGT(cx,cz,this);
   qgt->txw    = txw;
-  NbQGT++;
   ActQ.PutLast(qgt);
   //---Enter QGT in map --------------------------------
   qgtMAP[qgt->qKey] = qgt;
@@ -4326,6 +4352,7 @@ void TCacheMGR::DecSEA(U_INT key)
 { int    ind = GetCoastIndex(key);
   C_SEA *sea = GetSEA(ind);
   if (0 == sea)   return;
+	//--- Delete the data when no more used ----------
   LockSEA();
   if (sea->NoMoreUsed())
       { delete sea;                               // Delete file object
@@ -4455,7 +4482,7 @@ void TCacheMGR::LoadCoastPOD(U_INT ind)
 }
 //---------------------------------------------------------------------------------
 //  Load  coast data from SQL data base
-//  This function is also called from File Thread
+//  This function is Called from File Thread
 //  kxz is the QGT tile key
 //---------------------------------------------------------------------------------
 void TCacheMGR::LoadCoastSQL(U_INT kxz)
@@ -4471,7 +4498,7 @@ void TCacheMGR::LoadCoastSQL(U_INT kxz)
   return;
 }
 //---------------------------------------------------------------------------------
-//  Load All coast file from POD
+//  Load All coast file from POD (Called from File thread)
 //---------------------------------------------------------------------------------
 void TCacheMGR::AllSeaPOD(C_QGT *qgt)
 { U_INT key = 0;
@@ -4482,7 +4509,7 @@ void TCacheMGR::AllSeaPOD(C_QGT *qgt)
   return;
 }
 //---------------------------------------------------------------------------------
-//  Load All coast file from SQL
+//  Load All coast file from SQL (called from file thread)
 //---------------------------------------------------------------------------------
 void TCacheMGR::AllSeaSQL(C_QGT *qgt)
 { U_INT key = 0;
@@ -4546,7 +4573,7 @@ int TCacheMGR::InitMesh()
   //-----------TRACE THE OVERALL STATISTICS -------------------------------------
   if (!tr)  return 0;
   TRACE("TCM: -- Time: %04.2f---- END INIT Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d ---------",
-          dTime,NbQGT,NbQTR,NbSEA,globals->NbVTX);
+          dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
 
   return 0;
 }
@@ -4560,7 +4587,7 @@ int TCacheMGR::LastAction()
   if (ActQ.NotEmpty())  return 1;
   if(!tr)               return 1;
   TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d ----------",
-          dTime,NbQGT,NbQTR,NbSEA,globals->NbVTX);
+          dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
   return 1;
 }
 //---------------------------------------------------------------------
@@ -4571,6 +4598,7 @@ int TCacheMGR::LastAction()
 //---------------------------------------------------------------------
 int TCacheMGR::OneAction()
 { C_QGT *qgt = ActQ.Pop();        // Current QGT
+	int pm = 0;
   if (0 == qgt)   return 0;
   ActQ.PutHead(qgt);
   //-----Dispatch action code -----------------------------
@@ -4606,9 +4634,9 @@ int TCacheMGR::OneAction()
 			return qgt->StepSUP();
     //---Locate 3D objects per QGT ------------------------
     case TC_QT_3DO:
-			objMGR->LocateObjects(qgt);
+			pm = objMGR->LocateObjects(qgt);
 			//----------------------------------------------------
-      if (tr) TRACE("TCM: -- Time: %04.2fQGT(%3d-%3d) Load Objects",Time(),qgt->xKey,qgt->zKey);
+      if (tr) TRACE("TCM: -- Time: %04.2fQGT(%3d-%3d) Load %06d Objects",Time(),qgt->xKey,qgt->zKey,pm);
       //----------------------------------------------------
       return LastAction();
     //---- Delete the QGT --------------------------------
@@ -4628,7 +4656,9 @@ int TCacheMGR::OneAction()
 //  NOTE: Must return 1
 //---------------------------------------------------------------------
 int TCacheMGR::FreeTheQGT(C_QGT *qgt)
-{ //---Free all textures -----------------------------
+{ int qx = qgt->GetXkey();
+	int qz = qgt->GetZkey();
+  //---Free all textures -----------------------------
   qgt->FlushTextures();  
   //---Delete QTR file -------------------------------
   qgt->DeleteQTR();
@@ -4638,11 +4668,11 @@ int TCacheMGR::FreeTheQGT(C_QGT *qgt)
   iqt   = qgtMAP.begin();
   ActQ.Pop();
   qgt->DecUser();
-  NbQGT--;
   if (ActQ.NotEmpty())  return 1;
-  if(!tr)               return 1;
-  TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d ------",
-          dTime,NbQGT,NbQTR,NbSEA,globals->NbVTX);
+  if(tr) 
+	{ TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d ------",
+          dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
+	}
   return 1;
 }
 //---------------------------------------------------------------------------------
@@ -4954,18 +4984,6 @@ void TCacheMGR::Draw(CCamera *cam)
   }
 	//====================================================================
   return;
-}
-//-------------------------------------------------------------------------
-//  Draw the statistic
-//-------------------------------------------------------------------------
-void TCacheMGR::DrawCount(float dT)
-{ char txt[256];
-  aTime += dT;
-  if (aTime < 1)  return;
-  aTime -= 1;
-  _snprintf(txt,255,"Object draw=%04d / sec",globals->cnt1);
-  globals->cnt1 = 0;
-  globals->fui->DrawNoticeToUser(txt,2);
 }
 //---------------------------------------------------------------------------------
 //  Checkfor plane in tile.  For test purpose only
@@ -5292,18 +5310,33 @@ int TCacheMGR::StartIO(C_QGT *qgt, U_CHAR ns)
   pthread_cond_signal(&thCond);       // Signal file THREAD
   return 1;
 }
+
 //----------------------------------------------------------------------------
 //  Probe for statistics
 //----------------------------------------------------------------------------
 void TCacheMGR::GetStats(CFuiCanva *cnv)
 { char txt[128];
   //-------------------------------------------------
-  cnv->AddText(1,"Vertices:");
+	//int m = getTotalSystemMemory();
+	cnv->AddText(1,"Total bitmap:");
+	sprintf_s(txt,128,"% 8d",globals->NbBMP);
+  cnv->AddText(STATS_NUM,txt,1);
+
+  cnv->AddText(1,"TERA Vertices:");
   sprintf_s(txt,128,"% 8d",globals->NbVTX);
   cnv->AddText(STATS_NUM,txt,1);
+
   cnv->AddText(1,"QGTs:");
-  sprintf_s(txt,128,"% 8d",NbQGT);
+  sprintf_s(txt,128,"% 8d",qgtMAP.size());
   cnv->AddText(STATS_NUM,txt,1);
+
+	cnv->AddText(1,"Coast slots:");
+	sprintf_s(txt,128,"% 8d",cstMAP.size());
+	cnv->AddText(STATS_NUM,txt,1);
+
+	cnv->AddText(1,"Coast lines:");
+	sprintf_s(txt,128,"% 8d",globals->NbCLN);
+	cnv->AddText(STATS_NUM,txt,1);
   //------------------------------------------------
 }
 

@@ -131,6 +131,7 @@ CKeySet::~CKeySet (void)
   // Delete key definitions
   std::map<Tag,CKeyDefinition*>::iterator i;
   for (i=dkey.begin(); i!=dkey.end(); i++)  delete i->second;
+	dkey.clear();
   ckey.clear();
 }
 //-------------------------------------------------------------------------
@@ -298,12 +299,11 @@ void CKeyMap::OpenKey(char *fn)
 //  Destructor
 //--------------------------------------------------------------------------
 CKeyMap::~CKeyMap (void)
-{
+{ 
   // Delete key sets
   std::map<Tag,CKeySet*>::iterator i;
-  for (i=kset.begin(); i!=kset.end(); i++) {
-    delete i->second;
-  }
+  for (i=kset.begin(); i!=kset.end(); i++) delete i->second;
+  kset.clear();
   oset.clear();
 }
 //-------------------------------------------------------------------------

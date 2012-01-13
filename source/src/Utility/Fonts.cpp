@@ -39,12 +39,8 @@ CBitmappedFontChar::CBitmappedFontChar (void)
 }
 
 CBitmappedFontChar::~CBitmappedFontChar (void)
-{
-  std::vector<SFontCharBit*>::iterator i;
-  for (i=bits.begin(); i!=bits.end(); i++) {
-    SFontCharBit *bit = *i;
-    delete bit;
-  }
+{ for (U_INT k = 0; k < bits.size(); k++) delete bits[k];
+	bits.clear();
 }
 
 void CBitmappedFontChar::SetBit (int x, int y)

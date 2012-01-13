@@ -148,37 +148,42 @@ ColladaParser::~ColladaParser()
   { Xnode *nod = (*it).second;
     delete (nod);
   }
+	Nodes.clear();
   //-------------------------------------------------
   std::map<std::string,Ximag*>::iterator i1;
   for (i1 = Imags.begin(); i1 != Imags.end(); i1++)
   { Ximag *nod = (*i1).second;
     delete (nod);
   }
+	Imags.clear();
   //-------------------------------------------------
   std::map<std::string,Xeffc*>::iterator i2;
   for (i2 = Effcs.begin(); i2 != Effcs.end(); i2++)
   { Xeffc *nod = (*i2).second;
     delete (nod);
   }
+	Effcs.clear();
   //-------------------------------------------------
   std::map<std::string,Xmatr*>::iterator i3;
   for (i3 = Matrs.begin(); i3 != Matrs.end(); i3++)
   { Xmatr *nod = (*i3).second;
     delete (nod);
   }
+	Matrs.clear();
   //-------------------------------------------------
   std::vector<Xanim*>::iterator i4;
   for (i4 = Anims.begin(); i4 != Anims.end(); i4++)
   { Xanim *nod = (*i4);
     delete (nod);
   }
+	Anims.clear();
   //-------------------------------------------------
   std::vector<CKeyFrame*>::iterator i5;
   for (i5 = nKeys.begin(); i5 != nKeys.end(); i5++)
   { CKeyFrame *nod = (*i5);
     delete (nod);
   }
-
+	nKeys.clear();
 }
 //--------------------------------------------------------------------
 //  Back up file position and return false

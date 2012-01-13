@@ -1028,11 +1028,8 @@ CCameraCockpit::CCameraCockpit (CVehicleObject *mv)
 //--------------------------------------------------------------------------
 CCameraCockpit::~CCameraCockpit (void)
 {  // Delete panels
-  std::map<Tag,CCockpitPanel*>::iterator iter;
-  for (iter=panl.begin(); iter!=panl.end(); iter++) {
-    CCockpitPanel *p = iter->second;
-    delete p;
-  }
+  std::map<Tag,CCockpitPanel*>::iterator ra;
+  for (ra=panl.begin(); ra!=panl.end(); ra++) delete ra->second;
   panl.clear();
 }
 //--------------------------------------------------------------------------
@@ -2646,6 +2643,7 @@ CCameraManager::CCameraManager (CVehicleObject *veh,char* fn)
 CCameraManager::~CCameraManager (void)
 { std::map<Tag,CCamera*>::iterator i;
   for (i=came.begin(); i!=came.end(); i++) delete (*i).second;
+	came.clear();
   globals->ccm = 0;
 }
 

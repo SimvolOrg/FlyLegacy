@@ -312,9 +312,7 @@ void CPicQUAD::Draw()
 //
 //======================================================================================
 C3DMgr::C3DMgr(TCacheMGR *m )
-{ tcm   = m;
-  NbMOD = 0;
-  NbOBJ = 0;
+{ tcm			= m;
   int nb  = 0;                                // Trace option
   sphere  = gluNewQuadric();                  // Testing purpose
   GetIniVar("TRACE", "3DModel", &nb);
@@ -380,6 +378,9 @@ void C3DMgr::CreateVOR()
 }
 //--------------------------------------------------------------------
 //  Delete resources
+//	NOTE: If everything works as expected, then the model map
+//	mapMOD must be empty when getting here
+//	except at end
 //--------------------------------------------------------------------
 C3DMgr::~C3DMgr()
 { if (sphere) gluDeleteQuadric(sphere);
@@ -388,6 +389,13 @@ C3DMgr::~C3DMgr()
   //----Empty light Queue if any left ---------------
   C3DLight *lit = litQ.Pop();
   while (lit) {delete lit; lit = litQ.Pop();}
+	//--- Empty model queue ----------------------------
+	std::map<std::string,C3Dmodel *>::iterator it;
+	for (it = mapMOD.begin(); it != mapMOD.end(); it++)
+	{	C3Dmodel *mod = (*it).second;
+		delete mod;
+	}
+	mapMOD.clear();
   //--------------------------------------------------
   if (tr) TraceCount();
   //----Un register manager -------------------------
@@ -406,8 +414,8 @@ void C3DMgr::SetDrawingState()
 //  Trace object counts
 //-----------------------------------------------------------------------
 void C3DMgr::TraceCount()
-{ TRACE("Model      : % 4d",NbMOD);
-  TRACE("Objects    : % 4d",NbOBJ);
+{ TRACE("Model      : % 4d",globals->NbMOD);
+  TRACE("Objects    : % 4d",globals->NbOBJ);
   return;
 }
 //--------------------------------------------------------------------
@@ -437,7 +445,7 @@ void C3DMgr::LightToDraw(C3DLight *lit)
 //  Objects are loaded from the SQL database OBJ.db
 //	Then collected from loaded POD
 //--------------------------------------------------------------------
-void C3DMgr::LocateObjects(C_QGT *qgt)
+int C3DMgr::LocateObjects(C_QGT *qgt)
 { //--- Search in SQL database----------------------
 	if (sql)	globals->sqm->ReadWOBJ(qgt);
 	//--- Search in files ----------------------------
@@ -459,7 +467,9 @@ void C3DMgr::LocateObjects(C_QGT *qgt)
   { scf.Decode(name,pod);                 
     name = (char*)pfindnext (&globals->pfs);
   }
-  return;
+	//--- Return total decoded objects -----------------
+
+  return qgt->Get3DW()->GetNwoQ();
 
 }
 //--------------------------------------------------------------------
@@ -592,7 +602,6 @@ C3Dmodel *C3DMgr::AllocateModel(char *fn)
   modl  = new C3Dmodel(fn);
   modl->IncUser();
   mapMOD[fn] = modl;
-  NbMOD++;
   return modl;
 }
 //----------------------------------------------------------------------
@@ -600,7 +609,6 @@ C3Dmodel *C3DMgr::AllocateModel(char *fn)
 //----------------------------------------------------------------------
 void C3DMgr::FreeModelKey(char *key)
 { mapMOD.erase(key);
-  NbMOD--;
   return;
 }
 //---------------------------------------------------------------------
@@ -609,7 +617,7 @@ void C3DMgr::FreeModelKey(char *key)
 void C3DMgr::GetStats(CFuiCanva *cnv)
 { char txt[128];
   cnv->AddText(1,"3D Objects:");
-  sprintf_s(txt,128,"% 8d",NbOBJ);
+  sprintf_s(txt,128,"% 8d",globals->NbOBJ);
   cnv->AddText(STATS_NUM,txt,1);
 
   cnv->AddText(1,"3D Drawed :");
@@ -617,8 +625,13 @@ void C3DMgr::GetStats(CFuiCanva *cnv)
   cnv->AddText(STATS_NUM,txt,1);
 
   cnv->AddText(1,"3D Models:");
-  sprintf_s(txt,128,"% 8d",NbMOD);
+  sprintf_s(txt,128,"% 8d",globals->NbMOD);
   cnv->AddText(STATS_NUM,txt,1);
+	
+	cnv->AddText(1,"3D vertices:");
+  sprintf_s(txt,128,"% 8d",globals->NbPOL);
+  cnv->AddText(STATS_NUM,txt,1);
+
   globals->cnt1 = 0;
   return;
 }
@@ -836,6 +849,8 @@ C3Dmodel::C3Dmodel(char *fn)
   rLOD[1]     = 0;
   rLOD[2]     = 0;
   rLOD[3]     = 0;
+	//--------------------------------------------------
+	globals->NbMOD++;
   //--------------------------------------------------
   char * dot  = strchr(fn,'.');
   if (0 == dot) return;
@@ -854,6 +869,8 @@ C3Dmodel::~C3Dmodel()
   _snprintf(pn,(PATH_MAX-1),"MODELS/%s",fname);
   pRemDisk(&globals->pfs, fname,pn);
   delete [] fname;
+	globals->NbMOD--;
+
 }
 //-------------------------------------------------------------------------------
 //  Return object maximum dimension
@@ -882,7 +899,7 @@ void C3Dmodel::UnloadPart(int k)
 { //----Release parts ----------------
   C3DPart *prt = pLOD[k].Pop();
   while (prt)
-  { delete prt;
+  {	delete prt;
     prt = pLOD[k].Pop();
   }
   return;
@@ -937,6 +954,7 @@ int C3Dmodel::AddPodPart(C3DPart *prt)
   pLOD[0].Lock();
   pLOD[0].PutEnd(prt);
   pLOD[0].UnLock();
+	globals->NbPOL += prt->GetNBVTX();
   return 1;
 }
 //-------------------------------------------------------------------------------
@@ -968,6 +986,7 @@ void C3Dmodel::AddSqlPart(C3DPart *prt,int lod)
   prt->SetLOD(lod);
   pLOD[lod].PutEnd(prt); 
   rLOD[lod] = lod;            // Activate lod level
+	globals->NbPOL += prt->GetNBVTX();
   return;
 }
 //-------------------------------------------------------------------------------
@@ -1112,25 +1131,25 @@ CWobj::CWobj(Tag k)                   // : CmHead(SHR,WOB)
   Lite      = 0;
   inf.qgt   = 0;
   inf.sup   = 0;
-  globals->m3d->IncOBJ();
+  globals->NbOBJ++;
 }
 //---------------------------------------------------------------------
 //  Free resources
 //---------------------------------------------------------------------
 CWobj::~CWobj()
 { C_QGT *qt = inf.qgt;
-  if (qt)   qt->DecNOBJ(); 
   FreeLites();
   if (desc) delete [] desc;
   if (name) delete [] name;
   if (fnam) delete [] fnam;
   if (modL[MODEL_DAY])  (modL[MODEL_DAY])->DecUser();
   if (modL[MODEL_NIT])  (modL[MODEL_NIT])->DecUser();
-  globals->m3d->DecOBJ();
+  globals->NbOBJ--;
 }
 //-----------------------------------------------------------------------
 //	Decrement user count
 //	When object is marked for delete, it is recycled when user count is 0
+//	return 1 if object is deleted
 //-----------------------------------------------------------------------
 void CWobj::DecUser()
 {	//--Lock object here ----------------------
@@ -1792,11 +1811,7 @@ void CWvor::ReleaseOBJ()
 //  Place holder
 //============================================================================
 CWhld::~CWhld()
-{ std::vector<CWobj*>::iterator it;
-  for (it=Hold.begin(); it!=Hold.end(); it++)
-  { CWobj *obj = (*it);
-    if (obj) delete (obj);
-  }
+{ for (U_INT k = 0; k < Hold.size(); k++) delete Hold[k];
   Hold.clear();
 }
 //--------------------------------------------------------------------
@@ -1862,6 +1877,7 @@ C3DPart::~C3DPart()
   if (nTEX)     delete [] nTEX;
   if (nIND)     delete [] nIND;
   ntex  = 0;
+	globals->NbPOL -= GetNBVTX();
   total = 0;
 }
 //----------------------------------------------------------------------
@@ -1969,10 +1985,8 @@ void C3Dworld::Clear3Dworld()
   CWobj *obj = woQ.Pop();
   while (obj) {obj->DecUser(); obj = woQ.Pop();}
   std::map<std::string,CWobj*>::iterator it;
-  for (it = hold.begin();it != hold.end(); it++)
-  { CWobj *obj = (*it).second;
-    delete obj;
-  }
+  for (it = hold.begin();it != hold.end(); it++) delete (*it).second;
+	hold.clear();
   return;
 }
 //-----------------------------------------------------------------------

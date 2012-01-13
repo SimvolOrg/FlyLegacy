@@ -292,46 +292,6 @@ unsigned int 	GetTicket(PFS *pfs)
   pthread_mutex_unlock (&pfs->mux);
 	return no;
 }
-//=====================================================================================
-// @brief Shut down pod filesystem
-//
-// @param pPfs  Pointer to PFS filesystem struct
-//=====================================================================================
-void pshutdown (PFS* pfs)
-{
-  TRACE ("   SHUT DOWN podList");
-
-  //----- Deallocate all entries in the pod list -----------------------
-  std::map<string,PFSPOD*>::iterator iPod;
-  for (iPod=pfs->podList.begin(); iPod!=pfs->podList.end(); iPod++) {
-    PFSPOD *pPod = iPod->second;
-    if (pPod->file != NULL) fclose (pPod->file);
-    delete pPod;
-  }
-
-  pfs->podList.clear();
-  //----- Delete all entries in the pod file list ----------------------
-	TRACE ("   SHUT DOWN podFileList");
-	plog(pfs,"--------SHUT DOWN podFileList");
-  std::multimap<string,PFSPODFILE*>::iterator i;
-  for (i=pfs->podFileList.begin(); i!=pfs->podFileList.end(); i++) {
-    PFSPODFILE *pf = i->second;
-    delete pf;
-  }
-	pfs->podFileList.clear();
-	//----- delete all entries in disk list ------------------------------
-	TRACE ("   SHUT DOWN diskFileList");
-	plog(pfs,"--------SHUT DOWN diskFileList");
-
-	pfs->diskFileList.clear();
-	//---- Clear master list ---------------------------------------------
-	TRACE ("   SHUT DOWN masterFileList");
-  plog(pfs,"--------SHUT DOWN masterFileList");	pfs->masterFileList.clear();
-	//--------------------------------------------------------------------
-  plog (pfs, "------SHUTDOWN complete");
-  // Close log file
-  SAFE_DELETE (pfs->log);
-}
 //-------------------------------------------------------------------------------
 //  Normalize pathName
 //-------------------------------------------------------------------------------
@@ -347,38 +307,40 @@ void NormalizeName(char *name)
 //-------------------------------------------------------------------------------
 //  Add a single file into the POD file system
 //	Key is RELATIVE_DIRECTORY/NAME
+//	NOTE: Only one file is allowed with the same key.  Second files are ignored
 //-------------------------------------------------------------------------------
 int paddpodfile (PFS *pfs, PFSPODFILE *p)
-{ // Create pairing of filename with PFSPODFILE*
-	p->share	= pfs->mode;
+{ //--- Insert in master list if not already in ---------------------
+	std::map<std::string,PFSPODFILE*>::iterator ra = pfs->masterFileList.find(p->name);
+	if (ra != pfs->masterFileList.end())		return 0;
+	//--- lock PFS for insert -----------------------------------------
+	pthread_mutex_lock   (&pfs->mux);             // Lock access
+	pfs->masterFileList[p->name] = p;
+	p->IncUser();
+  //---- Create pairing of filename with PFSPODFILE* ----------------
   pair<string,PFSPODFILE*>  pr;
   pr.first  = p->name;
   pr.second = p;
-  // JSDEV: Lock the PFS for multithread
-  pthread_mutex_lock   (&pfs->mux);             // Lock access
   pfs->podFileList.insert(pr);
-  // Also insert filename into master filename set
-	pfs->masterFileList[p->name] = p;
-  // JSDEV Unlock PFS
+	p->IncUser();
+  //--- JSDEV Unlock PFS --------------------------------------------
   pthread_mutex_unlock   (&pfs->mux);           // Lock access
   plog (pfs,"......ADD file KEY %s",p->name);
   return 0;
 }
 //-------------------------------------------------------------------------------
 //  Remove the file from the POD file system
-//	NOTE:  Shared files are not removed
 //-------------------------------------------------------------------------------
 void prempodfile (PFS *pfs, char *fn)
 {   pthread_mutex_lock   (&pfs->mux);             // Lock access
-		std::multimap<string,PFSPODFILE*>::iterator i = pfs->podFileList.find(fn);
-		bool del = (i != pfs->podFileList.end()) && (0 == i->second->share);
-		if (del)
-			{	pfs->podFileList.erase(fn);
-				pfs->masterFileList.erase(fn);
-			}
+		std::multimap<std::string,PFSPODFILE*>::iterator ra = pfs->podFileList.find(fn);
+		PFSPODFILE *p = (ra != pfs->podFileList.end())?(ra->second):(0);
+		std::map<std::string,PFSPODFILE*>::iterator rb			= pfs->masterFileList.find(fn);
+		PFSPODFILE *q = (rb != pfs->masterFileList.end())?(rb->second):(0);
+		if (p)		{	p->DecUser(); pfs->podFileList.erase(fn); }
+		if (q)    {	q->DecUser(); pfs->masterFileList.erase(fn);	}
     pthread_mutex_unlock   (&pfs->mux);           // Lock access
-    if (del) plog (pfs,"......REM file %s",fn);
-		else     plog (pfs,"......SHARED   %s",fn);
+    if (p) plog (pfs,"......REM file %s",fn);
     return;
 }
 //-------------------------------------------------------------------------------
@@ -393,15 +355,9 @@ void padddiskfile (PFS *pfs, string key, string fullFn,char rep)
   pthread_mutex_lock   (&pfs->mux);             // Lock access
   std::map<string,string>::iterator i = pfs->diskFileList.find(key);
   if  (i == pfs->diskFileList.end())
-      { plog (pfs, "    ADD key %s", key.c_str());
-        pfs->diskFileList[key]   = fullFn;
-	//			pfs->masterFileList[key] = 0;
-      }
-  else if (1 == rep)
-      { plog (pfs, "    REP key %s", key.c_str());
-        pfs->diskFileList[key]   = fullFn;
-	//			pfs->masterFileList[key] = 0;
-      }
+	{	plog (pfs, "    ADD key %s", key.c_str());
+    pfs->diskFileList[key]   = fullFn;
+  }
   pthread_mutex_unlock   (&pfs->mux);           // Lock access
   return;
 }
@@ -419,11 +375,6 @@ void pRemDisk(PFS *pfs,char *key,char *fn)
 { NormalizeName(key);
   NormalizeName(fn);
   pfs->diskFileList.erase(key);
-  //  pfs->masterFileList.erase(key);
-  // To test  check for file ---------------------------------
-  //const char *n = 0;
-  //std::map<string,string>::iterator i = pfs->diskFileList.find(key);
-  //if (i != pfs->diskFileList.end()) n = (*i).second.c_str();
   //-----------------------------------------------------------
   return;
 }
@@ -463,6 +414,7 @@ static void pmountepd (PFS *pPfs, PFSPOD* pPod)
     p->priority = 1000;
 		NormalizeName(p->name);
 		int stop = (*VectorPOD)(pPfs,p);  // call paddpodfile
+		if (p->NoUser())	delete p;
 		if (stop)	break;
   }
 	return;
@@ -492,7 +444,11 @@ void unMountEPD (PFS *pfs, PFSPOD* pod)
 // @brief Mount an POD2 format pod into the specified pod filesystem
 //
 // @param pPod  Pointer to the POD2 pod details
- //-----------------------------------------------------------------------
+//	The file is processed through a callback function (VectorPOD*)
+//	return code is as follows:
+//	0 stop mounting
+//	1 continue mounting
+//-----------------------------------------------------------------------
 
 static void pmountpod2 (PFS *pPfs, PFSPOD* pPod)
 {
@@ -548,6 +504,7 @@ static void pmountpod2 (PFS *pPfs, PFSPOD* pPod)
     fseek (f, pos, SEEK_SET);
 		NormalizeName(p->name);
 		int stop = (*VectorPOD)(pPfs,p);	// Call paddpodfile
+		if (p->NoUser())	delete p;
 		if (stop)	break;
   }
 	return;
@@ -592,8 +549,7 @@ void unMountPOD2 (PFS *pfs, PFSPOD* pod)
 // @brief Mount an POD3 format pod into the specified pod filesystem
 //
 // @param pPod  Pointer to the POD3 pod details
- //-----------------------------------------------------------------------
-
+//-----------------------------------------------------------------------
 static void pmountpod3 (PFS *pPfs, PFSPOD* pPod)
 {
   int i, j;
@@ -656,6 +612,7 @@ static void pmountpod3 (PFS *pPfs, PFSPOD* pPod)
     fseek (f, pos, SEEK_SET);
 		NormalizeName(p->name);
 		int stop = (*VectorPOD)(pPfs,p);	// Call paddpodfile
+		if (p->NoUser())	delete p;
 		if (stop)	break;
   }
 	return;
@@ -1511,6 +1468,32 @@ void pclose (PODFILE* f)
   }
 
   delete f;
+}
+//=====================================================================================
+// @brief Shut down pod filesystem
+//
+// @param pPfs  Pointer to PFS filesystem struct
+//=====================================================================================
+void pshutdown (PFS* pfs)
+{
+  TRACE ("ERASE podList");
+
+  //----- Deallocate all entries in the pod list -----------------------
+  std::map<string,PFSPOD*>::iterator iPod;
+  for (iPod=pfs->podList.begin(); iPod!=pfs->podList.end(); iPod++) {
+    PFSPOD *pod = iPod->second;
+		pUnMount(pfs,pod);
+    if (pod->file) fclose (pod->file);
+    delete pod;
+  }
+
+  pfs->podList.clear();
+	pfs->diskFileList.clear();
+	pfs->masterFileList.clear();
+	pfs->podFileList.clear();
+	//--------------------------------------------------------------------
+  TRACE ("- POD-SHUTDOWN complete");
+  SAFE_DELETE (pfs->log);
 }
 
 

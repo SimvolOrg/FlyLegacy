@@ -465,7 +465,6 @@ void	APIReadMessage(SMessage *mesg, SStream *stream)
 { //-- APIReadMessage
   SMessage message;
   if (mesg) {
-    memset (&message, 0, sizeof (SMessage));
     ReadMessage (&message, stream);
     if (!message.user.u.datatag) message.user.u.datatag = 'st8t';
     *mesg = message;

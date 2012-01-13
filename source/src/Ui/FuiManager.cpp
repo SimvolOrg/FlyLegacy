@@ -59,6 +59,9 @@ CFuiManager::CFuiManager(void)
 //------------------------------------------------------------------------
 CFuiManager::~CFuiManager()
 {	if (xOBJ)	glDeleteTextures(1,&xOBJ);
+  std::map<Tag,CFuiTheme*>::iterator ra;
+	for (ra = themeMap.begin(); ra != themeMap.end(); ra++) delete (*ra).second;
+	themeMap.clear();
 }
 //------------------------------------------------------------------------
 //    Init the FuiManager

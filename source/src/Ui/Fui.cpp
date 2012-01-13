@@ -1925,10 +1925,6 @@ bool CFuiWindow::MouseClick (int mx, int my, EMouseButton button)
   //----Check if clicked inside ------------------------------------
   if (InsideClick(mx,my,button))          return true;
   if (0 == mPop)  ClearFocus(0);
-  //----- Check for resize ------------------------------------------
- // if (0 == edge)													return MouseHit(mx,my);
-	//edge->ClickOver(mx,my);
-	//return RegisterFocus(edge);
 	return false;
 	}
 //---------------------------------------------------------------------------------
@@ -5252,10 +5248,7 @@ void CFuiMenu::MoveParentTo (int xp, int yp)
 //  Clean all Menu parts
 //-----------------------------------------------------------------------
 void CFuiMenu::Cleanup (void)
-{ std::vector<SMenuPart*>::iterator mp;
-  for (mp=Parts.begin(); mp!=Parts.end(); mp++) {
-    delete (*mp);
-  }
+{ for (U_INT k= 0; k < Parts.size(); k++) delete Parts[k];
   Parts.clear();
 }
 //----------------------------------------------------------------------
@@ -5482,6 +5475,7 @@ CFuiMenuBar::CFuiMenuBar (int wd,CFuiComponent *mwin)
 CFuiMenuBar::~CFuiMenuBar (void)
 { std::map<Tag, CFuiMenu*>::iterator mi;
   for (mi = menu.begin();mi != menu.end();mi++) delete mi->second;
+	menu.clear();
   return;
 }
 //------------------------------------------------------------------------------------

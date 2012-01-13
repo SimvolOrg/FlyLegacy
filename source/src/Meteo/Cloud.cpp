@@ -371,23 +371,22 @@ CCloudSystem::~CCloudSystem()
   { CCloudPuff *clp = (*ita);
     delete clp;
   }
+	Puffs.clear();
   //----Delete cloud models --------------------
   std::vector<void *>::iterator itr;
   for (itr=RawSet.begin();itr!=RawSet.end();itr++)
   { void *mdl = (*itr);
     delete [] mdl;
   }
+	RawSet.clear();
   //---Delete model box ------------------------
   std::vector<CCloudModel *>::iterator itm;
   for (itm=Models.begin();itm!=Models.end();itm++)
   { CCloudModel *mod = (*itm);
     delete mod;
   }
-
+	Models.clear();
   //--------------------------------------------
-  Puffs.clear();
-  RawSet.clear();
-  Models.clear();
   return;
 }
 //------------------------------------------------------------------------------

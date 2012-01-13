@@ -2160,13 +2160,11 @@ CWingDeIce::CWingDeIce (void)
 {  TypeIs (SUBSYSTEM_WING_DEICE);
    hwId = HW_SWITCH;
 }
-
+//-----------------------------------------------------------------------
+//	Destructor
+//------------------------------------------------------------------------
 CWingDeIce::~CWingDeIce (void)
-{
-  std::vector<SMessage*>::iterator i;
-  for (i=msgPump.begin(); i!=msgPump.end(); i++) {
-    delete *i;
-  }
+{ for (U_INT k= 0; k < msgPump.size(); k++) delete msgPump[k];
   msgPump.clear();
 }
 

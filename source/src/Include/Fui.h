@@ -923,7 +923,6 @@ protected:
   U_CHAR            wCar;
   CFuiPage         *Page;
   //-------------------------------------------------------------
-//  std::map<Tag, std::string>   items;          ///< Item list
   Tag                          selection;      ///< Currently selected choice
   int                          xText, yText;   ///< Offsets to start drawing text
   int                          origH;          ///< height when inactive

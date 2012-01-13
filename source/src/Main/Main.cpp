@@ -28,8 +28,14 @@
  *   application initialization and shutdown functions, and the
  *   GTFO method of immediate application abort due to fatal errors.
  */
-
+//====================================================================================================
 // Include Visual Leak Detector header
+#if defined(_DEBUG)
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+//===================================================================================================
 #ifdef MEMORY_LEAK_VLD
 #include <vld.h>
 #endif // MEMORY_LEAK_VLD
@@ -41,6 +47,7 @@
 #include "../Include/FuiParts.h"
 #include "../Include/Database.h"
 #include "../Include/TerrainCache.h"
+#include "../Include/TerrainElevation.h"
 #include "../Include/Cloud.h"
 #include "../Include/LightSystem.h"
 #include "../Include/Utility.h"
@@ -60,6 +67,7 @@
 #include "../Include/Import.h"
 #include "../Include/SqlMGR.h"
 #include "../Include/BlackBox.h"
+#include "../Include/TerrainTexture.h"
 //----Windows particular -------------------------
 #include <math.h>
 #include <pthread.h>
@@ -304,34 +312,41 @@ char *GetStandardAlphabet(char car)
 static WORD savedGammaRamp[3][0x100];
 static HDC  hdc = 0;
 #endif // _WIN32
-//========================================================================================
-//  Restaure gamma ramp from file
-//========================================================================================
-void RestoreGamma()
-{ WORD ramp[3][0x100];
-  HDC hdc = wglGetCurrentDC();
-  char *fn = "System/Gamma.cof";
-  FILE* f = fopen (fn, "r");
-  if (!f) return;
-  //----------------------------------------------------------
-  int k = -1;
-  int r,g,b;
-  int q = 0;
-  char go = 1;
-  while (go)
-  { int n = fscanf(f,"%d R%d G%d B%d \n",&k,&r,&g,&b);
-    if (4 != n) break;
-    ramp[0][k] = r;
-    ramp[1][k] = g;
-    ramp[2][k] = b;
-    q++;
-  }
-  fclose(f);
-  if (q != 256)  return;
-  // Set the new gamma ramp
-  BOOL ok = SetDeviceGammaRamp (hdc, ramp);
-  return;
+//=========================================================================================
+// Trace object size
+//	Frequently allocated object may be put here
+//	We may try to identify them by size when memory leak occurs
+//=========================================================================================
+void TraceObjectSize()
+{	TRACE("----POD---------------------------------");
+	TRACE("%30s size = %05d","PFSPOD",						sizeof(PFSPOD));
+	TRACE("%30s size = %05d","PFSPODFILE",				sizeof(PFSPODFILE));
+	TRACE("---TEXTURES ----------------------------");
+	TRACE("%30s size = %05d","CSharedTxnTex",			sizeof(CSharedTxnTex));
+	TRACE("%30s size = %05d","CShared3DTex",			sizeof(CShared3DTex));
+	TRACE("%30s size = %05d","CTextureDef",				sizeof(CTextureDef));
+	TRACE("---TERRAIN -----------------------------");
+	TRACE("%30s size = %05d","CGroundTile",				sizeof(CGroundTile));
+	TRACE("%30s size = %05d","CSuperTile",				sizeof(CSuperTile));
+	TRACE("%30s size = %05d","CVertex",				    sizeof(CVertex));
+	TRACE("%30s size = %05d","CmQUAD",				    sizeof(CmQUAD));
+	TRACE("%30s size = %05d","C_QGT",							sizeof(C_QGT));
+	TRACE("--- COAST DATA -------------------------");
+	TRACE("%30s size = %05d","C_SEA",							sizeof(C_SEA));
+	TRACE("%30s size = %05d","C_CDT",							sizeof(C_CDT));
+	TRACE("--- AIRPORTS ---------------------------");
+	TRACE("%30s size = %05d","CTarmac",						sizeof(CTarmac));
+	TRACE("%30s size = %05d","CAptObject",				sizeof(CAptObject));
+	TRACE("%30s size = %05d","CPaveRWY",					sizeof(CPaveRWY));
+	TRACE("--- LIGHTS -----------------------------");
+	TRACE("%30s size = %05d","CDualLITE",					sizeof(CDualLITE));
+	TRACE("%30s size = %05d","CFlshLITE",					sizeof(CFlshLITE));
+	TRACE("%30s size = %05d","CStrobeLITE",				sizeof(CStrobeLITE));
+	TRACE("%30s size = %05d","CFlashBarLITE",			sizeof(CFlashBarLITE));
+	TRACE("%30s size = %05d","CPapiLITE",					sizeof(CPapiLITE));
+	TRACE("%30s size = %05d","CRLP",							sizeof(CRLP));
 }
+
 //============================================================================
 //  Set Initial profile from ini file 
 //	Lock, unlock individual feature 
@@ -451,11 +466,11 @@ void InitGraphics (void)
   DumpOpenGLState ("Debug/OpenGL_Init.txt");
 }
 
-/**
- *  Initialize fonts for use by the application.
- *
- *  The application uses a set of bitmap fonts availalble in the global data structure.
- */
+//========================================================================================
+//  Initialize fonts for use by the application.
+//
+//  The application uses a set of bitmap fonts availalble in the global data structure.
+//========================================================================================
 void InitFonts (void)
 {
   //----------------------------------------------------------
@@ -483,9 +498,9 @@ void InitFonts (void)
    
 }
 
-/**
- *  Clean up fonts used by the application.
- */
+//========================================================================================
+//  Clean up fonts used by the application.
+//========================================================================================
 void CleanupFonts (void)
 { FreeMonoFont(&globals->fonts.ftmono8);
   FreeMonoFont(&globals->fonts.ftmono14);
@@ -505,7 +520,13 @@ void CleanupFonts (void)
 //======================================================================================
 void InitGlobalsNoPodFilesystem (char *root)
 { //MEMORY_LEAK_MARKER ("globalinit");
-  // Allocate NULL bitmap
+  //--- Globals counters -----------------------------------
+	globals->NbOBJ	= 0;										// Total Objects
+	globals->NbMOD	= 0;										// Total Models
+	globals->NbPOL	= 0;										// Total polygons
+	globals->NbCLN  = 0;										// Coast lines
+	globals->NbBMP	= 0;										// Number of bitmap
+  //----  Allocate NULL bitmap
 	globals->dMap				= new CFmtxMap();
   globals->nBitmap		= new CBitmap;
   globals->dBug       = 0;
@@ -545,20 +566,6 @@ void InitGlobalsNoPodFilesystem (char *root)
   GetIniVar ("Graphics", "gameWindowX", &x);
   int y = 0;
   GetIniVar ("Graphics", "gameWindowY", &y);
-/*
-  // Validate screen width/height
-  bool screen640 = (w == 640) && (h == 480);
-  bool screen800 = (w == 800) && (h == 600);
-  bool screen1024 = (w == 1024) && (h == 768);
-  if (!(screen640 || screen800 || screen1024)) {
-    // Default to 1024 x 768
-    WARNINGLOG ("Invalid screen resolution in INI settings, default to 1024x768");
-    w = 1024;
-    h = 768;
-    SetIniVar ("Graphics", "gamePIXX", w);
-    SetIniVar ("Graphics", "gamePIXY", h);
-  }
-*/
   // Get colour depth from globals and validate
   int bpp = 32;
   GetIniVar ("Graphics", "gameBitsPerPixel", &bpp);
@@ -573,7 +580,7 @@ void InitGlobalsNoPodFilesystem (char *root)
   int refresh = 0;
   GetIniVar ("Graphics", "gameRefreshRate", &refresh);
 
-  // Init main view params
+  //-- Init main view params -------------------------
   globals->mScreen.ID     = 1; // constant for main view
   globals->mScreen.X      = x;
   globals->mScreen.Y      = y;
@@ -623,30 +630,18 @@ void InitGlobalsNoPodFilesystem (char *root)
   int plugin_allowed = 0;
   GetIniVar ("Sim", "allowDLLFiles", &plugin_allowed);
   globals->plugins.g_plugin_allowed = (plugin_allowed != 0);
-/*
-  // sdk: load and initialize the dll plugins
-  if (globals->plugins.g_plugin_allowed) {
-    if (globals->plugins_num = globals->plugins.On_LoadPlugins ()) {
-      globals->plugins.On_InitPlugins ();
-    } else
-      globals->plugins_num = 0;
-  }
-  else
-    //! plugins_num is used as a plugin flag along the code
-    globals->plugins_num = 0;
-*/
-   globals->opal_sim = NULL;
-   //MEMORY_LEAK_MARKER ("opal::createSimulator start")
-   globals->opal_sim = opal::createSimulator ();
-   globals->opal_sim->setMaxContacts(2);
-   //MEMORY_LEAK_MARKER ("opal::createSimulator end")
-   opal::Vec3r g (0.0f, 0.0f, -(GRAVITY_MTS));
-   globals->opal_sim->setGravity (g);
-   float step_size = ADJ_STEP_SIZE;          // 0.04f;
-   GetIniFloat ("PHYSICS", "adjustStepSize", &step_size);
-   globals->opal_sim->setStepSize (step_size); // was 0.02
-   DEBUGLOG ("InitGlobalsNoPod step_size=%f", step_size);
-   globals->simulation = false;
+  globals->opal_sim = NULL;
+  //MEMORY_LEAK_MARKER ("opal::createSimulator start")
+  globals->opal_sim = opal::createSimulator ();
+  globals->opal_sim->setMaxContacts(2);
+  //MEMORY_LEAK_MARKER ("opal::createSimulator end")
+  opal::Vec3r g (0.0f, 0.0f, -(GRAVITY_MTS));
+  globals->opal_sim->setGravity (g);
+  float step_size = ADJ_STEP_SIZE;          // 0.04f;
+  GetIniFloat ("PHYSICS", "adjustStepSize", &step_size);
+  globals->opal_sim->setStepSize (step_size); // was 0.02
+  DEBUGLOG ("InitGlobalsNoPod step_size=%f", step_size);
+  globals->simulation = false;
    char buffer_ [128] = {0};
    GetIniString ("PHYSICS", "aircraftPhysics", buffer_, 128);
    if (!strcmp (buffer_, "ufo")) globals->simulation = true;
@@ -658,7 +653,7 @@ void InitGlobalsNoPodFilesystem (char *root)
    GetIniString ("Sim", "fpsLimiter", buff_, 8);
    if (!strcmp (buff_, "false")) globals->fps_limiter = false;
 
-   // CAGING
+   //--- CAGING -----------------------------
    globals->caging_fixed_sped = false;
    globals->caging_fixed_sped_fval = 0.0f;
    globals->caging_fixed_moi = false;    
@@ -734,10 +729,6 @@ void InitGlobalsNoPodFilesystem (char *root)
 //======================================================================================
 void CleanupGlobals (void)
 {
-#ifdef _DEBUG
-  DEBUGLOG ("CleanupGlobals start");
-#endif
-  /// \todo
   // sdk: cleanup situation call DLLEndSituation
   if (globals->plugins_num) globals->plugins.On_EndSituation ();
 
@@ -762,6 +753,8 @@ void CleanupGlobals (void)
 //  ----Must be last ----------------------
 	TRACE("Delete TerrainCache");
   SAFE_DELETE (globals->tcm);         // Delete terrain before DBcache
+	TRACE("Delete SCeneryDBM");
+	SAFE_DELETE (globals->scn);
 	TRACE("Delete DatabaseCache");
   SAFE_DELETE (globals->dbc);         // Delete DB cache
 	TRACE("Delete WeatherManager");
@@ -777,17 +770,16 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->cap);
   SAFE_DELETE (globals->snd);
 	//---------------------------------------
-	TRACE("Shudown POD");
   pshutdown (&globals->pfs);
 	//----------------------------------------
   SAFE_DELETE (globals->logWarning);
-  SAFE_DELETE (globals->logTrace);
   SAFE_DELETE (globals->logTerra);
 	SAFE_DELETE (globals->logScene);
-  SAFE_DELETE (globals->logDebug);      // JS Must be the last if log is used
-  SAFE_DELETE (globals);                // JS Must be the last if log is used
-//  ---------------------------------------
 
+  SAFE_DELETE (globals->logDebug);      // JS Must be the last if log is used
+//  SAFE_DELETE (globals);                // JS Must be the last if log is used
+//  ---------------------------------------
+	TRACE("END CLEAN_UP");
 }
 
 
@@ -814,8 +806,8 @@ void ShutdownAll (void)
   // if (!SetDeviceGammaRamp (hdc, savedGammaRamp))  WARNINGLOG ("Failed to set Win32 gamma ramp");
 #endif // _WIN32
 	  // Save and clean up INI settings database
-	TRACE("Save ini file");
-  SaveIniSettings ();
+//	TRACE("Save ini file");
+//  SaveIniSettings ();
   UnloadIniSettings ();
 	//--------------------------------------------
 	TRACE("Delete CursorManager");
@@ -842,41 +834,6 @@ void ShutdownAll (void)
 	TRACE("Clean Globals");
   CleanupGlobals ();
 
-  // try to release as much heap allocated memory as possible
-  // lc 051610
-  // If successful, _heapmin returns 0; otherwise, the function returns 1
-  // The _heapmin function minimizes the heap by releasing unused heap memory
-	//	JS: All memory is released when the process terminates
-	/*
-  int heapmin_success = _heapmin ();
-  #ifdef _DEBUG	
-   // Check heap status
-	 TRACE("Check Heap");
-   int heapstatus = _heapchk ();
-   {FILE *fp_debug;
-    if (!(fp_debug = fopen ("__DDEBUG_heap.txt", "a")) == NULL)
-    {
-      fprintf (fp_debug, "_heapmin %s\n",
-        heapstatus ? "hasn't worked" : "has succeeded");
-      switch (heapstatus)
-      {
-      case _HEAPOK:
-         fprintf (fp_debug, "OK - heap is fine\n");
-         break;
-      case _HEAPEMPTY:
-         fprintf (fp_debug, "OK - heap is empty\n");
-         break;
-      case _HEAPBADBEGIN:
-         fprintf (fp_debug, "ERROR - bad start of heap\n");
-         break;
-      case _HEAPBADNODE:
-         fprintf (fp_debug, "ERROR - bad node in heap\n");
-         break;
-      }	    
-	    fclose(fp_debug); 
-   }}
-  #endif
-	*/
 }
 
 //======================================================================================
@@ -947,6 +904,7 @@ void InitApplication (void)
   globals->fui->Init();
   //------Start terrain ---------------------------------
   globals->tcm = new TCacheMGR();
+	globals->scn = new CSceneryDBM();
   globals->cld = new CCloudSystem();
   globals->wtm->Init();
 	//--- Check menu items --------------------------------
@@ -962,7 +920,9 @@ void InitApplication (void)
 //    Filename of situation file to load relative to POD Filesystem, or NULL to use default situation
 //=======================================================================================
 void InitSimulation (void)
-{ TRACE("Start InitSimulation");
+{ TRACE("===OBJECT DIMENSION (bytes) ==============");
+	TraceObjectSize();
+  TRACE("Start InitSimulation");
   //---- Set default area to Marseilles airport --------------------
   SPosition area = {18802.79, 156335.87, 78};
   globals->geop  = area;
@@ -1221,43 +1181,24 @@ void RedrawExitScreen (void)
   return;
 }
 
-/**
- *  Cleanup exit screen.
- *
- *  Free resources used to display the application exit screen.
- */
-void CleanupExitScreen (void)
-{
-	SAFE_DELETE(tExit);
-}
 
-/**
- *  Primary entry point for graceful application shutdown.
- */
+//=====================================================================================
+//  Primary entry point for graceful application shutdown.
+ //====================================================================================
 void ExitApplication (void)
 { globals->mBox.DumpAll();
   // Gracefully shut down and clean up before exiting
   ShutdownAll ();
   CleanupWindowManager ();
-  CleanupExitScreen ();
-	ExitProcess(0);
-	/*
-#ifdef MEMORY_LEAK_CRT
-#if defined(_DEBUG) && defined(HAVE_CRTDBG_H)
-  // Check for memory leaks
-  HANDLE hfile = CreateFile ("Logs/MemoryLeaks.log",
-                             GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
-                             FILE_ATTRIBUTE_NORMAL, NULL);
-  _CrtSetReportMode (_CRT_WARN, _CRTDBG_MODE_FILE);
-  _CrtSetReportFile (_CRT_WARN, hfile);
-  _CrtSetReportMode (_CRT_ERROR, _CRTDBG_MODE_FILE);
-  _CrtSetReportFile (_CRT_ERROR, hfile);
-  _CrtMemDumpAllObjectsSince(&memoryState);
-  CloseHandle (hfile);
+	TRACE("DELETE EXIT TEXTURE");
+  SAFE_DELETE(tExit);
+	TRACE("END of PROCESS");
+	SAFE_DELETE (globals->logTrace);		 // Trace is needed  to the end
+  SAFE_DELETE (globals);               // JS Must be the last if log is used
+#if defined(_DEBUG)
+ _CrtDumpMemoryLeaks();
 #endif
-#endif // MEMORY_LEAK_CRT
-*/
-
+	ExitProcess(0);
 }
 
 //==================================================================================
@@ -1273,11 +1214,8 @@ static pthread_mutex_t	mutexWarn,
  *  Initialize tracing options.
  */
 void InitTraces(void)
-{	bool trc	= IsSectionHere ("TRACE");
-	int op	= 0;
-  globals->ttr      = 0;
-  globals->logTrace	= (trc)?(new CLogFile ("logs/Trace.log", "w")):(0);
-  if (0 == trc) return;
+{	int op	= 0;
+	globals->ttr      = 0;
   GetIniVar ("TRACE", "Step", &op);
   globals->ttr  = op;
 	GetIniVar ("TRACE", "TimeSlice", &op);
@@ -1344,6 +1282,8 @@ int main (int argc, char **argv)
   pthread_mutex_init (&mutexGtfo,  NULL);
   pthread_mutex_init (&mutexTrace, NULL);		  // JSDEV* add trace
 	pthread_mutex_init (&mutexScene, NULL);
+	//--- Create trace file now -----------------------------------------
+  globals->logTrace	= new CLogFile ("logs/Trace.log", "w");
   //--------- Load application settings from INI file -----------------
   LoadIniSettings ();
 
@@ -1546,9 +1486,9 @@ int main (int argc, char **argv)
 
 #include <shellapi.h>
 
-/**
- *  Initial Windows application entry point.
- */
+//=====================================================================================
+//  Initial Windows application entry point.
+//=====================================================================================
 int APIENTRY WinMain (HINSTANCE hInstance,
                       HINSTANCE hPrevInstance,
                       LPSTR lpCmdLine,
@@ -1558,7 +1498,8 @@ int APIENTRY WinMain (HINSTANCE hInstance,
   return 0;
 }
 #endif // _WINDOWS
-
+//=====================================================================================
+//	ABORT OPERATOR
 //=================================================================================
 void GTFO::operator() (const char* fmt, ...)
 {

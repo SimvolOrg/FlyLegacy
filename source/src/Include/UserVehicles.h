@@ -199,8 +199,6 @@ protected:
   SMessage    mRpm;
   SMessage    mMap;
 
-  //std::vector <std::string> user_info;
-  //std::vector <SMessage> user_message;
   float       elapsed;
 
 public:
@@ -450,7 +448,7 @@ public:
   U_CHAR                        cInd;               // Cell index 
   U_CHAR                        fuel;               // Fuel state
   std::vector<CFuelSubsystem*>  fsub;               // List of CFuelSubsystem* objects
-  std::vector<CFuelCell*>       tanks;              // List of tanks
+  std::vector<CFuelCell*>       tanks;              // List of tanks (do not delete from this list)
   //-----List of contributing fuel tank -------------------------------------------
   std::vector<CFuelCell *>      ctank;              // Contributing tank
 protected:

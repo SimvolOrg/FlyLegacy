@@ -655,11 +655,10 @@ public:
   //--------------------------------------------------------------
   inline double     GetInflation()        {return cFactor;}
   inline double     GetReduction()        {return rFactor;}
-  inline int        IncNOBJ()             {nOBJ++; return nOBJ;}
-  inline int        DecNOBJ()             {nOBJ--; return nOBJ;}
   inline int        GetNOBJ()             {return nOBJ;}
   //--------------------------------------------------------------
   inline C_QGT*     GetQGT (void)         {return qgt;}
+	inline int				GetNwoQ()							{return woQ.NbObjects();}
 };
 //=============================================================================
 //  Class C3DMgr  This class manages the world 3D objects
@@ -674,8 +673,6 @@ class C3DMgr  {
 	U_CHAR		  sql;										// SQL database
   TCacheMGR *tcm;                     // Terrain cache
   C_QGT     *qgt;                     // Current QGT
-  U_INT      NbMOD;                   // Number of models
-  U_INT      NbOBJ;                   // Number of object
   //---------Decoding parameters -----------------------------
   int       dFactor;                  // Load factor
   //------------VOR OBJECT -----------------------------------
@@ -693,7 +690,7 @@ public:
  ~C3DMgr();
   void      TraceCount();
   void      LocateVOR();
-	void			LocateObjects(C_QGT *qgt);
+	int 			LocateObjects(C_QGT *qgt);
   void      NoTexture(char *fn,char *tn);
   void      Warning(CWobj *obj,char *msg);
   //------------------------------------------------------------
@@ -720,9 +717,7 @@ public:
   inline    GLUquadricObj *GetSphere()        {return sphere;}
   //------Statistical data -------------------------------------
   void      GetStats(CFuiCanva *cnv);
-  //-----------------------------------------------------------
-  inline void IncOBJ()                        {NbOBJ++;}
-  inline void DecOBJ()                        {NbOBJ--;}
+	//------------------------------------------------------------
 };
 
 //============================END OF FILE =================================================

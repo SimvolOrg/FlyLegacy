@@ -167,10 +167,8 @@ CIniSection::~CIniSection (void)
 void CIniSection::Clear (void)
 {
   std::map<string,CIniSetting*>::iterator i;
-  for (i=setting.begin(); i!=setting.end(); i++) {
-    CIniSetting *s = i->second;
-    delete s;
-  }
+  for (i=setting.begin(); i!=setting.end(); i++) delete (*i).second;
+  setting.clear();
 }
 
 //
@@ -482,7 +480,7 @@ int CIniFile::Load (const char* iniFilename)
   Clear ();
 
   // Declare local variables used in parsing of INI file lines
-  char section[64];
+  char sect[64];
   char key[64];
   char value[PATH_MAX];
   float f_value;
@@ -492,31 +490,31 @@ int CIniFile::Load (const char* iniFilename)
   // Begin parsing file
   char s[PATH_MAX];
   while (!feof (f)) {
+   *s = '§';
 		fgets (s, PATH_MAX, f);
+		s[PATH_MAX-1] = 0;
 		// ignore empty lines
 	  if ((strncmp (s, "\n", 1) == 0))		continue;
-
+		if (*s == '§')											continue;
     // First check for a new section header : [Section]
-    if (ParseSection (s, section))			fgets (s, PATH_MAX, f);
+    if (ParseSection (s, sect))			fgets (s, PATH_MAX, f);
     // New section header found
     // No new section header found, parse for key/value pair
 		
     if (!ParseKeyValue (s, key, value)) continue;
     //  Store the string anyway
-    Set (section, key, value);
+    Set (sect, key, value);
     // Parse the value to determine whether it is numeric (int/float)
     //   or string.
-		if (sscanf (value, "%f", &f_value) == 1) Set (section, key, f_value); 
+		if (sscanf (value, "%f", &f_value) == 1) Set (sect, key, f_value); 
 	 }
    fclose (f);
-
-   // Set success return code
-   return 1;
+	 return (section.size() != 0);
 }
 
-//
+//==============================================================================
 // Merge the contents of an INI settings file with the currently loaded settings
-//
+//==================================================================================
 int CIniFile::Merge (const char* iniFilename)
 {
   int rc = 0;
@@ -683,15 +681,15 @@ char* CIniFile::GetSectionName (int i)
  * INI functions defined in FlyLegacy.h
  */
 static CIniFile *ini;
-
+//=========================================================================
+//	Load FlyLegacy.ini
+//=========================================================================
 void LoadIniSettings (void)
 { ini = new CIniFile (); 
-
 	// Attempt to load INI settings from FlyLegacy.ini
-  if (ini->Load ("System/FlyLegacy.ini"))				return;					
-    // Could not load Fly! II settings from FlyLegacy.ini. 
-  if (ini->Load ("System/Fly.ini"))						return;
-   gtfo ("LoadIniSettings : Cannot read settings from Fly.ini");
+  if (ini->Load ("System/FlyLegacy.ini"))				return;	
+	TRACE("Invalid FlyLegecay.ini in /system");
+  gtfo ("LoadIniSettings : Cannot read settings from Fly.ini");
    
    /// \todo Delete Fly! II settings that are not supported
   }

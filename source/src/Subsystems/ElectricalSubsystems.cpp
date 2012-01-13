@@ -758,12 +758,9 @@ CSwitchSet::CSwitchSet (void)
 //  Destroy the set
 //-------------------------------------------------------------------------
 CSwitchSet::~CSwitchSet (void)
-{ std::vector<SMessage *>::iterator im;
-  for (im = msgs.begin(); im != msgs.end(); im++)
-  { SMessage *m = (*im);
-    delete m;
-  }
+{ for (U_INT  k=0; k < msgs.size(); k++) delete msgs[k];
   msgs.clear();
+	smsg.clear();
 }
 //-------------------------------------------------------------------------
 //  Read all parameters

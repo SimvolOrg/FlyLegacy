@@ -381,9 +381,14 @@ PlaneCheckList::PlaneCheckList(CVehicleObject *v)
 }
 //-------------------------------------------------------------------------
 PlaneCheckList::~PlaneCheckList()
-{	int end = autoM.size();
-	for (int k=0; k<end; k++) delete autoM[k];
+{	//--- Clear messages -------------------------
+	int end = autoM.size();
+	for (int k=0; k<end; k++)   delete autoM[k];
 	autoM.clear();
+	//--- Clear chapters -------------------------
+	end	= vCHAP.size();
+	for (int k=0; k < end;k++)	delete vCHAP[k];
+	vCHAP.clear();
 }
 //-------------------------------------------------------------------------
 //  Decode Check list
@@ -632,6 +637,7 @@ void CWPoint::Build(Tag t)
 	sDis			= 0;
 	mDis			= 0;
 	ilsF			= 0;
+	Mark[0]		= ' ';
 	Mark[1]		= 0;
 	strcpy(tkoRWY,"NONE");
 	strcpy(lndRWY,"NONE");

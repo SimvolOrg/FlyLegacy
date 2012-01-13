@@ -164,8 +164,6 @@ protected:
 public:
   std::vector<CDLLGauge*>    dll_gauge; // vector of dl gauges
 	//--- METHODS -----------------------------------------------------------
-  void FreeDLLGauge (void);
-
   CPanel (CCockpitManager *p,Tag id, const char* filename);
  ~CPanel (void);
 

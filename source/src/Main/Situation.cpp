@@ -904,7 +904,6 @@ void CSituation::Prepare (void)
 	// Create Database cache manager and populate first queues
 	globals->dbc->TimeSlice(2,(U_INT)-1);				// Force update
   globals->tcm->TimeSlice(2,(U_INT)-1);       // Force Update
-  //MEMORY_LEAK_MARKER ("SIT Prepare 3")
 
   /// SDK Stuffs JS/  Can we delete this????
   // sdk: don't know whether it's the right place or not ...

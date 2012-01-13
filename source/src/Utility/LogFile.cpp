@@ -43,7 +43,7 @@ CLogFile::CLogFile (const char* filename, const char* mode)
 // Destructor
 //
 CLogFile::~CLogFile (void)
-{
+{ 
   // Close file handle
 	if (f) {
 		fclose (f);

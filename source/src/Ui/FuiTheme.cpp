@@ -29,26 +29,24 @@
 
 using namespace std;
 
-//
+//==================================================================================
 // CFuiThemeWidget
-//
+//===================================================================================
 CFuiThemeWidget::CFuiThemeWidget (void)
 { black = MakeRGBA(0,0,0,255);
 }
-
+//------------------------------------------------------------------
+//	Destructor 
+//------------------------------------------------------------------
 CFuiThemeWidget::~CFuiThemeWidget (void)
-{
-  // Free bitmaps
+{ // Free bitmaps
   std::map<string,CBitmap*>::iterator i;
-  for (i=bmMap.begin(); i!=bmMap.end(); i++) {
-    CBitmap *bm = i->second;
-    SAFE_DELETE(bm);
-  }
+  for (i=bmMap.begin(); i!=bmMap.end(); i++) delete (*i).second;
   bmMap.clear();
-
   // Free other maps
   colourMap.clear();
   componentNameMap.clear();
+	flagSet.clear();
 }
 
 void CFuiThemeWidget::ParseBitmap (char* s)
@@ -277,12 +275,10 @@ CFuiTheme::CFuiTheme (const char *themeFilename)
 CFuiTheme::~CFuiTheme (void)
 {
   std::map<string,CFuiThemeWidget*>::iterator i;
-  for (i=widgetMap.begin(); i!=widgetMap.end(); i++) {
-    SAFE_DELETE (i->second);
-  }
+  for (i=widgetMap.begin(); i!=widgetMap.end(); i++) delete (*i).second;
   widgetMap.clear();
 }
-
+//======================================================================================
 CFuiThemeWidget *CFuiTheme::GetWidget (string name)
 {
   CFuiThemeWidget *rc = NULL;

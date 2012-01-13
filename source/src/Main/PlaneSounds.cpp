@@ -52,9 +52,7 @@ CVehicleSound::CVehicleSound (char *sfxFilename)
 CVehicleSound::~CVehicleSound (void)
 { // Clean up engine sound sub-object instances
   std::vector<CEngineSound*>::iterator i;
-  for (i=engineSounds.begin(); i!=engineSounds.end(); i++) {
-    delete (*i);
-  }
+  for (i=engineSounds.begin(); i!=engineSounds.end(); i++) delete (*i); 
   //---Release Engine sounds buffers ---------------------------
   CAudioManager *snd = globals->snd;
   snd->ReleaseSoundBUF('crkE');           // External engine start

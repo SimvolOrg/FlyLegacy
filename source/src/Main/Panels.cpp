@@ -204,27 +204,19 @@ CPanel::~CPanel (void)
   //--- Clear all vectors ----------------------------------------
   dgag.clear();
   gage.clear();
-  //--------------------------------------------------------------
+	sgag.clear();
+  //---Remove texture objets -------------------------------------
   glDeleteTextures(1,&txOBJ);
   glDeleteTextures(1,&ngOBJ);
 	glDeleteBuffers (1,&gVBO);
 	glDeleteBuffers (1,&pVBO);
 	if (gBUF)		delete [] gBUF;
 	if (pBUF)		delete [] pBUF;
-  FreeDLLGauge ();
+	//-------------------------------------------------------------
+	for (U_INT k=0; k< dll_gauge.size(); k++) delete dll_gauge[k];
+	dll_gauge.clear ();
 }
 
-//-----------------------------------------------------------
-//  Free DLL resources
-//-----------------------------------------------------------
-void CPanel::FreeDLLGauge (void)
-{ // delete all pointers in dll_gauge
-  std::vector <CDLLGauge *>::iterator idllG;
-  for (idllG = dll_gauge.begin (); idllG != dll_gauge.end (); ++idllG) {
-    SAFE_DELETE (*idllG);
-  }
-  dll_gauge.clear (); // 
-}
 //-----------------------------------------------------------
 //	JSDEV* Prepare message for all the panel gauges
 //-----------------------------------------------------------

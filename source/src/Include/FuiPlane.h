@@ -77,7 +77,7 @@ class CFuiFuel: public CFuiWindow {
   //----Fuel system --------------------------------------------------
   CFuelSystem     *gas;
   //----ARRAY Of Fuel Cells ------------------------------------------
-  std::vector<CFuelCell*>   fcel;
+  std::vector<CFuelCell*> fcel;
   //----------Fuel parameters ----------------------------------------
   CGasLine          ttl;                  // Title
   CGasLine          all;                  // All tanks

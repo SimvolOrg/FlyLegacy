@@ -306,8 +306,8 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
 	pBox->ColorText(white);
 	pBox->Hide();
 	//------ Properties ------------------------------------
-	SetXRange(100,1024);               // width
-	SetYRange( 40,800);
+	SetXRange(490,1024);               // width
+	SetYRange( 50,800);
   //------------------------------------------------------
   geop.lon  = 0;
   geop.lat  = 0;
@@ -361,7 +361,6 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   InitMenu();
   //----------------------------------------------------------
   DocInfo.rgba = 0;
-  xMini = 370;
   //----------------------------------------------------------
   Cam = globals->cap;
   //--------Radio interface ----------------------------------

@@ -262,10 +262,7 @@ void CWeatherManager::SetDefault()
 //-----------------------------------------------------------------------
 CWeatherManager::~CWeatherManager(void)
 { std::map<Tag,CMeteoArea*>::iterator ip;
-  for (ip = Areas.begin(); ip != Areas.end(); ip++)
-  { CMeteoArea *ma = (*ip).second;
-    delete ma;          //delete area;
-  }
+  for (ip = Areas.begin(); ip != Areas.end(); ip++) delete ip->second;
   Areas.clear();
 }
 //-----------------------------------------------------------------------

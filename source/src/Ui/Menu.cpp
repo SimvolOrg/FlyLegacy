@@ -34,6 +34,7 @@
 #include "../Include/Sky.h"
 #include "../Include/Export.h"
 #include "../Include/Import.h"
+#include "../Include/TerrainCache.h"
 //==================================================================================
 extern Tag    snexttag (char* s, int maxLength, SStream *stream);
 
@@ -78,7 +79,6 @@ void toggle_window (Tag id, const char* winFilename)
     globals->fui->CreateFuiWindow (id);
   }
 }
-
 
 //=========================================================================================
 // File Menu

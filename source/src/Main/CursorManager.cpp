@@ -381,10 +381,8 @@ CCursorManager::CCursorManager (void)
 //  Destroy resources
 //-----------------------------------------------------------------
 CCursorManager::~CCursorManager()
-{ std::map<Tag,CCursor*>::iterator iter;
-  for (iter=cache.begin(); iter!=cache.end(); iter++) {
-    delete iter->second;
-  }
+{ std::map<Tag,CCursor*>::iterator ra;
+  for (ra=cache.begin(); ra!=cache.end(); ra++) delete ra->second;
   cache.clear();
 }
 //-----------------------------------------------------------------

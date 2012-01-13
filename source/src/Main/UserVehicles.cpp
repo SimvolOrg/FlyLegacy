@@ -917,12 +917,15 @@ CElectricalSystem::~CElectricalSystem (void)
 { //--delete all amp subsystems -------------
   std::vector<CSubsystem*>::iterator i;
   for (i=subs.begin(); i!=subs.end(); i++) delete (*i);
+	subs.clear();
   //--delete all dlls -----------------------
   std::vector<CDLLSubsystem*>::iterator d;
   for (d=sdll.begin(); d!=sdll.end(); d++) delete (*d);
+	sdll.clear();
   //--delete all external subsystems --------
   std::vector<CSubsystem*>::iterator p;
   for (p=sext.begin(); p!=sext.end(); p++) delete (*p);
+	sext.clear();
 }
 //-----------------------------------------------------------
 //  Free DLL resources
@@ -1839,9 +1842,9 @@ CPitotStaticSystem::CPitotStaticSystem (CVehicleObject *v, char* pssFilename)
 }
 //--------------------------------------------------------------------
 CPitotStaticSystem::~CPitotStaticSystem (void)
-{
-  std::vector<CPitotStaticPort*>::iterator i;
+{ std::vector<CPitotStaticPort*>::iterator i;
   for (i=ports.begin(); i!=ports.end(); i++) delete *i;
+	ports.clear();
 }
 
 int CPitotStaticSystem::Read (SStream *stream, Tag tag)
@@ -2244,15 +2247,6 @@ CCameraViewsList::~CCameraViewsList (void)
 void CCameraViewsList::FreeList (void)
 {
   SAFE_FREE (type);
-  //
-  //#ifdef _DEBUG	
-  //{	FILE *fp_debug;
-	 // if(!(fp_debug = fopen("__DDEBUG_.txt", "a")) == NULL)
-	 // {
-		//  fprintf(fp_debug, "CCameraViewsList::FreeList\n");
-		//  fclose(fp_debug); 
-  //}	}
-  //#endif
 }
 
 int CCameraViewsList::ReadCamerasFile (void)
@@ -2412,6 +2406,7 @@ CEngine::~CEngine (void)
   SAFE_DELETE (sound);
   SAFE_DELETE (ngnModel);
   SAFE_DELETE (engprp); // lc 052310 +
+	cowlPart.clear();
 }
 //---------------------------------------------------------------------
 //	JSDEV* Identify engine message
@@ -3031,14 +3026,15 @@ CEngineManager::CEngineManager (CVehicleObject *v,char* ngnFilename)
     CloseStream (&s);
   }
 }
-
+//----------------------------------------------------------------------
+//	remove all engine definitions
+//----------------------------------------------------------------------
 CEngineManager::~CEngineManager (void)
-{  
-  for (ie=engn.begin(); ie!=engn.end(); ie++) {
-    delete *ie;
-  }
+{ for (ie=engn.begin(); ie!=engn.end(); ie++)		delete *ie;
 }
-
+//----------------------------------------------------------------------
+//	Read  engine parameters
+//----------------------------------------------------------------------
 int CEngineManager::Read (SStream *stream, Tag tag)
 {
   int rc = TAG_IGNORED;
@@ -3320,11 +3316,9 @@ CControlMixerChannel::CControlMixerChannel (CVehicleObject *v)
 //  Destroy this object
 //---------------------------------------------------------------
 CControlMixerChannel::~CControlMixerChannel (void)
-{
-  std::vector<CAeroControlChannel*>::iterator i;
-  for (i=aerochannel.begin(); i!=aerochannel.end(); i++) {
-    delete (*i);
-  }
+{ std::vector<CAeroControlChannel*>::iterator i;
+  for (i=aerochannel.begin(); i!=aerochannel.end(); i++)   delete (*i);
+	aerochannel.clear();
 }
 //----------------------------------------------------------------
 //  Set Name
@@ -3456,11 +3450,10 @@ CControlMixer::CControlMixer (CVehicleObject *v,char* mixFilename)
 //  Destroy this object
 //---------------------------------------------------------------------
 CControlMixer::~CControlMixer (void)
-{
-  std::map<string,CControlMixerChannel*>::iterator i;
-  for (i=mixerMap.begin(); i!=mixerMap.end(); i++) {
-    delete i->second;
-  }
+{ std::map<string,CControlMixerChannel*>::iterator i;
+  for (i=mixerMap.begin(); i!=mixerMap.end(); i++)  delete i->second;
+  mixerMap.clear();
+	channel.clear();
 }
 //--------------------------------------------------------------------
 //  Add one mixer

@@ -683,7 +683,8 @@ void CAptObject::RemPOD()
 //  destroy Airport Object
 //  NOTE:  Before proceeding a new organisation for airports, we must avoid thz teleport
 //         case where the QGT are destroyed first then the airport object (then the Quad
-//          and the textureDef are no longer allocated)
+//         and the textureDef are no longer allocated)
+// Dont destroy the ground tiles as they will be freed from the Terrain Manager
 //----------------------------------------------------------------------------------
 CAptObject::~CAptObject()
 { if (apm) RemPOD();
@@ -692,17 +693,13 @@ CAptObject::~CAptObject()
 	if (cVBO)	glDeleteBuffers(1,&cVBO);
 	if (gVBO) glDeleteBuffers(1,&gVBO);
   //--- free tarmac segments ------------------
-	std::vector<CTarmac *>::iterator it;
-	for (it=tmcQ.begin(); it!=tmcQ.end(); it++)
-	{	CTarmac *tmac = (*it);
-		delete tmac;
-	}
+	for (U_INT k = 0; k < tmcQ.size(); k++) delete tmcQ[k];
+	tmcQ.clear();
 	//--- Free ground VBO -----------------------
 	if (gBUF)		delete [] gBUF;
 	//--- free BGR ------------------------------
 	if (txBGR)	delete txBGR;
 	//-------------------------------------------
-	tmcQ.clear();
   UnmarkGround();
 	gluDeleteQuadric(sphere);
 }

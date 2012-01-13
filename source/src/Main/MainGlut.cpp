@@ -296,9 +296,7 @@ void reshape ( int w, int h )
 // GLUT mouse motion event
 //=====================================================================================
 void motion2 ( int x, int y )
-{ globals->sScreen.bMouseOn  = true;
-  globals->mScreen.bMouseOn = false;
-  globals->cScreen = &globals->sScreen;
+{ globals->cScreen = &globals->sScreen;
 
   // Send mouse motion to cockpit manager for panel scrolling
   CCockpitManager *pit = globals->pit;
@@ -314,9 +312,9 @@ void motion2 ( int x, int y )
 //  MOUSE MOTION
 //===========================================================================
 void motion ( int x, int y )
-{ globals->cum->SetCursor(Cursor);
-  globals->sScreen.bMouseOn = false;
-  globals->mScreen.bMouseOn = true;
+{ CCursorManager *cum = globals->cum;
+	if (0 == cum)		return;
+  cum->SetCursor(Cursor);
   globals->cScreen = &globals->mScreen;
   // Send mouse motion data to FUI
   bool used = globals->fui->MouseMove (x, y);
@@ -329,7 +327,7 @@ void motion ( int x, int y )
     if (pit)  used = pit->MouseMove(x,y);
   }
   // Send mouse motion to cursor manager
-  globals->cum->MouseMotion (x, y);
+  cum->MouseMotion (x, y);
   // Force screen redraw
   glutPostRedisplay () ;
 }
@@ -339,8 +337,6 @@ void motion ( int x, int y )
 //============================================================================
 void passive_motion2 ( int x, int y )
 { bool used = false;
-  globals->sScreen.bMouseOn = true;
-  globals->mScreen.bMouseOn = false;
   globals->cScreen = &globals->sScreen;
 
   // Send mouse motion for cockpit manager for panel scrolling
@@ -357,9 +353,9 @@ void passive_motion2 ( int x, int y )
 //  PASSIVE MOTION (No click)
 //============================================================================
 void passive_motion ( int x, int y )
-{ globals->cum->SetCursor(Cursor);
-  globals->sScreen.bMouseOn = false;
-  globals->mScreen.bMouseOn = true;
+{ CCursorManager *cum = globals->cum;
+	if (0 == cum)		return;
+  cum->SetCursor(Cursor);
   globals->cScreen = &globals->mScreen;
 
   // Send mouse motion to PU
@@ -372,7 +368,7 @@ void passive_motion ( int x, int y )
     if (pit)        pit->MouseMove(x,y);
   }
   // Send mouse motion to cursor manager
-  globals->cum->MouseMotion (x, y);
+  cum->MouseMotion (x, y);
   // Force screen redraw
   glutPostRedisplay () ;
 }
@@ -618,7 +614,6 @@ void redraw ()
 
   case APP_EXIT:
     // Exit application...program does not return from this function
-    CleanupExitScreen ();
     ExitApplication ();
     break;
 
@@ -696,9 +691,9 @@ void EnterWindowManagerMainLoop (void)
 // Cleanup GLUT
 //===========================================================================
 void CleanupWindowManager (void)
-{
+{ TRACE("glutLeaveGameMode()");
   // Exit fullscreen mode
   glutLeaveGameMode ();
 }
-#endif // USE_GLUT
 //================End of File ===============================================
+#endif // USE_GLUT

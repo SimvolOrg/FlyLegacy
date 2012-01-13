@@ -2125,8 +2125,8 @@ public:
 //---------------------------------------------------------------------------------------------------------
 class CPneumaticSubsystem : public CDependent {
 public:
-  CPneumaticSubsystem              (void);
-
+  CPneumaticSubsystem();
+ ~CPneumaticSubsystem();
   // CStreamObject methods
   virtual int   Read               (SStream *stream, Tag tag);
 //  virtual void  ReadFinished     (void);

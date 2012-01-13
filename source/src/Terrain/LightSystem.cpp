@@ -1700,8 +1700,8 @@ CExternalLightManager::~CExternalLightManager (void)
 { // Delete all allocated external light objects
 	glDeleteTextures(1,&txo);
   std::map<Tag,CExternalLight*>::iterator i;
-  for (i=nLit.begin(); i!=nLit.end(); i++) SAFE_DELETE (i->second);
-  for (i=sLit.begin(); i!=sLit.end(); i++) SAFE_DELETE (i->second);
+  for (i=nLit.begin(); i!=nLit.end(); i++) delete (i->second);
+  for (i=sLit.begin(); i!=sLit.end(); i++) delete (i->second);
 	nLit.clear();
 	sLit.clear();
 }

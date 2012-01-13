@@ -307,9 +307,12 @@ CAcmPart::CAcmPart (CModelACM *md,int n, float minValue, float maxValue)
 }
 //-------------------------------------------------------------------------------------
 //  Destroy the part
+//	Do not destroy the child list parts.  They are deleted form top level
 //-------------------------------------------------------------------------------------
 CAcmPart::~CAcmPart (void)
 { globals->txw->Free3DTexture(txRef);
+//  TRACE("DELETE PART %s",name);
+	childList.clear();
   SAFE_DELETE_ARRAY (kFrame);
 }
 //-------------------------------------------------------------------------------------
@@ -1289,9 +1292,9 @@ CModelACM::~CModelACM (void)
 	if (oVBO)		glDeleteBuffers(1,&oVBO);
 	//--- Delete all parts -----------------------------
   std::map<string,CAcmPart*>::iterator i;
-  for (i=partMap.begin(); i!=partMap.end(); i++) {
-    delete (i->second);
-  }
+  for (i=partMap.begin(); i!=partMap.end(); i++)  delete (i->second);
+  partMap.clear();
+	mapParent.clear();
 }
 //---------------------------------------------------------------------------
 #define FLT_DELTA float(45.0)
@@ -1646,6 +1649,7 @@ CAcmGears::CAcmGears(CVehicleObject *v,char *n)
 }
 //--------------------------------------------------------------------
 //  Destroy this object
+//	Dont delete ani AcmPart as they will be deleted at top level
 //--------------------------------------------------------------------
 CAcmGears::~CAcmGears()
 { if (sTire)  delete sTire;

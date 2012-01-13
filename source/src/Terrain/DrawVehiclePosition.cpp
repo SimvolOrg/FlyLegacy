@@ -72,7 +72,8 @@ CDrawPosition::CDrawPosition (CVehicleObject *mv)
 //  Destroy object
 //--------------------------------------------------------------------
 CDrawPosition::~CDrawPosition (void)
-{;}
+{	point_pos.clear();
+}
 //--------------------------------------------------------------------
 //  Reset the points and toggle on/off
 //--------------------------------------------------------------------

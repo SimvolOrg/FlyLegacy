@@ -121,7 +121,7 @@ typedef struct {
 //   recorded.
 //==================================================================================
 struct PFSPODFILE {
-	unsigned int	share;												// Sharing usage
+	unsigned int  user;													// User count
   PFSPOD*       pod;                          // Reference to containing POD
   char          name[POD_FILENAME_LENGTH+1];  // Name of file within the POD
   unsigned int  offset;                       // Starting offset within the POD
@@ -130,7 +130,10 @@ struct PFSPODFILE {
   unsigned int  checksum;                     // Checksum
   unsigned int  priority;                     // Mount priority
 	//----------------------------------------------------------------------
-	PFSPODFILE::PFSPODFILE()	{share = 0; }
+	PFSPODFILE::PFSPODFILE()	{user = 0;}
+	void		PFSPODFILE::IncUser()			{user++;}
+	void		PFSPODFILE::DecUser()			{user--; if (0 == user) delete this;}
+	bool		PFSPODFILE::NoUser()			{return (user == 0);}
 };
 
 //===================================================================================
@@ -161,7 +164,7 @@ typedef struct {
 	std::map<std::string,PFSPODFILE*>				masterFileList;
   // Members to support pfindfirst() and pfindnext() methods
 	std::map<std::string,PFSPODFILE*>::iterator iterFind;
-  char                                    patternFind[POD_FILENAME_LENGTH+1];
+  char    patternFind[POD_FILENAME_LENGTH+1];
   
 } PFS;
 

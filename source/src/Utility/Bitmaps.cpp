@@ -1411,7 +1411,7 @@ void CBitmap::AssignNUL()
 //   ensure compatibility with the overridden delete operator
 //=================================================================================
 void *CBitmap::operator new (size_t size)
-{
+{ globals->NbBMP++;
   return malloc (sizeof(CBitmap));
 }
 
@@ -1427,7 +1427,9 @@ void *CBitmap::operator new (size_t size)
 //==================================================================================
 void CBitmap::operator delete(void *obj)
 { CBitmap *map = (CBitmap*)obj;
-  if (map->m_bm.type != TYPE_NULL) free (obj);
+  if (map->m_bm.type == TYPE_NULL) return;
+	free (obj);
+	globals->NbBMP--;
   return;
 }
 //=================================================================================

@@ -806,10 +806,13 @@ void CExport::ExportCoastInDB()
         }
   }
   globals->sqm->SEAcommit();
+	globals->appState = APP_EXIT_SCREEN;
   return;
 }
 //-----------------------------------------------------------------------------------------
 //  Compute next detail tile Key in QGT
+//	Coast line data are register per Detail Tile. 
+//	This function compute the (x,z) coordinate of each detail tile in QGT
 //-----------------------------------------------------------------------------------------
 bool CExport::NextCoastKey()
 { if (qdr == 4) return false;
@@ -870,12 +873,8 @@ bool CExport::NextCoastKey()
 COAST_VERTEX *CExport::CoastCount(COAST_VERTEX *pol)
 { U_SHORT nbv = pol->Nbv;                     // Number of vertices
   rec.nbv += nbv;                             // Number of vertices recorded
-  COAST_VERTEX *adv = pol;
-  for (U_SHORT k = 0; k != nbv; k++)
-  { total += sizeof(COAST_VERTEX);
-    adv++;
-  }
-  return adv;
+	total += (nbv * sizeof(COAST_VERTEX));
+  return pol + nbv;
 }//-----------------------------------------------------------------------------------------
 //  Export this File in Database
 //-----------------------------------------------------------------------------------------
@@ -892,7 +891,6 @@ void CExport:: ExportCoastFile(char *name,int gx,int gz)
   col = 0;
   qdr = 0;
   //--------------------------------------------------------------------------
-//  sqm->SEAtransaction();
   while (NextCoastKey())
   { char *data = sea->GetCoast(ax,az);
     if (0 == data)  continue;
@@ -900,14 +898,15 @@ void CExport:: ExportCoastFile(char *name,int gx,int gz)
     rec.dtk  = (ax << 16) | az;                            // DET (X-Z)Key
     rec.data = data;
     rec.nbv  = 0;
-    COAST_VERTEX *pol = (COAST_VERTEX*)(data + sizeof(U_SHORT));
-    int nbp = *((U_SHORT*)data);
-    total   = sizeof(U_SHORT);
+		COAST_HEADER *hdr = (COAST_HEADER*)data;
+    COAST_VERTEX *pol = (COAST_VERTEX*)(data + sizeof(COAST_HEADER));
+    int nbp = hdr->nbp;
+    total   = sizeof(COAST_HEADER);
     for (int k = 0; k != nbp; k++) pol = CoastCount(pol);
     rec.dim = total;
     sqm->WriteCoastRec(rec);
   }
-//  sqm->SEAcommit();
+	delete sea;
   return;
 }
 //=========================================================================================
@@ -1086,7 +1085,7 @@ void CExport::CloseSceneries()
   for   (int z=0; z<512; z++)
   {  for(int x=0; x<512; x++)
       { U_INT key = QGTKEY(x,z);
-				CSceneryDBM::Instance().Deregister (key);
+				globals->scn->Deregister (key);
       }
     }
   globals->fui->DrawNoticeToUser(mtm,500);
@@ -1684,7 +1683,7 @@ int CExport::ExecuteOBJ()
 			return EXP_OBJ_MOUNT;
 		//--- Mount scenery---------------
 		case EXP_OBJ_MOUNT:
-			CSceneryDBM::Instance().MountAll();
+			globals->scn->MountAll();
 			return EXP_OBJ_FFILE;
 		//--- Search first file ----------
 		case EXP_OBJ_FFILE:
@@ -1712,7 +1711,7 @@ int CExport::ExecuteOBJ()
 //---------------------------------------------------------------------------
 void CExport::CheckSceneryFiles()
 { char *dir = "DATA/D*/*.S*";
-	CSceneryDBM::Instance().MountAll();
+	globals->scn->MountAll();
   SCENE("===== SEARCH FOR SCENERY FILES ALREADY IN DATABASE OBJ ===================");
   char *n1 = "D255167/TM_FRW_B.S01";
 	char* name = (char*)pfindfirst (&globals->pfs,dir);
@@ -1777,7 +1776,7 @@ int  CExport::ExecuteTRN()
 				return EXP_TRN_MOUNT;
 		//--- Mount scenry files ------------------
 		case EXP_TRN_MOUNT:
-				CSceneryDBM::Instance().MountAll();
+				globals->scn->MountAll();
 				return EXP_TRN_FFILE;
 		//--- Get first file ----------------------
 		case EXP_TRN_FFILE:

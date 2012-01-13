@@ -37,8 +37,7 @@ using namespace std;
 //   Global function to process a file from a POD 
 //==========================================================================
 int ScnpodCB(PFS *pfs, PFSPODFILE *p)
-{	int stop = CSceneryDBM::Instance().CheckForScenery(p);
-	delete p;
+{	int stop = globals->scn->CheckForScenery(p);
 	return stop;
 }
 //==========================================================================
@@ -73,10 +72,12 @@ void CSceneryPOD::Remove()
 // CSceneryDBM
 //
 //=================================================================================
-// Define the singleton instance of the scenery set database
-CSceneryDBM CSceneryDBM::instance;
+CSceneryDBM::CSceneryDBM()
+{	globals->scn	= this;	
+	Init();
+}	
 
-//
+//--------------------------------------------------------------------------------
 // "Constructor" for scenery set database singleton.  Search for any scenery files
 //   that describe sliced scenery areas.  Scenery files are stream files
 //   with the .SCF extension that reside in any sub-directory from the
@@ -105,6 +106,7 @@ void CSceneryDBM::Init (void)
 	SCENE("========END INITIAL LOAD==================");
 	return;
 }
+
 //--------------------------------------------------------------------------------
 //	Add a pod to the QGT pack
 //--------------------------------------------------------------------------------
@@ -131,7 +133,12 @@ void	CSceneryDBM::AddPodToGBT(CSceneryPOD *pod)
 	sgbt[key] = pak;
 	return;
 }
-
+//--------------------------------------------------------------------------------
+//	Destructor
+//--------------------------------------------------------------------------------
+CSceneryDBM::~CSceneryDBM()
+{	Cleanup();
+}
 //--------------------------------------------------------------------------------
 // "Destructor" for scenery set database singleton.  This method should be called
 //   when the database is no longer needed to avoid an apparent memory leak.
@@ -142,7 +149,7 @@ void CSceneryDBM::Cleanup (void)
 	for (ip=sqgt.begin(); ip!=sqgt.end(); ip++) delete (*ip).second;
 	//----Clean GBT list -------------------------
 	std::map<U_INT,CSceneryPack*>::iterator ig;
-	for (ig=sgbt.begin(); ig!=sgbt.end(); ip++) delete (*ip).second;
+	for (ig=sgbt.begin(); ig!=sgbt.end(); ig++) delete (*ig).second;
 }
 
 //--------------------------------------------------------------
@@ -228,7 +235,7 @@ void CSceneryDBM::ProcessPOD(char *path,char *fn)
 
 }
 //--------------------------------------------------------------
-// Check for scenery to process
+// Check for scenery to process in each file in the POD
 //	return 0 => Continue to look into POD
 //	return 1 => Stop to look
 //--------------------------------------------------------------
@@ -390,19 +397,14 @@ CSceneryPack::CSceneryPack(U_INT k)
 //	Destroy everything
 //------------------------------------------------------------------
 CSceneryPack::~CSceneryPack()
-{	std::vector<CSceneryPOD*>::iterator ip;
-	for (ip=apod.begin(); ip!=apod.end(); ip++)	delete (*ip);
+{	for (U_INT k = 0; k < apod.size(); k++) delete apod[k];
 	apod.clear();
 }
 //------------------------------------------------------------------
 //	Mount all pods not already mounted
 //------------------------------------------------------------------
 void CSceneryPack::MountPODs(CSceneryDBM *dbm)
-{	std::vector<CSceneryPOD*>::iterator ip;
-  for (ip=apod.begin(); ip!=apod.end(); ip++)
-	{	CSceneryPOD *pod = (*ip);
-		pod->Mount();
-	}
+{	for (U_INT k=0; k < apod.size(); k++) apod[k]->Mount();
 	return;
 }
 

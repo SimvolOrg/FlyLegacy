@@ -97,20 +97,15 @@ CAerodynamicModel::CAerodynamicModel (CVehicleObject *v, char* svhFilename)
 //  Destroy it
 //----------------------------------------------------------------------
 CAerodynamicModel::~CAerodynamicModel (void)
-{
-  // Delete all members of airfoil and wing maps
-  std::map<string,CAeroModelAirfoil*>::iterator iAirfoil;
-  for (iAirfoil=airfoilMap.begin(); iAirfoil!=airfoilMap.end(); iAirfoil++) {
-    CAeroModelAirfoil* af = iAirfoil->second;
-    delete af;
-  }
-
-  std::map<string,CAeroModelWingSection*>::iterator iWing;
-  for (iWing=wingMap.begin(); iWing!=wingMap.end(); iWing++) {
-    CAeroModelWingSection* ws = iWing->second;
-    delete ws;
-  }
-
+{ // Delete all members of airfoil and wing maps
+  std::map<string,CAeroModelAirfoil*>::iterator ra;
+  for (ra=airfoilMap.begin(); ra!=airfoilMap.end(); ra++) delete ra->second;
+	airfoilMap.clear();
+	//---------------------------------------------------------------
+  std::map<string,CAeroModelWingSection*>::iterator rw;
+  for (rw=wingMap.begin(); rw!=wingMap.end(); rw++) delete rw->second;
+	wingMap.clear();
+	//---------------------------------------------------------------
   SAFE_DELETE (log);
 }
 //----------------------------------------------------------------------
@@ -794,17 +789,16 @@ CAeroModelWingSection::CAeroModelWingSection (CVehicleObject *v,char* name)
 CAeroModelWingSection::~CAeroModelWingSection (void)
 { SAFE_DELETE (mflap);
   std::map<string,CAeroModelFlap*>::iterator i;
-  for (i=flapMap.begin(); i!=flapMap.end(); i++) {
-    delete i->second;
-  }
-  for (i=spoilerMap.begin(); i!=spoilerMap.end(); i++) {
-    delete i->second;
-  }
-  for (i=trimMap.begin(); i!=trimMap.end(); i++) {
-    delete i->second;
-  }
+  for (i=flapMap.begin(); i!=flapMap.end(); i++)	delete i->second;
+	flapMap.clear();
+	//----------------------------------------------------
+  for (i=spoilerMap.begin(); i!=spoilerMap.end(); i++) delete i->second;
+  spoilerMap.clear();
+	//----------------------------------------------------
+  for (i=trimMap.begin(); i!=trimMap.end(); i++)	delete i->second;
+  trimMap.clear();
+	//---------------------------------------------------
   SAFE_DELETE (damage);
-
 //  SAFE_DELETE (flpS);
   SAFE_DELETE (mflpS);
 
@@ -1322,10 +1316,8 @@ CPhysicModelAdj::CPhysicModelAdj (CVehicleObject *v,char* phyFilename)
 //----------------------------------------------------------------
 CPhysicModelAdj::~CPhysicModelAdj (void)
 { std::map<std::string,AERO_ADJ*>::iterator it;
-  for (it = aero.begin(); it != aero.end(); it++)
-  {AERO_ADJ *itm = (*it).second;
-   delete itm;
-  }
+  for (it = aero.begin(); it != aero.end(); it++) delete it->second;
+	aero.clear();
 #ifdef _DEBUG
   DEBUGLOG ("CPhysicModelAdj destructor");
 #endif

@@ -50,9 +50,8 @@ CDatabaseTemplateItem::CDatabaseTemplateItem (void)
 CDatabaseTemplate::~CDatabaseTemplate (void)
 {
   std::vector<CDatabaseTemplateItem*>::iterator i;
-  for (i=item.begin(); i!=item.end(); i++) {
-    delete *i;
-  }
+  for (i=item.begin(); i!=item.end(); i++) delete (*i);
+  item.clear();
 }
 
 //

@@ -596,19 +596,12 @@ CGroundSuspension::CGroundSuspension (CVehicleObject *v,char* whlFilename,  CWei
 //------------------------------------------------------------------------------
 CGroundSuspension::~CGroundSuspension (void)
 { 
-#ifdef _DEBUG
-  DEBUGLOG ("CGroundSuspension::~CGroundSuspension");
-#endif
   SAFE_DELETE (mstbl);
   SAFE_DELETE (mbtbl);
-  std::vector<CSuspension *>::const_iterator it_whel;
-  for (it_whel = whl_susp.begin (); it_whel != whl_susp.end (); it_whel++) {
-    delete (*it_whel);
-  }
-  std::vector<CWhl *>::const_iterator it_bmpr;
-  for (it_bmpr = whl_bump.begin (); it_bmpr != whl_bump.end (); it_bmpr++) {
-    delete (*it_bmpr);
-  }
+	for (U_INT k=0; k < whl_susp.size(); k++) delete whl_susp[k];
+	whl_susp.clear();
+	for (U_INT k=0; k < whl_bump.size(); k++) delete whl_bump[k];
+	whl_bump.clear();
 }
 //------------------------------------------------------------------------------
 // Read all parameters
@@ -851,7 +844,7 @@ CBumper::CBumper (char *name_, CWeightManager *wghman, char type)
 //  Destroy it
 //---------------------------------------------------------------------------------
 CBumper::~CBumper (void)
-{}
+{	vfx_.clear();}
 //---------------------------------------------------------------------------------
 //  Read all parameters
 //---------------------------------------------------------------------------------

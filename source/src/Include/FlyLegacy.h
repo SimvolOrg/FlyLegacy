@@ -1302,9 +1302,10 @@ typedef struct SDLLObject
 //  JS NOTE:  replace Sender by a Tag because the field was not used
 //            coherently.  Gauges and subsytems where stored in this field
 //            without any mean to know which one
+//	Add a first tag used only to identify this structure when memory leak occurs
 //---------------------------------------------------------------------------
 typedef struct SMessage
-{
+{ Tag								mem;						// Memory type
   unsigned int      id;				      // message ID
   unsigned int      group;			    // target group ID
   EMessageDataType  dataType;       // result data type
@@ -1343,7 +1344,8 @@ typedef struct SMessage
   } user;
   //--- Constructor -------------------------------
   SMessage()
-  { memset(this,0,sizeof(SMessage)); }
+  { memset(this,0,sizeof(SMessage)); 
+		mem = 'SMSG'; }
 } SMessage;
 //==============================================================================
 typedef struct SSurface
@@ -1893,21 +1895,22 @@ protected:
 };
 
 //===============================================================================
-//  CShared is a basic class for sharing an object
+//  QGTHead is a basic class for sharing an object
 //  It provide a user count and a delete mecanism when user count is 0
 //===============================================================================
-class CShared {
+class QGTHead {
 protected:
   pthread_mutex_t		mux;					// Mutex for lock
   unsigned int Users;
   //-----------------------------------------------------
 public:
-           CShared();
-  virtual ~CShared() {}
+           QGTHead();
+  virtual ~QGTHead() {}
   //----Count management --------------------------------
   void  IncUser();
-  void  DecUser();
+  bool  DecUser();
   //-----------------------------------------------------
+	virtual void GetTrace(int *t,int *x,int *z)		{;}
   virtual void TraceDelete() {};
 };
 //==============================================================================
@@ -1917,20 +1920,20 @@ public:
 class CPTR {
   //----Attribut is a pointer to a shared object --------
 protected:
-  CShared *obj;
+  QGTHead *obj;
   //----Methods -----------------------------------------
 public:
   CPTR() {obj = 0;}
   //--------Define assignement and access operators ------
-  void operator=(CShared *p);
-  void operator=(CShared &n);
+  void operator=(QGTHead *p);
+  void operator=(QGTHead &n);
   void operator=(CPTR    &q);
   //--------Define Access operator ----------------------
-  inline CShared* operator->() {return obj;}
-  inline bool     operator==(CShared *itm) {return (obj == itm);}
+  inline QGTHead* operator->() {return obj;}
+  inline bool     operator==(QGTHead *itm) {return (obj == itm);}
   inline bool     Assigned()  {return (obj != 0);}
   inline bool     IsNull()    {return (0 == obj);}
-  inline CShared *Obj()       {return obj;}
+  inline QGTHead *Obj()       {return obj;}
 };
 
 
@@ -2115,6 +2118,7 @@ class CAtmosphereModelJSBSim;     // Atmosphere
 class CEngine;                    // Engine instance
 class CSuspension;                // Wheel suspension
 class CSoundOBJ;                  // Sound object
+class CSceneryDBM;								// Scenery set
 //----PANEL -----------------------------------------------------
 class CGauge;
 class CKAP140Panel;
@@ -3255,6 +3259,14 @@ public:
   char  Not(U_INT p)    {return (prop & p)?(0):(1);}
 };
 //============================================================================
+//  STRUCTURE FOR COAST LINE HEADER
+//============================================================================
+struct COAST_HEADER {
+	Tag			mem;													// Memory identifier
+	U_SHORT nbp;													// Number of polygon
+	U_SHORT rfu;													// Not used
+	};
+//============================================================================
 //  STRUCTURE FOR COAST DETAIL TILE
 //============================================================================
 struct COAST_VERTEX {
@@ -3289,7 +3301,7 @@ typedef enum {
   EL_MULT = 2,
 } ElevationEtype;
 //=========================================================================
-//  COAST RECORD
+//  COAST RECORD IN DATA BASE
 //=========================================================================
 typedef struct {
     U_INT qtk;                                      // QGT key
@@ -3491,7 +3503,6 @@ void CleanupSplashScreen (void);
 
 void InitExitScreen (void);
 void RedrawExitScreen (void);
-void CleanupExitScreen (void);
 
 //
 // Window Manager API

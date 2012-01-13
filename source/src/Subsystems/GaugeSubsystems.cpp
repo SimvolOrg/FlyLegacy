@@ -381,6 +381,12 @@ CPneumaticSubsystem::CPneumaticSubsystem (void)
 	indn		= 0.6f;				// Initial for Gyro
 }
 //--------------------------------------------------------------------------------
+//  Destructor
+//--------------------------------------------------------------------------------
+CPneumaticSubsystem::~CPneumaticSubsystem()
+{	mPmp.clear();
+}
+//--------------------------------------------------------------------------------
 //  Read all parameters
 //--------------------------------------------------------------------------------
 int CPneumaticSubsystem::Read (SStream *stream, Tag tag)
@@ -1477,10 +1483,8 @@ CIndicatorSet::CIndicatorSet (void)
 //  Destructor
 //--------------------------------------------------------------------
 CIndicatorSet::~CIndicatorSet (void)
-{ std::vector<SMessage*>::iterator i;
-  for (i=smsg.begin(); i!=smsg.end(); i++) {
-    delete (*i);
-  }
+{	for (U_INT k=0; k < smsg.size(); k++) delete smsg[k]; 
+	smsg.clear();
 }
 //--------------------------------------------------------------------
 //  Read parameters

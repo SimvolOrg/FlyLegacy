@@ -49,7 +49,6 @@ std::map<int,std::string> g_vecAirportTypeS;
 std::map<int,std::string> g_vecNavaidTypeS;
 std::map<int,std::string> g_vecComTypeS;
 std::map<int,std::string> g_vecILSTypeS;
-
 std::map<int,std::string> g_vecWaypointUsageS;
 //====================================================================
 RD_COM GetComINDEX(U_INT mask);
@@ -5287,7 +5286,7 @@ CDatabaseManager::CDatabaseManager (void) {}
 
 void CDatabaseManager::Init (void)
 { //---------------------------------------------
-  MEMORY_LEAK_MARKER ("database_init")
+  //MEMORY_LEAK_MARKER ("database_init")
   if (0 == globals->sqm->SQLgen())
   { TRACE("------------DB Loading AIRPORTS");
     CDatabase *dbAirport = new CDatabaseAPT ("Airport.dbt");
@@ -5390,7 +5389,7 @@ void CDatabaseManager::Init (void)
     db[DB_WAYPOINT] = dbWaypoint;
     TRACE("WPT     count %u",dbWaypoint->GetNumRecords());
   }
-  MEMORY_LEAK_MARKER ("database_init")
+ // MEMORY_LEAK_MARKER ("database_init")
   // load string translation for various database "type" field
   InitTypeDBTranslation();
 }
@@ -5398,9 +5397,7 @@ void CDatabaseManager::Init (void)
 void CDatabaseManager::Cleanup (void)
 {
   std::map<Tag, CDatabase*>::iterator i;
-  for (i=db.begin(); i!=db.end(); i++) {
-    SAFE_DELETE (i->second);
-  }
+  for (i=db.begin(); i!=db.end(); i++) delete (i->second);
   db.clear ();
   CleanupTypeDBTranslation();
 }

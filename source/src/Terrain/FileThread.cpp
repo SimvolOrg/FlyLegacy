@@ -629,10 +629,10 @@ int CTextureWard::GetGenTexture(CTextureDef *txn)
 //  Draw coast  using polygons
 //-----------------------------------------------------------------------------
 void CTextureWard::MakeStencil(char *lsp)
-{ char         *adn = lsp;
-  COAST_VERTEX *pol = (COAST_VERTEX*)(lsp + sizeof(U_SHORT));
+{ COAST_HEADER *hdr = (COAST_HEADER*)lsp;
+  COAST_VERTEX *pol = (COAST_VERTEX*)(lsp + sizeof(COAST_HEADER));
   Dim       = SideRES[Resn];
-  U_INT nbp = *((U_SHORT*)adn);
+  U_INT nbp =  hdr->nbp;
   for (U_SHORT k = 0; k != nbp; k++)  pol = DrawStencil(pol);
   return;
 }

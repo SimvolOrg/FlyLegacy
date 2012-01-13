@@ -1324,15 +1324,8 @@ C_SEA::C_SEA(U_INT key,TCacheMGR *cm)
 //  Delete the SEA object
 //---------------------------------------------------------------------------
 C_SEA::~C_SEA()
-{ //----delete all detail tiles entries ----------------------
-  U_INT nbt = 0;
-  std::map<U_INT,char*>::iterator itr;
-  for (itr = coastMAP.begin(); itr != coastMAP.end(); itr++)
-  { char *slot = (*itr).second;
-    delete [] slot;
-    nbt++;
-  }
-  if (head)       delete [] head;
+{ 
+	if (head)       delete [] head;
   if (coast.vTAB) delete [] coast.vTAB;
   if (tr &&  tcm) TRACE("TCM: -- Time: %04.2f %s DELETE %03d Tiles",tcm->Time(),Name,lgr);
   head  = 0;
@@ -1428,9 +1421,10 @@ void C_SEA::LoadDetail(char *adh)
   NbVRT       = 0;                                        // Clear total vertices
   LoadVertices(ofs);                                      // Load the vertice table
   //---Built definitive coast data and enter in coast map -------------------
-  char *pol   = Finalize();                               // Build definittive data
+  char *pol   = BuildCoastLine();                         // Build definittive data
   if (0 == pol) return;                                   // Tile contour was deleted
   coastMAP[coast.Key] = pol;                              // Enter in map
+	globals->NbCLN++;
   NbDET++;
   return;                           
 }
@@ -1518,19 +1512,26 @@ U_LONG C_SEA::MakeTileKey(U_SHORT ind)
 //  |--------------------------------------------------------------
 //  
 //  DETAIL HEAD is:
+//	Tag     MEM:				Memory identifier = CLIN (coast line)
 //  U_SHORT NBP:        Number of Polygons
+//	U_SHORT rfu:				Not yet used
 //------------------------------------------------------------------------------
-char *C_SEA::Finalize()
+char *C_SEA::BuildCoastLine()
 { //-------Finalize Header -------------------------------------------------
-  U_INT hds = sizeof(U_SHORT);                        // Header size
+	U_INT hds = sizeof(COAST_HEADER);										// Coast line header
   U_INT nbp = coast.nPOL;                             // Number of polygon
   U_INT npl = NbVRT * sizeof(COAST_VERTEX);           // Number of Vertices structures
-  U_INT dim = hds + npl;                              // Total needed
-  char *pol = new char [dim];
-  char  *adn  = pol;                                  // Pointer to Nb polygon
-  *((U_SHORT*)adn) = nbp;                             // Store number of polygon
+  U_INT dim = hds + npl;                              // Total needed in char
+	U_INT nbw = (dim / sizeof(int)) + 1;								// Total in words
+	int	 *buf = new int[nbw];														// allocate memory
+  char  *pol  = (char*)buf;                                  // Pointer to Nb polygon
+	//-- build header ------------------------------------------------------
+	COAST_HEADER *hdr = (COAST_HEADER*)buf;
+	hdr->mem	= 'NILC';																	// Memory stamp
+	hdr->nbp	= nbp;																		// Number of polygons	
+	hdr->rfu	= 0;
   //---------Finalize polygons --------------------------------------------
-  COAST_VERTEX *dst = (COAST_VERTEX*)(pol + hds);     // Polygon entry
+  COAST_VERTEX *dst = (COAST_VERTEX*)((char*)buf + hds);     // Polygon entry
   COAST_VERTEX *fsp = dst;                            // First polygon
   char  *pid      =  (char*)coast.pTAB;               // First polygon slot
   char  *nxt      = 0;                                // next polygon slot
@@ -1546,15 +1547,18 @@ char *C_SEA::Finalize()
   coast.pTAB = 0;                                     // Clear pointer
   //---------Delete the tile if there is only one contour polygon ----------
   if (nbp != 1)       return pol;
-  if (fsp->Out == 1)  return 0;                       // Juste an inside polygon
-  return pol;
+  if (fsp->Out != 1)  return pol;
+	//--- delete inside polygon ----------------------------------------------                       
+	delete [] buf;
+  return 0;
 }
 //-------------------------------------------------------------------------------
 //  Finalize polygon
 //    pol:  Pointer to polygon in  formation
 //    pid:  Pointer to vertice indices
 //    vtb:  Pointer to vertice table
-//
+//	NOTE:		Each vertex hold the total number of vertices for facility
+//					in other algorithms
 //-------------------------------------------------------------------------------
 COAST_VERTEX *C_SEA::Finalize(COAST_VERTEX *vtx, char *pid,SEA_VERTEX *vtb)
 { U_INT szh = sizeof(void*) + sizeof(U_SHORT);  // pid header size
@@ -1641,25 +1645,20 @@ C_CDT::C_CDT(U_INT qk,TCacheMGR *tm)
   color = 0xFFF3FA8A;
 }
 //--------------------------------------------------------------------------
-//  Destroy this coast file
+//  Destroy this coast slot
 //--------------------------------------------------------------------------
 C_CDT::~C_CDT()
-{ std::map<U_INT,char*>::iterator idt = coastMAP.begin();
-  while (idt != coastMAP.end()) 
-  { char *data = (*idt).second;
-    delete [] data;
-    idt++;
-  }
-  coastMAP.clear();
+{ 
 }
 //-------------------------------------------------------------------
 //  Add new item
 //-------------------------------------------------------------------
 void C_CDT::AddCoast(U_INT key,char *data)
-{ pthread_mutex_lock   (&Mux);
+{ pthread_mutex_lock(&Mux);
   coastMAP[key] = data;
   item++;
-  pthread_mutex_unlock   (&Mux);
+	globals->NbCLN++;
+  pthread_mutex_unlock(&Mux);
   return;
 }
 //-------------------------------------------------------------------
@@ -1738,6 +1737,7 @@ COAST_VERTEX *CoastLine::CoastPolygon(COAST_VERTEX *pol,SVector &sw)
    }
   return adv;
 }
+
 //--------------------------------------------------------------------------------
 //  Draw coast line
 //--------------------------------------------------------------------------------
@@ -1751,11 +1751,23 @@ void CoastLine::DrawCoastLine(SSurface *sf)
     U_INT ax   = key >> 16;
     U_INT az   = key & 0x0000FFFF;
     dLat       = GetTileSWcorner(ax,az,sw);
-    char      *adn = cdt;
-    COAST_VERTEX *pol = (COAST_VERTEX*)(cdt + sizeof(U_SHORT));
-    U_INT nbp = *((U_SHORT*)adn);
+    COAST_HEADER *hdr = (COAST_HEADER*)cdt;
+    COAST_VERTEX *pol = (COAST_VERTEX*)(cdt + sizeof(COAST_HEADER));
+    U_INT nbp =   hdr->nbp;
     for (U_SHORT k = 0; k != nbp; k++)  pol = CoastPolygon(pol,sw);
   }
   return;
+}
+//--------------------------------------------------------------------------------
+//  Coast line destructor
+//--------------------------------------------------------------------------------
+CoastLine::~CoastLine()
+{std::map<U_INT,char*>::iterator ra; 
+  for (ra = coastMAP.begin(); ra != coastMAP.end(); ra++)
+  { char *data = (*ra).second;
+    delete [] data;
+		globals->NbCLN--;
+  }
+  coastMAP.clear();
 }
 //===========END OF THIS FILE ============================================================

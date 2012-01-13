@@ -220,15 +220,21 @@ typedef struct {
   CBitmap    *nBitmap;                  /// Null Bitmap
   CBitmapNUL  nBmap;                    /// Bitmap NUL
 	CFmtxMap   *dMap;											// Dummy map table
-  //-------- Application state ---------------------------------------
+  //--- Application state ---------------------------------------------
   EAppState appState;
-  //---- Cockpit panel parameters ------------------------------------
+  //--- Cockpit panel parameters --------------------------------------
   int         panelScrollStep, panelCreepStep;
   CPanel     *panel;                   /// Current panel in building for gauge
-  // Global settings
-  // POD filesystems for scenery and all other files
+  //---- POD filesystems for scenery and all other files -------------
   PFS               pfs;
-  //--------Global indicators ----------------------------------------
+	//--- Utility counters ---------------------------------------------
+	U_INT							cnDOB;							// Deleted objects for one QGT
+	U_INT							NbOBJ;							// Total Objects in scene
+	U_INT							NbMOD;							// Total Models
+	U_INT							NbPOL;							// Total polygons
+	U_INT							NbCLN;							// Total coast lines
+	U_INT							NbBMP;							// Bitmap number
+  //--- Global indicators --------------------------------------------
   U_CHAR             ttr;               // Temporary trace
   U_CHAR            dBug;               // Subsystem debuging on
   U_CHAR             tod;               // Time of Day ('N' or 'D');
@@ -260,7 +266,7 @@ typedef struct {
   CAirportMgr           *apm;           // Airport Manager
   C3DMgr                *m3d;           // 3D world manager
   CExport               *exm;           // Export manager
-  CImport               *imp;           //  Import manager
+  CImport               *imp;           // Import manager
   CKeyMap               *kbd;           // Keyboard  interface
   CFuiManager           *fui;           // Windows manager
   CSkyManager           *skm;           // Sky manager
@@ -273,6 +279,7 @@ typedef struct {
   CAtmosphereModelJSBSim *atm;          // Atmosphere
   CAudioManager         *snd;           // Sound manager
   CAirplane             *pln;           // Plane object
+	CSceneryDBM						*scn;						// Scenery set
   //-------Aircraft items --------------------------------------------
   CCameraManager        *ccm;           /// Current camera manager
   CPanel                *pan;           /// Active panel

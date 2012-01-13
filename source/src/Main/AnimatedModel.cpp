@@ -69,7 +69,9 @@ CAnimatedModel::CAnimatedModel (CVehicleObject *v,char* lodFilename,Tag t)
 //  Free resources
 //----------------------------------------------------------------------
 CAnimatedModel::~CAnimatedModel (void)
-{ SAFE_DELETE (s1Flap);
+{ if (mName) delete [] mName;
+	//------------------------------------------------------
+  SAFE_DELETE (s1Flap);
   SAFE_DELETE (s2Flap);
   //-------------------------------------------------------
   SAFE_DELETE (Model);                                          // lc 052310 +

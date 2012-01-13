@@ -377,6 +377,10 @@ CAudioManager::CAudioManager (void)
 CAudioManager::~CAudioManager()
 { Cleanup();
   if (source) delete [] source;
+	std::map<Tag,CSoundBUF*>::iterator ra;
+	for (ra = buffers.begin(); ra != buffers.end(); ra++) delete ra->second;
+	buffers.clear();
+	snames.clear();
 }
 //-------------------------------------------------------------------
 // CleanUp everything

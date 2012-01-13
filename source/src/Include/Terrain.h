@@ -133,12 +133,10 @@ public:
 //============================================================================
 class CSceneryDBM {
 	friend class CSceneryPack;
-private:
-  static CSceneryDBM instance;
-
 public:
-  // Return a reference to the singleton instance
-  static CSceneryDBM& Instance() { return instance; }
+	CSceneryDBM();
+ ~CSceneryDBM();
+public:
   // CSceneryDBM methods
   void    Init (void);
   void    Cleanup (void);

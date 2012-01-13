@@ -198,7 +198,7 @@ public:
   char     Hexa[4];                         // Name in Hexa
   //----Constructor -----------------------------------------
   CTextureDef();
- ~CTextureDef();
+  virtual	~CTextureDef();
   //---------------------------------------------------------
 	inline	void    SetDayTexture(U_CHAR n,GLubyte *t) {dTEX[n] = t;}
 	inline	void    SetNitTexture(U_CHAR n,GLubyte *t) {nTEX[n] = t;}
@@ -333,7 +333,6 @@ public:
     //----3D management ---------------------------------------------
     float        dEye;            // True eye distance
     float       alpha;            // Alpha chanel
-		CObjQ					zbQ;						// Queue for nozb objects
     CObjQ         woQ;            // Super Tile 3D object Queue
     bool      visible;            // Visibility indicator
     float        white[4];                // Diffuse color for blending
@@ -710,7 +709,7 @@ struct CTX_QUAD {
 //  C_QGT
 //=============================================================================
 //--------------------------------------------------------------
-class C_QGT: public CShared {
+class C_QGT: public QGTHead {
   friend class TCacheMGR;
   friend class C_QTR;
   friend class C_STile;
@@ -763,6 +762,7 @@ private:
   Tag           Metar;                    // Metar Key       
   U_CHAR        cloud[4];                 // counter for cloud types
   //---------3D objects ----------------------------------------
+	int						nbO;											// Object remainging in Supertiles
   C3Dworld      w3D;                      // Related world objects
   //---------Texture Parameters --------------------------------
   float         dto;                      // Texture origin
@@ -791,6 +791,7 @@ public:
   C_QGT() {}                              // Just for reservation
  ~C_QGT();                                // Destroy this QGT
   void    TraceDelete();
+	void		GetTrace(int *t,int *x,int *z);
   //-------------------------------------------------------------
   void TimeSlice(float dT);
   //---------Helpers  ---------------------------------
@@ -811,8 +812,6 @@ public:
 	inline  void				IndElevation()	{elv = 1;}
 	inline  bool				HasElevation()	{return elv != 0;}
   //--------3D Object -----------------------------------
-  inline  int         IncNOBJ() {return w3D.IncNOBJ();}
-  inline  int         DecNOBJ() {return w3D.DecNOBJ();}
   inline  int         GetNOBJ() {return w3D.GetNOBJ();}
   inline  C3Dworld   *Get3DW()  {return &w3D;}
   //-------Create vertex in line ------------------------------
@@ -1155,7 +1154,6 @@ class TCacheMGR {
   U_SHORT     clock;                        // internal clock
   U_SHORT     clock1;                       // Clock N1
   U_INT       NbQTR;                        // Number of QTR files
-  U_INT       NbQGT;                        // Number of Quarter Tiles
   U_INT       NbSEA;                        // Number of Coast Files
   U_INT       NbREG;                        // Number of regions
   U_INT       NbTEX;                        // Number of textures
@@ -1401,7 +1399,6 @@ public:
   void        CheckTeleport();
   void        Teleport(SPosition &dst);
   void        NoteTeleport();
-  void        DrawCount(float dT);
   //----------Statistics ---------------------------------------
   void        GetStats(CFuiCanva *cnv);
 };
