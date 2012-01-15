@@ -3372,8 +3372,9 @@ TCacheMGR::TCacheMGR()
 //  delete all allocated resources
 //-------------------------------------------------------------------------
 TCacheMGR::~TCacheMGR()
-{ int a = 0;
-  pthread_cancel(thIden);
+{ //int a =  pthread_cancel(thIden);
+	globals->sql->Stop();
+	pthread_cond_signal(&thCond);
   pthread_join(thIden,0);
   //---delete coordinate tables ----------------------
   delete [] TexRES[TC_MEDIUM];

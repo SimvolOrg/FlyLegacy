@@ -523,7 +523,6 @@ void InitGlobalsNoPodFilesystem (char *root)
 	globals->NbCLN  = 0;										// Coast lines
 	globals->NbBMP	= 0;										// Number of bitmap
   //----  Allocate NULL bitmap
-	globals->dMap				= new CFmtxMap();
   globals->nBitmap		= new CBitmap;
   globals->dBug       = 0;
   globals->logDebug   = new CLogFile ("Logs/Debug.log", "w");
@@ -541,13 +540,9 @@ void InitGlobalsNoPodFilesystem (char *root)
   BOOL rc = EnumDisplaySettings (NULL, iModeNum++, &dm);
   while (rc != 0) {
     // Add display setting to global list and get next
-    if (32 == dm.dmBitsPerPel) {
-      int num, denom;
+    if (32 == dm.dmBitsPerPel) 
+		{ int num, denom;
       AspectRatio (dm.dmPelsWidth, dm.dmPelsHeight, num, denom);
-#ifdef _DEBUG
-      DEBUGLOG ("Display setting %d (%d:%d) : %dx%d:%d@%d", iModeNum, num, denom,
-        dm.dmPelsWidth, dm.dmPelsHeight, dm.dmBitsPerPel, dm.dmDisplayFrequency);
-#endif
     }
     rc = EnumDisplaySettings (NULL, iModeNum++, &dm);
   }
@@ -626,7 +621,7 @@ void InitGlobalsNoPodFilesystem (char *root)
   int plugin_allowed = 0;
   GetIniVar ("Sim", "allowDLLFiles", &plugin_allowed);
   globals->plugins.g_plugin_allowed = (plugin_allowed != 0);
-  globals->opal_sim = NULL;
+	//--- Create OPAL simulation ----------------------------
   globals->opal_sim = opal::createSimulator ();
   globals->opal_sim->setMaxContacts(2);
   opal::Vec3r g (0.0f, 0.0f, -(GRAVITY_MTS));
@@ -707,13 +702,14 @@ void InitGlobalsNoPodFilesystem (char *root)
     int num_of_autogen = 0;
     GetIniVar ("Graphics", "numOfAutogen", &num_of_autogen);
     globals->num_of_autogen = num_of_autogen;
-
+		//--- Set initial position and orientation -----------------
     globals->iang.x = 0.0; 
     globals->iang.y = 0.0; 
     globals->iang.z = 0.0; 
     globals->dang.x = 0.0; 
     globals->dang.y = 0.0; 
-    globals->dang.z = 0.0; 
+    globals->dang.z = 0.0;
+		return; 
 }
 
 
@@ -758,17 +754,17 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->sqm);         // Delete SQL manager
   globals->nBitmap->ChangeType();
   SAFE_DELETE (globals->nBitmap);
-	SAFE_DELETE (globals->dMap);
   SAFE_DELETE (globals->csp);
   SAFE_DELETE (globals->cap);
   SAFE_DELETE (globals->snd);
 	//---------------------------------------
   pshutdown (&globals->pfs);
+	SAFE_DELETE (globals->clk);
+	SAFE_DELETE (globals->tim);
 	//----------------------------------------
   SAFE_DELETE (globals->logWarning);
   SAFE_DELETE (globals->logTerra);
 	SAFE_DELETE (globals->logScene);
-
   SAFE_DELETE (globals->logDebug);      // JS Must be the last if log is used
 //  SAFE_DELETE (globals);                // JS Must be the last if log is used
 //  ---------------------------------------
@@ -1191,7 +1187,8 @@ void ExitApplication (void)
 #if defined(_DEBUG)
  _CrtDumpMemoryLeaks();
 #endif
-	ExitProcess(0);
+  TerminateProcess (GetCurrentProcess(), 0);
+	exit(0);
 }
 
 //==================================================================================
@@ -1378,7 +1375,7 @@ int main (int argc, char **argv)
   globals->cld  = 0;                          // Cloud system
   globals->slw  = 0;                          // Slew manager
   globals->exm  = 0;													// Export manager
-  globals->imp  = new CImport();              // Import manager
+  globals->imp  = 0;		//new CImport();      // Import manager
   globals->atm  = 0;                          // Atmosphere
   //---Aircraft objects -----------------------------------------------
   globals->pln  = 0;
@@ -1394,17 +1391,18 @@ int main (int argc, char **argv)
   globals->wObj = 0;                          // Current object
   TRACE("Globals INITIALIZED");
   //-------------------------------------------------------------------
-#ifdef MEMORY_LEAK_CRT
-#if defined(_DEBUG) && defined(HAVE_CRTDBG_H)
-  /// \todo Remove memory checkpoint and eliminate memory leaks prior to main()
-  _CrtMemCheckpoint (&memoryState);
-#endif
-#endif // MEMORY_LEAK_CRT
+	//--- Loose memory marker 1 -----------------------
+	char *mk0 = new char[20];
+	strcpy(mk0,"***START****");
   //--------------------------------------------------------------------
   // Initialize globals variables
   //-------------------------------------------------------------------
   InitGlobalsNoPodFilesystem ((char*)flyRootFolder);
   TRACE("InitGlobalsNoPodFilesystem OK");
+	//--- Loose memory marker 1 -----------------------
+	char *mk1 = new char[20];
+	strcpy(mk1,"*END*");
+
   globals->appState = APP_SPLASH_SCREEN;
   globals->fui = new CFuiManager();
   TRACE("CFuiManager CREATED");
@@ -1539,7 +1537,7 @@ void GTFO::operator() (const char* fmt, ...)
 #if defined(WIN32) && defined(_DEBUG)
   TerminateProcess (GetCurrentProcess(), 0);
 #endif
-  exit (0);
+	exit(-1);
 }
 //=================================================================================
 void WARN::operator() (const char* fmt, ...)

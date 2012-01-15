@@ -219,7 +219,6 @@ typedef struct {
   U_INT	      HiFrame;								  /// Upper frame
   CBitmap    *nBitmap;                  /// Null Bitmap
   CBitmapNUL  nBmap;                    /// Bitmap NUL
-	CFmtxMap   *dMap;											// Dummy map table
   //--- Application state ---------------------------------------------
   EAppState appState;
   //--- Cockpit panel parameters --------------------------------------

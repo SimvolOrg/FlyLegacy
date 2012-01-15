@@ -736,6 +736,7 @@ const char *GetIniValue(const char *section, const char *key)
 bool  GetIniKey(char *section, char *key)
 {	return ini->GetKey(section,key);	}
 //======================================================================
+
 void  SetIniVar(const char *section, const char *varname, int value)
 {
   ini->Set (section, varname, value);

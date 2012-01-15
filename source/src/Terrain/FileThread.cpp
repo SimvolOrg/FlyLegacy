@@ -234,7 +234,7 @@ void *FileThread(void *p)
   U_INT     key		= 0;
   //--- Region parameters ----------------
   REGION_REC  reg;
-  while (p)
+  while (sql.IsRuning())
     { pthread_cond_wait(tcm->GetTHcond(),tcm->GetTHmux());        // Wait for signal
       //----Process load texture Queue first -------------------------------------
       for (qgt = tcm->PopLoadTEX(); qgt != 0; qgt = tcm->PopLoadTEX())  TextureLoad(qgt);
@@ -270,8 +270,10 @@ void *FileThread(void *p)
 				mod->Finalize();
         mod->DecUser();
       }
-      // end of thread loop -- check for stop -------------------
     }
+	//--- File thread is stopped ------------------
+	TRACE("FileThread STOP");
+	pthread_exit(0);
   return 0;
 }
 //=================================================================================

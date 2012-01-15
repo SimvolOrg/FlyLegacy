@@ -674,6 +674,8 @@ public:
 //  Support for Databases used by file thread
 //=============================================================================
 class SqlTHREAD: public SqlOBJ {
+	//---- Attribute ---------------------------------------------------
+	bool		go;						// Running indicator
   //-----Methods -----------------------------------------------------
 public:
   SqlTHREAD();
@@ -683,6 +685,9 @@ public:
   inline bool SQLsea()  {return (seaDBE.use == 1);}
   inline bool SQLmod()  {return (modDBE.use == 1);}
   inline bool SQLtex()  {return (texDBE.use == 1);}
+	//--- Execution control --------------------------------------------
+	inline bool IsRuning()	{return go;}
+	inline void Stop()			{go = false;}
   //---COAST METHODS -------------------------------------------------
   void  DecodeCST(sqlite3_stmt *stm,COAST_REC &cst);
   void  ReadCoast(COAST_REC &rec,C_CDT *cst);
