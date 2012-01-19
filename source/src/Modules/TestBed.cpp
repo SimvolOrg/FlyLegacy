@@ -1,0 +1,93 @@
+/*
+ * TestBed.cpp
+ *
+ * Part of Fly! Legacy project
+ *
+ * Copyright 2003-2005 Chris Wallace
+ * Copyright 2007-2009 Jean Sabatier
+ *
+ * Fly! Legacy is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ * Fly! Legacy is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ *   along with Fly! Legacy; if not, write to the Free Software
+ *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+#include "../Include/Globals.h"
+#include "../Include/TestBed.h"
+#include "../Include/Cameras.h"
+#include "../Include/Import.h"
+#include "../Include/Fileparser.h"
+#include "../Include/TerrainTexture.h"
+using namespace std;
+//===================================================================================
+//--------------------------------------------------------------------
+// Constructor 
+//--------------------------------------------------------------------
+CTestBed::CTestBed()
+{ int end = 2;
+  int k   = end;
+  SDateTime t0 = globals->tim->GetLocalDateTime();
+	while (k > 0)
+	{	trn.Load("Objects/OBJ03.txt");
+		trn.Start();
+		k--;
+	}
+	SDateTime t1 = globals->tim->GetLocalDateTime();
+	//--- Edit time --------------------------------------
+	U_INT mt0 = (t0.time.minute * 60000) + (t0.time.second * 1000) + t0.time.msecs;
+	U_INT mt1 = (t1.time.minute * 60000) + (t1.time.second * 1000) + t1.time.msecs;
+	U_INT dtm = mt1 - mt0; 
+	int   dmn = dtm / 60000;
+	int   rmn = dtm % 60000;
+	int   dsd = rmn / 1000;
+	int   rsd = rmn % 1000;
+	TRACE ("%d Polygons took %02dm %02ds %02d ms",end,dmn,dsd,rsd);
+
+	int a = 0;
+}
+
+//--------------------------------------------------------------------
+//  Free resources
+//--------------------------------------------------------------------
+CTestBed::~CTestBed()
+{
+}
+//-------------------------------------------------------------------
+//  Keyboard
+//-------------------------------------------------------------------
+void CTestBed::Keyboard(U_INT key,int mod)
+{ return;}
+void CTestBed::Special(U_INT key,int mod)
+{ return;}
+//-------------------------------------------------------------------
+//  Keyboard
+//-------------------------------------------------------------------
+void CTestBed::TimeSlice()
+{ 
+  return;}
+
+//-------------------------------------------------------------------
+//  Draw
+//-------------------------------------------------------------------
+void CTestBed::Draw()
+{ 
+  //---------- Check for an OpenGL error ---------------------
+  { GLenum e = glGetError ();
+    if (e != GL_NO_ERROR) 
+        WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
+  }
+
+  return;
+}
+
+//=========================END 0F FILE ====================================================
