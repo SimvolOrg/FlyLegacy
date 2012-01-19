@@ -30,6 +30,7 @@
 #include "../Include/FlyLegacy.h"
 #include "../Include/Subsystems.h"
 #include "../Include/Radio.h"
+#include "../Include/Queues.h"
 //====================================================================================
 #ifndef AUTOPILOT_H
 #define AUTOPILOT_H
@@ -289,6 +290,7 @@ public:
   inline CPIDbox *GetFirst()                 {return (CPIDbox*)CQueue::GetFirst();}
   inline CPIDbox *GetNext(CPIDbox *box)      {return (CPIDbox*)CQueue::GetNext(box);}
 };
+
 //====================================================================================
 //    GENERIC AUTOPILOT MODE
 //====================================================================================

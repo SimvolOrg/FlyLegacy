@@ -161,9 +161,9 @@ struct LITE_MODEL {
 struct SIDE_POINT {
   double   dt;                       // Delta for cross product
   double   sm;                       // Sign of cross product AM*AB
-  SPoint   pa;                       // A point
-  SPoint   pb;                       // B point
-  SPoint   po;                       // Reference point
+  P2_POINT pa;                       // A point
+  P2_POINT pb;                       // B point
+  P2_POINT po;                       // Reference point
 };
 //-----------------------------------------------------------------------------
 //  Light parameters
@@ -392,7 +392,7 @@ class CStrobeLITE: public CBaseLITE {
   char   seq;                         // Sequence
   U_CHAR lim;                         // Limit timer
   //---------------------------------------------------------
-  SPoint   ad;                        // Increment
+  P2_POINT	ad;                       // Increment
   //--------------------------------------------------------
 public:
   CStrobeLITE(U_CHAR type,U_SHORT nb);

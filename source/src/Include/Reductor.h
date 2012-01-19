@@ -182,7 +182,7 @@ class CrVertex {
   //-----------------------------------------------------------
   void    SaveVTX(F3_VERTEX *vtx);
   void    SaveNMX(F3_VERTEX *nmx);
-  void    SaveTXC(TC_TCOORD *txc);
+  void    SaveTXC(F2_COORD  *txc);
   //-----------------------------------------------------------
   inline void SetNorme(CVector n)     {norm = n;}
   inline void SetTexture(float s,float t) {ctex.x = s,ctex.y = t;}
@@ -240,7 +240,7 @@ class CPolyShop
   int         pnNIN;                        // Indice count in part
   F3_VERTEX  *vaTAB;                        // Vertice array
   F3_VERTEX  *vnTAB;                        // Normal array
-  TC_TCOORD  *txTAB;                        // Texture coordinates
+  F2_COORD   *txTAB;                        // Texture coordinates
   int        *xiTAB;                        // indice array
   int         crIND;                        // Current entry in xiTAB
   int         nbPRT;                        // Number of out part

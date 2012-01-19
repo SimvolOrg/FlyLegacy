@@ -1202,6 +1202,16 @@ void CVehicleObject::SetPartTransparent (char* part, bool ok)
 {
   if (lod) lod->SetPartTransparent (part, ok);
 }
+//---------------------------------------------------------------------------------
+//  Get overall model extension in vector
+//---------------------------------------------------------------------------------
+void CVehicleObject::OverallExtension(SVector &v)
+{ CAnimatedModel *lod = GetLOD();
+  if (0 == lod)     return;
+  CModelACM      *mod = lod->GetDayModel();
+	if (mod)	      mod->GetExtension(v);
+	return;
+}
 
 //---------------------------------------------------------------------------------
 //  Init deflection for steering gear

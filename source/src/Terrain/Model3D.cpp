@@ -1862,7 +1862,7 @@ C3DPart::C3DPart(int nv)
   NbIN  = 0;
   nVTX  = new F3_VERTEX[nv];
   nNRM  = new F3_VERTEX[nv];
-  nTEX  = new TC_TCOORD[nv];
+  nTEX  = new F2_COORD[nv];
   nIND  = 0;
   total = 0;
 }

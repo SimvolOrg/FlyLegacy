@@ -2232,22 +2232,6 @@ struct TC_RECT {
   float alt;                                     // Altitude      
 };
 //=============================================================================
-//  3D POINT DEFINITION
-//=============================================================================
-struct F3_VERTEX {
-  float VT_X;
-  float VT_Y;
-  float VT_Z;
-	//-------------------------------------------------
-};
-//=============================================================================
-//  POINT DEFINITION
-//=============================================================================
-struct TC_TCOORD {
-  float VT_S;
-  float VT_T;
-};
-//=============================================================================
 //  SPECIFIC POINT DEFINITION
 //=============================================================================
 struct TC_SPOINT {
@@ -3135,85 +3119,7 @@ class CSlot {
   inline   char   *GetName()                    {return Name;}
   inline   int     GetSeq()                     {return Seq;}
 };
-//=====================================================================
-//  Generic queued item : Base class for all queued items
-//=====================================================================
-class CqItem {
-  friend class CQueue;
-  //----------Attributes ---------------------------------------
-  CqItem *Next;                            // Next Queued item
-  //------------------------------------------------------------
-public:
-  CqItem() {Next = 0;}
-  //------------------------------------------------------------
-  inline void         SetNext(CqItem *n)  {Next = n;}
-  inline CqItem      *GetNext()           {return Next;}
-};
-//=====================================================================
-//  Generic Queue
-//=====================================================================
-class CQueue {
-protected:
-  //-----------Attributes ---------------------------------------
-  pthread_mutex_t		mux;					          // Mutex for lock
-	U_INT				  NbObj;					            // Item number
-	CqItem		   *First;					            // First object in queue
-	CqItem		   *Last;					              // Last  object in queue
-  CqItem       *Prev;                       // Previous in Queue
-  //---------------------------------------------------------------
-public:
-  CQueue();                                 // Constructor
- ~CQueue();
-  //----------------------------------------------------------------
-  inline   int NbObjects() {return NbObj;}
-  //-------------Queue Management ----------------------------------
-  U_INT   Copy(CQueue *q);
-  void    Append (CQueue &q);
-  void    PutEnd (CqItem *item);
-  void    PutHead(CqItem *item);
-  CqItem *Detach(CqItem *itm);
-  void    Clear();
-  void    Flush();
-  CqItem *Pop();
-  CqItem *GetFirst();
-  CqItem *GetLast()             {return Last;}
-  CqItem *GetNext(CqItem *itm);
-  //-------------Not empty -----------------------------------------
-  bool    NotEmpty()            {return (First != 0);}
-  bool    IsEmpty()             {return (First == 0);}
-};
-//=====================================================================
-//	Queue Header. Used for queued objects
-//=====================================================================
-class ClQueue {
-protected:
-	//--------------Attributes ------------------------------------
-	pthread_mutex_t		mux;					          // Mutex for lock
-	U_SHORT			NbrOb;					              // Item number
-	CmHead		 *First;					              // First object in queue
-	CmHead		 *Last;					                // Last  object in queue
-public:
-  ClQueue();
- ~ClQueue();
-  //---------inline ---------------------------------------------
-  inline  void        Lock()  {pthread_mutex_lock   (&mux); }
-  inline  void        Unlock(){pthread_mutex_unlock (&mux); }
-  inline  CmHead*  GetFirst()                {return First;}
-  inline  CmHead*  GetLast()                 {return Last; }
-  inline  CmHead*  NextInQ1(CmHead *ob)   {return (ob)?(ob->Cnext):(0);}
-  inline  CmHead*  PrevInQ1(CmHead *ob)   {return (ob)?(ob->Cprev):(0);}
-  inline  U_SHORT     GetNbrObj()               {return NbrOb;}
-  inline  bool        NotEmpty()  {return (0 != NbrOb);}
-	//------------------------------------------------------------
-  void        Clear();
-  void        LastInQ1(CmHead *obj);
-  void        LastInQ2(CmHead *obj);
-  void        HeadInQ1(CmHead *obj);
-  void        InsertInQ1(CmHead *nob,CmHead *obj);
-  CmHead  *DetachFromQ1(CmHead *obj);
-  CmHead  *PopFromQ1();
-  CmHead  *PopFromQ2();
-};
+
 //=====================================================================
 //  SMart pointer to CmHead
 //  All components should use this class pointer to access

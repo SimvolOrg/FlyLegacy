@@ -322,7 +322,7 @@ void CrVertex::SaveNMX(F3_VERTEX *nmx)
 //----------------------------------------------------------------------
 //  Save Texture coordinates
 //----------------------------------------------------------------------
-void CrVertex::SaveTXC(TC_TCOORD *txc)
+void CrVertex::SaveTXC(F2_COORD *txc)
 { txc[num].VT_S = ctex.x;
   txc[num].VT_T = ctex.y;
   return;
@@ -637,7 +637,7 @@ void  CPolyShop::OnePart(M3D_PART_INFO &inf)
   //---- Add all vertices -----------------------
   F3_VERTEX *tvb = inf.nVTX;        // Vertices
   F3_VERTEX *tvn = inf.nNRM;        // Normal
-  TC_TCOORD *txc = inf.nTEX;        // texture coordinates
+  F2_COORD  *txc = inf.nTEX;        // texture coordinates
   for (int k=0; k < inf.NbVT; k++)
   { CVector pos(tvb->VT_X,tvb->VT_Y,tvb->VT_Z);
     CVector nrm(tvn->VT_X,tvn->VT_Y,tvn->VT_Z);

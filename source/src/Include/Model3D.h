@@ -25,6 +25,7 @@
 #define MODEL3D_H
 
 #include "../Include/Globals.h"
+#include "../Include/3dMath.h"
 #include "../Include/FlyLegacy.h"
 #include "../Include/LightSystem.h"
 //===================================================================================
@@ -68,7 +69,7 @@ struct M3D_PART_INFO {
   int          NbIN;                            // Number of indices
   F3_VERTEX   *nVTX;                            // List of vertices
   F3_VERTEX   *nNRM;                            // Norme coordinates
-  TC_TCOORD   *nTEX;                            // Texture coordinates
+  F2_COORD    *nTEX;                            // Texture coordinates
   int         *nIND;                            // Indice list
   void        *ref;                             // Texture reference
   //------------------------------------------------------------------
@@ -151,7 +152,7 @@ class C3DPart : public CqItem {
   int       NbIN;                           // Number of indices
   F3_VERTEX   *nVTX;                            // List of vertices
   F3_VERTEX   *nNRM;                            // Norme coordinates
-  TC_TCOORD   *nTEX;                            // Texture coordinates
+  F2_COORD    *nTEX;                            // Texture coordinates
   int         *nIND;                            // Indice list
   //------------------------------------------------------------
   float     Top;                                // Top Feet
@@ -179,7 +180,7 @@ public:
   //----------------------------------------------------------------
   inline F3_VERTEX  *GetVLIST()            {return nVTX;}
   inline F3_VERTEX  *GetNLIST()            {return nNRM;}
-  inline TC_TCOORD  *GetTLIST()            {return nTEX;}
+  inline F2_COORD   *GetTLIST()            {return nTEX;}
   inline int        *GetXLIST()            {return nIND;}
   inline int      GetNBVTX()            {return NbVT;}
   inline int      GetNbIND()            {return NbIN;}
@@ -190,7 +191,7 @@ public:
   //-----------------------------------------------------------------
   inline void     SetVTX(int k,F3_VERTEX  *p)  {nVTX[k] = *p;}
   inline void     SetNRM(int k,F3_VERTEX  *p)  {nNRM[k] = *p;}
-  inline void     SetTEX(int k,TC_TCOORD  *t)  {nTEX[k] = *t;}
+  inline void     SetTEX(int k,F2_COORD  *t)   {nTEX[k] = *t;}
   inline void     SetIND(int k,int x)     {nIND[k] = x;}
   inline void     SetTSP(U_CHAR m)        {tsp = m;}
   //------------------------------------------------------------------

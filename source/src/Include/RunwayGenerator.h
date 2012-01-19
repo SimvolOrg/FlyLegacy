@@ -49,8 +49,8 @@ class CRwyGenerator
   SVector p0;                                   // Runway Hi position
   SVector p1;                                   // Runway Lo position
   //--------------------------------------------------------------------
-  SPoint  mid;                                  // Runway mid point
-  SPoint  lpt;                                  // Light point
+  P2_POINT  mid;                                // Runway mid point
+  P2_POINT  lpt;                                // Light point
   //---Metric parameters -----------------------------------------------
   double  dx;                                   // dx in arcsec
   double  dy;                                   // dy in arcsec
@@ -78,8 +78,6 @@ class CRwyGenerator
 	//------------------------------------------------------------------
   SVector   scl;                                // Scale factor for letter
   SVector   sct;                                // Scale factor for threshold bands
-//  CVector   center;                             // Ground center
-//  CVector   gBound;                             // ground bound  
   //---Segment base points ---------------------------------------------
   TC_VTAB  vsw;                                 // SW vertex (current)
   TC_VTAB  vse;                                 // SE vertex (current)

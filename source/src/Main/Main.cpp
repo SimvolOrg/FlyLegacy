@@ -508,7 +508,24 @@ void CleanupFonts (void)
   FreeFont (&globals->fonts.ftthin24);
   FreeFont (&globals->fonts.ftasci10);
 }
+//===================================================================================
+/// AspectRatio
+///
+/// \brief Calculate the w:h aspect ratio of a screen resolution
+///
+/// \param w      Screen width
+/// \param h      Screen height
+/// \param num    Updated with numerator of the aspect ratio
+//===================================================================================
+void AspectRatio (int w, int h, int &num, int &denom)
+{
+  // Find greatest common divisor (GCD) of w and h using Euclid's algorithm
+  int gcd = GreatestCommonDivisor (w, h);
 
+  // Calculate numerator and denominator by dividing GCD into w and h
+  num = w / gcd;
+  denom = h / gcd;
+}
 //======================================================================================
 //  Initialize global variables that are not dependent upon files in the POD Filesystem.
 //

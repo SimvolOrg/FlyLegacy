@@ -31,7 +31,7 @@
 #endif // _MSC_VER > 1000
 
 #include "FlyLegacy.h"
-#include "../Include/TerrainTexture.h"
+#include "../Include/3dMath.h"
 //===================================================================================
 //  Test Bed state
 //===================================================================================
@@ -44,6 +44,7 @@
 class CTestBed {
 private:
   //----  ATTRIBUTES -----------------------------------------------
+	Triangulator trn;
   //----  METHODS --------------------------------------------------
 public:
   CTestBed();

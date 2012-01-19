@@ -365,12 +365,14 @@ public:
 	inline  CRadio		*GetMRAD()				{return mRAD;}	// Master radio
   //------------------------------------------------------------------------
   //! send wing deflection to aeromodel
-  void          SetWingChannel(CAeroControlChannel *aero);
+  void    SetWingChannel(CAeroControlChannel *aero);
+	//--- Model interface ---------------------------------------------------------------------
+	void		OverallExtension(SVector &v);			// Get 3D model extension 
   //!-----------------------------------------------------------------------
   //! send steering wheel angle to gear
-	void					GetGearChannel    (SGearData *gdt);
-  void          SetPartKeyframe   (char* part, float value);
-  void          SetPartTransparent(char* part, bool ok = true);
+	void		GetGearChannel    (SGearData *gdt);
+  void    SetPartKeyframe   (char* part, float value);
+  void    SetPartTransparent(char* part, bool ok = true);
   //----Set spinner part -------------------------------------------------------------------
   CAcmSpin     *SetSpinner(char e,char *pn) {return (lod)?(lod->AddSpinner(e,pn)):(0);}     // Set spinner part
   //--------------Aero model management --------------------------------------------------
@@ -462,7 +464,7 @@ public:
 	inline  CRobot           *GetRobot()			{return amp->GetRobot(); }
 	inline  CFPlan           *GetFlightPlan() {return amp->GetFlightPlan();}
   inline  char             *GetPID()        {return (nfo)?(nfo->GetPID()):(0);}
-	inline  CPhysicModelAdj  *GetPHY()				{return phy;} 
+	inline  CPhysicModelAdj  *GetPHY()				{return phy;}
 	//-----------------------------------------------------------------------------------------
 protected:
   char   nEng;															// Engine number

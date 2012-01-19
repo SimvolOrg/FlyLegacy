@@ -725,17 +725,7 @@ template <class T> static inline T max3 (T v1, T v2, T v3)
   if (v3 > rc) rc = v3;
   return rc;
 }
-
-int GreatestCommonDivisor (int i, int j);
-void AspectRatio (int w, int h, int &num, int &denom);
 //==============================================================================
-/*
-	inline	float	Norme360(float deg) 
-  {	int k = 4;
-		while (deg >= 360) {deg -= 360; k--; if (0 >k) gtfo("Norme360 infinite");
-		while (deg <    0) (deg += 360);	
-		return deg;}
-		*/
   inline  float Norme180(float deg)
   { if (deg < -180) deg += 360;
     if (deg > +180) deg -= 360;
@@ -1609,10 +1599,7 @@ void BodyVector2WorldPos (const SPosition &cgPos, const SVector &body, SPosition
 //==============================================================================
 // Global utilities
 //==============================================================================
-class CModelACM;
 EMessageResult Send_Message (SMessage *msg);         // Messaging.cpp
-CModelACM     *GetDayModelACM();                    // Situation.cpp
-void           GetExtensionACM(SVector &v);         // Situation.cpp
 //==============================================================================
 //  Supply srandard routines
 //==============================================================================

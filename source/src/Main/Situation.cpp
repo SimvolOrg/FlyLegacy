@@ -67,27 +67,6 @@ void GlobalsClean (void)
 {
   return;
 }
-//=====================================================================================
-//    GLOBAL function to get the day model 
-//=====================================================================================
-//--------------------------------------------------------------------------------
-//  Return model to draw
-//--------------------------------------------------------------------------------
-CModelACM *GetDayModelACM()
-{ CVehicleObject   *veh = globals->pln;
-  if (0 == veh)     return 0;
-  CAnimatedModel *lod = veh->GetLOD();
-  if (0 == lod)     return 0;
-  return lod->GetDayModel();
-}
-//--------------------------------------------------------------------------------
-//  Return model spatial extension (in feet)
-//--------------------------------------------------------------------------------
-void GetExtensionACM(SVector &v)
-{ CModelACM  *mod = GetDayModelACM();
-  if (mod)  mod->GetExtension(v);
-  return;
-}
 
 ///=====================================================================================
 /// CRandomEvents
@@ -715,9 +694,10 @@ void CSituation::FreeDLLWindows (void)
 //  Proced to Camera adjustment according to aircraft dimension
 //-------------------------------------------------------------------------
 void CSituation::AdjustCameras()
-{ //--- Ensure cameras are at correct distance ---
+{	CVehicleObject   *veh = globals->pln; 
+//--- Ensure cameras are at correct distance ---
   SVector dim = {0,0,0};
-  GetExtensionACM(dim);
+  if (veh)		veh->OverallExtension(dim);
   double  lgr = max(dim.x,dim.y);
   CCameraManager *ccm = globals->ccm;
   if (ccm)  ccm->AdjustRange(lgr);

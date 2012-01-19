@@ -122,11 +122,9 @@ CFuiWinCG::~CFuiWinCG()
 //  Get object dimension
 //---------------------------------------------------------------------------------
 double CFuiWinCG::GetObjectDim()
-{ acm  = GetDayModelACM();
-  if (0   == acm)   return 0;
-  //------Compute pixel ratio -------------
+{ //------Compute pixel ratio -------------
   CVector ext;
-  acm->GetExtension(ext);
+	veh->OverallExtension(ext);
   return ext.MaxXY();
 }
 //---------------------------------------------------------------------------------

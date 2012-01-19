@@ -461,37 +461,4 @@ void BodyVector2WorldPos (const SPosition &cgPos, const SVector &body, SPosition
   world.alt = cgPos.alt + body.z;
 }
 
-///
-/// GreatestCommonDivisor
-///
-/// \brief Calculate the greatest common divisor (GCD) of two integers using Euclid's algorithm
-///
-int GreatestCommonDivisor (int i, int j)
-{
-  // Apply Euclid's algorithm to find the GCD
-  while (0 != j) {
-    int temp = j;
-    j = i % j;
-    i = temp;
-  }
-  return i;
-}
 
-///
-/// AspectRatio
-///
-/// \brief Calculate the w:h aspect ratio of a screen resolution
-///
-/// \param w      Screen width
-/// \param h      Screen height
-/// \param num    Updated with numerator of the aspect ratio
-/// \param denom  Updated with the denominator of the aspect ratio
-void AspectRatio (int w, int h, int &num, int &denom)
-{
-  // Find greatest common divisor (GCD) of w and h using Euclid's algorithm
-  int gcd = GreatestCommonDivisor (w, h);
-
-  // Calculate numerator and denominator by dividing GCD into w and h
-  num = w / gcd;
-  denom = h / gcd;
-}

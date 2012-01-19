@@ -177,7 +177,7 @@ public:
 	inline char       *GetDevice()		{return (pJoy)?(pJoy->dName):("");}
   inline void        Clear()        {pJoy = 0; inv = +1;}
   inline char       *GetName()      {return name;}
-  inline bool        Positive()     {return pos;}
+  inline int         Positive()     {return pos;}
   inline bool        IsUnassigned() {return (0 == pJoy);}
   inline int         AxeNo()        {return iAxe;}
   inline int         GetInvert()    {return (inv==1)?(0):(1);}

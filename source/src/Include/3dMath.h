@@ -8,8 +8,8 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "FlyLegacy.h"
-
+#include "../Include/FlyLegacy.h"
+#include "../Include/Queues.h"
 class CVector;
 class CQuaternion;
 class CRotMatrix;
@@ -45,13 +45,31 @@ inline float __fastcall SquareRootFloat(float number) {
     y  = y * ( f - ( x * y * y ) );
     return number * y;
 }
-//======================================================================================
-//  2D point coordinates
-//======================================================================================
-struct SPoint {
-  double x;
-  double y;
+//=============================================================================
+//  3D POINT DEFINITION
+//=============================================================================
+struct F3_VERTEX {
+  float VT_X;
+  float VT_Y;
+  float VT_Z;
+	//-------------------------------------------------
 };
+//=============================================================================
+//  2D TEXTURE COORDINATES
+//=============================================================================
+struct F2_COORD {
+  float VT_S;
+  float VT_T;
+};
+//======================================================================================
+//  2D planar pointcoordinates
+//======================================================================================
+struct P2_POINT {
+	double x;
+	double y;
+	P2_POINT::P2_POINT() {x = y = 0;}
+	};
+
 //======================================================================================
 //  CVector class
 //======================================================================================
@@ -302,4 +320,125 @@ public:
   int   RowFromX(double *row,TC_VTAB &s,TC_VTAB &d);
   int   RowFromY(double *row,TC_VTAB &s,TC_VTAB &d);
 };
+//==== Stand alone functions ==============================================================
+int GreatestCommonDivisor (int i, int j);
+//==== GEOMETRIC FUNCTIONS =================================================================
+#define GEO_OPPOS_SIDE	(0)
+#define GEO_INSIDE_PQ		(1)
+#define GEO_OUTSIDE_PQ  (2)
+#define GEO_SAME_SIDE		(3)
+//--- Side of a point -----------------------------
+#define GEO_ON_PQ			(4)
+#define GEO_LEFT_PQ		(1)				// Left side
+#define GEO_RITE_PQ		(2)				// right side
+//-------------------------------------------------
+#define GEO_OUTSIDE   (0)
+#define GEO_ON_SIDE		(1)
+#define GEO_INSIDE		(2)
+//--- Type of POINT -------------------------------
+#define GEO_CONVEX		(0)
+#define GEO_REFLEX		(1)
+//--- Type of FACE --------------------------------
+#define GEO_FACE_NUL	(0)
+#define GEO_FACE_EXT	(1)
+#define GEO_FACE_INT  (2)
+//=========================================================================================
+//	Geometric tester
+//=========================================================================================
+class GeoTest {
+	//--- ATTRIBUTES ----------------------------------------
+	double precision;													// Precision limit
+	//--- Methods -------------------------------------------
+public:
+	GeoTest()		{precision	= DBL_EPSILON;}
+	//--- Check side ----------------------------------------------
+	int		SameSide(D2_POINT &P, D2_POINT &Q, D2_POINT &A, D2_POINT &B);
+	bool	VisibilityTest(D2_POINT &P, D2_POINT &Q, D2_POINT &A, D2_POINT &B);
+	int 	OnLeft(D2_POINT &A, D2_POINT &P, D2_POINT &Q);
+	int 	InTriangle(D2_POINT &A, D2_POINT &P, D2_POINT &Q, D2_POINT &R);
+	int   InTriangle(D2_POINT &A, D2_TRIANGLE &T);
+	int	  Positive(D2_TRIANGLE &T);
+	//-------------------------------------------------------------
+	inline void SetPrecision(double p)	{precision = p;}
+};
+//====================================================================================
+//	Slot to point to a 2D_POINT
+//	Used for triagulation of the polygon
+//====================================================================================
+struct D2_SLOT {
+	D2_SLOT  *prev;
+	D2_SLOT  *next;
+	D2_POINT *vrtx;
+	//-----------------------------------------------
+	char     R;							// Reflex indicator
+	//-----------------------------------------------
+	D2_SLOT::D2_SLOT(D2_POINT *p)
+	{	prev	= 0;	next	= 0;	vrtx	= p; R = p->R;	}
+	//-----------------------------------------------
+	D2_POINT *D2_SLOT::GetVRTX()	{return vrtx;}
+	//-----------------------------------------------
+	bool D2_SLOT::IsReflex()			{return (R != 0);}
+	//------------------------------------------------
+	void D2_SLOT::SetType(char t)	{R = t;}
+	};
+//====================================================================================
+//	TRIANGULATOR for triangulation of polygones
+//====================================================================================
+class Triangulator {
+	//--- ATTRIBUTES ------------------------------------
+	GeoTest	geo;
+	Queue <D2_POINT> extp;												// External contour
+	Queue <D2_POINT> hole;												// Hole contour
+	Queue <D2_SLOT>  slot;												// Slot list
+	D2_POINT *P0;																	// First point
+	D2_POINT *Pn;																	//  Last Point
+	std::vector<D2_TRIANGLE *> out;								// Output triangle
+	//----------------------------------------------------
+	D2_TRIANGLE tri;															// Internal triangle
+	D2_TRIANGLE qtr;															// Qualify triangle
+	//----------------------------------------------------
+	double	surf;																	// Ground surface
+	//----------------------------------------------------
+	char    vRFX;																	// Reflex indicator
+	char    hIND;																	// Hole indicator
+	char    face;																	// Type of face			
+	//----------------------------------------------------
+	U_INT   num;																	// Null number
+	U_INT		seq;																	// Sequence number
+	//--- METHODS ----------------------------------------
+public:
+	Triangulator();
+ ~Triangulator();
+  //-----------------------------------------------------
+	void		AddVertex(double x, double y);
+	void		NewHole();
+	void		Load(char *fn);
+	void		Start();
+	//-----------------------------------------------------
+	inline double	GetSurface()		{return surf;}
+protected:
+  //-----------------------------------------------------
+	void		Clean();
+	void		ParseOBJ(FILE *fp);
+	bool		ParseVTX(char *txt);
+	bool		ParseHOL(char *txt);
+	//------------------------------------------------------
+	void		SetPointType();
+	bool		NotAnEar(D2_SLOT  *sa);
+	void		GetAnEar();
+	void		Requalify(D2_SLOT *sp);
+	//----Hole processing  -------------------------------
+	void			Merge();
+	D2_POINT *MatchHole(D2_POINT *xp);
+	bool			CheckInternal(D2_POINT *xp, D2_POINT *hp);
+	bool			CheckExternal(D2_POINT *xp, D2_POINT *hp);
+	void			Splice(D2_POINT *xp, D2_POINT *hp);
+	//-----------------------------------------------------
+	void			BoundRectangle();
+	//------------------------------------------------------
+	void		TraceOut();
+	void		TraceInp();
+};
+
+//==========================================================================================
 #endif // H3DMATH_H
