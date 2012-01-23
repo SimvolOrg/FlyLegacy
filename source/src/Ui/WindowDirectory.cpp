@@ -394,7 +394,6 @@ void CFuiDirectory::SetOtherWptData(CWptLine *slot)
 //=========================================================================
 void CFuiDirectory::Draw()
 { if (Req.EndOfReq())  EndOfRequest(&Req); 
-	if (globals->aPROF.Has(PROF_RABIT)) Close();
   CFuiWindow::Draw();
   return;
 }

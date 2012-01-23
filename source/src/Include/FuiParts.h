@@ -698,7 +698,7 @@ private:
   //-----------------Method ------------------------------------
 public:
    CListBox();
-  ~CListBox();
+  virtual	~CListBox();
   void    AddSlot(CSlot *slot);
   void    Apply(SlotCB fn);
   void    SetParameters(CFuiWindow *win,Tag idn,U_INT tp,short lh = 0);
@@ -1095,6 +1095,8 @@ public:
 class CTerraFile;
 class CFuiTBROS: public CFuiWindow {
   //------- ATTRIBUTES ---------------------------------------------
+	CRabbitCamera   *rcam;												// Rabbit camera
+	//-----------------------------------------------------------------
   CFuiList        *xWIN;                        // List textures
   CListBox        *aBOX;                        // Driving box
   CFuiLabel       *wLB1;                        // Label 1
@@ -1129,12 +1131,16 @@ public:
   void    UpdateGround();
   void    GetSelection();
   void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
+	//--- Dont close this window ----------------------------------------
+	void    CheckProfile()	{;}
 };
 //==========================================================================================
 //  OBJECT BROWSER
 //==========================================================================================
 class CFuiMBROS: public CFuiWindow {
     //--- Attribut -------------------------------------------------
+		CRabbitCamera   *rcam;												// Rabbit camera
+		//--------------------------------------------------------------
     CFuiLabel       *mPOS;                        // Model position
     CFuiLabel       *mNIT;                        // Nite Model
     CFuiCanva       *oDSP;                        // Object Canva
@@ -1171,6 +1177,8 @@ public:
     //----------------------------------------------------------------
     void  Draw();
     void  DrawByCamera(CCamera *cam);
+		//--- Dont close this window ----------------------------------------
+	  void  CheckProfile()	{;}
 };
 #endif // FUIPART_H
 //====================END OF FILE ==========================================================

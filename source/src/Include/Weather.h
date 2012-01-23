@@ -143,7 +143,7 @@ public:
 // CWeatherManager
 //
 //==================================================================
-class CWeatherManager{
+class CWeatherManager: public CExecutable {
 protected:
   SWeatherInfo    infoW;
   SWindsAloft     user_wind;
@@ -186,7 +186,7 @@ public:
 public:
   // wind angle relative to the wind direction in LH m/s
   // CWindModelmethods
-  void  TimeSlice(float dT,U_INT FrNo);
+  int   TimeSlice(float dT,U_INT FrNo);
   void  Init();
   void  SetDefault();
   //------METAR MANAGEMENT ----------------------------------------

@@ -4,7 +4,7 @@
  * Part of Fly! Legacy project
  *
  * Copyright 2003 Chris Wallace
- *
+ * copyright 2009-2012 Jean Sabatier
  * Fly! Legacy is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -20,7 +20,7 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-
+ //=====================================================================================
 #include "../Include/FlyLegacy.h"
 #include "../Include/Globals.h"
 #include "../Include/Ui.h"
@@ -1099,50 +1099,49 @@ void CheckTuningMenu()
 // present
 //============================================================================
 //----------------------------------------------------------------------------
+//  Model Sketch editor: skth
+//----------------------------------------------------------------------------
+void sktech_editor_cb(puObject *obj)
+{ globals->kbd->Stroke('menu','skch');	}
+//----------------------------------------------------------------------------
 //  Model terra editor: mted
 //----------------------------------------------------------------------------
 void model_teditor_cb(puObject *obj)
-{ globals->kbd->Stroke('glob','wted');
-  return; }
+{ globals->kbd->Stroke('menu','wted'); }
 //----------------------------------------------------------------------------
 //  Model browser: mbro
 //----------------------------------------------------------------------------
 void model_browser_cb(puObject *obj)
-{ globals->kbd->Stroke('menu','mbro');
-  return; }
+{ globals->kbd->Stroke('menu','mbro');	}
 //----------------------------------------------------------------------------
 //  Terra browser: tbro
 //----------------------------------------------------------------------------
 void terra_browser_cb(puObject *obj)
-{ globals->kbd->Stroke('menu','tbro');
-  return; }
+{ globals->kbd->Stroke('menu','tbro');	}
 //----------------------------------------------------------------------------
 //  Tune PID: tpid
 //----------------------------------------------------------------------------
 void tune_pid_cb(puObject *obj)
-{ globals->kbd->Stroke('menu','tpid');
-  return; }
+{ globals->kbd->Stroke('menu','tpid');	}
 //----------------------------------------------------------------------------
 //  Statistics:  cntr
 //----------------------------------------------------------------------------
 void tune_statistic_cb(puObject *obj)
-{ globals->kbd->Stroke('menu','cntr');
-  return; }
+{ globals->kbd->Stroke('menu','cntr');	}
 //----------------------------------------------------------------------------
 //  plot data window: 
 //----------------------------------------------------------------------------
 void tune_plot_cb(puObject *obj)
-{ globals->kbd->Stroke('menu','plot');
-  return; }
+{ globals->kbd->Stroke('menu','plot');	}
 //----------------------------------------------------------------------------
 //  Probe window: prob
 //----------------------------------------------------------------------------
 void tune_probe_cb(puObject *obj)
-{ globals->kbd->Stroke('menu','prob');
-  return; }
+{ globals->kbd->Stroke('menu','prob');	}
 //--------------------------------------------------------
 char *tune_legends[] =
-{ "TERRA Editor",
+{ "SKETCH Editor",
+	"TERRA Editor",
 	"----------------",
 	"OBJECT Browser",
   "TERRA Browser",
@@ -1155,7 +1154,8 @@ char *tune_legends[] =
 
 //------------------------------------------------------------------------
 puCallback tune_cb[] =
-{ model_teditor_cb,
+{ sktech_editor_cb,
+	model_teditor_cb,
 	NULL,
 	model_browser_cb,
   terra_browser_cb,

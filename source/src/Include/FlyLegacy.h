@@ -2836,12 +2836,44 @@ public:
   virtual void CamDraw(CCamera *cam){}
   virtual void EndDraw(CCamera *cam){}
 };
-//========================================================================
+//===================================================================================
+//	Executable object
+//	Must supply 2 methodes:  TimeSlice and Draw
+//===================================================================================
+class CExecutable {
+	//--- NO ATTRIBUTES -----------------------------------
+	//--- Methods -----------------------------------------
+public:
+	virtual int	  TimeSlice(float dT, U_INT frame)	{return 0;}
+};
+//===================================================================================
+//	Vector to Time Slice function
+//===================================================================================
+typedef int (CExecutable::*ExeTS)(float dT, U_INT frame);
+//===================================================================================
+//	Vector to Drawing function
+//===================================================================================
+typedef void (CExecutable::*ExeDR)(void);
+//===================================================================================
+//	Dispatching priority
+//===================================================================================
+#define PRIO_ABSOLUTE		(0)
+#define PRIO_WEATHER		(1)
+#define PRIO_TERRAIN		(2)
+#define PRIO_DBCACHE		(3)
+#define PRIO_SLEWMGR		(4)
+#define PRIO_ATMOSPHERE	(5)
+#define PRIO_PLANE			(6)
+#define PRIO_SDK				(7)
+#define PRIO_DLL				(8)
+#define PRIO_OTHERS			(9)
+#define PRIO_MAX				(16)
+//==============================================================================
 //  RANDOM GENERATOR (SYSTEM DEPENDENT)
-//========================================================================
+//==============================================================================
 inline int RandomNumber(int mod) {return (rand() % mod);}
 //==============================================================================
-// CRandomizer:
+// JS: CRandomizer:
 //  Produce a random number N in the requested range R every tim T.  The 
 //  value N is reached in T secondes from the previous one
 //  a:     the lower bound

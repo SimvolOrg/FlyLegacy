@@ -63,10 +63,11 @@
 #endif // _MSC_VER > 1000
 
 // TODO: reference additional headers your program requires here
-
+#include "..\Include\DLL.h"
 #include <plib\ul.h>
 #include "sdkintf.h"
 #include <vector>
+#include <list>
 
 static SDLLCopyright copyright;
 static SDLLRegisterTypeList *types [3];
@@ -80,10 +81,60 @@ namespace ut {
 
 
   extern int fake;
+	}
 
-  class CPluginMain
-  {
+	//=======================================================================
+/*!
+  LC: sdk: SFlyObjectList CLASS manager
+  ----------------------------
+  class used to maintain the list in CSituation
+  and to provide a method that is linked to the SDK
+  to retrive it
+  #include <stdio.h>
+  #include <string>
+  #include <string.h>
+ */
+ //=======================================================================
 
+class CFlyObjectListManager
+{
+	bool dirty;	                                                          ///< oject state memo
+	int  rc;
+  void Init(void);
+	
+  void Copy(const CFlyObjectListManager &aCopy);                        ///< inactivated
+	CFlyObjectListManager(const CFlyObjectListManager &aCopy);            ///< {Copy(aCopy);} inactivated
+	CFlyObjectListManager& operator=(const CFlyObjectListManager &aCopy); ///< inactivated
+
+public:
+	///< construecteurs et destructeurs
+  CFlyObjectListManager() {Init();}
+  virtual ~CFlyObjectListManager(void);
+
+  static CFlyObjectListManager* Instance (void);
+  SFlyObjectList tmp_fly_object;                                        // temporary object
+  std::list<SFlyObjectList> fo_list;
+  std::list<SFlyObjectList>::iterator i_fo_list;
+	///< set
+	///< get
+  void InsertUserInFirstPosition (const CVehicleObject *user);
+  void InsertDLLObjInList (const SDLLObject *obj);
+
+	///< Clone
+	CFlyObjectListManager Clone(void);                                    // inactivated
+};
+//======================================================================
+//	JS:  Put all plugin code here and remove it from CSituation
+//=====================================================================
+//=====================================================================
+
+  class CPluginMain: public CExecutable
+  {	//--- ATTRIBUTES -------------------------------------------
+	public:
+		//-----------------------------------------------------------
+		CFlyObjectListManager sdk_flyobject_list;
+		CDLLSimulatedObject *dVeh;
+		//--- METHODS ----------------------------------------------
   public:
     bool g_plugin_allowed;          ///< plugin flag from ini file
     std::vector <std::string> dll_export_listing;
@@ -165,11 +216,15 @@ namespace ut {
     void On_GenerateTileScenery (SPosition*,SPosition*,int,int,int,int,int,int) const;	    // DLLGenerateTileScenery;
     void On_FilterMetar     (char *metarFilename) const;		        // DLLFilterMetar;
     int  On_InitGlobalMenus (void) const;		    // DLLInitGlobalMenus;
-
+		//-----------------------------------------------------------------------------------
+		int		TimeSlice(float dT,U_INT frame);
+		void	DrawExternal();
+		void	DrawDLLWindow ();
+		void	FreeDLLWindows();
   //  void InitSdkIntf (void);
   };
 
-}
+
 
 #endif // __PLUGIN_HEADER__
 

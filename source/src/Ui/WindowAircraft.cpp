@@ -186,7 +186,7 @@ void CFuiSetAir::ChangeAircraft()
 	globals->sit->SetAircraftFrom(nfo);
   Close();
   // sdk: save a pointer to 'user' as the first item in the sdk SFlyObjectRef list
-  globals->sit->sdk_flyobject_list.InsertUserInFirstPosition (globals->pln);
+  globals->plugins.sdk_flyobject_list.InsertUserInFirstPosition (globals->pln);
   // sdk: used to load dll gauges when switching between aircrafts
   //    TRACE ("RESET USER VEHICLE %d", globals->plugins_num);
   if (globals->plugins_num) {

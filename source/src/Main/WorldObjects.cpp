@@ -265,9 +265,11 @@ void CWorldObject::SetOrientation(SVector v)
 //------------------------------------------------------------
 //	Add rotation vector in degres
 //  Update physical model too
+//	Function dedicated to Slew manager
 //------------------------------------------------------------
 void CWorldObject::AddOrientationInDegres(SVector &v)
-{ double x = DegToRad(v.x);
+{ if (globals->aPROF.Has(PROF_EDITOR))	return;
+	double x = DegToRad(v.x);
   double y = DegToRad(v.y);
   double z = DegToRad(v.z);
 	
@@ -398,6 +400,8 @@ CSimulatedObject::CSimulatedObject (void)
 
   nfo = NULL; lod = NULL;
  *nfoFilename = 0;
+ //--- Enter in Dispatcher ----------------------------------------
+ globals->Disp.Enter(this,PRIO_PLANE);
 }
 
 CSimulatedObject::~CSimulatedObject (void)
@@ -437,12 +441,6 @@ void  CSimulatedObject::ReadFinished (void)
 }
 
 //------------------------------------------------------------------ 
-//    TimeSlice: Update everything
-//------------------------------------------------------------------
-void CSimulatedObject::Timeslice (float dT,U_INT FrNo)
-{
-}
-//------------------------------------------------------------------ 
 //    Draw external parts
 //------------------------------------------------------------------
 void CSimulatedObject::DrawExternal(void)
@@ -450,86 +448,6 @@ void CSimulatedObject::DrawExternal(void)
   if (lod)  lod->Draw (BODY_TRANSFORM);                       
   return;
 }
-//========================================================================
-//    CDLLSimulated Object
-//========================================================================
-CDLLSimulatedObject::CDLLSimulatedObject (void)
-: CSimulatedObject ()
-{ SetType(TYPE_FLY_SIMULATEDOBJECT);
-  nfo = NULL;
-  lod = NULL;
-  draw_flag = false;
-  sim_objects_active = false;
- *nfoFilename = 0;
-}
-//------------------------------------------------------------------------
-//	Destroy object
-//------------------------------------------------------------------------
-CDLLSimulatedObject::~CDLLSimulatedObject (void)
-{*nfoFilename = 0;
-  SAFE_DELETE (nfo);
-  SAFE_DELETE (lod);
-}
-//------------------------------------------------------------------ 
-//    Set Orientation
-//------------------------------------------------------------------
-void  CDLLSimulatedObject::SetOrientation (SVector orientation)
-{ // adjust orientation with magnetic declination
-  CVector iang_ = orientation;
-  float decl_degrees_ = 0.0f, hor_field_ = 0.0f;
-  CMagneticModel::Instance().GetElements (this->GetPosition (), decl_degrees_, hor_field_);
-  iang_.z += DegToRad (static_cast<double> (decl_degrees_)); 
-  // if object is from simulated situation set global ori 
-//  if (globals->pln) CWorldObject::SetOrientation (orientation);
-//  else
-  CWorldObject::SetOrientation (iang_);
-}
-
-//------------------------------------------------------------------ 
-//    TimeSlice: Update everything
-//------------------------------------------------------------------
-void CDLLSimulatedObject::Timeslice (float dT,U_INT FrNo)
-{
-  if (sim_objects_active) {
-    sobj_offset = SubtractPosition (globals->geop, geop);
-    // verify whether to draw object or not
-    draw_flag = true;
-    if (fabs (sobj_offset.x) > FEET_PER_NM) draw_flag = false;
-    else
-    if (fabs (sobj_offset.y) > FEET_PER_NM) draw_flag = false;
-    else
-    if (fabs (sobj_offset.z) > FEET_PER_NM) draw_flag = false;
-  }
-  Simulate (dT,FrNo);
-}
-
-void CDLLSimulatedObject::Simulate (float dT,U_INT FrNo)
-{
-  return;
-}
-
-void CDLLSimulatedObject::DrawExternal (void)
-{
-  glMatrixMode (GL_MODELVIEW);
-  glPushMatrix ();
-  // Draw all externally visible objects associated with this object
-  if (lod) {
-    //if (globals->pln) { // 
-    //if (globals->sit->sdk_flyobject_list.fo_list.size () > 1) {
-    if (sim_objects_active) {
-      if (draw_flag) {
-        draw_flag    = false;
-        globals->pln = (CAirplane*)this;
-        lod->Draw (BODY_TRANSFORM);       // 1 = simulated DLL object
-        globals->sit->dVeh = NULL;
-      }
-    }
-  }
-  glMatrixMode (GL_MODELVIEW);
-  glPopMatrix ();
-  return;
-}
-
 //==================================================================================
 // CVehicleObject
 //
@@ -583,11 +501,12 @@ CVehicleObject::CVehicleObject (void)
 	//-------------------------------------------------------
   globals->rdb = new CFuiRadioBand;
   //----Check for No AIrcraft in Sim section --------------
-  int  NoAC = 0;
-  GetIniVar("Sim", "NoAircraft", &NoAC);
-  if (NoAC)
+  int  nop = 0;
+  GetIniVar("Sim", "NoAircraft", &nop);
+  if (nop)
 	{	globals->noEXT++;									// No external aircraft
 		globals->noINT++;									// No internal aircraft
+		globals->Disp.Lock(PRIO_PLANE);
 	}
   //-------------------------------------------------------
   is_ufo_object =  false;                // 
@@ -953,9 +872,7 @@ void CVehicleObject::Update (float dT,U_INT FrNo)
   // updated during slew mode:  UpdateInSlewMode=1
   // By default the systems are not updated.
   //
-  if (globals->slw->IsEnabled ()){
-     if (upd == 0) return;
-  }
+  if (globals->slw->IsEnabled ())   if (upd == 0) return;
   // precalculate kias once, allowing minor CPU waste in multicalling
   GetKIAS (kias);
 

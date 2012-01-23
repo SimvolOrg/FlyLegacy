@@ -175,8 +175,8 @@ CWeatherManager::CWeatherManager(void)
   int NoMT = 0;
   GetIniVar("Sim","NoMeteo",&NoMT);
   if (NoMT) globals->noMET++;
-  //--------------------------------------------
-
+  //---Enter in dispatcher    ----------------
+	globals->Disp.Enter(this,PRIO_WEATHER);
 }
 //-----------------------------------------------------------------------
 //  Get user wind layer (to be writen on file) 
@@ -496,7 +496,7 @@ void CWeatherManager::UpdateArea(float dT)
 //    For each Metar area, the wind vector components are updated 
 //    Temperature is updated every 8 frames
 //------------------------------------------------------------------------------
-void CWeatherManager::TimeSlice(float dT,U_INT FrNo)
+int CWeatherManager::TimeSlice(float dT,U_INT FrNo)
 { //--- Update Cloud subsystem ---------------------
   bool ok = (globals->noMET == 0);
   if (ok) globals->cld->TimeSlice(dT,FrNo);
@@ -505,7 +505,7 @@ void CWeatherManager::TimeSlice(float dT,U_INT FrNo)
   UpdateWind(dT);
   //---- Check if we are leaving the area ----------
   if (0 == (demux & 0x03))  UpdateArea(dT);
-  return;
+  return 1;
 }
 //--------------------------------------------------------------------------
 //  Display metar infos

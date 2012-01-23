@@ -218,14 +218,14 @@ private:
 //  Revisited by JS to unify temperature and pressure for weather
 //  manager
 //============================================================================
-class CAtmosphereModelJSBSim {
+class CAtmosphereModelJSBSim: public CExecutable {
   // Constructors/destructor
 public:
   CAtmosphereModelJSBSim (void);
 
 public:
   virtual ~CAtmosphereModelJSBSim (void);
-  void    TimeSlice(float dT,double alt);
+  int     TimeSlice(float dT,U_INT frame);
   void    InitModel(void);
   void    LocalTempC(float t);
   void    LocalPressureHPA(float p);

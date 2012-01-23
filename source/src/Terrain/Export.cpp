@@ -940,12 +940,7 @@ void CExport::Export3Dmodels()
 //  Init model position and orientation (at (0,0,0) facing Y)
 //-----------------------------------------------------------------------------------------
 void CExport::InitModelPosition()
-{ SPosition pos;  
-  pos.lat = pos.lon = pos.alt = 0;
-  globals->geop = pos;
-  CVector ori(0,0,0);
-  globals->iang = ori;
-  globals->dang = ori;
+{ globals->sit->WorldOrigin();
   return;
 }
 

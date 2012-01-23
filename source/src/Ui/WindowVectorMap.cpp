@@ -43,10 +43,6 @@
 #define VMAP_DOC_DRAG 1
 #define VMAP_RWY_DRAG 2
 #define VMAP_WPT_DRAG 3
-//=================================================================================
-//  Window profile when in flight plan edit mode
-//=================================================================================
-#define VMP_PROF (PROF_NO_INT+PROF_NO_EXT+PROF_NO_MET+PROF_RABIT+PROF_DRAWRB)
 //=======================================================================
 //  VECTOR WINDOW STATE
 //=======================================================================
@@ -251,7 +247,7 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   widgetTag = 'defa';
   wName = "VectorMap";
   dbc   = globals->dbc;
-  fpln  = 0;
+  fpln  = fpln = globals->pln->GetFlightPlan();
   Focus = 0;
   //----- Initialize vector map status -------------------
   vmapOrient.p = vmapOrient.h = vmapOrient.r = 0;
@@ -406,8 +402,7 @@ void  CFuiVectorMap::LoadOthBitmap(char *bmp,VM_BMP no)
 }
 //------------------------------------------------------------
 CFuiVectorMap::~CFuiVectorMap (void)
-{ LeaveModePlan();
-	//---Clear the cache screen table at exit ----------------       
+{ //---Clear the cache screen table at exit ----------------       
   ResetScreenTable();
   if (MyPop)  delete MyPop;
   //----waypoints --------------------
@@ -771,8 +766,7 @@ void CFuiVectorMap::DrawILS()
 //  CFuiVectorMap  DRAW method
 //---------------------------------------------------------------------------------------------
 void CFuiVectorMap::Draw (void)
-{ TrackPlan();
-	EraseSurfaceRGBA (surface,black);
+{ EraseSurfaceRGBA (surface,black);
   //---Draw according to State --------------------------------------
   if (dStat == VWIN_DOC) return DrawDocument();
   if (dStat == VWIN_RWY) return DrawRunways();
@@ -891,55 +885,6 @@ CmHead* CFuiVectorMap::LookForScreenHit(short x, short y)
   return (hSlot)?(hSlot->Obj):(0);
 }
 //=================================================================================
-//	Togle Mode Plan
-//=================================================================================
-//=================================================================================
-//	Enter Flight plan mode: Replace camera and aircraft
-//=================================================================================
-void CFuiVectorMap::EnterModePlan()
-{ //--- Set application profile -------------------
-	if (globals->aPROF.Has(PROF_ACBUSY))	return;
-	if (rCAM)															return;
-	if (fpln->NotFor3D())									return;
-	//--- Activate mode plan ------------------------
-	pBox->Show();
-	oCTX.fpln		= fpln;
-	oCTX.prof		= VMP_PROF;
-	oCTX.mode   = SLEW_FPLM;
-	rCAM	= globals->ccm->SetRabbitCamera(oCTX,this);
-	snode	= 0;
-	return;
-}
-//---------------------------------------------------------------------------------
-//	Leave Flight plan mode: Restore camera and aircraft
-//---------------------------------------------------------------------------------
-void CFuiVectorMap::LeaveModePlan()
-{	if (0 == rCAM)							return;
-	pBox->Hide();
-  globals->fui->DestroyFuiWindow('flog');
-  globals->ccm->RestoreCamera(oCTX);
-	rCAM	= 0;
-	snode	= 0;
-	return;
-}
-//---------------------------------------------------------------------------------
-//	Mode plan: follow the plan.  Teleport at selected node
-//---------------------------------------------------------------------------------
-void CFuiVectorMap::TrackPlan()
-{	fpln = globals->pln->GetFlightPlan();
-	if (rCAM == 0)				return;
-	CWPoint *nod = fpln->GetSelectedNode();
-	SPosition *pos;
-	if (nod)
-	{	pos				= nod->GetGeoP();
-		pos->alt  = nod->GetAltitude();
-	}
-	else	{pos = &oCTX.pos;}
-	snode	= nod;
-	globals->tcm->MoveRabbit(*pos);
-	return;
-}
-//=================================================================================
 //  Scale object size.  Compute all sizing parameters
 //  Objects size from Rose are expressed in Nautical miles rescaled by Rose Zoom 
 //  
@@ -1052,7 +997,7 @@ void CFuiVectorMap::ZoomPlus()
 //  Event notification
 //---------------------------------------------------------------------------------
 void  CFuiVectorMap::NotifyChildEvent(Tag idw,Tag itm,EFuiEvents evn)
-{ fpln = globals->pln->GetFlightPlan();
+{ 
 	switch (itm)  {
   case 'zout':                            // global Zoom out (-)
     ZoomLess();
@@ -1078,10 +1023,6 @@ void  CFuiVectorMap::NotifyChildEvent(Tag idw,Tag itm,EFuiEvents evn)
     RoseZm  -= 0.05f;
     Scale(Zoom);
     return;
-	case 'plan':														// View  plan
-		if (rCAM)		LeaveModePlan();
-		else				EnterModePlan();
-		return;
 	case 'nxwp':														// Next node
 		fpln->GoToNextNode();
 		return;
@@ -1682,8 +1623,7 @@ bool CFuiVectorMap::ClickWptOBJ(int mx,int my,EMouseButton button)
 // Move a Waypoint on the MAP
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::MoveWPT(int mx,int my)
-{ if (globals->aPROF.Has(PROF_RABIT)) return true;
-	int xorg = halfW + surface->xScreen;
+{ int xorg = halfW + surface->xScreen;
   int yorg = halfH + surface->yScreen;
   double dx = +((mx - xorg) * Zoom) / VM_SCALE;
   double dy = -((my - yorg) * Zoom) / VM_SCALE;

@@ -45,6 +45,9 @@ class CTestBed {
 private:
   //----  ATTRIBUTES -----------------------------------------------
 	Triangulator trn;
+	//--- Camera part -------------------------------------
+	char    dmod;																	// Drawing mode
+	CCameraSpot *Cam;															// Camera;
   //----  METHODS --------------------------------------------------
 public:
   CTestBed();

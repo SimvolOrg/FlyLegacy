@@ -293,7 +293,7 @@ void CElvTracker::DrawMark(TVertex *vdf)
 //=================================================================================
 //  Window profile
 //=================================================================================
-#define TED_PROF (PROF_NO_INT+PROF_NO_EXT+PROF_NO_MET+PROF_DR_DET+PROF_RABIT+PROF_TRACKE+PROF_NO_TEL)
+#define TED_PROF (PROF_NO_PLN+PROF_NO_MET+PROF_DR_DET+PROF_TRACKE+PROF_NO_TEL+PROF_EDITOR)
 //========================================================================================
 //  Window for terrain editor
 //========================================================================================
@@ -366,7 +366,7 @@ CFuiTED::CFuiTED(Tag idn, const char *filename)
   //--- Set application profile -------------------
 	ctx.prof = TED_PROF;
 	ctx.mode	= SLEW_RCAM;
-	cam	= globals->ccm->SetRabbitCamera(ctx,this);
+	rcam	= globals->ccm->SetRabbitCamera(ctx,this);
 }
 //----------------------------------------------------------------------
 //	Delete all resources
@@ -401,9 +401,9 @@ void CFuiTED::Draw()
 //-----------------------------------------------------------------------
 bool CFuiTED::MouseCapture(int mx, int my, EMouseButton bt)
 {	RegisterFocus(0);										// Free textedit
-	cam->SetPicking(mx,my);
-	bool hit = trak->PickOne(cam);
-	cam->StopPicking();
+	rcam->SetPicking(mx,my);
+	bool hit = trak->PickOne(rcam);
+	rcam->StopPicking();
 	return hit;
 }
 //-----------------------------------------------------------------------

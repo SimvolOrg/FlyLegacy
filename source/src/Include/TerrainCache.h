@@ -1051,7 +1051,7 @@ public:
 //=============================================================================
 //  Terrain Cache manager
 //=============================================================================
-class TCacheMGR {
+class TCacheMGR: public CExecutable {
   //---------Attributes ----------------------------------------
   float       dTime;
   float       eTime;                        // Elapse time     
@@ -1234,7 +1234,7 @@ public:
   void        MeshError(U_LONG xv,U_LONG zv);
   U_INT       GetQTRindex(U_INT cx,U_INT cz);         // Name from QGT indices
   //---------Cache update routines -----------------------------
-  void        TimeSlice(float dT,U_INT FrNo);		      // Cache update
+  int         TimeSlice(float dT,U_INT FrNo);		      // Cache update
   bool        IsaNewKey(U_INT key);                   // Check for new key
   bool        IsaActKey(U_INT key);                   // Check for old key
   void        GetRange(U_INT cz,U_SHORT &up,U_SHORT &dn);
@@ -1350,7 +1350,7 @@ public:
   //---------TRN FILE -------------------------------------------
   int         TryEPD(C_QGT *qgt,char *name);
   //---------Drawing primitives ----------------------------------
-  void        Draw(CCamera *cam);
+  void        Draw();
   void        DrawHorizon();
   void        ScanCoast(SSurface *sf);
   void        ScanCoastSQL(SSurface *sf);

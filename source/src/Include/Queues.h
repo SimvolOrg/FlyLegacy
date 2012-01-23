@@ -112,18 +112,29 @@ struct D2_POINT {
 	D2_POINT *prev;															// Previous
 	char   idn[4];															// Point ident
   char   R;																		// Type of point
-	char   f;																		// Type of face
+	char   F;																		// Type of face
+	char   rfu1;																// Not used 
+	char   rfu2;																// Not used
+	//--- Space coordinates ------------------------------------
 	double x;																		// X coordinate
   double y;																		// Y coordinate
+	double z;																		// Z coordinate
+	//--- Local space -------------------------------------------
+	double lx;																	// X coordinate
+	double ly;																	// Y coordinate
+	//-----------------------------------------------------------
+	double elg;																	// Edge lenght
+	double l2D;																	// 2D lenght
 	//---- Methods -----------------------
-	D2_POINT::D2_POINT() {x = y = 0; R= 0;}
+	D2_POINT::D2_POINT() {x = y = z =0; R= 0;}
 	D2_POINT::D2_POINT(double x,double  y)
-	 {	R	= f = 0;	
+	 {	R	= F = 0;	
 			this->x = x;
 			this->y = y;
+			z       = 0;
 		}
 	//-----------------------------------
-	D2_POINT::D2_POINT(D2_POINT &p)	{*this = p;}
+	D2_POINT::D2_POINT(D2_POINT &p)	{*this = p; elg = 0;}
 	//-----------------------------------
 	void  Id(char *d)			{strncpy(d,idn,4); d[4] = 0;}
 	void  SetID(char *d)	{strncpy(idn,d,4);}
@@ -132,11 +143,13 @@ struct D2_POINT {
 	void	D2_POINT::Reflex()			{R = 1;}
 	void  D2_POINT::Type(char n)	{R = n;}
 	bool  D2_POINT::IsReflex()	  {return (R == 1);}
+	bool  D2_POINT::NotNulEdge()	{return (*idn != 'N');}
 	//-----------------------------------
 	char  D2_POINT::GetType()		{return *idn;}
-	void	D2_POINT::SetFace(char n)	{*idn = n;}
+	void	D2_POINT::SetEdge(char n)	{*idn = n;}
 	//-----------------------------------
-	char  D2_POINT::GetFaceType() {return f;}
+	void	D2_POINT::SetFace(char n)	{F	= n;}
+	char  D2_POINT::GetFaceType() {return F;}
 };
 //======================================================================================
 //  2D triangles

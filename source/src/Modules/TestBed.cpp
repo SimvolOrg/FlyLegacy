@@ -34,33 +34,23 @@ using namespace std;
 // Constructor 
 //--------------------------------------------------------------------
 CTestBed::CTestBed()
-{ int end = 2;
-  int k   = end;
-  SDateTime t0 = globals->tim->GetLocalDateTime();
-	while (k > 0)
-	{	trn.Load("Objects/OBJ03.txt");
-		trn.Start();
-		k--;
-	}
-	SDateTime t1 = globals->tim->GetLocalDateTime();
-	//--- Edit time --------------------------------------
-	U_INT mt0 = (t0.time.minute * 60000) + (t0.time.second * 1000) + t0.time.msecs;
-	U_INT mt1 = (t1.time.minute * 60000) + (t1.time.second * 1000) + t1.time.msecs;
-	U_INT dtm = mt1 - mt0; 
-	int   dmn = dtm / 60000;
-	int   rmn = dtm % 60000;
-	int   dsd = rmn / 1000;
-	int   rsd = rmn % 1000;
-	TRACE ("%d Polygons took %02dm %02ds %02d ms",end,dmn,dsd,rsd);
-
-	int a = 0;
+{ Cam   = new CCameraSpot();
+	Cam->RangeFor(50,64);
+	Cam->SetAngle(0,60);
+	globals->cam = Cam;
+	dmod	= 0;
+	//--------------------------------------
+	trn.Load("Objects/OBJ03.txt");
+	trn.Start();
+	//---- set world origin ---------------
+	globals->sit->WorldOrigin();
 }
 
 //--------------------------------------------------------------------
 //  Free resources
 //--------------------------------------------------------------------
 CTestBed::~CTestBed()
-{
+{	delete Cam;
 }
 //-------------------------------------------------------------------
 //  Keyboard
@@ -73,14 +63,17 @@ void CTestBed::Special(U_INT key,int mod)
 //  Keyboard
 //-------------------------------------------------------------------
 void CTestBed::TimeSlice()
-{ 
+{
   return;}
 
 //-------------------------------------------------------------------
 //  Draw
 //-------------------------------------------------------------------
 void CTestBed::Draw()
-{ 
+{ 	Cam->StartShoot(0);
+		trn.DrawLines();
+		Cam->StopShoot();
+
   //---------- Check for an OpenGL error ---------------------
   { GLenum e = glGetError ();
     if (e != GL_NO_ERROR) 

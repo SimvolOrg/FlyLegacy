@@ -748,10 +748,10 @@ void CAcmPart::Draw (char mode)
         }
 
       case PART_SOBJ:
-        { glTranslated (transform.dx + globals->sit->dVeh->sobj_offset.x,
-                  transform.dy + globals->sit->dVeh->sobj_offset.y,
-                  transform.dz + globals->sit->dVeh->sobj_offset.z);
-          SVector  vect = globals->sit->dVeh->GetOrientDegre ();
+        { glTranslated (transform.dx + globals->plugins.dVeh->sobj_offset.x,
+                  transform.dy + globals->plugins.dVeh->sobj_offset.y,
+                  transform.dz + globals->plugins.dVeh->sobj_offset.z);
+          SVector  vect = globals->plugins.dVeh->GetOrientDegre ();
           glRotated ( vect.z, 0, 0, 1);      // Heading around Z
           glRotated ( vect.x, 1, 0, 0);      // Pitch   around X
           glRotated ( vect.y, 0, 1, 0);      // Bank    around Y

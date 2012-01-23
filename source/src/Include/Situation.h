@@ -55,38 +55,35 @@
 //=======================================================================
 class CFuiRadioBand;
 //=======================================================================
+//=======================================================================
 typedef enum  {
 
   NO_RND_EVENTS          = 0,
-  RND_EVENTS_ENABLED     = (1 << 0),
   RAND_TURBULENCE        = (1 << 1)
 
 } ERandomEvents;
-
-/*! \class CRandomEvents CLASS manager
+//=======================================================================
+/*! LC: \class CRandomEvents CLASS manager
   
     This class maintains a serie of random events
     that occurrs during the timeslice situation
     and allows to trigger events wherever it 's needed
  */
+ //=======================================================================
 class CRandomEvents
-{
+{	char on;
 	bool                     dirty;                                       ///< oject state memo
 	int                      rc;
-  static CRandomEvents     instance;
-  
-  CRandomEvents            (void) {;}
+  CRandomizer random;
+	//--- METHODS -------------------------------------------
 	void Copy                (const CRandomEvents &aCopy);                ///< inactivated
 	CRandomEvents            (const CRandomEvents &aCopy);                ///< {Copy(aCopy);} inactivated
 	CRandomEvents& operator= (const CRandomEvents &aCopy);                ///< inactivated
-
+	//-------------------------------------------------------
 public:
-  CRandomizer random;
-  
-	///< construecteurs et destructeurs
-  void     Init            (void);
+  CRandomEvents(void);
+	///< constructeurs et destructeurs
   virtual ~CRandomEvents   (void);
-  static   CRandomEvents& Instance (void) {return instance;}
 
 	///< methods
   void Timeslice           (float dT,U_INT Frame);
@@ -98,48 +95,10 @@ public:
   ///< Clone
 	CRandomEvents Clone(void);                                            ///< inactivated
 };
-
-/*!
-  sdk: SFlyObjectList CLASS manager
-  ----------------------------
-  class used to maintain the list in CSituation
-  and to provide a method that is linked to the SDK
-  to retrive it
-  #include <stdio.h>
-  #include <string>
-  #include <string.h>
- */
-class CFlyObjectListManager
-{
-	bool dirty;	                                                          ///< oject state memo
-	int  rc;
-  void Init(void);
-	
-  void Copy(const CFlyObjectListManager &aCopy);                        ///< inactivated
-	CFlyObjectListManager(const CFlyObjectListManager &aCopy);            ///< {Copy(aCopy);} inactivated
-	CFlyObjectListManager& operator=(const CFlyObjectListManager &aCopy); ///< inactivated
-
-public:
-	///< construecteurs et destructeurs
-  CFlyObjectListManager() {Init();}
-  virtual ~CFlyObjectListManager(void);
-
-  static CFlyObjectListManager* Instance (void);
-  SFlyObjectList tmp_fly_object;                                        // temporary object
-  std::list<SFlyObjectList> fo_list;
-  std::list<SFlyObjectList>::iterator i_fo_list;
-	///< set
-	///< get
-  void InsertUserInFirstPosition (const CVehicleObject *user);
-  void InsertDLLObjInList (const SDLLObject *obj);
-
-	///< Clone
-	CFlyObjectListManager Clone(void);                                    // inactivated
-};
 //===========================================================================
 //    class CSlewManager
 //============================================================================
-class CSlewManager {
+class CSlewManager: public CExecutable {
 public:
   // Constructor
   CSlewManager (void);
@@ -150,7 +109,7 @@ protected:
 public:
   // CSlewManager methods
   void    Disable (void);
-  void    Update (float dT);
+  int			TimeSlice(float dT,U_INT f);
   bool    Swap();
   bool    Reset();
   void    Level(char opt);
@@ -190,43 +149,6 @@ protected:
   CVehicleObject *veh;
 };
 
-//===========================================================================================
-//  Class CDLLWindow to display a window from a DLL plugin
-//  NOTE: This class is instanciated in global situation, but the Draw method is called
-//  in the context of CFuiManager as it is visible in every view
-//===========================================================================================
-class CDLLWindow {
-  //---------------Internal state ------------------------------------------------
-  //--------------Attribute ------------------------------------------------------
-  long signature;
-  SDLLObject *obj;
-  SSurface   *surf;                                           ///< Surface
-  short       wd;                                             ///< wide
-  short       ht;                                             ///< Height
-  U_INT       back;                                           ///< Back color
-  U_INT       black;                                          ///< Black color
-  //---------For time Management -------------------------------------------------
-  //---------Editied fields ------------------------------------------------------
-  //---------For editing  --------------------------------------------------------
-  //-------------Method ----------------------------------------------------------
-public:
-  bool enabled;
-  void *dll;
-  CDLLWindow  ();
-  ~CDLLWindow ();
-
-  void  SetObject (SDLLObject *object);
-  void  SetSignature (const long &sig);
-  const SDLLObject* Get_Object (void) {return obj;}
-  const long& GetSignature (void) {return signature;}
-  //-----------------------Edit --------------------------------------------------
-  //------------------------Size parameters --------------------------------------
-  void  Resize    (void);
-  //------------------------Drawing method ---------------------------------------
-  void  Draw      (void);
-  //-----------------------Time slice --------------------------------------------
-  void  TimeSlice (float dT);
-};
 //==========================================================================================
 //  Global situation
 //==========================================================================================
@@ -235,24 +157,18 @@ class CSituation : public CStreamObject {
 public:
   /// sdk: SFlyObjectList
   /// \todo link this list with wobjList
-  CFlyObjectListManager sdk_flyobject_list;
   CVehicleObject      *uVeh;    ///< Reference to user vehicle object
   CSimulatedObject    *sVeh;    ///< Reference to simulated objects
-  CDLLSimulatedObject *dVeh;    ///< Reference to Dll       objects
-  //-----------------------------------------------------------
-  std::vector     <CDLLWindow *> dllW;
-  std::vector     <CDLLWindow *>::iterator idllW;
 	//-----------------------------------------------------------
 protected:
 	U_INT           FrameNo;
   float           dTime;            // Delta time
+	CRandomEvents     rEVN;						// Event generator 
   //---- Methods --------------------------------------
 public:
    CSituation                          (void);
   ~CSituation                          (void);
-   void FreeDLLWindows                 (void);
-
-   
+  
   //----- CStreamObject methods-----------------------
   virtual int   Read                   (SStream *stream, Tag tag);
   virtual void  ReadFinished           (void);
@@ -277,7 +193,7 @@ public:
   void              OpalGlobalsClean   (void);
   void              ChangeUserVehicle  (char * name, bool bPlane);
   U_INT             GetFrameNo         (void) {return FrameNo; }
-  void              DrawDLLWindow      (void);
+	void							WorldOrigin();
   //----------------------------------------------------
   inline CVehicleObject*   GetUserVehicle() {return uVeh;}
   //----------------------------------------------------

@@ -138,6 +138,9 @@ CAtmosphereModelJSBSim::CAtmosphereModelJSBSim (void)
   //---Init base parameters ----------------------------
   InitModel();
   globals->atm  = this;
+	//--- Enter in dispatcher --------------------------------------------
+	globals->Disp.Enter(this,PRIO_ATMOSPHERE);
+
 }
 //------------------------------------------------------------------
 //  Free all resourecs 
@@ -155,11 +158,9 @@ CAtmosphereModelJSBSim::~CAtmosphereModelJSBSim (void) {
 //         at sea level;  We just make a (certainly) wrong supposition by 
 //         saying that temperature is 5° higgher at all altitude
 //=========================================================================
-void CAtmosphereModelJSBSim::TimeSlice(float dt,double altitude)
-{  //---Compute temperature and pressure -----------------------
-  //  slot.U = slope
-  //  slot.V = Temperature in Rankine
-  //  slot.W = pressure (psf)
+int CAtmosphereModelJSBSim::TimeSlice(float dt,U_INT frame)
+{ double altitude = globals->geop.alt;
+	//---Compute temperature and pressure -----------------------
   C3valSlot *slot = stdATMOS.Getfloor(altitude);
   float slp  = slot->GetU();
   float rfT  = slot->GetV();
@@ -196,23 +197,7 @@ void CAtmosphereModelJSBSim::TimeSlice(float dt,double altitude)
   presB   = presS * PFS_TO_HPA;
   //--- Update sound speed ---------------------------------------------
   soundspeed = sqrt(SHRatio*Reng*(tempR));
-  //--------------------------------------------------------------------
-  // test others density
-  //densD *= 10.0;
-  //cout << "Atmosphere:  h=" << altitude << " rho= " << densD << endl;
-//  #ifdef _DEBUG	
-//	  FILE *fp_debug;
-//	  if(!(fp_debug = fopen("__DDEBUG_atmosphere.txt", "a")) == NULL)
-//	  {
-//		  int test = 0;
-//		  fprintf(fp_debug, "TPD = %f %f %f\n", tempR, presS, densD);
-//		  fprintf(fp_debug, "TPD = %f %f %f\n",
-//                              RankineToCelsius (tempR),
-//                              presS * PSF_TO_INHG,
-//                              densD);
-//		  fclose(fp_debug); 
-//	  }
-//  #endif
+	return 1;
 }
 //--------------------------------------------------------------------
 //  Compute sea level parameters 
@@ -231,6 +216,7 @@ void CAtmosphereModelJSBSim::InitModel(void)
   tVAL.Conf(INDN_LINEAR,1);
   pVAL.Conf(INDN_LINEAR,1);
   dVAL.Conf(INDN_LINEAR,1);
+	globals->geop.alt = 0;
   TimeSlice(0,0);         //  Set Target
   TimeSlice(1,0);         //  Get Values
   //---Set sea level parameters --------------

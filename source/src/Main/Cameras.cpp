@@ -574,7 +574,7 @@ void CCamera::AbsoluteFeetPosition(CVector &v)
   return;
 }
 //-------------------------------------------------------------------------
-//  Set Camera Range
+//  Set Camera Range, return range ratio
 //-------------------------------------------------------------------------
 double CCamera::SetRange(double nr)
 { if (nr > rmax)  nr = rmax;
@@ -1274,8 +1274,7 @@ CRabbitCamera::CRabbitCamera()
 //  Release camera and restore contexte
 //--------------------------------------------------------------------------
 CRabbitCamera::~CRabbitCamera()
-{	
-}
+{	}
 //-------------------------------------------------------------------------
 //  Activate camera picking
 //-------------------------------------------------------------------------
@@ -1380,6 +1379,17 @@ void CCameraSpot::MoveBy(int px, int py)
   phi   = WrapTwoPi (phi   - r2);
   return;
 }
+//-------------------------------------------------------------------------
+//  Set Camera Range to see extension D at angle A
+//-------------------------------------------------------------------------
+void CCameraSpot::RangeFor(double D, double A)
+{double ang = DegToRad(A);
+ double hm  = D * 0.5;
+ double dr = hm / tan(ang);
+ SetRange(dr);
+ return;
+}
+
 //================================================================================
 // CCameraObserver
 //
@@ -2880,8 +2890,8 @@ CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx,CFuiWindow *win)
 	globals->cam	= rcam;
 	rcam->Store(&ctx);
 	//--- Set drawing constraints -----------
-	globals->noEXT += aCam->GetINTMOD();
-	globals->noINT += aCam->GetEXTMOD();
+	globals->noEXT += rcam->GetINTMOD();
+	globals->noINT += rcam->GetEXTMOD();
 	//--- Lock in slew mode -----------------
 	globals->slw->StartMode(&ctx);							// Slew mode
 	//--- Set profile -----------------------
@@ -2895,7 +2905,7 @@ CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx,CFuiWindow *win)
 //  Restore camera from context
 //---------------------------------------------------------------
 void CCameraManager::RestoreCamera(CAMERA_CTX &ctx)
-{ //--- Relax drawing from camera --------------
+{ //--- Relax drawing from active camera ------
 	delete aCam;
 	aCam	= 0;
 	//--- Set new camera and relax constraints --

@@ -67,27 +67,50 @@ void GlobalsClean (void)
 {
   return;
 }
-
+//=====================================================================================
+//    Dispatcher constructor
+//=====================================================================================
+CDispatcher::CDispatcher()
+{	for (int k=0; k < PRIO_MAX; k++)
+	{	DSP_EXEC *tab = slot + k;
+		tab->lock		= 0;
+		tab->obj  	= 0;
+	}
+}
+//-------------------------------------------------------------------
+//	Execute
+//-------------------------------------------------------------------
+void	CDispatcher::TimeSlice(float dT, U_INT frame)
+{	for (int k=0; k<= PRIO_OTHERS; k++)
+		{	CExecutable *ex = slot[k].obj;
+			if (0 == ex)			continue;
+			if (slot[k].lock)	continue;
+			if (0 == slot[k].obj->TimeSlice(dT,frame)) return;
+		}
+	return;
+}
 ///=====================================================================================
 /// CRandomEvents
 ///=====================================================================================
-CRandomEvents CRandomEvents::instance;
-
-void CRandomEvents::Init (void)
-{ TRACE ("CRandomEvents::Init");
+//	Constructor
+//---------------------------------------------------------------------------
+CRandomEvents::CRandomEvents()
+{	TRACE ("CRandomEvents::Init");
   rc = 0;
   dirty = false;
   rc++;
   random.Set (0.0f, 1000, 1.0f);
+	//--- Get ini file ----------------------
+	int rd = 0;
+	GetIniVar ("Sim", "randomEvents", &rd);
+  on = rd;
 }
-
+//---------------------------------------------------------------------------
 CRandomEvents::~CRandomEvents (void) 
-{
-  ;
-}
+{;}
 
 void CRandomEvents::Timeslice (float dT,U_INT Frame)
-{ 
+{ if (0 == on)	return;
   random.TimeSlice (dT);
   int val = random.GetValue ();
   //TRACE ("CRandomEvents::Timeslice %d %u", val, globals->random_flag);
@@ -109,61 +132,6 @@ void CRandomEvents::Timeslice (float dT,U_INT Frame)
 }
 
 
-///=====================================================================================
-/// sdk: CFlyObjectListManager
-///=====================================================================================
-void CFlyObjectListManager::Init (void)
-{
-  rc = 0;
-
-  tmp_fly_object.ref.objectPtr = NULL;
-  tmp_fly_object.ref.classSig  = NULL;
-  tmp_fly_object.ref.superSig  = NULL;
-  tmp_fly_object.next          = NULL;
-  tmp_fly_object.prev          = NULL;
-
-  fo_list.clear ();
-
-  // Allocate first struct
-  fo_list.push_back (tmp_fly_object);
-  dirty = false;
-  rc++;
-}
-
-CFlyObjectListManager::~CFlyObjectListManager (void) 
-{
-  // dll are responsible for objects deletion in this list
-  // except for the first one which is the user object;
-/*/
-  i_fo_list = fo_list.begin ();
-  ++i_fo_list;                           // skip first user object
-  for (i_fo_list; i_fo_list != fo_list.end (); ++i_fo_list) {
-     SAFE_DELETE (i_fo_list->ref.objectPtr);          // 
-  }
-/*/
-}
-
-void CFlyObjectListManager::InsertUserInFirstPosition (const CVehicleObject *user)
-{
-  if (rc) {
-    // (*it).ref.objectPtr
-    std::list<SFlyObjectList>::iterator it = fo_list.begin ();
-    (*it).ref.objectPtr = (CVehicleObject *) user;
-    (*it).ref.classSig  = NULL;
-    (*it).ref.superSig  = NULL;
-  }
-}
-
-void CFlyObjectListManager::InsertDLLObjInList (const SDLLObject *obj)
-{
-  if (rc) {
-    tmp_fly_object.ref = obj->flyObject;
-    tmp_fly_object.next = NULL;
-    tmp_fly_object.prev = NULL;
-    fo_list.push_back (tmp_fly_object);
-    rc++;
-  }
-}
 //==========================================================================
 //  Global Group function for Slew manager 'slew'
 //==========================================================================
@@ -215,7 +183,6 @@ bool sKeySRGT (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySBNL (int id, int code, int mod)
 { // Bank left 1° -------------------------------------
-	if (globals->aPROF.Has(PROF_RABIT))	return true;	
   CVector v(0,-1,0);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -225,7 +192,6 @@ bool sKeySBNL (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySBNR (int id, int code, int mod)
 {	//--- Bank right 1° ---------------------------------
-	if (globals->aPROF.Has(PROF_RABIT))	return true;
 	CVector v(0,+1,0);
 	globals->pln->AddOrientationInDegres(v);
 	return true;
@@ -235,7 +201,6 @@ bool sKeySBNR (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySRTL (int id, int code, int mod)
 { // Left rotate 1° ----------------------------------
-	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(0,0,+1);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -245,7 +210,6 @@ bool sKeySRTL (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySRTR (int id, int code, int mod)
 { // Right rotate 1° ----------------------------------
-	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(0,0,-1);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -255,7 +219,6 @@ bool sKeySRTR (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySRL4 (int id, int code, int mod)
 { //Left Rotate 45 ° ----------------------------------
-	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(0,0,+45);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -265,7 +228,6 @@ bool sKeySRL4 (int id, int code, int mod)
 //-----------------------------------------------------------------------------
 bool sKeySRR4 (int id, int code, int mod)
 { //--- Rigth rotate 45° ------------------------------
-	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(0,0,-45);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -275,7 +237,6 @@ bool sKeySRR4 (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySPTU (int id, int code, int mod)
 { //pitch up 0.25° ------------------------------------
-	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(+0.25,0,0);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -285,7 +246,6 @@ bool sKeySPTU (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySPTD (int id, int code, int mod)
 { //--- Pitch Down 0.25° -----------------------------
-	if (globals->aPROF.Has(PROF_RABIT))	return true;
   CVector v(-0.25,0,0);
   globals->pln->AddOrientationInDegres(v);
   return true;
@@ -338,6 +298,8 @@ CSlewManager::CSlewManager (void)
   mode  = SLEW_STOP;
 	//--- Bind all  keys -------------------------------------------
   BindKeys();
+	//--- Enter in Dispatcher --------------------------------------
+	globals->Disp.Enter(this,PRIO_SLEWMGR);
 }
 //------------------------------------------------------------------------
 //  Destroy resources
@@ -426,9 +388,9 @@ void CSlewManager::StartMode(CAMERA_CTX *ctx)
 //------------------------------------------------------------------------
 void CSlewManager::StopSlew()
 {	ZeroRate();
-	if (globals->aPROF.Has(PROF_RABIT))	return;
+	if (globals->aPROF.Has(PROF_EDITOR))	return;
   veh = globals->pln;
-  if (0 == veh)												return;
+  if (0 == veh)													return;
   //---------------------------------------------
   mode = SLEW_STOP;
   if (grnd)  veh->RestOnGround();
@@ -502,33 +464,30 @@ void CSlewManager::RabbitMove(float dT)
   return;
 }
 //------------------------------------------------------------------------
-//  Flight plan move
-//------------------------------------------------------------------------
-//------------------------------------------------------------------------
 //  Update aircraft position
 //------------------------------------------------------------------------
-void CSlewManager::Update (float dT)
+int CSlewManager::TimeSlice(float dT,U_INT f)
 {	veh = globals->pln;
-  if (0 == veh)   return;
   switch (mode) {
     case SLEW_STOP:
-        return;
+        break;
     //----Aircraft is moving -------------------------
     case SLEW_MOVE:
 				NormalMove(dT);
-				return;
+				break;
 		//--- Rabbit is moving ---------------------------
 		case SLEW_RCAM:
 				RabbitMove(dT);
-				return;
+				break;
 		//--- 3D flight plan -----------------------------
 		case SLEW_FPLM:
-				return;
+				break;
     //---Aircraft is leveling --------------------------
     case SLEW_LEVL:
-        return SetLevel(veh);
+        SetLevel(veh);
+				break;
   }
-  return;
+	return (globals->tcm->Teleporting())?(0):(1);
 };
 //--------------------------------------------------------------------------
 //  Set Plane to level
@@ -624,13 +583,7 @@ CSituation::CSituation()
   // Perform base initialization
 	FrameNo	= 0;										// JSDEV*
   uVeh    = 0;
-  sVeh    = dVeh = 0;
-  //MEMORY_LEAK_MARKER (">rnd Construct")
-  if (globals->random_flag & RND_EVENTS_ENABLED)
-    CRandomEvents::Instance ().Init ();
-  //MEMORY_LEAK_MARKER ("<rnd Construct")
-  //---- Init DLL ------------------------
-  dllW.clear ();
+  sVeh    = 0;
  // Open SIT file from pod filesystem
   OpenSitFile ();
   //MEMORY_LEAK_MARKER ("<SIT Construct")
@@ -666,29 +619,9 @@ CSituation::~CSituation (void)
 #ifdef _DEBUG
   DEBUGLOG ("CSituation::~CSituation");
 #endif  
-#ifdef _DEBUG
-  //TRACE ("CSituation::~CSituation %p %p", sVeh, dVeh);
-#endif
   //---Free all world objects ---------------------------
   SAFE_DELETE (uVeh);
   SAFE_DELETE (sVeh);
-  //----delete user position drawing pointer ------------
-  //---- delete all pointers in dllW --------------------
-  FreeDLLWindows ();
-}
-//-------------------------------------------------------------------------
-//  Free DLLWindows resources
-//-------------------------------------------------------------------------
-void CSituation::FreeDLLWindows (void)
-{ 
-#ifdef _DEBUG
-  DEBUGLOG ("CSituation::FreeDLLWindows");
-#endif  
-  // delete all pointers in dllW
-  for (idllW = dllW.begin (); idllW != dllW.end (); ++idllW) {
-    SAFE_DELETE (*idllW);
-  }
-  dllW.clear (); // 
 }
 //-------------------------------------------------------------------------
 //  Proced to Camera adjustment according to aircraft dimension
@@ -888,17 +821,15 @@ void CSituation::Prepare (void)
   /// SDK Stuffs JS/  Can we delete this????
   // sdk: don't know whether it's the right place or not ...
   // also added in main CleanupGlobals
-  if (globals->plugins_num) globals->plugins.On_EndSituation ();
+  globals->plugins.On_EndSituation ();
 
   // sdk: prepare plugin dlls = DLLStartSituation
-  if (globals->plugins_num) globals->plugins.On_StartSituation ();
+  globals->plugins.On_StartSituation ();
 
   // sdk: prepare plugin dlls = DLLInstantiate //
-  if (globals->plugins_num) {
-    globals->plugins.On_Link_DLLSystems (0,0,NULL);// 
-    //globals->plugins.On_Link_DLLGauges  (0,0,NULL);// 
-//  if (globals->plugins_num) globals->plugins.On_Instantiate (0,0,NULL);
-  }
+  globals->plugins.On_Link_DLLSystems (0,0,NULL);// 
+	//--- Call for dispatcher declaration ----------------
+  
 }
 //----------------------------------------------------------------------------
 // This method is called on every simulation cycle, in order to update
@@ -910,44 +841,9 @@ void CSituation::Timeslice (float dT,U_INT frame)
 {	// A new cycle begins --------------------------------
   dTime   = dT;
   FrameNo = frame;
-  //--- Update weather parameters -----------------------
-  globals->wtm->TimeSlice(dT,frame);
-  //--- Udpate Terrain cache ----------------------------
-  globals->tcm->TimeSlice(dT,frame);
-  //--- Update Navigation cache -------------------------
-  globals->dbc->TimeSlice(dT,frame);
-  //---- Update the slew manager --------------------------
-  globals->slw->Update (dT);
-  //--- Wait until terrain is ready -----------------------
-  if (globals->tcm->Teleporting())  return;
-  //---- Update atmosphere  -----------------
-  globals->atm->TimeSlice(dT,globals->geop.alt);
-  //---Dont update any vehicle when special editing --------
-	char nod = globals->noEXT + globals->noINT;
-  if (nod >= 2)											return;
-  //---- Update vehicle ------------------------------------
-  if (uVeh) uVeh->TimeSlice(dT,frame);
-  if (sVeh) sVeh->Timeslice(dT,frame);
-  // sdk : 
-  if (globals->plugins_num) {                                    
-  //---- sdk: Update DLL FlyObjects -----------------------
-    sdk_flyobject_list.i_fo_list = sdk_flyobject_list.fo_list.begin ();
-    ++sdk_flyobject_list.i_fo_list;                                // skip first user object
-    for (sdk_flyobject_list.i_fo_list; 
-         sdk_flyobject_list.i_fo_list != sdk_flyobject_list.fo_list.end ();
-       ++sdk_flyobject_list.i_fo_list) {
-       ((CSimulatedObject *)(sdk_flyobject_list.i_fo_list)->ref.objectPtr)->Timeslice (dT,frame); // 
-    }
-  //---- sdk: Update plugin DLLIdle data -------------------
-    globals->plugins.On_Idle (dT);
-  //---- sdk: Update DLL windows ---------------------------
-    for (idllW = dllW.begin (); idllW != dllW.end (); ++idllW) {
-      (*idllW)->TimeSlice (dT);
-    }
-  }
-  // random events
-  if (globals->random_flag & RND_EVENTS_ENABLED)
-    CRandomEvents::Instance ().Timeslice (dT, frame);
+	globals->Disp.TimeSlice(dT,frame);	// Call dispatcher
+  //--- random events --------------------------------------
+	rEVN.Timeslice(dT,frame);
   return;
 }
 //----------------------------------------------------------------------------
@@ -1000,15 +896,7 @@ void CSituation::DrawExternal()
   //  or from dll 'dVeh'
   //-------------------------------------------------------------
   if (sVeh) sVeh->DrawExternal();
-  else { // 
-    globals->sit->sdk_flyobject_list.i_fo_list = globals->sit->sdk_flyobject_list.fo_list.begin ();
-    ++globals->sit->sdk_flyobject_list.i_fo_list;                                // skip first user object
-    for (globals->sit->sdk_flyobject_list.i_fo_list; 
-         globals->sit->sdk_flyobject_list.i_fo_list != globals->sit->sdk_flyobject_list.fo_list.end ();
-       ++globals->sit->sdk_flyobject_list.i_fo_list) {
-        dVeh = (CDLLSimulatedObject *)((globals->sit->sdk_flyobject_list.i_fo_list)->ref.objectPtr); // 
-        if (dVeh)  dVeh->DrawExternal();
-    }
+  else { globals->plugins.DrawExternal();
   }
   return;
 }
@@ -1021,15 +909,24 @@ void CSituation::DrawVehicleFeatures()
   return;
 }
 //-------------------------------------------------------------------------------
-//  Change situation
+//  Set world origin
 //-------------------------------------------------------------------------------
+void CSituation::WorldOrigin()
+{	SPosition pos;  
+  pos.lat = pos.lon = pos.alt = 0;
+  globals->geop = pos;
+  CVector ori(0,0,0);
+  globals->iang = ori;
+  globals->dang = ori;
+}
 //==============================================================================
 //  Draw the situation
 //  All drawing of the scene (except for PUI user interface widgets) is
 //   controlled from this method.
 //===============================================================================
 void CSituation::Draw ()
-{ CCamera *cam = globals->cam;
+{ if (globals->aPROF.Has(PROF_NO_SIT))	return;
+	CCamera *cam = globals->cam;
   //----Use standard camera seting for drawing ------------------------
   cam->StartShoot(dTime);
   //----Draw sky background ------------------------------------
@@ -1038,110 +935,11 @@ void CSituation::Draw ()
   //--------------------------------------------------------------------
   // Draw the terrain (ground textures, airports, scenery models, etc.)
   //--------------------------------------------------------------------
-  globals->tcm->Draw(cam);                     //  Terrain cache
+  globals->tcm->Draw();                     //  Terrain cache
   //---Restore everything ---------------------------------------
   cam->StopShoot();
   // Check for an OpenGL error
   CHECK_OPENGL_ERROR
-}
-//==============================================================================
-// sdk: Draw the DLL windows plugins
-//  Called from CFUIManager::Draw method
-//===============================================================================
-void CSituation::DrawDLLWindow (void)
-{
-  for (idllW = dllW.begin (); idllW != dllW.end (); ++idllW) {
-    (*idllW)->Draw ();
-  }
-}
-
-//============================================================================================
-//  Class CDLLWindow to display a DLL window plugin
-//============================================================================================
-CDLLWindow::CDLLWindow (void)
-{ surf  = 0;
-  obj   = 0;
-  wd    = static_cast<short> (globals->mScreen.Width);
-  ht    = static_cast<short> (globals->mScreen.Height);
-  signature = 0;
-  dll = 0;
-  enabled = false;
-  //back  = MakeRGB (212, 212,   0);
-  back  = MakeRGB (  0,   0,   0);
-  black = MakeRGB (  0,   0,   0);
-  Resize();  
-}
-//---------------------------------------------------------------------------------
-//  Destroy 
-//---------------------------------------------------------------------------------
-CDLLWindow::~CDLLWindow (void)
-{ 
-#ifdef _DEBUG
-  //TRACE ("DELETE DLL SURF %p %p %p", surf, obj, dll);
-#endif
-  if (surf) surf = FreeSurface (surf);
-  // sdk: cleanup objects = DLLDestroyObject // 
-  globals->plugins.On_DestroyObject (obj, dll);
-}
-//---------------------------------------------------------------------------------
-//  
-//---------------------------------------------------------------------------------
-void CDLLWindow::SetObject (SDLLObject *object)
-{
-  obj = object;
-}
-//---------------------------------------------------------------------------------
-//  
-//---------------------------------------------------------------------------------
-void CDLLWindow::SetSignature (const long &sig)
-{
-  signature = sig;
-}
-//---------------------------------------------------------------------------------
-//  Resize parameters
-//---------------------------------------------------------------------------------
-void CDLLWindow::Resize (void)
-{ if (surf) FreeSurface (surf);
-  surf  = CreateSurface (400, 400);
-#ifdef _DEBUG
-  //TRACE ("CREATE DLL SURF");
-#endif
-  return;
-}
-//---------------------------------------------------------------------------------
-//  Time slice called from CSituation
-//---------------------------------------------------------------------------------
-void  CDLLWindow::TimeSlice (float dT)
-{ if (0 == surf) return;
-  // sdk: Draw the DLLDraw
-  //--------------------------------------------------------------------
-  //if (globals->plugins_num) globals->plugins.On_Draw (obj, surf);
-  //--- e.g. Draw a line in a windows ---------------------------
-  //EraseSurfaceRGB (surf, back);
-  //DrawFastLine (surf, 0, 0, 500, 5, black);
-  return;
-}
-//---------------------------------------------------------------------------------
-//  Draw the surface
-//  Should be called  from CFuiManager contex
-//---------------------------------------------------------------------------------
-void  CDLLWindow::Draw (void)
-{ if (0 == surf) return;
-  // Starting raster position is bottom-left corner of the surface,
-  //   with (0,0) at top-left of the screen
-  // sdk :
-  if (globals->plugins_num) {
-    glRasterPos2i (surf->xScreen, surf->yScreen + surf->ySize);
-    //
-    globals->plugins.On_Draw (obj, surf, dll); // 
-    // Blit is performed in the dll
-    //glDrawBuffer (GL_BACK);
-    //glDrawPixels  (surf->xSize,   surf->ySize,
-    //    GL_RGBA,
-    //    GL_UNSIGNED_BYTE,
-    //    surf->drawBuffer);
-  }
-  return;
 }
 //============================================================================================
 //  Methods for structure TXT_LIST

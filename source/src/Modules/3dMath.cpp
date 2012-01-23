@@ -5,6 +5,7 @@
 #include "../Include/3dMath.h"
 #include "../Include/Utility.h"
 #include "../Include/GeoMath.h"
+#include "../Include/Cameras.h"
 #include <math.h>
 
 #ifdef  _DEBUG
@@ -1228,15 +1229,48 @@ int GeoTest::InTriangle(D2_POINT &P, D2_TRIANGLE &T)
 	return (on)?(GEO_ON_SIDE):(GEO_INSIDE); 
 }
 //====================================================================================
+//	TRIANGULATOR global variable
+//====================================================================================
+char *FaceType[] =
+{	"X+",								// 0
+	"Y+",								// 1
+	"X-",								// 2
+	"Y-",								// 3
+};
+//====================================================================================
 //	TRIANGULATOR for triangulation of polygones
 //====================================================================================
 Triangulator::Triangulator()
-{	Clean();	}
+{	trace = 1;
+	Clean();	
+}
 //-------------------------------------------------------------------
 //	Release resources 
 //-------------------------------------------------------------------
 Triangulator::~Triangulator()
-{	Clean();	}
+{	Clean();
+}
+//===================================================================
+//	Drawing interface
+//===================================================================
+//-------------------------------------------------------------------
+//	Draw as lines 
+//-------------------------------------------------------------------
+void Triangulator::DrawLines()
+{	// Draw triangulation
+	glColor3f(0,255,0);
+	glPolygonMode(GL_FRONT,GL_LINE);
+	D2_TRIANGLE *T;
+	for (U_INT k=0; k != out.size(); k++)
+	{	T = out[k];
+		glBegin(GL_LINE_LOOP);
+		glVertex3d(T->B->x,T->B->y,T->B->z);
+		glVertex3d(T->A->x,T->A->y,T->A->z);
+		glVertex3d(T->C->x,T->C->y,T->C->z);
+		glEnd();
+	}
+}
+
 //===================================================================
 //	Public interface
 //===================================================================
@@ -1271,6 +1305,7 @@ void Triangulator::NewHole()
 	Merge();
 	return;
 }
+
 //===================================================================
 //	Private interface
 //===================================================================
@@ -1344,8 +1379,10 @@ bool Triangulator::ParseVTX(char *txt)
 //	Create slot for triangulation
 //	Compute ground surface
 //-------------------------------------------------------------------
-void Triangulator::SetPointType()
-{	surf	= 0;
+bool Triangulator::QualifyPoints()
+{	if (extp.GetNbObj() < 3)		return false;	
+	dlg		= 0;
+	surf	= 0;
 	U_INT nb = extp.GetNbObj();
 	//--- initialize the first triangle ----
 	D2_POINT *ap = extp.GetFirst();
@@ -1361,13 +1398,24 @@ void Triangulator::SetPointType()
 		//--- Create a triangulation slot ------
 		D2_SLOT *sp = new D2_SLOT(ap);
 		slot.PutLast(sp);
+		//--- Compute AC edge length -----------
+		if (ap->NotNulEdge())
+		{	double dx = (np->x - ap->x);
+			double dy = (np->y - ap->y);
+			double lg = sqrt((dx * dx) + (dy * dy));
+			ap->elg		= lg;
+			//--- remember extremity points ------
+			if (lg > dlg) {TO = ap; dlg = lg; }
+		}
+		else  ap->elg = 0;
 		//--- next vertex ----------------------
 		ap = ap->next;
 	}
 	out.reserve(nb-2);
 	//--- Adjust real surface- ---------------
 	surf *= -0.5;
-	return;
+	//--- Chose  direction -------------------
+	return  (dlg < geo.GetPrecision())?(false):(true);
 }
 //-------------------------------------------------------------------
 //	Compute type of points at triangle extremity
@@ -1442,25 +1490,55 @@ bool Triangulator::NotAnEar(D2_SLOT *sa)
 //-------------------------------------------------------------------
 //	Start triangulation
 //-------------------------------------------------------------------
+void Triangulator::Triangulation()
+{	while (slot.GetNbObj() != 2)	GetAnEar();
+	return;
+}
+
+//-------------------------------------------------------------------
+//	Start triangulation
+//-------------------------------------------------------------------
 void Triangulator::Start()
 {	if (extp.GetNbObj() < 3)			return;
 	if (hole.GetNbObj() > 2)			Merge();
-//	TraceInp();
-	SetPointType();
-	while (slot.GetNbObj() != 2)	GetAnEar();
+	QualifyPoints();
+	if (trace) TraceInp();
+	Triangulation();
 	slot.Clear();
-//	TraceOut();
+	if (trace) TraceOut();
+	QualifyFaces();
+	if (trace) TraceFace();
 	return;
 }
 //-------------------------------------------------------------------
 //	Trace Input
 //-------------------------------------------------------------------
 void Triangulator::TraceInp()
-{	char ida[6];
+{	char  ida[6];
+  char *dim;
   D2_POINT *pa;
+	TRACE("=====Input Polygon ======================");
 	for (pa = extp.GetFirst(); pa != 0; pa = pa->next)
 	{	pa->Id(ida);
-	  TRACE("%s x=%lf y=%lf",ida,pa->x,pa->y);
+	  dim = (pa == TO)?("***"):(" ");
+	  TRACE("%s x=%.02lf y=%.02lf lgr=%.02lf %s",ida,pa->x,pa->y,pa->elg,dim);
+	}
+	TRACE("=========================================");
+}
+//-------------------------------------------------------------------
+//	Trace Faces
+//-------------------------------------------------------------------
+void Triangulator::TraceFace()
+{	char  ida[6];
+  char *type = "None";
+  D2_POINT *pa;
+	TRACE("=====Input Faces  ======================");
+	U_INT k		= 0;
+	U_INT end = extp.GetNbObj();
+	for (pa = TO; k < end; pa = extp.CyNext(pa), k++)
+	{	pa->Id(ida);
+	  type = FaceType[pa->F];
+	  TRACE("%s lx=%.02lf ly=%.02lf type=%s",ida,pa->lx,pa->ly,type);
 	}
 	TRACE("========================================");
 }
@@ -1575,12 +1653,12 @@ void Triangulator::Splice(D2_POINT *xp, D2_POINT *hp)
 	//    this creates internal edge e1 from exterior to inside
 	xp->next	= hp;			// hp next (to H+1) is ok 
 	hp->prev	= xp;
-	xp->SetFace('N');		// This is e1 null edge
+	xp->SetEdge('N');		// This is e1 null edge
 	//--- Step 2 Introduce origin edge 2 with h2: ---------------
 	//		Link to hole chain. Going from inside to exterior 
 	h2->prev	= ln;			// Link to end of holes	
 	ln->next  = h2;
-	h2->SetFace('N');		// This is e2 null edge
+	h2->SetEdge('N');		// This is e2 null edge
 	//--- Step 3 Introduce extremity edge 2 with x2 -------------
 	h2->next	= x2;			// Link to extremity
 	x2->prev  = h2;
@@ -1594,13 +1672,129 @@ void Triangulator::Splice(D2_POINT *xp, D2_POINT *hp)
 //=========================================================================
 //	Compute the bounding rectangle and set wall attraction
 //
-//	We look for the longuest edge and take it as the X axis, thus computing
-//	the angle A = atan(dx,dy) 
+//	We look for the longuest edge AB and take it as the X axis, thus computing
+//	the angle A  from X axis to the Edge 
 //	Then new coordinates for edge are computed to get extension
-//	An edge as X or Y attration depending on which value of dx or dy is max
+//
+//	We have rot(A) = |cos(A)  sin(A)| for angle A. 
+//								   |-sin(A) cos(A)|
+//	where cos(A) = dx / lentgh(AB)
+//				sin(A) = dy / lentgh(AB)
+// We just have to change sin(-A) to -sin(A) fro the inverse rotation
+//	if the largest edge is near zero lentght, this have been detected
+//	in QualifyPoints() already.
 //=========================================================================
-void Triangulator::BoundRectangle()
-{
+void Triangulator::QualifyFaces()
+{	//--- Compute rotation matrix -------------------
+  D2_POINT *pa = TO;
+	D2_POINT *pb = extp.CyNext(pa);
+  double sx = (pb->x - pa->x) / dlg;					// Cos(A)
+	double sy = (pb->y - pa->y) / dlg;					// Sin(A)
+	//--- As we want a -A rotation, we change the signe of sin(A) aka dy
+	double mat00		= +sx;				// Line 0 col 0
+	double mat01    = -sy;				// Line 0 col 1
+	double mat10    = +sy;				// Line 1 col 0 
+	double mat11    = +sx;				// Line 1 col 1
+	//----Init extension ----------------------------------
+	minx		= maxx = 0;
+	miny    = maxy = 0;
+	//--- Save the matrix ---------------------------------
+	rotM[0]	= mat00; rotM[1] = mat01;
+	rotM[2] = mat10; rotM[3] = mat11;
+	//---- compute new coordinates relatives to PO---------
+	D2_POINT *pp = 0;
+	for (pp = extp.GetFirst(); pp != 0; pp = pp->next)
+	{	double dx = (pp->x - pa->x);
+		double dy = (pp->y - pa->y);
+	  double lx = ((dx * mat00) + (dy * mat10));
+	  double ly = ((dx * mat01) + (dy * mat11));
+		//--- Save both max, min extensions ----------------
+		pp->lx		= lx;
+		pp->ly		= ly;
+		if (lx < minx)	minx = lx;
+		if (lx > maxx)	maxx = lx;
+		if (ly < miny)	miny = ly;
+		if (ly > maxy)	maxy = ly;
+		//--- qualify previous edge if one ------------------
+		if (pp->prev)  QualifyEdge(pp);
+	}
+  //-- Now we may qualify the first face ----------------
+	//	because the last edge is computed
+	QualifyEdge(extp.GetFirst());
+	//---------------------------------------------------
+	return;
+}
+//----------------------------------------------------------------
+//	Qualify an edge with previous point
+//	We qualify the edge pa which is the previous point of pb
+//	because pa is already computed.
+//----------------------------------------------------------------
+void Triangulator::QualifyEdge(D2_POINT *pb)
+{	D2_POINT *pa = extp.CyPrev(pb);
+	double dx = pb->lx - pa->lx;
+	double dy = pb->ly - pa->ly;
+	//--- Qualify the face whose base is pa ------------
+	char F= (fabs(dy) > fabs(dx))?(GEO_Y_FACE):(GEO_X_FACE);
+	if ((F == GEO_X_FACE) && (dx < 0))   F |= GEO_N_FACE;
+	if ((F == GEO_Y_FACE) && (dy < 0))   F |= GEO_N_FACE;
+	pa->SetFace(F);
+	return;
+}
+//=========================================================================
+//	Extruding the building faces
+//=========================================================================
+void Triangulator::Extrude(int etg , int htr)
+{ 
+}
+//----------------------------------------------------------------
+//	Build floor number no
+//	f = floor 
+//----------------------------------------------------------------
+void Triangulator::BuildFloor(int No, double f, double h, D2_POINT *sw)
+{	double    ht = f + h;				// This floor height
+  D2_POINT *pa = 0;
+	D2_Floor *et = new D2_Floor(No,f,(f + h));
+	D2_Face  *fa = 0;
+	for (pa = extp.GetFirst(); pa != 0; pa = pa->next)
+	{	fa = new D2_Face();
+		//--- Now we build a face with pa as the base points
+		fa->Extrude(f,ht,pa,extp.CyNext(pa));
+		et->faces.push_back(fa);
+	}
+	return;
+}
+//=========================================================================
+//	D2-FACE class
+//=========================================================================
+D2_Face::D2_Face()
+{	}
+//---------------------------------------------------------------
+//	Extrude a face from  SW point PA
+//---------------------------------------------------------------
+void D2_Face::Extrude(double f, double c, D2_POINT *p0, D2_POINT *p1)
+{	sw		= *p0;
+	se		= *p1;
+	ne		= *p1;
+	nw		= *p0;
+	//--- Save heights ----------------
+	sw.z = se.z = f;
+	se.z = nw.z = c;
+	return;
+}
+//=========================================================================
+//	D2-Stair class
+//=========================================================================
+D2_Floor::D2_Floor(int e, double f, double c)
+{	sNo		= e;
+	floor = f;
+	ceil  = c;
+} 
+//---------------------------------------------------------------
+//	Free resources 
+//---------------------------------------------------------------
+D2_Floor::~D2_Floor()
+{	for (U_INT k=0; k < faces.size(); k++) delete faces[k];
+	faces.clear();
 }
 //=======================END OF FILE ======================================================
 

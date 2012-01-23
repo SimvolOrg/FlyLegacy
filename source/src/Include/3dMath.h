@@ -340,8 +340,10 @@ int GreatestCommonDivisor (int i, int j);
 #define GEO_REFLEX		(1)
 //--- Type of FACE --------------------------------
 #define GEO_FACE_NUL	(0)
-#define GEO_FACE_EXT	(1)
-#define GEO_FACE_INT  (2)
+#define GEO_X_FACE	  (0x00)
+#define GEO_Y_FACE    (0x01)
+#define GEO_N_FACE    (0x02)  // Negative face	
+//---- 
 //=========================================================================================
 //	Geometric tester
 //=========================================================================================
@@ -359,10 +361,11 @@ public:
 	int   InTriangle(D2_POINT &A, D2_TRIANGLE &T);
 	int	  Positive(D2_TRIANGLE &T);
 	//-------------------------------------------------------------
-	inline void SetPrecision(double p)	{precision = p;}
+	inline void		SetPrecision(double p)	{precision = p;}
+	inline double GetPrecision()					{return precision;}
 };
 //====================================================================================
-//	Slot to point to a 2D_POINT
+//	Slot to a 2D_POINT
 //	Used for triagulation of the polygon
 //====================================================================================
 struct D2_SLOT {
@@ -382,6 +385,40 @@ struct D2_SLOT {
 	void D2_SLOT::SetType(char t)	{R = t;}
 	};
 //====================================================================================
+//	Class face for stair extrusion
+//====================================================================================
+class D2_Face {
+	// ATTRIBUTES ------------------------------------------------
+protected:
+	//--- Corner definitions ----------------------------
+	D2_POINT sw;										// SW corner
+	D2_POINT se;										// SE corner
+	D2_POINT ne;										// NE corner
+	D2_POINT nw;										// NW corner
+	//--- public Methods -------------------------------
+public:
+	D2_Face();
+	//--------------------------------------------------
+	void Extrude(double f,double c,D2_POINT *sw,D2_POINT *se);
+};
+//====================================================================================
+//	Class Stair for stair extrusion
+//====================================================================================
+class D2_Floor {
+	//--- ATTRIBUTES ------------------------------------------
+public:
+	int			sNo;											// Stair number
+	double	floor;										// Height
+	double  ceil;
+	std::vector<D2_Face*> faces;			// Polygon faces
+	//--- METHODS ---------------------------------------------
+public:
+	D2_Floor() {;}
+	D2_Floor(int e, double f, double c);
+ ~D2_Floor();
+ //----------------------------------------------------------
+};
+//====================================================================================
 //	TRIANGULATOR for triangulation of polygones
 //====================================================================================
 class Triangulator {
@@ -397,8 +434,23 @@ class Triangulator {
 	D2_TRIANGLE tri;															// Internal triangle
 	D2_TRIANGLE qtr;															// Qualify triangle
 	//----------------------------------------------------
+	D2_POINT   *TO;																// Texture origin
+	double      dlg;															// Larger diagonal
+	//---------------------------------------------------------------
+	double      minx;															// Mini x
+	D2_POINT   *pminx;														// Point with minx
+	double      maxx;															// Max  x
+	D2_POINT   *pmaxx;														// Point with maxx
+	double      miny;															// mini y
+	D2_POINT   *pminy;														// Point with miny
+	double      maxy;															// Max  y
+	D2_POINT   *pmaxy;														// Point with maxy
+	//----------------------------------------------------
 	double	surf;																	// Ground surface
 	//----------------------------------------------------
+	double  rotM[4];															// Rotation matrix
+	//----------------------------------------------------
+	char    trace;																// Trace indicator
 	char    vRFX;																	// Reflex indicator
 	char    hIND;																	// Hole indicator
 	char    face;																	// Type of face			
@@ -413,7 +465,12 @@ public:
 	void		AddVertex(double x, double y);
 	void		NewHole();
 	void		Load(char *fn);
+	bool	  QualifyPoints();
+	void		Triangulation();
+	void		QualifyFaces();
+	void		Extrude(int e,int h);
 	void		Start();
+	void		DrawLines();					// Drawing interface
 	//-----------------------------------------------------
 	inline double	GetSurface()		{return surf;}
 protected:
@@ -423,7 +480,6 @@ protected:
 	bool		ParseVTX(char *txt);
 	bool		ParseHOL(char *txt);
 	//------------------------------------------------------
-	void		SetPointType();
 	bool		NotAnEar(D2_SLOT  *sa);
 	void		GetAnEar();
 	void		Requalify(D2_SLOT *sp);
@@ -433,11 +489,13 @@ protected:
 	bool			CheckInternal(D2_POINT *xp, D2_POINT *hp);
 	bool			CheckExternal(D2_POINT *xp, D2_POINT *hp);
 	void			Splice(D2_POINT *xp, D2_POINT *hp);
-	//-----------------------------------------------------
-	void			BoundRectangle();
+	//---- Face processing --------------------------------
+	void		QualifyEdge(D2_POINT *pa);
+	void		BuildFloor(int no,double f, double c, D2_POINT *sw);
 	//------------------------------------------------------
 	void		TraceOut();
 	void		TraceInp();
+	void		TraceFace();
 };
 
 //==========================================================================================

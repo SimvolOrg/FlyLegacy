@@ -624,11 +624,11 @@ public:
 //	CDbCacheMgr manages the whole thing
 //  NOTE:   Magnetic deviation is the average deviation of all objects 
 //          in cache. This is a substitute for the magnetic model that 
-//          is no more working
+//          is no more working when file COEF is out of date
 //
 //=====================================================================
 //=====================================================================
-class CDbCacheMgr {
+class CDbCacheMgr: public CExecutable {
   //-----------Stack for sorted waypoints --------------------------
   typedef struct {  U_CHAR    nWPT;          // Number of waypoints
                     U_CHAR    xWPT;          // Current waypoint
@@ -679,7 +679,7 @@ public:
 	 CDbCacheMgr();
 	~CDbCacheMgr();
   //---------------------------------------------------------------------
-  void        TimeSlice(float dT,U_INT FrNo);		// Cache update
+  int         TimeSlice(float dT,U_INT FrNo);		// Cache update
   void        GetRange(U_INT cz,U_SHORT &up,U_SHORT &dn);
   void        RefreshCache(U_INT FrNo);
   bool        IsaNewKey(U_INT key);

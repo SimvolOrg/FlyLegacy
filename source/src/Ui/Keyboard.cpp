@@ -73,7 +73,7 @@ bool KeyRedirect(Tag grp,Tag kid)
 //  File Load 'load'
 //---------------------------------------------------------------
 bool mKeyLOAD(int kid,int code,int mod)
-{ globals->fui->CreateFuiWindow (FUI_WINDOW_SITUATION_LOAD, 0);
+{ globals->fui->ToggleFuiWindow (FUI_WINDOW_SITUATION_LOAD);
   return true; }
 //---------------------------------------------------------------
 //  Quit 'quit'
@@ -292,6 +292,20 @@ bool mKeyTBRO(int kid,int code,int mod)
 bool mKeyPLOT(int kid,int code,int mod)
 { globals->fui->ToggleFuiWindow(FUI_WINDOW_PLOT);
   return true;  }
+//-----------------------------------------------------------------
+//  Open global Terra editor
+//-----------------------------------------------------------------
+bool mKeyWTED(int kid,int code, int mod)
+{ globals->fui->ToggleFuiWindow(FUI_WINDOW_TEDITOR);
+  return true;
+}
+//-----------------------------------------------------------------
+//  Open Sketch editor
+//-----------------------------------------------------------------
+bool mKeyMKCH(int kid,int code, int mod)
+{ globals->fui->ToggleFuiWindow(FUI_WINDOW_SKETCH);
+  return true;
+}
 
 //============================================================================
 //  Bind Menu Keys
@@ -338,6 +352,8 @@ static void BindMenuKeys (CKeyMap *keymap)
   keymap->Bind('mbro', mKeyMBRO, KEY_SET_ON);
   keymap->Bind('tbro', mKeyTBRO, KEY_SET_ON);
   keymap->Bind('plot', mKeyPLOT, KEY_SET_ON);
+	keymap->Bind('wted', mKeyWTED, KEY_TOGGLE);
+	keymap->Bind('skch', mKeyMKCH, KEY_TOGGLE);
   return;
 }
 //=================================================================================
@@ -542,13 +558,6 @@ bool gKeyGOPT(int kid,int code, int mod)
 { globals->fui->ToggleFuiWindow(FUI_WINDOW_GLOBAL_OPTIONS);
   return true;
 }
-//-----------------------------------------------------------------
-//  Open global options windwos
-//-----------------------------------------------------------------
-bool gKeyWTED(int kid,int code, int mod)
-{ globals->fui->ToggleFuiWindow(FUI_WINDOW_TEDITOR);
-  return true;
-}
 
 //=======================================================================
 //  Bind global Keys
@@ -575,7 +584,6 @@ static void BindGlobalKeys (CKeyMap *keymap)
   keymap->Bind ('stat', gKeySTAT, KEY_TOGGLE);                     
   keymap->Bind ('alit', gKeyALIT, KEY_TOGGLE);
   keymap->Bind ('gopt', gKeyGOPT, KEY_TOGGLE);
-	keymap->Bind ('wted', gKeyWTED, KEY_TOGGLE);
 /*
 KeySet 'glob' Global Keys
   'stat' Status Bar

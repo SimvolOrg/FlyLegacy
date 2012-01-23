@@ -320,19 +320,16 @@ int CSimulatedVehicle::Read (SStream *stream, Tag tag)
   case 'mAlt':
     // Status bar display : Altitude message
     ReadMessage (&mAlt, stream);
-    //user_message.push_back (mAlt);
     rc = TAG_READ;
     break;
   case 'mSpd':
     // Status bar display : Airspeed message
     ReadMessage (&mSpd, stream);
-    //user_message.push_back (mSpd);
     rc = TAG_READ;
     break;
   case 'mVsi':
     // Status bar display : Vertical speed message
     ReadMessage (&mVsi, stream);
-    //user_message.push_back (mVsi);
     rc = TAG_READ;
     break;
   case 'mMag':

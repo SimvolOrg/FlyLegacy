@@ -2743,6 +2743,8 @@ CDbCacheMgr::CDbCacheMgr(void)
   uOBS = opt;
   //---Check for SQL usage -------------------------------
   gSQL = globals->sqm->SQLgen();
+	//--- Enter in dispatching -----------------------------
+	globals->Disp.Enter(this,PRIO_DBCACHE);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -2962,15 +2964,15 @@ U_INT	CDbCacheMgr::MakeKey(int gtx,int gty)
 //      The database cache is active only on even frame number
 //      while the terrain cache is working every odd frame
 //------------------------------------------------------------------------
-void CDbCacheMgr::TimeSlice(float dT,U_INT FrNo)
+int CDbCacheMgr::TimeSlice(float dT,U_INT FrNo)
 {	//----------------------------------------------------------------------
-	if (1 == (FrNo & 1))  return;
+	if (1 == (FrNo & 1))  return 1;
   cFrame	= FrNo;
   CTileCache *tc = (CTileCache*)ActQ.GetFirst();
   //-----------If action queue not empty, do one action --------------------
   aPos  = globals->geop;
-  if  (tc)                    { DispatchAction(tc); return; }
-  if  (reqQ.GetFirst()      ) { ExecuteREQ();       return; }
+  if  (tc)                    { DispatchAction(tc); return 1; }
+  if  (reqQ.GetFirst()      ) { ExecuteREQ();       return 1; }
   //-----Database Cache is stable here -------------------------------------
   stab  = 1;
   //----------Duty tasks ---------------------------------------------------
@@ -2979,7 +2981,7 @@ void CDbCacheMgr::TimeSlice(float dT,U_INT FrNo)
 	//---- Maintains nearest airport -----------------------------------------
 	cycle++;
 	if (0 ==(cycle & 0xFF)) nAPT = FindFirstNearest(APT);
-  return;
+  return 1;
 }
 //-------------------------------------------------------------------------
 //  Check for new Key

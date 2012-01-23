@@ -35,6 +35,7 @@
 #include "../Include/WinControlAxis.h"
 #include "../Include/PlanDeVol.h"
 #include "../Include/Ui.h"
+#include "../Include/WinSketch.h"
 
 #include <malloc.h>
 #include <map>
@@ -236,7 +237,7 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
   CFuiWindow *window = 0;
   switch(windowId)  {
    //----------------------------------------------------------------------------
-   case FUI_WINDOW_CHART: 
+   case FUI_WINDOW_CHART:
       window  = new CFuiChart (windowId, "UI/TEMPLATES/SectionalChart.WIN");
       window->MoveTo(10,120);
       break;
@@ -317,6 +318,12 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       window  = new CFuiTED(windowId,"UI/TEMPLATES/TERRAEDITOR.WIN");
       window->MoveTo(580,50);
       break;
+		//---Sketch editor-----------------------------------------
+    case FUI_WINDOW_SKETCH:
+      window  = new CFuiSketch(windowId,"UI/TEMPLATES/SKETCH_EDITOR.WIN");
+      window->MoveTo(1036,840);
+      break;
+
     //---SUBSYSTEM PROBE-----------------------------------------
     case FUI_WINDOW_PROBE:
       window  = new CFuiProbe (windowId,"UI/TEMPLATES/Probe.WIN");
@@ -541,7 +548,7 @@ CFuiWindow* CFuiManager::CreateOneWindow(Tag id,int lim)
 //------------------------------------------------------------------------------
 void CFuiManager::ToggleFuiWindow (Tag windowId)
 { if (IsWindowCreated (windowId))   DestroyFuiWindow (windowId);
-  else  	if (globals->aPROF.Has(PROF_RABIT)) return ;
+  else  	if (globals->aPROF.Has(PROF_EDITOR)) return ;
   CreateFuiWindow (windowId);
   return;
 }
@@ -612,6 +619,7 @@ void CFuiManager::Draw ()
   for (w = winMap.begin(); w!= winMap.end();)
   { e = w++;
     CFuiWindow *win = e->second;
+		win->CheckProfile();
     switch (win->GetState()) {
       case FUI_WINDOW_CLOSED:
       {   RemoveFromDisplay(win);
@@ -628,7 +636,7 @@ void CFuiManager::Draw ()
   }
   EnterDrawing();
   // sdk: Draw DLL windows plugins
-  if (globals->plugins_num) globals->sit->DrawDLLWindow ();
+  globals->plugins.DrawDLLWindow ();
   //------------------------------------------------------
   // Draw windows following priority deque
   //  NOTE: The top windows is the last displayed

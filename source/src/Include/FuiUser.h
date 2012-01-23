@@ -235,10 +235,6 @@ protected:
   void        AddToFlightPlan();
 	bool				ModePlan();
   int         ClosePopMenu();
-	//--- Mode plan management --------------------------------------------
-	void				EnterModePlan();
-	void				LeaveModePlan();
-	void				TrackPlan();
   //-------NOTIFICATIONS ------------------------------------------------
   void        ZoomLess();
   void        ZoomPlus();
@@ -839,6 +835,8 @@ public:
 	void	NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 	//-----------------------------------------------------------
 	void	Draw();
+	//--- Dont close this window ----------------------------------------
+	void    CheckProfile()	{;}
 };
 //==================================================================================
 //  CFuiCamControl.  A window to edit terrain elevation
@@ -864,7 +862,7 @@ class CFuiTED : public CFuiWindow
 	CFuiButton      *yBut;								// Yes button
 	CFuiButton      *nBut;								// No button
 	//--- Rabbit camera -----------------------------------------
-	CRabbitCamera   *cam;
+	CRabbitCamera   *rcam;
 	//----Patche area -------------------------------------------
 	ELV_PATCHE			pbuf;									// Patche buffer
 	//--- Update parameters -------------------------------------
@@ -897,6 +895,8 @@ public:
  bool		MouseCapture (int mx, int my, EMouseButton bt);
  //--- Notifications ------------------------------------------
  void		NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
+ //--- Dont close the windows ----------------------------------
+ void		CheckProfile()		{;}
 };
 //==================================================================================
 //  CFuiDLL.  A generic fui window connected to plugins

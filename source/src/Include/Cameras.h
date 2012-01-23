@@ -375,6 +375,7 @@ public:
                                     const float &distanceInFeet);
   //-----------------------------------------------------------------
   void  MoveBy(int px,int py);
+	void  RangeFor(double D, double A);
 };
 
 //===========================================================================

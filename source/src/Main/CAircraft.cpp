@@ -386,6 +386,7 @@ CAirplane::CAirplane (void)
   Apil.id         = MSG_SETDATA;
   Apil.group      = 'AXIS';
   Apil.user.u.datatag = 'apOn';
+	//--- Enter in dispatcher ----------------------------------------
   //---TODO other Keyboard messages --------------------------------
   int opt = 0;
   GetIniVar ("Logs", "logAirplaneObject", &opt);
@@ -758,7 +759,7 @@ void CAirplane::BodyCollision(CVector &p)
 //          In the futur, when the .sit file describes in flight situation
 //          we will have to make some adaptation
 //-----------------------------------------------------------------------------
-void CAirplane::TimeSlice(float dT,U_INT frame)
+int CAirplane::TimeSlice(float dT,U_INT frame)
 { //--------------------------------------------------------
 	pit->TimeSlice(dT);
 	CJoysticksManager *jsm = globals->jsm;
@@ -767,12 +768,12 @@ void CAirplane::TimeSlice(float dT,U_INT frame)
     case VEH_INIT:
       { SPosition pos = SetOnGround();
         SetPosition(pos);
-        return;
+        return 1;
       }
     //--- Aircraft is crashing ----------------------------
     case VEH_CRSH:
-      if (!globals->snd->IsPlaying(sound)) State = VEH_INOP;
-			return;
+				if (!globals->snd->IsPlaying(sound)) State = VEH_INOP;
+				return 1;
     //--- Aircraft is operational or damaged----------------
     case VEH_INOP:
     case VEH_OPER:
@@ -780,11 +781,11 @@ void CAirplane::TimeSlice(float dT,U_INT frame)
         int  nbEng = amp->pEngineManager->HowMany();
         jsm->SendGroupPMT(nbEng);               // Send Prop-mixture and throttle
         Update (dT,frame);
-        return;
+        return 1;
       }
 
   }
-  return;
+  return 1;
 }
 
 //----------------------------------------------------------------------------

@@ -2187,11 +2187,11 @@ bool C_QGT::GetTileIndices(SPosition &pos,short &tx, short &tz)
 bool C_QGT::GetTileIndices(GroundSpot &gns)
 { //---Compute longitude index ----------------
   double dta	= gns.lon - aLon;                //Delta to west frontier 
-  gns.tx			= int(dta / dLon) & 16383;
+  gns.tx			= int(dta / dLon) & 31;
   //---Compute latitude index -----------------
   double dtz	= gns.lat - sLat;
-  gns.tz			= int(dtz / dLat);
-  return ((gns.tx <= 31) && (gns.tz <= 31));
+  gns.tz			= int(dtz / dLat) & 31;
+  return true;
 }
 
 //---------------------------------------------------------------------
@@ -3365,6 +3365,8 @@ TCacheMGR::TCacheMGR()
   CheckTeleport();
 	//-----Init elevation Tracker ---------------------------------
 	eTrack.SetTCM(this);
+	//--- Enter in dispatcher -------------------------------------
+	globals->Disp.Enter(this,PRIO_TERRAIN);
 }
 ///------------------------------------------------------------------------
 //  End of TCache: TODO 
@@ -3746,7 +3748,8 @@ void TCacheMGR::Probe(CFuiCanva *cnv)
   char fnm[8];
   char lat[32];
   char lon[32];
-  if (!Spot.ValidQGT())   return;
+  if (!Spot.ValidQGT())   
+		return;
   C_QGT *qgt = Spot.qgt;                        //aQGT;
 	Spot.Edit(txt);
   cnv->AddText( 1,txt,1);
@@ -3796,7 +3799,7 @@ void TCacheMGR::GetTileIndices(int &tx,int &tz)
 //-------------------------------------------------------------------------
 //  Time slice.  Update the terrain cache
 //-------------------------------------------------------------------------
-void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
+int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
 { bbox->Enter("TCM TimeSlice",0,0);
 	eTime     = dT;
   dTime    += dT;
@@ -3822,8 +3825,8 @@ void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
 	//---Update Tracker ----------------------------------------------------
 	eTrack.TimeSlice(dT);
 	//--- Update action ----------------------------------------------------
-  if (action)           return;
-  if (OneAction())      return;
+  if (action)           return 1;
+  if (OneAction())      return 1;
 	//--- End initial state when all QGT are ready -------------------------
   if (Tele)     NoteTeleport();
   //-----No cache refresh.  Update magnetic deviation --------------------
@@ -3838,13 +3841,13 @@ void TCacheMGR::TimeSlice(float dT, U_INT FrNo)
 	bbox->Enter("OBJ TimeSlice",0,0);
   objMGR->TimeSlice(dT);          // Update 3D
   //----------------------------------------------------------------------
-  if (clock1)                 return;
+  if (clock1)                 return 1;
   //----------------------------------------------------------------------
   if (tr) TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d -------------------",
           dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
   if (tr) txw->TraceCTX();
   //----------------------------------------------------------------------
-  return;
+  return 1;
 }
 //-------------------------------------------------------------------------
 //  Check for new Key
@@ -3969,7 +3972,8 @@ int TCacheMGR::RefreshCache()
   }
   //----Keep new reference key ------------------------------------------
   C_QGT *aqg = GetQGT(cx,cz);                             // Current QGT
-  if (0 == aqg) gtfo("CACHE: corrupted geo position: No corresponding tile");
+  if (0 == aqg) 
+			gtfo("CACHE: corrupted geo position: No corresponding tile");
   Spot.SetQGT(aqg);
   rKEY  = nKEY;
   xKey  = cx;
@@ -4823,8 +4827,9 @@ void TCacheMGR::UpdateGroundPlane()
 //  NOTE:  Texture Unit-0 is supposed to enable permanently TEXTURE_2D except when
 //         this is contrary to the objective. This is to avoid extensive GL commands
 //=================================================================================
-void TCacheMGR::Draw(CCamera *cam)
-{	bbox->Enter("TCM Draw",0,0);
+void TCacheMGR::Draw()
+{	CCamera *cam = globals->cam;
+  bbox->Enter("TCM Draw",0,0);
 	CVehicleObject *veh = globals->pln;
 	//----Prepare OpenGL for drawing ---------------------------------
   glMatrixMode (GL_MODELVIEW);

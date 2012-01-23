@@ -1657,6 +1657,12 @@ void CFuiWindow::ShowMe()
 void CFuiWindow::Close()
 {	state = FUI_WINDOW_CLOSED; }
 //-------------------------------------------------------------------------------
+//	Call to check profile
+//-------------------------------------------------------------------------------
+void CFuiWindow::CheckProfile()
+{	if (globals->aPROF.Has(PROF_EDITOR))	 state = FUI_WINDOW_CLOSED;
+	return;	}
+//-------------------------------------------------------------------------------
 //  Add screen coordinate from surface to (X,Y)
 //-------------------------------------------------------------------------------
 void CFuiWindow::SurfaceOrigin(int &x,int &y)

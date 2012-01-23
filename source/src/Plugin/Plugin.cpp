@@ -10,11 +10,13 @@
 #include "..\include\utility.h"
 #endif
 #include "..\include\globals.h"
+#include "../Include/MagneticModel.h"
+#include "../Include/GeoMath.h"
+#include "../Include/DLL.h"
 
-
-
+//====================================================================
 #include <vector>
-
+using namespace std;
 using namespace ut;
 
 
@@ -52,6 +54,7 @@ typedef struct SDLLData {
 
 std::vector <SDLLData> dll_data;
 std::vector <SDLLData>::iterator idll_data;
+std::vector<CDLLWindow*> wLst;
 
 static bool flag_instantiate = false;
 static int dll_gauges_init_counter = 0;
@@ -172,23 +175,81 @@ void FreeInitialDLLObjectList (void)
     }
   #endif
 }
+///=====================================================================================
+/// sdk: CFlyObjectListManager
+///=====================================================================================
+void CFlyObjectListManager::Init (void)
+{
+  rc = 0;
+
+  tmp_fly_object.ref.objectPtr = NULL;
+  tmp_fly_object.ref.classSig  = NULL;
+  tmp_fly_object.ref.superSig  = NULL;
+  tmp_fly_object.next          = NULL;
+  tmp_fly_object.prev          = NULL;
+
+  fo_list.clear ();
+
+  // Allocate first struct
+  fo_list.push_back (tmp_fly_object);
+  dirty = false;
+  rc++;
+}
+
+CFlyObjectListManager::~CFlyObjectListManager (void) 
+{
+  // dll are responsible for objects deletion in this list
+  // except for the first one which is the user object;
+/*/
+  i_fo_list = fo_list.begin ();
+  ++i_fo_list;                           // skip first user object
+  for (i_fo_list; i_fo_list != fo_list.end (); ++i_fo_list) {
+     SAFE_DELETE (i_fo_list->ref.objectPtr);          // 
+  }
+/*/
+}
+
+void CFlyObjectListManager::InsertUserInFirstPosition (const CVehicleObject *user)
+{
+  if (rc) {
+    // (*it).ref.objectPtr
+    std::list<SFlyObjectList>::iterator it = fo_list.begin ();
+    (*it).ref.objectPtr = (CVehicleObject *) user;
+    (*it).ref.classSig  = NULL;
+    (*it).ref.superSig  = NULL;
+  }
+}
+
+void CFlyObjectListManager::InsertDLLObjInList (const SDLLObject *obj)
+{
+  if (rc) {
+    tmp_fly_object.ref = obj->flyObject;
+    tmp_fly_object.next = NULL;
+    tmp_fly_object.prev = NULL;
+    fo_list.push_back (tmp_fly_object);
+    rc++;
+  }
+}
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 CPluginMain::CPluginMain()
-{
-  g_plugin_allowed = false;
+{	g_plugin_allowed = false;
 }
 
 CPluginMain::~CPluginMain()
-{
+{	FreeDLLWindows();
 
 }
-
+//----------------------------------------------------------------
+//	Plugin to load
+//----------------------------------------------------------------
 int CPluginMain::On_LoadPlugins (void) const
-{
+{			  CExecutable *exe = (CExecutable*)this;
+        globals->Disp.Enter(exe,PRIO_SDK);
+
         m_dwa.clear ();
         //m_dll.clear ();
         dll_data.clear ();
@@ -342,7 +403,6 @@ void CPluginMain::On_KillPlugins (void) const
   //
   globals->plugins_num = 0;
   // delete all pointers in dllW // 
-  //globals->sit->FreeDLLWindows ();
   //
   pac = bkup = deb = NULL;  // 
   dllobjects_counter = 0;   // 
@@ -710,15 +770,15 @@ void CPluginMain::On_Instantiate (const long,const long,SDLLObject**) const
           //if ((*idll_data).ityp_obj->first->type == TYPE_DLL_WINDOW){
             // create a new window
             //MEMORY_LEAK_MARKER ("windeb 1");
-            CDLLWindow *new_w = new CDLLWindow;
+            CDLLWindow *wdl = new CDLLWindow();
             //MEMORY_LEAK_MARKER ("windeb 1");
-            if (new_w) {
+            if (wdl) {
               plg_object [0]->flyObject.superSig = (*idll_data).ityp_obj->first;
-              new_w->SetObject (plg_object [0]);
-              new_w->SetSignature ((*idll_data).ityp_obj->first->signature);
-              new_w->dll = (*idll_data).dll_registry;
+              wdl->SetObject (plg_object [0]);
+              wdl->SetSignature ((*idll_data).ityp_obj->first->signature);
+              wdl->dll = (*idll_data).dll_registry;
               (*idll_data).enabled = true;
-              globals->sit->dllW.push_back (new_w);
+              wLst.push_back(wdl);
               dll_windows_init_counter++;
               #ifdef _DEBUG
                 //TRACE ("DLL WINDOW INITIALIZED %d %p", dll_windows_init_counter, plg_object [0]);
@@ -1648,10 +1708,238 @@ void CPluginMain::BuildExportList (void)
   }
 }
 
+//================================================================================
+//	JS:  Put time slice here
+//================================================================================
+int CPluginMain::TimeSlice(float dT,U_INT frame)
+{	//---- sdk: Update DLL FlyObjects -----------------------
+  sdk_flyobject_list.i_fo_list = sdk_flyobject_list.fo_list.begin ();
+  ++sdk_flyobject_list.i_fo_list;                                // skip first user object
+  for (sdk_flyobject_list.i_fo_list; sdk_flyobject_list.i_fo_list != sdk_flyobject_list.fo_list.end ();
+       ++sdk_flyobject_list.i_fo_list) {
+       ((CSimulatedObject *)(sdk_flyobject_list.i_fo_list)->ref.objectPtr)->Timeslice (dT,frame); // 
+    }
+  //---- sdk: Update plugin DLLIdle data -------------------
+  On_Idle (dT);
+	//---- sdk: Update DLL windows ---------------------------
+	std::vector<CDLLWindow*>::iterator wk;
+  for (wk = wLst.begin (); wk != wLst.end (); ++wk)
+	{CDLLWindow *wdl =   (*wk);
+	 wdl->TimeSlice (dT);
+	 }
+	 return 1;
+}
+
+//================================================================================
+//	JS:  Put Draw here
+//================================================================================
+void CPluginMain::DrawExternal()
+{	sdk_flyobject_list.i_fo_list = sdk_flyobject_list.fo_list.begin ();
+    ++sdk_flyobject_list.i_fo_list;                                // skip first user object
+    for (sdk_flyobject_list.i_fo_list;  sdk_flyobject_list.i_fo_list != sdk_flyobject_list.fo_list.end ();
+       ++sdk_flyobject_list.i_fo_list) {
+        dVeh = (CDLLSimulatedObject *)((sdk_flyobject_list.i_fo_list)->ref.objectPtr); // 
+        if (dVeh)  dVeh->DrawExternal();
+    }
+	return;
+}
+//==============================================================================
+// sdk: Draw the DLL windows plugins
+//  Called from CFUIManager::Draw method
+//===============================================================================
+void CPluginMain::DrawDLLWindow (void)
+{ std::vector<CDLLWindow*>::iterator wk;
+  for (wk = wLst.begin (); wk != wLst.end (); ++wk) (*wk)->Draw ();
+}
+//-------------------------------------------------------------------------
+//  Free DLLWindows resources
+//-------------------------------------------------------------------------
+void CPluginMain::FreeDLLWindows (void)
+{ 
+#ifdef _DEBUG
+  DEBUGLOG ("CSituation::FreeDLLWindows");
+#endif  
+  // delete all pointers in dllW
+	std::vector<CDLLWindow*>::iterator wk;
+ for (wk = wLst.begin (); wk != wLst.end (); ++wk)  SAFE_DELETE (*wk);
+ wLst.clear (); // 
+}
+
+//========================================================================
+//    CDLLSimulated Object
+//========================================================================
+CDLLSimulatedObject::CDLLSimulatedObject (void)
+: CSimulatedObject ()
+{ SetType(TYPE_FLY_SIMULATEDOBJECT);
+  nfo = NULL;
+  lod = NULL;
+  draw_flag = false;
+  sim_objects_active = false;
+ *nfoFilename = 0;
+}
+//------------------------------------------------------------------------
+//	Destroy object
+//------------------------------------------------------------------------
+CDLLSimulatedObject::~CDLLSimulatedObject (void)
+{*nfoFilename = 0;
+  SAFE_DELETE (nfo);
+  SAFE_DELETE (lod);
+}
+//------------------------------------------------------------------ 
+//    Set Orientation
+//------------------------------------------------------------------
+void  CDLLSimulatedObject::SetOrientation (SVector orientation)
+{ // adjust orientation with magnetic declination
+  CVector iang_ = orientation;
+  float decl_degrees_ = 0.0f, hor_field_ = 0.0f;
+  CMagneticModel::Instance().GetElements (this->GetPosition (), decl_degrees_, hor_field_);
+  iang_.z += DegToRad (static_cast<double> (decl_degrees_)); 
+  // if object is from simulated situation set global ori 
+//  if (globals->pln) CWorldObject::SetOrientation (orientation);
+//  else
+  CWorldObject::SetOrientation (iang_);
+}
+
+//------------------------------------------------------------------ 
+//    TimeSlice: Update everything
+//------------------------------------------------------------------
+int CDLLSimulatedObject::Timeslice (float dT,U_INT FrNo)
+{
+  if (sim_objects_active) {
+    sobj_offset = SubtractPosition (globals->geop, geop);
+    // verify whether to draw object or not
+    draw_flag = true;
+    if (fabs (sobj_offset.x) > FEET_PER_NM) draw_flag = false;
+    else
+    if (fabs (sobj_offset.y) > FEET_PER_NM) draw_flag = false;
+    else
+    if (fabs (sobj_offset.z) > FEET_PER_NM) draw_flag = false;
+  }
+  Simulate (dT,FrNo);
+	return 1;
+}
+
+void CDLLSimulatedObject::Simulate (float dT,U_INT FrNo)
+{
+  return;
+}
+
+void CDLLSimulatedObject::DrawExternal (void)
+{
+  glMatrixMode (GL_MODELVIEW);
+  glPushMatrix ();
+  // Draw all externally visible objects associated with this object
+  if (lod) {
+    //if (globals->pln) { // 
+    //if (globals->sit->sdk_flyobject_list.fo_list.size () > 1) {
+    if (sim_objects_active) {
+      if (draw_flag) {
+        draw_flag    = false;
+        globals->pln = (CAirplane*)this;
+        lod->Draw (BODY_TRANSFORM);       // 1 = simulated DLL object
+        globals->plugins.dVeh = NULL;
+      }
+    }
+  }
+  glMatrixMode (GL_MODELVIEW);
+  glPopMatrix ();
+  return;
+}
+
+
 //void ut::InitSdkIntf (void)
 //{
 //  gRegistry.APISetMouseCursor = APISetMouseCursor;
 //}
+
+//============================================================================================
+//  Class CDLLWindow to display a DLL window plugin
+//============================================================================================
+CDLLWindow::CDLLWindow (void)
+{ surf  = 0;
+  obj   = 0;
+  wd    = static_cast<short> (globals->mScreen.Width);
+  ht    = static_cast<short> (globals->mScreen.Height);
+  signature = 0;
+  dll = 0;
+  enabled = false;
+  //back  = MakeRGB (212, 212,   0);
+  back  = MakeRGB (  0,   0,   0);
+  black = MakeRGB (  0,   0,   0);
+  Resize();  
+}
+//---------------------------------------------------------------------------------
+//  Destroy 
+//---------------------------------------------------------------------------------
+CDLLWindow::~CDLLWindow (void)
+{ 
+#ifdef _DEBUG
+  //TRACE ("DELETE DLL SURF %p %p %p", surf, obj, dll);
+#endif
+  if (surf) surf = FreeSurface (surf);
+  // sdk: cleanup objects = DLLDestroyObject // 
+  globals->plugins.On_DestroyObject (obj, dll);
+}
+//---------------------------------------------------------------------------------
+//  
+//---------------------------------------------------------------------------------
+void CDLLWindow::SetObject (SDLLObject *object)
+{
+  obj = object;
+}
+//---------------------------------------------------------------------------------
+//  
+//---------------------------------------------------------------------------------
+void CDLLWindow::SetSignature (const long &sig)
+{
+  signature = sig;
+}
+//---------------------------------------------------------------------------------
+//  Resize parameters
+//---------------------------------------------------------------------------------
+void CDLLWindow::Resize (void)
+{ if (surf) FreeSurface (surf);
+  surf  = CreateSurface (400, 400);
+#ifdef _DEBUG
+  //TRACE ("CREATE DLL SURF");
+#endif
+  return;
+}
+//---------------------------------------------------------------------------------
+//  Time slice called from CSituation
+//---------------------------------------------------------------------------------
+void  CDLLWindow::TimeSlice (float dT)
+{ if (0 == surf) return;
+  // sdk: Draw the DLLDraw
+  //--------------------------------------------------------------------
+  //if (globals->plugins_num) globals->plugins.On_Draw (obj, surf);
+  //--- e.g. Draw a line in a windows ---------------------------
+  //EraseSurfaceRGB (surf, back);
+  //DrawFastLine (surf, 0, 0, 500, 5, black);
+  return;
+}
+//---------------------------------------------------------------------------------
+//  Draw the surface
+//  Should be called  from CFuiManager contex
+//---------------------------------------------------------------------------------
+void  CDLLWindow::Draw (void)
+{ if (0 == surf) return;
+  // Starting raster position is bottom-left corner of the surface,
+  //   with (0,0) at top-left of the screen
+  // sdk :
+  if (globals->plugins_num) {
+    glRasterPos2i (surf->xScreen, surf->yScreen + surf->ySize);
+    //
+    globals->plugins.On_Draw (obj, surf, dll); // 
+    // Blit is performed in the dll
+    //glDrawBuffer (GL_BACK);
+    //glDrawPixels  (surf->xSize,   surf->ySize,
+    //    GL_RGBA,
+    //    GL_UNSIGNED_BYTE,
+    //    surf->drawBuffer);
+  }
+  return;
+}
 
 //////////////////////////////////////////////////////////////////////
 // utility definitions

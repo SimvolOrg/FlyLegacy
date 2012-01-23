@@ -111,6 +111,7 @@ enum EFuiWindowIdentifier
   FUI_WINDOW_TBROS                   = 'tbro',
 	FUI_WINDOW_TEDITOR								 = 'wted',
   FUI_WINDOW_MBROS                   = 'mbro',
+	FUI_WINDOW_SKETCH									 = 'skch',
   FUI_WINDOW_STATS                   = 'Stat',
   FUI_WINDOW_DEFAULT                 = '?win',
 
@@ -770,6 +771,8 @@ public:
   virtual void        DrawByCamera(CCamera *cam) {}
   //-----------visibility management ------------------------------
   void                ModifyShow(Tag idn, bool vs);
+	//--- Profile management ----------------------------------------
+	virtual void				CheckProfile();
   //------------Mouse management ----------------------------------
   virtual bool        MouseMove (int x, int y);
   virtual bool        MouseClick (int x, int y, EMouseButton button);

@@ -6,7 +6,8 @@
 #include "..\Include\FuiUser.h" // for APICreateWindow2
 #include "..\Include\MagneticModel.h"
 #include "..\Include\Utility.h"
-
+#include "..\Include\GeoMath.h"
+#include "..\Include\DLL.h"
 #include <stdio.h>
 
 ///////// DEBUG STUFF TO REMOVE LATER ////////////////////////////////
@@ -1182,7 +1183,8 @@ void	APIUpdateFPCurrentWaypoint(SPosition *pos)
 }
 
 
-//
+
+//============================================================================================
 //	object functions
 //
 //		note: most of these functions return an int error code (0=no error, 1=invalid object)
@@ -1193,7 +1195,7 @@ void	APIUpdateFPCurrentWaypoint(SPosition *pos)
 //		received from Fly!, but you should check the result codes from each of the following
 //		function calls before attempting to use the data returned if the object had gone
 //		out of scope
-//
+//============================================================================================
 
 SDLLObject*	APICreateFlyObject(char *initFile)
 {
@@ -1213,7 +1215,7 @@ SDLLObject*	APICreateFlyObject(char *initFile)
       obj->flyObject.objectPtr = sobj;
       obj->flyObject.classSig = sobj->GetTypePointer ();
       obj->flyObject.superSig = NULL;
-      globals->sit->sdk_flyobject_list.InsertDLLObjInList (obj);
+      globals->plugins.sdk_flyobject_list.InsertDLLObjInList (obj);
       #ifdef _DEBUG
         TRACE ("APICreateFlyObject %p %p", sobj, obj);
       #endif
@@ -1267,7 +1269,7 @@ int	APIGetUserObject(SFlyObjectRef *object)
         - every user change (sit->) is responsible for this first
           element pointer modification or NULL
 */
-  std::list<SFlyObjectList>::iterator it = globals->sit->sdk_flyobject_list.fo_list.begin ();
+  std::list<SFlyObjectList>::iterator it = globals->plugins.sdk_flyobject_list.fo_list.begin ();
   object->objectPtr = (*it).ref.objectPtr;
   object->classSig = globals->pln->GetTypePointer ();
   if (object->objectPtr) return 0;

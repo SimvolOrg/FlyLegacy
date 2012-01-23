@@ -380,6 +380,7 @@ void InitialProfile()
   GetIniVar("Sim", "NoAircraft", &np);
   if (np)	globals->noEXT = 1;									// No external aircraft
 	if (np)	globals->noINT = 1;									// No internal aircraft
+	if (np) globals->Disp.Lock(PRIO_PLANE);
   //----Check for meteo rendition  -----------------------
   int nm = 0;
   GetIniVar("Sim","NoMeteo",&nm);
@@ -401,6 +402,12 @@ void SpecialProfile(Tag set,U_INT p)
 	if (p & PROF_NO_EXT)	globals->noEXT += dta;
 	if (p & PROF_NO_OBJ)	globals->noOBJ += dta;
 	if (p & PROF_NO_MET)	globals->noMET += dta;
+	//--- Check for NO plane at all -----------
+	if (p & PROF_NO_PLN)  
+	{	globals->Disp.Modlock(PRIO_PLANE,dta);
+		globals->noINT += dta;
+		globals->noEXT += dta;
+		}
 	return;
 }
 //========================================================================================
@@ -712,9 +719,6 @@ void InitGlobalsNoPodFilesystem (char *root)
 
     globals->random_flag = NO_RND_EVENTS;
     
-    int randomEvents = 0;
-    GetIniVar ("Sim", "randomEvents", &randomEvents);
-    if (randomEvents) globals->random_flag |= RND_EVENTS_ENABLED;
 
     int num_of_autogen = 0;
     GetIniVar ("Graphics", "numOfAutogen", &num_of_autogen);
@@ -1281,9 +1285,7 @@ int main (int argc, char **argv)
   double hpx = FN_FEET_FROM_INCH(pxr);        // Pixel radius in feet
   double nrp = 20;                            // Near clip plane
   globals = new SGlobals;	                    // Create global structure
-
-
-  //------------- Initialize mutexes----------------------------------
+	//------------- Initialize mutexes----------------------------------
   pthread_mutex_init (&mutexWarn,  NULL);
   pthread_mutex_init (&mutexDebug, NULL);
   pthread_mutex_init (&mutexGtfo,  NULL);

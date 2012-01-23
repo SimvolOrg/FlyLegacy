@@ -280,6 +280,8 @@ void InitGlobeTileTable ()
   //-----------Last entry for init ----------------------
   globe_tile_lat[128].nSide = 0.0;
   globe_tile_lat[128].hzr   = 0;
+	globe_tile_lat[126].vpr   = 2;
+	globe_tile_lat[127].vpr   = 1;
   globe_tile_lat[128].vpr   = 0;
   globe_tile_lat[128].vqr   = 0;
   return;
@@ -506,6 +508,9 @@ void InitQgtTable (float vmax)
   qgt_latitude[256].hzr   = 0;
   qgt_latitude[256].vpr   = 0;
   qgt_latitude[256].vqr   = 0;
+	//----- Limit pole extension ---------------------------
+	qgt_latitude[255].vpr     = 0;
+	qgt_latitude[254].vpr     = 1;
   //-----Init longitude band ----------------------------
   InitLongitudeBand();
   InitBaseLatitude();
@@ -1067,7 +1072,8 @@ bool GroundSpot::ValidQGT()
 char  GroundSpot::GetTerrain()
 { if (0 == qgt)           return 0;
   if ( qgt->NoQuad())     return 0;
-  if (!qgt->GetTileIndices(*this))      gtfo("Position error");
+  if (!qgt->GetTileIndices(*this))      
+					gtfo("Position error");
   U_INT No    = FN_DET_FROM_XZ(tx,tz);    
   CmQUAD  *dt = qgt->GetQUAD(No);             // Detail tile QUAD
   Type        = dt->GetGroundType();          // Ground Type

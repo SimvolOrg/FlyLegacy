@@ -58,11 +58,14 @@ class CFmtxMap;
 #define PROF_NO_APT			(0x00000002)				// No airport drawing
 #define PROF_NO_INT			(0x00000004)				// No internal plane drawing
 #define PROF_NO_EXT			(0x00000008)				// No external plane drawing
+//-----------------------------------------------------------------------
 #define PROF_NO_OBJ			(0x00000010)				// No Object drawing
 #define PROF_NO_MET			(0x00000020)				// No Meteo effect
-#define PROF_NO_FPL     (0x00000040)				// No flight plan
-#define PROF_NO_PLN			(0x00000080)				// No aircraft
-#define PROF_RABIT			(0x01000000)				// Rabbit camera
+#define PROF_EDITOR			(0x00000040)				// This is an editor
+#define PROF_NO_SIT			(0x00000080)				// No situation
+//-----------------------------------------------------------------------
+#define PROF_NO_PLN			(0x00000100)				// No plane
+//-----------------------------------------------------------------------
 #define PROF_DR_DET			(0x02000000)				// Draw detail tour	
 #define PROF_DR_ELV			(0x04000000)				// Draw elevations
 #define PROF_TRACKE			(0x08000000)				// Track elevation
@@ -73,7 +76,7 @@ class CFmtxMap;
 //	Basic editor profile
 //	no view, no meteo, use a rabbit camera, draw tile tour,no flight plan
 //-------------------------------------------------------------------------
-#define PROF_EDITOR (PROF_NO_INT+PROF_NO_EXT+PROF_NO_MET+PROF_DR_DET+PROF_RABIT+PROF_NO_FPL+PROF_NO_PLN)
+#define PROF_NO_PLANE   (PROF_NO_INT+PROF_NO_EXT+PROF_ACBUSY)
 //=======================================================================================
 //  Edit column for statistics
 //=======================================================================================
@@ -175,6 +178,39 @@ typedef enum {
 //-------------------------------------------------------------------
 #define WINDOW_TBROS      (0x01)        // TERRA  BROWSER
 #define WINDOW_MBROS      (0x02)        // OBJECT BROWSER
+//=======================================================================
+//	JS: Dispatcher class
+//	Used by Situation to dispatch TimeSlice and Draw
+//=======================================================================
+//	Executable slot
+//=======================================================================
+struct DSP_EXEC {
+	char	lock;							  // TimeSlice lock
+	CExecutable *obj;					// Executable object
+	};
+//=======================================================================
+//	Dispatcher
+//=======================================================================
+class CDispatcher {
+	//--- ATTRIBUTES --------------------------------------
+	DSP_EXEC	slot[PRIO_MAX];
+	//----METHODS -----------------------------------------
+public: 
+  CDispatcher::CDispatcher();
+	void Enter(CExecutable *x, char p)	
+		{	slot[p].obj	= x;
+		}
+	void Clear(char p)
+		{	slot[p].obj	= 0;
+		}
+  //-----------------------------------------------------
+	void Lock  (char p)						{slot[p].lock++;}
+	void Unlock(char p)						{slot[p].lock--;}
+	void Modlock(char p,char m)		{slot[p].lock += m;}
+	//---- Time slice -------------------------------------
+	void TimeSlice(float dT,U_INT frame);
+	//-----------------------------------------------------
+};
 //==============================================================================
 // Global variables
 //
@@ -185,6 +221,8 @@ typedef struct {
 	U_INT			Frame;
 	char     *mdule;											// Current module
 	BBM				mBox;												// Master black box
+	//--- Dispatcher --------------------------------------------------
+	CDispatcher Disp;
   //----World position ----------------------------------------------
 	double		aMax;		// Altitude maximum
   SPosition geop;   // Position (lat/lon/alt) of the aircraft
@@ -211,7 +249,7 @@ typedef struct {
   char        m3dDB;                    // 3D model database
   char        texDB;                    // Terra texture database
   char        objDB;                    // World Object
-  //-----------------------------------------------------------------
+  //----VMAP Parameters --------------------------------------------
   char        MapName[SLOT_NAME_DIM];   /// Selected Map Name
   char        NulChar;                  /// Null Char
   char        FlyRoot[PATH_MAX];				/// JSDEV* remember Fly Root
@@ -312,7 +350,7 @@ typedef struct {
   U_INT              cnt2;
   //------------------------------------------------------------------
   // sdk: Plugin manager
-  ut::CPluginMain   plugins;
+  CPluginMain				plugins;
   int               plugins_num;
   // sdk: Main menu additions if any  // 
   sdkmenu::CSDKMenu sdk_menu;

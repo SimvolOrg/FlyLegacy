@@ -182,7 +182,7 @@ public:
 // JS NOTE: CModelObject has been removed as 3D model are implemented separatedly
 //        in model3D.cpp as C3Dmodel class
 //=====================================================================================
-class CSimulatedObject : public CWorldObject {
+class CSimulatedObject : public CWorldObject, public CExecutable {
   //---ATTRIBUTES ----------------------------------------------
 public:
   char                  nfoFilename[64];
@@ -199,7 +199,7 @@ public:
   virtual void  ReadFinished        (void);
 
   // Simulation
-  virtual void  Timeslice           (float dT,U_INT FrNo);       ///< Real-time timeslice processing
+  virtual int  Timeslice(float dT,U_INT FrNo) {return 0;}       ///< Real-time timeslice processing
   // Drawing 
   virtual void  DrawExternal();
 
@@ -209,44 +209,6 @@ public:
 
 };
 
-//====================================================================================
-// The CDLLSimulatedObject object is a specialization of CSimulatedObject for DLL
-//   This could be a dynamic object managed by dll.
-//
-// Stream file declaration:
-//    <wobj>
-//    sobj
-//    <bgno>
-//    <endo>
-//=====================================================================================
-class CDLLSimulatedObject : public CSimulatedObject {
-    
-public:
-  // Constructors / destructor
-  CDLLSimulatedObject                  (void);
-  virtual ~CDLLSimulatedObject         (void);
-
-  // CStreamObject methods
-//  virtual int   Read                (SStream *stream, Tag tag);
-//  virtual void  ReadFinished        (void);
-
-  virtual void  SetOrientation      (SVector orientation);
-
-  // Simulation
-  virtual void  Timeslice           (float dT, U_INT FrNo);       ///< Real-time timeslice processing
-  /// Called from Timeslice() to simulate the things that happen in the timeslice
-  virtual void  Simulate            (float dT, U_INT FrNo);				
-  // Drawing 
-  virtual void  DrawExternal();
-  // Methods
-
-protected:
-  bool draw_flag;
-
-public:
-  bool                  sim_objects_active;
-  CVector               sobj_offset;
-};
 //==============================================================================
 // The CVehicleObject object is ...
 //   <wobj> signature of TYPE_FLY_VEHICLEOBJECT
@@ -279,7 +241,7 @@ public:
   virtual Tag               GetPanel();
   virtual void              SetPanel(Tag tag);
   virtual void              Print                    (FILE *f);
-  virtual void              TimeSlice(float dT,U_INT frame) {}
+  virtual int               TimeSlice(float dT,U_INT frame) {return 0;}
   virtual void              Update(float dT,U_INT FrNo);		        // JSDEV*
   //! Returns altitude above ground in feet
 	float                     GetUserAGL()	{return 0;}
@@ -600,7 +562,7 @@ public:
   double            GetPositionAGL()  {return whl->GetPositionAGL();}
   void              BodyCollision(CVector &p);
   //----Update the vehicle ------------------------------------------------------
-  void              TimeSlice(float dT,U_INT frame);
+  int               TimeSlice(float dT,U_INT frame);
   //-----------------------------------------------------------------------------
   void              BindKeys();
   //-----------------------------------------------------------------------------

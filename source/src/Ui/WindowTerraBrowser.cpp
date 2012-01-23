@@ -1,24 +1,24 @@
-/*
- *
- * Part of Fly! Legacy project
- *
- * Copyright 2005 Chris Wallace
- * Copyright 2009 Jean Sabatier
- * Fly! Legacy is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
- *
- * Fly! Legacy is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *   along with Fly! Legacy; if not, write to the Free Software
- *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- */
+//==========================================================================================
+//
+// Part of Fly! Legacy project
+//
+// Copyright 2005 Chris Wallace
+// Copyright 2009 Jean Sabatier
+// Fly! Legacy is free software; you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation; either version 2 of the License, or
+//   (at your option) any later version.
+//
+// Fly! Legacy is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+//   along with Fly! Legacy; if not, write to the Free Software
+//    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//
+//==========================================================================================
 
 
 #include "../Include/FlyLegacy.h"
@@ -31,8 +31,8 @@ extern char *HexTAB;
 //=================================================================================
 //  Window profile
 //=================================================================================
-#define TBROS_PROF (PROF_NO_INT + PROF_NO_EXT + PROF_NO_MET + PROF_DR_DET + PROF_RABIT)
-#define MBROS_PROF (PROF_NO_INT + PROF_NO_EXT + PROF_NO_MET + PROF_DR_DET + PROF_RABIT)
+#define TBROS_PROF (PROF_NO_PLN + PROF_NO_MET + PROF_DR_DET + PROF_EDITOR)
+#define MBROS_PROF (PROF_NO_PLN + PROF_NO_MET + PROF_DR_DET + PROF_EDITOR)
 //=================================================================================
 //  Button text
 //=================================================================================
@@ -119,7 +119,7 @@ CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
 	//--- Set application profile -------------------
   ctx.prof	= TBROS_PROF;
 	ctx.mode	= SLEW_RCAM;
-  globals->ccm->SetRabbitCamera(ctx,this);
+  rcam			= globals->ccm->SetRabbitCamera(ctx,this);
 
 }
 //-----------------------------------------------------------------------
@@ -358,7 +358,7 @@ CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
 	//---Create application profile -------------------------
 	ctx.prof	= MBROS_PROF;
 	ctx.mode	= SLEW_RCAM;
-  globals->ccm->SetRabbitCamera(ctx,this);			// Change camera
+  rcam			= globals->ccm->SetRabbitCamera(ctx,this);			// Change camera
 	//---Set focus on first object --------------------------
 	NewSelection();
   ChangeZoom();
