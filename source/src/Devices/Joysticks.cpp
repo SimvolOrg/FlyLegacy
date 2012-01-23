@@ -352,28 +352,28 @@ void CJoysticksManager::PreInit()
   AxeMoved.iAxe  = -1;
   AxeMoved.pJoy  = 0;
   //--------Assign plane axe name ----------------
-  InitAxe( 0,JOY_TYPE_PLAN, JS_AILR_BIT,"Aileron  (Bank)",  JS_AILERON     , 0, true); 
-  InitAxe( 1,JOY_TYPE_PLAN, JS_ELVR_BIT,"Elevator (Pitch)", JS_ELEVATOR    , 0, true, -1);
-  InitAxe( 2,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)", JS_RUDDER      , 0, true, -1);
-  InitAxe( 3,JOY_TYPE_PLAN, JS_ELVT_BIT,"Elevator Trim",    JS_TRIM        , 0, true);
+  InitAxe( 0,JOY_TYPE_PLAN, JS_AILR_BIT,"Aileron  (Bank)",		'ailr'			, 0, true); 
+  InitAxe( 1,JOY_TYPE_PLAN, JS_ELVR_BIT,"Elevator (Pitch)",		'elev'			, 0, true, -1);
+  InitAxe( 2,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)",		'rudr'      , 0, true, -1);
+  InitAxe( 3,JOY_TYPE_PLAN, JS_ELVT_BIT,"Elevator Trim",			'trim'      , 0, true);
 	//---Group toes -------------------------------------------------------------------
-  InitAxe( 4,JOY_TYPE_PLAN, JS_OTHR_BIT,"Right Toe-brake",  JS_RITE_TOE		 , JOY_GROUP_TOES, false);
-  InitAxe( 5,JOY_TYPE_PLAN, JS_OTHR_BIT,"Left  Toe-brake",  JS_LEFT_TOE    , JOY_GROUP_TOES, false);
+  InitAxe( 4,JOY_TYPE_PLAN, JS_OTHR_BIT,"Right Toe-brake",		'rtoe'			, JOY_GROUP_TOES, false);
+  InitAxe( 5,JOY_TYPE_PLAN, JS_OTHR_BIT,"Left  Toe-brake",		'ltoe'			, JOY_GROUP_TOES, false);
 	//---Group throttle ---------------------------------------------------------------
-  InitAxe( 6,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",       JS_THROTTLE_1  , JOY_THROTTLE, false,-1);
-  InitAxe( 7,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 2",       JS_THROTTLE_2  , JOY_THROTTLE, false,-1);
-  InitAxe( 8,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 3",       JS_THROTTLE_3  , JOY_THROTTLE, false,-1);
-  InitAxe( 9,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 4",       JS_THROTTLE_4  , JOY_THROTTLE, false,-1);
+  InitAxe( 6,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",					'thr1'  , JOY_THROTTLE, false,-1);
+  InitAxe( 7,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 2",					'thr2'  , JOY_THROTTLE, false,-1);
+  InitAxe( 8,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 3",					'thr3'  , JOY_THROTTLE, false,-1);
+  InitAxe( 9,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 4",					'thr4'  , JOY_THROTTLE, false,-1);
 	//---Group mixture -----------------------------------------------------------------
-  InitAxe(10,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 1",        JS_MIXTURE_1   , JOY_MIXTURE, false);
-  InitAxe(11,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 2",        JS_MIXTURE_2   , JOY_MIXTURE, false);
-  InitAxe(12,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 3",        JS_MIXTURE_3   , JOY_MIXTURE, false);
-  InitAxe(13,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 4",        JS_MIXTURE_4   , JOY_MIXTURE, false);
+  InitAxe(10,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 1",					'mix1'   , JOY_MIXTURE, false);
+  InitAxe(11,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 2",					'mix2'   , JOY_MIXTURE, false);
+  InitAxe(12,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 3",					'mix3'   , JOY_MIXTURE, false);
+  InitAxe(13,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 4",					'mix4'   , JOY_MIXTURE, false);
 	//---Group Propellor ---------------------------------------------------------------
-  InitAxe(14,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 1",           JS_PROP_1      , JOY_PROPEL, false);
-  InitAxe(15,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 2",           JS_PROP_2      , JOY_PROPEL, false);
-  InitAxe(16,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 3",           JS_PROP_3      , JOY_PROPEL, false);
-  InitAxe(17,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 4",           JS_PROP_4      , JOY_PROPEL, false);
+  InitAxe(14,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 1",							'pro1'      , JOY_PROPEL, false);
+  InitAxe(15,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 2",							'pro2'      , JOY_PROPEL, false);
+  InitAxe(16,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 3",							'pro3'      , JOY_PROPEL, false);
+  InitAxe(17,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 4",							'pro4'      , JOY_PROPEL, false);
 	//--- Mark controls with neutral area ----------------------------------------------
   NeutralMark(0,JOY_NEUTRAL_STICK);
   NeutralMark(1,JOY_NEUTRAL_STICK);
@@ -527,7 +527,7 @@ void CJoysticksManager::NeutralMark(int nx,U_CHAR type)
 //---------------------------------------------------------------------------------
 CJoysticksManager::~CJoysticksManager()
 { std::map<Tag,CSimAxe *>::iterator it;
-	for (U_INT k=0; k < mapAxe.size(); k++) delete mapAxe[k];
+	for (it = mapAxe.begin(); it != mapAxe.end(); it++) delete (*it).second;
   mapAxe.clear();
   FreeJoyList();
 }
@@ -911,6 +911,8 @@ void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
 { Update();										// Refresh values
 	if (GasDisconnected())	return CheckControl('thr1');
 	CSimAxe * axe = 0;
+if (mapAxe.size() < 11)
+gtfo("AXESSS");
   for (int k=JOY_FIRST_PMT; k!=JOY_AXIS_NUMBER; k++)
   { axe = AxesList + k;
     if (0 == (axe->group & JOY_GROUP_PMT))  return;
