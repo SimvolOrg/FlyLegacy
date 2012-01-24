@@ -750,6 +750,8 @@ void CleanupGlobals (void)
 
   CloseUserMenu();   
   CleanupFonts();
+	TRACE("Delete Aircraft");
+	SAFE_DELETE(globals->pln);
 	TRACE("Delete FuiManager");
   SAFE_DELETE (globals->fui);
 	TRACE("Delete CloudSystem");
@@ -1338,6 +1340,7 @@ int main (int argc, char **argv)
   globals->pitch = (hpx / nrp);               // one pixel fov
   globals->camRange = nrp + 20;               // Initial range 50 feets
   //---Default global simulation data --------------------------------
+	globals->trn			= 0;
   globals->cum      = 0;
   globals->cap      = new CCameraRunway();
   globals->csp      = new CCameraSpot();

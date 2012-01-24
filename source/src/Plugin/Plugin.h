@@ -126,6 +126,7 @@ public:
 //======================================================================
 //	JS:  Put all plugin code here and remove it from CSituation
 //=====================================================================
+class CSimulatedObject;
 //=====================================================================
 
   class CPluginMain: public CExecutable

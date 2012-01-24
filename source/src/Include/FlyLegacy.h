@@ -3192,6 +3192,8 @@ public:
   void  Set(U_INT p)    {prop |= p;}            // Set property
   void  Raz(U_INT p)    {prop &= (-1 - p);}     // Clear property
   void  Toggle(U_INT p);                        // Swap property
+	//-------------------------------------------------------------
+	U_INT GetAll()				{return prop;}
   //-------------------------------------------------------------
   char  Has(U_INT p)    {return (prop & p)?(1):(0);}
   char  Not(U_INT p)    {return (prop & p)?(0):(1);}

@@ -74,7 +74,6 @@ void FatalError(int code)
 { TRACE("=====FATAL Error===================");
   TRACE("CODE = %d", code);
  	globals->mBox.DumpAll();
-  exit(-1);
 }
 //=====================================================================================
 _EXCEPTION_POINTERS *excp = 0;
@@ -603,6 +602,7 @@ void redraw ()
     __except(EXCEPTION_EXECUTE_HANDLER)										//(std::exception &e)
     { int code = GetExceptionCode();
 			FatalError(code);
+			TerminateProcess (GetCurrentProcess(), 0);
 			exit(-1);	} 
 			break; 
 	

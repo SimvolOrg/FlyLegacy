@@ -89,7 +89,7 @@ public:
 	void			AxeInvert(Tag st);
 	void			AxeForce(float inc);
 	void			AxeNeutral();
-	void			ButtonList(int No);
+	void			ButtonList(char *name);
 	void			ButtonClick(SJoyDEF *jsd, int nbut);
 	void			HatControl();
 	//-------DRAWING -----------------------------------------

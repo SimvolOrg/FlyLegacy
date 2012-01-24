@@ -41,6 +41,7 @@
 #include "FlyLegacy.h"
 #include "Pod.h"
 #include "Situation.h"
+#include "Triangulator.h"
 #include "DrawVehiclePosition.h"
 #include "DrawVehicleSmoke.h"
 #include "..\Include\BlackBox.h"
@@ -223,6 +224,8 @@ typedef struct {
 	BBM				mBox;												// Master black box
 	//--- Dispatcher --------------------------------------------------
 	CDispatcher Disp;
+	//--- Triangulator ------------------------------------------------
+	Triangulator *trn;
   //----World position ----------------------------------------------
 	double		aMax;		// Altitude maximum
   SPosition geop;   // Position (lat/lon/alt) of the aircraft

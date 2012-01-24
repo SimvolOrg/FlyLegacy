@@ -131,7 +131,7 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
   SelectVehicle(0);
   FillAxes(0);
 	AxeSelect(0);
-	ButtonList(0);
+	ButtonList(devMENU[0]);
 	HatControl();
   //----Allow for Joystick detection ------------------
 	if (jsm->IsBusy()) Close();
@@ -282,10 +282,10 @@ void CFuiAxis::AxeNeutral()
 //----------------------------------------------------------------------
 //  Init the button list for the requested joystick
 //----------------------------------------------------------------------
-void CFuiAxis::ButtonList(int No)
-{ jsp = jsm->GetJoystickNo(No);
+void CFuiAxis::ButtonList(char *name)
+{ jsp = jsm->Find(name);
   if (0 == jsp)     return;
-  devPOP->SetButtonText(devMENU[No]);
+  devPOP->SetButtonText(name);
   butBOX.EmptyIt();
   //-----Locate joystick descriptor
 	int       end = jsp->nbt;
@@ -323,7 +323,7 @@ void CFuiAxis::HatControl()
 //  A button is clicked
 //----------------------------------------------------------------------
 void CFuiAxis::ButtonClick(SJoyDEF *jsn, int nbut)
-{	if (jsp != jsn)	ButtonList(jsn->jNumber());
+{	if (jsp != jsn)	ButtonList(jsn->getDevName());
 	butBOX.GoToItem(nbut);
 }
 //--------------------------------------------------------------------------
@@ -344,14 +344,14 @@ void CFuiAxis::Draw()
 //  Notification from Popup
 //--------------------------------------------------------------------------
 void CFuiAxis::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
-{ switch (id) {
+{	int pm = (int)itm; 
+	switch (id) {
     case 'type':
-      if (evn == EVENT_POP_CLICK)  NewVehicleType((U_INT)itm);
+      if (evn == EVENT_POP_CLICK)  NewVehicleType(pm);
       return;
     case 'devl':
-      if (evn == EVENT_POP_CLICK)  ButtonList((U_INT)itm);
+      if (evn == EVENT_POP_CLICK)  ButtonList(devMENU[pm]);
       return;
-
 }
 return;
 }

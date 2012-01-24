@@ -71,7 +71,7 @@ void CTestBed::TimeSlice()
 //-------------------------------------------------------------------
 void CTestBed::Draw()
 { 	Cam->StartShoot(0);
-		trn.DrawLines();
+		trn.Draw();
 		Cam->StopShoot();
 
   //---------- Check for an OpenGL error ---------------------

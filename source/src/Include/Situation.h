@@ -39,15 +39,15 @@
 
 
 #include <plib/pu.h>
-
-#include "FlyLegacy.h"
+#include "../Include/FlyLegacy.h"
 #include "../Include/database.h"
-#include "UserVehicles.h"
-#include "WorldObjects.h"
-#include "Terrain.h"
-#include "TimeManager.h"
-#include "Cameras.h"
-#include "FlyLegacy.h"
+#include "../Include/Queues.h"
+#include "../Include/3DMath.h"
+#include "../Include/UserVehicles.h"
+#include "../Include/WorldObjects.h"
+#include "../Include/Terrain.h"
+#include "../Include/TimeManager.h"
+#include "../Include/Cameras.h"
 #include <vector>
 #include <list> // sdk: CFlyObjectListManager SFlyObjectList
 
@@ -153,17 +153,12 @@ protected:
 //  Global situation
 //==========================================================================================
 class CSituation : public CStreamObject {
-  //-----------------------------------------------------------
-public:
-  /// sdk: SFlyObjectList
-  /// \todo link this list with wobjList
-  CVehicleObject      *uVeh;    ///< Reference to user vehicle object
-  CSimulatedObject    *sVeh;    ///< Reference to simulated objects
 	//-----------------------------------------------------------
 protected:
 	U_INT           FrameNo;
   float           dTime;            // Delta time
-	CRandomEvents     rEVN;						// Event generator 
+	CSimulatedObject *sVeh;						// Object simulated
+	CRandomEvents     rEVN;						// Event generator
   //---- Methods --------------------------------------
 public:
    CSituation                          (void);
@@ -177,11 +172,9 @@ public:
   void              OpenSitFile        (void);
   void              AdjustCameras      (void);
 	void							ReloadAircraft();
-  CAirplane  *GetAnAircraft            (void);
-  CSimulatedObject *GetASimulated      (void);
-  void              StoreVEH           (CVehicleObject *veh);
+  CAirplane        *GetAnAircraft      ();
+  CSimulatedObject *GetASimulated      ();
   void              SetAircraftFrom    (char *nfo);
-  void              SetPosition        (SPosition &pos);
   void              PrintUserVehicle   (FILE *f);
   void              Prepare            (void);
 	//----------------------------------------------------
@@ -195,11 +188,8 @@ public:
   U_INT             GetFrameNo         (void) {return FrameNo; }
 	void							WorldOrigin();
   //----------------------------------------------------
-  inline CVehicleObject*   GetUserVehicle() {return uVeh;}
-  //----------------------------------------------------
 
 };
-
 
 //=================================END OF FILE ==============================================
 #endif // SITUATION_H

@@ -113,7 +113,7 @@ bool SJoyDEF::CreateSDL(int k)
 //	save previous value;
 //----------------------------------------------------------------
 void SJoyDEF::UpdateSDL()
-{	//---- Update the axes values of this joystick ----
+{	//---- Update the axes values for this joystick ----
 	for (int k=0; k<nax; k++)
 	{ int		v0  = SDL_JoystickGetAxis(spj, k);
 		float v1 = float(v0) / 32768;
@@ -172,7 +172,7 @@ int CSimAxe::Read(SStream * st, Tag tag)
       return TAG_READ;
     case 'devc':  // joystick name
       ReadString(dev, 128, st);
-      pJoy  = globals->jsm->Find(dev,joyn);
+      pJoy  = globals->jsm->Find(dev);
       return TAG_READ;
 
     case 'Anum':  // Axe number (0 based)
@@ -292,7 +292,7 @@ int CSimButton::Read(SStream * stream, Tag tag)
 
     case 'devc':  // joystick name
       ReadString(dev, 128, stream);
-      pjoy = globals->jsm->Find(dev,joyn);
+      pjoy = globals->jsm->Find(dev);
       return TAG_READ;
 
     case 'Bnum':  // button number <0 - 31>
@@ -526,10 +526,12 @@ void CJoysticksManager::NeutralMark(int nx,U_CHAR type)
 //  Free all resources
 //---------------------------------------------------------------------------------
 CJoysticksManager::~CJoysticksManager()
-{ std::map<Tag,CSimAxe *>::iterator it;
+{ SDL_Quit();
+	std::map<Tag,CSimAxe *>::iterator it;
 	for (it = mapAxe.begin(); it != mapAxe.end(); it++) delete (*it).second;
   mapAxe.clear();
-  FreeJoyList();
+  for (U_INT k=0; k<joyQ.size(); k++)  delete joyQ[k];
+  joyQ.clear();
 }
 //---------------------------------------------------------------------------------
 //  OPEN JOYSTICK CONTROL FILE
@@ -618,10 +620,12 @@ void CJoysticksManager::ReleaseAxe(CSimAxe *axn)
   return;
 }
 //---------------------------------------------------------------------------------
-//  ASSIGN AXE axn TO  COMPONENT tag
-//  1) if the component is part of a group and the all option is set, then 
-//      axe is assigned to all component of the group
-//  2) For each component, if a previous axe is assigned, it is then released
+//  ASSIGN AXE axn TO  current axe. 
+//	axn is the new detected axis
+//	-axn has a pointer to joystick and a number for the new axis.
+//	-axe is the current axe that is reassigned
+//	1) the new axe (axn) is released from previous assignation
+//  2)  
 //---------------------------------------------------------------------------------
 void CJoysticksManager::AssignAxe(CSimAxe *axe, CSimAxe *axn, U_CHAR all)
 { ReleaseAxe(axn);
@@ -629,7 +633,7 @@ void CJoysticksManager::AssignAxe(CSimAxe *axe, CSimAxe *axn, U_CHAR all)
 	U_CHAR grp = axe->group;
 	if ((0 == all) ||(0 == grp))	return;
 	for (int k = 0; k != JOY_AXIS_NUMBER; k++)
-  { CSimAxe *axk = &AxesList[k];
+  { CSimAxe *axk = AxesList+ k;
     if (axk->group != grp)  continue;
     ReleaseAxe(axk);
 		axk->Assign(axn);
@@ -645,7 +649,7 @@ void CJoysticksManager::Clear(CSimAxe *axe,U_CHAR all)
 	U_CHAR grp = axe->group;
   if ((0 == all) ||(0 == grp))	return;
 	for (int k=0; k!=JOY_AXIS_NUMBER; k++)
-	{	CSimAxe *axn = &AxesList[k];
+	{	CSimAxe *axn = AxesList + k;
 		if (axn->group == grp) axn->Clear();
 	}
 	modify	= 1;
@@ -660,7 +664,7 @@ void CJoysticksManager::Invert(CSimAxe *axe,U_CHAR all)
   modify = 1;
 	if ((0 == all) ||(0 == grp))	return;
   for (int k = 0; k != JOY_AXIS_NUMBER; k++)
-  { CSimAxe *axk = &AxesList[k];
+  { CSimAxe *axk = AxesList + k;
 		if (axk == axe)								continue;		// Already inverted
     if (axk->group != axe->group) continue;   // Not same group
     if (axk->pJoy  != axe->pJoy)  continue;   // Not same joystick
@@ -668,18 +672,6 @@ void CJoysticksManager::Invert(CSimAxe *axe,U_CHAR all)
     axk->Invert();
   }
 	//modify	= 1;
-  return;
-}
-//------------------------------------------------------------------------
-//  Clear Requested Axe
-//------------------------------------------------------------------------
-void CJoysticksManager::ClearAxe(EAllAxes tag)
-{ CSimAxe * pAxe = GetAxe(tag);
-  if(pAxe)
-  {
-    pAxe->pJoy   = 0;
-    pAxe->iAxe   = 0;
-  }
   return;
 }
 //==========================================================================================
@@ -711,15 +703,12 @@ void CJoysticksManager::DetectMove(SJoyDEF * p)
 { for(int nba=0; nba<p->nax; nba++)
   { float dif = p->axePrev[nba] - p->axeData[nba];
     // consider a valid move at a minimum of ?
-    if(dif > 0.2f || dif < -0.2f)
-    {	AxeMoved.iAxe = nba;
-      AxeMoved.pJoy = p;
-			AxeMoved.joyn = p->jNumber();
-      if(pAxeCB)
-			{	pAxeCB(&AxeMoved, wmID);
-        p->axePrev[nba] = p->axeData[nba];
-      }
-		}
+    if(fabs(dif) < 0.05f)			continue;
+    AxeMoved.iAxe = nba;
+    AxeMoved.pJoy = p;
+		AxeMoved.joyn = p->jNumber();
+		(*pAxeCB)(&AxeMoved, wmID);
+		return;
 	}
 	return;
 }
@@ -774,21 +763,6 @@ bool CJoysticksManager::AssignCallBack(SJoyDEF * pJoy,int k)
   pButCB(pJoy, k, wbID);
   return true;
 }
-//----------------------------------------------------------------------
-//  Free Joystick list
-//----------------------------------------------------------------------
-void CJoysticksManager::FreeJoyList()
-{
-  std::vector<SJoyDEF *>::iterator it;
-  SJoyDEF *    pjs;
-
-  for (it = joyQ.begin(); it != joyQ.end(); it++)
-  {
-    pjs = *it;
-    if(pjs)	SAFE_DELETE(pjs);	
-  }
-  joyQ.clear();
-}
 //---------------------------------------------------------------------------------
 // Enum all devices and allocate corresponding 
 // axes array storage with duplicate
@@ -817,17 +791,15 @@ SJoyDEF *CJoysticksManager::GetJoystickNo(int No)
   return 0;
 }
 //==============================================================================
-// FIND JOYSTICK DESCRIPTOR by name (not const protected version)
+// FIND JOYSTICK DESCRIPTOR by name 
 //==============================================================================
-SJoyDEF *CJoysticksManager::Find(char * name,int jn)
+SJoyDEF *CJoysticksManager::Find(char * name)
 {
   std::string str;
 
   int iPos;
   if(name)
-  {
-    std::string strname(name);
-
+  {  std::string strname(name);
     //
     // remove last char if blank
     // (jslib side effect ?)
@@ -844,7 +816,7 @@ SJoyDEF *CJoysticksManager::Find(char * name,int jn)
         // remove last char if blank
         iPos = str.find_last_of(' ');
         if(iPos == int(str.size()-1))    str.resize(str.size()-1);
-        if ((str == strname) && (jn == jdf->njs)) return jdf;
+				if (str == strname) return jdf;
       }
     }
   }
@@ -853,8 +825,8 @@ SJoyDEF *CJoysticksManager::Find(char * name,int jn)
 //-------------------------------------------------------------------------------
 //  Poll Axe value:  Used by all control surface to get raw value of control
 //-------------------------------------------------------------------------------
-void CJoysticksManager::Poll(EAllAxes axe, float &v)
-{	CSimAxe *pa = GetAxe(axe);
+void CJoysticksManager::Poll(EAllAxes tag, float &v)
+{	CSimAxe *pa = GetAxe(tag);
   if (pa && pa->IsConnected(axeCNX))	v = pa->Value(nZON);
 	return;
 }
@@ -1042,11 +1014,9 @@ bool CJoysticksManager::StartDetectMoves(AxeDetectCB * pFunc, Tag id)
 { if (pAxeCB)		return false;
   wmID		= id;
   pAxeCB	= pFunc;
-
-  // reset detected struct
+  //----- reset detected struct ---------------------
   AxeMoved.iAxe = -1;
   AxeMoved.pJoy = 0;
-
   // Copy the current state of all joysticks
   // to the copy float array as an Idle state to detect large moves
   SJoyDEF * p1;
@@ -1162,15 +1132,14 @@ bool CJoysticksManager::ProcessButton(CSimButton *sbt)
 //-----------------------------------------------------------------------------------
 //  Save Axis in configuration file
 //-----------------------------------------------------------------------------------
-void CJoysticksManager::SaveAxisConfig(SStream *st,SJoyDEF *jsd)
+void CJoysticksManager::SaveAxisConfig(SStream *st)
 { char stag[8];
   CSimAxe *axe = 0;
   int tmp;
   for (int k=0; k != JOY_AXIS_NUMBER; k++)
   { axe = AxesList+k;
 		SJoyDEF *jdf = axe->pJoy;
-	  if (0 == jdf)		continue;
-		
+	  if (0 == jdf)				continue;
     //---Write axe configuration ------------------------
     WriteTag('jaxe',  "-- joystick axe definition --", st);
     WriteTag('bgno', st);
@@ -1179,12 +1148,10 @@ void CJoysticksManager::SaveAxisConfig(SStream *st,SJoyDEF *jsd)
       WriteFloat(&axe->attn,st);
     }
     WriteTag('njoy',  " -- internal number (must precede devc) --",st);
-		tmp	= 0;
-		if(jdf) tmp = jdf->jNumber();
+		tmp = jdf->jNumber();
     WriteInt(&tmp,st);
     WriteTag('devc',  " -- input device name --------------------", st);
-		char *dn = (jdf)?(jdf->dName):("None");
-    WriteString(dn, st);
+    WriteString(jdf->dName, st);
     WriteTag('Anum', "-- device axe number ----------------------", st);
 		tmp	= axe->iAxe;
     WriteInt(&tmp, st);
@@ -1200,9 +1167,9 @@ void CJoysticksManager::SaveAxisConfig(SStream *st,SJoyDEF *jsd)
 }
 //-----------------------------------------------------------------------------------
 //  Save Button in configuration file
-//	TODO:  LIMT TO JOYSTICK number of buttons 
+//	 
 //-----------------------------------------------------------------------------------
-void CJoysticksManager::SaveButtonConfig(SStream *st,SJoyDEF *jsd)
+void CJoysticksManager::SaveButtonConfig(SStream *st, SJoyDEF *jsd)
 { char stag[8];
   CSimButton *sbt = 0;
   for (int k=0; k!=jsd->nbt; k++)
@@ -1254,9 +1221,9 @@ void CJoysticksManager::SaveConfiguration()
   WriteTag('neut', " -- Neutral [0-1] stick coefficient ------", &s);
   WriteFloat(&nValue,&s);
   //---------------------------------------------------------
+	SaveAxisConfig(&s);
   for (it = joyQ.begin(); it != joyQ.end(); it++)
   { jsd = (*it);
-    SaveAxisConfig(&s,jsd);
     SaveButtonConfig(&s,jsd);
   }
   //---Close the file ---------------------------------------

@@ -576,14 +576,12 @@ bool CSlewManager::StopMove()
 //          and just delete user 
 //=========================================================================
 CSituation::CSituation()
-{
+{ TRACE("=========CSituation start============");
   globals->sit = this;
-  TRACE("=========CSituation start============");
+	sVeh			= 0;
   //MEMORY_LEAK_MARKER (">SIT Construct")
   // Perform base initialization
 	FrameNo	= 0;										// JSDEV*
-  uVeh    = 0;
-  sVeh    = 0;
  // Open SIT file from pod filesystem
   OpenSitFile ();
   //MEMORY_LEAK_MARKER ("<SIT Construct")
@@ -615,13 +613,7 @@ void CSituation::ReloadAircraft()
 //  Free resources
 //-------------------------------------------------------------------------
 CSituation::~CSituation (void)
-{ 
-#ifdef _DEBUG
-  DEBUGLOG ("CSituation::~CSituation");
-#endif  
-  //---Free all world objects ---------------------------
-  SAFE_DELETE (uVeh);
-  SAFE_DELETE (sVeh);
+{ SAFE_DELETE (sVeh);
 }
 //-------------------------------------------------------------------------
 //  Proced to Camera adjustment according to aircraft dimension
@@ -692,7 +684,6 @@ int CSituation::Read (SStream *stream, Tag tag)
             if (globals->plugins_num) globals->plugins.On_Instantiate (0,0,NULL);
             // 122809
             CAirplane *plan = GetAnAircraft();
-            StoreVEH(plan);
             //---Continue reading on behalf of the CVehicleObject --------
             ReadFrom (plan, stream);
             TRACE("FLY_AIRPLANE all read");
@@ -718,26 +709,16 @@ int CSituation::Read (SStream *stream, Tag tag)
   return rc;
 }
 //---------------------------------------------------------------------------------
-//*  Check and store vehicle
-//    inhibit vehicle under initialization
-//---------------------------------------------------------------------------------
-void CSituation::StoreVEH(CVehicleObject *veh)
-{ if (uVeh) gtfo("CSituation: uveh not free");
-  uVeh          = veh;
-  return;
-}
-//---------------------------------------------------------------------------------
 //  Set a new plane with the NFO file
 //  NOTE: user entry must be free
 //    Some cameras are distance adjusted according to aircraft dimensions
 //---------------------------------------------------------------------------------
 void CSituation::SetAircraftFrom(char *nfo)
-{ if (uVeh)             return;
+{ if (globals->pln)             return;
   //---Set aircraft from nfo ---------------------
   CVehicleObject *veh  = GetAnAircraft();
   veh->StoreNFO(nfo);
   veh->ReadFinished();
-	uVeh			= veh;
   AdjustCameras();
   return;
 }
@@ -847,14 +828,6 @@ void CSituation::Timeslice (float dT,U_INT frame)
   return;
 }
 //----------------------------------------------------------------------------
-//  Set vehicle position
-//----------------------------------------------------------------------------
-void CSituation::SetPosition(SPosition &pos)
-{ if (uVeh) uVeh->SetPosition(pos);
-  return;
-}
-
-//----------------------------------------------------------------------------
 //      Change user vehicle
 //----------------------------------------------------------------------------
 void CSituation::ClearUserVehicle()
@@ -871,7 +844,6 @@ void CSituation::ClearUserVehicle()
   //--- Stop engines --------------------------------------
   pln->eng->CutAllEngines();
   delete pln;
-  uVeh = 0;
   //----Change to default camera -------------------------
   globals->cam = globals->csp;
   //----Clean all globals --------------------------------
@@ -925,18 +897,21 @@ void CSituation::WorldOrigin()
 //   controlled from this method.
 //===============================================================================
 void CSituation::Draw ()
-{ if (globals->aPROF.Has(PROF_NO_SIT))	return;
+{ 
 	CCamera *cam = globals->cam;
   //----Use standard camera seting for drawing ------------------------
   cam->StartShoot(dTime);
-  //----Draw sky background ------------------------------------
-
-  globals->skm->PreDraw();
-  //--------------------------------------------------------------------
+  //----Draw sky background -----------------------------------------
+	if (globals->trn)		globals->trn->Draw();
+	//--------------------------------------------------------------------
   // Draw the terrain (ground textures, airports, scenery models, etc.)
   //--------------------------------------------------------------------
-  globals->tcm->Draw();                     //  Terrain cache
-  //---Restore everything ---------------------------------------
+
+	else {
+				globals->skm->PreDraw();
+				globals->tcm->Draw();                     //  Terrain cache
+				}
+	//---Restore everything ---------------------------------------
   cam->StopShoot();
   // Check for an OpenGL error
   CHECK_OPENGL_ERROR
@@ -990,4 +965,5 @@ void  TXT_LIST::Increment()
   }
   return;
 }
+
 //=========================END OF FILE =======================================================

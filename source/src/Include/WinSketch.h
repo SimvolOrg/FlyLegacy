@@ -37,7 +37,15 @@
 //==========================================================================================
 class CFuiSketch : public CFuiWindow
 {	//--- ATTRIBUTES ----------------------------------------------
+	CFuiGroupBox	*gBOX;					// Option group box
+	CFuiLabel			*aLAB;
+  CFuiCheckBox  *fOPT;					// fill Option box
+  CFuiCheckBox  *wOPT;					// wall Option box
+	//-------------------------------------------------------------
+	COption        optD;					// Option box
+	//-------------------------------------------------------------
 	GLUquadricObj *sphere;
+	Triangulator    *trn;
 	//---Original context -----------------------------------------
   CAMERA_CTX       ctx;         // Original camera and situation
 	//--- Rabbit camera -----------------------------------------
@@ -46,8 +54,12 @@ class CFuiSketch : public CFuiWindow
 public:
 	CFuiSketch(Tag idn, const char *filename);
  ~CFuiSketch();
+  //--- File handling -----------------------------------------
+	void	ProcessFile(char *fn);
+	void	SetOptions(U_INT p);
 	//--- Drawing() ----------------------------------------------
 	void	Draw();
+	void	NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 	//--- Dont close tthe windows ---------------------------------
 	void CheckProfile()		{;}
 };

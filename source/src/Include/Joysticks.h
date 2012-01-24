@@ -284,7 +284,6 @@ public:
   float           Neutral(float f, int nx);
   float           AxeVal(CSimAxe *pa);
 	float           RawVal(CSimAxe *pa);
-  int             HowMany() const {return joyQ.size();};
   bool            StartDetectMoves(AxeDetectCB * pFunc, Tag id);
   void            StopDetectMoves(void);
 	//----Read values ------------------------------------------------------
@@ -293,13 +292,11 @@ public:
 	bool						StartDetectButton(ButtonDetectCB *pcb, Tag id);
   void            StopDetectButton(void);
 	//----------------------------------------------------------------------
-  SJoyDEF        *Find(char * name,int jn = 0);
+  SJoyDEF        *Find(char * name);
   SJoyDEF        *GetJoystickNo(int No);
   //------Remap a message to given tag -------------------------------------
   void            MapTo(Tag gen, Tag usr);
   Tag             TagFrom(Tag gen);
-  //------------------------------------------------------------------------
-  inline  void    ClearAxe(int nx) {AxesList[nx].pJoy = 0;}
   //------------------------------------------------------------------------
   CSimAxe *Axe(Tag tag)  {return GetAxe(tag);}
   CSimAxe *NextAxe(CSimAxe *from,int type);
@@ -318,7 +315,6 @@ public:
   CSimAxe        *GetAxe(Tag tag);
   bool            HasAxe(EAllAxes axe);
   void            Invert(CSimAxe *axn,U_CHAR all);
-  void            ClearAxe(EAllAxes tag);
   void            ReleaseAxe(CSimAxe *axn);
   void            SetInvert(EAllAxes tag,int p);
   int             GetInvert(EAllAxes tag);
@@ -327,7 +323,7 @@ public:
   void            ClearGroupPMT();
   //------------------------------------------------------------------------
   void            SaveButtonConfig(SStream *st,SJoyDEF *jsd);
-  void            SaveAxisConfig(SStream *st,SJoyDEF *jsd);
+  void            SaveAxisConfig(SStream *st);
   void            SaveConfiguration();
   void            SetNulleArea(float n,char m); 
   float           GetAttenuation(EAllAxes cmd);
@@ -339,7 +335,6 @@ public:
   //------------------------------------------------------------------------
 protected:
 	void					EnumSDL();
-  void          FreeJoyList();
   void          HandleButton(SJoyDEF * pJoy);
 	bool					HandleHat(U_INT hat);
   //----ATTRIBUTES ----------------------------------------------------------
