@@ -369,6 +369,8 @@ protected:
   //------------------------------------------------------------
   float       pDis;                   // Distance to plane
   //-----------------------------------------------------------
+	U_CHAR     obtr;									  // Trace
+	U_CHAR     rfu;											// Futur use
 	U_CHAR		 snap;										// Snap to ground
   U_CHAR     nozb;                    // No Z Buffer
   U_CHAR     nozu;                    // No Z underlay
@@ -418,7 +420,7 @@ public:
   C3DLight       *PopALight();
   //----------------------------------------------------------
   void            AddModel(C3Dmodel *mod,U_CHAR q);
-  int             LoadTheModel();
+  int             LoadMyModel();
   double          GetXExtend();
   double          GetYExtend();
   double          GetZExtend();
@@ -429,7 +431,6 @@ public:
   float           RefreshDistance();
   void            UpdateWith(CNavaid *nav);
   void            EndOfQGT(C_QGT *qt);
-  void            AddToSuperTile();       
    //---------UPDATE IF ANIMATED -----------------------------
   virtual  void   ModelLoaded(C3Dmodel *m) {}
   virtual  void   Update(U_CHAR rfq) {}
@@ -485,12 +486,14 @@ public:
   inline void       SetNOZB(char f)       {nozb = f;}
   inline void       SetNOZU(char f)       {nozu = f;}
 	inline void				SetSnap()							{snap = 1;}
+	inline void				SetTrace(char t)			{obtr = t;}
 	//--------------------------------------------------------------
 	inline void SnapTo()	{snap  = (flag & TC_SNAP_GROUND);}
   //--------------------------------------------------------------
-  inline void       Copy(TC_GRND_INFO &t) {inf = t;}
+  inline void						Copy(TC_GRND_INFO &t) {inf = t;}
   inline TC_GRND_INFO  *GetINFO()         {return &inf;}
-  inline SPosition  GetPosition()         {return oPos;}
+  inline SPosition			GetPosition()     {return oPos;}
+	inline CSuperTile    *GetSuperTile()		{return inf.sup;}
   //--------------------------------------------------------------
 };
 //=============================================================================
@@ -577,6 +580,7 @@ class C3Dfile: public CStreamObject {
   C_QGT     *oQGT;                    // Object's QGT 
   CObjQ      exQ;                     // Object queue for export
   CWhld     *hld;                     // Last place holder found
+	U_INT			cntr;											// Add object count
   char       namef[64];               // File name
   char       fullN[PATH_MAX];					// Current file ident
   //-----------------------------------------------------------
@@ -585,7 +589,7 @@ public:
  ~C3Dfile();
   void  Abort(Tag tag);
   void  Abort(char *msg);
-  void  Decode(char *fname,char *pn);
+  int   Decode(char *fname,char *pn);
   int   Read(SStream *st,Tag tag);
   bool  MarkHold(CWobj *obj);
 	void	AutoGen(SStream *st);
@@ -641,6 +645,7 @@ public:
   void    AddToWOBJ(CWobj *obj);
   void    SetQGTparameters(C_QGT *q);
   void    TraceEnd();
+	void		TraceAdd(int n);
   void    Clear3Dworld();
   void    GetLine(CListBox *box);
   CWobj  *SelectOneOf(CWobj *hld);
@@ -694,6 +699,7 @@ public:
 	int 			LocateObjects(C_QGT *qgt);
   void      NoTexture(char *fn,char *tn);
   void      Warning(CWobj *obj,char *msg);
+	void			TraceLoad(int nb,char *src,C_QGT *qgt);
   //------------------------------------------------------------
   C3Dmodel *AllocateModel(char *fn);
   void      FreeModelKey(char *key);

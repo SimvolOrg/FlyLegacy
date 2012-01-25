@@ -111,6 +111,7 @@ struct D2_POINT {
 	D2_POINT *next;															// Next point
 	D2_POINT *prev;															// Previous
 	char   idn[4];															// Point ident
+	//---------------------------------------------------------
   char   R;																		// Type of point
 	char   F;																		// Type of face
 	char   rfu1;																// Not used 
@@ -119,6 +120,9 @@ struct D2_POINT {
 	double x;																		// X coordinate
   double y;																		// Y coordinate
 	double z;																		// Z coordinate
+	//--- Texture coordinate -----------------------------------
+	double s;																		// along x
+	double t;																		// along y
 	//--- Local space -------------------------------------------
 	double lx;																	// X coordinate
 	double ly;																	// Y coordinate
@@ -152,22 +156,41 @@ struct D2_POINT {
 	char  D2_POINT::GetFaceType() {return F;}
 	//----------------------------------------
 	void  D2_POINT::Draw()				{	glVertex3f(x,y,z);}
+	//----------------------------------------
+	void  D2_POINT::Add(D2_POINT &p, SVector &v)
+	{	x = p.x + v.x;
+		y = p.y + v.y;
+		z = p.z + v.z;
+	}
 };
 //======================================================================================
 //  2D triangles
 //	Orientation is B->A->C->B
 //======================================================================================
 struct D2_TRIANGLE {
+	char	type;
 	D2_POINT *B;				// Previous point
 	D2_POINT *A;				// current vertex
 	D2_POINT *C;				// Next point
+	//----------------------------------------------
+	D2_TRIANGLE::D2_TRIANGLE() { type = 0;}
+	//---- Allocate D2_POINTS ----------------------
+	D2_TRIANGLE::D2_TRIANGLE(char a)
+	{	type = 1;
+	  B	= new D2_POINT();
+		A = new D2_POINT();
+		C = new D2_POINT();
+	}
+	//----- Destruction ----------------------------
+	D2_TRIANGLE::~D2_TRIANGLE()
+		{	if (type)	{delete B; delete A; delete C;} }
 	//----- Methods --------------------
 	void	D2_TRIANGLE::Set(D2_POINT *P, D2_POINT *S, D2_POINT *N)
 	 {	A = S; 
 			B = P;
 			C = N;
 		}
-	//-----------------------------------------
+	//----------------------------------------------
 	void  D2_TRIANGLE::Draw()
 	{	B->Draw();
 		A->Draw();

@@ -318,7 +318,7 @@ public:
     U_CHAR       State;                   // Request code
     U_CHAR       NoSP;                    // Super Tile number [0-63]
     U_CHAR       sta3D;                   // 3D state
-    U_CHAR       rfu1;										// reserved futur use
+    U_CHAR       obtr;										// Trace object
 		//---Rendering vector -------------------------------------------
 		VREND					Rend;										// Rending vector
     //---------------------------------------------------------------
@@ -367,8 +367,10 @@ public:
     void          DrawInnerSuperTile();
     void          DrawTour();
     int           Draw3D(U_CHAR tod);
-    void          Add3DObject(CWobj *obj); 
+    void          Add3DObject(CWobj *obj,char t); 
 		void					BindVBO();
+		//-----------------------------------------------------------
+		void					TraceEnd();
     //-----------------------------------------------------------
     inline CTextureDef *GetTexDesc(int nd)  {return (Tex + nd);}
     //-----------------------------------------------------------

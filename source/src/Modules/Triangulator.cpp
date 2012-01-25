@@ -100,8 +100,8 @@ int Triangulator::FillMode()
 //-------------------------------------------------------------------
 void Triangulator::DrawRoof()
 {	D2_TRIANGLE *T;
-	for (U_INT k=0; k != out.size(); k++)
-	{	T = out[k];
+	for (U_INT k=0; k != grnd.size(); k++)
+	{	T = grnd[k];
 		glBegin(GL_TRIANGLES);
 		T->Draw();
 		glEnd();
@@ -158,8 +158,8 @@ void Triangulator::NewHole()
 void Triangulator::Clean()
 {	extp.Clear();
 	hole.Clear();
-	for (U_INT k=0; k < out.size(); k++)		delete out[k];
-	out.clear();
+	for (U_INT k=0; k < grnd.size(); k++)		delete grnd[k];
+	grnd.clear();
 	for (U_INT k=0; k < walls.size(); k++)	delete walls[k];
 	seq		= 0;										// Vertex sequence
 	num		= 0;										// Null number
@@ -254,7 +254,7 @@ bool Triangulator::QualifyPoints()
 		//--- next vertex ----------------------
 		ap = ap->next;
 	}
-	out.reserve(nb-2);
+	grnd.reserve(nb-2);
 	//--- Adjust real surface- ---------------
 	surf *= -0.5;
 	//--- Chose  precision -------------------
@@ -288,7 +288,7 @@ void Triangulator::GetAnEar()
 		//------ Get an ear -------------------------------
 		D2_TRIANGLE *t = new D2_TRIANGLE();
 		*t			= tri;
-		out.push_back(t);
+		grnd.push_back(t);
 		//--- remove ear slot -----------------------------
 		D2_SLOT *sb = slot.CyPrev(sa);
 		D2_SLOT *sc = slot.CyNext(sa);
@@ -387,8 +387,8 @@ void Triangulator::TraceOut()
 {	char ida[6];
 	char idb[6];
 	char idc[6];	
-	for (U_INT k = 0; k < out.size();k++)
-	{	D2_TRIANGLE *t = out[k];
+	for (U_INT k = 0; k < grnd.size();k++)
+	{	D2_TRIANGLE *t = grnd[k];
 		t->A->Id(ida);
 		t->B->Id(idb);
 		t->C->Id(idc); 
@@ -617,8 +617,18 @@ void Triangulator::BuildFloor(int No, double fl, double ht)
 	return;
 }
 //----------------------------------------------------------------
-//	Adjust a dedicated roof model to the building
+//	Reorder the tour with origin as first point
 //----------------------------------------------------------------
+void Triangulator::Reorder()
+{	int k = extp.GetNbObj();
+	while (extp.GetFirst() != TO)	
+	{	if (k <0)	return;
+		D2_POINT *pq = extp.Pop();
+		extp.PutLast(pq);
+		k--;
+	} 
+	return;
+}	
 //=========================================================================
 //	D2-FACE class
 //=========================================================================
@@ -673,5 +683,71 @@ D2_FLOOR::~D2_FLOOR()
 //---------------------------------------------------------------
 void D2_FLOOR::Draw()
 {	for (U_INT k=0; k < faces.size(); k++)	faces[k]->Draw();
+}
+//====================================================================================
+//	Roof Model
+//====================================================================================
+CRoofModel::CRoofModel(int n,SVector *v,int q, short *x)
+{	nbv		= n;
+	aVEC	= v;
+	nbx		= q;
+	aIND	= x;
+	aOUT  = 0;
+}
+//---------------------------------------------------------------
+//	free vectors
+//---------------------------------------------------------------
+CRoofModel::~CRoofModel()
+{	if (aOUT)	delete [] aOUT;}
+//---------------------------------------------------------------
+//	Fill a triangle from index k
+//	NOTE: Only the pointers are assigned to the aOUT points
+//---------------------------------------------------------------
+int CRoofModel::FillTriangle(D2_TRIANGLE &T, short k)
+{	short s0 = aIND[k++];
+	T.B	= aOUT + s0;
+	short s1 = aIND[k++];
+	T.A = aOUT + s1;
+	short s2 = aIND[k++];
+	T.C = aOUT + s2;
+	return k;
+}
+//---------------------------------------------------------------
+//	Build a roof with 2 slopes
+//	NOTE:  The tour points (inp) must have good height
+//				the inp should be ordered with X origin as 1rst point
+//---------------------------------------------------------------
+void CRoofModel::BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out)
+{	if (inp.GetNbObj() != 4)					return;
+	//-----Allocate output vector --------------------------
+	CloneModel();
+	//---- Compute the 4 corners ---------------------------
+	D2_POINT *p1 = inp.GetFirst();
+	D2_POINT *p2 = inp.CyNext(p1);
+	D2_POINT *p0 = inp.CyPrev(p1);
+	D2_POINT *pq;
+	int k   = 0;
+	for (pq = p1; k != 4; pq = pq->next, k++)
+	{	 aOUT[k].x = pq->x;
+		 aOUT[k].y = pq->y;
+		 aOUT[k].z = pq->z;
+	}
+	//--- Compute both roof top vertices from X side-------------
+	SVector T;
+	T.x = (p0->x - p1->x) * 0.5;
+	T.y = (p0->y - p1->y) * 0.5;
+	T.z = T.y;
+	aOUT[5].Add(*p1,T);
+	aOUT[6].Add(*p2,T);
+	//--- Now build the triangles -------------------------------
+	int n = 0;
+	while (n < nbx)
+	{	D2_TRIANGLE *T = new D2_TRIANGLE(1);
+		n	= FillTriangle(*T,n);
+		out.push_back(T);
+	}
+	//--- POINTS are now under T responsibility to delete -------
+	aOUT	= 0;
+	return;
 }
 //======================= END OF FILE =========================================================

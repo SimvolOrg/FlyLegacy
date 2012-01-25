@@ -2445,11 +2445,12 @@ int SqlMGR::WriteOBJname(char *fn)
 //=================================================================================
 //  Read a set of World Object model
 //=================================================================================
-void SqlMGR::ReadWOBJ(C_QGT *qgt)
+int SqlMGR::ReadWOBJ(C_QGT *qgt)
 { U_INT key = qgt->FullKey();
   char req[1024];
   _snprintf(req,1024,"SELECT * FROM OBJ where qgt='%d';*",key);
   sqlite3_stmt *stm = CompileREQ(req,objDBE);
+	int cnto		= 0;
   while (SQLITE_ROW == sqlite3_step(stm))
     { CWobj *obj = 0;
       int kind =  sqlite3_column_int (stm,CLN_OBJ_KND);
@@ -2468,10 +2469,11 @@ void SqlMGR::ReadWOBJ(C_QGT *qgt)
       ReadOBJLite(obj,xk,yk);
       C3Dworld *w3d = qgt->Get3DW();
       w3d->AddToWOBJ(obj);
+			cnto++;
     }
   //---Free statement ------------------------------------------
   sqlite3_finalize(stm);
-  return;
+  return cnto;
 }
 //---------------------------------------------------------------------------------
 //  Select al objects from the same file name

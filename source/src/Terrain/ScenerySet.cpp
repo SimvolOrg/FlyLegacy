@@ -55,7 +55,7 @@ void CSceneryPOD::Mount()
 {	U_INT No = paddpod (&globals->pfs, fName);
 	if (0 == No)		return;
 	//--- A new pod is mouted ---------------------
-	SCENE("   (%06d) Mount %s",No,fName);
+	SCENE("   Ticket(%06d) Mount %s",No,fName);
 	return;
 }
 //---------------------------------------------------------------
@@ -65,7 +65,7 @@ void CSceneryPOD::Mount()
 void CSceneryPOD::Remove()
 {	U_INT No = premovepod (&globals->pfs, fName);
   if (0 == No)		return;
-	SCENE("   (%06d) Unmount %s",No,fName);
+	SCENE("   Ticket(%06d) Unmount %s",No,fName);
 	return;
 }
 //=================================================================================
@@ -156,7 +156,7 @@ void CSceneryDBM::Cleanup (void)
 // Search for POD in this directory 
 //--------------------------------------------------------------
 void CSceneryDBM::LookForPOD(char *path)
-{	
+{	int sh = 0;
 	SCENE("SEARCH POD in: %s", path);
   // Iterate over all files in this folder.  Sub-folders are ignored
   ulDir*  dirp = ulOpenDir (path);
@@ -165,28 +165,31 @@ void CSceneryDBM::LookForPOD(char *path)
     
     while ((dp = ulReadDir(dirp)) != NULL )
 		{ if (dp->d_isdir)						continue;
-			//--- Bypass shared scenery (already mounted) ---------
-			if (GetSceneryType(path))		continue;
+			//--- Qualify shared scenery --------------------------
+			sh = GetSceneryType(path);
 			//--- a file is found ---------------------------------
       // Check for file extension .POD
       char *ext = strrchr (dp->d_name, '.');
 			if (0 == ext)								continue;
       if ((_stricmp (ext, ".EPD") == 0) || (_stricmp(ext, ".POD") == 0))
-			{	ProcessPOD(path,dp->d_name);				}
+			{	char *fn = dp->d_name;
+				if (sh)		MountSharedPod(path,fn);
+			  else			ProcessPOD(path,fn);				}
     }
   }
     ulCloseDir(dirp);
 		return;
 }
+
 //--------------------------------------------------------------
 // Check for shared scenery
 //--------------------------------------------------------------
 int	CSceneryDBM::GetSceneryType(char *path)
-{	char *sdr = "/SCENERY/SHARED";
+{	char *sdr = "SCENERY/SHARED";
 	int   lgr = strlen(sdr);
 	_strupr(path);
-	char *deb = path + 3;				// Bypass drive letter
-	deb = strchr(deb,'/');			// Bypass
+	char *deb = path;
+	if (':' == path[1])		deb += 3;		// Bypass drive				
 	//--- Search for SHARED directory ------------------
 	while (deb)	
 	{	if (strncmp(deb,sdr,lgr)== 0)		return 1;
@@ -290,7 +293,7 @@ int CSceneryDBM::SceneryForGBT(PFSPODFILE *p,int gx,int gz)
 //-----------------------------------------------------------------
 void CSceneryDBM::LoadInFolderTree (const char *path)
 {
-  // Load SCF files from this folder
+  // Load POD files from this folder
 	LookForPOD((char*)path);
   // Recursively load SCF files from subdirectories
   ulDir* dirp = ulOpenDir (path);
@@ -305,9 +308,6 @@ void CSceneryDBM::LoadInFolderTree (const char *path)
         // This is a sub-folder, attempt to load scenery files in it
         char newPath[PATH_MAX];
 				_snprintf(newPath,(PATH_MAX-1),"%s%s/",path,dp->d_name);
- //       strcpy (newPath, path);
- //       strcat (newPath, dp->d_name);
- //       strcat (newPath, "/");
         LoadInFolderTree (newPath);
       }
     }
@@ -383,6 +383,26 @@ void CSceneryDBM::Deregister (U_INT key)
 	if (p2 == sgbt.end())	return;
 	if (reg)	SCENE("GBT (%03d-%03d) UNREGISTER",gx,gz); 
 	(*p2).second->RemovePODs(this);
+	return;
+}
+//=================================================================================
+// CSceneryDBM
+//	Special mounting for shared scenery
+//	check if pod file already in Database
+//=================================================================================
+void CSceneryDBM::MountSharedPod(char * path,char *fn)
+{	char *scn = "SCENERY/";
+  int   lgr = strlen(scn);
+	int   lim = PATH_MAX - 1;
+	char  name[PATH_MAX];
+	//--- First search pod in databases ------
+	char *pn  = strstr(path,scn) + lgr;
+	_snprintf(name,lim,"%s%s",pn,fn);
+	int   in  = CheckDatabase(name);
+	if (in)	return Warn01(fn);
+	//--- Mount the pod file -----------------
+	U_INT tk = paddpod (&globals->pfs, fn);
+	SCENE("   Ticket(%06d) Mount %s",tk,fn);
 	return;
 }
 //==============================================================================

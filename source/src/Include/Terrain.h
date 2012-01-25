@@ -147,6 +147,8 @@ public:
 	void		MountAll();
   void    Register(U_INT key);
 	void    Deregister(U_INT key);
+	//--- For shared scenery pod --------------------------------------------
+	void		MountSharedPod(char *pat,char *fn);
   //  Load initial files --------------------------------------------------
 protected:
   void    LoadInFolderTree (const char *path);

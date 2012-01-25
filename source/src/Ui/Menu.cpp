@@ -1098,6 +1098,7 @@ void CheckTuningMenu()
 // because there is a feature that prevent vehicle code when no vehicle is 
 // present
 //============================================================================
+
 //----------------------------------------------------------------------------
 //  Model Sketch editor: skth
 //----------------------------------------------------------------------------
@@ -1140,7 +1141,7 @@ void tune_probe_cb(puObject *obj)
 { globals->kbd->Stroke('menu','prob');	}
 //--------------------------------------------------------
 char *tune_legends[] =
-{ //"SKETCH Editor",
+{// "SKETCH Editor",
 	"TERRA Editor",
 	"----------------",
 	"OBJECT Browser",
@@ -1154,7 +1155,7 @@ char *tune_legends[] =
 
 //------------------------------------------------------------------------
 puCallback tune_cb[] =
-{ //sktech_editor_cb,
+{// sktech_editor_cb,
 	model_teditor_cb,
 	NULL,
 	model_browser_cb,

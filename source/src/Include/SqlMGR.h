@@ -646,7 +646,7 @@ public:
 	bool		FileInOBJ(char *fn);
 	int 		SearchWOBJ(char *fn);
 	bool		SearchPODinOBJ(char *pn);
-  void    ReadWOBJ(C_QGT *qgt);
+  int     ReadWOBJ(C_QGT *qgt);
   void    ReadOBJLite(CWobj *obj,int xk,int yk);
 	void		ReadOBJFile(CWobj *obj,int row);
   void    DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj);

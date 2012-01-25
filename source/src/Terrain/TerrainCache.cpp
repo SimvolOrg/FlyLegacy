@@ -1455,7 +1455,9 @@ CSuperTile::CSuperTile()
   swap    = 1;                      // Allow texture swap by default
   alpha   = 0;
   LOD     = 0;
+	obtr		= 0;
   nbVTX   = 0;
+	qgt			= 0;
   sta3D   = TC_3D_OUTSIDE;
   white[0] = white[1] = white[2] = white[3] = 1;
 	//------------------------------------------------
@@ -1468,6 +1470,17 @@ CSuperTile::CSuperTile()
 CSuperTile::~CSuperTile()
 { if (vBUF)	delete [] vBUF;
 	if (aVBO) glDeleteBuffers(1,&aVBO);
+	if (obtr)	TraceEnd();
+}
+//-------------------------------------------------------------------------
+//  Trace object release
+//-------------------------------------------------------------------------
+void CSuperTile::TraceEnd()
+{	if (0 == qgt)		return;
+  U_INT qx = qgt->GetXkey();
+	U_INT qz = qgt->GetZkey();
+	int   nb = woQ.NbObjects();
+	TRACE("QGT(%03d-%03d) ST%02d free %05d Objects",qx,qz,NoSP,nb);
 }
 //-------------------------------------------------------------------------
 //  Reload VBO if needed
@@ -1652,6 +1665,7 @@ void CSuperTile::BuildBorder(C_QGT *qt,U_INT No)
   Tour[0].VT_Y   = Center.y;
   Tour[0].VT_Z   = Center.z;
   F3_VERTEX *dst = Tour+1;
+	qgt	= qt;
   //--- Save contour -----------------------------------------------
   int end   = TC_SPTBORDNBR;
   U_INT bx  = SuperDT[No].dx;                      // Base DET X in Super Tile
@@ -1804,8 +1818,9 @@ void CSuperTile::GetLine(CListBox *box)
 //-----------------------------------------------------------------------------
 //  Add object to draw
 //-----------------------------------------------------------------------------
-void CSuperTile::Add3DObject(CWobj *obj)
-{ if (obj->NoZB()) woQ.PutHead(obj);
+void CSuperTile::Add3DObject(CWobj *obj, char t)
+{	obtr	= t;	
+	if (obj->NoZB()) woQ.PutHead(obj);
   else             woQ.PutEnd(obj);
   return;
 }

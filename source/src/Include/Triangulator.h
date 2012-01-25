@@ -87,8 +87,9 @@ class Triangulator: public CExecutable {
 	Queue <D2_SLOT>  slot;												// Slot list
 	D2_POINT *P0;																	// First point
 	D2_POINT *Pn;																	//  Last Point
-	std::vector<D2_TRIANGLE *> out;								// Output triangle
-	std::vector<D2_FLOOR*> walls;									// Walls
+	std::vector<D2_TRIANGLE *> grnd;						  // ground output
+	std::vector<D2_FLOOR*>     walls;							// Walls
+	std::vector<D2_TRIANGLE *> roof;							// Roof output
 	//--------------------------------------------------------------
 	D2_TRIANGLE tri;															// Internal triangle
 	D2_TRIANGLE qtr;															// Qualify triangle
@@ -130,6 +131,7 @@ public:
 	void		Triangulation();
 	void		QualifyFaces();
 	void		Extrude(char e,double h);
+	void		Reorder();
 	void		Start();
 	void		Draw();					// Drawing interface
 	//-----------------------------------------------------
@@ -168,6 +170,26 @@ protected:
 public:
 	void		repD(U_INT p)			{dop.Rep(p);}
 	char    hasR(U_INT p)			{return dop.Has(p);}
+};
+//====================================================================================
+//	Roof Model
+//====================================================================================
+class CRoofModel {
+	//--- ATTRIBUTES -----------------------------------------------
+	short			nbv;												// Number of vertices
+	short			nbx;												// Number of index
+	SVector	 *aVEC;												// Vectors
+	short    *aIND;												// Indices
+	D2_POINT *aOUT;												// Output vectors
+	//---METHODS --------------------------------------------------
+public:
+	CRoofModel(int n,SVector *v,int q, short *x);
+ ~CRoofModel();
+  //--- clone model ---------------------------------------------
+	void	CloneModel()	{aOUT = new D2_POINT[nbv];}
+	int 	FillTriangle(D2_TRIANGLE &T, short k);
+	//---Default is a 2 slopes roof -------------------------------
+	virtual void BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out);
 };
 
 //============================= END OF FILE ======================================================

@@ -762,9 +762,10 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->slw);         // Delete slew manager
 	TRACE("Delete KeyMap");
   SAFE_DELETE (globals->kbd);         // Delete keymap manager;
-//  ----Must be last ----------------------
 	TRACE("Delete TerrainCache");
+	TCacheMGR *tcm = globals->tcm;
   SAFE_DELETE (globals->tcm);         // Delete terrain before DBcache
+
 	TRACE("Delete SCeneryDBM");
 	SAFE_DELETE (globals->scn);
 	TRACE("Delete DatabaseCache");
@@ -1452,9 +1453,9 @@ int main (int argc, char **argv)
   //------------------------------------------
 	_snprintf(folder,lgr,"%s/TAXIWAYS",flyRootFolder);
   paddpodfolder (pfs, folder);
-  //------------------------------------------
-	_snprintf(folder,lgr,"%s/SCENERY/SHARED",flyRootFolder);
-  paddpodfolder (pfs, folder);
+  //-----shared sceneries are mounted by ScenerySet------
+	//_snprintf(folder,lgr,"%s/SCENERY/SHARED",flyRootFolder);
+  // paddpodfolder (pfs, folder);
 
   //------ Add any disk files except pod -----
   padddiskfolder (pfs, flyRootFolder, "ART");

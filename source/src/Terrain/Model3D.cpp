@@ -414,8 +414,8 @@ void C3DMgr::SetDrawingState()
 //  Trace object counts
 //-----------------------------------------------------------------------
 void C3DMgr::TraceCount()
-{ TRACE("Model      : % 4d",globals->NbMOD);
-  TRACE("Objects    : % 4d",globals->NbOBJ);
+{ TRACE("C3DMgr Model   left: % 5d",globals->NbMOD);
+  TRACE("C3DMgr Objects left: % 5d",globals->NbOBJ);
   return;
 }
 //--------------------------------------------------------------------
@@ -441,13 +441,24 @@ void C3DMgr::LightToDraw(C3DLight *lit)
   return;
 }
 //--------------------------------------------------------------------
+//  Trace object loaded for this QGT
+//--------------------------------------------------------------------
+void C3DMgr::TraceLoad(int nb,char *src,C_QGT *qt)
+{	U_INT qx = qt->GetXkey();
+	U_INT qz = qt->GetZkey();
+	TRACE("%05d Objects loaded for QGT(%03d-%03d) from %s",nb,qx,qz,src);
+	return;
+}
+//--------------------------------------------------------------------
 //  Locate all models files that are related to this QGT
 //  Objects are loaded from the SQL database OBJ.db
 //	Then collected from loaded POD
 //--------------------------------------------------------------------
 int C3DMgr::LocateObjects(C_QGT *qgt)
-{ //--- Search in SQL database----------------------
-	if (sql)	globals->sqm->ReadWOBJ(qgt);
+{ int nbo = 0;
+	//--- Search in SQL database----------------------
+	if (sql)	nbo = globals->sqm->ReadWOBJ(qgt);
+	if (tr && nbo) TraceLoad(nbo,"Database",qgt);
 	//--- Search in files ----------------------------
   C3Dfile    scf(this,qgt);
 	char *pod = 0;
@@ -461,16 +472,15 @@ int C3DMgr::LocateObjects(C_QGT *qgt)
   U_INT scz = tz & 0x01;
   _snprintf(dir,128,"DATA/D%03d%03d/*.S%d%d",gtx,gtz,scx,scz);
   char* name = (char*)pfindfirst (&globals->pfs,dir,&pod);
-	if (tr) TRACE("LOOKING FOR SCENERY FILE ==============> %s",name);
 	//--------------------------------------------------
+	nbo		= 0;
   while (name)
-  { scf.Decode(name,pod);                 
-    name = (char*)pfindnext (&globals->pfs);
+  { nbo = scf.Decode(name,pod); 
+	  if (tr && nbo) if (tr && nbo) TraceLoad(nbo,name,qgt);
+    name = (char*)pfindnext (&globals->pfs);		// Next file
   }
 	//--- Return total decoded objects -----------------
-
   return qgt->Get3DW()->GetNwoQ();
-
 }
 //--------------------------------------------------------------------
 //  Locate the nearest VOR in this QGT
@@ -644,8 +654,7 @@ C3Dfile::C3Dfile(C3DMgr *m,C_QGT *qt)
 { wMgr  = m;
   oQGT  = qt;
   hld   = 0;
-  //num_of_autogen = 1000;
-  //GetIniVar ("Graphics", "numOfAutogen", &num_of_autogen);
+	cntr	= 0;
 }
 //---------------------------------------------------------------------
 //  Remove count to CFileName
@@ -663,7 +672,7 @@ C3Dfile::~C3Dfile()
 //  the new object calls the C3DMgr (3D manager) to add this object
 //  to the corresponding QGT C3Dworld manager.
 //---------------------------------------------------------------------
-void C3Dfile::Decode(char *fname,char *pn)
+int C3Dfile::Decode(char *fname,char *pn)
 { char *dt  = "DATA/";
 	char *deb = strstr(fname,dt) + strlen(dt);
 	char *pod = GetSceneryPOD(pn);
@@ -678,7 +687,7 @@ void C3Dfile::Decode(char *fname,char *pn)
     ReadFrom (this, &s);                 
     CloseStream (&s);
   }
-  return;
+  return cntr;
 }
 //--------------------------------------------------------------------
 //  Abort for unknown tag (temporary)
@@ -755,6 +764,7 @@ int C3Dfile::Read(SStream *st,Tag tag)
       if (MarkHold(obj))                  return TAG_READ;
       C3Dworld *w3d = oQGT->Get3DW();
       w3d->AddToWOBJ(obj);
+			cntr++;
       return TAG_READ;}
   case 'auto': // lc added 05.29.11 test for autogen
     AutoGen (st);
@@ -1449,20 +1459,13 @@ void CWobj::GetInfo(CFuiCanva *cnv)
 //  NOTE:  When the model(s) are loaded, the Wobj is queued
 //         to the Super Tile corresponding to the location
 //--------------------------------------------------------------------
-int CWobj::LoadTheModel()
+int CWobj::LoadMyModel()
 { int nbf = 0;
   C3Dmodel *modD = modL[MODEL_DAY];
   if (modD && modD->NeedLoad()) nbf += globals->m3d->LoadTheModel(modD);
   C3Dmodel *modN = modL[MODEL_NIT];
   if (modN && modN->NeedLoad()) nbf += globals->m3d->LoadTheModel(modN);
   return nbf;
-}
-//-------------------------------------------------------------------------
-//  Add Object for Drawing by SuperTile
-//-------------------------------------------------------------------------
-void CWobj::AddToSuperTile()
-{ LoadTheModel();
-  inf.sup->Add3DObject(this);
 }
 //------------------------------------------------------------------------
 //  Trace file name 
@@ -1587,7 +1590,7 @@ void CWobj::UpdateWith(CNavaid *nav)
   //----Compute light position ------------------
   Lite->SetOffset(vorOFS);
   Lite->SetLocation(oPos);
-  LoadTheModel();
+  LoadMyModel();
   return;
 }
 //------------------------------------------------------------------------
@@ -1998,7 +2001,8 @@ void C3Dworld::TraceEnd()
   int qx = qgt->GetXkey();
   int qz = qgt->GetZkey();
   int nb = qgt->GetNOBJ();
-  TRACE("===QGT(%03d-%03d) FREE woQ(% 4d CWobj)  not free % 4d",qx,qz,n1,nb); 
+	if ((0 == n1) && (0 == nb))	return;
+  TRACE("QGT(%03d-%03d) FREE woQ(% 4d CWobj).  Still in QGT % 4d",qx,qz,n1,nb); 
   return;
 }
 //-----------------------------------------------------------------------
@@ -2020,12 +2024,15 @@ CWobj *C3Dworld::SelectOneOf(CWobj *obj)
   return sel;
 } 
 //-----------------------------------------------------------------------
-//  Assign an object to place holder
+//  1)	Assign an object to place holder
+//	2)	Load Object model
+//	3)	
 //-----------------------------------------------------------------------
 int C3Dworld::AssignToSuperTile(CWobj *obj)
 { if (obj->IsaHold())  obj = SelectOneOf(obj);
   if (0   == obj)       return 0;
-  obj->AddToSuperTile();
+	obj->LoadMyModel();
+	obj->GetSuperTile()->Add3DObject(obj,tr);
   return 1;
 } 
 //----------------------------------------------------------------------
@@ -2056,13 +2063,24 @@ void C3Dworld::TimeSlice(float dT)
         prv  = woQ.Detach(obj);
         AssignToSuperTile(obj);
         cnt++;
-        if (cnt == 100)     return;
+        if (cnt == 100)     break;
         //--- Restart with next to first object --------------
         if (0 == prv)       obj = woQ.GetFirst();
         else								obj = prv; 
-        if (0 == obj)       return;
+        if (0 == obj)       break;
       }
+		//--- Check for trace ------------------------------------
+		if (tr) TraceAdd(cnt);
     return;
+}
+//-----------------------------------------------------------------------------
+//  Check all objects
+//-----------------------------------------------------------------------------
+void C3Dworld::TraceAdd(int cnt)
+{	if (0 == cnt)	return;
+  U_INT qx = qgt->GetXkey();
+	U_INT qz = qgt->GetZkey();
+	TRACE("QGT(%03d-%03d) activates %05d Objects",qx,qz,cnt);
 }
 //-----------------------------------------------------------------------------
 //  Check all objects
@@ -2078,6 +2096,7 @@ void C3Dworld::Check()
 void C3Dworld::AddToWOBJ(CWobj *obj)
 { obj->SetParent(this);
   obj->SetSerial(++serial);
+	obj->SetTrace(tr);
 	if (tr) {
 		char la[32];
 		char lo[32];
