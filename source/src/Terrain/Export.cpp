@@ -961,7 +961,7 @@ bool CExport::Prepare3Dmodel(char *fn, char opt)
 	sprintf(tx,"TESTING %05d: %s in DATABASE",mCnt,mName);
   globals->fui->DrawNoticeToUser(tx,200);
   if (globals->sqm->Check3DModel(name)) return false;     // Already in DB
-  Mod   = new C3Dmodel(name);
+  Mod   = new C3Dmodel(name,0);
   Mod->LoadPart("MODELS");
   if (!Mod->IsOK())                     return false;
   Polys = new CPolyShop;
@@ -1196,7 +1196,7 @@ void CExport::Update3DModels()
 //-------------------------------------------------------------------
 void CExport::LoadUpdModel(char *name)
 {	pif.mode	= 1;								// Update mode
-	Mod   = new C3Dmodel(name);
+	Mod   = new C3Dmodel(name,0);
   Mod->LoadPart("UPDATES");
   if (!Mod->IsOK())
 	{	delete Mod;

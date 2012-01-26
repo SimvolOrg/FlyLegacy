@@ -113,7 +113,6 @@ void CFuiSketch::ProcessFile(char *fn)
 {	//---- Open a file ---------------
 	trn->Load(fn);
 	trn->QualifyPoints();
-	trn->Start();
 	trn->Triangulation();
 	trn->QualifyFaces();
 	trn->Extrude(6,2.5);

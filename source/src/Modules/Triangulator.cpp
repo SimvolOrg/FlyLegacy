@@ -100,8 +100,8 @@ int Triangulator::FillMode()
 //-------------------------------------------------------------------
 void Triangulator::DrawRoof()
 {	D2_TRIANGLE *T;
-	for (U_INT k=0; k != grnd.size(); k++)
-	{	T = grnd[k];
+	for (U_INT k=0; k != roof.size(); k++)
+	{	T = roof[k];
 		glBegin(GL_TRIANGLES);
 		T->Draw();
 		glEnd();
@@ -158,8 +158,8 @@ void Triangulator::NewHole()
 void Triangulator::Clean()
 {	extp.Clear();
 	hole.Clear();
-	for (U_INT k=0; k < grnd.size(); k++)		delete grnd[k];
-	grnd.clear();
+	for (U_INT k=0; k < roof.size(); k++)		delete roof[k];
+	roof.clear();
 	for (U_INT k=0; k < walls.size(); k++)	delete walls[k];
 	seq		= 0;										// Vertex sequence
 	num		= 0;										// Null number
@@ -222,11 +222,11 @@ bool Triangulator::ParseVTX(char *txt)
 //	Compute ground surface
 //-------------------------------------------------------------------
 bool Triangulator::QualifyPoints()
-{	if (extp.GetNbObj() < 3)			return false;
+{	int nbp = extp.GetNbObj();
+  if (nbp < 3)				return false;
 	if (hole.GetNbObj() > 2)			Merge();	
 	dlg		= 0;
 	surf	= 0;
-	U_INT nb = extp.GetNbObj();
 	//--- initialize the first triangle ----
 	D2_POINT *ap = extp.GetFirst();
 	D2_POINT *np = 0;
@@ -254,9 +254,11 @@ bool Triangulator::QualifyPoints()
 		//--- next vertex ----------------------
 		ap = ap->next;
 	}
-	grnd.reserve(nb-2);
+	roof.reserve(nbp-2);
 	//--- Adjust real surface- ---------------
 	surf *= -0.5;
+	//--- Reorder with TO as origin point ----
+	if (4 == nbp)	Reorder();
 	//--- Chose  precision -------------------
 	if (trace) TraceInp();
 	return  (dlg < geo.GetPrecision())?(false):(true);
@@ -288,7 +290,7 @@ void Triangulator::GetAnEar()
 		//------ Get an ear -------------------------------
 		D2_TRIANGLE *t = new D2_TRIANGLE();
 		*t			= tri;
-		grnd.push_back(t);
+		roof.push_back(t);
 		//--- remove ear slot -----------------------------
 		D2_SLOT *sb = slot.CyPrev(sa);
 		D2_SLOT *sc = slot.CyNext(sa);
@@ -387,8 +389,8 @@ void Triangulator::TraceOut()
 {	char ida[6];
 	char idb[6];
 	char idc[6];	
-	for (U_INT k = 0; k < grnd.size();k++)
-	{	D2_TRIANGLE *t = grnd[k];
+	for (U_INT k = 0; k < roof.size();k++)
+	{	D2_TRIANGLE *t = roof[k];
 		t->A->Id(ida);
 		t->B->Id(idb);
 		t->C->Id(idc); 

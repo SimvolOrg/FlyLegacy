@@ -312,7 +312,8 @@ void CPicQUAD::Draw()
 //
 //======================================================================================
 C3DMgr::C3DMgr(TCacheMGR *m )
-{ tcm			= m;
+{	pthread_mutex_init (&mux,  NULL); 
+	tcm			= m;
   int nb  = 0;                                // Trace option
   sphere  = gluNewQuadric();                  // Testing purpose
   GetIniVar("TRACE", "3DModel", &nb);
@@ -473,8 +474,7 @@ int C3DMgr::LocateObjects(C_QGT *qgt)
   _snprintf(dir,128,"DATA/D%03d%03d/*.S%d%d",gtx,gtz,scx,scz);
   char* name = (char*)pfindfirst (&globals->pfs,dir,&pod);
 	//--------------------------------------------------
-	nbo		= 0;
-  while (name)
+	while (name)
   { nbo = scf.Decode(name,pod); 
 	  if (tr && nbo) if (tr && nbo) TraceLoad(nbo,name,qgt);
     name = (char*)pfindnext (&globals->pfs);		// Next file
@@ -609,7 +609,7 @@ C3Dmodel *C3DMgr::AllocateModel(char *fn)
     return modl;
   }
   //---Allocate a new model --------------------
-  modl  = new C3Dmodel(fn);
+  modl  = new C3Dmodel(fn,tr);
   modl->IncUser();
   mapMOD[fn] = modl;
   return modl;
@@ -681,6 +681,7 @@ int C3Dfile::Decode(char *fname,char *pn)
   strncpy(namef,fname,63);
   namef[63] = 0;
   //---Open the file -------------------------------
+	cntr			= 0;
   SStream s;
   if (OpenRStream (fname,s))
   { // Successfully opened stream
@@ -841,12 +842,13 @@ void C3Dfile::AutoGen(SStream *st)
 //  C3D model to hold parts from a SMF or BIN file
 //
 //===================================================================================
-C3Dmodel::C3Dmodel(char *fn)
+C3Dmodel::C3Dmodel(char *fn, char t)
 { state       = M3D_INIT;                      // 0= unloaded
   int dim     = strlen(fn);
   fname       = new char[dim+2];
   strncpy(fname,fn,dim);
   fname[dim]  = 0;
+	mdtr				= t;
   User        = 0;
   aBot        = 0;
   aTop        = 0;
@@ -870,6 +872,7 @@ C3Dmodel::C3Dmodel(char *fn)
   if (dot && bin) rDIR = GL_CW;
   if (smf)  type = M3D_SMF;
   if (bin)  type = M3D_BIN;
+	if (mdtr)	TRACE("CREATION MODEL %s", fname);
 }
 //-------------------------------------------------------------------------------
 //  Destroy 3D model
@@ -878,6 +881,7 @@ C3Dmodel::~C3Dmodel()
 { char pn[PATH_MAX];
   _snprintf(pn,(PATH_MAX-1),"MODELS/%s",fname);
   pRemDisk(&globals->pfs, fname,pn);
+	if (mdtr)	TRACE("DESTRUCTION MODEL %s",fname);
   delete [] fname;
 	globals->NbMOD--;
 
@@ -931,7 +935,7 @@ int C3Dmodel::LoadPart(char * dir)
   if (type == M3D_SMF)
   { CSMFparser smf(this);
     state = smf.Decode(pn);
-    //TRACE("LOAD %20s FACE %04d",fname,nbf);
+   // if (mdtr) TRACE("LOAD %30s FACE %04d",fname,nbf);
     hObj  = aTop - aBot;
     return state;
   }
@@ -964,7 +968,6 @@ int C3Dmodel::AddPodPart(C3DPart *prt)
   pLOD[0].Lock();
   pLOD[0].PutEnd(prt);
   pLOD[0].UnLock();
-	globals->NbPOL += prt->GetNBVTX();
   return 1;
 }
 //-------------------------------------------------------------------------------
@@ -996,7 +999,6 @@ void C3Dmodel::AddSqlPart(C3DPart *prt,int lod)
   prt->SetLOD(lod);
   pLOD[lod].PutEnd(prt); 
   rLOD[lod] = lod;            // Activate lod level
-	globals->NbPOL += prt->GetNBVTX();
   return;
 }
 //-------------------------------------------------------------------------------
@@ -1868,6 +1870,8 @@ C3DPart::C3DPart(int nv)
   nTEX  = new F2_COORD[nv];
   nIND  = 0;
   total = 0;
+	globals->m3d->vCount(NbVT);
+
 }
 //----------------------------------------------------------------------
 //  Free Texture
@@ -1880,7 +1884,8 @@ C3DPart::~C3DPart()
   if (nTEX)     delete [] nTEX;
   if (nIND)     delete [] nIND;
   ntex  = 0;
-	globals->NbPOL -= GetNBVTX();
+//	globals->NbPOL -= GetNBVTX();
+	globals->m3d->vCount(-NbVT);
   total = 0;
 }
 //----------------------------------------------------------------------
@@ -2105,8 +2110,7 @@ void C3Dworld::AddToWOBJ(CWobj *obj)
 		//TRACE("Add object %s QGT(%03d-%03d)", name,qgt->GetXkey(),qgt->GetZkey());
 	}
   //--- Set object localization ---------------
-  if (!obj->Localize(qgt)) return;
-  woQ.PutEnd(obj);     
+  if (obj->Localize(qgt)) woQ.PutEnd(obj);     
   //-------------------------------------------
   return;
 }

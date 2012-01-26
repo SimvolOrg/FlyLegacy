@@ -241,8 +241,10 @@ public:
 //=========================================================================================
 class C3Dmodel: public CqItem, public CDrawByCamera {
   //---Attributes -------------------------------------------------------
-  char         state;               // Model state
-  char         type;                // BIN or SMF
+  char					state;              // Model state
+  char					type;               // BIN or SMF
+	char					mdtr;								// Trace mode
+	char          rfu;								// Futur use
   pthread_mutex_t		mux;            // Locker
   int          User;                // User count
   char        *fname;               // file name
@@ -258,7 +260,7 @@ class C3Dmodel: public CqItem, public CDrawByCamera {
   C3DpartQ     pLOD[4];             // List of parts
   //---------------------------------------------------------------------
 public:
-  C3Dmodel(char *fn);
+  C3Dmodel(char *fn,char t);
  ~C3Dmodel();
  //----------------------------------------------------------------------
   C3DPart *PopPart()            {return pLOD[0].Pop();}
@@ -679,6 +681,8 @@ class C3DMgr  {
 	U_CHAR		  sql;										// SQL database
   TCacheMGR *tcm;                     // Terrain cache
   C_QGT     *qgt;                     // Current QGT
+	//----------------------------------------------------------
+	pthread_mutex_t		mux;					    // Mutex for lock
   //---------Decoding parameters -----------------------------
   int       dFactor;                  // Load factor
   //------------VOR OBJECT -----------------------------------
@@ -725,6 +729,11 @@ public:
   //------Statistical data -------------------------------------
   void      GetStats(CFuiCanva *cnv);
 	//------------------------------------------------------------
+	void			vCount(int k)
+	{	pthread_mutex_lock (&mux);
+		globals->NbPOL += k;
+		pthread_mutex_unlock (&mux);
+	}
 };
 
 //============================END OF FILE =================================================
