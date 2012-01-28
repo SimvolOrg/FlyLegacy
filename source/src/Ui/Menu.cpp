@@ -159,31 +159,31 @@ void options_scenery_cb (puObject* obj)
 //====================================================================
 char *options_legends[] =
 {
-  "Scenery...",
-  "--------------------",
-  "Startup...",
-  "--------------------",
+  /*"Scenery...",*/
+  /*"--------------------",*/
+  /*"Startup...",*/
+  /*"--------------------",*/
   "Define Axes Parameters",
   "Keys & Buttons...",
-  "--------------------",
-  "Date & Time...",
-  "Audio...",
-  "Video...",
+  /*"--------------------",*/
+  /*"Date & Time...",*/
+  /*"Audio...",*/
+  /*"Video...",*/
   NULL
 };
 
 puCallback options_cb[] =
 {
-  NULL,                         //options_scenery_cb,
-  NULL,
-  NULL,                         // options_startup_cb,
-  NULL,
+  /*NULL,*/                     //options_scenery_cb,
+  /*NULL,*/
+  /*options_startup_cb,*/       // options_startup_cb,
+  /*NULL,*/
   options_setup_axes_cb,
   options_keys_buttons_cb,
-  NULL,
-  NULL,                         // options_date_time_cb,
-  NULL,                         // options_audio_cb,
-  NULL,                         // options_video_cb,
+  /*NULL,*/
+  /*NULL,*/                     // options_date_time_cb,
+  /*NULL,*/                     // options_audio_cb,
+  /*NULL,*/                     // options_video_cb,
   NULL
 };
 
@@ -1287,7 +1287,9 @@ void OpenUserMenu (void)
 
   menu->close ();
   //--- Hide menu by default ------------------------
-  hide_menu ();
+  // hide_menu ();
+  //--- Show menu by default ------------------------
+  show_menu ();
 }
 //=====================================================================
 //  Close Menu
