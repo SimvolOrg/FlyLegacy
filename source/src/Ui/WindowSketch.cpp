@@ -38,12 +38,12 @@ SVector    vM1[] =
 };
 //-------Indices for model 1-------------------------------
 short xM1[]=
-	{	0,4,2,				// T(AED)	
-	  3,5,1,				// T(CFB)
+	{	0,4,3,				// T(AED)	
+	  2,5,1,				// T(CFB)
 	  4,0,1,				// T(EAB)
 	  4,1,5,				// T(EBF)
-	  4,3,4,				// T(FCE)
-	  4,3,2,				// T(ECD)
+	  5,2,4,				// T(FCE)
+	  4,2,3,				// T(ECD)
 	};
 //------Instance for model 1 -----------------------------
 CRoofModel roofM1(6,vM1,18,xM1);
@@ -56,11 +56,10 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
   close = 1;
   zoom  = 0;
   mini  = 0;
-//	optD.Set(TRITOR_ALL);
 	//--- Set title ---------------------------------
 	strcpy(text,"SKETCH EDITOR");
 	TRACE("SKETCH EDITOR on");
-	gBOX  = new CFuiGroupBox(10,8,200,60,this);
+	gBOX  = new CFuiGroupBox(10,8,200,80,this);
   AddChild('gbox',gBOX,"");
 	//--- Label --------------------------------------
   aLAB  = new CFuiLabel   ( 4, 4,76, 20, this);
@@ -76,7 +75,7 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	//--- Open triangulation ------------------------
 	trn	= new Triangulator();
 	globals->trn = trn;
-	ProcessFile("Objects/OBJ04.txt");
+	ProcessFile("Objects/Obj05.txt");
 	//-----------------------------------------------
 	ctx.prof	= PROF_SKETCH;
 	ctx.mode	= SLEW_RCAM;
@@ -111,11 +110,14 @@ void CFuiSketch::SetOptions(U_INT q)
 //-----------------------------------------------------------------------
 void CFuiSketch::ProcessFile(char *fn)
 {	//---- Open a file ---------------
-	trn->Load(fn);
-	trn->QualifyPoints();
-	trn->Triangulation();
+	if (!trn->Load(fn))						return;
+	int np = trn->NbPoints();
+	if (!trn->QualifyPoints())		return;
+	if (!trn->Triangulation())		return;
 	trn->QualifyFaces();
-	trn->Extrude(6,2.5);
+	int etg = (np != 4)?(5):(2);
+	trn->Extrude(etg,2.5);
+	if (np == 4) trn->ChangeRoof(roofM1);
 	return;
 }
 //-----------------------------------------------------------------------

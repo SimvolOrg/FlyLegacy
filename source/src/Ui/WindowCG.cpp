@@ -59,6 +59,8 @@ char *viewBTN[] = {
   "Top view",
 };
 //==================================================================================
+extern CModelACM *GetDayModelACM();
+//==================================================================================
 //  THIS WINDOW WILL DISPLAY THE CENTER OF GRAVITY
 //==================================================================================
 CFuiWinCG::CFuiWinCG(Tag idn, const char* filename)
@@ -122,9 +124,11 @@ CFuiWinCG::~CFuiWinCG()
 //  Get object dimension
 //---------------------------------------------------------------------------------
 double CFuiWinCG::GetObjectDim()
-{ //------Compute pixel ratio -------------
+{ acm  = GetDayModelACM();
+  if (0   == acm)   return 0;
+  //------Compute pixel ratio -------------
   CVector ext;
-	veh->OverallExtension(ext);
+  acm->GetExtension(ext);
   return ext.MaxXY();
 }
 //---------------------------------------------------------------------------------

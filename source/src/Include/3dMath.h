@@ -322,68 +322,6 @@ public:
 };
 //==== Stand alone functions ==============================================================
 int GreatestCommonDivisor (int i, int j);
-//==== GEOMETRIC FUNCTIONS =================================================================
-#define GEO_OPPOS_SIDE	(0)
-#define GEO_INSIDE_PQ		(1)
-#define GEO_OUTSIDE_PQ  (2)
-#define GEO_SAME_SIDE		(3)
-//--- Side of a point -----------------------------
-#define GEO_ON_PQ			(4)
-#define GEO_LEFT_PQ		(1)				// Left side
-#define GEO_RITE_PQ		(2)				// right side
-//-------------------------------------------------
-#define GEO_OUTSIDE   (0)
-#define GEO_ON_SIDE		(1)
-#define GEO_INSIDE		(2)
-//--- Type of POINT -------------------------------
-#define GEO_CONVEX		(0)
-#define GEO_REFLEX		(1)
-//--- Type of FACE --------------------------------
-#define GEO_FACE_NUL	(0)
-#define GEO_X_FACE	  (0x00)
-#define GEO_Y_FACE    (0x01)
-#define GEO_N_FACE    (0x02)  // Negative face	
 //---- 
-//=========================================================================================
-//	Geometric tester
-//=========================================================================================
-class GeoTest {
-	//--- ATTRIBUTES ----------------------------------------
-	double precision;													// Precision limit
-	//--- Methods -------------------------------------------
-public:
-	GeoTest()		{precision	= DBL_EPSILON;}
-	//--- Check side ----------------------------------------------
-	int		SameSide(D2_POINT &P, D2_POINT &Q, D2_POINT &A, D2_POINT &B);
-	bool	VisibilityTest(D2_POINT &P, D2_POINT &Q, D2_POINT &A, D2_POINT &B);
-	int 	OnLeft(D2_POINT &A, D2_POINT &P, D2_POINT &Q);
-	int 	InTriangle(D2_POINT &A, D2_POINT &P, D2_POINT &Q, D2_POINT &R);
-	int   InTriangle(D2_POINT &A, D2_TRIANGLE &T);
-	int	  Positive(D2_TRIANGLE &T);
-	//-------------------------------------------------------------
-	inline void		SetPrecision(double p)	{precision = p;}
-	inline double GetPrecision()					{return precision;}
-};
-//====================================================================================
-//	Slot to a 2D_POINT
-//	Used for triagulation of the polygon
-//====================================================================================
-struct D2_SLOT {
-	D2_SLOT  *prev;
-	D2_SLOT  *next;
-	D2_POINT *vrtx;
-	//-----------------------------------------------
-	char     R;							// Reflex indicator
-	//-----------------------------------------------
-	D2_SLOT::D2_SLOT(D2_POINT *p)
-	{	prev	= 0;	next	= 0;	vrtx	= p; R = p->R;	}
-	//-----------------------------------------------
-	D2_POINT *D2_SLOT::GetVRTX()	{return vrtx;}
-	//-----------------------------------------------
-	bool D2_SLOT::IsReflex()			{return (R != 0);}
-	//------------------------------------------------
-	void D2_SLOT::SetType(char t)	{R = t;}
-	};
-
 //==========================================================================================
 #endif // H3DMATH_H

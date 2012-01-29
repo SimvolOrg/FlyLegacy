@@ -27,7 +27,6 @@
  *
  */
 
-#include "../Include/FlyLegacy.h"
 #include "../Include/Subsystems.h"
 #include "../Include/Radio.h"
 #include "../Include/Queues.h"

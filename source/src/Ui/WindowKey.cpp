@@ -302,7 +302,7 @@ void CFuiKeyMap::ButtonHit(SJoyDEF *jsd,int bt)
   CKeyLine          *kln = (CKeyLine*)keyBOX.GetSelectedSlot();
   CKeyDefinition    *kdf = kln->GetKDef();
   CSimButton        *old  = kdf->LinkTo(0);
-  if (old)      jsm->RemoveButton(old->pjoy,old->nBut);
+  if (old)   jsm->RemoveButton(old->pjoy,old->nBut);
   CSimButton        *sbt  = jsm->AddButton(jsd,bt,kdf);
   kln->SetJoysDef(sbt);
   keyBOX.Refresh();

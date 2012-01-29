@@ -23,7 +23,141 @@
 #include <math.h>
 #include "../Include/Globals.h"
 #include "../Include/Triangulator.h"
-
+//======================================================================================
+// Visibility test between 4 points on same plan
+//  -point P is the origin point
+//  -point Q is the extemity of segment PQ
+//	-point A is    origin of segment AB
+//  -point B is extremity of segment AB
+//	We want to check if P and Q are mutually visible, relative to AB. 
+//	Does segment AB masks P from Q?
+//	-----------------------------------------------------------------
+//	AB masks P from Q when both conditions holds
+//	1) A and B are not on the same side relative to PQ
+//	2) P and Q are not on the same side relative to AB
+//	When 1 & 2 are both true, segments PQ and AB intersect so P cant see Q.
+//  ------------------------------------------------------------------
+//	Same side test is done by considering the dot products of 3 vectors 
+//	Example: prod1 = PQ.PA 
+//					 prod2 = PQ.PB
+//	Each dot product defines a vector perpendicular to the plan. A & B are on same
+//	side of PQ if both products has same orientation.   As PQ and AB are planar, we just
+//	have to consider the Z coordinate of each dot product (a real number).
+//--------------------------------------------------------------------------------------
+//			Z(prod1)*Z(prod2) < 0		=>	A and B are not on same side of PQ
+//  with
+//	P(xp,yp) Q(xq,yq) A(xa,ya) B(xb,yb) we have
+//	vector PQ[(xq-xp),(yq-yp)]
+//	vector PA[(xa-xp),(ya-yp)]
+//	vector PB[(xb-xp),(yb-yp)]
+//	Z(prod(PQ,PA)) = (xq-xp)(ya-yp) - (yq-yp)(xa-xp) = z1;
+//	Z(prod(PQ,PB)) = (xq-xp)(yb-yp) - (yq-yp)(xb-xp) = z2;
+//	thus we just test the sign of z1.z2 
+//--------------------------------------------------------------------------------------
+//	Special cases:
+//	A is on PQ when PQ.PA = vector(0) thus z1 = 0;  So we  cant tell which side is A
+//		but we can tell if A is between P and Q
+//	Idem for B
+//======================================================================================
+int GeoTest::SameSide(D2_POINT &P, D2_POINT &Q, D2_POINT &A, D2_POINT &B)
+{ double xpq	= Q.x - P.x;
+	double ypq  = Q.y - P.y;
+	double xpa	= A.x - P.x;
+	double ypa  = A.y - P.y;
+	double xpb  = B.x - P.x;
+	double ypb  = B.y - P.y;
+	//--- compute Z coordinate of PQ.PA ----------------
+	double z1   = (xpq * ypa) - (ypq * xpa);
+	//--- Check if A is colinear with PQ ----------------
+	if (fabs(z1) < precision)	
+	{	double	xqa	=  (A.x - Q.x);
+		double	yqa =  (A.y - Q.y);
+	  bool		in	= ((xqa * xpa) < 0)	|| ((yqa * ypa) < 0);
+		return (in)?(GEO_INSIDE_PQ):(GEO_OUTSIDE_PQ);
+	}	
+	double z2   = (xpq * ypb) - (ypq * xpb);
+	//--- Check if B is colinear with PQ ----------------
+	if (fabs(z2) < precision)	
+	{	double	xqb = (B.x - Q.x);
+		double	yqb = (B.y - Q.y);
+		bool in			= ((xqb	* xpb) < 0)	|| ((yqb * ypb) < 0);
+		return	(in)?(GEO_INSIDE_PQ):(GEO_OUTSIDE_PQ);
+	}
+	//--- Opposite side if z1 * z2 < 0 --------------------
+	double pr   = z1 * z2;
+  return (pr < 0)?(GEO_OPPOS_SIDE):(GEO_SAME_SIDE);
+}
+//--------------------------------------------------------------------------------------
+//	Check visibility (see above)
+//	1)	If either point A or B is inside Segment PQ, then we considere that
+//			P is masked from Q by this point
+//	2)  If  both A and B are on the same side of segment PQ then P an Q are mutually
+//			visible
+//	3		 As A and B are on opposite sides (or colinear with PQ, but ouside), we must now 
+//			test P and Q positons relative to AB
+//--------------------------------------------------------------------------------------
+bool GeoTest::VisibilityTest(D2_POINT &P, D2_POINT &Q, D2_POINT &A, D2_POINT &B)
+{	int r1 = SameSide(P,Q,A,B);
+	if (r1 == GEO_INSIDE_PQ)		return false;
+	if (r1 == GEO_SAME_SIDE)		return true;
+	//--- A & B are opposed relative to segment PQ ---------
+	int r2 = SameSide(A,B,P,Q);
+	return (r2 == GEO_OPPOS_SIDE)?(false):(true);
+}
+//--------------------------------------------------------------------------------------
+//	Check side of point A, relative to vector PQ
+//	We just need the case where A is strictly on left of PQ
+//--------------------------------------------------------------------------------------
+int GeoTest::OnLeft(D2_POINT &A, D2_POINT &P, D2_POINT &Q)
+{	//--- check the Z coordinate of dot product(PQ,PA) --------
+	double xpq = Q.x - P.x;
+	double ypq = Q.y - P.y;
+	double xpa = A.x - P.x;
+	double ypa = A.y - P.y;
+	double zp  = (xpq * ypa) - (xpa * ypq);
+	//---------------------------------------------------------
+	if (fabs(zp) < precision)		return GEO_ON_PQ;
+	return (zp > 0)?(GEO_LEFT_PQ):(GEO_RITE_PQ);
+}
+//--------------------------------------------------------------------------------------
+//	Check side of point A, relative to vector PQ
+//	We just need the case where A is strictly on left of PQ
+//--------------------------------------------------------------------------------------
+int GeoTest::Positive(D2_TRIANGLE &T)
+{	double xac = T.C->x - T.A->x;
+  double yac = T.C->y - T.A->y;
+	double xab = T.B->x - T.A->x;
+	double yab = T.B->y - T.A->y;
+	double zp  = (xac * yab) - (xab *yac);
+	return (zp > 0)?(1):(0);
+}
+//--------------------------------------------------------------------------------------
+//	Check if Point A is inside triangle P,Q,R where edges are positively oriented
+//	True when A is strictly on left side of the 3 edges
+//--------------------------------------------------------------------------------------
+int GeoTest::InTriangle(D2_POINT &A, D2_POINT &P, D2_POINT &Q, D2_POINT &R)
+{	int in = OnLeft(A,P,Q) & OnLeft(A,Q,R) & OnLeft(A,R,P);
+	return in;
+}
+//--------------------------------------------------------------------------------------
+//	Check if Point A is inside triangle P,Q,R where edges are positively oriented
+//	True when A is strictly on left side of the 3 edges
+//--------------------------------------------------------------------------------------
+int GeoTest::InTriangle(D2_POINT &P, D2_TRIANGLE &T)
+{	int on = 0;
+	int p1 = OnLeft(P,*T.B,*T.A);
+	if (p1 == GEO_RITE_PQ)			return GEO_OUTSIDE;
+	if (p1 == GEO_ON_PQ)				on++;
+	//-----------------------------------------------------
+	int p2 = OnLeft(P,*T.A,*T.C);
+	if (p2 == GEO_RITE_PQ)			return GEO_OUTSIDE;
+	if (p2 == GEO_ON_PQ)				on++;
+	//----------------------------------------------------
+	int p3 = OnLeft(P,*T.C, *T.B);
+	if (p3 == GEO_RITE_PQ)			return GEO_OUTSIDE;
+	if (p3 == GEO_ON_PQ)				on++;
+	return (on)?(GEO_ON_SIDE):(GEO_INSIDE); 
+	}
 //====================================================================================
 //	TRIANGULATOR global variable
 //====================================================================================
@@ -42,6 +176,8 @@ Triangulator::Triangulator()
 	dop.Set(TRITOR_DRAW_WALL);
 	dop.Set(TRITOR_DRAW_LINE);
 	dop.Set(TRITOR_DRAW_FILL);
+
+	roofArray = 0;
 	Clean();
 	globals->Disp.Enter(this,PRIO_ABSOLUTE);	
 }
@@ -92,7 +228,7 @@ int Triangulator::LineMode()
 int Triangulator::FillMode()
 {	// Draw triangulation
 	glPolygonMode(GL_FRONT,GL_FILL);
-	glColor3f(0,255,0);
+	glColor3f(255,255,255);
 	return 1;
 }
 //-------------------------------------------------------------------
@@ -100,6 +236,7 @@ int Triangulator::FillMode()
 //-------------------------------------------------------------------
 void Triangulator::DrawRoof()
 {	D2_TRIANGLE *T;
+  glColor3f(255,0,0);
 	for (U_INT k=0; k != roof.size(); k++)
 	{	T = roof[k];
 		glBegin(GL_TRIANGLES);
@@ -133,12 +270,13 @@ void Triangulator::AddVertex(double x, double y)
 //-------------------------------------------------------------------
 //	Load an object file
 //-------------------------------------------------------------------
-void Triangulator::Load(char *fn)
+bool Triangulator::Load(char *fn)
 {	Clean();
 	FILE  *f  = fopen(fn,"r");
-  if (0 == f)  return;
+  if (0 == f)  return false;
 	ParseOBJ(f);
 	fclose(f);
+	return (extp.GetNbObj() != 0);
 }
 //-------------------------------------------------------------------
 //	Hole annunciator
@@ -161,10 +299,13 @@ void Triangulator::Clean()
 	for (U_INT k=0; k < roof.size(); k++)		delete roof[k];
 	roof.clear();
 	for (U_INT k=0; k < walls.size(); k++)	delete walls[k];
+	if (roofArray)													delete [] roofArray;
+	roofArray = 0;
 	seq		= 0;										// Vertex sequence
 	num		= 0;										// Null number
 	vRFX	= 0;
 	hIND	= 'X';
+  //--- Reset all parameters ----------------------
 	return;
 }
 //-------------------------------------------------------------------
@@ -182,9 +323,9 @@ void Triangulator::ParseOBJ(FILE *fp)
 		if (strncmp(txt,"//",2) == 0)			continue;				// Comment
 		if (ParseHOL(txt))								continue;				// Hole directive
 		if (ParseVTX(txt))								continue;				// Vertices
-		if (strcmp(txt,"END")	== 0)				return;
+		if (strncmp(txt,"END",3)== 0)			return;
 		go = false;
-		WARNINGLOG("Object %fp ignored");
+		WARNINGLOG("Triangulation of Object %fp ignored");
 		Clean();
 	}
 	return;
@@ -248,7 +389,8 @@ bool Triangulator::QualifyPoints()
 			double lg = sqrt((dx * dx) + (dy * dy));
 			ap->elg		= lg;
 			//--- remember extremity points ------
-			if (lg > dlg) {TO = ap; dlg = lg; }
+			if (lg > dlg) 
+			{TO = ap; dlg = lg; }
 		}
 		else  ap->elg = 0;
 		//--- next vertex ----------------------
@@ -282,7 +424,7 @@ void Triangulator::Requalify(D2_SLOT *sa)
 //	When one is detected, remove the Ear point and add triangle to 
 //	the Ear list
 //-------------------------------------------------------------------
-void Triangulator::GetAnEar()
+bool Triangulator::GetAnEar()
 { D2_SLOT  *sa = 0;
 	for (sa = slot.GetFirst(); sa != 0; sa= sa->next)
 	{ if (sa->IsReflex())				continue;
@@ -302,9 +444,10 @@ void Triangulator::GetAnEar()
 		if (sb->IsReflex())	Requalify(sb);
 		if (sc->IsReflex()) Requalify(sc);
 		//-------------------------------------------------
-		return;
+		return true;
 	}
-	gtfo ("Did not find any ear");
+	WARNINGLOG ("Did not find any ear");
+	return false;
 }
 //-------------------------------------------------------------------
 //	Check for a Ear
@@ -336,11 +479,11 @@ bool Triangulator::NotAnEar(D2_SLOT *sa)
 //-------------------------------------------------------------------
 //	Start triangulation
 //-------------------------------------------------------------------
-void Triangulator::Triangulation()
-{	while (slot.GetNbObj() != 2)	GetAnEar();
+bool Triangulator::Triangulation()
+{	while (slot.GetNbObj() != 2)	if (!GetAnEar()) return false;
 	slot.Clear();
 	if (trace) TraceOut();
-	return;
+	return true;
 }
 
 //-------------------------------------------------------------------
@@ -513,15 +656,18 @@ void Triangulator::Splice(D2_POINT *xp, D2_POINT *hp)
 //
 //	We look for the longuest edge AB and take it as the X axis, thus computing
 //	the angle A  from X axis to the Edge 
-//	Then new coordinates for edge are computed to get extension
+//	Then new local coordinates for edge are computed to get extension
 //
 //	We have rot(A) = |cos(A)  sin(A)| for angle A. 
 //								   |-sin(A) cos(A)|
 //	where cos(A) = dx / lentgh(AB)
 //				sin(A) = dy / lentgh(AB)
-// We just have to change sin(-A) to -sin(A) fro the inverse rotation
+// We just have to change sin(-A) to -sin(A) for the inverse rotation
 //	if the largest edge is near zero lentght, this have been detected
 //	in QualifyPoints() already.
+//	NOTE:  With this procedure, some local coordinates may be negative
+//	So we renormalize all coordinates to be positive by the translation
+//	T=(-minx,-miny) and we commpute the s coordinate
 //=========================================================================
 void Triangulator::QualifyFaces()
 {	//--- Compute rotation matrix -------------------
@@ -560,7 +706,10 @@ void Triangulator::QualifyFaces()
   //-- Now we may qualify the first face ----------------
 	//	because the last edge is computed
 	QualifyEdge(extp.GetFirst());
-	//---------------------------------------------------
+	//--- second pass for renormalization -----------------
+	for (pp = extp.GetFirst(); pp != 0; pp = pp->next)
+	{	pp->Translate(-minx,-miny);	}
+	//-----------------------------------------------------
 	if (trace) TraceFace();
 	return;
 }
@@ -630,7 +779,17 @@ void Triangulator::Reorder()
 		k--;
 	} 
 	return;
-}	
+}
+//----------------------------------------------------------------
+//	Change roof for indicated model
+//----------------------------------------------------------------
+void Triangulator::ChangeRoof(CRoofModel &m)
+{	//--- Clear actual roof ---------------------
+	for (U_INT k=0; k < roof.size(); k++) delete roof[k];
+	roof.clear();
+	roofArray = m.BuildRoof(extp,roof);
+	return;
+}
 //=========================================================================
 //	D2-FACE class
 //=========================================================================
@@ -702,14 +861,28 @@ CRoofModel::CRoofModel(int n,SVector *v,int q, short *x)
 CRoofModel::~CRoofModel()
 {	if (aOUT)	delete [] aOUT;}
 //---------------------------------------------------------------
+//	free vectors
+//---------------------------------------------------------------
+void CRoofModel::CloneModel()
+{	char txt[8];
+	aOUT = new D2_POINT[nbv];
+	for (int k=0; k<nbv; k++)
+	{	_snprintf(txt,8,"R%03d",k);
+		aOUT[k].SetID(txt);
+	}
+	return;
+}
+//---------------------------------------------------------------
 //	Fill a triangle from index k
 //	NOTE: Only the pointers are assigned to the aOUT points
 //---------------------------------------------------------------
 int CRoofModel::FillTriangle(D2_TRIANGLE &T, short k)
 {	short s0 = aIND[k++];
 	T.B	= aOUT + s0;
+  //--- build A POINT ------
 	short s1 = aIND[k++];
 	T.A = aOUT + s1;
+  //------------------------
 	short s2 = aIND[k++];
 	T.C = aOUT + s2;
 	return k;
@@ -719,8 +892,8 @@ int CRoofModel::FillTriangle(D2_TRIANGLE &T, short k)
 //	NOTE:  The tour points (inp) must have good height
 //				the inp should be ordered with X origin as 1rst point
 //---------------------------------------------------------------
-void CRoofModel::BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out)
-{	if (inp.GetNbObj() != 4)					return;
+D2_POINT *CRoofModel::BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out)
+{	if (inp.GetNbObj() != 4)					return 0;
 	//-----Allocate output vector --------------------------
 	CloneModel();
 	//---- Compute the 4 corners ---------------------------
@@ -738,9 +911,9 @@ void CRoofModel::BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out
 	SVector T;
 	T.x = (p0->x - p1->x) * 0.5;
 	T.y = (p0->y - p1->y) * 0.5;
-	T.z = T.y;
-	aOUT[5].Add(*p1,T);
-	aOUT[6].Add(*p2,T);
+	T.z = T.y * p0->elg;
+	aOUT[4].Add(*p1,T);
+	aOUT[5].Add(*p2,T);
 	//--- Now build the triangles -------------------------------
 	int n = 0;
 	while (n < nbx)
@@ -748,8 +921,358 @@ void CRoofModel::BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out
 		n	= FillTriangle(*T,n);
 		out.push_back(T);
 	}
-	//--- POINTS are now under T responsibility to delete -------
+	//--- POINTS are now under caller responsibility to delete -------
+	D2_POINT *rf = aOUT;
 	aOUT	= 0;
+	return rf;
+}
+//===================================================================================
+//	UNIT CONVERTER 
+//===================================================================================
+#define FOOT_FROM_METERS(X)   (double(X) * 10.7639104)
+#define SQRF_FROM_SQRMTR(X)   (double(X) *  3.2808399)
+//===================================================================================
+//
+//	Start OpenStreet session
+//
+//===================================================================================
+D2_Session::D2_Session()
+{	;
+}
+//-----------------------------------------------------------------
+//	Destroy resourecs 
+//-----------------------------------------------------------------
+D2_Session::~D2_Session()
+{	std::map<std::string, D2_Group*>::iterator ig;
+	for (ig = group.begin(); ig != group.end(); ig++) delete (*ig).second;
+}
+//-----------------------------------------------------------------
+//	Stop Session 
+//-----------------------------------------------------------------
+bool D2_Session::Stop01(char *ln)
+{	WARNINGLOG("Invalid statement %s",ln);
+	if (ln) exit(-1);
+	return false;
+}
+//-----------------------------------------------------------------
+//	Read session parameters 
+//-----------------------------------------------------------------
+bool	D2_Session::ReadParameters(char *fn)
+{	char path[128];
+	_snprintf(path,128,"OpenStreet/%s",fn);
+	FILE  *f  = fopen(path,"r");
+  if (0 == f)  return false;
+	bool ok = ParseSession(f);
+	fclose(f);
+	return ok;
+}
+//-----------------------------------------------------------------
+//	Read file 
+//-----------------------------------------------------------------
+void D2_Session::ReadFile(FILE *f, char *buf)
+{	bool go = true;
+	while (go)
+	{	fpos = ftell(f);
+	  *buf = 0;
+		fgets(buf,128,f);
+		buf[127] = 0;
+		if (strncmp(buf,"//",2) == 0)	continue;
+		if (*buf == 0x0A)							continue;
+		return;
+	}
 	return;
+}
+//-----------------------------------------------------------------
+//	Read session Name 
+//-----------------------------------------------------------------
+bool D2_Session::ParseSession(FILE *f)
+{	char buf[128];
+  ReadFile(f,buf);
+	char *nm = 0;
+	int nf = sscanf_s(buf,"Session %63s", name,63);
+	name[63] = 0;
+	if (nf!= 1)				return false;
+	//--- Parse Groups --------------------
+	ParseGroups(f);
+	fseek(f,fpos,SEEK_SET);
+	ParseStyles(f);
+	//--- Normally we got the end statement here
+	ReadFile(f,buf); 
+	char *ok = strstr(buf,"Fin");
+	if (ok)		return true;
+	//--------------------------------------
+	WARNINGLOG("Error arround %s",buf);
+	return false;
+}
+//-----------------------------------------------------------------
+//	Read a group 
+//-----------------------------------------------------------------
+bool D2_Session::ParseGroups(FILE *f)
+{	char buf[128];
+	char gnm[64];
+	bool go = true;
+	while (go)
+	{	fpos = ftell(f);
+		ReadFile(f,buf);
+		int nf = sscanf_s(buf," Group %63s",gnm,63);
+		gnm[63]  = 0;
+		if (nf != 1)	break;
+		//--- Allocate a new group -----------------
+		D2_Group *gp = new D2_Group(gnm);
+		group[gnm] = gp;
+		gp->Parse(f,this);
+	}
+	return false;
+}
+//-----------------------------------------------------------------
+//	Read a Style 
+//-----------------------------------------------------------------
+bool D2_Session::ParseStyles(FILE *f)
+{ char buf[128];
+  char snm[64];
+	char gnm[64];
+	bool go = true;
+	while (go)
+	{	int pos = ftell(f);
+		ReadFile(f,buf);
+		int nf	= sscanf_s(buf," Style %63s ( %64[^)]s )",snm, 63, gnm, 63);
+		snm[63] = 0;
+		gnm[63]	= 0;
+		if (nf == 2)	{ AddStyle(f,snm,gnm);	continue; }
+		//--- Back up one line --------------------
+		fseek(f,pos,SEEK_SET);
+		return false;
+	}
+	return false;
+}
+//-----------------------------------------------------------------
+//	Add a style  
+//-----------------------------------------------------------------
+bool D2_Session::AddStyle(FILE *f,char *sn,char *gn)
+{	//--- Find group ----------------------------
+	std::map<std::string,D2_Group*>::iterator rg = group.find(gn);
+	if (rg == group.end())	return Stop01(sn);
+	D2_Group *gp = (*rg).second;
+	D2_Style *sy = new D2_Style(sn,gp);
+	gp->AddStyle(sy);
+	//--- Decode Style parameters ---------------
+	bool go = true;
+	char buf[128];
+	while (go)	
+	{	fpos = ftell(f);	
+		ReadFile(f,buf);
+		if (sy->Decode(buf))	continue;
+		fseek(f,fpos,SEEK_SET);
+		return (sy->IsOK());
+	}
+	return false;
+}
+//===================================================================================
+//	Create a new group
+//===================================================================================
+D2_Group::D2_Group(char *gn)
+{	strncpy(name,gn,64);
+	name[63]	= 0;
+	sfMin			= 0;
+	sfMax			= 1000000;
+	sdMin			= 4;
+	sdMax			= 2000;		 
+}
+//-----------------------------------------------------------------
+//	Destroy Group 
+//-----------------------------------------------------------------
+D2_Group::~D2_Group()
+{	for (U_INT k= 0; k < styles.size(); k++) delete styles[k];
+}
+//-----------------------------------------------------------------
+//	Read parameters 
+//-----------------------------------------------------------------
+bool D2_Group::Parse(FILE *f, D2_Session *sn)
+{	char buf[128];
+	int  pos	= 0;
+	bool go   = true;
+	while (go)
+	{	pos	= ftell(f);
+	  sn->ReadFile(f,buf);
+		if (DecodeParam(buf))	continue;
+		go	= false;
+	}
+	//------Back up --------------------------------------------
+	fseek(f,pos,SEEK_SET);
+	return false;
+}
+//-----------------------------------------------------------------
+//	Get a  parameters 
+//-----------------------------------------------------------------
+bool D2_Group::DecodeParam(char *buf)
+{	//--- Check for surface --------------------------------
+	int nf = sscanf(buf," Surface [ %lf , %lf]", &sfMin, &sfMax);
+	if (nf == 2)
+	{	sfMin = SQRF_FROM_SQRMTR(sfMin);
+		sfMax	= SQRF_FROM_SQRMTR(sfMax);
+		return true;
+	}
+	//--- Check for side ------------------------------------
+	nf = sscanf(buf," Sides [ %u , %u]", &sdMin, &sdMax);
+	return (nf == 2);
+}
+//===================================================================================
+//
+//	Create a new style
+//
+//===================================================================================
+D2_Style::D2_Style(char *snm, D2_Group *gp)
+{	strncpy(name,snm,64);
+	name[63]	= 0;
+	group			= gp;
+	weight		= 1;
+	minF = maxF = 1;
+	//--- Clear matrix ----------------------------
+	for (int k=0; k < TEXD2_MAT_DIM; k++) param[k] = 0; 
+}
+//-----------------------------------------------------------------
+//	Destroy Style 
+//-----------------------------------------------------------------
+D2_Style::~D2_Style()
+{	for (int k=0; k < TEXD2_MAT_DIM; k++)
+	{	D2_TParam *p = param[k];
+		if (p)	Clear(p);
+		if (p)  delete p;
+	}
+}
+//-----------------------------------------------------------------
+//	Remove pointeur from matrix 
+//-----------------------------------------------------------------
+void	D2_Style::Clear(D2_TParam *p)
+{	for (int k=0; k < TEXD2_MAT_DIM; k++) if (param[k] == p) param[k] = 0;
+}
+//-----------------------------------------------------------------
+//	Error
+//-----------------------------------------------------------------
+bool D2_Style::Error1(char *p)
+{	WARNINGLOG("Mandatory Face(X+) missing: %s", p);
+	return false;
+}
+//-----------------------------------------------------------------
+//	Error
+//-----------------------------------------------------------------
+bool D2_Style::Error2(char *p)
+{	WARNINGLOG("Found Face(Y+) after Face(Y-): %s", p);
+	return false;
+}
+
+//-----------------------------------------------------------------
+//	Read style parameters 
+//-----------------------------------------------------------------
+bool D2_Style::Decode(char *buf)
+{ int nf = 0;
+	char floor[4];
+	D2_TParam pm;
+	char	er = 0;
+	char *xp		= " Face ( X+ ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
+	char *yp    = " Face ( Y+ ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
+	char *xm    = " Face ( X- ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
+	char *ym		= " Face ( Y- ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
+	char *gf    = " gFloor ( %2[^)] ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
+	char *mf    = " mFloor ( %2[^)] ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
+	char *zf    = " zFloor ( %2[^)] ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
+	//----------------------------------------------------------------------
+  nf = sscanf(buf," Weight %u",&weight);
+	if (1 == nf)		return true;
+	//--- Check for X+ -----------------------------------------------------
+	pm.rept = 1;
+	pm.code	= GEO_FACE_XP;
+	nf = sscanf(buf,xp,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (4 <= nf) 		return AddFace(pm);	
+	//--- Check for Y+ -----------------------------------------------------
+	pm.rept	= 1;
+	pm.code = GEO_FACE_YP;
+	nf = sscanf(buf,yp,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (4 <= nf)		return AddFace(pm); 	 
+	//--- Check for X- ----------------------------------------------------
+	pm.rept	= 1;
+	pm.code = GEO_FACE_XM;
+	nf = sscanf(buf,xm,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (4 <= nf)		return AddFace(pm);
+	//--- Check for Y- ----------------------------------------------------
+	pm.rept	= 1;
+	pm.code = GEO_FACE_YM;
+	nf = sscanf(buf,ym,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (4 <= nf) 	  return AddFace(pm);
+	//--- Check for ground Floor ------------------------------------------
+	pm.rept = 1;
+	pm.code = 0;
+	nf = sscanf_s(buf,gf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_GF,pm);
+	//--- Check for middle Floor ------------------------------------------
+	pm.rept = 1;
+	pm.code = 0;
+	nf = sscanf_s(buf,mf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_MF,pm);
+	//--- Check for Last Floor ------------------------------------------
+	pm.rept = 1;
+	pm.code = 0;
+	nf = sscanf_s(buf,zf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_ZF,pm);
+	return false;
+}
+//----------------------------------------------------------------------
+//	Add a Face 
+//----------------------------------------------------------------------
+bool  D2_Style::AddFace(D2_TParam &p)
+{	D2_TParam *tp = new D2_TParam();
+	*tp = p;
+	switch (p.code)	{
+		case GEO_FACE_XP:
+			//--- Fill whole matrix with it -----------
+			for (int k=0; k != TEXD2_MAT_DIM; k++)	param[k] = tp;
+			return true;
+		case GEO_FACE_YP:
+			//--- Fill YP and YM ---------------------
+			for (int k=0; k != 4; k++) param[TEXD2_IND_YP + k] = tp;
+			for (int k=0; k != 4; k++) param[TEXD2_IND_YM + k] = tp;
+			return true;
+		case GEO_FACE_XM:
+			//--- Fill XM ----------------------------
+			for (int k=0; k != 4; k++) param[TEXD2_IND_XM + k] = tp;
+			return true;
+		case GEO_FACE_YM:
+			//--- Fill YM -------------------------------
+			for (int k=0; k != 4; k++) param[TEXD2_IND_YM + k] = tp;
+			return true;	 
+}
+	return false;
+}
+//----------------------------------------------------------------------
+//	Add a Face 
+//----------------------------------------------------------------------
+bool  D2_Style::AddFloor(char *fl, int n, D2_TParam &p)
+{	int k	= 1;
+	D2_TParam *tp = new D2_TParam();
+	*tp = p;
+	//--- Enter floor X+ --------------------------
+	if (strncmp(fl,"X+",2) == 0) k = (4 * TEXD2_IND_XP) + n;
+	if (strncmp(fl,"Y+",2) == 0) k = (4 * TEXD2_IND_YP) + n;
+	if (strncmp(fl,"X-",2) == 0) k = (4 * TEXD2_IND_XM) + n;
+	if (strncmp(fl,"Y-",2) == 0) k = (4 * TEXD2_IND_YM) + n;
+	param[k] = tp;
+	return true;
+}
+//----------------------------------------------------------------------
+//	Check for completion 
+//----------------------------------------------------------------------
+bool D2_Style::IsOK()
+{	if (*param != 0)	return true;
+	WARNINGLOG("Style %s Missing Face(X+) definition",name);
+	return false;
+}
+//===================================================================================
+//	Create a texture parameter
+//===================================================================================
+//-----------------------------------------------------------------
+//	Destroy texture parameter 
+//-----------------------------------------------------------------
+D2_TParam::~D2_TParam()
+{
 }
 //======================= END OF FILE =========================================================

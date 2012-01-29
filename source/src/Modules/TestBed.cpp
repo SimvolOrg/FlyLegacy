@@ -25,32 +25,23 @@
 #include "../Include/Globals.h"
 #include "../Include/TestBed.h"
 #include "../Include/Cameras.h"
-#include "../Include/Import.h"
-#include "../Include/Fileparser.h"
-#include "../Include/TerrainTexture.h"
+#include "../Include/Triangulator.h"
+
 using namespace std;
 //===================================================================================
 //--------------------------------------------------------------------
 // Constructor 
 //--------------------------------------------------------------------
 CTestBed::CTestBed()
-{ Cam   = new CCameraSpot();
-	Cam->RangeFor(50,64);
-	Cam->SetAngle(0,60);
-	globals->cam = Cam;
-	dmod	= 0;
-	//--------------------------------------
-	trn.Load("Objects/OBJ03.txt");
-	trn.Start();
-	//---- set world origin ---------------
-	globals->sit->WorldOrigin();
+{ D2_Session dds;
+	bool ok = dds.ReadParameters("Session01.txt");
 }
 
 //--------------------------------------------------------------------
 //  Free resources
 //--------------------------------------------------------------------
 CTestBed::~CTestBed()
-{	delete Cam;
+{
 }
 //-------------------------------------------------------------------
 //  Keyboard
@@ -70,9 +61,7 @@ void CTestBed::TimeSlice()
 //  Draw
 //-------------------------------------------------------------------
 void CTestBed::Draw()
-{ 	Cam->StartShoot(0);
-		trn.Draw();
-		Cam->StopShoot();
+{ 	
 
   //---------- Check for an OpenGL error ---------------------
   { GLenum e = glGetError ();

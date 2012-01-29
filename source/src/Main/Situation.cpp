@@ -61,6 +61,27 @@
 #include "../Include/PlanDeVol.h"
 using namespace std;
 //=====================================================================================
+//    GLOBAL function to get the day model 
+//=====================================================================================
+//--------------------------------------------------------------------------------
+//  Return model to draw
+//--------------------------------------------------------------------------------
+CModelACM *GetDayModelACM()
+{ CVehicleObject   *veh = globals->pln;
+  if (0 == veh)     return 0;
+  CAnimatedModel *lod = veh->GetLOD();
+  if (0 == lod)     return 0;
+  return lod->GetDayModel();
+}
+//--------------------------------------------------------------------------------
+//  Return model spatial extension (in feet)
+//--------------------------------------------------------------------------------
+void GetExtensionACM(SVector &v)
+{ CModelACM  *mod = GetDayModelACM();
+  if (mod)  mod->GetExtension(v);
+  return;
+}
+//=====================================================================================
 //    GLOBAL CLEANUP
 //=====================================================================================
 void GlobalsClean (void)

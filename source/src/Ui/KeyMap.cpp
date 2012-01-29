@@ -51,7 +51,6 @@ CKeyDefinition::CKeyDefinition (Tag ks)
  *name  = 0;
   jbtn  = 0;
   type  = 0;
-  cb    = 0;
 }
 
 //--------------------------------------------------------------

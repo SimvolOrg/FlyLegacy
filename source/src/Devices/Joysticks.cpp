@@ -105,7 +105,7 @@ bool SJoyDEF::CreateSDL(int k)
 		//-- get number of buttons and hat ----------
 		nbt	= SDL_JoystickNumButtons(spj);
 		nht	= SDL_JoystickNumHats(spj);
-		WARNINGLOG("JOYSTICK: %s axes=%d buttons=%d",dName,nba,nbt);
+		TRACE("JOYSTICK: %s axes=%d buttons=%d",dName,nba,nbt);
 		return true;
 	}
 //----------------------------------------------------------------
@@ -122,8 +122,7 @@ void SJoyDEF::UpdateSDL()
 	}
 	//---- Update button state ------------------------
 	but	= 0;
-	int lim = SDL_JoystickNumButtons(spj);
-	for (int k=0; k<lim; k++)
+	for (int k=0; k < nbt; k++)
 	{	U_INT st = SDL_JoystickGetButton(spj,k);
 		but |= (st << k);
 	}
@@ -760,7 +759,7 @@ bool CJoysticksManager::HandleHat(U_INT hat)
 //----------------------------------------------------------------------
 bool CJoysticksManager::AssignCallBack(SJoyDEF * pJoy,int k)
 { if (0 == pButCB)					return false;
-  pButCB(pJoy, k, wbID);
+  (*pButCB)(pJoy, k, wbID);
   return true;
 }
 //---------------------------------------------------------------------------------
@@ -769,11 +768,11 @@ bool CJoysticksManager::AssignCallBack(SJoyDEF * pJoy,int k)
 //---------------------------------------------------------------------------------
 void CJoysticksManager::EnumSDL()
 {	int nbj	= SDL_NumJoysticks();
-	SJoyDEF    * pJINF = 0;
+	SJoyDEF    *joy = 0;
 	for (int k=0; k<nbj; k++)
-	{	pJINF = new SJoyDEF();
-	  if (pJINF->CreateSDL(k))	joyQ.push_back(pJINF);
-		else											delete pJINF;
+	{	joy = new SJoyDEF();
+	  if (joy->CreateSDL(k))	joyQ.push_back(joy);
+		else										delete joy;
 	}
 	use	= joyQ.size();
 	Time	= 0;
@@ -883,8 +882,6 @@ void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
 { Update();										// Refresh values
 	if (GasDisconnected())	return CheckControl('thr1');
 	CSimAxe * axe = 0;
-if (mapAxe.size() < 11)
-gtfo("AXESSS");
   for (int k=JOY_FIRST_PMT; k!=JOY_AXIS_NUMBER; k++)
   { axe = AxesList + k;
     if (0 == (axe->group & JOY_GROUP_PMT))  return;
@@ -1076,7 +1073,9 @@ int CJoysticksManager::Read (SStream *stream, Tag tag)
     sbt = new CSimButton;
     ReadFrom(sbt,stream);
     if (ProcessButton(sbt))  return TAG_READ;
-    WARNINGLOG("CJoysticksManager: Error with button %d.",sbt->nBut);
+		SJoyDEF *joy = sbt->pjoy;
+		char    *jnm = (joy)?(joy->dName):("????");
+    WARNINGLOG("Error button %d Joystick %s.",sbt->nBut,jnm);
     delete sbt;
     return TAG_READ;
   }
@@ -1121,7 +1120,6 @@ bool CJoysticksManager::ProcessButton(CSimButton *sbt)
   if (0 == jsd)             return false;
   CKeyDefinition *kdf = globals->kbd->FindKeyDefinitionByIds(sbt->kset,sbt->cmde);
   if (0 == kdf)             return false;
-  KeyCallbackPtr pcb        = kdf->GetCallback();
   //-----------------------------------------------------------------
   int  nb  = sbt->nBut;
   kdf->LinkTo(sbt);
@@ -1204,6 +1202,7 @@ void CJoysticksManager::SaveConfiguration()
   char     *fn = "System/FlyLegacyControls.txt";
   SJoyDEF *jsd;
   std::vector<SJoyDEF *>::iterator it;
+	if (0 == use)						return;
 	if (0 == modify)				return;
 	modify		= 0;
 	txt[127]	= 0;

@@ -1141,7 +1141,7 @@ void tune_probe_cb(puObject *obj)
 { globals->kbd->Stroke('menu','prob');	}
 //--------------------------------------------------------
 char *tune_legends[] =
-{ //"SKETCH Editor",
+{// "SKETCH Editor",
 	"TERRA Editor",
 	"----------------",
 	"OBJECT Browser",

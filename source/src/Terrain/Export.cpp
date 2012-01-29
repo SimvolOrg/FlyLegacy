@@ -934,6 +934,10 @@ void CExport::Export3Dmodels()
   globals->fui->SetNoticeFont(&globals->fonts.ftmono20);
 	pif.mode= 0;								// Adding mode
 	SCENE("========== START OF MODEL EXPORT ==========");
+	if (globals->m3dDB)		return;
+	SCENE("No M3D database");
+	globals->appState = APP_EXIT_SCREEN;
+	Clear = 1;
   return;
 }
 //-----------------------------------------------------------------------------------------

@@ -494,9 +494,9 @@ public:
   void  ClearKey();
   void  SetJoysDef(CSimButton *sbt);
   void  SetCode(int c);
-  void            SetKText(char *txt) {strncpy(ktext,txt,20);}
+  void            SetKText(char *txt) {strncpy(ktext,txt,31);}
   char           *GetKText()          {return ktext;}
-  void            SetJText(char *txt) {strncpy(jtext,txt,20);}
+  void            SetJText(char *txt) {strncpy(jtext,txt,31);}
   char           *GetJText()          {return jtext;}
   void            SetIden(Tag t)      {iden = t;}
   Tag             GetIden()           {return iden;}
