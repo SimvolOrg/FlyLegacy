@@ -10,6 +10,7 @@
 
 #include "../Include/FlyLegacy.h"
 #include "../Include/Queues.h"
+#include <float.h>
 class CVector;
 class CQuaternion;
 class CRotMatrix;
