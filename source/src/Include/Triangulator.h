@@ -90,6 +90,9 @@
 #define TEXD2_IND_GF  (1)
 #define TEXD2_IND_MF  (2)
 #define TEXD2_IND_ZF  (3)
+//-------------------------------------------------------------
+#define TEXD2_HMOD_WHOLE (0)
+#define TEXD2_HMOD_FLOOR (1)
 //======================================================================================
 //	Pixel definition
 //======================================================================================
@@ -417,22 +420,24 @@ friend class D2_Style;
 	//--- ATTRIBUTES ----------------------------------------------
 	char code;														// Code texture
 	char rept;														// Repeat number
-	char user;														// User count
+	char hmod;														// Texture mode in vertical
 	char rfu2;														// Reserved 2
 	//--------------------------------------------------------------
 	int		x0;															// SW corner
 	int		y0;															// 
 	int		x1;															// NE corne
 	int   y1;
+	//-----Texture extensions --------------------------------------
+	double dtx;
+	double dty;
 	//--------------------------------------------------------------
 	U_INT *mem;														// Memory image
 	//--- METHODS --------------------------------------------------
 public:
-	D2_TParam()	{user = 0;}
+	D2_TParam()	{}
  ~D2_TParam();
-  //--- ---------------------------------------------------
-	void IncUser()	{user++;}
-	void DecUser()  {user--; if (user <= 0) delete this;}
+  //--------------------------------------------------------------
+	void	CopyFrom(D2_TParam &p);
 };
 //====================================================================================
 //	data for Style definition 
@@ -447,6 +452,12 @@ class D2_Style {
 	short			 weight;										// relative weight in group
 	char			 minF;											// minimum floor number
 	char			 maxF;											// maximum floor number
+	//--------Floor height -----------------------------------------
+	double     height;										// Floor height
+	//--------Frequency parameters driving generation --------------
+	U_INT			 nber;											// Number of instances
+	double     freq;											// Current frequency
+	double     ratio;											// Style ratio (%)
 	//--------------------------------------------------------------							
 	D2_TParam *param[TEXD2_MAT_DIM];			// Texture array
 	//--- METHODS -------------------------------------------------
@@ -462,6 +473,9 @@ public:
 	bool			AddFloor(char *fl, int n, D2_TParam &p);
 	//-------------------------------------------------------------
 	bool			IsOK();
+	//-------------------------------------------------------------
+	short     GetWeight()					{return weight;}
+	void			SetRatio(double r)	{ratio = r;}
 };
 //====================================================================================
 //	data for group definition 
@@ -474,6 +488,12 @@ class D2_Group {
 	double  sfMax;													// Max surface
 	int			sdMin;													// side number
 	int			sdMax;													// side max
+	//---- Floor parameters ---------------------------------------
+	int     floor;													// Number of floors
+	double  height;													// Floor height
+	//--------------------------------------------------------------
+	int			weight;													// Cummulated weight
+	//--------------------------------------------------------------
 	std::vector<D2_Style*> styles;					// All styles in group
 	//--- METHODS --------------------------------------------------
 public:
@@ -483,8 +503,8 @@ public:
 	bool Parse(FILE *f, D2_Session *sn);
 	bool DecodeParam(char *buf);
 	//--------------------------------------------------------------
-	void		AddStyle(D2_Style *sy)		{styles.push_back(sy);}
-
+	void		AddStyle(D2_Style *sy);		
+	void    ComputeRatio();
 	};
 
 //====================================================================================
@@ -546,6 +566,8 @@ class Triangulator: public CExecutable {
 	std::vector<D2_FLOOR*>     walls;							// Walls
 	D2_POINT *roofArray;													// Sloped roof
 	//--------------------------------------------------------------
+	D2_Style   *style;														// Building style
+	//--------------------------------------------------------------
 	D2_TRIANGLE tri;															// Internal triangle
 	D2_TRIANGLE qtr;															// Qualify triangle
 	//--------------------------------------------------------------
@@ -595,6 +617,7 @@ public:
 	//-----------------------------------------------------
 	inline double	GetSurface()		{return surf;}
 	inline int    NbPoints()			{return extp.GetNbObj();}
+	inline void		SetStyle(D2_Style *s)	{style = s;}
 protected:
   //-----------------------------------------------------
 	void		Clean();

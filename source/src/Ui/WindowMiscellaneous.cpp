@@ -71,6 +71,8 @@ void CFuiKLN89::InitGPS()
   int wd = 0;
   int ht = 0;
   Back.GetBitmapSize(&wd,&ht);
+	SetXRange(wd,wd);
+	SetYRange(ht,ht);
   SetProperty(FUI_XY_RESIZING);
   Resize(wd,ht);
   RazProperty(FUI_XY_RESIZING);

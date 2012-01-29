@@ -668,6 +668,9 @@ void Triangulator::Splice(D2_POINT *xp, D2_POINT *hp)
 //	NOTE:  With this procedure, some local coordinates may be negative
 //	So we renormalize all coordinates to be positive by the translation
 //	T=(-minx,-miny) and we commpute the s coordinate
+//	
+//	Before calling this type, the style must be selected and set
+//	We need it to precompute some texture coefficients
 //=========================================================================
 void Triangulator::QualifyFaces()
 {	//--- Compute rotation matrix -------------------
@@ -929,8 +932,8 @@ D2_POINT *CRoofModel::BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*>
 //===================================================================================
 //	UNIT CONVERTER 
 //===================================================================================
-#define FOOT_FROM_METERS(X)   (double(X) * 10.7639104)
-#define SQRF_FROM_SQRMTR(X)   (double(X) *  3.2808399)
+#define FOOT_FROM_METERS(X)   (double(X) *  3.2808399)
+#define SQRF_FROM_SQRMTR(X)   (double(X) * 10.7639104)
 //===================================================================================
 //
 //	Start OpenStreet session
@@ -1054,7 +1057,6 @@ bool D2_Session::AddStyle(FILE *f,char *sn,char *gn)
 	if (rg == group.end())	return Stop01(sn);
 	D2_Group *gp = (*rg).second;
 	D2_Style *sy = new D2_Style(sn,gp);
-	gp->AddStyle(sy);
 	//--- Decode Style parameters ---------------
 	bool go = true;
 	char buf[128];
@@ -1062,6 +1064,9 @@ bool D2_Session::AddStyle(FILE *f,char *sn,char *gn)
 	{	fpos = ftell(f);	
 		ReadFile(f,buf);
 		if (sy->Decode(buf))	continue;
+		//-- have a new style for the group -----
+		gp->AddStyle(sy);
+		//--- Exit now --------------------------
 		fseek(f,fpos,SEEK_SET);
 		return (sy->IsOK());
 	}
@@ -1074,9 +1079,15 @@ D2_Group::D2_Group(char *gn)
 {	strncpy(name,gn,64);
 	name[63]	= 0;
 	sfMin			= 0;
-	sfMax			= 1000000;
+	sfMax			= 10000000;
+	//-- Default is side [4,200000] ---------
 	sdMin			= 4;
-	sdMax			= 2000;		 
+	sdMax			= 200000;
+	//--- Floor -----------------------------
+	floor			= 1;
+	height		= 2.8;
+	//---------------------------------------
+	weight		= 0;		 
 }
 //-----------------------------------------------------------------
 //	Destroy Group 
@@ -1095,6 +1106,11 @@ bool D2_Group::Parse(FILE *f, D2_Session *sn)
 	{	pos	= ftell(f);
 	  sn->ReadFile(f,buf);
 		if (DecodeParam(buf))	continue;
+		//--- Convert all units --------------------------------
+		sfMin		= SQRF_FROM_SQRMTR(sfMin);	// M² to FEET²
+		sfMax		= SQRF_FROM_SQRMTR(sfMax);
+		height	=	FOOT_FROM_METERS(height);	
+		//--- Then exit false ----------------------------------
 		go	= false;
 	}
 	//------Back up --------------------------------------------
@@ -1102,19 +1118,48 @@ bool D2_Group::Parse(FILE *f, D2_Session *sn)
 	return false;
 }
 //-----------------------------------------------------------------
-//	Get a  parameters 
+//	Get group parameters  parameters 
 //-----------------------------------------------------------------
 bool D2_Group::DecodeParam(char *buf)
 {	//--- Check for surface --------------------------------
 	int nf = sscanf(buf," Surface [ %lf , %lf]", &sfMin, &sfMax);
-	if (nf == 2)
-	{	sfMin = SQRF_FROM_SQRMTR(sfMin);
-		sfMax	= SQRF_FROM_SQRMTR(sfMax);
-		return true;
-	}
+	if (nf == 2)	return true;
+	//--- Check for surface to infinity --------------------
+  nf = sscanf(buf," Surface [ %lf , * ]",  &sfMin);
+	if (nf == 1)	return true;
 	//--- Check for side ------------------------------------
 	nf = sscanf(buf," Sides [ %u , %u]", &sdMin, &sdMax);
-	return (nf == 2);
+	if  (nf == 2) return true;
+	//--- Check for side to infinity ------------------------
+	nf = sscanf(buf," Side [%u , * ]", &sdMin);
+	if	(nf == 1) return true;
+	//--- Check floor number --------------------------------
+	nf = sscanf(buf," Floor %u",   &floor);
+	if  (1 == nf)	return true;
+	//--- Check floor height --------------------------------
+	nf = sscanf(buf," Height %lf", &height);
+	if	(1 == nf)	return true;
+	return false;
+}
+//-----------------------------------------------------------------
+//	Add a new style 
+//-----------------------------------------------------------------
+void	D2_Group::AddStyle(D2_Style *sy)
+{	styles.push_back(sy);
+	weight += sy->GetWeight();
+	return;
+}
+//-----------------------------------------------------------------
+//	Compute each style ratio
+//-----------------------------------------------------------------
+void D2_Group::ComputeRatio()
+{	for (U_INT k=0; k < styles.size(); k++)
+	{	D2_Style *sty = styles[k];
+		int			w = sty->GetWeight();
+		double	r = double(w) / double (weight);
+		sty->SetRatio(r);
+	} 
+	return;
 }
 //===================================================================================
 //
@@ -1182,36 +1227,43 @@ bool D2_Style::Decode(char *buf)
 	//--- Check for X+ -----------------------------------------------------
 	pm.rept = 1;
 	pm.code	= GEO_FACE_XP;
+	pm.hmod = TEXD2_HMOD_WHOLE;
 	nf = sscanf(buf,xp,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
 	if (4 <= nf) 		return AddFace(pm);	
 	//--- Check for Y+ -----------------------------------------------------
 	pm.rept	= 1;
 	pm.code = GEO_FACE_YP;
+	pm.hmod = TEXD2_HMOD_WHOLE;
 	nf = sscanf(buf,yp,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
 	if (4 <= nf)		return AddFace(pm); 	 
 	//--- Check for X- ----------------------------------------------------
 	pm.rept	= 1;
 	pm.code = GEO_FACE_XM;
+	pm.hmod = TEXD2_HMOD_WHOLE;
 	nf = sscanf(buf,xm,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
 	if (4 <= nf)		return AddFace(pm);
 	//--- Check for Y- ----------------------------------------------------
 	pm.rept	= 1;
 	pm.code = GEO_FACE_YM;
+	pm.hmod = TEXD2_HMOD_WHOLE;
 	nf = sscanf(buf,ym,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
 	if (4 <= nf) 	  return AddFace(pm);
 	//--- Check for ground Floor ------------------------------------------
 	pm.rept = 1;
 	pm.code = 0;
+	pm.hmod = TEXD2_HMOD_FLOOR;
 	nf = sscanf_s(buf,gf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
 	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_GF,pm);
 	//--- Check for middle Floor ------------------------------------------
 	pm.rept = 1;
 	pm.code = 0;
+	pm.hmod = TEXD2_HMOD_FLOOR;
 	nf = sscanf_s(buf,mf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
 	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_MF,pm);
 	//--- Check for Last Floor ------------------------------------------
 	pm.rept = 1;
 	pm.code = 0;
+	pm.hmod = TEXD2_HMOD_FLOOR;
 	nf = sscanf_s(buf,zf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
 	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_ZF,pm);
 	return false;
@@ -1221,7 +1273,7 @@ bool D2_Style::Decode(char *buf)
 //----------------------------------------------------------------------
 bool  D2_Style::AddFace(D2_TParam &p)
 {	D2_TParam *tp = new D2_TParam();
-	*tp = p;
+	tp->CopyFrom(p);
 	switch (p.code)	{
 		case GEO_FACE_XP:
 			//--- Fill whole matrix with it -----------
@@ -1249,7 +1301,7 @@ bool  D2_Style::AddFace(D2_TParam &p)
 bool  D2_Style::AddFloor(char *fl, int n, D2_TParam &p)
 {	int k	= 1;
 	D2_TParam *tp = new D2_TParam();
-	*tp = p;
+	tp->CopyFrom(p);
 	//--- Enter floor X+ --------------------------
 	if (strncmp(fl,"X+",2) == 0) k = (4 * TEXD2_IND_XP) + n;
 	if (strncmp(fl,"Y+",2) == 0) k = (4 * TEXD2_IND_YP) + n;
@@ -1274,5 +1326,14 @@ bool D2_Style::IsOK()
 //-----------------------------------------------------------------
 D2_TParam::~D2_TParam()
 {
+}
+//-----------------------------------------------------------------
+//	Copy from parameters and compute some values 
+//-----------------------------------------------------------------
+void	D2_TParam::CopyFrom(D2_TParam &p)
+{	*this = p;
+	 dtx  = double (x1 - x0);
+	 dty  = double (y1 - y0);
+	 return;
 }
 //======================= END OF FILE =========================================================
