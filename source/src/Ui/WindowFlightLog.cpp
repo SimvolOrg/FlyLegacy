@@ -97,8 +97,10 @@ CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
   if (0 == eWIN)  gtfo(erm);
   nWIN  = (CFuiTextField*)GetComponent('name');
   if (0 == nWIN)  gtfo(erm);
+	nWIN->SetValidMask(KB_ANYTHING);
   dWIN  = (CFuiTextField*)GetComponent('desc');
   if (0 == dWIN)  gtfo(erm);
+	dWIN->SetValidMask(KB_ANYTHING);
   grh   = (CFuiCanva*)GetComponent('canv');
   if (0 == grh)		gtfo(erm);
 	ilsF	= (CFuiLabel*)GetComponent('ilsf');
@@ -106,9 +108,11 @@ CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
 	//--- Get altitude components ----------------------
 	wALT	= (CFuiTextField*)GetComponent('alti');
 	if (0 == wALT)	gtfo(erm);
+	wALT->SetValidMask(KB_NUMBER_SIGN);
 	//--- Get Ceil component ---------------------------
 	wCEL  = (CFuiTextField*)GetComponent('ceil');
 	if (0 == wCEL)  gtfo(erm);
+	wCEL->SetValidMask(KB_NUMBER_SIGN);
 	//--- Init runway end points component -------------
 	rend	= (CFuiGroupBox*)GetComponent('rend');
   if (0 == rend)	gtfo(erm);

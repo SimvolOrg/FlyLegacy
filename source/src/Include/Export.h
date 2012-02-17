@@ -60,7 +60,8 @@ class SqlMGR;
 #define EXP_TRN_FFILE 3										// First file
 #define EXP_TRN_NFILE 4										// Next file
 #define EXP_TRN_WRITE 5										// Export one file
-#define EXP_TRN_EXIT	6
+#define EXP_TRN_WTEXT 6
+#define EXP_TRN_EXIT	7
 //============================================================================
 //	Export OBJ files
 //============================================================================
@@ -126,6 +127,10 @@ class CExport {
 	U_INT	gz;																// Gloabl tile Z
   U_INT ax;                               // Tile X
   U_INT az;                               // Tile Z
+	U_INT	sx;																// SUPER TILE X
+	U_INT	sz;																// SUPER TILE Z
+	//--- TRN parameters -------------------------------------------
+	U_INT dKey;															// Detail tile key
   //----SEA Values -----------------------------------------------
   int   row;
   int   col;
@@ -234,7 +239,11 @@ public:
 	int		GetNextTRN();
 	void	WriteTRN();
 	void	ExportTRN(char *fn);
-	void	ExportSUP(C_STile *asp);
+	int 	WriteT2D();
+	int		ExportT2D();
+	void	ExportSUPelevation(C_STile *asp);
+	void	WriteTexture2D(C_STile *sp);
+	void	LoadTRNTexture(CTextureDef	 *txd,char R);
 };
 //============================END OF FILE =================================================
 #endif  // EXPORT_H

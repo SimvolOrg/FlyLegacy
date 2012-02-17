@@ -229,7 +229,7 @@ bool CFuiKeyMap::Message(char *msg)
 //--------------------------------------------------------------------------
 void CFuiKeyMap::Unassign(CKeyDefinition *kdf,int cde)
 { char ktx[32];
-  formatKeyCode(ktx,cde);
+  formatKeyCode(ktx,cde,1);
   label->EditText("%s was used by %s",ktx,kdf->GetName());
   CKeyLine *old = (CKeyLine*)keyBOX.Search(kdf);
   if (0 == old) return;
@@ -237,15 +237,12 @@ void CFuiKeyMap::Unassign(CKeyDefinition *kdf,int cde)
   return;
 }
 //--------------------------------------------------------------------------
-//  Assign key code to definition
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
 //  Key was pressed.  Process according to the current mode
 //--------------------------------------------------------------------------
 int CFuiKeyMap::KeyPress(int cde)
 { if (modOpt == 1)  return NewKeyCode(cde);
   char ktx[32];
-  formatKeyCode(ktx,cde);
+  formatKeyCode(ktx,cde,1);
 	wkeys->EditText("Key pressed: %s: code %05d",ktx,cde);
 	Message("To Modify set MODE to CHANGE !");
   return 0;

@@ -37,7 +37,7 @@
 //	Level k=>  4 Power(k)
 //	For each QUAD there are 10 vertices to render in a TRIANGLE_FAN mode
 //=============================================================================
-#define QUAD_RESOLUTION (16)
+#define QUAD_RESOLUTION (64)
 //=============================================================================
 #include "../Include/FlyLegacy.h"
 #include "../Include/Model3D.h"
@@ -187,7 +187,7 @@ public:
   //----------------------------------------------------------
   U_CHAR   Reso[2];                         // Resolution
   //----------------------------------------------------------
-  U_INT    Key;                             // Shared key
+  U_INT    sKey;                            // Shared key
   GLuint   dOBJ;                            // Day texture Object
   GLuint   nOBJ;                            // Nigth texture Object
   GLubyte *dTEX[2];                         // Day texture data
@@ -261,40 +261,6 @@ public:
 		{strncpy(Name,n,TEX_NAME_DIM); return TEX_NAME_DIM;}
 };
 //============================================================================
-//  Ground tile: Define text descriptor for a detail tile that
-//  if part of an airport ground
-//============================================================================
-class CGroundTile {
-  //--- Attributes --------------------------------------------
-  U_INT         ax;                       //  Tile ident X
-  U_INT         az;                       //  Tile ident Z
-	C_QGT       *qgt;												// Tile QGT
-  CTextureDef *txn;                       //  Tile descriptor
-	CmQUAD      *quad;
-	int          dim;												// Quad number
-	GLint        sIND[QUAD_RESOLUTION];			//   Start indices
-	GLint				 nIND[QUAD_RESOLUTION];			//   Count of indices
-  //--- Methods ------------------------------------------------
-public:
-  CGroundTile(U_INT x,U_INT z);
-  //------------------------------------------------------------
-	void		Free();
-  int		  StoreData(CTextureDef *d);
-	int			TransposeTile(TC_GTAB *d,int s, SPosition *o);
-	//--- VBO management -----------------------------------------
-	int 		GetNbrVTX();
-	void		Draw();
-	void		DrawGround(U_INT xo);
-	//------------------------------------------------------------
-  inline CmQUAD      *GetQUAD()		{return quad;}
-  inline U_INT        GetAX()			{return ax;}
-  inline U_INT        GetAZ()     {return az;}
-	//------------------------------------------------------------
-	inline void	SetQGT(C_QGT *q)			{qgt = q;}
-	inline void SetTXD(CTextureDef *t){txn = t;} 
-	inline void SetQUAD(CmQUAD *q)		{quad = q;}
-};
-//============================================================================
 //  SUPERTILE  DESCRIPTOR
 //	Super held data for 16 Detail Tile
 //	1) The VBO buffer is an array of all vertices for the 16 Detail Tiles
@@ -331,20 +297,19 @@ public:
 		TC_GTAB			*vBUF;										// Buffer
 		U_INT				 aVBO;										// Vertex Buffer Object
     //----3D management ---------------------------------------------
-    float        dEye;            // True eye distance
-    float       alpha;            // Alpha chanel
-    CObjQ         woQ;            // Super Tile 3D object Queue
-    bool      visible;            // Visibility indicator
+    float        dEye;										// True eye distance
+    float       alpha;										// Alpha chanel
+    CObjQ         woQ;										// Super Tile 3D object Queue
+    U_CHAR       visible;									// Visibility indicator
     float        white[4];                // Diffuse color for blending
     //---------------------------------------------------------------
-    SPosition    cPos;                        // Center position
+    SPosition    mPos;                        // Center position
+    CVector      sRad;												// Radius
     //---------------------------------------------------------------
-    CVector      Center;                      // Center Coordinates
-    float        MiniH;                       // Minimum Height
-    float        MaxiH;                       // Maximum Height
-    float        dimz;                        // Z size
+    double       MiniH;                       // Minimum Height
+    double       MaxiH;                       // Maximum Height
     CTextureDef  Tex[TC_TEXSUPERNBR];         // List of Tetxures
-    F3_VERTEX    Tour[TC_SPTBORDNBR + 2];     // SP contour
+    D3_VERTEX    Tour[TC_SPTBORDNBR + 2];     // SP contour
     //------Methods ---------------------------------------------
     CSuperTile();
    ~CSuperTile();
@@ -374,8 +339,8 @@ public:
     //-----------------------------------------------------------
     inline CTextureDef *GetTexDesc(int nd)  {return (Tex + nd);}
     //-----------------------------------------------------------
-    inline void   SetVisibility(bool v)   {visible = v;}
-    inline bool   IsVisible()             {return visible;}
+    inline void   SetVisibility(char v)   {visible = v;}
+    inline char   Visibility()            {return visible;}
     inline bool   IsOutside()             {return (sta3D == TC_3D_OUTSIDE);}
     inline float  GetTrueDistance()       {return dEye;}
     inline float  GetAlpha()              {return alpha;}
@@ -439,33 +404,34 @@ class CVertex {
   friend class C_QGT;
   friend class CmQUAD;
   //--- Absolute Vertex coordinates ------------------
-  U_LONG   xKey;                  // X coordinate in world grid
-  U_LONG   zKey;                  // Z coordinate in world grid
-  U_CHAR   Fixe;                  // Fixed
-  U_CHAR   Use;                   // Quad user count
-  U_CHAR   nElev;                 // Number of elevations
-  U_CHAR   gType;                 // Ground type when vertex is center tile
+  U_INT			xKey;										// X coordinate in world grid
+  U_INT			zKey;										// Z coordinate in world grid
+  U_CHAR		Fixe;										// Fixed
+  U_CHAR		Use;										// Quad user count
+  U_CHAR		nElev;									// Number of elevations
+  U_CHAR		gType;									// Ground type when vertex is center tile
 	//--- Texture indices -------------------------------
-	U_CHAR   indS;									// S Texture indice
-	U_CHAR	 indT;									// T Texture indice
-	U_CHAR	 inES;									// S border  indice
-	U_CHAR   inNT;									// N border  indice
+	U_CHAR		indS;										// S Texture indice
+	U_CHAR		indT;										// T Texture indice
+	U_CHAR		inES;										// S border  indice
+	U_CHAR		inNT;										// N border  indice
   //--- Total elevation -------------------------------
-  float    Ground;
+  double    Ground;
   //--- Edge/Corner pointers --------------------------
   CVertex *Edge[4];               // 4 Adjacent vertices
-  //--- World coordinates -----------------------------
-  WCoord   Coord;                   // World coordinates
+  //--- Relatives coordinates in QGT ------------------
+  double	rx;
+	double  ry;
+	double  rz;
   //------------Methods ---------------------------------
 public:
-  CVertex(U_LONG xk,U_LONG zk);
+  CVertex(U_INT xk, U_INT zk);
   CVertex();
  ~CVertex();
   //----- Relative vector --------------------------------
   CVector RelativeFrom(CVertex &a);
-	CVector DistanceFrom(CVertex &a);
-  bool    IsAbove(float y);
-  bool    ToRight(float x);
+  bool    IsAbove(double y);
+  bool    ToRight(double x);
 	bool    AreWe(U_INT ax,U_INT az);
   //------Border vertices ----------- --------------------
   CVertex *VertexNB()  {return Edge[TC_NORTH];}
@@ -486,21 +452,9 @@ public:
   void    Init(U_INT vx,U_INT vz);
   //------------------------------------------------------
   void    CopyEdge(CVertex *vt);
-  inline void Assign(double *ft)        {Coord.Assign(ft);}
-  inline void Tour(F3_VERTEX *t,char v) {Coord.SetTour(t,v);}
-  //------------------------------------------------------
-  inline void AssignNE(TC_GTAB *tab){Coord.AssignNE(tab);}
-  inline void AssignNB(TC_GTAB *tab){Coord.AssignNB(tab);}
-  inline void AssignNW(TC_GTAB *tab){Coord.AssignNW(tab);}
-  inline void AssignWB(TC_GTAB *tab){Coord.AssignWB(tab);}
-  inline void AssignSW(TC_GTAB *tab){Coord.AssignSW(tab);}
-  inline void AssignSB(TC_GTAB *tab){Coord.AssignSB(tab);}
-  inline void AssignSE(TC_GTAB *tab){Coord.AssignSE(tab);}
-  inline void AssignEB(TC_GTAB *tab){Coord.AssignEB(tab);}
-	inline void AssignCT(TC_GTAB *tab){Coord.AssignCT(tab);}
-	//-------------------------------------------------------
-	inline void AssignHT(TC_GTAB *tab){Coord.AssignHT(tab);}
   //-------------------------------------------------------
+	SVector GeoCoordinates(C_QGT *qgt);
+	//-------------------------------------------------------
   void    InsertNorth(CVertex *vn);
   void    InsertEast(CVertex *vn);
   void    EastLink(CVertex *v2);
@@ -514,20 +468,13 @@ public:
   inline bool NoMoreUsed()  {Use--;    return (0 == Use);}
   inline bool IsUsed()                {return (0 != Use);}
 	//-----XBAND is QGT index divided by 64 and multiplied by 8 --------
-	inline U_CHAR GetXBand()						{return (xKey >> 21) << 3;}
 	inline U_INT  keyX()								{return xKey;}
 	inline U_INT  keyZ()								{return zKey;}
-  //--------Maximum Band coordinate ----------------------------------
-  inline double GetMX()                       {return Coord.GetMX();}
-  inline double GetMY()                       {return Coord.GetMY();}
-  //--------World    coordinates -------------------------------------
-  inline void   SetWZ(float elv)       {Coord.SetWZ(elv);}
-	inline double  GetWX()               {return Coord.GetWX();}
-  inline double  GetWY()               {return Coord.GetWY();}
-  inline double  GetWZ()               {return Coord.GetWZ();}
+	//---- Check if there is subdivision in index -----------------------
+	inline bool HasSubdivision(U_INT k) { return (FN_SUB_FROM_INDX(k) != 0);}
 	//------------------------------------------------------------------
+	inline void   SetCornerHeight()							{rz      = (Ground / nElev);}
   inline void   SetEdge(U_CHAR e,CVertex *v)  {Edge[e] = v;}
-  inline void   SetCornerHeight()             {Coord.SetWZ(Ground / nElev);}
   inline void   SetCorner(U_CHAR c,CVertex *v){Edge[c] = v; if (v) v->IncUse();}
 	//--- For debug ---------------------------------------------------
 	inline bool   Is(U_INT x,U_INT z)	{return (xKey == x) && (zKey == z);}
@@ -537,8 +484,7 @@ public:
 	inline short xCln()								{return (xKey & TC_1024MOD);}
 	inline short zRow()								{return (zKey & TC_1024MOD);}
   //---------------------------------------------------
-  inline double GetAbsoluteLongitude()        {return FN_ARCS_FROM_SUB(xKey);}
-	inline double LongitudeOffset()   {return TC_ARCS_PER_BAND * FN_BAND_FROM_INX(xKey);}
+  inline double GetAbsoluteLongitude()  {return FN_ARCS_FROM_SUB(xKey);}
   //---------------------------------------------------
   inline CVertex *GetEdge(U_SHORT cnr)  {return Edge[cnr];}
   inline CVertex *GetCorner(U_SHORT cnr){return Edge[cnr];}
@@ -571,7 +517,37 @@ public:
 	inline U_LONG NTCoord(char sh,char fx)
 		{	int n = (zKey & TC_1024MOD) >> sh;
 			return (n == 0)?(fx):(n);	}
-	//----------------------------------------------------
+	//--- Copy World coordinates ------------------------
+	inline void CopyCOORD(CVertex &v)
+		{	this->rx = v.rx;
+			this->ry = v.ry;
+			this->rz = v.rz;
+		}
+	//--- Check for same QGT in X direction --------------
+  bool SameXQGT(U_INT x)
+	{	U_INT cmp = (xKey ^ x) & (TC_QGTMASK);
+		return (cmp == 0);	}
+	//--- Check for same X-QGT as vertex V -----------------
+	bool SameXQGT(CVertex &v)
+	{	U_INT cmp = (xKey ^ v.keyX())	& (TC_QGTMASK);
+		return (cmp == 0);	}
+	//--- Check for same QGT in Z direction --------------
+	bool SameZQGT(U_INT z)
+	{	U_INT cmp = (zKey ^ z) & (TC_QGTMASK);
+		return (cmp == 0);	}
+	//--- Check for same Z QGT as vertex v --------------
+	bool SameZQGT(CVertex &v)
+	{	U_INT cmp = (zKey ^ v.keyZ()) & (TC_QGTMASK);
+		return (cmp == 0);	}
+	//---------------------------------------------------
+	//--- Return relative coordinates -------------------
+	double GetRX()		{return rx;}
+	double GetRY()    {return ry;}
+	double GetRZ()		{return rz;}
+	//--- Return altitude ------------------------------
+	double GetWZ()		{return rz;}
+	//--- Set relative coordinates ---------------------
+	void	SetWZ(double a)	{rz = a;}
  };
 
 //============================================================================
@@ -611,7 +587,6 @@ public:
   CmQUAD();
  ~CmQUAD();
   //--------------------------------------------------------
-  double      LongitudeOffset();
   void        SetArray(CmQUAD *cp,U_SHORT dim);
   void        SetParameters(CVertex *ct,U_CHAR l);
   int         CountVertices();
@@ -629,14 +604,17 @@ public:
 	void				RefreshVTAB(CSuperTile *sp,U_CHAR res);
 	void				RefreshVertexCoord(CSuperTile *sp,float *txt);
 	int         TransposeVertices(TC_GTAB *vbo,SPosition *org);
-	int					RelocateVertices(TC_GTAB *vbo,SPosition *org);
-  //-------------------------------------------------------
+	//-------------------------------------------------------
+	void				StoreIn(D3_VERTEX *d, CVertex *v);
+	void				AssignGeoCOORD(TC_GTAB *tab, CVertex *v);
+	//-------------------------------------------------------
   bool        AreWe(U_INT qx,U_INT tx,U_INT qz,U_INT tz);
 	bool        AreWe(U_INT ax,U_INT az);
   //-------------------------------------------------------
   bool        PointHeight(CVector &p,CVector &nm);
   //-------------------------------------------------------
-  bool        PointInSW(CVector &p, CVector nm);
+	bool				PointInQuad(CVector &p);
+	bool        PointInSW(CVector &p, CVector nm);
   bool        PointInSE(CVector &p, CVector nm);
   bool        PointInNE(CVector &p, CVector nm);
   bool        PointInNW(CVector &p, CVector nm);
@@ -706,6 +684,46 @@ struct CTX_QUAD {
     U_INT      tx;                        // Tile key
     U_INT      tz;                        // Tile Key
   };
+//============================================================================
+//  Ground tile: Define text descriptor for a detail tile that
+//  if part of an airport ground
+//============================================================================
+class CGroundTile {
+  //--- Attributes --------------------------------------------
+  U_INT         ax;                       //  Tile ident X
+  U_INT         az;                       //  Tile ident Z
+	C_QGT       *qgt;												//  Tile QGT
+  CTextureDef *txn;                       //  Tile descriptor
+	CmQUAD      *quad;											// Quad
+	CSuperTile  *sup;												// Super tile
+	int          dim;												// Quad number
+	//------------------------------------------------------------
+	GLint        sIND[QUAD_RESOLUTION];			//   Start indices
+	GLint				 nIND[QUAD_RESOLUTION];			//   Count of indices
+  //--- Methods ------------------------------------------------
+public:
+  CGroundTile(U_INT x,U_INT z);
+  //------------------------------------------------------------
+	void		Free();
+  int		  StoreData(CTextureDef *d);
+	int			TransposeTile(TC_GTAB *d,int s, SPosition *o);
+	void		RelocateVertices(TC_GTAB *vbo, int nbv, SPosition *org);
+	//------------------------------------------------------------
+	char		Visibility()	{return sup->Visibility();}
+	//--- VBO management -----------------------------------------
+	int 		GetNbrVTX();
+	int 		DrawGround(U_INT xo);
+	//------------------------------------------------------------
+	inline void					StoreSup(CSuperTile *s) {sup = s;}
+  inline CmQUAD      *GetQUAD()			{return quad;}
+  inline U_INT        GetAX()				{return ax;}
+  inline U_INT        GetAZ()				{return az;}
+	//------------------------------------------------------------
+	inline	void	SetQGT(C_QGT *q)			{qgt = q;}
+	inline	void	SetTXD(CTextureDef *t){txn = t;} 
+	inline	void	SetQUAD(CmQUAD *q)		{quad = q;}
+};
+
 //=============================================================================
 //  CLASS Quarter Tile descriptor
 //  C_QGT
@@ -728,13 +746,14 @@ private:
   U_SHORT       xKey;                     // X coordinate in world grid
   U_SHORT       zKey;                     // Z coordinate in world grid
   U_INT         qKey;                     // QGT key (X,Z)
-  U_CHAR        rCode;                    // Request code
   U_INT         rKey;                     // Request parameter
   SPosition     Scene;                    // Mid position for scenery
   //--------Band parameters--------------------------------------
+  U_CHAR        rCode;                    // Request code
   U_CHAR        xBand;                    // Tile X band
   U_CHAR        yBand;                    // Tile Y band
   U_CHAR        visb;                     // is visible
+	U_CHAR        strn;											// Skip trn
   //--------Mux for Step protection -----------------------------
   pthread_mutex_t	stMux;                  // State lock
   U_CHAR        qSTAT;                    // Quad available when 0
@@ -742,8 +761,7 @@ private:
   U_CHAR        nStp;                     // Next Step
   U_CHAR        dead;                     // Dead mark
   //-------------------------------------------------------------
-  double        aLon;                     // West absolute longitude
-  double        wLon;                     // West  (band) longitude of SW corner
+  double        wLon;                     // West absolute longitude
   double        sLat;                     // South Latitude of SW corner
   double        nLat;                     // North Latitude
   double        dLat;                     // Latitude delta for Detail Tile
@@ -770,9 +788,7 @@ private:
   float         dto;                      // Texture origin
   float         dtu;                      // Texture unit
   //---------Center coordinates --------------------------------
-  CVector       Center;                   // Center in feet
   CVector       Bound;                    // Bounding
-  TRANS2D       qTran;                    // QGT translation
   //---------Option indicator ----------------------------------
   U_CHAR          tr;                     // Trace indicator
   U_CHAR          vbu;                    // use VBO
@@ -808,16 +824,14 @@ public:
   inline  bool  NotVisible()    {return (visb == 0);}
   inline  bool        NoQuad()  {return (1 == qSTAT);}
   inline  bool        HasQuad() {return (0 == qSTAT);}
-	//---- Band translation -------------------------------
-	inline	U_CHAR			GetHband(){return xBand;}
 	//-----------------------------------------------------
 	inline  void				IndElevation()	{elv = 1;}
 	inline  bool				HasElevation()	{return elv != 0;}
   //--------3D Object -----------------------------------
   inline  int         GetNOBJ() {return w3D.GetNOBJ();}
   inline  C3Dworld   *Get3DW()  {return &w3D;}
-  //-------Create vertex in line ------------------------------
-  inline  CVertex    *CreateVertex(U_LONG vx,U_LONG vz)
+  //-------Create vertex in line ------------------------
+  inline  CVertex    *CreateVertex(U_INT vx,U_INT vz)
                       { CVertex *vt = new CVertex(vx,vz);
                         globals->NbVTX++;
                         return vt;
@@ -844,13 +858,14 @@ public:
   bool				NotAlive()   {return (dead == 1);}
   void				SetStep(U_CHAR s);
   void				PostIO();
-  //---------Queing management ---------------------------------
+  //---------Queuing management --------------------------------
   CSuperTile *PopLoad();
   CSuperTile *NextLoad(CSuperTile *sp)  {return sp->Next;}
   void        EnterNearQ(CSuperTile *sp);
   //---------Position routines ---------------------------------
   bool        GetTileIndices(SPosition &pos,short &tx, short &tz);
   bool        GetTileIndices(GroundSpot &gns);
+	void				RelativeToBase(CVector &v);
   //----------Helper -------------------------------------------
   CmQUAD     *GetQuad(U_INT No,U_SHORT rx,U_SHORT rz);
 	CmQUAD		 *GetQuad(U_INT ax,U_INT az);
@@ -863,10 +878,11 @@ public:
 	int					HasTRN();
 	void				Reallocate(CmQUAD *qd);
   //----------Mesh Management ------------------------------------
-  int         CenterTile(CVertex *sw,CVertex *nw,CVertex *ne,CVertex *se);
+	SPosition		GetBase();
+	int         CenterTile(CVertex *sw,CVertex *nw,CVertex *ne,CVertex *se);
   int         DivideTile(U_INT div,CVertex *sw,CVertex *nw,CVertex *ne,CVertex *se);
-  CVertex    *GetEastVertex (CVertex *n,U_LONG vx,U_LONG vz,int op);
-  CVertex    *GetNorthVertex(CVertex *n,U_LONG vx,U_LONG vz,int op);
+  CVertex    *GetEastVertex (CVertex *n,U_INT vx, U_INT vz,int op);
+  CVertex    *GetNorthVertex(CVertex *n,U_INT vx, U_INT vz,int op);
   CVertex    *CreateCenter(CVertex *sw,CVertex *se,CVertex *ne,CVertex *nw,CVertex *op);
   void        DetailElevation(U_INT tx,U_INT tz,float elev);
   void        SetMiniMax(float el,CVertex *vt,CSuperTile *sp);
@@ -895,8 +911,9 @@ public:
   void        FreeAllVertices();
   void        UnlinkVertex(CVertex *vt);
   //--------Drawing ----------------------------------------------
-  void        DrawSuperMesh(U_INT wat);
+  void        DrawSuperMesh(CCamera *cam, char d);
   void        DrawWiresSuperTile(CSuperTile *sp);
+	void				DrawContour();
   //--------Coast management -------------------------------------
   inline      U_INT       GetSeaKEY(int k)        {return seaKEY[k];}
   inline      U_INT       GetSeaREQ(int k)        {return seaREQ[k];}
@@ -906,7 +923,7 @@ public:
   inline      double      GetMidLat()         {return  mPoint.lat;}
   inline      double      GetMidLon()         {return  mPoint.lon;}
   inline      double      GetMidAlt()         {return  mPoint.alt;}
-  inline      double      GetWesLon()         {return  aLon;}
+  inline      double      GetWesLon()         {return  wLon;}
   inline      double      GetNorLat()         {return  nLat;}
   inline      double      GetSudLat()         {return  sLat;}
   //--------Meteo Management  -------------------------------------
@@ -1061,10 +1078,10 @@ class TCacheMGR: public CExecutable {
   U_INT       nKEY;                         // New Key
   U_SHORT     qRDY;                         // Number qgt waiting ready
   //------Terrain parameters ------------------------------------
-  U_CHAR      xBand;                        // Aircraft xBand
-  U_CHAR      yBand;                        // Aircraft yBand
+  U_CHAR      rfu1;                         // Aircraft yBand
   U_CHAR      wire;                         // QGT step
   U_CHAR      Terrain;                      // Terrian indicator
+	U_CHAR        strn;											  // Skip trn
   //------Teleport ----------------------------------------------
   U_CHAR      Tele;                         // Teleport in action
   //-------Vector map:  pixels per mile -------------------------
@@ -1098,7 +1115,6 @@ class TCacheMGR: public CExecutable {
   CVector     gNM;                          // Normal vector
   //--------TRANSFORMATIONS --------------------------------------
   SVector     scale;                        // Scaling parameters
-  SVector     cTran;                        // Terrain translation vector
   TRANS2D     aTran;                        // Airport translation
   //--------Horizon Parameters -----------------------------------
   double      hLine;                        // Distance to horizon
@@ -1113,7 +1129,7 @@ class TCacheMGR: public CExecutable {
 	float       gplan[4];											// Floor plane
   //--------Latitude correction factors --------------------------
   double      rFactor;                      // X longitude Reduction factor
-  double      cFactor;                      // X compensation factor
+  double      xFactor;                      // X Expension factor
   //-------Resolution parameters -----------------------------
   float       higRAT;                       // Hight def ratio
   float       medRAD;                       // Drawing limit
@@ -1159,6 +1175,8 @@ class TCacheMGR: public CExecutable {
   U_INT       NbSEA;                        // Number of Coast Files
   U_INT       NbREG;                        // Number of regions
   U_INT       NbTEX;                        // Number of textures
+	U_INT				DrSUP;												// Numer of SUP drawed
+	U_INT				DrQGT;												// Number of QGT drawed
   U_INT       tr;                           // Trace option
   U_INT       td;                           // Thread debug
   float       aTime;                        // Accounting timer
@@ -1179,10 +1197,6 @@ class TCacheMGR: public CExecutable {
   char        trnName[64];                  // TRN file name
   //---------CULLING  --------------------------------------
   C_QGT       *vqt;                         // QGT in test
-  double      pj[16];                       // Projection Matrix
-  double      mv[16];                       // Model view
-  double      rs[16];                       // Resulting
-  float       pn[6][4];                     // Clip planes
 	//------Black box ---------------------------------------------
 	BBcache	   *bbox;													// TCache black box
   //---------Methods -------------------------------------------
@@ -1208,7 +1222,6 @@ public:
   void        SetTransitionMask(C_QGT *qgt,CTextureDef *txn);
   char        GetTileType(char tp,int dir);
   int         GetCoastMark(int inc,U_INT ax,U_INT az);
-  double      PlaneLongitudeBand() {return Spot.BandLongitude();}
   float       AircraftFeetDistance(SPosition &pos);
 	void				SetShadowMatrix( float mat[16],float lp[4]);
   //----------Terrain management -------------------------------
@@ -1259,6 +1272,7 @@ public:
   inline CTextureWard *GetTexWard() {return txw;}
   inline void   InActQ(C_QGT *qgt)  {ActQ.PutLast(qgt);}
   //-------------------------------------------------------------
+	inline void IncDSP()							{DrSUP++;}
 	inline void IncRDY(short n)				{qRDY += n;}
   inline bool MeshReady()           {return (qRDY == 0);}
 	inline bool MeshBusy()						{return (qRDY != 0);}
@@ -1273,7 +1287,6 @@ public:
   inline CVector *SunPosition()     {return &sunP;}
   //--------Return scale parameters ------------------------------
   inline SVector *GetScale()        {return &scale;}
-  inline SVector *GetTerrainTrans() {return &cTran;}
   //--------Terrain Parameters -----------------------------------
   inline bool     Teleporting()       {return (Tele != 0);}
   inline double   GetHorizon()        {return hLine;}
@@ -1282,13 +1295,11 @@ public:
 	inline double		GetFeetAGL()				{return fAGL;}
   inline void     GetGroundNormal(CVector &v) {v = Spot.gNM;}
   inline U_CHAR   GetGroundType()     {return Spot.Type;}
-  inline double   GetInflation()      {return cFactor;}
+  inline double   GetInflation()      {return xFactor;}
   inline double   GetReduction()      {return rFactor;}
-  inline double*  GetProjection()     {return pj;}
   inline TRANS2D  GetTranslation()    {return aTran;}
 	inline float*   GetGroundPlane()		{return gplan;}
-	//---- Band translation -------------------------------
-	inline U_CHAR		GetHband()					{return xBand;}
+	inline U_CHAR		GetTRNoption()			{return strn;}
   //--------Aircraft Parameters -----------------------------------
 	inline bool     QGTplane(C_QGT *q)	{return Spot.qgt == q;}
   inline SPosition  *PlaneArcsPos()      {return &globals->geop;}
@@ -1358,14 +1369,6 @@ public:
   void        ScanCoastSQL(SSurface *sf);
   void        SetSkyFog(float dens);
   //-------------------------------------------------------------
-  void        ComputeClip();
-  void        ExtractPlanes();
-  void        Normalize(int No);
-  float       Distance(CVector &vt,int No);
-  float       ToPlan(U_INT No,CVector &vt,float dx, float dy, float dz);
-  bool        BoxInView(CVector &ct,CVector &bd);
-  int         SphereInView(CVector &vt,float rd);
-  bool        PointInView(CVector &pt);
   //----------Misc items  ---------------------------------------
   void        DrawSun();
   void        GetSunPosition (void);

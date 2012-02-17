@@ -52,8 +52,8 @@ void		CheckTuningMenu();
 void        init_keyboard (void);
 void        BindAllKeys (CKeyMap *keymap);
 EKeyboardModifiers  glutModifiersToFlyLegacyModifiers (int glutmod);
-bool        glutKeyToFlyLegacyKey (int glutkey, EKeyboardKeys *flykey);
-bool        glutSpecialToFlyLegacyKey (int glutkey, EKeyboardKeys *flykey);
+U_INT       glutKeyToFlyLegacyKey (U_INT gkey, U_INT mdf);
+bool        glutSpecialToFlyLegacyKey (int glutkey, U_INT *flykey);
 #ifdef _WIN32
 EKeyboardKeys   VirtualKeyToLegacyKey (BYTE vk);
 int         VirtualKeyToGlutKey (BYTE vk, bool shift, bool ctrl, bool alt);

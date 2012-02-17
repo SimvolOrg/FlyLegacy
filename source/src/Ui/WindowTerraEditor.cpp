@@ -274,7 +274,7 @@ void CElvTracker::DrawAll()
 //----------------------------------------------------------------------
 void CElvTracker::DrawMark(TVertex *vdf)
 {	CVertex *vtx = vdf->vrt;
-	spot->FeetDistanceTo(vtx,tran);					// Compute distance
+	spot->FeetCoordinatesTo(vtx,tran);				// components in feet
 	glLoadName(vdf->vnum);									// Vector number
 	//--- Camera at vertex and draw ----------------------------
 	glPushMatrix();
@@ -330,6 +330,7 @@ CFuiTED::CFuiTED(Tag idn, const char *filename)
 	lab3->RazProperty(FUI_NO_BORDER);
 	AddChild('lab3',lab3,"",(FUI_EDIT_MODE + FUI_TRANSPARENT));
 	lab3->SetColour(col);
+	lab3->SetValidMask(KB_NUMBER_SIGN);
 	//---  Add buttons ------------------------------
 	elvm  = new CFuiButton( 6,44,36,20,this); 
   AddChild('elvm',elvm,"-",FUI_REPEAT_BT);

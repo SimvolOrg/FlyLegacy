@@ -1806,7 +1806,7 @@ void  CDLLSimulatedObject::SetOrientation (SVector orientation)
 int CDLLSimulatedObject::Timeslice (float dT,U_INT FrNo)
 {
   if (sim_objects_active) {
-    sobj_offset = SubtractPosition (globals->geop, geop);
+    sobj_offset = SubtractPositionInFeet (globals->geop, geop);
     // verify whether to draw object or not
     draw_flag = true;
     if (fabs (sobj_offset.x) > FEET_PER_NM) draw_flag = false;

@@ -795,181 +795,221 @@ void BindAllKeys (CKeyMap *keymap)
 SGlutToFlyLegacyKey glutKeyMap[] =
 {
   // Control keys
-  { 1,            KB_KEY_A },
-  { 2,            KB_KEY_B },
-  { 3,            KB_KEY_C },
-  { 4,            KB_KEY_D },
-  { 5,            KB_KEY_E },
-  { 6,            KB_KEY_F },
-  { 7,            KB_KEY_G },
+  { 1,            1 },
+  { 2,            2 },
+  { 3,            3 },
+  { 4,            4 },
+  { 5,            5 },
+  { 6,            6 },
+  { 7,            7 },
   { 8,            KB_KEY_BACK },
-  { 9,            KB_KEY_I },
-  { 10,           KB_KEY_J },
-  { 11,           KB_KEY_K },
-  { 12,           KB_KEY_L },
+  { 9,            KB_KEY_TAB },
+  { 10,           10 },
+  { 11,           11 },
+  { 12,           12 },
   { 13,           KB_KEY_ENTER },
-  { 14,           KB_KEY_N },
-  { 15,           KB_KEY_O },
-  { 16,           KB_KEY_P },
-  { 17,           KB_KEY_Q },
-  { 18,           KB_KEY_R },
-  { 19,           KB_KEY_S },
-  { 20,           KB_KEY_T },
-  { 21,           KB_KEY_U },
-  { 22,           KB_KEY_V },
-  { 23,           KB_KEY_W },
-  { 24,           KB_KEY_X },
-  { 25,           KB_KEY_Y },
-  { 26,           KB_KEY_Z },
+  { 14,           14 },
+  { 15,           15 },
+  { 16,           16 },
+  { 17,           17 },
+  { 18,           18 },
+  { 19,           19 },
+  { 20,           20 },
+  { 21,           21 },
+  { 22,           22 },
+  { 23,           23 },
+  { 24,           24 },
+  { 25,           25 },
+  { 26,           26 },
 
   // Top row
   { 27,           KB_KEY_ESC },
   { '`',          KB_KEY_REVERSE_SINGLE_QUOTE },
-  { '1',          KB_KEY_1 },
-  { '2',          KB_KEY_2 },
-  { '3',          KB_KEY_3 },
-  { '4',          KB_KEY_4 },
-  { '5',          KB_KEY_5  },
-  { '6',          KB_KEY_6 },
-  { '7',          KB_KEY_7 },
-  { '8',          KB_KEY_8 },
-  { '9',          KB_KEY_9 },
-  { '0',          KB_KEY_0 },
+  { '1',          '1' },
+  { '2',          '2' },
+  { '3',          '3' },
+  { '4',          '4' },
+  { '5',          '5'  },
+  { '6',          '6' },
+  { '7',          '7' },
+  { '8',          '8' },
+  { '9',          '9' },
+  { '0',          '0' },
   { '-',          KB_KEY_MINUS },
   { '=',          KB_KEY_EQUALS },
 
   // Shifted top row
-  { '~',          KB_KEY_REVERSE_SINGLE_QUOTE },
-  { '!',          KB_KEY_1 },
-  { '@',          KB_KEY_2 },
-  { '#',          KB_KEY_3 },
-  { '$',          KB_KEY_4 },
-  { '%',          KB_KEY_5  },
-  { '^',          KB_KEY_6 },
-  { '&',          KB_KEY_7 },
-  { '*',          KB_KEY_8 },
-  { '(',          KB_KEY_9 },
-  { ')',          KB_KEY_0 },
-  { '_',          KB_KEY_MINUS },
-  { '+',          KB_KEY_EQUALS },
+  { '~',          KB_KEY_TILDE },
+  { '!',          KB_KEY_EXCLM },
+  { '@',          KB_KEY_AROBS },
+  { '#',          KB_KEY_DIEZE },
+  { '$',          KB_KEY_DOLAR },
+  { '%',          KB_KEY_PERCN },
+  { '^',          KB_KEY_HATOV },
+  { '&',          KB_KEY_AMPER },
+  { '*',          KB_KEY_STAR  },
+  { '(',          KB_KEY_LEFTP },
+  { ')',          KB_KEY_RITEP },
+  { '_',          KB_KEY_UNDER },
+  { '+',          KB_KEY_PLUS },
 
   // Second row
-  { '\t',         KB_KEY_TAB },
-  { 'q',          KB_KEY_Q },
-  { 'w',          KB_KEY_W },
-  { 'e',          KB_KEY_E },
-  { 'r',          KB_KEY_R },
-  { 't',          KB_KEY_T },
-  { 'y',          KB_KEY_Y },
-  { 'u',          KB_KEY_U },
-  { 'i',          KB_KEY_I },
-  { 'o',          KB_KEY_O },
-  { 'p',          KB_KEY_P },
+  { 'q',          'q' },
+  { 'w',          'w' },
+  { 'e',          'e' },
+  { 'r',          'r' },
+  { 't',          't' },
+  { 'y',          'y' },
+  { 'u',          'u' },
+  { 'i',          'i' },
+  { 'o',          'o' },
+  { 'p',          'p' },
   { '[',          KB_KEY_FORWARD_BRACKET },
   { ']',          KB_KEY_REVERSE_BRACKET },
   { '\\',         KB_KEY_BACKSLASH },
 
   // Shifted second row
-  { 'Q',          KB_KEY_Q },
-  { 'W',          KB_KEY_W },
-  { 'E',          KB_KEY_E },
-  { 'R',          KB_KEY_R },
-  { 'T',          KB_KEY_T },
-  { 'Y',          KB_KEY_Y },
-  { 'U',          KB_KEY_U },
-  { 'I',          KB_KEY_I },
-  { 'O',          KB_KEY_O },
-  { 'P',          KB_KEY_P },
-  { '{',          KB_KEY_FORWARD_BRACKET },
-  { '}',          KB_KEY_REVERSE_BRACKET },
-  { '|',          KB_KEY_BACKSLASH },
+  { 'Q',          'Q' },
+  { 'W',          'W' },
+  { 'E',          'E' },
+  { 'R',          'R' },
+  { 'T',          'T' },
+  { 'Y',          'Y' },
+  { 'U',          'U' },
+  { 'I',          'I' },
+  { 'O',          'O' },
+  { 'P',          'P' },
+  { '{',          KB_KEY_LEFTB },
+  { '}',          KB_KEY_RITEB },
+  { '|',          KB_KEY_VBAR },
 
   // Third row
-  { 'a',          KB_KEY_A },
-  { 's',          KB_KEY_S },
-  { 'd',          KB_KEY_D },
-  { 'f',          KB_KEY_F },
-  { 'g',          KB_KEY_G },
-  { 'h',          KB_KEY_H },
-  { 'j',          KB_KEY_J },
-  { 'k',          KB_KEY_K },
-  { 'l',          KB_KEY_L },
+  { 'a',          'a' },
+  { 's',          's' },
+  { 'd',          'd' },
+  { 'f',          'f' },
+  { 'g',          'g' },
+  { 'h',          'h' },
+  { 'j',          'j' },
+  { 'k',          'k' },
+  { 'l',          'l' },
   { ';',          KB_KEY_SEMI_COLON },
-  { '\'',         KB_KEY_SINGLE_QUOTE},
-  { '\13',        KB_KEY_ENTER},
 
   // Shifted third row
-  { 'A',          KB_KEY_A },
-  { 'S',          KB_KEY_S },
-  { 'D',          KB_KEY_D },
-  { 'F',          KB_KEY_F },
-  { 'G',          KB_KEY_G },
-  { 'H',          KB_KEY_H },
-  { 'J',          KB_KEY_J },
-  { 'K',          KB_KEY_K },
-  { 'L',          KB_KEY_L },
-  { ':',          KB_KEY_SEMI_COLON },
-  { '\"',         KB_KEY_SINGLE_QUOTE},
-
+  { 'A',          'A' },
+  { 'S',          'S' },
+  { 'D',          'D' },
+  { 'F',          'F' },
+  { 'G',          'G' },
+  { 'H',          'H' },
+  { 'J',          'J' },
+  { 'K',          'K' },
+  { 'L',          'L' },
+  { ':',          ':' },
+  { '\"',         KB_KEY_DOUBLE_QUOTE},
+	{ '%',					KB_KEY_PERCN },
   // Fourth row
-  { 'z',          KB_KEY_Z },
-  { 'x',          KB_KEY_X },
-  { 'c',          KB_KEY_C },
-  { 'v',          KB_KEY_V },
-  { 'b',          KB_KEY_B },
-  { 'n',          KB_KEY_N },
-  { 'm',          KB_KEY_M },
+  { 'z',          'z' },
+  { 'x',          'x' },
+  { 'c',          'c' },
+  { 'v',          'v' },
+  { 'b',          'b' },
+  { 'n',          'n' },
+  { 'm',          'm' },
   { ',',          KB_KEY_COMMA },
   { '.',          KB_KEY_PERIOD },
   { '/',          KB_KEY_SLASH },
 
   // Shifted fourth row
-  { 'Z',          KB_KEY_Z },
-  { 'X',          KB_KEY_X },
-  { 'C',          KB_KEY_C },
-  { 'V',          KB_KEY_V },
-  { 'B',          KB_KEY_B },
-  { 'N',          KB_KEY_N },
-  { 'M',          KB_KEY_M },
-  { '<',          KB_KEY_COMMA },
-  { '>',          KB_KEY_PERIOD },
-  { '?',          KB_KEY_SLASH },
-
+  { 'Z',          'Z' },
+  { 'X',          'X' },
+  { 'C',          'C' },
+  { 'V',          'V' },
+  { 'B',          'B' },
+  { 'N',          'N' },
+  { 'M',          'M' },
+  { '<',          '<' },
+  { '>',          '>' },
+  { '?',          KB_KEY_WHAT },
+	{ '!',					KB_KEY_EXCLM},
   // Space
   { ' ',          KB_KEY_SPACE },
 
   // Del
   { 127,          KB_KEY_DEL }
 };
-
+//==========================================================================================
+//	Ctrl remapping
+//==========================================================================================
+U_INT	CtrlMAP[]	= {
+	0,								// No remap
+	'a',							// 0x01
+	'b',							// 0x02
+	'c',							// 0x03
+	'd',							// 0x04
+	'e',							// 0x05
+	'f',							// 0x06
+	'g',							// 0x07
+	'h',							// 0x08
+	'i',							// 0x09
+	'j',							// 0x0A
+	'k',							// 0x0B
+	'l',							// 0x0C
+	'm',							// 0x0D
+	'n',							// 0x0E
+	'o',							// 0x0F
+	'p',							// 0x10
+	'q',							// 0x11
+	'r',							// 0x12
+	's',							// 0x13
+	't',							// 0x14
+	'u',							// 0x15
+	'v',							// 0x16
+	'w',							// 0x17
+	'x',							// 0x18
+	'y',							// 0x19
+	'z',							// 0x1A
+	0,								// 0x1B
+	0,								// 0x1C
+	0,								// 0x1D
+	0,								// 0x1E
+	0,								// 0x1F
+};
+//==========================================================================================
+//	GLUT Special Key re mapping
+//==========================================================================================
 SGlutToFlyLegacyKey glutSpecialMap[] =
 {
-  { GLUT_KEY_F1,      KB_KEY_F1 },
-  { GLUT_KEY_F2,      KB_KEY_F2 },
-  { GLUT_KEY_F3,      KB_KEY_F3 },
-  { GLUT_KEY_F4,      KB_KEY_F4 },
-  { GLUT_KEY_F5,      KB_KEY_F5 },
-  { GLUT_KEY_F6,      KB_KEY_F6 },
-  { GLUT_KEY_F7,      KB_KEY_F7 },
-  { GLUT_KEY_F8,      KB_KEY_F8 },
-  { GLUT_KEY_F9,      KB_KEY_F9 },
-  { GLUT_KEY_F10,     KB_KEY_F10 },
-  { GLUT_KEY_F11,     KB_KEY_F11 },
-  { GLUT_KEY_F12,     KB_KEY_F12 },
-  { GLUT_KEY_HOME,    KB_KEY_HOME },
-  { GLUT_KEY_UP,      KB_KEY_UP },
-  { GLUT_KEY_PAGE_UP, KB_KEY_PGUP },
-  { GLUT_KEY_LEFT,    KB_KEY_LEFT },
-  { GLUT_KEY_RIGHT,   KB_KEY_RIGHT },
-  { GLUT_KEY_END,     KB_KEY_END },
-  { GLUT_KEY_DOWN,    KB_KEY_DOWN },
+  { GLUT_KEY_F1,        KB_KEY_F1 },
+  { GLUT_KEY_F2,				KB_KEY_F2 },
+  { GLUT_KEY_F3,				KB_KEY_F3 },
+  { GLUT_KEY_F4,				KB_KEY_F4 },
+  { GLUT_KEY_F5,				KB_KEY_F5 },
+  { GLUT_KEY_F6,				KB_KEY_F6 },
+  { GLUT_KEY_F7,				KB_KEY_F7 },
+  { GLUT_KEY_F8,				KB_KEY_F8 },
+  { GLUT_KEY_F9,				KB_KEY_F9 },
+  { GLUT_KEY_F10,				KB_KEY_F10 },
+  { GLUT_KEY_F11,				KB_KEY_F11 },
+  { GLUT_KEY_F12,				KB_KEY_F12 },
+  { GLUT_KEY_HOME,			KB_KEY_HOME },
+  { GLUT_KEY_UP,				KB_KEY_UP },
+  { GLUT_KEY_PAGE_UP,		KB_KEY_PGUP },
+  { GLUT_KEY_LEFT,			KB_KEY_LEFT },
+  { GLUT_KEY_RIGHT,			KB_KEY_RIGHT },
+  { GLUT_KEY_END,				KB_KEY_END },
+  { GLUT_KEY_DOWN,			KB_KEY_DOWN },
   { GLUT_KEY_PAGE_DOWN, KB_KEY_PGDN },
   { GLUT_KEY_INSERT,    KB_KEY_INSERT },
 };
-
+//===================================================================================
+//	Keyboard codes Tables
+//===================================================================================
 SGlutToFlyLegacyKey glutKeyboard[128];
 SGlutToFlyLegacyKey glutSpecial[128];
-
+//------------------------------------------------------------------------------
+//	Transform GLUT modifier to Legacy modifier
+//------------------------------------------------------------------------------
 EKeyboardModifiers glutModifiersToFlyLegacyModifiers (int glutmod)
 {
   int flymod = KB_MODIFIER_NONE;
@@ -979,23 +1019,21 @@ EKeyboardModifiers glutModifiersToFlyLegacyModifiers (int glutmod)
 
   return (EKeyboardModifiers)flymod;
 }
-
-
-bool glutKeyToFlyLegacyKey (int glutkey, EKeyboardKeys *flykey)
-{
-  *flykey = glutKeyboard[glutkey].flylegacy;
-  return (*flykey != KB_KEY_META);
+//-------------------------------------------------------------------------------
+//	Translate Glut KEY to standard ASCII
+//-------------------------------------------------------------------------------
+U_INT glutKeyToFlyLegacyKey (U_INT gkey, U_INT mdf)
+{ if (KB_MODIFIER_CTRL != mdf)	return glutKeyboard[gkey].flylegacy;
+	gkey &= 0x1F;
+	return CtrlMAP[gkey];
 }
 
-
-bool glutSpecialToFlyLegacyKey (int glutkey, EKeyboardKeys *flykey)
+//-------------------------------------------------------------------------------
+//	Translate Glut Special KEYs to specific keys
+//-------------------------------------------------------------------------------
+bool glutSpecialToFlyLegacyKey (int glutkey, U_INT *flykey)
 {
   *flykey = glutSpecial[glutkey].flylegacy;
-
-//  char debug[80];
-//  sprintf (debug, "glut=%d flylegacy=%d", glutkey, *flykey);
-//  DrawNoticeToUser (debug, 2);
-
   return (*flykey != KB_KEY_META);
 }
 //=============================================================================
@@ -1007,8 +1045,9 @@ bool glutSpecialToFlyLegacyKey (int glutkey, EKeyboardKeys *flykey)
 // This function must be called prior to any keyboard events being handled
 //=============================================================================
 void CKeyMap::Init(void)
-{ int iSize;
-  char *kfn = "SYSTEM/FLYLEGACYKEY.txt";
+{
+//  char *kfn = "SYSTEM/FLYLEGACYKEY.txt";
+	char *kfn = "SYSTEM/KEYMAP.txt";
   //---Try for the standard file --------------------
   if (pexists (&globals->pfs, kfn)) 
   {  OpenKey(kfn);
@@ -1018,14 +1057,7 @@ void CKeyMap::Init(void)
   char *dfn = "SYSTEM/DEFAULT.KEY";
   OpenKey("System/default.key");
   // Create new FlyLegacyKey.txt from contents of Fly! II key settings
-  char buf[1024];
-  PODFILE *fpOldKey = popen(&globals->pfs,dfn);
-  FILE    *fpNewKey = fopen(kfn, "w");
-  while((iSize = pread(buf, sizeof(char), 1024, fpOldKey)) != 0)
-    { fwrite(buf, sizeof(char), iSize, fpNewKey);
-    }
-  pclose(fpOldKey);
-  fclose(fpNewKey);
+	SaveCurrentConfig();
   return;
   }
 //---------------------------------------------------------------------------
@@ -1045,8 +1077,9 @@ void CKeyMap::BindKeys()
 
   // Now set all values specified in the actual maps
   int nKeys = sizeof (glutKeyMap) / sizeof(SGlutToFlyLegacyKey);
-  for (i=0; i<nKeys; i++) {
-    glutKeyboard[glutKeyMap[i].glut].flylegacy = glutKeyMap[i].flylegacy;
+  for (i=0; i<nKeys; i++)
+	{ U_INT inx = glutKeyMap[i].glut;
+	  glutKeyboard[inx].flylegacy = glutKeyMap[i].flylegacy;
   }
 
   int nSpecialKeys = sizeof (glutSpecialMap) / sizeof (SGlutToFlyLegacyKey);

@@ -77,6 +77,36 @@ using namespace std;
 //=============================================================================================
 // General-purpose global settings
 SGlobals *globals = NULL;
+//=====================================================================
+//	ASCII Valid text characters
+//	0x00  => Invalid
+//	0x01  => Space
+//	0x02	=> Letters
+//	0x04  => Number
+//	0x08	=> Sign
+//	0x10	=> Punctuation
+//	0x20	=> Others
+//=====================================================================
+//=====================================================================
+char asciiVAL[]	=	{
+	//--00--01--02--03--04--05--06--07--08--09--0A--0B--0C--0D--0E--0F
+			0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+	//--10--11--12--13--14--15--16--17--18--19--1A--1B--1C--1D--1E--1F
+			0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,
+	//--SP--!---"---#---$---%---&---'---(---)---*---+---,-------.---/
+			KSP,KPN,KKK,KKK,KKK,KKK,KKK,KKK,KKK,KKK,KKK,KSG,KPN,KSG,KDT,KKK,
+	//--0---1---2---3---4---5---6---7---8---9---:---;---<---=--->---?--
+			KNB,KNB,KNB,KNB,KNB,KNB,KNB,KNB,KNB,KNB,KPN,KPN,KKK,KKK,KKK,KPN,
+	//--@---A---B---C---D---E---F---G---H---I---J---K---L---M---N---O--
+			KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,
+	//--P---Q---R---S---T---U---V---W---X---Y---Z---[---\---]---^---_---
+			KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KKK,KKK,KKK,KKK,KLT,
+	//--`---a---b---c---d---e---f---g---h---i---j---k---l---m---n---o---
+			KPN,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,
+	//--p---q---r---s---t---u---v---w---x---y---z---{---|---}---~--DEL-
+			KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KLT,KKK,KKK,KKK,KKK,KKK,
+};
+//=====================================================================
 //-----------Time zone designation --------------------------------
 STIME_ZONE tmzTAB[]  =   {
   {"UTC",  0},              // 0 UTC
@@ -789,6 +819,7 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->logWarning);
   SAFE_DELETE (globals->logTerra);
 	SAFE_DELETE (globals->logScene);
+	SAFE_DELETE (globals->logStreet);
   SAFE_DELETE (globals->logDebug);      // JS Must be the last if log is used
 //  SAFE_DELETE (globals);                // JS Must be the last if log is used
 //  ---------------------------------------
@@ -892,32 +923,47 @@ void Draw2D (SSurface *surf)
 //  Primary entry point for application initialization
 //======================================================================================
 void InitApplication (void)
-{ InitialProfile();
+{ TRACE("Init PROFILES");
+	InitialProfile();
 	globals->Frame	= 0;
 	globals->aMax		= 1.0E+5;
   globals->magDEV = 0;
   globals->NbVTX  = 0;
+	TRACE("Create Audio Manager");
   globals->snd = new CAudioManager();
+	TRACE("Create SQL Manager");
   globals->sqm = new SqlMGR();
+	TRACE("Create Database Manager");
   globals->dbc = new CDbCacheMgr();
   // Initialize various subsystems.  These initialization functions may be
   //   dependent on INI settings and/or POD filesystem
+	TRACE("Create Key Map");
   globals->kbd = new CKeyMap();
+	TRACE("Create Slew Manager");
   globals->slw = new CSlewManager();
+	TRACE("Create Import Manager");
 	globals->exm = new CExport();
   //---Latitude tables for Globe tiles and QGTs --------
+	TRACE("Init Globe Tile Table");
   InitGlobeTileTable ();
   //-- Initialize singletons----------------------------
   CTextureManager::Instance().Init ();
+	TRACE("Init Database Manager");
   CDatabaseManager::Instance().Init();
   //----Initialize sky and weather ----------------------
   CSkyManager::Instance().Init();
+	TRACE("Create Atmosphere Manager");
   globals->atm = new CAtmosphereModelJSBSim();
+	TRACE("Create Weather Manager");
   globals->wtm = new CWeatherManager();
+	TRACE("Create Fui Manager");
   globals->fui->Init();
   //------Start terrain ---------------------------------
+	TRACE("Start TERRAIN CACHE");
   globals->tcm = new TCacheMGR();
+	TRACE("START SCENERY MGR");
 	globals->scn = new CSceneryDBM();
+	TRACE("START CLOUD SYSTEM");
   globals->cld = new CCloudSystem();
   globals->wtm->Init();
 	//--- Check menu items --------------------------------
@@ -1317,9 +1363,10 @@ int main (int argc, char **argv)
   //=========Init the global structure==================================
   strncpy(globals->FlyRoot,flyRootFolder,511);			// Root folder
   InitTraces();
-  globals->logTerra	= new CLogFile ("logs/ChangedTiles.log", "a+");
   TRACE("TRACE FILE CREATED"); 
-	globals->logScene = new CLogFile ("logs/Scenery.log", "w");
+  globals->logTerra		= new CLogFile ("logs/ChangedTiles.log", "a+");
+	globals->logScene		= new CLogFile ("logs/Scenery.log", "w");
+	globals->logStreet	= new CLogFile ("logs/OpenStreet.log","w");
 	//----------------------------------------------------------------------
 	globals->mdule = "Main";
   //----------- Init global databank -------------------------------------
@@ -1444,13 +1491,17 @@ int main (int argc, char **argv)
   PFS *pfs = &globals->pfs;
 	int lgr  = PATH_MAX - 1;
   // Mount folders from Fly! II filesystem
+	TRACE("Mounting Pods in /SYSTEM");
   char folder[PATH_MAX];
 	_snprintf(folder,lgr,"%s/SYSTEM",flyRootFolder);
   paddpodfolder (pfs, folder);
+	
   //------------------------------------------
+	TRACE("Mounting Pods in /AIRCRAFT");
 	_snprintf(folder,lgr,"%s/AIRCRAFT",flyRootFolder);
   paddpodfolder (pfs, folder, true);      ///< Add subfolders too
   //------------------------------------------
+	TRACE("Mounting Pods in /TAXIWAYS");
 	_snprintf(folder,lgr,"%s/TAXIWAYS",flyRootFolder);
   paddpodfolder (pfs, folder);
   //-----shared sceneries are mounted by ScenerySet------
@@ -1458,14 +1509,23 @@ int main (int argc, char **argv)
   // paddpodfolder (pfs, folder);
 
   //------ Add any disk files except pod -----
+	TRACE("Mounting Disk file in /ART");
   padddiskfolder (pfs, flyRootFolder, "ART");
+	TRACE("Mounting Disk file in /AIRCRAFT");
   padddiskfolder (pfs, flyRootFolder, "AIRCRAFT");
+	TRACE("Mounting Disk file in /DATA");
   padddiskfolder (pfs, flyRootFolder, "DATA");
+	TRACE("Mounting Disk file in /MODELS");
   padddiskfolder (pfs, flyRootFolder, "MODELS");
+	TRACE("Mounting Disk file in /SAVE SIMULATION");
   padddiskfolder (pfs, flyRootFolder, "SAVED SIMULATION");
+	TRACE("Mounting Disk file in /SYSTEM");
   padddiskfolder (pfs, flyRootFolder, "SYSTEM");
+	TRACE("Mounting Disk file in /UI");
   padddiskfolder (pfs, flyRootFolder, "UI");
+	TRACE("Mounting Disk file in /WORLD");
   padddiskfolder (pfs, flyRootFolder, "WORLD");
+	TRACE("Mounting Disk file in /SOUND");
   padddiskfolder (pfs, flyRootFolder, "SOUND");
 
   // Initialize subsystems so that mouse and keyboard callbacks can be handled
@@ -1480,11 +1540,15 @@ int main (int argc, char **argv)
   else
     //! plugins_num is used as a plugin flag along the code
     globals->plugins_num = 0; 
+		
 	//--- Open Master menu ----------------------------------------------
+	TRACE("Open Master MENU");
 	OpenMasterMenu();
   //--- Initialize fonts and cursor manager -------------------
+	TRACE("Initialize FONTS");
   InitFonts ();
   globals->cum = new CCursorManager();
+	TRACE("Enter GLUT LOOP");
   EnterWindowManagerMainLoop ();
   return 0;
 }
@@ -1649,6 +1713,18 @@ TERRA::TERRA(const char *fmt,...)
 		va_list argp;
 		va_start(argp, fmt);
 		globals->logTerra->Write (fmt, argp);
+		va_end(argp);	}
+	pthread_mutex_unlock (&mutexTrace);
+}
+//-------------------------------------------------------------------------
+//	JSDEV* Implement OpenStreet log
+//-------------------------------------------------------------------------
+STREETLOG::STREETLOG(const char *fmt,...)
+{	pthread_mutex_lock (&mutexTrace);
+	if (globals->logStreet != 0) {
+   	va_list argp;
+		va_start(argp, fmt);
+		globals->logStreet->Write (fmt, argp);
 		va_end(argp);	}
 	pthread_mutex_unlock (&mutexTrace);
 }

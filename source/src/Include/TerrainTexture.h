@@ -203,7 +203,9 @@ class CArtParser {
 	char      rrv;																// reverse row
   //-------Alpha channel --------------------------------------
   U_CHAR    afa;                                // Alpha channel
-  U_CHAR    lay;                                // Sea layer
+	//-----------------------------------------------------------
+	U_CHAR		mac;																// Mac option
+	char			rfu;																// Not used
   //-------Main tile data -------------------------------------
   GLubyte   *act;                               // ACT bytes
   GLubyte   *raw;                               // Raw bytes
@@ -239,6 +241,7 @@ public:
   //---------------------------------------------------------------------
   int       ConvertRGBA(U_CHAR alf);                // Convert in RGBA
   int       ByteRGBA(U_CHAR opt);
+	int				ByteABGR(U_CHAR opt);
   int       IndxRGBA(U_CHAR opt);
   int       PixlRGBA(U_CHAR opt);
   int       PixlBGRO(U_CHAR opt);
@@ -255,10 +258,6 @@ public:
   int       GetSize(int tot,char *fn);
   int       GetFileType(char *name);
   //---------------------------------------------------------------------
-  inline U_INT GetDim()                     {return dim;}
-  inline U_INT GetSide()                    {return side;}
-  inline U_INT GetHeigth()                  {return htr;}
-  inline U_INT GetWidth()                   {return wid;}
   inline void  SetWaterRGBA(U_INT *wt)      {wtx = (GLubyte*)wt;}
   inline U_INT GetBPP()                     {return bpp;}
   inline void  DontAbort()                  {abt = 0;}
@@ -266,10 +265,20 @@ public:
   inline void  SetOption(int p)               {fop = p;}
   inline void  SetEPD()                     {epd   = 1;}
 	inline void	 NoReverse()									{rrv   = 0;}
+	inline void  MacPic()											{mac   = 1;}
   //--- Transition textures ---------------------------------------------
   inline void  SetTrans1(GLubyte *t)        {Tx1 = t;}
   inline void  SetTrans2(GLubyte *t)        {Tx2 = t;}
   inline void  SetTrans3(GLubyte *t)        {Tx3 = t;}
+	//--- Texture management ----------------------------------------------
+	void					ReplaceRGBA(U_INT *buf);
+  inline U_INT GetDim()                     {return dim;}
+  inline U_INT GetSide()                    {return side;}
+  inline U_INT GetHeigth()                  {return htr;}
+  inline U_INT GetWidth()                   {return wid;}
+	inline GLubyte *GetRAW()									{return raw;	}
+	inline GLubyte *GetACT()									{return act;	}
+	inline GLubyte *GetOPA()									{return opa;	}
   //---------------------------------------------------------------------
   void         InitTransitionT1(TEXT_INFO &txd);
   void         InitTransitionT2(TEXT_INFO &txd);
@@ -350,6 +359,7 @@ class CTextureWard  {
   U_INT     kaf;
   CWater3D *anSEA;                    // Animated sea texture
   //-------Light textures ---------------------------------------
+	GLuint  cTERRA;											// Compressed format
   GLuint  LiOBJ[8];                   // Ligth Texture objects
   //-------CANVAS for drawing coast polygons --------------------
   int     Dim;                        // Dimension for resolution
@@ -394,7 +404,8 @@ public:
   int     GetRawTexture(CTextureDef *txn);
   int     GetEPDTexture(CTextureDef *txn);
   int     GetSeaTexture(CTextureDef *txn);
-  //----------------------------------------------------------
+	int 		GetTRNtextures(CTextureDef *txn, U_INT qx, U_INT qz);
+	//----------------------------------------------------------
   void    GetTileName (char *base);
   void    BuildName(char *gen,char *root,char res);
   void    GetMediumTexture(CTextureDef *txn);

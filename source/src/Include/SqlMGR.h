@@ -474,8 +474,8 @@ protected:
   //---Type of manager ----------------------------------------------
   U_CHAR    sqlTYP;                       // Type of base
   U_CHAR    tr;                           // Trace indicator
-	char      trn;													// TRN pass
-	char			rfu;													// Reserved
+	char      rfu1;													// Reserved
+	char			rfu2;													// Reserved
 	U_INT			count;
 	C_QGT			*qgt;
 	//------Attributes ------------------------------------------------
@@ -498,6 +498,7 @@ protected:
   //-----------------------------------------------------------------
   SQL_DB    objDBE;                       // Object database
   //-----------------------------------------------------------------
+	SQL_DB    t2dDBE;												// Texture 2D database
   //---Common methods -----------------------------------------------
 public:
   SqlOBJ();
@@ -509,6 +510,7 @@ public:
   void          WarnE(SQL_DB &db);
   void          Warn1(SQL_DB &db);
 	int						ReadVersion(SQL_DB &db);
+	void					ImportConfiguration(char *fn);
 	//-----------------------------------------------------------------
   sqlite3_stmt *CompileREQ(char *req,SQL_DB &db);
   void          Abort(SQL_DB &db);
@@ -550,8 +552,7 @@ public:
   inline bool SQLtxy()      {return (1 == txyDBE.use );}
   inline bool SQLtex()      {return (1 == texDBE.use );}
   inline bool SQLobj()      {return (1 == objDBE.use );}
-	//-----------------------------------------------------------------------
-	inline char	GetTRNpass()	{return trn;}
+	inline bool SQLt2d()			{return (1 == t2dDBE.use );}
   //-----------------------------------------------------------------------
   CComLine    *GetComSlot(sqlite3_stmt *stm,CDataBaseREQ *req);
   CAptLine    *GetAptSlot(sqlite3_stmt *stm);
@@ -657,13 +658,15 @@ public:
   GLubyte *GetGenTexture(TEXT_INFO &inf);
   GLubyte *GetAnyTexture(TEXT_INFO &inf);
   //--- SPECIFIC TRN ELEVATIONS -----------------------------------------
-	bool	FileInELV(char *fn);
+	bool	FileInELV(char *fn, U_INT *r);
 	bool	SearchPODinTRN(char *pn);
 	int		GetTRNElevations(C_QGT *qgt);
 	int		DecodeTRNrow();
 	int		GetTILElevations(C_QGT *qgt);
 	int		DecodeDETrow();
 	int   ReadPatches(C_QGT *qgt,ELV_PATCHE &p);
+	int		WriteT2D(TEXT_INFO *tdf);
+	bool	TileInBase(U_INT key);
 	//--- WRITING PATCHE ELEVATIONS ---------------------------------------
 	int		WritePatche (ELV_PATCHE &p);
 	int		DeletePatche(ELV_PATCHE &p);

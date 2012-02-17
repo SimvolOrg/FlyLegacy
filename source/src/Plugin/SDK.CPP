@@ -1497,7 +1497,7 @@ int	APISetObjectSpeed(SFlyObjectRef *object, float *speed)
     vect.x = cos (orientation.z + HALF_PI) * distance;
     vect.y = sin (orientation.z + HALF_PI) * distance;
     //
-    pos_to = AddVector (pos_from, vect);
+    pos_to = AddToPositionInFeet (pos_from, vect);
     pos_to.alt = pos_from.alt + sin (orientation.x) * distance;
     //
     #ifdef _DEBUG_APISPEED	
@@ -3019,7 +3019,7 @@ float	APIWrapTwoPi(float value)
 SPosition	APIAddVector(SPosition *from, SVector *v)
 {
   //--APIAddVector
-  return (AddVector(*from, *v));
+  return (AddToPositionInFeet (*from, *v));
 }
 
 SPosition	APISubtractVector(SPosition *from, SVector *v)
@@ -3031,7 +3031,7 @@ SPosition	APISubtractVector(SPosition *from, SVector *v)
 SVector	APISubtractPosition(SPosition *from, SPosition *to)
 {
   //--APISubtractPosition
-  return (SubtractPosition(*from, *to));
+  return (SubtractPositionInFeet(*from, *to));
 }
 
 

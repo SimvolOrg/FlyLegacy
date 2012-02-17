@@ -22,31 +22,7 @@
 #include "../include/WinSketch.h"
 #include "../Include/Triangulator.h"
 #include <vector>
-//==========================================================================================
-//  Roof model N°1
-//										E---------------F			height = 1 A= origin (0,0,0)
-//								D-------A      C--------B
-//==========================================================================================
-//----- Vertices for model 1 --------------------------------
-SVector    vM1[] =
-{	{0,0,0},													// 0 Point A
-	{1,0,0},													// 1 Point B
-	{1,2,0},													// 2 point C
-	{0,2,0},													// 3 Point D
-	{0,1,1},													// 4 point E
-	{1,1,1},													// 5 point F
-};
-//-------Indices for model 1-------------------------------
-short xM1[]=
-	{	0,4,3,				// T(AED)	
-	  2,5,1,				// T(CFB)
-	  4,0,1,				// T(EAB)
-	  4,1,5,				// T(EBF)
-	  5,2,4,				// T(FCE)
-	  4,2,3,				// T(ECD)
-	};
-//------Instance for model 1 -----------------------------
-CRoofModel roofM1(6,vM1,18,xM1);
+
 //==========================================================================================
 //  Window to display building sketch
 //==========================================================================================
@@ -75,15 +51,29 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	//--- Open triangulation ------------------------
 	trn	= new Triangulator();
 	globals->trn = trn;
-	ProcessFile("Objects/Obj05.txt");
 	//-----------------------------------------------
 	ctx.prof	= PROF_SKETCH;
 	ctx.mode	= SLEW_RCAM;
   rcam			= globals->ccm->SetRabbitCamera(ctx,this);
 	//-----------------------------------------------
-	globals->cam->SetRange(40);
+	globals->cam->SetRange(100);
 	SetOptions(TRITOR_ALL);
+	ses.SetTrace(1);
+	//--- Temporary ---------------------------------
+	OpenSession("Session.txt");
+	//OpenFile("OpenStreet/Obj05.txt");
+	OpenFile("OpenStreet/House.txt");
 };
+//-----------------------------------------------------------------------
+//	OpenSession parameters
+//-----------------------------------------------------------------------
+void CFuiSketch::OpenSession(char *fn)
+{	bool ok = ses.ReadParameters(fn);
+	if (ok)		return;
+	//----Warning ---------------------------
+	STREETLOG("Problem with parameter file %s",fn);
+	return;
+}
 //-----------------------------------------------------------------------
 //	destroy this
 //-----------------------------------------------------------------------
@@ -108,16 +98,26 @@ void CFuiSketch::SetOptions(U_INT q)
 //	Process file
 //	Building contruction from contour
 //-----------------------------------------------------------------------
-void CFuiSketch::ProcessFile(char *fn)
-{	//---- Open a file ---------------
+void CFuiSketch::OpenFile(char *fn)
+{	//---- Open a file -----------------
 	if (!trn->Load(fn))						return;
-	int np = trn->NbPoints();
-	if (!trn->QualifyPoints())		return;
+	//--- Step 2: Process points --------
+	if (!trn->QualifyPoints())		return;			
+	//--- Step 2 Find a style -----------
+	double sf = trn->GetSurface();
+	int    sd = trn->GetSideNbr();
+	D2_Style *sty = ses.GetStyle(sf,sd);
+	trn->SetStyle(sty);
+	//--- Step 3: Compute triangle ------
 	if (!trn->Triangulation())		return;
-	trn->QualifyFaces();
-	int etg = (np != 4)?(5):(2);
-	trn->Extrude(etg,2.5);
-	if (np == 4) trn->ChangeRoof(roofM1);
+	//--- Step 4: Face orientation ----- 
+	trn->OrientFaces();
+	//--- Step 5: Build walls -----------
+	trn->BuildWalls();
+	//--- Step 6: Select roof model -----
+	trn->SelectRoof();
+	//--- Step 7: Texturing -------------
+	trn->Texturing();
 	return;
 }
 //-----------------------------------------------------------------------

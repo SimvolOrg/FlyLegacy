@@ -331,7 +331,7 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
       { txn   = &sp->Tex[Nd];
         qad   = txn->quad;
         //---Uncomment and set Tile indices for stop on tile -
- //       qad->AreWe(508,28,336,6);
+//       qad->AreWe(508,28,336,6);
 //				int ok = strcmp(txn->Name,"656C0F03");
 //				if (ok ==  0)
 //					int	a = 1;
@@ -419,11 +419,28 @@ int CTextureWard::GetRawTexture(CTextureDef *txn)
   CArtParser img(Resn);
   img.SetWaterRGBA(GetWaterRGBA(Resn));
   dTEX = img.GetRawTexture(xsp,1);
-  txn->SetFlag(img.lay);
   //-------Check for night texture ----------------------------------
   U_CHAR nt = txn->IsNight() & NT;      // Nitght texture
   if  (nt == 0)         return 1;
   return NightRawTexture(txn) + 1;      // Load night texture
+}
+//-----------------------------------------------------------------------------
+//	Return Texture from TRN file 
+//-----------------------------------------------------------------------------
+int CTextureWard::GetTRNtextures(CTextureDef *txn, U_INT qx, U_INT qz)
+{	Resn	= txn->Reso[0];									//	Save Resolution
+	gx		= qx >> 1;											//	Save Globals Tile X
+	gz		= qz >> 1;											//	Save Globals Tile Z
+	dTEX	= 0;
+	nTEX	= 0;
+	GetRawTexture(txn);										// Get textures
+	txn->dTEX[0]	= dTEX;									// return day texture
+	txn->nTEX[0]  = nTEX;									// return nitght texture
+	dTEX	= 0;
+	nTEX  = 0;
+	//--- Encode texture dimension --------------------------------
+	U_INT dim = (xsp.wd << 16) | xsp.ht;
+	return dim;
 }
 //-----------------------------------------------------------------------------
 //  Return a full day texture RGBA from file thread
@@ -899,6 +916,7 @@ int CTextureWard::NightRawTexture(CTextureDef *txn)
   if (Resn == TC_HIGHTR)   DoubleNiTexture(txn,(U_INT*)nTEX);
   return 1;
 }
+
 //-----------------------------------------------------------------------------
 //  Locate Texture from cache list.  Shared texture has a unic 4 char key:
 //  1) for Terrain texture

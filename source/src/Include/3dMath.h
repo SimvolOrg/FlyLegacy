@@ -56,6 +56,16 @@ struct F3_VERTEX {
 	//-------------------------------------------------
 };
 //=============================================================================
+//  3D POINT DEFINITION
+//=============================================================================
+struct D3_VERTEX {
+  float VT_X;
+  float VT_Y;
+  float VT_Z;
+	//-------------------------------------------------
+};
+
+//=============================================================================
 //  2D TEXTURE COORDINATES
 //=============================================================================
 struct F2_COORD {
@@ -90,8 +100,9 @@ public:
   void    Sum(SVector &v1,SVector &v2);       //  Add  2 vectors into one
   void    Dif(SVector &v1,SVector &v2);       //  Sub  2 vectors into one
   void    Subtract(const SVector &v);         //< Subtract v from this vector
-  void    Subtract2D(SVector &v);
-  void    Times(double s);                    //< Multiply the components with s
+  void    Subtract2D(SVector &v);							// Only X,Y substract
+	void		Product2D (double p);								// Only X,Y product
+	void    Times(double s);                    //< Multiply the components with s
   double  DotProduct();                       // Own dot product
   double  DotProduct(const SVector &v);       //< Return the dot product of this vector and v
   double  DotProd2D(SVector &v);              //  Return the dot product in 2D
@@ -111,6 +122,9 @@ public:
 	void		Translation(SPosition &o, SPosition &d);
 	void		FeetTranslation(SPosition &p1, SPosition &p2);
 	void		FeetTranslation(double rdf,SPosition &p1, SPosition &p2);
+	void		Affect(SPosition &p);
+	void		ArcsToFeetUnit();
+	//--------------------------------------------------------------------
   CVector& operator= (const CVector &aCopy) {Copy(aCopy); return *this;}
 	//----VERTEX OPERATIONS ----------------------------------------------
 	void		Set(C3_VTAB &t);

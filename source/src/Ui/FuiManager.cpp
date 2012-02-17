@@ -304,8 +304,8 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
     //---Globals OPTIONS-----------------------------------------
     case FUI_WINDOW_GLOBAL_OPTIONS:
-      window  = new CFuiOptions(windowId,"UI/TEMPLATES/GLOBALOPTIONS.WIN");
-      window->MoveTo(600,150);
+//      window  = new CFuiOptions(windowId,"UI/TEMPLATES/GLOBALOPTIONS.WIN");
+//      window->MoveTo(600,150);
       break;
     //---Globals OPTIONS-----------------------------------------
     case FUI_WINDOW_CAMERA_CONTROL:
@@ -469,7 +469,7 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
 //------------------------------------------------------------------------------
 void CFuiManager::ExportMessage(char *fn)
 { char txt[210];
-	_snprintf(txt,127,"YOU ARE CONFIGURED TO EXPORT IN %s",fn);
+	_snprintf(txt,127,"YOU ARE CONFIGURED TO IMPORT IN %s",fn);
 	txt[200] = 0;
 	notex  = new CFuiTextPopup;
  	notex->RedBack();

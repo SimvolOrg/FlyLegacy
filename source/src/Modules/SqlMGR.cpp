@@ -167,6 +167,7 @@ SqlOBJ::~SqlOBJ()
   if (texDBE.opn) sqlite3_close(texDBE.sqlOB);
   if (objDBE.opn) sqlite3_close(objDBE.sqlOB);
 	if (wptDBE.opn) sqlite3_close(wptDBE.sqlOB);
+	if (t2dDBE.opn) sqlite3_close(t2dDBE.sqlOB);
 }
 //-----------------------------------------------------------------------------
 //  Initialize databases
@@ -238,6 +239,14 @@ void SqlOBJ::Init()
   objDBE.mgr	=  SQL_MGR;
   objDBE.dbn	= "World Objects";
 	objDBE.mode = SQLITE_OPEN_READWRITE;
+	//---Texture 2D database --------------------------------------
+	t2dDBE.vers	= 0;																// Minimum version
+  strncpy(t2dDBE.path,"SQL",63);
+  GetIniString("SQL","T2DDB",t2dDBE.path,lgr);
+	strncpy(t2dDBE.name,"T2D*.db",63);
+  t2dDBE.mgr	=  SQL_THR + SQL_MGR;
+  t2dDBE.dbn	= "Texture 2D";
+	t2dDBE.mode = SQLITE_OPEN_READWRITE;
   //--- Process  export flags -------------------------------------
   int exp = 0;
   GetIniVar("SQL","ExpGEN",&exp);           
@@ -282,14 +291,14 @@ void SqlOBJ::Init()
 	exp = 0;
   GetIniVar("SQL","ExpTRN",&exp);
 	if (exp)	elvDBE.mgr = SQL_MGR;
-  texDBE.exp |= exp;
+	if (exp)	t2dDBE.mgr = SQL_MGR;
 	elvDBE.exp |= exp;
-	trn	= exp;
+	t2dDBE.exp |= exp;
   return;
 }
-//-----------------------------------------------------------------------------
+//=============================================================================
 //  Open all required database
-//-----------------------------------------------------------------------------
+//=============================================================================
 void SqlOBJ::OpenBases()
 { //---Open Generic database -----------------------------------------
   globals->genDB |= Open(genDBE);
@@ -305,7 +314,21 @@ void SqlOBJ::OpenBases()
   globals->texDB |= Open(texDBE);
   //---Open World Object database -----------------------------------------
   globals->objDB |= Open(objDBE);
+	//---Open Texture 2D database ---------------------------------------
+	//globals->t2dDB |= Open(t2dDBE);
   return;
+}
+//-----------------------------------------------------------------------------
+//		Import configuration
+//-----------------------------------------------------------------------------
+void SqlOBJ::ImportConfiguration(char *fn)
+{	globals->fui->ExportMessage(fn);
+	globals->noEXT	= 7;
+	globals->noINT	= 7;
+	globals->Disp.Lock(PRIO_PLANE);
+	globals->noAPT  = 7;
+	globals->noOBJ  = 7;
+	return;
 }
 //-----------------------------------------------------------------------------
 //  Open the requested database
@@ -337,7 +360,7 @@ int SqlOBJ::Open(SQL_DB &db)
   db.use  = (db.opn == 1) && (db.exp == 0); 
 	_findclose(h1);
 	//--- Warn fui manager ----------------------------------
-	if (db.exp) globals->fui->ExportMessage(fnm);
+	if (db.exp) ImportConfiguration(fnm);
 	//--- Now check for minimum version -----------------
 	if (0 == db.opn)		return 0;
 	db.use = ReadVersion(db);
@@ -1649,11 +1672,12 @@ void SqlMGR::WriteElevationRecord(REGION_REC &reg)
 //==============================================================================
 //  Check for POD-TRN in Database
 //==============================================================================
-bool SqlMGR::FileInELV(char *fn)
+bool SqlMGR::FileInELV(char *fn, U_INT *row)
 {	char rq[1024];
-	_snprintf(rq,1023,"SELECT * from FNM where file = '%s';*",fn);
+	_snprintf(rq,1023,"SELECT rowid from FNM where file = '%s';*",fn);
 	sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
 	bool in = (SQLITE_ROW == sqlite3_step(stm));
+	*row      =  sqlite3_column_int(stm, 0);
 	sqlite3_finalize(stm);                      // Close statement
 	return in;
 }
@@ -2789,6 +2813,58 @@ int SqlMGR::DeletePatche(ELV_PATCHE &p)
   sqlite3_finalize(stm);  
 	return 0;
 }
+//===================================================================================
+//	SAVE USER 2D TEXTURE
+//	
+//===================================================================================
+int SqlMGR::WriteT2D(TEXT_INFO *tdf)
+{	char *rq = "INSERT INTO texture (kdet,file,rfu,wdt,htr,res,day,ind,nit) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9);*";
+	int rep	 = 0;
+	int nit  = 0;
+  sqlite3_stmt *stm = CompileREQ(rq,t2dDBE);
+	//--- insert DET key ------------------------
+	sqlite3_bind_int(stm, 1,tdf->key);
+	//--- insert file reference -----------------
+	sqlite3_bind_int(stm, 2,tdf->xOBJ);
+	//---- Set reserved to 0 --------------------
+	sqlite3_bind_int(stm, 3,0);
+	//--- Save width -----------------------------
+	sqlite3_bind_int(stm, 4,tdf->wd);
+	//--- Save height -----------------------------
+	sqlite3_bind_int(stm, 5,tdf->ht);
+	//--- Save resolution ------------------------
+	sqlite3_bind_int(stm, 6,tdf->res);
+	//--- Insert day texture in blob -------------
+	int dim  = tdf->dim;
+  sqlite3_bind_blob(stm,7,tdf->mADR, dim, SQLITE_TRANSIENT);
+	//--- Save night indicator -------------------
+	nit = (tdf->nite)?(1):(0);
+	sqlite3_bind_int(stm, 8,nit);
+	if (nit)
+	{	//--- Save night texture ---------------------
+		sqlite3_bind_blob(stm,8,tdf->nite, dim, SQLITE_TRANSIENT);
+	}
+	//--- Execute statement ---------------------
+	rep      = sqlite3_step(stm);        // Insert value in database
+  if (rep != SQLITE_DONE) Abort(t2dDBE);
+  //---Free statement ------------------------------------------
+  sqlite3_finalize(stm);
+	return 0;
+
+}
+//-----------------------------------------------------------------------------
+//	Check if detail tile already in data base
+//-----------------------------------------------------------------------------
+bool SqlMGR::TileInBase(U_INT key)
+{ char req[1024];
+  _snprintf(req,1024,"SELECT rowid FROM texture WHERE kdet = %d;*",key);
+  sqlite3_stmt *stm = CompileREQ(req,t2dDBE);
+  //-----Execute statement -----------------------------------------------
+  int rep = sqlite3_step(stm);              // Search database
+  sqlite3_finalize(stm);                    // Close statement
+  return (rep == SQLITE_ROW)?(true):(false);
+}
+
 //=================================================================================
 //
 //  SQL THREAD Access methods

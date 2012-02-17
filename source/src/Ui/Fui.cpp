@@ -47,7 +47,7 @@ using namespace std;
   //#define _DEBUG_CFuiDLL    //                      ... remove later 
 #endif
 //////////////////////////////////////////////////////////////////////
-
+extern char asciiVAL[];
 //--------------------------------------------------------------------------------
 //  Compute free memory and trace
 //--------------------------------------------------------------------------------
@@ -2818,6 +2818,9 @@ CFuiTextField::CFuiTextField (int x, int y, int w, int h, CFuiComponent *win)
   caret   = 0xFF000000;
   time    = 0;
   mask    = 0x00FFFFFF;
+	//--- Set signed number as valid characters input --------------
+	vcar		= KB_NUMBER_SIGN;
+
 }
 
 //-------------------------------------------------------------------------
@@ -3051,24 +3054,34 @@ bool CFuiTextField::KeyboardInput(U_INT key)
     case 13:          // ENTER (do not lost focus. focus is managed elsewhere)
 			MoWind->NotifyChildEvent(id,id,EVENT_TEXTENTER);
       return true;
-    case 8:           // BACKSPACE
+    case KB_KEY_BACK:							// BACKSPACE
       fmod |= BackSpace();
       break;
-    case 127:         // DEL
+    case KB_KEY_DEL:							// DEL
       fmod |= ShiftLeft();
       break;
-    case 0x20064:     // Left arrow
+
+    case KB_KEY_LEFT:							// Left arrow
       LeftPos();
       return true;
-    case 0x20066:
+
+		case KB_KEY_ENTER:
+			MoWind->NotifyChildEvent(id,id,EVENT_TEXTENTER);
+			return true;
+
+		case KB_KEY_RIGHT:						// Up
       RightPos();    // Right arrow
       return true;
     default:
-			
+			//--- Check for character validity --------------
+			if (key & 0x80)				return true;
+			key &= 0x7F;	
+			U_CHAR val = asciiVAL[key] & vcar;
+			if (0 == val)					return true;
       fmod |= AddChar(key);
       break;
   }
-  //---Notify if modification --------------
+  //---Notify if modification -------------------------
   if (fmod) MoWind->NotifyChildEvent(id,id,EVENT_TEXTCHANGED);
   fmod = 0;
   return true;

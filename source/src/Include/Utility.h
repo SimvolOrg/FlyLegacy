@@ -484,7 +484,6 @@ template <class T> static inline T ClampTo(T v,T m, T M)
 	if (v > M)	return M;
 	return v;	}
 //----------------------------------------------------------------------
-double  FeetPerLonArcsec (double lat);
 double  WrapLongitude    (double lon);
 int     DiffOn360Circle  (const int &a, const int &b);
 //----------------------------------------------------------------------
@@ -526,18 +525,6 @@ static int Round(double nb)
 }
 
 
-//
-// AddVector computes a new global position based on a starting position (lat/lon/alt)
-//   and an offset vector.  This function uses a fast, simple approximation and
-//   should only be used for relatively short distances (less than a couple of miles).
-//   For long distances, use the GreatCircle... functions.
-//
-//    x = East/West offset in feet, East is positive
-//    y = Altitude offset in feet, Up is positive
-//    z = North/South offset in feet, North is positive
-//
-
-SPosition AddVector(SPosition &from, SVector &v);
 
 //
 // SubtractVector computes a new global position based on a starting position

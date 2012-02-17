@@ -43,19 +43,15 @@ public:
   double  lon;                        // longitude
   double  lat;                        // Lattitude
   double  alt;                        // Altitude
-  double  lbd;                        // Longitude in band
 	double  rdf;				// Reduction factor for feet conversion
   //-------------------------------------------------------------
   GroundSpot();
   GroundSpot(double x,double y);
   //-------------------------------------------------------------
-  void    GetCoordinates(U_INT xk,U_INT zk);
-	void		ArcDistanceTo (CVertex *vtx,CVector &v);
-	void		FeetDistanceTo(CVertex *vtx,CVector &v);
+	void		FeetCoordinatesTo(CVertex *vtx,CVector &v);
   //-------------------------------------------------------------
   void    SetQGT(C_QGT *qgt);
   bool    ValidQGT();
-  bool    IsLeftOf(GroundSpot &gs);
   char    GetTerrain();
 	double	GetAltitude(SPosition &p);
 	bool    InvalideQuad();
@@ -69,7 +65,6 @@ public:
   inline short  zDet()            {return tz;}
   inline void   Reset()           {pgt = qgt; qgt = 0;}
   inline void   PopQGT()          {if (0 == qgt)  qgt = pgt;}
-  inline double BandLongitude()   {return lbd;}
   inline bool   HasQGT()          {return (0 != qgt);}
 	//-------------------------------------------------------------
 };
@@ -84,8 +79,6 @@ typedef struct {
 //=============================================================================
 // GLOBAL routines 
 //=============================================================================
-double horzBAND[];                      // Declaration for longitude bands
-double vertBAND[];                      // Declaration for latitude bands
 //--------------------------------------------------------------
 //
 // Determine various terrain tile indices for a given position
@@ -110,32 +103,35 @@ double  GetQgtNorthLatitude(short cz);
 float   GetMediumCircle(int tz);
 float   GetFogDensity(int tz);
 //----------------------------------------------------------------
-float		GetRealFlatDistance(CmHead *obj);
-float		GetFlatDistance(SPosition *to);
-double  LongitudeDifference(double f1,double f2);
-SVector SubtractPosition(SPosition &from, SPosition &to);
-U_INT   QgtDifference(U_INT q1,U_INT q2);
-double  AddLongitude(double f1,double f2);
-void    AddToPosition(SPosition &pos,SVector &v);
-void    AddToPosition(SPosition *pos, float dx, float dy);
-void    GetRRtoLDOrientation(SVector &ld);
-double  GetLatitudeArcs(U_INT tz);
-double  GetLatitudeDelta(U_INT tz);
-double  GetTileSWcorner(U_INT ax,U_INT az,SVector &v);
-double  LongitudeInBand(U_INT qx, double lon);
-double	GetAngleFromGeoPosition(SPosition &p1,SPosition &p2);
-void    GetVertexCoordinates(U_INT vx,U_INT vz,SVector &v);
-void    Add2dPosition(SPosition &p1,SPosition &p2, SPosition &r);
-void    AddMilesTo(SPosition &pos,double mx,double my);
-void		AddFeetTo(SPosition &pos,SVector &v);
-void    GetLatitudeFactor(double lat,double &rf,double &cp);
-void    GetQgtMidPoint(int gx,int gz,SPosition &p);
-int     GetRounded(float nb);
-double  RoundAltitude(double a);
-int			RoundAltitude(int a);
-U_INT   AbsoluteTileKey(int qx, int dx);
-U_INT   GetTileFromLatitude(double lat);
-bool    TileIsLeft(U_INT k1,U_INT k2);
+float			GetRealFlatDistance(CmHead *obj);
+float			GetFlatDistance(SPosition *to);
+double		LongitudeDifference(double f1,double f2);
+SVector		SubtractPositionInFeet(SPosition &from, SPosition &to);
+SVector		SubtractPositionInArcs(SPosition &from, SPosition &to);
+SVector   SubtractFromPositionInArcs(SPosition &from, CVector &to);
+U_INT			QgtDifference(U_INT q1,U_INT q2);
+double		AddLongitude(double f1,double f2);
+void			AddToPosition(SPosition &pos,SVector &v);
+SPosition AddToPositionInFeet(SPosition &pos,SVector &v, double exf);
+SPosition AddToPositionInFeet(SPosition &pos,SVector &v);
+void			GetRRtoLDOrientation(SVector &ld);
+double		GetLatitudeArcs(U_INT tz);
+double		GetLatitudeDelta(U_INT tz);
+double		LatitudeIncrement(U_INT qz);
+double		GetTileSWcorner(U_INT ax,U_INT az,SVector &v);
+double		GetAngleFromGeoPosition(SPosition &p1,SPosition &p2);
+void			GetVertexCoordinates(U_INT vx,U_INT vz,SVector &v);
+void			Add2dPosition(SPosition &p1,SPosition &p2, SPosition &r);
+void			AddMilesTo(SPosition &pos,double mx,double my);
+void			AddFeetTo(SPosition &pos,SVector &v);
+void			GetLatitudeFactor(double lat,double &rf,double &cp);
+void			GetQgtMidPoint(int gx,int gz,SPosition &p);
+int				GetRounded(float nb);
+double		RoundAltitude(double a);
+int				RoundAltitude(int a);
+U_INT			AbsoluteTileKey(int qx, int dx);
+U_INT			GetTileFromLatitude(double lat);
+bool			TileIsLeft(U_INT k1,U_INT k2);
 //-----------------------------------------------------------------------------
 bool    PointInTriangle(CVector &p,CVector &a,CVector &b,CVector &c,CVector &n);
 U_INT   NextVertexKey(U_INT vk,U_INT inc);
@@ -143,16 +139,23 @@ U_INT   GetSEAindex(U_INT cx,U_INT cz);
 //-----------------------------------------------------------------------------
 inline  U_INT   QGTKEY(U_INT cx,U_INT cz) {return ((cx << 16) | (cz));}
 //-----------------------------------------------------------------------------
-double  GetCompensationFactor(short cz);
-double  GetReductionFactor(U_INT cz);
-void    FeetCoordinates(SPosition &pos,SVector &v);
-void		FeetCoordinates(SVector &v, double rdf);
+double		GetCompensationFactor(short cz);
+double		GetReductionFactor(U_INT cz);
+void			FeetCoordinates(SPosition &pos,SVector &v);
+void			FeetCoordinates(SVector &v, double rdf);
+SVector		FeetComponents(SPosition &from, SPosition &To, double rdf);
 //-----------------------------------------------------------------------------
 void    InitGlobeTileTable ();
 void    InitQgtTable(float vmax);
 //-----------------------------------------------------------------------------
 float   ComputeDeviation(float ref,float rad,U_CHAR *flag, U_CHAR pwr);
-
+//-----------------------------------------------------------------------------
+//	Return Detail tile indices in QGT
+//	sp = SuperTile No in QGT
+//	dn = No of Detail Tile in SuperTile
+//	NOTE: Order is from SW to SE then upward
+//-----------------------------------------------------------------------------
+U_INT  DetailTileIndices(U_INT sp, U_INT dn, U_INT *tx, U_INT *tz);
 //=============================================================================
 //  Inline globale functions
 //=============================================================================
@@ -173,7 +176,7 @@ inline U_INT MakeDetInQGT(U_INT sp,U_INT nd)
 	return (sx << 16) | sz;
 }
 //-----------------------------------------------------------------------------
-//  return detail tile absolute key
+//  return detail tile absolute key (including vertice)
 //-----------------------------------------------------------------------------
 inline U_INT MakeDetKey(U_INT qx,U_INT tx,U_INT qz, U_INT tz)
 { return (qx << (TC_BY32 + 16)) | (tx << 16) | (qz << TC_BY32) | tz; }
@@ -205,24 +208,6 @@ inline U_INT WorldDetailKey(U_INT vx,U_INT vz)
 {	U_INT tx = vx >> TC_BY1024;
 	U_INT tz = vz >> TC_BY1024;
 	return (tx << 16) | tz;
-}
-//-----------------------------------------------------------------------------
-//  return xTrans  factor
-//-----------------------------------------------------------------------------
-inline double GetXTRANS(U_CHAR a,U_CHAR q)
-{ U_INT ind   = a | q;
-  return horzBAND[ind];
-}
-//-----------------------------------------------------------------------------
-//  return xTrans  factor for Vertex CX
-//-----------------------------------------------------------------------------
-double GetXTRANS(CVertex *vt);
-//-----------------------------------------------------------------------------
-//  return yTrans  factor
-//-----------------------------------------------------------------------------
-inline double GetYTRANS(U_CHAR a,U_CHAR q)
-{ U_INT ind   = a | q;
-  return vertBAND[ind];
 }
 //-----------------------------------------------------------------------------
 //  return reduction factor
@@ -286,54 +271,13 @@ inline void BillBoardMatrix(double *mat)
   return;
 }
 //=============================================================================
-//  WCoord holds a geographical position (lat,lon,alt) inside a BOX
+//  Vertex Maths
 //=============================================================================
-class WCoord {
-friend class CVertex;
-protected:
-  //-----BOX Coordinate -------------------------------------------
-  double WX;                           // Coordinate X
-  double WY;                           // Coordinate Y
-  double WZ;                           // Coordinate Z
-  //----Band indice -----------------------------------------------
-  char  xB;                           // X band
-  char  yB;                           // Y band
-  //---------------------------------------------------------------
-public:
-  WCoord();
-  //---------------------------------------------------------------
-  void  Set(U_INT cx,U_INT cz);       // Init coordinates
-  void  Assign2D(SVector &v1);
-  //-----Return maximum band coordinate ---------------------------
-  double  GetMX();
-  double  GetMY();      
-  //---------------------------------------------------------------
-  void  AssignNE(TC_GTAB *tab);       // Assign NE vertex
-  void  AssignNB(TC_GTAB *tab);       // Assign North border
-  void  AssignNW(TC_GTAB *tab);       // Assign NW vertex
-  void  AssignWB(TC_GTAB *tab);       // Assign West  border
-  void  AssignSW(TC_GTAB *tab);       // Assign SW vertex
-  void  AssignSB(TC_GTAB *tab);       // Assign South border
-  void  AssignSE(TC_GTAB *tab);       // Assign SE vertex
-  void  AssignEB(TC_GTAB *tab);       // Assign East border
-	void	AssignCT(TC_GTAB *tab);				// Assign center
-	//---------------------------------------------------------------
-	void	AssignCT(TC_GTAB *tab,SPosition *org);
-  //---------------------------------------------------------------
-  void  Assign(double *ft);
-  void  SetTour(F3_VERTEX *t,char v);
-  //---------------------------------------------------------------
-  inline void   SetWX(double x)  {WX = x;}
-  inline void   SetWY(double y)  {WY = y;}
-  inline void   SetWZ(double z)  {WZ = z;}
-		//---------------------------------------------------------------
-	inline void		AssignHT(TC_GTAB *tab)	{tab->GT_Z = WZ;}
-  //-----Return World coordinate (band relative)-------------------
-  inline double  GetWX()          {return WX;}
-  inline double  GetWY()          {return WY;}
-  inline double  GetWZ()          {return WZ;}
-};
-//=============================================================================
+double	RelativeLongitudeInQGT(U_INT vx);
+double	RelativeLatitudeInQGT(U_INT vz);
+double	AbsoluteLongitude(CVertex &v);
+double	AsoluteLatitude(CVertex &v);
+void		MidRadius(SVector &v, U_INT qz);
 
 //========================================================================================
 #endif // !defined(GEOMATH_H)

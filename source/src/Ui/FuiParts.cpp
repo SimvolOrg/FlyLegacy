@@ -519,7 +519,7 @@ void CKeyLine::ClearKey()
 //-----------------------------------------------------------------------
 void CKeyLine::SetCode(int cde)
 { code  = cde;
-  formatKeyCode (ktext, cde);
+  formatKeyCode (ktext, cde, 1);
   return;
 }
 //----------------------------------------------------------------------

@@ -1604,23 +1604,26 @@ public:
   void  GetSelection(int *firstChar, int *lastChar);
   void  SetMaxChars(int mc);
   //----------------------------------------------------------------
-  inline U_CHAR IsModified()			{	return fmod;}
+  inline U_CHAR IsModified()						{	return fmod;}
+	inline void		SetValidMask(U_CHAR m)	{vcar = m;}
 protected:
   //------- Attributes --------------------------------
   U_CHAR        input;
   U_CHAR        time;
+	U_CHAR				vcar;
+	U_CHAR				rfu1;
   //---CARET ATTRIBUTES -------------------------------
   U_INT         caret;
   U_INT         mask;
   //--------------------------------------------------
   CFuiComponent     *fBox[RSIZ];
   //-------Text color -------------------------------
-  unsigned int  colHighlight;
-  unsigned int  colTextHighlight;
-  unsigned int  colLine;
-  unsigned int  colFill;
-  unsigned int  colFillDisabled;
-  unsigned int  colCaret;
+  U_INT  colHighlight;
+  U_INT  colTextHighlight;
+  U_INT  colLine;
+  U_INT  colFill;
+  U_INT  colFillDisabled;
+  U_INT  colCaret;
   U_INT         bCol[2];              // Background color
   //-------Edit parameters --------------------------
   short         hCar;                 // Character height

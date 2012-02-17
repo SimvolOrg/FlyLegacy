@@ -30,10 +30,6 @@
 #include "../Include/TerrainCache.h"
 #include <math.h>
 //================================================================================
-//  BAND junction is defined for the last vertices of a band so as
-//  to recover the first vertice of the next band
-//================================================================================
-#define XBAND_JUNCTION (double(TC_XB_ARCS) + double(0.12))
 //================================================================================
 //  JS:  Define the global tile table
 //        Each entry contains the folowing fields:
@@ -51,135 +47,28 @@ typedef struct {
   double lats;                          // Base latitude in arcsec
   double dta;                           // Latitude delta for QGT in arcsec
   double det;                           // Latitude delta per Detail Tile
+	double sub;														// Latitude delta per subdivision
   double mid;                           // Mid point in arcsec (GBT only) ---
-  double nSide;                         // Tile side in nm
   double rdf;                           // Longitude reduction factor
   double cpf;                           // Longitude compensation factor (inverse of rdf)
   //-----------Visibility parameters (in QGT only) --------------------------
   double fmax;                          // Max visibility in feet
-  float fSide;                          // Side in feet
   float vmax;                           // Visibility in miles
   float dfog;                           // Fog density
+	//---- Dimensions --------------------------------------------------------
+	double mSide;													// Side in miles
+	double vArcs;													// Side in arcsec at mid QGT (Vertical)
   //------------------------------------------------------------------------
   short hzr;                            // horizontal range
   short vpr;                            // Vertical range to pole
   short vqr;                            // Vertical range to equator
 } GLOBE_TILE;
 //================================================================================
-//  Longitude band slot
-//================================================================================
-typedef struct {
-  //-------------------------------------------------------------
-  float lfLON;                          // Base left  longitude
-  float rtLON;                          // Limit right longitude
-  //-------------------------------------------------------------
-  float loADJ;                          // Longitude adjustment
-  //-------------------------------------------------------------
-  char  lBand;                          // Left band
-  char  rBand;                          // Right band
-} LON_BAND;
-//===================================================================================================
-//  XBAND TRANSLATION TABLE
-//  The 512 QGT tiles are divided in 8 bands of 64 QGT.  Inside a band
-//  longitude coordinate in arcsec is runing in [0-16200].  This feature
-//  ensure enough precision to avoid terrain flickering that appears
-//  when tiles are too far from the origin, due to the translation used
-//  to position aircraft as the center of world
-//  Index in this table is formed by concatenation of
-//     Aircraft band and Tile band
-//  Each entry gives the extra translation needed for the tile
-//  This feature ensure correct computation of longitude coordinates when
-//  Aircraft and tiles are not in the same band
-//====================================================================================================
-double horzBAND[64] = {
-  //------Band 0-------Band 1------Band 2----Band 3------Band 4-------Band 5------Band 6----Band 7 --
-               0,-TC_XB_ARCS,          0,          0,          0,          0,          0,+TC_XB_ARCS,
-     +TC_XB_ARCS,          0,-TC_XB_ARCS,          0,          0,          0,          0,          0,
-               0,+TC_XB_ARCS,          0,-TC_XB_ARCS,          0,          0,          0,          0,
-               0,          0,+TC_XB_ARCS,          0,-TC_XB_ARCS,          0,          0,          0,
-               0,          0,          0,+TC_XB_ARCS,          0,-TC_XB_ARCS,          0,          0,
-               0,          0,          0,          0,+TC_XB_ARCS,          0,-TC_XB_ARCS,          0,
-               0,          0,          0,          0,          0,+TC_XB_ARCS,          0,-TC_XB_ARCS,
-     -TC_XB_ARCS,          0,          0,          0,          0,          0,+TC_XB_ARCS,          0,
-};
-//===================================================================================================
-//  YBAND TRANSLATION TABLE
-//  The 512 QGT tiles are divided in 8 bands of 64 QGT.  Inside a band
-//  latitude coordinate in arcsec is runing in [0-16200].  This feature
-//  ensure enough precision to avoid terrain flickering that appears
-//  when tiles are too far from the origin, due to the translation used
-//  to position aircraft as the center of world
-//  Index in this table is formed by concatenation of
-//     Aircraft band and Tile band
-//  Each entry gives the extra translation needed for the tile
-//  This feature ensure correct computation of longitude coordinates when
-//  Aircraft and tiles are not in the same band
-//====================================================================================================
-double vertBAND[64] = {
-  //------Band 0--Band 1--Band 2--Band 3--Band 4--Band 5--Band 6--Band 7 -->Aircraft
-               0,    -1,      0,      0,      0,       0,      0,      0,
-              +1,     0,     -1,      0,      0,       0,      0,      0,
-               0,    +1,      0,     -1,      0,       0,      0,      0,
-               0,     0,     +1,      0,     -1,       0,      0,      0,
-               0,     0,      0,     +1,      0,      -1,      0,      0,
-               0,     0,      0,      0,     +1,       0,     -1,      0,
-               0,     0,      0,      0,      0,      +1,      0,     -1,
-               0,     0,      0,      0,      0,       0,     +1,      0,
-};
-//================================================================================
 //  GLOBE TILE AND QGT TABLES
 //================================================================================
-GLOBE_TILE globe_tile_lat [129];
-GLOBE_TILE qgt_latitude[257];
-//================================================================================
-//  Longitude table
-//================================================================================
-LON_BAND  LonBASE[8] = {0};
-double    LatBASE[8] = {0};
-//================================================================================
-//  Init longitude table
-//================================================================================
-void InitLongitudeBand()
-{ double band = TC_XB_ARCS;
-  for (int k=0; k< 8; k++)
-  { //---Compute left and right longitude ----------
-    double lf = band * k;
-    double rt = band * (k+1);
-    LonBASE[k].lfLON = lf;
-    LonBASE[k].rtLON = rt;
-    //---Set the adjustment factor -----------------
-    LonBASE[k].loADJ = (k==0)?(TC_FULL_WRD_ARCS):(lf);
-    //---Set next and previous band ----------------
-    LonBASE[k].lBand = (k==0)?(7):(k-1);
-    LonBASE[k].rBand = (k==7)?(0):(k+1);
-  }
-  return;
-}
-//================================================================================
-//  Init base latitude table
-//================================================================================
-void InitBaseLatitude()
-{ for (int k=0; k<8; k++)
-  { int cz = (k << TC_BY64);
-    LatBASE[k] = GetQgtSouthLatitude(cz);
-  }
-  return;
-}
-//================================================================================
-//  Init band latitude table
-//================================================================================
-void InitBandLatitude()
-{ double *tab = vertBAND;
-  for (int nl=0; nl<8; nl++)
-  { for (int nc=0; nc<8; nc++)
-    { if ( 0 == *tab) { tab++;                  continue;}
-      if (-1 == *tab) {*tab++ = -LatBASE[nc-1]; continue;}
-      if (+1 == *tab) {*tab++ = +LatBASE[nc]  ; continue;}
-    }
-  }
-  tab = vertBAND;
-  return;
-}
+GLOBE_TILE globe_tile_lat [132];
+GLOBE_TILE qgt_latitude[260];
+
 //================================================================================
 //  Compute vertical range toward pole for Globe Tile
 //================================================================================
@@ -187,7 +76,7 @@ short GetVerticalPoleRange(short no)
 { float dis = COVERED_RADIUS;
   short rg  = 0;
   while (no != 127)
-  { dis -= globe_tile_lat[no++].nSide;
+  { dis -= globe_tile_lat[no++].mSide;
     rg++;
     if (dis <= 0) return rg;
   }
@@ -200,13 +89,13 @@ short GetVerticalEquatorRange(short no)
 { float dis = COVERED_RADIUS;
   short rg  = 0;
   while (no >= 0)
-  { dis -= globe_tile_lat[no--].nSide;
+  { dis -= globe_tile_lat[no--].mSide;
     rg++;
     if (dis <= 0) return rg;
   }
   no = 0;
   while (no != 127)
-  { dis -= globe_tile_lat[no++].nSide;
+  { dis -= globe_tile_lat[no++].mSide;
     rg++;
     if (dis <= 0) return rg;
   } 
@@ -230,31 +119,38 @@ void InitGlobeTileTable ()
 { U_INT tr = globals->Trace.Has(TRACE_LATITUDE);
   if (tr) TRACE("====INIT GLOBAL TILE PARAMETERS ======================");
   int i       = 0;
-  double side = (float(MILE_CIRCUMFERENCE) / 256);
-  double feet = (TC_FULL_WRD_FEET / 256);
+  double side = (double(MILE_CIRCUMFERENCE) / 256);
   int    hrz  = int(COVERED_RADIUS / side) + 1;
   double k    = 360.0 / 256.0;
   double prev = 0;
+  double lat  = 0;
   double lats = 0;
   globe_tile_lat[0].lat   = 0.0;
-  globe_tile_lat[0].nSide = side;
-  globe_tile_lat[0].fSide = feet;
+	globe_tile_lat[0].lats  = 0;
+  globe_tile_lat[0].mSide = side;
+  globe_tile_lat[0].dta   = 0;
+  globe_tile_lat[0].vArcs = 0;
   globe_tile_lat[0].hzr   = hrz;
   globe_tile_lat[0].dfog  = 0.000016f;
-  for (i=1; i<129; i++) {
-    double prevRad  = DegToRad (prev);
-    prev            = prev + k * cos(prevRad);
-    globe_tile_lat[i].lat   = prev;                   // Latitude in °
-    lats                    = prev * 3600;            // Latitude in arcsec
-    globe_tile_lat[i].lats  = lats;            
-    globe_tile_lat[i-1].dta = (lats - globe_tile_lat[i-1].lats);
-    globe_tile_lat[i-1].mid = (lats + globe_tile_lat[i-1].lats) * 0.5;
-    double latrad   = DegToRad(prev);
-    side            = (MILE_CIRCUMFERENCE * cos(latrad)) / 256;
-    feet            = (TC_FULL_WRD_FEET   * cos(latrad)) / 256;
+  for (i=1; i<128; i++) 
+	{	int pp = i - 1;
+    double prevRad          = DegToRad (lat);
+    lat											= lat + k * cos(prevRad);
+		//--- Set latitude in degre and arcsec ----------------------------
+    globe_tile_lat[i].lat   = lat;                   // Latitude in °
+    lats                    = lat * 3600;            // Latitude in arcsec
+    globe_tile_lat[i].lats  = lats;
+		//--- Compute Latitude Delta for this indice ----------------------
+    globe_tile_lat[pp].dta  = (lats - globe_tile_lat[pp].lats);
+		globe_tile_lat[pp].sub  = 0;
+    globe_tile_lat[pp].mid  = (lats + globe_tile_lat[pp].lats) * 0.5;
+		//--- Compute side -------------------------------------------------
+		double latrad   = DegToRad(lat);
+		double cosn			= cos(latrad);
+    side            = (MILE_CIRCUMFERENCE * cosn) / 256;
     hrz             = int(COVERED_RADIUS / side) + 1;
-    globe_tile_lat[i].nSide = side;
-    globe_tile_lat[i].fSide = feet;
+    globe_tile_lat[i].mSide = side;
+		globe_tile_lat[i].vArcs = 0;
     globe_tile_lat[i].hzr   = hrz;
     globe_tile_lat[i].dfog  = 0;
   }
@@ -265,25 +161,25 @@ void InitGlobeTileTable ()
   double mid = 0;
   double las = 0;
   for (i = 0; i<128; i++)
-  { float lat = globe_tile_lat[i].lat;
-    side      = globe_tile_lat[i].nSide;
-    las       = globe_tile_lat[i].lats;
-    dta       = globe_tile_lat[i].dta;
-    mid       = globe_tile_lat[i].mid;
-    hrz       = globe_tile_lat[i].hzr;
+  { double lat	= globe_tile_lat[i].lat;
+    las					= globe_tile_lat[i].lats;
+		double dim	= globe_tile_lat[i].mSide;
+    dta					= globe_tile_lat[i].dta;
+    mid					= globe_tile_lat[i].mid;
+    hrz					= globe_tile_lat[i].hzr;
     vpr = GetVerticalPoleRange(i);
     vqr = GetVerticalEquatorRange(i);
     globe_tile_lat[i].vpr   = vpr;
     globe_tile_lat[i].vqr   = vqr;
-    if (tr) TRACE("i=%03u LAT=%2.6f ARCs=%8.4fnm (Mid=%8.4fnm) HR=%2u VP=%2u VQ=%2u",i,lat,las,mid,hrz,vpr,vqr);
+    if (tr) TRACE("i=%03u LAT=%0.6lf Side=%8.4lf (Mid=%8.4lfnm) HR=%2u VP=%2u VQ=%2u",i,lat,dim,mid,hrz,vpr,vqr);
   }
   //-----------Last entry for init ----------------------
-  globe_tile_lat[128].nSide = 0.0;
+  globe_tile_lat[128].mSide = 0.0;
   globe_tile_lat[128].hzr   = 0;
-	globe_tile_lat[126].vpr   = 2;
-	globe_tile_lat[127].vpr   = 1;
   globe_tile_lat[128].vpr   = 0;
   globe_tile_lat[128].vqr   = 0;
+	globe_tile_lat[127].vpr   = 1;
+	globe_tile_lat[126].vpr   = 2;
   return;
 }
 //-----------------------------------------------------------------------------
@@ -354,7 +250,7 @@ short GetQgtVerticalPoleRange(short no,float vmax)
 { float dis = vmax;
   short rg  = 0;
   while (no != 255)
-  { dis -= qgt_latitude[no++].nSide;
+  { dis -= qgt_latitude[no++].mSide;
     rg++;
     if (dis <= 0) return rg;
   }
@@ -367,13 +263,13 @@ short GetQgtVerticalEquatorRange(short no,float vmax)
 { float dis = vmax;
   short rg  = 0;
   while (no >= 0)
-  { dis -= qgt_latitude[no--].nSide;
+  { dis -= qgt_latitude[no--].mSide;
     rg++;
     if (dis <= 0) return rg;
   }
   no = 0;
   while (no != 255)
-  { dis -= qgt_latitude[no++].nSide;
+  { dis -= qgt_latitude[no++].mSide;
     rg++;
     if (dis <= 0) return rg;
   } 
@@ -435,10 +331,11 @@ void InitQgtTable (float vmax)
   double rmn  = 0;
   short vpr = 0;
   short vqr = 0;
+	//--- cosinus latitude --------------------------------------------------------
+	double cosn = 1;
   //-----------------------------------------------------------------------------
   qgt_latitude[0].lat   = 0.0;
-  qgt_latitude[0].nSide = side;
-  qgt_latitude[0].fSide = feet;
+  qgt_latitude[0].mSide = side;
   qgt_latitude[0].rdf   = 1;
   qgt_latitude[0].cpf   = 1;
   qgt_latitude[0].vmax = vmax;
@@ -446,39 +343,45 @@ void InitQgtTable (float vmax)
   qgt_latitude[0].dfog  = GetQgtFog(0,vmax,vmax);
   qgt_latitude[0].hzr   = 2;
   for (nz =1; nz < 257; nz++) {
-		int np = nz-1;
+		int pp = nz-1;
     double prevRad         = DegToRad (lat);
     if (nz & 0x01)   lat   = lat + k * cos(prevRad);
     else             lat   = globe_tile_lat[(nz >> 1)].lat;
     lats                   = lat * 3600;
     qgt_latitude[nz].lat   = lat;                               // Lat in °
     qgt_latitude[nz].lats  = lats;                              // Lat in arcsec
-		qgt_latitude[np].mid = (lats + qgt_latitude[np].lats) * 0.5;
-    det                    = lats - qgt_latitude[nz-1].lats;    // Delta in arcsec
-    qgt_latitude[nz-1].dta = det;
-    qgt_latitude[nz-1].det = det / TC_DET_PER_QGT;
+		//--- Compute previous QGT mid point -----------------------
+		qgt_latitude[pp].mid   = (lats + qgt_latitude[pp].lats) * 0.5;
+		//--- latitude delta for previous QGT -----------------------
+    det                    = lats  - qgt_latitude[pp].lats;    // Delta in arcsec
+		//--- Compute all subdivisions in previous QGT --------------
+    qgt_latitude[pp].dta = det;												// Arcsec per QGT
+    qgt_latitude[pp].det = det / TC_DET_PER_QGT;			// Arcsec per Detail Tile
+		qgt_latitude[pp].sub = det / TC_SUBD_PER_QGT;			// Arcsec per smallest vertice
+		qgt_latitude[pp].vArcs	= det * 0.5;							// Arcsec at mid latitude
+		//--- Parameters for this QGT ------------------------------
     double latrad   = DegToRad(lat);
-    qgt_latitude[nz].rdf   = cos(latrad);                       // Reduction factor
-    qgt_latitude[nz].cpf   = (1 / qgt_latitude[nz].rdf);        // Compensation factor 
-    side            = (MILE_CIRCUMFERENCE * cos(latrad)) / 512; // QGT side in mile
-    feet            = (TC_FULL_WRD_FEET   * cos(latrad)) / 512; // QGT side in feet
+		cosn	= cos(latrad);
+    qgt_latitude[nz].rdf   = cosn;												// Reduction factor
+    qgt_latitude[nz].cpf   = (1 / cosn);									// Compensation factor 
+    side            = (MILE_CIRCUMFERENCE * cosn) / 512;	// QGT side in mile
+    feet            = (TC_FULL_WRD_FEET   * cosn) / 512;	// QGT side in feet
     vmx             =  GetQgtVMAX(nz,vmax);                     // Maximum visibility
     qgt_latitude[nz].vmax  = vmx; 
     qgt_latitude[nz].fmax  = vmx * TC_FEET_PER_MILE;
     hrz                    = ceil(vmx / side);
     if (hrz == 1)    hrz   = 2;
-    qgt_latitude[nz].nSide = side;
-    qgt_latitude[nz].fSide = feet;
+    qgt_latitude[nz].mSide = side;
     qgt_latitude[nz].hzr   = hrz;
     qgt_latitude[nz].dfog  = GetQgtFog(nz,vmax,vmx);
   }
-    //---------Compute the  ranges ---------------------
+    //---------Compute the  ranges --------------------------------
   for (int i = 0; i < 257; i++)
   { double latd = qgt_latitude[i].lat;
     double lats = qgt_latitude[i].lats;
     double vmx  = qgt_latitude[i].vmax;
     double dta  = qgt_latitude[i].dta;
-    double side = qgt_latitude[i].nSide;
+    double side = qgt_latitude[i].mSide;
     double rdf  = qgt_latitude[i].rdf;
     float fog   = qgt_latitude[i].dfog;
     float rst   = (vmx / side) * 8;               // Radius in super tile unit
@@ -501,7 +404,7 @@ void InitQgtTable (float vmax)
     adj      |= (rmn < spr);
     if (adj)  qgt_latitude[i].fmax -= spr * TC_FEET_PER_MILE;
 
-    if (tr) TRACE("Z=%03u LAT=%.6f dta= %.8f arcs VMAX=%2.4f RDF=%.5f FOG=%.8f HR=%2u VP=%2u VQ=%2u",
+    if (tr) TRACE("Z=%03u LAT=%.6lf dta= %.8lf arcs VMAX=%2.4lf RDF=%.5lf FOG=%.8lf HR=%2u VP=%2u VQ=%2u",
                 i,lats,dta,vmx,rdf,fog,hrz,vpr,vqr);
   }
   //-----------Last entry for init ----------------------
@@ -511,10 +414,6 @@ void InitQgtTable (float vmax)
 	//----- Limit pole extension ---------------------------
 	qgt_latitude[255].vpr     = 0;
 	qgt_latitude[254].vpr     = 1;
-  //-----Init longitude band ----------------------------
-  InitLongitudeBand();
-  InitBaseLatitude();
-  InitBandLatitude();
   return;
 }
 //-----------------------------------------------------------------------------
@@ -559,7 +458,23 @@ void IndicesInQGT (GroundSpot &gsp)
   gsp.qz = GetVerticalQgtNumber(gsp.lat);
   return;
 }
-
+//-----------------------------------------------------------------------------
+//	Return QGT mid point radius
+//-----------------------------------------------------------------------------
+void MidRadius(SVector &v, U_INT qz)
+{	U_INT No	= (qz >= 256)?(qz - 256):(255 - qz);
+	v.x				= TC_ARCS_PER_QGT * 0.5;
+	v.y				= qgt_latitude[No].vArcs;
+	v.z				= 0;
+	return;
+}
+//-----------------------------------------------------------------------------
+//	Return QGT top latitude increment
+//-----------------------------------------------------------------------------
+double LatitudeIncrement(U_INT qz)
+{	U_INT   No = (qz >= 256)?(qz - 256):(255 - qz);
+	return  qgt_latitude[No].dta;
+}
 //-----------------------------------------------------------------------------
 //  return number of tiles needed to reach vMax in horizontal direction
 //  vt is the vertical tile coordinate
@@ -605,6 +520,7 @@ void GetQgtMidPoint(int gx,int gz,SPosition &p)
          lon += FN_ARCS_FROM_QGT(gx + 1);
   p.lat = 0.5 * lat;
   p.lon = 0.5 * lon;
+	p.alt	= 0;
   return;
 }
 //-----------------------------------------------------------------------------
@@ -736,18 +652,7 @@ void AddToPosition(SPosition &pos,SVector &v)
   pos.alt   += v.z;
   return;
 }
-//-----------------------------------------------------------------------------
-//  Add to position  Dx and Dy in arcsec
-//-----------------------------------------------------------------------------
-void  AddToPosition(SPosition *pos, float dx, float dy)
-{ pos->lat += dy;
-  pos->lon += dx;
-  if (pos->lat > +qgt_latitude[255].lats)  pos->lat = +qgt_latitude[255].lats;
-  if (pos->lat < -qgt_latitude[255].lats)  pos->lat = -qgt_latitude[255].lats;
-  if (pos->lon >= +TC_FULL_WRD_ARCS)       pos->lon -= TC_FULL_WRD_ARCS;
-  if (pos->lon <= -TC_FULL_WRD_ARCS)       pos->lon += TC_FULL_WRD_ARCS;
-  return;
-}
+
 //-----------------------------------------------------------------------------
 //  return latitude of vertex Z index
 //  TZ is the concatenation of
@@ -785,6 +690,16 @@ void FeetCoordinates(SVector &v, double rdf)
   v.y = FN_FEET_FROM_ARCS(v.y);
   return;
 }
+//---------------------------------------------------------------------------------
+//	Compute feet components of vector (to - from) usinf the rdf factor
+//---------------------------------------------------------------------------------
+SVector		FeetComponents(SPosition &from, SPosition &to, double rdf)
+{	SVector R;
+	R.x = LongitudeDifference(to.lon,from.lon) * TC_FEET_PER_ARCSEC * rdf;
+	R.y = (to.lat - from.lat) * TC_FEET_PER_ARCSEC;
+	R.z = (to.alt - from.alt);
+	return R;
+}
 //-----------------------------------------------------------------------------
 //  Return Latitude increment per detail tile for this QGT
 //-----------------------------------------------------------------------------
@@ -792,17 +707,6 @@ double GetLatitudeDelta(U_INT qz)
 { U_INT nz    = (qz >= 256)?(qz - 256):(255 - qz);  // Table entry
   double dta  = qgt_latitude[nz].det;
   return dta;
-}
-//-----------------------------------------------------------------------------
-//  Compute Modulo Band longitude
-//  Qx is the QGT X index
-/// lon is absolute world longitude
-//  return local longitude in current band
-//-----------------------------------------------------------------------------
-double LongitudeInBand(U_INT qx, double lon)
-{ U_INT bm   = FN_BAND_FROM_QGT(qx);
-  double dta = double(bm) * TC_XB_ARCS;
-  return (lon - dta);
 }
 //-----------------------------------------------------------------------------
 //	Given geo positions P1 and P2 return angle between
@@ -819,29 +723,9 @@ double GetAngleFromGeoPosition(SPosition &p1,SPosition &p2)
 	double deg  = RadToDeg(alf);
 	return deg;
 }
-//-----------------------------------------------------------------------------
-//  Compute Modulo Band latitude
-//  Qz is the QGT Z index
-/// lat is absolute world latitude
-//  return local latitude in current band
-//-----------------------------------------------------------------------------
-double LatitudeInBand(U_INT qz, double lat)
-{ U_INT bm   = FN_BAND_FROM_QGT(qz);
-  double sud = LatBASE[bm];
-  return (lat - sud);
-}
-//-----------------------------------------------------------------------------
-//  return xTrans  factor for Vertex CX
-//-----------------------------------------------------------------------------
-double GetXTRANS(CVertex *vt)
-{ U_CHAR hba  = globals->tcm->GetHband(); 
-	U_CHAR hbv  = vt->GetXBand();
-	U_INT ind   = hba | hbv;
-  return horzBAND[ind];
-}
-//-----------------------------------------------------------------------------
+//========================================================================
 //  Add two positions in arcsec
-//-----------------------------------------------------------------------------
+//========================================================================
 void Add2dPosition(SPosition &p1,SPosition &p2, SPosition &r)
 { r.lon = p1.lon + p2.lon;
   if (r.lon >= TC_FULL_WRD_ARCS) r.lon -= TC_FULL_WRD_ARCS;
@@ -851,19 +735,77 @@ void Add2dPosition(SPosition &p1,SPosition &p2, SPosition &r)
   return;
 }
 //========================================================================
-// SubtractPosition computes the vector offset between two globe positions.
-//   See "AddVector" for details on the result.
+//  Add to position the feet increment in vector
+//  pos contains a geop in absolute arcsec
+//  v   contains a vector increment in feet
+//	Use exf as expension factor
+//========================================================================
+SPosition AddToPositionInFeet(SPosition &pos,SVector &v, double exf)
+{ SPosition p;
+	double acx = FN_ARCS_FROM_FEET(v.x) * exf;
+  p.lon   = AddLongitude(pos.lon,acx);
+  p.lat   = pos.lat + FN_ARCS_FROM_FEET(v.y);
+  p.alt		= pos.alt + v.z;
+  return p;
+}
+//========================================================================
+//  Add to position the feet increment in vector
+//  pos contains a geop in absolute arcsec
+//  v   contains a vector increment in feet
+//	Get expension factor from latitude
+//========================================================================
+SPosition AddToPositionInFeet(SPosition &pos,SVector &v)
+{ SPosition p;
+  double rad = FN_RAD_FROM_ARCS(pos.lat);			// DegToRad(lat / 3600);
+  double exf = 1/ cos(rad);
+	double acx = FN_ARCS_FROM_FEET(v.x) * exf;
+  p.lon   = AddLongitude(pos.lon,acx);
+  p.lat   = pos.lat + FN_ARCS_FROM_FEET(v.y);
+  p.alt		= pos.alt + v.z;
+  return p;
+}
+
+//========================================================================
+// SubtractPositionInFeet computes the vector offset between two globe positions.
+//   the result is in feet
+//	NOTE: We use the feet expension factor at aircraft position (globals->exf)
 //=======================================================================
-SVector SubtractPosition(SPosition &from, SPosition &to)
+SVector SubtractPositionInFeet(SPosition &from, SPosition &to)
 { SVector v;
   // Calculate number of arcseconds difference in latitude
   double arcsecLat = to.lat - from.lat;
-  v.y = arcsecLat * FEET_PER_LAT_ARCSEC;
+  v.y = FN_FEET_FROM_ARCS (arcsecLat);
   // Calculate arcsecond difference in longitude
   double arcsecLon = LongitudeDifference(to.lon,from.lon);
-  v.x = arcsecLon * FeetPerLonArcsec (from.lat);
+  v.x = FN_FEET_FROM_ARCS(arcsecLon) * globals->rdf;				
   // Altitude is already in feet, simply subtract
   v.z = to.alt - from.alt;
+  return v;
+}
+//========================================================================
+// SubtractPositionInArcs computes the vector offset between two globe positions.
+//   the result is in arcsec
+//=======================================================================
+SVector SubtractPositionInArcs(SPosition &from, SPosition &to)
+{ SVector v;
+  // Calculate number of arcseconds difference in latitude
+  v.y = to.lat - from.lat;
+  // Calculate arcsecond difference in longitude
+  v.x = LongitudeDifference(to.lon,from.lon);
+  // Altitude is  in feet, simply subtract -----
+  v.z = to.alt - from.alt;
+  return v;
+}
+//========================================================================
+// SubtractPositionInArcs computes the vector offset between two globe positions.
+//   the result is in arcsec
+//=======================================================================
+SVector   SubtractFromPositionInArcs(SPosition &from, CVector &to)
+{	SVector v;
+	v.y = to.y - from.lat;				// Latitude difference
+	v.x = LongitudeDifference(to.x,from.lon);
+	// Altitude is  in feet, simply subtract -----
+  v.z = to.z - from.alt;
   return v;
 }
 //-----------------------------------------------------------------------------
@@ -895,7 +837,7 @@ void AddFeetTo(SPosition &pos,SVector &v)
 //-----------------------------------------------------------------------------
 //  Make an absolute tile key with QGT index[0-512] and Detail index [0-32]
 //-----------------------------------------------------------------------------
-inline U_INT AbsoluteTileKey(int qx, int dx)
+U_INT AbsoluteTileKey(int qx, int dx)
 { return ((qx << TC_BY32) | dx); }
 //-----------------------------------------------------------------------------
 //  Compare 2 detail tile horizontal positions given the earth rotondity
@@ -976,7 +918,6 @@ float GetFlatDistance(SPosition *To)
 		double	sq			= ((disLon * disLon) + (disLat * disLat));  // squarred distance
 		return   SquareRootFloat(sq);
 }
-
 //=========================================================================================
 //  Class GroundSpot:   Info on a ground spot
 //=========================================================================================
@@ -987,7 +928,6 @@ GroundSpot::GroundSpot()
   lon = 0;
   lat = 0;
   alt = 0;
-  lbd = 0;
 }
 //------------------------------------------------------------------------
 //  Ground Spot with latitude and longitude
@@ -998,52 +938,6 @@ GroundSpot::GroundSpot(double x,double y)
   lon = x;
   lat = y;
   alt = 0;
-}
-//------------------------------------------------------------------------
-//  Ground Spot with vertex keys
-//------------------------------------------------------------------------
-void GroundSpot::GetCoordinates(U_INT xk,U_INT zk)
-{ qgt = 0;
-  pgt = 0;
-  kx  = xk;
-  kz  = zk;
-  //---Isolate QGT keys ---------------------
-  U_INT px  = (xk >> TC_BY1024);
-  U_INT pz  = (zk >> TC_BY1024);
-  qx  = (px >> TC_BY32);
-  qz  = (pz >> TC_BY32);
-  //---Isolate TILE keys --------------------
-  tx  = px & TC_032MODULO;
-  tz  = pz & TC_032MODULO;
-  //---Isolate vertex keys ------------------
-  vx  = px & TC_1024MOD;
-  vz  = pz & TC_1024MOD;
-  //---Compute spot latitude ----------------
-  float sud = GetQgtSouthLatitude(qz);
-  float nor = GetQgtNorthLatitude(qz);
-  float dla = (nor - sud) / 32;
-  float vla = (dla / 1024);
-  lat = sud + (dla * tz) + (vla * vz);
-  //---Compute spot longitude ---------------
-  float dlo = TC_ARCS_PER_QGT;
-  float vlo = (dlo / 1024);
-  lon = (dlo * tx) + (vlo * vx);
-  //-----------------------------------------
-  alt = 0;
-}
-
-//-------------------------------------------------------------------------
-//  Compare horizontal position of 2 ground locations given the earth
-//  rotondity
-//  Compute difference from this spot to target spot (gs)
-//  Then check for which side of the circle to take decision
-//-------------------------------------------------------------------------
-bool GroundSpot::IsLeftOf(GroundSpot &gs)
-{ U_INT k1 = AbsoluteTileKey(qx,tx);
-  U_INT k2 = AbsoluteTileKey(gs.qx,gs.tx);
-  int  dif = k2 - k1;
-  if (dif > TC_HALF_WRD_TILE) dif -= TC_FULL_WRD_TILE;
-  return (dif > 0);
 }
 //-------------------------------------------------------------------------
 //  Set QGT into ground spot
@@ -1068,6 +962,8 @@ bool GroundSpot::ValidQGT()
 //	NOTE:  Due to precision error, it may happen that the point is not
 //	localized, mostly because it is almost on the frontier between two
 //	tiles. So we just let it pass and use the previous altitude value
+//	NOTE: To locate position, we need to express it as a relative offset
+//			  from the SW corner of the QGT
 //-------------------------------------------------------------------------
 char  GroundSpot::GetTerrain()
 { if (0 == qgt)           return 0;
@@ -1079,8 +975,8 @@ char  GroundSpot::GetTerrain()
   Type        = dt->GetGroundType();          // Ground Type
   Quad        = dt;
   //------Compute precise elevation at position ---------------
-  lbd         = LongitudeInBand(qx,lon);
-  CVector  p(lbd,lat,0);
+  CVector  p(lon,lat,0);
+	qgt->RelativeToBase(p);											// Relative to SW corner
   CmQUAD  *qd = dt->Locate2D(p);              // Smaller QUAD in Detail Tile
   //----Locate the triangle where p reside --------------------
   if (!qd->PointHeight(p,gNM)) 	p.z = qd->CenterElevation();
@@ -1108,31 +1004,13 @@ bool GroundSpot::InvalideQuad()
 	return false;
 }
 //-------------------------------------------------------------------------
-//  Compute arcs distance to vertex
-//-------------------------------------------------------------------------
-void GroundSpot::ArcDistanceTo(CVertex *vtx,CVector &v)
-{ double xband = FN_BAND_FROM_QGT(qx) * TC_ARCS_PER_BAND;
-	double xwest = ((qx == 511) && (vx == 0))?(TC_XB_ARCS):(0); 
-	double arcx  = vtx->GetWX() + xband + xwest;		// Vertex Absolute longitude
-	double arcy  = vtx->GetWY();
-	double arcz	 = vtx->GetWZ();
-	v.x					 = LongitudeDifference(arcx,lon);
-	v.y					 = arcy - lat;
-	v.z					 = arcz - alt;
-	return;
-}
-//-------------------------------------------------------------------------
 //  Compute feet distance to vertex
 //-------------------------------------------------------------------------
-void GroundSpot::FeetDistanceTo(CVertex *vtx,CVector &v)
-{ double xband = FN_BAND_FROM_QGT(qx) * TC_ARCS_PER_BAND;
-	double xwest = ((qx == 511) && (vtx->keyX() == 0))?(TC_XB_ARCS):(0); 
-	double arcx  = vtx->GetWX() + xband + xwest;		// Vertex Absolute longitude
-	double arcy  = vtx->GetWY();										// Vertex Absolute latitude
-	double arcz	 = vtx->GetWZ();										// Vertex altitude
-	v.x					 = LongitudeDifference(arcx,lon) * rdf * TC_FEET_PER_ARCSEC;
-	v.y					 = (arcy - lat) * TC_FEET_PER_ARCSEC;
-	v.z					 = (arcz - alt);
+void GroundSpot::FeetCoordinatesTo(CVertex *vtx,CVector &v)
+{	SVector w = vtx->GeoCoordinates(qgt);
+	v.x				= TC_FEET_PER_ARCSEC * rdf * LongitudeDifference(w.x,lon);
+	v.y				= TC_FEET_PER_ARCSEC * (w.y - lat);
+	v.z				= w.z - alt;
 	return;
 }
 //=========================================================================================
@@ -1219,164 +1097,60 @@ U_INT GetSEAindex(U_INT cx,U_INT cz)
   U_INT indx  = (gx << 16) + gz;                      // Final index
   return indx;
 }
+//-----------------------------------------------------------------------------
+//	Return Detail tile indices in QGT
+//	sp = SuperTile No in QGT
+//	dn = No of Detail Tile in SuperTile
+//	NOTE: Order is from SW to SE then upward
+//-----------------------------------------------------------------------------
+U_INT  DetailTileIndices(U_INT sp, U_INT dn, U_INT *tx, U_INT *tz)
+{	U_INT sz	= sp >> 3;						// SuperTile Z index in QGT
+	U_INT sx  = sp & 0x07;					// SuperTile X index in QGT
+	U_INT px  = dn >> 2;						// Detail Tile Z index in SuperTile
+	U_INT pz  = dn & 0x03;					// Detail Tile X index in SuperTile
+	U_INT nz  = (sz << 2) | pz;			// Detail Tile Z index in QGT
+	U_INT nx  = (sx << 2) | px;			// Detail Tile X index in QGT
+	*tx	= nx;
+	*tz = nz;
+	return (nx << 16) | nz;
+}
 //=========================================================================================
-//  Class WCoord:   World coordinates
+//  Vertex maths
 //=========================================================================================
-WCoord::WCoord()
-{ WX  = 0;
-  WY  = 0;
-  WZ  = 0;
+//	Return relative longitude in QGT of vertex indice vx
+//-----------------------------------------------------------------------------------
+double RelativeLongitudeInQGT(U_INT vx)
+{	U_INT sub			= FN_SUB_FROM_INDX(vx);							// Number of subdivision in QGT
+	return sub * TC_ARCS_PER_SUBD;
 }
-//-----------------------------------------------------------------------------
-//  Return maximum horizontal band coordinate for east border vertice
-//-----------------------------------------------------------------------------
-double WCoord::GetMX()
-{ return (WX == 0)?(TC_XB_ARCS):(WX); }
-//-----------------------------------------------------------------------------
-//  Return maximum vertical band coordinate for east border vertice
-//  Ignore temporary
-//-----------------------------------------------------------------------------
-double WCoord::GetMY()
-{ return WY;  }
-
-//-----------------------------------------------------------------------------
-//  Given cx and cz indices, compute the band coordinates
-//-----------------------------------------------------------------------------
-void WCoord::Set(U_INT cx,U_INT cz)
-{ xB  = FN_BAND_FROM_INX(cx);
-	WX  = GetBandLongitude(cx);
-  WY  = GetLatitudeArcs(cz);
-  return;
+//-----------------------------------------------------------------------------------
+//	Return Absolute longitude of vertex indice vx
+//-----------------------------------------------------------------------------------
+double AbsoluteLongitude(CVertex &v)
+{	U_INT No		= FN_QGT_FROM_INDX(v.keyX());				// QGT No
+	return (No * TC_ARCS_PER_QGT) + (v.GetRX());
 }
-//-------------------------------------------------------------------------
-//  Dupplicate the coordinates in V1 
-//-------------------------------------------------------------------------
-void WCoord::Assign2D(SVector &v1)
-{ v1.x = WX;
-  v1.y = WY;
-  v1.z = WZ;
-  return;
+//-----------------------------------------------------------------------------------
+//	Return relative latitude in QGT of vertex indice vz
+//-----------------------------------------------------------------------------------
+double RelativeLatitudeInQGT(U_INT vz)
+{	U_INT  No		= FN_QGT_FROM_INDX(vz);										// QGT row number
+	U_INT  nz   = (No >= 256)?(No - 256):(255 - No);			// Table entry        
+  U_INT sub   = FN_SUB_FROM_INDX(vz);										// Number of subdivisions
+  double dt   = qgt_latitude[nz].sub * sub;							// Delta from south border
+  return (No >= 256)?(dt):(-dt);												// Latitude of tz 
 }
-//-------------------------------------------------------------------------
-//  Assign Center vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignCT(TC_GTAB *tab)
-{ tab->GT_X = WX;
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Assign Center vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignCT(TC_GTAB *tab,SPosition *org)
-{ tab->GT_X = LongitudeDifference(WX,org->lon);
-	tab->GT_Y = WY - org->lat;
-	tab->GT_Z = WZ - org->alt;
-  return;
+//-----------------------------------------------------------------------------------
+//	Return Absolute latitude of vertex indice vz
+//-----------------------------------------------------------------------------------
+double AsoluteLatitude(CVertex &v)
+{	U_INT  No		= FN_QGT_FROM_INDX(v.keyZ());							// QGT row number
+	U_INT  nz   = (No >= 256)?(No - 256):(255 - No);			// Table entry        
+  double sb   = qgt_latitude[nz].lats;									// South border latitude
+	if (No < 256)	sb = -sb;																// Negative in south
+	return (qgt_latitude[nz].lats + sb);									// Absolute latitude
 }
 
-//-------------------------------------------------------------------------
-//  Assign NE vertex in Quad. If x = 0, the vertex is along the 0 meridien
-//	The we retrun the eastmost coordinate in the horizontal band 
-//-------------------------------------------------------------------------
-void WCoord::AssignNE(TC_GTAB *tab)
-{ tab->GT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Assign North vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignNB(TC_GTAB *tab)
-{ tab->GT_X = WX;
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Assign NW vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignNW(TC_GTAB *tab)
-{ tab->GT_X = WX;
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Assign West vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignWB(TC_GTAB *tab)
-{ tab->GT_X = WX;
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Assign SW vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignSW(TC_GTAB *tab)
-{ tab->GT_X = WX;
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Assign South vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignSB(TC_GTAB *tab)
-{ tab->GT_X = WX;
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Assign SE vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignSE(TC_GTAB *tab)
-{ tab->GT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Assign East vertex in Quad
-//-------------------------------------------------------------------------
-void WCoord::AssignEB(TC_GTAB *tab)
-{ tab->GT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
-  tab->GT_Y = WY;
-  tab->GT_Z = WZ;
-  return;
-}
-
-//-------------------------------------------------------------------------
-//  Return Vertex West world coordinates
-//-------------------------------------------------------------------------
-void WCoord::Assign(double *ft)
-{ ft[0] = double((WX == 0)?(XBAND_JUNCTION):(WX));
-  ft[1] = double(WY);
-  ft[2] = double(WZ);
-  return;
-}
-//-------------------------------------------------------------------------
-//  Return Vertex  world coordinates according to type
-//-------------------------------------------------------------------------
-void WCoord::SetTour(F3_VERTEX *tab, char type)
-{ switch (type) {
-    case 0:
-      tab->VT_X = WX;
-      tab->VT_Y = WY;
-      tab->VT_Z = WZ;
-      return;
-    case 1:
-      tab->VT_X = (WX == 0)?(XBAND_JUNCTION):(WX);
-      tab->VT_Y = WY;
-      tab->VT_Z = WZ;
-      return;
-  }
-  return;
-}
 //==============================================================================
 // CRandomizer:
 //  Produce a random number N in the requested range R every tim T.  The 

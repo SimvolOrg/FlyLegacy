@@ -44,7 +44,6 @@
 #include "../Include/Utility.h"
 #include "../Include/Subsystems.h"
 #include "../Include/Gauges.h"
-#include "../Include/Joysticks.h"
 #include "../Include/Weather.h"
 #include "../Include/MagneticModel.h"
 #include "../Include/Joysticks.h"
@@ -59,6 +58,7 @@
 #include "../Include/DrawVehiclePosition.h"
 #include "../Include/DrawVehicleSmoke.h"
 #include "../Include/PlanDeVol.h"
+#include "../Include/Triangulator.h"
 using namespace std;
 //=====================================================================================
 //    GLOBAL function to get the day model 
@@ -439,12 +439,13 @@ bool CSlewManager::Reset()
 //------------------------------------------------------------------------
 void CSlewManager::SetAltitude(SPosition *p)
 { double grd = globals->tcm->GetGroundAltitude();
-  double alt = globals->geop.alt;
+  double alt = p->alt;
   double agl = veh->GetPositionAGL();
-  if ((alt - agl) < grd) {p->alt = grd + agl; grnd = 1;}
-  if (0 == grnd)  return;
+	//--- Check if bottom is above ground ----------
+  if ((alt - agl) > grd) return;
   //---Must follow ground even when lower ------
-  p->alt = grd + agl;
+	p->alt = grd + agl; 
+	grnd = 1;
   return;
 }
 //------------------------------------------------------------------------
@@ -920,18 +921,19 @@ void CSituation::WorldOrigin()
 void CSituation::Draw ()
 { 
 	CCamera *cam = globals->cam;
-  //----Use standard camera seting for drawing ------------------------
+  //----Use standard camera setting for drawing ---------------------
   cam->StartShoot(dTime);
+	cam->CameraReferential();
   //----Draw sky background -----------------------------------------
 	if (globals->trn)		globals->trn->Draw();
 	//--------------------------------------------------------------------
   // Draw the terrain (ground textures, airports, scenery models, etc.)
   //--------------------------------------------------------------------
 
-	else {
-				globals->skm->PreDraw();
-				globals->tcm->Draw();                     //  Terrain cache
-				}
+	else 
+	{	globals->skm->PreDraw();
+		globals->tcm->Draw();                     //  Terrain cache
+	}
 	//---Restore everything ---------------------------------------
   cam->StopShoot();
   // Check for an OpenGL error

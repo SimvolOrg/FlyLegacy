@@ -23,6 +23,62 @@
 #include <math.h>
 #include "../Include/Globals.h"
 #include "../Include/Triangulator.h"
+#include "../Include/TerrainTexture.h"
+#include <math.h>
+//===================================================================================
+//	UNIT CONVERTER 
+//===================================================================================
+#define FOOT_FROM_METERS(X)   (double(X) *  3.2808399)
+#define SQRF_FROM_SQRMTR(X)   (double(X) * 10.7639104)
+//===================================================================================
+//	Style mask decoder
+//===================================================================================
+char *D2_MXP 		= " Face ( X+ ) SW [ %u , %u ] Dim [ %u , %u ] Rep %lf";
+char *D2_MYP		= " Face ( Y+ ) SW [ %u , %u ] Dim [ %u , %u ] Rep %lf";
+char *D2_MXM		= " Face ( X- ) SW [ %u , %u ] Dim [ %u , %u ] Rep %lf";
+char *D2_MYM		= " Face ( Y- ) SW [ %u , %u ] Dim [ %u , %u ] Rep %lf";
+char *D2_MGF		= " gFloor ( %2[^)] ) SW [ %u , %u ] Dim [ %u , %u ] Rep %lf";
+char *D2_MMF		= " mFloor ( %2[^)] ) SW [ %u , %u ] Dim [ %u , %u ] Rep %lf";
+char *D2_MZF		= " zFloor ( %2[^)] ) SW [ %u , %u ] Dim [ %u , %u ] Rep %lf";
+char *D2_ROF		= " Roof  SW[ %u , %u] Dim [%u, %u ] Rep %lf";
+//===================================================================================
+//	Floor ident	(used as a debug visual mark
+//===================================================================================
+char *D2_FLID[] = {
+	"NO",											// 0 = none
+	"gF",											// 1 = TEXD2_HMOD_GFLOOR (ground floor)
+	"mF",											// 2 = TEXD2_HMOD_MFLOOR (Middle floor)
+	"zF",											// 3 = TEXD2_HMOD_ZFLOOR (Last floor)
+};
+//==========================================================================================
+//  Roof model N°1
+//										E---------------F			height = 1 A= origin (0,0,0)
+//								D-------A      C--------B
+//	Positive base is ABCD with AB the longuest edge
+//==========================================================================================
+//----- Vertices for model 1 --------------------------------
+SVector    vM1[] =
+{	{0,0,0},													// 0 Point A
+	{1,0,0},													// 1 Point B
+	{1,2,0},													// 2 point C
+	{0,2,0},													// 3 Point D
+	//--- End of base --------------------------------------
+	{0,1,1},													// 4 point E
+	{1,1,1},													// 5 point F
+};
+//-------Indices for model 1------------------------------
+short xM1[]=
+	{	3,0,4,				// T(DAE)					// Face Y-
+	  1,2,5,				// T(BCF)					// Face Y+
+		//----------------------------------------------------
+	  4,0,1,				// T(EAB)
+	  4,1,5,				// T(EBF)
+	  5,2,4,				// T(FCE)
+	  2,3,4,				// T(CDE)
+	};
+//------Instance for model 1 -----------------------------
+CRoofFLAT	roofFLT(0,0,0,0);
+CRoofM2P	roofM2P(6,vM1,18,xM1);
 //======================================================================================
 // Visibility test between 4 points on same plan
 //  -point P is the origin point
@@ -159,6 +215,25 @@ int GeoTest::InTriangle(D2_POINT &P, D2_TRIANGLE &T)
 	return (on)?(GEO_ON_SIDE):(GEO_INSIDE); 
 	}
 //====================================================================================
+//	POINTS routines
+//====================================================================================
+void  D2_POINT::Mid(D2_POINT &p, D2_POINT &q, double h)
+	{	x		= 0.5 * (p.x + q.x);
+		y		= 0.5 * (p.y + q.y);
+		z		= 0.5 * (p.z + q.z) + h;
+		s		= t = 0;
+		lx	= 0.5 * (p.lx + q.lx);
+		ly	= 0.5 * (p.ly + q.ly);
+		elg	= 0;
+		strncpy(idn,"MIDP",4);
+	}
+//----------------------------------------
+void D2_POINT::Translate(double tx,double ty)
+	{	lx += tx;
+		ly += ty;
+	}
+
+//====================================================================================
 //	TRIANGULATOR global variable
 //====================================================================================
 char *FaceType[] =
@@ -176,8 +251,8 @@ Triangulator::Triangulator()
 	dop.Set(TRITOR_DRAW_WALL);
 	dop.Set(TRITOR_DRAW_LINE);
 	dop.Set(TRITOR_DRAW_FILL);
-
-	roofArray = 0;
+	roofM		= &roofFLT;
+	rPoint	= 0;
 	Clean();
 	globals->Disp.Enter(this,PRIO_ABSOLUTE);	
 }
@@ -203,13 +278,21 @@ int Triangulator::TimeSlice(float dT,U_INT frame)
 //-------------------------------------------------------------------
 void Triangulator::Draw()
 {	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glDisable(GL_LIGHTING);
+	glEnable(GL_TEXTURE_2D);
+	glColor3f(255,255,255);
+	//--- Get texture Object -----------------------------------------
+	U_INT xob = 0;
+	D2_Group *grp = (style)?(style->GetGroup()):(0);
+	if (grp)	xob	=  grp->GetXOBJ();
+	glBindTexture(GL_TEXTURE_2D,xob);
+	//----------------------------------------------------------------
   char d1 = 0;
 	if (dop.Has(TRITOR_DRAW_FILL))	 d1 = FillMode();
 	if (d1 && dop.Has(TRITOR_DRAW_WALL))	DrawWall();
 	DrawRoof();
 	LineMode();
 	if (dop.Has(TRITOR_DRAW_WALL))	      DrawWall();
-	DrawRoof();
 	glPopAttrib();
 	return;
 }
@@ -218,7 +301,6 @@ void Triangulator::Draw()
 //-------------------------------------------------------------------
 int Triangulator::LineMode()
 {	// Draw triangulation
-  glColor3f(255,0,0);
 	glPolygonMode(GL_FRONT,GL_LINE);
 	return 1;
 }
@@ -228,15 +310,20 @@ int Triangulator::LineMode()
 int Triangulator::FillMode()
 {	// Draw triangulation
 	glPolygonMode(GL_FRONT,GL_FILL);
-	glColor3f(255,255,255);
 	return 1;
+}
+//-------------------------------------------------------------------
+//	Draw Walls 
+//-------------------------------------------------------------------
+void Triangulator::DrawWall()
+{	glColor3f(255,255,255);
+	for (U_INT k=0; k != walls.size(); k++) walls[k]->Draw();
 }
 //-------------------------------------------------------------------
 //	Draw Roof 
 //-------------------------------------------------------------------
 void Triangulator::DrawRoof()
 {	D2_TRIANGLE *T;
-  glColor3f(255,0,0);
 	for (U_INT k=0; k != roof.size(); k++)
 	{	T = roof[k];
 		glBegin(GL_TRIANGLES);
@@ -245,13 +332,7 @@ void Triangulator::DrawRoof()
 	}
 	return;
 }
-//-------------------------------------------------------------------
-//	Draw Walls 
-//-------------------------------------------------------------------
-void Triangulator::DrawWall()
-{	
-	for (U_INT k=0; k != walls.size(); k++) walls[k]->Draw();
-}
+
 //===================================================================
 //	Public interface
 //===================================================================
@@ -296,11 +377,11 @@ void Triangulator::NewHole()
 void Triangulator::Clean()
 {	extp.Clear();
 	hole.Clear();
-	for (U_INT k=0; k < roof.size(); k++)		delete roof[k];
-	roof.clear();
 	for (U_INT k=0; k < walls.size(); k++)	delete walls[k];
-	if (roofArray)													delete [] roofArray;
-	roofArray = 0;
+	walls.clear();
+	for (U_INT k=0; k < roof.size();  k++)	delete roof[k];
+	roof.clear();
+	roofM = &roofFLT;
 	seq		= 0;										// Vertex sequence
 	num		= 0;										// Null number
 	vRFX	= 0;
@@ -325,7 +406,7 @@ void Triangulator::ParseOBJ(FILE *fp)
 		if (ParseVTX(txt))								continue;				// Vertices
 		if (strncmp(txt,"END",3)== 0)			return;
 		go = false;
-		WARNINGLOG("Triangulation of Object %fp ignored");
+		STREETLOG("Triangulation of Object %fp ignored");
 		Clean();
 	}
 	return;
@@ -356,6 +437,19 @@ bool Triangulator::ParseVTX(char *txt)
 		nv++;
 	}
 	return true;
+}
+//-------------------------------------------------------------------
+//	Save style
+//-------------------------------------------------------------------
+void Triangulator::SetStyle(D2_Style *sty)
+{	flHtr = FOOT_FROM_METERS(2.8);
+	flNbr = 1;
+	style	= sty;
+	if (0 == sty)	return;
+	//--- Extract parameters -----------------
+	flNbr	= sty->GetFloorNbr();
+	flHtr	= sty->GetHeight();
+	return;
 }
 //-------------------------------------------------------------------
 //	Compute type of points (reflex or convex)
@@ -446,7 +540,7 @@ bool Triangulator::GetAnEar()
 		//-------------------------------------------------
 		return true;
 	}
-	WARNINGLOG ("Did not find any ear");
+	STREETLOG("Did not find any ear");
 	return false;
 }
 //-------------------------------------------------------------------
@@ -477,7 +571,7 @@ bool Triangulator::NotAnEar(D2_SLOT *sa)
 	return false;
 }
 //-------------------------------------------------------------------
-//	Start triangulation
+//	Start triangulation.  The result is a flat roof
 //-------------------------------------------------------------------
 bool Triangulator::Triangulation()
 {	while (slot.GetNbObj() != 2)	if (!GetAnEar()) return false;
@@ -672,7 +766,7 @@ void Triangulator::Splice(D2_POINT *xp, D2_POINT *hp)
 //	Before calling this type, the style must be selected and set
 //	We need it to precompute some texture coefficients
 //=========================================================================
-void Triangulator::QualifyFaces()
+void Triangulator::OrientFaces()
 {	//--- Compute rotation matrix -------------------
   D2_POINT *pa = TO;
 	D2_POINT *pb = extp.CyNext(pa);
@@ -706,12 +800,21 @@ void Triangulator::QualifyFaces()
 		//--- qualify previous edge if one ------------------
 		if (pp->prev)  QualifyEdge(pp);
 	}
-  //-- Now we may qualify the first face ----------------
+  //--- Now we may qualify the first face ---------------
 	//	because the last edge is computed
 	QualifyEdge(extp.GetFirst());
-	//--- second pass for renormalization -----------------
+	//--- Compute P extensions ----------------------------
+	Xp	= maxx - minx;
+	Yp	= maxy - miny;
+	//-----------------------------------------------------
+	//   Second pass for 
+	//	1) Relocation of local coordinates
+	//		Each local coordinate is translated so they are
+	//		positives
+	//-----------------------------------------------------
 	for (pp = extp.GetFirst(); pp != 0; pp = pp->next)
-	{	pp->Translate(-minx,-miny);	}
+	{	 pp->Translate(-minx,-miny);
+	}
 	//-----------------------------------------------------
 	if (trace) TraceFace();
 	return;
@@ -730,17 +833,17 @@ void Triangulator::QualifyEdge(D2_POINT *pb)
 	if ((F == GEO_X_FACE) && (dx < 0))   F |= GEO_N_FACE;
 	if ((F == GEO_Y_FACE) && (dy < 0))   F |= GEO_N_FACE;
 	pa->SetFace(F);
+	//--- Compute coordinate ratios ----------------------
 	return;
 }
 //=========================================================================
 //	Extruding the building faces
 //=========================================================================
-void Triangulator::Extrude(char etg , double htr)
-{	double floor = 0;
-	stair	= etg;
-	for (int k=0; k < etg; k++)
-	{	BuildFloor(k,floor,htr);
-		floor += htr;
+void Triangulator::BuildWalls()
+{	Wz = 0;
+	for (int k=1; k <= flNbr; k++)
+	{	BuildFloor(k,Wz,flHtr);
+		Wz += flHtr;
 	}
 	return;
 }
@@ -749,20 +852,26 @@ void Triangulator::Extrude(char etg , double htr)
 //	f = floor 
 //	We mke tour of external points (extp) and for each point,
 //	We extrude wall with
-//	fl = floor height
+//	fh = floor height
 //	ce = ceil height
 //	We also adjust the roof height (extp)
 //----------------------------------------------------------------
-void Triangulator::BuildFloor(int No, double fl, double ht)
-{	double    ce = fl + ht;				// Ceil height
+void Triangulator::BuildFloor(int No, double fh, double ht)
+{	//--- Compute face code -----------------------------
+	char indx = TEXD2_FLOORM;								// For middle floor
+	if (flNbr == No)	indx = TEXD2_FLOORZ;	// Last floor
+	if (1			== No)	indx = TEXD2_FLOOR1;	// ground floor
+	//--- Compute floor ceil -----------------------------
+	double    ce = fh + ht;				// Ceil height
   D2_POINT *pa = 0;
-	D2_FLOOR *et = new D2_FLOOR(No,fl,ce);
+	D2_FLOOR *et = new D2_FLOOR(No,indx,fh,ce);
 	D2_FACE  *fa = 0;
+	//--- Build one floor -------------------------------
 	for (pa = extp.GetFirst(); pa != 0; pa = pa->next)
-	{	fa = new D2_FACE();
+	{	fa = new D2_FACE(pa->FaceType(),indx);
 		//--- Now we build a face with pa as the base points
 		D2_POINT *pb = extp.CyNext(pa);
-		fa->Extrude(fl,ce,pa,extp.CyNext(pa));
+		fa->Extrude(fh,ce,pa,extp.CyNext(pa));
 		et->faces.push_back(fa);
 		pa->z		= ce;
 		pb->z		= ce;
@@ -784,20 +893,46 @@ void Triangulator::Reorder()
 	return;
 }
 //----------------------------------------------------------------
-//	Change roof for indicated model
+//	Select roof model
+//	Actually the roof model is selected from the number of points
+//	Later other models may be implemented
 //----------------------------------------------------------------
-void Triangulator::ChangeRoof(CRoofModel &m)
-{	//--- Clear actual roof ---------------------
+void Triangulator::SelectRoof()
+{	if (extp.GetNbObj() != 4)				return;
+	//--- Delete current roof -----------------------------
 	for (U_INT k=0; k < roof.size(); k++) delete roof[k];
 	roof.clear();
-	roofArray = m.BuildRoof(extp,roof);
+	//--- Assign a roof model -----------------------------
+  roofM = &roofM2P;
+	//--- Build a new roof from model---------------------
+	rPoint = roofM->BuildRoof(extp,roof);
+	Zp				= roofM->GetTop();
+	return;
+}
+//----------------------------------------------------------------
+//	Texturing pass
+//----------------------------------------------------------------
+void Triangulator::Texturing()
+{	if (0 == style)		return;
+	//--- Set building extensions ---------------------
+	style->SetXp(Xp);
+	style->SetYp(Yp);
+	style->SetZp(Zp);
+	style->SetWz(Wz);
+	//------------------------------------------------- 
+	for (U_INT k = 0; k < walls.size(); k++) 
+	{	D2_FLOOR *fl = walls[k];
+		fl->TextureFloor(style);
+	}
+	roofM->Texturing(this,roof);
 	return;
 }
 //=========================================================================
 //	D2-FACE class
 //=========================================================================
-D2_FACE::D2_FACE()
-{	}
+D2_FACE::D2_FACE(char type, char fx)
+{	fType = type;
+	fIndx = fx;}
 //---------------------------------------------------------------
 //	Extrude a face from  SW point PA
 //---------------------------------------------------------------
@@ -805,15 +940,33 @@ D2_FACE::~D2_FACE()
 {	int a = 0;	}
 //---------------------------------------------------------------
 //	Extrude a face from  SW point PA
+//	fh = floor height
+//	ch = ceil  height
 //---------------------------------------------------------------
-void D2_FACE::Extrude(double f, double c, D2_POINT *p0, D2_POINT *p1)
+void D2_FACE::Extrude(double fh, double ch, D2_POINT *p0, D2_POINT *p1)
 {	sw		= *p0;
 	se		= *p1;
 	ne		= *p1;
 	nw		= *p0;
+	//--- Set Face top position ------
+	ne.V	= 1;
+	nw.V	= 1;
 	//--- Save heights ----------------
-	sw.z = se.z = f;
-	ne.z = nw.z = c;
+	sw.z = se.z = fh;
+	ne.z = nw.z = ch;
+	return;
+}
+//---------------------------------------------------------------
+//	Texture this face
+//---------------------------------------------------------------
+void D2_FACE::TextureFace(D2_Style *sty)
+{	if (sty->HasTrace()) STREETLOG("Texture Face------");
+  sty->TexturePoint(&sw,fType,fIndx);
+	sty->TexturePoint(&se,fType,fIndx);
+	sty->TexturePoint(&ne,fType,fIndx);
+	sty->TexturePoint(&nw,fType,fIndx);
+	//--- check for roof complement ---------------
+	
 	return;
 }
 //---------------------------------------------------------------
@@ -821,17 +974,18 @@ void D2_FACE::Extrude(double f, double c, D2_POINT *p0, D2_POINT *p1)
 //---------------------------------------------------------------
 void D2_FACE::Draw()
 {	glBegin(GL_TRIANGLE_STRIP);
-	sw.Draw();
-	se.Draw();
 	nw.Draw();
+	sw.Draw();
 	ne.Draw();
+	se.Draw();
 	glEnd();
 }
 //=========================================================================
 //	D2-Stair class
 //=========================================================================
-D2_FLOOR::D2_FLOOR(int e, double f, double c)
+D2_FLOOR::D2_FLOOR(char e, char t,double f, double c)
 {	sNo		= e;
+	type	= t;
 	floor = f;
 	ceil  = c;
 } 
@@ -843,13 +997,25 @@ D2_FLOOR::~D2_FLOOR()
 	faces.clear();
 }
 //---------------------------------------------------------------
+//	Floor texturing 
+//---------------------------------------------------------------
+void D2_FLOOR::TextureFloor(D2_Style *s)
+{ for (U_INT k=0; k < faces.size(); k++)
+	{	D2_FACE *fa = faces[k];
+		fa->TextureFace(s);
+	}
+	return;
+}
+//---------------------------------------------------------------
 //	Draw 
 //---------------------------------------------------------------
 void D2_FLOOR::Draw()
 {	for (U_INT k=0; k < faces.size(); k++)	faces[k]->Draw();
 }
 //====================================================================================
-//	Roof Model
+//	PROCEDURAL Roof Model
+//	Those function build several kind of roof when the base contour of the building
+//	is a rectangle
 //====================================================================================
 CRoofModel::CRoofModel(int n,SVector *v,int q, short *x)
 {	nbv		= n;
@@ -857,93 +1023,575 @@ CRoofModel::CRoofModel(int n,SVector *v,int q, short *x)
 	nbx		= q;
 	aIND	= x;
 	aOUT  = 0;
+	ratio = 0.5;
+	trn		= 0;
 }
 //---------------------------------------------------------------
 //	free vectors
 //---------------------------------------------------------------
 CRoofModel::~CRoofModel()
-{	if (aOUT)	delete [] aOUT;}
+{	Clear();	}
 //---------------------------------------------------------------
-//	free vectors
+//	free roof model
 //---------------------------------------------------------------
-void CRoofModel::CloneModel()
-{	char txt[8];
-	aOUT = new D2_POINT[nbv];
-	for (int k=0; k<nbv; k++)
-	{	_snprintf(txt,8,"R%03d",k);
-		aOUT[k].SetID(txt);
-	}
-	return;
+void CRoofModel::Clear()
+{ aOUT = 0;
 }
 //---------------------------------------------------------------
 //	Fill a triangle from index k
 //	NOTE: Only the pointers are assigned to the aOUT points
+//	n is the current index number in model description (aIND)
+//	m is the current index into  the POINT array
 //---------------------------------------------------------------
-int CRoofModel::FillTriangle(D2_TRIANGLE &T, short k)
-{	short s0 = aIND[k++];
-	T.B	= aOUT + s0;
-  //--- build A POINT ------
-	short s1 = aIND[k++];
-	T.A = aOUT + s1;
+int CRoofModel::FillTriangle(D2_TRIANGLE &T, short n, short m)
+{	D2_POINT *np;
+	D2_POINT *sp;
+	//--- Dupplicate B vertex ------
+	short s0 = aIND[n++];
+	sp  = aOUT + s0;
+	np	= new D2_POINT(sp);
+	T.B	= np;
+	aOUT[m++] = *np;
+  //--- Dupplicate A vertex ------
+	short s1 = aIND[n++];
+	sp  = aOUT + s1;
+	np	= new D2_POINT(sp);
+	T.A = np;
+	aOUT[m++] = *np;
   //------------------------
-	short s2 = aIND[k++];
-	T.C = aOUT + s2;
-	return k;
+	short s2 = aIND[n++];
+	sp  = aOUT + s2;
+	np	= new D2_POINT(sp);
+	T.C = np;
+	aOUT[m++] = *np;
+	if (U_INT(m) > tot)	gtfo("Bad m index");
+	return n;
 }
 //---------------------------------------------------------------
-//	Build a roof with 2 slopes
-//	NOTE:  The tour points (inp) must have good height
-//				the inp should be ordered with X origin as 1rst point
+//	A roof model must do the following things
+//	1) compute roof triangles from the model and the building
+//			tour given by 'inp'.  This is done by overwriting
+//			the virtual function BuildRoof(..)
+//	2) Save those triangles in the output list 'out'
+//	3) Compute and save the top point of the roof
+//	4) Return a list of vertices that made triangles computed in 1
+//---------------------------------------------------------------
+//	The list of POINT is organized as
+//	-First 4 POINTS are the base points
+//	-Next comes the top points
+//	-Next come the POINTs needed by triangles with distinct
+//	Texture coordinates.
 //---------------------------------------------------------------
 D2_POINT *CRoofModel::BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out)
 {	if (inp.GetNbObj() != 4)					return 0;
-	//-----Allocate output vector --------------------------
-	CloneModel();
-	//---- Compute the 4 corners ---------------------------
-	D2_POINT *p1 = inp.GetFirst();
-	D2_POINT *p2 = inp.CyNext(p1);
-	D2_POINT *p0 = inp.CyPrev(p1);
+	//-----Allocate arry of POINTs --------------------------
+	tot	= nbv + (3 * nbx);
+	aOUT = new D2_POINT[tot];
 	D2_POINT *pq;
 	int k   = 0;
-	for (pq = p1; k != 4; pq = pq->next, k++)
-	{	 aOUT[k].x = pq->x;
-		 aOUT[k].y = pq->y;
-		 aOUT[k].z = pq->z;
-	}
-	//--- Compute both roof top vertices from X side-------------
-	SVector T;
-	T.x = (p0->x - p1->x) * 0.5;
-	T.y = (p0->y - p1->y) * 0.5;
-	T.z = T.y * p0->elg;
-	aOUT[4].Add(*p1,T);
-	aOUT[5].Add(*p2,T);
-	//--- Now build the triangles -------------------------------
-	int n = 0;
-	while (n < nbx)
-	{	D2_TRIANGLE *T = new D2_TRIANGLE(1);
-		n	= FillTriangle(*T,n);
-		out.push_back(T);
-	}
-	//--- POINTS are now under caller responsibility to delete -------
-	D2_POINT *rf = aOUT;
-	aOUT	= 0;
-	return rf;
+	//--- Copy contour as the first roof points ------------
+	for (pq = inp.GetFirst(); k != 4; pq = pq->next, k++) 	{	aOUT[k] = *pq;	}
+	GenerateRoof(inp,out);
+	return aOUT;
 }
 //===================================================================================
-//	UNIT CONVERTER 
+//	Roof with 2 Slopes
 //===================================================================================
-#define FOOT_FROM_METERS(X)   (double(X) *  3.2808399)
-#define SQRF_FROM_SQRMTR(X)   (double(X) * 10.7639104)
+CRoofM2P::CRoofM2P(int n,SVector *v,int q, short *x)
+	: CRoofModel(n,v,q,x)
+{}
+//---------------------------------------------------------------
+//	The model M2P builds a roof with 2 slopes
+//	
+//	NOTE:  The tour points (inp) must have good height
+//				the inp should be ordered with X origin as 1rst point
+//	The top of roof is computed according to the roof angle
+//	For 45° roof  top is half the wall width
+//---------------------------------------------------------------
+void  CRoofM2P::GenerateRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out)
+{	//--- Compute both roof top vertices from width--------
+	D2_POINT *p0 = aOUT + 0;
+	D2_POINT *p1 = aOUT + 1;
+	D2_POINT *p2 = aOUT + 2;
+	D2_POINT *p3 = aOUT + 3;
+	//--- Add the 2 top vertices into POINT array ---------------
+	double H = ratio * p1->elg;
+	aOUT[4].Mid(*p3,*p0,H);							// Face Y-
+	aOUT[5].Mid(*p1,*p2,H);							// Face Y+
+	//--- Save the highest point elevation ----------------------
+	top	= aOUT[4].z;
+	//--- Now build the triangles -------------------------------
+	int n = 0;
+	int m = nbv;
+	//--- NOTE: First 2 triangles must be Y faces ---------------
+	while (n < nbx)
+	{	D2_TRIANGLE *T = new D2_TRIANGLE(1);
+		n	= FillTriangle(*T,n,m++);
+		out.push_back(T);
+	}
+	return;
+}
+//----------------------------------------------------------------------
+//	Texture ta face
+//----------------------------------------------------------------------
+void CRoofM2P::TextureFace(int ftype, D2_TRIANGLE *T)
+{	D2_Style *sty = trn->GetStyle(); 
+	if (0 == sty)		return;
+	sty->TexturePoint(T->B,ftype,TEXD2_WHOLE);
+	sty->TexturePoint(T->A,ftype,TEXD2_WHOLE);
+	sty->TexturePoint(T->C,ftype,TEXD2_WHOLE);
+	return;
+}
+//----------------------------------------------------------------------
+//	Texture this 2-slopes roof
+//----------------------------------------------------------------------
+void CRoofM2P::Texturing(Triangulator *t,std::vector<D2_TRIANGLE*> &out)
+{	trn = t;
+	TextureFace(GEO_FACE_YP,out[1]);
+	TextureFace(GEO_FACE_YM,out[0]);
+}
+//===================================================================================
+//	Roof with Flat Top
+//===================================================================================
+//----------------------------------------------------------------------
+//	Generate a flat roof
+//----------------------------------------------------------------------
+CRoofFLAT::CRoofFLAT(int n,SVector *v,int q, short *x)
+	: CRoofModel(n,v,q,x)
+{;}
+//----------------------------------------------------------------------
+//	Generate a flat roof
+//----------------------------------------------------------------------
+void  CRoofFLAT::GenerateRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out)
+{;}
+//----------------------------------------------------------------------
+//	Texture this 2-slopes roof
+//----------------------------------------------------------------------
+void CRoofFLAT::Texturing(Triangulator *trn,std::vector<D2_TRIANGLE*> &out)
+{	;}
+
+//===================================================================================
+//	STYLE management
+//	Create a new group
+//
+//===================================================================================
+D2_Group::D2_Group(char *gn, D2_Session *s)
+{	ssn				= s;
+	tr				= ssn->HasTrace();
+	strncpy(name,gn,64);
+	name[63]	= 0;
+	sfMin			= 0;
+	sfMax			= 10000000;
+	//-- Default is side [4,200000] ---------
+	sdMin			= 4;
+	sdMax			= 200000;
+	//--- Floor -----------------------------
+	flNbr			= 1;
+	flHtr			= 2.8;
+	//---------------------------------------
+	weight		= 0;
+	nber			= 1;
+	//--- Index -----------------------------
+	indx			= 0;
+	//--- No texture yet --------------------
+	*path			= 0;
+}
+//-----------------------------------------------------------------
+//	Destroy Group 
+//-----------------------------------------------------------------
+D2_Group::~D2_Group()
+{	for (U_INT k= 0; k < styles.size(); k++) delete styles[k];
+	glDeleteTextures(1,&tinf.xOBJ);
+}
+//-----------------------------------------------------------------
+//	Read parameters 
+//-----------------------------------------------------------------
+bool D2_Group::Parse(FILE *f, D2_Session *sn)
+{	char buf[128];
+	int  pos	= 0;
+	bool go   = true;
+	while (go)
+	{	pos	= ftell(f);
+	  sn->ReadFile(f,buf);
+		if (DecodeParam(buf))	continue;
+		//--- Convert all units --------------------------------
+		sfMin		= SQRF_FROM_SQRMTR(sfMin);	// M² to FEET²
+		sfMax		= SQRF_FROM_SQRMTR(sfMax);
+		flHtr	  =	FOOT_FROM_METERS(flHtr);
+		//--- Load texture if any ------------------------------
+		LoadTexture();
+		//--- Then exit false ----------------------------------
+		go	= false;
+	}
+	//------Back up --------------------------------------------
+	fseek(f,pos,SEEK_SET);
+	return false;
+}
+//-----------------------------------------------------------------
+//	Get group parameters  parameters 
+//-----------------------------------------------------------------
+bool D2_Group::DecodeParam(char *buf)
+{	char tex[64];
+	//--- Check for surface --------------------------------
+	int nf = sscanf(buf," Surface [ %lf , %lf]", &sfMin, &sfMax);
+	if (nf == 2)	return true;
+	//--- Check for surface to infinity --------------------
+  nf = sscanf(buf," Surface [ %lf , * ]",  &sfMin);
+	if (nf == 1)	return true;
+	//--- Check for side ------------------------------------
+	nf = sscanf(buf," Sides [ %u , %u]", &sdMin, &sdMax);
+	if  (nf == 2) return true;
+	//--- Check for side to infinity ------------------------
+	nf = sscanf(buf," Side [%u , * ]", &sdMin);
+	if	(nf == 1) return true;
+	//--- Check floor number --------------------------------
+	nf = sscanf(buf," Floor %u",   &flNbr);
+	if  (1 == nf)	return true;
+	//--- Check floor height --------------------------------
+	nf = sscanf(buf," Height %lf", &flHtr);
+	if	(1 == nf)	return true;
+	//--- Check texture file -------------------------------
+	nf = sscanf_s(buf," Texture %64s",tex,64);
+	if  (1 == nf)
+	{	tex[63]	= 0;
+		_snprintf(path,511,"OpenStreet/Textures/%s",tex);
+		return true;
+	}
+	//--- Not a group parameter ----------------------------
+	return false;
+}
+//-----------------------------------------------------------------
+//	Add a new style 
+//-----------------------------------------------------------------
+void	D2_Group::AddStyle(D2_Style *sy)
+{	styles.push_back(sy);
+	weight += sy->GetWeight();
+	return;
+}
+//-----------------------------------------------------------------
+//	Compute each style ratio
+//-----------------------------------------------------------------
+void D2_Group::ComputeRatio()
+{	if (0 == weight)	return;
+	for (U_INT k=0; k < styles.size(); k++)
+	{	D2_Style *sty = styles[k];
+		int			w = sty->GetWeight();
+		double	r = double(w) / double (weight);
+		sty->SetRatio(r);
+	} 
+	return;
+}
+//-----------------------------------------------------------------
+//	Select a group based on surface and number of sides
+//	Then select a style based on ratio
+//-----------------------------------------------------------------
+D2_Style *D2_Group::GetStyle(double sf, int sd)
+{ int end = styles.size();
+	if (0 == end)												return 0;
+	if ((sf < sfMin) || (sf > sfMax))		return 0;
+	if ((sd < sdMin) || (sd > sdMax))		return 0;
+	//--- Update style index ----------------------
+	int   k = end;
+	while (k--)	
+	{	if (indx >= end)	indx = 0;
+		D2_Style *sty = styles[indx++];
+		if (!sty->HasTurn(nber))	continue;
+		//--- Increment instance number -------------
+		nber++;							
+		return sty;
+	}
+	return 0;
+}
+//-----------------------------------------------------------------
+//	Load texture for this group
+//-----------------------------------------------------------------
+void D2_Group::LoadTexture()
+{	if (*path == 0)		return;
+	if (tinf.xOBJ)		return;
+	CArtParser img(TC_HIGHTR);
+  strcpy(tinf.path,path);
+  img.GetAnyTexture(tinf);
+	globals->txw->GetTexOBJ(tinf,0,GL_RGBA);
+	return;
+}
+//===================================================================================
+//
+//	Create a new style
+//
+//===================================================================================
+D2_Style::D2_Style(char *snm, D2_Group *gp)
+{	strncpy(name,snm,64);
+	name[63]	= 0;
+	group			= gp;
+	weight		= 1;
+	flNbr     = gp->GetFloorNbr();
+	Fz				= gp->GetFloorHtr();
+	nber			= 0;				// Instance number
+	gp->GetTexDim(Tw,Th);
+	tr				= gp->HasTrace();
+	//--- Clear matrix ----------------------------
+	for (int k=0; k < TEXD2_MAT_DIM; k++) param[k] = 0; 
+}
+//-----------------------------------------------------------------
+//	Destroy Style 
+//-----------------------------------------------------------------
+D2_Style::~D2_Style()
+{	for (int k=0; k < TEXD2_MAT_DIM; k++)
+	{	D2_TParam *p = param[k];
+		if (p)	Clear(p);
+		if (p)  delete p;
+	}
+  //--- Free roof parameters --------------------
+	for (U_INT k=0; k < roofT.size(); k++) delete roofT[k];
+	roofT.clear();
+}
+//-----------------------------------------------------------------
+//	Remove pointeur from matrix 
+//-----------------------------------------------------------------
+void	D2_Style::Clear(D2_TParam *p)
+{	for (int k=0; k < TEXD2_MAT_DIM; k++) if (param[k] == p) param[k] = 0;
+}
+//-----------------------------------------------------------------
+//	Error
+//-----------------------------------------------------------------
+bool D2_Style::Error1(char *p)
+{	STREETLOG("Mandatory Face(X+) missing: %s", p);
+	return false;
+}
+//-----------------------------------------------------------------
+//	Error
+//-----------------------------------------------------------------
+bool D2_Style::Error2(char *p)
+{	STREETLOG("Found Face(Y+) after Face(Y-): %s", p);
+	return false;
+}
+//-----------------------------------------------------------------
+//	Read style parameters 
+//-----------------------------------------------------------------
+bool D2_Style::Decode(char *buf)
+{ int nf = 0;
+	char floor[4];
+	D2_TParam pm;
+	char	er = 0;
+	//----------------------------------------------------------------------
+  nf = sscanf(buf," Weight %u",&weight);
+	if (1 == nf)		return true;
+	//--- Check for X+ -----------------------------------------------------
+	pm.code	= GEO_FACE_XP;
+	nf = sscanf(buf,D2_MXP, &pm.x0, &pm.y0, &pm.x1, &pm.y1, &pm.rept);
+	if (4 <= nf) 		return AddFace(pm);	
+	//--- Check for Y+ -----------------------------------------------------
+	pm.code = GEO_FACE_YP;
+	nf = sscanf(buf,D2_MYP, &pm.x0, &pm.y0, &pm.x1, &pm.y1, &pm.rept);
+	if (4 <= nf)		return AddFace(pm); 	 
+	//--- Check for X- ----------------------------------------------------
+	pm.code = GEO_FACE_XM;
+	nf = sscanf(buf,D2_MXM, &pm.x0, &pm.y0, &pm.x1, &pm.y1, &pm.rept);
+	if (4 <= nf)		return AddFace(pm);
+	//--- Check for Y- ----------------------------------------------------
+	pm.code = GEO_FACE_YM;
+	nf = sscanf(buf,D2_MYM, &pm.x0, &pm.y0, &pm.x1, &pm.y1, &pm.rept);
+	if (4 <= nf) 	  return AddFace(pm);
+	//--- Check for ground Floor ------------------------------------------
+	pm.code = 0;
+	pm.hmod = TEXD2_HMOD_GFLOOR;
+	nf = sscanf_s(buf,D2_MGF,floor,4, &pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (5 <= nf)		return AddFloor(floor,pm);
+	//--- Check for middle Floor ------------------------------------------
+	pm.code = 0;
+	pm.hmod = TEXD2_HMOD_MFLOOR;
+	nf = sscanf_s(buf,D2_MMF,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (5 <= nf)		return AddFloor(floor,pm);
+	//--- Check for Last Floor ------------------------------------------
+	pm.code = 0;
+	pm.hmod = TEXD2_HMOD_ZFLOOR;
+	nf = sscanf_s(buf,D2_MZF,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (5 <= nf)		return AddFloor(floor,pm);
+	//--- Check for roof texture ----------------------------------------
+	pm.code = 0;
+	pm.hmod = 0;
+	nf = sscanf(buf,D2_ROF,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
+	if (4 <= nf)		return AddRoof(pm);
+	return false;
+}
+//----------------------------------------------------------------------
+//	Add a Face texture definition
+//----------------------------------------------------------------------
+bool  D2_Style::AddFace(D2_TParam &p)
+{	D2_TParam *tp = new D2_TParam();
+	tp->AdjustFrom(p, Tw, Th);
+	switch (p.code)	{
+		case GEO_FACE_XP:
+			tp->SetFace("X+");
+			//--- Fill whole matrix with it -----------
+			for (int k=0; k != TEXD2_MAT_DIM; k++)	param[k] = tp;
+			return true;
+		case GEO_FACE_YP:
+			tp->SetFace("Y+");
+			//--- Fill YP and YM ---------------------
+			for (int k=0; k != 4; k++) param[TEXD2_IND_YP + k] = tp;
+			for (int k=0; k != 4; k++) param[TEXD2_IND_YM + k] = tp;
+			return true;
+		case GEO_FACE_XM:
+			tp->SetFace("X-");
+			//--- Fill XM ----------------------------
+			for (int k=0; k != 4; k++) param[TEXD2_IND_XM + k] = tp;
+			return true;
+		case GEO_FACE_YM:
+			tp->SetFace("Y-");
+			//--- Fill YM -------------------------------
+			for (int k=0; k != 4; k++) param[TEXD2_IND_YM + k] = tp;
+			return true;	 
+}
+	return false;
+}
+//----------------------------------------------------------------------
+//	Add a floor texture definition 
+//----------------------------------------------------------------------
+bool  D2_Style::AddFloor(char *fl, D2_TParam &p)
+{	int k	= 0;
+	int n = p.hmod & 0x3;     // Limit value
+	char *fid = D2_FLID[n];
+	D2_TParam *tp = new D2_TParam();
+	tp->AdjustFrom(p, Tw, Th);
+	tp->SetFace(fl);
+	tp->SetFloor(fid);
+	//--- Enter floor texture in matrix  --------------------------
+	if (strncmp(fl,"X+",2) == 0) k = (TEXD2_IND_XP) + n;
+	if (strncmp(fl,"Y+",2) == 0) k = (TEXD2_IND_YP) + n;
+	if (strncmp(fl,"X-",2) == 0) k = (TEXD2_IND_XM) + n;
+	if (strncmp(fl,"Y-",2) == 0) k = (TEXD2_IND_YM) + n;
+	param[k] = tp;
+	return true;
+}
+//----------------------------------------------------------------------
+//	Add a roof texture definition 
+//----------------------------------------------------------------------
+bool D2_Style::AddRoof(D2_TParam &p)
+{	D2_TParam *ntp = new D2_TParam();
+	ntp->AdjustFrom(p, Tw, Th);
+	roofT.push_back(ntp);
+	return true;
+}
+//----------------------------------------------------------------------
+//	Check for completion 
+//----------------------------------------------------------------------
+bool D2_Style::IsOK()
+{	if (*param != 0)	return true;
+	STREETLOG("Style %s Missing Face(X+) definition",name);
+	return false;
+}
+//----------------------------------------------------------------------
+//	Check if the ratio allow for a generation 
+//----------------------------------------------------------------------
+bool D2_Style::HasTurn(int d)
+{	double rt = double(nber) / double(d);
+	if (rt > ratio)			return false;
+	//--- Increment instance number --------------
+	nber++;
+	return true;
+}
+//----------------------------------------------------------------------
+//	Compute the S,T texture coordinates for point pp
+//	1) Select texture definition in matrix from face type of pp
+//	2) Compute S and T coordinates
+//
+//----------------------------------------------------------------------
+void D2_Style::TexturePoint(D2_POINT *pp, char ft, char fx)
+{ //--- Load texture --------------------------------------
+  char	 ind = (ft << 2);					// Face Type as index in param
+  ind += fx;											// Add floor code
+	//---- Select the texture -------------------------------
+	D2_TParam  *T = param[ind];								// Related exture
+	double      R = T->rept;									// Repeat count
+	double      H = pp->z;										// Point height
+	double      V = pp->VertPos();						// Vertical position
+	double      W = (ft & GEO_Y_FACE)?(Zp):(Wz);	// Wall height
+	//--- pr is pixel in rectangle ---------------------------
+	double     pr		= 0;
+	double     md   = 0;
+	double  lc;						// Local coordinate
+	double  U = 0;
+	double  P = 0;
+	int     Q = 0;
+
+	//---- Compute S coordinate -----------------------------
+	switch (ft)
+	{	case GEO_FACE_XP:
+			pr		= (T->Rx * pp->LocalX()) / Xp;
+			pp->s = (T->x0 + pr) / T->Tw;
+			break;
+		case GEO_FACE_YP:
+		  pr		= (T->Rx * pp->LocalY()) / Yp;
+			pp->s = (T->x0 + pr) / T->Tw;
+			break;
+		case GEO_FACE_XM:
+			pr		= T->Rx - ((T->Rx * pp->LocalX())  / Xp);
+			pp->s = (T->x0 + pr) / T->Tw;
+			break;
+		case GEO_FACE_YM:
+			pr		= T->Rx - ((T->Rx * pp->LocalY())  / Yp);
+			pp->s = (T->x0 + pr) / T->Tw;
+			break;
+	}
+	//---- Compute T coordinate -----------------------------
+	if (T->IsWhole())
+		{	//--- Pixel in rectangle -------------------
+			pr		= (H * T->Ry) / (W * T->Th);
+			pr		=  T->Oz + pr;
+			pp->t =  pr;
+		}
+	else 
+		{ pp->t = T->Oz + ((V * T->Ry) / (Fz * T->Th));  }
+	//-------------------------------------------------------
+	if (!group->HasTrace())			return;
+	char np[6];
+	pp->Id(np);
+	STREETLOG("Texture Point %s: S=%.5lf T=%.5lf",np,pp->s,pp->t);
+	return;
+}
+//===================================================================================
+//	Create a texture parameter
+//===================================================================================
+D2_TParam::D2_TParam()
+{	strcpy(face,"NO");
+	strcpy(flor,"NO");
+	rept = 1; 
+	hmod = TEXD2_HMOD_WHOLE;
+}
+//-----------------------------------------------------------------
+//	Destroy texture parameter 
+//-----------------------------------------------------------------
+D2_TParam::~D2_TParam()
+{	}
+//-----------------------------------------------------------------
+//	Copy from parameters and compute some values 
+//-----------------------------------------------------------------
+void	D2_TParam::AdjustFrom(D2_TParam &p, U_INT tw, U_INT th)
+{	*this = p;
+	 Tw = tw;
+	 Th = th;
+	 //--- Save rectangle dimansion -----------------------
+	 Rx  = double (x1);
+	 Ry  = double (y1);
+	 //---- Adjust X1 and Y1 to NE corner of texture ------
+	 x1  += x0;	
+	 y1	 += y0;
+	//--- Compute origin of rectangle in texture ----------
+	 Ox   = (tw > 0)? (double (x0) / double(Tw)):(0);
+	 Oz   = (th > 0)? (double (y0) / double(Th)):(0);
+	 return;
+}
 //===================================================================================
 //
 //	Start OpenStreet session
 //
 //===================================================================================
 D2_Session::D2_Session()
-{	;
+{	tr	= 0;
 }
 //-----------------------------------------------------------------
-//	Destroy resourecs 
+//	Destroy resources
 //-----------------------------------------------------------------
 D2_Session::~D2_Session()
 {	std::map<std::string, D2_Group*>::iterator ig;
@@ -953,7 +1601,7 @@ D2_Session::~D2_Session()
 //	Stop Session 
 //-----------------------------------------------------------------
 bool D2_Session::Stop01(char *ln)
-{	WARNINGLOG("Invalid statement %s",ln);
+{	STREETLOG("Invalid statement %s",ln);
 	if (ln) exit(-1);
 	return false;
 }
@@ -977,16 +1625,20 @@ void D2_Session::ReadFile(FILE *f, char *buf)
 	while (go)
 	{	fpos = ftell(f);
 	  *buf = 0;
-		fgets(buf,128,f);
+		char *txt = fgets(buf,128,f);
 		buf[127] = 0;
-		if (strncmp(buf,"//",2) == 0)	continue;
-		if (*buf == 0x0A)							continue;
+		if (0 == txt)		return;
+		while ((*txt == 0x09) || (*txt == ' '))	txt++;
+		if (strncmp(txt,"//", 2) == 0)	continue;
+		if (*buf == 0x0A)								continue;
 		return;
 	}
 	return;
 }
 //-----------------------------------------------------------------
-//	Read session Name 
+//	Read session Name
+//	NOTE: When all style parameters are OK we may compute the
+//				style ration inside of each group. 
 //-----------------------------------------------------------------
 bool D2_Session::ParseSession(FILE *f)
 {	char buf[128];
@@ -995,16 +1647,22 @@ bool D2_Session::ParseSession(FILE *f)
 	int nf = sscanf_s(buf,"Session %63s", name,63);
 	name[63] = 0;
 	if (nf!= 1)				return false;
-	//--- Parse Groups --------------------
+	//--- Parse Groups ----------------------
 	ParseGroups(f);
 	fseek(f,fpos,SEEK_SET);
 	ParseStyles(f);
+	//--- Compute all ratios ----------------
+	std::map<std::string,D2_Group*>::iterator rg;
+	for (rg = group.begin(); rg != group.end(); rg++) 
+	{	D2_Group *gp = (*rg).second;
+		gp->ComputeRatio();
+	}
 	//--- Normally we got the end statement here
 	ReadFile(f,buf); 
 	char *ok = strstr(buf,"Fin");
 	if (ok)		return true;
 	//--------------------------------------
-	WARNINGLOG("Error arround %s",buf);
+	STREETLOG("Error arround %s",buf);
 	return false;
 }
 //-----------------------------------------------------------------
@@ -1021,7 +1679,7 @@ bool D2_Session::ParseGroups(FILE *f)
 		gnm[63]  = 0;
 		if (nf != 1)	break;
 		//--- Allocate a new group -----------------
-		D2_Group *gp = new D2_Group(gnm);
+		D2_Group *gp = new D2_Group(gnm,this);
 		group[gnm] = gp;
 		gp->Parse(f,this);
 	}
@@ -1072,268 +1730,17 @@ bool D2_Session::AddStyle(FILE *f,char *sn,char *gn)
 	}
 	return false;
 }
-//===================================================================================
-//	Create a new group
-//===================================================================================
-D2_Group::D2_Group(char *gn)
-{	strncpy(name,gn,64);
-	name[63]	= 0;
-	sfMin			= 0;
-	sfMax			= 10000000;
-	//-- Default is side [4,200000] ---------
-	sdMin			= 4;
-	sdMax			= 200000;
-	//--- Floor -----------------------------
-	floor			= 1;
-	height		= 2.8;
-	//---------------------------------------
-	weight		= 0;		 
-}
-//-----------------------------------------------------------------
-//	Destroy Group 
-//-----------------------------------------------------------------
-D2_Group::~D2_Group()
-{	for (U_INT k= 0; k < styles.size(); k++) delete styles[k];
-}
-//-----------------------------------------------------------------
-//	Read parameters 
-//-----------------------------------------------------------------
-bool D2_Group::Parse(FILE *f, D2_Session *sn)
-{	char buf[128];
-	int  pos	= 0;
-	bool go   = true;
-	while (go)
-	{	pos	= ftell(f);
-	  sn->ReadFile(f,buf);
-		if (DecodeParam(buf))	continue;
-		//--- Convert all units --------------------------------
-		sfMin		= SQRF_FROM_SQRMTR(sfMin);	// M² to FEET²
-		sfMax		= SQRF_FROM_SQRMTR(sfMax);
-		height	=	FOOT_FROM_METERS(height);	
-		//--- Then exit false ----------------------------------
-		go	= false;
+//------------------------------------------------------------------
+//	From surface and number of side, return a style
+//------------------------------------------------------------------
+D2_Style *D2_Session::GetStyle(double sf, int side)
+{	std::map<std::string,D2_Group*>::iterator rg;
+	for (rg = group.begin(); rg != group.end(); rg++)
+	{	D2_Group *grp = (*rg).second;
+		D2_Style *sty = grp->GetStyle(sf,side);
+		if (sty)	return sty;
 	}
-	//------Back up --------------------------------------------
-	fseek(f,pos,SEEK_SET);
-	return false;
-}
-//-----------------------------------------------------------------
-//	Get group parameters  parameters 
-//-----------------------------------------------------------------
-bool D2_Group::DecodeParam(char *buf)
-{	//--- Check for surface --------------------------------
-	int nf = sscanf(buf," Surface [ %lf , %lf]", &sfMin, &sfMax);
-	if (nf == 2)	return true;
-	//--- Check for surface to infinity --------------------
-  nf = sscanf(buf," Surface [ %lf , * ]",  &sfMin);
-	if (nf == 1)	return true;
-	//--- Check for side ------------------------------------
-	nf = sscanf(buf," Sides [ %u , %u]", &sdMin, &sdMax);
-	if  (nf == 2) return true;
-	//--- Check for side to infinity ------------------------
-	nf = sscanf(buf," Side [%u , * ]", &sdMin);
-	if	(nf == 1) return true;
-	//--- Check floor number --------------------------------
-	nf = sscanf(buf," Floor %u",   &floor);
-	if  (1 == nf)	return true;
-	//--- Check floor height --------------------------------
-	nf = sscanf(buf," Height %lf", &height);
-	if	(1 == nf)	return true;
-	return false;
-}
-//-----------------------------------------------------------------
-//	Add a new style 
-//-----------------------------------------------------------------
-void	D2_Group::AddStyle(D2_Style *sy)
-{	styles.push_back(sy);
-	weight += sy->GetWeight();
-	return;
-}
-//-----------------------------------------------------------------
-//	Compute each style ratio
-//-----------------------------------------------------------------
-void D2_Group::ComputeRatio()
-{	for (U_INT k=0; k < styles.size(); k++)
-	{	D2_Style *sty = styles[k];
-		int			w = sty->GetWeight();
-		double	r = double(w) / double (weight);
-		sty->SetRatio(r);
-	} 
-	return;
-}
-//===================================================================================
-//
-//	Create a new style
-//
-//===================================================================================
-D2_Style::D2_Style(char *snm, D2_Group *gp)
-{	strncpy(name,snm,64);
-	name[63]	= 0;
-	group			= gp;
-	weight		= 1;
-	minF = maxF = 1;
-	//--- Clear matrix ----------------------------
-	for (int k=0; k < TEXD2_MAT_DIM; k++) param[k] = 0; 
-}
-//-----------------------------------------------------------------
-//	Destroy Style 
-//-----------------------------------------------------------------
-D2_Style::~D2_Style()
-{	for (int k=0; k < TEXD2_MAT_DIM; k++)
-	{	D2_TParam *p = param[k];
-		if (p)	Clear(p);
-		if (p)  delete p;
-	}
-}
-//-----------------------------------------------------------------
-//	Remove pointeur from matrix 
-//-----------------------------------------------------------------
-void	D2_Style::Clear(D2_TParam *p)
-{	for (int k=0; k < TEXD2_MAT_DIM; k++) if (param[k] == p) param[k] = 0;
-}
-//-----------------------------------------------------------------
-//	Error
-//-----------------------------------------------------------------
-bool D2_Style::Error1(char *p)
-{	WARNINGLOG("Mandatory Face(X+) missing: %s", p);
-	return false;
-}
-//-----------------------------------------------------------------
-//	Error
-//-----------------------------------------------------------------
-bool D2_Style::Error2(char *p)
-{	WARNINGLOG("Found Face(Y+) after Face(Y-): %s", p);
-	return false;
+	return 0;
 }
 
-//-----------------------------------------------------------------
-//	Read style parameters 
-//-----------------------------------------------------------------
-bool D2_Style::Decode(char *buf)
-{ int nf = 0;
-	char floor[4];
-	D2_TParam pm;
-	char	er = 0;
-	char *xp		= " Face ( X+ ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
-	char *yp    = " Face ( Y+ ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
-	char *xm    = " Face ( X- ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
-	char *ym		= " Face ( Y- ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
-	char *gf    = " gFloor ( %2[^)] ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
-	char *mf    = " mFloor ( %2[^)] ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
-	char *zf    = " zFloor ( %2[^)] ) SW [ %u , %u ] NE [ %u , %u ] Rep %u";
-	//----------------------------------------------------------------------
-  nf = sscanf(buf," Weight %u",&weight);
-	if (1 == nf)		return true;
-	//--- Check for X+ -----------------------------------------------------
-	pm.rept = 1;
-	pm.code	= GEO_FACE_XP;
-	pm.hmod = TEXD2_HMOD_WHOLE;
-	nf = sscanf(buf,xp,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
-	if (4 <= nf) 		return AddFace(pm);	
-	//--- Check for Y+ -----------------------------------------------------
-	pm.rept	= 1;
-	pm.code = GEO_FACE_YP;
-	pm.hmod = TEXD2_HMOD_WHOLE;
-	nf = sscanf(buf,yp,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
-	if (4 <= nf)		return AddFace(pm); 	 
-	//--- Check for X- ----------------------------------------------------
-	pm.rept	= 1;
-	pm.code = GEO_FACE_XM;
-	pm.hmod = TEXD2_HMOD_WHOLE;
-	nf = sscanf(buf,xm,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
-	if (4 <= nf)		return AddFace(pm);
-	//--- Check for Y- ----------------------------------------------------
-	pm.rept	= 1;
-	pm.code = GEO_FACE_YM;
-	pm.hmod = TEXD2_HMOD_WHOLE;
-	nf = sscanf(buf,ym,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
-	if (4 <= nf) 	  return AddFace(pm);
-	//--- Check for ground Floor ------------------------------------------
-	pm.rept = 1;
-	pm.code = 0;
-	pm.hmod = TEXD2_HMOD_FLOOR;
-	nf = sscanf_s(buf,gf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
-	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_GF,pm);
-	//--- Check for middle Floor ------------------------------------------
-	pm.rept = 1;
-	pm.code = 0;
-	pm.hmod = TEXD2_HMOD_FLOOR;
-	nf = sscanf_s(buf,mf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
-	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_MF,pm);
-	//--- Check for Last Floor ------------------------------------------
-	pm.rept = 1;
-	pm.code = 0;
-	pm.hmod = TEXD2_HMOD_FLOOR;
-	nf = sscanf_s(buf,zf,floor,4,&pm.x0,&pm.y0,&pm.x1,&pm.y1,&pm.rept);
-	if (5 <= nf)		return AddFloor(floor,TEXD2_IND_ZF,pm);
-	return false;
-}
-//----------------------------------------------------------------------
-//	Add a Face 
-//----------------------------------------------------------------------
-bool  D2_Style::AddFace(D2_TParam &p)
-{	D2_TParam *tp = new D2_TParam();
-	tp->CopyFrom(p);
-	switch (p.code)	{
-		case GEO_FACE_XP:
-			//--- Fill whole matrix with it -----------
-			for (int k=0; k != TEXD2_MAT_DIM; k++)	param[k] = tp;
-			return true;
-		case GEO_FACE_YP:
-			//--- Fill YP and YM ---------------------
-			for (int k=0; k != 4; k++) param[TEXD2_IND_YP + k] = tp;
-			for (int k=0; k != 4; k++) param[TEXD2_IND_YM + k] = tp;
-			return true;
-		case GEO_FACE_XM:
-			//--- Fill XM ----------------------------
-			for (int k=0; k != 4; k++) param[TEXD2_IND_XM + k] = tp;
-			return true;
-		case GEO_FACE_YM:
-			//--- Fill YM -------------------------------
-			for (int k=0; k != 4; k++) param[TEXD2_IND_YM + k] = tp;
-			return true;	 
-}
-	return false;
-}
-//----------------------------------------------------------------------
-//	Add a Face 
-//----------------------------------------------------------------------
-bool  D2_Style::AddFloor(char *fl, int n, D2_TParam &p)
-{	int k	= 1;
-	D2_TParam *tp = new D2_TParam();
-	tp->CopyFrom(p);
-	//--- Enter floor X+ --------------------------
-	if (strncmp(fl,"X+",2) == 0) k = (4 * TEXD2_IND_XP) + n;
-	if (strncmp(fl,"Y+",2) == 0) k = (4 * TEXD2_IND_YP) + n;
-	if (strncmp(fl,"X-",2) == 0) k = (4 * TEXD2_IND_XM) + n;
-	if (strncmp(fl,"Y-",2) == 0) k = (4 * TEXD2_IND_YM) + n;
-	param[k] = tp;
-	return true;
-}
-//----------------------------------------------------------------------
-//	Check for completion 
-//----------------------------------------------------------------------
-bool D2_Style::IsOK()
-{	if (*param != 0)	return true;
-	WARNINGLOG("Style %s Missing Face(X+) definition",name);
-	return false;
-}
-//===================================================================================
-//	Create a texture parameter
-//===================================================================================
-//-----------------------------------------------------------------
-//	Destroy texture parameter 
-//-----------------------------------------------------------------
-D2_TParam::~D2_TParam()
-{
-}
-//-----------------------------------------------------------------
-//	Copy from parameters and compute some values 
-//-----------------------------------------------------------------
-void	D2_TParam::CopyFrom(D2_TParam &p)
-{	*this = p;
-	 dtx  = double (x1 - x0);
-	 dty  = double (y1 - y0);
-	 return;
-}
 //======================= END OF FILE =========================================================

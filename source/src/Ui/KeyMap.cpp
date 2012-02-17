@@ -42,69 +42,415 @@
 using namespace std;
 //===========================================================================
 extern bool GroupUnbind(CKeyDefinition *kdf,int code);
+
+//==================================================================================
+//  Table to edit keyboard entries
+//==================================================================================
+std::map<U_INT,std::string> keyString;
+void BuildKeyString()
+{
+//static SKeyCodeFormatEntry keyCodeFormatTable[] =
+//{
+	keyString[0]	=														"none";
+  keyString[KB_KEY_ESC]=										"Esc";
+  keyString['1'] =                     "1" ;
+  keyString['2'] =                     "2" ;
+  keyString['3'] =                     "3" ;
+  keyString['4'] =                     "4" ;
+  keyString['5'] =                     "5" ;
+  keyString['6'] =                     "6" ;
+  keyString['7'] =                     "7" ;
+  keyString['8'] =                     "8" ;
+  keyString['9'] =                     "9" ;
+  keyString['0'] =                     "0" ;
+  keyString[KB_KEY_MINUS] =                 "-" ;
+  keyString[KB_KEY_EQUALS] =                "=" ;
+  keyString[KB_KEY_BACK] =                  "Backspace" ;
+  keyString[KB_KEY_TAB] =                   "Tab" ;
+	//----------------------------------------------------
+  keyString['q'] =                     "q" ;
+  keyString['w'] =                     "w" ;
+  keyString['e'] =                     "e" ;
+  keyString['r'] =                     "r" ;
+  keyString['t'] =                     "t" ;
+  keyString['y'] =                     "y" ;
+  keyString['u'] =                     "u" ;
+  keyString['i'] =                     "i" ;
+  keyString['o'] =                     "o" ;
+  keyString['p'] =                     "p" ;
+	//----------------------------------------------------
+  keyString['Q'] =                     "Q" ;
+  keyString['W'] =                     "W" ;
+  keyString['E'] =                     "E" ;
+  keyString['R'] =                     "R" ;
+  keyString['T'] =                     "T" ;
+  keyString['Y'] =                     "Y" ;
+  keyString['U'] =                     "U" ;
+  keyString['I'] =                     "I" ;
+  keyString['O'] =                     "O" ;
+  keyString['P'] =                     "P" ;
+	//--------------------------------------------------
+  keyString[KB_KEY_FORWARD_BRACKET] =       "]" ;
+  keyString[KB_KEY_REVERSE_BRACKET] =       "[" ;
+  keyString[KB_KEY_ENTER] =                 "Enter" ;
+  keyString[KB_KEY_LCTRL] =                 "LeftCtrl" ;
+  keyString['a'] =                     "a" ;
+  keyString['s'] =                     "s" ;
+  keyString['d'] =                     "d" ;
+  keyString['f'] =                     "f" ;
+  keyString['g'] =                     "g" ;
+  keyString['h'] =                     "h" ;
+  keyString['j'] =                     "j" ;
+  keyString['k'] =                     "k" ;
+  keyString['l'] =                     "l" ;
+	//-------------------------------------------------
+  keyString['A'] =                     "A" ;
+  keyString['S'] =                     "S" ;
+  keyString['D'] =                     "D" ;
+  keyString['F'] =                     "F" ;
+  keyString['G'] =                     "G" ;
+  keyString['H'] =                     "H" ;
+  keyString['J'] =                     "J" ;
+  keyString['K'] =                     "K" ;
+  keyString['L'] =                     "L" ;
+	//-------------------------------------------------
+  keyString[KB_KEY_SEMI_COLON] =            ";" ;
+  keyString[KB_KEY_SINGLE_QUOTE] =          "'" ;
+	keyString[KB_KEY_DBLEP] =									":" ;
+  keyString[KB_KEY_REVERSE_SINGLE_QUOTE] =  "`" ;
+  keyString[KB_KEY_LSHIFT] =                "LeftShift" ;
+  keyString[KB_KEY_BACKSLASH] =             "\\" ;
+  keyString['z'] =                     "z" ;
+  keyString['x'] =                     "x" ;
+  keyString['c'] =                     "c" ;
+  keyString['v'] =                     "v" ;
+  keyString['b'] =                     "b" ;
+  keyString['n'] =                     "n" ;
+  keyString['m'] =                     "m" ;
+	//-----------------------------------------------------
+  keyString['Z'] =                     "Z" ;
+  keyString['X'] =                     "X" ;
+  keyString['C'] =                     "C" ;
+  keyString['V'] =                     "V" ;
+  keyString['B'] =                     "B" ;
+  keyString['N'] =                     "N" ;
+  keyString['M'] =                     "M" ;
+	//-----------------------------------------------------
+	keyString['<'] =									"<" ;
+	keyString['>'] =									">" ;
+	//-----------------------------------------------------
+	keyString['!'] =									"!" ;
+	keyString['$'] =									"$" ;
+	keyString['%'] =									"%" ;
+	keyString['?']  =									"?" ;
+  keyString[','] =									"," ;
+  keyString['.'] =									"." ;
+  keyString['/'] =									"/" ;
+  keyString[KB_KEY_RSHIFT] =                "RightShift" ;
+  keyString[KB_KEY_STAR] =                  "Star" ;
+  keyString[KB_KEY_LALT] =                  "LeftAlt" ;
+  keyString[KB_KEY_SPACE] =                 "Space" ;
+  keyString[KB_KEY_CAPSLOCK] =              "CapsLock" ;
+	//------------------------------------------------------
+  keyString[KB_KEY_F1] =                    "F1" ;
+  keyString[KB_KEY_F2] =                    "F2" ;
+  keyString[KB_KEY_F3] =                    "F3" ;
+  keyString[KB_KEY_F4] =                    "F4" ;
+  keyString[KB_KEY_F5] =                    "F5" ;
+  keyString[KB_KEY_F6] =                    "F6" ;
+  keyString[KB_KEY_F7] =                    "F7" ;
+  keyString[KB_KEY_F8] =                    "F8" ;
+  keyString[KB_KEY_F9] =                    "F9" ;
+  keyString[KB_KEY_F10] =                   "F10" ;
+  keyString[KB_KEY_F11] =                   "F11" ;
+  keyString[KB_KEY_F12] =                   "F12" ;
+	//-----------------------------------------------------
+  keyString[KB_KEY_NUMLOCK] =               "NumLock" ;
+  keyString[KB_KEY_SCROLLLOCK] =            "ScrollLock" ;
+  keyString[KB_KEY_HOME] =                  "padHome" ;
+  keyString[KB_KEY_UP] =                    "padUpArrow" ;
+  keyString[KB_KEY_PGUP] =                  "padPageUp" ;
+  keyString[KB_KEY_KEYPAD_MINUS] =          "pad -" ;
+  keyString[KB_KEY_LEFT] =                  "padLeftArrow" ;
+  keyString[KB_KEY_CENTER] =                "padCenter" ;
+  keyString[KB_KEY_RIGHT] =                 "padRightArrow" ;
+  keyString[KB_KEY_KEYPAD_PLUS] =           "pad +" ;
+  keyString[KB_KEY_END] =                   "padEnd" ;
+  keyString[KB_KEY_DOWN] =                  "padDownArrow" ;
+  keyString[KB_KEY_PGDN] =                  "padPageDown" ;
+	//-----------------------------------------------------
+  keyString[KB_KEY_INSERT] =                "padIns" ;
+  keyString[KB_KEY_DEL] =                   "padDel" ;
+  keyString[KB_KEY_KEYPAD_ENTER] =          "padEnter" ;
+  keyString[KB_KEY_RCTRL] =                 "RightCtrl" ;
+  keyString[KB_KEY_KEYPAD_SLASH] =          "Num /" ;
+  keyString[KB_KEY_RALT] =                  "RightAlt" ;
+  keyString[KB_KEY_EXT_NUMLOCK] =           "ExtNumLock" ;
+  keyString[KB_KEY_GRAY_HOME] =             "GrayHome" ;
+  keyString[KB_KEY_GRAY_UP] =               "GrayUpArrow" ;
+  keyString[KB_KEY_GRAY_PGUP] =             "GrayPageUp" ;
+  keyString[KB_KEY_GRAY_LEFT] =             "GrayLeftArrow" ;
+  keyString[KB_KEY_GRAY_RIGHT] =            "GrayRightArrow" ;
+  keyString[KB_KEY_GRAY_END] =              "GrayEnd" ;
+  keyString[KB_KEY_GRAY_DOWN] =             "GrayDownArrow" ;
+  keyString[KB_KEY_GRAY_PGDN] =             "GrayPageDown" ;
+  keyString[KB_KEY_GRAY_INS] =              "GrayIns" ;
+  keyString[KB_KEY_GRAY_DEL] =              "GrayDel" ;
+  keyString[KB_KEY_META] =                  "Meta";
+}
+//===========================================================================
+//	String to Key Map
+//===========================================================================
+std::map<std::string,U_INT> namedKeys;
+void MapNamedKeys()
+{	namedKeys["none"]							= 0;
+	namedKeys["Ctrl"]							= (KB_MODIFIER_CTRL << 16);
+	namedKeys["Alt"]							= (KB_MODIFIER_ALT  << 16);
+	namedKeys["Shift"]						= (KB_MODIFIER_SHIFT << 16);
+	namedKeys["Meta"]							= (KB_MODIFIER_META << 16);
+	//-----------------------------------------------------------
+	namedKeys["Esc"]							= KB_KEY_ESC;
+	namedKeys["1"]								= '1';
+	namedKeys["2"]								= '2';
+	namedKeys["3"]								= '3';
+	namedKeys["4"]								= '4';
+	namedKeys["5"]								= '5';
+	namedKeys["6"]								= '6';
+	namedKeys["7"]								= '7';
+	namedKeys["8"]								= '8';
+	namedKeys["9"]								= '9';
+	namedKeys["0"]								= '0';
+	//------------------------------------------------------
+	namedKeys["-"]								= KB_KEY_MINUS;
+	namedKeys["="]								= KB_KEY_EQUALS;
+	namedKeys["Backspace"]				= KB_KEY_BACK;
+	namedKeys["Tab"]							= KB_KEY_TAB;
+	//------------------------------------------------------
+	namedKeys["Q"]								= 'Q';
+	namedKeys["W"]								= 'W';
+	namedKeys["E"]								= 'E';
+	namedKeys["R"]								= 'R';
+	namedKeys["T"]								= 'T';
+	namedKeys["Y"]								= 'Y';
+	namedKeys["U"]								= 'U';
+	namedKeys["I"]								= 'I';
+	namedKeys["O"]								= 'O';
+	namedKeys["P"]								= 'P';
+	//------------------------------------------------------
+	namedKeys["q"]								= 'q';
+	namedKeys["w"]								= 'w';
+	namedKeys["e"]								= 'e';
+	namedKeys["r"]								= 'r';
+	namedKeys["t"]								= 't';
+	namedKeys["y"]								= 'y';
+	namedKeys["u"]								= 'u';
+	namedKeys["i"]								= 'i';
+	namedKeys["o"]								= 'o';
+	namedKeys["p"]								= 'p';
+	//------------------------------------------------------
+	namedKeys["["]								= KB_KEY_FORWARD_BRACKET;
+	namedKeys["]"]								= KB_KEY_REVERSE_BRACKET;
+	namedKeys["Enter"]						= KB_KEY_ENTER;
+	namedKeys["LeftCtrl"]					= KB_KEY_LCTRL;
+	//---------------------------------------------------
+	namedKeys["A"]								= 'A';
+	namedKeys["S"]								= 'S';
+	namedKeys["D"]								= 'D';
+	namedKeys["F"]								= 'F';
+	namedKeys["G"]								= 'G';
+	namedKeys["H"]								= 'H';
+	namedKeys["J"]								= 'J';
+	namedKeys["K"]								= 'K';
+	namedKeys["L"]								= 'L';
+	//----------------------------------------------------
+	namedKeys["a"]								= 'a';
+	namedKeys["s"]								= 's';
+	namedKeys["d"]								= 'd';
+	namedKeys["f"]								= 'f';
+	namedKeys["g"]								= 'g';
+	namedKeys["h"]								= 'h';
+	namedKeys["j"]								= 'j';
+	namedKeys["k"]								= 'k';
+	namedKeys["l"]								= 'l';
+	//----------------------------------------------------
+
+	namedKeys[";"]								= KB_KEY_SEMI_COLON;
+	namedKeys["'"]								= KB_KEY_SINGLE_QUOTE;
+	namedKeys["`"]								= KB_KEY_REVERSE_SINGLE_QUOTE;
+	namedKeys[":"]								= KB_KEY_DBLEP;
+	namedKeys["LeftShift"]				= KB_KEY_LSHIFT;
+	namedKeys["\\"]								= KB_KEY_LSHIFT;
+	//--------------------------------------------------------
+	namedKeys["Z"]								= 'Z';
+	namedKeys["X"]								= 'X';
+	namedKeys["C"]								= 'C';
+	namedKeys["V"]								= 'V';
+	namedKeys["B"]								= 'B';
+	namedKeys["N"]								= 'N';
+	namedKeys["M"]								= 'M';
+	//-------------------------------------------------------
+	namedKeys["z"]								= 'z';
+	namedKeys["x"]								= 'x';
+	namedKeys["c"]								= 'c';
+	namedKeys["v"]								= 'v';
+	namedKeys["b"]								= 'b';
+	namedKeys["n"]								= 'n';
+	namedKeys["m"]								= 'm';
+	//-------------------------------------------------------
+	namedKeys[","]								= KB_KEY_COMMA;
+	namedKeys["."]								= KB_KEY_PERIOD;
+	namedKeys["/"]								= KB_KEY_SLASH;
+	namedKeys["RightShift"]				= KB_KEY_RSHIFT;
+	namedKeys["Star"]							= KB_KEY_STAR;
+	namedKeys["LeftAlt"]					= KB_KEY_LALT;
+	namedKeys["Space"]						= KB_KEY_SPACE;
+	namedKeys["CapsLock"]					= KB_KEY_CAPSLOCK;
+	//--------------------------------------------------------
+	namedKeys["<"]								= '<';
+	namedKeys[">"]								= '>';
+	namedKeys["!"]								= '!';
+	namedKeys["$"]								= '$';
+	namedKeys["%"]								= '%';
+	namedKeys["?"]								= '?';
+	//--------------------------------------------------------
+	namedKeys["F1"]								= KB_KEY_F1;
+	namedKeys["F2"]								= KB_KEY_F2;
+	namedKeys["F3"]								= KB_KEY_F3;
+	namedKeys["F4"]								= KB_KEY_F4;
+	namedKeys["F5"]								= KB_KEY_F5;
+	namedKeys["F6"]								= KB_KEY_F6;
+	namedKeys["F7"]								= KB_KEY_F7;
+	namedKeys["F8"]								= KB_KEY_F8;
+	namedKeys["F9"]								= KB_KEY_F9;
+	namedKeys["F10"]							= KB_KEY_F10;
+	namedKeys["F11"]							= KB_KEY_F11;
+	namedKeys["F12"]							= KB_KEY_F12;
+	//---------------------------------------------------------
+	namedKeys["NumLock"]					= KB_KEY_NUMLOCK;
+	namedKeys["ScrollLock"]				= KB_KEY_SCROLLLOCK;
+	namedKeys["padHome"]					= KB_KEY_HOME;
+	namedKeys["padUpArrow"]				= KB_KEY_UP;
+	namedKeys["padPageUp"]				= KB_KEY_PGUP;
+	namedKeys["pad -"]						= KB_KEY_KEYPAD_MINUS;
+	namedKeys["padLeftArrow"]			= KB_KEY_LEFT;
+	namedKeys["padCenter"]				= KB_KEY_CENTER;
+	namedKeys["padRightArrow"]		= KB_KEY_RIGHT;
+	namedKeys["pad +"]						= KB_KEY_KEYPAD_PLUS;
+
+	namedKeys["padEnd"]						= KB_KEY_END;
+	namedKeys["padDownArrow"]			= KB_KEY_DOWN;
+	namedKeys["padPageDown"]			= KB_KEY_PGDN;
+	namedKeys["padIns"]						= KB_KEY_INSERT;
+	namedKeys["padDel"]						= KB_KEY_DEL;
+	namedKeys["padEnter"]					= KB_KEY_KEYPAD_ENTER;
+
+	namedKeys["RightCtrl"]				= KB_KEY_RCTRL;
+	namedKeys["Num /"]						= KB_KEY_KEYPAD_SLASH;
+	namedKeys["RightAlt"]					= KB_KEY_RALT;
+	namedKeys["ExtNumLock"]				= KB_KEY_EXT_NUMLOCK;
+	namedKeys["GrayHome"]					= KB_KEY_GRAY_HOME;
+
+	namedKeys["GrayUpArrow"]			= KB_KEY_GRAY_UP;
+	namedKeys["GrayPageUp"]				= KB_KEY_GRAY_PGUP;
+	namedKeys["GrayLeftArrow"]		= KB_KEY_GRAY_LEFT;
+	namedKeys["GrayRightArrow"]		= KB_KEY_GRAY_RIGHT;
+	namedKeys["GrayEnd"]					= KB_KEY_GRAY_END;
+	namedKeys["GrayDownArrow"]		= KB_KEY_GRAY_DOWN;
+	namedKeys["GrayPageDown"]			= KB_KEY_GRAY_PGDN;
+	namedKeys["GrayIns"]					= KB_KEY_GRAY_INS;
+	namedKeys["GrayDel"]					= KB_KEY_GRAY_DEL;
+}
+//===========================================================================
+//	ABort key definition
+//---------------------------------------------------------------------------
+U_INT CKeyDefinition::Warn(char * msg)
+{	WARNINGLOG("Not a valid Key: %s", msg);
+	return 0;
+}
+//===========================================================================
+// Decode the key code
+//===========================================================================
+U_INT CKeyDefinition::Decode(SStream *str)
+{	char pm1[24];
+	char pm2[24];
+	char pm3[24];
+	U_INT	key = 0;
+	std::map<std::string,U_INT>::iterator rk;
+	ReadString(knam,32,str);
+	int nf = sscanf_s(knam,"%24s %24s %24s",pm1,24,pm2,24,pm3,24);
+	if (-1 == nf)								return key;
+	//--- Decode first parameter ------------------------------
+	if (0 == nf)								return Warn(knam);
+	rk = namedKeys.find(pm1);
+	if (rk == namedKeys.end())	return Warn(knam);
+	key |= (*rk).second;
+	if (1 == nf)								return key;
+	//--- Decode second parameter -----------------------------
+	rk = namedKeys.find(pm2);
+	if (rk == namedKeys.end())	return Warn(knam);
+	key |= (*rk).second;
+	if (2 == nf)								return key;
+	//--- Decode third parameter -----------------------------
+	rk = namedKeys.find(pm3);
+	if (rk == namedKeys.end())	return Warn(knam);
+	key |= (*rk).second;
+	return key;
+}
 //===========================================================================
 // CKeyDefinition
 //===========================================================================
 CKeyDefinition::CKeyDefinition (Tag ks)
 : kyid (0), code (0), user (true), enab (true), cb (NULL)
-{ kset = ks;
+{ char tex[8];
+	kset = ks;
  *name  = 0;
   jbtn  = 0;
   type  = 0;
+	TagToString(tex,ks);
+	strncpy(stag,tex,6);
 }
 
 //--------------------------------------------------------------
 //  Read Parameters
 //--------------------------------------------------------------
 int CKeyDefinition::Read (SStream *stream, Tag tag)
-{
-  int rc = TAG_IGNORED;
-
+{ char tex[8];
+	int pm;
   switch (tag) {
   case 'kyid':
     // Key unique ID
     ReadTag (&kyid, stream);
-    rc = TAG_READ;
-    break;
+		TagToString(tex,kyid);
+		strncpy(skey,tex,6);
+if (strcmp(skey,"anlt") == 0)
+int a = 0;
+    return TAG_READ;
 
   case 'name':
     // Key name
     ReadString (name, 64, stream);
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
 
   case 'code':
     // Key code and modifier
-    ReadInt (&code, stream);
-    rc = TAG_READ;
-    break;
+    code	= Decode(stream);
+    return TAG_READ;
 
   case 'user':
     // User-mappable?
-    {
-      int i;
-      ReadInt (&i, stream);
-      user = (i != 0);
-    }
-    rc = TAG_READ;
-    break;
+    ReadInt (&pm, stream);
+    user = (pm != 0);
+    return TAG_READ;
 
   case 'enab':
     // Enabled?
-    {
-      int i;
-      ReadInt (&i, stream);
-      enab = (i != 0);
-    }
-    rc = TAG_READ;
-    break;
+    ReadInt (&pm, stream);
+    enab = (pm != 0);
+    return TAG_READ;
   }
 
-  if (rc == TAG_IGNORED) {
-    globals->logWarning->Write ("CKeyDefinition::Read : Unknown tag %s", TagToString (tag));
-  }
-  
-  return rc;
+  globals->logWarning->Write ("CKeyDefinition::Read : Unknown tag %s", TagToString (tag));
+  return TAG_IGNORED;
 }
 //---------------------------------------------------------------------------
 //  Link to new button, return previous
@@ -278,6 +624,8 @@ CKeyMap::CKeyMap ()
 { m_bKeyDetect    = false;
   m_fKeyCallback  = 0;
   m_winID         = 0;
+	BuildKeyString();
+	MapNamedKeys();
   Init();
   BindKeys();
 }
@@ -369,7 +717,7 @@ void CKeyMap::ReadFinished()
 //  Save keyboard mapping to file
 //--------------------------------------------------------------------------
 void CKeyMap::SaveCurrentConfig()
-{
+{ char codk[128];
   char stag[8];
   int i;
   SStream s;
@@ -378,7 +726,8 @@ void CKeyMap::SaveCurrentConfig()
   CKeySet        * pset;
   CKeyDefinition * pkey;
 
-  strncpy (s.filename, "System/FlyLegacyKey.txt",(PATH_MAX-1));
+//  strncpy (s.filename, "System/FlyLegacyKey.txt",(PATH_MAX-1));
+	strncpy (s.filename, "System/Keymap.txt",(PATH_MAX-1));
   strncpy (s.mode, "w",3);
   if (OpenStream (&s))
   {
@@ -421,8 +770,10 @@ void CKeyMap::SaveCurrentConfig()
         WriteTag('name', "---- key name ----", &s);
         WriteString(pkey->GetName(), &s);
         WriteTag('code', "---- key code & modifier ----", &s);
-        i = pkey->GetCode();
-        WriteInt(&i, &s);
+				i = pkey->GetCode();
+				formatKeyCode(codk,i,0);
+				WriteString(codk,&s);
+ //       WriteInt(&i, &s);
         WriteTag('user', "---- user definable ----", &s);
         i = pkey->IsUserMod();
         WriteInt(&i, &s);
@@ -634,7 +985,7 @@ void CKeyMap::UnbindGroup(Tag gp)
 //------------------------------------------------------------------------------
 //  Keyboard Key pressed
 //------------------------------------------------------------------------------
-void CKeyMap::KeyPress (EKeyboardKeys key, EKeyboardModifiers mod)
+void CKeyMap::KeyPress (U_INT key, EKeyboardModifiers mod)
 { // Translate key and modifier into keycode
   int  code = (mod << 16) + key;
   bool handled = false;
@@ -682,151 +1033,28 @@ typedef struct {
   EKeyboardKeys kbkey;
   char      *name;
 } SKeyCodeFormatEntry;
-//==================================================================================
-//  Table to edit keyboard entries
-//==================================================================================
-
-static SKeyCodeFormatEntry keyCodeFormatTable[] =
-{
-  { KB_KEY_ESC,                   "Esc" },
-  { KB_KEY_1,                     "1" },
-  { KB_KEY_2,                     "2" },
-  { KB_KEY_3,                     "3" },
-  { KB_KEY_4,                     "4" },
-  { KB_KEY_5,                     "5" },
-  { KB_KEY_6,                     "6" },
-  { KB_KEY_7,                     "7" },
-  { KB_KEY_8,                     "8" },
-  { KB_KEY_9,                     "9" },
-  { KB_KEY_0,                     "0" },
-  { KB_KEY_MINUS,                 "-" },
-  { KB_KEY_EQUALS,                "=" },
-  { KB_KEY_BACK,                  "Backspace" },
-  { KB_KEY_TAB,                   "Tab" },
-  { KB_KEY_Q,                     "Q" },
-  { KB_KEY_W,                     "W" },
-  { KB_KEY_E,                     "E" },
-  { KB_KEY_R,                     "R" },
-  { KB_KEY_T,                     "T" },
-  { KB_KEY_Y,                     "Y" },
-  { KB_KEY_U,                     "U" },
-  { KB_KEY_I,                     "I" },
-  { KB_KEY_O,                     "O" },
-  { KB_KEY_P,                     "P" },
-  { KB_KEY_FORWARD_BRACKET,       "]" },
-  { KB_KEY_REVERSE_BRACKET,       "[" },
-  { KB_KEY_ENTER,                 "Enter" },
-  { KB_KEY_LCTRL,                 "LeftCtrl" },
-  { KB_KEY_A,                     "A" },
-  { KB_KEY_S,                     "S" },
-  { KB_KEY_D,                     "D" },
-  { KB_KEY_F,                     "F" },
-  { KB_KEY_G,                     "G" },
-  { KB_KEY_H,                     "H" },
-  { KB_KEY_J,                     "J" },
-  { KB_KEY_K,                     "K" },
-  { KB_KEY_L,                     "L" },
-  { KB_KEY_SEMI_COLON,            ";" },
-  { KB_KEY_SINGLE_QUOTE,          "'" },
-  { KB_KEY_REVERSE_SINGLE_QUOTE,  "`" },
-  { KB_KEY_LSHIFT,                "LeftShift" },
-  { KB_KEY_BACKSLASH,             "\\" },
-  { KB_KEY_Z,                     "Z" },
-  { KB_KEY_X,                     "X" },
-  { KB_KEY_C,                     "C" },
-  { KB_KEY_V,                     "V" },
-  { KB_KEY_B,                     "B" },
-  { KB_KEY_N,                     "N" },
-  { KB_KEY_M,                     "M" },
-  { KB_KEY_COMMA,                 "," },
-  { KB_KEY_PERIOD,                "." },
-  { KB_KEY_SLASH,                 "/" },
-  { KB_KEY_RSHIFT,                "RightShift" },
-  { KB_KEY_STAR,                  "Star" },
-  { KB_KEY_LALT,                  "LeftAlt" },
-  { KB_KEY_SPACE,                 "Space" },
-  { KB_KEY_CAPSLOCK,              "CapsLock" },
-  { KB_KEY_F1,                    "F1" },
-  { KB_KEY_F2,                    "F2" },
-  { KB_KEY_F3,                    "F3" },
-  { KB_KEY_F4,                    "F4" },
-  { KB_KEY_F5,                    "F5" },
-  { KB_KEY_F6,                    "F6" },
-  { KB_KEY_F7,                    "F7" },
-  { KB_KEY_F8,                    "F8" },
-  { KB_KEY_F9,                    "F9" },
-  { KB_KEY_F10,                   "F10" },
-  { KB_KEY_NUMLOCK,               "NumLock" },
-  { KB_KEY_SCROLLLOCK,            "ScrollLock" },
-//  { KB_KEY_HOME,                  "KeypadHome" },
-  { KB_KEY_HOME,                  "padHome" },
-//  { KB_KEY_UP,                    "KeypadUpArrow" },
-  { KB_KEY_UP,                    "padUpArrow" },
-//  { KB_KEY_PGUP,                  "KeypadPageUp" },
-  { KB_KEY_PGUP,                  "padPageUp" },
-//  { KB_KEY_KEYPAD_MINUS,          "KeypadMinus" },
-  { KB_KEY_KEYPAD_MINUS,          "pad -" },
-//  { KB_KEY_LEFT,                  "KeypadLeftArrow" },
-  { KB_KEY_LEFT,                  "padLeftArrow" },
-//  { KB_KEY_CENTER,                "KeypadCenter" },
-  { KB_KEY_CENTER,                "padCenter" },
-//  { KB_KEY_RIGHT,                 "KeypadRightArrow" },
-  { KB_KEY_RIGHT,                 "padRightArrow" },
-//  { KB_KEY_KEYPAD_PLUS,           "KeypadPlus" },
-  { KB_KEY_KEYPAD_PLUS,           "pad +" },
-//  { KB_KEY_END,                   "KeypadEnd" },
-  { KB_KEY_END,                   "padEnd" },
-//  { KB_KEY_DOWN,                  "KeypadDownArrow" },
-  { KB_KEY_DOWN,                  "padDownArrow" },
-//  { KB_KEY_PGDN,                  "KeypadPageDown" },
-  { KB_KEY_PGDN,                  "padPageDown" },
-//  { KB_KEY_INSERT,                "KeypadIns" },
-  { KB_KEY_INSERT,                "padIns" },
-//  { KB_KEY_DEL,                   "KeypadDel" },
-  { KB_KEY_DEL,                   "padDel" },
-  { KB_KEY_F11,                   "F11" },
-  { KB_KEY_F12,                   "F12" },
-//  { KB_KEY_KEYPAD_ENTER,          "KeypadEnter" },
-  { KB_KEY_KEYPAD_ENTER,          "padEnter" },
-  { KB_KEY_RCTRL,                 "RightCtrl" },
-//  { KB_KEY_KEYPAD_SLASH,          "KeypadSlash" },
-  { KB_KEY_KEYPAD_SLASH,          "Num /" },
-  { KB_KEY_RALT,                  "RightAlt" },
-  { KB_KEY_EXT_NUMLOCK,           "ExtNumLock" },
-  { KB_KEY_GRAY_HOME,             "GrayHome" },
-  { KB_KEY_GRAY_UP,               "GrayUpArrow" },
-  { KB_KEY_GRAY_PGUP,             "GrayPageUp" },
-  { KB_KEY_GRAY_LEFT,             "GrayLeftArrow" },
-  { KB_KEY_GRAY_RIGHT,            "GrayRightArrow" },
-  { KB_KEY_GRAY_END,              "GrayEnd" },
-  { KB_KEY_GRAY_DOWN,             "GrayDownArrow" },
-  { KB_KEY_GRAY_PGDN,             "GrayPageDown" },
-  { KB_KEY_GRAY_INS,              "GrayIns" },
-  { KB_KEY_GRAY_DEL,              "GrayDel" },
-  { KB_KEY_META,                  "Meta" }
-};
 
 //==================================================================================
 //  Edit a given key code
 //==================================================================================
-void formatKeyCode (char *s, int code)
+void formatKeyCode (char *s, int code, char opt)
 {*s = 0;
   // Format modifiers
   int iMod = (code & 0xFFFF0000) >> 16;
   if (iMod & KB_MODIFIER_CTRL)  strcat (s, "Ctrl ");
   if (iMod & KB_MODIFIER_ALT)   strcat (s, "Alt  ");
-  if (iMod & KB_MODIFIER_SHIFT) strcat (s, "Shift");
+  if (iMod & KB_MODIFIER_SHIFT) strcat (s, "Shift ");
   if (iMod & KB_MODIFIER_META)  strcat (s, "Meta ");
-
-  int nKeys = sizeof(keyCodeFormatTable) / sizeof(SKeyCodeFormatEntry);
-  int kbkey = (code & 0x0000FFFF);
-  for (int i=0; i<nKeys; i++) {
-    SKeyCodeFormatEntry *p = &keyCodeFormatTable[i];
-    if (p->kbkey == kbkey) {
-      strcat (s, p->name);
-      break;
-    }
-  }
+	code	&= 0xFF;
+	std::map<U_INT,std::string>::iterator rk = keyString.find(code);
+	if (rk == keyString.end())	return;
+	const char *kn = (*rk).second.c_str();
+	strcat(s,kn);				// Store name
+	//--- check option to suppress "none" ---------
+	if (0 == opt)											return; 
+	if (strncmp(kn,"none",4) != 0)		return;
+	//--- suppress everything --------------------
+	*s = 0;
   return;
 }
 

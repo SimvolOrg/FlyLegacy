@@ -47,8 +47,8 @@ typedef bool(*CVehicleObject::*KeyCallbackVeh) (int keyid, int code, int modifie
 // This table is a simple mapping of GLUT key codes to FlyLegacy key codes.
 //=========================================================================================
 struct SGlutToFlyLegacyKey {
-  int           glut;
-  EKeyboardKeys flylegacy;
+  U_INT glut;
+  U_INT flylegacy;
 } ;
 
 //===============================================================================
@@ -65,7 +65,10 @@ protected:
   Tag           kset;     // Key set
   Tag           kyid;     // Unique key definition tag
   int           slot;     // Associated slot
+	char          stag[6];	// Set tag
+	char					skey[6];	// Key tag
   char          name[64]; // UI name
+	char          knam[32];	// Key name
   int           code;     // Key code and modifier
   bool          user;     // User definable
   bool          enab;     // Enabled
@@ -82,6 +85,9 @@ public:
   KeyCallbackPtr GetCallback() {return cb; }
   bool  IsUserMod( ) {return user;};
   bool  IsEnabled( ) {return enab;};
+	U_INT	Warn(char *msg);
+	//-------------------------------------------------
+	U_INT	Decode(SStream *str);
   //-------------------------------------------------
   inline void   SetSlot(int s)          {slot = s;}
   inline int    GetSlot()               {return slot;}
@@ -175,7 +181,7 @@ public:
   void  ReadFinished();
   // CKeyMap methods
   void            Print (FILE *f);
-  void            KeyPress (EKeyboardKeys key, EKeyboardModifiers mod);
+  void            KeyPress (U_INT key, EKeyboardModifiers mod);
   bool            Stroke(Tag grp,Tag kid);
   void            Bind (Tag id, KeyCallbackPtr f,char type);
   void            BindGroup(Tag gp, KeyGroupCB f);
@@ -213,7 +219,7 @@ protected:
 //=============================================================================
 // Utility function which formats the keycode into a human-readable string
 //=============================================================================
-void formatKeyCode (char *s, int code);
+void formatKeyCode (char *s, int code,char opt = 0);
 
 #endif // KEYMAP_H
 

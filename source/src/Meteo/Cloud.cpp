@@ -2049,7 +2049,7 @@ int  CCloudPuff::Draw()
   glPushMatrix();
   //-----Translate to cloud center-------------------------
   glTranslated(geol.x,geol.y,geol.z);
-  visi = globals->tcm->SphereInView(geol,extVOL);
+  visi = 1;																										//globals->tcm->SphereInView(geol,extVOL);
   if (visi)
     { switch(dStat)
       { case CLOUD_DRAW_NOT:

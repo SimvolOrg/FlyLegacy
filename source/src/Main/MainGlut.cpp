@@ -220,7 +220,9 @@ typedef struct {
   BYTE          vk;
   EKeyboardKeys key;
 } SNonGlutKey;
-
+//========================================================================
+//	Non GLUT Key MAP
+//========================================================================
 SNonGlutKey nonGlutKeys[] =
 {
   { VK_CAPITAL, KB_KEY_CAPSLOCK },
@@ -232,7 +234,7 @@ SNonGlutKey nonGlutKeys[] =
   { VK_RETURN,  KB_KEY_KEYPAD_ENTER },
   { VK_DIVIDE,  KB_KEY_KEYPAD_SLASH },
 };
-
+//-------------------------------------------------------
 int nKeys = sizeof(nonGlutKeys) / sizeof(SNonGlutKey);
 //========================================================================
 
@@ -258,6 +260,7 @@ void idle (void)
     globals->kbd->KeyPress (nonGlutKeys[i].key, (EKeyboardModifiers)flymod);
     break;
   }
+	return;
 }
 #endif // _WIN32
 
@@ -387,15 +390,10 @@ void keyboard2(unsigned char key, int x, int y)
 
     // Convert GLUT modifiers to FlyLegacy modifiers
     int glutmod = glutGetModifiers ();
-    EKeyboardModifiers flymod = glutModifiersToFlyLegacyModifiers (glutmod);
+    EKeyboardModifiers mdf = glutModifiersToFlyLegacyModifiers (glutmod);
 
     // Get FlyLegacy key code
-    EKeyboardKeys flykey;
-    if (glutKeyToFlyLegacyKey (key, &flykey)) {
-      kbd->KeyPress (flykey, flymod);
-      return;
-    }
-    WARNINGLOG ("Unmapped GLUT key %d", key);
+    U_INT kcod = glutKeyToFlyLegacyKey (key,mdf);
   }
 }
 //============================================================================
@@ -405,7 +403,11 @@ void keyboard2(unsigned char key, int x, int y)
 //============================================================================
 void keyboard (unsigned char key, int x, int y)
 { CKeyMap  *kbd = globals->kbd;
-  globals->cScreen    = &globals->mScreen;
+  globals->cScreen				= &globals->mScreen;
+	int mod = glutGetModifiers ();
+  EKeyboardModifiers mdf	= glutModifiersToFlyLegacyModifiers (mod);
+  U_INT codk =  glutKeyToFlyLegacyKey(key, mdf);
+
   switch(globals->appState) {
     case APP_LOADING_SCREEN:
       Choice = 1;
@@ -413,15 +415,11 @@ void keyboard (unsigned char key, int x, int y)
     case APP_SIMULATION:
       break;
     case APP_TEST:
-      { int mod = glutGetModifiers ();
-        EKeyboardModifiers mdf = glutModifiersToFlyLegacyModifiers (mod);
-        globals->tsb->Keyboard(key,mod);
+      { globals->tsb->Keyboard(codk,mod);
         return;
       }
     case APP_EXPORT:
-      { int mod = glutGetModifiers ();
-        EKeyboardModifiers mdf = glutModifiersToFlyLegacyModifiers (mod);     
-        globals->exm->Keyboard(key,mdf);
+      { globals->exm->Keyboard(codk,mdf);
         return;
       }
     default:
@@ -430,15 +428,9 @@ void keyboard (unsigned char key, int x, int y)
   //---- Pass keystroke to PUI keyboard handler--
   if (puKeyboard (key, PU_DOWN))                            return; 
   //---- Pass Keystroke to FUI handler -----------
-  int glutmod = glutGetModifiers ();
-  if (globals->fui->KeyboardInput((glutmod << 16) | key))   return;
-  //---- Ignore keypresses if there is no keymap definition
- 
-  EKeyboardModifiers flymod = glutModifiersToFlyLegacyModifiers (glutmod);
-  // Get FlyLegacy key code
-  EKeyboardKeys flykey;
-  if (glutKeyToFlyLegacyKey (key, &flykey)) kbd->KeyPress (flykey, flymod);
-  else                                      WARNINGLOG ("Unmapped GLUT key %d", key);
+  if (globals->fui->KeyboardInput((mod << 16) | codk))  return;
+  //----- Get FlyLegacy key code -------------------------------
+	kbd->KeyPress (codk, mdf);
   return;
 }
 
@@ -458,7 +450,7 @@ void special2(int key, int x, int y)
     EKeyboardModifiers flymod = glutModifiersToFlyLegacyModifiers (glutmod);
 
     // Get FlyLegacy key code
-    EKeyboardKeys flykey;
+    U_INT flykey;
     if (glutSpecialToFlyLegacyKey (key, &flykey)) 
     { kbd->KeyPress (flykey, flymod);
       return;
@@ -472,29 +464,24 @@ void special2(int key, int x, int y)
 void special (int key, int x, int y)
 { CKeyMap *kbd = globals->kbd;
   globals->cScreen = &globals->mScreen;
+	int mod = glutGetModifiers ();
+	EKeyboardModifiers mdf = glutModifiersToFlyLegacyModifiers (mod);
   //--- MODE TEST ------------------------------------------------------
-	  if (globals->appState == APP_TEST)
-  { int mod = glutGetModifiers ();
-    EKeyboardModifiers mdf = glutModifiersToFlyLegacyModifiers (mod);
-    globals->tsb->Special(key,mdf);
-    return;
-  }
+	if (globals->appState == APP_TEST)
+		{ globals->tsb->Special(key,mdf);
+			return;
+		}
   //--- MODE SIMULATION ------------------------------------------------
   if (globals->appState != APP_SIMULATION)                    return;
   //---- Pass Keystroke to PUI handler ---------------------------------
   if (puKeyboard (key + PU_KEY_GLUT_SPECIAL_OFFSET, PU_DOWN)) return;
+	//--- Translate special keys -----------------------------------------
+	U_INT skey = KB_KEY_NONE;
+	glutSpecialToFlyLegacyKey (key, &skey);
   //---- Pass Keystroke to FUI Handler ---------------------------------
-  int glutmod = glutGetModifiers ();
-  if (globals->fui->KeyboardInput((glutmod << 16) | key))     return;
+  if (globals->fui->KeyboardInput((mod << 16) | skey))				return;
   //---- Simulator key event handling ----------------------------------
-  // Ignore keypresses if there is no keymap definition
-  // if (0 == kbd)                               return;
-  // Get GLUT modifiers and convert to FlyLegacy modifiers
-  EKeyboardModifiers flymod = glutModifiersToFlyLegacyModifiers (glutmod);
-  // Get FlyLegacy key code
-  EKeyboardKeys flykey;
-  if (glutSpecialToFlyLegacyKey (key, &flykey)) kbd->KeyPress (flykey, flymod);
-  else                                          WARNINGLOG ("Unmapped GLUT key %d", key);
+  kbd->KeyPress (skey, mdf);
   return;
 }
 
@@ -638,8 +625,7 @@ void redraw ()
 // Initialize window manager
 //===========================================================================
 void InitWindowManager (int argc, char **argv)
-{
-  // Get screen resolution from globals
+{ // Get screen resolution from globals
   int x = globals->mScreen.X;
   int y = globals->mScreen.Y;
   int w = globals->mScreen.Width;
@@ -683,7 +669,7 @@ void InitWindowManager (int argc, char **argv)
 // Enter window manager main event loop
 //===========================================================================
 void EnterWindowManagerMainLoop (void)
-{
+{ 
   // Enter GLUT main loop.
   glutMainLoop ();
 }

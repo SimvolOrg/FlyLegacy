@@ -88,7 +88,8 @@ public:
   //   all descended classes.  The position and orientation of the target
   //   object are supplied in the tgtPosition and tgtOrientation arguments;
   //   these should never be updated.
-  virtual void    UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT = 0) = 0;
+	virtual void    CameraReferential();
+	virtual void    UpdateCamera (SPosition wPos, SVector tgtOrient,float dT = 0) = 0;
   virtual void    GetPosition(SPosition &pos);
   virtual void    StartShoot(float dT);
   virtual void    StopShoot();
@@ -167,6 +168,12 @@ public:
   void    RangeAdjust(double lg);
   void    ShowRange();
 	void		RockArround (SPosition tpos, SVector tori,float dT);
+	void		UpdateCameraPosition(SPosition &wpos);
+	//--- Set perspective parameters -----------------------------
+	void    SetCameraParameters(double fov, double ratio);
+	void		SetReferential(SPosition &tg);
+	bool		GeoPosInFrustum(SPosition &P, CVector &R, char *T);
+	bool		BoxInFrustum(SPosition &P, CVector &B, double fc);
 	//------------------------------------------------------------
 	void		RoundLeft();
 	void		RoundRight();
@@ -208,9 +215,10 @@ public:
 	//------------------------------------------------------------
 	inline	char	GetINTMOD()					{return intcm;}
 	inline  char  GetEXTMOD()					{return extcm;}
-  //------------------------------------------------------------
+	inline  void	IncT1()							{T1++;}
+	inline  void  IncT2()							{T2++;}
+  //---CAMERA ATTRIBUTES ---------------------------------------
 protected:
-  char      Prop;       // properties
 	float			Rate;				// Rotation rate (1/4 sec unit)
 	COption   Prof;				// Camera profile
 	//--- Camera type (inside or outside) ------------------------
@@ -218,19 +226,34 @@ protected:
 	char			extcm;			// Type of camera (1= outside
 	//--------Camera parameters ----------------------------------
   SPosition Tgt;        // Camera target world position 
-  float     fov;        // Horizontal field of view in degrees
-	double    tgf;				// Tangent of FOV
   double    range;      // Range
   double    dmin;       // Minimum distance
   double    rmin, rmax; // Min/max range
   double    clamp;      // Vertical rotation angle clamp
   double    minAGL;     // Minimum above ground levl
-  double    nearP;      // Near plan
 	double    farP;				// Far plan
-	SPosition camPos;
-  SVector   offset;     // Camera offset from target vehicle location (in feet)
-  SVector   orient;     // Camera orientation with respect to world axes
-  SVector   Up;         // Up vector
+	//------------------------------------------------------------
+	SPosition tgtPos;			// Target position
+	SPosition camPos;			// Camera position
+  CVector   offset;     // Camera offset from target vehicle location (in feet)
+  CVector   orient;     // Camera orientation with respect to world axes
+	//-----Camera orientation -----------------------------------
+  CVector   Up;         //  Up vector (
+	CVector   Fw;         //  Forward
+	CVector   Lf;					// Left 
+	//---- Camera referential ----------------------------------
+	CVector   Rx;					// X  (left) vector reference
+	CVector   Ry;					// Y (forward)	reference vector
+	CVector   Rz;					// Z (Up)  reference vector
+	CVector   PJ;					// Projection of forward
+	//----Internal parameters -----------------------------------
+  double    fov;        // Horizontal field of view in degrees
+	double    tgf;				// Tangent of FOV
+	double    ratio;			// Aspect ratio
+  double    nearP;      // Near plan
+	double    htr;				// height of nera plan
+	double    wdt;				// Widht of near plan
+	double    ffac;				// Flare factor
   //----Locking ------------------------------------------------
   char      Lock;       // Lock indicator
 	//----Picking ------------------------------------------------
@@ -246,7 +269,9 @@ protected:
   //----Camera angles ------------------------------------------
   double     theta;     // Around Z
   double      phi;      // Around X
-
+	//--- Trace temporaire ----------------------------------------
+	char				T1;
+	char				T2;
 };
 //====================================================================================
 // Rabbit camera
@@ -322,7 +347,8 @@ public:
   virtual void  HeadPitchDown (void);
 
   //---- CCameraCockpit methods -------------------
-  Tag       GetCockpitPanel (void);
+	void			CameraReferential();
+	Tag       GetCockpitPanel (void);
   void      SetUpVector(SVector &ori);
   void      ActivateCockpitPanel (Tag tag);
   void      SetPanel(Tag id,CPanel *p);
@@ -342,7 +368,6 @@ protected:
   std::map<Tag,CCockpitPanel*>  panl;           //  Map unique IDs to cockpit panels
   SVector                       Seat;           //  Orientation angles of <seat> tag
   CCockpitPanel*                ckPanel;        //  Pointer to currently active panel
-  CVector                       Fw;             //  Forward
   CVector                       Ofs;            //  True offset
   double                        Head;           //  Pilot head direction
 	//--- transformation matrix ----------------------
@@ -414,15 +439,14 @@ public:
   CCameraFlyby (void);
 
   // CCamera methods
-  virtual void  UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
-  virtual Tag   GetCameraType (void) { return CAMERA_FLYBY;}
-  virtual void  GetCameraName (char* name, int maxLength)
+  void  UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
+  Tag   GetCameraType (void) { return CAMERA_FLYBY;}
+  void  GetCameraName (char* name, int maxLength)
   {
     strncpy (name, "Fly-by Camera", maxLength);
   }
   //-----------------------------------------------------------------
 protected:
-  SPosition   cameraPos;      ///< Geographical position of camera
   double rng;
   double distance;
   double r0;

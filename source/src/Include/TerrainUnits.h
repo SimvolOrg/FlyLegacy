@@ -152,10 +152,14 @@
 #define TC_FULL_WRD_TILE    (16384)
 #define TC_FULL_WRD_SUBD    (TC_FULL_WRD_TILE * TC_SUBD_NUMBER)
 #define TC_HALF_WRD_TILE    ( 8192)
-#define TC_ARCS_PER_DET     (double(TC_FULL_WRD_ARCS) / TC_FULL_WRD_TILE)
-#define TC_ARCS_PER_QGT     (double(TC_FULL_WRD_ARCS) / 512)
-#define TC_ARCS_PER_GBT     (double(TC_FULL_WRD_ARCS) / 256)
+//---------------------------------------------------------------------
+#define TC_ARCS_PER_DET     (double(TC_FULL_WRD_ARCS) / TC_FULL_WRD_TILE)		// Arcsec per Detail Tile 
+#define TC_ARCS_PER_SUP     (double(TC_FULL_WRD_ARCS) / 2048)								// Arcsec per Supertile
+#define TC_ARCS_PER_HSP			(double(TC_FULL_WRD_ARCS) / 4096)								// Arcsec per half Supertile
+#define TC_ARCS_PER_QGT     (double(TC_FULL_WRD_ARCS) / 512)								// Arcsec per QGT
+#define TC_ARCS_PER_GBT     (double(TC_FULL_WRD_ARCS) / 256)								// Arcsec per Globe Tile
 #define TC_ARCS_PER_BAND    (double(TC_FULL_WRD_ARCS) /   8)
+#define TC_ARCS_PER_SUBD		(double(TC_FULL_WRD_ARCS) / (512 * TC_SUBD_PER_QGT))	// Arcsec per subdivision
 //-----------------------------------------------------------------------
 #define TC_INT_PER_ARCSEC   (double(1073741824) / TC_FULL_WRD_ARCS)
 //-----------------------------------------------------------------------
@@ -177,6 +181,8 @@
 //------------------------------------------------------------------------------
 #define FN_METRE_FROM_FEET(X)	(double(X) * 0.304799999)
 //------------------------------------------------------------------------------
+#define FN_SUB_FROM_INDX(X)  (U_INT (X) & (TC_SUBD_PER_QGT - 1))
+//------------------------------------------------------------------------------
 #define FN_ARCS_FROM_FEET(X) ((double(X) * TC_FULL_WRD_ARCS) / TC_FULL_WRD_FEET)
 #define FN_ARCS_FROM_MILE(X) ((double(X) * 60))
 #define FN_ARCS_FROM_QGT(X)  ((double(X) * TC_FULL_WRD_ARCS) / 512)
@@ -186,11 +192,11 @@
 #define FN_RAD_FROM_ARCS(X)  ( double(X) * (PI / 648000))      
 //------------LONGITUDE BAND PARAMETERS --------------------------------
 #define FN_ABS_QGT_DET(X)		 (X >> TC_BY1024)
-#define FN_QGT_FROM_INDX(X)  (X >> (TC_BY1024 + TC_BY32))       
-#define FN_DET_FROM_INDX(X)  ((X >> TC_BY1024) & 31)
+#define FN_QGT_FROM_INDX(X)  ( U_INT(X) >> (TC_BY1024 + TC_BY32))       
+#define FN_DET_FROM_INDX(X)  ((U_INT(X) >> TC_BY1024) & 31)
 #define FN_DET_FROM_XZ(X,Z)  ((Z << TC_BY32) | X)
-#define FN_BAND_FROM_QGT(X)  (X >> TC_BY64)
-#define FN_BAND_FROM_INX(X)  (X >> (TC_BY1024 + TC_BY32 + TC_BY64))
+#define FN_BAND_FROM_QGT(X)  ( U_INT(X) >> TC_BY64)
+#define FN_BAND_FROM_INX(X)  ( U_INT(X) >> (TC_BY1024 + TC_BY32 + TC_BY64))
 //---------------------------------------------------------------------
 #define TC_BANDMOD   ((64 * 32 * 1024)-1)
 //------HORIZON PARAMETERS --------------------------------------------
@@ -199,6 +205,7 @@
 #define TC_DT_ELV_PER_ST  (TC_DETAIL_PER_SPT + 1)
 #define TC_DETAIL_NBR     (TC_DET_PER_QGT * TC_DET_PER_QGT)
 #define TC_DETMASK  ((1 << 14) - 1) // Mask for DT absolute coordinate in QTR
+#define TC_QGTMASK  (511 << (TC_BY32 + TC_BY1024))
 //-------Super Tile Parameters ----------------------------------------
 #define TC_SUPERT_PER_QGT  8        // SUPER Tiles per Quarter Global Tile
 #define TC_SUPERT_NBR     (TC_SUPERT_PER_QGT * TC_SUPERT_PER_QGT)

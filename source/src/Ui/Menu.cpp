@@ -57,10 +57,10 @@ char *gmFplan		= "Flight Planner";
 char *gmVeh			= "Vehicle";
 char *gmMeteo		= "Weather";
 char *gmWindow	= "Windows";
-char *gmExport  = "Export Data";
+char *gmImport  = "Import Data";
 char *gmDebugDB	= "Debug DB";
 char *gmDebug   = "Debug";
-char *gmTune		= "Tuning";
+char *gmTune		= "Tools";
 //=====================================================================
 //  Menu bar
 //=====================================================================
@@ -365,6 +365,11 @@ void windows_vector_cb (puObject* obj)
 void windows_glo_options_cb(puObject* obj)
 { globals->kbd->Stroke('glob','gopt'); }
 //-------------------------------------------------------------------------
+//  Camera control.  
+//-------------------------------------------------------------------------
+void windows_cam_control_cb(puObject* obj)
+{	globals->fui->ToggleFuiWindow('ccam'); }
+//-------------------------------------------------------------------------
 //  Secondary window.  TO BE DISPLACED SOMEWHERE ELSE
 //-------------------------------------------------------------------------
 // Create the secondary view or screen
@@ -454,6 +459,7 @@ char *windows_legends[] =
 //  "Create secondary view",
   "--------------------",
 //  "Globals options",
+	"Camera Control",
   "Vector Window",
   "GPS Window",
   NULL
@@ -468,6 +474,7 @@ puCallback windows_cb[] =
  //  NULL,                         // windows_newview_cb,
   NULL,
  // windows_glo_options_cb,
+	windows_cam_control_cb,
   windows_vector_cb,
   windows_gps_cb,
   NULL
@@ -478,57 +485,57 @@ puCallback windows_cb[] =
 //-------------------------------------------------------------------------
 //  Generic database.  
 //-------------------------------------------------------------------------
-void export_gen_cb(puObject* obj)
+void import_gen_cb(puObject* obj)
 { globals->exm->ExportGenericAsCVS();
   return; }
 //-------------------------------------------------------------------------
 //  Waypoint database.  
 //-------------------------------------------------------------------------
-void export_wpt_cb(puObject* obj)
+void import_wpt_cb(puObject* obj)
 { globals->exm->ExportWptAsCVS();
   return; }
 //-------------------------------------------------------------------------
 //  Elevations database.  
 //-------------------------------------------------------------------------
-void export_elv_cb(puObject* obj)
+void import_elv_cb(puObject* obj)
 { globals->imp->ExportElevations();
   return; }
 //-------------------------------------------------------------------------
 //  coast contour database.  
 //-------------------------------------------------------------------------
-void export_cst_cb(puObject* obj)
+void import_cst_cb(puObject* obj)
 { globals->exm->ExportCoastInDB();
   return; }
 //-------------------------------------------------------------------------
 //  3D models  database.  
 //-------------------------------------------------------------------------
-void export_3dm_cb(puObject* obj)
+void import_3dm_cb(puObject* obj)
 { globals->exm->Export3Dmodels();
   return; }
 //-------------------------------------------------------------------------
 //  Taxiways  database.  
 //-------------------------------------------------------------------------
-void export_twy_cb(puObject* obj)
+void import_twy_cb(puObject* obj)
 { globals->exm->ExportTaxiways();
   return; }
 //-------------------------------------------------------------------------
 //  Textures  database.  
 //-------------------------------------------------------------------------
-void export_gtx_cb(puObject* obj)
+void import_gtx_cb(puObject* obj)
 { globals->exm->ExportGenTextures();
   return;
 }
 //-------------------------------------------------------------------------
 //  World object  database.  
 //-------------------------------------------------------------------------
-void export_wob_cb(puObject* obj)
+void import_wob_cb(puObject* obj)
 { globals->exm->ExportSceneryOBJ();
   return;
 }
 //-------------------------------------------------------------------------
 //  Export all sceneries  
 //-------------------------------------------------------------------------
-void export_trn_cb(puObject* obj)
+void import_trn_cb(puObject* obj)
 { globals->exm->ExportAllTRNs();
   return;
 }
@@ -546,33 +553,33 @@ void import_elv_cb(puObject* obj)
 }
 */
 //---Menu items ----------------------------------
-char *export_legends[] =
+char *Import_legends[] =
 { "Check Database for POD files",
   "-------------------------",
-	"Export TRN Sceneries",
-  "Export World Objects",
-  "Export Generic Textures",
-  "Export Taxiwway",
-  "Export 3D models",
-  "Export Coasts",
-  "Export Elevations",
-  "Export Waypoints",
-  "Export Generic(APT,..,COM)",
+	"Import TRN Sceneries",
+  "Import World Objects",
+  "Import Generic Textures",
+  "Import Taxiwway",
+  "Import 3D models",
+  "Import Coasts",
+  "Import Elevations",
+  "Import Waypoints",
+  "Import Generic(APT,..,COM)",
   NULL
 };
 //---Associated call back ------------------------
-puCallback export_cb[] =
+puCallback Import_cb[] =
 { export_pod_in_db, 
 	NULL,
-	export_trn_cb,
-  export_wob_cb,
-  export_gtx_cb,
-  export_twy_cb,
-  export_3dm_cb,
-  export_cst_cb,
-  export_elv_cb,
-  export_wpt_cb,
-  export_gen_cb,
+	import_trn_cb,
+  import_wob_cb,
+  import_gtx_cb,
+  import_twy_cb,
+  import_3dm_cb,
+  import_cst_cb,
+  import_elv_cb,
+  import_wpt_cb,
+  import_gen_cb,
 };
 //--- Associated keyword in ini file ------------
 char *keySQL[] = {
@@ -592,11 +599,11 @@ char *keySQL[] = {
 //----------------------------------------------------------
 //	search for key word and check ini file
 //----------------------------------------------------------
-void CheckExportAccess(puCallback cb,puObject *itm)
+void CheckImportAccess(puCallback cb,puObject *itm)
 {	int k=0;
   int	a=0;
 	while (keySQL[k])
-	{	if (cb != export_cb[k++])	continue;
+	{	if (cb != Import_cb[k++])	continue;
 		int m = k-1;
 		if ('*' == *keySQL[m])		return;
 		GetIniVar("SQL",keySQL[m],&a);
@@ -609,7 +616,7 @@ void CheckExportAccess(puCallback cb,puObject *itm)
 //----------------------------------------------------------
 //	Check each export itmes
 //----------------------------------------------------------
-void CheckExportItems(puObject *itm)
+void CheckImportItems(puObject *itm)
 { puPopup  *exm = (puPopupMenu*)itm->getUserData();
   puObject *sub = exm->getFirstChild();
 	int nbw       = exm->getNumChildren ();
@@ -620,14 +627,14 @@ void CheckExportItems(puObject *itm)
 		sub							 = sub->getNextObject();
 		if (0 == cb)	continue;
 		//--- Process according to item -----------
-		CheckExportAccess(cb,itm);
+		CheckImportAccess(cb,itm);
 	}
 	return;
 }
 //----------------------------------------------------------
 //	Create Export menu
 //----------------------------------------------------------
-void CheckExportMenu()
+void CheckImportMenu()
 {	//-- Find the export sub menu ---------------
 	puObject *sub = menu->getFirstChild();
 	puObject *itm = 0;
@@ -636,7 +643,7 @@ void CheckExportMenu()
 	  itm		= sub;	
 		sub		= sub->getNextObject();
 		if (0 == name)	continue;
-		if (strcmp(gmExport,name) == 0) return CheckExportItems(itm);
+		if (strcmp(gmImport,name) == 0) return CheckImportItems(itm);
 	}
 	return;
 }
@@ -1141,7 +1148,7 @@ void tune_probe_cb(puObject *obj)
 { globals->kbd->Stroke('menu','prob');	}
 //--------------------------------------------------------
 char *tune_legends[] =
-{// "SKETCH Editor",
+{ "SKETCH Editor",
 	"TERRA Editor",
 	"----------------",
 	"OBJECT Browser",
@@ -1155,7 +1162,7 @@ char *tune_legends[] =
 
 //------------------------------------------------------------------------
 puCallback tune_cb[] =
-{ //sktech_editor_cb,
+{ sktech_editor_cb,
 	model_teditor_cb,
 	NULL,
 	model_browser_cb,
@@ -1247,11 +1254,11 @@ void OpenUserMenu (void)
   int i = 0;
   GetIniVar ("UI", "debugMenus", &i);
   if (i == 1) {
-		menu->add_submenu (gmExport,	export_legends, export_cb);
+		menu->add_submenu (gmImport,	Import_legends, Import_cb);
     menu->add_submenu (gmDebugDB, debugdb_legends, debugdb_cb);
     menu->add_submenu (gmDebug,		debug_legends, debug_cb);
     menu->add_submenu (gmTune,		tune_legends, tune_cb);
-		CheckExportMenu();
+		CheckImportMenu();
   }
   menu->add_submenu ("Help", help_legends, help_cb);
 

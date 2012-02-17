@@ -27,6 +27,7 @@
 #include "../Include/Utility.h"
 #include "../Include/3dMath.h"
 #include "../Include/GeoMath.h"
+#include "../Include/Globals.h"
 //=============================================================
 // Wrap a longitude value in arcsec to the range [0, 1.296E+6)
 // (corresponds to 360 degrees * 3600 arcsec/deg)
@@ -150,47 +151,6 @@ double WrapArcsec (double arcsec)
 
   return rc;
 }
-//==================================================================================
-// Calculate the number of feet in one arcsecond of longitude at the given latitude.
-//
-// Arguments:
-//    lat     Latitude in arcseconds (+ is N hemisphere)
-//==================================================================================
-double FeetPerLonArcsec (double lat)
-{
-  double latRad = FN_RAD_FROM_ARCS(lat);		// Latitude in radian
-  double circumference = cos(latRad) * TC_FULL_WRD_FEET;
-  double feetPerLonArcsec = circumference / (360.0 * 3600.0);
-
-  return feetPerLonArcsec;
-}
-
-//==================================================================================
-// Calculate a new position based on a starting point and a vector offset in feet:
-//   v.x = E/W offset      (+ is East)
-//   v.y = N/S offset      (+ is North)
-//   v.z = Altitude offset (+ is higher)
-//
-// This function is only accurate for small vector offsets (a few miles)
-//===================================================================================
-SPosition AddVector(SPosition &from, SVector &v)
-{
-  SPosition to;
-
-  // Calculate arcseconds of latitude offset based on constants defined above
-  double arcsecLat = v.y / TC_FEET_PER_ARCSEC;
-  to.lat = from.lat + arcsecLat;
-
-  // Calculate actual number of feet per longitude arcsec at this latitude
-  double feetPerLonArcsec = FeetPerLonArcsec (from.lat);
-  double arcsecLon = v.x / feetPerLonArcsec;
-  to.lon = WrapArcsec (from.lon + arcsecLon);
-
-  // Altitude is already in feet, simply add the offset
-  to.alt = from.alt + v.z;
-
-  return to;
-}
 
 //==========================================================================
 // SubtractVector computes a new global position based on a starting position
@@ -204,7 +164,7 @@ SPosition SubtractVector(SPosition &from, SVector &v)
   vNew.x = -v.x;
   vNew.y = -v.y;
   vNew.z = -v.z;
-  return AddVector (from, vNew);
+  return AddToPositionInFeet (from, vNew);
 }
 
 
@@ -447,13 +407,14 @@ void BodyVector2WorldPos (const SPosition &cgPos, const SVector &body, SPosition
 {
   // basically same as SPosition AddVector(SPosition &from, SVector &v)
   // but adapted to its purpose and work with a reference
+	//	NOTE:  We use the feet expension factor at aircraft position (globals->exf)
 
   // Calculate arcseconds of latitude offset based on constants defined above
   double arcsecLat = body.y / TC_FEET_PER_ARCSEC;
   world.lat = cgPos.lat + arcsecLat;
 
   // Calculate actual number of feet per longitude arcsec at this latitude
-  double feetPerLonArcsec = FeetPerLonArcsec (cgPos.lat);
+  double feetPerLonArcsec = FN_FEET_FROM_ARCS(1) * globals->exf;		// FeetPerLonArcsec (cgPos.lat);
   double arcsecLon = body.x / feetPerLonArcsec;
   world.lon = WrapArcsec (cgPos.lon + arcsecLon);
 

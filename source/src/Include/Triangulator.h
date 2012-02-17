@@ -27,7 +27,8 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-#include "../Include/3dMath.h"//====================================================================================
+#include "../Include/3dMath.h"
+//====================================================================================
 //==== GEOMETRIC FUNCTIONS =================================================================
 #define GEO_OPPOS_SIDE	(0)
 #define GEO_INSIDE_PQ		(1)
@@ -68,8 +69,8 @@
 //	Texturing mode
 //====================================================================================
 //--- Parameter surface type sType
-#define TEXD2_XPLUS	 (0)												// Texture for X+
-#define	TEXD2_YPLUS	 (1)												// Texture for Y+
+#define TEXD2_X_PLUS	(0)												// Texture for X+
+#define	TEXD2_Y_PLUS	(1)												// Texture for Y+
 #define	TEXD2_X_MINUS (2)												// Texture for X-
 #define	TEXD2_Y_MINUS (3)												// Texture for Y-
 //--- Floor mode  zMode -------------------------------------
@@ -92,7 +93,9 @@
 #define TEXD2_IND_ZF  (3)
 //-------------------------------------------------------------
 #define TEXD2_HMOD_WHOLE (0)
-#define TEXD2_HMOD_FLOOR (1)
+#define TEXD2_HMOD_GFLOOR (1)
+#define TEXD2_HMOD_MFLOOR (2)
+#define TEXD2_HMOD_ZFLOOR (3)
 //======================================================================================
 //	Pixel definition
 //======================================================================================
@@ -112,7 +115,7 @@ struct D2_POINT {
 	//---------------------------------------------------------
   char   R;																		// Type of point
 	char   F;																		// Type of face
-	char   rfu1;																// Not used 
+	char   V;																		// Vertical position 
 	char   rfu2;																// Not used
 	//--- Space coordinates ------------------------------------
 	double x;																		// X coordinate
@@ -126,21 +129,30 @@ struct D2_POINT {
 	double ly;																	// Y coordinate
 	//-----------------------------------------------------------
 	double elg;																	// Edge lenght
-	double l2D;																	// 2D lenght
-	//---- Methods -----------------------
-	D2_POINT::D2_POINT() {x = y = z =0; R= 0; next = prev = 0;}
+	//---- Methods ----------------------------------------------
+	D2_POINT::D2_POINT() {x = y = z = s = t = 0; R= F = V = 0; next = prev = 0;}
 	D2_POINT::D2_POINT(double x,double  y)
-	 {	R	= F = 0;	
+	 {	R	= F = V = 0;	
 			this->x = x;
 			this->y = y;
-			z       = 0;
+			lx = ly = 0;
+			z = s = t  = 0;
 			next = prev = 0;
-		}
+			}
 	//-----------------------------------
 	D2_POINT::D2_POINT(D2_POINT &p)	{*this = p; elg = 0;}
 	//-----------------------------------
+	D2_POINT::D2_POINT(D2_POINT *p)
+	{	*this = *p;
+		 strncpy(idn,"ROOF",4);			// Debug visaul ident
+	}
+
+	//-----------------------------------
 	void  Id(char *d)			{strncpy(d,idn,4); d[4] = 0;}
 	void  SetID(char *d)	{strncpy(idn,d,4);}
+	//-----------------------------------
+	void  D2_POINT::Mid(D2_POINT &p, D2_POINT &q, double h);
+	void	D2_POINT::Translate(double tx,double ty);
 	//-----------------------------------
 	void	D2_POINT::Convex()			{R = 0;}
 	void	D2_POINT::Reflex()			{R = 1;}
@@ -154,19 +166,20 @@ struct D2_POINT {
 	void	D2_POINT::SetFace(char n)	{F	= n;}
 	char  D2_POINT::GetFaceType() {return F;}
 	//----------------------------------------
-	void  D2_POINT::Draw()				{	glVertex3f(x,y,z);}
-	//----------------------------------------
-	void  D2_POINT::Add(D2_POINT &p, SVector &v)
-	{	x = p.x + v.x;
-		y = p.y + v.y;
-		z = p.z + v.z;
+	void  D2_POINT::Draw()
+	{	glTexCoord2d(s,t);
+		glVertex3d(x,y,z);
 	}
-	//----------------------------------------
-	void D2_POINT::Translate(double tx,double ty)
-	{	x += tx;
-		y += ty;
-	}
+
 	//------------------------------------------
+	char FaceType()	{return F;}
+	//-------------------------------------------
+	char IsYFace()	{return (F & GEO_Y_FACE);}
+	//--------------------------------------------
+	char VertPos()	{return V;}
+	//-------------------------------------------
+	double	D2_POINT::LocalX() {	return lx;}
+	double	D2_POINT::LocalY() {  return ly;}
 };
 //======================================================================================
 //  2D triangles
@@ -373,14 +386,18 @@ struct D2_SLOT {
 	//------------------------------------------------
 	void D2_SLOT::SetType(char t)	{R = t;}
 	};
-
-
+//====================================================================================
+class D2_Style;
+class CRoofModel;
 //====================================================================================
 //	Class face for stair extrusion
 //====================================================================================
 class D2_FACE {
 	// ATTRIBUTES ------------------------------------------------
 protected:
+	//--- Floor code ------------------------------------
+	char	fType;										// Face type
+	char	fIndx;										// Floor index
 	//--- Corner definitions ----------------------------
 	D2_POINT sw;										// SW corner
 	D2_POINT se;										// SE corner
@@ -388,11 +405,15 @@ protected:
 	D2_POINT nw;										// NW corner
 	//--- public Methods -------------------------------
 public:
-	D2_FACE();
+	D2_FACE()	{;}
+	D2_FACE(char t, char n);
  ~D2_FACE();
 	//--------------------------------------------------
 	void	Extrude(double f,double c,D2_POINT *sw,D2_POINT *se);
 	void	Draw();
+	void	TextureFace(D2_Style *s);
+	//--------------------------------------------------
+	char  SwFaceType()							{ return sw.F;}
 };
 //====================================================================================
 //	Class Stair for stair extrusion
@@ -400,44 +421,60 @@ public:
 class D2_FLOOR {
 	//--- ATTRIBUTES ------------------------------------------
 public:
-	int			sNo;											// Stair number
-	double	floor;										// Height
-	double  ceil;
+	char			sNo;										// Stair number
+	char      type;										// Floor type
+	double		floor;									// Height
+	double		ceil;
+	//---------------------------------------------------------
 	std::vector<D2_FACE*> faces;			// Polygon faces
 	//--- METHODS ---------------------------------------------
 public:
 	D2_FLOOR() {;}
-	D2_FLOOR(int e, double f, double c);
+	D2_FLOOR(char e, char t, double f, double c);
  ~D2_FLOOR();
  //----------------------------------------------------------
- void	Draw();
+  void	TextureFloor(D2_Style *s);
+ //----------------------------------------------------------
+ void		Draw();
 };
 //====================================================================================
 //	data for Texture definition
 //====================================================================================
 class D2_TParam {
 friend class D2_Style;
-	//--- ATTRIBUTES ----------------------------------------------
+	//--- ATTRIBUTES -----------------------------------------------
+	char face[4];													// Code face
+	char flor[4];													// Code floor
+	//--------------------------------------------------------------
 	char code;														// Code texture
-	char rept;														// Repeat number
+	char rfu1;														// Resrved
 	char hmod;														// Texture mode in vertical
 	char rfu2;														// Reserved 2
 	//--------------------------------------------------------------
+	double		rept;												// Repeat factor
 	int		x0;															// SW corner
 	int		y0;															// 
 	int		x1;															// NE corne
 	int   y1;
-	//-----Texture extensions --------------------------------------
-	double dtx;
-	double dty;
-	//--------------------------------------------------------------
-	U_INT *mem;														// Memory image
+	//--- Texture dimension ----------------------------------------- 
+	U_INT  Tw;
+	U_INT  Th;
+	//--- Rectangle extensions --------------------------------------
+	double Rx;
+	double Ry;
+	//--- Rectangle position in texture in [0,1]---------------------
+	double Ox;
+	double Oz;
 	//--- METHODS --------------------------------------------------
 public:
-	D2_TParam()	{}
+	D2_TParam();	
  ~D2_TParam();
   //--------------------------------------------------------------
-	void	CopyFrom(D2_TParam &p);
+	void	AdjustFrom(D2_TParam &p, U_INT w, U_INT h);
+	//--------------------------------------------------------------
+	bool  IsWhole()						{ return (hmod == 0);	}
+	void  SetFace(char *t)		{ strncpy(face,t,4);	}
+	void	SetFloor(char *t)		{ strncpy(flor,t,4);	}
 };
 //====================================================================================
 //	data for Style definition 
@@ -449,17 +486,25 @@ class D2_Style {
 	char			 name[63];									// Style name
 	char       filn[63];									// Texture file name					
 	D2_Group  *group;											// Parent group
-	short			 weight;										// relative weight in group
-	char			 minF;											// minimum floor number
-	char			 maxF;											// maximum floor number
-	//--------Floor height -----------------------------------------
-	double     height;										// Floor height
+	int 			 weight;										// relative weight in group
+	char			 flNbr;											// floor number
+	char			 tr;												// Trace
+	//--- Texture size ---------------------------------------------
+	U_INT			 Tw;												// Texture width
+	U_INT			 Th;												// Texture height
+	//--------------------------------------------------------------
+	double     Fz;												// Floor height
+	double     Xp;												// Polygon X extension
+	double     Yp;												// Polygon Y extension
+	double     Zp;												// Building Z extension
+	double     Wz;												// wall height
 	//--------Frequency parameters driving generation --------------
 	U_INT			 nber;											// Number of instances
 	double     freq;											// Current frequency
 	double     ratio;											// Style ratio (%)
 	//--------------------------------------------------------------							
-	D2_TParam *param[TEXD2_MAT_DIM];			// Texture array
+	D2_TParam *param[TEXD2_MAT_DIM];			// Texture array for face
+	std::vector<D2_TParam *> roofT;				// Roof textures
 	//--- METHODS -------------------------------------------------
 public:
 	D2_Style(char *sn, D2_Group *gp);
@@ -470,12 +515,28 @@ public:
 	bool			Error2 (char *s);
 	bool			Decode(char *buf);
 	bool			AddFace(D2_TParam &p);
-	bool			AddFloor(char *fl, int n, D2_TParam &p);
+	bool			AddFloor(char *fl, D2_TParam &p);
+	bool			AddRoof(D2_TParam &p);
+	//-------------------------------------------------------------
+	void      TexturePoint(D2_POINT *p, char tp, char fx);			// Compute x texture coordinate
+	void			TextureFace(D2_FACE *fa);
 	//-------------------------------------------------------------
 	bool			IsOK();
+	bool			HasTurn(int n);
 	//-------------------------------------------------------------
 	short     GetWeight()					{return weight;}
 	void			SetRatio(double r)	{ratio = r;}
+	//-------------------------------------------------------------
+	char			GetFloorNbr()				{return flNbr;}
+	double    GetHeight()					{return Fz;}
+	char      HasTrace()					{return tr;}
+	//------ Save building extensions ------------------------------
+	void			SetXp(double r)			{Xp = r;}			
+	void			SetYp(double r)			{Yp = r;}			
+	void      SetZp(double r)			{Zp = r;}
+	void			SetWz(double r)			{Wz = r;}
+	//--------------------------------------------------------------
+	D2_Group *GetGroup()					{return group;}
 };
 //====================================================================================
 //	data for group definition 
@@ -483,72 +544,111 @@ public:
 class D2_Session;
 class D2_Group {
 	//--- ATTRIBUTES ----------------------------------------------
+	D2_Session *ssn;												// Parent session
 	char  name[64];													// Group name
 	double	sfMin;													// min surface
 	double  sfMax;													// Max surface
 	int			sdMin;													// side number
 	int			sdMax;													// side max
+	//--- Trace indicator -----------------------------------------
+	char		tr;															// Trace
+	char    rfu;														// Not yet used
+	//--- Texture parameters --------------------------------------
+	TEXT_INFO tinf;													// Texture definition
+	char    path[512];											// File name
+	//---- Turn index ---------------------------------------------
+	short    indx;													// Turn index
 	//---- Floor parameters ---------------------------------------
-	int     floor;													// Number of floors
-	double  height;													// Floor height
+	short    flNbr;													// Number of floors
+	double   flHtr;													// Floor height
 	//--------------------------------------------------------------
 	int			weight;													// Cummulated weight
+	U_INT   nber;														// Number of instances
 	//--------------------------------------------------------------
 	std::vector<D2_Style*> styles;					// All styles in group
 	//--- METHODS --------------------------------------------------
 public:
-	D2_Group(char *gn);
+	D2_Group(char *gn, D2_Session *s);
  ~D2_Group();
   //--------------------------------------------------------------
 	bool Parse(FILE *f, D2_Session *sn);
 	bool DecodeParam(char *buf);
 	//--------------------------------------------------------------
+	void		LoadTexture();
+	//--------------------------------------------------------------
 	void		AddStyle(D2_Style *sy);		
 	void    ComputeRatio();
+	//--------------------------------------------------------------
+	void    GetTexDim(U_INT &x,U_INT &y) {x = tinf.wd; y = tinf.ht;}
+	//--------------------------------------------------------------
+	D2_Style *GetStyle(double sf,int side);
+	//--------------------------------------------------------------
+	U_INT			GetFloorNbr()				{return	flNbr;}
+	double    GetFloorHtr()				{return flHtr;}
+	//--------------------------------------------------------------
+	U_INT     GetXOBJ()						{return tinf.xOBJ;}
+	//--------------------------------------------------------------
+	char			HasTrace()					{return tr;}
+ 
 	};
 
-//====================================================================================
-//	data for session 
-//====================================================================================
-class D2_Session {
-	//--- ATTRIBUTES ------------------------------------------------
-	char  name[64];													// Session name
-	std::map<std::string,D2_Group*> group;	// Groups
-	U_INT  fpos;														// File position
-	//---METHODS ----------------------------------------------------
-public:
-	D2_Session();
- ~D2_Session();
-	//----Session decoding ------------------------------------
-	bool	Stop01(char *ln);
-	void	ReadFile(FILE *f, char *buf);
-	bool	ReadParameters(char *fn);
-	bool  ParseSession(FILE *f);
-	bool	ParseGroups(FILE *f);
-	bool  ParseStyles(FILE *f);
-	bool	AddStyle(FILE *f,char *sn,char *gn);
-	//---------------------------------------------------------------
-	inline void BackTo(int p)	{fpos = p;}
- };
 //====================================================================================
 //	Roof Model
 //====================================================================================
 class CRoofModel {
 	//--- ATTRIBUTES -----------------------------------------------
+protected:
 	short			nbv;												// Number of vertices
 	short			nbx;												// Number of index
 	SVector	 *aVEC;												// Vectors
 	short    *aIND;												// Indices
 	D2_POINT *aOUT;												// Output vectors
+	//--- Roof ratio ----------------------------------------------
+	double    ratio;											// top ratio relative to width
+	double		top;												// Highest point in roof
+	//--- Total POINTs in array -----------------------------------
+	U_INT			tot;												// Total
+	//--- Triangulator --------------------------------------------
+	Triangulator *trn;										// Pointer to
 	//---METHODS --------------------------------------------------
 public:
 	CRoofModel(int n,SVector *v,int q, short *x);
  ~CRoofModel();
-  //--- clone model ---------------------------------------------
-	void	CloneModel();
-	int 	FillTriangle(D2_TRIANGLE &T, short k);
+  void		Clear();
+  //--- Fill Triangles ------------------------------------------
+	int 	FillTriangle(D2_TRIANGLE &T, short n,short m);
 	//---Default is a 2 slopes roof -------------------------------
-	virtual D2_POINT *BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out);
+	virtual D2_POINT		 *BuildRoof(Queue <D2_POINT> &inp,    std::vector<D2_TRIANGLE*> &out);
+	virtual void					GenerateRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out) {;}
+	virtual void					Texturing(Triangulator *,std::vector<D2_TRIANGLE*> &out) {;}
+	//-------------------------------------------------------------
+	double  GetTop()	{	return top;}
+};
+//====================================================================================
+//	Roof Model with flat top
+//====================================================================================
+class  CRoofFLAT : public CRoofModel
+{	//--- Attributes -------------------------
+	//--- Methods ----------------------------
+public:
+	CRoofFLAT(int n,SVector *v,int q, short *x);
+	void      GenerateRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out);
+	void			Texturing(Triangulator *,std::vector<D2_TRIANGLE*> &out);
+	//----------------------------------------
+};
+
+//====================================================================================
+//	Roof Model with 2 slopes
+//====================================================================================
+class  CRoofM2P : public CRoofModel
+{	//--- Attributes -------------------------
+	//--- Methods ----------------------------
+public:
+	CRoofM2P(int n,SVector *v,int q, short *x);
+	void      GenerateRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out);
+	void			Texturing(Triangulator *,std::vector<D2_TRIANGLE*> &out);
+	//----------------------------------------
+	void			TextureFace(int ftype, D2_TRIANGLE *Tr);
 };
 //====================================================================================
 //	TRIANGULATOR for triangulation of polygones
@@ -562,9 +662,12 @@ class Triangulator: public CExecutable {
 	Queue <D2_SLOT>  slot;												// Slot list
 	D2_POINT *P0;																	// First point
 	D2_POINT *Pn;																	//  Last Point
-	std::vector<D2_TRIANGLE *> roof;						  // roof output
 	std::vector<D2_FLOOR*>     walls;							// Walls
-	D2_POINT *roofArray;													// Sloped roof
+	std::vector<D2_TRIANGLE*> roof;								// Data
+	//--- roof points ----------------------------------------------
+	D2_POINT   *rPoint;														// Roof array
+	//--------------------------------------------------------------
+	CRoofModel *roofM;														// Roof model
 	//--------------------------------------------------------------
 	D2_Style   *style;														// Building style
 	//--------------------------------------------------------------
@@ -582,7 +685,13 @@ class Triangulator: public CExecutable {
 	D2_POINT   *pminy;														// Point with miny
 	double      maxy;															// Max  y
 	D2_POINT   *pmaxy;														// Point with maxy
-	//----------------------------------------------------
+	//-------------------------------------------------------------
+	double      Xp;																// building X extend
+	double		  Yp;																// building Y extent
+	double      Zp;																// Building Z extend
+	//-------------------------------------------------------------
+	double      Wz;																// Wall height
+	//-------------------------------------------------------------
 	double	surf;																	// Ground surface
 	//----------------------------------------------------
 	double  rotM[4];															// Rotation matrix
@@ -592,7 +701,8 @@ class Triangulator: public CExecutable {
 	char    hIND;																	// Hole indicator
 	char    face;																	// Type of face	
 	//----------------------------------------------------
-	char    stair;																// Stair numbers		
+	char    flNbr;																// Stair numbers
+	double  flHtr;																// Floor height		
 	//----------------------------------------------------
 	U_INT   num;																	// Null number
 	U_INT		seq;																	// Sequence number
@@ -608,16 +718,17 @@ public:
 	bool		Load(char *fn);
 	bool	  QualifyPoints();
 	bool		Triangulation();
-	void		QualifyFaces();
-	void		Extrude(char e,double h);
+	void		OrientFaces();
+	void		BuildWalls();
 	void		Reorder();
-	void		ChangeRoof(CRoofModel &m);
+	void		SelectRoof();
+	void		Texturing();
+	void    SetStyle(D2_Style *s);
 	void		Start();
 	void		Draw();					// Drawing interface
 	//-----------------------------------------------------
 	inline double	GetSurface()		{return surf;}
-	inline int    NbPoints()			{return extp.GetNbObj();}
-	inline void		SetStyle(D2_Style *s)	{style = s;}
+	inline int    GetSideNbr()		{return extp.GetNbObj();}
 protected:
   //-----------------------------------------------------
 	void		Clean();
@@ -644,15 +755,44 @@ protected:
 	//--- Drawing routines ---------------------------------
 	int 		LineMode();					// Drawing interface
 	int 		FillMode();
-	void		DrawRoof();						// Draw roof
 	void		DrawWall();					  // Draw floors
+	void		DrawRoof();
 	//--- TimeSlice must return 0 to inhibit further processing --
 	int			TimeSlice(float dT,U_INT frame);
 	//--- Option  management -------------------------------
 public:
 	void		repD(U_INT p)			{dop.Rep(p);}
 	char    hasR(U_INT p)			{return dop.Has(p);}
+	D2_Style *GetStyle()			{return style;}
 };
+//====================================================================================
+//	data for session 
+//====================================================================================
+class D2_Session {
+	//--- ATTRIBUTES ------------------------------------------------
+	char  tr;																// Trace indicator
+	char  name[64];													// Session name
+	std::map<std::string,D2_Group*> group;	// Groups
+	U_INT  fpos;														// File position
+	//---METHODS ----------------------------------------------------
+public:
+	D2_Session();
+ ~D2_Session();
+	//----Session decoding ------------------------------------------
+	bool	Stop01(char *ln);
+	void	ReadFile(FILE *f, char *buf);
+	bool	ReadParameters(char *fn);
+	bool  ParseSession(FILE *f);
+	bool	ParseGroups(FILE *f);
+	bool  ParseStyles(FILE *f);
+	bool	AddStyle(FILE *f,char *sn,char *gn);
+	//---------------------------------------------------------------
+	D2_Style *GetStyle(double sf, int side);
+	//---------------------------------------------------------------
+	inline void SetTrace(char t)	{tr = t;}
+	inline void BackTo(int p)			{fpos = p;}
+	inline char HasTrace()				{return tr;}
+ };
 
 //============================= END OF FILE ======================================================
 #endif // TRIANGULATOR_H

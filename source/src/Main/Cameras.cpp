@@ -298,10 +298,10 @@ bool cKeyCKPD(int id, int code, int mod)
 //===================================================================================
 CCamera::CCamera (void)
 { fov   = globals->fovX;          // Degrees
+	ffac	= 1;
   range = globals->camRange;      // xx feet initial
   Lock  = 0;
 	pick	= 0;											// Picking indicator
-  Prop  = 0;											// Default to external
 	intcm	= 0;
 	extcm = 1;
 	Rate	= 0.05f;										// Default rotation rate
@@ -341,15 +341,153 @@ CCamera::CCamera (void)
   offset.x = offset.y = offset.z = 0;
   orient.x = orient.y = orient.z = 0;
   nearP    = globals->nearP;
+	farP		 = globals->afarP;
   SetMinAGL();
-  // As a convenience to subclasses, define a clamp value just less than 90 degrees
+  // Define a clamp value just less than 90 degrees
   clamp = DegToRad (89.99999f);
+	//--- Temporaire ---------------------------------------
+	T1 = 0;
+	T2 = 0;
 }
 //-------------------------------------------------------------------------
 // Camera is destroyed
 //-------------------------------------------------------------------------
 CCamera::~CCamera()
 {	if (globals->cam == this)	ReleaseIndicators();}
+//-------------------------------------------------------------------------
+// Camera change internal parameters
+//	NOTE:  The tangent value is increased to accomodate for precision error
+//	when computing a point position inside the frustum
+//-------------------------------------------------------------------------
+void CCamera::SetCameraParameters(double fv,double rt)
+{	ratio = rt;
+	fov   = fv;
+	//--- Compute height and width of near section ---------
+	tgf   = tan(DegToRad(fv * 0.5));
+	htr		= nearP * tgf;
+	wdt		= htr   * ratio;
+	return;
+}
+//-------------------------------------------------------------------------
+// Compute camera referential relative to target position tgt
+//	The camera referential are the 3 vectors local to the camera
+//	-Rx is the right direction
+//	-Ry is the forward direction
+//	-Rz is the up direction
+//	Vector forward is the vector from eye position to target position
+//-------------------------------------------------------------------------
+void CCamera::SetReferential(SPosition &tgt)
+{	//--- Compute components of forward vector --------------
+	Ry = SubtractPositionInFeet(camPos, tgt);
+	Ry.Normalize();
+	//--- Compute X reference from Ry and given up vector ---
+	Up.Normalize();
+	Rx.CrossProduct(Ry,Up);
+	Rx.Normalize();
+	//--- Compute Up reference -(is normalized already) -----
+	Rz.CrossProduct(Rx,Ry);
+	return;
+}
+//=========================================================================
+#define FTUM_INSIDE		(0)
+#define FTUM_REAR			(1)
+#define FTUM_LEFT			(2)
+#define FTUM_RIGHT		(3)
+#define FTUM_ABOVE		(4)
+#define FTUM_BELOW		(5)
+//-------------------------------------------------------------------------
+// Check for point in frustum 
+//	NOTE:  We use the reduction factor at aircraft position
+//	This return an index to account for point position in the
+//	frustum
+//-------------------------------------------------------------------------
+bool CCamera::GeoPosInFrustum(SPosition &P, CVector &R, char *T)
+{	bool in = true;
+	//--- Compute Vector from camera to Position -(in feet components)-----
+	CVector fwp = PJ + R;								// Relocate to point position
+	//--- Compute and test the forward coordinate -------------------------
+	double  yp  = fwp.DotProduct(Ry);
+	if (yp < nearP)			{	T[FTUM_REAR]++; in= false;}
+	//--- Compute and test the Up direction --------------------------------
+	double  zp		= fwp.DotProduct(Rz);
+	double  zlim  = yp * tgf * ffac;						// Limit in X direction
+	if (zp < -zlim)			{	T[FTUM_BELOW]++; in = false;}
+	if (zp >  zlim)			{ T[FTUM_ABOVE]++; in = false;}
+	//--- Compute and test the right direction ------------------------------
+	double	xp		= fwp.DotProduct(Rx);
+	double  xlim  = zlim * ratio;
+	if (xp < -xlim)			{ T[FTUM_LEFT]++;		in = false; }
+	if (xp >  xlim)			{ T[FTUM_RIGHT]++;	in = false; }
+	return in;
+}
+//-------------------------------------------------------------------------
+// Check for box in frustum 
+//	ff is a flare factor to account for error when testing point in
+//	frustum
+//	NOTE:  Both P and B must have coordinates in arcsec
+//	We check for the 8 corners points of the box.
+//	If only one is in frustum, then the box is at least partially visible
+//-------------------------------------------------------------------------
+bool CCamera::BoxInFrustum(SPosition &P, CVector &B, double ff)
+{	char  pos[8] = {0,0,0,0,0,0,0,0};
+	CVector T = B;
+	T.x *= TC_FEET_PER_ARCSEC * globals->rdf;			// In feet
+	T.y *= TC_FEET_PER_ARCSEC;
+	//--- Compute vector from camera to target --------------
+	ffac	= ff;
+	PJ = FeetComponents(camPos,P,globals->rdf);
+	//--- Check corner 1 -------------------------
+	CVector c1(-T.x,-T.y,-T.z);
+	if (GeoPosInFrustum(P,c1,pos))	return true;
+	//--- Check corner 2 --------------------------
+	CVector c2(-T.x,-T.y,+T.z);
+	if (GeoPosInFrustum(P,c2,pos))	return true;
+	//--- Check corner 3 --------------------------
+	CVector c3(-T.x,+T.y,-T.z);
+	if (GeoPosInFrustum(P,c3,pos))	return true;
+	//--- Check corner 4 --------------------------
+	CVector c4(-T.x,+T.y,+T.z);
+	if (GeoPosInFrustum(P,c4,pos))	return true;
+	//--- Check corner 5 ---------------------------
+	CVector c5(+T.x,-T.y,-T.z);
+	if (GeoPosInFrustum(P,c5,pos))	return true;
+	//--- Check corner 6 ---------------------------
+	CVector c6(+T.x,-T.y,+T.z);
+	if (GeoPosInFrustum(P,c6,pos))	return true;
+	//--- Check corner 7 ---------------------------
+	CVector c7(+T.x,+T.y,-T.z);
+	if (GeoPosInFrustum(P,c7,pos))	return true;
+	//--- Check corner 8 ---------------------------
+	CVector c8(+T.x,+T.y,+T.z);
+	if (GeoPosInFrustum(P,c8,pos))	return true;
+	//--- Check if box is astride ------------------
+	if (pos[FTUM_REAR]  == 8)		return false;
+	if (pos[FTUM_LEFT]  == 8)		return false;
+	if (pos[FTUM_RIGHT] == 8)		return false;
+	if (pos[FTUM_ABOVE] == 8)		return false;
+	if (pos[FTUM_BELOW] == 8)		return false;
+	//--- Box may be visible ------------------------------
+	//	NOTE: When we are here, then all parts are in front
+	//				but some are spread on different sides of the
+	//				frustum. Some objects may still be not
+	//				visible. So some extra overhead is incurred
+	//	Exemple:
+	//            |                   *|
+	//            |                    |*
+	//      ------------------------------*---------------
+	//            |   inside           |   * object is not
+	//            | frustum            |     visible
+	//            |                    |
+	//-----------------------------------------------------
+	return true;
+}
+//-------------------------------------------------------------------------
+//	Standard camera referential use target position
+//--------------------------------------------------------------------------
+void	CCamera::CameraReferential()
+{	SetReferential(tgtPos);
+	return;
+}
 //-------------------------------------------------------------------------
 // Camera save context
 //-------------------------------------------------------------------------
@@ -635,7 +773,8 @@ void CCamera::StartShoot(float dT)
   glMatrixMode (GL_PROJECTION);
   glLoadIdentity ();
 	StartPicking();
-  gluPerspective (fov, globals->aspect, nearP,globals->afarP); 
+	SetCameraParameters(fov,globals->aspect);
+  gluPerspective (fov, ratio, nearP,farP); 
   glMatrixMode (GL_MODELVIEW);
   glFrontFace(GL_CCW);
   return;
@@ -676,7 +815,8 @@ void CCamera::DrawObject(float dT,VIEW_PORT &vp,CFuiWindow *win)
   glMatrixMode (GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity ();
-  gluPerspective (fov, aspect, globals->nearP,globals->afarP);
+	SetCameraParameters(fov,aspect);
+  gluPerspective (fov, ratio, nearP,farP);
   //---------Save and set view port  -------------------------------------
   glGetIntegerv(GL_VIEWPORT,(GLint*)&vps);
   glViewport(vp.x0,vp.y0,vp.wd,vp.ht);
@@ -777,7 +917,8 @@ void CCamera::Projection(VIEW_PORT &vp,TEXT_INFO &inf)
 //  -offset are in feet from aircraft position
 //-------------------------------------------------------------------------
 void CCamera::RockArround (SPosition tpos, SVector tori,float dT)
-{ // Update offset to target position in world coordinates.  Note that spot camera
+{ tgtPos = tpos;
+	// Update offset to target position in world coordinates.  Note that spot camera
   // follows target vehicle orientation in heading only, not pitch or bank
   double atheta = WrapTwoPi(double(tori.z) + theta);
   double cosphi = cos(phi);
@@ -788,11 +929,18 @@ void CCamera::RockArround (SPosition tpos, SVector tori,float dT)
   // Update orientation
   orient.x = phi;
   orient.y = 0;
-  orient.z = atheta; 
-  //---Update phi if camera is too low -------------------------
-  double gh = offset.z + tpos.alt;
-  if (gh < minAGL)  phi += DegToRad(0.5f);
+  orient.z = atheta;
   return;
+}
+//-------------------------------------------------------------------------
+// Update camera world position
+//  -offset are in feet from aircraft position
+//-------------------------------------------------------------------------
+void CCamera::UpdateCameraPosition(SPosition &wpos)
+{	camPos			= AddToPositionInFeet(wpos,offset,globals->exf);
+	double	alt = globals->tcm->GetGroundAltitude() + minAGL;
+  //---Update phi if camera is too low -------------------------
+  if (camPos.alt < alt)  phi += DegToRad(0.25f);
 }
 //-------------------------------------------------------------------------
 // Pan Left - rotate clockwise
@@ -1082,11 +1230,26 @@ void CCameraCockpit::ReadFinished (void)
     }
   }
 }
+//----------------------------------------------------------------------
+//  Cockpit camera uses its position translated by the Forward vector
+//	as target
+//-----------------------------------------------------------------------
+void	CCameraCockpit::CameraReferential()
+{	SPosition P;
+	P.lon	= (camPos.lon + Fw.x);
+	P.lat	= (camPos.lat + Fw.y);
+	P.alt = (camPos.alt + Fw.z);
+	SetReferential(P);
+	return;
+}
+
 //------------------------------------------------------------------------------------
 //	Compute camera position using openGL matrix operations
+//	World position is the world position of aircraft
 //------------------------------------------------------------------------------------
-void CCameraCockpit::UpdateCamera (SPosition tgtPos, SVector ori ,float dT)
-{	//----- Adjust orientation by fixed seat orientation ----
+void CCameraCockpit::UpdateCamera (SPosition wpos, SVector ori ,float dT)
+{	tgtPos = wpos;
+	//----- Adjust orientation by fixed seat orientation ----
   CVector ors = Seat;
 	ors.x += ckPanel->pit;
   ors.z += ckPanel->hdg;
@@ -1102,15 +1265,16 @@ void CCameraCockpit::UpdateCamera (SPosition tgtPos, SVector ori ,float dT)
 	//--- Save matrix ------------------------------
   glGetDoublev(GL_MODELVIEW_MATRIX,mSEAT);
   glPopMatrix();
-
-	//--- Compute forward vector -------------------
-	CVector fw(0,100,0);
+	//--- Compute forward vector ----------------------
+	CVector fw(0,1000,0);
 	fw.MultMatGL(mSEAT,Fw);
-	//--- Compute up vector ------------------------
+	//--- Compute up vector ---------------------------
 	CVector up(0,0,1);
 	up.MultMatGL(mSEAT,Up);
 	//--- Now compute offset --------------------------
   Ofs.MultMatGL(mSEAT,offset);
+	//--- Update camera world position ----------------
+	camPos  = AddToPositionInFeet(wpos,offset, globals->exf);
 	return;
 }
 
@@ -1338,8 +1502,12 @@ void CRabbitCamera::RabbitRight()
 //  Update camera position
 //  -offset are in feet from aircraft posiiton
 //-------------------------------------------------------------------------
-void CRabbitCamera::UpdateCamera (SPosition tpos, SVector tori,float dT)
-{	return RockArround(tpos,tori,dT);	}
+void CRabbitCamera::UpdateCamera (SPosition wpos, SVector tori,float dT)
+{	RockArround(wpos,tori,dT);
+	//--- Update camera world position ---------------------
+	UpdateCameraPosition(wpos);
+	return;
+}
 //=========================================================================
 // CCameraSpot
 //
@@ -1354,13 +1522,18 @@ CCameraSpot::CCameraSpot (void)
   cIden = CAMERA_SPOT;
   cNext = CAMERA_OBSERVER;
   cPrev = CAMERA_COCKPIT;
+	rmax  = 15000;
 }
 //-------------------------------------------------------------------------
 //  Update camera position
 //  -offset are in feet from aircraft posiiton
 //-------------------------------------------------------------------------
-void CCameraSpot::UpdateCamera (SPosition tpos, SVector tori,float dT)
-{	return RockArround(tpos,tori,dT);	}
+void CCameraSpot::UpdateCamera (SPosition wpos, SVector tori,float dT)
+{	RockArround(wpos,tori,dT);
+	//--- Update camera world position -------------------
+	UpdateCameraPosition(wpos);
+	return;
+}
 //-------------------------------------------------------------------------
 // Set the camera position
 //-------------------------------------------------------------------------
@@ -1409,21 +1582,10 @@ CCameraObserver::CCameraObserver (void)
 //-------------------------------------------------------------------------------
 //  Compute Camera offset
 //-------------------------------------------------------------------------------
-void CCameraObserver::UpdateCamera (SPosition tpos, SVector tgtOrient,float dT)
-{ double cosphi = cos(phi);
-  // Update offset to target position in world coordinates.
-  offset.x =  range * sin (theta) * cosphi;
-  offset.y = -range * cos (theta) * cosphi;
-  offset.z =  range * sin (phi);
-
-  // Update camera orientation
-  orient.x = phi;
-  orient.y = 0;
-  orient.z = tgtOrient.z + theta;
-  //---Update phi if camera is too low -------------------------
-  double gh = offset.z + tpos.alt;
-  if (gh < minAGL)  phi += DegToRad(0.5f);
-
+void CCameraObserver::UpdateCamera (SPosition wpos, SVector tori,float dT)
+{ RockArround(wpos,tori,dT);
+	//--- Update camera world position -------------------
+	UpdateCameraPosition(wpos);
   return;
 }
 //-------------------------------------------------------------------------------
@@ -1468,7 +1630,7 @@ CCameraFlyby::CCameraFlyby (void)
 { // This camera cannot be manually handled
   Prof.Set(CAM_MAY_ZOOM);
   // Default position to an arbitrary value to cause position recalc on first update
-  cameraPos.lat = cameraPos.lon = cameraPos.alt = 0;
+  camPos.lat = camPos.lon = camPos.alt = 0;
   // Temporarily set orientation based on position NE of the target
   orient.x = 0;
   orient.y = 0;
@@ -1485,33 +1647,34 @@ CCameraFlyby::CCameraFlyby (void)
 //-------------------------------------------------------------------------------
 //  Update camera offset
 //-------------------------------------------------------------------------------
-void CCameraFlyby::UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT)
-{ CVector v = SubtractPosition (tgtPos, cameraPos);
-  //if (r > 65.0) r = r0; // limit the range
+void CCameraFlyby::UpdateCamera (SPosition wPos, SVector tori,float dT)
+{ tgtPos = wPos;
+	CVector v = SubtractPositionInFeet(wPos, camPos);
   if (v.Length() > rng || range != r0) {
     rng = range * 17.50;
-    r0 = range;
+    r0  = range;
     //TRACE ("%f", r);
     // Recalculate position
     CRotationMatrixHPB matx;                                            // LH
     CVector _angle (0.984, 0.0, 0.173);  // cos - sin 10°               // LH
     _angle.Times (range * 15.0 /*distance*/);
     SVector or_m = {0.0, 0.0, 0.0};                                     // LH
-    or_m.y = TWO_PI - tgtOrient.z;     // + is right                    // RH to LH
+    or_m.y = TWO_PI - tori.z;     // + is right                    // RH to LH
     matx.Setup (or_m);                                                  // LH
     SVector dir, w_dir;                                                 // LH
     matx.ParentToChild (w_dir, _angle);                                 // LH
     dir.x = w_dir.z; dir.y = w_dir.x; dir.z = 0.0;
     // set camera to the NE of target position
-    cameraPos = AddVector (tgtPos, dir);
-    v = SubtractPosition (tgtPos, cameraPos);
+    // camPos = AddToPositionInFeet(wPos, dir, globals->exf);
+    v = dir;//	SubtractPositionInFeet (wPos, camPos);
   }
   offset.x = v.x;
   offset.y = v.y;
   offset.z = v.z;
+  camPos = AddToPositionInFeet(wPos, offset, globals->exf);
   //---Update phi if camera is too low -------------------------
-  double gh = offset.z + tgtPos.alt;
-  if (gh < minAGL)  cameraPos.alt +=1 ;
+	double alt = globals->tcm->GetGroundAltitude() + minAGL;
+  if (camPos.alt < alt)  camPos.alt += 4 ;
   return;
 }
 //==============================================================================
@@ -1573,7 +1736,7 @@ void	CCameraTower::ComputeAngle(CVector &v)
 //  Compute camera offset from aircraft
 //-------------------------------------------------------------------------------
 CVector CCameraTower::ComputeOffset(SPosition tgp)
-{	CVector v = SubtractPosition (tgp, camPos);
+{	CVector v = SubtractPositionInFeet (tgp, camPos);
 	// Set camera offset from aircraft ------ 
 	offset.x = v.x;
 	offset.y = v.y;
@@ -1583,16 +1746,17 @@ CVector CCameraTower::ComputeOffset(SPosition tgp)
 //-------------------------------------------------------------------------------
 //  Update camera offset
 //-------------------------------------------------------------------------------
-void CCameraTower::UpdateCamera (SPosition tgp, SVector tgtOrient,float Dt)
-{ switch (Mode)	{
+void CCameraTower::UpdateCamera (SPosition wPos, SVector tgtOrient,float Dt)
+{ tgtPos = wPos;
+	switch (Mode)	{
 		case CAM_TRK_MODE:
 			{	UpdatePosition(Dt);
-				ComputeOffset(tgp);
+				ComputeOffset(wPos);
 				return;
 			}
 		case CAM_MAN_MODE:
 			{ DrawNoticeToUser("Tower Camera in manual mode",2);
-				CVector v = ComputeOffset(tgp);
+				CVector v = ComputeOffset(wPos);
 				//--- compute target position -------------
        	double hprj = range * cos(orient.x);
 				tpos.x			= hprj  * cos(orient.z);
@@ -1618,7 +1782,7 @@ bool CCameraTower::ToggleMode()
 	case CAM_TRK_MODE:
 		{	Mode = CAM_MAN_MODE;
 			//--- Compute theta and phi from positions -----
-			CVector v = SubtractPosition (camPos,globals->geop);	// v is in Feet
+			CVector v = SubtractPositionInFeet (camPos,globals->geop);	// v is in Feet
 			ComputeAngle(v);
 			return true;
 		}
@@ -1721,7 +1885,7 @@ CCameraOverhead::CCameraOverhead (void)
   Up.z = 0;
   Up.y = 1.0f;
   // Increase rmax to allow very high zoom range
-  rmax = NmToFeet (20.0f);
+  rmax = NmToFeet (30.0f);
   
   // Initialize orientation to point straight down
   orient.x = DegToRad (90.0);
@@ -1735,12 +1899,15 @@ CCameraOverhead::CCameraOverhead (void)
 //-------------------------------------------------------------------------------
 //  Update camera offset
 //-------------------------------------------------------------------------------
-void CCameraOverhead::UpdateCamera (SPosition tgtPos, SVector tgtOrient,float Dt)
-{
-  // Update position
+void CCameraOverhead::UpdateCamera (SPosition wpos, SVector tgtOrient,float Dt)
+{ tgtPos = wpos;
+  //---------- Update position ---------------------------
   offset.x = 0;
   offset.y = 0;
   offset.z = range;
+	//--- Update camera world position --------------------
+	camPos			= wpos;
+	camPos.alt	= range + wpos.alt;
 }
 //=====================================================================================
 // Orbit camera
@@ -1761,8 +1928,9 @@ CCameraOrbit::CCameraOrbit (void)
 //------------------------------------------------------------------------------------
 //  Update camera offset and orientation
 //------------------------------------------------------------------------------------
-void CCameraOrbit::UpdateCamera (SPosition tpos, SVector tgtOrient,float dT)
-{ theta += (dT * orbitRate);
+void CCameraOrbit::UpdateCamera (SPosition wpos, SVector tgtOrient,float dT)
+{ tgtPos = wpos;
+	theta += (dT * orbitRate);
   theta  = WrapTwoPi(theta);
   double cosphi = cos(phi);
   // Update heading rotation
@@ -1774,9 +1942,8 @@ void CCameraOrbit::UpdateCamera (SPosition tpos, SVector tgtOrient,float dT)
   orient.x = -phi;
   orient.y = 0;
   orient.z = -theta;
-  //---Update phi if camera is too low -------------------------
-  double gh = offset.z + tpos.alt;
-  if (gh < minAGL)  phi += DegToRad(0.5f);
+	//--- Update Camera world position ---------------------------
+	UpdateCameraPosition(wpos);
   return;
 }
 //------------------------------------------------------------------------------------
@@ -1857,8 +2024,10 @@ CCameraRunway::CCameraRunway (void)
 //-------------------------------------------------------------------------------
 //  Update camera position relative to 0rigin
 //-------------------------------------------------------------------------------
-void CCameraRunway::UpdateCamera (SPosition tgtPos, SVector tgtOrient,float Dt)
-{}
+void CCameraRunway::UpdateCamera (SPosition wpos, SVector tgtOrient,float Dt)
+{	camPos			= wpos;
+	camPos.alt	= offset.z;
+}
 //-------------------------------------------------------------------------------
 //  Set camera to airport origin
 //  Camera is placed 3.2 miles above ground
@@ -2213,7 +2382,8 @@ void CCameraObject::DrawOnWin(VIEW_PORT &vp,CFuiWindow *win)
   glMatrixMode (GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity ();
-  gluPerspective (fov, aspect, globals->nearP,globals->afarP);
+	SetCameraParameters(fov,aspect);
+  gluPerspective (fov, ratio, nearP,farP);
   //---------Save and set view port  -------------------------------------
   glGetIntegerv(GL_VIEWPORT,(GLint*)&vps);
   glMatrixMode (GL_MODELVIEW);
@@ -2307,7 +2477,8 @@ void CCameraObject::DebDrawFBOinPerspective(int w, int h)
   glMatrixMode (GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity ();
-  gluPerspective (fov, aspect, globals->nearP,globals->afarP);
+	SetCameraParameters(fov,aspect);
+  gluPerspective (fov, ratio, nearP,farP);
   //---------Save and set view port  -------------------------------------
   glGetIntegerv(GL_VIEWPORT,(GLint*)&vps);
   glMatrixMode (GL_MODELVIEW);
@@ -2548,12 +2719,12 @@ void CCameraDLL::GetLookatPoint (SVector &v)
   glRotated (RadToDeg (eyeOri_.x), 1.0, 0.0, 0.0); // pitch
 }
 
-void CCameraDLL::UpdateCamera (SPosition tgtPos, SVector tgtOri, float dT)
-{
+void CCameraDLL::UpdateCamera (SPosition wPos, SVector tgtOri, float dT)
+{ tgtPos = wPos;
   // only eyePos and eyeOri should be modified
   globals->plugins.On_UpdateCamera (obj, &tgtPos, &tgtOri, &eyePos_, &eyeOri_, dT, dll);
   //
-  offset = SubtractPosition (tgtPos, eyePos_);
+  offset = SubtractPositionInFeet (tgtPos, eyePos_);
 }
 
 Tag CCameraDLL::GetCameraType (void)

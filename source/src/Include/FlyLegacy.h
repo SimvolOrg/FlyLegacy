@@ -858,22 +858,20 @@ enum EFileSearchLocation {
 };
 
 enum EKeyboardKeys
-{
-  KB_KEY_ESC    = 1,
-  KB_KEY_1      = 2,
-  KB_KEY_2      = 3,
-  KB_KEY_3      = 4,
-  KB_KEY_4      = 5,
-  KB_KEY_5      = 6,
-  KB_KEY_6      = 7,
-  KB_KEY_7      = 8,
-  KB_KEY_8      = 9,
-  KB_KEY_9      = 10,
-  KB_KEY_0      = 11,
-  KB_KEY_MINUS  = 12,
-  KB_KEY_EQUALS = 13,
-  KB_KEY_BACK   = 14,
-  KB_KEY_TAB    = 15,
+{ KB_KEY_NONE   = 0,
+  KB_KEY_1      = '1',
+  KB_KEY_2      = '2',
+  KB_KEY_3      = '3',
+  KB_KEY_4      = '4',
+  KB_KEY_5      = '5',
+  KB_KEY_6      = '6',
+  KB_KEY_7      = '7',
+  KB_KEY_8      = '8',
+  KB_KEY_9      = '9',
+  KB_KEY_0      = '0',
+  KB_KEY_MINUS  = '-',
+  KB_KEY_EQUALS = '=',
+	KB_KEY_PLUS		= '+',
   KB_KEY_Q      = 16,
   KB_KEY_W      = 17,
   KB_KEY_E      = 18,
@@ -884,10 +882,8 @@ enum EKeyboardKeys
   KB_KEY_I      = 23,
   KB_KEY_O      = 24,
   KB_KEY_P      = 25,
-  KB_KEY_FORWARD_BRACKET    = 26,
-  KB_KEY_REVERSE_BRACKET    = 27,
-  KB_KEY_ENTER      = 28,
-  KB_KEY_LCTRL      = 29,
+  KB_KEY_FORWARD_BRACKET    = '[',
+  KB_KEY_REVERSE_BRACKET    = ']',
   KB_KEY_A      = 30,
   KB_KEY_S      = 31,
   KB_KEY_D      = 32,
@@ -897,11 +893,11 @@ enum EKeyboardKeys
   KB_KEY_J      = 36,
   KB_KEY_K      = 37,
   KB_KEY_L      = 38,
-  KB_KEY_SEMI_COLON   = 39,
-  KB_KEY_SINGLE_QUOTE   = 40,
-  KB_KEY_REVERSE_SINGLE_QUOTE = 41,
-  KB_KEY_LSHIFT     = 42,
-  KB_KEY_BACKSLASH    = 43,
+  KB_KEY_SEMI_COLON						= 39,
+  KB_KEY_SINGLE_QUOTE					= '\'',
+  KB_KEY_REVERSE_SINGLE_QUOTE = '`',
+	KB_KEY_TILDE								= '~',
+  KB_KEY_BACKSLASH						= '\\',
   KB_KEY_Z      = 44,
   KB_KEY_X      = 45,
   KB_KEY_C      = 46,
@@ -909,59 +905,105 @@ enum EKeyboardKeys
   KB_KEY_B      = 48,
   KB_KEY_N      = 49,
   KB_KEY_M      = 50,
-  KB_KEY_COMMA      = 51,
-  KB_KEY_PERIOD     = 52,
-  KB_KEY_SLASH      = 53,
-  KB_KEY_RSHIFT     = 54,
-  KB_KEY_STAR     = 55,
-  KB_KEY_LALT     = 56,
-  KB_KEY_SPACE      = 57,
-  KB_KEY_CAPSLOCK     = 58,
-  KB_KEY_F1     = 59,
-  KB_KEY_F2     = 60,
-  KB_KEY_F3     = 61,
-  KB_KEY_F4     = 62,
-  KB_KEY_F5     = 63,
-  KB_KEY_F6     = 64,
-  KB_KEY_F7     = 65,
-  KB_KEY_F8     = 66,
-  KB_KEY_F9     = 67,
-  KB_KEY_F10      = 68,
-  KB_KEY_NUMLOCK      = 69,
-  KB_KEY_SCROLLLOCK   = 70,
-  KB_KEY_HOME     = 71,
-  KB_KEY_UP     = 72,
-  KB_KEY_PGUP     = 73,
-  KB_KEY_KEYPAD_MINUS   = 74,
-  KB_KEY_LEFT     = 75,
-  KB_KEY_CENTER     = 76,
-  KB_KEY_RIGHT      = 77,
-  KB_KEY_KEYPAD_PLUS    = 78,
-  KB_KEY_END      = 79,
-  KB_KEY_DOWN     = 80,
-  KB_KEY_PGDN     = 81,
-  KB_KEY_INSERT     = 82,
-  KB_KEY_DEL      = 83,
-  KB_KEY_F11      = 87,
-  KB_KEY_F12      = 88,
-  KB_KEY_KEYPAD_ENTER   = 284,
-  KB_KEY_RCTRL      = 285,
-  KB_KEY_KEYPAD_SLASH   = 309,
-  KB_KEY_RALT     = 312,
-  KB_KEY_EXT_NUMLOCK    = 325,
-  KB_KEY_GRAY_HOME    = 327,
-  KB_KEY_GRAY_UP      = 328,
-  KB_KEY_GRAY_PGUP    = 329,
-  KB_KEY_GRAY_LEFT    = 331,
-  KB_KEY_GRAY_RIGHT   = 333,
-  KB_KEY_GRAY_END     = 335,
-  KB_KEY_GRAY_DOWN    = 336,
-  KB_KEY_GRAY_PGDN    = 337,
-  KB_KEY_GRAY_INS     = 338,
-  KB_KEY_GRAY_DEL     = 339,
-  KB_KEY_META     = 340
-};
+  KB_KEY_COMMA  = ',',
+  KB_KEY_PERIOD = '.',
+  KB_KEY_SLASH  = '/',
+  KB_KEY_STAR   = '*',
+  KB_KEY_SPACE  = ' ',
+	KB_KEY_DBLEP  = 58,
+	KB_KEY_LOWER  = 83,
+	KB_KEY_GREAT	= 84,
+	KB_KEY_EXCLM  = '!',
+	KB_KEY_AROBS  = '@',
+	KB_KEY_DIEZE	= '#',
+	KB_KEY_DOLAR  = '$',
+	KB_KEY_PERCN	= '%',
+	KB_KEY_HATOV  = '^',
+	KB_KEY_AMPER  = '&',
+	KB_KEY_WHAT   = '?',
+	KB_KEY_LEFTP  = '(',
+	KB_KEY_RITEP  = ')',
+	KB_KEY_UNDER  = '_',
+	KB_KEY_LEFTB	= '{',
+	KB_KEY_RITEB	= '}',
+  KB_KEY_VBAR		= '|',
+	KB_KEY_DOUBLE_QUOTE = '\"',
 
+	//---Special keys --------------------------------------------
+  KB_KEY_BACK   = 128,
+	KB_KEY_TAB		= 129,
+  KB_KEY_ENTER	= 130,
+  KB_KEY_ESC    = 131,
+	//--- GLUT KEYS ---------------------------------------------
+  KB_KEY_F1     = 141,			//141,		// WAS 59
+  KB_KEY_F2     = 142,			//142,		// 60
+  KB_KEY_F3     = 143,			//131,		// 61
+  KB_KEY_F4     = 144,			//132,		// 62
+  KB_KEY_F5     = 145,			//133,		// 63
+  KB_KEY_F6     = 146,			//134,		// 64
+  KB_KEY_F7     = 147,			//135,		// 65
+  KB_KEY_F8     = 148,			//136,		// 66
+  KB_KEY_F9     = 149,			//137,		// 67
+  KB_KEY_F10    = 150,			//138,		// 68
+  KB_KEY_F11    = 151,			//139,		// 87
+  KB_KEY_F12    = 152,			//140,		// 88
+	//-----------------------------------------------------------
+	KB_KEY_HOME   = 153,			//141,		// 71
+  KB_KEY_UP     = 154,			//142,		// 72
+	KB_KEY_PGUP		= 155,			//143,		// 73
+  KB_KEY_LEFT   = 156,			//144,		// 75
+  KB_KEY_RIGHT  = 157,			//145,		// 77
+  KB_KEY_END    = 158,			//146,		// 79
+  KB_KEY_DOWN   = 159,			//147,		// 80
+  KB_KEY_PGDN   = 160,			//148,		// 81
+  KB_KEY_INSERT = 161,			//149,		// 82
+  KB_KEY_LCTRL	= 162,
+  KB_KEY_LSHIFT	= 163,
+  KB_KEY_RSHIFT = 164,
+  KB_KEY_LALT   = 165,
+	//--- NON GLUT KEYS -----------------------------------------
+  KB_KEY_CAPSLOCK     = 180,		// 58
+  KB_KEY_NUMLOCK			= 181,		// 69
+  KB_KEY_SCROLLLOCK		= 182,		// 70
+  KB_KEY_KEYPAD_MINUS = 183,		// 74
+  KB_KEY_CENTER				= 184,		// 76
+  KB_KEY_KEYPAD_PLUS  = 185,		// 78
+  KB_KEY_DEL					= 186,		// 83
+	//--- Key PAD Keys ------------------------------------------
+  KB_KEY_KEYPAD_ENTER   = 200,	//187,	// 284
+  KB_KEY_RCTRL					= 201,	//188,	// 285
+  KB_KEY_KEYPAD_SLASH   = 202,	//189,	// 309
+  KB_KEY_RALT						= 203,	//190,	// 312
+  KB_KEY_EXT_NUMLOCK    = 204,	//191,	// 325
+  KB_KEY_GRAY_HOME			= 205,	//192,	// 327
+  KB_KEY_GRAY_UP				= 206,	//193,	// 328
+  KB_KEY_GRAY_PGUP			= 207,	//194,	// 329
+  KB_KEY_GRAY_LEFT			= 208,	//195,	// 331
+  KB_KEY_GRAY_RIGHT			= 209,	//196,	// 333
+  KB_KEY_GRAY_END				= 210,	//197,	// 335
+  KB_KEY_GRAY_DOWN			= 211,	//198,	// 336
+  KB_KEY_GRAY_PGDN			= 212,	//199,	// 337
+  KB_KEY_GRAY_INS				= 213,	//200,	// 338
+  KB_KEY_GRAY_DEL				= 214,	//201,	// 339
+
+	//------------------------------------------------------------
+  KB_KEY_META						= 340
+};
+//----------------------------------------------------------------------
+//	Key class
+//----------------------------------------------------------------------
+#define KSP (0x01)				// Space
+#define KLT (0x02)				// Letter
+#define KNB (0x04)				// Number
+#define KSG (0x08)				// Sign + -
+#define KPN (0x10)				// punctuation
+#define KDT (0x20)				// Dot
+#define KKK (0x40)				// other
+//----------------------------------------------------------------------
+#define KB_WORD_ONLY			(KLT+KNB)
+#define KB_NUMBER_SIGN		(KNB+KSG+KDT)
+#define KB_ANYTHING		    (KSP+KLT+KNB+KPN+KDT+KKK) 
+//----------------------------------------------------------------------
 enum EKeyboardModifiers
 {
   KB_MODIFIER_NONE    = (0 << 0),
@@ -2584,6 +2626,7 @@ struct  TEXT_INFO {
 	U_INT			key;
   short     wd;                           // Texture width
   short     ht;                           // Texture height
+	U_INT			dim;													// Texture dimension
   U_CHAR    apx;                          // alpha when pixel
 	U_CHAR		azp;													// alpha when 0 pixle
   char      bpp;                          // Byte per plan
@@ -2591,6 +2634,7 @@ struct  TEXT_INFO {
   char      type;                         // Terrain type   (if needed)
   U_INT     xOBJ;                         // Texture object (if needed)
   GLubyte  *mADR;                         // RGBA Memory addresse
+	GLubyte  *nite;													// Night texture if needed
   char      name[TC_TEXTURE_NAME_NAM];    // Texture name
   char      path[TC_TEXTURE_NAME_DIM];    // Texture full name
 	//--- Constructor --------------------------------------------------
@@ -2601,6 +2645,8 @@ struct  TEXT_INFO {
 		azp			= 0;
 		xOBJ		= 0;
 		name[0]	= 0;
+		mADR    = 0;
+		nite    = 0;
 	}
 };
 //---------------------------------------------------------------------
@@ -3375,6 +3421,16 @@ private:
 	char msg[1024];
 public:
 	TERRA(const char *fmt = NULL, ...);
+};
+//-------------------------------------------------------------------------
+//	JSDEV* TERRA log.   This log serve to trace changed tiles
+//
+//--------------------------------------------------------------------------
+class STREETLOG {
+private:
+	char msg[1024];
+public:
+	STREETLOG(const char *fmt = NULL, ...);
 };
 
 //-------------------------------------------------------------------------

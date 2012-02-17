@@ -326,7 +326,7 @@ void CBaseSmoke::Draw (U_INT op)
 
     int num = 0; // used in lit
     while (!posQ.empty ()) {
-      geol = SubtractPosition (upos, posQ.front ());
+      geol = SubtractPositionInFeet (upos, posQ.front ());
       glPushMatrix ();
       // Place the quad and rotate to face the viewer
       glTranslated (geol.x+to.x, geol.y+to.y, geol.z-to.z);

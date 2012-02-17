@@ -136,6 +136,7 @@ CFuiDirectory::CFuiDirectory(Tag idn, const char* filename)
   //------Resize properties -----------------------------------------
   SetXRange(w,w);               // Fixed width
   SetProperty(FUI_VT_RESIZING);
+	nBox->SetValidMask(KB_WORD_ONLY + KSP);
   //-------Populate lists -------------------------------------------
   selPop->CreatePage(&mSEL,DirMENU);
   Lock  = 1;
@@ -543,7 +544,9 @@ void  CFuiDirectory::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
   case 'mtar':
     ShowMetar();
     return;
-
+	case 'name':
+		if (evn == EVENT_TEXTENTER) Search();
+		return;
   }
 return;
 }

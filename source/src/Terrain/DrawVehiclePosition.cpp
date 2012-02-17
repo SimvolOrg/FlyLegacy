@@ -122,7 +122,7 @@ void CDrawPosition::Draw (void)
     for (i_point_pos = point_pos.begin (); i_point_pos != point_pos.end (); ++ i_point_pos) {
       //---Compute feet coordinates relative to origin ---
       //globals->tcm->RelativeFeetTo (*i_point_pos, geol);
-      geol = SubtractPosition (upos, *i_point_pos);
+      geol = SubtractPositionInFeet (upos, *i_point_pos);
       if (line) {
         if (flag) {
           glVertex3d (geof.x, geof.y, geof.z);
@@ -153,7 +153,7 @@ void CDrawPosition::Draw (void)
     glBegin (GL_LINES);
     bool flag = false;
     while (!posQ.empty ()) {
-      geol = SubtractPosition (upos, posQ.front ());
+      geol = SubtractPositionInFeet (upos, posQ.front ());
       if (line) {
         if (flag) {
           glVertex3d (geof.x, geof.y, geof.z);

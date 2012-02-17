@@ -43,6 +43,11 @@
 //===================================================================================
 class CTestBed {
 private:
+	TEXT_INFO tinf;
+	//---Original context -----------------------------------------
+  CAMERA_CTX       ctx;         // Original camera and situation
+	//--- Rabbit camera -----------------------------------------
+	CRabbitCamera   *rcam;
   //----  METHODS --------------------------------------------------
 public:
   CTestBed();

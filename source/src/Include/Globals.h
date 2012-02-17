@@ -41,7 +41,6 @@
 #include "FlyLegacy.h"
 #include "Pod.h"
 #include "Situation.h"
-#include "Triangulator.h"
 #include "DrawVehiclePosition.h"
 #include "DrawVehicleSmoke.h"
 #include "..\Include\BlackBox.h"
@@ -50,6 +49,7 @@
 #include "Ui.h"                 // sdk:
 //=============================================================================================
 class CFmtxMap;
+class Triangulator;
 //=============================================================================================
 //	Define APPLICATION PROFILE
 //	APPLICATION PROFILE is used by specifics windows like editors.
@@ -228,7 +228,9 @@ typedef struct {
 	Triangulator *trn;
   //----World position ----------------------------------------------
 	double		aMax;		// Altitude maximum
-  SPosition geop;   // Position (lat/lon/alt) of the aircraft
+	double		exf;		// feet factor expension at aircraft position
+	double		rdf;		// feet factor reduction at aircraft position
+	SPosition geop;		// Position (lat/lon/alt) of the aircraft
   SVector   iang;   // Inertial angular orientation in radian
   SVector   dang;   // Same as above in degre
   double    magDEV; // Magnetic deviation at position
@@ -252,7 +254,8 @@ typedef struct {
   char        m3dDB;                    // 3D model database
   char        texDB;                    // Terra texture database
   char        objDB;                    // World Object
-  //----VMAP Parameters --------------------------------------------
+	char				t2dDB;										// Texture 2D database
+	//----VMAP Parameters --------------------------------------------
   char        MapName[SLOT_NAME_DIM];   /// Selected Map Name
   char        NulChar;                  /// Null Char
   char        FlyRoot[PATH_MAX];				/// JSDEV* remember Fly Root
@@ -348,6 +351,7 @@ typedef struct {
   CLogFile			    *logTrace;
   CLogFile          *logTerra;
 	CLogFile					*logScene;
+	CLogFile          *logStreet;
   //-------- Internal counters for tests -----------------------------
   U_INT              cnt1;
   U_INT              cnt2;

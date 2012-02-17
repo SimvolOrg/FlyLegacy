@@ -1462,7 +1462,7 @@ bool C_PushPullKnobGauge::AtRatio(char k)
 //  Thus the value are sorted in reverse order
 //---------------------------------------------------------------------
 void C_PushPullKnobGauge::DefaultArea()
-{ int th = bmap.TextureHeight();
+{ int th = bmap.FrameHeight();
   float htr = float(th);
   // define valu data
   nVal = bmap.NbFrames();

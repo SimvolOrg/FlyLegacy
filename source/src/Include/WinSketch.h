@@ -25,11 +25,11 @@
 #define WINSKETCH_H
 //=========================================================================================
 #include "../Include/FlyLegacy.h"
-#include "../Include/FlyLegacy.h"
 #include "../Include/Fui.h"
 #include "../include/FuiUser.h"
 #include "../include/3DMath.h"
 #include "../include/globals.h"
+#include "../Include/Triangulator.h"
 //==========================================================================================
 #define PROF_SKETCH   (PROF_EDITOR+PROF_NO_TEL+PROF_NO_PLANE+PROF_NO_SIT)
 //==========================================================================================
@@ -45,7 +45,8 @@ class CFuiSketch : public CFuiWindow
 	COption        optD;					// Option box
 	//-------------------------------------------------------------
 	GLUquadricObj *sphere;
-	Triangulator    *trn;
+	Triangulator    *trn;					// Triangulator
+	D2_Session       ses;					// Session
 	//---Original context -----------------------------------------
   CAMERA_CTX       ctx;         // Original camera and situation
 	//--- Rabbit camera -----------------------------------------
@@ -55,7 +56,8 @@ public:
 	CFuiSketch(Tag idn, const char *filename);
  ~CFuiSketch();
   //--- File handling -----------------------------------------
-	void	ProcessFile(char *fn);
+	void	OpenSession(char *fn);
+	void	OpenFile(char *fn);
 	void	SetOptions(U_INT p);
 	//--- Drawing() ----------------------------------------------
 	void	Draw();

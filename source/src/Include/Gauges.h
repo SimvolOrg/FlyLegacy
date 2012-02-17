@@ -169,6 +169,7 @@ class CPanelLight;
 #define GAUGE_FLAP                      'flap'
 #define GAUGE_LIT_LANDING_GEAR_KNOB     'llgr'
 #define GAUGE_MIXTURE_KNOB              'mixt'
+#define GAUGE_THROTTLE_KNOB             'thro'
 #define GAUGE_REVERSIBLE_THROTTLE_KNOB  'revt'
 #define GAUGE_DUAL_KNOB                 'dual'
 #define GAUGE_DOUBLE_LIGHT_KNOB         'shlk'

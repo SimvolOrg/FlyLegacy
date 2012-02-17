@@ -1767,7 +1767,8 @@ void CExport::InitTRNmsg()
 //  Dispatch export TRN action
 //-----------------------------------------------------------------------------------------
 int  CExport::ExecuteTRN()
-{ Clear = 0;
+{ int rc;
+	Clear = 0;
 	switch (State)	{
 		//--- Initial state -----------------------
 		case EXP_TRN_INIT:
@@ -1790,8 +1791,15 @@ int  CExport::ExecuteTRN()
 		//--- Write a file ------------------------
 		case EXP_TRN_WRITE:
 				WriteTRN();
+//				rc = WriteT2D();
+				rc		= EXP_TRN_NFILE;
 				Clear = 1;
-			  return EXP_TRN_NFILE;
+				return rc;
+		//--- Next texture ------------------------
+		case EXP_TRN_WTEXT:
+				rc = ExportT2D();
+				Clear = 1;
+			  return rc;
 	}
 	SCENE("========== Exported: %05d files ==========",count);
 	globals->appState = APP_EXIT_SCREEN;
@@ -1843,19 +1851,19 @@ int CExport::GetNextTRN()
 }
 
 //-----------------------------------------------------------------------------------------
-//  Find the first file
+//  Write elevations from TRN file
 //-----------------------------------------------------------------------------------------
 void  CExport::WriteTRN()
 {	if (0 == fName)		return;
 	//--- check if file already in data base
-	bool in		= sqm->FileInELV(podN);
+	bool in					= sqm->FileInELV(podN, &rowid);
 	if (in)					 return;
 	//--- Write file name in database ----------------------
 	rowid = sqm->WriteTRNname(podN);
 	//--- Insert TRN in database ---------------------------
 	ExportTRN(fName);
 	count++;
-	SCENE("Export %s from %s:", fName,pod);
+	SCENE("Import elevations from %s in %s:", fName,pod);
 	return;
 }
 
@@ -1873,7 +1881,7 @@ void CExport::ExportTRN(char *fn)
 	for (short   sz = 0; sz != TC_SUPERT_PER_QGT; sz++)
   { for (short sx = 0; sx != TC_SUPERT_PER_QGT; sx++)
 		{	C_STile *asp = ftrn->GetSupTile(sx,sz);
-			ExportSUP(asp);
+			ExportSUPelevation(asp);
 		}
 	}
 	delete ftrn;
@@ -1883,7 +1891,7 @@ void CExport::ExportTRN(char *fn)
 //---------------------------------------------------------------------------
 //  Export Super Tile description
 //---------------------------------------------------------------------------
-void CExport::ExportSUP(C_STile *asp)
+void CExport::ExportSUPelevation(C_STile *asp)
 {	asp->SetKey(qKey);
   globals->sqm->WriteElevationTRN(*asp,rowid);
 	//--- Now, export all detail tiles from supertile ------
@@ -1895,6 +1903,101 @@ void CExport::ExportSUP(C_STile *asp)
 		hd	= asp->PopDetail();
 	}
 	
+	return;
+}
+//---------------------------------------------------------------------------
+//  Export textures
+//---------------------------------------------------------------------------
+int CExport::WriteT2D()
+{	if (0 == fName)								return	EXP_TRN_NFILE;
+	if (!sqm->SQLt2d())						return	EXP_TRN_NFILE;
+	//--- check if file already in data base
+	bool in		= sqm->FileInELV(podN, &rowid);
+	if (!in)											return	EXP_TRN_NFILE;
+	//--- Write file name in database ----------------------
+	sx	= 0;
+	sz	= 0;
+	//--- Create a new C_TRN object ------------------------
+	SStream s;                                // Stream file
+  if (!OpenRStream (fName, s))  return EXP_TRN_NFILE;
+  ftrn = new C_TRN(0,0);
+	ftrn->Export();
+  ReadFrom (ftrn, &s);
+  CloseStream (&s);
+	SCENE("Import 2D textures from %s in %s:", fName,pod);
+	return EXP_TRN_WTEXT;
+}
+//---------------------------------------------------------------------------
+//  Export textures
+//---------------------------------------------------------------------------
+int CExport::ExportT2D()
+{	char msg[1024];
+
+	if (sx == TC_SUPERT_PER_QGT)	{sx = 0; sz++;}
+	if (sz == TC_SUPERT_PER_QGT)
+	{	delete ftrn;
+		ftrn	= 0;
+		return EXP_TRN_NFILE;
+	}
+	_snprintf(msg,1023,"Import Texture (%02d-%02d) from %s",sx,sz,fName);
+	globals->fui->DrawNoticeToUser(msg,200);
+	C_STile *asp = ftrn->GetSupTile(sx,sz);
+	WriteTexture2D(asp);
+	sx++;
+	return EXP_TRN_WTEXT;
+}
+//---------------------------------------------------------------------------
+//  Export textures
+//---------------------------------------------------------------------------
+void CExport::WriteTexture2D(C_STile *sp)
+{		U_INT					tx = 0;
+		U_INT					tz = 0;
+		U_INT					dkey	= 0;
+		CTextureDef	 *txd		= sp->qList;
+		for (U_INT nd=0; nd < TC_TEXSUPERNBR; nd++)
+		{ DetailTileIndices(sp->No, nd, &tx, &tz);
+			ax	= (qx << TC_BY32) | tx;
+			az	= (qz << TC_BY32) | tz;
+			dKey	= (ax << 16) | az;					// Detail tile key
+			if (!sqm->TileInBase(dKey) && txd->IsSlice())	
+			{	//--- Write a new texture ------------------------
+				LoadTRNTexture(txd,TC_MEDIUM);		// Low resolution
+				LoadTRNTexture(txd,TC_HIGHTR);		// hig resolution
+			}
+			txd++;
+		}
+		return;
+}
+//---------------------------------------------------------------------------
+//  Load Texture textures
+//---------------------------------------------------------------------------
+void CExport::LoadTRNTexture(CTextureDef	 *txd,char R)
+{	txd->Reso[0]	= R;
+	txd->dTEX[0]	= 0;
+	txd->nTEX[0]	= 0;
+	U_INT dim = globals->txw->GetTRNtextures(txd,qx,qz);
+	//--- Fill parameters ---------------------------
+	GLubyte *pix = txd->dTEX[0];
+	if (0 == pix)			return;
+	inf.key		= dKey;									// Detail tile key
+	inf.wd		= dim >> 16;						// Width
+	inf.ht		= dim & 0xFFFF;					// Height
+	inf.dim		= inf.wd * inf.ht * 4;	// Byte dimension
+	inf.res		= R;										// Resolution
+	inf.mADR	= txd->dTEX[0];					// Day texture
+	inf.nite	= txd->nTEX[0];					// Nite texture
+	inf.xOBJ  = rowid;								// Save file reference
+	//--- Remove pointers ----------------------------
+	txd->dTEX[0]	= 0;
+	txd->nTEX[0]	= 0;
+	//--- Write textures -----------------------------
+	sqm->WriteT2D(&inf);
+	pix = inf.mADR;
+	if (pix)	delete [] pix;
+	pix	= inf.nite;
+	if (pix)	delete [] pix;
+	inf.mADR	= 0;
+	inf.nite	= 0;
 	return;
 }
 

@@ -487,9 +487,10 @@ void CTextureDef::GetTileIndices(U_INT &tx,U_INT &tz)
 
 //==========================================================================
 //  Initialize the Vertex descriptor
+//	NOTE:  World coordinates are relative to SW corner of the QGT
 //==========================================================================
-CVertex::CVertex(U_LONG xv,U_LONG zv)
-{ xKey  = xv;
+CVertex::CVertex(U_INT xv,U_INT zv)
+{	xKey  = xv;
   zKey  = zv;
   Use   = 0;
   Fixe  = VTX_DYNAM;
@@ -500,13 +501,16 @@ CVertex::CVertex(U_LONG xv,U_LONG zv)
   Edge[TC_SOUTH]  = 0;
   Edge[TC_WEST]   = 0;
   Edge[TC_EAST]   = 0;
-  Coord.Set(xv,zv);
+	//--- Assign world coordinates -------------------
+  rx	= RelativeLongitudeInQGT(xv);
+	ry	= RelativeLatitudeInQGT(zv);
+	rz	= 0;
 }
 //-------------------------------------------------------------------------
 //  Fixed vertex
 //-------------------------------------------------------------------------
 CVertex::CVertex()
-{ xKey  = 0;
+{	xKey  = 0;
   zKey  = 0;
   Use   = 0;
   gType = 0;
@@ -517,6 +521,10 @@ CVertex::CVertex()
   Edge[TC_SOUTH]  = 0;
   Edge[TC_WEST]   = 0;
   Edge[TC_EAST]   = 0;
+	rx		= 0;
+	ry		= 0;
+	rz		= 0;
+
 }
 //-------------------------------------------------------------------------
 //  Destructor
@@ -529,43 +537,41 @@ CVertex::~CVertex()
 //  Init the vertex
 //-------------------------------------------------------------------------
 void  CVertex::Init(U_INT xv,U_INT zv)
-{ xKey  = xv;
+{	xKey  = xv;
   zKey  = zv;
-  Coord.Set(xv,zv);
+  //--- Assign world coordinates -------------------
+  rx	= RelativeLongitudeInQGT(xv);
+	ry	= RelativeLatitudeInQGT(zv);
+	rz	= 0;
   return;
 }
 
 //-------------------------------------------------------------------------
 //  Compute in V the relative coordinates to vertex A
+//	NOTE: A is always a center vertex so it is not a frontier vertex
+//				This one may be a frontier vertex
 //-------------------------------------------------------------------------
 CVector  CVertex::RelativeFrom(CVertex &a)
 { CVector v;
-  v.x = Coord.GetWX() - a.Coord.GetWX();
-  v.y = Coord.GetWY() - a.Coord.GetWY();
-  v.z = Coord.GetWZ() - a.Coord.GetWZ();
-  return v;
-}
-//-------------------------------------------------------------------------
-//  Compute in V the relative coordinates to vertex A
-//	when Vertex is along the 0 meridien
-//-------------------------------------------------------------------------
-CVector  CVertex::DistanceFrom(CVertex &a)
-{ CVector v;
-  v.x = Coord.GetMX() - a.Coord.GetWX();
-  v.y = Coord.GetWY() - a.Coord.GetWY();
-  v.z = Coord.GetWZ() - a.Coord.GetWZ();
+	U_INT		xa		= a.keyX();
+	double	orgx  = (SameXQGT(a))?(GetRX()):(TC_ARCS_PER_QGT);
+  v.x = orgx - a.GetRX();
+	U_INT   za		= a.keyZ();
+	double  orgy  = (SameZQGT(a))?(GetRY()):(LatitudeIncrement(FN_QGT_FROM_INDX(zKey)));
+  v.y = orgy - a.GetRY();
+  v.z = GetWZ() - a.GetWZ();
   return v;
 }
 //-------------------------------------------------------------------------
 //  Check if vertex is above
 //-------------------------------------------------------------------------
-bool CVertex::IsAbove(float y)
-{ return (Coord.GetWY() > y);}
+bool CVertex::IsAbove(double y)
+{ return (GetRY() >= y);	}
 //-------------------------------------------------------------------------
 //  Check if point is to the left
 //-------------------------------------------------------------------------
-bool CVertex::ToRight(float x)
-{ return (Coord.GetWX() > x);}
+bool CVertex::ToRight(double x)
+{	return (GetRX() >= x);	}
 //-------------------------------------------------------------------------
 //  Check if we are this vertex
 //-------------------------------------------------------------------------
@@ -583,6 +589,18 @@ void CVertex::CopyEdge(CVertex *vt)
   Edge[TC_NWCORNER] = vt->Edge[TC_NWCORNER];
   Edge[TC_NECORNER] = vt->Edge[TC_NECORNER];
   return;
+}
+//-------------------------------------------------------------------------
+//  Return vertex absolute coordinates 
+//-------------------------------------------------------------------------
+SVector CVertex::GeoCoordinates(C_QGT *qgt)
+{	SVector   v;
+  U_INT    qx = FN_QGT_FROM_INDX(xKey);
+	double x		= (qgt->GetXkey() == qx)?(rx):(TC_ARCS_PER_QGT);  // Eastern position
+	v.x					= qgt->GetWesLon() + x;
+	v.y					= qgt->GetSudLat() + ry;
+	v.z					= rz;
+	return   v;
 }
 //-----------------------------------------------------------------------
 //  Insert vn after vp in North direction
@@ -687,7 +705,8 @@ void CmQUAD::SetParameters(CVertex *ct,U_CHAR lv)
   Center.Edge[TC_NWCORNER]  = ct->Edge[TC_NWCORNER];
   Center.Edge[TC_NECORNER]  = ct->Edge[TC_NECORNER];
   //-----World coordinates --------------------------------------
-  Center.Coord  = ct->Coord;
+  //Center.Coord  = ct->Coord;
+	Center.CopyCOORD(*ct);
   return;
 }
 //----------------------------------------------------------------------------
@@ -702,7 +721,7 @@ void CmQUAD::Contour()
   CVertex   *ne = Center.Edge[TC_NECORNER];
   CVertex   *se = Center.Edge[TC_SECORNER];
   float     col[4];
-  double    vtx[3];
+  D3_VERTEX v;
   U_CHAR    dep = glIsEnabled(GL_DEPTH_TEST);
   U_CHAR    lit = glIsEnabled(GL_LIGHTING);
   glGetFloatv(GL_CURRENT_COLOR,col);
@@ -717,16 +736,16 @@ void CmQUAD::Contour()
 	CVertex   *vt = sw;
 	//--- Draw South border ------------------
 	while (vt != se)
-	{	vt->Assign(vtx);	glVertex3dv(vtx); vt = vt->GetEdge(TC_EAST); }
+	{	StoreIn(&v,vt); glVertex3d(v.VT_X,v.VT_Y,v.VT_Z); vt = vt->GetEdge(TC_EAST); }
 	//--- Draw East Border -------------------
 	while (vt != ne)
-	{	vt->Assign(vtx); glVertex3dv(vtx); vt = vt->GetEdge(TC_NORTH); }
+	{	StoreIn(&v,vt);	glVertex3d(v.VT_X,v.VT_Y,v.VT_Z); vt = vt->GetEdge(TC_NORTH); }
 	//--- Draw North border -----------------
 	while (vt != nw)
-	{	vt->Assign(vtx); glVertex3dv(vtx); vt = vt->GetEdge(TC_WEST); }
+	{	StoreIn(&v,vt);	glVertex3d(v.VT_X,v.VT_Y,v.VT_Z);	vt = vt->GetEdge(TC_WEST); }
 	//--- Draw West border -------------------
 	while (vt != sw)
-	{	vt->Assign(vtx); glVertex3dv(vtx); vt = vt->GetEdge(TC_SOUTH); }
+	{	StoreIn(&v,vt);	glVertex3d(v.VT_X,v.VT_Y,v.VT_Z);	vt = vt->GetEdge(TC_SOUTH); }
   glEnd();
 
   //---Restore depth and color --------------
@@ -745,6 +764,30 @@ void CmQUAD::Clean()
 {	if (iBUF)	delete [] iBUF;
 	vTab = 0;
 	return;
+}
+//-------------------------------------------------------------------------
+//	Assign world coordinates from vertex v
+//	In East  border, supplies full arcsec width	 of QGT
+//	In North border, supplies full arcsec height of QGT
+//-------------------------------------------------------------------------
+void	CmQUAD::StoreIn(D3_VERTEX *d, CVertex *v)
+{	U_INT qx = Center.keyX();
+	d->VT_X  = (v->SameXQGT(qx))?(v->GetRX()):(TC_ARCS_PER_QGT);
+	U_INT qz = Center.keyZ();
+	d->VT_Y  = (v->SameZQGT(qz))?(v->GetRY()):(LatitudeIncrement(FN_QGT_FROM_INDX(qz)));
+	d->VT_Z  =  v->GetRZ();
+}
+//-------------------------------------------------------------------------
+//	Assign world coordinates from vertex v
+//	In East  border, supplies full arcsec width	 of QGT
+//	In North border, supplies full arcsec height of QGT
+//-------------------------------------------------------------------------
+void CmQUAD::AssignGeoCOORD(TC_GTAB *t, CVertex *v)
+{	U_INT qx	= Center.keyX();
+	t->GT_X		= (v->SameXQGT(qx))?(v->GetRX()):(TC_ARCS_PER_QGT);
+	U_INT qz	= Center.keyZ();
+	t->GT_Y		= (v->SameZQGT(qz))?(v->GetRY()):(LatitudeIncrement(FN_QGT_FROM_INDX(qz)));
+	t->GT_Z		=  v->GetRZ();
 }
 //-------------------------------------------------------------------------
 //  Allocate QUAD vertex table
@@ -783,7 +826,9 @@ int CmQUAD::InitVTAB(TC_GTAB *vbo,int deb, U_CHAR res)
 //		refreshed due to a change in resolution.
 //-------------------------------------------------------------------------
 int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
-{	char       sh = globals->tcm->GetFactEV();			// Shift factor	
+{//	AreWe(337,31,313,0);
+ //	AreWe(338, 0,313,0);
+	char       sh = globals->tcm->GetFactEV();			// Shift factor	
 	char			 fx = globals->tcm->GetLastEVindex();
 	CVertex   *ct = GetCenter();
   CVertex   *sw = ct->GetEdge(TC_SWCORNER);
@@ -798,7 +843,7 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
   //----Store center values -----------------------------------
   dst->GT_S  = txt[ct->S_Coord(sh)];			// S coordinate
   dst->GT_T  = txt[ct->T_Coord(sh)];			// T coordinate
-	ct->AssignCT(dst);
+	AssignGeoCOORD(dst,ct);
   dst++;																	// Next entry
   //----Process South border ----------------------------------
   CVertex *vt = sw;												// Start with SW corner
@@ -807,7 +852,7 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
 	while (vt != se)												// Stop at SE corner
 	{	dst->GT_S  = txt[vt->S_Coord(sh)];		// S coordinate
 		dst->GT_T  = T;												// T coordinate
-		vt->AssignSB(dst);										// World coordinates
+		AssignGeoCOORD(dst,vt);
 		vt         = vt->Edge[TC_EAST];				// Next vertex
 		dst++;																// Next slot
 	}
@@ -816,7 +861,7 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
   while (vt != ne)												// Stop at NE corner
   { dst->GT_S  = S;												// S coordinate
     dst->GT_T  = txt[vt->T_Coord(sh)];		// T coordinate
-    vt->AssignEB(dst);										// World coordinates
+		AssignGeoCOORD(dst,vt);
     vt         = vt->Edge[TC_NORTH];			// Next vertex
     dst++;																// Next slot
   }
@@ -825,14 +870,14 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
 	//--- NE corner is special. it must have previous S coord----
 	dst->GT_S	= S;													// S value
 	dst->GT_T	= T;													// T value
-	vt->AssignNE(dst);
+	AssignGeoCOORD(dst,vt);
 	vt				= vt->Edge[TC_WEST];					// Next vertice
 	dst++;																	// Next slot
 	//--- process other north vetices ----------------------------
 	while (vt != nw)												// Stop at NW corner
 	{	dst->GT_S  = txt[vt->S_Coord(sh)];		// S coordinate
 		dst->GT_T  = T;												// T coordinate
-		vt->AssignNB(dst);										// World coordinates
+		AssignGeoCOORD(dst,vt);
 		vt         = vt->Edge[TC_WEST];				// Next vertex
 		dst++;																// Next entry
 	}
@@ -841,14 +886,14 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
 	//--- NW corner is special. it must have previous T coord----
 	dst->GT_S	= S;													// S value
 	dst->GT_T	= T;													// T value
-	vt->AssignNW(dst);
+	AssignGeoCOORD(dst,vt);
 	vt				= vt->Edge[TC_SOUTH];					// Next vertice
 	dst++;																	// Next slot
 	//--- Process other WEST vertices ----------------------------
 	while (vt != sw)												// Stop at SW corner
 	{	dst->GT_S	= S;												// S coordinate
 		dst->GT_T = txt[vt->T_Coord(sh)];			// T coordinate
-		vt->AssignWB(dst);										// World coordinates
+		AssignGeoCOORD(dst,vt);
 		vt				= vt->Edge[TC_SOUTH];				// Next vertex
 		dst++;																// Next entry
 		}
@@ -863,7 +908,8 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
 //	origin
 //-------------------------------------------------------------------------
 int CmQUAD::TransposeVertices(TC_GTAB *vbo,SPosition *org)
-{	double   ofs = Center.LongitudeOffset();
+{	/*
+	double   ofs = Center.LongitudeOffset();
 	TC_GTAB *src = vTab;
   TC_GTAB *dst = vbo;
 //TRACE("QUAD %d-%d -----",Center.keyX(),Center.keyZ());
@@ -877,24 +923,7 @@ int CmQUAD::TransposeVertices(TC_GTAB *vbo,SPosition *org)
 		dst++;
 		src++;
 	}
-	return nvtx;
-}
-//-------------------------------------------------------------------------
-//	Relocate vertices for airport ground
-//	Vertex parameter X and Y are recomputed to be relative to airport
-//	origin
-//-------------------------------------------------------------------------
-int CmQUAD::RelocateVertices(TC_GTAB *vbo,SPosition *org)
-{	double    ofs = Center.LongitudeOffset();
-  TC_GTAB *dst = vbo;
-//TRACE("QUAD %d-%d -----",Center.keyX(),Center.keyZ());
-	for (int k=0; k< nvtx; k++)
-	{	dst->GT_X = LongitudeDifference((dst->GT_X + ofs),org->lon);
-		dst->GT_Y = dst->GT_Y - org->lat;
-		dst->GT_Z = dst->GT_Z - org->alt;
-//TRACE("   DST= %10d   X=%.5f Y=%.5f Z=%.5f",(int)dst,dst->GT_X,dst->GT_Y,dst->GT_Z);
-		dst++;
-	}
+	*/
 	return nvtx;
 }
 //-------------------------------------------------------------------------
@@ -922,7 +951,8 @@ void CmQUAD::RefreshVTAB(CSuperTile *sp,U_CHAR res)
 //		detailled elevations
 //-------------------------------------------------------------------------
 void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
-{ char       sh = globals->tcm->GetFactEV();			// Shift factor	
+{// AreWe(337,31,313,0);
+ //	AreWe(338, 0,313,0);
 	char			 fx = globals->tcm->GetLastEVindex();
 	CVertex   *ct = GetCenter();
   CVertex   *sw = ct->GetEdge(TC_SWCORNER);
@@ -930,13 +960,15 @@ void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
   CVertex   *ne = ct->GetEdge(TC_NECORNER);
   CVertex   *nw = ct->GetEdge(TC_NWCORNER);
   TC_GTAB  *dst = vTab;
+	//TRACE("QUAD (%08x-%08x)--------------------------",ct->xKey, ct->zKey);
 	//-----------------------------------------------------------
 	float			S;														// S coordinate
 	float			T;														// T coordinate
   //----Store center values -----------------------------------
   dst->GT_S  = txt[ct->indS];							// S coordinate
   dst->GT_T  = txt[ct->indT];							// T coordinate
-	dst->GT_Z  = ct->GetWZ();								// Z coordinate
+	dst->GT_Z  = ct->GetRZ();								// Z coordinate
+	//TRACE("REF GX=%.4lf GY=%.4lf GZ=%.4lf",dst->GT_X,dst->GT_Y,dst->GT_Z);
   dst++;																	// Next entry
   //----Process South border ----------------------------------
   CVertex *vt = sw;												// Start with sSW corner
@@ -945,7 +977,8 @@ void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
 	while (vt != se)												// Stop at SE corner
 	{	dst->GT_S  = txt[vt->indS];						// S coordinate
 		dst->GT_T  = T;												// T coordinate
-		dst->GT_Z  = vt->GetWZ();							// Z coordinate
+		dst->GT_Z  = vt->GetRZ();							// Z coordinate
+	//TRACE("REF GX=%.4lf GY=%.4lf GZ=%.4lf",dst->GT_X,dst->GT_Y,dst->GT_Z);
 		vt         = vt->Edge[TC_EAST];				// Next vertex
 		dst++;																// Next slot
 	}
@@ -954,7 +987,8 @@ void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
   while (vt != ne)												// Stop at NE corner
   { dst->GT_S  = S;												// S coordinate
     dst->GT_T  = txt[vt->indT];						// T coordinate
-		dst->GT_Z  = vt->GetWZ();							// Z coordinate
+		dst->GT_Z  = vt->GetRZ();							// Z coordinate
+	//TRACE("REF GX=%.4lf GY=%.4lf GZ=%.4lf",dst->GT_X,dst->GT_Y,dst->GT_Z);
     vt         = vt->Edge[TC_NORTH];			// Next vertex
     dst++;																// Next slot
   }
@@ -963,14 +997,16 @@ void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
 	//--- NE corner is special. it must have previous S coord----
 	dst->GT_S	= S;													// S value
 	dst->GT_T	= T;													// T value
-	dst->GT_Z = vt->GetWZ();							  // Z coordinate
+	dst->GT_Z = vt->GetRZ();							  // Z coordinate
+	//TRACE("REF GX=%.4lf GY=%.4lf GZ=%.4lf",dst->GT_X,dst->GT_Y,dst->GT_Z);
 	vt				= vt->Edge[TC_WEST];					// Next vertice
 	dst++;																	// Next slot
 	//--- process other north vetices ----------------------------
 	while (vt != nw)												// Stop at NW corner
 	{	dst->GT_S  = txt[vt->indS];						// S coordinate
 		dst->GT_T  = T;												// T coordinate
-		dst->GT_Z  = vt->GetWZ();							// Z coordinate
+		dst->GT_Z  = vt->GetRZ();							// Z coordinate
+	//TRACE("REF GX=%.4lf GY=%.4lf GZ=%.4lf",dst->GT_X,dst->GT_Y,dst->GT_Z);
 		vt         = vt->Edge[TC_WEST];				// Next vertex
 		dst++;																// Next entry
 	}
@@ -979,19 +1015,25 @@ void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
 	//--- NW corner is special. it must have previous T coord----
 	dst->GT_S	= S;													// S value
 	dst->GT_T	= T;													// T value
-	dst->GT_Z = vt->GetWZ();							  // Z coordinate
+	dst->GT_Z = vt->GetRZ();							  // Z coordinate
+	//TRACE("REF GX=%.4lf GY=%.4lf GZ=%.4lf",dst->GT_X,dst->GT_Y,dst->GT_Z);
+
 	vt				= vt->Edge[TC_SOUTH];					// Next vertice
 	dst++;																	// Next slot
 	//--- Process other WEST vertices ----------------------------
 	while (vt != sw)												// Stop at SW corner
 	{	dst->GT_S	= S;												// S coordinate
 		dst->GT_T = txt[vt->indT];						// T coordinate
-		dst->GT_Z = vt->GetWZ();							// Z coordinate
+		dst->GT_Z = vt->GetRZ();							// Z coordinate
+	//TRACE("REF GX=%.4lf GY=%.4lf GZ=%.4lf",dst->GT_X,dst->GT_Y,dst->GT_Z);
+
 		vt				= vt->Edge[TC_SOUTH];				// Next vertex
 		dst++;																// Next entry
 		}
   //----Duplicate SW corner -------------------------------------
 	*dst	= vTab[1];
+	//TRACE("REF GX=%.4lf GY=%.4lf GZ=%.4lf",dst->GT_X,dst->GT_Y,dst->GT_Z);
+
   //------------------------------------------------------------
   return;
 }
@@ -1013,9 +1055,6 @@ void  CmQUAD::RefreshVertexCoord(CSuperTile *sp,float *txt)
 //-------------------------------------------------------------------------
 bool CmQUAD::PointHeight(CVector &p,CVector &nm)
 { CVertex *ct = GetCenter();
-	//--- Trim p to float limit -----------------------
-	p.x = float(p.x);
-	p.y = float(p.y);
   //--- Locate the quadrant ------------------------
   if (ct->IsAbove(p.y))
   { if (ct->ToRight(p.x))	return PointInSW(p,nm);
@@ -1025,17 +1064,38 @@ bool CmQUAD::PointHeight(CVector &p,CVector &nm)
   return PointInNE(p,nm);
 }
 //-------------------------------------------------------------------------
+/// Check for Point in Quad
+//  
+//-------------------------------------------------------------------------
+bool CmQUAD::PointInQuad(CVector &p)
+{	CVertex *sw = GetCorner(TC_SWCORNER);
+	if (p.x < sw->GetRX())	return false;
+	CVertex *se = GetCorner(TC_SECORNER);
+	if (p.x > se->GetRX())	return false;
+	if (p.y < se->GetRY())	return false;
+	CVertex *ne = GetCorner(TC_NECORNER);
+	if (p.y > ne->GetRY())	return false;
+	return false;
+}
+
+//-------------------------------------------------------------------------
 //  Check for point in SW quadran
 //	-Look from NW corner to SE corner
+//		QUAD configuration is
+//			NW --M4 ---NE
+//			|     |     |
+//			M2 --CT ---M3
+//			|     |     |
+//			SW---M1----SE
 //-------------------------------------------------------------------------
 bool CmQUAD::PointInSW(CVector &pp, CVector nm)
 { CVertex *va = GetCenter();
   CVertex *vb = va->VertexNW();       // NW corner
 	CVector  pb = vb->RelativeFrom(*va);
 	//---Compute vector  A and P----------------
-	CVector  pa(va->GetWX(),va->GetWY(),va->GetWZ());
+	CVector  pa(va->GetRX(),va->GetRY(),va->GetWZ());
 	pp  =    pp - pa;
-	//---Look along west border -----------------
+	//---Look along west border of QUAD --------
 	while (vb != va->VertexSW())
 	{	CVertex *vc  = vb->VertexSB();				// Go south
 		CVector  pc  = vc->RelativeFrom(*va);
@@ -1045,12 +1105,13 @@ bool CmQUAD::PointInSW(CVector &pp, CVector nm)
 	}
   //---Look along south border ----------------
 	while (vb != va->VertexSE())
-	{	CVertex *vc = vb->VertexEB();				// East border
-		CVector  pc = vc->DistanceFrom(*va);
+	{	CVertex *vc = vb->VertexEB();				// Go East
+		CVector  pc = vc->RelativeFrom(*va);
 		if (PointInTriangle(pp,pa,pb,pc,nm)) return true;
 		vb	= vc;
 		pb	= pc;
 	}
+
   return false;
 }
 //-------------------------------------------------------------------------
@@ -1061,13 +1122,14 @@ bool CmQUAD::PointInSE(CVector &pp, CVector nm)
 { CVertex *va = GetCenter();
   CVertex *vb = va->VertexSW();       // SW corner
   CVector  pb = vb->RelativeFrom(*va);
+	
   //---Compute vector  A and P----------------
-  CVector  pa(va->GetWX(),va->GetWY(),va->GetWZ());
+  CVector  pa(va->GetRX(),va->GetRY(),va->GetWZ());
   pp  =    pp - pa;
 	//--- Look along south border ----------------
 	while (vb != va->VertexSE())
 	{	CVertex *vc = vb->VertexEB();			// going east
-		CVector  pc = vc->DistanceFrom(*va);
+		CVector  pc = vc->RelativeFrom(*va);
 		if (PointInTriangle(pp,pa,pb,pc,nm)) return true;
 		vb	= vc;
 		pb	= pc;
@@ -1075,11 +1137,12 @@ bool CmQUAD::PointInSE(CVector &pp, CVector nm)
   //--- Look along East border -----------------
 	while (vb != va->VertexNE())
 	{	CVertex *vc = vb->VertexNB();				// Go north
-		CVector  pc = vc->DistanceFrom(*va);
+		CVector  pc = vc->RelativeFrom(*va);
 		if (PointInTriangle(pp,pa,pb,pc,nm)) return true;
 		vb	= vc;
 		pb	= pc;
 	}
+
   return false;
 }
 //-------------------------------------------------------------------------
@@ -1089,14 +1152,15 @@ bool CmQUAD::PointInSE(CVector &pp, CVector nm)
 bool CmQUAD::PointInNE(CVector &pp, CVector nm)
 { CVertex *va = GetCenter();
   CVertex *vb = va->VertexSE();       // SE corner
-  CVector  pb = vb->DistanceFrom(*va);
+  CVector  pb = vb->RelativeFrom(*va);
+
   //---Compute vector  A and P----------------
-  CVector  pa(va->GetWX(),va->GetWY(),va->GetWZ());
+  CVector  pa(va->GetRX(),va->GetRY(),va->GetWZ());
   pp  =    pp - pa;
 	//--- look along East border ----------------
 	while	(vb != va->VertexNE())
 	{	CVertex *vc = vb->VertexNB();				// Going north
-		CVector  pc = vc->DistanceFrom(*va);
+		CVector  pc = vc->RelativeFrom(*va);
 		if (PointInTriangle(pp,pa,pb,pc,nm)) return true;
 		vb	= vc;
 		pb  = pc;
@@ -1109,6 +1173,7 @@ bool CmQUAD::PointInNE(CVector &pp, CVector nm)
 		vb	= vc;
 		pb  = pc;
 	}
+	
   return false;
 }
 //-------------------------------------------------------------------------
@@ -1119,8 +1184,9 @@ bool  CmQUAD::PointInNW(CVector &pp, CVector nm)
 { CVertex *va = GetCenter();
   CVertex *vb = va->VertexNE();       // NE corner
   CVector  pb = vb->RelativeFrom(*va);
+	
   //---Compute vector  A and P---------------------
-  CVector  pa(va->GetWX(),va->GetWY(),va->GetWZ());
+  CVector  pa(va->GetRX(),va->GetRY(),va->GetWZ());
   pp  =    pp - pa;
   //--- look along north border -------------------
 	while (vb != va->VertexNW())
@@ -1138,6 +1204,7 @@ bool  CmQUAD::PointInNW(CVector &pp, CVector nm)
 		vb	= vc;
 		pb	= pc;
 	}
+	
   //------------------------------------------------
   return false;
 }
@@ -1209,22 +1276,24 @@ void CmQUAD::GetTileIndices(U_INT &tx,U_INT &tz)
 }
 //-------------------------------------------------------------------------
 /// Locate quad where the position is lying
-//  p coordinates must be local (not absolute world )
+//  p coordinates must be local to SW corner of QGT
 //-------------------------------------------------------------------------
 CmQUAD *CmQUAD::Locate2D(CVector &p)
-{ float lon = p.x;
-	float lat	= p.y;
+{ double lon  = p.x;
+	double lat	= p.y;
 	if (IsaQuad())    return this;
   CmQUAD *qd = qARR;
+	//--- Search quad along south border ------------
   for (int k = 0; k != qDim; k++, qd++)
   { CVertex *sw = qd->GetCorner(TC_SWCORNER);
-    if (lon < sw->GetWX())    continue;
-    if (lat < sw->GetWY())    continue;
+    if (lon < sw->GetRX())    continue;
+    if (lat < sw->GetRY())    continue;
     CVertex *ne = qd->GetCorner(TC_NECORNER);
-    if (lon > ne->GetWX())    continue;
-    if (lat > ne->GetWY())    continue;
+    if (lon > ne->GetRX())    continue;
+    if (lat > ne->GetRY())    continue;
     return qd->Locate2D(p); 
   }
+	
   return this;
 }
 //-------------------------------------------------------------------------
@@ -1379,7 +1448,8 @@ void CmQUAD::PatchVertices(ELV_PATCHE &p)
 //	dir = 1 =>   Store patche into vertex elevation 
 //-------------------------------------------------------------------------
 CVertex *CmQUAD::Patche(CVertex *vt,ELV_PATCHE &p,int nxt)
-{	U_INT key			= vt->VertexKey();
+{	/*
+	U_INT key			= vt->VertexKey();
 	ELV_VTX *mat	= p.mat;
 	int			  k		= 0;
 	//--- Process according to direction -------------------
@@ -1397,6 +1467,7 @@ CVertex *CmQUAD::Patche(CVertex *vt,ELV_PATCHE &p,int nxt)
 			{	if (key == mat[k].key) {vt->SetWZ(mat[k].elv); break;}
 			}
 	}
+	*/
 	return vt->GetEdge(nxt);
 }
 //=========================================================================
@@ -1660,16 +1731,19 @@ void CSuperTile::RazNames()
 //  Extract border vertices for the Super Tile
 //-------------------------------------------------------------------------
 void CSuperTile::BuildBorder(C_QGT *qt,U_INT No)
-{ //---Start with center -------------------------------------------
-  Tour[0].VT_X   = Center.x;
-  Tour[0].VT_Y   = Center.y;
-  Tour[0].VT_Z   = Center.z;
-  F3_VERTEX *dst = Tour+1;
-	qgt	= qt;
+{ qgt	= qt;
+	//---Start with center -------------------------------------------
+	CVector ctr (mPos.lon,mPos.lat,mPos.alt);
+	qgt->RelativeToBase(ctr);
+  Tour[0].VT_X   = ctr.x;
+  Tour[0].VT_Y   = ctr.y;
+  Tour[0].VT_Z   = ctr.z;
+  D3_VERTEX *dst = Tour+1;
   //--- Save contour -----------------------------------------------
   int end   = TC_SPTBORDNBR;
   U_INT bx  = SuperDT[No].dx;                      // Base DET X in Super Tile
   U_INT bz  = SuperDT[No].dz;                      // Base DET Z in Super Tile
+	
   for (int  k = 0; k != end; k++)
       {U_INT tx = bx | SupBORD[k].cx;           // Border Tile X composite
        U_INT tz = bz | SupBORD[k].cz;           // Border Tile Z composite
@@ -1677,8 +1751,9 @@ void CSuperTile::BuildBorder(C_QGT *qt,U_INT No)
        U_INT cn = SupBORD[k].msk;               // Corner index
        CmQUAD *qd   = qt->GetQUAD(nt);          // Quad
        CVertex *vt  = qd->GetCorner(cn);        // Vertex
-       vt->Tour(dst++,SupBORD[k].east);
+			 qd->StoreIn(dst++,vt);
       }
+			
   //--- End with first vertex -------------------------------------
  *dst = Tour[1];
   return;
@@ -1713,8 +1788,7 @@ void CSuperTile::DrawOuterSuperTile()
 //  Draw a Supertile if visible
 //-------------------------------------------------------------------------
 void CSuperTile::DrawInnerSuperTile()
-{ 
-  CTextureDef *txn = 0;
+{ CTextureDef *txn = 0;
 	//-------------------------------------------------------------------
   if (NeedSWP()) globals->txw->SwapTextures(this);
   if (NeedOBJ()) globals->txw->GetSupOBJ(this);
@@ -1731,7 +1805,7 @@ void CSuperTile::DrawInnerSuperTile()
 			//       ax = ax;                                      // Break point here
       //---Stop for a given detail tile -------------------------------
       //
-      //if (txn->AreWe(TC_ABSOLUTE_DET(508,28),TC_ABSOLUTE_DET(336,6)))
+      //	if (txn->AreWe(TC_ABSOLUTE_DET(509,0),TC_ABSOLUTE_DET(334,18)))
       //    txn = txn;                  // Set break point here
       //
       //--Avoid ground airport ------------------------------------------------
@@ -1762,7 +1836,7 @@ void CSuperTile::DrawInnerSuperTile()
 //	Update distance and alpha blending
 //-------------------------------------------------------------------------
 bool CSuperTile::Update()
-{	if (!IsVisible())		return false;
+{	if (!Visibility())		return false;
 	float lim = globals->ftDRW;         //nm Limit (real feet)
   //--- Update LOD -------------------------------------------
   if (dEye > lim)		Outside3DRing();
@@ -1885,14 +1959,15 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
   qSTAT = 1;
   dead	= 0;
   Metar = 0;
+	strn	= tm->GetTRNoption();
 	//--- Get VBO option -----------------------
 	int opt = 1;
 	GetIniVar("Sim","TerrainVBO",&opt);
 	vbu			= opt;
 	elv			= 0;							// No elevation yet
   //------Set coordinate bands ---------------
-  xBand  = FN_BAND_FROM_QGT(cx) << TC_BY08;
-  yBand  = FN_BAND_FROM_QGT(cz) << TC_BY08;
+ // xBand  = FN_BAND_FROM_QGT(cx) << TC_BY08;
+ // yBand  = FN_BAND_FROM_QGT(cz) << TC_BY08;
   //----Cloud counters by type ---------------
   cloud[0] = cloud[1] = cloud[2] = cloud[3] = 0;
   //-----Corners -----------------------------
@@ -1904,31 +1979,18 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
   tr  = tm->GetTrace();
   //----Init State Lock --------------------------
   pthread_mutex_init (&stMux,  NULL);
-  //---Init basic parameters ---------------------
-  U_INT nx    = ((cx + 1) & TC_0512MOD);
   //------Locate the QGT parameters   ------------
   double sLat = GetQgtSouthLatitude(cz);
   double nLat = GetQgtNorthLatitude(cz);
   double wLon = FN_ARCS_FROM_QGT(cx);
-  double eLon = FN_ARCS_FROM_QGT(nx);
   dLat   = GetLatitudeDelta(cz);
   dLon   = (TC_ARCS_PER_DET);
-  this->aLon   = wLon;
-  this->wLon   = LongitudeInBand(cx,wLon);
-  this->sLat   = sLat;
-  this->nLat   = nLat;
- 
+  this->wLon  = wLon;
+  this->sLat  = sLat;
+  this->nLat  = nLat;
   //-----Compute center coordinates for scenery --------
-  mPoint.lat =  0.5 * (sLat + nLat);
-  mPoint.lon =  FN_ARCS_FROM_QGT(cx + 0.5);
-  Scene.lat  =  GetMidLat();
-  Scene.lon  =  GetMidLon();
-  Scene.alt  =  0;
-  //------Dupplicate for center ------------------------
-  double clon     = Scene.lon;
-  Center.y   = Scene.lat;
-  Center.x   = LongitudeInBand(cx,clon);
-  Center.z   = Scene.alt;
+	GetQgtMidPoint(cx,cz,mPoint);
+	Scene				= mPoint;
 	//---Register the QGT for scenery --------------------
 	globals->scn->Register(qKey);
 }
@@ -2037,7 +2099,7 @@ void C_QGT::TimeSlice(float dT)
 //-----------------------------------------------------------------------
 //  STEP INI:	Initialize the QGT
 //  Note:   MidPoint position is in absolute world coordinate in arcsec
-//          Center Vector is in longitude band relative coordinates
+//         
 //-----------------------------------------------------------------------
 int C_QGT::StepINI()
 { //-----Southwest Corner vertex -----------------------
@@ -2061,9 +2123,8 @@ int C_QGT::StepINI()
   nw->EastLink(ne);
   sw->NorthLink(nw);
   se->NorthLink(ne);
-  //---------Compute the QGT  dim in arcsecs -----------
-  Bound.x  = (Center.x - sw->GetWX()) * FN_FEET_FROM_ARCS(1);
-  Bound.y  = (Center.y - sw->GetWY()) * FN_FEET_FROM_ARCS(1);
+  //---------Compute the QGT  dim in arcsec ------------
+	MidRadius(Bound,zKey);
   //---------Init the super tiles ----------------------
   InitSuperTiles();
   SetStep(TC_QT_MSH);
@@ -2114,6 +2175,7 @@ int C_QGT::StepHDT()
 //---------------------------------------------------------------------
 int C_QGT::HasTRN()
 { char  fn[64];														// TRN file name
+  if (strn)				return 0;
 	if (globals->elvDB)	globals->sqm->GetTRNElevations(this);
 	if (HasElevation()) {SetStep(TC_QT_TIL);	return 1;}		
 	//---Check for a TRN file ------------------------------------
@@ -2189,26 +2251,32 @@ int C_QGT::StepSEA()
 //-----------------------------------------------------------------------
 bool C_QGT::GetTileIndices(SPosition &pos,short &tx, short &tz)
 { //---Compute longitude index ----------------
-  double dta = pos.lon - aLon;                // Delta to west frontier
-  tx = int(dta / dLon) & 16383;
+  double dta = pos.lon - wLon;                // Delta to west frontier
+  tx = int(dta / dLon) & 31;
   //---Compute latitude index -----------------
   double dtz = pos.lat - sLat;
-  tz = int(dtz / dLat);
-  return ((tx <= 31) && (tx >= 0) && (tz >= 0) && (tz <= 31));
+  tz = int(dtz / dLat) & 31;
+  return (true);
 }
 //-----------------------------------------------------------------------
 //  Return Tile X-Z indice of the ground spot
 //-----------------------------------------------------------------------
 bool C_QGT::GetTileIndices(GroundSpot &gns)
 { //---Compute longitude index ----------------
-  double dta	= gns.lon - aLon;                //Delta to west frontier 
+  double dta	= gns.lon - wLon;                //Delta to west frontier 
   gns.tx			= int(dta / dLon) & 31;
   //---Compute latitude index -----------------
   double dtz	= gns.lat - sLat;
   gns.tz			= int(dtz / dLat) & 31;
   return true;
 }
-
+//-----------------------------------------------------------------------
+//  Adjust V (X,Y) coordinates relative to SW corner
+//-----------------------------------------------------------------------
+void C_QGT::RelativeToBase(CVector &v)
+{	v.x -= wLon;													// Remove west longitude
+	v.y -= sLat;													// Remove south latitude
+}
 //---------------------------------------------------------------------
 //  Delete the QTR file
 //---------------------------------------------------------------------
@@ -2346,17 +2414,17 @@ int C_QGT::FreeQuad(CmQUAD *qd)
 //  Locate East Vertex
 //  Locate Vertex (vx,vz) along the East Side of Vk
 //  When op = 1 a new vertex is created and inserted in the mesh
+//	NOTE:  When the vertex key is 0, then we cross the origin meridien
 //---------------------------------------------------------------------
-CVertex *C_QGT::GetEastVertex(CVertex *vk,U_LONG xv,U_LONG zv,int op)
-{ CVertex *pv   = vk;
-  CVertex *vn   = vk->Edge[TC_EAST];
-  U_LONG   ckey = 0;
-  U_LONG   rkey = (xv)?(xv):(0xFFFFFFFF);
-  //----scan the East direction ---------------------
+CVertex *C_QGT::GetEastVertex(CVertex *vk,U_INT xv,U_INT zv,int op)
+{ CVertex *pv   = vk;									// Previous
+  CVertex *vn   = vk->Edge[TC_EAST];	// Next
+  U_INT   nkey  = 0;									// Key from next vertex
+  //----Scan the East direction ---------------------
   while (vn)
   { if (vn->xKey == xv)   return vn;
-    ckey = (vn->xKey)?(vn->xKey):(0xFFFFFFFF);
-    if (ckey <  rkey)            
+    nkey = (vn->xKey)?(vn->xKey):(0xFFFFFFFF);
+    if (nkey <  xv)            
     { pv    = vn;
       vn    = pv->Edge[TC_EAST];
       continue;
@@ -2377,9 +2445,10 @@ CVertex *C_QGT::GetEastVertex(CVertex *vk,U_LONG xv,U_LONG zv,int op)
 //  Locate Vertex (vx,vz) along the North Side of Vk
 //  When op = 1 a new vertex is created and inserted in the mesh
 //---------------------------------------------------------------------
-CVertex *C_QGT::GetNorthVertex(CVertex *vk,U_LONG xv,U_LONG zv,int op)
+CVertex *C_QGT::GetNorthVertex(CVertex *vk,U_INT xv,U_INT zv,int op)
 { CVertex *pv = vk;
   CVertex *vn = vk->Edge[TC_NORTH];
+  U_INT   nkey  = 0;									// Key from next vertex
   //----scan the NORTH direction ---------------------
   while (vn)
   { if (vn->zKey == zv) return vn;
@@ -2398,6 +2467,16 @@ CVertex *C_QGT::GetNorthVertex(CVertex *vk,U_LONG xv,U_LONG zv,int op)
   if (0 == op)  return 0;
   tcm->MeshError(xv,zv);
   return 0;
+}
+//-------------------------------------------------------------------------
+//	Get SW corner position: The Base of QGT
+//-------------------------------------------------------------------------
+SPosition C_QGT::GetBase()
+{	SPosition p;
+	p.lon	= wLon;
+	p.lat	= sLat;
+	p.alt	= 0;
+	return p;
 }
 //-------------------------------------------------------------------------
 //  Assign final Detail Tile center
@@ -2491,23 +2570,25 @@ int C_QGT::StepMSH()
   return 1;
 }
 //--------------------------------------------------------------------------
-//  Init the Super Tiles 
+//  Init the Super Tiles
 //--------------------------------------------------------------------------
 void C_QGT::InitSuperTiles()
 { U_INT  No    = 0;
   CSuperTile *sp = Super;
+
   for (No = 0; No != TC_SUPERT_NBR; No++)
   { sp->NoSP        = No;
-    sp->Center.x    = (SuperCT[No].cx * dLon) + wLon;
-    sp->Center.y    = (SuperCT[No].cz * dLat) + sLat;
-    sp->Center.z    = 0;
-    //---Compute center absolute position -----------
-    sp->cPos.lon    = (SuperCT[No].cx * dLon) + aLon;
-    sp->cPos.lat    = (SuperCT[No].cz * dLat) + sLat;
-    sp->cPos.alt    = 0;
+    sp->mPos.lon    = (SuperCT[No].cx * dLon) + wLon;
+    sp->mPos.lat    = (SuperCT[No].cz * dLat) + sLat;
+    sp->mPos.alt    = 0;
+    //---Compute SuperTile radius in arcsec ----------
+    sp->sRad.x			= TC_ARCS_PER_HSP;
+    sp->sRad.y			= 2 * dLat;
+    sp->sRad.z			= 0;
     //-----------------------------------------------
     sp++;
   }
+
   return;
 }
 //-----------------------------------------------------------------------
@@ -2544,7 +2625,7 @@ CSuperTile *C_QGT::GetSuperTile(int tx,int tz)
 void C_QGT::DetailElevation(U_INT tx,U_INT tz,float elev)
 { if ((tx >= 32) || (tz >= 32)) Abort("Tile index > 31");
   U_INT No = FN_DET_FROM_XZ(tx,tz);
-  CVertex   *ct = qTAB[No].GetCenter();
+  CVertex    *ct = qTAB[No].GetCenter();
   CSuperTile *sp = GetSuperTile(tx,tz);
   //-------Update Super Tile mini max  ------------------
   SetMiniMax(elev,ct,sp);
@@ -2568,7 +2649,6 @@ void C_QGT::DetailElevation(U_INT tx,U_INT tz,float elev)
   nw->nElev++;
   nw->Ground += elev;
   nw->SetCornerHeight();
-
   return;
 }
 //-------------------------------------------------------------------------
@@ -2627,17 +2707,18 @@ void C_QGT::SetElvFromTRN(U_INT bx,U_INT bz,float *el)
     {int No      = FN_DET_FROM_XZ(x,z);
      CmQUAD *qd  = qTAB + No;
      if (qd->IsArray())     continue;
+		 //--- Compute cnter height ------------
+ 		 double   mp = 0;
      CVertex *ct = qd->GetCenter();
      CVertex *sw = ct->Edge[TC_SWCORNER];
-     float    e1 = sw->GetWZ();
+     mp += sw->GetWZ();
      CVertex *se = ct->Edge[TC_SECORNER];
-     float    e2 = se->GetWZ();
+     mp += se->GetWZ();
      CVertex *ne = ct->Edge[TC_NECORNER];
-     float    e3 = ne->GetWZ();
+     mp += ne->GetWZ();
      CVertex *nw = ct->Edge[TC_NWCORNER];
-     float    e4 = nw->GetWZ();
-     float    mp = (e1 + e2 + e3 + e4) * 0.25f;
-     ct->SetWZ(mp);
+     mp += nw->GetWZ();
+     ct->SetWZ(mp * double (0.25));
     }
   }
   return;
@@ -2648,7 +2729,7 @@ void C_QGT::SetElvFromTRN(U_INT bx,U_INT bz,float *el)
 //  Then the highest point is retain as the center for far terrain rendering
 //-------------------------------------------------------------------------
 void C_QGT::SetMiniMax(float el,CVertex *vt,CSuperTile *sp)
-{ //------Compute Super Tile indices ------------------------
+{	//------Compute Super Tile indices ------------------------
   vt->SetWZ(el);
   if (el < sp->MiniH) sp->MiniH = el;
   //--Retain Highest point as the center of Super Tile for far terrain --
@@ -2885,18 +2966,17 @@ void C_QGT::DivideHDTL(TRN_HDTL *hd)
 //-------------------------------------------------------------------------
 CVertex *C_QGT::DuplicateCenter(CVertex *ct,TRN_HDTL *hd)
 { //ct->AreWe(0x00047600,0x0A4F200);
-	CVertex *nc = CreateVertex(ct->xKey,ct->zKey);
-  nc->Use     = ct->Use;
-  nc->CopyEdge(ct);       // Dupplicate corner
-  //---Duplicate world coordinates -------------
-  nc->Coord.SetWX(ct->GetWX());
-  nc->Coord.SetWY(ct->GetWY());
   //---Set elevation from middle region array --
   U_SHORT ed    = hd->GetDim();
   U_SHORT md    = (ed * ed) >> 1;
 	double  el    = hd->Elevation(md);
-  nc->Coord.SetWZ(el);
-	ct->Coord.SetWZ(el);
+	ct->SetWZ(el);
+	//--- Copy center vertex in a new one ----------(-
+	CVertex *nc = CreateVertex(ct->xKey,ct->zKey);
+  nc->Use     = ct->Use;
+  nc->CopyEdge(ct);       // Dupplicate corner
+	//--- Dupplicate world coordinates ---------------
+	nc->CopyCOORD(*ct);
   return nc;
 }
 
@@ -2910,16 +2990,15 @@ CVertex *C_QGT::DuplicateCenter(CVertex *ct,TRN_HDTL *hd)
 int C_QGT::StepSUP()
 { bool				ac = tcm->QGTplane(this);
 	CSuperTile *sp = Super;
-  float minH  = sp->MiniH;
-  float maxH  = sp->MaxiH;
+  double minH  = sp->MiniH;
+  double maxH  = sp->MaxiH;
   for   (U_INT No = 0; No != TC_SUPERT_NBR; No++)
-        { sp->Center.z  = (sp->MaxiH + sp->MiniH) * 0.5;
-          sp->dimz      = (sp->MaxiH - sp->MiniH) * 0.52;
+        { sp->sRad.z  = (sp->MaxiH - sp->MiniH) * 0.5;
           //----Update QGT mini max --------------
           if (sp->MaxiH > maxH) maxH = sp->MaxiH;
           if (sp->MiniH < minH) minH = sp->MiniH;
-          //--------------------------------------
-          sp->cPos.alt  = sp->Center.z;
+          //--- Update mid point altitude --------
+          sp->mPos.alt  = (sp->MaxiH + sp->MiniH) * 0.5;
           //--------------------------------------
           tcm->FormatName(this,sp);
           sp->BuildBorder(this,No);
@@ -2928,9 +3007,9 @@ int C_QGT::StepSUP()
           FarsQ.PutLast(sp);
           sp++;
         }
-  //----Compute QGT center and bounds -----------------------
-  Center.z  = (minH + maxH) * 0.5;
-  Bound.z   = (maxH - minH) * 0.5;
+  //----Compute QGT mid point and Z radius ------------------
+  mPoint.alt  = (minH + maxH) * 0.5;
+  Bound.z			= (maxH - minH) * 0.5;
   SetStep(TC_QT_3DO);
   //----Set QGTfor 3D model ---------------------------------
   w3D.SetQGTparameters(this);
@@ -3020,7 +3099,7 @@ int C_QGT::UpdateInnerCircle()
   bool      hiok = tcm->HiResPermited();
   //---Change State for all NEAR ST leaving the inner circle ---
   while (sp)
-  { sp->dEye = tcm->AircraftFeetDistance(sp->cPos);
+  { sp->dEye = tcm->AircraftFeetDistance(sp->mPos);
     //--------Leaving inner circle ---------------------------
     if (sp->dEye > ndis)
     { sp->RenderOUT();
@@ -3066,7 +3145,7 @@ int C_QGT::UpdateInnerCircle()
   LockState();
   sp = FarsQ.GetFirst();
   while (sp)
-    { sp->dEye = tcm->AircraftFeetDistance(sp->cPos);
+    { sp->dEye = tcm->AircraftFeetDistance(sp->mPos);
       if (sp->dEye > ndis)  {sp = FarsQ.GetNext(sp); continue;}
       sp->WantLOD();
       sp->Reso = TC_MEDIUM;
@@ -3176,8 +3255,7 @@ void C_QGT::Abort(char *msg)
 //  ABORT FOR VERTEX
 //-------------------------------------------------------------------------
 void C_QGT::Abortv()
-{ 
-  char edt1 [128] = {'\0'};
+{ char edt1 [128] = {'\0'};
   char edt2 [128] = {'\0'};
   SPosition pos = globals->geop;
   EditLon2DMS(pos.lon, edt1);
@@ -3186,21 +3264,68 @@ void C_QGT::Abortv()
   return;
 }
 //-------------------------------------------------------------------------
-//  Draw the SuperTile Mesh
+//  Draw the SuperTile Mesh by the camera cam
 //-------------------------------------------------------------------------
-void C_QGT::DrawSuperMesh(U_INT wat)
+void C_QGT::DrawSuperMesh(CCamera *cam, char d)
 { CSuperTile *sp = Super;
   for (int No = 0; No != TC_SUPERT_NBR; No++,sp++)
   { //---Check visibility ----------------------------------
-    CVector    bd((2 * dLon),(2 * dLat),Super[No].dimz);
-    bool       vi = tcm->BoxInView(Super[No].Center,bd);
+		char vi = d || cam->BoxInFrustum(sp->mPos,sp->sRad, 1.8);
     sp->SetVisibility(vi);
     if (0 == vi) continue;
     //---Render Super Tile ---------------------------------
+		tcm->IncDSP();
 		sp->Draw();
   }
+	//--- Check for contour ---------------------------------
   return;
 }
+//-------------------------------------------------------------------------
+//  Draw the QGT contour
+//-------------------------------------------------------------------------
+void C_QGT::DrawContour()
+{	glDisableClientState(GL_VERTEX_ARRAY);
+	glPushMatrix();
+  CVertex   sw = *Corner[TC_SWCORNER];
+  CVertex   nw = *Corner[TC_NWCORNER];
+  CVertex   ne = *Corner[TC_NECORNER];
+  CVertex   se = *Corner[TC_SECORNER];
+	//--- Adjust East and north coordinates ------
+	double dtl = LatitudeIncrement(zKey);
+	se.rx    += TC_ARCS_PER_QGT;
+	ne.rx		 += TC_ARCS_PER_QGT;
+	ne.ry    += dtl;
+	nw.ry    += dtl;
+	//--- Save paramaters and set others ---------
+  float     col[4];
+  U_CHAR    dep = glIsEnabled(GL_DEPTH_TEST);
+  U_CHAR    lit = glIsEnabled(GL_LIGHTING);
+  glGetFloatv(GL_CURRENT_COLOR,col);
+  //---Disable depth and set red color -----
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_LIGHTING);
+  glColor3f(1,0,0);
+  glLineWidth(4);
+
+  //----------------------------------------
+  glBegin(GL_POLYGON);
+	//--- Draw South border ------------------
+	glVertex3d(sw.rx, sw.ry, sw.rz);
+	glVertex3d(se.rx, se.ry, se.rz);
+	glVertex3d(ne.rx, ne.ry, ne.rz);
+	glVertex3d(nw.rx, nw.ry, nw.rz);
+  glEnd();
+
+  //---Restore depth and color --------------
+  if (dep) glEnable(GL_DEPTH_TEST);
+  if (lit) glEnable(GL_LIGHTING);
+  glColor4fv(col);
+  glPopMatrix();
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glLineWidth(1);
+  return;
+}
+
 //-------------------------------------------------------------------------
 //  Draw the wire frame
 //  
@@ -3239,6 +3364,7 @@ TCacheMGR::TCacheMGR()
   aTime   = 0;
   Disp    = 0;
 	lumn    = 0;
+	strn		= 0;
   int ter = 0;
 	GetIniVar("TRACE","TerrainCache",&ter);
 	tr			= ter;
@@ -3268,6 +3394,9 @@ TCacheMGR::TCacheMGR()
   float rt = globals->highRAT;            // Hight resolution ratio
   GetIniFloat("Terrain","HighResRatio",&rt);
   globals->highRAT = rt;
+	int   st = 0;
+	GetIniVar("Sim","NoTRN", &st);
+	strn	= st;
   //---Check for Terrain Wire Frame -----------------------
   hi      = 0;
   GetIniVar("Sim", "NoTerrain", &hi);
@@ -3305,6 +3434,8 @@ TCacheMGR::TCacheMGR()
 	//	table (TexRES) from vertex indice. The vertex indice is
 	//	shifted right (divided) by FactEV.
   //-------------------------------------------------------------
+  glHint(GL_POLYGON_SMOOTH_HINT,GL_NICEST);
+  glHint(GL_TEXTURE_COMPRESSION_HINT,GL_NICEST);
   int esid  = (1 << TC_MAX_ELV_LEV) + 1;      // Array side
   LastEV    = esid - 1;                       // Last indice in elevation
 	FactEV    = TC_BY1024 - TC_MAX_ELV_LEV; 
@@ -3360,7 +3491,7 @@ TCacheMGR::TCacheMGR()
   pthread_attr_setinheritsched (&attr, PTHREAD_EXPLICIT_SCHED);
   param.sched_priority = pmax;            //sched_get_priority_max (SCHED_OTHER);
   pthread_attr_setschedparam (&attr, &param);
-  // Create thread 
+  //--- Create thread for file access ---------------------------
   thRUN   = 0;                              // Thread stop
   int rs  = pthread_create (&thIden, &attr, FileThread, this);
   if (0 != rs)  Abort("Cannot Create File Thread");
@@ -3382,6 +3513,7 @@ TCacheMGR::TCacheMGR()
 	eTrack.SetTCM(this);
 	//--- Enter in dispatcher -------------------------------------
 	globals->Disp.Enter(this,PRIO_TERRAIN);
+TRACE("ENd TCACHE Constructor");
 }
 ///------------------------------------------------------------------------
 //  End of TCache: TODO 
@@ -3389,8 +3521,7 @@ TCacheMGR::TCacheMGR()
 //  delete all allocated resources
 //-------------------------------------------------------------------------
 TCacheMGR::~TCacheMGR()
-{ //int a =  pthread_cancel(thIden);
-	globals->sql->Stop();
+{ globals->sql->Stop();
 	pthread_cond_signal(&thCond);
   pthread_join(thIden,0);
   //---delete coordinate tables ----------------------
@@ -3639,7 +3770,7 @@ U_CHAR TCacheMGR::BuildName(CTextureDef *txn,U_SHORT nx,U_SHORT nz)
   txn->TypTX  = TC_TEXGENER;         
   //--------Build Shared key -------------------------------------
   U_CHAR k1 = base[0];                            // Terrain type
-  txn->Key  = (k1 << 8)|(nx << 4)|(nz);           // XZ indices
+  txn->sKey  = (k1 << 8)|(nx << 4)|(nz);          // XZ indices
   return *txn->Hexa;
 }
 //-------------------------------------------------------------------------
@@ -3823,11 +3954,13 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   IndicesInQGT (aPos, globals->qgtX, globals->qgtZ);
   nKEY      = QGTKEY(globals->qgtX, globals->qgtZ);
   //--------Update aircraft position in feet ------------------------------
-  rFactor   = GetReductionFactor(aPos.lat);
-  cFactor   = 1 / rFactor;
-  geow.x    = FN_FEET_FROM_ARCS(aPos.lon) * rFactor;
-  geow.y    = FN_FEET_FROM_ARCS(aPos.lat);
-  geow.z    = aPos.alt;
+  rFactor				= GetReductionFactor(aPos.lat);
+	globals->rdf	= rFactor;
+  xFactor				= 1 / rFactor;
+	globals->exf	= xFactor;
+  geow.x				= FN_FEET_FROM_ARCS(aPos.lon) * rFactor;
+  geow.y				= FN_FEET_FROM_ARCS(aPos.lat);
+  geow.z				= aPos.alt;
   //-----Scan for Action Queue -------------------------------------------
   clock++;                                              // Internal clock
   clock1    = clock & 1023;                             // Derived clock 1
@@ -3955,9 +4088,6 @@ int TCacheMGR::RefreshCache()
           dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
   if (tr) TRACE("TCM: -- AIRCRAFT ENTER %d-%d=================================================================",
           globals->qgtX,globals->qgtZ);
-  //----------Compute aircraft new bands -----------------------------
-  xBand   = FN_BAND_FROM_QGT(cx);
-  yBand   = FN_BAND_FROM_QGT(cz);
   //----------Get the X reduction factor at this latitude ------------
   scale.x = rFactor * TC_FEET_PER_ARCSEC;   // Scaling parameter 1
 	//----------scan all surrounding QGT tiles for new position --------
@@ -3980,8 +4110,6 @@ int TCacheMGR::RefreshCache()
   for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
   { C_QGT *qt   = (*im).second;
     U_INT key   = (*im).first;
-    qt->qTran.x = GetXTRANS(xBand,qt->xBand);
-    qt->qTran.y = GetYTRANS(yBand,qt->yBand);
     if (IsaActKey(key)) continue;
     MarkDelete(qt);
   }
@@ -4057,14 +4185,15 @@ void TCacheMGR::GetTerrainInfo(TC_GRND_INFO &inf,SPosition &pos)
   if (0 == qgt) qgt =  GetQGT(pos);
   if (0 == qgt)         return;
   if (qgt->NoQuad())    return;
-  if (!qgt->GetTileIndices(pos,inf.tx,inf.tz)) return;
+  qgt->GetTileIndices(pos,inf.tx,inf.tz);
   //----Access the Super Tile ----------------
   inf.qgt     = qgt;
   inf.sup     = qgt->GetSuperTile(inf.tx,inf.tz);
   //----Compute location elevation -----------
   U_INT No    = FN_DET_FROM_XZ(inf.tx,inf.tz);           
   CmQUAD *dt  = qgt->GetQUAD(No);
-  CVector  p(LongitudeInBand(qgt->xKey,pos.lon),pos.lat,0);
+  CVector  p(pos.lon,pos.lat,0);
+	qgt->RelativeToBase(p);
   CmQUAD *qd  = dt->Locate2D(p);
   //----Locate the triangle where p reside ------------
   qd->PointHeight(p,gNM);
@@ -4081,11 +4210,12 @@ double TCacheMGR::SetGroundAt(GroundSpot &gns)
   if (!SetQGT(gns)) return 0;
   C_QGT *qgt = gns.qgt;
 	gns.ClampLon();
-  if (!qgt->GetTileIndices(gns)) gtfo("Position error");
+  qgt->GetTileIndices(gns);
   U_INT No		= FN_DET_FROM_XZ(gns.tx,gns.tz);       
   CmQUAD *dt  = qgt->GetQUAD(No);
  
-  CVector  p(LongitudeInBand(qgt->xKey,gns.lon),gns.lat,dt->CenterElevation());
+  CVector  p(gns.lon,gns.lat,dt->CenterElevation());
+	qgt->RelativeToBase(p);
   gns.Quad    = dt->Locate2D(p);
   //----Locate the triangle where p reside ------------
   gns.Quad->PointHeight(p,gNM);
@@ -4203,10 +4333,11 @@ void TCacheMGR::FillGroundTile(CGroundTile *gnt)
 	qgt->IncUser();
   //----Access the Super Tile ----------------
   CSuperTile   *sp  = qgt->GetSuperTile(tx,tz);
+	gnt->StoreSup(sp);
   //----Local  tile number -------------------
-  U_INT lx = tx & TC_004MODULO;
-  U_INT lz = tz & TC_004MODULO;
-  U_INT nt = (lz << TC_BY04) | lx;
+  U_INT lx	= tx & TC_004MODULO;
+  U_INT lz	= tz & TC_004MODULO;
+  U_INT nt	= (lz << TC_BY04) | lx;
   CTextureDef *txn = &sp->Tex[nt];
 	gnt->StoreData(txn);
   return;
@@ -4642,7 +4773,7 @@ int TCacheMGR::OneAction()
       return qgt->StepHDT();
 		//--- Detailled elevation in database -----------------
 		case TC_QT_TIL:
-			return qgt->StepTIL();
+		  return qgt->StepTIL();
 		//--- Check elevation patche --------------------------
 		case TC_QT_PCH:
 			return qgt->StepPCH();
@@ -4846,6 +4977,7 @@ void TCacheMGR::Draw()
 {	CCamera *cam = globals->cam;
   bbox->Enter("TCM Draw",0,0);
 	CVehicleObject *veh = globals->pln;
+	DrQGT	= DrSUP = 0;
 	//----Prepare OpenGL for drawing ---------------------------------
   glMatrixMode (GL_MODELVIEW);
   glPushAttrib (mask);
@@ -4855,15 +4987,10 @@ void TCacheMGR::Draw()
   cCam   = cam;
   aptMGR->SetCamera(cCam);
   //------Set Globale options ---------------------------------------
-  glHint(GL_POLYGON_SMOOTH_HINT,GL_NICEST);
   glPolygonMode (GL_FRONT, WireOPT[wire]);    // Fill for texture
   glEnable(GL_POLYGON_SMOOTH);
   //-------Lighting parameters -------------------------------------
   glEnable(GL_LIGHTING);                      // LIGHT
-  //-------- Init Translation vector ---------------------------------
-  cTran.x = -Spot.BandLongitude();            // Translation longitude
-  cTran.y = -aPos.lat;                        // Translation latitude
-  cTran.z = -aPos.alt;                        // Translation altitude
   //---------Activate fog --------------------------------------------
   //  Fog is taken from sky dome, face to camera at about 45°  of zenith
   //------------------------------------------------------------------
@@ -4882,17 +5009,18 @@ void TCacheMGR::Draw()
   //  Latitude uses a steady scale.
   //------------------------------------------------------------------
 	bbox->Enter("APM Draw",0,0);
-  glGetDoublev(GL_PROJECTION_MATRIX,pj);      // Save projection
   glScaled(scale.x,scale.y, 1.0);             // T1: Scale X,Y to feet coordinate
   aptMGR->Draw(aPos);													// Draw airports
   //------------------------------------------------------------------
   //  Draw Terrain
   //  Camera at aircraft position
   //------------------------------------------------------------------
-  glTranslated(cTran.x, cTran.y, cTran.z);    // T2: Camera at aircraft
+  //glTranslated(cTran.x, cTran.y, cTran.z);    // T2: Camera at origin
   glPushClientAttrib (GL_CLIENT_ALL_ATTRIB_BITS);
   //------------------------------------------------------------------
 	//	Draw terrain: check for QGT visibility
+	//	Otherwise
+	//	For each QGT go to SW corner and render the QGT mesh
 	//------------------------------------------------------------------
 	bbox->Enter("TER	Draw",0,0);
   glEnable(GL_TEXTURE_2D);
@@ -4903,24 +5031,31 @@ void TCacheMGR::Draw()
   glDisable(GL_BLEND);
   U_CHAR vis = 0;
   std::map<U_INT,C_QGT*>::iterator im;
+	//--- Draw all visible QGTs -------------------------
   for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
   { C_QGT *qt = (*im).second;
-    if (qt->NoQuad())  continue;
-    glPushMatrix();                           // Mark T2
-    glTranslated(qt->qTran.x,0.0,0.0);        // T3:  band translation
-    ComputeClip();
-    vis =  (qt->qKey == rKEY)?(1):(BoxInView(qt->Center,qt->Bound));
-    if  (vis) qt->DrawSuperMesh(0);
-    qt->visb  = vis;
-    glPopMatrix();                            // Back to T2
+    if (qt->NoQuad())		continue;
+		//--- Check for visibility ------------------------
+		bool v1	= (qt->qKey == rKEY);						// Aircraft QGT
+		bool v2	= v1 | cam->BoxInFrustum(qt->mPoint,qt->Bound, 1.4);
+		qt->visb		= v2;
+		if (!v2)						continue;
+		//--- Draw the QGT --------------------------------
+		DrQGT++;
+		glPushMatrix();		// Mark T2
+		SPosition	sw = qt->GetBase();
+		SVector  vtr = SubtractPositionInArcs(aPos,sw);
+		glTranslated(vtr.x, vtr.y, vtr.z);						// Go to SW corner at 0 feet AGL
+		qt->DrawSuperMesh(cam,v1);
+		glPopMatrix();                            // Back to T2
   }
-
+	//--- Recover attributes ---------------------------
   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   glDisableClientState(GL_VERTEX_ARRAY);
   glPopMatrix();                              // Back to T0 (camera at origin)
   //------------------------------------------------------------------
   //  Draw all 3D objects 
-	//	Camera is at aircarft origine, scale is 1 in every direction
+	//	Camera is at aircraft origin, scale is 1 in every direction
   //------------------------------------------------------------------
 	bbox->Enter("OBJ Draw",0,0);
   glEnable(GL_ALPHA_TEST);
@@ -4931,6 +5066,7 @@ void TCacheMGR::Draw()
   glShadeModel(GL_SMOOTH);
   glPushMatrix();                             // Mark T0
 	glCullFace (GL_BACK);
+	//-------------------------------------------------------------------
   objMGR->SetDrawingState();
 	glEnable(GL_TEXTURE_2D);
   for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
@@ -5020,176 +5156,6 @@ bool TCacheMGR::PlaneInTile(U_INT ax,U_INT az)
   qt->GetTileIndices(aPos,tx,tz);
   if  (tx != rx)   return false;
   if  (tz != rz)   return false;
-  return true;
-}
-//---------------------------------------------------------------------------------
-//  Get clipping planes
-//---------------------------------------------------------------------------------
-/*
-void TCacheMGR::ExtractPlanes()
-{ MatrixGL M;
-  double *mat =(double *)(&M);
-  glGetDoublev(GL_MODELVIEW_MATRIX,mat);
-  //--- Extract Left plane ------------------------
-  pn[0][0]  = M.e41 + M.e11;          // a
-  pn[0][1]  = M.e42 + M.e12;          // b
-  pn[0][2]  = M.e43 + M.e13;          // c
-  pn[0][3]  = M.e44 + M.e14;          // d
-  Normalize(0);
-  //--- Extract right clip plane -------------------
-  pn[1][0]  = M.e41 - M.e11;          // a
-  pn[1][1]  = M.e42 - M.e12;          // b
-  pn[1][2]  = M.e43 - M.e13;          // c
-  pn[1][3]  = M.e44 - M.e14;          // d
-  Normalize(1);
-  //--- Extract top clip plane ---------------------
-  pn[3][0]  = M.e41 - M.e21;          // a 
-  pn[3][1]  = M.e42 - M.e22;          // b
-  pn[3][2]  = M.e43 - M.e23;          // c
-  pn[3][3]  = M.e44 - M.e24;          // c
-  Normalize(3);
-  //--- Extract bottom plane -----------------------
-  pn[2][0]  = M.e41 + M.e21;          // a
-  pn[2][1]  = M.e42 + M.e22;          // b
-  pn[2][2]  = M.e43 + M.e23;          // c
-  pn[2][3]  = M.e44 + M.e24;          // d
-  Normalize(2);
-  //--- Extract near clip plane --------------------
-  pn[4][0]  = M.e41 + M.e31;          // a
-  pn[4][1]  = M.e42 + M.e32;          // b
-  pn[4][2]  = M.e43 + M.e33;          // c
-  pn[4][3]  = M.e44 + M.e34;          // d
-  Normalize(4);
-}
-*/
-//---------------------------------------------------------------------------------
-//  Compute the Clip planes (in world coordinates (feet))
-//  Compute T= Pj * Mv (in row major)
-//---------------------------------------------------------------------------------
-void TCacheMGR::ComputeClip()
-{ glGetDoublev(GL_MODELVIEW_MATRIX,mv);
-  //----Multiply T = P*M --------------------------------------------------------
-  rs[ 0] = (pj[ 0]*mv[ 0]) + (pj[ 4]*mv[ 1]) + (pj[ 8]*mv[ 2]) + (pj[12]*mv[ 3]); 
-  rs[ 1] = (pj[ 0]*mv[ 4]) + (pj[ 4]*mv[ 5]) + (pj[ 8]*mv[ 6]) + (pj[12]*mv[ 7]);
-  rs[ 2] = (pj[ 0]*mv[ 8]) + (pj[ 4]*mv[ 9]) + (pj[ 8]*mv[10]) + (pj[12]*mv[11]);
-  rs[ 3] = (pj[ 0]*mv[12]) + (pj[ 4]*mv[13]) + (pj[ 8]*mv[14]) + (pj[12]*mv[15]);
-  //-----------------------------------------------------------------------------
-  rs[ 4] = (pj[ 1]*mv[ 0]) + (pj[ 5]*mv[ 1]) + (pj[ 9]*mv[ 2]) + (pj[13]*mv[ 3]);
-  rs[ 5] = (pj[ 1]*mv[ 4]) + (pj[ 5]*mv[ 5]) + (pj[ 9]*mv[ 6]) + (pj[13]*mv[ 7]);
-  rs[ 6] = (pj[ 1]*mv[ 8]) + (pj[ 5]*mv[ 9]) + (pj[ 9]*mv[10]) + (pj[13]*mv[11]);
-  rs[ 7] = (pj[ 1]*mv[12]) + (pj[ 5]*mv[13]) + (pj[ 9]*mv[14]) + (pj[13]*mv[15]);
-  //-----------------------------------------------------------------------------
-  rs[ 8] = (pj[ 2]*mv[ 0]) + (pj[ 6]*mv[ 1]) + (pj[10]*mv[ 2]) + (pj[14]*mv[ 3]);
-  rs[ 9] = (pj[ 2]*mv[ 4]) + (pj[ 6]*mv[ 5]) + (pj[10]*mv[ 6]) + (pj[14]*mv[ 7]);
-  rs[10] = (pj[ 2]*mv[ 8]) + (pj[ 6]*mv[ 9]) + (pj[10]*mv[10]) + (pj[14]*mv[11]);
-  rs[11] = (pj[ 2]*mv[12]) + (pj[ 6]*mv[13]) + (pj[10]*mv[14]) + (pj[14]*mv[15]);
-  //-----------------------------------------------------------------------------
-  rs[12] = (pj[ 3]*mv[ 0]) + (pj[ 7]*mv[ 1]) + (pj[11]*mv[ 2]) + (pj[15]*mv[ 3]);
-  rs[13] = (pj[ 3]*mv[ 4]) + (pj[ 7]*mv[ 5]) + (pj[11]*mv[ 6]) + (pj[15]*mv[ 7]);
-  rs[14] = (pj[ 3]*mv[ 8]) + (pj[ 7]*mv[ 9]) + (pj[11]*mv[10]) + (pj[15]*mv[11]);
-  rs[15] = (pj[ 3]*mv[12]) + (pj[ 7]*mv[13]) + (pj[11]*mv[14]) + (pj[15]*mv[15]);
-  //-----Extract the left plane coefficients ------------------------------------
-  pn[0][0] = rs[12] + rs[0];
-  pn[0][1] = rs[13] + rs[1];
-  pn[0][2] = rs[14] + rs[2];
-  pn[0][3] = rs[15] + rs[3];
-  Normalize(0);
-
-  //-----Extract the right plane coefficients ------------------------------------
-  pn[1][0] = rs[12] - rs[0];
-  pn[1][1] = rs[13] - rs[1];
-  pn[1][2] = rs[14] - rs[2];
-  pn[1][3] = rs[15] - rs[3];
-  Normalize(1);
-  //-----Extract the bottom plane coefficients -----------------------------------
-  pn[2][0] = rs[12] + rs[4];
-  pn[2][1] = rs[13] + rs[5];
-  pn[2][2] = rs[14] + rs[6];
-  pn[2][3] = rs[15] + rs[7];
-  Normalize(2);
-  //-----Extract the top plane coefficients --------------------------------------
-  pn[3][0] = rs[12] - rs[4];
-  pn[3][1] = rs[13] - rs[5];
-  pn[3][2] = rs[14] - rs[6];
-  pn[3][3] = rs[15] - rs[7];
-  Normalize(3);
-  //-----Extract the near plane coefficients --------------------------------------
-  pn[4][0] = rs[12] + rs[ 8];
-  pn[4][1] = rs[13] + rs[ 9];
-  pn[4][2] = rs[14] + rs[10];
-  pn[4][3] = rs[15] + rs[11];
-  Normalize(4);
-  //-----Extract the far plane coefficients --------------------------------------
-//  pn[5][0] = rs[12] - rs[ 8];
-//  pn[5][1] = rs[13] - rs[ 9];
-//  pn[5][2] = rs[14] - rs[10];
-//  pn[5][3] = rs[15] - rs[11];
-//  Normalize(5);
-}
-//--------------------------------------------------------------------------------
-//  Normalize Plan
-//--------------------------------------------------------------------------------
-void TCacheMGR::Normalize(int No)
-{ float a = pn[No][0];
-  float b = pn[No][1];
-  float c = pn[No][2];
-  float n = SquareRootFloat(a*a + b*b + c*c);
-  pn[No][0] /= n;
-  pn[No][1] /= n;
-  pn[No][2] /= n;
-  pn[No][3] /= n;
-  return;
-}
-//--------------------------------------------------------------------------------
-//  Compute Vertex distance to clip plan N°
-//--------------------------------------------------------------------------------
-float TCacheMGR::Distance(CVector &vt,int No)
-{ return ((pn[No][0]* vt.x) + (pn[No][1]*vt.y) + (pn[No][2]*vt.z) + pn[No][3]);
-}
-//--------------------------------------------------------------------------------
-//  Clipping test for bounding sphere
-//  Exclude the far plane
-//--------------------------------------------------------------------------------
-int TCacheMGR::SphereInView(CVector &vt,float rd)
-{ for (int k = 0; k != 5; k++) if (Distance(vt,k) <= -rd)   return visiCODE[k];
-  return 1;
-}
-//--------------------------------------------------------------------------------
-//  Check for point in view
-//  Exclude the far plane
-//--------------------------------------------------------------------------------
-bool TCacheMGR::PointInView(CVector &pt)
-{ for (int k = 0; k != 5; k++) if (Distance(pt,k) <= 0)     return false;
-  return true;
-}
-//--------------------------------------------------------------------------------
-//  Compute distance to Plan No
-//--------------------------------------------------------------------------------
-float TCacheMGR::ToPlan(U_INT No,CVector &ct,float dx, float dy, float dz)
-{ float x = ct.x + dx;
-  float y = ct.y + dy;
-  float z = ct.z + dz;
-  float d = (pn[No][0]*x + pn[No][1]*y + pn[No][2]*z + pn[No][3]);
-  return d;
-}
-//--------------------------------------------------------------------------------
-//  Clip against bounding box
-//  -If all corners of the bounding box are in the negative part of
-//   one clipping plan (p), then the box is not visible
-//--------------------------------------------------------------------------------
-bool TCacheMGR::BoxInView(CVector &ct,CVector &bd)
-{ 
-  for (U_INT p = 0; p != 5; p++)
-  { if (ToPlan(p,ct,-bd.x,-bd.y,-bd.z) > 0)  continue;
-    if (ToPlan(p,ct,-bd.x,-bd.y,+bd.z) > 0)  continue;
-    if (ToPlan(p,ct,-bd.x,+bd.y,-bd.z) > 0)  continue;
-    if (ToPlan(p,ct,-bd.x,+bd.y,+bd.z) > 0)  continue;
-    if (ToPlan(p,ct,+bd.x,-bd.y,-bd.z) > 0)  continue;
-    if (ToPlan(p,ct,+bd.x,-bd.y,+bd.z) > 0)  continue;
-    if (ToPlan(p,ct,+bd.x,+bd.y,-bd.z) > 0)  continue;
-    if (ToPlan(p,ct,+bd.x,+bd.y,+bd.z) > 0)  continue;
-    return false;
-  }
   return true;
 }
 //---------------------------------------------------------------------------------
@@ -5358,6 +5324,16 @@ void TCacheMGR::GetStats(CFuiCanva *cnv)
 	cnv->AddText(1,"Coast lines:");
 	sprintf_s(txt,128,"% 8d",globals->NbCLN);
 	cnv->AddText(STATS_NUM,txt,1);
+
+	cnv->AddText(1,"QGT draw:");
+	sprintf_s(txt,128,"% 8d",DrQGT);
+	cnv->AddText(STATS_NUM,txt,1);
+
+	cnv->AddText(1,"Sup draw:");
+	sprintf_s(txt,128,"% 8d",DrSUP);
+	cnv->AddText(STATS_NUM,txt,1);
+
+
   //------------------------------------------------
 }
 

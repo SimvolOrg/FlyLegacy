@@ -862,6 +862,10 @@ int CPanel::ReadNewGauge(SStream *str, Tag tag)
           { CRepeatPushPull *g = new CRepeatPushPull(this);
             return ProcessGauge(g,str); }
 
+				case GAUGE_THROTTLE_KNOB:
+          { CRepeatPushPull *g = new CRepeatPushPull(this);
+            return ProcessGauge(g,str); }
+
         case GAUGE_PUSH_PULL_KNOB:
           { C_PushPullKnobGauge *g = new C_PushPullKnobGauge(this);
             return ProcessGauge(g,str); }
@@ -1336,6 +1340,7 @@ void CPanel::Activate (void)
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,dx,dy,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
+	//glTexImage2D(GL_TEXTURE_2D,0,GL_COMPRESSED_SRGB_ALPHA,dx,dy,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
 	delete [] tex;
 	txPanl.rgba = 0;

@@ -284,6 +284,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   int     gz;                                 // Z number
   double grid;                                // Grid scale
   //-----Lighting control ------------------------------------------------
+	float     lSiz;															// Light Size
   U_INT     lTim;                             // Light timer
   CRunway  *lrwy;                             // Lighting runway
   char      swlt;                             // Light state
@@ -386,7 +387,6 @@ public:
   //--------DRAW Airport --------------------------------------------------
   void    Draw();
 	void		DrawGround();
-	void		DrawTextureGround();
 	void		DrawVBO(U_INT vbo,U_INT n);
   void    DrawLights(CCamera *cam);
   void    DrawGrid();
@@ -442,6 +442,7 @@ class CAirportMgr {
   //----Drawing parameters -----------------------------------------
   int             PavSize;                    // Pavement texture in feet
   double          PavArc;                     // Pavement size in arcsec
+	float						lSiz;												// Light size
 	//---- Nearest airport -------------------------------------------
 	CAptObject		 *nApt;												// Nearest airport
 	SPosition      *tko;												// Take off position
@@ -475,6 +476,7 @@ public:
   inline double       GetPaveFactor()         {return PavArc;}
   inline CPicQUAD    *GetIcon()               {return avion;}
 	inline void					SwapILSdraw()						{dILS ^= 1;}
+	inline float				LightSize()							{return lSiz;}
 	//-----------------------------------------------------------------
 	inline CAptObject  *GetNearestAPT()					{return nApt;}
 	inline ILS_DATA    *GetDepartingEND()				{return rdep;}

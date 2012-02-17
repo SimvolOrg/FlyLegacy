@@ -5036,6 +5036,7 @@ void CDatabaseManager::Init (void)
     db[DB_AIRPORT] = dbAirport;
     TRACE("APT     count %u",dbAirport->GetNumRecords());
   }
+	else		TRACE("USING SQL Generic Database");
   // Load ATS (Air Traffic System) Routing database
   TRACE("------------DB Loading ATS");
   CDatabase *dbAtsRoute = new CDatabase ("ATSROUTE.DBT");
@@ -5127,6 +5128,7 @@ void CDatabaseManager::Init (void)
  // MEMORY_LEAK_MARKER ("database_init")
   // load string translation for various database "type" field
   InitTypeDBTranslation();
+	TRACE("________ ALL DATABASES LOADED _____________");
 }
 
 void CDatabaseManager::Cleanup (void)

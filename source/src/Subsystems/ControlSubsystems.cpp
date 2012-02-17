@@ -846,6 +846,17 @@ EMessageResult  CThrottleControl::ReceiveMessage (SMessage *msg)
   
       case MSG_SETDATA:
           switch (msg->user.u.datatag) {
+						//-- Increase value -------------------
+						case 'incr':
+							Incr();
+							data->e_thro  = indn;
+							return MSG_PROCESSED;
+						//---Decrement value -------------------
+						case 'decr':
+							Decr();
+							data->e_thro  = indn;
+							return MSG_PROCESSED;
+						//--- Direct value ---------------------
             case 'indn' :
             case 'thro' :
               { float val     = float(msg->realData);

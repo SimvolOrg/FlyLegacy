@@ -281,6 +281,17 @@ bool aKeyAMFL(int kid,int key, int mod)
 {	int ne = globals->pln->GetEngNb();
   globals->jsm->SendGroup(JOY_GROUP_MIXT,'amfl',ne);
   return true; }
+//---Throttle up --------------------------------------------
+bool aKeyTRUP(int kid,int key, int mod)
+{	int ne = globals->pln->GetEngNb();
+	globals->jsm->SendGroup(JOY_GROUP_THRO,'incr',ne);
+  return true; }
+//---Throttle Down --------------------------------------------
+bool aKeyTRDN(int kid,int key, int mod)
+{	int ne = globals->pln->GetEngNb();
+	globals->jsm->SendGroup(JOY_GROUP_THRO,'decr',ne);
+  return true; }
+
 //---Autopilot Takeoff---------------------------------------
 bool aKeyTKOF(int kid,int key, int mod)
 {	globals->pln->aPIL->EnterTakeOFF(0);
@@ -472,6 +483,8 @@ void CAirplane::BindKeys()
 	km->Bind('amfr',aKeyAMFR,KEY_SET_ON);						// Mixture full rich
 	km->Bind('amfl',aKeyAMFL,KEY_SET_ON);						// Mixture full lean
 	km->Bind('tkof',aKeyTKOF,KEY_SET_ON);						// Autopilot Take-off
+	km->Bind('trdn',aKeyTRDN,KEY_REPEAT);						// throttle down
+	km->Bind('trup',aKeyTRUP,KEY_REPEAT);						// Throttle up
   //---Menu keys -------------------------------------------------------
   km->Bind('gwin',aKeyGWIN,KEY_SET_ON);           // Display GPS
   km->Bind('adet',aKeyADET,KEY_SET_ON);           // Display aircraft info
@@ -1152,7 +1165,7 @@ int	CUFOObject::UpdateNewPositionState(float dT, float spd)
     vect.x = cos (orientation.z + HALF_PI) * distance1;
     vect.y = sin (orientation.z + HALF_PI) * distance1;
     //
-    pos_to = AddVector (pos_from, vect);
+    pos_to = AddToPositionInFeet (pos_from, vect, globals->exf);
 
     pos_to.alt = pos_from.alt + sin (orientation.x) * distance2;
 
@@ -1524,7 +1537,9 @@ void COPALObject::RestOnGround()
   Plane->zeroForces ();
   //--- Clear wheels forces ------------------------------
   whl->ResetForce();
-	SetAltPosition(grn + GetPositionAGL());
+	SPosition p = globals->geop;
+	p.alt	= grn + GetPositionAGL();
+	SetPosition(p);
   PositionAGL();
   return;
 }
@@ -1870,7 +1885,7 @@ void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
   }
   //
   ifpos   = dist;
-  const SPosition pos_to = AddVector (pos_from, dist); // 
+  SPosition pos_to = AddToPositionInFeet (pos_from, dist, globals->exf); // 
   SetPosition (pos_to);
 }
 //---------------------------------------------------------------------------

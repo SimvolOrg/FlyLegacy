@@ -169,6 +169,7 @@ CTexture::CTexture()
 //------------------------------------------------------------------------
 void CTexture::LoadFromDisk(char *name,char tsp,int xs,int ys)
 { CArtParser img(0);
+	img.MacPic();
   TEXT_INFO xds;
   if (rgba) delete [] rgba;
   rgba = 0;

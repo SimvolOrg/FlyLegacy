@@ -31,8 +31,9 @@
 #include "../Include/FreeImage.h"
 #include "../Include/FileParser.h"
 #include "../Include/Fui.h"
-
-//==========================================================================
+//===================================================================================
+extern U_CHAR NameRES[];
+//===================================================================================
 U_CHAR Black[] = {0,0,0,0};
 //===================================================================================
 //  Ocean texture coordinates
@@ -326,8 +327,8 @@ CArtParser::CArtParser(char rs)
   fop     = 0;
   epd     = 0;
   afa     = 0xFF;             // Default alpha 
-  lay     = 0;                // No sea layer
-	rrv			= 1;								// Reverse row 
+	rrv			= 1;								// Reverse row
+	mac			= 0;
   //-----Transition file 1 --------------------------
   Tx1     = 0;
   Ms1     = 0;
@@ -355,6 +356,14 @@ CArtParser::~CArtParser()
   if (Tx2) delete [] Tx2;
   if (Tx3) delete [] Tx3;
   //-----------------------------------------------------
+}
+//--------------------------------------------------------------------
+//  Replace rgba
+//--------------------------------------------------------------------
+void CArtParser::ReplaceRGBA(U_INT *buf)
+{	if (rgb)		delete [] rgb;
+	rgb	= buf;
+	return;
 }
 //--------------------------------------------------------------------
 //  Set dimension parameters
@@ -386,12 +395,13 @@ void CArtParser::Abort(char *fn,char *er)
 int CArtParser::ConvertRGBA(U_CHAR alf)
 { //-----Extract the bitmap ----------------------------------
   RGBQUAD *pal  = FreeImage_GetPalette(ref);
-  if (pal)              return IndxRGBA(alf);
-  if (ffm == FIF_PNG)   return ByteRGBA(alf);
-  if (ffm == FIF_TIFF)  return ByteTIFF(alf);
-  if (ffm == FIF_BMP)   return PixlBGRO(alf);
-  if (ffm == FIF_JPEG)  return ByteRGBA(alf);
-  if (ffm == FIF_TARGA) return PixlRGBA(alf);
+  if (pal)												return IndxRGBA(alf);
+  if (ffm == FIF_PNG)							return ByteABGR(alf);
+  if (ffm == FIF_TIFF)						return ByteTIFF(alf);
+  if (ffm == FIF_BMP)							return PixlBGRO(alf);
+  if ((ffm == FIF_JPEG) && mac)		return ByteRGBA(alf);
+	if (ffm == FIF_JPEG)						return ByteABGR(alf);
+  if (ffm == FIF_TARGA)						return ByteABGR(alf);
   Abort("ConvertRGBA","Bad format");
   return 1;
 }
@@ -412,7 +422,7 @@ int CArtParser::PixlRGBA(U_CHAR alf)
   return 1;
 }
 //--------------------------------------------------------------------
-//  Pixel RGB Only Transfert (BMP invert BGR)
+//  Pixel RGB Only 
 //--------------------------------------------------------------------
 int CArtParser::ByteTIFF(U_CHAR alf)
 { // rgb has to be freed before any new allocation
@@ -427,9 +437,9 @@ int CArtParser::ByteTIFF(U_CHAR alf)
   for (U_INT z=0; z<(htr-1); z++)
   { BYTE *src = FreeImage_GetScanLine(ref,z);
     for (U_INT x=0; x<wid; x++)
-    { char  R   = *src++;
+    { char  B   = *src++;
       char  G   = *src++;
-      char  B   = *src++;
+      char  R   = *src++;
       U_INT pix = MakeRGBA(R,G,B,0);
       if (pix ) pix |= af1;
 			else			pix |= af2;
@@ -440,6 +450,7 @@ int CArtParser::ByteTIFF(U_CHAR alf)
 }
 //--------------------------------------------------------------------
 //  Pixel RGB Only Transfert (BMP invert BGR)
+//	The pic is also line inverted
 //--------------------------------------------------------------------
 int CArtParser::PixlBGRO(U_CHAR alf)
 { // rgb has to be freed before any new allocation
@@ -467,6 +478,7 @@ int CArtParser::PixlBGRO(U_CHAR alf)
 }
 //--------------------------------------------------------------------
 //  Byte Transfert
+//	Memory format:  RGB
 //--------------------------------------------------------------------
 int CArtParser::ByteRGBA(U_CHAR alf)
 { U_INT af1 = ((U_INT)0xFF << 24);
@@ -477,9 +489,9 @@ int CArtParser::ByteRGBA(U_CHAR alf)
       { U_CHAR *src = (U_CHAR*)FreeImage_GetScanLine(ref,z);
         for (U_INT x = 0; x < wid; x++) 
         { U_INT  pix  =  0;
-             pix |=  *src++;
-             pix |= (*src++ <<  8);
-             pix |= (*src++ << 16);
+             pix |= (*src++);					// Blue
+             pix |= (*src++ <<  8);		// Green
+             pix |= (*src++ <<  16);	// Red
 						 if (pix)		pix |= af1;
 						 else				pix |= af2;
             *dst++ = pix;
@@ -487,6 +499,30 @@ int CArtParser::ByteRGBA(U_CHAR alf)
       }
   return 1;
 }
+//--------------------------------------------------------------------
+//  Byte Transfert
+//	Memory format:  BGR
+//--------------------------------------------------------------------
+int CArtParser::ByteABGR(U_CHAR alf)
+{ U_INT af1 = ((U_INT)0xFF << 24);
+  U_INT af2 = (alf << 24);
+  rgb  = new U_INT[dim];
+  U_INT *dst = rgb;
+  for (U_INT z = 0; z < htr; z++)
+      { U_CHAR *src = (U_CHAR*)FreeImage_GetScanLine(ref,z);
+        for (U_INT x = 0; x < wid; x++) 
+        { U_INT  pix  =  0;
+             pix |= (*src++ << 16);		// Blue
+             pix |= (*src++ <<  8);		// Green
+             pix |= (*src++);					// Red
+						 if (pix)		pix |= af1;
+						 else				pix |= af2;
+            *dst++ = pix;
+        }
+      }
+  return 1;
+}
+
 //--------------------------------------------------------------------
 //  Byte Transfert color Indexed
 //--------------------------------------------------------------------
@@ -641,6 +677,7 @@ GLubyte  *CArtParser::LoadRaw(TEXT_INFO &txd,char opt)
   side    = GetSize(dim,rnm);
   txd.wd  = side;
   txd.ht  = side;
+	txd.dim	= dim;
   raw     = new GLubyte[dim];
   if ( 1 != pread (raw, dim, 1, fraw))          Abort(rnm,"Can't read(raw)");
   pclose (fraw);
@@ -847,7 +884,8 @@ GLubyte *CArtParser::MergeNight(GLubyte *tex)
 //-----------------------------------------------------------------------------
 GLubyte *CArtParser::GetRawTexture(TEXT_INFO &txd,char opt)
 { GLubyte   *tex = 0;
-  afa = 0;
+  afa			= 0;
+	txd.dim	= 0;
   tex = LoadRaw(txd,opt);
   if (0 == opa) return tex;
   MergeWater(tex);
@@ -1111,6 +1149,11 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
   iBox.zmin = 4096;
   iBox.xmax = 0;
   iBox.zmax = 0;
+	//--- Compressed format -------------------------------------
+	cTERRA		= GL_RGBA;
+	int pm;
+	GetIniVar("Sim","UseTerrainCompression",&pm);
+	if (pm)	cTERRA	= GL_COMPRESSED_RGBA;
   //------Init Counters ---------------------------------------
   NbCUT   = 0;
 	NbG3D		= 0;
@@ -1264,7 +1307,7 @@ GLubyte *CTextureWard::LoadMSK(char *msn,int side)
 //    char 3:   IJ indices compacted (I is X direction in super tile)
 //-----------------------------------------------------------------------------
 U_INT CTextureWard::KeyForTerrain(CTextureDef *txn,U_CHAR res)
-{ return ('T' << 24) | (res << 16) | txn->Key; }
+{ return ('T' << 24) | (res << 16) | txn->sKey; }
 //-----------------------------------------------------------------------------
 //  Make A Water Key
 //-----------------------------------------------------------------------------
@@ -1735,8 +1778,6 @@ GLuint CTextureWard::GetRepeatOBJ(TEXT_INFO &xds)
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,3);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-
-
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,xds.wd,xds.ht,0,GL_RGBA,GL_UNSIGNED_BYTE,xds.mADR);
@@ -1766,7 +1807,7 @@ GLuint CTextureWard::GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
 
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,dim,dim,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
+  glTexImage2D(GL_TEXTURE_2D,0,cTERRA,dim,dim,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
   glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
 
   //----Check for error -----------------------------------------

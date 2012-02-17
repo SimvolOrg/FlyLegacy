@@ -204,6 +204,7 @@ C_QTR::C_QTR(U_INT kf,TCacheMGR *tm)
   raster  = 0;
   NbReg   = 0;
   tr    = globals->Trace.Has(TRACE_TERRAIN_OP);
+	btx = btz	= 0;
   //---------LOAD AND DECODE THE QTR FILE -------------------------------
   LoadFile(kf);
   if (tcm) tcm->AddRegion(NbReg);
@@ -230,9 +231,9 @@ bool C_QTR::NoMoreUsed()
 //  ABORT FOR QTR PROBLEM
 //-----------------------------------------------------------------------
 void C_QTR::Abort(char *reason)
-{ TRACE("F.node %u R.node %u Type %c",cNode,rNode,tNode);     /// TEMPO
+{ //TRACE("F.node %u R.node %u Type %c",cNode,rNode,tNode);     /// TEMPO
   if (pod)	TRACE("File start %u size %u pos %u",pod->offset,pod->size,pod->pos);
-  gtfo("QTR File %s: %s ",name,reason);
+  WARNINGLOG("QTR File %s: %s ",name,reason);
   return;
 }
 //-----------------------------------------------------------------------
@@ -241,12 +242,12 @@ void C_QTR::Abort(char *reason)
 //-----------------------------------------------------------------------
 void C_QTR::LoadFile(U_INT idn)
 { _snprintf(name,64,"Data/%03X.QTR",idn);
-  if (!pexists (&globals->pfs, name))                     Abort("Not found");
+  if (!pexists (&globals->pfs, name))                     return Abort("Not found");
   pod = popen (&globals->pfs, name);
-  if (0 == pod)                                           Abort("Cant open");
-  if (1 != pread (&(head.nNodes),sizeof(U_SHORT),1,pod))  Abort("Cant read");
-  if (4 != pread (&(head.magic),sizeof(U_LONG) , 4,pod))  Abort("Cant read");
-  if (4 != pread (&(head.elev), sizeof(short) ,  4,pod))  Abort("Cant read");
+  if (0 == pod)                                           return Abort("Cant open");
+  if (1 != pread (&(head.nNodes),sizeof(U_SHORT),1,pod))  return Abort("Cant read");
+  if (4 != pread (&(head.magic),sizeof(U_LONG) , 4,pod))  return Abort("Cant read");
+  if (4 != pread (&(head.elev), sizeof(short) ,  4,pod))  return Abort("Cant read");
   if (tr && tcm) TRACE("TCM: -- Time: %04.2f ****Read QTR file %s ****",tcm->Time(),name);
   InitRegion(idn,head.width);
   //----Decode all nodes first -----------------------------
@@ -254,7 +255,7 @@ void C_QTR::LoadFile(U_INT idn)
   //----Decode Raster data ---------------------------------
   if (head.nBytes)
   { raster = new char[head.nBytes];                 // Allocate raster area
-    if (1 != pread (raster, head.nBytes ,1,pod))  Abort("Cant read");
+    if (1 != pread (raster, head.nBytes ,1,pod))  return Abort("Cant read");
   }
   pclose (pod);
   pod = 0;
@@ -269,7 +270,7 @@ void C_QTR::LoadFile(U_INT idn)
 //----------------------------------------------------------------------
 void C_QTR::InitRegion(U_INT idn,U_SHORT dim)
 { U_INT qtx = idn &   TC_032MODULO;     // QTR x index
-  U_INT qtz = idn >>  TC_BY32;   // QTR z index
+  U_INT qtz = idn >>  TC_BY32;					// QTR z index
   //---Compute base Detail Tile indices for this QTR -------
   btx = qtx << (9);                     // 512 DT per QTR 
   btz = (TC_032MODULO - qtz) << (9);    // 512 DT per QGT
@@ -302,26 +303,26 @@ QTR_REGION *C_QTR::NewRegion(U_SHORT cx,U_SHORT cz)
 //  Decode a node
 //---------------------------------------------------------------------
 void C_QTR::DecodeNode(PODFILE *p)
-{ if (1 != pread (&(nHD.Type),sizeof(char), 1,p))  Abort("Cant read");
-  if (1 != pread (&(nHD.cElv),sizeof(short),1,p))  Abort("Cant read");
+{ if (1 != pread (&(nHD.Type),sizeof(char), 1,p))  return Abort("Node Error");
+  if (1 != pread (&(nHD.cElv),sizeof(short),1,p))  return Abort("Node Error");
   switch (nHD.Type) {
     case TC_TYPE_BR:              // Branch node
-      if (4 != pread (&nBR,sizeof(short),4,p))      Abort("Cant read");
+      if (4 != pread (&nBR,sizeof(short),4,p))     return	Abort("Node Error");
       CutHeadRegion();
       cNode++;
       return;
     case TC_TYPE_LF:              // Leaf node with elevations
-      if (4 != pread (&nBR,sizeof(short),4,p))      Abort("Cant read");
+      if (4 != pread (&nBR,sizeof(short),4,p))     return	Abort("Node Error");
       StoreElevation();
       cNode++;
       return;
     case TC_TYPE_AR:
-      if (4 != pread (&aRS,sizeof(short),4,p))      Abort("Cant read");
+      if (4 != pread (&aRS,sizeof(short),4,p))     return Abort("Node Error");
       RasterRegion(TC_TYPE_AR);
       cNode++;
       return;
     case TC_TYPE_RR:
-      if (4 != pread (&aRS,sizeof(short),4,p))      Abort("Cant read");
+      if (4 != pread (&aRS,sizeof(short),4,p))      return Abort("Node Error");
       RasterRegion(TC_TYPE_RR);
       cNode++;
       return;
@@ -336,7 +337,7 @@ void C_QTR::RasterRegion(U_SHORT type)
 { QTR_REGION *reg = qREG.Pop();
   rNode = reg->node;
   tNode = 'R';
-  if (reg->node != cNode)  Abort("QTR Node not synch");
+  if (reg->node != cNode)  return Abort("QTR Node not synch");
   reg->Type = type;
   reg->elev = aRS.index;
   ClipRegion(reg);
@@ -346,11 +347,10 @@ void C_QTR::RasterRegion(U_SHORT type)
 //  Cut Head Region in four sub-regions of half size
 //--------------------------------------------------------------------
 void C_QTR::CutHeadRegion()
-{ char *erm = "No memory for sub-region";
-  QTR_REGION *hr = qREG.Pop();
+{ QTR_REGION *hr = qREG.Pop();
   rNode = hr->node;
   tNode = 'C';
-  if (hr->node != cNode)  Abort("Nodes not synch");
+  if (hr->node != cNode)  return Abort("Nodes not synch");
 //  if (tr) TRACE("    POP NODE %03d for subdivision",hr->node);
   U_SHORT dim   = hr->dim >> 1;
   U_SHORT cx  = hr->cx;
@@ -386,16 +386,15 @@ void C_QTR::CutHeadRegion()
 //  NOTE Region with Elevation 0 are just deleted
 //---------------------------------------------------------------------
 void C_QTR::StoreElevation()
-{ char *erm = "No memory for leaf region";
-  QTR_REGION *hr = qREG.Pop();
+{ QTR_REGION *hr = qREG.Pop();
   rNode = hr->node;
   tNode = 'E';
-  if (hr->node != cNode)  Abort("Nodes not synch");
+  if (hr->node != cNode)  return Abort("Nodes not synch");
   U_SHORT dim   = hr->dim >> 1;
   U_SHORT cx    = hr->cx;
   U_SHORT cz    = hr->cz;
   QTR_REGION *rg = 0;
-  if (dim == 0)           Abort("Region dim = 0");
+  if (dim == 0)           return Abort("Region dim = 0");
   //------Set the NW sub-region --------------
   if (nBR.data[0])
   { rg = NewRegion(cx,(cz + dim) & TC_DETMASK);
@@ -442,8 +441,7 @@ void C_QTR::StoreElevation()
 //  -Subdivide the REGION along X  axis accross QGT boundary
 //-----------------------------------------------------------------------
 void C_QTR::ClipRegion(QTR_REGION *reg)
-{ char *erm = "No memory for end region";
-  U_SHORT zdim = reg->dim;
+{ U_SHORT zdim = reg->dim;
   while (reg->dim > TC_DET_PER_QGT)
   { QTR_REGION *rgn = NewRegion(reg->cx,reg->cz);
     rgn->Type = reg->Type;
@@ -461,8 +459,7 @@ void C_QTR::ClipRegion(QTR_REGION *reg)
 //  Clip REGION on Z axis accross QGT boundary
 //----------------------------------------------------------------------
 void C_QTR::ClipRegionCZ(QTR_REGION *reg,U_SHORT dim)
-{ char *erm = "No memory for end region";
-  while (dim > TC_DET_PER_QGT)
+{ while (dim > TC_DET_PER_QGT)
   { QTR_REGION *rgn = NewRegion(reg->cx,reg->cz);
     rgn->Type = reg->Type;
     rgn->dim  = TC_DET_PER_QGT;
@@ -604,8 +601,8 @@ void C_QTR::GetQGTindices(int xk,int zk,U_SHORT *ex,U_SHORT *ez)
   U_SHORT bz  = (btz >> TC_BY32);          // Base QGT_z 
   U_SHORT dx = (xk - bx) & TC_0512MOD;
   U_SHORT dz = (zk - bz) & TC_0512MOD;
-  if (dx >= 16) Abort("cx Index error");
-  if (dx >= 16) Abort("cz Index error");
+	if (dx >= 16) {Abort("cx Index error"); dx = 0;}
+	if (dz >= 16) {Abort("cz Index error");	dz = 0;}
   *ex = dx;
   *ez = dz;
   return;
@@ -965,7 +962,7 @@ int C_STile::Read (SStream *stream, Tag tag)
           U_CHAR j1   = name[8] - '0';              // I index
           U_CHAR j2   = name[9] - '0';              // J index
           U_INT key   = (k0 << 12)|(k1 << 8)|(j1 << 4)|(j2);
-          txn->Key    = key;
+          txn->sKey   = key;
           //----Build the Hexa name -----------------------------
           U_CHAR *org = (U_CHAR*)name;
           U_CHAR *dst = (U_CHAR*)txn->Hexa;
