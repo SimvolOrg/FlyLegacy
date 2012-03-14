@@ -508,7 +508,7 @@ void CDatabaseWPT::DecodeRecord (CWptLine *slot)
 { U_LONG    n;
   double    d;
   SPosition pos;
-  slot->SetName(buf+14);
+  slot->SetSlotName(buf+14);
   slot->SetWaid("INT");
   slot->SetWcty(buf+40);
   slot->SetWsta(buf+43);
@@ -530,7 +530,7 @@ void CDatabaseWPT::DecodeRecord (CWptLine *slot)
   //------------------------------------------------------
   //  Normalize name of waypoint. Eliminate ( and )
   //------------------------------------------------------
-  char *txt = slot->GetName();
+  char *txt = slot->GetSlotName();
   if  (*txt == '(')  strcpy(txt,txt+1);
   char *end = strrchr(txt,')');
   if (end) *end = 0;
@@ -624,8 +624,8 @@ void CDatabaseCTY::DecodeRecord (CCountry *cty)
 //  Country decoder
 //-----------------------------------------------------------------------------------
 void CDatabaseCTY::DecodeRecord (CSlot *slot)
-{ slot->SetName(buf+3);
-  slot->SetKey (buf+0);
+{ slot->SetSlotName(buf+3);
+  slot->SetSlotKey (buf+0);
   return;
 }
 ///==================================================================================
@@ -648,8 +648,8 @@ void CDatabaseSTA::DecodeRecord (CState *sta)
 //  Decode in a slot
 //----------------------------------------------------------------------
 void CDatabaseSTA::DecodeRecord (CStaLine *slot)
-{ slot->SetName(buf+11);
-  slot->SetKey(buf);
+{ slot->SetSlotName(buf+11);
+  slot->SetSlotKey(buf);
   slot->SetCTY(buf+5);
   return;
 }
@@ -724,7 +724,7 @@ void CDatabaseNAV::DecodeRecord (CNavLine *slot)
 { U_LONG    n;
   double    d;
   SPosition pos;
-  slot->SetName(buf+19);
+  slot->SetSlotName(buf+19);
   slot->SetVaid(buf+14);
   slot->SetVcty(buf+83);
   slot->SetVsta(buf+86);
@@ -934,7 +934,7 @@ void  CDatabaseAPT::DecodeRecord (CAptLine *slot)
   double  d;
   SPosition pos;
   //----------------------------------------------
-  slot->SetName(buf+23);              // Name
+  slot->SetSlotName(buf+23);    // Name
   slot->SetAica(buf+18);        // ICAO ident
   slot->SetIfaa(buf+14);        // FAA  ident
   slot->SetActy(buf+63);        // Country
@@ -2073,7 +2073,7 @@ void CAirport::SaveProfile()
   if (0 == mod) return;
   sprintf_s(path,d,"Runways/%s.RLP",fn);
   //---Open a stream file -----------------------------------
-  strncpy (s.filename, path,511);
+  strncpy (s.filename, path,FNAM_MAX);
   strncpy (s.mode, "w",3);
   if (!OpenStream (&s)) {WARNINGLOG("CAptObject : can't write %s", path); return;}
   WriteTag('bgno', "========== BEGIN FILE ==========" , &s);
@@ -2744,7 +2744,7 @@ CDbCacheMgr::CDbCacheMgr(void)
   //---Check for SQL usage -------------------------------
   gSQL = globals->sqm->SQLgen();
 	//--- Enter in dispatching -----------------------------
-	globals->Disp.Enter(this,PRIO_DBCACHE);
+	globals->Disp.Enter(this, PRIO_DBCACHE, DISP_EXCONT, 0);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -4152,8 +4152,8 @@ void CDbCacheMgr::NDBByOffset(CDataBaseREQ *req)
 //  -If no country key is needed then the record is OK
 //-------------------------------------------------------------------------
 bool CDbCacheMgr::FilterCountry(CSlot *slot,CDataBaseREQ *req)
-{ if (!req->NeedCTY())                               return true;
-  if (strcmp(req->GetCTYkey(),slot->GetKey()) == 0)  return true;
+{ if (!req->NeedCTY())																		return true;
+  if (strcmp(req->GetCTYkey(),slot->GetSlotKey()) == 0)		return true;
   return false;
 }
 //-------------------------------------------------------------------------

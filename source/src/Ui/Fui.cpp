@@ -31,6 +31,7 @@
 #include "../Include/Fui.h"
 #include "../Include/FuiUser.h"
 #include "../Include/FuiParts.h"
+#include "../Include/FuiOption.h"
 #include "../Include/Utility.h"
 #include "../Include/Globals.h"
 #include "../Include/CursorManager.h"
@@ -188,7 +189,6 @@ int CFuiComponent::Read (SStream *stream, Tag tag)
   case 'ID  ':
   case 'id  ':
     ReadTag (&id, stream);
-    TagToString(desi,id);
     return TAG_READ;
   case 'bind':
     { int i;
@@ -275,6 +275,7 @@ void CFuiComponent::ReadFinished (void)
 { font = FuiFont (fontTag);
   fnts = (CFont*)font->font;
   MakeSurface ();
+	TagToString(desi,id);
   return;
 }
 //--------------------------------------------------------------------------
@@ -330,6 +331,7 @@ void CFuiComponent::SetFont (Tag fontTag)
 void CFuiComponent::MakeSurface ()
 { surface = FreeSurface(surface);
   surface = CreateSurface (w, h);
+	if (0 == surface)	return;
   surface->xScreen = xParent + x;
   surface->yScreen = yParent + y;
   EraseSurfaceRGBA (surface,0);
@@ -1121,6 +1123,7 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
   mini = zoom = close = 0;
   mPop      = 0;
   limit     = lim;
+	modal			= 0;
   //------Init the decoration items---------------------------------
   InitFBox(fBox,MSIZ);
 	edge			= 0;
@@ -1163,7 +1166,8 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
 //  Destroy the window
 //-------------------------------------------------------------------
 CFuiWindow::~CFuiWindow (void)
-{ std::deque<CFuiComponent*>::iterator i;
+{ if (modal)	modal->ModalClose();
+	std::deque<CFuiComponent*>::iterator i;
   for (i=childList.begin(); i!=childList.end(); i++) 
   { CFuiComponent *cp = (*i);
     delete (cp);
@@ -1230,7 +1234,6 @@ int CFuiWindow::Read (SStream *stream, Tag tag)
   case 'layr':
     { int i;
       ReadInt (&i, stream);
-      layer = (EFuiLayer) i;
     }
     return TAG_READ;
 
@@ -1288,10 +1291,11 @@ void CFuiWindow::SetBackPicture(char *fn)
 //----------------------------------------------------------------------
 //  Helper to add a component
 //----------------------------------------------------------------------
-void CFuiWindow::AddChild(Tag idn,CFuiComponent *cmp,char *txt,U_INT p)
+void CFuiWindow::AddChild(Tag idn,CFuiComponent *cmp, char *txt, U_INT p, U_INT c)
 { cmp->SetId(idn);
 	cmp->SetProperty(p);
   cmp->ReadFinished();
+	if (c)		cmp->SetColour(c);
   if (txt)  cmp->SetText(txt);
   childList.push_back(cmp);
   return;
@@ -1471,92 +1475,6 @@ void CFuiWindow::PostRequest(CDataBaseREQ *req)
   globals->dbc->PostRequest(req);
   return;
 }
-//----------------------------------------------------------------------
-//  Helper to create Detailled VOR windows 
-//----------------------------------------------------------------------
-bool  CFuiWindow::CreateVORwindow(CmHead *obj,U_INT No,int lim)
-{ CFuiNavDetail *wind = 0;
-  wind = (CFuiNavDetail *)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_NAVAID,lim);
-  if (0 == wind)    return true;
-  wind->Initialize(obj,VOR,No);
-  return true;
-}
-//----------------------------------------------------------------------
-//  Helper to create Detailled NDB windows 
-//----------------------------------------------------------------------
-bool  CFuiWindow::CreateNDBwindow(CmHead *obj,U_INT No,int lim)
-{ CFuiNavDetail *wind = 0;
-  wind = (CFuiNavDetail *)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_NAVAID,lim);
-  if (0 == wind)    return true;
-  wind->Initialize(obj,NDB,No);
-  return true;
-}
-//----------------------------------------------------------------------
-//  Helper to create Detailled Airport windows short version
-//  lim = 0 => Flight Plan detail
-//  lim = 1 => Short version
-//  No = waypoint No
-//----------------------------------------------------------------------
-bool  CFuiWindow::CreateAPTwindow(CmHead *obj,U_INT No,int lim)
-{ CFuiAptDetail *wind = 0;
-  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_AIRPORT,lim);
-  if (0 == wind)  return true;
-  wind->Initialize(obj,APT,No);
-  return true;
-}
-//----------------------------------------------------------------------
-//  Helper to create Detailled Airport windows with runway light profile
-//  No = waypoint No
-//----------------------------------------------------------------------
-bool  CFuiWindow::CreateAPTwinLIT(CmHead *obj,U_INT No,int lim)
-{ CFuiAptDetail *wind = 0;
-  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_AIRPORT,lim);
-  if (0 == wind)  return true;
-  wind->SetRunwayVersion();
-  wind->Initialize(obj,APT,No);
-  return true;
-}
-//----------------------------------------------------------------------
-//  Helper to create Small Detailled windows on an object
-//----------------------------------------------------------------------
-bool CFuiWindow::SmallDetailObject(CmHead *obj,U_INT No)
-{ QTYPE type        = obj->GetActiveQ();
-  switch (type) {
-    case VOR:
-      return CreateVORwindow(obj,No,1);
-
-    case NDB:
-      return CreateNDBwindow(obj,No,1);
-
-    case APT:
-      return CreateAPTwindow(obj,No,1);
-  }
- return true;
-}
-//----------------------------------------------------------------------
-//  Helper to create Map Detailled windows on an object
-//----------------------------------------------------------------------
-bool CFuiWindow::OpenWinDET(CmHead *obj,U_INT No)
-{ QTYPE type        = obj->GetActiveQ();
-  switch (type) {
-    //---Create a short version of detailled nav ------
-    case VOR:
-      return CreateVORwindow(obj,No,1);
-    //---Create a short version of detailled ndb ------
-    case NDB:
-      return CreateNDBwindow(obj,No,1);
-    //---Create a full version of detailled ndb ------
-    case APT:
-			{	CAirport *apt = (CAirport*)obj;
-				if (!apt->UnderEdit())   CreateAPTwinLIT(obj,No,0);
-				return true;
-			}
-		//--- Init for moving --------------------------
-		case WPT:
-			return true;
-  }
- return true;
-}
 //----------------------------------------------------------------------------------
 //  Inside mouse click
 //  Helper to start moving an image described by the S_IMAGE structure
@@ -1656,6 +1574,13 @@ void CFuiWindow::ShowMe()
 //--------------------------------------------------------------------------------
 void CFuiWindow::Close()
 {	state = FUI_WINDOW_CLOSED; }
+//--------------------------------------------------------------------------------
+// Close modal window
+//--------------------------------------------------------------------------------
+void CFuiWindow::ModalClose()
+{	MoWind = 0;
+	state = FUI_WINDOW_CLOSED;
+}
 //-------------------------------------------------------------------------------
 //	Call to check profile
 //-------------------------------------------------------------------------------
@@ -1851,6 +1776,27 @@ int CFuiWindow::SwapGroupButton(Tag btn, char *zbt)
 { *zbt ^= 1;
    gBox->SetChildText(btn,ObjBTN[*zbt]);
    return btnLOK[*zbt];
+}
+//------------------------------------------------------------------------------
+//	Create a modal search file box
+//------------------------------------------------------------------------------
+void CFuiWindow::CreateFileBox(FILE_SEARCH *fpm)
+{	if (modal)					return;
+	CFuiFileBox *fbox = new CFuiFileBox(this,fpm);
+	modal							= fbox;
+	fbox->MoveTo(200,200);
+	return;
+}
+//------------------------------------------------------------------------------
+//	Create a modal Dialog box
+//------------------------------------------------------------------------------
+void CFuiWindow::CreateDialogBox(char *ttl, char *msg)
+{	if (modal)					return;
+	CFuiErrorMSG *win = new CFuiErrorMSG(this);
+	modal							= win;
+	win->Display(msg);
+	win->MoveTo(300,200);
+	return;
 }
 //------------------------------------------------------------------------------
 /// Override check for mouse hit to account for window decorations
@@ -4265,9 +4211,10 @@ void CFuiGroupBox::MoveParentTo (int xp, int yp)
 //----------------------------------------------------------------------
 //  Helper to add a component
 //----------------------------------------------------------------------
-void CFuiGroupBox::AddChild(Tag idn,CFuiComponent *cmp,char *txt)
+void CFuiGroupBox::AddChild(Tag idn,CFuiComponent *cmp,char *txt, U_INT c)
 { cmp->SetId(idn);
   cmp->ReadFinished();
+	if (c) cmp->SetColour(c);
   cmp->SetText(txt);
   childList.push_back(cmp);
   return;
@@ -4283,8 +4230,7 @@ void CFuiGroupBox::Draw (void)
   DrawFBox(fBox,RSIZ);
   // Draw child components
   for (i=childList.begin(); i!=childList.end(); i++) {
-    CFuiComponent* c = *i;
-    c->Draw();
+    (*i)->Draw();
   }
   CFuiComponent::Draw ();
 }
@@ -4406,13 +4352,13 @@ CFuiList::CFuiList (int x, int y, int w, int h, CFuiComponent *win)
   input       = 0;
   autowidth   = 0;
   rowSelected = 0;
-
+	cMark = 0;
   vsBOX = NULL;
   hzBOX = NULL;
   //-- init decorations ---------------
   InitFBox(fBox,RSIZ);
   //-----------------------------------
-  cTxtNormal  = MakeRGB (0,    0, 0);
+  colText     = MakeRGB (0,    0, 0);
   cTxtHLight  = MakeRGB (0,    0, 255);
   cBakHLight  = MakeRGB (200,  0, 200);
   cBackTitle  = MakeRGB (105,243, 232);
@@ -4425,7 +4371,7 @@ CFuiList::CFuiList (int x, int y, int w, int h, CFuiComponent *win)
 //  Destroy the window list 
 //-------------------------------------------------------------------------
 CFuiList::~CFuiList()
-{
+{ SAFE_DELETE(cMark);
   SAFE_DELETE(hzBOX);
   SAFE_DELETE(vsBOX);
 }
@@ -4484,12 +4430,9 @@ void CFuiList::ReadFinished (void)
   halfH = (h >> 1);          // Half height
   CreateFBox(this,fBox,x,y,w,h);
   //--------- Get text colour ----------------------------------
-  cTxtNormal  = tw->GetColour ("TEXT");
+  colText     = tw->GetColour ("TEXT");
   cTxtHLight  = tw->GetColour ("TEXTHILITE");
   cBakHLight  = tw->GetColour ("HILITE");
-
-  // Get optional DONT_DRAW_BACKGROUND flag
-  noBackground = tw->GetFlag ("DONT_DRAW_BACKGROUND");
 
   // Create Scrollbar object if required
   if(hscr) hzBOX = new CFuiScrollBar(0, h, w, h, this, false);
@@ -4506,6 +4449,8 @@ void CFuiList::ReadFinished (void)
   Load_Bitmap (cMark);
   NbLin   = h / hLine;
   //--------------------------------------------
+	//ChangeFont(&globals->fonts.ftradi9);
+	//fnts = (CFont*)font->font;
   return;
 }
 //-------------------------------------------------------------------------
@@ -4558,12 +4503,21 @@ short CFuiList::IncLineHeight(short ht)
   NbLin  = h / hLine;
   return NbLin;
 }
+//-------------------------------------------------------------------------
+//  Set Transparent mode
+//-------------------------------------------------------------------------
+void	CFuiList::SetTransparentMode()
+{	prop |= FUI_TRANSPARENT;
+	CFuiComponent *cmp = fBox[BAKW];
+	if (cmp) delete cmp;
+	fBox[BAKW] = 0;
+	return;
+}
 //--------------------------------------------------------------------------
 //  Change parent position for all component of this box
 //--------------------------------------------------------------------------
 void CFuiList::MoveParentTo (int xp, int yp)
-{
-  CFuiComponent::MoveParentTo (xp, yp);
+{ CFuiComponent::MoveParentTo (xp, yp);
   int nx  = surface->xScreen;
   int ny  = surface->yScreen;
   // Update all decorations
@@ -4619,7 +4573,7 @@ void CFuiList::ClearBand(int ln,int nbl)
 //  Set selection if needed and text color
 //----------------------------------------------------------------------------------
 void CFuiList::NewLine(short ln)
-{ cText   = cTxtNormal;
+{ cText   = colText;
   bool sl = (ln >= aROW) && (ln < bROW);
   if (!sl)    return;  
   DrawSelection(ln,cBakHLight);
@@ -5998,7 +5952,7 @@ CFuiPage::CFuiPage (int x, int y, FL_MENU *sm, CFuiComponent *win,short sl)
   halfH   = (h >> 1);          // Half height
   //---------------------------------------
   cBackPane   = MakeRGB (130,153,196);
-  cTxtNormal  = MakeRGB (0, 0, 0);
+  colText     = MakeRGB (0, 0, 0);
   cTxtHLight  = MakeRGB (0, 0, 255);
   cBakHLight  = MakeRGB (200, 0, 200);
   grey        = MakeRGB ( 30, 30, 30);
@@ -6037,10 +5991,10 @@ void CFuiPage::Initialize ()
 { MakeSurface ();
   tw = globals->fui->GetThemeWidget (widgetTag, wName);
   //---------Text color ---------------------------------------
-  cTxtNormal  = tw->GetColour ("TEXT");
+  colText     = tw->GetColour ("TEXT");
   cTxtHLight  = tw->GetColour ("TEXTHILITE");
   cBakHLight  = tw->GetColour ("HILITE");
-  cText[0]    = cTxtNormal;
+  cText[0]    = colText;
   cText[1]    = cTxtHLight;
   cBack[0]    = cBackPane;
   cBack[1]    = cBakHLight;

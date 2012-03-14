@@ -401,7 +401,7 @@ CSimulatedObject::CSimulatedObject (void)
   nfo = NULL; lod = NULL;
  *nfoFilename = 0;
  //--- Enter in Dispatcher ----------------------------------------
- globals->Disp.Enter(this,PRIO_PLANE);
+ globals->Disp.Enter(this, PRIO_PLANE, DISP_EXCONT, 0);
 }
 
 CSimulatedObject::~CSimulatedObject (void)

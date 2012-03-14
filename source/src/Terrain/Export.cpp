@@ -1061,9 +1061,7 @@ void CExport::Export3DMlodQ(char * name, int n)
   float    bot = Mod->GetGround();
   C3DPart *prt = 0;
   for (prt = Mod->PopPart(n); prt != 0; prt = Mod->PopPart(n))
-  { prt->SetTop(top);
-    prt->SetBot(bot);
-    globals->sqm->Write3Dmodel(name,prt);
+  { globals->sqm->Write3Dmodel(name,prt,top, bot);
     delete prt;
   }
   return;

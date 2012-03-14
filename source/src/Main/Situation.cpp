@@ -96,6 +96,8 @@ CDispatcher::CDispatcher()
 	{	DSP_EXEC *tab = slot + k;
 		tab->lock		= 0;
 		tab->obj  	= 0;
+		tab->exec   = 0;
+		tab->draw   = 0;
 	}
 }
 //-------------------------------------------------------------------
@@ -104,12 +106,23 @@ CDispatcher::CDispatcher()
 void	CDispatcher::TimeSlice(float dT, U_INT frame)
 {	for (int k=0; k<= PRIO_OTHERS; k++)
 		{	CExecutable *ex = slot[k].obj;
-			if (0 == ex)			continue;
-			if (slot[k].lock)	continue;
-			if (0 == slot[k].obj->TimeSlice(dT,frame)) return;
+			if (0 == ex)						continue;
+			if (slot[k].lock)				continue;
+			slot[k].obj->TimeSlice(dT,frame);
+			if (slot[k].exec == 0)	return;			
 		}
 	return;
 }
+//-------------------------------------------------------------------
+//	 Draw
+//-------------------------------------------------------------------
+void	CDispatcher::Draw(char p)
+{	if (slot[p].draw == 0)			return;
+	if (slot[p].obj  == 0)			return;
+	slot[p].obj->Draw();
+	return;
+}
+
 ///=====================================================================================
 /// CRandomEvents
 ///=====================================================================================
@@ -292,6 +305,7 @@ bool sKeySLDN (int id, int code, int mod)
 //----------------------------------------------------------------------------
 bool sKeySREO(int id, int code, int mod)
 { // Get current user vehicle orientation
+	if (!globals->pln)	return false;
   CVehicleObject *veh = globals->pln;
   CVector v;
   v.x = v.y = v.z = 0.0;
@@ -320,7 +334,7 @@ CSlewManager::CSlewManager (void)
 	//--- Bind all  keys -------------------------------------------
   BindKeys();
 	//--- Enter in Dispatcher --------------------------------------
-	globals->Disp.Enter(this,PRIO_SLEWMGR);
+	globals->Disp.Enter(this, PRIO_SLEWMGR, DISP_EXCONT, 0);
 }
 //------------------------------------------------------------------------
 //  Destroy resources
@@ -490,6 +504,7 @@ void CSlewManager::RabbitMove(float dT)
 //------------------------------------------------------------------------
 int CSlewManager::TimeSlice(float dT,U_INT f)
 {	veh = globals->pln;
+	if (0 == veh)		return 0;
   switch (mode) {
     case SLEW_STOP:
         break;
@@ -924,16 +939,10 @@ void CSituation::Draw ()
   //----Use standard camera setting for drawing ---------------------
   cam->StartShoot(dTime);
 	cam->CameraReferential();
-  //----Draw sky background -----------------------------------------
-	if (globals->trn)		globals->trn->Draw();
-	//--------------------------------------------------------------------
-  // Draw the terrain (ground textures, airports, scenery models, etc.)
-  //--------------------------------------------------------------------
+	//--- Draw Terrain, then upper priority ---------------------------
+	globals->Disp.Draw(PRIO_TERRAIN);
+	globals->Disp.Draw(PRIO_ABSOLUTE);
 
-	else 
-	{	globals->skm->PreDraw();
-		globals->tcm->Draw();                     //  Terrain cache
-	}
 	//---Restore everything ---------------------------------------
   cam->StopShoot();
   // Check for an OpenGL error

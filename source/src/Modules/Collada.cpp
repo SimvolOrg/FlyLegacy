@@ -184,6 +184,7 @@ ColladaParser::~ColladaParser()
     delete (nod);
   }
 	nKeys.clear();
+	//--------------------------------------------------
 }
 //--------------------------------------------------------------------
 //  Back up file position and return false

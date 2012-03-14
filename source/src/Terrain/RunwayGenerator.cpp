@@ -302,7 +302,7 @@ void CRwyGenerator::ComputeElevation(SPosition &pos)
 { pos.lon += Org.lon;
   pos.lat += Org.lat;
   GroundSpot lnd(pos.lon,pos.lat);
-  pos.alt  = globals->tcm->SetGroundAt(lnd);
+  pos.alt  = globals->tcm->GetGroundAt(lnd);
   return;
 }
 //---------------------------------------------------------------------------------
@@ -626,7 +626,7 @@ void CRwyGenerator::SegmentBase(int k)
   vsw.VT_Y      = yl + ppy;
   psw.lon       = vsw.VT_X + Org.lon;
   psw.lat       = vsw.VT_Y + Org.lat;
-  globals->tcm->SetGroundAt(psw);
+  globals->tcm->GetGroundAt(psw);
   vsw.VT_Z      = psw.alt - Org.alt;
   //--Compute SE base --------------------------------------
   bse           = vse;                              // Save previous
@@ -634,7 +634,7 @@ void CRwyGenerator::SegmentBase(int k)
   vse.VT_Y      = yl - ppy;
   pse.lon       = vse.VT_X + Org.lon;
   pse.lat       = vse.VT_Y + Org.lat;
-  globals->tcm->SetGroundAt(pse);
+  globals->tcm->GetGroundAt(pse);
   vse.VT_Z      = pse.alt - Org.alt;
   //--Compute Mid point elevation --------------------------
   RwyMID[k].pz  = (vsw.VT_Z + vse.VT_Z) * 0.5;

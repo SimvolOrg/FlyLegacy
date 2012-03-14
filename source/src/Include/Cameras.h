@@ -65,6 +65,21 @@ struct RGBA_COLOR
 //---Combination ------------------------------------------------
 #define CAM_IS_SPOT  (CAM_SIDE_ROT + CAM_VERT_ROT + CAM_MAY_MOVE + CAM_MAY_ZOOM)
 //===================================================================================
+//   Class Tracker for interractive windows.
+//		This class is used in conjonction with camera to pick object on screen
+//		from mouse click
+//		Derived class must supply the Draw() and OneSeletion() functions
+// 
+//====================================================================================
+class Tracker {
+	//--- ATTRIBUTS ----------------------------------------------
+	//--- METHODS ------------------------------------------------
+public:
+	Tracker() {;}
+	virtual void		DrawMarks()							{;}
+	virtual void    OneSelection(U_INT No)	{;}
+};
+//===================================================================================
 // Abstract class common to all cameras.  All subclasses must implement the
 //   mandatory UpdateCamera method
 //===================================================================================
@@ -151,6 +166,7 @@ public:
 	//--- Check camera type --------------------------------------
 	bool IsOf(Tag t) {return (GetCameraType() == t);}
   //------------------------------------------------------------
+	void		GoToPosition(SPosition &dst);
 	void		ToggleBox();
   void    OffsetFrom(SPosition &pos,CVector &v);
   void    AbsoluteFeetPosition(CVector &p);
@@ -180,43 +196,44 @@ public:
 	void		RoundUp();
 	void		RoundDown();
   //------------------------------------------------------------
-  inline Tag   NextCamera()   {return cNext;}
-  inline Tag   PrevCamera()   {return cPrev;}
-  inline Tag   GetIdent()     {return cIden;}
-  inline void  SetNext(Tag t) {cNext = t;}
-  inline void  SetPrev(Tag t) {cPrev = t;}
-  inline SVector *GetOffset() {return &offset;}
-  inline void  SetOffset(SVector &v) {offset = v;}
-  inline void  SetUpDir(SVector &u)  {Up = u;}
+  Tag   NextCamera()   {return cNext;}
+  Tag   PrevCamera()   {return cPrev;}
+  Tag   GetIdent()     {return cIden;}
+  void  SetNext(Tag t) {cNext = t;}
+  void  SetPrev(Tag t) {cPrev = t;}
+  SVector *GetOffset() {return &offset;}
+  void  SetOffset(SVector &v) {offset = v;}
+  void  SetUpDir(SVector &u)  {Up = u;}
   //------------------------------------------------------------
-  inline void  SetLock()            {Lock = 1;}
-  inline void  SetLock(char k)      {Lock = k;}
+  void  SetLock()            {Lock = 1;}
+  void  SetLock(char k)      {Lock = k;}
 	//------------------------------------------------------------
-  inline bool  IsLocked()           {return (Lock != 0);}
-	inline float GetRate()						{return Rate;}
+  bool  IsLocked()           {return (Lock != 0);}
+	float GetRate()						{return Rate;}
+	void  SetAngles(SVector &a)	{theta = a.x; phi = a.y;}
   //------------------------------------------------------------
-	inline double GetAzimuth()		{return orient.z;}
-	inline double GetElevation()	{return orient.x;}
-	inline double	GetTheta()					{return theta;}
-	inline double GetPhi()						{return phi;}
-  inline float  GetXofs()           {return offset.x;}
-  inline float  GetYofs()           {return offset.y;}
-  inline float  GetZofs()           {return offset.z;}
-  inline double GetRange()          {return range;}
-  inline void   SetMaxRange(double m){rmax  = m;}
-  inline void   GetUpVector (SVector &v) {v = Up;}
-  inline double GetTargetLon()      {return Tgt.lon;}
-  inline double GetTargetLat()      {return Tgt.lat;}
-  inline double GetTargetAlt()      {return Tgt.alt;}
-  inline float  GetFOV ()           {return fov;}
-  inline SVector   &CamOffset()     {return offset;}
-	inline void   GetOffset (SVector &v)            {v = offset;}
-  inline void   GetOrientation (SVector &v)       {v = orient;}
+	double GetAzimuth()		{return orient.z;}
+	double GetElevation()	{return orient.x;}
+	double	GetTheta()					{return theta;}
+	double GetPhi()						{return phi;}
+  float  GetXofs()           {return offset.x;}
+  float  GetYofs()           {return offset.y;}
+  float  GetZofs()           {return offset.z;}
+  double GetRange()          {return range;}
+  void   SetMaxRange(double m){rmax  = m;}
+  void   GetUpVector (SVector &v) {v = Up;}
+  double GetTargetLon()      {return Tgt.lon;}
+  double GetTargetLat()      {return Tgt.lat;}
+  double GetTargetAlt()      {return Tgt.alt;}
+  float  GetFOV ()           {return fov;}
+  SVector   &CamOffset()     {return offset;}
+	void   GetOffset (SVector &v)            {v = offset;}
+  void   GetOrientation (SVector &v)       {v = orient;}
 	//------------------------------------------------------------
-	inline	char	GetINTMOD()					{return intcm;}
-	inline  char  GetEXTMOD()					{return extcm;}
-	inline  void	IncT1()							{T1++;}
-	inline  void  IncT2()							{T2++;}
+	char	GetINTMOD()					{return intcm;}
+	char  GetEXTMOD()					{return extcm;}
+	void	IncT1()							{T1++;}
+	void  IncT2()							{T2++;}
   //---CAMERA ATTRIBUTES ---------------------------------------
 protected:
 	float			Rate;				// Rotation rate (1/4 sec unit)
@@ -281,22 +298,27 @@ protected:
 //====================================================================================
 class CRabbitCamera : public CCamera {
 	//--- ATTRIBUTES ---------------------------------------------
+	GLuint				bHit[8];									// Hit buffer
+	//------------------------------------------------------------
 	CAMERA_CTX    *ctx;										  // Original context
 	//--- Picking parameters -------------------------------------
 	int		px;																// Screen cursor
 	int		py;																// Screen cursor
+	Tracker    *trak;												// Tracker
+	CFuiWindow *twin;												// Associated Windows to warn
 	//--- METHODS ------------------------------------------------
 public:
 	CRabbitCamera();
  ~CRabbitCamera();
-  //-------------------------------------------------------------
-	void		SetPicking(int x,int y);
+  //------------------------------------------------------------
+	void		SetTracker(Tracker *t, CFuiWindow *w);
 	void		StartPicking();
-	void		StopPicking()        {pick = 0;}
 	void		RabbitLeft();
 	void		RabbitRight();
 	void		RabbitMoveTo(SPosition *pos);
 	void		TurnRabbit(SVector v);
+	//-------------------------------------------------------------
+	bool		PickObject(U_INT mx, U_INT my);
 	//-------------------------------------------------------------
 	void	UpdateCamera (SPosition tpos, SVector tori,float dT);
  	//-------------------------------------------------------------
@@ -645,7 +667,6 @@ public:
  //-------------------------------------------------------------
  inline void  PreDraw() {if (cam) cam->DebDrawFBOinPerspective(wd,ht);}
 };
-
 //===================================================================================
 // DLL camera
 //

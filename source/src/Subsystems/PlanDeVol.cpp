@@ -348,7 +348,7 @@ void CheckChapter::CreateNode(SStream *st,int No)
   ReadString(dst,1023,st);
   //----Add text  ---------------------
   nod->FixeIt();
-  nod->SetName(dst);
+  nod->SetSlotName(dst);
   nod->SetTotLine(nbl);
   vLIN.push_back(nod);
   if (0 == No) pLIN = nod;
@@ -600,7 +600,7 @@ SMessage *PlaneCheckList::GetSMessage(U_INT k)
 //===============================================================================
 //	CWPoint
 //===============================================================================
-CWPoint::CWPoint(CFPlan *fp,Tag t) : CSlot()
+CWPoint::CWPoint(CFPlan *fp,Tag t) : CSlot(1)
 {	Build(t);
   fplan     = fp;
 	fp->IncWPT();
@@ -608,7 +608,7 @@ CWPoint::CWPoint(CFPlan *fp,Tag t) : CSlot()
 //-----------------------------------------------------------------
 //	Default constructor
 //-----------------------------------------------------------------
-CWPoint::CWPoint() : CSlot()
+CWPoint::CWPoint() : CSlot(1)
 {	Build(0);	}
 //-----------------------------------------------------------------
 //	Destroy the waypoint
@@ -744,7 +744,7 @@ void  CWPoint::FillWPT(CmHead *obj)
 { //--- Set common parameters ----------
 	State	= WPT_STA_OUT;
 	SetDBwpt   (obj);
-  SetName    (obj->GetName());
+  SetSlotName(obj->GetName());
 	SetIden    (obj->GetIdent());
   SetPosition(obj->GetPosition());
   SetDbKey   (obj->GetKey());
@@ -1058,7 +1058,7 @@ bool CWPoint::HorizontalMove(SPosition *pos)
 {	if (type != 'wayp')		return false;
 	SPosition *ops = GetDBobject()->ObjPosition();
 	GroundSpot lnd(pos->lon,pos->lat);
-	globals->tcm->SetGroundAt(lnd);
+	globals->tcm->GetGroundAt(lnd);
 	ops->lon = pos->lon;
 	ops->lat = pos->lat;
 	ops->alt = lnd.alt;
@@ -1326,7 +1326,7 @@ CFPlan::CFPlan(CVehicleObject *m,char rp)
 	realp   = rp;
 	//---Init title ---------------------------------
   head.FixeIt();
-  head.SetName("Waypoint name");
+  head.SetSlotName("Waypoint name");
   head.SetMark("X");
   head.SetIden("Ident");
   head.SetDist("Dis (nm)");
@@ -2242,7 +2242,6 @@ void CFPlan::Save()
   CloseStream(&s);
 	modify	= 0;
   //---Make it appear in next FP Manager window------
-  if (1 == Version) pAddDisk(&globals->pfs,name,name);
   return;
 } 
 //=======================================================================

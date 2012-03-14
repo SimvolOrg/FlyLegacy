@@ -454,7 +454,7 @@ void CTileTMS::ComputeElevation(TC_VTAB *tab)
   double lon = tab->VT_X + por->lon;
   double lat = tab->VT_Y + por->lat;
   GroundSpot lnd(lon,lat);
-  globals->tcm->SetGroundAt(lnd);
+  globals->tcm->GetGroundAt(lnd);
   tab->VT_Z = (lnd.alt - por->alt);
   apo->AptExtension(lnd);
   return;
@@ -467,7 +467,7 @@ void CTileTMS::SpotElevation(int k)
   double lon = spot[k].wx + apo->lon;
   double lat = spot[k].wy + apo->lat;
   GroundSpot lnd(lon,lat);
-  globals->tcm->SetGroundAt(lnd);
+  globals->tcm->GetGroundAt(lnd);
   spot[k].wz = lnd.alt - apo->alt;
   return;
 }

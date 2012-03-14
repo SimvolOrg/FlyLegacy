@@ -139,7 +139,7 @@ CAtmosphereModelJSBSim::CAtmosphereModelJSBSim (void)
   InitModel();
   globals->atm  = this;
 	//--- Enter in dispatcher --------------------------------------------
-	globals->Disp.Enter(this,PRIO_ATMOSPHERE);
+	globals->Disp.Enter(this, PRIO_ATMOSPHERE, DISP_EXCONT, 0);
 
 }
 //------------------------------------------------------------------

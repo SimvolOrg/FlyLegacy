@@ -41,7 +41,7 @@
 CMoonImage::CMoonImage (float distance)
 {
   // Load DXT texture
-  strncpy (ddsFilename, "ART/MOONMAP_256.dds",511);
+  strncpy (ddsFilename, "ART/MOONMAP_256.dds",FNAM_MAX);
   CImageDXT *dxt = new CImageDXT (ddsFilename);
   texid = CTextureManager::Instance().BindTexture (ddsFilename, dxt);
   SAFE_DELETE (dxt);

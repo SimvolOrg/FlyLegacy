@@ -354,7 +354,7 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   if (d3 < d2)    d3  = d2 * 2;
   globals->ftLD3      = FN_FEET_FROM_MILE(d3);
   //--------------------------------------------------------------
-  int lf    = 100;                        // Decoding factor default
+  int lf    = 1000;                        // Decoding factor default
   GetIniVar("W3D","ObjectLoadFactor",&lf);
   dFactor   = lf;
   //--------------------------------------------------------------
@@ -854,7 +854,6 @@ C3Dmodel::C3Dmodel(char *fn, char t)
   aTop        = 0;
   rDIR        = GL_CCW;
   type        = 0;
-  hObj        = 0;
   pthread_mutex_init (&mux,  NULL);
   //--- Init redirection table -----------------------
   rLOD[0]     = 0;
@@ -868,10 +867,14 @@ C3Dmodel::C3Dmodel(char *fn, char t)
   if (0 == dot) return;
   bool   smf  = (strcmp(dot,".SMF") == 0);
   bool   bin  = (strcmp(dot,".BIN") == 0);
-  if (dot && smf) rDIR = GL_CCW;
-  if (dot && bin) rDIR = GL_CW;
+	bool   obj  = (strcmp(dot,".OBJ") == 0);
+	//---- Mettre une table ici --------------
+  if (smf) rDIR = GL_CCW;
+  if (bin) rDIR = GL_CW;
+	if (obj) rDIR = GL_CCW;
   if (smf)  type = M3D_SMF;
   if (bin)  type = M3D_BIN;
+	if (obj)	type = M3D_OBJ;
 	if (mdtr)	TRACE("CREATION MODEL %s", fname);
 }
 //-------------------------------------------------------------------------------
@@ -880,7 +883,6 @@ C3Dmodel::C3Dmodel(char *fn, char t)
 C3Dmodel::~C3Dmodel()
 { char pn[PATH_MAX];
   _snprintf(pn,(PATH_MAX-1),"MODELS/%s",fname);
-  pRemDisk(&globals->pfs, fname,pn);
 	if (mdtr)	TRACE("DESTRUCTION MODEL %s",fname);
   delete [] fname;
 	globals->NbMOD--;
@@ -921,34 +923,35 @@ void C3Dmodel::UnloadPart(int k)
 //-------------------------------------------------------------------------------
 //  Load the model if not yet done
 //   Add the file name to the file system
-//  NOTE: 
-//    The distance limit L is computed as L = H / Tan(p)
-//    p is the angle under which a pixel is perceived at the near plane 
-//    tan(p) = P/N  with P pixel height and N near plane distance.  
-//    This value is computed at start up in the pitch variable.
 //-------------------------------------------------------------------------------
 int C3Dmodel::LoadPart(char * dir)
 { char    pn[PATH_MAX];
   _snprintf (pn,(PATH_MAX-1),"%s/%s",dir,fname);             
-  pAddDisk(&globals->pfs,fname,pn);
   //--- decode a smf file -------------------------
   if (type == M3D_SMF)
-  { CSMFparser smf(this);
-    state = smf.Decode(pn);
+  { CSMFparser smf(W3D_OBJECT);
+    state = smf.Decode(pn,W3D_OBJECT);
+		smf.LoadModel(this);
    // if (mdtr) TRACE("LOAD %30s FACE %04d",fname,nbf);
-    hObj  = aTop - aBot;
     return state;
   }
   //--- decode a bin file -------------------------
   if (type == M3D_BIN)
-  { CBINparser bin(this);
-    state = bin.Decode(pn,0);
+  { CBINparser bin(W3D_OBJECT);
+    state = bin.Decode(pn,W3D_OBJECT);
+		bin.LoadModel(this);
     //TRACE("LOAD %20s FACE %04d",fname,nbf);
-    hObj  = aTop - aBot;
     return state;
   }
+	//--- Decode  OBJ file -------------------------
+	if (type == M3D_OBJ)
+	{	COBJparser obj(W3D_OBJECT);
+		state = obj.Decode(pn,W3D_OBJECT);
+		obj.LoadModel(this);
+    return state;
+	}
   state = M3D_ERROR;
-  return 2;
+  return M3D_ERROR;
 }
 //-------------------------------------------------------------------------------
 //  Add a new part From POD file
@@ -956,15 +959,7 @@ int C3Dmodel::LoadPart(char * dir)
 //  SMF add whole part at a time
 //-------------------------------------------------------------------------------
 int C3Dmodel::AddPodPart(C3DPart *prt)
-{ char   *txn = prt->TextureName();
-  U_CHAR  tsp = prt->GetTSP();
-  prt->SetTREF(globals->txw->GetM3DPodTexture(txn,tsp));
-  //---Update extension -------------------------------
-  float top = prt->GetTop();
-  float bot = prt->GetBot();
-  if (aTop < top) aTop = top;
-  if (aBot > bot) aBot = bot;
-  //---Add this part ---------------------------------
+{ //---Add this part ---------------------------------
   pLOD[0].Lock();
   pLOD[0].PutEnd(prt);
   pLOD[0].UnLock();
@@ -984,18 +979,7 @@ void C3Dmodel::AddLodPart(C3DPart *prt,int lod)
 //  Add part into model from SQL database
 //-------------------------------------------------------------------------------
 void C3Dmodel::AddSqlPart(C3DPart *prt,int lod)
-{ //---Check for update option ------------------------
-  char   *txn = prt->TextureName();
-  U_CHAR  tsp = prt->GetTSP();
-  prt->SetTREF(globals->txw->GetM3DSqlTexture(txn,tsp));
-  //---Update extension -------------------------------
-  if (lod ==  0)
-  { float top = prt->GetTop();
-    float bot = prt->GetBot();
-    if (aTop < top) aTop = top;
-    if (aBot > bot) aBot = bot;
-  }
-  //---Queue the part to related LOD -----------------
+{ //---Queue the part to related LOD -----------------
   prt->SetLOD(lod);
   pLOD[lod].PutEnd(prt); 
   rLOD[lod] = lod;            // Activate lod level
@@ -1642,7 +1626,7 @@ int CKmm::Read(SStream *st,Tag tag)
     case 'modl':
       { ReadTag(&idn,st);
         ReadString(fn,PATH_MAX,st);
-        fn[PATH_MAX - 1] = 0;
+        fn[FNAM_MAX] = 0;
         _strupr(fn);
         modl = globals->m3d->AllocateModel(fn);
         wobj->AddModel(modl,tod);
@@ -1665,7 +1649,7 @@ void CKmm::SetMdl (const char *model)
 { char fn[PATH_MAX];
   Tag idn = 'norm';
   strncpy (fn, model, PATH_MAX);
-  fn[PATH_MAX - 1] = 0;
+  fn[FNAM_MAX] = 0;
   _strupr(fn);
   modl = globals->m3d->AllocateModel(fn);
   wobj->AddModel(modl,tod);
@@ -1857,45 +1841,119 @@ int C3Ddummy::Read(SStream *st, Tag tag)
 //----------------------------------------------------------------------
 //  Alternate constructor
 //----------------------------------------------------------------------
-C3DPart::C3DPart(int nv)
-{ tRef  = 0;
-  lod   = 0;
-  tsp   = 0;
+C3DPart::C3DPart()
+{ next = prev = 0;
+	tRef  = 0;
+  lod   = tsp = 0;
   xOBJ  = 0;
   ntex  = 0;
-  NbVT  = nv;
-  NbIN  = 0;
-  nVTX  = new F3_VERTEX[nv];
-  nNRM  = new F3_VERTEX[nv];
-  nTEX  = new F2_COORD[nv];
+  NbVT  = NbIN = 0;
+  nVTX  = 0;
+  nNRM  = 0;
+  nTEX  = 0;
+	vTAB	= 0;
   nIND  = 0;
   total = 0;
-	globals->m3d->vCount(NbVT);
-
+	strcpy(idn,"PART");
 }
 //----------------------------------------------------------------------
 //  Free Texture
 //----------------------------------------------------------------------
 C3DPart::~C3DPart()
-{ globals->txw->Free3DTexture(tRef);
-  if (ntex)     delete [] ntex;
-  if (nVTX)     delete [] nVTX;
-  if (nNRM)     delete [] nNRM;
-  if (nTEX)     delete [] nTEX;
-  if (nIND)     delete [] nIND;
-  ntex  = 0;
-//	globals->NbPOL -= GetNBVTX();
-	globals->m3d->vCount(-NbVT);
+{ Release();
   total = 0;
+}
+//----------------------------------------------------------------------
+//  Release all vertices
+//----------------------------------------------------------------------
+void C3DPart::Release()
+{	if (tRef) globals->txw->Free3DTexture(tRef);
+	if (ntex)     delete [] ntex;
+	ntex  = 0;
+  if (nVTX)     delete [] nVTX;
+	nVTX	= 0;
+  if (nNRM)     delete [] nNRM;
+	nNRM	= 0;
+  if (nTEX)     delete [] nTEX;
+	nTEX	= 0;
+  if (nIND)     delete [] nIND;
+	nIND	= 0;
+	if (vTAB)			delete [] vTAB;
+	vTAB	= 0;
+	globals->m3d->vCount(-NbVT);
+	NbVT	= 0;
+}
+//----------------------------------------------------------------------
+//  Allocate vertices for a 3D object
+//----------------------------------------------------------------------
+void C3DPart::AllocateW3dVTX(int nv)
+{	NbVT  = nv;
+	nVTX  = new F3_VERTEX[nv];
+  nNRM  = new F3_VERTEX[nv];
+  nTEX  = new F2_COORD [nv];
+	Rend  = &C3DPart::DrawAsW3D;
+	globals->m3d->vCount(NbVT);
+}
+//----------------------------------------------------------------------
+// Allocate vertices for OSM Object
+//----------------------------------------------------------------------
+void C3DPart::AllocateOsmVTX(int nv)
+{	Release();
+	NbVT  = nv;
+	vTAB  = new TC_VTAB[nv];
+	Rend  = &C3DPart::DrawAsOSM;
+	globals->m3d->vCount(NbVT);
+	return;
+}
+//----------------------------------------------------------------------
+// Allocate vertices for OBJ format
+//----------------------------------------------------------------------
+void C3DPart::AllocateObjVTX(int nv)
+{	Release();
+	NbVT  = nv;
+	vTAB  = new TC_VTAB[nv];
+	Rend  = &C3DPart::DrawAsOBJ;
+	globals->m3d->vCount(NbVT);
+	return;
+}
+//----------------------------------------------------------------------
+//	Rotation around Z axis
+//----------------------------------------------------------------------
+void C3DPart::ZRotation(double sn, double cn)
+{ TC_VTAB *vtx = vTAB;
+	for (U_INT k = 0; k != NbVT; k++)	ZRotate(*vtx++,sn,cn);
+	return;
+}
+//----------------------------------------------------------------------
+// Copy part for osm use
+//----------------------------------------------------------------------
+void C3DPart::CopyForOSM(C3DPart *ps)
+{	int       *ind = ps->GetXLIST();
+	F3_VERTEX *svt = 0;
+	F2_COORD  *scd = 0;
+	TC_VTAB   *dst = vTAB;
+	for (int k=0; k < NbVT; k++)
+	{	int inx   = *ind;
+		svt       = ps->nVTX + inx;
+		scd				= ps->nTEX + inx;
+		dst->VT_X = svt->VT_X;
+		dst->VT_Y = svt->VT_Y;
+		dst->VT_Z = svt->VT_Z;
+		dst->VT_S = scd->VT_S;
+		dst->VT_T = scd->VT_T;
+		dst++;
+		ind++;
+	}
+	return;
 }
 //----------------------------------------------------------------------
 //  Assign texture name
 //----------------------------------------------------------------------
 void C3DPart::SetTexName(char *txn)
-{ int lgr   = strlen(txn);
-  ntex      = new char[lgr + 1];
+{ int lgr   = strlen(txn) + 1;
+  ntex      = new char[lgr];
   strncpy(ntex,txn,lgr);
-  ntex[lgr] = 0;
+  ntex[lgr-1] = 0;
   return;
 }
 //----------------------------------------------------------------------
@@ -1915,25 +1973,61 @@ void C3DPart::GetInfo(M3D_PART_INFO &inf)
   return;
 }
 //----------------------------------------------------------------------
-//  Draw the part 
+//  Draw the part for  a 3D object
+//	Actually we dont use VBO.  There is one indice per vertex in nIND list
 //----------------------------------------------------------------------
-void C3DPart::Draw()
+void C3DPart::DrawAsW3D()
 { if (0 == xOBJ)  xOBJ = globals->txw->Get3DObject(tRef);
-  glBindTexture(GL_TEXTURE_2D,xOBJ);
+  glBindTexture    (GL_TEXTURE_2D,xOBJ);
   glVertexPointer  (3,GL_FLOAT,0,nVTX);
   glNormalPointer  (  GL_FLOAT,0,nNRM);
   glTexCoordPointer(2,GL_FLOAT,0,nTEX);
   glDrawElements(GL_TRIANGLES,NbIN,GL_UNSIGNED_INT,nIND);
-
   //----------------------------------------------------------------
   //  {GLenum e = glGetError ();
   //  if (e != GL_NO_ERROR) 
   //    WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
   // }
   //----------------------------------------------------------------
-
   return;
 }
+
+//----------------------------------------------------------------------
+//  Draw the part for  an Osm object
+//----------------------------------------------------------------------
+void C3DPart::DrawAsOSM()
+{ glVertexPointer  (3,GL_FLOAT,sizeof(TC_VTAB),&(vTAB->VT_X));
+  glTexCoordPointer(2,GL_FLOAT,sizeof(TC_VTAB),&(vTAB->VT_S));
+  glDrawArrays(GL_TRIANGLES,0, NbVT);
+  //----------------------------------------------------------------
+  //  {GLenum e = glGetError ();
+  //  if (e != GL_NO_ERROR) 
+  //    WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
+  // }
+  //----------------------------------------------------------------
+  return;
+}
+//----------------------------------------------------------------------
+//  Draw the part for  an OBJ format
+//----------------------------------------------------------------------
+void C3DPart::DrawAsOBJ()
+{ GLint xob = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D,&xob);
+	glBindTexture(GL_TEXTURE_2D,xOBJ);
+	glFrontFace(GL_CCW);
+	glVertexPointer  (3,GL_FLOAT,sizeof(TC_VTAB),&(vTAB->VT_X));
+  glTexCoordPointer(2,GL_FLOAT,sizeof(TC_VTAB),&(vTAB->VT_S));
+  glDrawArrays(GL_TRIANGLES,0, NbVT);
+	glBindTexture(GL_TEXTURE_2D,xob);
+  //----------------------------------------------------------------
+  //  {GLenum e = glGetError ();
+  //  if (e != GL_NO_ERROR) 
+  //    WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
+  // }
+  //----------------------------------------------------------------
+  return;
+}
+
 //=============================================================================
 //  Destroy 3D Q
 //=============================================================================
@@ -1941,6 +2035,27 @@ C3DpartQ::~C3DpartQ()
 { C3DPart *prt = Pop();
   while (prt) { delete prt; prt = Pop();}
 }
+//---------------------------------------------------------------------
+//	receive Queue from Q
+//---------------------------------------------------------------------
+void C3DpartQ::ReceiveQ(C3DpartQ &Q)
+{ NbObj = Q.NbObj;
+	First = Q.First;
+	Last	= Q.Last;
+	Prev  = 0;
+	Q.Raz();
+}
+//---------------------------------------------------------------------
+//	give this Queue to Q
+//---------------------------------------------------------------------
+void C3DpartQ::Transfer(C3DpartQ &Q)
+{ Q.NbObj = NbObj;
+	Q.First = First;
+	Q.Last	= Last;
+	Q.Prev  = 0;
+	Raz();
+}
+
 //=============================================================================
 //  Destroy world object queue
 //=============================================================================
@@ -2119,8 +2234,7 @@ void C3Dworld::AddToWOBJ(CWobj *obj)
 //  Camera must be set to origin
 //-----------------------------------------------------------------------------
 void C3Dworld::Draw(U_CHAR tod)
-{ if (globals->noOBJ)    return;
-  U_CHAR     mod = ('N' == tod)?(MODEL_NIT):(MODEL_DAY);
+{  U_CHAR     mod = ('N' == tod)?(MODEL_NIT):(MODEL_DAY);
   //----------------------------------------------------------
   CSuperTile *sup = 0;
   for (U_INT No = 0; No != TC_SUPERT_NBR; No++) 

@@ -445,7 +445,7 @@ void CFuiMBROS::Teleport()
   sCam->SetRange(ex);
   sCam->SetAngle(15,30);
   globals->m3d->ReleaseVOR();
-  globals->pln->SetPosition(pos);
+  globals->geop = pos;
   return;
 }
 //--------------------------------------------------------------------------------

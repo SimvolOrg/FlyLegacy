@@ -1133,12 +1133,12 @@ void CTxtDecoder::NormeName(char *txt,CTextureDef *txd)
 //  READ <txtl> in SuperTile PARAMETERS from TRN FILE
 //--------------------------------------------------------------------------------
 int CTxtDecoder::Read (SStream *stream, Tag tag)
-{ char txt[512];
+{ char txt[PATH_MAX];
   if  ('txtl' != tag) return 0;
   ReadUInt (&nbx, stream);
   txd = new CTextureDef[nbx];
   for (U_SHORT nt=0; nt<nbx; nt++) 
-    {   ReadString (txt, 511, stream);
+    {   ReadString (txt, FNAM_MAX, stream);
         NormeName(txt,&txd[nt]);
     }
   return TAG_READ;

@@ -141,6 +141,10 @@ CFuiDirectory::CFuiDirectory(Tag idn, const char* filename)
   selPop->CreatePage(&mSEL,DirMENU);
   Lock  = 1;
   FillCTYlist();
+	//--- Loose memory marker 1 -----------------------
+	char *mk0 = new char[20];
+	strcpy(mk0,"*StartDirectory*");
+
 }
 
 //----------------------------------------------------------------------------------
@@ -180,6 +184,10 @@ CFuiDirectory::~CFuiDirectory()
   staBOX.EmptyIt();
   objBOX.EmptyIt();
   dbc->RegisterDIRwindow(0);
+	//--- Loose memory marker 2 -----------------------
+	char *mk0 = new char[20];
+	strcpy(mk0,"*EndDirectory*");
+
 }
 //=========================================================================
 //  Country Management
@@ -192,7 +200,7 @@ void CFuiDirectory::FillCTYlist()
 { //-------Init country list --------------------------
   ctyBOX.SetParameters(this,'clst',0);
   ctyLIN.FixeIt();
-  ctyLIN.SetName("ALL COUNTRIES");
+  ctyLIN.SetSlotName("ALL COUNTRIES");
   ctyLIN.SetKey("");
   ctyBOX.AddSlot(&ctyLIN);
   //-------InitObject list ----------------------------
@@ -214,7 +222,7 @@ void CFuiDirectory::RetreiveCTYkey()
 { Req.SetCTY("");
   CSlot *slot = ctyBOX.GetSelectedSlot();
   if (0 == slot)  return;
-  Req.SetCTY(slot->GetKey());
+  Req.SetCTY(slot->GetSlotKey());
   return;
 }
 //-------------------------------------------------------------------------
@@ -226,7 +234,7 @@ char *CFuiDirectory::GetCountry(char *ckey)
   CSlot *slot;
   while (No != end)
   { slot = ctyBOX.GetSlot(No++);
-    if (strcmp(slot->GetKey(),ckey) == 0)  return slot->GetName();
+    if (strcmp(slot->GetSlotKey(),ckey) == 0)  return slot->GetSlotName();
   }
   return 0;
 }
@@ -239,7 +247,7 @@ char *CFuiDirectory::GetCountry(char *ckey)
 //-------------------------------------------------------------------------
 void CFuiDirectory::FillSTAlist()
 { staBOX.EmptyIt();
-  staLIN.SetName("NO STATE");
+  staLIN.SetSlotName("NO STATE");
   staLIN.SetKey("");
   staBOX.AddSlot(&staLIN);
   RetreiveCTYkey();
@@ -256,7 +264,7 @@ void CFuiDirectory::FillSTAlist()
 //  Sort the State list and display
 //-------------------------------------------------------------------------
 void CFuiDirectory::SortSTAlist()
-{ if (staBOX.GetSize() > 1) staLIN.SetName("ALL STATES");
+{ if (staBOX.GetSize() > 1) staLIN.SetSlotName("ALL STATES");
   staBOX.SortAndDisplay();
   return;
 }
@@ -266,9 +274,9 @@ void CFuiDirectory::SortSTAlist()
 void CFuiDirectory::SetFilter(QTYPE type)
 { Req.ClearFilter();
   CSlot *slot = ctyBOX.GetSelectedSlot();
-  if (slot)   Req.SetCTY(slot->GetKey());
+  if (slot)   Req.SetCTY(slot->GetSlotKey());
   slot        = staBOX.GetSelectedSlot();
-  if (slot)   Req.SetSTA(slot->GetKey());
+  if (slot)   Req.SetSTA(slot->GetSlotKey());
   if (type == NDB)  Req.SelectNDB();
   if (type == VOR)  Req.SelectVOR();
   if (0 == cBox->GetState())  return;
@@ -285,7 +293,7 @@ void CFuiDirectory::SetFilter(QTYPE type)
 void CFuiDirectory::SortOBJlist()
 { char *cty = 0;
   CSlot *slot = ctyBOX.GetSelectedSlot();
-  cty   = slot->GetName();
+  cty   = slot->GetSlotName();
   hBox->EditText("%s: %u %s FOUND",cty,objBOX.GetSize(),mSEL.aText[selOpt]);
   objBOX.SortAndDisplay();
   return;
@@ -452,16 +460,17 @@ bool CFuiDirectory::GetNAVObject()
 { CSlot *slot = objBOX.GetSelectedSlot();
   if (0 == slot)  return true;
   Req.SetOFS(slot->GetOFS());
-  char *key = slot->GetKey();
+  char *key = slot->GetSlotKey();
   Req.SetAPT(key);
+	selOBJ = 0;
   switch (oType)  {
-  case VOR:
-    return GetVORobject();
-  case NDB:
-    return GetNDBobject();
-  case APT:
-    return GetAPTobject();
-}
+		case VOR:
+			return GetVORobject();
+		case NDB:
+			return GetNDBobject();
+		case APT:
+			return GetAPTobject();
+	}
   return true ;
 }
 //-------------------------------------------------------------------------
@@ -599,7 +608,8 @@ void CFuiDirectory::AddDBrecord(void *rec,DBCODE code)
 //  Notify the caller if any
 //-------------------------------------------------------------------------
 void CFuiDirectory::NotifyCaller(CmHead *obj,QTYPE type)
-{ if (cWin) cWin->NotifyFromDirectory(obj);
+{ if (0 == obj)	return;
+	if (cWin) cWin->NotifyFromDirectory(obj);
   else delete obj;
   return;
 }

@@ -232,7 +232,7 @@ void CFuiProbe::GetWhlSubsystems()
 void CFuiProbe::AddSubsystem(CSubsystem *obj)
 { CSubLine *slot = new CSubLine;
   char *idn      = obj->GetIdString();
-  slot->SetName(idn);
+  slot->SetSlotName(idn);
   slot->SetSubsystem(obj);
   slot->SetIden(obj->GetUnId());
   slot->SetType(obj->GetTyString());
@@ -245,7 +245,7 @@ void CFuiProbe::AddSubsystem(CSubsystem *obj)
 void  CFuiProbe::AddPid(CPIDbox *obj)
 { CSubLine *lin = new CSubLine;
   char *idn     = obj->GetIdString();
-  lin->SetName(idn);
+  lin->SetSlotName(idn);
   lin->SetSubsystem(obj);
   lin->SetIden(obj->GetUnId());
   lin->SetType(obj->GetTyString());
@@ -259,7 +259,7 @@ void CFuiProbe::AddDependent(CDependent *dep)
 { if (0 ==dep)  return;
   CSubLine *slot = new CSubLine;
   char *idn      = dep->GetIdString();
-  slot->SetName(idn);
+  slot->SetSlotName(idn);
   slot->SetSubsystem(dep);
   slot->SetIden(dep->GetUnId());
   slot->SetType(dep->GetTyString());
@@ -281,7 +281,7 @@ void CFuiProbe::ReplacePID()
 CSubsystem *CFuiProbe::GetSubsystem(CFuiButton *btn)
 { CSubLine *slot = (CSubLine*)sBox.GetSelectedSlot();
   if (0 == slot)  return 0;
-  btn->SetText(slot->GetName());
+  btn->SetText(slot->GetSlotName());
   return slot->GetSubsystem();
 }
 //-----------------------------------------------------------------------
@@ -321,7 +321,7 @@ void CFuiProbe::ReplaceDependent(PROBE &p1,PROBE &p2)
 { CSubLine *slot  = (CSubLine*)p1.box.GetSelectedSlot();
   if (0 == slot)    return;
   CSubsystem *sub = slot->GetSubsystem();
-  p2.btn->SetText(slot->GetName());
+  p2.btn->SetText(slot->GetSlotName());
   ViewSubsystem(sub,p2);
   return;
 }

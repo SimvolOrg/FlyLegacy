@@ -81,11 +81,11 @@ int CPlotter::Start(Tag itm)
 //  Init header
 //-----------------------------------------------------------------------
 int CPlotter::Header()
-{ char edt[512];
+{ char edt[PATH_MAX];
   float unit = (pPRM.yUnit * scale);
   EraseSurfaceRGBA(srf,0);
   ppyu    = vht / unit;
-  _snprintf(edt,512,pPRM.mask,unit);
+  _snprintf(edt,(PATH_MAX-1),pPRM.mask,unit);
   xD      = font->DrawNText(srf,x0,yL,green,edt);
   yPix    = RealY(y0);
   //----Draw horizontal line ----------------------------------

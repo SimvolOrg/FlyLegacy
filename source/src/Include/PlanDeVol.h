@@ -65,7 +65,7 @@ public:
 //==================================================================================
 // Detail of current FLIGHT PLAN
 //==================================================================================
-class CFuiFlightLog : public CFuiRwyEXT, public CFuiWindow
+class CFuiFlightLog : public CFuiRwyEXT, public CFuiDetail ,public CFuiWindow
 { //------------Attributes ---------------------------------------
 	CFPlan             *fpln;									// Flight plan
   //-----------Title line ----------------------------------------

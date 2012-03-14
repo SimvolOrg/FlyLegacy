@@ -174,7 +174,7 @@ void CFuiAxis::FillAxes(int tp)
   axeBOX.EmptyIt();
   for (axe = jsm->NextAxe(0,tp); axe != 0; axe = jsm->NextAxe(axe,tp))
   { xln = new CAxeLine;
-    xln->SetName(axe->GetName());
+    xln->SetSlotName(axe->GetName());
     xln->SetAxeDesc(axe);
     axeBOX.AddSlot(xln);
   }
@@ -298,7 +298,7 @@ void CFuiAxis::ButtonList(char *name)
     ktx = (kdf)?(kdf->GetName()):("");
     sprintf(txt,"Button %02d",k);
     btl = new CButLine;
-    btl->SetName(txt);
+    btl->SetSlotName(txt);
     btl->SetKeyText(ktx);
     butBOX.AddSlot(btl);
   }

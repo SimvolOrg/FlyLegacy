@@ -742,7 +742,8 @@ int OpenStream(SStream *stream)
 // The function returns 1 if the stream was successfully opened, 0 otherwise
 //==========================================================================
 int OpenRStream(char *fn,SStream &s)
-{ strncpy (s.filename, fn,(PATH_MAX-1));
+{ if (0 == fn)	return 0;
+	strncpy (s.filename, fn,(PATH_MAX-1));
   strcpy (s.mode, "r");
 	return OpenStream (&globals->pfs, &s);
 }

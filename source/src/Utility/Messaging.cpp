@@ -93,7 +93,7 @@ EMessageResult Send_Message (SMessage *msg)
 
   //---Send message to the user vehicle ---------------------------	
 	CVehicleObject *veh = globals->pln;
-  rc = veh->ReceiveMessage(msg);
+  if (veh)	rc = veh->ReceiveMessage(msg);
   TagToString(msg->dst,msg->group);
 	if (msg->receiver)    return rc;
   //--- Send message to the CheckList -----------------------------

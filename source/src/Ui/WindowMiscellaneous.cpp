@@ -31,6 +31,7 @@
 #include "../Include/Fui.h"
 #include "../Include/FuiParts.h"
 #include "../Include/Utility.h"
+#include "../Include/FuiOption.h"
 #include "../Include/subsystems.h"
 #include <algorithm>
 #include <vector>
@@ -634,10 +635,20 @@ CFuiErrorMSG::CFuiErrorMSG (Tag id, const char* filename)
 { mesg = (CFuiLabel*)GetComponent ('mesg');
 }
 //-------------------------------------------------------------------------
+//	Modal constructor
+//-------------------------------------------------------------------------
+CFuiErrorMSG::CFuiErrorMSG(CFuiWindow * mwin)
+	:  CFuiWindow (FUI_WINDOW_ERMSG, "UI/TEMPLATES/ERRORMSG.win", NULL, NULL, NULL)
+{	MoWind	= mwin;
+	mesg = (CFuiLabel*)GetComponent ('mesg');
+	if (0 == mesg)	gtfo("Invalid file UI/TEMPLATES/ERRORMSG.win");
+}
+//-------------------------------------------------------------------------
 //  Event notification
 //-------------------------------------------------------------------------
 void CFuiErrorMSG::NotifyChildEvent (Tag id, Tag itm, EFuiEvents evn)
-{	Close();
+{	if (MoWind)	MoWind->ClearModal();
+	Close();
 	return;
 }
 //=========================END of FILE =============================================

@@ -1068,7 +1068,7 @@ void LsComputeElevation(TC_VTAB &tab,SPosition &org)
 { double lon  = tab.VT_X + org.lon;
   double lat  = tab.VT_Y + org.lat;
   GroundSpot spot(lon,lat);
-  globals->tcm->SetGroundAt(spot);
+  globals->tcm->GetGroundAt(spot);
   tab.VT_Z = (spot.alt - org.alt);
   return;
 }

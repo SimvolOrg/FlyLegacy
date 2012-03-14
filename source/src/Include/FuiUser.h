@@ -135,7 +135,7 @@ typedef struct {
   SRADIO_TYPE tab[12];                            // room for 12 radios
 } RADIO_LST;
 //================================================================================
-class CFuiVectorMap : public CFuiWindow
+class CFuiVectorMap : public CFuiWindow, public CFuiDetail
 { friend int VMapCB(char *dn, void *upm);
   #define VMAP_MENU_SIZE (17)
 	//---------------------------------------------------------------------
@@ -421,7 +421,7 @@ class CFuiTeleport: public CFuiWindow
 //  DIRECTORY:  Window for all directories
 //====================================================================================
 class CDbCacheMgr;
-class CFuiDirectory: public CFuiWindow
+class CFuiDirectory: public CFuiDetail, public CFuiWindow
 { //------------------Attributes ----------------------------------
   U_CHAR              Lock;                 // Lock indicator
   CDataBaseREQ        Req;                  // Integrated request
@@ -441,7 +441,7 @@ class CFuiDirectory: public CFuiWindow
   CStaLine            staLIN;               // Fixed state slot
   //-----------------Object management ----------------------------
   QTYPE               oType;                // Object type
-  CmHead          *selOBJ;               // Detailled object
+  CmHead            *selOBJ;               // Detailled object
   CListBox            objBOX;               // Object box
   Tag                 Order;                // Request order
   //-----------------Airport ownership ----------------------------
@@ -790,55 +790,6 @@ public:
   char    GetOption(U_INT p);
 };
 //==================================================================================
-//  CFuiOptions.  A window for globals options
-//==================================================================================
-class CFuiOptions: public CFuiWindow
-{ //----ATTRIBUTES -----------------------------------------------
-  CFuiCheckBox  *gBOX;              // Gamma correction option
-  //--------------------------------------------------------------
-  //----METHODS --------------------------------------------------
-public:
-  CFuiOptions(Tag idn, const char *filename);
-  //--------------------------------------------------------------
-  bool  CheckNoFile();
-  void  SaveGamma();
-  void  SetGamma(double g);
-};
-//==================================================================================
-//  CFuiCamControl.  A window to control a camera
-//==================================================================================
-class CFuiCamControl: public CFuiWindow 
-{	//--- ATTRIBUTES --------------------------------------------
-	CCamera     *cam;											// Cockpit camera
-	//--- Rotation control	-------------------------------------
-	CFuiLabel   *lrot;										// Label rotation
-	CFuiButton	*rtlf;										// Rotate left
-	CFuiButton  *rtrt;										// Rotate right
-	CFuiButton  *rtup;										// Rotate up
-	CFuiButton  *rtdn;										// Rotate down
-	//--- Range buttons -----------------------------------------
-	CFuiLabel   *lrng;										// Label range
-	CFuiButton  *rnut;										// Outward
-	CFuiButton  *rnin;										// In ward
-	//----Zoom items --------------------------------------------
-	CFuiLabel   *lzom;										// Zoom label
-	CFuiButton  *zmup;										// Zoom out
-	CFuiButton  *zmin;										// Zoom in
-	//----METHODS -----------------------------------------------
-public:
-	CFuiCamControl(Tag idn, const char *filename);
-	//-----------------------------------------------------------
-	void	EditValues();
-  //-----------------------------------------------------------
-	bool	InsideClick (int x, int y, EMouseButton buttons);
-	bool	MouseMove (int x, int y);
-	void	NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
-	//-----------------------------------------------------------
-	void	Draw();
-	//--- Dont close this window ----------------------------------------
-	void    CheckProfile()	{;}
-};
-//==================================================================================
 //  CFuiCamControl.  A window to edit terrain elevation
 //==================================================================================
 class CFuiTED : public CFuiWindow
@@ -863,6 +814,8 @@ class CFuiTED : public CFuiWindow
 	CFuiButton      *nBut;								// No button
 	//--- Rabbit camera -----------------------------------------
 	CRabbitCamera   *rcam;
+	//--- Hit buffer -------------------------------------
+	GLuint					 bHit[8];						  // Hit buffer
 	//----Patche area -------------------------------------------
 	ELV_PATCHE			pbuf;									// Patche buffer
 	//--- Update parameters -------------------------------------
@@ -912,6 +865,5 @@ public:
     //-----------------------------------------------------------------
     void  NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 };
-
 #endif // FUIUSER_H
 //=================================END OF FILE =====================================================

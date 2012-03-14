@@ -626,7 +626,7 @@ CAptLine *SqlMGR::GetAptSlot(sqlite3_stmt *stm)
   txt = (char*)sqlite3_column_text(stm,CLN_APT_UKEY);
   lin->SetAkey(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_APT_ANAM);
-  lin->SetName(txt);
+  lin->SetSlotName(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_APT_AICA);
   lin->SetAica(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_APT_AFAA);
@@ -792,7 +792,7 @@ CNavLine *SqlMGR::GetNavSlot(sqlite3_stmt *stm)
   txt = (char*)sqlite3_column_text(stm,CLN_NAV_UKEY);
   lin->SetKey(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_NAV_NAME);
-  lin->SetName(txt);
+  lin->SetSlotName(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_NAV_NAID);
   lin->SetVaid(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_NAV_NCTY);
@@ -948,7 +948,7 @@ CWptLine *SqlMGR::GetWptSlot(sqlite3_stmt *stm)
   txt = (char*)sqlite3_column_text(stm,CLN_WPT_UKEY);
   lin->SetKey(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_WPT_WNAM);
-  lin->SetName(txt);
+  lin->SetSlotName(txt);
   lin->SetWaid("INT");
   txt = (char*)sqlite3_column_text(stm,CLN_WPT_WCTY);
   lin->SetWcty(txt);
@@ -963,7 +963,7 @@ CWptLine *SqlMGR::GetWptSlot(sqlite3_stmt *stm)
   //------------------------------------------------------
   //  Normalize name of waypoint. Eliminate ( and )
   //------------------------------------------------------
-  txt = lin->GetName();
+  txt = lin->GetSlotName();
   if  (*txt == '(')  strcpy(txt,txt+1);
   char *end = strrchr(txt,')');
   if (end) *end = 0;
@@ -975,7 +975,7 @@ CWptLine *SqlMGR::GetWptSlot(sqlite3_stmt *stm)
 CCtyLine *SqlMGR::GetCtySlot(sqlite3_stmt *stm)
 { CCtyLine *lin = new CCtyLine();
   char     *txt = (char*)sqlite3_column_text(stm,CLN_CTY_CNAM);
-  lin->SetName(txt);
+  lin->SetSlotName(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_CTY_CUID);
   lin->SetKey(txt);
   return lin;
@@ -986,7 +986,7 @@ CCtyLine *SqlMGR::GetCtySlot(sqlite3_stmt *stm)
 CStaLine *SqlMGR::GetStaSlot(sqlite3_stmt *stm)
 { CStaLine *lin = new CStaLine();
   char *txt = (char*)sqlite3_column_text(stm,CLN_STA_NAME);
-  lin->SetName(txt);
+  lin->SetSlotName(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_STA_SKEY);
   lin->SetKey(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_STA_SCTY);
@@ -1398,7 +1398,7 @@ void SqlMGR::RWYbyAPTkey(CDataBaseREQ *rqb)
 //----------------------------------------------------------------------------------
 void SqlMGR::ILSbyRWYkey(CDataBaseREQ *rqb,CRwyLine *lin)
 { char req[1024];
-	char *k1 = lin->GetKey();
+	char *k1 = lin->GetSlotKey();
   char *k2 = lin->GetHiEndID();
   char *k3 = lin->GetLoEndID();
   _snprintf(req,1024,"SELECT * FROM ILS WHERE iapt == '%s' AND irwy IN ('%s','%s');",k1,k2,k3);
@@ -1877,7 +1877,7 @@ void SqlMGR::WriteCoastRec(COAST_REC &cst)
 //==============================================================================
 //  Insert Model record
 //==============================================================================
-void SqlMGR::Write3Dmodel(char *name,C3DPart *prt)
+void SqlMGR::Write3Dmodel(char *name,C3DPart *prt,double top, double bot)
 { char *rq =  "INSERT INTO MOD (name,type,tsp,ntex,ftop,fbot,lod,nvtx,nind,vtab,ntab,ttab,xtab) "  
               "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13);*";
   sqlite3_stmt *stm = CompileREQ(rq,modDBE);
@@ -1896,9 +1896,9 @@ void SqlMGR::Write3Dmodel(char *name,C3DPart *prt)
   if (rep != SQLITE_OK) Abort(modDBE);
   rep = sqlite3_bind_text(stm, 4,prt->TextureName(),-1,SQLITE_TRANSIENT);
   if (rep != SQLITE_OK) Abort(modDBE);
-  rep = sqlite3_bind_double(stm,5, double(prt->GetTop()));
+  rep = sqlite3_bind_double(stm,5, top);					//double(prt->GetTop()));
   if (rep != SQLITE_OK) Abort(modDBE);
-  rep = sqlite3_bind_double(stm,6, double(prt->GetBot()));
+  rep = sqlite3_bind_double(stm,6, bot);					//double(prt->GetBot()));
   if (rep != SQLITE_OK) Abort(modDBE);
   rep = sqlite3_bind_int (stm, 7, prt->GetLOD());
   if (rep != SQLITE_OK) Abort(modDBE);
@@ -2947,13 +2947,17 @@ int SqlTHREAD::DecodeM3DPart(sqlite3_stmt *stm,C3Dmodel *modl)
   char *txn = (char*)sqlite3_column_text(stm,CLN_MOD_TXN);
   int   nbv =        sqlite3_column_int (stm,CLN_MOD_NVT);
   int   nbx =        sqlite3_column_int (stm,CLN_MOD_NIX);
-  C3DPart *prt = new C3DPart(nbv);
+	//---- Build a new part --------------------------------
+	void *ref   = globals->txw->GetM3DSqlTexture(txn,tsp);
+  C3DPart *prt = new C3DPart();
+	prt->AllocateW3dVTX(nbv);
   prt->AllocateXList(nbx);
+	prt->SetTREF(ref);
   prt->SetTexName(txn);
   float top =  float(sqlite3_column_double(stm, CLN_MOD_TOP));
-  prt->SetTop(top);
+  modl->SaveTop(top);
   float bot =  float(sqlite3_column_double(stm, CLN_MOD_BOT));
-  prt->SetBot(bot);
+  modl->SaveBot(bot);
   int   lod =        sqlite3_column_int (stm,CLN_MOD_LOD);
   prt->SetLOD(lod);
   int   dim =        sqlite3_column_bytes(stm,CLN_MOD_VTX);
@@ -2969,6 +2973,7 @@ int SqlTHREAD::DecodeM3DPart(sqlite3_stmt *stm,C3Dmodel *modl)
   src =       (char*)sqlite3_column_blob (stm,CLN_MOD_ITB);
   prt->CpyIND(src,dim);
   //----Add this part --------------------------------------
+
   modl->AddSqlPart(prt,lod);
   int nbf = (nbx / 3);
   return nbf;

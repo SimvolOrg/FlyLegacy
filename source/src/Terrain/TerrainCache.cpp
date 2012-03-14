@@ -27,6 +27,7 @@
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainElevation.h"
 #include "../Include/TerrainTexture.h"
+#include "../Include/ElevationTracker.h"
 #include "../Include/MagneticModel.h"
 #include "../Include/FileThread.h"
 #include "../Include/Fui.h"
@@ -903,30 +904,6 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
   return nvtx;
 }
 //-------------------------------------------------------------------------
-//	Transpose vertices for airport ground
-//	Vertex parameter X and Y are recomputed to be relative to airport
-//	origin
-//-------------------------------------------------------------------------
-int CmQUAD::TransposeVertices(TC_GTAB *vbo,SPosition *org)
-{	/*
-	double   ofs = Center.LongitudeOffset();
-	TC_GTAB *src = vTab;
-  TC_GTAB *dst = vbo;
-//TRACE("QUAD %d-%d -----",Center.keyX(),Center.keyZ());
-	for (int k=0; k< nvtx; k++)
-	{	dst->GT_S	= src->GT_S;
-		dst->GT_T = src->GT_T;
-		dst->GT_X = LongitudeDifference((src->GT_X + ofs),org->lon);
-		dst->GT_Y = src->GT_Y - org->lat;
-		dst->GT_Z = src->GT_Z - org->alt;
-//TRACE("   DST= %10d   X=%.5f Y=%.5f Z=%.5f",(int)dst,dst->GT_X,dst->GT_Y,dst->GT_Z);
-		dst++;
-		src++;
-	}
-	*/
-	return nvtx;
-}
-//-------------------------------------------------------------------------
 //  Allocate QUAD vertex table
 //  trs:    Texture coordinates table
 //  xk:     QGT X index
@@ -1448,7 +1425,7 @@ void CmQUAD::PatchVertices(ELV_PATCHE &p)
 //	dir = 1 =>   Store patche into vertex elevation 
 //-------------------------------------------------------------------------
 CVertex *CmQUAD::Patche(CVertex *vt,ELV_PATCHE &p,int nxt)
-{	/*
+{	
 	U_INT key			= vt->VertexKey();
 	ELV_VTX *mat	= p.mat;
 	int			  k		= 0;
@@ -1467,7 +1444,7 @@ CVertex *CmQUAD::Patche(CVertex *vt,ELV_PATCHE &p,int nxt)
 			{	if (key == mat[k].key) {vt->SetWZ(mat[k].elv); break;}
 			}
 	}
-	*/
+
 	return vt->GetEdge(nxt);
 }
 //=========================================================================
@@ -1532,6 +1509,9 @@ CSuperTile::CSuperTile()
   sta3D   = TC_3D_OUTSIDE;
   white[0] = white[1] = white[2] = white[3] = 1;
 	//------------------------------------------------
+	State   = TC_TEX_NEW;
+	visible = 0;
+	//------------------------------------------------
 	vBUF		= 0;
 	aVBO		= 0;
 }
@@ -1565,6 +1545,23 @@ void CSuperTile::LoadVBO()
 	return;
 }
 //-------------------------------------------------------------------------
+//		Trace reallocation
+//-------------------------------------------------------------------------
+void CSuperTile::TraceRealloc(CmQUAD *qd)
+{ U_INT qx = qd->GetTileAX() >> TC_BY32;
+	U_INT	qz = qd->GetTileAZ() >> TC_BY32;
+	U_INT tx = qd->GetTileTX();
+	U_INT tz = qd->GetTileTZ();
+	U_INT vx = qd->GetTileVX();
+	U_INT vz = qd->GetTileVZ();
+	TRACE("ELV realloc (%03d-%03d) (%02d-%02d) (%4d-%04d)", qx,qz,tx,tz,vx,vz);
+	int asw = qd->GetCorner(TC_SWCORNER)->GetRZ();
+	int ase = qd->GetCorner(TC_SECORNER)->GetRZ();
+	int ane = qd->GetCorner(TC_NECORNER)->GetRZ();
+	int anw = qd->GetCorner(TC_NWCORNER)->GetRZ();
+	TRACE ("  sw=%04d se=%04d ne=%04d nw=%04d",asw,ase,ane,anw);
+}
+//-------------------------------------------------------------------------
 //	Reallocate the Super Tile vertices
 //-------------------------------------------------------------------------
 void CSuperTile::Reallocate(char opt)
@@ -1577,7 +1574,6 @@ void CSuperTile::Reallocate(char opt)
 	if (vBUF)	delete [] vBUF;
 	nbVTX	= 0;
 	vBUF	= 0;
-	glDeleteBuffers(1,&aVBO);
 	AllocateVertices(opt);
 	return;
 }
@@ -1610,11 +1606,12 @@ void CSuperTile::AllocateVertices(char opt)
 			int nbv		= qd->InitVTAB(dst,inx,TC_MEDIUM);
 			inx			 += nbv;
 			dst      += nbv;
+			//if (opt & 0x02) TraceRealloc(qd);
 		}
 	//--- Allocate a VBO -------------------------------
 	if (opt)
 	{	int	dm = nbVTX * sizeof(TC_GTAB);
-		glGenBuffers(1,&aVBO);
+		if (0 == aVBO) glGenBuffers(1,&aVBO);
 		glBindBuffer(GL_ARRAY_BUFFER,aVBO);
 		glBufferData(GL_ARRAY_BUFFER,dm,vBUF,GL_STATIC_COPY);
 		glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -1630,6 +1627,16 @@ void CSuperTile::BindVBO()
 	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2 * UNIT_SIZE) );
 	glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),0);
 	return;
+}
+//-------------------------------------------------------------------------
+//	Check if super tile is all textured
+//-------------------------------------------------------------------------
+bool CSuperTile::IsTextured()
+{ if (!Visibility())	return true;
+	if (IsReady())      return true;
+	if (NeedOBJ())			return true;
+	if (InFarQ())				return true;
+	return false;
 }
 //-------------------------------------------------------------------------
 //  Check if Super Tile needs medium resolution
@@ -1958,6 +1965,7 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
   nStp  = 0;
   qSTAT = 1;
   dead	= 0;
+	visb	= 0;
   Metar = 0;
 	strn	= tm->GetTRNoption();
 	//--- Get VBO option -----------------------
@@ -3004,6 +3012,7 @@ int C_QGT::StepSUP()
           sp->BuildBorder(this,No);
           //----Put Super Tile in Far Queue ------
 					sp->RenderOUT();
+					sp->WantINQ();
           FarsQ.PutLast(sp);
           sp++;
         }
@@ -3077,6 +3086,7 @@ int C_QGT::PutOutside()
     txw->FreeAllTextures(sp);
     sp->RazNames();
     CSuperTile *nx = NearQ.Detach(sp);
+		sp->WantINQ();
     FarsQ.PutLast(sp);
     tcm->FormatName(this,sp);
     return 0;
@@ -3105,6 +3115,7 @@ int C_QGT::UpdateInnerCircle()
     { sp->RenderOUT();
       txw->FreeAllTextures(sp);
       CSuperTile *nx = NearQ.Detach(sp);
+			sp->WantINQ();
       FarsQ.PutLast(sp);
       sp  = nx;
       continue;
@@ -3262,6 +3273,18 @@ void C_QGT::Abortv()
   EditLat2DMS(pos.lat, edt2);   
   gtfo("Tile mesh error: No more memory for Vertices [%s %s]", edt1, edt2);
   return;
+}
+//-------------------------------------------------------------------------
+// Check if supertiles are all textured
+//-------------------------------------------------------------------------
+bool C_QGT::AllTextured()
+{	CSuperTile *sp = Super;
+  for (int No = 0; No != TC_SUPERT_NBR; No++,sp++)
+	{	if (sp->IsTextured()) continue;
+		if (sp->InFarQ())			continue;
+		else	return false;	}	
+	//--- OK ready -------------------------------------
+	return true;
 }
 //-------------------------------------------------------------------------
 //  Draw the SuperTile Mesh by the camera cam
@@ -3510,9 +3533,9 @@ TCacheMGR::TCacheMGR()
   //-----Check for teleport directive ---------------------------
   CheckTeleport();
 	//-----Init elevation Tracker ---------------------------------
-	eTrack.SetTCM(this);
+	globals->etrk.SetTCM(this);
 	//--- Enter in dispatcher -------------------------------------
-	globals->Disp.Enter(this,PRIO_TERRAIN);
+	globals->Disp.Enter(this, PRIO_TERRAIN, DISP_EXCONT, 1);
 TRACE("ENd TCACHE Constructor");
 }
 ///------------------------------------------------------------------------
@@ -3574,13 +3597,13 @@ void TCacheMGR::OneTerraLine(CTgxLine *lin)
 //  Catch one country line
 //-------------------------------------------------------------------------
 void TCacheMGR::OneCountry(CCtyLine *cty)
-{ int  lgr  = strlen(cty->GetName()) + 1;
-  char *cn  = cty->GetKey();
+{ int  lgr  = strlen(cty->GetSlotName()) + 1;
+  char *cn  = cty->GetSlotKey();
   U_INT key = (cn[0] << 8) | (cn[1]);
   //MEMORY_LEAK_MARKER ("nm1")
   char *nm  = new char[lgr];
   //MEMORY_LEAK_MARKER ("nm2")
-  strncpy(nm,cty->GetName(),lgr);
+  strncpy(nm,cty->GetSlotName(),lgr);
   ctyMAP[key] = nm;
   return;
 }
@@ -3661,17 +3684,6 @@ void TCacheMGR::Teleport(SPosition &dst)
   globals->m3d->ReleaseVOR();
   veh->SetPosition(dst);
   Tele          = 1;
-  Terrain       = 0;
-  return;
-}
-//-------------------------------------------------------------------------
-//  Teleport to requested position
-//-------------------------------------------------------------------------
-void TCacheMGR::MoveRabbit(SPosition &dst)
-{ if (globals->aPROF.Has(PROF_NO_TEL))	return;
-  globals->m3d->ReleaseVOR();
-  globals->geop = dst;
-  Tele          = 0;
   Terrain       = 0;
   return;
 }
@@ -3943,6 +3955,12 @@ void TCacheMGR::GetTileIndices(int &tx,int &tz)
   return;
 }
 //-------------------------------------------------------------------------
+//  Activate thread one cycle
+//-------------------------------------------------------------------------
+void TCacheMGR::ThreadPulse()
+{	pthread_cond_signal(&thCond);    // Signal file THREAD
+	return; }
+//-------------------------------------------------------------------------
 //  Time slice.  Update the terrain cache
 //-------------------------------------------------------------------------
 int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
@@ -3971,7 +3989,7 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   char action = RefreshCache();
   UpdateAGL(aPos);
 	//---Update Tracker ----------------------------------------------------
-	eTrack.TimeSlice(dT);
+	globals->etrk.TimeSlice(dT);
 	//--- Update action ----------------------------------------------------
   if (action)           return 1;
   if (OneAction())      return 1;
@@ -4205,7 +4223,7 @@ void TCacheMGR::GetTerrainInfo(TC_GRND_INFO &inf,SPosition &pos)
 //  The position must contains the absolute longitude and latitude in arcsec
 //  (not the band longitude).
 //-----------------------------------------------------------------------
-double TCacheMGR::SetGroundAt(GroundSpot &gns)
+double TCacheMGR::GetGroundAt(GroundSpot &gns)
 { IndicesInQGT (gns);
   if (!SetQGT(gns)) return 0;
   C_QGT *qgt = gns.qgt;
@@ -4355,7 +4373,24 @@ CTextureDef *TCacheMGR::GetTexDescriptor(C_QGT *qgt,U_INT tx,U_INT tz)
   CTextureDef *txn = &sp->Tex[nt];
   return txn;
 }
-
+//-----------------------------------------------------------------
+//	Check for terrain ready
+//------------------------------------------------------------------
+bool TCacheMGR::TerrainStable()
+{ std::map<U_INT,C_QGT*>::iterator rp;
+	pthread_cond_signal(&thCond);    // Signal file THREAD
+	for (rp = qgtMAP.begin(); rp != qgtMAP.end(); rp++)
+	{	C_QGT *qt = (*rp).second;
+		if (qt->NotReady())				return false;
+		if (qt->NotVisible())			continue;
+		if (!qt->AllTextured())		
+			return false;
+	}
+	if (!SPotReady())						return false;
+	glFlush();
+	glFinish();
+	return true;
+}
 //-----------------------------------------------------------------
 //  Create a New QGT in stack
 //  NOTE:   a)The four corner vertices are searched in adjacent QGT
@@ -4957,6 +4992,31 @@ void TCacheMGR::UpdateGroundPlane()
   gplan[3]	= -(dta);
 	return;
 }
+//-----------------------------------------------------------------------------
+// Draw all 3D objects if allowed
+//	Camera is at aircraft origin, scale is 1 in every direction
+//-----------------------------------------------------------------------------
+void TCacheMGR::Draw3DObjects()
+{	if (globals->noOBJ)    return;
+	std::map<U_INT,C_QGT*>::iterator im;
+	glEnable(GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER,0);
+ // glEnable(GL_BLEND);
+	glDisable(GL_BLEND);
+  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glShadeModel(GL_SMOOTH);
+	glCullFace (GL_BACK);
+	//-------------------------------------------------------------------
+  objMGR->SetDrawingState();
+	glEnable(GL_TEXTURE_2D);
+  for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
+  { C_QGT *qt = (*im).second;
+    if (qt->NoQuad())       continue;
+    if (qt->NotVisible())   continue;
+    qt->w3D.Draw(cTod);                         // Draw for day or night
+  }
+	return;
+}
 //=================================================================================
 //  TERRAIN CACHE: DRAW TERRAIN
 //  Compute the top model matrix.  X,Y, and Z are OpenGL axis coordinates
@@ -4976,6 +5036,8 @@ void TCacheMGR::UpdateGroundPlane()
 void TCacheMGR::Draw()
 {	CCamera *cam = globals->cam;
   bbox->Enter("TCM Draw",0,0);
+	//--- Draw sky as background --------------------------------------
+	globals->skm->PreDraw();
 	CVehicleObject *veh = globals->pln;
 	DrQGT	= DrSUP = 0;
 	//----Prepare OpenGL for drawing ---------------------------------
@@ -5015,7 +5077,6 @@ void TCacheMGR::Draw()
   //  Draw Terrain
   //  Camera at aircraft position
   //------------------------------------------------------------------
-  //glTranslated(cTran.x, cTran.y, cTran.z);    // T2: Camera at origin
   glPushClientAttrib (GL_CLIENT_ALL_ATTRIB_BITS);
   //------------------------------------------------------------------
 	//	Draw terrain: check for QGT visibility
@@ -5058,23 +5119,8 @@ void TCacheMGR::Draw()
 	//	Camera is at aircraft origin, scale is 1 in every direction
   //------------------------------------------------------------------
 	bbox->Enter("OBJ Draw",0,0);
-  glEnable(GL_ALPHA_TEST);
-  glAlphaFunc(GL_GREATER,0);
- // glEnable(GL_BLEND);
-	glDisable(GL_BLEND);
-  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glShadeModel(GL_SMOOTH);
   glPushMatrix();                             // Mark T0
-	glCullFace (GL_BACK);
-	//-------------------------------------------------------------------
-  objMGR->SetDrawingState();
-	glEnable(GL_TEXTURE_2D);
-  for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
-  { C_QGT *qt = (*im).second;
-    if (qt->NoQuad())       continue;
-    if (qt->NotVisible())   continue;
-    qt->w3D.Draw(cTod);                         // Draw for day or night
-  }
+	Draw3DObjects();
   //---Reset all parameters ----------------------------------------
   glPopClientAttrib();
   glFrontFace(GL_CCW);
@@ -5099,7 +5145,6 @@ void TCacheMGR::Draw()
   glEnableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   objMGR->Draw(cTod);                           // Draw VOR and lights
-
   //-----------------------------------------------------------------
   //  Set Context to draw airport lights 
   //  Camera at origin
@@ -5127,7 +5172,7 @@ void TCacheMGR::Draw()
   //-----------------------------------------------------------------
   //  Draw tracker
   //-----------------------------------------------------------------
-	eTrack.Draw();
+	globals->etrk.Draw();
   //--------Restore attributs ---------------------------------------
   glPopAttrib ();
   glMatrixMode (GL_MODELVIEW);

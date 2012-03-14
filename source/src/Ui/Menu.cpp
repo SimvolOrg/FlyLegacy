@@ -263,7 +263,8 @@ void vehicle_cg_cb (puObject* obj)
 //  Vehicle Teleport
 //----------------------------------------------------------------------
 void vehicle_vpilot_cb (puObject* obj)
-{ globals->pln->VirtualPilot(); }
+{ if (!globals->pln)	return;
+	globals->pln->VirtualPilot(); }
 //----------------------------------------------------------------------
 //  Vehicle dammage report
 //----------------------------------------------------------------------
@@ -1109,7 +1110,7 @@ void CheckTuningMenu()
 //----------------------------------------------------------------------------
 //  Model Sketch editor: skth
 //----------------------------------------------------------------------------
-void sktech_editor_cb(puObject *obj)
+void city_editor_cb(puObject *obj)
 { globals->kbd->Stroke('menu','skch');	}
 //----------------------------------------------------------------------------
 //  Model terra editor: mted
@@ -1148,7 +1149,7 @@ void tune_probe_cb(puObject *obj)
 { globals->kbd->Stroke('menu','prob');	}
 //--------------------------------------------------------
 char *tune_legends[] =
-{ "SKETCH Editor",
+{ "CITY Editor",
 	"TERRA Editor",
 	"----------------",
 	"OBJECT Browser",
@@ -1162,7 +1163,7 @@ char *tune_legends[] =
 
 //------------------------------------------------------------------------
 puCallback tune_cb[] =
-{ sktech_editor_cb,
+{ city_editor_cb,
 	model_teditor_cb,
 	NULL,
 	model_browser_cb,

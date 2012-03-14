@@ -146,7 +146,8 @@
 #ifdef _PATH_MAX
 #define PATH_MAX _PATH_MAX
 #else
-#define PATH_MAX 512
+#define PATH_MAX 260
+#define FNAM_MAX (PATH_MAX-1)
 #endif
 #endif // PATH_MAX
 
@@ -264,6 +265,7 @@ typedef enum {
   APP_LOADING_SCREEN,
   APP_LOAD_SITUATION,
   APP_PREPARE,
+	APP_TELEPORT,
   APP_SIMULATION,
   APP_EXIT_SCREEN,
   APP_EXIT,
@@ -1405,11 +1407,15 @@ typedef struct SFont
 } SFont;
 
 
-typedef struct {
+struct SBitmap {
   char    bitmapName[64]; // -> passed to APILoadBitmap
   void    *bitmap;				// <- returned from APILoadBitmap; do NOT alter!!!
   EBitmapType type;				// <- returned from APILoadBitmap; do NOT alter!!!
-} SBitmap;
+	//----------------------------------------------------------------------
+	SBitmap() {bitmap = 0;}
+ ~SBitmap() { if (bitmap) delete bitmap;}
+  //---------------------------------------------------------------------
+} ;
 
 
 typedef struct {
@@ -2367,6 +2373,39 @@ struct TC_VTAB {
   for (int k = 0; k<n; k++)  *dst++  = *s++;
   return; }
   //------------------------------------------------------
+	void Copy(TC_VTAB &v)
+	{	*this = v;	}
+	//------------------------------------------------------
+	void InvertXZ(TC_VTAB &v)
+	{ VT_X = v.VT_Z;
+		VT_Z = v.VT_X;
+		VT_Y = v.VT_Y;
+	}
+	//------------------------------------------------------
+	void InvertYZ(TC_VTAB &v)
+	{ VT_X = v.VT_X;
+		VT_Z = v.VT_Y;
+		VT_Y = v.VT_Z;
+	}
+	//------------------------------------------------------
+	void InvertXY(TC_VTAB &v)
+	{ VT_X = v.VT_Y;
+		VT_Z = v.VT_Z;
+		VT_Y = v.VT_X;
+	}
+	//------------------------------------------------------
+	void InvertHD1(TC_VTAB &v)
+	{ VT_X =  v.VT_X;
+		VT_Z =  v.VT_Y;
+		VT_Y = -v.VT_Z;
+	}
+		//------------------------------------------------------
+	void InvertHD2(TC_VTAB &v)
+	{ VT_X =  v.VT_X;
+		VT_Z = -v.VT_Y;
+		VT_Y =  v.VT_Z;
+	}
+
 };
 //=============================================================================
 //  VERTEX TABLE for ground description
@@ -2618,7 +2657,7 @@ public:
 //=============================================================================
 //  Texture Info
 //=============================================================================
-#define TC_TEXTURE_NAME_DIM (512)
+#define TC_TEXTURE_NAME_DIM (PATH_MAX)
 #define TC_TEXTURE_NAME_NAM (64)
 #define TC_LAST_INFO_BYTE   (TC_TEXTURE_NAME_DIM - 1)
 //-------------------------------------------------------------------
@@ -2891,6 +2930,7 @@ class CExecutable {
 	//--- Methods -----------------------------------------
 public:
 	virtual int	  TimeSlice(float dT, U_INT frame)	{return 0;}
+	virtual void	Draw() {;}
 };
 //===================================================================================
 //	Vector to Time Slice function
@@ -3171,18 +3211,20 @@ class CSlot {
  //--------------Vector to line edition ---------------------------
  public:
    CSlot();
+	 CSlot(char d);
+	 void		Init();
    int    GetTotLines() {return nLIN;}
    int    GetCurLine()  {return cLIN;}
  //-----------Virtual functions --------------------------------
    virtual ~CSlot() {}
    virtual  void    GetPosition(SPosition &p)   {}
-   virtual  char *  GetKey()  {return "";}
-   virtual  void    Clean() {}
+   virtual  char *  GetSlotKey()  {return "";}
+   virtual  void    CleanSlot() {}
    virtual  bool    Match(void *key)  {return false;}
-   virtual  void    Print(CFuiList *w,U_CHAR ln) {}
+   virtual  void    Print(CFuiList *w,U_CHAR ln);
    virtual  void    Title(CFuiList *w) {Print(w,0);}
    //-----------------------------------------------------------
-   virtual  void    SetKey(char *k)   {}
+   virtual  void    SetSlotKey(char *k)   {}
  //-----------Generic access -----------------------------------
   inline   void    SetOFS(U_LONG of)            {Offset = of;}
   inline   U_LONG  GetOFS()                     {return Offset;}
@@ -3191,11 +3233,11 @@ class CSlot {
   inline   bool    IsFixed()                    {return  (Fixed != 0);}
   inline   void    SetCurLine(char nl)          {cLIN = nl;}
   inline   void    SetTotLine(char nl)          {nLIN = nl;}
-  inline   void    SetSeq(U_INT n)              {Seq  = n;}
+  inline   void    SetSlotSeq(U_INT n)          {Seq  = n;}
   //--------------------------------------------------------------
-  inline   void    SetName(char *nm)            {strncpy(Name,nm,SLOT_NAME_DIM); Name[SLOT_NAME_DIM-1] = 0;}
-  inline   char   *GetName()                    {return Name;}
-  inline   int     GetSeq()                     {return Seq;}
+  inline   void    SetSlotName(char *nm)        {strncpy(Name,nm,SLOT_NAME_DIM); Name[SLOT_NAME_DIM-1] = 0;}
+  inline   char   *GetSlotName()                {return Name;}
+  inline   int     GetSlotSeq()                 {return Seq;}
 };
 
 //=====================================================================
@@ -3296,6 +3338,166 @@ typedef struct {
     U_INT dim;                                      // Dimension
     char *data;                                     // Polygon definitions
 } COAST_REC ;
+//=====================================================================
+//	Queue Header. Used for queuing D2_POINT object
+//=====================================================================
+template <class T> class Queue {
+protected:
+	//--------------Attributes ------------------------------------
+	U_SHORT			NbOb;									// Item number
+	T	 *First;					              // First object in queue
+	T	 *Last;													// Last  object in queue
+	T  *Prev;
+public:
+  Queue();
+ ~Queue();
+  //---------inline ---------------------------------------------
+  inline  T*  GetFirst()         {return First;}
+  inline  T*  GetLast()          {return Last; }
+  inline  T*  NextFrom(T *p)     {return (p)?(p->next):(0);}
+  inline  T*  PrevFrom(T *p)     {return (p)?(p->prev):(0);}
+  inline  U_SHORT     GetNbObj() {return NbOb;}
+  inline  bool        NotEmpty()  {return (0 != NbrOb);}
+	//--- Circular links -----------------------------------------
+	inline  T*  CyNext(T *p)	{T* n = p->next; if (0 == n) n = First; return n;}
+	inline  T*  CyPrev(T *p)	{T* n = p->prev; if (0 == n) n = Last;  return n;}
+	//------------------------------------------------------------
+	inline  void  Update(int k,T *p, T *q) {NbOb += k; if (p == Last) Last = q;}
+	//------------------------------------------------------------
+  void        Clear();
+  void        PutLast (T *obj);
+  void        PutBefore(T *ne,T *obj);
+	void        PutHead(T *obj);
+  T          *Detach(T *obj);
+  T          *Pop();
+	void				SwitchToLast(T *obj);
+	void        TransferQ(Queue<T> &h);
+	T          *Remove(T *obj);
+	//--------------------------------------------------------------------
+	T					 *SwapFirst()		{T *h = First; First = 0;					return h; }
+	T					 *SwapLast()		{T *e = Last; Last = 0; NbOb = 0; return e; }
+};
+//==========================================================================
+//  GENERIC QUEUE MANAGEMENT
+//==========================================================================
+template <class T> Queue<T>::Queue()
+{ NbOb    = 0;
+  First   = 0;
+  Last    = 0;
+  Prev    = 0;
+}
+//----------------------------------------------------------
+//	Destory all elements
+//----------------------------------------------------------
+template <class T> Queue<T>::~Queue()
+{	Clear();	}
+//----------------------------------------------------------
+//	Insert element Obj at end of queue
+//----------------------------------------------------------
+template <class T> void	Queue<T>::PutLast (T *obj)
+{	NbOb++;								                    // Increment count
+	obj->next	 = 0;							              // No next
+	T *lo = Last;															// Get the last object
+	obj->prev	 = lo;							            // Link to previous
+	Last	     = obj;							            // This is the last
+	if (lo == NULL)	  First    = obj;					// Queue was empty
+	if (lo != NULL)		lo->next = obj;					// Link previous to new
+	return ;	
+}
+//----------------------------------------------------------
+//	Insert element Obj at Head of queue
+//----------------------------------------------------------
+template <class T> void Queue<T>::PutHead(T *obj)
+{	NbOb++;
+  T *nxt = First;
+	obj->next = nxt;
+	obj->prev = 0;
+	First			= obj;
+	if (nxt)	nxt->prev = obj;
+	else			Last			= obj;
+	return;
+}
+//---------------------------------------------------------
+//	Insert new element ne after object obj
+//----------------------------------------------------------
+template <class T> void Queue<T>::PutBefore(T *ne,T *obj)
+{ T *prv = (obj)?(obj->prev):(Last);
+  if (prv)  prv->next = ne;
+  ne->next  = obj;
+  if (obj)  obj->prev = ne;
+  ne->prev  = prv;
+  if (0 ==     obj)   Last  = ne;
+  if (First == obj)   First = ne;
+  NbOb++;
+  return;  
+}
+//----------------------------------------------------------
+//	Detach element  obj from Queue return the previous
+//----------------------------------------------------------
+template <class T> T* Queue<T>::Detach(T *obj)
+{	T	*nx = obj->next;					      // next object
+	T	*pv = obj->prev;					      // Previous
+	NbOb--;														// Decrease count
+	if (nx)		nx->prev = pv;					// Relink next
+	if (pv)		pv->next = nx;					// Relink previous
+	if (First == obj)	    First = nx;	// New first
+	if (Last  == obj)	    Last  = pv;	// New last
+	obj->next	= 0;								    // Clear detached next
+	obj->prev = 0;								    // Clear detached previous
+	return pv;	}
+//---------------------------------------------------------------
+//	Detach element  obj from Queue without destroying the pointer
+//---------------------------------------------------------------
+template <class T> T* Queue<T>::Remove(T *obj)
+{	T	*nx = obj->next;					      // next object
+	T	*pv = obj->prev;					      // Previous
+	NbOb--;														// Decrease count
+	if (nx)		nx->prev = pv;					// Relink next
+	if (pv)		pv->next = nx;					// Relink previous
+	if (First == obj)	    First = nx;	// New first
+	if (Last  == obj)	    Last  = pv;	// New last
+	return obj;	}
+//---------------------------------------------------------------
+//	Detach element  obj from Queue and put at end of Queue
+//---------------------------------------------------------------
+template <class T> void Queue<T>::SwitchToLast(T *obj)
+{	Detach(obj);
+	PutLast(obj);
+}
+//---------------------------------------------------------------------
+//	Pop the first object from Queue
+//---------------------------------------------------------------------
+template <class T> T*	Queue<T>::Pop()	
+{	T	*obj	  = First;															// Pop the first
+	if (obj)	{First  = obj->next; NbOb--; }		    // Update header
+	if (First)	First->prev = 0;										// First has no previous
+	if (Last == obj)	  Last = 0;					          // Queue is now empty
+	if (0 == obj)	return obj;				
+	obj->next	= 0;
+	obj->prev	= 0;
+	return obj;	}
+//-----------------------------------------------------------------------
+//	Delete all objects in a queue
+//-------------------------------------------------------------------------
+template <class T> void Queue<T>::Clear()
+{	T *obj = Pop();
+	while (obj)
+	{	delete obj;
+		obj	= Pop();
+	}
+	return;
+}
+//-----------------------------------------------------------------------
+//	Transfer Queue
+//-------------------------------------------------------------------------
+template <class T> void Queue<T>::TransferQ(Queue<T> &Q)
+{ Q.First = First;
+	Q.Last  = Last;
+	Q.NbOb	= NbOb;
+	Q.Prev  = 0;
+	First = Last = Prev = 0;
+	NbOb	= 0;
+}
 
 //===================================================================================
 //    Structure used for makink continuous text from a list of pointers

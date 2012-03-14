@@ -493,7 +493,7 @@ int CIniFile::Load (const char* iniFilename)
   while (!feof (f)) {
    *s = '§';
 		fgets (s, PATH_MAX, f);
-		s[PATH_MAX-1] = 0;
+		s[FNAM_MAX] = 0;
 		// ignore empty lines
 	  if ((strncmp (s, "\n", 1) == 0))		continue;
 		if (*s == '§')											continue;

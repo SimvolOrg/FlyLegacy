@@ -62,8 +62,8 @@ public:
   void    PutEnd (CqItem *item);
   void    PutHead(CqItem *item);
   CqItem *Detach(CqItem *itm);
+  void    Raz();
   void    Clear();
-  void    Flush();
   CqItem *Pop();
   CqItem *GetFirst();
   CqItem *GetLast()             {return Last;}

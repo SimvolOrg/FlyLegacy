@@ -26,6 +26,7 @@
 #include "../Include/Globals.h"
 #include "../Include/Fui.h"
 #include "../Include/FuiUser.h"
+#include "../Include/FuiOption.h"
 #include <vector>
 #include <stdio.h>
 //=====================================================================================

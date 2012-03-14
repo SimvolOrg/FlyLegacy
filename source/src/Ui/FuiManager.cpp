@@ -35,8 +35,8 @@
 #include "../Include/WinControlAxis.h"
 #include "../Include/PlanDeVol.h"
 #include "../Include/Ui.h"
-#include "../Include/WinSketch.h"
-
+#include "../Include/WinCity.h"
+#include "../Include/FuiOption.h"
 #include <malloc.h>
 #include <map>
 
@@ -320,10 +320,10 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
 		//---Sketch editor-----------------------------------------
     case FUI_WINDOW_SKETCH:
-      window  = new CFuiSketch(windowId,"UI/TEMPLATES/SKETCH_EDITOR.WIN");
+			if (globals->aPROF.Has(PROF_ACBUSY))	return 0;
+      window  = new CFuiSketch(windowId,"UI/TEMPLATES/CITY_EDITOR.WIN");
       window->MoveTo(1036,840);
       break;
-
     //---SUBSYSTEM PROBE-----------------------------------------
     case FUI_WINDOW_PROBE:
       window  = new CFuiProbe (windowId,"UI/TEMPLATES/Probe.WIN");
@@ -613,7 +613,7 @@ void CFuiManager::ExitDrawing()
 ///   screen refresh.
 //-------------------------------------------------------------------------------
 void CFuiManager::Draw ()
-{ if (tClick)   tClick--;
+{ if (tClick > 0)   tClick -= globals->dRT;
   std::map <Tag,CFuiWindow*>::iterator w;
   std::map <Tag,CFuiWindow*>::iterator e;
   for (w = winMap.begin(); w!= winMap.end();)
@@ -654,6 +654,7 @@ void CFuiManager::Draw ()
       case FUI_WINDOW_OPEN:
       case FUI_WINDOW_MOVE:
           // Window is open; draw it
+				  if (win->NotModal())	win->TimeSlice();
           win->Draw ();
           continue;
     }
@@ -829,7 +830,7 @@ bool CFuiManager::MouseToWind(int mx, int my, EMouseButton bt)
 /// \param button    Mouse button clicked
 ///-------------------------------------------------------------------
 bool CFuiManager::MouseClick (int mx, int my, EMouseButton bt)
-{ if ((tClick) && (bt == MOUSE_BUTTON_LEFT))  return DoubleClick(mx,my,bt);
+{ if ((tClick > 0) && (bt == MOUSE_BUTTON_LEFT))  return DoubleClick(mx,my,bt);
   CFuiWindow *wck  = 0;
   CFuiWindow *win  = 0;
   std::vector<CFuiWindow *>::reverse_iterator  ip;
@@ -850,7 +851,7 @@ bool CFuiManager::MouseClick (int mx, int my, EMouseButton bt)
   if (win == 0)					return  MouseToWind(mx, my, bt);                            
 	//---This is a simple click. Arm timer -------------------
 	win->MouseClick (mx, my, bt);
-	tClick = 10;
+	tClick = 0.25F;
 	return true;
 }
 //-------------------------------------------------------------------
@@ -890,6 +891,11 @@ void CFuiManager::SetComponentText (Tag window, Tag component, char* text)
     }
   }
 }
+///--------------------------------------------------------------------------
+//	Set big font
+//---------------------------------------------------------------------------
+void	CFuiManager::SetBigFont()
+{	note1->ChangeFont(&globals->fonts.ftmono20); }
 ///--------------------------------------------------------------------------
 /// Dump FuiManager details to a file for debugging
 ///

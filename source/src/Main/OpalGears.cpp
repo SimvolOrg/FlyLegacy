@@ -378,7 +378,7 @@ void CGearOpal::BrakeForce(float dT)
 	//--- Check velocity -------------------------------------
 	double lv  = local_velocity.y;				
 	if (fabs(lv) < 0.001) lv = 0;
-	if (lv <= 0)	bf = 0;
+	if (lv <= 0)	bf = -bf;
 	gearData->brakF	= bf;													// Brake force to apply
 		//--- Compute a torque value to add to steering one -----
 	mveh->AddDifBrake(bf * diffK * gearData->bPos.x / ms);

@@ -51,10 +51,49 @@
 #include <stdio.h>
 
 extern void heapdump(char *);
-//
+//===============================================================================================================
+//---------Window properties -----------------------------------------
+//===============================================================================================================
+#define FUI_TRANSPARENT         0x0001        // Transparent windows
+#define FUI_VT_RESIZING         0x0002        // Vertical resizing
+#define FUI_HZ_RESIZING         0x0004        // Horizontal resizing
+#define FUI_XY_RESIZING         0x0006        // Both resizing
+#define FUI_VT_RELOCATE         0x0008        // Relocate verticaly on resize
+#define FUI_HZ_RELOCATE         0x0010        // Relocate horizontaly on resize
+#define FUI_NO_MOUSE            0x0020        // No mouse sensisility
+#define FUI_EDIT_MODE           0x0040        // EDIT PERMITTED
+#define FUI_HAS_QUAD            0x0080        // Window has panel
+#define FUI_IS_VISIBLE          0x0100        // Window is visible
+#define FUI_IS_ENABLE           0x0200        // Window is enabled
+#define FUI_UPPER_CASE          0x0400        // text in upper case
+#define FUI_NO_BORDER						0x0800				// No border
+#define FUI_IS_LOCKED           0x1000        // Locked component
+#define FUI_REPEAT_BT						0x2000				// Repeat click
+#define FUI_BLINK_TXT						0x4000				// Blink text
+//===============================================================================================================
+//	Window size
+//===============================================================================================================
+#define WINDOW_SIZE_MINI  0
+#define WINDOW_SIZE_NORM  1
+#define WINDOW_SIZE_MAXI  2
+//===============================================================================================================
+//	File search parameters
+//===============================================================================================================
+struct FILE_SEARCH {
+	char		close;												// With close button
+	char		sbdir;												// Look in subdirectory
+	char    userp;												// User parameter
+	char   *text;													// Text to  display
+	char	 *dir;													// Directory name
+	char	 *pat;													// File pattern
+	char   *sfil;													// Selection
+	char   *sdir;													// Found directory
+};
+//===============================================================================================================
 // The following enum defines unique window IDs for all window types.  It is used
 //   as a means for applications to avoid using the same ID for different window types
 //
+//===============================================================================================================
 enum EFuiWindowIdentifier
 {
   // The following window types are supported in the Alpha build
@@ -112,6 +151,7 @@ enum EFuiWindowIdentifier
 	FUI_WINDOW_TEDITOR								 = 'wted',
   FUI_WINDOW_MBROS                   = 'mbro',
 	FUI_WINDOW_SKETCH									 = 'skch',
+	FUI_WINDOW_FILE_BOX							   = 'fbox',
   FUI_WINDOW_STATS                   = 'Stat',
   FUI_WINDOW_DEFAULT                 = '?win',
 
@@ -268,7 +308,8 @@ typedef enum {
   FUI_WINDOW_OPEN,
   FUI_WINDOW_CLOSING,
   FUI_WINDOW_CLOSED,
-  FUI_WINDOW_MOVE
+  FUI_WINDOW_MOVE,
+	FUI_WINDOW_MODAL,
 } EFuiWindowState;
 //===================================================================================
 // Forward declare all class types
@@ -335,23 +376,6 @@ class CFuiComponent : public CStreamObject
                  
                   
   };
-  //---------Window properties -----------------------------------------
-#define FUI_TRANSPARENT         0x0001        // Transparent windows
-#define FUI_VT_RESIZING         0x0002        // Vertical resizing
-#define FUI_HZ_RESIZING         0x0004        // Horizontal resizing
-#define FUI_XY_RESIZING         0x0006        // Both resizing
-#define FUI_VT_RELOCATE         0x0008        // Relocate verticaly on resize
-#define FUI_HZ_RELOCATE         0x0010        // Relocate horizontaly on resize
-#define FUI_NO_MOUSE            0x0020        // No mouse sensisility
-#define FUI_EDIT_MODE           0x0040        // EDIT PERMITTED
-#define FUI_HAS_QUAD            0x0080        // Window has panel
-#define FUI_IS_VISIBLE          0x0100        // Window is visible
-#define FUI_IS_ENABLE           0x0200        // Window is enabled
-#define FUI_UPPER_CASE          0x0400        // text in upper case
-#define FUI_NO_BORDER						0x0800				// No border
-#define FUI_IS_LOCKED           0x1000        // Locked component
-#define FUI_REPEAT_BT						0x2000				// Repeat click
-#define FUI_BLINK_TXT						0x4000				// Blink text
   //--------------------------------------------------------------------
 public:
   // Constructors / destructor
@@ -386,7 +410,9 @@ public:
   virtual CFuiThemeWidget*  FindThemeWidget (Tag wid, const char *name);
   virtual void        SetFont (Tag fontTag);
   virtual void        Edit(){}
-  //--------Mouse management ------------------------------------------
+	virtual void				ClearModal()		{;}
+	virtual void				FileSelected(FILE_SEARCH *pm)  {;}
+	//--------Mouse management ------------------------------------------
   virtual int         NoMouse() {return (prop & FUI_NO_MOUSE);}
   virtual bool        MouseHit (int x, int y);
   virtual bool        MouseMove (int x, int y);
@@ -481,10 +507,10 @@ protected:
 	void						 SetQuad(int wd,int ht);
   //--------------------------------------------------------------
 protected:
-  std::list<CFuiComponent*> decorationList; ///< Decoration components
+  char                desi[6];          ///< Designator (Tag)
+	std::list<CFuiComponent*> decorationList; ///< Decoration components
   EFuiComponentTypes  type;             ///< Component type
   Tag                 id;               ///< Unique identifier
-  char                desi[8];          ///< Designator (Tag)
   int                 bind;             ///< Parent binding flags
   char               *wName;						///< Widget name
   Tag                 widgetTag;        ///< Widget tag
@@ -722,42 +748,30 @@ class CFuiPage;
 class CFuiMenuBar;
 class CmHead;
 //=====================================================================================
-#define WINDOW_SIZE_MINI  0
-#define WINDOW_SIZE_NORM  1
-#define WINDOW_SIZE_MAXI  2
-//=====================================================================================
 class CFuiWindow : public CFuiComponent
 {
-public:
-  //---------Type of VLBOX -------------------------------------
-  enum  VLTYP   { TITLE = 0x01,
-                  NOHSC = 0x02,
-  };
 
 public:
   // Constructors / destructor
-  CFuiWindow (Tag tag, const char* winFilename, int wd = 0, int ht = 0, short lim = 0);
-  ~CFuiWindow (void);
+   CFuiWindow (Tag tag, const char* winFilename, int wd = 0, int ht = 0, short lim = 0);
+   virtual ~CFuiWindow (void);
 
   // CStreamObject methods
   virtual int         Read (SStream *stream, Tag tag);
   virtual void        ReadFinished (void);
   //-----Helper to add component ----------------------------------
-  void                AddChild(Tag idn,CFuiComponent *win,char *txt = 0,U_INT p = 0);
+  void                AddChild(Tag idn,CFuiComponent *win,char *txt = 0,U_INT p = 0, U_INT color = 0);
   //--------Database Management -----------------------------------
           void        PostRequest(CDataBaseREQ *req);
   virtual void        AddDBrecord(void *rec,DBCODE cd) {};
   virtual bool        NotifyFromDirectory(CmHead *obj){return false;}
   //----Helpers For derived class only ----------------------------
   virtual void        Initialize(CmHead*obj,U_SHORT type){}
+	virtual void				FileSelected(FILE_SEARCH *pm) {;}
+					void				CreateFileBox(FILE_SEARCH *fpm);
+					void				CreateDialogBox(char *ttl, char *msg);			
           void        AddZoomButton();
           void        AddMiniButton();
-          bool        CreateVORwindow(CmHead *obj,U_INT No,int lim);
-          bool        CreateNDBwindow(CmHead *obj,U_INT No,int lim);
-          bool        CreateAPTwindow(CmHead *obj,U_INT No,int lim);
-          bool        CreateAPTwinLIT(CmHead *obj,U_INT No,int lim);
-          bool        SmallDetailObject(CmHead *obj,U_INT No);
-          bool        OpenWinDET (CmHead *obj,U_INT No);
           bool        ClickImage (int mx, int my, EMouseButton button,S_IMAGE &info);
           bool        MoveImage(int mx,int my,S_IMAGE &info);
           bool        ResetImage(S_IMAGE &info);
@@ -773,6 +787,8 @@ public:
   void                ModifyShow(Tag idn, bool vs);
 	//--- Profile management ----------------------------------------
 	virtual void				CheckProfile();
+	//----------- picking management --------------------------------
+	virtual void				OnePicking(U_INT nb) {;}
   //------------Mouse management ----------------------------------
   virtual bool        MouseMove (int x, int y);
   virtual bool        MouseClick (int x, int y, EMouseButton button);
@@ -786,6 +802,8 @@ public:
   virtual void        NotifyResize(short dx,short dy) {;}
   virtual void        MoveBy (int x, int y);
   virtual void        MoveTo (int xs,int ys);
+	//-----------------------------------------------------------------
+	virtual void				TimeSlice() {;}
   virtual bool        KeyboardInput(U_INT key);
 	virtual bool				MouseCapture(int mx, int my, EMouseButton bt) {return false;}
   //----------------------------------------------------------------
@@ -806,7 +824,8 @@ public:
   static void         ParseThemeElement (const char* s);
   //--------- CFuiWindow methods-------------------------------------
   virtual void        Close();
-  //-----------------------------------------------------------------
+	virtual void				ModalClose();
+	//-----------------------------------------------------------------
   U_CHAR              GetState (void) {return state;}
   void                SetTitle (char* title);
   CFuiComponent*      GetComponent (Tag component);
@@ -826,9 +845,11 @@ public:
   void                DebDrawInside();
   void                EndDrawInside();
   //-------------------------------------------------------------------
-  inline int TitleHeight()  {return (tBar)?(tBar->Height()):(0);}
-  inline Tag GetWinId()     {return windowId;}
-  inline void SetState(U_CHAR s)  {state = s;}
+  inline int		TitleHeight()  {return (tBar)?(tBar->Height()):(0);}
+  inline Tag		GetWinId()     {return windowId;}
+  inline void		SetState(U_CHAR s)  {state = s;}
+	inline bool		NotModal()			{return (0 == modal); }
+	inline void		ClearModal()		{modal = 0;}
   //-------------------------------------------------------------------
 protected:
   Tag               windowId;   ///< Window manager unique ID for this window
@@ -843,7 +864,6 @@ protected:
   U_CHAR            borderSize; ///< Border size
   U_CHAR            move;       ///< Window is movable
   U_CHAR            save;       ///< Save ???
-  EFuiLayer         layer;      ///< Drawing layer
 	char							abtn;				// Airport button
 	char							obtn;				// Object button
   //-----------------------------------------------------
@@ -859,6 +879,7 @@ protected:
   CFuiCloseButton    *btc;
   CFuiZoomButton     *btz;
   CFuiMinimizeButton *btm;
+	CFuiWindow         *modal;										// Modal windows
 	//---- Move management -------------------------------------------
 	CFuiComponent      *edge;											// Selected edge for resize
   int               lastX, lastY;               ///< Cursor position at last move update
@@ -1433,7 +1454,7 @@ public:
   void                SetChildText(Tag id,char *txt);
   void                SetEditMode(Tag id,U_CHAR md);
   bool                KeyboardInput(U_INT key);
-  void                AddChild(Tag idn,CFuiComponent *cmp,char *txt);
+  void                AddChild(Tag idn,CFuiComponent *cmp,char *txt, U_INT color = 0);
 	//----------------------------------------------------------------------
 	void								SetText(char *t);
   //------NOTIFICATIONS --------------------------------------------------
@@ -1474,7 +1495,6 @@ protected:
   U_CHAR    autowidth;    ///< Autowidth
   U_CHAR    input;        // Input allowed
   U_CHAR    scrol;        /// Last scroll
-  bool      noBackground; ///< Don't draw background
   U_SHORT   rowSelected;  ///< selected row number
   //------------Text dimension -----------------------------
   short     hCar;             // Character height
@@ -1489,7 +1509,6 @@ protected:
   //-------------Full box -liste of decorations ---------
   CFuiComponent     *fBox[RSIZ];
   //-----------Color for component------------------------
-  U_INT  cTxtNormal;
   U_INT  cTxtHLight;
   U_INT  cBakHLight;
   U_INT  cBackTitle;
@@ -1519,7 +1538,7 @@ public:
   void          SetSelectionTo(U_SHORT nl);
   short         GetTextBase(short line);
   void          Underline(short line);
-  void          SetColorTxtNormal (void) {cText = cTxtNormal;}
+  void          SetColorTxtNormal (void) {cText = colText;}
   void          ResizeVT(short dy);
   void          MoveBy(int xs,int ys);
   //-------EDIT INTERFACE -------------------------------------------
@@ -1538,8 +1557,9 @@ public:
   inline  void    SetVScroll()      {vscr = 1;}
   inline  void    SetBand(short a,short n)  {aROW = a; bROW = a+n;}
   inline  void    FocusIn(int a,int b)      {aROW = a; bROW = b;}
-  //-----------------------------------------------------------------
-  short         ChangeLineHeight(short ht);
+  //----------Management -------------------------------------------
+	void					SetTransparentMode();
+	short         ChangeLineHeight(short ht);
   short         IncLineHeight(short ht);
   void          SetVSRatio(float rat);
   void          SetHSRatio(float rat); 
@@ -1841,7 +1861,6 @@ class CFuiPage: public CFuiComponent
   short   hCar;                                   // Char height
   short   wCar;                                   // Char wide
   U_INT  cBackPane;                               // Color Back Pane
-  U_INT  cTxtNormal;                              // Text normal
   U_INT  cTxtHLight;                              // Text Hilight
   U_INT  cBakHLight;                              // Back Hilit
   U_INT  cText[2];
@@ -1971,7 +1990,7 @@ protected:
   unsigned char   xPos;           // Original screen position
   unsigned char   yPos;           // Original screen position
   unsigned char   widn;           // Window numbering
-  U_SHORT       tClick;           // Time clicked
+  float         tClick;           // Time clicked
   CFuiWindow   *wTop;             // Top windows
 	CFuiWindow	 *wCap;							// Mouse Capturing window
   char          wLast[8];         // Last clicked
@@ -2026,20 +2045,21 @@ public:
 public:
   // Access functions for applications to get/set widget state
   void  SetComponentText (Tag window, Tag component, char* text);
+	void	SetBigFont();
 	//--------------------------------------------------------------------------
-	inline char    *PilotNote()					{return notep->Buffer();}
+	char    *PilotNote()					{return notep->Buffer();}
   //--------------------------------------------------------------------------
-  inline void     SetNoticeFont(SFont *f) {note1->ChangeFont(f);}
-  inline void     RazCrash()          {notec->RazActive();}
-  inline void     SetCrash()          {notec->SetActive();}
-	inline void			CaptureMouse(CFuiWindow *w)	{wCap	= w;}
-	inline void			CaptureRelease()						{wCap = 0;}
+  void     SetNoticeFont(SFont *f) {note1->ChangeFont(f);}
+  void     RazCrash()          {notec->RazActive();}
+  void     SetCrash()          {notec->SetActive();}
+	void			CaptureMouse(CFuiWindow *w)	{wCap	= w;}
+	void			CaptureRelease()						{wCap = 0;}
   //--------------------------------------------------------------------------
-  inline CFuiTextPopup *GetCrashNote() {return notec;}
+  CFuiTextPopup *GetCrashNote() {return notec;}
   //--------------------------------------------------------------------------
-  inline char    *HelpBuffer()  {return help->GetText();}
+  char    *HelpBuffer()  {return help->GetText();}
 	//--------------------------------------------------------------------------
-	inline U_INT		GetTexOBJ()		{return xOBJ;}
+	U_INT		GetTexOBJ()		{return xOBJ;}
   //--------------------------------------------------------------------------
 protected:
   CFuiComponent*  FindComponent (Tag windowID, Tag id);
@@ -2068,18 +2088,6 @@ class CFuiConfirmQuit : public CFuiWindow
 public :
   CFuiConfirmQuit (Tag id, const char* filename);
   void NotifyChildEvent (Tag id, Tag component, EFuiEvents event);
-};
-//=============================================================================================
-// FUI Error message
-//=============================================================================================
-class CFuiErrorMSG : public CFuiWindow
-{	//------------------------------------------------------------
-	CFuiLabel *mesg;
-public :
-  CFuiErrorMSG (Tag id, const char* filename);
-  void NotifyChildEvent (Tag id, Tag component, EFuiEvents event);
-	//--------------------------------------------------------------
-	inline void Display(char *m)	{mesg->SetText(m);}
 };
 //=============================================================================================
 

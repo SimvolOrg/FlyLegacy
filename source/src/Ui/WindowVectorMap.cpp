@@ -1196,7 +1196,7 @@ void CFuiVectorMap::EditCoordinates(int sx,int sy)
   AddMilesTo(geop,dx,dy);
 	//--- Get altitude at geop -------------------
 	GroundSpot lnd(geop.lon,geop.lat);
-	globals->tcm->SetGroundAt(lnd);
+	globals->tcm->GetGroundAt(lnd);
 	geop.alt	= lnd.alt;
 	return;
 }
@@ -1572,7 +1572,7 @@ int CFuiVectorMap::StartonRWY(short itm)
 //----------------------------------------------------------------------------------
 void CFuiVectorMap::SetElevation(SPosition &p)
 {	GroundSpot lnd(p.lon,p.lat);
-  p.alt  = globals->tcm->SetGroundAt(lnd);
+  p.alt  = globals->tcm->GetGroundAt(lnd);
 	_snprintf(WptALTI,120,"%05d feet",int(p.alt));
 	return;
 }

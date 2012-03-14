@@ -536,6 +536,15 @@ void CCamera::ToggleBox()
 {	globals->fui->ToggleFuiWindow('ccam');
 	return;
 }
+//-------------------------------------------------------------------------
+//  Teleport to requested position
+//-------------------------------------------------------------------------
+void CCamera::GoToPosition(SPosition &dst)
+{ globals->m3d->ReleaseVOR();
+  globals->geop = dst;
+  return;
+}
+
 //------------------------------------------------------------------------
 //  Screen is resized
 //-------------------------------------------------------------------------
@@ -730,7 +739,7 @@ void CCamera::SetAngle(double a, double b)
   return;
 }
 //-------------------------------------------------------------------------
-//  Set reste default
+//  Set  default
 //-------------------------------------------------------------------------
 void CCamera::Reset()
 { range   = globals->camRange;      // xx feet initial
@@ -1427,6 +1436,9 @@ CRabbitCamera::CRabbitCamera()
 { Prof.Set(CAM_IS_SPOT);
   theta = DegToRad (0.0f);
   phi   = DegToRad (30.0f);
+	//---------------------------------------------
+	trak	  = 0;		// No tracker
+	twin		= 0;		// No window
   //--- Link to cameras -------------------------
   cIden = CAMERA_RABBIT;
   cNext = 0;
@@ -1440,13 +1452,11 @@ CRabbitCamera::CRabbitCamera()
 CRabbitCamera::~CRabbitCamera()
 {	}
 //-------------------------------------------------------------------------
-//  Activate camera picking
+// Save tracker
 //-------------------------------------------------------------------------
-void CRabbitCamera::SetPicking(int x, int y)
-{	pick	= 1;
-	px		= x;
-	py		= y;
-}
+void CRabbitCamera::SetTracker(Tracker *t, CFuiWindow *w )
+{	trak	= t;	
+	twin	= w;}
 //-------------------------------------------------------------------------
 //  Start picking by loading picking matrix
 //	This function should be called by the camera when Perspective matrix
@@ -1497,6 +1507,33 @@ void CRabbitCamera::RabbitRight()
 	ori.z       = WrapTwoPi (ori.z + DegToRad (double(0.5)));	
 	TurnRabbit(ori);
 	return;
+}
+//----------------------------------------------------------------------
+//	Pick objects
+//	-Draw all markers in pick mode in a small cube centered on mouse
+//	 to detect if a hit occured.
+//	When a hit is detected, the selction is changed to the new marker
+//----------------------------------------------------------------------
+bool CRabbitCamera::PickObject(U_INT mx, U_INT my)
+{	//--- Init picking -------------------------------------
+	pick	= 1;
+	px		= mx;
+	py		= my;
+	glSelectBuffer(8,bHit);						// Supply buffer
+	glRenderMode(GL_SELECT);					// Start select mode
+	glInitNames();										// Init stack name
+	glPushName(0);										// room for one name
+	StartShoot(0);										// Init camera
+	trak->DrawMarks();											// Redraw markers
+	StopShoot();											// Stop Drawing
+	int hit = glRenderMode(GL_RENDER);
+	pick	= 0;
+	if (0 == hit)					return false;
+	//--- change selected vertex ---------------------------
+	U_INT vno = bHit[3];							// Number hited
+	trak->OneSelection(vno);
+	twin->OnePicking(vno);
+	return true;
 }
 //-------------------------------------------------------------------------
 //  Update camera position
@@ -2099,7 +2136,7 @@ void CCameraRunway::MoveBy(float dx,float dy)
   Tgt.lon  -= FN_ARCS_FROM_FEET(mx);
   Tgt.lat  += FN_ARCS_FROM_FEET(my);
   GroundSpot spot(Tgt.lon,Tgt.lat);
-  Tgt.alt   = globals->tcm->SetGroundAt(spot);
+  Tgt.alt   = globals->tcm->GetGroundAt(spot);
   return;
 }
 //==============================================================================

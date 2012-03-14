@@ -26,6 +26,7 @@
 #include "../Include/CursorManager.h"
 #include "../Include/database.h"
 #include "../Include/FuiParts.h"
+#include "../Include/FuiUser.h"
 #include "../Include/FuiKeyMap.h"
 #include "../Include/Joysticks.h"
 
@@ -74,38 +75,40 @@ RD_COM GetComINDEX(U_INT mask);
 //  CSLOT is used to store data for List box
 //==========================================================================
 CSlot::CSlot()
-{ Fixed   = 0;
-  Name[0] = 0;
+{ Fixed   = 1;
+  Init();
+}
+//--------------------------------------------------------------------------
+//	Dynamic slot
+//--------------------------------------------------------------------------
+CSlot::CSlot(char d)
+{	Fixed  = 0;
+	Init();
+}
+//--------------------------------------------------------------------------
+//	Init the slot
+//--------------------------------------------------------------------------
+void	CSlot::Init()
+{	Name[0] = 0;
   Offset  = 0;
   //--------------------
   nLIN    = 1;
   cLIN    = 0;
+	Seq			= 0;
 }
 //--------------------------------------------------------------------------
-//	By default, the search function look for the item number
+//	By default, the Print function print name in column 1
 //--------------------------------------------------------------------------
-//================================================================================
-//  Edit a country line
-//================================================================================
-void CCtyLine::Print(CFuiList *w,U_CHAR ln)
-{ w->NewLine(ln);
-  w->AddText(ln, 1, 0,GetName());
-  return;
-}
-//================================================================================
-//  Edit a State line
-//================================================================================
-void CStaLine::Print(CFuiList *w,U_CHAR ln)
-{ w->NewLine(ln);
-  w->AddText(ln, 1, 0,GetName());
-  return;
+void CSlot::Print(CFuiList *w,U_CHAR ln)
+{	w->NewLine(ln);
+	w->AddText(ln, 1, 0,GetSlotName());
 }
 //================================================================================
 //  Edit an Airport line
 //================================================================================
 void CAptLine::Print(CFuiList *w,U_CHAR ln)
 { w->NewLine(ln);
-  w->AddText(ln, 1,28,GetName());
+  w->AddText(ln, 1,28,GetSlotName());
   w->AddText(ln,18, 0,GetAica());
   w->AddText(ln,22, 0,GetIfaa());
   w->AddText(ln,26, 0,GetOtxt());
@@ -117,7 +120,7 @@ void CAptLine::Print(CFuiList *w,U_CHAR ln)
 //================================================================================
 void CNavLine::Print(CFuiList *w,U_CHAR ln)
 { w->NewLine(ln);
-  w->AddText(ln, 1,30,GetName());
+  w->AddText(ln, 1,30,GetSlotName());
   w->AddText(ln,18, 0,GetVaid());
   w->AddText(ln,26, 0,GetVtyp());
   w->AddText(ln,36, 0,GetClab());
@@ -129,7 +132,7 @@ void CNavLine::Print(CFuiList *w,U_CHAR ln)
 void CWptLine::Print(CFuiList *w,U_CHAR ln)
 { char edt[64];
   w->NewLine(ln);
-  w->AddText(ln, 1,30,GetName());
+  w->AddText(ln, 1,30,GetSlotName());
   EditLat2DMS(GetLatitude(),edt);
   w->AddText(ln,18, 0,edt + 5);
   EditLon2DMS(GetLongitude(),edt);
@@ -238,22 +241,7 @@ void  CRwyLine::ComputeCorner(short mx,short my)
 
 U_CHAR CRwyLine::CheckEnd(char *id,RWEND **end)   //int *px,int *py, char **d)
 {	if	(strcmp(id,Hend.rwid) == 0) {*end = &Hend; return 1;}
-/*
-	{	
-		*px	= Hend.dx;
-		*py	= Hend.dy;
-		if (d)	*d = Hend.ilsD;
-		return 1;
-	}
-	*/
 	if	(strcmp(id,Lend.rwid) == 0) {*end = &Lend; return 1;}
-	/*
-	{	*px = Lend.dx;
-		*py = Lend.dy;
-		if (d) *d = Lend.ilsD;
-		return 1;
-	}
-	*/
 	return 0;
 }
 //-----------------------------------------------------------------
@@ -323,7 +311,7 @@ void CRwyLine::Print(CFuiList *w,U_CHAR ln)
 void CFlpLine::Print(CFuiList *w,U_CHAR ln)
 { w->NewLine(ln);
   w->AddText(ln, 1, 1,GetMark());
-  w->AddText(ln, 3,24,GetName());
+  w->AddText(ln, 3,24,GetSlotName());
   w->AddText(ln,18, 5,GetIden()); 
   w->AddText(ln,22,10,GetDist());
 	w->AddText(ln,30,4, GetDirt());
@@ -338,7 +326,7 @@ void CFlpLine::Print(CFuiList *w,U_CHAR ln)
 void CFpnLine::Print(CFuiList *w,U_CHAR ln)
 { w->NewLine(ln);
   w->AddText(ln, 1,32, GetFile());
-  w->AddText(ln,16, 0, GetName());
+  w->AddText(ln,16, 0, GetSlotName());
   return;
 }
 //--------------------------------------------------------------
@@ -356,7 +344,7 @@ bool CFpnLine::Match(void *k)
 void CAirLine::Print(CFuiList *w,U_CHAR ln)
 { w->TextPolicy('bold');
   w->NewLine(ln);
-  w->AddText(ln,12,0,GetName());
+  w->AddText(ln,12,0,GetSlotName());
   w->AddBitmap(ln,1,GetBitmap());
   w->TextPolicy('deff');
   w->Underline(ln);
@@ -404,14 +392,6 @@ void CLodLine::Print(CFuiList *w,U_CHAR ln)
   return;
 }
 //================================================================================
-//  Edit Chart name
-//================================================================================
-void CMapLine::Print(CFuiList *w,U_CHAR ln)
-{ w->NewLine(ln);
-  w->AddText(ln, 1, 0, GetName());
-  return;
-}
-//================================================================================
 //  Edit a subsystem
 //================================================================================
 void CSubLine::Print(CFuiList *w,U_CHAR ln)
@@ -419,18 +399,10 @@ void CSubLine::Print(CFuiList *w,U_CHAR ln)
   U_INT   hw = aSub->GetHWID();
   if (hw > HW_MAX)  hw = 0;
   w->NewLine(ln);
-  w->AddText(ln,1,0,GetName());
+  w->AddText(ln,1,0,GetSlotName());
   sprintf(txt,"(%s)",tyst);
   w->AddText(ln,4,0,txt);
   w->AddText(ln,8,0,hwTAB[hw]);
-  return;
-}
-//================================================================================
-//  Edit a PID name
-//================================================================================
-void CPidLine::Print(CFuiList *w,U_CHAR ln)
-{ w->NewLine(ln);
-  w->AddText(ln,1,0,GetName());
   return;
 }
 //================================================================================
@@ -439,7 +411,7 @@ void CPidLine::Print(CFuiList *w,U_CHAR ln)
 void CPipLine::Print(CFuiList *w,U_CHAR ln)
 { char edt[64];
   w->NewLine(ln);
-  w->AddText(ln, 1,0,GetName());
+  w->AddText(ln, 1,0,GetSlotName());
   double val = Pid->GetValue(PRM);
   sprintf_s(edt,10,"%.05f",val);
   w->AddText(ln,18,0,edt);
@@ -455,7 +427,7 @@ void CKeyLine::Print(CFuiList *w,U_CHAR ln)
   sprintf(iden,"%s:",txt);
   w->NewLine(ln);
   w->AddText(ln, 1, 0,iden);
-  w->AddText(ln, 4,28,GetName());
+  w->AddText(ln, 4,28,GetSlotName());
   w->AddText(ln,18, 0,GetKText());
   w->AddText(ln,28, 0,GetJText());
   return;
@@ -468,7 +440,7 @@ void CAxeLine::Print(CFuiList *w,U_CHAR ln)
 { char edt[128];
 	axe->Assignment(edt,128);
 	w->NewLine(ln);
-  w->AddText(ln, 1, 0, GetName());
+  w->AddText(ln, 1, 0, GetSlotName());
   w->AddText(ln,10, 0, edt);
   return;
 }
@@ -477,14 +449,14 @@ void CAxeLine::Print(CFuiList *w,U_CHAR ln)
 //================================================================================
 void CButLine::Print(CFuiList *w,U_CHAR ln)
 { w->NewLine(ln);
-  w->AddText(ln, 1, 0, GetName());
+  w->AddText(ln, 1, 0, GetSlotName());
   w->AddText(ln, 6, 0, GetKeyText());
   return;
 }
 //================================================================================
 //  CheckList lines
 //================================================================================
-CChkLine::CChkLine(char nl) : CSlot() 
+CChkLine::CChkLine(char nl) : CSlot(1) 
 { mark  = 0;
   cLIN  = nl;
 	ActDF.Clear();
@@ -536,7 +508,7 @@ void CKeyLine::SetJoysDef(CSimButton *sbt)
 //=================================================================================
 //  Generic Texture line
 //=================================================================================
-CTgxLine::CTgxLine()
+CTgxLine::CTgxLine() : CSlot(1)
 {   type = 0;
     nite = 0;
 }
@@ -550,18 +522,10 @@ void CTgxLine::SetLabel(int tp,char *nm)
   Name[SLOT_NAME_DIM-1] = 0;
   return;
 }
-//---------------------------------------------------------------------
-//  Edit label
-//---------------------------------------------------------------------
-void CTgxLine::Print(CFuiList *w,U_CHAR ln)
-{ w->NewLine(ln);
-  w->AddText(ln, 1, 0, Name);
-  return;
-}
 //=================================================================================
 //  Wind layer line
 //=================================================================================
-CWndLine::CWndLine()
+CWndLine::CWndLine() : CSlot(1)
 {}
 //---------------------------------------------------------------------
 //  Edit label
@@ -597,6 +561,7 @@ void CWndLine::Title(CFuiList *w)
 //  Ident is concatenation of FILE:TYPE-NAME
 //=================================================================================
 CObjLine::CObjLine(CWobj *obj)
+	: CSlot(1)
 { char txt[MAX_PATH];
   char txg[8];
   Tag kind = obj->GetKind();
@@ -754,7 +719,7 @@ int CKeyItem::Read(SStream *str,Tag tag)
 bool CompareName(CSlot *s1,CSlot *s2)
 { if (s1->IsFixed())    return true;
   if (s2->IsFixed())    return false;
-  return ( (strncmp(s1->GetName(),s2->GetName(),SLOT_NAME_DIM) < 0));
+  return ( (strncmp(s1->GetSlotName(),s2->GetSlotName(),SLOT_NAME_DIM) < 0));
 }
 
 //================================================================================
@@ -770,6 +735,7 @@ CListBox::CListBox()
   iFree   = 1;
   nNOD    = 0;
   Title   = 0;
+	  Num   = 0;
 }
 //--------------------------------------------------------------------------------
 CListBox::~CListBox()
@@ -780,7 +746,7 @@ CListBox::~CListBox()
 //--------------------------------------------------------------------------------
 void  CListBox::AddSlot(CSlot *slot)
 { if (0 == slot)  return;
-  slot->SetSeq(Num++);
+  slot->SetSlotSeq(Num++);
   Obj.push_back(slot);
 	nNOD	= Obj.size();
   return;
@@ -922,7 +888,7 @@ CSlot  *CListBox::GetSelectedSlot()
 //--------------------------------------------------------------------------------
 CSlot  *CListBox::NextPrimary(CSlot *p)
 { if (0 == p)				return 0;
-	int No = p->GetSeq() + p->GetTotLines();
+	int No = p->GetSlotSeq() + p->GetTotLines();
   return (No >= nNOD)?(0):(Obj[No]);
 }
 //--------------------------------------------------------------------------------
@@ -930,7 +896,7 @@ CSlot  *CListBox::NextPrimary(CSlot *p)
 //  NOTE: p must be a primary slot
 //--------------------------------------------------------------------------------
 CSlot  *CListBox::PrevPrimary(CSlot *p)
-{ int No = p->GetSeq() - 1;         // Previous bottom
+{ int No = p->GetSlotSeq() - 1;     // Previous bottom
   if (No < Title) return 0;
   CSlot *lst = Obj[No];             // Bottom slot
   No  -= lst->GetCurLine();         // Top slot
@@ -993,7 +959,7 @@ void CListBox::EmptyIt()
 { std::vector<CSlot*>::iterator it;
   for (it = Obj.begin(); it != Obj.end();it++)
   { CSlot *slot = (*it);
-    slot->Clean();
+    slot->CleanSlot();
     if (slot->IsNotFixed()) delete (slot);
   }
   Obj.clear();
@@ -1322,7 +1288,7 @@ void CListBox::Renum(int n0, int n1)
   for (int k=n0; k<=n1; k++)
   { if (k >= end)  return;
     CSlot *slt = Obj[k];
-    slt->SetSeq(sq++);
+    slt->SetSlotSeq(sq++);
   }
   return;
 }
@@ -1602,4 +1568,99 @@ void CEditor::Key(U_INT k, short p)
   obj->CursorAt(lin,pos);
   return;
 }
+//================================================================================
+//	CFuiDetail for airports and VOR
+//================================================================================
+CFuiDetail::CFuiDetail()
+{}
+//----------------------------------------------------------------
+//	Free any resources
+//----------------------------------------------------------------
+CFuiDetail::~CFuiDetail()
+{}
+//----------------------------------------------------------------------
+//  Helper to create Detailled VOR windows 
+//----------------------------------------------------------------------
+bool  CFuiDetail::CreateVORwindow(CmHead *obj,U_INT No,int lim)
+{ CFuiNavDetail *wind = 0;
+  wind = (CFuiNavDetail *)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_NAVAID,lim);
+  if (wind)  wind->Initialize(obj,VOR,No);
+  return true;
+}
+//----------------------------------------------------------------------
+//  Helper to create Detailled NDB windows 
+//----------------------------------------------------------------------
+bool  CFuiDetail::CreateNDBwindow(CmHead *obj,U_INT No,int lim)
+{ CFuiNavDetail *wind = 0;
+  wind = (CFuiNavDetail *)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_NAVAID,lim);
+  if (wind)  wind->Initialize(obj,NDB,No);
+  return true;
+}
+//----------------------------------------------------------------------
+//  Helper to create Detailled Airport windows short version
+//  lim = 0 => Flight Plan detail
+//  lim = 1 => Short version
+//  No = waypoint No
+//----------------------------------------------------------------------
+bool  CFuiDetail::CreateAPTwindow(CmHead *obj,U_INT No,int lim)
+{ CFuiAptDetail *wind = 0;
+  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_AIRPORT,lim);
+  if (wind)  wind->Initialize(obj,APT,No);
+  return true;
+}
+//----------------------------------------------------------------------
+//  Helper to create Detailled Airport windows with runway light profile
+//  No = waypoint No
+//----------------------------------------------------------------------
+bool  CFuiDetail::CreateAPTwinLIT(CmHead *obj,U_INT No,int lim)
+{ CFuiAptDetail *wind = 0;
+  wind = (CFuiAptDetail*)globals->fui->CreateFuiWindow(FUI_WINDOW_DETAILS_AIRPORT,lim);
+  if (0 == wind)  return true;
+  wind->SetRunwayVersion();
+  wind->Initialize(obj,APT,No);
+  return true;
+}
+//----------------------------------------------------------------------
+//  Helper to create Small Detailled windows on an object
+//----------------------------------------------------------------------
+bool CFuiDetail::SmallDetailObject(CmHead *obj,U_INT No)
+{ if (0 == obj)		return false;
+	QTYPE type      = obj->GetActiveQ();
+  switch (type) {
+    case VOR:
+      return CreateVORwindow(obj,No,1);
+
+    case NDB:
+      return CreateNDBwindow(obj,No,1);
+
+    case APT:
+      return CreateAPTwindow(obj,No,1);
+  }
+ return true;
+}
+//----------------------------------------------------------------------
+//  Helper to create Map Detailled windows on an object
+//----------------------------------------------------------------------
+bool CFuiDetail::OpenWinDET(CmHead *obj,U_INT No)
+{ QTYPE type        = obj->GetActiveQ();
+  switch (type) {
+    //---Create a short version of detailled nav ------
+    case VOR:
+      return CreateVORwindow(obj,No,1);
+    //---Create a short version of detailled ndb ------
+    case NDB:
+      return CreateNDBwindow(obj,No,1);
+    //---Create a full version of detailled ndb ------
+    case APT:
+			{	CAirport *apt = (CAirport*)obj;
+				if (!apt->UnderEdit())   CreateAPTwinLIT(obj,No,0);
+				return true;
+			}
+		//--- Init for moving --------------------------
+		case WPT:
+			return true;
+  }
+ return true;
+}
+
 //====================END OF FILE ==========================================================

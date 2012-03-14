@@ -25,7 +25,6 @@
 //============================================================================
 //  GENERAL DEFINITIONS
 //============================================================================
-#define TC_PATH_DIM (512)
 //-----FILE FORMATS ---------------------------------------------
 #define TC_FILE_PNG  0
 #define TC_FILE_JPG  1
@@ -40,6 +39,7 @@
 #define SIN_T1   (double(4.0f / TC_PI))
 #define SIN_T2   (double(4.0f / TC_PI_PI))
 //----------------------------------------------------------------
+#define SGD_PI                               3.14159265358979323846   /* From M_PI under Linux/X86 */
 #define PI                                    double(SGD_PI)
 #define TWO_PI                                double(PI * 2.0)
 #define HALF_PI                               double(PI / 2.0)
@@ -183,6 +183,7 @@
 //------------------------------------------------------------------------------
 #define FN_SUB_FROM_INDX(X)  (U_INT (X) & (TC_SUBD_PER_QGT - 1))
 //------------------------------------------------------------------------------
+#define FN_ARCS_FROM_DEGRE(X)		((double (X) * TC_FULL_WRD_ARCS) / 360)
 #define FN_ARCS_FROM_FEET(X) ((double(X) * TC_FULL_WRD_ARCS) / TC_FULL_WRD_FEET)
 #define FN_ARCS_FROM_MILE(X) ((double(X) * 60))
 #define FN_ARCS_FROM_QGT(X)  ((double(X) * TC_FULL_WRD_ARCS) / 512)
@@ -283,7 +284,8 @@
 #define TC_TEX_ALT    2             // Alternate texture
 #define TC_TEX_POP    3             // Swap texture
 #define TC_TEX_OBJ    4             // Request Object
-#define TC_TEX_OUT    5             // End
+#define TC_TEX_INQ    5             // In Queue
+#define TC_TEX_NEW    9							// New supertile
 //-----CONTOUR STATE parameters --------------------------
 #define TC_PIX_ZERO   0             // Value 0
 #define TC_PIX_RED    4             // RED value

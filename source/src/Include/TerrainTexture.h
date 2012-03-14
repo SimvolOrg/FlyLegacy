@@ -166,12 +166,12 @@ class CShared3DTex {
   TEXT_INFO     x3d;                          // Texture info
   //--------------------------------------------------------
 public:
-  CShared3DTex(char *tn,char tsp);
+  CShared3DTex(char *tn,char tsp, char dir = 0);
  ~CShared3DTex();
+ char                 *GetIdent()      {return  x3d.path;}
  //----------------------------------------------------------
  inline TEXT_INFO     *GetInfo()                      {return &x3d;}
- inline char          *GetIdent()                     {return  (x3d.path + 4);}
- inline void           IncUser()                      {Use++;}
+ inline U_INT          IncUser()                      {Use++; return Use;}
  inline bool           DecUser()                      {Use--; return (Use != 0);}
  inline U_INT          GetOBJ()                       {return x3d.xOBJ;}
  inline void           SetXOBJ(GLuint r)              {x3d.xOBJ = r;}
@@ -412,12 +412,13 @@ public:
   //----------------------------------------------------------
   void    GetShdOBJ(CTextureDef *txn);
   GLuint  GetTaxiTexture();
-  void   *GetM3DPodTexture(char *fn,U_CHAR tsp);
+  void   *GetM3DPodTexture(char *fn,U_CHAR tsp,char opt=0);
   void   *GetM3DSqlTexture(char *fn,U_CHAR tsp);
   void    Get3DTIF(TEXT_INFO *inf);
   void    Get3DRAW(TEXT_INFO *inf);
   void   *RefTo3DTexture(char *fn);
   GLuint  Get3DObject(void *tref);
+	void		ReserveReference(void *tref);
   void    Free3DTexture(void *sht);
   //------Night textures -------------------------------------
   int     NightGenTexture(CTextureDef *txd);

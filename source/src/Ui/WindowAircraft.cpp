@@ -136,7 +136,7 @@ void CFuiSetAir::MakeSlot(char *cpln, bool alloc,char *nfo)
   if (airInfo.NotComplete())                    return;
   CAirLine *slot = (alloc)?(new CAirLine):(&fSlot);
   slot->SetBitmap(0);
-  slot->SetName(airInfo.GetMake());
+  slot->SetSlotName(airInfo.GetMake());
   char  *icon = airInfo.GetIcon();
   if (0 == icon)          return;
   SBitmap *bmp = new SBitmap;

@@ -24,10 +24,10 @@
 #ifndef MODEL3D_H
 #define MODEL3D_H
 
-#include "../Include/Globals.h"
 #include "../Include/3dMath.h"
 #include "../Include/FlyLegacy.h"
 #include "../Include/LightSystem.h"
+#include "../Include/Globals.h"
 //===================================================================================
 #define TC_SNAP_GROUND    (0x00000001)         // Snap to ground
 #define TC_SHARE_PLACE    (0x40000000)         // Share place 
@@ -141,43 +141,68 @@ public:
 //  
 //=============================================================================
 class C3DPart : public CqItem {
+	//--- Define render vector -----------------------------
+	typedef void (C3DPart::*VREND)(void);	// Rending vector
+	char			idn[8];
   //---ATTRIBUTES ----------------------------------------------
+	C3DPart  *next;														// Next part
+	C3DPart  *prev;														// Previous part
+	//-------------------------------------------------------------
+	VREND			Rend;														// Rending vector
+	//------------------------------------------------------------
   U_CHAR    tsp;                            // Transparent indicator
   U_CHAR    lod;                            // Level of detail
+	U_CHAR    rf1;														// not used
+	U_CHAR    rf2;														// not used
+	//------------------------------------------------------------
   char     *ntex;                           // Texture name
   void     *tRef;                           // Texture Reference
   GLuint    xOBJ;                           // Texture Object
   //---List of components --------------------------------------
   int       NbVT;                           // Number of vertices
   int       NbIN;                           // Number of indices
-  F3_VERTEX   *nVTX;                            // List of vertices
-  F3_VERTEX   *nNRM;                            // Norme coordinates
-  F2_COORD    *nTEX;                            // Texture coordinates
-  int         *nIND;                            // Indice list
+  F3_VERTEX   *nVTX;                        // List of vertices
+	TC_VTAB     *vTAB;												// Vertices
+  F3_VERTEX   *nNRM;                        // Norme coordinates
+  F2_COORD    *nTEX;                        // Texture coordinates
+  int         *nIND;                        // Indice list
   //------------------------------------------------------------
-  float     Top;                                // Top Feet
-  float     Bot;                                // Bottom feet
-  //------------------------------------------------------------
-  int       total;                              // Total faces
+  int       total;                          // Total faces
   //------------------------------------------------------------
 public:
-  C3DPart(int nv);
+  C3DPart();
  ~C3DPart();
-  //-------------------------------------------------------------
+	//-------------------------------------------------------------
+	void		Release();
+	//-------------------------------------------------------------
+	void		ZRotation(double sn, double cn);
+	//-------------------------------------------------------------
+	void		AllocateW3dVTX(int nv);
+	void    AllocateOsmVTX(int nv);
+	void    AllocateObjVTX(int nv);
+	void		CopyForOSM(C3DPart *s);
+	void		DrawAsW3D();
+	void		DrawAsOSM();
+	void		DrawAsOBJ();
+	//-------------------------------------------------------------
+	void		Draw()		{(this->*Rend)();}
+	//-------------------------------------------------------------
   void    SetTexName(char *txn);
-  void    Draw();
   void    GetInfo(M3D_PART_INFO &inf);
   //-------------------------------------------------------------
   inline bool     IsEmpty()   {return (0 == NbVT) || (0 == NbIN);}
   inline void     ReduceIndice(int k) {if (k < NbIN) NbIN = k;}
-  //-------------------------------------------------------------
-  inline void     SetTREF(void *r) {tRef = r;}
-  inline void     SetLOD(int k)    {lod  = k;}
-  inline void     SetXOB(U_INT ob) {xOBJ = ob;}
-  inline void    *GetTREF()        {return tRef;}
-  inline void     AddFace(int nf)  {total += nf;}
-  inline char    *TextureName()    {return ntex;}
+	inline U_INT    GetXOBJ()					{return xOBJ;}
+  //---------------------------------------------------------------
+  inline void     SetTREF(void *r)	{tRef = r;}
+  inline void     SetLOD(int k)			{lod  = k;}
+  inline void     SetXOBJ(U_INT ob)	{xOBJ = ob;}
+  inline void    *GetTREF()					{return tRef;}
+  inline void     AddFace(int nf)		{total += nf;}
+  inline char    *TextureName()			{return ntex;}
+	inline void    *SwapTREF()				{void *r = tRef;tRef = 0;return r;}
   //----------------------------------------------------------------
+	inline TC_VTAB    *GetVTAB()						 {return vTAB;}
   inline F3_VERTEX  *GetVLIST()            {return nVTX;}
   inline F3_VERTEX  *GetNLIST()            {return nNRM;}
   inline F2_COORD   *GetTLIST()            {return nTEX;}
@@ -199,11 +224,6 @@ public:
   inline void     CpyNRM(char *s,int k)   {memcpy(nNRM,s,k);}
   inline void     CpyTEX(char *s,int k)   {memcpy(nTEX,s,k);}
   inline void     CpyIND(char *s,int k)   {memcpy(nIND,s,k);}
-  //------------------------------------------------------------------
-  inline float    GetTop()                {return Top;}
-  inline float    GetBot()                {return Bot;}
-  inline void     SetTop(float t)         {Top = t;}
-  inline void     SetBot(float b)         {Bot = b;}
   inline int      GetLOD()                {return lod;}
 };
 //=========================================================================================
@@ -217,21 +237,31 @@ public:
   inline void UnLock()              {pthread_mutex_unlock (&mux);}
   //----------------------------------------------------------------------
   ~C3DpartQ();                        // Destructor
+	void ReceiveQ(C3DpartQ &Q);
+	void Transfer(C3DpartQ &Q);
   //----------------------------------------------------------------------
   inline void PutEnd(C3DPart *prt)           {CQueue::PutEnd(prt);}
   inline C3DPart *Pop()                      {return (C3DPart*)CQueue::Pop();}
   inline C3DPart *GetFirst()                 {return (C3DPart*)CQueue::GetFirst();}
   inline C3DPart *GetNext(C3DPart *prt)      {return (C3DPart*)CQueue::GetNext(prt);}
+	inline void Clear()												 { CQueue::Clear();}
 };
 //=========================================================================================
 #define M3D_SMF 1
 #define M3D_BIN 2
+#define M3D_OBJ 3
 //=========================================================================================
 #define M3D_INIT      0
 #define M3D_INLOAD    1
 #define M3D_LOADED    2
 #define M3D_EMPTY			3
 #define M3D_ERROR     4
+//====================================================================================
+//	Object type
+//====================================================================================
+#define OSM_OBJECT (0)
+#define W3D_OBJECT (1)
+
 //=========================================================================================
 //  Class C3Dmodel to hold a model from a SMF or BIN file
 //  The 3D model key is formed by
@@ -252,7 +282,6 @@ class C3Dmodel: public CqItem, public CDrawByCamera {
   //---viewing parameters -----------------------------------------------
   float         aBot;               // Ground elevation
   float         aTop;               // Top elevation
-  float         hObj;               // Object height
   //----Rendering parameters --------------------------------------------
   U_INT        rDIR;                // Rendering direction
   //----Stack of parts for 4 levels of details (LOD) --------------------
@@ -266,6 +295,8 @@ public:
   C3DPart *PopPart()            {return pLOD[0].Pop();}
   C3DPart *PopPart(int k)       {return pLOD[k].Pop();}
   //---------------------------------------------------------------------
+	C3DpartQ &GetQueue(int k)		  {return pLOD[k];	}
+	//---------------------------------------------------------------------
   double  MaxExtend();
   int     LoadPart(char *dir);
   int     AddPodPart(C3DPart *prt);
@@ -293,7 +324,6 @@ public:
   inline char  *GetFileName()     {return fname;}
   inline float  GetGround()       {return aBot;}
   inline float  GetTop()          {return aTop;}
-  inline float  GetHeight()       {return hObj;}
   inline void   SetTop(float t)   {aTop = t;}
   inline void   SetGround(float g){aBot = g;}
   inline void   SetDirection(U_INT d) {rDIR = d;}

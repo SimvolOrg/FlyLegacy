@@ -19,6 +19,9 @@
 #pragma once
 #endif // _MSC_VER > 1000
 //=============================================================================
+#include "../Include/3DMath.h"
+#include "../Include/TerrainUnits.h"
+//=============================================================================
 //  class for Terrain info
 //=============================================================================
 class GroundSpot {
@@ -55,6 +58,7 @@ public:
   char    GetTerrain();
 	double	GetAltitude(SPosition &p);
 	bool    InvalideQuad();
+	bool    Valid();
   //------------------------------------------------------------
 	inline void		Edit(char *txt) {sprintf(txt,"QGT(%03d-%03d) TILE(%02d-%02d) GROUND=%4d feet",
 		qx,qz,tx,tz,int(alt));}
@@ -114,6 +118,7 @@ double		AddLongitude(double f1,double f2);
 void			AddToPosition(SPosition &pos,SVector &v);
 SPosition AddToPositionInFeet(SPosition &pos,SVector &v, double exf);
 SPosition AddToPositionInFeet(SPosition &pos,SVector &v);
+double		DistancePositionInFeet(SPosition &from, SPosition &to);
 void			GetRRtoLDOrientation(SVector &ld);
 double		GetLatitudeArcs(U_INT tz);
 double		GetLatitudeDelta(U_INT tz);

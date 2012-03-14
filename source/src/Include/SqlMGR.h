@@ -622,7 +622,7 @@ public:
   //----WRITING 3D model --------------------------------------------------
   bool     Check3DModel(char *name);
   bool     Check3DTexture(char *name);
-  void     Write3Dmodel(char *name,C3DPart *prt);
+  void     Write3Dmodel(char *name,C3DPart *prt, double t, double b);
   int      WriteM3DTexture(TEXT_INFO &inf);
 	//----UPDATING 3D model -----------------------------------------------
 	int			 DeleteM3DModel(char *fn);
@@ -690,6 +690,7 @@ public:
 	//--- Execution control --------------------------------------------
 	inline bool IsRuning()	{return go;}
 	inline void Stop()			{go = false;}
+	//------------------------------------------------------------------
   //---COAST METHODS -------------------------------------------------
   void  DecodeCST(sqlite3_stmt *stm,COAST_REC &cst);
   void  ReadCoast(COAST_REC &rec,C_CDT *cst);

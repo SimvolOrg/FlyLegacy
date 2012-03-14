@@ -783,6 +783,26 @@ SVector SubtractPositionInFeet(SPosition &from, SPosition &to)
   return v;
 }
 //========================================================================
+// Compute distance position in feet, based on reduction factor of 
+//   the from position
+//
+//=======================================================================
+double DistancePositionInFeet(SPosition &from, SPosition &to)
+{ CVector v;
+	//--- Get Expension factor -----------------------
+	double rad = FN_RAD_FROM_ARCS(from.lat);			// DegToRad(lat / 3600);
+  double rdf = cos(rad);
+  // Calculate number of arcseconds difference in latitude
+  double arcsecLat = to.lat - from.lat;
+  v.y = FN_FEET_FROM_ARCS (arcsecLat);
+  // Calculate arcsecond difference in longitude
+  double arcsecLon = LongitudeDifference(to.lon,from.lon);
+  v.x = FN_FEET_FROM_ARCS(arcsecLon) * rdf;				
+  // Altitude is already in feet, simply subtract
+  v.z = to.alt - from.alt;
+  return v.Length();
+}
+//========================================================================
 // SubtractPositionInArcs computes the vector offset between two globe positions.
 //   the result is in arcsec
 //=======================================================================
@@ -966,7 +986,8 @@ bool GroundSpot::ValidQGT()
 //			  from the SW corner of the QGT
 //-------------------------------------------------------------------------
 char  GroundSpot::GetTerrain()
-{ if (0 == qgt)           return 0;
+{ Rdy	= 0;
+	if (0 == qgt)           return 0;
   if ( qgt->NoQuad())     return 0;
   if (!qgt->GetTileIndices(*this))      
 					gtfo("Position error");
@@ -981,6 +1002,7 @@ char  GroundSpot::GetTerrain()
   //----Locate the triangle where p reside --------------------
   if (!qd->PointHeight(p,gNM)) 	p.z = qd->CenterElevation();
   alt         = p.z;
+	Rdy	= 1;
   return 1;
 }
 //-------------------------------------------------------------------------
@@ -1002,6 +1024,15 @@ bool GroundSpot::InvalideQuad()
 {	if (0 == qgt)					return true;
 	if (qgt->NotReady())	return true;
 	return false;
+}
+//-------------------------------------------------------------------------
+//  Check for spot validity
+//-------------------------------------------------------------------------
+bool GroundSpot::Valid()
+{	if (0 == qgt)				return false;
+	if (qgt->NoQuad())	return false;
+	if (0 == Rdy)				return false;
+	return true;
 }
 //-------------------------------------------------------------------------
 //  Compute feet distance to vertex
@@ -1275,5 +1306,20 @@ float GetHEIGHT(TC_VTAB *qd)
   float h2 = qd[1].VT_Y + qd[2].VT_Y;
   return (h1 + h2) * 0.5;
 }
+//============================================================================
+//	Rotate vertex arround Z axis
+//============================================================================
+void ZRotate(TC_VTAB &v, double sn, double cn)
+{	double x = v.VT_X;
+	double y = v.VT_Y;
+	double M0	= +cn; 
+	double M1 = +sn;
+	double M2 = -sn; 
+	double M3 = +cn;
+  v.VT_X  = ((x * M0) + (y * M2));
+	v.VT_Y  = ((x * M1) + (y * M3));
+	return;
+}
+
 //=======================END OF FILE ======================================================
 

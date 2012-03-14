@@ -184,7 +184,7 @@ CQueue::~CQueue()
 //-------------------------------------------------------------------------
 // Flush: Free all items in queue
 //-------------------------------------------------------------------------
-void CQueue::Flush()
+void CQueue::Clear()
 { CqItem *itm = Pop();
   while (itm) {delete itm; itm = Pop();}
   return;
@@ -220,7 +220,7 @@ void CQueue::Append(CQueue &q2)
 //-------------------------------------------------------------------------
 //  Clear Queue
 //-------------------------------------------------------------------------
-void  CQueue::Clear()
+void  CQueue::Raz()
 { NbObj = 0;
   First = 0;
   Last  = 0;

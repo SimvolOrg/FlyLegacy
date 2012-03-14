@@ -85,6 +85,7 @@ CFuiVehOption::CFuiVehOption(Tag idn, const char *filename)
 
   //--------------------------------------------------------
   ReadFinished();
+	if (0 == mveh)	Close();
 }
 //--------------------------------------------------------------
 //  Check for option

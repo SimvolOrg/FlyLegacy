@@ -69,11 +69,11 @@ CFuiListPlan::~CFuiListPlan()
 { 
 }
 //-------------------------------------------------------------------------
-//  Edit the titlefor list of plans
+//  Edit the title for list of plans
 //-------------------------------------------------------------------------
 void CFuiListPlan::TitlePlan()
 { CFpnLine *slot = new CFpnLine;
-  slot->SetName("Description");
+  slot->SetSlotName("Description");
   slot->SetFile("File name.......................");
   allBOX.AddSlot(slot);
   return;
@@ -95,8 +95,8 @@ void CFuiListPlan::FillPlans()
 //-------------------------------------------------------------------------
 int CFuiListPlan::AddToList(char *fn)
 { CFPlan  fpn(globals->pln,0);
-  char txt[512];
-	strncpy(txt,fn,511);
+  char txt[PATH_MAX];
+	strncpy(txt,fn,(PATH_MAX-1));
 	char *end = strrchr(txt,'.');
 	if (0 == end)						return 1;
  *end  = 0;						// Remove extension
@@ -104,7 +104,7 @@ int CFuiListPlan::AddToList(char *fn)
 	//--- Add a line to selection box ----------
 	CFpnLine *slot = new CFpnLine;
 	slot->SetFile(txt);
-	slot->SetName(fpn.GetDescription());
+	slot->SetSlotName(fpn.GetDescription());
 	allBOX.AddSlot(slot);
 	return 1;
 }
@@ -155,7 +155,7 @@ void CFuiListPlan::FillOneList(char *ext)
 //-------------------------------------------------------------------------
 void CFuiListPlan::AddChart(char *map)
 { CMapLine *lin = new CMapLine();
-  lin->SetName(map);
+  lin->SetSlotName(map);
   mapBOX.AddSlot(lin);
   return;
 }
@@ -165,7 +165,7 @@ void CFuiListPlan::AddChart(char *map)
 void CFuiListPlan::SelectChart()
 { CMapLine *lin = (CMapLine*)mapBOX.GetSelectedSlot();
   if (0 == lin)     return;
-  strncpy(globals->MapName,lin->GetName(),SLOT_NAME_DIM);
+  strncpy(globals->MapName,lin->GetSlotName(),SLOT_NAME_DIM);
   globals->fui->CreateFuiWindow(FUI_WINDOW_CHART,0);
   return;
 }

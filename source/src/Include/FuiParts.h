@@ -86,11 +86,10 @@ class CCtyLine: public CSlot {
   char            cuid[4];                // country key
   //--------------inline ---------------------------------
 public:
-  CCtyLine(): CSlot()  {}
-  void  Print(CFuiList *w,U_CHAR ln);
+  CCtyLine(): CSlot(1)  {}
   //-------------------------------------------------------
   inline  void    SetKey(char *key)  {strncpy(cuid,key,4);}
-  inline  char*   GetKey()   {return cuid;}
+  inline  char*   GetSlotKey()			 {return cuid;}
 };
 //=============================================================================
 //  Class CStaLine to display States in directory box
@@ -101,11 +100,10 @@ class CStaLine: public CSlot {
   char            ckey[4];                // Country key
   //-----------inline ------------------------------------
 public:
-  CStaLine(): CSlot() {}
-  void     Print(CFuiList *w,U_CHAR ln);
+  CStaLine(): CSlot(1) {}
   //-------------------------------------------------------
   inline  void    SetKey(char *sk)   {strncpy(skey,sk,6);}
-  inline  char   *GetKey()           {return skey;}
+  inline  char   *GetSlotKey()       {return skey;}
   //-------------------------------------------------------
   inline  void    SetCTY(char *ck)   {strncpy(ckey,ck,4);}
   //------------------------------------------------------
@@ -128,7 +126,7 @@ class CAptLine: public CSlot {
   //-------------------------------------------------------
 public:
   //-------------------------------------------------------
-  CAptLine(): CSlot() {akey[0] = 0;}
+  CAptLine(): CSlot(1) {akey[0] = 0;}
   void         Print(CFuiList *w,U_CHAR ln);
   //----------inline --------------------------------------
   void            SetAkey(char *k)    {strncpy(akey,k, 10);}
@@ -141,7 +139,7 @@ public:
   void            SetClab(char *lb)   {clab = lb;}
   void            SetPosition(SPosition p) {Pos = p;}
   //--------------------------------------------------------
-  char           *GetKey()            {return akey;}
+  char           *GetSlotKey()        {return akey;}
   char           *GetAica()           {return aica;}
   char           *GetIfaa()           {return ifaa;}
   char           *GetActy()           {return ncty;}
@@ -166,7 +164,7 @@ class CNavLine: public CSlot {
   char           *clab;               // Country label
 public:
   //-------------------------------------------------------------
-  CNavLine() : CSlot() {nkey[0] = 0;}
+  CNavLine() : CSlot(1) {nkey[0] = 0;}
   void             Print(CFuiList *w,U_CHAR ln);
   //-----------inline -------------------------------------------
   void            SetKey(char *k)     {strncpy(nkey,k,10);}
@@ -178,7 +176,7 @@ public:
   void            SetClab(char *lb)   {clab = lb;}
   void            SetPosition(SPosition p) {Pos = p;}
   //-------------------------------------------------------------
-  char           *GetKey()            {return nkey;}
+  char           *GetSlotKey()        {return nkey;}
   U_SHORT         GetType()           {return type;}
   char           *GetVaid()           {return naid;}
   char           *GetVcty()           {return ncty;}
@@ -204,7 +202,7 @@ class CWptLine: public CSlot {
   char           *wlab;               // Country label
 public:
   //-------------------------------------------------------------
-  CWptLine() : CSlot() {wkey[0] = 0;}
+  CWptLine() : CSlot(1) {wkey[0] = 0;}
   void            Print(CFuiList *w,U_CHAR ln);
   //-----------inline -------------------------------------------
   void            SetKey(char *k)     {strncpy(wkey,k,10);}
@@ -215,7 +213,7 @@ public:
   void            SetClab(char *lb)   {wlab = lb;}
   void            SetPosition(SPosition p) {Pos = p;}
   //-------------------------------------------------------------
-  char           *GetKey()            {return wkey;}
+  char           *GetSlotKey()        {return wkey;}
   U_SHORT         GetWtyp()           {return wtyp;}
   char           *GetWaid()           {return waid;}
   char           *GetWcty()           {return wcty;}
@@ -243,7 +241,7 @@ class CFlpLine: public CSlot {
   char            Etar[16];           // Arrival time
 public:
   //---------------------------------------------------------
-	CFlpLine(): CSlot() {wPnt = 0;}
+	CFlpLine(): CSlot(1) {wPnt = 0;}
   void            Print(CFuiList *w,U_CHAR ln);
   void            Edit();
   //------------inline --------------------------------------
@@ -272,7 +270,7 @@ class CFpnLine: public CSlot {
   //-----------Attributes ----------------------------------
   char fname[64];
 public:
-  CFpnLine() : CSlot() {}
+  CFpnLine() : CSlot(1) {}
   void            Print(CFuiList *w,U_CHAR ln);
   bool            Match(void *k);  
   //------------inline -------------------------------------
@@ -294,7 +292,7 @@ class CComLine: public CSlot {
   char          irwy[4];            // Ruway end identification for ILS
 public:
   //----------------------------------------------------------
-  CComLine() : CSlot() {}
+  CComLine() : CSlot(1) {}
   void            Print(CFuiList *w,U_CHAR ln);
   //---------inline ------------------------------------------
   inline  void    SetFreq(float fq)       {freq = fq;}
@@ -332,7 +330,7 @@ class CRwyLine: public CSlot {
   //--------inline ----------------------------------------------
 public:
   //-------------------------------------------------------------
-  CRwyLine() : CSlot() {}
+  CRwyLine() : CSlot(1) {}
   void      Print(CFuiList *w,U_CHAR ln);
   //-------------------------------------------------------------
   void      SetKey(char *k)           {strncpy(rapt,k,10);}
@@ -355,7 +353,7 @@ public:
   inline    int GetDXL()    {return Lend.dx;}
   inline    int GetDYL()    {return Lend.dy;}
   //-------------------------------------------------------------
-  inline  char     *GetKey()          {return rapt;}
+  inline  char     *GetSlotKey()      {return rapt;}
   inline  int       GetLeng()         {return rwlg;}
   inline  SPosition GetHiPosition()   {return Hend.pos;}
   inline  char     *GetHiEndID()      {return Hend.rwid;}
@@ -373,7 +371,7 @@ class CAirLine: public CSlot {
   //------------method ------------------------------------------
 public:
   //-------------------------------------------------------------
-  CAirLine() : CSlot() {*Nfo = 0;}
+  CAirLine() : CSlot(1) {*Nfo = 0;}
   void       Print(CFuiList *w,U_CHAR ln);
   //-------------------------------------------------------------
   inline  void      SetNFO(char *n) {strncpy(Nfo,n,64); Nfo[63];}
@@ -391,8 +389,8 @@ class CGasLine: public CSlot {
   CFuelCell   *cel;
   //-------------------------------------------------------------
 public:
-  CGasLine(CFuelCell *c)  {cel = c;}
-  CGasLine()              {cel = 0;}
+  CGasLine(CFuelCell *c): CSlot(1)  {cel = c;}
+  CGasLine(): CSlot(1)              {cel = 0;}
   void       Print(CFuiList *w,U_CHAR ln);
   void       Title(CFuiList *w);
   //-------------------------------------------------------------
@@ -407,8 +405,8 @@ class CLodLine: public CSlot {
   CLoadCell   *lod;
   //------------------------------------------------------------
 public:
-  CLodLine(CLoadCell * c) {lod = c;}
-  CLodLine()              {lod = 0;}
+  CLodLine(CLoadCell * c): CSlot(1) {lod = c;}
+  CLodLine() : CSlot(1)             {lod = 0;}
   void        Print(CFuiList *w,U_CHAR ln);
   //------------------------------------------------------------
   inline void       SetCell(CLoadCell *c) {lod = c;}
@@ -421,8 +419,7 @@ class CMapLine: public CSlot {
   //----- Attributes ------------------------------------------
   //----- Methods ---------------------------------------------
 public:
-  CMapLine() {}
-  void        Print(CFuiList *w,U_CHAR ln);
+  CMapLine(): CSlot(1) {}
 };
 //=============================================================================
 //  Class CSubLine to display Subsystems in probe windows
@@ -434,7 +431,7 @@ class CSubLine: public CSlot{
   Tag         iden;                     // ident
 public:
   //-------------------------------------------------------------
-  CSubLine() : CSlot() { aSub = 0; }
+  CSubLine() : CSlot(1) { aSub = 0; }
   void                  Print(CFuiList *w,U_CHAR ln);
   //-----------method -------------------------------------------
   inline    void        SetSubsystem(CSubsystem *obj) {aSub = obj; }
@@ -451,8 +448,7 @@ class CPidLine: public CSlot{
   CPIDbox    *aPID;                     // PID
 public:
   //-------------------------------------------------------------
-  CPidLine() : CSlot() {aPID = 0;}
-  void                  Print(CFuiList *w,U_CHAR ln);
+  CPidLine() : CSlot(1) {aPID = 0;}
   //-----------method -------------------------------------------
   inline    void        SetPID(CPIDbox *pid)  {aPID = pid;}
   inline    CPIDbox    *GetPID()        {return aPID;}
@@ -466,7 +462,7 @@ class CPipLine: public CSlot{
   Tag          PRM;                     // Parmeter identity
 public:
   //-------------------------------------------------------------
-  CPipLine() : CSlot() {Pid = 0;}
+  CPipLine() : CSlot(1) {Pid = 0;}
   void              Print(CFuiList *w,U_CHAR ln);
   //-------------------------------------------------------------
   inline  void      SetPID(CPIDbox *b)  {Pid = b;}
@@ -487,7 +483,7 @@ class CKeyLine: public CSlot {
   int     code;                         // Key code
   //-------------------------------------------------------
 public:
-  CKeyLine() : CSlot() {ktext[0] = 0; jtext[0] = 0;}
+  CKeyLine() : CSlot(1) {ktext[0] = 0; jtext[0] = 0;}
   void    Print(CFuiList *w,U_CHAR ln);
   bool    Match(void *k)  {return ((CKeyDefinition *)k == kdef);}
   //---------methods --------------------------------------
@@ -513,7 +509,7 @@ class CAxeLine: public CSlot {
   char     txt[32];
   //------------------------------------------------------
 public:
-  CAxeLine() : CSlot() {axe = 0; txt[0] = 0;}
+  CAxeLine() : CSlot(1) {axe = 0; txt[0] = 0;}
   //------------------------------------------------------
   void      Print(CFuiList *w,U_CHAR ln);
   //------------------------------------------------------
@@ -530,7 +526,7 @@ class CButLine: public CSlot {
   char   ktx[32];
   //---Methods ------------------------------------------
 public:
-  CButLine() : CSlot() {ktx[0] = 0;}
+  CButLine() : CSlot(1) {ktx[0] = 0;}
   void         Print(CFuiList *w,U_CHAR ln);
   //-----------------------------------------------------
   inline void  SetKeyText(char *t)  {strncpy(ktx,t,32);}
@@ -582,7 +578,6 @@ class CTgxLine: public CSlot {
 public:
   CTgxLine();
   void   SetLabel(int t,char *n);
-  void   Print(CFuiList *w,U_CHAR ln);
   //----inline ---------------------------------------
   inline  void  SetType(int t)      {type = t;}
   inline  void  SetNite(char n)     {nite = n;}
@@ -739,7 +734,7 @@ public:
   //-------------------------------------------------------------
   inline U_INT  GetSize()           {return Obj.size();}
   inline void   Clear()             {Obj.clear();}
-  inline bool   IsEmpty()           {return (Title == Obj.size());}
+  inline bool   IsEmpty()           {return (Title >= Obj.size());}
   inline bool   OutSide(U_INT No)   {return (No >= Obj.size());} 
 	inline void   NoTitle()						{Title = 0;}
   //-------------------------------------------------------------
@@ -1180,5 +1175,23 @@ public:
 		//--- Dont close this window ----------------------------------------
 	  void  CheckProfile()	{;}
 };
+//==================================================================================
+//  CFuiDetail.  A generic fui window for VOR and airport
+//==================================================================================
+class CFuiDetail {
+	// Attributes ----------------------------------------------------
+	//--- Methods ----------------------------------------------------
+public:
+	CFuiDetail();
+ ~CFuiDetail();
+  //----------------------------------------------------------------
+  bool        CreateVORwindow(CmHead *obj,U_INT No,int lim);
+  bool        CreateNDBwindow(CmHead *obj,U_INT No,int lim);
+  bool        CreateAPTwindow(CmHead *obj,U_INT No,int lim);
+  bool        CreateAPTwinLIT(CmHead *obj,U_INT No,int lim);
+  bool        SmallDetailObject(CmHead *obj,U_INT No);
+  bool        OpenWinDET (CmHead *obj,U_INT No);
+};
+
 #endif // FUIPART_H
 //====================END OF FILE ==========================================================

@@ -287,14 +287,14 @@ CSharedTxnTex::~CSharedTxnTex()
 //=============================================================================
 //  Shared 3D texture
 //=============================================================================
-CShared3DTex::CShared3DTex(char *tn,char tsp)
+CShared3DTex::CShared3DTex(char *tn,char tsp, char dir)
 { Use       = 1;
   x3d.azp   = tsp;
   x3d.bpp   = 4;
   x3d.xOBJ  = 0;
   x3d.mADR  = 0;
 	x3d.type	= 0;
-  _snprintf(x3d.path,512,"ART/%s",tn);
+	strncpy  (x3d.path,tn,FNAM_MAX);
   x3d.path[TC_LAST_INFO_BYTE]   = 0;
 }
 //-----------------------------------------------------------------------------
@@ -1362,7 +1362,7 @@ void CTextureWard::LoadTaxiTexture(char *name,char tsp)
   CArtParser img(res);
   //----PATH is ART --------------------------------
   strncpy(xds.name,name,TC_TEXTURE_NAME_NAM);
-  _snprintf(xds.path,512,"ART/%s.PNG",name);
+  _snprintf(xds.path,TC_TEXTURE_NAME_DIM,"ART/%s.PNG",name);
   xds.azp   = tsp;
   U_INT key = KeyForTaxiway(res);               
   CSharedTxnTex *shx = new CSharedTxnTex("TAXI",res);
@@ -1405,7 +1405,7 @@ void CTextureWard::LoadRwyTexture(U_INT key,char *fn, char tsp)
   CArtParser img(res);
   //----PATH is ART --------------------------------
   xds.azp    = tsp;
-  _snprintf(xds.path,512,"ART/%s.png",fn);
+  _snprintf(xds.path,TC_TEXTURE_NAME_DIM,"ART/%s.png",fn);
   strncpy(xds.name,fn,TC_TEXTURE_NAME_NAM);
   CSharedTxnTex *shx = new CSharedTxnTex(fn,res);
   //--------Read texture and assign texture object
@@ -1477,7 +1477,7 @@ void CTextureWard::LoadLightTexture(U_CHAR No)
   CArtParser img(res);
   char *name  = LiteNAM[No];
   //----PATH is ART --------------------------------
-  _snprintf(xds.path,512,"ART/%s.PNG",name);
+  _snprintf(xds.path,TC_TEXTURE_NAME_DIM,"ART/%s.PNG",name);
   strncpy(xds.name,name,TC_TEXTURE_NAME_NAM);
   //----READ THE FILE ------------------------------
   GLubyte *rgb = (usq)?(sqm->GetAnyTexture(xds)):(img.GetAnyTexture(xds));
@@ -1494,7 +1494,7 @@ GLuint CTextureWard::LoadIconPNG(char *name)
 { U_CHAR res = TC_LOWRES;
   CArtParser img(res);
   //----PATH is ART --------------------------------
-  _snprintf(xds.path,512,"ART/%s.PNG",name);
+  _snprintf(xds.path,TC_TEXTURE_NAME_DIM,"ART/%s.PNG",name);
   //----READ THE FILE ------------------------------
   GLubyte *rgb = img.GetAnyTexture(xds);
   GLuint   xob = GetLitOBJ(xds);
@@ -1536,22 +1536,27 @@ GLuint CTextureWard::GetTaxiTexture()
 //	Allocated a shared object for this texture name
 //	Return the shared objet as a reference to this texture
 //-----------------------------------------------------------------------------
-void *CTextureWard::GetM3DPodTexture(char *fn,U_CHAR tsp)
+void *CTextureWard::GetM3DPodTexture(char *fn,U_CHAR tsp,char dir)
 { _strupr(fn);
-  void *ref = RefTo3DTexture(fn);
+  char key[PATH_MAX];
+	//--- build a full name as key -------------------------
+	if (0 == dir)	_snprintf(key,FNAM_MAX,"ART/%s",fn);
+	else					strncpy  (key,fn,FNAM_MAX);
+	key[FNAM_MAX]	= 0;
+	//-------------------------------------------------------
+  void *ref = RefTo3DTexture(key);
   if   (ref)  return ref;
   char *dot = strstr(fn,".");
   if (0 == dot) return 0;
   //---Add a new shared texture --------------------------
-  CShared3DTex *shx = new CShared3DTex(fn,tsp);
-  char         *idn = shx->GetIdent();
+  CShared3DTex *shx = new CShared3DTex(key,tsp,dir);
   TEXT_INFO    *inf = shx->GetInfo();
   if (strcmp(dot,".TIF") == 0)  Get3DTIF(inf);
   if (strcmp(dot,".RAW") == 0)  Get3DRAW(inf);
   if (0 == inf->mADR)  {delete shx; shx = 0;}
   //--Insert new shared object ---------------------------
   pthread_mutex_lock (&t3dMux);
-  if (shx)   t3dMAP[idn]  = shx;
+	if (shx)   t3dMAP[key]  = shx;
   pthread_mutex_unlock (&t3dMux);
   return shx;
 }
@@ -1560,16 +1565,20 @@ void *CTextureWard::GetM3DPodTexture(char *fn,U_CHAR tsp)
 //  from SQL database.  This function runs in SQL thread
 //-----------------------------------------------------------------------------
 void *CTextureWard::GetM3DSqlTexture(char *fn,U_CHAR tsp)
-{ void *ref = RefTo3DTexture(fn);
-  if   (ref)  return ref;
+{ char key[PATH_MAX];
+  //-- Make a key with ART directory ---------------------
+  _snprintf(key,FNAM_MAX,"ART/%s",fn);
+	key[FNAM_MAX]	= 0;
+  //------------------------------------------------------
+	void *ref = RefTo3DTexture(key);
+  if   (ref)  	return ref;
   //---Add a new shared texture --------------------------
-  CShared3DTex *shx = new CShared3DTex(fn,tsp);
-  char         *idn = shx->GetIdent();
+  CShared3DTex *shx = new CShared3DTex(key,tsp);
   TEXT_INFO    *inf = shx->GetInfo();
   globals->sql->GetM3DTexture(inf);
   //--Insert new shared object ---------------------------
   pthread_mutex_lock (&t3dMux);
-  if (shx)  t3dMAP[idn]  = shx; 
+  if (shx)  t3dMAP[key]  = shx; 
   pthread_mutex_unlock (&t3dMux);
   return shx;
 }
@@ -1587,6 +1596,17 @@ void *CTextureWard::RefTo3DTexture(char *fn)
   }
   pthread_mutex_unlock (&t3dMux);
   return shx;
+}
+//-----------------------------------------------------------------------------
+//  Reserve one more user to the texture reference
+//-----------------------------------------------------------------------------
+void CTextureWard::ReserveReference(void *ref)
+{	if (0 == ref)			return;
+	CShared3DTex *shx =  (CShared3DTex *)ref;
+	pthread_mutex_lock (&t3dMux);
+	shx->IncUser();
+	pthread_mutex_unlock (&t3dMux);
+	return;
 }
 //-----------------------------------------------------------------------------
 //  Return a TIF Texture for 3D object
@@ -1613,8 +1633,6 @@ void CTextureWard::Get3DRAW(TEXT_INFO *txd)
   img.DontAbort();
   txd->mADR = img.GetModTexture(*txd);
   txd->bpp  = 4;
-//  txd->wd   = img.GetSide();
-//  txd->ht   = img.GetSide();
   strcpy(dot,"RAW");                             // Reset name
   return;
 }
@@ -1636,11 +1654,12 @@ GLuint CTextureWard::Get3DObject(void *tref)
   glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
   glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,6);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,5);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+  //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_COMPRESSED_RGBA,inf->wd,inf->ht,0,GL_RGBA,GL_UNSIGNED_BYTE,inf->mADR);
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
   inf->xOBJ = obj;
@@ -1768,14 +1787,14 @@ GLuint CTextureWard::GetRepeatOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
 }
 //-----------------------------------------------------------------------------
 //  Assign a texture object with mipmap level depending on resolution
-//  With repaet border
+//  With repeat border
 //-----------------------------------------------------------------------------
 GLuint CTextureWard::GetRepeatOBJ(TEXT_INFO &xds)
 { U_INT obj = 0;
   glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
   glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,3);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,5);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
@@ -1801,7 +1820,7 @@ GLuint CTextureWard::GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
   if (0 == obj) glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
   glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,3);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,4);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
 
@@ -2350,7 +2369,7 @@ void CWater3D::LoadWater3D()
   glBindTexture(GL_TEXTURE_3D,w3d);
   for (int k=0; k<16; k++)
   { nf    = k + 1;
-    _snprintf(xds.path,512,"ART/stw%03d.TIF",nf);
+    _snprintf(xds.path,(PATH_MAX-1),"ART/stw%03d.TIF",nf);
     tex = img.GetAnyTexture(xds);
     tex = PickAlphaChanel(tex, sid);
     Append(buf,tex,dim,k);

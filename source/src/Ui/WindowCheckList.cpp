@@ -63,10 +63,13 @@ CFuiCkList::CFuiCkList(Tag idn, const char *filename)
   U_INT type = LIST_DONT_FREE + LIST_NOHSCROLL + LIST_USE_MARKS;
   iBOX.SetParameters(this,'list',type);
 	//--- Get related objects to work together -----------------
-  LST = globals->pln->ckl;
-  if (LST->HasChapter())  BuildMenu();
-  //---Register for closing ----------------------------------
-  LST->RegisterWindow(this);
+  LST = (globals->pln)?(globals->pln->ckl):(0);
+	if (LST)
+	{ if (LST->HasChapter())  BuildMenu();
+		//---Register for closing ----------------------------------
+		LST->RegisterWindow(this);
+	}
+	else Close();
 };
 //-------------------------------------------------------------------------
 //  Release resources

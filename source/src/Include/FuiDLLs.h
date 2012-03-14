@@ -56,7 +56,7 @@ class CDllLine: public CSlot {
   char name    [8];
   //-------------------------------------------------------
 public:
-  CDllLine(void) : CSlot () {
+  CDllLine(void) : CSlot (1) {
     *dlltext = NULL;
     *module  = NULL;
     *vers    = NULL;

@@ -650,7 +650,7 @@ CAptObject::CAptObject(CAirport *apt)
 //----------------------------------------------------------------------------------
 bool CAptObject::InitBound()
 { GroundSpot spot(Org.lon,Org.lat);
-  globals->tcm->SetGroundAt(spot);
+  globals->tcm->GetGroundAt(spot);
 	Airp->SetElevation(spot.alt);					// Set terrain altitude			
   glim.xmax = glim.xmin = AbsoluteTileKey(int(spot.qx),int(spot.tx));
   glim.zmax = glim.zmin = AbsoluteTileKey(int(spot.qz),int(spot.tz));
@@ -774,7 +774,7 @@ void CAptObject::ComputeElevation(TC_VTAB *tab)
 { double lon = tab->VT_X + Org.lon;
   double lat = tab->VT_Y + Org.lat;
   GroundSpot spot(lon,lat);
-  globals->tcm->SetGroundAt(spot);
+  globals->tcm->GetGroundAt(spot);
   tab->VT_Z  = (spot.alt - Org.alt);
   return;
 }

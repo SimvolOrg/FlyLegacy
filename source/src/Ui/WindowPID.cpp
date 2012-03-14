@@ -102,7 +102,7 @@ void CFuiPID::AddPID(CPIDbox *pid)
   CPidLine *slot = new CPidLine;
   slot->SetPID(pid);
   TagToString(eidn,pid->GetUnId());
-  slot->SetName(eidn);
+  slot->SetSlotName(eidn);
   pBox.AddSlot(slot);
 }
 //-----------------------------------------------------------
@@ -154,43 +154,43 @@ void CFuiPID::SelectPID()
   sPID  = box;
   //-------------------------------------------------------
   lin   = new CPipLine;
-  lin->SetName("<KP__> Proportional coefficient:");
+  lin->SetSlotName("<KP__> Proportional coefficient:");
   lin->SetPRM('Kp__');
   lin->SetPID(box);
   mBox.AddSlot(lin);
   //-------------------------------------------------------
   lin   = new CPipLine;
-  lin->SetName("<iTim> Integrator Time:");
+  lin->SetSlotName("<iTim> Integrator Time:");
   lin->SetPRM('iTim');
   lin->SetPID(box);
   mBox.AddSlot(lin);
   //-------------------------------------------------------
   lin   = new CPipLine;
-  lin->SetName("<aTim> Anti Saturator Time:");
+  lin->SetSlotName("<aTim> Anti Saturator Time:");
   lin->SetPRM('aTim');
   lin->SetPID(box);
   mBox.AddSlot(lin);
   //-------------------------------------------------------
   lin   = new CPipLine;
-  lin->SetName("<iMax> Integrator Limit:");
+  lin->SetSlotName("<iMax> Integrator Limit:");
   lin->SetPRM('iMax');
   lin->SetPID(box);
   mBox.AddSlot(lin);
   //-------------------------------------------------------
   lin   = new CPipLine;
-  lin->SetName("<dTim> Derivator Time:");
+  lin->SetSlotName("<dTim> Derivator Time:");
   lin->SetPRM('dTim');
   lin->SetPID(box);
   mBox.AddSlot(lin);
   //-------------------------------------------------------
   lin   = new CPipLine;
-  lin->SetName("<vmin> minimum output:");
+  lin->SetSlotName("<vmin> minimum output:");
   lin->SetPRM('vmin');
   lin->SetPID(box);
   mBox.AddSlot(lin);
   //-------------------------------------------------------
   lin   = new CPipLine;
-  lin->SetName("<vmax> maximum output:");
+  lin->SetSlotName("<vmax> maximum output:");
   lin->SetPRM('vmax');
   lin->SetPID(box);
   mBox.AddSlot(lin);
@@ -204,7 +204,7 @@ void CFuiPID::SelectPID()
 void CFuiPID::SelectPRM()
 { CPipLine *sln = (CPipLine*)mBox.GetSelectedSlot();
   if (0 == sln)     return;
-  char     *vtx = sln->GetName();
+  char     *vtx = sln->GetSlotName();
   Tag       prm = sln->GetPRM();
   Val = sPID->GetValue(prm);
   wVAL->EditText("%.05f",Val);

@@ -65,6 +65,7 @@
 #include "../Include/SqlMGR.h"
 #include "../Include/BlackBox.h"
 #include "../Include/TerrainTexture.h"
+#include "../Include/Triangulator.h"
 //----Windows particular -------------------------
 #include <math.h>
 #include <pthread.h>
@@ -372,6 +373,54 @@ void TraceObjectSize()
 	TRACE("%30s size = %05d","CFlashBarLITE",			sizeof(CFlashBarLITE));
 	TRACE("%30s size = %05d","CPapiLITE",					sizeof(CPapiLITE));
 	TRACE("%30s size = %05d","CRLP",							sizeof(CRLP));
+	TRACE("--- CITY EDITOR ------------------------");
+	TRACE("%30s size = %05d","OSM_Object",				sizeof(OSM_Object));
+	TRACE("%30s size = %05d","D2_FACE",					  sizeof(D2_FACE));
+	TRACE("%30s size = %05d","D2_FLOOR",					sizeof(D2_FLOOR));
+	TRACE("%30s size = %05d","D2_Group",					sizeof(D2_Group));
+	TRACE("%30s size = %05d","D2_POINT",					sizeof(D2_POINT));
+	TRACE("%30s size = %05d","D2_Session",				sizeof(D2_Session));
+	TRACE("%30s size = %05d","D2_Style",					sizeof(D2_Style));
+	TRACE("%30s size = %05d","D2_TParam",					sizeof(D2_TParam));
+	TRACE("%30s size = %05d","D2_Session",				sizeof(D2_Session));
+	TRACE("--- CITY 3D Objects---------------------");
+	TRACE("%30s size = %05d","C3Dmodel",					sizeof(C3Dmodel));
+	TRACE("%30s size = %05d","C3DPart",						sizeof(C3DPart));
+	TRACE("%30s size = %05d","CWobj",							sizeof(CWobj));
+	TRACE("--- LINES EDITOR------------------------");
+	TRACE("%30s size = %05d","CCtyLine",					sizeof(CCtyLine));
+	TRACE("%30s size = %05d","CStaLine",					sizeof(CStaLine));
+	TRACE("%30s size = %05d","CAptLine",					sizeof(CAptLine));
+	TRACE("----FUI---------------------------------");
+	TRACE("%30s size = %05d","CFuiManager",				sizeof(CFuiManager));
+	TRACE("%30s size = %05d","CSlot",							sizeof(CSlot));
+	TRACE("%30s size = %05d","CFuiBox",						sizeof(CFuiBox));
+	TRACE("%30s size = %05d","CFuiButton",				sizeof(CFuiButton));
+	TRACE("%30s size = %05d","CFuiCanva",					sizeof(CFuiCanva));
+	TRACE("%30s size = %05d","CFuiCheckbox",		  sizeof(CFuiCheckbox));
+	TRACE("%30s size = %05d","CFuiCheckBox",			sizeof(CFuiCheckBox));
+	TRACE("%30s size = %05d","CFuiCloseButton",		sizeof(CFuiCloseButton));
+	TRACE("%30s size = %05d","CFuiComponent",		  sizeof(CFuiComponent));
+	TRACE("%30s size = %05d","CFuiGroupBox",		  sizeof(CFuiGroupBox));
+	TRACE("%30s size = %05d","CFuiLabel",					sizeof(CFuiLabel));
+	TRACE("%30s size = %05d","CFuiList",					sizeof(CFuiList));
+	TRACE("%30s size = %05d","CFuiMenu",					sizeof(CFuiMenu));
+	TRACE("%30s size = %05d","CFuiMenuBar",		    sizeof(CFuiMenuBar));
+	TRACE("%30s size = %05d","CFuiMinimizeButton",sizeof(CFuiMinimizeButton));
+	TRACE("%30s size = %05d","CFuiPage",					sizeof(CFuiPage));
+	TRACE("%30s size = %05d","CFuiPicture",				sizeof(CFuiPicture));
+	TRACE("%30s size = %05d","CFuiPopupMenu",			sizeof(CFuiPopupMenu));
+	TRACE("%30s size = %05d","CFuiScrollBar",		  sizeof(CFuiScrollBar));
+	TRACE("%30s size = %05d","CFuiScrollBTN",		  sizeof(CFuiScrollBTN));
+	TRACE("%30s size = %05d","CFuiSlider",				sizeof(CFuiSlider));
+	TRACE("%30s size = %05d","CFuiTextField",		  sizeof(CFuiTextField));
+	TRACE("%30s size = %05d","CFuiTextPopup",		  sizeof(CFuiTextPopup));
+	TRACE("%30s size = %05d","CFuiThemeWidget",		sizeof(CFuiThemeWidget));
+	TRACE("%30s size = %05d","CFuiWindow",				sizeof(CFuiWindow));
+	TRACE("%30s size = %05d","CFuiWindowMenuBar",	sizeof(CFuiWindowMenuBar));
+	TRACE("%30s size = %05d","CFuiWindowTitle",		sizeof(CFuiWindowTitle));
+	TRACE("%30s size = %05d","CFuiZoomButton",		sizeof(CFuiZoomButton));
+	TRACE("----Systems---------------------------------");
 }
 
 //============================================================================
@@ -418,6 +467,17 @@ void InitialProfile()
 	//--- Reset global profile lock -------------------------
 	globals->aPROF.Rep(0);
 	return;
+}
+//=====================================================================================
+//	String dupplication 
+//=====================================================================================
+char *Dupplicate(char *s, int lgm)
+{	int lgr = strlen(s) + 1;
+	if (lgr > lgm)	lgr = lgm;
+	char *d = new char[lgr];
+	strncpy(d,s,lgr);
+	d[lgr-1] = 0;
+	return d;
 }
 //============================================================================
 //  Set special application profile
@@ -1033,8 +1093,20 @@ U_INT Frame = 0xFFFFFFFF;
  */
 float tmp_timerS = 0.0f,
       tmp_timerR = 0.0f;
-
-
+//===========================================================================
+//	Wait for terrain to be ready
+//===========================================================================
+int WaitTerrain()
+{ if (!globals->tcm->TerrainStable())	return APP_SIMULATION;
+	globals->init = 0;
+	globals->zero = 1;
+	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
+	CleanupSplashScreen ();
+	return APP_SIMULATION;
+}
+//===========================================================================
+//	Rdraw the simulation
+//===========================================================================
 int RedrawSimulation ()
 { float dSimT, dRealT;
   const float FPS_LIMIT = globals->opal_sim->getStepSize ();
@@ -1094,11 +1166,10 @@ int RedrawSimulation ()
 ////#endif
 
   globals->sit->Timeslice (dSimT,Frame);
-
+	if (globals->init)		return WaitTerrain();
   // The global CSituation object contains all informations about the current
   //   simulation state, user vehicle, camera mode, etc.
   globals->sit->Draw ();
-
   // Draw UI only on main screen at this time
   // Draw UI components
   globals->fui->Draw ();
@@ -1109,12 +1180,12 @@ int RedrawSimulation ()
   return APP_SIMULATION;
 }
 
-/**
- *  Initialize splash screen
- *
- *  Initialize static splash screen image displayed during initial application
- *  startup.
- */
+//==============================================================================
+//  Initialize splash screen
+//
+//  Initialize static splash screen image displayed during initial application
+//  startup.
+//==============================================================================
 CTexture *tSplash = NULL;
 
 void InitSplashScreen (void)
@@ -1348,20 +1419,20 @@ int main (int argc, char **argv)
   // Initialize simulation situation (.SIT) to load
   if (argc == 2) {
     // First argument is .SIT filename
-    strncpy (globals->sitFilename, argv[1],511);
+    strncpy (globals->sitFilename, argv[1],FNAM_MAX);
   } else {
     // No .SIT filename provided on command line; use INI settings
-    GetIniString ("UI", "startupSituation", globals->sitFilename, (PATH_MAX-1));
+    GetIniString ("UI", "startupSituation", globals->sitFilename, FNAM_MAX);
     if (strlen (globals->sitFilename) == 0) {
       // No default startup situation specified in INI settings
-      strncpy (globals->sitFilename, "Saved Simulations/Default.sit",511);
+      strncpy (globals->sitFilename, "Saved Simulations/Default.sit",FNAM_MAX);
     }
   }
 
   //---Put find root foldeer here to open log file in final directory
 	const char *flyRootFolder = ".";
   //=========Init the global structure==================================
-  strncpy(globals->FlyRoot,flyRootFolder,511);			// Root folder
+  strncpy(globals->FlyRoot,flyRootFolder,FNAM_MAX);			// Root folder
   InitTraces();
   TRACE("TRACE FILE CREATED"); 
   globals->logTerra		= new CLogFile ("logs/ChangedTiles.log", "a+");
@@ -1369,6 +1440,7 @@ int main (int argc, char **argv)
 	globals->logStreet	= new CLogFile ("logs/OpenStreet.log","w");
 	//----------------------------------------------------------------------
 	globals->mdule = "Main";
+	globals->stop	 = 0;
   //----------- Init global databank -------------------------------------
   globals->tmzTAB = tmzTAB;
   globals->comTAB = comTAB;
@@ -1489,7 +1561,7 @@ int main (int argc, char **argv)
   pinit (&globals->pfs, "logs/systempod.log");		// JSDEV* add file name
   //----ADD POD FROM FLYII FOLDERS -------------------------------------------
   PFS *pfs = &globals->pfs;
-	int lgr  = PATH_MAX - 1;
+	int lgr  = FNAM_MAX;
   // Mount folders from Fly! II filesystem
 	TRACE("Mounting Pods in /SYSTEM");
   char folder[PATH_MAX];

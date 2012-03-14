@@ -218,7 +218,7 @@ void CSceneryDBM::SendPOD(char *pn)
 void CSceneryDBM::ProcessPOD(char *path,char *fn)
 {	char *scn = "SCENERY/";
   int   lgr = strlen(scn);
-	int   lim = PATH_MAX - 1;
+	int   lim = FNAM_MAX;
 	char name[PATH_MAX];
 	//--- mount pod if exporting -------------
 	_snprintf(name,lim,"%s%s",path,fn);
@@ -393,7 +393,7 @@ void CSceneryDBM::Deregister (U_INT key)
 void CSceneryDBM::MountSharedPod(char * path,char *fn)
 {	char *scn = "SCENERY/";
   int   lgr = strlen(scn);
-	int   lim = PATH_MAX - 1;
+	int   lim = FNAM_MAX;
 	char  name[PATH_MAX];
 	//--- First search pod in databases ------
 	char *pn  = strstr(path,scn) + lgr;
@@ -401,8 +401,9 @@ void CSceneryDBM::MountSharedPod(char * path,char *fn)
 	int   in  = CheckDatabase(name);
 	if (in)	return Warn01(fn);
 	//--- Mount the pod file -----------------
-	U_INT tk = paddpod (&globals->pfs, fn);
-	SCENE("   Ticket(%06d) Mount %s",tk,fn);
+	_snprintf(name,lim,"%s%s",path,fn);
+	U_INT tk = paddpod (&globals->pfs, name);
+	SCENE("   Ticket(%06d) Mount %s",tk,name);
 	return;
 }
 //==============================================================================

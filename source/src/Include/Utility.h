@@ -44,11 +44,6 @@
 //
 // Various constants
 //
-#ifndef M_PI
-#define SGD_PI                               3.14159265358979323846   /* From M_PI under Linux/X86 */
-#else
-#define SGD_PI                               M_PI
-#endif
 //=============================================================================
 #define KOLLMAN_CTE 924.8253					// feet per unit of Hg
 //=============================================================================
@@ -355,47 +350,6 @@ template <class T> static inline T RadFromNorth(T rad)
 	if (rad < 0)	rad += (T)PI;
   return rad;
 }
-//----------------------------------------------------------------------
-// Wrap a value to the range [0, 360), typically used to normalize
-//   an angle in degrees
-//----------------------------------------------------------------------
-/*
-template <class T> static inline T Wrap360 (T deg)
-{
-  while (deg <  (T)0)
-    deg += (T)360;
-  while (deg >= (T)360)
-    deg -= (T)360;
-  return deg;
-}
-*/
-//----------------------------------------------------------------------
-// Wrap a value to the range [0, 2*PI), typically used to normalize
-//   an angle in radians
-//----------------------------------------------------------------------
-/*
-template <class T> static inline T WrapTwoPi (T rad)
-{ while (rad < (T)0)
-    rad += (T)TWO_PI;
-  while (rad >= TWO_PI)
-    rad -= (T)TWO_PI;
-  return rad;
-}
-*/
-//----------------------------------------------------------------------
-// Wrap a value to the range [0, PI), typically used to normalize
-//   an angle in radians
-//----------------------------------------------------------------------
-/*
-template <class T> static inline T WrapPI (T rad)
-{
-  while (rad < (T)0)
-    rad += (T)PI;
-  while (rad >= (T)PI)
-    rad -= (T)PI;
-  return rad;
-}
-*/
 //----------------------------------------------------------------------
 // Wrap a value to the range [0, PI), typically used to normalize
 //   an angle in radians
@@ -763,9 +717,6 @@ void CIE_Yxy_to_XYZ (SCIE in, SCIE &out);
 void CIE_XYZ_to_RGB_D65 (SCIE XYZ, sgdVec3 &RGB);
 //-----------------------------------------------------------------------------
 void    DrawNoticeToUser (char* text, float timeout);
-//========================================================================
-//  Fast Math
-//========================================================================
 //========================================================================
 //  Return standard alphabet (ALPHA, BRAVO etc) from the first letter
 //  (car). In Main.cpp
@@ -1276,6 +1227,8 @@ float         GetTopPos(TC_VTAB *qd);
 float         GetWIDTH(TC_VTAB *qd);
 float         GetHEIGHT(TC_VTAB *qd);
 //=========================================================================================
+void ZRotate(TC_VTAB &v, double sn, double cn);
+//=========================================================================================
 void  BlitTransparentSurface (SSurface *surface, int xOffset, int yOffset, int y_isiz);
 void  BlitOpaqueSurface (SSurface *surface, int xOffset, int yOffset, int y_isiz);
 //=========================================================================================
@@ -1290,8 +1243,6 @@ void  FreeFont (SFont *font);
 void  FreeMonoFont(SFont *font);
 void  FreeVariFont(SFont *font);
 void  DrawTextList(SSurface *sf,int x0, int y0,TXT_LIST *sT,U_SHORT Nb);
-//============================================================================================
-
 //==============================================================================
 // Data map for a polynomial relationship up to 9th order
 //==============================================================================

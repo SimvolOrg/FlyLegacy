@@ -176,7 +176,7 @@ CWeatherManager::CWeatherManager(void)
   GetIniVar("Sim","NoMeteo",&NoMT);
   if (NoMT) globals->noMET++;
   //---Enter in dispatcher    ----------------
-	globals->Disp.Enter(this,PRIO_WEATHER);
+	globals->Disp.Enter(this, PRIO_WEATHER, DISP_EXCONT, 0);
 }
 //-----------------------------------------------------------------------
 //  Get user wind layer (to be writen on file) 
@@ -203,7 +203,7 @@ void CWeatherManager::GetDefaultWinds()
   { C3valSlot *tab = windMAP.GetSlot(k);
     if (0 == tab)   break;
     CWndLine  *lin = new CWndLine();
-    lin->SetName(windNAME[k]);
+    lin->SetSlotName(windNAME[k]);
     lin->SetSlot(k,tab);
     windBOX.AddSlot(lin);
     k++;
@@ -284,7 +284,7 @@ void CWeatherManager::GetMetar(CmHead *obj)
 { Apt = (CAirport*)obj;
   char *name = Apt->GetIdent();
   char fnam[PATH_MAX];
-  _snprintf(fnam,(PATH_MAX-1),"METAR/%s.TXT",name);
+  _snprintf(fnam,FNAM_MAX,"METAR/%s.TXT",name);
   FILE  *f  = fopen(fnam,"r");
   if (0 == f)  return;
   //--- Decode the METAR Bulletin --------------------------

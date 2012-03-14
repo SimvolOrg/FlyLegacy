@@ -858,11 +858,12 @@ bool CPolyShop::OpenPart(CrTriangle *tr)
   nbPRT++;
   pnNVT = phd->GetNbVertices();
   pnNIN = phd->GetNbIndices();
-  Part  = new C3DPart(pnNVT);
+  Part  = new C3DPart();
+	Part->AllocateW3dVTX(pnNVT);
   Part->SetTSP(phd->GetTSP());
   Part->SetTexName(phd->GetTXN());
   Part->AllocateXList(pnNIN);
-  Part->SetXOB(phd->GetXOB());
+  Part->SetXOBJ(phd->GetXOB());
   vaTAB = Part->GetVLIST();
   vnTAB = Part->GetNLIST();
   txTAB = Part->GetTLIST();

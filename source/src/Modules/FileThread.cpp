@@ -414,7 +414,7 @@ int CTextureWard::GetRawTexture(CTextureDef *txn)
   strncpy(root,txn->Name,8);            // Root Name
   root[8]   = NameRES[Resn];            // Resolution
   root[9]   = 0;                        // Close name
-  _snprintf(xsp.path,512,"DATA/D%03d%03d/%s.",gx,gz,root);
+  _snprintf(xsp.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,root);
   //--------Read the RAW and ACT texture file ----------------------
   CArtParser img(Resn);
   img.SetWaterRGBA(GetWaterRGBA(Resn));
@@ -628,7 +628,7 @@ int CTextureWard::GetEPDTexture(CTextureDef *txn)
   char  root[32];                       // file name
   strncpy(root,txn->Name,8);            // Root Name
   root[8]   = 0;                        // Day close here
-  _snprintf(txd.path,512,"DATA/D%03d%03d/%s.",gx,gz,root);
+  _snprintf(txd.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,root);
   //--------Read the RAW and ACT texture file ----------------------
   CArtParser img(res);
   img.SetEPD();
@@ -906,7 +906,7 @@ int CTextureWard::NightRawTexture(CTextureDef *txn)
   root[8]   = '5';                      // Name is always 5
   root[9]   = 'N';                      // Night indicator
   root[10]  = 0;
-  _snprintf(xsp.path,512,"DATA/D%03d%03d/%s.",gx,gz,root);
+  _snprintf(xsp.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,root);
   //-----READ the Night texture file with ----------------
   CArtParser img(TC_MEDIUM);						// Reader instance
   nTEX		= img.LoadRaw(xsp,0);
@@ -938,7 +938,7 @@ int CTextureWard::GetShdTexture(CTextureDef *txn,char *rawn)
   if (shx)            return 0;
   //------Load texture as a shared one ------------------
   TEXT_INFO txd;
-  strncpy(txd.path,rawn,(PATH_MAX-1));
+  strncpy(txd.path,rawn,FNAM_MAX);
   CArtParser img(Resn);
   shx		= new CSharedTxnTex(txn->Name,Resn);
   GLubyte *tex	= img.GetDayTexture(txd,0);

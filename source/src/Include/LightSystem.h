@@ -474,7 +474,7 @@ public:
 	void	StartDraw();
 	void	EndDraw();
   //---------------------------------------------------------------------
-  void  Flush() {litQ.Flush();}
+  void  Flush() {litQ.Clear();}
   //---------------------------------------------------------------------
   inline void SetMiniSize(float m)            {mins = m;}
   inline void AddLight(CBaseLITE *lit)        {litQ.PutEnd(lit);}

@@ -64,7 +64,6 @@ void mouse2         (int button, int updown, int x, int y);
 void keyboard2      (unsigned char key, int x, int y);
 void special2       (int key, int x, int y);
 
-char          Clear   =  0;
 int           Choice  =  0;                       // Initial choice;
 Tag           Cursor = 0;
 //===========================================================================
@@ -525,13 +524,23 @@ bool CheckForTest()
   return true;
 }
 //===========================================================================
+//  Exit
+//===========================================================================
+void ExitScreen()
+{ // Display exit screen
+  InitExitScreen ();
+  RedrawExitScreen ();
+  globals->appState = APP_EXIT;
+	return;
+}
+//===========================================================================
 //  REDRAW LOOP
 //===========================================================================
 void redraw ()
 { globals->cScreen = &globals->mScreen;
 
   // Clear the back buffer
-  if (Clear) glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
+  if (globals->zero) glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
 
   switch (globals->appState) {
   case APP_SPLASH_SCREEN:
@@ -574,30 +583,28 @@ void redraw ()
     // Prepare situation for simulation
     globals->sit->Prepare ();
     globals->appState = APP_SIMULATION;
-    Clear = 1;
+		globals->init = 1;
     globals->tim->Update ();
-    CleanupSplashScreen ();
     break;
 
   case APP_SIMULATION:
     // Run simulation
-		//globals->appState = (EAppState)RedrawSimulation ();
-	//	_ASSERTE(_CrtCheckMemory( ));
-	//		break;
-	
-    __try {globals->appState = (EAppState)RedrawSimulation ();}
+		 RedrawSimulation ();
+		 if (globals->stop)	ExitScreen();
+		 break;
+		/*
+    __try {	globals->appState = (EAppState)RedrawSimulation ();			}
     __except(EXCEPTION_EXECUTE_HANDLER)										//(std::exception &e)
     { int code = GetExceptionCode();
 			FatalError(code);
 			TerminateProcess (GetCurrentProcess(), 0);
-			exit(-1);	} 
+			exit(-1);	}
+			if (globals->stop)	ExitScreen();
 			break; 
-	
+	*/
   case APP_EXIT_SCREEN:
     // Display exit screen
-    InitExitScreen ();
-    RedrawExitScreen ();
-    globals->appState = APP_EXIT;
+    ExitScreen ();
     break;
 
   case APP_EXIT:
@@ -606,14 +613,14 @@ void redraw ()
     break;
 
   case APP_TEST:
-    Clear = 1;
+    globals->zero = 1;
     CleanupSplashScreen ();
     globals->tsb->TimeSlice();
     globals->tsb->Draw();
     break;
 
   case APP_EXPORT:
-    Clear = globals->exm->TimeSlice(0.01f);
+    globals->zero = globals->exm->TimeSlice(0.01f);
     break;
   }
   // Force screen redraw
@@ -669,7 +676,7 @@ void InitWindowManager (int argc, char **argv)
 // Enter window manager main event loop
 //===========================================================================
 void EnterWindowManagerMainLoop (void)
-{ 
+{ globals->zero = 0;
   // Enter GLUT main loop.
   glutMainLoop ();
 }

@@ -26,6 +26,7 @@
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainUnits.h"
 #include "../Include/TerrainTexture.h"
+#include "../Include/Triangulator.h"
 #include "../Include/Model3D.h"
 #include "../Include/Endian.h"
 #include "../Include/FileParser.h"
@@ -101,7 +102,91 @@ int layMETAR[] = {
 //  Indices to decompose a QUAD in triangles
 //=============================================================================
 int quadIND[] = {0,1,2,0,2,3};
-
+//========================================================================
+//	Common file parser
+//	A parser will build a list of C3DParts
+//========================================================================
+CParser::CParser(char t)
+{	part		= 0;
+	retcode = M3D_LOADED;
+	pod			= 0;
+	type		= t;
+	tREF		= 0;
+	Dir			= 0;
+	vmin.x	= vmin.y = vmin.z = 0;
+  vmax		= vmin;
+}
+//----------------------------------------------------------------------
+//  Save Model extension
+//----------------------------------------------------------------------
+void CParser::SaveExtension(F3_VERTEX &vt)
+{ if (vt.VT_X < vmin.x)  vmin.x = vt.VT_X;
+  if (vt.VT_X > vmax.x)  vmax.x = vt.VT_X;
+  if (vt.VT_Y < vmin.y)  vmin.y = vt.VT_Y;
+  if (vt.VT_Y > vmax.y)  vmax.y = vt.VT_Y;
+  if (vt.VT_Z < vmin.z)  vmin.z = vt.VT_Z;
+  if (vt.VT_Z > vmax.z)  vmax.z = vt.VT_Z;
+  return;
+}
+//----------------------------------------------------------------------
+//  Save Model extension
+//----------------------------------------------------------------------
+void CParser::SaveExtension(TC_VTAB &v)
+{	if (v.VT_X < vmin.x)  vmin.x = v.VT_X;
+  if (v.VT_X > vmax.x)  vmax.x = v.VT_X;
+  if (v.VT_Y < vmin.y)  vmin.y = v.VT_Y;
+  if (v.VT_Y > vmax.y)  vmax.y = v.VT_Y;
+  if (v.VT_Z < vmin.z)  vmin.z = v.VT_Z;
+  if (v.VT_Z > vmax.z)  vmax.z = v.VT_Z;
+	return;
+}
+//----------------------------------------------------------------------
+// Get a statement
+//----------------------------------------------------------------------
+int CParser::GetStatement(char *s)
+{	bool go = true;
+	while (go)
+	{ char *B = pgets(s,256,pod);
+		if (0 == B)			return 0;
+		if (*B == 0x0A)	continue;
+		return 1;
+	}
+	return 0;
+}
+//---------------------------------------------------------------------
+// Load a 3D model with the part Queue
+//---------------------------------------------------------------------
+int  CParser::LoadModel(C3Dmodel *mod)
+{	mod->SetExtend(vmin,vmax);
+  mod->SaveTop(vmax.z);
+	mod->SaveBot(vmin.z);
+	C3DPart *prt = 0;
+	for (prt = partQ.Pop(); prt != 0; prt = partQ.Pop()) 	mod->AddPodPart(prt);
+	return retcode;
+}
+//---------------------------------------------------------------------
+//  Return a warning for file
+//---------------------------------------------------------------------
+int CParser::StopParse(PODFILE *p,char *msg)
+{ char *fn = (p)?(p->filename):("");
+  WARNINGLOG("File Parsed %s error: %s", fn,msg);
+  if (part)  delete part;
+  part  = 0;
+	//if (modl)	 modl->UnloadPart();
+	partQ.Clear();
+  retcode = M3D_ERROR;
+  if (pod)  pclose(pod);
+	pod		= 0;
+  return  M3D_ERROR;
+}
+//---------------------------------------------------------------------
+//  Return a warning for file
+//---------------------------------------------------------------------
+C3DPart *CParser::GetOnlyFirstPart()
+{	C3DPart *p0 = partQ.Pop();
+	partQ.Clear();
+	return p0;
+}
 //==================================================================================
 //  TIF PARSER
 //  inspired by C.Wallace ImageTIFF.cpp
@@ -510,69 +595,44 @@ int  CTIFFparser::Decode(char *fn)
 //---------------------------------------------------------------------
 //  Parser for 3Dmodel
 //---------------------------------------------------------------------
-CSMFparser::CSMFparser(C3Dmodel *mod)
-{ Prt   = 0;
-  Tsp   = 0xFF;
-  modl  = mod;
+CSMFparser::CSMFparser(char t)
+	:CParser(t)
+{ Tsp   = 0xFF;
   Res   = MODEL_HI;
-  nface = 0;
-  error = 0;
-  vmin.x = vmin.y = vmin.z = 0;
-  vmax   = vmin;
-}
-//---------------------------------------------------------------------
-//  Return a warning for file
-//---------------------------------------------------------------------
-int CSMFparser::Warning(PODFILE *p,char *msg)
-{ WARNINGLOG("SMFparser %s file: %s", fname,msg);
-  if (Prt)  delete Prt;
-  Prt   = 0;
-  error = 1;
-  if (p)  pclose(p);
-  return  M3D_ERROR;
-}
-//---------------------------------------------------------------------
-//  Return a warning for file
-//---------------------------------------------------------------------
-int CSMFparser::Stop(char *msg)
-{ WARNINGLOG("SMFparser %s file: %s", fname,msg);
-  if (Prt)  delete Prt;
-  Prt   = 0;
-  error = 1;
-  return  0;
+  nFace = 0;
 }
 //---------------------------------------------------------------------
 //  Decode the SMF file
 //  -mod indicates weither this is a DAY/NIGHT object
 //---------------------------------------------------------------------
-int CSMFparser::Decode(char *fn)
-{ int part    = 0;
+int CSMFparser::Decode(char *fn,char t)
+{ int nbp     = 0;
   int dtl     = 0;
+	type				= t;
   float pix   = 0;
   fname       = fn;
   PODFILE *p = popen (&globals->pfs,fn);
-  if (0 == p)                               return Warning(0, "No FILE ");
+	pod					= p;
+  if (0 == p)																			return StopParse(0, "No FILE ");
   char s[256];
   //--- Object type, this should be "C3DModel"
   pgets (s, 256, p);
-  if (strncmp (s, "C3DModel",8) != 0)       return Warning(p,"TYPE");
+  if (strncmp (s, "C3DModel",8) != 0)							return StopParse(p,"TYPE");
   //--- Skip Version (ignored)
   pgets (s, 256, p);
   sscanf(s,"%d",&version);
   //--- Part count ------------------------
   pgets (s, 256, p);
-  if (sscanf (s, "%d", &part) != 1)         return Warning(p,"COUNT");
+  if (sscanf (s, "%d", &nbp) != 1)								return StopParse(p,"COUNT");
   //---- Auto detail ----------------------
   if (version > 3)
   {  pgets (s, 256, p);
-     if (sscanf (s, "%d,%f", &dtl, &pix) != 2) return Warning(p,"DTL");
+     if (sscanf (s, "%d,%f", &dtl, &pix) != 2)		return StopParse(p,"DTL");
   }
   //---- Read parts -----------------------
-  for (int k=0; k!= part; k++)  if (0 == ReadPart(p,fn)) break;
-  pclose(p);
-  if (error)  {modl->UnloadPart(); return M3D_ERROR;}
-  modl->SetExtend(vmin,vmax);
-  return M3D_LOADED;
+  for (int k=0; k!= nbp; k++)  if (M3D_ERROR == ReadPart(p,fn)) return retcode;
+  if (pod)	pclose(pod);
+  return retcode;
 }
 //----------------------------------------------------------------------
 //  Get current part from file
@@ -597,40 +657,41 @@ int CSMFparser::ReadPart(PODFILE *p,char *fn)
   //--- Version (ignored)
   pgets(s, 256, p);
   //--- Vertex count, frame count, face count, unused value
-  int nVerts, nFrames, nFaces, dummy;
+  int nVerts, nFrames, nbfaces, dummy;
   pgets (s, 256, p);
-  nf = sscanf (s, "%d,%d,%d,%d", &nVerts, &nFrames, &nFaces, &dummy);
-  if (4 != nf)                  return Stop("VTX");
-  nface += nFaces;
+  nf = sscanf (s, "%d,%d,%d,%d", &nVerts, &nFrames, &nbfaces, &dummy);
+  if (4 != nf)                  return StopParse(p,"VTX");
+  nFace += nbfaces;
   //--- Skip optional v1 flag ---------------------
   pgets (s, 256, p);
   if (strncmp (s, "v1", 2) == 0) {v1 = true; pgets (s, 256, p);}
   //--- Other parameters --------------------------
   float dif, spc, pow;
   int   trn,env;
-  char  tn[TC_TEXTURE_NAME_DIM];               // Texture name
-  nf = sscanf (s, "%f,%f,%f,%d,%d, %31s ",&dif, &spc, &pow, &trn, &env, tn);
-  if (6 != nf)          return Stop("TEXT");
+  
+  nf = sscanf (s, "%f,%f,%f,%d,%d, %31s ",&dif, &spc, &pow, &trn, &env, txname);
+  if (6 != nf)          return StopParse(p,"TEXT");
   // If the line before last was "v1" then skip the next line, which is
   //   always a blank string ""
   //---Convert texture name in upper case --Compute texture type ------
-  _strupr_s(tn,TC_TEXTURE_NAME_DIM);
+  _strupr_s(txname,TC_TEXTURE_NAME_DIM);
   if (v1)  pgets (s, 256, p);
   int   tot = nVerts * nFrames;
   //----Read vertices ------------------------------------
   //  NOTE: Y and Z are reverted for LHS to RHS conversion
   //
-  Prt             = new C3DPart(tot);
-  F3_VERTEX *cvt  = Prt->GetVLIST();           // Vertex list
-  F3_VERTEX *cvn  = Prt->GetNLIST();           // Normal coordinates
-  F2_COORD  *ctu  = Prt->GetTLIST();           // Texture coordinates
+  part             = new C3DPart();
+	part->AllocateW3dVTX(tot);
+  F3_VERTEX *cvt  = part->GetVLIST();           // Vertex list
+  F3_VERTEX *cvn  = part->GetNLIST();           // Normal coordinates
+  F2_COORD  *ctu  = part->GetTLIST();           // Texture coordinates
   for (int k=0; k<nVerts; k++)
   { pgets (s, 256, p);
     nf =  sscanf (s, "%f,%f,%f,%f,%f,%f,%f,%f",
             &cvt->VT_X,&cvt->VT_Z,&cvt->VT_Y,
             &cvn->VT_X,&cvn->VT_Z,&cvn->VT_Y,
             &ctu->VT_S,&ctu->VT_T);
-    if (8 != nf)      return Stop("VTX");
+    if (8 != nf)      return StopParse(p,"VTX");
     //---Adjust coordinates here -------------------------------
     ctu->VT_T = 1 + ctu->VT_T;
     //---Want to save model extension here from ent ------------
@@ -640,40 +701,27 @@ int CSMFparser::ReadPart(PODFILE *p,char *fn)
     cvn++;
     ctu++;
   }
-  //---Allocate part  ----------------------------------- ------
-  int dm    = (3 * nFaces);
-  int *inx  = Prt->AllocateXList(dm);
+  //---Allocate indices --------------------------------- ------
+  int dm    = (3 * nbfaces);
+  int *inx  = part->AllocateXList(dm);
   //--Read faces -----------------------------------------------
   int f1,f2,f3;
-  Prt->SetTexName(tn);
+	tREF			= globals->txw->GetM3DPodTexture(txname,Tsp);
+	part->SetTREF(tREF);
   int np = 0;                             // Part number
-  for (int n=0; n < nFaces; n++)
+  for (int n=0; n < nbfaces; n++)
   { pgets (s, 256, p);
     nf = sscanf (s, "%d,%d,%d", &f1, &f2, &f3);
-    if (3 != nf)      return Stop("FACE");
+    if (3 != nf)      return StopParse(p,"FACE");
     *inx++ = f3;
     *inx++ = f2;
     *inx++ = f1;
   }
   //---Add a new part --------------------------------------------
-  Prt->SetTop(vmax.z);
-  Prt->SetBot(vmin.z);
-  if (Res == MODEL_HI) modl->AddPodPart(Prt);
-  else delete Prt;
-  Prt = 0;
-  return 1;
-}
-//----------------------------------------------------------------------
-//  Save Model extension
-//----------------------------------------------------------------------
-void CSMFparser::SaveExtension(F3_VERTEX &vt)
-{ if (vt.VT_X < vmin.x)  vmin.x = vt.VT_X;
-  if (vt.VT_X > vmax.x)  vmax.x = vt.VT_X;
-  if (vt.VT_Y < vmin.y)  vmin.y = vt.VT_Y;
-  if (vt.VT_Y > vmax.y)  vmax.y = vt.VT_Y;
-  if (vt.VT_Z < vmin.z)  vmin.z = vt.VT_Z;
-  if (vt.VT_Z > vmax.z)  vmax.z = vt.VT_Z;
-  return;
+	if (Res == MODEL_HI)	partQ.PutEnd(part);
+  else delete part;
+  part = 0;
+  return 0;
 }
 //----------------------------------------------------------------------
 //  Get Part model
@@ -707,11 +755,9 @@ int CSMFparser::ReadType(char *name)
 //---------------------------------------------------------------------
 //  Parser for 3Dmodel
 //---------------------------------------------------------------------
-CBINparser::CBINparser(C3Dmodel *mod)
-{ Prt   = 0;
-  Tsp   = 0xFF;
-  modl  = mod;
-  error = 0;
+CBINparser::CBINparser(char t)
+	:CParser(t)
+{ Tsp   = 0xFF;
   trace = 0;
   nFace = 0;
   shiny = 0;
@@ -719,34 +765,12 @@ CBINparser::CBINparser(C3Dmodel *mod)
   xOBJ  = 0;
   nVTX  = 0;
   head  = 0;
-  vmin.x = vmin.y = vmin.z = 0;
-  vmax   = vmin;
-
 }
 //---------------------------------------------------------------------
 //  Free all resources
 //---------------------------------------------------------------------
 CBINparser::~CBINparser()
 { if (nVTX) delete [] nVTX;
-}
-//---------------------------------------------------------------------
-//  Return a warning for file
-//---------------------------------------------------------------------
-int CBINparser::Warning(PODFILE *p,char *msg)
-{ 
-  WARNINGLOG("BINparser file: %s (%s)",fn,msg);
-  if (Prt)  delete Prt;
-  Prt   = 0;
-  error = 1;
-  return 0;
-}
-//-----------------------------------------------------------------------
-//  Abort reading for invalid data
-//-----------------------------------------------------------------------
-int CBINparser::Stop(PODFILE *p,char *msg)
-{ WARNINGLOG("BINparser file: %s (%s)",fn,msg);
-  error = 1;
-  return M3D_ERROR;
 }
 //-----------------------------------------------------------------------
 //  return a correct S coordinate
@@ -767,27 +791,26 @@ float CBINparser::GetTValue(int vt)
 //  Decode the BIN file
 //  -mod indicates weither it is a DAY/NIGHT object
 //----------------------------------------------------------------------------
-int CBINparser::Decode(char *fn,U_CHAR mod)
+int CBINparser::Decode(char *fn, char t)
 { char buf[8];
   int tp = 0;
+	type   = t;
   PODFILE *p = popen (&globals->pfs,fn);
-  this->fn   = fn;
-  model      = mod;
-  if (0 == p)                     return Stop(0, "No FILE");
+	pod				 = p;
+  fname			 = fn;
+  if (0 == p)                     return StopParse(0, "No FILE");
   //----Read file type --------------------------------------
   pread (buf, sizeof(int),1, p);
   tp = *(int*)(buf);
-  if (0x14 != tp)                 return Stop(p,"TYPE");
+  if (0x14 != tp)                 return StopParse(p,"TYPE");
   //---Read Header and allocate vertex table ----------------
-  if (0 == ReadHeader(p))         return Stop(p,"No HDR");
+  if (0 == ReadHeader(p))         return StopParse(p,"No HDR");
 
-  if (0 == ReadVertex(p))         return Stop(p,"No VTX");
+  if (0 == ReadVertex(p))         return StopParse(p,"No VTX");
   //---Read Block type and dispatch -------------------------
-  while (ReadBlock(p))            continue;
-  if (p) pclose (p);
-  if (error)  {modl->UnloadPart(); return M3D_ERROR;}
-  modl->SetExtend(vmin,vmax);
-  return M3D_LOADED;
+  while (ReadBlock(p) && (retcode == M3D_LOADED))  continue;
+  if (pod) pclose (pod);
+  return retcode;										//M3D_LOADED;
 }
 
 //----------------------------------------------------------------------------
@@ -795,7 +818,7 @@ int CBINparser::Decode(char *fn,U_CHAR mod)
 //----------------------------------------------------------------------------
 int CBINparser::ReadHeader(PODFILE *p)
 { char buf[64];
-  if (4 != pread (buf, sizeof(int),4, p))   return Warning(p,"HDR");
+  if (4 != pread (buf, sizeof(int),4, p))   return 0;
   hdr.scale = *(int*)(buf);
   hdr.nvert = *(int*)(buf + SIZE_INT3);
   return 1;
@@ -813,7 +836,7 @@ int CBINparser::ReadVertex(PODFILE *p)
   int x,y,z;
   float scale = float(1) / 256;
   for (int k=0; k<nbv; k++)
-  { if (3!= pread (buf, sizeof(int),3, p))  return Warning(p,"VTX");
+  { if (3!= pread (buf, sizeof(int),3, p))  return 0;
     x   = *(int*)buf;
     y   = *(int*)(buf + SIZE_INT1);
     z   = *(int*)(buf + SIZE_INT2);
@@ -832,7 +855,7 @@ int CBINparser::ReadVertex(PODFILE *p)
 //----------------------------------------------------------------------------
 int CBINparser::ReadColor(PODFILE *p)
 { char buf[8];
-  if (4 != pread(buf,sizeof(char),4,p))  return Warning(p,"COLOR");
+  if (4 != pread(buf,sizeof(char),4,p))  return StopParse(p,"COLOR");
   return 1;
 }
 //----------------------------------------------------------------------------
@@ -841,7 +864,7 @@ int CBINparser::ReadColor(PODFILE *p)
 int CBINparser::ReadBlock(PODFILE *p)
 { char buf[8];
   int tp;
-  if (1 != pread (buf, sizeof(int),1, p)) return Warning(p,"TYPE");
+  if (1 != pread (buf, sizeof(int),1, p)) return StopParse(p,"No data");
   tp = *(int*)(buf);
   switch (tp) {
     //---Normal vectors ---------------
@@ -877,7 +900,7 @@ int CBINparser::ReadBlock(PODFILE *p)
       Concatenate(p);
       return 0;
   }
-  return Warning(p,"TYPE");
+  return StopParse(p,"TYPE");
 }
 //----------------------------------------------------------------------------
 //  Read Vertex
@@ -888,12 +911,13 @@ int CBINparser::ReadNormal(PODFILE *p)
 { char *err = "NORM";
   int nbv = hdr.nvert;
   char buf[32];
-  Prt  = new C3DPart(nbv);
-  F3_VERTEX *vnx = Prt->GetNLIST();
+  part  = new C3DPart();
+	part->AllocateW3dVTX(nbv);
+  F3_VERTEX *vnx = part->GetNLIST();
   int x,y,z;
   float scale = float(1) / 65535;
   for (int k=0; k<nbv; k++)
-  { if (3!= pread (buf, sizeof(int),3, p))  return Warning(p,err);
+  { if (3!= pread (buf, sizeof(int),3, p))  return StopParse(p,err);
     x   = *(int*)buf;
     y   = *(int*)(buf + SIZE_INT1);
     z   = *(int*)(buf + SIZE_INT2);
@@ -904,11 +928,11 @@ int CBINparser::ReadNormal(PODFILE *p)
   }
   //---ByPass 2 integers ------------------------------------
   int s,t;
-  if (2!= pread (buf, sizeof(int),2, p))  return Warning(p,err);
+  if (2!= pread (buf, sizeof(int),2, p))  return StopParse(p,err);
   s     = *(int*)(buf);
   t     = *(int*)(buf + SIZE_INT1);
-  delete Prt;
-  Prt   = 0;
+  delete part;
+  part   = 0;
   return 1;
 }
 //----------------------------------------------------------------------------
@@ -917,9 +941,10 @@ int CBINparser::ReadNormal(PODFILE *p)
 int CBINparser::ReadTexture(PODFILE *p)
 { char buf[64];
   pread (buf, sizeof(int),1, p);          // By pass unknown
-  if (16 != pread (Texn, sizeof(char),16, p)) return Warning(p,"TEXT");
-  Texn[16] = 0;
-  _strupr_s(Texn,16);
+  if (16 != pread (txname, sizeof(char),16, p)) return StopParse(p,"TEXT");
+  txname[32] = 0;
+  _strupr_s(txname,32);
+	//--- Get a texture reference ----------------------------------
   head  = 0;                              // Restart head
   return 1;
 }
@@ -930,22 +955,14 @@ int CBINparser::ReadTexture(PODFILE *p)
 //----------------------------------------------------------------------------
 int CBINparser::UpdateHead(int nf)
 {   int lodf = globals->m3d->GetLoadFactor();
-    if (0 == head)  head = Prt;
-    if (head) head->AddFace(nf);
+    if (0 == head)
+		//--- Create a new head part Allocate a texture--
+		{	head = part;
+			head->SetTexName(txname);
+		}
+    head->AddFace(nf);
     if (lodf < head->GetNbFace()) head = 0;
     return nf;
-}
-//----------------------------------------------------------------------------
-//  Save extention
-//----------------------------------------------------------------------------
-void CBINparser::SaveExtension(F3_VERTEX &vt)
-{ if (vt.VT_X < vmin.x)  vmin.x = vt.VT_X;
-  if (vt.VT_X > vmax.x)  vmax.x = vt.VT_X;
-  if (vt.VT_Y < vmin.y)  vmin.y = vt.VT_Y;
-  if (vt.VT_Y > vmax.y)  vmax.y = vt.VT_Y;
-  if (vt.VT_Z < vmin.z)  vmin.z = vt.VT_Z;
-  if (vt.VT_Z > vmax.z)  vmax.z = vt.VT_Z;
-  return;
 }
 //----------------------------------------------------------------------------
 //  Read faces and allocate a new part
@@ -961,35 +978,39 @@ void CBINparser::SaveExtension(F3_VERTEX &vt)
 //    A List of indices in above array (I0,I1,.. Ip)
 //  
 //  For bin file, the List of indices is (0,1,2,..,n)
+//  NOTE: As we use intermediate part with texture reference, we must
+//				request each time a reference because when intermediate part is
+//				deleted, the reference is deallocated if no more used.
 //----------------------------------------------------------------------------
 int CBINparser::ReadTFaces(PODFILE *p)
 { char *err = "TFACE";
   char buf[64];
   int nv;
   int nx,ny,nz;
-  if (1 != pread (buf, sizeof(int),1, p)) return Warning(p,err);
+  if (1 != pread (buf, sizeof(int),1, p)) return StopParse(p,err);
   nv  = *(int*)(buf);
   if (nv != 3)  return ReadQFaces(p,nv);
-  if (4 != pread (buf, sizeof(int),4, p)) return Warning(p,err);
+  if (4 != pread (buf, sizeof(int),4, p)) return StopParse(p,err);
   nx  = *(int*)(buf);
   ny  = *(int*)(buf + SIZE_INT1);
   nz  = *(int*)(buf + SIZE_INT2);
-  float nmx = TC_BIN_SCALE(nx);         //float(nx) * norme;
-  float nmy = TC_BIN_SCALE(ny);         //float(ny) * norme;
-  float nmz = TC_BIN_SCALE(nz);         //float(nz) * norme;
-  Prt = new C3DPart(nv);
-  Prt->SetTexName(Texn);
-  Prt->SetTSP(Tsp);
+  float nmx = TC_BIN_SCALE(nx);         
+  float nmy = TC_BIN_SCALE(ny);         
+  float nmz = TC_BIN_SCALE(nz);
+  part = new C3DPart();
+	part->AllocateW3dVTX(nv);
+  part->SetTSP(Tsp);
+
   //-----Build the faces -(invert Y and Z normals) ------
-  int    *inx = Prt->AllocateXList(nv);
-  F3_VERTEX *vtx = Prt->GetVLIST();
-  F3_VERTEX *vnx = Prt->GetNLIST();
-  F2_COORD  *vtu = Prt->GetTLIST();
+  int    *inx = part->AllocateXList(nv);
+  F3_VERTEX *vtx = part->GetVLIST();
+  F3_VERTEX *vnx = part->GetNLIST();
+  F2_COORD  *vtu = part->GetTLIST();
   for (int k=0;k < nv; k++)
   { int vx;
     int sv;
     int tv;
-    if (3 != pread (buf, sizeof(int),3, p)) return Warning(p,err);
+    if (3 != pread (buf, sizeof(int),3, p)) return StopParse(p,err);
     vx  = *(int*)(buf);
     sv  = *(int*)(buf + SIZE_INT1);
     tv  = *(int*)(buf + SIZE_INT2);
@@ -1005,9 +1026,9 @@ int CBINparser::ReadTFaces(PODFILE *p)
     vtu++;
   }
   //---Add a new triangle ----------------
-  prtQ.PutEnd(Prt);
+  tmpQ.PutEnd(part);
   UpdateHead(1);
-  Prt = 0;
+  part = 0;
   return 1;
 }
 //---------------------------------------------------------------------------------
@@ -1022,8 +1043,8 @@ int CBINparser::ReadQFaces(PODFILE *p,int nbv)
   F3_VERTEX vref[4];
   F3_VERTEX nref[4];
   F2_COORD  tref[4];
-  if (nbv != 4)                           return Warning(p,err);
-  if (4 != pread (buf, sizeof(int),4, p)) return Warning(p,err);
+  if (nbv != 4)                           return StopParse(p,err);
+  if (4 != pread (buf, sizeof(int),4, p)) return StopParse(p,err);
   nx  = *(int*)(buf);
   ny  = *(int*)(buf + SIZE_INT1);
   nz  = *(int*)(buf + SIZE_INT2);
@@ -1035,11 +1056,11 @@ int CBINparser::ReadQFaces(PODFILE *p,int nbv)
   { int vx;
     int sv;
     int tv;
-    if (3 != pread (buf, sizeof(int),3, p)) return Warning(p,err);
+    if (3 != pread (buf, sizeof(int),3, p)) return StopParse(p,err);
     vx  = *(int*)(buf);
     sv  = *(int*)(buf + SIZE_INT1);
     tv  = *(int*)(buf + SIZE_INT2);
-    if (vx >= hdr.nvert)                    return Warning(p,err);
+    if (vx >= hdr.nvert)                    return StopParse(p,err);
     vref[k]       = nVTX[vx];
     nref[k].VT_X  = nmx;
     nref[k].VT_Y  = nmz;
@@ -1048,60 +1069,61 @@ int CBINparser::ReadQFaces(PODFILE *p,int nbv)
     tref[k].VT_T = GetTValue(tv);
   }
   //----Build First triangle -------------------------------
-  Prt = new C3DPart(3);
-  Prt->SetTexName(Texn);
-  Prt->SetTSP(Tsp);
-  Prt->SetVTX(0,&vref[0]);
-  Prt->SetNRM(0,&nref[0]);
-  Prt->SetTEX(0,&tref[0]);
-  Prt->SetVTX(1,&vref[1]);
-  Prt->SetNRM(1,&nref[1]);
-  Prt->SetTEX(1,&tref[1]);
-  Prt->SetVTX(2,&vref[2]);
-  Prt->SetNRM(2,&nref[2]);
-  Prt->SetTEX(2,&tref[2]);
-  ref = Prt->AllocateXList(3);
+  part = new C3DPart();
+	part->AllocateW3dVTX(3);
+  part->SetTSP(Tsp);
+
+  part->SetVTX(0,&vref[0]);
+  part->SetNRM(0,&nref[0]);
+  part->SetTEX(0,&tref[0]);
+  part->SetVTX(1,&vref[1]);
+  part->SetNRM(1,&nref[1]);
+  part->SetTEX(1,&tref[1]);
+  part->SetVTX(2,&vref[2]);
+  part->SetNRM(2,&nref[2]);
+  part->SetTEX(2,&tref[2]);
+  ref = part->AllocateXList(3);
   for (int k=0; k < 3; k++) *ref++ = k;
-  prtQ.PutEnd(Prt);
+  tmpQ.PutEnd(part);
   UpdateHead(1);
   //----Build second triangle -------------------------------
-  Prt = new C3DPart(3);
-  Prt->SetTexName(Texn);
-  Prt->SetTSP(Tsp);
-  Prt->SetVTX(0,&vref[0]);
-  Prt->SetNRM(0,&nref[0]);
-  Prt->SetTEX(0,&tref[0]);
-  Prt->SetVTX(1,&vref[2]);
-  Prt->SetNRM(1,&nref[2]);
-  Prt->SetTEX(1,&tref[2]);
-  Prt->SetVTX(2,&vref[3]);
-  Prt->SetNRM(2,&nref[3]);
-  Prt->SetTEX(2,&tref[3]);
-  ref = Prt->AllocateXList(3);
+  part = new C3DPart();
+	part->AllocateW3dVTX(3);
+  part->SetTSP(Tsp);
+
+  part->SetVTX(0,&vref[0]);
+  part->SetNRM(0,&nref[0]);
+  part->SetTEX(0,&tref[0]);
+  part->SetVTX(1,&vref[2]);
+  part->SetNRM(1,&nref[2]);
+  part->SetTEX(1,&tref[2]);
+  part->SetVTX(2,&vref[3]);
+  part->SetNRM(2,&nref[3]);
+  part->SetTEX(2,&tref[3]);
+  ref = part->AllocateXList(3);
   for (int k=0; k < 3; k++) *ref++ = k;
-  prtQ.PutEnd(Prt);
+  tmpQ.PutEnd(part);
   UpdateHead(1);
-  Prt = 0;
+  part = 0;
   return 2;
 }
 //------------------------------------------------------------------------------------
 //  Add Part to model
 //------------------------------------------------------------------------------------
 void CBINparser::AddToModel(C3DPart *prt)
-{ prt->SetTop(vmax.z);
-  prt->SetBot(vmin.z);
-  modl->AddPodPart(prt);
+{	partQ.PutEnd(prt);
   nFace += Tof;
   return;
 }
 //------------------------------------------------------------------------------------
 //  Concatenate partial faces
+//	Head part are parts that have a new texture. They are marked with a Tof number
 //------------------------------------------------------------------------------------
 int CBINparser::Concatenate(PODFILE *p)
 { char *err = "CONCAT";
   int cnt = 0;
-  C3DPart *hdp = prtQ.Pop();
-  C3DPart *dsp = 0;
+  C3DPart *hdp = tmpQ.Pop();
+  C3DPart *dsp = 0;							// Concatened part
   F3_VERTEX  *vtx;
   F3_VERTEX  *vnx;
   F2_COORD   *vtu;
@@ -1110,26 +1132,29 @@ int CBINparser::Concatenate(PODFILE *p)
   int      tof = 0;
   char    *txn = 0;
   while (hdp)
-  { tof = hdp->GetNbFace();
-    vtx = hdp->GetVLIST();
-    vnx = hdp->GetNLIST();
-    vtu = hdp->GetTLIST();
-    txn = hdp->TextureName();
-    Tsp = hdp->GetTSP();
+  { tof			= hdp->GetNbFace();
+    vtx			= hdp->GetVLIST();
+    vnx			= hdp->GetNLIST();
+    vtu			= hdp->GetTLIST();
     //--- NOTE: Only Head part has a tof number --
     //    Thus if (tof) => a new head part
     if (tof)
     { if (dsp) AddToModel(dsp);
-      Tof = tof;
-      nbv = 3 * Tof;
-      dsp = new C3DPart(nbv);
+			Tsp		= hdp->GetTSP();
+			txn		= hdp->TextureName();
+		  tREF	= globals->txw->GetM3DPodTexture(txn,Tsp);
+      Tof		= tof;
+      nbv		= 3 * Tof;
+      dsp		= new C3DPart();
+			dsp->AllocateW3dVTX(nbv);
       inx = 0;
       dsp->AllocateXList(nbv);
+			dsp->SetTREF(tREF);
       dsp->SetTexName(txn);
       dsp->SetTSP(Tsp);
     }
     //----Transfer data to bigger Part ----------
-    if (0 == dsp)                     return Warning(p,err);
+    if (0 == dsp)                     return StopParse(p,err);
     int end = hdp->GetNBVTX();
     for (int k=0; k< end; k++)
     { dsp->SetVTX(inx,vtx++);
@@ -1137,10 +1162,10 @@ int CBINparser::Concatenate(PODFILE *p)
       dsp->SetTEX(inx,vtu++);
       dsp->SetIND(inx,inx);
       inx++;
-      if (inx > nbv)                  return Warning(p,err);
+      if (inx > nbv)                  return StopParse(p,err);
     }
     delete hdp;
-    hdp = prtQ.Pop();
+    hdp = tmpQ.Pop();
   }
   //----Add last part ----------------------
   if (dsp) AddToModel(dsp);
@@ -1152,9 +1177,8 @@ int CBINparser::Concatenate(PODFILE *p)
 CRLParser::CRLParser(CAirportMgr *ap, char *fn)
 { char fkey[PATH_MAX];
   apm = ap;
-	int d = PATH_MAX - 1;
   //---TRY to locate profile ---------------------------------
-  sprintf_s(fkey,d,"%s.RLP",fn);
+  sprintf_s(fkey,FNAM_MAX,"%s.RLP",fn);
   Decode(fkey);
 }
 //----------------------------------------------------------------------------------
@@ -1271,7 +1295,7 @@ int METARparser::Parse()
 { int  nf;
   int  en;
   char mask[PATH_MAX];
-	int  d = PATH_MAX - 1;
+	int  d = FNAM_MAX;
   //----Parse the METAR DATA --------------------------------
   sprintf_s(mask,d,"%s %%dZ",info->iden);
   //----Clear all infos -------------------------------------
@@ -1858,4 +1882,219 @@ bool CBtParser::GetRegionElevation(REGION_REC &reg)
   elPT  = 0;
   return true;
 }
+//==================================================================================
+//  OBJ format parser
+//	NOTE: We add a dummy vertex to each vector list because reference to vertices 
+//	Start from 1.  They wyill be deleted with the list
+//==================================================================================
+COBJparser::COBJparser(char t)
+	:CParser(t)
+{	TC_VTAB *V = new TC_VTAB;
+	vpos.push_back(V);			// Add dummy vector 0
+	TC_VTAB *T = new TC_VTAB;
+	vtex.push_back(T);			// Add dummy texture
+	TC_VTAB *N = new TC_VTAB;
+	vnor.push_back(N);			// Add dummy normal
+}
+//------------------------------------------------------------------------------
+//	Free all resources
+//------------------------------------------------------------------------------
+COBJparser::~COBJparser()
+{	for (U_INT k=0; k < vpos.size(); k++)			delete vpos[k];
+	for (U_INT k=0; k < vtex.size(); k++)			delete vtex[k];
+	for (U_INT k=0; k < vnor.size(); k++)			delete vnor[k];
+	for (U_INT k=0; k < vtri.size(); k++)			delete vtri[k];
+	vpos.clear();
+	vtex.clear();
+	vnor.clear();
+	vtri.clear();
+}
+//------------------------------------------------------------------------------
+//	Set directoty 
+//------------------------------------------------------------------------------
+void COBJparser::SetDirectory(char *dir)
+{	strncpy(txname,dir,TC_TEXTURE_NAME_DIM);
+	Dir	= 1;
+	return;
+}
+//------------------------------------------------------------------------------
+//	Decode the file
+//------------------------------------------------------------------------------
+int COBJparser::Decode(char *fn,char t)
+{ type				= t;
+	fname       = fn;
+	strcat(txname,"/");
+	strcat(txname,fn);
+  PODFILE *p	= popen (&globals->pfs,txname);
+	pod					= p;
+  if (0 == p)							return StopParse(0, "No FILE ");
+	//------------------------------------------------------------
+	char s[256];
+  //--- Object type, this should be "WaveFront"
+  pgets (s, 256, p);
+	if (strncmp (s, "# WaveFront ",12) != 0)							return StopParse(p,"Format");
+	//--- Bypass name ----------------------------------------------
+	GetStatement(s);
+	//--- Check if material is used --------------------------------
+	while (GetStatement(s))
+	{	if (ParseMaterial(s))							continue;
+		if (Parse3Vertex(s))							continue;
+		if (Parse3TCoord(s))							continue;
+		if (Parse3Normes(s))							continue;
+		if (Parse4Faces(s))								continue;
+		if (Parse3Faces(s))								continue;
+	}
+	//--- Build a model or an OSM Object ---------------------------
+	if (OSM_OBJECT == type) BuildOSMPart();
+	if (pod)  pclose(pod);
+	return M3D_LOADED;
+}
+//------------------------------------------------------------------------------
+//	Check for material
+//------------------------------------------------------------------------------
+bool COBJparser::ParseMaterial(char *s)
+{ int nf  = sscanf(s,"usemtl %128s ",img);
+	return (nf == 1);
+}
+//------------------------------------------------------------------------------
+//	Check for vertex
+//------------------------------------------------------------------------------
+bool COBJparser::Parse3Vertex(char *s)
+{	TC_VTAB v;
+  float   w;
+	int nf	= sscanf(s,"v %f %f %f", &v.VT_X, &v.VT_Y, &v.VT_Z, &w);
+	if (nf < 3)		return false;
+	TC_VTAB *vp		= new TC_VTAB();
+	vp->InvertHD1(v);
+	SaveExtension(*vp);
+	vpos.push_back(vp);					// Add to list
+	return true;
+}
+//------------------------------------------------------------------------------
+//	Check for Texture coordinates
+//------------------------------------------------------------------------------
+bool COBJparser::Parse3TCoord(char *s)
+{	TC_VTAB v;
+  float   w;
+	int nf	= sscanf(s,"vt %f %f %f", &v.VT_S, &v.VT_T, &w);
+	if (nf < 2)		return false;
+	TC_VTAB *vt		= new TC_VTAB();
+	vt->Copy(v);
+	double T = vt->VT_T;
+	vt->VT_T = 1 - T;
+	vtex.push_back(vt);					// Add to list
+	return true;
+}
+//------------------------------------------------------------------------------
+//	Check for Texture coordinates
+//------------------------------------------------------------------------------
+bool COBJparser::Parse3Normes(char *s)
+{	TC_VTAB v;
+	int nf	= sscanf(s,"vt %f %f %f", &v.VT_X, &v.VT_Y, &v.VT_Z);
+	if (3 != nf)		return false;
+	TC_VTAB *vp		= new TC_VTAB();
+	vp->Copy(v);
+	vnor.push_back(vp);					// Add to list
+	return true;
+}
+//------------------------------------------------------------------------------
+//	Build a triangle
+//------------------------------------------------------------------------------
+bool COBJparser::BuildTriangleVertex(int dst, U_INT vt, U_INT nt)
+{	TC_VTAB *tab = tri.vtx + dst;
+	if (vt >= vpos.size())	 return false;
+	*tab  = *vpos[vt];
+	if (nt >= vtex.size())	 return false;
+	tab->VT_S = vtex[nt]->VT_S;
+	tab->VT_T = vtex[nt]->VT_T;
+	TRACE("  VTX x=%.2lf y=%.2lf z=%.2lf",tab->VT_X,tab->VT_Y,tab->VT_Z);
+	return true;
+}
+
+//------------------------------------------------------------------------------
+//	Build a 2 triangle face T(V0,V1,V2) and T(V0,V2,V3)
+//	A positive orientable (CCW) is used
+//------------------------------------------------------------------------------
+bool COBJparser::Parse4Faces(char *s)
+{	int v0,v1,v2,v3;
+	int t0,t1,t2,t3;
+	OBJ_TRIANGLE *T = 0;
+	int nf	= sscanf(s,"f %d/%d  %d/%d %d/%d %d/%d", &v0,&t0,&v1,&t1,&v2,&t2,&v3,&t3);
+	if (8 != nf)		return false;
+	//--- Generate 2 Triangles -----------------
+	bool ok = true;
+	ok &= BuildTriangleVertex(0,v0,t0);
+	ok &= BuildTriangleVertex(1,v1,t1);
+	ok &= BuildTriangleVertex(2,v2,t2);
+	T		= new OBJ_TRIANGLE();
+	*T	= tri;
+	vtri.push_back(T);
+	if (!ok)	 		return false;	
+	//--- Generate the second triangle --------
+	ok &= BuildTriangleVertex(0,v0,t0);
+	ok &= BuildTriangleVertex(1,v2,t2);
+	ok &= BuildTriangleVertex(2,v3,t3);
+	T		= new OBJ_TRIANGLE();
+	*T	= tri;
+	vtri.push_back(T);
+	return ok;
+}
+//------------------------------------------------------------------------------
+//	Build a 1 triangle face T(V0,V1,V2) and T(V0,V2,V3)
+//	A positive orientable (CCW) is used
+//------------------------------------------------------------------------------
+bool COBJparser::Parse3Faces(char *s)
+{	int v0,v1,v2;
+	int t0,t1,t2;
+	OBJ_TRIANGLE *T = 0;
+	int nf	= sscanf(s,"f %d/%d  %d/%d %d/%d ", &v0,&t0,&v1,&t1,&v2,&t2);
+	if (6 != nf)		return false;
+	//--- Generate 1 Triangles -----------------
+	bool ok = true;
+	ok &= BuildTriangleVertex(0,v0,t0);
+	ok &= BuildTriangleVertex(1,v1,t1);
+	ok &= BuildTriangleVertex(2,v2,t2);
+	T		= new OBJ_TRIANGLE();
+	*T	= tri;
+	vtri.push_back(T);
+	return ok;
+}
+//------------------------------------------------------------------------------
+//	Build a Part for a 3D model
+//	Not yet implemented because we must compute normal vector if they are
+//	omitted to be consistent with the 3D objects
+//------------------------------------------------------------------------------
+void COBJparser::BuildW3DPart()
+{	return;
+	
+}
+//------------------------------------------------------------------------------
+//	Build a Part for OSM object
+//------------------------------------------------------------------------------
+void COBJparser::BuildOSMPart()
+{	int nbv = vtri.size() * 3;
+	part    = new C3DPart();
+	part->AllocateObjVTX(nbv);
+	//--- Copy all  vertices from triangles ----------------------
+	TC_VTAB *dst = part->GetVTAB();
+	//------------------------------------------------------------
+	for (U_INT k=0; k < vtri.size(); k++)
+	{	OBJ_TRIANGLE *T = vtri[k];
+		*dst++ = T->vtx[0];
+		*dst++ = T->vtx[1];
+		*dst++ = T->vtx[2];
+	}
+	//---- Get a texture reference -------------------------------
+	char *fn = strrchr(txname,'/');
+	strncpy((fn + 1),img,64);
+	void * ref = globals->txw->GetM3DPodTexture(txname,0xFF,Dir);
+	U_INT  xob  = globals->txw->Get3DObject(ref);
+	part->SetTREF(ref);
+	part->SetXOBJ(xob);
+	//--- Add to Queue -------------------------------------------
+	partQ.PutEnd(part);
+	part = 0;
+	return;
+}
+
 //===================================END OF FILE ==========================================

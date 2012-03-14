@@ -61,7 +61,10 @@ struct B19_HEADER {
   int nmz;                      // Normal z
   int magic;      
 };
-
+//----- a triangle -------------------------------
+struct OBJ_TRIANGLE {
+	TC_VTAB vtx[3];
+};
 //========================================================================
 //  TIF STRUCTURES
 //========================================================================
@@ -118,6 +121,43 @@ typedef struct {
 #define TIF_TYPE_SHORT   (3)
 #define TIF_TYPE_LONG    (4)
 #define TIF_TYPE_RATIONAL  (5)
+//========================================================================
+//	Common file parser
+//========================================================================
+class CParser : public CStreamObject {
+	//--- Attributes ---------------------------------------
+protected:
+	C3DPart   *part;                  // Current part
+	char      *fname;                 // File name
+  int        nFace;                 // Number of faces
+	OBJ_TRIANGLE tri;									// A triangle
+	//------------------------------------------------------
+	PODFILE   *pod;										// Pod file
+	char      retcode;								// return code
+	char      trace;									// Trace request
+	char			type;										// Type of file
+	U_CHAR     Tsp;										// Transparent mode
+	U_CHAR     Dir;										// Directory						
+	//----Model extension ----------------------------------
+  CVector    vmax;                  // Maximum coordinates
+  CVector    vmin;                  // Minimum coordinates
+	//--- Part Queue ---------------------------------------
+	C3DpartQ   partQ;									// List of parts
+	//------------------------------------------------------
+	void      *tREF;									// Texture reference
+	char  txname[TC_TEXTURE_NAME_DIM];    // Texture name
+	//--- METHODS ------------------------------------------
+public:
+	CParser::CParser(char t);
+	int		StopParse (PODFILE *p,char *msg);
+	void	SaveExtension(F3_VERTEX &vt);
+	void	SaveExtension(TC_VTAB &vt);
+	int   GetStatement(char *s);
+	//------------------------------------------------------
+	int		LoadModel(C3Dmodel *mod);
+	//------------------------------------------------------
+	C3DPart *GetOnlyFirstPart();
+	};
 //========================================================================
 //
 // CTIF parser
@@ -187,70 +227,48 @@ public:
 //-----------------------------------------------------------
 //  Only part of hi resolution are kept
 //=============================================================================
-class CSMFparser: public CStreamObject {
+class CSMFparser: public CParser {
   //---ATTRIBUTES ----------------------------------------
-  C3Dmodel  *modl;                  // Current model
-  U_CHAR     Tsp;                   // Transparency
+  U_CHAR     rfu;                   // Transparency
   U_CHAR     Res;                   // Resolution
-  C3DPart   *Prt;                   // Current part
-  char      *fname;                 // File name
-  int        nface;                 // Number of faces
-  char       error;                 // Any error
   int        version;               // File version
-  //----Model extension ----------------------------------
-  CVector    vmax;                  // Maximum coordinates
-  CVector    vmin;                  // Minimum coordinates
   //----Methods ------------------------------------------
 public:
-  CSMFparser(C3Dmodel *mod);
-  int     Stop(char *msg);
-  int     Warning(PODFILE *p,char *msg);
-  int     Decode(char *fn);
+  CSMFparser(char t);
+  int     Decode(char *fn,char t);
   int     ReadPart(PODFILE *p,char *fn);
   int     ReadType(char *name);
-  void    SaveExtension(F3_VERTEX &vtx);
   //------------------------------------------------------
  };
 //=============================================================================
 //  BIN decoder to parse a BIN file
 //=============================================================================
-class CBINparser: public CStreamObject {
+class CBINparser: public CParser {
   //---ATTRIBUTES ----------------------------------------
-  char      error;                // Any error
-  char      trace;                // Trace request
-  C3Dmodel *modl;                 // 3D model
-  C3DPart  *Prt;                  // Current part
-  F3_VERTEX   *nVTX;                 // Vertex list
-  U_CHAR    Tsp;                  // Transparency
+  F3_VERTEX   *nVTX;              // Vertex list
   U_CHAR    shiny;                // Shiny texture
-  U_CHAR    model;                // Part model
   U_CHAR    Res;                  // Resolution
   U_INT     xOBJ;                 // Texture OBJECT
-  int       nFace;                // Number of faces
+ // int       nFace;              // Number of faces
   char      Texn[20];             // Texture name
-  char     *fn;                   // File name
+ // char     *fn;                 // File name
   C3DPart  *head;                 // Heading part
   //------------------------------------------------------
   int       Tof;                  // Total faces
   int       Tov;                  // Total vertices
-  //----Model extension ----------------------------------
-  CVector    vmax;                  // Maximum coordinates
-  CVector    vmin;                  // Minimum coordinates
   //---List of parts -------------------------------------
-  C3DpartQ  prtQ;                 // Hi resolution Queue
+  C3DpartQ  tmpQ;                 // Hi resolution Queue
   //------------------------------------------------------
   BIN_HEADER hdr;
   B19_HEADER b19;
   //------------------------------------------------------
 public:
-  CBINparser(C3Dmodel *mod);
+  CBINparser(char t);
  ~CBINparser();
   //-------------------------------------------------------
   float GetSValue(int vs);
   float GetTValue(int vs);
-  int   Warning(PODFILE *p,char *msg);
-  int   Stop(PODFILE *p,char *msg);
-  int   Decode(char *fn,U_CHAR mod);
+  int   Decode(char *fn,char t);
   int   ReadHeader(PODFILE *p);         // File header
   int   ReadVertex(PODFILE *p);         // Vertex list
   int   ReadBlock(PODFILE *p);          // Block type
@@ -261,7 +279,6 @@ public:
   int   ReadColor(PODFILE *p);
   int   Concatenate(PODFILE *p);
   int   UpdateHead(int nf);
-  void  SaveExtension(F3_VERTEX &vtx);
   void  AddToModel(C3DPart *prt);
   //-------------------------------------------------------
   inline void Trace()     {trace = 1;}
@@ -421,5 +438,38 @@ public:
  bool   GetRegionElevation(REGION_REC &reg);
  //---------------------------------------------------------
  inline int Resolution()  {return tDim;}
+};
+//=======================================================================================
+//  CLASS OBJParser to decode ASCII 3D OBJ file format
+//=======================================================================================
+class COBJparser: public CParser {
+	//---- ATTRIBUTES -----------------------------------------
+	C3Dmodel *model;
+	C3DPart  *part;
+	char      img[PATH_MAX];
+	//---- List of space vertices -----------------------------
+	std::vector<TC_VTAB *>			vpos;	
+	std::vector<TC_VTAB *>			vtex;
+	std::vector<TC_VTAB *>			vnor;
+	std::vector<OBJ_TRIANGLE*>	vtri;
+	//---- METHODS --------------------------------------------
+public:
+	COBJparser(char t);
+ ~COBJparser();
+	//---------------------------------------------------------
+	void	SetDirectory(char *d);
+	//---------------------------------------------------------
+	void	BuildW3DPart();
+	void	BuildOSMPart();
+	//---------------------------------------------------------
+	int		Decode(char *fn, char t);
+	bool	ParseMaterial(char *s);
+	bool	Parse3Vertex(char *s);
+	bool	Parse3TCoord(char *s);
+	bool	Parse3Normes(char *s);
+	bool	Parse4Faces(char *s);
+	bool	Parse3Faces(char *s);
+	//----------------------------------------------------------
+	bool	BuildTriangleVertex(int dst, U_INT nv, U_INT nt);
 };
 //=======END OF FILE ============================================================================

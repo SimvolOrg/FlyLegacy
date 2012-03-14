@@ -34,19 +34,20 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+//#if _MSC_VER > 1000
+//#pragma once
+//#endif // _MSC_VER > 1000
 
-#include "FlyLegacy.h"
-#include "Pod.h"
-#include "Situation.h"
-#include "DrawVehiclePosition.h"
-#include "DrawVehicleSmoke.h"
-#include "..\Include\BlackBox.h"
-#include "LogFile.h"
-#include "..\Plugin\Plugin.h"   // 
-#include "Ui.h"                 // sdk:
+#include "../Include/FlyLegacy.h"
+#include "../Include/Pod.h"
+#include "../Include/Situation.h"
+#include "../Include/DrawVehiclePosition.h"
+#include "../Include/DrawVehicleSmoke.h"
+#include "../Include\BlackBox.h"
+#include "../Include/ElevationTracker.h"
+#include "../Include/LogFile.h"
+#include "../Plugin\Plugin.h"   // 
+#include "../Include/Ui.h"                 // sdk:
 //=============================================================================================
 class CFmtxMap;
 class Triangulator;
@@ -180,6 +181,13 @@ typedef enum {
 #define WINDOW_TBROS      (0x01)        // TERRA  BROWSER
 #define WINDOW_MBROS      (0x02)        // OBJECT BROWSER
 //=======================================================================
+//	Dispatcher
+//=======================================================================
+#define DISP_EXCONT		(1)
+#define DISP_EXSTOP		(0)
+#define DISP_DR_YES   (1)
+#define DISP_DR_NOT		(0)
+//=======================================================================
 //	JS: Dispatcher class
 //	Used by Situation to dispatch TimeSlice and Draw
 //=======================================================================
@@ -187,6 +195,8 @@ typedef enum {
 //=======================================================================
 struct DSP_EXEC {
 	char	lock;							  // TimeSlice lock
+	char  exec;								// Time slice state
+	char  draw;								// Draw state
 	CExecutable *obj;					// Executable object
 	};
 //=======================================================================
@@ -197,10 +207,10 @@ class CDispatcher {
 	DSP_EXEC	slot[PRIO_MAX];
 	//----METHODS -----------------------------------------
 public: 
-  CDispatcher::CDispatcher();
-	void Enter(CExecutable *x, char p)	
-		{	slot[p].obj	= x;
-		}
+CDispatcher::CDispatcher();
+	void Enter(CExecutable *x, char p, char s,char d)	
+		{	slot[p].obj	= x; slot[p].exec = s;	slot[p].draw = d;}
+
 	void Clear(char p)
 		{	slot[p].obj	= 0;
 		}
@@ -208,8 +218,15 @@ public:
 	void Lock  (char p)						{slot[p].lock++;}
 	void Unlock(char p)						{slot[p].lock--;}
 	void Modlock(char p,char m)		{slot[p].lock += m;}
+	void DrawON (char p)					{slot[p].draw = 1;}
+	void DrawOFF(char p)					{slot[p].draw = 0;}
+	void ExecON (char p)					{slot[p].exec = 1;}
+	void ExecLOK(char p)					{slot[p].lock++;}
+	void ExecULK(char p)					{slot[p].lock--;}
+	void ExecOFF (char p)					{slot[p].exec = 0;}
 	//---- Time slice -------------------------------------
-	void TimeSlice(float dT,U_INT frame);
+	void	TimeSlice(float dT,U_INT frame);
+	void	Draw(char p);
 	//-----------------------------------------------------
 };
 //==============================================================================
@@ -264,6 +281,7 @@ typedef struct {
   CBitmap    *nBitmap;                  /// Null Bitmap
   CBitmapNUL  nBmap;                    /// Bitmap NUL
   //--- Application state ---------------------------------------------
+	char				stop;											// Request to stop
   EAppState appState;
   //--- Cockpit panel parameters --------------------------------------
   int         panelScrollStep, panelCreepStep;
@@ -281,8 +299,9 @@ typedef struct {
   U_CHAR             ttr;               // Temporary trace
   U_CHAR            dBug;               // Subsystem debuging on
   U_CHAR             tod;               // Time of Day ('N' or 'D');
-  U_CHAR            rfua;               // reserved futur use
-  //---------Timer for everybody -------------------------------------
+  U_CHAR            init;               // Initial time
+	U_CHAR						zero;								// Clear Screen
+	//---------Timer for everybody -------------------------------------
   float             dRT;                // Real time delta from last frame
   float             dST;                // Simu time delta from last Frame
   //---------Interface with master radio -----------------------------
@@ -368,6 +387,8 @@ typedef struct {
   double         aspect;        // Aspect ratio
   double         pitch;         // pixel pitch
   double         camRange;      // Camera initial range
+	//--- Elevation tracker ---------------------------------------------
+	CElvTracker		 etrk;
   //-----Terrain parameters -------------------------------------------
   double         maxView;       // Maximum view
   double         highRAT;       // Hight resolution ratio
@@ -428,7 +449,7 @@ typedef struct {
   USHORT random_flag;
   int   num_of_autogen;     // num_of_autogen objects
 } SGlobals;
-
+//=========================================================================
 extern SGlobals *globals;   // Declared in Main.cpp
 //==========================================================================
 void		InitialProfile();

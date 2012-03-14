@@ -1011,8 +1011,8 @@ void CModelACM::AddPart(short No,int index,CAcmPart *part)
 //-----------------------------------------------------------------------------
 //  Get Texture reference
 //-----------------------------------------------------------------------------
-U_INT CModelACM::GetTextureRef(char *fn,char opt)
-{ void *ref = globals->txw->GetM3DPodTexture(fn,opt);
+U_INT CModelACM::GetTextureRef(char *fn,char trs)
+{ void *ref = globals->txw->GetM3DPodTexture(fn,trs);
   U_INT obj = globals->txw->Get3DObject(ref);
   return obj;
 }

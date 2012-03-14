@@ -214,8 +214,7 @@ static unsigned int freadLittleUnsignedInt (FILE* f)
 // @param fmt... Variable arguments specifying log message
 //=====================================================================================
 static void plog (PFS *pPfs, const char* fmt, ...)
-{
-  if (pPfs->log != NULL) {
+{ if (pPfs->log != NULL) {
 		va_list argp;
 		va_start(argp, fmt);
 		pPfs->log->Write (fmt, argp);
@@ -364,8 +363,8 @@ void padddiskfile (PFS *pfs, string key, string fullFn,char rep)
 //--------------------------------------------------------------------------------
 //  Add one disk file to internal file system
 //--------------------------------------------------------------------------------
-void pAddDisk(PFS *pfs, char *key, char *fn)
-{ padddiskfile (pfs, key, fn,0);
+void pAddDisk(PFS *pfs, char *key, char *path)
+{ padddiskfile (pfs, key, path,0);
   return;
 }
 //--------------------------------------------------------------------------------
@@ -672,7 +671,7 @@ static PFSPOD* pmount (PFS *pPfs, const char* podname)
 {
   PFSPOD* pPod = new PFSPOD;
 	pPod->users	= 1;
-  strncpy (pPod->name, podname,511);
+  strncpy (pPod->name, podname,FNAM_MAX);
   pPod->file = NULL;
   pPod->format = PodFormatUnknown;
   pPod->refs = 0;
@@ -807,7 +806,7 @@ void paddpodfolder (PFS* pPfs, const char* folder, bool sub, char sh)
         if (sub) {
           if ((strcmp (dp->d_name, ".") != 0) && (strcmp (dp->d_name, "..") != 0)) {
             char subFolder[PATH_MAX];
-						_snprintf(subFolder,(PATH_MAX-1),"%s/%s",folder,dp->d_name);
+						_snprintf(subFolder,FNAM_MAX,"%s/%s",folder,dp->d_name);
             paddpodfolder (pPfs, subFolder, sub, sh);
           }
         }
@@ -818,7 +817,7 @@ void paddpodfolder (PFS* pPfs, const char* folder, bool sub, char sh)
           // This is a POD file, create a new PFSPOD instance and add
           //   it to the POD list for the filesystem
           char podfilename[PATH_MAX];
-					_snprintf(podfilename,(PATH_MAX-1),"%s/%s",folder,dp->d_name);
+					_snprintf(podfilename,FNAM_MAX,"%s/%s",folder,dp->d_name);
           ///--- mount the POD file ---------------
           plog (pPfs, "MOUNT POD: %s", podfilename);
           PFSPOD *pPod = pmount (pPfs, podfilename);
@@ -841,7 +840,7 @@ void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
 
   // Create full folder name by concatenating root folder with sub-folder name
   char path[PATH_MAX];
-  if (strlen(folder) > 0)  _snprintf(path,(PATH_MAX-1),"%s/%s",root,folder);
+  if (strlen(folder) > 0)  _snprintf(path,FNAM_MAX,"%s/%s",root,folder);
 
   // Iterate over all files in this folder.
   ulDir* dirp = ulOpenDir (path);
@@ -878,7 +877,7 @@ void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
 						_snprintf(keyFilename,(PATH_MAX-1),"%s/%s",folder,dp->d_name);
           } else {
             // Folder name is empty, initialize to filename only
-            strncpy (keyFilename, dp->d_name,511);
+            strncpy (keyFilename, dp->d_name,FNAM_MAX);
           }
           strupper (keyFilename);
           NormalizeName(keyFilename);
@@ -963,7 +962,7 @@ static PODFILE* findinpod (PFS* pPfs, const char* filename)
 //----------------------------------------------------------------------
 static PODFILE* findondisk (PFS* pPfs, const char* keyFilename,char *md)
 { char *mode  = (md)?(md):("rb");
-  PODFILE* p = NULL;
+  PODFILE* p	= 0;
   pthread_mutex_lock   (&pPfs->mux);             // Lock access
   std::map<string,string>::iterator i = pPfs->diskFileList.find(keyFilename);
   if (i != pPfs->diskFileList.end()) {
@@ -989,6 +988,29 @@ static PODFILE* findondisk (PFS* pPfs, const char* keyFilename,char *md)
   return p;
 }
 
+//----------------------------------------------------------------------
+//  Search file on disk
+//  WARNING:  This routine is locked for multithread
+//----------------------------------------------------------------------
+static PODFILE* findonDirectory (PFS* pPfs, char* keyFilename,char *md)
+{ PODFILE* p	= 0;
+	char *mode  = (md)?(md):("rb");
+	FILE* f = fopen (keyFilename, mode);
+	if (0 == f)		return 0;
+  // File was successfully opened; create PODFILE for return value
+  p = new PODFILE;
+  strncpy (p->fullFilename, keyFilename,(PATH_MAX-1));
+  strncpy (p->filename, keyFilename,(PATH_MAX-1));
+  p->pFile	= f;
+  p->pPod		= NULL;
+  p->source = PODFILE_SOURCE_DISK;
+  p->offset = 0;
+  p->pos		= 0;
+  fseek (p->pFile, 0, SEEK_END);
+  p->size = ftell (p->pFile);
+  rewind (p->pFile);
+  return p;
+}
 
 //---------------------------------------------------------------------------
 // Search all mounted files for the given filename
@@ -1223,21 +1245,28 @@ PODFILE* popen (PFS* pPfs, const char* fname, char *md)
   if (pPfs->searchPodFilesFirst && (md == 0)) 
   { // Search for filename in all mounted PODs.
     p = findinpod (pPfs, filename);
-    if (p == NULL) {
-    // Not found in a POD, search disk files
+		if (p)				return p;
+		// Not found in a POD, search disk files
     p = findondisk (pPfs, filename,md);
+		if (p)				return p;
+		//--- Not found find normal file -----------------
+		p	=	findonDirectory (pPfs, filename,md);
+		return p;
   }
-  } else 
-  { // Search for filename in disk files
-    p = findondisk (pPfs, filename,md);
-    if ((p == NULL) && (0 == md))
-    { // Not found on disk, search all mounted PODs
-      p = findinpod (pPfs, filename);
-    }
-  }
-
-  return p;
+	//---- Search in disk file -------------------------
+  p = findondisk (pPfs, filename,md);
+	if (p)	return p;
+	//--- Search in mounted pods------------------------
+  p = findinpod (pPfs, filename);
+	if (p)	return p;
+	//--- Not found find normal file -----------------
+	p	=	findonDirectory (pPfs, filename,md);
+	return p;
 }
+//------------------------------------------------------------------------
+//  Open File:	search a normal file
+//------------------------------------------------------------------------
+
 //======================================================================
 //  Read POD file
 //======================================================================

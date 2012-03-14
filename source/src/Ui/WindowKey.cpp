@@ -197,7 +197,7 @@ void CFuiKeyMap::DisplayKeys(Tag idn)
     CKeyLine       *kln = new CKeyLine;
     kdf->SetSlot(x);
     keyBOX.AddSlot(kln);
-    kln->SetName((char*)kdf->GetName());
+    kln->SetSlotName((char*)kdf->GetName());
     kln->SetDef(kdf);
     kln->SetCode(kdf->GetCode());
     kln->SetIden(kdf->GetTag());

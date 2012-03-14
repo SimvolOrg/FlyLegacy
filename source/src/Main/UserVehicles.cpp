@@ -2254,7 +2254,7 @@ int CCameraViewsList::ReadCamerasFile (void)
 	FILE *fp_;
   char file[PATH_MAX] = {0};
   /// try to find cameras_legacy.txt in the Fly!2 folder
-  _snprintf (file,(PATH_MAX-1),"%s\\DATA\\cameras_legacy.txt", globals->FlyRoot);
+  _snprintf (file,FNAM_MAX,"%s\\DATA\\cameras_legacy.txt", globals->FlyRoot);
   if((fp_ = fopen(file, "rt")) == NULL) {
     /// cameras_legacy.txt isn't in the Fly!2 folder
     /// try now in the Fly!Legacy folder
@@ -3711,7 +3711,7 @@ CVehicleInfo::CVehicleInfo (char* nfoFilename)
   *phyFilename = 0; // PHY file
   // Open stream for NFO file
   SStream s;
-  strncpy (s.filename, nfoFilename,511);
+  strncpy (s.filename, nfoFilename,FNAM_MAX);
   strncpy (s.mode, "r",3);
   bool success = OpenStream(&s) != 0;
   if (!success) {
