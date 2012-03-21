@@ -636,7 +636,8 @@ bool CFuiSketch::NoSelection()
 //	Fly Over the city
 //-----------------------------------------------------------------------
 void CFuiSketch::FlyOver()
- {  globals->Disp.DrawOFF (PRIO_TERRAIN);		// No Terrain
+ { Write(); 
+	 globals->Disp.DrawOFF (PRIO_TERRAIN);		// No Terrain
 	  ses.UpdateCache();
 		Close();
 		return;

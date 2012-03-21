@@ -414,26 +414,14 @@ static bool ParseSection (char* s, char* section)
   bool rc = false;
 
   TrimTrailingWhitespace (s);
-
-  char *p = strchr (s, '[');
-  if (p != NULL) {
-    // Increment to first character of section name
-    p++;
-
-    // Opening square bracket found
-    char *q = strchr (p, ']');
-    if (q != NULL) {
-      // Closing square bracket found
-      int len = q - p;
-      strncpy (section, p, len);
-      section[len] = '\0';
-      rc = true;
-    }
-  }
-
-  return rc;
+	int nf = sscanf(s," [ %64[^ /]s ]", section); 
+	if (0 == nf)	return false;
+	char *p = strchr(section,']');
+	if (0 == p)		return true;
+	*p = 0;
+	return true;
 }
-
+	
 //-------------------------------------------------------------------------------
 // Local function which parses the supplied line and returns the key and value
 //   (strings) if the line conforms to the standard INI format key=value
@@ -507,7 +495,7 @@ int CIniFile::Load (const char* iniFilename)
     Set (sect, key, value);
     // Parse the value to determine whether it is numeric (int/float)
     //   or string.
-		if (sscanf (value, "%f", &f_value) == 1) Set (sect, key, f_value); 
+		if (sscanf (value, "%f ", &f_value) == 1) Set (sect, key, f_value); 
 	 }
    fclose (f);
 	 return (section.size() != 0);

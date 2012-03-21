@@ -1852,7 +1852,7 @@ GLuint CTextureWard::GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
   if (0 == obj) glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
   glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,4);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,globals->mipTER);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
 
