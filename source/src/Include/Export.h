@@ -239,11 +239,11 @@ public:
 	int		GetNextTRN();
 	void	WriteTRN();
 	void	ExportTRN(char *fn);
-	int 	WriteT2D();
-	int		ExportT2D();
+	//int 	WriteT2D();
+	//int		ExportT2D();
 	void	ExportSUPelevation(C_STile *asp);
-	void	WriteTexture2D(C_STile *sp);
-	void	LoadTRNTexture(CTextureDef	 *txd,char R);
+	//void	WriteTexture2D(C_STile *sp);
+	//void	LoadTRNTexture(CTextureDef	 *txd,char R);
 };
 //============================END OF FILE =================================================
 #endif  // EXPORT_H

@@ -201,7 +201,7 @@ void CFuiDirectory::FillCTYlist()
   ctyBOX.SetParameters(this,'clst',0);
   ctyLIN.FixeIt();
   ctyLIN.SetSlotName("ALL COUNTRIES");
-  ctyLIN.SetKey("");
+  ctyLIN.SetSlotKey("");
   ctyBOX.AddSlot(&ctyLIN);
   //-------InitObject list ----------------------------
   objBOX.SetParameters(this,'list',0);
@@ -248,7 +248,7 @@ char *CFuiDirectory::GetCountry(char *ckey)
 void CFuiDirectory::FillSTAlist()
 { staBOX.EmptyIt();
   staLIN.SetSlotName("NO STATE");
-  staLIN.SetKey("");
+  staLIN.SetSlotKey("");
   staBOX.AddSlot(&staLIN);
   RetreiveCTYkey();
   //---Only USA has state for now ------------------

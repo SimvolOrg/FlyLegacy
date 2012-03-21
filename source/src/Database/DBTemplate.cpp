@@ -127,24 +127,22 @@ void CDatabaseTemplate::Load(PODFILE* f)
 }
 
 
-//
+//----------------------------------------------------------------------
 // Constructor which accepts a const char* filename of the DBT file
-//
-void CDatabaseTemplate::Load (const char* dbn)
+//------------------------------------------------------------------------
+bool CDatabaseTemplate::Load (const char* dbn)
 {
   char fn[128];
 	_snprintf(fn,127,"DATABASE/%s",dbn);
-  PODFILE *p = popen (&globals->pfs, dbn);
+  PODFILE *p = popen (&globals->pfs, fn);
 
-  if (p) {
-    Load (p);
-    pclose (p);
-  }
+  if (p) { Load (p); pclose (p);}
+	return (p != 0);
 }
 
-//
+//-------------------------------------------------------------------
 // Data access function to get the number of template items
-//
+//-------------------------------------------------------------------
 int CDatabaseTemplate::GetNumItems ()
 {
   return item.size();

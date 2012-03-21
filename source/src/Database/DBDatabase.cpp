@@ -82,13 +82,12 @@ void CDatabaseRecord::Reset()
 //  Constructor
 //=======================================================================
 CDatabase::CDatabase (const char* dbtFilename)
-{
+{ nRecords = 0;
   // Load the database template
   LoadTemplate (dbtFilename);
 
   // Initialize state to UNMOUNTED until Mount() is called
-  state   =  DB_UNMOUNTED;
-  podfile = NULL;
+  podfile = 0;
   buf     = 0;
 }
 
@@ -111,7 +110,7 @@ CDatabase::~CDatabase (void)
 //-------------------------------------------------------------------
 void CDatabase::LoadTemplate (const char* dbtFilename)
 {
-  dbt.Load (dbtFilename);
+  state = (dbt.Load (dbtFilename))?(DB_UNMOUNTED):(DB_OFF);
 }
 
 CDatabaseTemplate* CDatabase::GetTemplate (void)
@@ -123,7 +122,7 @@ CDatabaseTemplate* CDatabase::GetTemplate (void)
 // Index related methods
 //-------------------------------------------------------------------
 void CDatabase::AddIndex (const char *dbiFilename)
-{
+{ if (state == DB_OFF)		return;
   pair<Tag,CDatabaseIndex*> dbiInsert;
   dbiInsert.second = new CDatabaseIndex (dbiFilename);
   dbiInsert.first = dbiInsert.second->GetKeyId();
@@ -131,6 +130,7 @@ void CDatabase::AddIndex (const char *dbiFilename)
   char idn[8];
   TagToString(idn,dbiInsert.second->GetKeyId());
   TRACE("------------DB %s Add index %s", dbiFilename,idn);
+	return;
 }
 //-------------------------------------------------------------------
 
@@ -199,12 +199,14 @@ void CDatabase::Mount (PODFILE *f)
 // Mount the database but do not load any of the records into memory
 //-------------------------------------------------------------------
 void CDatabase::Mount (const char* dbn)
-{ char fn[128];
+{ if (state == DB_OFF)	return;
+	char fn[128];
 	_snprintf(fn,127,"DATABASE/%s",dbn);
 	fn[127] = 0;
   // Mount the database, PODFILE must be left open
   PODFILE *p = popen (&globals->pfs, fn);
   if (p)  Mount (p);
+	return;
 }
 //-------------------------------------------------------------------
 void CDatabase::Unmount (void)

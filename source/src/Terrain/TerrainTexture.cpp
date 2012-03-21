@@ -1191,10 +1191,6 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
   //--------Initialize Library --------------------------------------
   FreeImage_Initialise(TRUE);
   //----Check for animated water ------------------------------------
-  //	int NoAW     = 0;
-  //	GetIniVar("Sim", "NoAnimatedWater", &NoAW);
-  //	if (NoAW) globals->noAWT++;
-  //anSEA = new CWater3D(256);
   kaf   = int (double(1 - 0.62f) * 255);
   kaf   = kaf << 24;
   //--------Build the medium Water Texture --------------------------

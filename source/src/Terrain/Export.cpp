@@ -1789,15 +1789,15 @@ int  CExport::ExecuteTRN()
 		//--- Write a file ------------------------
 		case EXP_TRN_WRITE:
 				WriteTRN();
-//				rc = WriteT2D();
-				rc		= EXP_TRN_NFILE;
 				Clear = 1;
-				return rc;
+				return EXP_TRN_NFILE;
 		//--- Next texture ------------------------
+				/*
 		case EXP_TRN_WTEXT:
 				rc = ExportT2D();
 				Clear = 1;
 			  return rc;
+				*/
 	}
 	SCENE("========== Exported: %05d files ==========",count);
 	globals->appState = APP_EXIT_SCREEN;
@@ -1906,6 +1906,7 @@ void CExport::ExportSUPelevation(C_STile *asp)
 //---------------------------------------------------------------------------
 //  Export textures
 //---------------------------------------------------------------------------
+/*
 int CExport::WriteT2D()
 {	if (0 == fName)								return	EXP_TRN_NFILE;
 	if (!sqm->SQLt2d())						return	EXP_TRN_NFILE;
@@ -1925,9 +1926,11 @@ int CExport::WriteT2D()
 	SCENE("Import 2D textures from %s in %s:", fName,pod);
 	return EXP_TRN_WTEXT;
 }
+*/
 //---------------------------------------------------------------------------
 //  Export textures
 //---------------------------------------------------------------------------
+/*
 int CExport::ExportT2D()
 {	char msg[1024];
 
@@ -1944,9 +1947,11 @@ int CExport::ExportT2D()
 	sx++;
 	return EXP_TRN_WTEXT;
 }
+*/
 //---------------------------------------------------------------------------
 //  Export textures
 //---------------------------------------------------------------------------
+/*
 void CExport::WriteTexture2D(C_STile *sp)
 {		U_INT					tx = 0;
 		U_INT					tz = 0;
@@ -1966,9 +1971,11 @@ void CExport::WriteTexture2D(C_STile *sp)
 		}
 		return;
 }
+*/
 //---------------------------------------------------------------------------
 //  Load Texture textures
 //---------------------------------------------------------------------------
+/*
 void CExport::LoadTRNTexture(CTextureDef	 *txd,char R)
 {	txd->Reso[0]	= R;
 	txd->dTEX[0]	= 0;
@@ -1998,5 +2005,5 @@ void CExport::LoadTRNTexture(CTextureDef	 *txd,char R)
 	inf.nite	= 0;
 	return;
 }
-
+*/
 //===================================END OF FILE ==========================================

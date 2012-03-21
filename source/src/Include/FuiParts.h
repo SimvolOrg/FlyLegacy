@@ -88,8 +88,8 @@ class CCtyLine: public CSlot {
 public:
   CCtyLine(): CSlot(1)  {}
   //-------------------------------------------------------
-  inline  void    SetKey(char *key)  {strncpy(cuid,key,4);}
-  inline  char*   GetSlotKey()			 {return cuid;}
+  inline  void    SetSlotKey(char *key)  {strncpy(cuid,key,4);}
+  inline  char*   GetSlotKey()					 {return cuid;}
 };
 //=============================================================================
 //  Class CStaLine to display States in directory box
@@ -102,8 +102,8 @@ class CStaLine: public CSlot {
 public:
   CStaLine(): CSlot(1) {}
   //-------------------------------------------------------
-  inline  void    SetKey(char *sk)   {strncpy(skey,sk,6);}
-  inline  char   *GetSlotKey()       {return skey;}
+  inline  void    SetSlotKey(char *sk)   {strncpy(skey,sk,6);}
+  inline  char   *GetSlotKey()					 {return skey;}
   //-------------------------------------------------------
   inline  void    SetCTY(char *ck)   {strncpy(ckey,ck,4);}
   //------------------------------------------------------
@@ -167,7 +167,7 @@ public:
   CNavLine() : CSlot(1) {nkey[0] = 0;}
   void             Print(CFuiList *w,U_CHAR ln);
   //-----------inline -------------------------------------------
-  void            SetKey(char *k)     {strncpy(nkey,k,10);}
+  void            SetSlotKey(char *k) {strncpy(nkey,k,10);}
   void            SetType(U_SHORT tp) {type = tp;}
   void            SetVaid(char *id)   {strncpy(naid,id, 5);}
   void            SetVcty(char *ct)   {strncpy(ncty,ct, 3);}
@@ -205,7 +205,7 @@ public:
   CWptLine() : CSlot(1) {wkey[0] = 0;}
   void            Print(CFuiList *w,U_CHAR ln);
   //-----------inline -------------------------------------------
-  void            SetKey(char *k)     {strncpy(wkey,k,10);}
+  void            SetSlotKey(char *k) {strncpy(wkey,k,10);}
   void            SetWtyp(U_SHORT tp) {wtyp = tp;}
   void            SetWaid(char *id)   {strncpy(waid,id, 5);}
   void            SetWcty(char *ct)   {strncpy(wcty,ct, 3);}
@@ -333,7 +333,7 @@ public:
   CRwyLine() : CSlot(1) {}
   void      Print(CFuiList *w,U_CHAR ln);
   //-------------------------------------------------------------
-  void      SetKey(char *k)           {strncpy(rapt,k,10);}
+  void      SetSlotKey(char *k)       {strncpy(rapt,k,10);}
   void      SetLeng(U_INT lg)         {rwlg = lg;}
   void      SetHend(RWEND end)        {Hend = end;}
   void      SetLend(RWEND end)        {Lend = end;}

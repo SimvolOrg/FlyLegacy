@@ -3619,6 +3619,7 @@ TCacheMGR::~TCacheMGR()
   { char  *nm = (*ic).second;
     SAFE_DELETE_ARRAY (nm); 
   }
+  ctyMAP.clear();
 	//--- Delete unused coast data -----------------------
 	std::map<U_INT,C_SEA*>::iterator ra;
 	for (ra = seaMAP.begin(); ra != seaMAP.end(); ra++) delete (*ra).second;
@@ -3626,8 +3627,6 @@ TCacheMGR::~TCacheMGR()
 	std::map<U_INT,C_CDT*>::iterator rb;
 	for (rb = cstMAP.begin(); rb != cstMAP.end(); rb++) delete (*rb).second;
 	cstMAP.clear();
-	//---------------------------------------------------
-  ctyMAP.clear();
   //---delete all terrain types -----------------------
   terBOX->EmptyIt();
   delete terBOX;

@@ -156,18 +156,17 @@ SqlOBJ::SqlOBJ()
 	sup		= 0;
 }
 //-----------------------------------------------------------------------------
-//  Close all bases
+//  Close all open bases
+//	NOTE: Database structures with a description in dbn are fixed 
 //-----------------------------------------------------------------------------
 SqlOBJ::~SqlOBJ()
-{ if (genDBE.opn) sqlite3_close(genDBE.sqlOB);
-  if (elvDBE.opn) sqlite3_close(elvDBE.sqlOB);
-  if (seaDBE.opn) sqlite3_close(seaDBE.sqlOB);
-  if (txyDBE.opn) sqlite3_close(txyDBE.sqlOB);
-  if (modDBE.opn) sqlite3_close(modDBE.sqlOB);
-  if (texDBE.opn) sqlite3_close(texDBE.sqlOB);
-  if (objDBE.opn) sqlite3_close(objDBE.sqlOB);
-	if (wptDBE.opn) sqlite3_close(wptDBE.sqlOB);
-	if (t2dDBE.opn) sqlite3_close(t2dDBE.sqlOB);
+{	std::map<std::string,SQL_DB*>::iterator rb;
+	for (rb = dbase.begin(); rb != dbase.end(); rb++)
+	{	SQL_DB *db = (*rb).second;
+		sqlite3_close(db->sqlOB);
+		if (0 == db->dbn)	delete db;
+	}
+	dbase.clear();
 }
 //-----------------------------------------------------------------------------
 //  Initialize databases
@@ -179,9 +178,9 @@ void SqlOBJ::Init()
   strncpy(genDBE.path,"SQL",63);
   GetIniString("SQL","GENDB",genDBE.path,lgr);
 	strncpy(genDBE.name,"GEN*.db",63);
-  genDBE.mgr = SQL_MGR;
-  genDBE.dbn = "Generic files";
-	
+  genDBE.mgr	= SQL_MGR;
+  genDBE.dbn	= "Generic files";
+	genDBE.mode = SQLITE_OPEN_READONLY;
   //---Waypoint database -------------------------------------------
 	wptDBE.vers	= 0;																// Minimum version
   strncpy(wptDBE.path,"SQL",63);
@@ -189,24 +188,24 @@ void SqlOBJ::Init()
 	strncpy(wptDBE.name,"WPT*.db",63);
   wptDBE.mgr = SQL_MGR;
   wptDBE.dbn = "Waypoints";
-
+	wptDBE.mode = SQLITE_OPEN_READONLY;
   //---Elevation database ------------------------------------------
 	elvDBE.vers	= 2;																// Minimum version
   strncpy(elvDBE.path,"SQL",63);
   GetIniString("SQL","ELVDB",elvDBE.path,lgr);
 	strncpy(elvDBE.name,"ELV*.db",63);
-  elvDBE.mgr = SQL_THR | SQL_MGR; 
-  elvDBE.dbn = "Elevation Data";
-	elvDBE.mode= SQLITE_OPEN_READWRITE;
+  elvDBE.mgr	= SQL_THR | SQL_MGR; 
+  elvDBE.dbn	= "Elevation Data";
+	elvDBE.mode	= SQLITE_OPEN_READWRITE;
 
   //---Coast data database -----------------------------------------
 	seaDBE.vers	= 1;																// Minimum version
   strncpy(seaDBE.path,"SQL",63);
   GetIniString("SQL","SEADB",seaDBE.path,lgr);
 	strncpy(seaDBE.name,"SEA*.db",63);
-  seaDBE.mgr = SQL_THR;
-  seaDBE.dbn = "Coast data";
-
+  seaDBE.mgr	= SQL_THR;
+  seaDBE.dbn	= "Coast data";
+	seaDBE.mode = SQLITE_OPEN_READONLY;
   //---Taxiways database ------------------------------------------
 	txyDBE.vers	= 0;																// Minimum version
   strncpy(txyDBE.path,"SQL",63);
@@ -214,6 +213,7 @@ void SqlOBJ::Init()
 	strncpy(txyDBE.name,"TXY*.db",63);
   txyDBE.mgr = SQL_MGR;
   txyDBE.dbn = "Taxiway data";
+	txyDBE.mode = SQLITE_OPEN_READONLY;
 
   //---Model 3D database ------------------------------------------
 	modDBE.vers	= 0;																// Minimum version
@@ -222,7 +222,7 @@ void SqlOBJ::Init()
 	strncpy(modDBE.name,"M3D*.db",63);
   modDBE.mgr =  SQL_THR;
   modDBE.dbn = "Model3D data";
-
+	modDBE.mode = SQLITE_OPEN_READONLY;
   //---Generic textures database ----------------------------------
 	texDBE.vers	= 0;																// Minimum version
   strncpy(texDBE.path,"SQL",63);
@@ -230,7 +230,7 @@ void SqlOBJ::Init()
 	strncpy(texDBE.name,"TEX*.db",63);
   texDBE.mgr =  SQL_THR + SQL_MGR;
   texDBE.dbn = "Generic Textures";
-
+	texDBE.mode = SQLITE_OPEN_READONLY;
   //---World Object database --------------------------------------
 	objDBE.vers	= 2;																// Minimum version
   strncpy(objDBE.path,"SQL",63);
@@ -246,7 +246,7 @@ void SqlOBJ::Init()
 	strncpy(t2dDBE.name,"T2D*.db",63);
   t2dDBE.mgr	=  SQL_THR + SQL_MGR;
   t2dDBE.dbn	= "Texture 2D";
-	t2dDBE.mode = SQLITE_OPEN_READWRITE;
+	t2dDBE.mode = SQLITE_OPEN_READONLY;
   //--- Process  export flags -------------------------------------
   int exp = 0;
   GetIniVar("SQL","ExpGEN",&exp);           
@@ -339,10 +339,8 @@ void SqlOBJ::ImportConfiguration(char *fn)
 //-----------------------------------------------------------------------------
 int SqlOBJ::Open(SQL_DB &db)
 { char fnm[MAX_PATH];
-  int lgr   = (MAX_PATH-1);
-	int   flg = (db.exp)?(SQLITE_OPEN_READWRITE):(db.mode);
-  int   mop = (db.mgr & sqlTYP);        // Manager type
-  if (0 == mop)				return 0;
+  int lgr = (MAX_PATH-1);
+	if (db.exp)	db.mode = SQLITE_OPEN_READWRITE;
 	//--- Check if file exist ---------------------------
 	_snprintf(fnm,lgr,"%s/%s",db.path,db.name);
 	db.path[lgr] = 0;
@@ -352,18 +350,20 @@ int SqlOBJ::Open(SQL_DB &db)
 	_snprintf(fnm,lgr,"%s/%s",db.path,fileinfo.name);
 	fnm[lgr] = 0;
 	strncpy(db.path,fnm,259);
-	//--- For file thread, open in read only mode -------
-  if (SQL_THR == mop)	flg = SQLITE_OPEN_READONLY;
-  int rep = sqlite3_open_v2(fnm,  &db.sqlOB,flg,0 );
+	//---------------------------------------------------
+  int rep = sqlite3_open_v2(fnm,  &db.sqlOB,db.mode,0 );
   if (rep)  WarnE(db);
   else      Warn1(db);
   db.use  = (db.opn == 1) && (db.exp == 0); 
 	_findclose(h1);
 	//--- Warn fui manager ----------------------------------
 	if (db.exp) ImportConfiguration(fnm);
-	//--- Now check for minimum version -----------------
-	if (0 == db.opn)		return 0;
+	//--- Now check for minimum version ---------------------
+	if (0 == db.opn)		return 0;			// Not open
 	db.use = ReadVersion(db);
+	if (0 == db.use)		return 0;
+	//--- Now enter the database list -----------------------
+	dbase[db.path] = &db;
   return db.use;
 }
 //-----------------------------------------------------------------------------
@@ -422,6 +422,7 @@ int SqlOBJ::ReadVersion(SQL_DB &db)
 	if (vers >= db.vers)		return 1;
 	//--- warning ------------------------------------------
 	WARNINGLOG("Database %s obsolete. Get version %d",db.path,db.vers);
+	sqlite3_close(db.sqlOB);
 	return 0;
 }
 //==============================================================================
@@ -515,6 +516,24 @@ void SqlOBJ::DeleteElevation(U_INT key)
 { DeleteElvDetail(key);
   DeleteElvRegion(key);
   return;
+}
+//--------------------------------------------------------------------
+//  Open requested database
+//	If the file does not exists and scrit S is supplied*
+//	then create the base with script S
+//--------------------------------------------------------------------
+SQL_DB *SqlOBJ::OpenOSMbase(char *fn,char *S)
+{
+	return 0;
+}
+//==================================================================================
+//	Decrement user and close the base when no more used
+//==================================================================================
+void SqlOBJ::DecUser(SQL_DB *db)
+{	db->ucnt--;
+	if (db->ucnt > 0)	return;
+	//---  close database and delete all resources ----------
+
 }
 //==================================================================================
 //
@@ -726,7 +745,7 @@ CRwyLine *SqlMGR::GetRwySlot(sqlite3_stmt *stm)
 { RWEND     rend;
   CRwyLine *lin = new CRwyLine();
   char     *txt = (char*)sqlite3_column_text(stm,CLN_RWY_RAPT);
-  lin->SetKey(txt);
+  lin->SetSlotKey(txt);
   int       n   = int  (sqlite3_column_int(stm,CLN_RWY_RLEN));
   lin->SetLeng(n);
   txt = (char*)sqlite3_column_text(stm,CLN_RWY_RHID);
@@ -790,7 +809,7 @@ CNavLine *SqlMGR::GetNavSlot(sqlite3_stmt *stm)
   U_SHORT    s;
   SPosition pos;
   txt = (char*)sqlite3_column_text(stm,CLN_NAV_UKEY);
-  lin->SetKey(txt);
+  lin->SetSlotKey(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_NAV_NAME);
   lin->SetSlotName(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_NAV_NAID);
@@ -946,7 +965,7 @@ CWptLine *SqlMGR::GetWptSlot(sqlite3_stmt *stm)
   short   s;
   SPosition pos;
   txt = (char*)sqlite3_column_text(stm,CLN_WPT_UKEY);
-  lin->SetKey(txt);
+  lin->SetSlotKey(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_WPT_WNAM);
   lin->SetSlotName(txt);
   lin->SetWaid("INT");
@@ -977,7 +996,7 @@ CCtyLine *SqlMGR::GetCtySlot(sqlite3_stmt *stm)
   char     *txt = (char*)sqlite3_column_text(stm,CLN_CTY_CNAM);
   lin->SetSlotName(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_CTY_CUID);
-  lin->SetKey(txt);
+  lin->SetSlotKey(txt);
   return lin;
 }
 //-----------------------------------------------------------------------------
@@ -988,7 +1007,7 @@ CStaLine *SqlMGR::GetStaSlot(sqlite3_stmt *stm)
   char *txt = (char*)sqlite3_column_text(stm,CLN_STA_NAME);
   lin->SetSlotName(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_STA_SKEY);
-  lin->SetKey(txt);
+  lin->SetSlotKey(txt);
   txt = (char*)sqlite3_column_text(stm,CLN_STA_SCTY);
   lin->SetCTY(txt);
   return lin;
@@ -2817,6 +2836,7 @@ int SqlMGR::DeletePatche(ELV_PATCHE &p)
 //	SAVE USER 2D TEXTURE
 //	
 //===================================================================================
+
 int SqlMGR::WriteT2D(TEXT_INFO *tdf)
 {	char *rq = "INSERT INTO texture (kdet,file,rfu,wdt,htr,res,day,ind,nit) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9);*";
 	int rep	 = 0;
@@ -2852,6 +2872,7 @@ int SqlMGR::WriteT2D(TEXT_INFO *tdf)
 	return 0;
 
 }
+
 //-----------------------------------------------------------------------------
 //	Check if detail tile already in data base
 //-----------------------------------------------------------------------------

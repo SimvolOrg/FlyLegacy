@@ -5021,25 +5021,28 @@ CDatabaseManager CDatabaseManager::instance;
 CDatabaseManager::CDatabaseManager (void) {}
 
 void CDatabaseManager::Init (void)
-{ //---------------------------------------------
+{ PFS *pfs = &globals->pfs; 
+	//---------------------------------------------
   //MEMORY_LEAK_MARKER ("database_init")
   if (0 == globals->sqm->SQLgen())
-  { TRACE("------------DB Loading AIRPORTS");
-    CDatabase *dbAirport = new CDatabaseAPT ("Airport.dbt");
-    dbAirport->Mount    ("AIRPORT.DBD");
-    dbAirport->AddIndex ("AIRPORT.DBI");
-    dbAirport->AddIndex ("APRTCTRY.DBI");
-    dbAirport->AddIndex ("APRTSTAT.DBI");
-    dbAirport->AddIndex ("APRTFAA.DBI");
-    dbAirport->AddIndex ("APRTICAO.DBI");
-    dbAirport->AddIndex ("APRTGLOB.DBI");
-    dbAirport->AddIndex ("APRTNAME.DBI");
-    db[DB_AIRPORT] = dbAirport;
-    TRACE("APT     count %u",dbAirport->GetNumRecords());
+  {TRACE("------------DB Loading AIRPORTS");
+	 paddpod(pfs,"DATABASE/AIRPORT.POD");
+	 CDatabase *dbAirport = new CDatabaseAPT ("Airport.dbt");
+   dbAirport->Mount    ("AIRPORT.DBD");
+   dbAirport->AddIndex ("AIRPORT.DBI");
+   dbAirport->AddIndex ("APRTCTRY.DBI");
+   dbAirport->AddIndex ("APRTSTAT.DBI");
+   dbAirport->AddIndex ("APRTFAA.DBI");
+   dbAirport->AddIndex ("APRTICAO.DBI");
+   dbAirport->AddIndex ("APRTGLOB.DBI");
+   dbAirport->AddIndex ("APRTNAME.DBI");
+   db[DB_AIRPORT] = dbAirport;
+	 
+   TRACE("APT     count %u",dbAirport->GetNumRecords());
   }
-	else		TRACE("USING SQL Generic Database");
   // Load ATS (Air Traffic System) Routing database
   TRACE("------------DB Loading ATS");
+	paddpod(pfs,"DATABASE/ATSROUTE.POD");
   CDatabase *dbAtsRoute = new CDatabase ("ATSROUTE.DBT");
   dbAtsRoute->Mount ("ATSROUTE.DBD");
   db[DB_ATS_ROUTE] = dbAtsRoute;
@@ -5048,6 +5051,7 @@ void CDatabaseManager::Init (void)
   if (0 == globals->sqm->SQLgen())
   { // Load Comm facility database
     TRACE("------------DB Loading COMM FACILITY");
+		paddpod(pfs,"DATABASE/COMM.POD");
     CDatabase *dbComm = new CDatabaseCOM ("Comm.dbt");
     dbComm->Mount    ("COMM.DBD");
     dbComm->AddIndex ("COMM.DBI");
@@ -5058,6 +5062,7 @@ void CDatabaseManager::Init (void)
   if (0 == globals->sqm->SQLgen())
   { // Load Country name database
     TRACE("------------DB Loading COUNTRY");
+		paddpod(pfs,"DATABASE/GEOGRAPH.POD");
     CDatabase *dbCountry = new CDatabaseCTY ("Country.dbt");
     dbCountry->Mount		("COUNTRY.DBD");
     dbCountry->AddIndex ("COUNTRY.DBI");
@@ -5079,6 +5084,7 @@ void CDatabaseManager::Init (void)
   if (0 == globals->sqm->SQLgen())
   { // Load ILS Facility database
     TRACE("------------DB Loading ILS");
+		paddpod(pfs,"DATABASE/ILS.POD");
     CDatabase *dbIls = new CDatabaseILS ("Ils.dbt");
     dbIls->Mount ("Ils.dbd");
     dbIls->AddIndex ("Ils.dbi");
@@ -5090,6 +5096,7 @@ void CDatabaseManager::Init (void)
   if (0 == globals->sqm->SQLgen())
   { // Load Navaid database
     TRACE("------------DB Loading NAVAIDs");
+		paddpod(pfs,"DATABASE/NAVAID.POD");
     CDatabase *dbNavaid = new CDatabaseNAV ("Navaid.dbt");
     dbNavaid->Mount ("Navaid.dbd");
     dbNavaid->AddIndex ("Navaid.dbi");
@@ -5100,25 +5107,31 @@ void CDatabaseManager::Init (void)
     db[DB_NAVAID] = dbNavaid;
     TRACE("NAV     count %u",dbNavaid->GetNumRecords());
   }
-  // Load Obstruction database
-  TRACE("------------DB Loading OBSTRUCTIONS");
-  CDatabase *dbObstruct = new CDatabaseOBS ("Obstruct.dbt");
-  dbObstruct->Mount ("Obstruct.dbd");
-  dbObstruct->AddIndex ("ObstGlob.dbi");
-  db[DB_OBSTRUCTION] = dbObstruct;
-  TRACE("OBS     count %u",dbObstruct->GetNumRecords());
-  if (0 == globals->sqm->SQLgen())
+	  if (0 == globals->sqm->SQLgen())
   { // Load Runway database
     TRACE("------------DB Loading RUNWAYS");
+		paddpod(pfs,"DATABASE/RUNWAY.POD");
     CDatabase *dbRunway = new CDatabaseRWY("RUNWAY.dbt");
     dbRunway->Mount ("RUNWAY.dbd");
     dbRunway->AddIndex ("RUNWAY.dbi");
     db[DB_RUNWAY] = dbRunway;
     TRACE("RWY     count %u",dbRunway->GetNumRecords());
   }
+
+  // Load Obstruction database
+		/*
+  TRACE("------------DB Loading OBSTRUCTIONS");
+	paddpod(pfs,"DATABASE/OBSTRUCT.POD");
+  CDatabase *dbObstruct = new CDatabaseOBS ("Obstruct.dbt");
+  dbObstruct->Mount ("Obstruct.dbd");
+  dbObstruct->AddIndex ("ObstGlob.dbi");
+  db[DB_OBSTRUCTION] = dbObstruct;
+  TRACE("OBS     count %u",dbObstruct->GetNumRecords());
+	*/
   if (0 == globals->sqm->SQLgen())
   { // Load Waypoint database
     TRACE("------------DB Loading WAYPOINTS");
+		paddpod(pfs,"DATABASE/WAYPOINT.POD");
     CDatabase *dbWaypoint = new CDatabaseWPT("Waypoint.dbt");
     dbWaypoint->Mount ("WAYPOINT.dbd");
     dbWaypoint->AddIndex ("WAYPOINT.dbi");

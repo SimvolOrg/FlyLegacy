@@ -416,6 +416,7 @@ struct ELV_PATCHE;
 //  Define a database
 //=====================================================================================
 struct SQL_DB {
+		int			  ucnt;								// User counts
 		int				vers;								// Minimum version
 		int				mode;								// Open mode
     char      path[MAX_PATH];     // path name
@@ -428,12 +429,16 @@ struct SQL_DB {
     char     *dbn;                // Database name
 		//--- Constructor ------------------------------
 		SQL_DB::SQL_DB()
-		{	mode	= SQLITE_OPEN_READONLY;
+		{	ucnt	= 0;
+			mode	= SQLITE_OPEN_READONLY;
 			exp		= 0;
 			opn		= 0;
 			use		= 0;
 			vers	= 0;
+			dbn		= 0;
 		}
+		//----------------------------------------------
+		void IncUser()	{ucnt++;}
 		//----------------------------------------------
 };
 //=====================================================================================
@@ -499,6 +504,8 @@ protected:
   SQL_DB    objDBE;                       // Object database
   //-----------------------------------------------------------------
 	SQL_DB    t2dDBE;												// Texture 2D database
+	//--- list of OSM database ----------------------------------------
+	std::map<std::string, SQL_DB*> dbase;		// List of open  bases
   //---Common methods -----------------------------------------------
 public:
   SqlOBJ();
@@ -524,6 +531,9 @@ public:
 	//-----------------------------------------------------------------
   inline char   UseELV()			{return elvDBE.use;}
   inline bool   MainSQL()			{return (sqlTYP == SQL_MGR);}
+	//-----------------------------------------------------------------
+	void					DecUser(SQL_DB *db);
+	SQL_DB			 *OpenOSMbase(char *fn,char *S);
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD

@@ -126,7 +126,7 @@ public:
   ~CDatabaseTemplate (void);
 
   // Public methods
-  void                   Load (const char* fileName);
+  bool                   Load (const char* fileName);
   int                    GetNumItems (void);
   CDatabaseTemplateItem* GetItem (int i);
   CDatabaseTemplateItem* GetItemByTag (Tag tag);
@@ -223,7 +223,8 @@ protected:
 
 typedef enum {
   DB_UNMOUNTED,
-  DB_MOUNTED
+  DB_MOUNTED,
+	DB_OFF,
 } EDatabaseState;
 //=====================================================================
 //	Put forward declaration for managed objects here
