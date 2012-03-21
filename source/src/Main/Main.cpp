@@ -1481,9 +1481,12 @@ int main (int argc, char **argv)
   globals->noOBJ    = 0;                      // Allow Object
   globals->noMET    = 0;                      // Allow Meteo
   //---Terrain parameters --------------------------------------------
+	globals->pakCAP		= 1000;										// 1000 vertices
   globals->maxView  = 40;                     // Default Maximum view (miles)
   globals->highRAT  = 0.32;                   // Hight resolution (ratio of maxView)
   globals->skyDist  = FN_FEET_FROM_MILE(60);  // Sky distance
+	globals->mipOBJ		= 3;											// Mip level for Objects
+	globals->mipTER		= 3;											// Mip level for terrain
   //---SQL databases -------------------------------------------------
   globals->genDB = 0;
   globals->elvDB = 0;

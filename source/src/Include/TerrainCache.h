@@ -51,9 +51,10 @@
 //=============================================================================
 class CTerraFile;
 class CMemCount;
-class CWater3D;
 class CVertex;
 class CFuiTED;
+class OSM_Object;
+class C3DPack;
 struct ELV_VTX;
 struct ELV_PATCHE;
 //=============================================================================
@@ -190,6 +191,8 @@ public:
     CObjQ         woQ;										// Super Tile 3D object Queue
     U_CHAR       visible;									// Visibility indicator
     float        white[4];                // Diffuse color for blending
+		//--- OSM management --------------------------------------------
+		Queue<C3DPack> batQ;									// Building Queue
     //---------------------------------------------------------------
     SPosition    mPos;                        // Center position
     CVector      sRad;												// Radius
@@ -209,6 +212,9 @@ public:
 		//-----------------------------------------------------------
 		void					LoadVBO();
 		//-----------------------------------------------------------
+		C3DPack      *Locate(OSM_Object *obj);
+		void					AddToPack(OSM_Object *obj);
+		//-----------------------------------------------------------
 		void					Reallocate(char opt);
     void					AllocateVertices(char opt);
     void          RazNames();
@@ -227,7 +233,8 @@ public:
 		void					TraceEnd();
 		void					TraceRealloc(CmQUAD *qd);
     //-----------------------------------------------------------
-    inline CTextureDef *GetTexDesc(int nd)  {return (Tex + nd);}
+		inline Queue<C3DPack> *GetBatQ()					{return & batQ;}
+    inline CTextureDef    *GetTexDesc(int nd) {return (Tex + nd);}
     //-----------------------------------------------------------
     inline void   SetVisibility(char v)   {visible = v;}
     inline char   Visibility()            {return visible;}
@@ -560,6 +567,7 @@ public:
   inline  bool  NotVisible()    {return (visb == 0);}
   inline  bool        NoQuad()  {return (1 == qSTAT);}
   inline  bool        HasQuad() {return (0 == qSTAT);}
+	inline  bool				InLoad()	{return LoadQ.NotEmpty();}
 	//-----------------------------------------------------
 	inline  void				IndElevation()	{elv = 1;}
 	inline  bool				HasElevation()	{return elv != 0;}
@@ -630,15 +638,15 @@ public:
   int         DivideQuad(CVertex *ct,CTX_QUAD &ctx);
   int         TerminalQuad(CVertex *ct,CTX_QUAD &ctx);
   //--------Super Tile Management --------------------------------
-  void        InitSuperTiles();
-  int         PutOutside();
-  int         UpdateInnerCircle();
-  void        FlushTextures();
-  CTextureDef *GetTexDescriptor(U_INT tx,U_INT tz);
-  CTextureDef *GetTexList(U_INT No)    {return Super[No].Tex;}
-  CSuperTile   *GetSuperTile(U_INT No)   {return &Super[No];}
-  CSuperTile   *GetSuperTile(int tx,int tz);
-	bool				AllTextured();
+	void						InitSuperTiles();
+  int							PutOutside();
+  int							UpdateInnerCircle();
+  void						FlushTextures();
+  CTextureDef		 *GetTexDescriptor(U_INT tx,U_INT tz);
+  CTextureDef    *GetTexList(U_INT No)    {return Super[No].Tex;}
+  CSuperTile     *GetSuperTile(int tx,int tz);
+  CSuperTile     *GetSuperTile(U_INT No);
+	bool						AllTextured();
 //--------Delete resources --------------------------------------
   int         FreeQuad(CmQUAD *cp);
   int         FreeVertices(CmQUAD *cp);
@@ -774,7 +782,7 @@ class TCacheMGR: public CExecutable {
   double    orient;                         // Camera orientation
   GLint       mask;                         // Attribute mask
   //-------TEXTURE COORDINATE  TABLES ---------------------------
-  U_CHAR      Disp;                         // Display accounting
+  U_CHAR      rfu2;                         // Display accounting
   U_CHAR      HiRes;                        // Hires permited
   U_CHAR      FactEV;                       // Shift factor
   U_CHAR      LastEV;                       // Last indice in elevation
@@ -882,6 +890,7 @@ public:
   C_QGT      *LocateQGT(QGT_DIR *itm,U_SHORT cx,U_SHORT cz);
   C_QGT      *GetQGT(U_SHORT cx, U_SHORT cz);
   C_QGT      *GetQGT(SPosition &pos);
+	C_QGT      *GetQGT(U_INT key);
   bool        SetQGT(GroundSpot &gns);
   CVertex    *GetQgtCorner(C_QGT *qgt,QGT_DIR *tab,U_SHORT cn);
   int         FreeTheQGT(C_QGT *qt);
@@ -893,7 +902,7 @@ public:
   //---------STEP ROUTINES --------------------------------------
   void        CreateQGT(U_SHORT cx, U_SHORT cz);      // STEP 0
   //---------Inline ---------------------------------------------
-	inline void	ProbeBB(CFuiCanva *c,int n) {bbox->Probe(c,n);}
+	inline void	ProbeBB(CFuiCanva *c,int n) {;}
   inline CTextureWard *GetTexWard() {return txw;}
   inline void   InActQ(C_QGT *qgt)  {ActQ.PutLast(qgt);}
   //-------------------------------------------------------------
@@ -937,7 +946,6 @@ public:
   inline CmQUAD     *GetPlaneQuad()      {return Spot.Quad;}
   inline bool        PlaneQuad(CmQUAD *q){return (q == Spot.Quad);}
   //--------------------------------------------------------------
-  inline void   SetHires(U_CHAR r)  {HiRes = r;}
   inline bool   HiResPermited()     {return (HiRes!= 0);}
   inline char   GetTrace()          {return (tr)?(1):(0);}
   inline char   GetDebug()          {return (td)?(1):(0);}
@@ -994,7 +1002,8 @@ public:
   void        ScanCoast(SSurface *sf);
   void        ScanCoastSQL(SSurface *sf);
   void        SetSkyFog(float dens);
-  //-------------------------------------------------------------
+  //---OSM Management -------------------------------------------
+	void				AddToPack(OSM_Object *obj);
   //----------Misc items  ---------------------------------------
   void        DrawSun();
   void        GetSunPosition (void);
@@ -1029,8 +1038,7 @@ public:
   //----------Teleport -----------------------------------------
 	void				MoveRabbit(SPosition &dst);
   void        CheckTeleport();
-  void        Teleport(SPosition &dst);
-  void        NoteTeleport();
+  void        Teleport(SPosition *P, SVector *O);
   //----------Statistics ---------------------------------------
   void        GetStats(CFuiCanva *cnv);
 };

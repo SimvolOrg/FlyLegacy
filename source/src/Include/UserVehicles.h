@@ -37,7 +37,6 @@
 
 
 #include "../Include/FlyLegacy.h"
-#include "../Include/Cameras.h"
 #include "../Include/Panels.h"
 #include "../Include/Subsystems.h"
 #include "../Include/WeightManager.h"
@@ -639,105 +638,6 @@ public:
 	inline CVehicleObject *GetMVEH()	{return mveh;}
 };
 
-//==============================================================================
-// Camera Views list
-//
-// CCameraViewsList gets a list of the cameras that are listed in DATA/CAMERAS.TXT
-// SCameraType is a structure used with the data in CAMERAS.TXT  
-//===============================================================================
-struct SCameraType {
-  char camera_tag [4+1];
-  char camera_name[64+1];
-  int val;
-  SCameraType (void) {
-    *camera_tag = 0;
-    *camera_name = 0;
-    val = 0;
-  }
-};
-
-class CCameraViewsList {
-public:
-  SCameraType *cam_type;
-  CCameraViewsList (void);
-  ~CCameraViewsList (void);
-
-  // methods
-  void  FreeList (void);
-  int   ReadCamerasFile (void);
-  inline const int& GetNumItems (void) const {return num_lines;}
-  inline const char* GetTag (const int& i) const
-  { if (type) return type[i].camera_tag;
-    else return 0;
-  }
-  inline const char* GetCameraName (const int& i) const
-  { if (type) return type[i].camera_name;
-    else return 0;
-  }
-  inline const int GetVal (const int& i) const
-  { if (type) return type[i].val;
-    else return 0;
-  }
-  const int PosCameraTag (const char *tag);
-
-private:
-  int num_lines;
-  SCameraType *type;
-};
-
-//==============================================================================
-// Camera Manager
-//
-// CCameraManager links together all of the various static and interactive
-//   panel views defined in the CCockpitManager (.PIT file).
-//===============================================================================
-class CCameraManager : public CStreamObject {
-public:
-   CCameraManager (CVehicleObject *veh,char* fn);
-  ~CCameraManager (void);
-
-  // CStreamObject methods
-  int   Read (SStream *stream, Tag tag);
-  void  ReadFinished (void);
-
-  //----- CCameraManager ------------------------------------------------
-  void      BindKeys();
-  void      ZeroRate();
-  void      DefaultCameras();
-  void      ExplicitCameras(int nb);
-  void      Link(CCamera *cam,int k,int last);
-  void      UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
-  void      AdjustRange(double lg);
-  //----------------------------------------------------------------------------
-  void      NextCamera (void);
-  void      PrevCamera (void);
-  CCamera  *SelectCamera (Tag id);
-  CCamera  *GetCamera(Tag id);
-  CCameraCockpit *GetCockpitCamera();
-	void			RestoreCamera(CAMERA_CTX &ctx);
-	//----------------------------------------------------------------------------
-	CRabbitCamera *SetRabbitCamera(CAMERA_CTX &ctx,CFuiWindow *w);
-  //----------------------------------------------------------------------------
-  void      KbEvent(Tag id);                // Keyboard command
-  bool      KeyCameraCockpitEvent(int id);
-  //----------------------------------------------------------------------------
-  void      Print (FILE *f);
-  //----------------------------------------------------------------------------
-  inline    CCamera*  GetActiveCamera ()     {return aCam;}
-  //----------------------------------------------------------------------------
-protected:
-  ///----------Attributes ------------------------------------------------------
-	CVehicleObject *mveh;												// Mother vehicle
-  CCamera  *aCam;                             // Active camera
-  std::map<Tag,CCamera*>   came;              // List of standard cameras
-  Tag       tCam;                             // Tag of current camera
-  /// Current camera parameters
-  SPosition tgtPos;
-  SVector   tgtOrient;
-  char      Internal;                         // Camera is internal if (1)
-  ///--------Cameras list from DATA\CAMERAS_LEGACY.TXT --------------------------
-  CCameraViewsList cam_list;
-};
 
 //===========================================================================
 // Control Mixer

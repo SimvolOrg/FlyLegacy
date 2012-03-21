@@ -1349,12 +1349,12 @@ int	APISetObjectPosition(SFlyObjectRef *object, SPosition *pos)
     Tag* sig = static_cast<Tag *> (object->classSig);
     switch (*sig) {
       case TYPE_FLY_SIMULATEDOBJECT:
-        static_cast<CDLLSimulatedObject *> (object->objectPtr)->SetPosition (*pos);
+        static_cast<CDLLSimulatedObject *> (object->objectPtr)->SetObjectPosition (*pos);
         return 0;
       default :
       //case TYPE_FLY_VEHICLE:
       //  static_cast<CVehicleObject *> (object->objectPtr)->SetPosition (*pos);
-        globals->pln->SetPosition (*pos);
+        globals->pln->SetObjectPosition (*pos);
         return 0;
     }
   }
@@ -1385,7 +1385,7 @@ int	APISetObjectOrientation(SFlyObjectRef *object, SVector *orientation)
       default:
       //case TYPE_FLY_VEHICLE:
       //  static_cast<CVehicleObject *> (object->objectPtr)->SetOrientation (*orientation);
-        globals->pln->SetOrientation (*orientation);
+        globals->pln->SetObjectOrientation (*orientation);
         return 0;
     }
   }

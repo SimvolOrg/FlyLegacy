@@ -743,7 +743,7 @@ SPosition CAirplane::SetOnGround()
 { if (globals->tcm->MeshBusy())  return orgp;
   SPosition pos = orgp;
   pos.alt   = globals->tcm->GetGroundAltitude() + GetBodyAGL();
-  SetPosition(pos);
+  SetObjectPosition(pos);
   State = VEH_OPER;
   return pos;
 }
@@ -780,7 +780,7 @@ int CAirplane::TimeSlice(float dT,U_INT frame)
     //-- At start up wait for terrain to be stable ---------
     case VEH_INIT:
       { SPosition pos = SetOnGround();
-        SetPosition(pos);
+        SetObjectPosition(pos);
         return 1;
       }
     //--- Aircraft is crashing ----------------------------
@@ -1133,7 +1133,7 @@ void CUFOObject::UpdateOrientationState (float dT, U_INT FrNo)
  tmp_iang.z = WrapTwoPi (tmp_iang.z - (tmp_iang.y * (DEG2RAD * 10.0) * dT / (DEG2RAD * 45.0)));                                // roll
  tmp_iang.y = WrapPiPi  (tmp_iang.y - (DEG2RAD * (z_ / 10.0)));    // 
 
- SetOrientation (tmp_iang);
+ SetObjectOrientation (tmp_iang);
  float coef  = 0;
  globals->jsm->Poll(JS_THROTTLE_1,coef);
  float speed = 100.0f * coef * 5;
@@ -1182,7 +1182,7 @@ int	CUFOObject::UpdateNewPositionState(float dT, float spd)
         DrawNoticeToUser (buff, 1);
     }
 
-    SetPosition (pos_to);
+    SetObjectPosition (pos_to);
     //
     return 1;
 }
@@ -1446,7 +1446,7 @@ void COPALObject::ResetOrientation (const CVector &rad_angle)
 //--------------------------------------------------------------
 //  Set aircraft orientation with opal object
 //--------------------------------------------------------------
-void COPALObject::SetPhysicalOrientation (CVector &rad_angle)
+void COPALObject::SetPhysicalOrientation (SVector &rad_angle)
 { opal::Matrix44r transform; 
   CVector iang_ = rad_angle;
   iang_.Times (RadToDeg (1.0));
@@ -1512,7 +1512,7 @@ void COPALObject::ResetZeroOrientation (void)
   // return to the former heading
   reset_ori.x = 0.0; reset_ori.y = 0.0;
   SetPhysicalOrientation (reset_ori);
-  SetOrientation (reset_ori);
+  SetObjectOrientation (reset_ori);
 }
 //------------------------------------------------------------------------------------------
 //  We must compute the CoG above ground level
@@ -1539,7 +1539,7 @@ void COPALObject::RestOnGround()
   whl->ResetForce();
 	SPosition p = globals->geop;
 	p.alt	= grn + GetPositionAGL();
-	SetPosition(p);
+	SetObjectPosition(p);
   PositionAGL();
   return;
 }
@@ -1851,7 +1851,7 @@ void COPALObject::UpdateOrientationState (float dT, U_INT FrNo)
     transform.rotate (globals->caging_fixed_pitch_dval, 1.0, 0.0, 0.0);//
     Plane->setTransform (transform);
   }
-  SetOrientation (orientation); // RH
+  SetObjectOrientation (orientation); // RH
   return;
 }
 //---------------------------------------------------------------------------
@@ -1886,7 +1886,7 @@ void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
   //
   ifpos   = dist;
   SPosition pos_to = AddToPositionInFeet (pos_from, dist, globals->exf); // 
-  SetPosition (pos_to);
+  SetObjectPosition (pos_to);
 }
 //---------------------------------------------------------------------------
 //  Slew move

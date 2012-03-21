@@ -2968,6 +2968,7 @@ int CDbCacheMgr::TimeSlice(float dT,U_INT FrNo)
 {	//----------------------------------------------------------------------
 	if (1 == (FrNo & 1))  return 1;
   cFrame	= FrNo;
+
   CTileCache *tc = (CTileCache*)ActQ.GetFirst();
   //-----------If action queue not empty, do one action --------------------
   aPos  = globals->geop;

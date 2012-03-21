@@ -96,8 +96,8 @@ CDispatcher::CDispatcher()
 	{	DSP_EXEC *tab = slot + k;
 		tab->lock		= 0;
 		tab->obj  	= 0;
-		tab->exec   = 0;
-		tab->draw   = 0;
+		tab->exec   = 1;
+		tab->draw   = 1;
 	}
 }
 //-------------------------------------------------------------------
@@ -122,7 +122,19 @@ void	CDispatcher::Draw(char p)
 	slot[p].obj->Draw();
 	return;
 }
-
+//-------------------------------------------------------------------
+//	 Draw external
+//	Draw external start from PLANE priority up to SDK included
+//-------------------------------------------------------------------
+void CDispatcher::DrawExternal()
+{	for (int k=PRIO_PLANE; k<= PRIO_OTHERS; k++)
+		{	CExecutable *ex = slot[k].obj;
+			if (0 == ex)							continue;
+			if (slot[k].draw == 0)		continue;
+			slot[k].obj->DrawExternal();			
+		}
+	return;
+}
 ///=====================================================================================
 /// CRandomEvents
 ///=====================================================================================
@@ -309,7 +321,7 @@ bool sKeySREO(int id, int code, int mod)
   CVehicleObject *veh = globals->pln;
   CVector v;
   v.x = v.y = v.z = 0.0;
-  veh->SetOrientation (v);
+  veh->SetObjectOrientation (v);
   veh->SetPhysicalOrientation (v);
   return true;
 }
@@ -427,9 +439,12 @@ void CSlewManager::StopSlew()
   veh = globals->pln;
   if (0 == veh)													return;
   //---------------------------------------------
-  mode = SLEW_STOP;
-  if (grnd)  veh->RestOnGround();
+	SVector ori = veh->GetOrientation();
+	veh->SetObjectOrientation(ori);
+	veh->SetPhysicalOrientation(ori);
+	if (grnd)	veh->RestOnGround();
   globals->pln->SetOPT(vopt);
+  mode = SLEW_STOP;
   return;
 }
 //------------------------------------------------------------------------
@@ -476,7 +491,7 @@ void CSlewManager::NormalMove(float dT)
   pos.lon -= ((sin(dir.z) * fRate) + (sin(dir.z + HALF_PI) * lRate)) * dT;
   pos.lon = WrapLongitude (pos.lon);
   SetAltitude(&pos);
-  veh->SetPosition (pos);
+  veh->SetObjectPosition (pos);
   return;
 }
 //------------------------------------------------------------------------
@@ -546,7 +561,7 @@ void CSlewManager::SetLevel(CVehicleObject *user)
   else            {ori.y  = 0.0; level++;}
   //-------------------------------------------------
   pln->SetPhysicalOrientation (ori);
-  pln->SetOrientation(ori);
+  pln->SetObjectOrientation(ori);
   if (2 != level)   return;
   //-------------------------------------------------
   if (call)  pln->EndLevelling();
@@ -608,14 +623,17 @@ bool CSlewManager::StopMove()
   return true;
 }
 //=========================================================================
+//	TELEPORT PROFILE
+//=========================================================================
+#define PROF_TELEPORT (PROF_NO_OBJ | PROF_NO_MET | PROF_NO_APT )
+//=========================================================================
 // CSituation
-//  NOTE:  TODO check if wobjList is needed. if not remove it
-//          and just delete user 
 //=========================================================================
 CSituation::CSituation()
 { TRACE("=========CSituation start============");
-  globals->sit = this;
-	sVeh			= 0;
+  globals->sit	= this;
+	sVeh					= 0;
+	State					= SIT_NORMAL;
   //MEMORY_LEAK_MARKER (">SIT Construct")
   // Perform base initialization
 	FrameNo	= 0;										// JSDEV*
@@ -650,7 +668,7 @@ void CSituation::ReloadAircraft()
 //  Free resources
 //-------------------------------------------------------------------------
 CSituation::~CSituation (void)
-{ SAFE_DELETE (sVeh);
+{ 
 }
 //-------------------------------------------------------------------------
 //  Proced to Camera adjustment according to aircraft dimension
@@ -721,6 +739,7 @@ int CSituation::Read (SStream *stream, Tag tag)
             if (globals->plugins_num) globals->plugins.On_Instantiate (0,0,NULL);
             // 122809
             CAirplane *plan = GetAnAircraft();
+						sVeh     = plan;
             //---Continue reading on behalf of the CVehicleObject --------
             ReadFrom (plan, stream);
             TRACE("FLY_AIRPLANE all read");
@@ -881,6 +900,7 @@ void CSituation::ClearUserVehicle()
   //--- Stop engines --------------------------------------
   pln->eng->CutAllEngines();
   delete pln;
+	pln = 0;
   //----Change to default camera -------------------------
   globals->cam = globals->csp;
   //----Clean all globals --------------------------------
@@ -892,23 +912,10 @@ void CSituation::ClearUserVehicle()
 //  Draw all animated vehicles in the situation
 //===============================================================================
 void CSituation::DrawExternal()
-{ CAirplane *pln = globals->pln;
-	//-------------------------------------------------------------
-  //  Aircraft 
-  //  Draw outside depending on camera type
-  //  Camera at origin
-  //-------------------------------------------------------------
-  if (pln) pln->DrawExternal();
-  //-------------------------------------------------------------
-  //  Simulated Objects 
-  //  both from saved simulation 'sVeh'
-  //  or from dll 'dVeh'
-  //-------------------------------------------------------------
-  if (sVeh) sVeh->DrawExternal();
-  else { globals->plugins.DrawExternal();
-  }
+{ globals->Disp.DrawExternal();
   return;
 }
+
 //-------------------------------------------------------------------------------
 //  Draw user position and vehicle smoke
 //-------------------------------------------------------------------------------
@@ -918,7 +925,7 @@ void CSituation::DrawVehicleFeatures()
   return;
 }
 //-------------------------------------------------------------------------------
-//  Set world origin
+//  Set world origin (Just for IMPORT MODULE) Dont use elsewhere
 //-------------------------------------------------------------------------------
 void CSituation::WorldOrigin()
 {	SPosition pos;  
@@ -932,21 +939,109 @@ void CSituation::WorldOrigin()
 //  Draw the situation
 //  All drawing of the scene (except for PUI user interface widgets) is
 //   controlled from this method.
-//===============================================================================
+//==============================================================================
 void CSituation::Draw ()
-{ 
-	CCamera *cam = globals->cam;
+{	switch (State)	{
+			//-- Normal state: Draw everything ------------
+			case SIT_NORMAL:
+				return DrawNormal();
+			//--- Enter teleport mode ---------------------
+			case SIT_TELEP01:
+				return TeleportS1();
+			//--- Continue teleport -----------------------
+			case SIT_TELEP02:
+				return TeleportS2();
+				return;
+	}
+return;
+}
+//----------------------------------------------------------------------------
+//  Normal drawing
+//----------------------------------------------------------------------------
+void CSituation::DrawNormal()
+{ CCamera *cam = globals->cam;
   //----Use standard camera setting for drawing ---------------------
   cam->StartShoot(dTime);
 	cam->CameraReferential();
 	//--- Draw Terrain, then upper priority ---------------------------
 	globals->Disp.Draw(PRIO_TERRAIN);
 	globals->Disp.Draw(PRIO_ABSOLUTE);
-
 	//---Restore everything ---------------------------------------
   cam->StopShoot();
   // Check for an OpenGL error
   CHECK_OPENGL_ERROR
+}
+//----------------------------------------------------------------------------
+// Enter in teleport mode
+//	for a given position P at orientation O
+//----------------------------------------------------------------------------
+void CSituation::EnterTeleport(SPosition *P, SVector *O)
+{	contx.prof	= PROF_TELEPORT;
+	contx.mode	= SLEW_STOP;
+  rcam			  = globals->ccm->SetRabbitCamera(contx,0);
+	contx.pos		= *P;
+	contx.ori		= *O;
+	wait				= 0;
+	globals->geop	= *P;			// Target position
+	//--- prevent aircraft time slice and drawing ---
+	globals->Disp.ExecLOK(PRIO_PLANE);
+	globals->Disp.DrawOFF(PRIO_PLANE);
+	//--- Set camera to look up sky -----------------
+	rcam->SetAngle(30,20);
+	rcam->SetRange(200);
+	//--- Set font for notice to user ---------------
+	globals->fui->SetBigFont();
+	State = SIT_TELEP01;
+	//--- Warning message ---------------------------
+	char txt[128];
+	_snprintf(txt,127,"%05d Removing scenery files. PLEASE WAIT",wait++);
+	DrawNoticeToUser(txt,4);
+	return;
+}
+//----------------------------------------------------------------------------
+// Teleport Step 01:  Wait for terrain stability
+//----------------------------------------------------------------------------
+void CSituation::TeleportS1()
+{	char txt[128];
+	_snprintf(txt,127,"%05d Teleporting to destination. PLEASE WAIT",wait++);
+	DrawNoticeToUser(txt,4);
+	bool ok = globals->tcm->TerrainStable();
+	if (!ok)			return DrawNormal();
+	//-- OK terrain ready at destination --------------
+	globals->Disp.ExecULK(PRIO_PLANE);		// Allow time slice
+	globals->Disp.DrawON (PRIO_PLANE);		// Allow drawing
+	globals->fui->ResetFont();
+	//--- Restore vehicle position ----
+	State = SIT_NORMAL;
+  globals->ccm->RestoreCamera(contx);
+	rcam			= 0;
+	if (sVeh) sVeh->RestOnGround();
+	DrawNormal();
+	return;
+}
+//----------------------------------------------------------------------------
+// Enter in short teleport mode
+//	for a given position P at orientation O
+//----------------------------------------------------------------------------
+void CSituation::ShortTeleport(SPosition *P, SVector *O)
+{	globals->geop	= *P;			// Target position
+	contx.pos			= *P;			// Save position
+	contx.ori			= *O;			// Save orientation
+	State = SIT_TELEP02;
+}
+//----------------------------------------------------------------------------
+// Teleport Step 01:  Wait for some time slice. Set camera to look down
+//----------------------------------------------------------------------------
+void CSituation::TeleportS2()
+{	bool ok = globals->tcm->TerrainStable();
+	if (!ok)					return	DrawNormal();
+	State = SIT_NORMAL;
+	if (0 == sVeh)		return	DrawNormal();
+  sVeh->SetObjectPosition(contx.pos);
+	sVeh->SetObjectOrientation(contx.ori);
+	sVeh->SetPhysicalOrientation(contx.ori);
+	sVeh->RestOnGround();
+	return DrawNormal();
 }
 //============================================================================================
 //  Methods for structure TXT_LIST

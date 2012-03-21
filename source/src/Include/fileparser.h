@@ -125,6 +125,7 @@ typedef struct {
 //	Common file parser
 //========================================================================
 class CParser : public CStreamObject {
+
 	//--- Attributes ---------------------------------------
 protected:
 	C3DPart   *part;                  // Current part
@@ -142,7 +143,7 @@ protected:
   CVector    vmax;                  // Maximum coordinates
   CVector    vmin;                  // Minimum coordinates
 	//--- Part Queue ---------------------------------------
-	C3DpartQ   partQ;									// List of parts
+	Queue<C3DPart> partQ;							// List of parts
 	//------------------------------------------------------
 	void      *tREF;									// Texture reference
 	char  txname[TC_TEXTURE_NAME_DIM];    // Texture name
@@ -257,7 +258,7 @@ class CBINparser: public CParser {
   int       Tof;                  // Total faces
   int       Tov;                  // Total vertices
   //---List of parts -------------------------------------
-  C3DpartQ  tmpQ;                 // Hi resolution Queue
+  Queue<C3DPart>	tmpQ;           // Hi resolution Queue
   //------------------------------------------------------
   BIN_HEADER hdr;
   B19_HEADER b19;

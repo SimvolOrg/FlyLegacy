@@ -156,7 +156,7 @@ int   CWorldObject::Read (SStream *stream, Tag tag)
       angu.z = WrapPiPi (-angu.y); 
       angu.y = -tmp;
       angu.x = WrapPiPi (-angu.x);
-      SetOrientation(angu);
+      SetObjectOrientation(angu);
       rc = TAG_READ;
     }
     break;
@@ -184,8 +184,8 @@ void  CWorldObject::ReadFinished (void)
 	int nf = sscanf(txt," QGT ( %03d , %03d )",&qx, &qz);
 	if (nf == 2)	GetQgtMidPoint(qx,qz,orgp);
 	//---- Receive position and orientation from globals -----
-  SetPosition(orgp);
-  SetOrientation(globals->iang);
+  SetObjectPosition(orgp);
+  SetObjectOrientation(globals->iang);
 
   if (!is_ufo_object)
   { SetPhysicalOrientation (iang);
@@ -196,7 +196,7 @@ void  CWorldObject::ReadFinished (void)
 //--------------------------------------------------------------
 //  Set aircraft position
 //--------------------------------------------------------------
-void CWorldObject::SetPosition (SPosition pos)
+void CWorldObject::SetObjectPosition (SPosition pos)
 { // Clamp altitude to 100K
   double altClamp = globals->aMax;;
   if (pos.alt > altClamp) pos.alt = altClamp;
@@ -242,7 +242,7 @@ void CWorldObject::SetAltitude(double alt)
 //  NOTE:  Any change in orientation should use this function
 //         in order to get accurate degres
 //------------------------------------------------------------
-void CWorldObject::SetOrientation(SVector v)
+void CWorldObject::SetObjectOrientation(SVector v)
 { iang = v;
   dang.x = RadToDeg(iang.x);
   dang.y = RadToDeg(iang.y);
@@ -276,7 +276,7 @@ void CWorldObject::AddOrientationInDegres(SVector &v)
   iang.x   = WrapPiPi(x + iang.x);
   iang.y   = WrapPiPi(y + iang.y);
   iang.z   = WrapPiPi(z + iang.z);
-  SetOrientation(iang);
+  SetObjectOrientation(iang);
   SetPhysicalOrientation(iang);
   return;
 }
@@ -401,7 +401,7 @@ CSimulatedObject::CSimulatedObject (void)
   nfo = NULL; lod = NULL;
  *nfoFilename = 0;
  //--- Enter in Dispatcher ----------------------------------------
- globals->Disp.Enter(this, PRIO_PLANE, DISP_EXCONT, 0);
+ globals->Disp.Enter(this, PRIO_PLANE, DISP_EXCONT, 1);
 }
 
 CSimulatedObject::~CSimulatedObject (void)

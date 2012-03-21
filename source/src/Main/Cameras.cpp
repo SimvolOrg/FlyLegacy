@@ -517,8 +517,9 @@ void CCamera::Restore(CAMERA_CTX &ctx)
   fov   = ctx.fov;
 	//--- Restore vehicle position ----
   CVehicleObject *veh = globals->pln;
-  if (veh) veh->SetPosition(ctx.pos);
-	if (veh) veh->SetOrientation(ctx.ori);
+  if (veh) veh->SetObjectPosition(ctx.pos);
+	if (veh) veh->SetObjectOrientation(ctx.ori);
+	if (veh) veh->SetPhysicalOrientation(ctx.ori);
   return;
 }
 //-----------------------------------------------------------------
@@ -3087,7 +3088,7 @@ CCamera *CCameraManager::SelectCamera (Tag id)
 //  Save current camera context
 //  Allocate a new spot camera during editing
 //---------------------------------------------------------------
-CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx,CFuiWindow *win)
+CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx, U_CHAR opt)
 { aCam->Save(ctx);			// Save actual context
 	//--- Relax drawing from current camera -
 	globals->noEXT -= aCam->GetINTMOD();
@@ -3101,12 +3102,12 @@ CRabbitCamera *CCameraManager::SetRabbitCamera(CAMERA_CTX &ctx,CFuiWindow *win)
 	globals->noEXT += rcam->GetINTMOD();
 	globals->noINT += rcam->GetEXTMOD();
 	//--- Lock in slew mode -----------------
-	globals->slw->StartMode(&ctx);							// Slew mode
+	if (opt & RABBIT_IN_SLEW) globals->slw->StartMode(&ctx);							// Slew mode
 	//--- Set profile -----------------------
 	ctx.prof |= PROF_ACBUSY;
 	SpecialProfile('busy',ctx.prof);
 	//--- Create camera window --------------
-	globals->fui->CreateOneWindow('ccam',0);
+	if (opt & RABBIT_CONTROL) globals->fui->CreateOneWindow('ccam',0);
   return rcam;
 }
 //---------------------------------------------------------------
@@ -3122,7 +3123,7 @@ void CCameraManager::RestoreCamera(CAMERA_CTX &ctx)
 	//--- Restore profile -----------------------
 	SpecialProfile(0,ctx.prof);					// Clear profile
 	//--- Now stop slew mode --------------------
-	globals->slw->StopSlew();
+	if (ctx.mode == SLEW_RCAM) globals->slw->StopSlew();
   return;
 }
 //---------------------------------------------------------------

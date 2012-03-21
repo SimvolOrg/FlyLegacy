@@ -477,12 +477,13 @@ bool CFuiDirectory::GetNAVObject()
 //  Teleport to selected waypoint
 //-------------------------------------------------------------------------
 void CFuiDirectory::Teleport()
-{ CSlot *slot = objBOX.GetSelectedSlot();
+{ SVector ori = globals->iang;
+	CSlot *slot = objBOX.GetSelectedSlot();
   if (0 == slot)    return;
   if (Lock)         return;
   SPosition pos;
   slot->GetPosition(pos);
-  globals->tcm->Teleport(pos);
+  globals->tcm->Teleport(&pos,&ori);
   return;
 }
 //-------------------------------------------------------------------------

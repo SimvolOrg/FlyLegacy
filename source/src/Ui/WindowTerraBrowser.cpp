@@ -119,7 +119,7 @@ CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
 	//--- Set application profile -------------------
   ctx.prof	= TBROS_PROF;
 	ctx.mode	= SLEW_RCAM;
-  rcam			= globals->ccm->SetRabbitCamera(ctx,this);
+  rcam			= globals->ccm->SetRabbitCamera(ctx,RABBIT_S_AND_C);
 
 }
 //-----------------------------------------------------------------------
@@ -133,6 +133,11 @@ CFuiTBROS::~CFuiTBROS()
   globals->ccm->RestoreCamera(ctx);
   delete Cam;
 }
+//----------------------------------------------------------------------
+//	Override check profile
+//----------------------------------------------------------------------
+bool CFuiTBROS::CheckProfile(char a)
+{	return true;	}
 //-----------------------------------------------------------------------
 //  Get the selected texture slot
 //-----------------------------------------------------------------------
@@ -358,7 +363,7 @@ CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
 	//---Create application profile -------------------------
 	ctx.prof	= MBROS_PROF;
 	ctx.mode	= SLEW_RCAM;
-  rcam			= globals->ccm->SetRabbitCamera(ctx,this);			// Change camera
+  rcam			= globals->ccm->SetRabbitCamera(ctx,RABBIT_S_AND_C);			// Change camera
 	//---Set focus on first object --------------------------
 	NewSelection();
   ChangeZoom();
@@ -374,6 +379,12 @@ CFuiMBROS::~CFuiMBROS()
   globals->ccm->RestoreCamera(ctx);
   delete sCam;
 }
+//----------------------------------------------------------------------
+//	Override check profile
+//----------------------------------------------------------------------
+bool CFuiMBROS::CheckProfile(char a)
+{	return true;	}
+
 //--------------------------------------------------------------------------------
 //  Compute Camera object position relative to object size
 //--------------------------------------------------------------------------------

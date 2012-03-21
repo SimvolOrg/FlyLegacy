@@ -79,7 +79,7 @@ public:
 	//-----------------------------------------------------------
 	void	Draw();
 	//--- Dont close this window ----------------------------------------
-	void    CheckProfile()	{;}
+	bool    CheckProfile(char a) {return true;}
 };
 //=============================================================================================
 // FUI Error message
@@ -92,7 +92,7 @@ public :
 	CFuiErrorMSG (CFuiWindow *mwin);
   void	NotifyChildEvent (Tag id, Tag component, EFuiEvents event);
 	//--------------------------------------------------------------
-	void	CheckProfile()	{;}
+	bool	CheckProfile(char a)	{return true;}
 	//--------------------------------------------------------------
 	inline void Display(char *m)	{mesg->SetText(m);}
 };
@@ -124,7 +124,7 @@ class CFuiFileBox : public CFuiWindow {
 	CListBox   fBOX;
 	//----------------------------------------------------------------------
 private:
-	void	CheckProfile()  {;}										// Let it pass
+	bool	CheckProfile(char a)  {return true;}  // Let it pass
 public:
 	CFuiFileBox(CFuiWindow *mwin, FILE_SEARCH *fpm);
   virtual ~CFuiFileBox();

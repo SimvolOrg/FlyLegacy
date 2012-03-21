@@ -28,6 +28,7 @@
 #include "../Include/FlyLegacy.h"
 #include "../Include/LightSystem.h"
 #include "../Include/Globals.h"
+#include "../Include/Queues.h"
 //===================================================================================
 #define TC_SNAP_GROUND    (0x00000001)         // Snap to ground
 #define TC_SHARE_PLACE    (0x40000000)         // Share place 
@@ -51,6 +52,7 @@
 //    airport origin.
 //=============================================================================
 class CPolyShop;
+class OSM_Object;
 //=============================================================================
 #define MODEL_NIT     0x01
 #define MODEL_DAY     0x00
@@ -140,7 +142,8 @@ public:
 //    A List of indices in above array (I0,I1,.. Ip)
 //  
 //=============================================================================
-class C3DPart : public CqItem {
+class C3DPart {
+	friend class Queue<C3DPart>;
 	//--- Define render vector -----------------------------
 	typedef void (C3DPart::*VREND)(void);	// Rending vector
 	char			idn[8];
@@ -181,6 +184,8 @@ public:
 	void    AllocateOsmVTX(int nv);
 	void    AllocateObjVTX(int nv);
 	void		CopyForOSM(C3DPart *s);
+	void		ReceiveOSM(C3DPart *ps, char opt);
+	void		Translate(SVector &T);
 	void		DrawAsW3D();
 	void		DrawAsOSM();
 	void		DrawAsOBJ();
@@ -188,13 +193,16 @@ public:
 	void		Draw()		{(this->*Rend)();}
 	//-------------------------------------------------------------
   void    SetTexName(char *txn);
+	void		SetTexture(char *txn);
   void    GetInfo(M3D_PART_INFO &inf);
   //-------------------------------------------------------------
+	inline bool     SameREF(void *r)	{return (tRef == r);}
   inline bool     IsEmpty()   {return (0 == NbVT) || (0 == NbIN);}
   inline void     ReduceIndice(int k) {if (k < NbIN) NbIN = k;}
 	inline U_INT    GetXOBJ()					{return xOBJ;}
   //---------------------------------------------------------------
-  inline void     SetTREF(void *r)	{tRef = r;}
+	inline void			ResetNBVT()				{NbVT = 0;}	
+	inline void     SetTREF(void *r)	{tRef = r;}
   inline void     SetLOD(int k)			{lod  = k;}
   inline void     SetXOBJ(U_INT ob)	{xOBJ = ob;}
   inline void    *GetTREF()					{return tRef;}
@@ -202,14 +210,15 @@ public:
   inline char    *TextureName()			{return ntex;}
 	inline void    *SwapTREF()				{void *r = tRef;tRef = 0;return r;}
   //----------------------------------------------------------------
-	inline TC_VTAB    *GetVTAB()						 {return vTAB;}
-  inline F3_VERTEX  *GetVLIST()            {return nVTX;}
-  inline F3_VERTEX  *GetNLIST()            {return nNRM;}
-  inline F2_COORD   *GetTLIST()            {return nTEX;}
-  inline int        *GetXLIST()            {return nIND;}
-  inline int      GetNBVTX()            {return NbVT;}
-  inline int      GetNbIND()            {return NbIN;}
-  inline U_CHAR   GetTSP()              {return tsp;}
+	inline TC_VTAB    *GetVTAB()						{return vTAB;}
+  inline F3_VERTEX  *GetVLIST()           {return nVTX;}
+  inline F3_VERTEX  *GetNLIST()           {return nNRM;}
+  inline F2_COORD   *GetTLIST()           {return nTEX;}
+  inline int        *GetXLIST()           {return nIND;}
+  inline int				 GetNBVTX()           {return NbVT;}
+  inline int				 GetNbIND()           {return NbIN;}
+  inline U_CHAR      GetTSP()             {return tsp;}
+	inline C3DPart    *Next()								{return next;}
   //----------------------------------------------------------------
   inline int     *AllocateXList(int n)  {NbIN = n; nIND = new int [n]; return nIND;} 
   inline int      GetNbFace()           {return total;}
@@ -225,26 +234,6 @@ public:
   inline void     CpyTEX(char *s,int k)   {memcpy(nTEX,s,k);}
   inline void     CpyIND(char *s,int k)   {memcpy(nIND,s,k);}
   inline int      GetLOD()                {return lod;}
-};
-//=========================================================================================
-//  CLASS C3DpartQ
-//        Class to collect 3D parts
-//=========================================================================================
-class C3DpartQ : public CQueue {
-  //---------------------------------------------------------------------
-public:
-  inline void Lock()                {pthread_mutex_lock (&mux);}
-  inline void UnLock()              {pthread_mutex_unlock (&mux);}
-  //----------------------------------------------------------------------
-  ~C3DpartQ();                        // Destructor
-	void ReceiveQ(C3DpartQ &Q);
-	void Transfer(C3DpartQ &Q);
-  //----------------------------------------------------------------------
-  inline void PutEnd(C3DPart *prt)           {CQueue::PutEnd(prt);}
-  inline C3DPart *Pop()                      {return (C3DPart*)CQueue::Pop();}
-  inline C3DPart *GetFirst()                 {return (C3DPart*)CQueue::GetFirst();}
-  inline C3DPart *GetNext(C3DPart *prt)      {return (C3DPart*)CQueue::GetNext(prt);}
-	inline void Clear()												 { CQueue::Clear();}
 };
 //=========================================================================================
 #define M3D_SMF 1
@@ -285,17 +274,17 @@ class C3Dmodel: public CqItem, public CDrawByCamera {
   //----Rendering parameters --------------------------------------------
   U_INT        rDIR;                // Rendering direction
   //----Stack of parts for 4 levels of details (LOD) --------------------
-  U_CHAR       rLOD[4];             // Redirection table
-  C3DpartQ     pLOD[4];             // List of parts
+  U_CHAR						rLOD[4];        // Redirection table
+	Queue<C3DPart>  	pLOD[4];        // List of parts
   //---------------------------------------------------------------------
 public:
   C3Dmodel(char *fn,char t);
  ~C3Dmodel();
  //----------------------------------------------------------------------
-  C3DPart *PopPart()            {return pLOD[0].Pop();}
-  C3DPart *PopPart(int k)       {return pLOD[k].Pop();}
+  C3DPart *PopPart()								{return pLOD[0].Pop();}
+  C3DPart *PopPart(int k)						{return pLOD[k].Pop();}
   //---------------------------------------------------------------------
-	C3DpartQ &GetQueue(int k)		  {return pLOD[k];	}
+	Queue<C3DPart>  &GetQueue(int k)	{return pLOD[k];	}
 	//---------------------------------------------------------------------
   double  MaxExtend();
   int     LoadPart(char *dir);
@@ -765,6 +754,32 @@ public:
 		pthread_mutex_unlock (&mux);
 	}
 };
+//=============================================================================
+//  3D pack for OSM data
+//=============================================================================
+class C3DPack {
+	friend class Queue<C3DPack>;
+	//--- Attributes -----------------------------------------------
+	C3DPack  *next;															// Next object
+	C3DPack  *prev;															// Previous object
+	//--------------------------------------------------------------
+	U_INT			qgKey;														// QGT key
+	//--------------------------------------------------------------
+	C3DPart  *part;															// Part (vertice)
+	//---------------------------------------------------------------
+public:
+	C3DPack(U_INT qk);
+ ~C3DPack();
+	//---------------------------------------------------------------
+	void		ExtendPart(OSM_Object *obj, SVector &T);
+	void		Draw()		{if (part) part->Draw();	}
+	//---------------------------------------------------------------
+	C3DPack *Next()							{return next;}	
+	//----------------------------------------------------------------
+	bool		SameREF(void *ref)	{return part->SameREF(ref);}
+	U_INT		GetNBVTX()					{return (part)?(part->GetNBVTX()):(0);}
+	//----------------------------------------------------------------
 
+};
 //============================END OF FILE =================================================
 #endif  // MODEL3D_H

@@ -331,15 +331,16 @@ int paddpodfile (PFS *pfs, PFSPODFILE *p)
 //  Remove the file from the POD file system
 //-------------------------------------------------------------------------------
 void prempodfile (PFS *pfs, char *fn)
-{   pthread_mutex_lock   (&pfs->mux);             // Lock access
+{    pthread_mutex_lock   (&pfs->mux);             // Lock access
 		std::multimap<std::string,PFSPODFILE*>::iterator ra = pfs->podFileList.find(fn);
 		PFSPODFILE *p = (ra != pfs->podFileList.end())?(ra->second):(0);
 		std::map<std::string,PFSPODFILE*>::iterator rb			= pfs->masterFileList.find(fn);
 		PFSPODFILE *q = (rb != pfs->masterFileList.end())?(rb->second):(0);
+		int u = (p)?(p->user):(0);
 		if (p)		{	p->DecUser(); pfs->podFileList.erase(fn); }
 		if (q)    {	q->DecUser(); pfs->masterFileList.erase(fn);	}
     pthread_mutex_unlock   (&pfs->mux);           // Lock access
-    if (p) plog (pfs,"......REM file %s",fn);
+    plog (pfs,"...File %05d(%d)...REM file %s",pfs->count,u,fn);
     return;
 }
 //-------------------------------------------------------------------------------
@@ -429,12 +430,14 @@ void unMountEPD (PFS *pfs, PFSPOD* pod)
   //---Go to directory ------------------------------------
   fseek (f,pod->Directory, SEEK_SET);
   //---  Read EPD directory and remove file list
+	pfs->count = 0;
   for (unsigned int i=0; i<pod->nEntries; i++) {
     // Instantiate new PFSPODFILE struct
     fread (fn, 1, EPD_FILENAME_LENGTH, f);
     fread (none,sizeof(unsigned int),4,f);  // Bypass
     // EPD files do not support mount priority, so use default of 1000
     NormalizeName(fn);
+		pfs->count++;
     prempodfile (pfs,fn); 
     
   }
@@ -522,7 +525,7 @@ void unMountPOD2 (PFS *pfs, PFSPOD* pod)
   unsigned int offsetStringTable = (POD_VOLUME_LENGTH
     + (4 * sizeof(unsigned int))
     + (pod->nEntries * 20));
-
+	pfs->count = 0;
   char fn[PATH_MAX];
   // Read POD2 directory, and add PFSPODFILE structs to POD file list
   for (i=0; i<(int)pod->nEntries; i++) {
@@ -541,6 +544,7 @@ void unMountPOD2 (PFS *pfs, PFSPOD* pod)
         }
     fn[j] = '\0';
     fseek (f, pos, SEEK_SET);
+		pfs->count++;
     prempodfile (pfs,fn);
   }
 }
@@ -639,7 +643,7 @@ void unMountPOD3 (PFS *pfs, PFSPOD* pod)
   
   // Calculate starting offset of filename string table
   unsigned int offsetStringTable = offsetDirectory + (pod->nEntries * 20);
-
+	pfs->count = 0;
   // Reposition file pointer to start of POD directory
   fseek (f, offsetDirectory, SEEK_SET);
 
@@ -660,6 +664,7 @@ void unMountPOD3 (PFS *pfs, PFSPOD* pod)
     }
     fn[j] = '\0';
     fseek (f, pos, SEEK_SET);
+		pfs->count++;
     prempodfile (pfs,fn);
   }
   return;
@@ -1471,7 +1476,7 @@ void prewind (PODFILE* f)
 //======================================================================
 //  Close the file
 //======================================================================
-void pclose (PODFILE* f)
+PODFILE* pclose (PODFILE* f)
 {
   if (f != NULL) {
     switch (f->source) {
@@ -1497,6 +1502,7 @@ void pclose (PODFILE* f)
   }
 
   delete f;
+	return 0;
 }
 //=====================================================================================
 // @brief Shut down pod filesystem
@@ -1511,6 +1517,7 @@ void pshutdown (PFS* pfs)
   std::map<string,PFSPOD*>::iterator iPod;
   for (iPod=pfs->podList.begin(); iPod!=pfs->podList.end(); iPod++) {
     PFSPOD *pod = iPod->second;
+		plog(pfs,".. Erase %s", pod->name);
 		pUnMount(pfs,pod);
     if (pod->file) fclose (pod->file);
     delete pod;

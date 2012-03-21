@@ -115,7 +115,7 @@ public:
  //-------------------------------------------------------------------
  void     Draw();
  //--- Dont close windows --------------------------------------------
- void CheckProfile()	{}
+ bool CheckProfile(char a) {return true;}
 };
 //==============END OF FILE =============================================================
 #endif // FUIPROBE_H

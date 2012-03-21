@@ -1152,7 +1152,7 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
 	//--- Compressed format -------------------------------------
 	cTERRA		= GL_RGBA;
 	int pm;
-	GetIniVar("Sim","UseTerrainCompression",&pm);
+	GetIniVar("Performances","UseTerrainCompression",&pm);
 	if (pm)	cTERRA	= GL_COMPRESSED_RGBA;
   //------Init Counters ---------------------------------------
   NbCUT   = 0;
@@ -1174,13 +1174,22 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
   RwyTX[1]  = 0;
   RwyTX[2]  = 0;
   RwyTX[3]  = 0;
-  //--------Read terrain options ------------------------------------
+	//--- Mip level -----------------------------------------------
+	int m = globals->mipOBJ;
+	GetIniVar ("Performances", "ObjectMipLevel", &m);
+	if (m > 6) m=6;
+	globals->mipOBJ = m;
+	//--- Terrian mip level ---------------------------------------
+	int p = globals->mipTER;
+	GetIniVar ("Performances", "TerrainMipLevel", &p);
+	if (p > 6) p=6;
+	globals->mipTER = p;
+  //--- Read terrain options ------------------------------------
   int i = 1;                                    // Default is set
-  GetIniVar ("Terrain", "NightTextures", &i);
+  GetIniVar ("Performances", "NightTextures", &i);
   NT    = (i == 1);
   //--------Initialize Library --------------------------------------
   FreeImage_Initialise(TRUE);
-	anSEA	= 0;
   //----Check for animated water ------------------------------------
   //	int NoAW     = 0;
   //	GetIniVar("Sim", "NoAnimatedWater", &NoAW);
@@ -1245,7 +1254,6 @@ CTextureWard::~CTextureWard()
   }
   t3dMAP.clear();
   globals->txw = 0;
-  if (anSEA)	delete anSEA;
 }
 //----------------------------------------------------------------------
 //  ABORT ERROR
@@ -1529,6 +1537,13 @@ GLuint CTextureWard::GetTaxiTexture()
   return shx->dOBJ;
 }
 //-----------------------------------------------------------------------------
+//	Get any texture from other formats
+//------------------------------------------------------------------------------
+void CTextureWard::GetAnyTexture(TEXT_INFO *inf)
+{	CArtParser img(TC_HIGHTR);
+  img.GetAnyTexture(*inf);
+}
+//-----------------------------------------------------------------------------
 //  Get A 3D model Texture
 //  Format may be either
 //  1)RAW-ACT
@@ -1551,14 +1566,32 @@ void *CTextureWard::GetM3DPodTexture(char *fn,U_CHAR tsp,char dir)
   //---Add a new shared texture --------------------------
   CShared3DTex *shx = new CShared3DTex(key,tsp,dir);
   TEXT_INFO    *inf = shx->GetInfo();
-  if (strcmp(dot,".TIF") == 0)  Get3DTIF(inf);
   if (strcmp(dot,".RAW") == 0)  Get3DRAW(inf);
+	else                          GetAnyTexture(inf);
   if (0 == inf->mADR)  {delete shx; shx = 0;}
   //--Insert new shared object ---------------------------
   pthread_mutex_lock (&t3dMux);
 	if (shx)   t3dMAP[key]  = shx;
   pthread_mutex_unlock (&t3dMux);
   return shx;
+}
+//-----------------------------------------------------------------------------
+//	Return texture parameters 
+//-----------------------------------------------------------------------------
+void CTextureWard::GetTextureParameters(void *ref,TEXT_INFO &dst)
+{ CShared3DTex *shx = (CShared3DTex *)ref;
+  TEXT_INFO    *src = shx->GetInfo();
+	dst = *src;
+	dst.mADR = 0;
+	return;
+}
+//-----------------------------------------------------------------------------
+//	Reserve one reference 
+//-----------------------------------------------------------------------------
+void CTextureWard::ReserveOne(void *ref)
+{	CShared3DTex *shx = (CShared3DTex *)ref;
+	shx->IncUser();
+	return;
 }
 //-----------------------------------------------------------------------------
 //  Get A 3D model Texture
@@ -1654,11 +1687,10 @@ GLuint CTextureWard::Get3DObject(void *tref)
   glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
   glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,5);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,globals->mipOBJ);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-  //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_COMPRESSED_RGBA,inf->wd,inf->ht,0,GL_RGBA,GL_UNSIGNED_BYTE,inf->mADR);
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
@@ -2249,223 +2281,6 @@ void CTextureWard::WriteScreen()
   return;
 }
 
-//================================================================================
-//  Class CWater3D to produce animated textures
-//  sob => Handle to background sea texture
-//  w3d => Handle to texture 3D holding water animation
-//================================================================================
-CWater3D::CWater3D(int sz)
-{ dim = sz;
-  CArtParser bim(TC_HIGHTR);
-  cds   = cdt = 0;
-  vit   = 0;
-  once  = 1;
-  //---Build the 3D animation --------------------------------
-  //if (0 == globals->noAWT)  LoadWater3D();
-  //---Create a camera object --------------------------------
-  CVector  ofs(0,0,0);
-  RGBA_COLOR blk = {0,0,0,0};
-  cam      = new CCameraObject();
-  cam->FrontOffsetFor(256);
-  cam->SetOffset(ofs);
-  cam->SetFBO(dim,dim);
-  cam->SetColor(blk);
-  //----------------------------------------------------------
-  globals->txw->GetTextParam(TC_HIGHTR,&org,&exp);
-  exp = float(1) / (exp);
-  //---Init the quad coordinates -----------------------------
-  InitQuad();
-}
-//--------------------------------------------------------------------
-//  Init Quad coordinates
-//--------------------------------------------------------------------
-void CWater3D::InitQuad()
-{ float sid   = 128;
-  //---SW corner -------------
-  qad[0].VT_X = -sid;
-  qad[0].VT_Y =    0;
-  qad[0].VT_Z = -sid;
-  //---SE corner -------------
-  qad[1].VT_X = +sid;
-  qad[1].VT_Y =    0;
-  qad[1].VT_Z = -sid;
-  //---NE corner -------------
-  qad[2].VT_X = +sid;
-  qad[2].VT_Y =    0;
-  qad[2].VT_Z = +sid;
-  //---NW corner ------------
-  qad[3].VT_X = -sid;
-  qad[3].VT_Y =    0;
-  qad[3].VT_Z = +sid;
-  return;
-}
-//--------------------------------------------------------------------
-//  Delete all resources
-//--------------------------------------------------------------------
-CWater3D::~CWater3D()
-{ delete    cam;
-  glDeleteTextures(1,&sob);
-  glDeleteTextures(1,&w3d);
-} 
-//--------------------------------------------------------------------
-//  Build a sea texture into the FBO
-//  The texture represent the animated part extracted from the 3D texture
-//  The third parameter u gives the texture number to extract
-//  This function is called once per frame as all water tiles share this
-//  texture.
-//--------------------------------------------------------------------
-/*
-void CWater3D::BuildAnimation()
-{ cam->DebDrawFBOinOrthoMode(dim,dim);
-  glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
-  //--- Set direction - ------------------------------------
-  glFrontFace(GL_CW);
-  //--------------------------------------------------------
-  COORD_UNIT   *vtx   = &qad[0].VT_X;
-  COORD_UNIT    col[] = {1,1,1,1};
-  //--------------------------------------------------------
-  glMatrixMode(GL_TEXTURE);
-  glPushMatrix();
-  glScalef(exp,exp,1);
-  //--------------------------------------------------------
-  glBindTexture(GL_TEXTURE_3D, w3d);
-  glEnable(GL_TEXTURE_3D);
-  glTexCoordPointer(3,GL_FLOAT,0,s3d);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  glVertexPointer(3,GL_FLOAT,sizeof(TC_VTAB),vtx);
-  glEnableClientState(GL_VERTEX_ARRAY);
-  //--------------------------------------------------------
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-  //---------------------------------------------------------
-  glDrawArrays(GL_QUADS,0,4);
-  //---------------------------------------------------------
-  glDisable(GL_TEXTURE_3D);
-  //----Inhibit pointer usage -------------------------------
-  glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-  glPopClientAttrib();
-  cam->EndDrawFBO();
-  return;
-}
-*/
-//--------------------------------------------------------------------
-//  Load Water textures
-//  The 16 images are loaded and are used to make the 3D texture
-//--------------------------------------------------------------------
-void CWater3D::LoadWater3D()
-{ int         sid = 256;
-  int         dim = sid * sid;
-  int         htr =  16;
-  int         tot = htr * dim;
-  U_CHAR     *buf = new U_CHAR[tot];
-  CArtParser  img(TC_HIGHTR);
-  U_CHAR     *tex = 0;
-  int         nf  = 0;
-  TEXT_INFO   xds;
-  xds.azp     = 0xFF;
-  w3d         = Get3DtexOBJ();
-  glBindTexture(GL_TEXTURE_3D,w3d);
-  for (int k=0; k<16; k++)
-  { nf    = k + 1;
-    _snprintf(xds.path,(PATH_MAX-1),"ART/stw%03d.TIF",nf);
-    tex = img.GetAnyTexture(xds);
-    tex = PickAlphaChanel(tex, sid);
-    Append(buf,tex,dim,k);
-  }
-  glTexImage3D(GL_TEXTURE_3D,0,GL_LUMINANCE8,sid,sid,htr-1,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,buf);
-  glTexParameteri(GL_TEXTURE_3D,GL_GENERATE_MIPMAP,GL_FALSE);
-  glDisable(GL_TEXTURE_3D);
-  delete [] buf;
-  return;
-}
-//--------------------------------------------------------------------
-//  Append a plane image to buffer to aggregate the 3D texture
-//--------------------------------------------------------------------
-void CWater3D::Append(U_CHAR *buf,U_CHAR *tex,int dim,int k)
-{ U_CHAR *src = tex;
-  U_CHAR *dst = buf + (k * dim);
-  for (int k=0; k<dim; k++) *dst++ = *src++;
-  delete [] tex;
-  return;
-}
-//--------------------------------------------------------------------
-//  Get a 8 bit grey texture
-//  Pick only the blue chanel as they are all the same
-//--------------------------------------------------------------------
-U_CHAR *CWater3D::PickAlphaChanel(U_CHAR *rgba, int side)
-{ int   dim     = side * side;
-  U_CHAR *buf   = new U_CHAR[dim];
-  U_INT  *src   = (U_INT*)rgba;
-  U_CHAR *dst   = buf;
-  for (int k=0; k<dim; k++)
-  { U_INT pix = *src++;
-   *dst++    = (pix & 0x000000FF);
-  }
-  delete [] rgba;
-  return buf;
-}
-
-//-----------------------------------------------------------------------------
-//  Assign a texture object with mipmap level depending on resolution
-//-----------------------------------------------------------------------------
-GLuint CWater3D::Get3DtexOBJ()
-{ U_INT obj = 0;
-  glGenTextures(1,&obj);
-  glEnable(GL_TEXTURE_3D);
-  glBindTexture(GL_TEXTURE_3D,obj);
-  glTexParameteri(GL_TEXTURE_3D,GL_GENERATE_MIPMAP,GL_TRUE);
-  glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAX_LEVEL,3);
-  glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-  //----Check for error -----------------------------------------
-	/*
-  {GLenum e = glGetError ();
-   if (e != GL_NO_ERROR) 
-    WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
-  }
-	*/
-  return obj;
-}
-//---------------------------------------------------------
-//  Move texture by wind direction
-//  Origin is defined by (cds,cdt) in [0,1]
-//  The end point (S or T) defines the texture scale on the tile
-//---------------------------------------------------------
-U_INT CWater3D::MoveWater()
-{ if (globals->noAWT)  return 0;
-//---TODO move according to wind direction -----------
-  cds += 0.00005f;
-  if (cds > 1) cds = 0;
-  cdt += 0.00006f;
-  if (cdt > 1) cdt = 0;
-  //--------------------------------------------------
-  float ds    = cds;
-  float es    = ds + 2.2;
-  float dt    = cdt;
-  float et    = dt + 2.2;
-  //---Init quad with new texture coordinates --------
-  s3d[0].VT_X = ds;
-  s3d[0].VT_Y = dt;
-  s3d[0].VT_Z = vit;
-  s3d[1].VT_X = es;
-  s3d[1].VT_Y = dt;
-  s3d[1].VT_Z = vit;
-  s3d[2].VT_X = es;
-  s3d[2].VT_Y = et;
-  s3d[2].VT_Z = vit;
-  s3d[3].VT_X = ds;
-  s3d[3].VT_Y = et;
-  s3d[3].VT_Z = vit;
-  //-------------------------------------------------
-  vit += 0.005f;
-  if (vit > 1)  vit = 0;
-//  BuildAnimation();
-  return cam->TextureObject();
-}
 
 
 //===============END OF THIS FILE =============================================

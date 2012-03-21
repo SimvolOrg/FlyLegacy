@@ -28,7 +28,6 @@
 #include "../Include/fileparser.h"
 #include <math.h>
 //===================================================================================
-extern char *Dupplicate(char *s, int lgm);
 //===================================================================================
 //	UNIT CONVERTER 
 //===================================================================================
@@ -396,6 +395,21 @@ void Triangulator::Clean()
 	return;
 }
 //-------------------------------------------------------------------
+//	Check every thing for debugging
+//-------------------------------------------------------------------
+void Triangulator::CheckAll()
+{	if (extp.NotEmpty())
+	int a = 0;
+  if (slot.NotEmpty())
+	int b = 0;
+	if (walls.size() != 0)
+	int c = 0;
+	if (roof.size() != 0)
+	int d = 0;
+	if (bevel)
+	int e = 0;
+}
+//-------------------------------------------------------------------
 //	Draw One 
 //-------------------------------------------------------------------
 void Triangulator::DrawSingle()
@@ -450,7 +464,7 @@ D2_BPM *Triangulator::BuildOBJ()
 	BDP.error = ConvertInFeet();
 	BDP.error = QualifyPoints();
 	if (BDP.error)		ReOrientation();
-	BDP.lgx		= dlg;
+	BDP.dlg		= dlg;
 	//--- Set generation parameters ---------
 	session->GetBuildParameters(&BDP);
 	D2_Style *sty = BDP.style;
@@ -458,7 +472,6 @@ D2_BPM *Triangulator::BuildOBJ()
 	BDP.style->AssignBPM(&BDP);
 	BDP.roofP		= session->GetRoofTexture(sty);
 	BDP.roofM		= grp->GetRoofModByNumber(BDP);
-
 	MakeBuilding();
 	//--------------------------------------
 	return &BDP;
@@ -483,16 +496,13 @@ void Triangulator::EditTag(char *txt)
 //  Build the building
 //-------------------------------------------------------------------
 bool Triangulator::MakeBuilding()
-{	//--- Step 1: Create OSM object -----
+{	dlg	= BDP.dlg;
+	//--- Step 1: Create OSM object -----
 	CreateBuilding();
 	//--- Step 2:  Triangulation --------
 	BDP.error = Triangulation();
 	//--- Step 3: Face orientation ----- 
 	OrientFaces();
-	//------------------------------------------------------
-	U_INT rfm  = BDP.group->GetRoofNumber();
-	char *nsty = BDP.style->GetSlotName();
-
 	//--- Step 4: Build walls -----------
 	BuildWalls();
 	//--- Step 5: Select roof model -----
@@ -564,14 +574,10 @@ void Triangulator::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx)
 //				deferred until Object is OK
 //-------------------------------------------------------------------
 void Triangulator::CreateBuilding()
-{ U_INT xob = BDP.group->GetXOBJ();
-	OSM_Object  *obj	= osmB;
+{ OSM_Object  *obj	= osmB;
 	if (0 == obj) obj =	new OSM_Object(OSM_TYPE_BUILDING);
   osmB							= obj;
-	C3DPart   *prt		= new C3DPart();
-	//---- save object parameters ------------------
-	obj->SetXOBJ(xob);
-	obj->SetPart(prt);
+	GetSuperTileNo(&BDP.geop, &BDP.qgKey, &BDP.supNo);
 	obj->SetParameters(BDP);
 	//--- Save a copy of the base points -----------
 	osmB->ReceiveQ(extp);
@@ -821,7 +827,7 @@ bool Triangulator::GetAnEar()
 		//-------------------------------------------------
 		return true;
 	}
-	STREETLOG("Did not find any ear");
+	STREETLOG("Building %05d Cannot Triangulate", BDP.stamp);
 	return false;
 }
 //-------------------------------------------------------------------
@@ -1184,10 +1190,10 @@ void Triangulator::QualifyEdge(D2_POINT *pb)
 //=========================================================================
 void Triangulator::BuildWalls()
 {	Wz = 0;
-  double fht = BDP.flHtr;
+  double H = BDP.flHtr;
 	for (int k=1; k <= BDP.flNbr; k++)
-	{	BuildFloor(k,Wz,fht);
-		Wz += fht;
+	{	BuildFloor(k,Wz,H);
+		Wz += H;
 	}
 	return;
 }
@@ -1361,7 +1367,7 @@ return ce;
 //	ce = ceil height
 //	We also adjust the roof height in (extp)
 //----------------------------------------------------------------
-void Triangulator::BuildFloor(int No, double afh, double ht)
+void Triangulator::BuildFloor(int No, double afh, double H)
 {	//--- Compute face code -----------------------------
 	D2_Style *sty = BDP.style;
 	int  flNbr		= BDP.flNbr;
@@ -1370,13 +1376,16 @@ void Triangulator::BuildFloor(int No, double afh, double ht)
 	if (flNbr == No)	indx = TEXD2_FLOORZ;	// Last floor
 	if (1			== No)	indx = TEXD2_FLOOR1;	// ground floor
 	bool mans = (indx == TEXD2_FLOORZ) && sty->IsMansart();
-	if (mans)	ce	=		BuildBevelFloor(No,indx,afh,ht);
-	else			ce	=		BuildNormaFloor(No,indx,afh,ht);
+	if (mans)	ce	=		BuildBevelFloor(No,indx,afh,H);
+	else			ce	=		BuildNormaFloor(No,indx,afh,H);
 	sty->SetWz(ce);
 	BDP.hgt = ce;			//sty->SetBz(ce);
-  
 	return;
 }
+//----------------------------------------------------------------
+//	Build fence
+//----------------------------------------------------------------
+
 //----------------------------------------------------------------
 //	Reorder the tour with origin as first point
 //----------------------------------------------------------------
@@ -1585,9 +1594,11 @@ U_INT	D2_FACE::StoreVertices(C3DPart *prt, U_INT n)
 	tab = sw.SaveVertex(tab);
 	tab = se.SaveVertex(tab);
 	tab = nw.SaveVertex(tab);
+
 	tab = nw.SaveVertex(tab);
 	tab = se.SaveVertex(tab);
 	tab = ne.SaveVertex(tab);
+
 	return 6;
 }
 //=========================================================================
@@ -1663,6 +1674,9 @@ D2_Group::D2_Group(char *gn, D2_Session *s)
 	*path			= 0;
 	//----------------------------------------
 	sbldg		  = 0;
+	//----------------------------------------
+	xOBJ			= 0;
+	tREF			= 0;
 }
 //-----------------------------------------------------------------
 //	Destroy Group 
@@ -1674,7 +1688,7 @@ D2_Group::~D2_Group()
 	for (rp = building.begin(); rp != building.end(); rp++)  delete (*rp).second;
 	building.clear();
 	//-------------------------------------------------
-	glDeleteTextures(1,&tinf.xOBJ);
+	globals->txw->Free3DTexture(tREF);
 
 }
 //-----------------------------------------------------------------
@@ -1898,11 +1912,10 @@ CRoofModel *D2_Group::GetRoofModByNumber(D2_BPM &bpm)
 //-----------------------------------------------------------------
 void D2_Group::LoadTexture()
 {	if (*path == 0)		return;
-	if (tinf.xOBJ)		return;
-	CArtParser img(TC_HIGHTR);
-  strcpy(tinf.path,path);
-  img.GetAnyTexture(tinf);
-	globals->txw->GetTexOBJ(tinf,5,GL_RGBA);
+	if (xOBJ)		      return;
+	tREF	= globals->txw->GetM3DPodTexture(path,1,1);
+	globals->txw->GetTextureParameters(tREF,tinf);
+	xOBJ	= globals->txw->Get3DObject(tREF);
 	//--- Fill default roof parameters ---------------------
 	tRoof.DefaultParameters(tinf);
 	return;
@@ -1912,7 +1925,7 @@ void D2_Group::LoadTexture()
 //-----------------------------------------------------------------
 void D2_Group::DrawBuilding()
 {	std::map<U_INT,OSM_Object*>::iterator rp;
-	glBindTexture(GL_TEXTURE_2D,tinf.xOBJ);
+	glBindTexture(GL_TEXTURE_2D,xOBJ);
 	for (rp = building.begin(); rp != building.end(); rp++)
 	{	OSM_Object *bld = (*rp).second;
 		if (bld != sbldg)	bld->Draw();
@@ -2504,7 +2517,27 @@ void OSM_Object::SetParameters(D2_BPM &p)
 	bpm				= p;
 	D2_Group *grp = bpm.group;
 	grp->AddBuilding(this);
+	U_INT xob	= grp->GetXOBJ();
+	//--- Set part parameters ----------------------
+	C3DPart   *prt  = new C3DPart();
+	prt->SetXOBJ(xob);
+	if (part)	delete part;
+	part	= prt;
 	return;
+}
+//-----------------------------------------------------------------
+//	Return group texture reference
+//-----------------------------------------------------------------
+void *OSM_Object::GetGroupTREF()
+{	if (0 == bpm.group)		return 0;
+	return bpm.group->GetTREF();
+}
+//-----------------------------------------------------------------
+//	Return group texture name
+//-----------------------------------------------------------------
+char *OSM_Object::TextureName()
+{ if (0 == bpm.group)		return 0;
+	return bpm.group->TextureName();
 }
 //-----------------------------------------------------------------
 //	Select this building
@@ -2547,7 +2580,6 @@ void OSM_Object::Replace(char *fn, C3DPart *prt)
 	orien	= 0;
 	if (part)	delete part;
 	part = prt;
-	xOBJ = prt->GetXOBJ();
 	return;
 }
 //-----------------------------------------------------------------
@@ -2566,14 +2598,13 @@ void OSM_Object::Draw()
 //	We dont translate camera at building center
 //-----------------------------------------------------------------
 void OSM_Object::DrawLocal()
-{	glBindTexture    (GL_TEXTURE_2D,xOBJ);
-	part->Draw();	 }
+{	part->Draw();	 }
 //-----------------------------------------------------------------
 //	Write the building
 //-----------------------------------------------------------------
 void OSM_Object::Write(FILE *fp)
 {	char txt[128];
-	_snprintf(txt,127,"Start %05d\n", bpm.stamp);
+	_snprintf(txt,127,"Start %05d id=%d\n", bpm.stamp, bpm.ident);
 	fputs(txt,fp);
 	//--- Write style ----------------------------------
 	char *nsty = bpm.style->GetSlotName();

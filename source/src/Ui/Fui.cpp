@@ -1583,10 +1583,13 @@ void CFuiWindow::ModalClose()
 }
 //-------------------------------------------------------------------------------
 //	Call to check profile
+//	By default:  When editing, dont allow creation and drawing
+//	Windows that must be present when editing will override this function
 //-------------------------------------------------------------------------------
-void CFuiWindow::CheckProfile()
-{	if (globals->aPROF.Has(PROF_EDITOR))	 state = FUI_WINDOW_CLOSED;
-	return;	}
+bool CFuiWindow::CheckProfile(char a)
+{	char edt = globals->aPROF.Has(PROF_EDITOR);
+	if (edt)	 state = FUI_WINDOW_CLOSED;
+	return (edt == 0);	}
 //-------------------------------------------------------------------------------
 //  Add screen coordinate from surface to (X,Y)
 //-------------------------------------------------------------------------------

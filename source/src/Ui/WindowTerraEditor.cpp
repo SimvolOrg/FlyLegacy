@@ -105,7 +105,7 @@ CFuiTED::CFuiTED(Tag idn, const char *filename)
   //--- Set application profile -------------------
 	ctx.prof = TED_PROF;
 	ctx.mode	= SLEW_RCAM;
-	rcam	= globals->ccm->SetRabbitCamera(ctx,this);
+	rcam	= globals->ccm->SetRabbitCamera(ctx,RABBIT_S_AND_C);
 	rcam->SetTracker(trak, 0);
 }
 //----------------------------------------------------------------------
@@ -119,6 +119,11 @@ CFuiTED::~CFuiTED()
   globals->noAPT -= abtn;
   globals->ccm->RestoreCamera(ctx);
 }
+//----------------------------------------------------------------------
+//	Override check profile
+//----------------------------------------------------------------------
+bool CFuiTED::CheckProfile(char a)
+{	return true;	}
 //----------------------------------------------------------------------
 //	Draw the window
 //----------------------------------------------------------------------

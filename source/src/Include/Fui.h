@@ -310,6 +310,7 @@ typedef enum {
   FUI_WINDOW_CLOSED,
   FUI_WINDOW_MOVE,
 	FUI_WINDOW_MODAL,
+	FUI_WINDOW_DRAW
 } EFuiWindowState;
 //===================================================================================
 // Forward declare all class types
@@ -786,7 +787,7 @@ public:
   //-----------visibility management ------------------------------
   void                ModifyShow(Tag idn, bool vs);
 	//--- Profile management ----------------------------------------
-	virtual void				CheckProfile();
+	virtual bool				CheckProfile(char action);
 	//----------- picking management --------------------------------
 	virtual void				OnePicking(U_INT nb) {;}
   //------------Mouse management ----------------------------------
@@ -2046,14 +2047,15 @@ public:
   // Access functions for applications to get/set widget state
   void  SetComponentText (Tag window, Tag component, char* text);
 	void	SetBigFont();
+	void	ResetFont();
 	//--------------------------------------------------------------------------
 	char    *PilotNote()					{return notep->Buffer();}
   //--------------------------------------------------------------------------
-  void     SetNoticeFont(SFont *f) {note1->ChangeFont(f);}
-  void     RazCrash()          {notec->RazActive();}
-  void     SetCrash()          {notec->SetActive();}
-	void			CaptureMouse(CFuiWindow *w)	{wCap	= w;}
-	void			CaptureRelease()						{wCap = 0;}
+  void    SetNoticeFont(SFont *f) {note1->ChangeFont(f);}
+  void    RazCrash()          {notec->RazActive();}
+  void    SetCrash()          {notec->SetActive();}
+	void		CaptureMouse(CFuiWindow *w)	{wCap	= w;}
+	void		CaptureRelease()						{wCap = 0;}
   //--------------------------------------------------------------------------
   CFuiTextPopup *GetCrashNote() {return notec;}
   //--------------------------------------------------------------------------

@@ -524,6 +524,26 @@ void GetQgtMidPoint(int gx,int gz,SPosition &p)
   return;
 }
 //-----------------------------------------------------------------------------
+//	Return QGT key and super tile No
+//-----------------------------------------------------------------------------
+void GetSuperTileNo(SPosition *P, U_INT *K, U_SHORT *S)
+{ U_INT qx, qz;
+	IndicesInQGT (*P, qx, qz);
+	*K = (qx << 16) | qz;
+	//--- compute supertile Number ----------------------
+	double slat = GetQgtSouthLatitude(qz);
+	double dlat = GetLatitudeDelta(qz);
+	U_INT tz    = U_INT((P->lat - slat) / dlat);
+	//--- Get longitude delta ---------------------------
+	double wlon = FN_ARCS_FROM_QGT(qx);
+	U_INT tx    = (P->lon - wlon) / TC_ARCS_PER_DET;
+	//--- divide each number by 4 -----------------------
+	U_INT sx	= tx >> 2;
+	U_INT sz  = tz >> 2;
+	*S = U_SHORT((sx << 3) | sz);
+	return;
+}
+//-----------------------------------------------------------------------------
 //  Return SW corner coordinates for Detail-Tile (ax,az)
 //-----------------------------------------------------------------------------
 double GetTileSWcorner(U_INT ax,U_INT az,SVector &v)

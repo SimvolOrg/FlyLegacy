@@ -52,6 +52,8 @@
 class CFmtxMap;
 class Triangulator;
 //=============================================================================================
+extern char *Dupplicate(char *s, int lgm);
+//=============================================================================================
 //	Define APPLICATION PROFILE
 //	APPLICATION PROFILE is used by specifics windows like editors.
 //	Option to prevent drawing and changing camera are set
@@ -64,7 +66,6 @@ class Triangulator;
 #define PROF_NO_OBJ			(0x00000010)				// No Object drawing
 #define PROF_NO_MET			(0x00000020)				// No Meteo effect
 #define PROF_EDITOR			(0x00000040)				// This is an editor
-#define PROF_NO_SIT			(0x00000080)				// No situation
 //-----------------------------------------------------------------------
 #define PROF_NO_PLN			(0x00000100)				// No plane
 //-----------------------------------------------------------------------
@@ -79,6 +80,7 @@ class Triangulator;
 //	no view, no meteo, use a rabbit camera, draw tile tour,no flight plan
 //-------------------------------------------------------------------------
 #define PROF_NO_PLANE   (PROF_NO_INT+PROF_NO_EXT+PROF_ACBUSY)
+#define PROF_TOOL       (PROF_EDITOR | PROF_ACBUSY)
 //=======================================================================================
 //  Edit column for statistics
 //=======================================================================================
@@ -227,6 +229,7 @@ CDispatcher::CDispatcher();
 	//---- Time slice -------------------------------------
 	void	TimeSlice(float dT,U_INT frame);
 	void	Draw(char p);
+	void  DrawExternal();
 	//-----------------------------------------------------
 };
 //==============================================================================
@@ -306,7 +309,8 @@ typedef struct {
   float             dST;                // Simu time delta from last Frame
   //---------Interface with master radio -----------------------------
   BUS_RADIO        *Radio;              // Radio block
-  CILS             *cILS;               // Current ILS
+  CILS             *cILS;
+	// Current ILS
   //---------Globals cameras parameters-------------------------------
   CCameraRunway         *cap;           // Camera airport
   CCameraSpot           *csp;           // spot camera
@@ -393,7 +397,10 @@ typedef struct {
   double         maxView;       // Maximum view
   double         highRAT;       // Hight resolution ratio
   double         skyDist;       // Sky distance
-  //-----Screen management --------------------------------------------
+	U_INT						pakCAP;				// Super Tile buffer
+	U_CHAR					mipOBJ;				// Mip Level for 3d object
+	U_CHAR					mipTER;				// Mip level for terrain
+	//----------------------------------------------------------------
   sScreenParams *cScreen;       ///< Current screen parameters
                                 ///<  (pointer changed dynamically)
   sScreenParams  mScreen;       ///< Primary screen parameters

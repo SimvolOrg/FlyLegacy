@@ -1797,7 +1797,7 @@ void  CDLLSimulatedObject::SetOrientation (SVector orientation)
   // if object is from simulated situation set global ori 
 //  if (globals->pln) CWorldObject::SetOrientation (orientation);
 //  else
-  CWorldObject::SetOrientation (iang_);
+  CWorldObject::SetObjectOrientation (iang_);
 }
 
 //------------------------------------------------------------------ 

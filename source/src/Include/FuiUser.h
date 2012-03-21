@@ -849,7 +849,7 @@ public:
  //--- Notifications ------------------------------------------
  void		NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
  //--- Dont close the windows ----------------------------------
- void		CheckProfile()		{;}
+ bool		CheckProfile(char a);
 };
 //==================================================================================
 //  CFuiDLL.  A generic fui window connected to plugins

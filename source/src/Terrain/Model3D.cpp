@@ -27,6 +27,7 @@
 #include "../Include/Globals.h"
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainTexture.h"
+#include "../Include/Triangulator.h"
 #include "../Include/Model3D.h"
 #include "../Include/Endian.h"
 #include "../Include/Weather.h"
@@ -325,41 +326,46 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   //----ADD VOR REFERENCE ----------
   oVOR  = 0;
   CreateVOR();
+	//--- Init Pack capacity -------------------------------------
+	nb		= 1000;
+	GetIniVar		("Performances", "PackCapacity", &nb);
+	globals->pakCAP = nb;
   //----Init all distances -------------------------------------
   float dd  = 24;                         // Default (nm)for detection
-  GetIniFloat("W3D","ObjectDetectDistance",&dd);
+  GetIniFloat	("Performances","ObjectDetectDistance",&dd);
   globals->nmDET  = dd;                   // Limit in miles
   globals->ftDET  = FN_FEET_FROM_MILE(dd);
   //-------------------------------------------------------------
   float dw   = 12;                         // Default for drawing
-  GetIniFloat("W3D","ObjectDrawDistance",&dw);
+  GetIniFloat	("Performances","ObjectDrawDistance",&dw);
   globals->nmDRW = dw;                    // Limit in miles
   globals->ftDRW = FN_FEET_FROM_MILE(dw);
   //----Level of details -----------------------------------------
   float d1   = 1.5;                    
-  GetIniFloat("W3D","Lod1",&d1);
+  GetIniFloat("Performances","ObjectHigDetails",&d1);
   if (d1 < 0)     d1  = 1.5;
   if (d1 > dw)    d1  = 1.5;
   globals->ftLD1      = FN_FEET_FROM_MILE(d1);
   //--------------------------------------------------------------
   float d2   = 2.5;
-  GetIniFloat("W3D","Lod2",&d2);
+  GetIniFloat("Performances","ObjectMidDetails",&d2);
   if (d2 < 0)     d2  = 2.5;
   if (d2 < d1)    d2  = d1 * 2;
   globals->ftLD2      = FN_FEET_FROM_MILE(d2);
   //--------------------------------------------------------------
   float d3   = 5;
-  GetIniFloat("W3D","Lod3",&d3);
+  GetIniFloat("Performances","ObjectLowDetails",&d3);
   if (d3 < 0)     d3  = 5;
   if (d3 < d2)    d3  = d2 * 2;
   globals->ftLD3      = FN_FEET_FROM_MILE(d3);
   //--------------------------------------------------------------
-  int lf    = 1000;                        // Decoding factor default
-  GetIniVar("W3D","ObjectLoadFactor",&lf);
+  int lf    = 500;                        // Decoding factor default
+  GetIniVar("Performances","ObjectLoadFactor",&lf);
   dFactor   = lf;
   //--------------------------------------------------------------
-	lpod    = 1;
-	if (GetIniKey("W3D","LookOnlyInSQL"))	lpod = 0;
+	int lq = 1;
+	GetIniVar("Performances","LookOnlyInSQL",&lq);
+	lpod  = (1 - lq);
 	//--------------------------------------------------------------
 	sql	= globals->objDB;
 	if (0 == sql)	lpod = 1;
@@ -768,7 +774,7 @@ int C3Dfile::Read(SStream *st,Tag tag)
 			cntr++;
       return TAG_READ;}
   case 'auto': // lc added 05.29.11 test for autogen
-    AutoGen (st);
+   // AutoGen (st);
 		return TAG_READ;
   }
   WARNINGLOG("Scenery file %s: Not an Object tag %s",namef,TagToString(tag));
@@ -961,7 +967,7 @@ int C3Dmodel::LoadPart(char * dir)
 int C3Dmodel::AddPodPart(C3DPart *prt)
 { //---Add this part ---------------------------------
   pLOD[0].Lock();
-  pLOD[0].PutEnd(prt);
+  pLOD[0].PutLast(prt);
   pLOD[0].UnLock();
   return 1;
 }
@@ -971,7 +977,7 @@ int C3Dmodel::AddPodPart(C3DPart *prt)
 void C3Dmodel::AddLodPart(C3DPart *prt,int lod)
 { //---Queue the part to related LOD ---------------------
   prt->SetLOD(lod);
-  pLOD[lod].PutEnd(prt); 
+  pLOD[lod].PutLast(prt); 
   rLOD[lod] = lod;
   return;
 }
@@ -981,7 +987,7 @@ void C3Dmodel::AddLodPart(C3DPart *prt,int lod)
 void C3Dmodel::AddSqlPart(C3DPart *prt,int lod)
 { //---Queue the part to related LOD -----------------
   prt->SetLOD(lod);
-  pLOD[lod].PutEnd(prt); 
+  pLOD[lod].PutLast(prt); 
   rLOD[lod] = lod;            // Activate lod level
   return;
 }
@@ -991,7 +997,7 @@ void C3Dmodel::AddSqlPart(C3DPart *prt,int lod)
 void C3Dmodel::GetParts(CPolyShop *psh,M3D_PART_INFO &inf)
 { C3DPart  *prt;
   pLOD[0].Lock();
-  for (prt = pLOD[0].GetFirst(); prt != 0; prt = pLOD[0].GetNext(prt))   
+  for (prt = pLOD[0].GetFirst(); prt != 0; prt = prt->Next())   
   { prt->GetInfo(inf);
     psh->OnePart(inf);
   }
@@ -1004,7 +1010,7 @@ void C3Dmodel::GetParts(CPolyShop *psh,M3D_PART_INFO &inf)
 void C3Dmodel::GetParts(CExport *exp,M3D_PART_INFO &inf)
 { C3DPart  *prt;
   pLOD[0].Lock();
-  for (prt = pLOD[0].GetFirst(); prt != 0; prt = pLOD[0].GetNext(prt))   
+  for (prt = pLOD[0].GetFirst(); prt != 0; prt = prt->Next())   
   { prt->GetInfo(inf);
     exp->OneM3DPart(inf);
   }
@@ -1021,7 +1027,7 @@ int C3Dmodel::Draw(int q)
   C3DPart  *prt;
   glFrontFace(rDIR);
   pLOD[k].Lock();
-  for (prt = pLOD[k].GetFirst(); prt != 0; prt = pLOD[k].GetNext(prt))   prt->Draw();
+  for (prt = pLOD[k].GetFirst(); prt != 0; prt = prt->Next())   prt->Draw();
   pLOD[k].UnLock();
   return 0;
 }
@@ -1034,7 +1040,7 @@ void C3Dmodel::Counts(M3D_PART_INFO &tt)
   tt.NbIN       = 0;
   tt.NbVT       = 0;
   pLOD[0].Lock();
-  for (prt = pLOD[0].GetFirst(); prt != 0; prt = pLOD[0].GetNext(prt))
+  for (prt = pLOD[0].GetFirst(); prt != 0; prt = prt->Next())
   { prt->GetInfo(cn);
     tt.NbIN += cn.NbIN;
     tt.NbVT += cn.NbVT;
@@ -1921,7 +1927,7 @@ void C3DPart::AllocateObjVTX(int nv)
 //----------------------------------------------------------------------
 void C3DPart::ZRotation(double sn, double cn)
 { TC_VTAB *vtx = vTAB;
-	for (U_INT k = 0; k != NbVT; k++)	ZRotate(*vtx++,sn,cn);
+	for (int k = 0; k != NbVT; k++)	ZRotate(*vtx++,sn,cn);
 	return;
 }
 //----------------------------------------------------------------------
@@ -1947,15 +1953,43 @@ void C3DPart::CopyForOSM(C3DPart *ps)
 	return;
 }
 //----------------------------------------------------------------------
+// Clone part for osm use
+//----------------------------------------------------------------------
+void C3DPart::ReceiveOSM(C3DPart *ps, char opt)
+{ if (0 == ps)		return;
+	if (opt) NbVT	= 0;
+	int nbv				= ps->GetNBVTX();
+	TC_VTAB *src	= ps->GetVTAB();
+	TC_VTAB *dst  = vTAB + NbVT;
+	for (int k=0; k < nbv; k++)	*dst++ = *src++;
+	NbVT				+= nbv;
+	return;
+}
+//----------------------------------------------------------------------
+// Translate by T vector
+//----------------------------------------------------------------------
+void C3DPart::Translate(SVector &T)
+{	TC_VTAB *src = vTAB;
+	for (int k=0; k < NbVT; k++, src++)		src->Add(T);
+	return;
+}
+//----------------------------------------------------------------------
 //  Assign texture name
 //----------------------------------------------------------------------
 void C3DPart::SetTexName(char *txn)
-{ int lgr   = strlen(txn) + 1;
-  ntex      = new char[lgr];
-  strncpy(ntex,txn,lgr);
-  ntex[lgr-1] = 0;
+{ ntex = Dupplicate(txn,256); 
   return;
 }
+//----------------------------------------------------------------------
+//  Assign texture object and reference
+//----------------------------------------------------------------------
+void C3DPart::SetTexture(char *txn)
+{ void *ref = globals->txw->GetM3DPodTexture(txn,1,1);
+  tRef			= ref;
+	xOBJ			= globals->txw->Get3DObject(ref);
+  return;
+}
+
 //----------------------------------------------------------------------
 //  Return part infos
 //----------------------------------------------------------------------
@@ -1996,7 +2030,8 @@ void C3DPart::DrawAsW3D()
 //  Draw the part for  an Osm object
 //----------------------------------------------------------------------
 void C3DPart::DrawAsOSM()
-{ glVertexPointer  (3,GL_FLOAT,sizeof(TC_VTAB),&(vTAB->VT_X));
+{ glBindTexture    (GL_TEXTURE_2D,xOBJ);
+	glVertexPointer  (3,GL_FLOAT,sizeof(TC_VTAB),&(vTAB->VT_X));
   glTexCoordPointer(2,GL_FLOAT,sizeof(TC_VTAB),&(vTAB->VT_S));
   glDrawArrays(GL_TRIANGLES,0, NbVT);
   //----------------------------------------------------------------
@@ -2028,33 +2063,6 @@ void C3DPart::DrawAsOBJ()
   return;
 }
 
-//=============================================================================
-//  Destroy 3D Q
-//=============================================================================
-C3DpartQ::~C3DpartQ()
-{ C3DPart *prt = Pop();
-  while (prt) { delete prt; prt = Pop();}
-}
-//---------------------------------------------------------------------
-//	receive Queue from Q
-//---------------------------------------------------------------------
-void C3DpartQ::ReceiveQ(C3DpartQ &Q)
-{ NbObj = Q.NbObj;
-	First = Q.First;
-	Last	= Q.Last;
-	Prev  = 0;
-	Q.Raz();
-}
-//---------------------------------------------------------------------
-//	give this Queue to Q
-//---------------------------------------------------------------------
-void C3DpartQ::Transfer(C3DpartQ &Q)
-{ Q.NbObj = NbObj;
-	Q.First = First;
-	Q.Last	= Last;
-	Q.Prev  = 0;
-	Raz();
-}
 
 //=============================================================================
 //  Destroy world object queue
@@ -2262,5 +2270,51 @@ void C3Dworld::GetLine(CListBox *box)
 float C3Dworld::GetSockForce()
 { float spd = globals->wtm->WindSpeed();
   return wmap->Lookup(spd);
+}
+//=============================================================================
+//
+//  Class C3DPack for OSM objects located in a Supertile
+//
+//=============================================================================
+C3DPack::C3DPack(U_INT qk)
+{	next = prev = 0;
+	qgKey	= qk;
+	part	= 0;
+}
+//-----------------------------------------------------------------------------
+//	Delete the pack
+//-----------------------------------------------------------------------------
+C3DPack::~C3DPack()
+{
+}
+//-----------------------------------------------------------------------------
+//	Extend this pack with the given part
+//-----------------------------------------------------------------------------
+void C3DPack::ExtendPart(OSM_Object *obj, SVector &T)
+{	C3DPart *p0 = part;
+	C3DPart *p1 = obj->GetPart(); 
+	U_INT		tot	= p1->GetNBVTX();
+  tot  += (p0)?(p0->GetNBVTX()):(0);
+	C3DPart *np = new C3DPart();
+	np->AllocateObjVTX(tot);
+	np->ReceiveOSM(p1,1);
+	np->Translate(T);
+	np->ReceiveOSM(p0,0);
+	//--- Delete original part ---------------
+	if (p0)	delete p0;
+	//--- Set texture reference and object ---
+	char *txn = obj->TextureName();
+	np->SetTexture(txn);
+	part	= np;
+	//--- Trace addition -----------------------
+	U_INT stamp = obj->GetStamp();
+	U_INT key   = obj->GetKey();
+	U_INT qx    = key >> 16;
+	U_INT qz    = key & 0xFFFF;
+	U_INT spn   = obj->GetSupNo();
+	U_INT nbv   = np->GetNBVTX();
+	STREETLOG("ADD %05d to QGT(%03d-%03d) ST%02d: PART has %05d vertices",
+			stamp, qx, qz, spn, nbv);
+	return;
 }
 //========================END OF FILE ===================================================

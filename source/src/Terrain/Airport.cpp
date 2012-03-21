@@ -1648,13 +1648,12 @@ bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
   if (0 == tko)		return false;
 	CAirplane *pln = globals->pln;
   if (0 == pln)		return false;
-	globals->tcm->Teleport(*tko);
-	CVector ori   = pln->GetOrientation();
+	
+	SVector ori   = pln->GetOrientation();
 	ori.z					= DegToRad(rot);
 	ori.x					= 0;
 	ori.y					= 0;
-	pln->SetOrientation(ori);
-	pln->SetPhysicalOrientation(ori);
+	globals->sit->ShortTeleport(tko,&ori);
 	return true;
 }
 //----------------------------------------------------------------------------------

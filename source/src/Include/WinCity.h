@@ -32,7 +32,7 @@
 #include "../Include/Triangulator.h"
 #include "../Include/RoofModels.h"
 //==========================================================================================
-#define PROF_SKETCH   (PROF_EDITOR+PROF_NO_TEL+PROF_NO_PLANE+PROF_NO_SIT)
+#define PROF_SKETCH   (PROF_EDITOR+PROF_NO_TEL+PROF_NO_PLANE)
 #define SKETCH_REFER (0)
 #define SKETCH_PAUSE (1)
 #define SKETCH_NEXT  (2)
@@ -60,6 +60,9 @@ class CFuiSketch : public CFuiWindow
 	//--- STATE ---------------------------------------------------
 	U_INT					State;					// Logical state
 	U_INT					nStat;					// Next state after wait
+	//-------------------------------------------------------------
+	U_INT					ident;					//
+	U_INT					seqNo;					// Sequence number
 	//-------------------------------------------------------------
 	U_INT					cntw;						// Waiting counter
 	U_INT					count;					// Vertices count
@@ -91,9 +94,10 @@ class CFuiSketch : public CFuiWindow
 	char          smodl[PATH_MAX];
 	//-------------------------------------------------------------
 	CFuiGroupBox	*gBOX;					// Option group box
-	CFuiLabel			*aLAB;
+	CFuiLabel			*aLAB;					// Label for group
   CFuiCheckBox  *fOPT;					// fill Option box
   CFuiCheckBox  *vOPT;					// View Option box
+	CFuiGroupBox  *Box2;					// Box number 2
 	CFuiButton    *nBUT;					// Next button
 	CFuiButton    *vTER;					// View terrain option
 	CFuiButton		*vALL;					// View all
@@ -106,8 +110,9 @@ class CFuiSketch : public CFuiWindow
 	CFuiLabel     *nBAT;					// Building n°
 	CFuiLabel     *nTAG;					// Building n°
 	CFuiList      *sWIN;					// style list
-	CFuiBox       *wSEP;					// Separator
-	//CFuiList      *mWIN;					// model list
+	CFuiGroupBox  *Box3;					// Separator
+	CFuiGroupBox  *Box4;
+	CFuiButton    *bTRY;					// Try button
 	//--- Titles --------------------------------------------------
 	CSlot					 styTT;					// style title
 	CSlot          modTT;					// Model title
@@ -152,8 +157,6 @@ public:
 	U_INT	Abort(char *err,char *fn);
 	U_INT	GotoReferencePosition();
 	U_INT	HereWeAre();
-	U_INT	ComputeReference();
-	U_INT	OpenAgain();
 	U_INT	BuildObject();
 	U_INT	OneBuilding();
 	//--- Terrain ------------------------------------------------
@@ -181,6 +184,7 @@ public:
 	void	Swap3D();
 	//------------------------------------------------------------
 	void	Write();
+	void	FlyOver();
 	//--- mouse --------------------------------------------------
 	bool	MouseCapture(int mx, int my, EMouseButton bt);
 	//--- Keyboard -----------------------------------------------
@@ -189,7 +193,7 @@ public:
 	void	Draw();
 	void	NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 	//--- Dont close tthe windows ---------------------------------
-	void  CheckProfile()		{;}
+	bool  CheckProfile(char a);
 };
 //============================END OF FILE =================================================
 #endif // WINCITY_H

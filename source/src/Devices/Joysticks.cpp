@@ -83,8 +83,8 @@ SJoyDEF::SJoyDEF()
 //	Free resources 
 //----------------------------------------------------------------
 SJoyDEF::~SJoyDEF()
-{	if (axeData)	delete [] axeData;
-	if (axePrev)	delete [] axePrev;
+{	SAFE_DELETE_ARRAY( axeData);
+	SAFE_DELETE_ARRAY (axePrev);
 	if (spj)			SDL_JoystickClose(spj);
 }
 //----------------------------------------------------------------

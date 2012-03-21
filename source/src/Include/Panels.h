@@ -33,8 +33,9 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "FlyLegacy.h"
-#include "Gauges.h"
+#include "../Include/FlyLegacy.h"
+#include "../Include/Gauges.h"
+#include "../Include/Cameras.h"
 #include <map>
 #include <vector>
 

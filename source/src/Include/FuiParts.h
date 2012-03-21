@@ -1127,7 +1127,7 @@ public:
   void    GetSelection();
   void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 	//--- Dont close this window ----------------------------------------
-	void    CheckProfile()	{;}
+	bool    CheckProfile(char a);
 };
 //==========================================================================================
 //  OBJECT BROWSER
@@ -1173,7 +1173,7 @@ public:
     void  Draw();
     void  DrawByCamera(CCamera *cam);
 		//--- Dont close this window ----------------------------------------
-	  void  CheckProfile()	{;}
+	  bool  CheckProfile(char a);
 };
 //==================================================================================
 //  CFuiDetail.  A generic fui window for VOR and airport

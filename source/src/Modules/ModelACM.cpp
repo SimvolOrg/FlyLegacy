@@ -973,8 +973,8 @@ CModelACM::CModelACM(char t,char d, CVehicleObject *mv)
   topParent = 0;
 	RenderVBO();
 	//---Geometry parameters ------------------------
-	int opt = 1;
-	GetIniVar("Sim","PlaneVBO",&opt);
+	int opt = 0;
+	GetIniVar("Performances","UsePlaneVBO",&opt);
 	vbu			= opt;
 	nbVT		= 0;
 	vBUF		= 0;

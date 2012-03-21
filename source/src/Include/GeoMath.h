@@ -137,6 +137,7 @@ int				RoundAltitude(int a);
 U_INT			AbsoluteTileKey(int qx, int dx);
 U_INT			GetTileFromLatitude(double lat);
 bool			TileIsLeft(U_INT k1,U_INT k2);
+void			GetSuperTileNo(SPosition *P, U_INT *K, U_SHORT *S);
 //-----------------------------------------------------------------------------
 bool    PointInTriangle(CVector &p,CVector &a,CVector &b,CVector &c,CVector &n);
 U_INT   NextVertexKey(U_INT vk,U_INT inc);

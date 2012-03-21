@@ -136,11 +136,17 @@ class	D2_TParam;
 //	
 //====================================================================================
 struct D2_BPM {
+	//--- Localization parameters ------------------------
 	SPosition			geop;										// Geo position
+	U_INT		qgKey;												// QGT key
+	U_SHORT	supNo;												// Super tile No
+	U_SHORT				rfu1;										// Reserved
+	//----------------------------------------------------
 	double				sinA;										// Angle
 	double				cosA;										// Angle
 	double        flHtr;									// Floor height
 	double				rdf;										// Reduction factor
+	U_INT					ident;									// Object identity
 	U_INT					stamp;									// Object number
 	D2_Group		 *group;									// mother group
 	D2_Style		 *style;									// Style
@@ -156,6 +162,7 @@ struct D2_BPM {
 	//-----------------------------------------------------
 	U_INT					side;										// Side number
 	double        surf;										// Surface
+	double        dlg;										// Longuest edge
 	double				lgx;										// Width
 	double				lgy;										// Lenght
 	double				hgt;										// Height						
@@ -546,7 +553,7 @@ public:
 	void			AddGroundFXP(D2_TParam &p);
 	//-------------------------------------------------------------
 	void					SelectRoofTexture();
-	D2_TParam			*GetRoofTexture();
+	D2_TParam		 *GetRoofTexture();
 	void					SelectRoofNum(U_INT rfno);
 	//-------------------------------------------------------------
 	void      TexturePoint(D2_POINT *p, char tp, char fx,char hb = 0);			// Compute x texture coordinate
@@ -604,6 +611,8 @@ class D2_Group: public  D2_Ratio {
 	char		rfu2;														// Reserved
 	//--- Texture parameters --------------------------------------
 	TEXT_INFO tinf;													// Texture definition
+	U_INT		xOBJ;														// Texture Object
+	void   *tREF;														// Texture reference
 	char    path[PATH_MAX];									// File name
 	//---- Turn index ---------------------------------------------
 	short    indx;													// Turn index
@@ -663,13 +672,15 @@ public:
 	U_INT			GetFloorNbr()				{return	flNbr;}
 	double    GetFloorHtr()				{return flHtr;}
 	//--------------------------------------------------------------
-	U_INT     GetXOBJ()						{return tinf.xOBJ;}
+	U_INT     GetXOBJ()						{return xOBJ;}
+	void     *GetTREF()						{return tREF;}
 	//--------------------------------------------------------------
 	char			HasTrace()					{return tr;}
 	//--------------------------------------------------------------
 	D2_TParam *GetRoofTexDefault()	{return &tRoof;}
 	//--------------------------------------------------------------
 	char     *GetName()						{return name;}
+	char     *TextureName()				{return tinf.path;}
 	//--------------------------------------------------------------
 	std::vector<CRoofModel*>		&GetRoofList()		{return roofM;}
 	Queue<D2_Style> *GetStyleQ()	{return &styleQ;}
@@ -754,6 +765,7 @@ public:
 	Triangulator(D2_Session *s);
  ~Triangulator();
 	//-----------------------------------------------------
+ void				CheckAll();
 	void			ClearRoof();
 	D2_POINT *GetBevelPoint(D2_POINT *p);
 	D2_POINT *ChangePoint(D2_POINT *pp);
@@ -834,7 +846,7 @@ public:
 	D2_Style  *GetStyle()							{return BDP.style;}
 	void    SetReference(SPosition p)	{rpos = p;}
 	SPosition &ReferencePosition()		{return rpos;}
-	void		SetIdent(U_INT No)				{BDP.stamp = No;}
+	void		SetIdent(U_INT No,U_INT id)		{BDP.stamp = No; BDP.ident = id;}
 	//------------------------------------------------------
 	void		DrawSingle();
 	void		DrawGroups();
@@ -862,13 +874,12 @@ class OSM_Object {
 	U_INT		type;													// Type of object
 	D2_BPM  bpm;													// Building parameters
 	U_INT		blink;												// Blink time
-	//--- Replacingt object ------------------------------------------
+	//--- Replacing  object ------------------------------------------
 	char   *rmodl;												// Replacing model
 	double  orien;												// Orientation (rad);
 	//--- OSM properties ---------------------------------------------
 	char	 *tag;													// From OSM
 	char   *val;													// Value
-	U_INT		xOBJ;													// Texture object
 	//--- List of base POINTS ---------------------------------------
 	Queue<D2_POINT> base;									// Base Points
 	//--- can be replaced --------------------------------------------
@@ -888,8 +899,12 @@ public:
 	//----------------------------------------------------------------
 	U_CHAR	Rotate();
 	U_CHAR  IncOrientation(double rad);
+	//----------------------------------------------------------------
+	U_INT		GetKey()									{return bpm.qgKey;}
+	U_INT		GetSupNo()								{return bpm.supNo;}
+	void   *GetGroupTREF();
+	char   *TextureName();
 	//-----------------------------------------------------------------
-	void		SetXOBJ(U_INT xob)				{xOBJ = xob;}
 	void		SetPart(C3DPart *p)				{part = p;}
 	void		Select();
 	void		Deselect();
@@ -898,11 +913,13 @@ public:
 
 	//----------------------------------------------------------------
 	void    SetParameters(D2_BPM &p);
-	D2_BPM &GetParameters()			        {return bpm;}				
+	//----------------------------------------------------------------
+	D2_BPM &GetParameters()			        {return bpm;}	
+	SPosition GetPosition()							{return bpm.geop;}
+	double    GetRDF()									{return bpm.rdf;}
 	//----------------------------------------------------------------
 	U_INT		 GetStamp()									{return bpm.stamp;}
 	//----------------------------------------------------------------
-	U_INT    GetXOBJ()									{return xOBJ;}
 	C3DPart *GetPart()									{return part;}
 	//----------------------------------------------------------------
 	char		Selection()								  {return bpm.selc;}
@@ -954,9 +971,10 @@ public:
 	D2_Style    *GetStyle(char *nsty);
 	D2_TParam   *GetRoofTexture(D2_Style *sty);
 	//---------------------------------------------------------------
-	void				 FillStyles(CListBox *box);
+	void		FillStyles(CListBox *box);
+	void		UpdateCache();
 	//---------------------------------------------------------------
-	bool	AddStyle(FILE *f,char *sn,char *gn);
+	bool		AddStyle(FILE *f,char *sn,char *gn);
 	//---------------------------------------------------------------
 	std::map<std::string,D2_Group*> &GetGroups();
 	//---------------------------------------------------------------

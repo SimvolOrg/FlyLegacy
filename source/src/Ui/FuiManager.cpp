@@ -227,8 +227,7 @@ Tag CFuiManager::GenTag()
 //  NOTE: Use ToggleWindow to alternatively set ON/OFF
 ///========================================================================================== 
 CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
-{
-  //----Dont create any window before simulation -------------------------------
+{ //----Dont create any window before simulation -------------------------------
   if (globals->appState != APP_SIMULATION)  return 0;
   //----Dont create any window if one is already active -------------------------
   CFuiWindow *old = GetFuiWindow (windowId);
@@ -314,13 +313,13 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
 		//---Terra editor -------------------------------------------
     case FUI_WINDOW_TEDITOR:
-			if (globals->aPROF.Has(PROF_ACBUSY))	return 0;
+			if (globals->aPROF.Has(PROF_TOOL))	return 0;
       window  = new CFuiTED(windowId,"UI/TEMPLATES/TERRAEDITOR.WIN");
       window->MoveTo(580,50);
       break;
 		//---Sketch editor-----------------------------------------
     case FUI_WINDOW_SKETCH:
-			if (globals->aPROF.Has(PROF_ACBUSY))	return 0;
+			if (globals->aPROF.Has(PROF_TOOL))	return 0;
       window  = new CFuiSketch(windowId,"UI/TEMPLATES/CITY_EDITOR.WIN");
       window->MoveTo(1036,840);
       break;
@@ -364,13 +363,13 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
     //---- TERRA BROWSER --------------------------------------
     case FUI_WINDOW_TBROS:
-      if (globals->aPROF.Has(PROF_ACBUSY))	return 0;
+      if (globals->aPROF.Has(PROF_TOOL))	return 0;
       window  = new CFuiTBROS (windowId, "UI/TEMPLATES/TBROS.WIN");
       window->MoveTo(20,100);
       break;
     //---- MODEL BROWSER --------------------------------------
     case FUI_WINDOW_MBROS:
-      if (globals->aPROF.Has(PROF_ACBUSY))	return 0;
+      if (globals->aPROF.Has(PROF_TOOL))	return 0;
       window  = new CFuiMBROS (windowId, "UI/TEMPLATES/MBROS.WIN");
       window->MoveTo(20,200);
       break;
@@ -485,7 +484,7 @@ void CFuiManager::ExportMessage(char *fn)
 //------------------------------------------------------------------------------
 void CFuiManager::ActivateWindow(CFuiWindow *win)
 { Tag wid = win->GetWinId(); 
-  winMap[wid] = win;
+	winMap[wid] = win;
   return;
 }
 //------------------------------------------------------------------------------
@@ -548,7 +547,6 @@ CFuiWindow* CFuiManager::CreateOneWindow(Tag id,int lim)
 //------------------------------------------------------------------------------
 void CFuiManager::ToggleFuiWindow (Tag windowId)
 { if (IsWindowCreated (windowId))   DestroyFuiWindow (windowId);
-  else  	if (globals->aPROF.Has(PROF_EDITOR)) return ;
   CreateFuiWindow (windowId);
   return;
 }
@@ -619,7 +617,7 @@ void CFuiManager::Draw ()
   for (w = winMap.begin(); w!= winMap.end();)
   { e = w++;
     CFuiWindow *win = e->second;
-		win->CheckProfile();
+		win->CheckProfile(FUI_WINDOW_DRAW);
     switch (win->GetState()) {
       case FUI_WINDOW_CLOSED:
       {   RemoveFromDisplay(win);
@@ -896,6 +894,12 @@ void CFuiManager::SetComponentText (Tag window, Tag component, char* text)
 //---------------------------------------------------------------------------
 void	CFuiManager::SetBigFont()
 {	note1->ChangeFont(&globals->fonts.ftmono20); }
+///--------------------------------------------------------------------------
+//	Reset Normal font
+//---------------------------------------------------------------------------
+void	CFuiManager::ResetFont()
+{	note1->ChangeFont(&globals->fonts.ftmono8); }
+
 ///--------------------------------------------------------------------------
 /// Dump FuiManager details to a file for debugging
 ///

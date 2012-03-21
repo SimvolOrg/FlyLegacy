@@ -146,6 +146,7 @@ struct PFSPODFILE {
 //				should not be used when working in other thread
 //===================================================================================
 typedef struct {
+	int 					count;										// Counting file
 	char					mode;											// Shared mode
 	unsigned int  ticket;										// Event number
 	pthread_mutex_t	mux;										// JS: protection Mutex for multithread
@@ -343,7 +344,7 @@ void    prewind (PODFILE* f);
 // This function mimics the stdio function fclose() and should be used to close
 //   a pod file when it has been fully processed.
 //
-void    pclose (PODFILE* f);
+PODFILE*    pclose (PODFILE* f);
 
 //
 // This function dumps the contents of a pod filesystem to the specified

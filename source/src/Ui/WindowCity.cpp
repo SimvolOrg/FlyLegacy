@@ -18,6 +18,11 @@
 //   along with Fly! Legacy; if not, write to the Free Software
 //    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
+//	Primary data used for building are comming from http://www.openstreetmap.org/ with
+//	copyright "© les contributeurs d’OpenStreetMap, CC BY-SA "
+//
+//	"osm2xp par Benjamin Blanchet" pour la generation FlyLegacy
+//
 //==========================================================================================
 #include "../include/WinCity.h"
 #include "../Include/Triangulator.h"
@@ -31,7 +36,7 @@
 //  Window to display building sketch
 //==========================================================================================
 CFuiSketch::CFuiSketch(Tag idn, const char *filename)
-:CFuiWindow(idn,filename,220,420,0)
+:CFuiWindow(idn,filename,220,470,0)
 { title = 1;
   close = 1;
   zoom  = 0;
@@ -52,50 +57,63 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
   vOPT  = new CFuiCheckBox(60,24,160,20,this);
   gBOX->AddChild('vopt',vOPT,"View scenery objects",wit);
 	vOPT->SetState(1);
+
+	//--- Second group box ------------------------
+	Box2 = new CFuiGroupBox(10,66,200,100,this);
+	AddChild('box2',Box2,"");
 	//--- Terrain button---------------------------
 	vTer	= "Hide Terrain";
-	vTER	= new CFuiButton( 120,114, 90, 20,this);
-	AddChild('vter', vTER,"View Terrain");
+	vTER = new CFuiButton( 106, 46,  90, 20,this);
+	Box2->AddChild('vter', vTER,"View Terrain");
 	//--- NEXT button---------------------------
-	nBUT	= new CFuiButton(10,  138, 90, 20,this);
-	AddChild('nbut', nBUT,"Next");
+	nBUT	= new CFuiButton(  4, 72,  90, 20,this);
+	Box2->AddChild('nbut', nBUT,"Next");
 	//--- View All button --------------------------
-	vALL	= new CFuiButton( 120,138, 90, 20,this);
-	AddChild('vall', vALL,"Load all");
-	//--- Change style ---------------------------
-	nSTY	= new CFuiButton(  10,316, 90, 20,this);
-	AddChild('nsty', nSTY,"Change Style");
-	//--- Delete object ---------------------------
-	dOBJ	= new CFuiButton(120, 316, 90, 20,this);
-	AddChild('delt', dOBJ,"Remove building");
-	//--- Restore object ---------------------------
-	gOBJ	= new CFuiButton(120, 342, 90, 20,this);
-	AddChild('gobj', gOBJ,"Restore building");
+	vALL	= new CFuiButton(106, 72,  90, 20,this);
+	Box2->AddChild('vall', vALL,"Load all");
 	//-----------------------------------------------
-	nBAT	= new CFuiLabel (10,   64,200, 20, this);
-	AddChild('nbat', nBAT, "Building",0,wit);
+	nBAT	= new CFuiLabel ( 4,   4, 190, 20, this);
+	Box2->AddChild('nbat', nBAT, "Building",wit);
 	//-----------------------------------------------
-	nTAG  = new CFuiLabel (10,   94,200, 20, this);
-	AddChild('ntag', nTAG, "Tag",0,wit);
+	nTAG  = new CFuiLabel ( 4,  30, 190, 20, this);
+	Box2->AddChild('ntag', nTAG, "Tag",wit);
+
 	//----Create the style List box -----------------
-  sWIN  = new CFuiList  (10,164, 200,140,this);
+  sWIN  = new CFuiList  (10,174, 200,140,this);
   sWIN->SetVScroll();
   AddChild('styl',sWIN,"Styles",FUI_TRANSPARENT,wit);
-	//--- Create a group box for separation ---------
-	wSEP	= new CFuiBox( 10, 370, 200, 10, this);
-	AddChild('wsep',wSEP,"", FUI_TRANSPARENT,wit);
 
+	//--- Create a group box 3 -------------------
+	Box3	= new CFuiGroupBox(10, 330, 200, 56, this);
+	AddChild('box3',Box3,"", FUI_TRANSPARENT,wit);
+	//--- Change style ---------------------------
+	nSTY	= new CFuiButton(  4, 4, 90, 20,this);
+	Box3->AddChild('nsty', nSTY,"Change Style");
+	//--- Delete object ---------------------------
+	dOBJ	= new CFuiButton(106, 4, 90, 20,this);
+	Box3->AddChild('delt', dOBJ,"Remove building");
+	//--- Restore object ---------------------------
+	gOBJ	= new CFuiButton(106, 30, 90, 20,this);
+	Box3->AddChild('gobj', gOBJ,"Restore building");
+
+	//--- Create a group box 4 -------------------
+	Box4	= new CFuiGroupBox(10, 400, 200, 36, this);
+	AddChild('box4',Box4,"", FUI_TRANSPARENT,wit);
 	//----Create Replace button ---------------------	
-	rOBJ	= new CFuiButton(10,390, 90, 20,this);
-	AddChild('robj', rOBJ,"Replace building");
+	rOBJ	= new CFuiButton(4,  4,  90, 20,this);
+	Box4->AddChild('robj', rOBJ,"Replace building");
 	//----Create Rotation button --------------------	
-	lROT	= new CFuiButton(120,390, 42, 20,this);
-	AddChild('lrot', lROT,"left", FUI_REPEAT_BT);
+	lROT	= new CFuiButton(106,4,  42, 20,this);
+	Box4->AddChild('lrot', lROT,"left");
 	lROT->SetRepeat(0.1F);
 	//----Create Rotation button --------------------	
-	rROT	= new CFuiButton(166,390, 42, 20,this);
-	AddChild('rrot', rROT,"right", FUI_REPEAT_BT);
+	rROT	= new CFuiButton(152,4,  42, 20,this);
+	Box4->AddChild('rrot', rROT,"right");
 	rROT->SetRepeat(0.1F);
+	//-----------------------------------------------
+	bTRY  = new CFuiButton(10, 446, 200, 20, this);
+	AddChild('btry',bTRY,"FLY IT",0);
+
 	//-----------------------------------------------	
 	ReadFinished();
 	//--- Open triangulation ------------------------
@@ -103,8 +121,8 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	globals->trn = trn;
 	//-----------------------------------------------
 	ctx.prof	= PROF_SKETCH;
-	ctx.mode	= SLEW_RCAM;
-  rcam			= globals->ccm->SetRabbitCamera(ctx,this);
+	ctx.mode	= 0;
+  rcam			= globals->ccm->SetRabbitCamera(ctx,RABBIT_S_AND_C);
 	rcam->SetTracker(trn, this);
 	//--- Set transparent mode ----------------------
 	SetTransparentMode();
@@ -149,19 +167,29 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 //	destroy this
 //-----------------------------------------------------------------------
 CFuiSketch::~CFuiSketch()
-{	//--- Close File -----------------------------------
+{	//--- Close File ------------------------------------
 	if (FP)	fclose(FP);
-	//--- Restore State --------------------------------
-	globals->Disp.DrawOFF (PRIO_TERRAIN);		// No Terrain
-	globals->Disp.ExecOFF (PRIO_TERRAIN);		// No Terrain
+	//--- Restore State ---------------------------------
+	globals->Disp.DrawON (PRIO_TERRAIN);		// No Terrain
+	globals->Disp.ExecON (PRIO_TERRAIN);		// No Terrain
+	globals->Disp.ExecULK(PRIO_WEATHER);
 	//--- Back to position ------------------------------
 	SAFE_DELETE(globals->trn);
-	globals->stop = 1;
-	//---- Marker 2 -----------------------------------
+
+//	globals->stop = 1;
+	//---- Marker 2 -------------------------------------
 	char *ds = new char[32];
 	strcpy(ds,"*END CityEDIT*");
 	STREETLOG("END CITY EDITOR");
+	globals->ccm->RestoreCamera(ctx);
+
 }
+//----------------------------------------------------------------------
+//	Override check profile
+//----------------------------------------------------------------------
+bool CFuiSketch::CheckProfile(char a)
+{	return true;	}
+
 //-----------------------------------------------------------------------
 //	A file is selected 
 //-----------------------------------------------------------------------
@@ -203,14 +231,10 @@ bool CFuiSketch::ParseBuilding()
 	_strupr(txt);
 	*tagn = *valn = *smodl = 0;
 	//--- Check for a building number -------------------------
-	U_INT No;
-	int nf = sscanf(ch,"START %d",&No);
-	//bool sta = (State != SKETCH_REFER);
-	//if ((nf == 1)	&& sta)			{trn->SetIdent(No); return ParseVertices();}
-	if (nf == 1)		{trn->SetIdent(No); return ParseVertices();}
-	//--- Check for start only -------------------------------
-	bool ok = (strncmp(ch,"START",5) == 0);
-	return (ok)?(ParseVertices()):(false);
+	int nf = sscanf(ch,"START %d ID=%d ",&seqNo, &ident);
+	if (nf != 2)		return false;
+	trn->SetIdent(seqNo,ident); 
+	return ParseVertices();
 }
 //-------------------------------------------------------------------
 //	Parse vertice list 
@@ -266,25 +290,6 @@ bool CFuiSketch::ParseVTX(char *txt)
 	}
 	return true;
 }
-//-------------------------------------------------------------------
-//	Have a new vertex
-//	TODO:  Check addition accross zero meridian
-//-------------------------------------------------------------------
-/*
-void CFuiSketch::HaveVertex(double x, double y)
-{	switch (State)	{
-		case SKETCH_REFER:
-				rpos.lon += x;
-				rpos.lat += y;
-				count++;
-				return;
-		default:
-				trn->AddVertex(x,y);
-				return;
-	}
-	return;
-}
-*/
 //-------------------------------------------------------------------
 //	Parse Hole directive
 //-------------------------------------------------------------------
@@ -367,41 +372,6 @@ U_INT CFuiSketch::GotoReferencePosition()
 	return SKETCH_WAIT;
 }
 //-------------------------------------------------------------------
-//	Compute reference position
-//-------------------------------------------------------------------
-/*
-U_INT CFuiSketch::ComputeReference()
-{	char *er1 = "No parameter file in ";
-	char *er2 = "File is empty ";
-	rpos.lon	= 0;
-	rpos.lat	= 0;
-	rpos.alt	= 0;
-	count			= 0;
-	FP  = fopen(fnam,"rb");
-  if (0 == FP)			return Abort(er1,fnam);
-	fpos	= 0;
-	//--- Read all vertices ------------------
-	while (ParseBuilding())	continue;
-	fclose(FP);
-	FP	= 0;
-	if (0 == count)		return Abort(er2,fnam);
-	//--- Compute reference position ---------
-	rpos.lon	/= count;
-	rpos.lat  /= count;
-	rpos.lon  = FN_ARCS_FROM_DEGRE(rpos.lon);
-	rpos.lat  = FN_ARCS_FROM_DEGRE(rpos.lat);
-	//----------------------------------------
-	wfil	= 0;
-	cntw	= 0;
-	trn->SetReference(rpos);
-	rcam->GoToPosition(rpos);			// Teleport
-	globals->Disp.ExecON (PRIO_ABSOLUTE);		// Allow Terrain
-	globals->Disp.ExecOFF(PRIO_TERRAIN);		// Stop after terrain
-	nStat = SKETCH_OPEN;
-	return SKETCH_WAIT;
-}
-*/
-//-------------------------------------------------------------------
 //	Edit building
 //-------------------------------------------------------------------
 void CFuiSketch::EditBuilding()
@@ -474,23 +444,6 @@ U_INT CFuiSketch::TerrainWait()
 	wait	= 0;
 	return nStat;
 }
-//-----------------------------------------------------------------------
-//	Open file for session
-//-----------------------------------------------------------------------
-/*
-U_INT CFuiSketch::OpenAgain()
-{	char * erm = "Problem with ";
-	FP  = fopen(fnam,"rb");
-  if (0 == FP)  return Abort(erm,fnam);
-	fpos	= 0;
-	rcam->SetAngle(30,15);
-	globals->Disp.ExecOFF (PRIO_ABSOLUTE);		// No Terrain
-	globals->Disp.DrawOFF (PRIO_TERRAIN);		  // No Terrain
-	trn->DrawSingle();
-	eofl	= 0;
-	return SKETCH_NEXT;
-}
-*/
 //-----------------------------------------------------------------------
 //	Terrain at reference position
 //-----------------------------------------------------------------------
@@ -680,6 +633,15 @@ bool CFuiSketch::NoSelection()
 	return false;
 }
 //-----------------------------------------------------------------------
+//	Fly Over the city
+//-----------------------------------------------------------------------
+void CFuiSketch::FlyOver()
+ {  globals->Disp.DrawOFF (PRIO_TERRAIN);		// No Terrain
+	  ses.UpdateCache();
+		Close();
+		return;
+}
+//-----------------------------------------------------------------------
 //	Time slice
 //-----------------------------------------------------------------------
 void CFuiSketch::TimeSlice()
@@ -696,12 +658,10 @@ void CFuiSketch::TimeSlice()
 				return;
 		//--- Create reference position --------
 		case SKETCH_REFER:
-				//State = ComputeReference();
 				State = GotoReferencePosition();
 				return;
 		//--- Open again the file ---------------
 		case SKETCH_OPEN:
-				//State = OpenAgain();
 				State = HereWeAre();
 				return;
 		//--- Read next building ----------------
@@ -797,10 +757,6 @@ void	CFuiSketch::Draw()
 	//--------------------------------------------------
 	return;
 }
-//-----------------------------------------------------------------------
-//	Intercept Close
-//-----------------------------------------------------------------------
-
 //---------------------------------------------------------------------
 //  Write the file
 //---------------------------------------------------------------------
@@ -814,7 +770,7 @@ void CFuiSketch::Write()
 	//--- Edit area --------------------------------
 	_snprintf(txt,127,ed,SW.lat, SW.lon, NE.lat, NE.lon);
 	fputs(txt,fp);
-	ses.Write(fp, nBLDG);
+	ses.Write(fp,nBLDG);
 	fclose(fp);
 	return;
 }
@@ -885,6 +841,10 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		//--- Rotate right -----------------------
 		case 'rrot':
 			RotateBuilding(+oneD);
+			return;
+		//--- Update cache -----------------------
+		case 'btry':
+			FlyOver();
 			return;
 	}
 	return;
@@ -1078,6 +1038,7 @@ void D2_Session::GetBuildParameters(D2_BPM *p)
 {	int val = -1;
 	grp			= 0;
 	bpm			= p;
+	if (p->stamp > Stamp)	Stamp = p->stamp;
 	if (p->style)	return;
 	std::map<std::string,D2_Group*>::iterator rg;
 	for (rg = grpM.begin(); rg != grpM.end(); rg++)
@@ -1102,7 +1063,6 @@ void D2_Session::GetBuildParameters(D2_BPM *p)
 	bpm->flNbr		= grp->GetFloorNbr();
 	bpm->flHtr		= grp->GetFloorHtr();
 	bpm->mans			= sty->IsMansart();
-	//bpm->roofM		= 0;				//grp->GetOneRoof(*bpm);
 	return;
 }
 //------------------------------------------------------------------
@@ -1141,13 +1101,11 @@ std::map<std::string,D2_Group*> &D2_Session::GetGroups()
 //	Write all buildings
 //------------------------------------------------------------------
 void D2_Session::Write(FILE *fp, U_INT cnt)
-{	std::map<std::string,D2_Group*>::iterator rg;
-	U_INT end = cnt;
-	U_INT bno = 1;
+{	U_INT bno = 1;
 	U_INT wrt = 0;
 	OSM_Object *bld = 0;
 
-	for (bno = 1; bno <= end; bno++)
+	for (bno = 1; bno <= Stamp; bno++)
 	{	bld = GetBuilding(bno);
 		if (0 == bld)	continue;
 		bld->Write(fp);
@@ -1156,6 +1114,17 @@ void D2_Session::Write(FILE *fp, U_INT cnt)
 	fputs("END\n",fp);
 	STREETLOG("Imported %05d Buildings", cnt);
 	STREETLOG("Updated  %05d Buildings", wrt);
+	return;
+}
+//------------------------------------------------------------------
+//	Store all buildings
+//------------------------------------------------------------------
+void D2_Session::UpdateCache()
+{	OSM_Object *obj;
+	for (U_INT k=1; k <= Stamp; k++)
+	{	obj = GetBuilding(k);
+		if (obj) globals->tcm->AddToPack(obj);
+	}
 	return;
 }
 //============================END OF FILE ================================================================================

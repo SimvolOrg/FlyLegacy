@@ -479,18 +479,19 @@ void CStreamFile::Close (void)
   if (IsReadable()) {
     if (podfile != NULL) {
       // Close podfile
-      pclose (podfile);
-      podfile = NULL;
-    } else if (f != NULL) {
+      podfile = pclose (podfile);
+    } else 
+		if (f != NULL) {
       // Close normal file
       fclose (f);
-      f = NULL;
+      f = 0;
     }
     readable = false;
-  } else if (IsWriteable()) {
+  } else 
+	if (IsWriteable()) {
     // Close disk file
     fclose (f);
-    f = NULL;
+    f = 0;
     writeable = false;
   }
 }

@@ -37,7 +37,7 @@ CTerraFile::CTerraFile(char *fn)
 //  Close tile image
 //-------------------------------------------------------------------
 CTerraFile::~CTerraFile()
-{ if (Tiles) pclose(Tiles);
+{ if (Tiles) Tiles = pclose(Tiles);
 }
 //-------------------------------------------------------------------
 //  Read the Tile Name as 4 characters AXBY
@@ -66,9 +66,9 @@ void CTerraFile::GetBase(U_INT ax, U_INT az, char *base)
 //  Close and Reopen for Write
 //-------------------------------------------------------------------
 bool CTerraFile::OpenForWrite()
-{ pclose(Tiles);        // Close file in read mode
+{ Tiles = pclose(Tiles);        // Close file in read mode
   //---- try for write mode --------------------------------
-  Tiles   = popen (&globals->pfs, fname,"rb+");
+  Tiles = popen (&globals->pfs, fname,"rb+");
   if (Tiles)      return true;
   //---- Reopen in read only mode --------------------------
   Tiles   = popen (&globals->pfs, fname);
@@ -83,8 +83,8 @@ bool CTerraFile::Write(U_INT ax, U_INT az, char *tp)
   U_INT offset = ((16383 - az) << TCBY16384) + ax;
   pseek (Tiles, offset, SEEK_SET);
   pwrite(tp, sizeof(char),1,Tiles);
-  pclose(Tiles);
-  Tiles   = popen (&globals->pfs, fname);
+  Tiles = pclose(Tiles);
+  Tiles = popen (&globals->pfs, fname);
   if (0 == Tiles) gtfo ("TCache: Cannot open %s",fname);
   return true;
 }

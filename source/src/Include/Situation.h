@@ -148,15 +148,28 @@ protected:
 	//--- Aircraft ---------------------------------------------------
   CVehicleObject *veh;
 };
-
+//==========================================================================================
+//	SItuation States
+//==========================================================================================
+#define SIT_NORMAL			(0)
+#define SIT_TELEP01			(1)
+#define SIT_TELEP02			(2)
+#define SIT_TELEP03			(3)
 //==========================================================================================
 //  Global situation
 //==========================================================================================
 class CSituation : public CStreamObject {
 	//-----------------------------------------------------------
 protected:
-	U_INT           FrameNo;
+	U_INT						State;						// Current state
+	U_INT           FrameNo;					// Current frame
   float           dTime;            // Delta time
+	//--- Teleport control ------------------------------
+	double          ang;
+	int 						wait;							// Wait timer
+	CAMERA_CTX			contx;						// Camera context
+	CRabbitCamera   *rcam;						// Rabbit camera
+	//---------------------------------------------------
 	CSimulatedObject *sVeh;						// Object simulated
 	CRandomEvents     rEVN;						// Event generator
   //---- Methods --------------------------------------
@@ -178,17 +191,26 @@ public:
   void              PrintUserVehicle   (FILE *f);
   void              Prepare            (void);
 	//----------------------------------------------------
-  void              Timeslice          (float dT,U_INT Frame);
-  void              Draw               (void);
-  void              DrawExternal       (void);
-  void              DrawVehicleFeatures(void);
-  void              ClearUserVehicle   (void);
-  void              OpalGlobalsClean   (void);
+	//----------------------------------------------------
+  void              Timeslice (float dT,U_INT Frame);
+	//----------------------------------------------------
+	void							DrawNormal();
+  void              Draw();
+  void              DrawExternal();
+  void              DrawVehicleFeatures();
+	//-----------------------------------------------------
+	void							TeleportS1();
+	void							TeleportS2();
+	void							TeleportS3();
+	//-----------------------------------------------------
+  void              ClearUserVehicle();
+  void              OpalGlobalsClean();
   void              ChangeUserVehicle  (char * name, bool bPlane);
   U_INT             GetFrameNo         (void) {return FrameNo; }
 	void							WorldOrigin();
   //----------------------------------------------------
-
+	void							EnterTeleport(SPosition *P, SVector *O);
+	void							ShortTeleport(SPosition *P, SVector *O);
 };
 
 //=================================END OF FILE ==============================================

@@ -718,7 +718,7 @@ int CSMFparser::ReadPart(PODFILE *p,char *fn)
     *inx++ = f1;
   }
   //---Add a new part --------------------------------------------
-	if (Res == MODEL_HI)	partQ.PutEnd(part);
+	if (Res == MODEL_HI)	partQ.PutLast(part);
   else delete part;
   part = 0;
   return 0;
@@ -1026,7 +1026,7 @@ int CBINparser::ReadTFaces(PODFILE *p)
     vtu++;
   }
   //---Add a new triangle ----------------
-  tmpQ.PutEnd(part);
+  tmpQ.PutLast(part);
   UpdateHead(1);
   part = 0;
   return 1;
@@ -1084,7 +1084,7 @@ int CBINparser::ReadQFaces(PODFILE *p,int nbv)
   part->SetTEX(2,&tref[2]);
   ref = part->AllocateXList(3);
   for (int k=0; k < 3; k++) *ref++ = k;
-  tmpQ.PutEnd(part);
+  tmpQ.PutLast(part);
   UpdateHead(1);
   //----Build second triangle -------------------------------
   part = new C3DPart();
@@ -1102,7 +1102,7 @@ int CBINparser::ReadQFaces(PODFILE *p,int nbv)
   part->SetTEX(2,&tref[3]);
   ref = part->AllocateXList(3);
   for (int k=0; k < 3; k++) *ref++ = k;
-  tmpQ.PutEnd(part);
+  tmpQ.PutLast(part);
   UpdateHead(1);
   part = 0;
   return 2;
@@ -1111,7 +1111,7 @@ int CBINparser::ReadQFaces(PODFILE *p,int nbv)
 //  Add Part to model
 //------------------------------------------------------------------------------------
 void CBINparser::AddToModel(C3DPart *prt)
-{	partQ.PutEnd(prt);
+{	partQ.PutLast(prt);
   nFace += Tof;
   return;
 }
@@ -2092,7 +2092,7 @@ void COBJparser::BuildOSMPart()
 	part->SetTREF(ref);
 	part->SetXOBJ(xob);
 	//--- Add to Queue -------------------------------------------
-	partQ.PutEnd(part);
+	partQ.PutLast(part);
 	part = 0;
 	return;
 }

@@ -79,13 +79,7 @@ CTextureManager::CTextureManager (void)
 
 void CTextureManager::Init (void)
 {
-  // Open log file if specified in INI settings
-  int i = 0;
-  GetIniVar ("Logs", "logTextureManager", &i);
-  if (i != 0) {
-    log = new CLogFile ("Logs/TextureManager.log", "w");
-  }
-}
+ }
 
 void CTextureManager::Cleanup (void)
 {

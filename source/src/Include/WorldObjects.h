@@ -146,13 +146,13 @@ public:
   inline    double     GetAltitude()												{return geop.alt;}
   inline    void       SetAltPosition(double a)		          {geop.alt = a;}
   //----------------------------------------------------------------------------
-  virtual void SetPhysicalOrientation (CVector &v)  {;}  // used in COpal to slew orientation
+  virtual void SetPhysicalOrientation (SVector &v)  {;}  // used in COpal to slew orientation
   virtual void ResetSpeeds() {}
   virtual void ResetZeroOrientation () {}
   //-----------------------------------------------------------------------------
 	void			SetType(Tag t);
-  void      SetOrientation(SVector v);
-  void      SetPosition(SPosition pos);
+  void      SetObjectOrientation(SVector v);
+  void      SetObjectPosition(SPosition pos);
   void      SetAltitude(double alt);
   //------------------------------------------------------------------------------
   inline  void    Rotate()    {glMultMatrixd(rotM);}
@@ -198,11 +198,11 @@ public:
   virtual int   Read                (SStream *stream, Tag tag);
   virtual void  ReadFinished        (void);
 
-  // Simulation
+  //---------- Simulation ---------------------------------------
   virtual int  Timeslice(float dT,U_INT FrNo) {return 0;}       ///< Real-time timeslice processing
   // Drawing 
   virtual void  DrawExternal();
-
+	virtual void  RestOnGround()   {;}
   //-------- Methods ------------------------------------------
   ETerrainType GetTerrainType (void);           ///< get terrain type under object
   //------------------------------------------------------------
@@ -675,7 +675,7 @@ public:
   void ReadFinished               (void);
   void  PlaneShape();
   // CWorldObject methods
-  void  SetPhysicalOrientation (CVector &rad_angle);
+  void  SetPhysicalOrientation (SVector &rad_angle);
   //---- Normal management --------------------------------
   void  Simulate(float dT,U_INT FrNo);		            ///< Overriden 
   void  PositionAGL();           

@@ -28,6 +28,7 @@
 #include "../Include/TerrainElevation.h"
 #include "../Include/TerrainTexture.h"
 #include "../Include/ElevationTracker.h"
+#include "../Include/Triangulator.h"
 #include "../Include/MagneticModel.h"
 #include "../Include/FileThread.h"
 #include "../Include/Fui.h"
@@ -664,7 +665,8 @@ CmQUAD::CmQUAD()
 //  End of CmQUAD
 //-------------------------------------------------------------------------
 CmQUAD::~CmQUAD()
-{ if (IsArray())	delete [] qARR;
+{	if (IsArray())	
+		delete [] qARR;
 	if (iBUF)	delete [] iBUF;
 }
 //-------------------------------------------------------------------------
@@ -1534,6 +1536,36 @@ void CSuperTile::TraceEnd()
 	TRACE("QGT(%03d-%03d) ST%02d free %05d Objects",qx,qz,NoSP,nb);
 }
 //-------------------------------------------------------------------------
+// Seach a pack or create one
+//-------------------------------------------------------------------------
+C3DPack *CSuperTile::Locate(OSM_Object *obj)
+{	C3DPack *pak = 0;
+	void    *ref = obj->GetGroupTREF();
+	for (pak = batQ.GetFirst(); pak != 0; pak = pak->Next())
+	{	if (!pak->SameREF(ref))			continue;
+		U_INT nbv = pak->GetNBVTX();
+		if (nbv < globals->pakCAP)	return pak;
+		break;
+	}
+	//--- Allocate a new 3D pack --------------------------
+	pak	= new C3DPack(obj->GetKey());
+	//--- Allocate a new part -----------------------------
+	batQ.PutHead(pak);
+	return pak;
+}
+//-------------------------------------------------------------------------
+// Add osm object to try
+//-------------------------------------------------------------------------
+void CSuperTile::AddToPack(OSM_Object *obj)
+{	//--- Check for object --------------------
+	double rad = FN_RAD_FROM_ARCS(mPos.lat);
+	double rdf = cos(rad);
+	C3DPack  *pak	= Locate(obj);
+	SPosition pos	= obj->GetPosition();
+	CVector T  = FeetComponents(mPos, pos,rdf);
+	pak->ExtendPart(obj, T);
+}
+//-------------------------------------------------------------------------
 //  Reload VBO if needed
 //-------------------------------------------------------------------------
 void CSuperTile::LoadVBO()
@@ -1632,11 +1664,16 @@ void CSuperTile::BindVBO()
 //	Check if super tile is all textured
 //-------------------------------------------------------------------------
 bool CSuperTile::IsTextured()
-{ if (!Visibility())	return true;
-	if (IsReady())      return true;
-	if (NeedOBJ())			return true;
+{ CTextureDef *txn = 0;
 	if (InFarQ())				return true;
-	return false;
+	if (!Visibility())	return true;
+	for (U_INT nd = 0; nd != TC_TEXSUPERNBR; nd++)
+    { txn = Tex+nd;
+			U_INT xob = txn->GetDOBJ();
+			if (xob == 0)		return false;
+		}
+
+	return true;
 }
 //-------------------------------------------------------------------------
 //  Check if Super Tile needs medium resolution
@@ -1881,6 +1918,20 @@ int CSuperTile::Draw3D(U_CHAR mod)
     glPopMatrix();
     nbo++;
   }
+	//--- Draw 3D pack -------------------------------------------------
+	GLint nrm = 0;
+	if (batQ.IsEmpty())	return nbo;
+	glGetIntegerv(GL_NORMAL_ARRAY,&nrm);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glPushMatrix();
+	CVector T;
+	globals->tcm->RelativeFeetTo(mPos,T);
+	glTranslated(T.x, T.y, T.z);		// Got to supertile center
+	C3DPack *pak;
+	for (pak = batQ.GetFirst(); pak != 0; pak= pak->Next()) 
+		pak->Draw();
+	glPopMatrix();
+	glEnableClientState(nrm);
   return nbo;
 }
 //-----------------------------------------------------------------------------
@@ -1969,8 +2020,8 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
   Metar = 0;
 	strn	= tm->GetTRNoption();
 	//--- Get VBO option -----------------------
-	int opt = 1;
-	GetIniVar("Sim","TerrainVBO",&opt);
+	int opt = 0;
+	GetIniVar("Performances","UseTerrainVBO",&opt);
 	vbu			= opt;
 	elv			= 0;							// No elevation yet
   //------Set coordinate bands ---------------
@@ -2616,6 +2667,11 @@ CSuperTile *C_QGT::GetSuperTile(int tx,int tz)
 { U_INT No = ((tz >> TC_BY04) << TC_BY08) | (tx >> TC_BY04);
   return &Super[No];
 }
+//-------------------------------------------------------------------------
+//  Given Key (indices of Detatil tile) return SuperTile context
+//-------------------------------------------------------------------------
+CSuperTile *C_QGT::GetSuperTile(U_INT No)
+{ return (No > 63)?(0):(&Super[No]); }
 //-------------------------------------------------------------------------
 //  STEP 3:
 //  Set Detail Tile elevation from QTR file
@@ -3281,7 +3337,6 @@ bool C_QGT::AllTextured()
 {	CSuperTile *sp = Super;
   for (int No = 0; No != TC_SUPERT_NBR; No++,sp++)
 	{	if (sp->IsTextured()) continue;
-		if (sp->InFarQ())			continue;
 		else	return false;	}	
 	//--- OK ready -------------------------------------
 	return true;
@@ -3385,7 +3440,6 @@ TCacheMGR::TCacheMGR()
   NbREG   = 0;
   NbTEX   = 0;
   aTime   = 0;
-  Disp    = 0;
 	lumn    = 0;
 	strn		= 0;
   int ter = 0;
@@ -3399,7 +3453,6 @@ TCacheMGR::TCacheMGR()
   mask    = GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_POLYGON_BIT | GL_FOG | GL_LIGHTING_BIT | GL_COLOR;
   Terrain = 0;
   Tele    = 0;
-  bbox    = globals->mBox.CreateTcmBox("TCM");
   //----Sun Radius base on average apparent diameter in[0.5244°,0.5422°]------
   double alf = DegToRad(double(0.533333) * 0.5);
   sunT = tan(alf);
@@ -3408,30 +3461,30 @@ TCacheMGR::TCacheMGR()
   clock1  = 0;
   //------Read Parameters ---------------------------------------
   float mv = globals->maxView;            // Default Max view
-  GetIniFloat ("Terrain", "MaxView", &mv);
+  GetIniFloat("Performances", "MaxView", &mv);
   globals->maxView  = mv;
-  InitQgtTable(mv);                       // Init QGT tables
-  int hi  = 1;                            // Hires permitted
-  GetIniVar("Terrain", "HiResolution", &hi);
-  HiRes   = (hi)?(1):(0);
+  InitQgtTable(mv);		// Init QGT tables
+	//--- Using hi resolution -------------------------------------
+	int pm = 1;
+  GetIniVar  ("Performances", "UseHiResolution", &pm);
+  HiRes   = U_CHAR(pm);
+	//--- Hi resolution radius ------------------------------------
   float rt = globals->highRAT;            // Hight resolution ratio
-  GetIniFloat("Terrain","HighResRatio",&rt);
+  GetIniFloat("Performances","HighResRatio",&rt);
   globals->highRAT = rt;
-	int   st = 0;
-	GetIniVar("Sim","NoTRN", &st);
-	strn	= st;
+	//--- Use default elevation -----------------------------
+	pm = 0;
+	GetIniVar  ("Performances","UseDefaultElevations", &pm);
+	strn	= pm;
   //---Check for Terrain Wire Frame -----------------------
-  hi      = 0;
-  GetIniVar("Sim", "NoTerrain", &hi);
-  wire    = hi;
+  pm    = 0;
+  GetIniVar("Sim", "NoTerrain", &pm);
+  wire    = pm;
   if (wire) globals->noTER++;
   if (wire) globals->noAPT++;
   if (wire) globals->noOBJ++;
   if (wire) globals->noMET++;
   if (wire) globals->noAWT++;
-  //------------------------------------------------------
-  GetIniVar("W3D","Display",&hi);
-  Disp    = hi;
   //------Magnetic refresh indicator ---------------------
   magRF   = 1;
   //------Init horizon parameters ------------------------
@@ -3674,36 +3727,17 @@ void TCacheMGR::CheckTeleport()
   return;
 }
 //-------------------------------------------------------------------------
-//  Teleport to requested position
+//  Teleport to requested position P at Orientation O
 //-------------------------------------------------------------------------
-void TCacheMGR::Teleport(SPosition &dst)
+void TCacheMGR::Teleport(SPosition *P, SVector *O)
 { CVehicleObject *veh = globals->pln;
   if (0 == veh)													return;
   if (veh->HasState(VEH_INOP))					return;
 	if (globals->aPROF.Has(PROF_NO_TEL))	return;
+	globals->sit->EnterTeleport(P,O);
   globals->m3d->ReleaseVOR();
-  veh->SetPosition(dst);
-  Tele          = 1;
   Terrain       = 0;
   return;
-}
-//-------------------------------------------------------------------------
-//  Advise for teleporting
-//-------------------------------------------------------------------------
-void TCacheMGR::NoteTeleport()
-{ char edt[128];
-  _snprintf(edt,128,"Teleport. Please wait.");
-  DrawNoticeToUser(edt,1);
-  if (qRDY)              return;
-  //----End of teleporting ---------------------
-  Tele = 0;
-  Spot.PopQGT();
-  CVehicleObject *veh = globals->pln;
-  if (0 == veh)         return;
-	bool grnd  = veh->WheelsAreOnGround();
-  if (!grnd)            return;
-  //---Set aircraft on ground at destination ---
-  veh->RestOnGround();
 }
 //-------------------------------------------------------------------------
 //  Allocate texture coordinates for a given texture size
@@ -3964,8 +3998,7 @@ void TCacheMGR::ThreadPulse()
 //  Time slice.  Update the terrain cache
 //-------------------------------------------------------------------------
 int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
-{ bbox->Enter("TCM TimeSlice",0,0);
-	eTime     = dT;
+{ eTime     = dT;
   dTime    += dT;
   aPos      = globals->geop;                            // Update aircraft position
   //---Update QGT position at global level --------------------------------
@@ -3993,18 +4026,13 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
 	//--- Update action ----------------------------------------------------
   if (action)           return 1;
   if (OneAction())      return 1;
-	//--- End initial state when all QGT are ready -------------------------
-  if (Tele)     NoteTeleport();
   //-----No cache refresh.  Update magnetic deviation --------------------
   if (magRF) globals->mag->GetElements (aPos,magDV, magFD);
 	globals->magDEV = magDV;
   magRF = 0;
   //---Update QGT AIRPORT AND 3D MANAGER ---------------------------------
-	bbox->Enter("TCM UpdateQGT",0,0);
 	UpdateQGTs(dT);
-	bbox->Enter("APM TimeSlice",0,0);
   aptMGR->TimeSlice(dT);          // Update airports
-	bbox->Enter("OBJ TimeSlice",0,0);
   objMGR->TimeSlice(dT);          // Update 3D
   //----------------------------------------------------------------------
   if (clock1)                 return 1;
@@ -4012,7 +4040,7 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   if (tr) TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d -------------------",
           dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
   if (tr) txw->TraceCTX();
-  //----------------------------------------------------------------------
+
   return 1;
 }
 //-------------------------------------------------------------------------
@@ -4133,8 +4161,7 @@ int TCacheMGR::RefreshCache()
   }
   //----Keep new reference key ------------------------------------------
   C_QGT *aqg = GetQGT(cx,cz);                             // Current QGT
-  if (0 == aqg) 
-			gtfo("CACHE: corrupted geo position: No corresponding tile");
+  if (0 == aqg) 			gtfo("CACHE: corrupted geo position: No corresponding tile");
   Spot.SetQGT(aqg);
   rKEY  = nKEY;
   xKey  = cx;
@@ -4161,7 +4188,8 @@ void TCacheMGR::MarkDelete(C_QGT *qgt)
 //  Call Time slice for each QGT that is in ready state
 //-----------------------------------------------------------------------
 int TCacheMGR::UpdateQGTs(float dT)
-{ if (iqt == qgtMAP.end())  iqt = qgtMAP.begin();
+{ if (0 == qgtMAP.size())		return 0;
+	if (iqt == qgtMAP.end())  iqt = qgtMAP.begin();
   C_QGT *qgt = (*iqt).second;
   if (qgt->IsReady()) qgt->TimeSlice(dT);
   iqt++;
@@ -4377,16 +4405,20 @@ CTextureDef *TCacheMGR::GetTexDescriptor(C_QGT *qgt,U_INT tx,U_INT tz)
 //	Check for terrain ready
 //------------------------------------------------------------------
 bool TCacheMGR::TerrainStable()
-{ std::map<U_INT,C_QGT*>::iterator rp;
+{ if (qgtMAP.size() == 0)			return false;
+	std::map<U_INT,C_QGT*>::iterator rp;
 	pthread_cond_signal(&thCond);    // Signal file THREAD
+	if (ActQ.NotEmpty())			return false;
 	for (rp = qgtMAP.begin(); rp != qgtMAP.end(); rp++)
 	{	C_QGT *qt = (*rp).second;
+	  if (qt->InLoad())					return false;
 		if (qt->NotReady())				return false;
 		if (qt->NotVisible())			continue;
-		if (!qt->AllTextured())		
-			return false;
+		if (!qt->AllTextured())		return false;
 	}
+	if (!MeshReady())						return false;
 	if (!SPotReady())						return false;
+	if (tr)		TRACE("TERRAIN IS READY");
 	glFlush();
 	glFinish();
 	return true;
@@ -4447,6 +4479,14 @@ C_QGT *TCacheMGR::GetQGT(SPosition &pos)
 { U_INT cx,cz;
   IndicesInQGT (pos, cx, cz);
   return GetQGT(cx,cz);
+}
+//----------------------------------------------------------------------
+//  Get a Quarter Global Tile by Key
+//----------------------------------------------------------------------
+C_QGT *TCacheMGR::GetQGT(U_INT key)
+{ std::map<U_INT,C_QGT*>::iterator qm = qgtMAP.find(key);
+  if (qm == qgtMAP.end()) return 0;
+  return (*qm).second;
 }
 //----------------------------------------------------------------------
 //  Get a Quarter Global Tile by Key
@@ -5017,6 +5057,17 @@ void TCacheMGR::Draw3DObjects()
   }
 	return;
 }
+
+//-----------------------------------------------------------------------------
+//	Locate 3D pack
+//-----------------------------------------------------------------------------
+void TCacheMGR::AddToPack(OSM_Object *obj)
+{ C_QGT *qgt			= GetQGT(obj->GetKey());
+	if (0 == qgt)		return;
+	CSuperTile *sup	= qgt->GetSuperTile(obj->GetSupNo());
+	sup->AddToPack(obj);
+	return;
+}
 //=================================================================================
 //  TERRAIN CACHE: DRAW TERRAIN
 //  Compute the top model matrix.  X,Y, and Z are OpenGL axis coordinates
@@ -5035,7 +5086,6 @@ void TCacheMGR::Draw3DObjects()
 //=================================================================================
 void TCacheMGR::Draw()
 {	CCamera *cam = globals->cam;
-  bbox->Enter("TCM Draw",0,0);
 	//--- Draw sky as background --------------------------------------
 	globals->skm->PreDraw();
 	CVehicleObject *veh = globals->pln;
@@ -5070,7 +5120,6 @@ void TCacheMGR::Draw()
   //  Longitude Feet per Arcsec is changing with latitude while
   //  Latitude uses a steady scale.
   //------------------------------------------------------------------
-	bbox->Enter("APM Draw",0,0);
   glScaled(scale.x,scale.y, 1.0);             // T1: Scale X,Y to feet coordinate
   aptMGR->Draw(aPos);													// Draw airports
   //------------------------------------------------------------------
@@ -5083,7 +5132,6 @@ void TCacheMGR::Draw()
 	//	Otherwise
 	//	For each QGT go to SW corner and render the QGT mesh
 	//------------------------------------------------------------------
-	bbox->Enter("TER	Draw",0,0);
   glEnable(GL_TEXTURE_2D);
   glColor4fv(fogC);                           // restore color
   glMaterialfv (GL_FRONT, GL_EMISSION, GetDeftEmission());
@@ -5118,7 +5166,6 @@ void TCacheMGR::Draw()
   //  Draw all 3D objects 
 	//	Camera is at aircraft origin, scale is 1 in every direction
   //------------------------------------------------------------------
-	bbox->Enter("OBJ Draw",0,0);
   glPushMatrix();                             // Mark T0
 	Draw3DObjects();
   //---Reset all parameters ----------------------------------------
@@ -5135,7 +5182,6 @@ void TCacheMGR::Draw()
   // Draw all external vehicle features
   // Camera at origin
   //-------------------------------------------------------------
-	bbox->Enter("EXT Draw",0,0);
   globals->sit->DrawExternal();
   //----------------------------------------------------------------
   // Draw VOR
@@ -5149,7 +5195,6 @@ void TCacheMGR::Draw()
   //  Set Context to draw airport lights 
   //  Camera at origin
   //-----------------------------------------------------------------
-	bbox->Enter("LIT Draw",0,0);
   glDepthMask(false);
   glEnable (GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER,0);
@@ -5164,7 +5209,6 @@ void TCacheMGR::Draw()
   //-----------------------------------------------------------------
   //  Draw vehicle inside
   //-----------------------------------------------------------------
-	bbox->Enter("VEH Draw",0,0);
   glMaterialfv (GL_FRONT, GL_EMISSION, GetDeftEmission());
   glColor4f(1,1,1,1);
   if (veh) veh->DrawInside(cam);

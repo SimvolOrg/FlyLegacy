@@ -61,48 +61,6 @@ struct TC_PIX_STATE
   U_CHAR  swap;                                 // Inside swap value
   U_CHAR  In;                                   // Inside value
 };
-//===================================================================================
-//  Class to animate water
-//===================================================================================
-class CWater3D {
-protected:
-  //---ATTRIBUTES -------------------------------------------------
-  U_INT       w3d;                            // 3D Texture Object
-  U_INT       sob;                            // sea texture object
-  float       org;                            // Texture origin
-  float       exp;                            // Expansion factor
-  //---------------------------------------------------------------
-  char        once;                           // For debbug
-  //---Sea coordinates --------------------------------------------
-  int         dim;                            // Texture dimension
-  float       cds;                            // S coordinate   
-  float       cdt;                            // t coordinate
-  float       vit;                            // moving speed
-  F3_VERTEX s3d[4];                           // Moving texture
-  //---Panel ------------------------------------------------
-  TC_VTAB     qad[4];                         // Quad definition
-  //---Camera -----------------------------------------------
-  CCameraObject   *cam;
-  //---------------------------------------------------------
-public:
-  CWater3D(int k);
- ~CWater3D();
-  //---------------------------------------------------------
-  void    LoadWater3D();
-  void    Append(U_CHAR *buf,U_CHAR *tex,int dim,int k);
-  GLuint  Get3DtexOBJ();
-  U_CHAR *PickAlphaChanel(U_CHAR *rgba, int side);
-  //---------------------------------------------------------
-  void    InitQuad();
-  void    BuildAnimation();
-  void    DrawTile(CTextureDef *txn);
-  void    DrawTest(CTextureDef *txn);
-  //---------------------------------------------------------
-  U_INT   MoveWater();
-  //----------------------------------------------------------------
-  inline U_INT GetWaterOBJ()  {return cam->TextureObject();}
-  inline U_INT GetW3D()       {return w3d;}
-};
 //=============================================================================
 //  Class CWaterTexture : to store fixed water file textures
 //  NOTE:  The RGBA texture is managed by the shared texture object. 
@@ -313,6 +271,7 @@ class CTextureWard  {
   TCacheMGR *tcm;                     // Cache manager
   SqlMGR    *sqm;                     // Main sql manager
   bool       usq;                     // Use sql for textures
+	//--- MIP level for Objects ---------------------------------
   //-----Picture number ---------------------------------------
   int     nPic;                       // Picture number for output
   //-------Working --------------------------------------------
@@ -357,7 +316,6 @@ class CTextureWard  {
 	int				NbNOB;										// Terrian Nit texture object
   //-------Animated water ---------------------------------------
   U_INT     kaf;
-  CWater3D *anSEA;                    // Animated sea texture
   //-------Light textures ---------------------------------------
 	GLuint  cTERRA;											// Compressed format
   GLuint  LiOBJ[8];                   // Ligth Texture objects
@@ -391,10 +349,6 @@ public:
   inline  bool    IsNight()             {return (Night == 'N');}
   inline  bool    IsDay()               {return (Night == 'D');}
   inline  GLubyte *GetMask(U_INT m,U_INT r) {return Blend[(m | r)].GetMask();}
-  //-----Animated water --------------------------------------
-  inline  void    DrawWater(CTextureDef* d) {anSEA->DrawTile(d);}
-  inline  U_INT   MoveWater()               {return anSEA->MoveWater();}
-  inline  U_INT   GetWaterAlpha()           {return kaf;}
   //-----Helpers ---------------------------------------------
   GLubyte *LoadMSK(char *msn,int side); 
   float   GetLuminance(float *col);
@@ -416,11 +370,14 @@ public:
   void   *GetM3DSqlTexture(char *fn,U_CHAR tsp);
   void    Get3DTIF(TEXT_INFO *inf);
   void    Get3DRAW(TEXT_INFO *inf);
-  void   *RefTo3DTexture(char *fn);
+	void		GetAnyTexture(TEXT_INFO *inf);
+	void   *RefTo3DTexture(char *fn);
   GLuint  Get3DObject(void *tref);
 	void		ReserveReference(void *tref);
   void    Free3DTexture(void *sht);
-  //------Night textures -------------------------------------
+	void		GetTextureParameters(void *ref,TEXT_INFO &inf);
+	void		ReserveOne(void *ref);
+	//------Night textures -------------------------------------
   int     NightGenTexture(CTextureDef *txd);
   int     NightRawTexture(CTextureDef *txn);
   int     DoubleNiTexture(CTextureDef *txn,U_INT *tex);

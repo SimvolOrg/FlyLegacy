@@ -2405,6 +2405,12 @@ struct TC_VTAB {
 		VT_Z = -v.VT_Y;
 		VT_Y =  v.VT_Z;
 	}
+		//-----------------------------------------------------
+	void Add(SVector &T)
+	{	VT_X += T.x;
+		VT_Y += T.y;
+		VT_Z += T.z;
+	}
 
 };
 //=============================================================================
@@ -2931,6 +2937,7 @@ class CExecutable {
 public:
 	virtual int	  TimeSlice(float dT, U_INT frame)	{return 0;}
 	virtual void	Draw() {;}
+	virtual void  DrawExternal() {;}
 };
 //===================================================================================
 //	Vector to Time Slice function
@@ -2950,9 +2957,10 @@ typedef void (CExecutable::*ExeDR)(void);
 #define PRIO_SLEWMGR		(4)
 #define PRIO_ATMOSPHERE	(5)
 #define PRIO_PLANE			(6)
-#define PRIO_SDK				(7)
-#define PRIO_DLL				(8)
-#define PRIO_OTHERS			(9)
+#define PRIO_SIMVH			(7)
+#define PRIO_SDK				(8)
+#define PRIO_DLL				(9)
+#define PRIO_OTHERS			(10)
 #define PRIO_MAX				(16)
 //==============================================================================
 //  RANDOM GENERATOR (SYSTEM DEPENDENT)
@@ -3344,6 +3352,7 @@ typedef struct {
 template <class T> class Queue {
 protected:
 	//--------------Attributes ------------------------------------
+	pthread_mutex_t		mux;					  // Mutex for lock
 	U_SHORT			NbOb;									// Item number
 	T	 *First;					              // First object in queue
 	T	 *Last;													// Last  object in queue
@@ -3357,12 +3366,16 @@ public:
   inline  T*  NextFrom(T *p)     {return (p)?(p->next):(0);}
   inline  T*  PrevFrom(T *p)     {return (p)?(p->prev):(0);}
   inline  U_SHORT     GetNbObj() {return NbOb;}
-  inline  bool        NotEmpty()  {return (0 != NbrOb);}
+  inline  bool        NotEmpty() {return (0 != NbOb);}
+	inline  bool				IsEmpty()	 {return (0 == NbOb);}
 	//--- Circular links -----------------------------------------
 	inline  T*  CyNext(T *p)	{T* n = p->next; if (0 == n) n = First; return n;}
 	inline  T*  CyPrev(T *p)	{T* n = p->prev; if (0 == n) n = Last;  return n;}
 	//------------------------------------------------------------
 	inline  void  Update(int k,T *p, T *q) {NbOb += k; if (p == Last) Last = q;}
+	//------------------------------------------------------------
+  inline void Lock()                {pthread_mutex_lock (&mux);}
+  inline void UnLock()              {pthread_mutex_unlock (&mux);}
 	//------------------------------------------------------------
   void        Clear();
   void        PutLast (T *obj);
@@ -3372,6 +3385,7 @@ public:
   T          *Pop();
 	void				SwitchToLast(T *obj);
 	void        TransferQ(Queue<T> &h);
+	void				ReceiveQ(Queue<T>  &h);
 	T          *Remove(T *obj);
 	//--------------------------------------------------------------------
 	T					 *SwapFirst()		{T *h = First; First = 0;					return h; }
@@ -3381,7 +3395,8 @@ public:
 //  GENERIC QUEUE MANAGEMENT
 //==========================================================================
 template <class T> Queue<T>::Queue()
-{ NbOb    = 0;
+{ pthread_mutex_init (&mux,0);
+	NbOb    = 0;
   First   = 0;
   Last    = 0;
   Prev    = 0;
@@ -3497,8 +3512,19 @@ template <class T> void Queue<T>::TransferQ(Queue<T> &Q)
 	Q.Prev  = 0;
 	First = Last = Prev = 0;
 	NbOb	= 0;
+	return;
 }
-
+//-----------------------------------------------------------------------
+//	Receive Queue
+//-------------------------------------------------------------------------
+template <class T> void Queue<T>::ReceiveQ(Queue<T> &Q)
+{	NbOb	= Q.NbOb;
+  First = Q.First;
+	Last	= Q.Last;
+	Prev  = 0;
+	Q.First = Q.Last = Q.Prev = 0;
+	return;
+}
 //===================================================================================
 //    Structure used for makink continuous text from a list of pointers
 //===================================================================================

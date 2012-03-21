@@ -1838,7 +1838,8 @@ void CFuiVectorMap::AddToFlightPlan()
 //  Compute coordinate of mouse point and teleport to the point
 //----------------------------------------------------------------------------------
 void CFuiVectorMap::Teleport()
-{ globals->tcm->Teleport(wpos);
+{ SVector ori = globals->iang;
+	globals->tcm->Teleport(&wpos,&ori);
   return;
 }
 
