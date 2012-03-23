@@ -250,15 +250,14 @@ class CBINparser: public CParser {
   U_CHAR    shiny;                // Shiny texture
   U_CHAR    Res;                  // Resolution
   U_INT     xOBJ;                 // Texture OBJECT
- // int       nFace;              // Number of faces
   char      Texn[20];             // Texture name
- // char     *fn;                 // File name
-  C3DPart  *head;                 // Heading part
+  F3_VERTEX norm;									// Normal vertex
+	F2_COORD  ctex;									// Texture coord
+	//------------------------------------------------------
+	int				Nbv;									// Number of vertices
   //------------------------------------------------------
   int       Tof;                  // Total faces
   int       Tov;                  // Total vertices
-  //---List of parts -------------------------------------
-  Queue<C3DPart>	tmpQ;           // Hi resolution Queue
   //------------------------------------------------------
   BIN_HEADER hdr;
   B19_HEADER b19;
@@ -274,13 +273,12 @@ public:
   int   ReadVertex(PODFILE *p);         // Vertex list
   int   ReadBlock(PODFILE *p);          // Block type
   int   ReadNormal(PODFILE *p);         // Normal vectors
-  int   ReadTexture(PODFILE *p);        // Texture name
-  int   ReadTFaces(PODFILE *p);         // Textured faces
-  int   ReadQFaces(PODFILE *p,int n);   // Textured QUAD faces
   int   ReadColor(PODFILE *p);
-  int   Concatenate(PODFILE *p);
-  int   UpdateHead(int nf);
   void  AddToModel(C3DPart *prt);
+	//---New interface  -------------------------------------
+	int		ReadTexture(PODFILE *p);
+	int		ReadTFaces(PODFILE *p);
+	int		ReadQFaces(PODFILE *p);
   //-------------------------------------------------------
   inline void Trace()     {trace = 1;}
 };

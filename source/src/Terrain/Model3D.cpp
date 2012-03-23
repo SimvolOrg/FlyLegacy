@@ -982,14 +982,31 @@ void C3Dmodel::AddLodPart(C3DPart *prt,int lod)
   return;
 }
 //-------------------------------------------------------------------------------
+//  allocate a new part with all parameters set
+//-------------------------------------------------------------------------------
+C3DPart *C3Dmodel::GetNewPart(char *txn, int lod, int nbv, int nbx)
+{	C3DPart *prt = new C3DPart(txn,lod,nbv,nbx);
+  prt->W3DRendering();
+	//--- Add part to lod level ----------------------
+	pLOD[lod].PutLast(prt); 
+  rLOD[lod] = lod;            // Activate lod level
+	return prt;
+}
+//-------------------------------------------------------------------------------
 //  Add part into model from SQL database
 //-------------------------------------------------------------------------------
-void C3Dmodel::AddSqlPart(C3DPart *prt,int lod)
-{ //---Queue the part to related LOD -----------------
-  prt->SetLOD(lod);
-  pLOD[lod].PutLast(prt); 
-  rLOD[lod] = lod;            // Activate lod level
-  return;
+C3DPart *C3Dmodel::GetPartFor(char *txn, int lod, int nbv, int nbx)
+{	C3DPart *prt =  pLOD[lod].GetLast();
+	if (0 == prt)								return GetNewPart(txn,lod,nbv,nbx);
+	//--- Check if same texture ----------------------------
+	bool sm = strcmp(prt->TextureName(),txn) == 0;
+	if (!sm)										return GetNewPart(txn,lod,nbv,nbx);
+	//--- check if part is big enough ----------------------
+	U_INT nbp = prt->GetNBVTX();
+	if (nbp > globals->pakCAP)	return GetNewPart(txn,lod,nbv,nbx);
+	//--- Extend actual part -------------------------------
+	prt->ExtendTNV(nbv,nbx);
+	return prt;
 }
 //-------------------------------------------------------------------------------
 //  Return part geometry to polygon reduction
@@ -1854,6 +1871,7 @@ C3DPart::C3DPart()
   xOBJ  = 0;
   ntex  = 0;
   NbVT  = NbIN = 0;
+	vloc  = xloc = 0;
   nVTX  = 0;
   nNRM  = 0;
   nTEX  = 0;
@@ -1863,12 +1881,53 @@ C3DPart::C3DPart()
 	strcpy(idn,"PART");
 }
 //----------------------------------------------------------------------
+//	Constructor with parameters
+//----------------------------------------------------------------------
+C3DPart::C3DPart(char *txn,int lq, int nbv, int nbx)
+{	next	= prev = 0;
+	tRef	= GetReference(txn,1);
+	tsp		= 1;
+	lod		= lq;
+	xOBJ	= 0;
+	vloc	= xloc = 0;
+	NbVT  = NbIN = 0;
+	nVTX  = 0;
+  nNRM  = 0;
+  nTEX  = 0;
+	vTAB	= 0;
+  nIND  = 0;
+	ntex  = Dupplicate(txn,128);
+	if (nbv) AllocateW3dVTX(nbv);
+	if (nbx) AllocateXList (nbx);
+	total = 0;
+	
+}
+//----------------------------------------------------------------------
+//	Get texture reference
+//----------------------------------------------------------------------
+void *C3DPart::GetReference(char *txn, char tsp)
+{	if (globals->m3dDB) return globals->txw->GetM3DSqlTexture(txn,tsp);
+	else								return globals->txw->GetM3DPodTexture(txn,tsp);
+}
+//----------------------------------------------------------------------
 //  Free Texture
 //----------------------------------------------------------------------
 C3DPart::~C3DPart()
 { Release();
-  total = 0;
 }
+//----------------------------------------------------------------------
+//  Set BIN rendering
+//----------------------------------------------------------------------
+void C3DPart::BinRendering()
+{	Rend  = &C3DPart::DrawAsBIN;
+}
+//----------------------------------------------------------------------
+//  Set W3D rendering
+//----------------------------------------------------------------------
+void C3DPart::W3DRendering()
+{	Rend  = &C3DPart::DrawAsW3D;
+}
+
 //----------------------------------------------------------------------
 //  Release all vertices
 //----------------------------------------------------------------------
@@ -1928,6 +1987,94 @@ void C3DPart::AllocateObjVTX(int nv)
 void C3DPart::ZRotation(double sn, double cn)
 { TC_VTAB *vtx = vTAB;
 	for (int k = 0; k != NbVT; k++)	ZRotate(*vtx++,sn,cn);
+	return;
+}
+//----------------------------------------------------------------------
+//	Relocate one vertice
+//----------------------------------------------------------------------
+void C3DPart::Push(F3_VERTEX &v, F3_VERTEX &n, F2_COORD &t)
+{ F3_VERTEX *ds1 = nVTX + vloc;
+	*ds1 = v;
+	F3_VERTEX *ds2 = nNRM + vloc;
+	*ds2 = n;
+	F2_COORD  *ds3 = nTEX + vloc;
+	*ds3 = t;
+	vloc++;
+	return;
+}
+
+//----------------------------------------------------------------------
+//	Extend part for additional vertices
+//	Note that actual vertice are pushed at end of part.  This should
+//	not have any impact on rendering the part
+//----------------------------------------------------------------------
+void C3DPart::ExtendTNV(int nbv,int nbx)
+{ int		tot = NbVT + nbv;
+	int   df3 = NbVT * sizeof(F3_VERTEX);
+	int   dtx = NbVT * sizeof(F2_COORD);
+  //--- Allocate for total vertices ----
+	F3_VERTEX *vtx = new F3_VERTEX[tot];
+  F3_VERTEX *nrn = new F3_VERTEX[tot];
+  F2_COORD  *tex = new F2_COORD [tot];
+	//--- Copy previous vertices and replace ----------
+	if (nVTX)	{ memcpy((char*)vtx, nVTX, df3); delete [] nVTX;}
+	if (nNRM)	{ memcpy((char*)nrn, nNRM, df3); delete [] nNRM;}
+	if (nTEX)	{ memcpy((char*)tex, nTEX, dtx); delete [] nTEX;}
+	//--- replace with copy ---------------
+	nVTX	= vtx;
+	nNRM  = nrn;
+	nTEX  = tex;
+	//-------------------------------------
+	vloc  = NbVT;
+	NbVT	= tot;
+	//--- Extend indices now --------------
+	if (0 == nbx)			return;
+	int ttx		= NbIN + nbx;
+	int dnx		= NbIN * sizeof(int);
+	int *nind = new int[ttx];
+	if (nIND) { memcpy((char*)nind, nIND, dnx);delete [] nIND;}
+	nIND		= nind;
+	xloc    = NbIN;
+	NbIN		= ttx;
+	return;
+}
+//----------------------------------------------------------------------
+// Store vertex and relocate
+//----------------------------------------------------------------------
+void C3DPart::MoveVTX(void *src, int dim)
+{	int ofs = vloc * sizeof(F3_VERTEX);
+	memcpy((char*)nVTX + ofs, src, dim);
+	return;
+}
+//----------------------------------------------------------------------
+// Store normal and relocate
+//----------------------------------------------------------------------
+void C3DPart::MoveNRM(void *src, int dim)
+{	int ofs = vloc * sizeof(F3_VERTEX);
+	memcpy((char*)nNRM + ofs, src, dim);
+	return;
+}
+//----------------------------------------------------------------------
+// Store texture coord and relocate
+//----------------------------------------------------------------------
+void C3DPart::MoveTEX(void *src, int dim)
+{	int ofs = vloc * sizeof(F2_COORD);
+	memcpy((char*)nTEX + ofs, src, dim);
+	return;
+}
+
+//----------------------------------------------------------------------
+// Store indice and relocate
+//----------------------------------------------------------------------
+void C3DPart::MoveIND(void *deb,int dim)
+{ int *src = (int*)deb;
+	int *dst = nIND + xloc;
+	int  nbx = dim / sizeof(int);
+	for (int k=0; k< nbx; k++)
+	{	int ind = *src++;
+		ind += vloc;
+		*dst++ = ind;
+	}
 	return;
 }
 //----------------------------------------------------------------------
@@ -2014,9 +2161,28 @@ void C3DPart::DrawAsW3D()
 { if (0 == xOBJ)  xOBJ = globals->txw->Get3DObject(tRef);
   glBindTexture    (GL_TEXTURE_2D,xOBJ);
   glVertexPointer  (3,GL_FLOAT,0,nVTX);
-  glNormalPointer  (  GL_FLOAT,0,nNRM);
   glTexCoordPointer(2,GL_FLOAT,0,nTEX);
+  glNormalPointer  (  GL_FLOAT,0,nNRM);
   glDrawElements(GL_TRIANGLES,NbIN,GL_UNSIGNED_INT,nIND);
+  //----------------------------------------------------------------
+  //  {GLenum e = glGetError ();
+  //  if (e != GL_NO_ERROR) 
+  //    WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
+  // }
+  //----------------------------------------------------------------
+  return;
+}
+//----------------------------------------------------------------------
+//  Draw the part for  a 3D object
+//	Actually we dont use VBO.  There is one indice per vertex in nIND list
+//----------------------------------------------------------------------
+void C3DPart::DrawAsBIN()
+{ if (0 == xOBJ)  xOBJ = globals->txw->Get3DObject(tRef);
+  glBindTexture    (GL_TEXTURE_2D,xOBJ);
+  glVertexPointer  (3,GL_FLOAT,0,nVTX);
+  glTexCoordPointer(2,GL_FLOAT,0,nTEX);
+  glNormalPointer  (  GL_FLOAT,0,nNRM);
+  glDrawArrays(GL_TRIANGLES,0, NbVT);
   //----------------------------------------------------------------
   //  {GLenum e = glGetError ();
   //  if (e != GL_NO_ERROR) 

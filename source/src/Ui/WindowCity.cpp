@@ -31,7 +31,35 @@
 #include "../Include/TerrainTexture.h"
 #include "../Include/FuiOption.h"
 #include <vector>
-
+char *EndOSM = "***";
+//==========================================================================================
+//  List of AMENITY VALUES Tags
+//==========================================================================================
+OSM_VALUE amenityVAL[] = {
+	{"PLACE_OF_WORSHIP",	OSM_CHURCH},
+	{"POLICE",						OSM_POLICE},
+	{"FIRE_STATION",			OSM_FIRE},
+	{"TOWNHALL",					OSM_TOWNHALL},
+	{"SCHOOL",						OSM_SCHOOL},
+	{"COLLEGE",						OSM_COLLEGE},
+	{"HOSPITAL",					OSM_HOSPITAL},
+	{EndOSM,					0},									  // End of table
+};
+//==========================================================================================
+//  List of BUILDING VALUES Tags
+//==========================================================================================
+OSM_VALUE  buildingVAL[] = {
+		{"SCHOOL",						OSM_SCHOOL},
+		{EndOSM,					0},									// End of table
+};
+//==========================================================================================
+//  List of admitted Tags
+//==========================================================================================
+OSM_TAG TagLIST[] = {
+	{"AMENITY",			amenityVAL},
+	{"BUILDING",		buildingVAL},
+	{EndOSM,					0},									// End of table
+};
 //==========================================================================================
 //  Window to display building sketch
 //==========================================================================================
@@ -229,17 +257,19 @@ bool CFuiSketch::ParseBuilding()
   fsetpos( FP, &fpos); 
 	char *ch = ReadTheFile(FP,txt);
 	_strupr(txt);
+	skip	= 0;
+	otype = OSM_BUILDING;
 	*tagn = *valn = *smodl = 0;
 	//--- Check for a building number -------------------------
 	int nf = sscanf(ch,"START %d ID=%d ",&seqNo, &ident);
 	if (nf != 2)		return false;
 	trn->SetIdent(seqNo,ident); 
-	return ParseVertices();
+	return ParseFile();
 }
 //-------------------------------------------------------------------
 //	Parse vertice list 
 //-------------------------------------------------------------------
-bool CFuiSketch::ParseVertices()
+bool CFuiSketch::ParseFile()
 {	char txt[256];
 	bool go = true;
 	trn->StartOBJ();
@@ -283,8 +313,7 @@ bool CFuiSketch::ParseVTX(char *txt)
 	while (go)
 	{	int nf = sscanf(src," V ( %lf , %lf ) %n",&y,&x,&rd);
 		if (nf != 2)	return (nv != 0);
-		//HaveVertex(x,y);
-		trn->AddVertex(x,y);
+		if (skip == 0) trn->AddVertex(x,y);
 		src += rd;
 		nv++;
 	}
@@ -295,15 +324,41 @@ bool CFuiSketch::ParseVTX(char *txt)
 //-------------------------------------------------------------------
 bool CFuiSketch::ParseHOL(char *txt)
 {	if (strncmp(txt,"HOLE",4) != 0)			return false;
-	trn->NewHole();
+	if (skip == 0)	trn->NewHole();
 	return true;
+}
+//-------------------------------------------------------------------
+//	Check for legible value
+//-------------------------------------------------------------------
+void CFuiSketch::CheckValue(OSM_VALUE *tab)
+{	while (strcmp(tab->value,EndOSM) != 0)
+	{ otype	= tab->type;
+		if  (strcmp(tab->value,valn) == 0)	return;
+		tab++;
+	}
+  //--- unsupported object --------------------
+	skip	= 1;
+}
+//-------------------------------------------------------------------
+//	Check for legible tag
+//-------------------------------------------------------------------
+void CFuiSketch::CheckTag()
+{	OSM_TAG *tab = TagLIST;
+	while (strcmp(tab->tag,EndOSM) != 0)
+	{	if  (strcmp(tab->tag,tagn)   == 0)	return CheckValue(tab->table);
+		tab++;
+	}
+	//--- tag not supported --------------------
+	skip	= 1;
 }
 //-------------------------------------------------------------------
 //	Parse Tag directive
 //-------------------------------------------------------------------
 bool CFuiSketch::ParseTAG(char *txt)
-{	int nf = sscanf(txt,"TAG ( %32[^=)] = %32[^)] ) ",tagn, valn);
-	return (nf == 2);
+{	int nf = sscanf(txt,"TAG ( %32[^ =)] = %32[^ )] ) ",tagn, valn);
+	if (nf != 2)		return false;
+	CheckTag();
+	return true;
 }
 //-------------------------------------------------------------------
 //	Parse replace directive
@@ -389,8 +444,9 @@ void CFuiSketch::EditBuilding()
 //-------------------------------------------------------------------
 //	Build Object
 //-------------------------------------------------------------------
-U_INT CFuiSketch::BuildObject()
-{	bpm = trn->BuildOBJ();
+void CFuiSketch::BuildObject()
+{	if (skip)	return;
+	bpm = trn->BuildOBJ(otype);
 	trn->SetTag(tagn,valn);
 	if (*smodl)	trn->ReplaceBy(smodl,"OpenStreet/Models", orien);
 	nBLDG++;
@@ -398,7 +454,7 @@ U_INT CFuiSketch::BuildObject()
 	geop  = bpm->geop;
 	rcam->GoToPosition(geop);			// Teleport
 	if (bpm->error == 0)	rpos = geop;
-	return SKETCH_PAUSE;
+	return ;
 }
 //-----------------------------------------------------------------------
 //	View terrain action

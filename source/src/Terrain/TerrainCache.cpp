@@ -1928,8 +1928,7 @@ int CSuperTile::Draw3D(U_CHAR mod)
 	globals->tcm->RelativeFeetTo(mPos,T);
 	glTranslated(T.x, T.y, T.z);		// Got to supertile center
 	C3DPack *pak;
-	for (pak = batQ.GetFirst(); pak != 0; pak= pak->Next()) 
-		pak->Draw();
+	for (pak = batQ.GetFirst(); pak != 0; pak= pak->Next()) pak->Draw();
 	glPopMatrix();
 	glEnableClientState(nrm);
   return nbo;
@@ -5039,7 +5038,7 @@ void TCacheMGR::Draw3DObjects()
 {	if (globals->noOBJ)    return;
 	std::map<U_INT,C_QGT*>::iterator im;
 	glEnable(GL_ALPHA_TEST);
-  glAlphaFunc(GL_GREATER,0);
+  glAlphaFunc(GL_GREATER,0.4);
  // glEnable(GL_BLEND);
 	glDisable(GL_BLEND);
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

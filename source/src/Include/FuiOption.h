@@ -70,6 +70,7 @@ class CFuiCamControl: public CFuiWindow
 	//----METHODS -----------------------------------------------
 public:
 	CFuiCamControl(Tag idn, const char *filename);
+  virtual ~CFuiCamControl();
 	//-----------------------------------------------------------
 	void	EditValues();
   //-----------------------------------------------------------

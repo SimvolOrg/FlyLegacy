@@ -36,6 +36,7 @@ CFuiCamControl::CFuiCamControl(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,240,180,0)
 {	SetProperty(FUI_TRANSPARENT);
 	SetProperty(FUI_NO_BORDER);
+	//MEMORY_LEAK_MARKER (">CAMERA CONTRL");
 	//---- Set the back bitmap ----------------------
 	SetBackPicture("CamControl.bmp");
 	CFuiWindow::ReadFinished();
@@ -73,6 +74,12 @@ CFuiCamControl::CFuiCamControl(Tag idn, const char *filename)
 	zmup  = new CFuiButton(140,129,36,20,this); 
 	AddChild('zmup',zmup,"+",FUI_REPEAT_BT);
 
+}
+//---------------------------------------------------------------------
+//	Edit values 
+//---------------------------------------------------------------------
+CFuiCamControl::~CFuiCamControl()
+{		//MEMORY_LEAK_MARKER ("<CAMERA CONTRL");
 }
 //---------------------------------------------------------------------
 //	Edit values 

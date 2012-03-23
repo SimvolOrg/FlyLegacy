@@ -86,8 +86,15 @@ class	D2_TParam;
 //====================================================================================
 //	Object type
 //====================================================================================
-#define OSM_TYPE_BUILDING  (1)
-#define OSM_TYPE_FENCE     (2)
+#define OSM_BUILDING  (1)
+#define OSM_FENCE     (2)
+#define OSM_CHURCH		(3)
+#define OSM_POLICE    (4)
+#define OSM_FIRE			(5)
+#define OSM_TOWNHALL	(6)
+#define OSM_SCHOOL		(7)
+#define OSM_COLLEGE		(8)
+#define OSM_HOSPITAL	(9)
 //====================================================================================
 //	TRIANGULATOR Drawing options
 //====================================================================================
@@ -140,7 +147,7 @@ struct D2_BPM {
 	SPosition			geop;										// Geo position
 	U_INT		qgKey;												// QGT key
 	U_SHORT	supNo;												// Super tile No
-	U_SHORT				rfu1;										// Reserved
+	U_SHORT	rfu1;													// Reserved
 	//----------------------------------------------------
 	double				sinA;										// Angle
 	double				cosA;										// Angle
@@ -755,9 +762,10 @@ class Triangulator: public CExecutable, public Tracker {
 	U_INT		seq;																	// Sequence number
 	//--- Current building  ------------------------------
 	D2_BPM  BDP;																	// Building parameters
-	OSM_Object *osmB;														// Current building
-	OSM_Object *remB;														// Removed building
+	OSM_Object *osmB;															// Current building
+	OSM_Object *remB;															// Removed building
 	U_INT   xOBJ;																	// Current texture
+	U_INT		otype;																// Object type
 	//--- Drawing mode -----------------------------------
 	char		dMOD;																	// Drawing mode													
 	//--- METHODS ----------------------------------------
@@ -853,7 +861,7 @@ public:
 	//------------------------------------------------------
 	bool		MakeBuilding();
 	void		StartOBJ();
-	D2_BPM *BuildOBJ();
+	D2_BPM *BuildOBJ(U_INT type);
 	void		SetTag(char *t, char *v);
 	void		EditTag(char *txt);
 	void		EndOBJ();

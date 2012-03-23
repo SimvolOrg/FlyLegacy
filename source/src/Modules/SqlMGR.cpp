@@ -349,7 +349,7 @@ int SqlOBJ::Open(SQL_DB &db)
 	intptr_t h1 = _findfirst(fnm,&fileinfo);
 	_snprintf(fnm,lgr,"%s/%s",db.path,fileinfo.name);
 	fnm[lgr] = 0;
-	strncpy(db.path,fnm,259);
+	strncpy(db.path,fnm,FNAM_MAX);
 	//---------------------------------------------------
   int rep = sqlite3_open_v2(fnm,  &db.sqlOB,db.mode,0 );
   if (rep)  WarnE(db);
@@ -518,13 +518,51 @@ void SqlOBJ::DeleteElevation(U_INT key)
   return;
 }
 //--------------------------------------------------------------------
+//	Create the database first using script
+//--------------------------------------------------------------------
+SQL_DB *SqlOBJ::CreateOSMbase(SQL_DB *db,char *S)
+{ if (0 == S)	{delete db; return 0; }
+	char *fn = db->path;
+	db->mode = (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+	int rep  = sqlite3_open_v2(fn,  &db->sqlOB,db->mode,0 );
+	//--- Check for any error ----------------------------------
+	if (rep != SQLITE_OK)	
+	{	WarnE(*db);
+		delete db;
+		return 0;
+	}
+	//-- now execute the script uppon the database -------------
+	return db;
+}
+//--------------------------------------------------------------------
 //  Open requested database
 //	If the file does not exists and scrit S is supplied*
 //	then create the base with script S
 //--------------------------------------------------------------------
-SQL_DB *SqlOBJ::OpenOSMbase(char *fn,char *S)
-{
-	return 0;
+SQL_DB *SqlOBJ::OpenOSMbase(char *fn,char *S, U_INT M)
+{ SQL_DB *db = 0;
+	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(fn);
+	if (rb != dbase.end())
+	{	db = (*rb).second;
+		db->IncUser();
+		return db;
+	}
+	db = new SQL_DB();
+	strncpy(db->path,fn,FNAM_MAX);
+	db->mode  = M;
+	
+	//--- Check if file exist ------------------------
+	FILE *pf	= fopen(fn,"r");
+	bool  ok		= (pf != 0);
+	if (pf)	fclose(pf);
+	//--- if file exist open the database in mode ----
+	if (!ok)	return CreateOSMbase(db,S);
+	int rep  = sqlite3_open_v2(fn,  &db->sqlOB,db->mode,0 );
+  if (rep)  WarnE(*db);
+  else      Warn1(*db);
+  db->use  = (db->opn == 1);
+	dbase[fn] = db;				// Enter database in list
+	return db;
 }
 //==================================================================================
 //	Decrement user and close the base when no more used
@@ -533,7 +571,12 @@ void SqlOBJ::DecUser(SQL_DB *db)
 {	db->ucnt--;
 	if (db->ucnt > 0)	return;
 	//---  close database and delete all resources ----------
-
+	sqlite3_close(db->sqlOB);
+	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(db->path);
+	if (rb == dbase.end())	return;
+	dbase.erase(rb);
+	delete db;
+	return;
 }
 //==================================================================================
 //
@@ -2960,6 +3003,14 @@ bool SqlTHREAD::CheckM3DModel(char *name)
   return (rep == SQLITE_ROW)?(true):(false);
 }
 //---------------------------------------------------------------------------------
+//  Check if texture is same as previous part
+//  
+//---------------------------------------------------------------------------------
+/*bool SqlTHREAD::CheckLastPart(C3Dmodel *modl, char *txn)
+{	
+}
+*/
+//---------------------------------------------------------------------------------
 //  Decode 3DPart
 //  NOTE: Type is ignored for now
 //---------------------------------------------------------------------------------
@@ -2968,34 +3019,27 @@ int SqlTHREAD::DecodeM3DPart(sqlite3_stmt *stm,C3Dmodel *modl)
   char *txn = (char*)sqlite3_column_text(stm,CLN_MOD_TXN);
   int   nbv =        sqlite3_column_int (stm,CLN_MOD_NVT);
   int   nbx =        sqlite3_column_int (stm,CLN_MOD_NIX);
-	//---- Build a new part --------------------------------
-	void *ref   = globals->txw->GetM3DSqlTexture(txn,tsp);
-  C3DPart *prt = new C3DPart();
-	prt->AllocateW3dVTX(nbv);
-  prt->AllocateXList(nbx);
-	prt->SetTREF(ref);
-  prt->SetTexName(txn);
+	int   lod =        sqlite3_column_int (stm,CLN_MOD_LOD);
+	C3DPart *prt = modl->GetPartFor(txn,lod, nbv, nbx);
+	//---- Build this part --------------------------------
   float top =  float(sqlite3_column_double(stm, CLN_MOD_TOP));
   modl->SaveTop(top);
   float bot =  float(sqlite3_column_double(stm, CLN_MOD_BOT));
   modl->SaveBot(bot);
-  int   lod =        sqlite3_column_int (stm,CLN_MOD_LOD);
-  prt->SetLOD(lod);
   int   dim =        sqlite3_column_bytes(stm,CLN_MOD_VTX);
   char *src = (char*)sqlite3_column_blob (stm,CLN_MOD_VTX);
-  prt->CpyVTX(src,dim);
+  prt->MoveVTX(src,dim);
   dim =              sqlite3_column_bytes(stm,CLN_MOD_NTB);
   src =       (char*)sqlite3_column_blob (stm,CLN_MOD_NTB);
-  prt->CpyNRM(src,dim);
+  prt->MoveNRM(src,dim);
   dim =              sqlite3_column_bytes(stm,CLN_MOD_TTB);
   src =       (char*)sqlite3_column_blob (stm,CLN_MOD_TTB);
-  prt->CpyTEX(src,dim);
+  prt->MoveTEX(src,dim);
   dim =              sqlite3_column_bytes(stm,CLN_MOD_ITB);
   src =       (char*)sqlite3_column_blob (stm,CLN_MOD_ITB);
-  prt->CpyIND(src,dim);
+  prt->MoveIND(src,dim);
   //----Add this part --------------------------------------
 
-  modl->AddSqlPart(prt,lod);
   int nbf = (nbx / 3);
   return nbf;
 }

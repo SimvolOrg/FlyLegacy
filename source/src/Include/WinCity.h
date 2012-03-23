@@ -32,6 +32,8 @@
 #include "../Include/Triangulator.h"
 #include "../Include/RoofModels.h"
 //==========================================================================================
+//	State values
+//==========================================================================================
 #define PROF_SKETCH   (PROF_EDITOR+PROF_NO_TEL+PROF_NO_PLANE)
 #define SKETCH_REFER (0)
 #define SKETCH_PAUSE (1)
@@ -45,6 +47,21 @@
 #define SKETCH_WSEL  (11)
 #define SKETCH_ROBJ  (12)
 #define SKETCH_ABORT (13)
+//==========================================================================================
+// Type of object
+//==========================================================================================
+struct OSM_VALUE {
+	char *value;
+	U_INT type;
+};
+//==========================================================================================
+// Type of object
+//==========================================================================================
+struct OSM_TAG {
+	char      *tag;
+	OSM_VALUE *table;					// Value table
+};
+
 //==========================================================================================
 class CFuiFileBox;
 extern char *Dupplicate(char *s, int lgm);
@@ -80,8 +97,10 @@ class CFuiSketch : public CFuiWindow
 	U_CHAR        wait;						// Waiting terrain
 	U_CHAR				edit;						// Edit step
 	U_CHAR        wfil;						// Waiting file
-	U_CHAR			 modif;						// Modification		
+	U_CHAR			 modif;						// Modification
+	U_CHAR			 skip;						// Skip object
 	//-------------------------------------------------------------
+	U_INT					otype;					// Object type
 	char					tagn[64];				// Tag name
 	char					valn[64];				// Value name
 	double				orien;					// Replacing orientation
@@ -140,13 +159,17 @@ public:
 	void	SetOptions(U_INT p);
 	bool	ParseArea();
 	bool	ParseBuilding();
-	bool	ParseVertices();
+	bool	ParseFile();
 	bool	ParseStyle(char *txt);
 	bool	ParseVTX(char *txt);
 	bool	ParseHOL(char *txt);
 	bool	ParseTAG(char *txt);
 	bool	ParseReplace(char *txt);
 	void	HaveVertex(double x, double y);
+	void	BuildObject();
+	//------------------------------------------------------------
+	void	CheckTag();
+	void	CheckValue(OSM_VALUE *tab);
 	//------------------------------------------------------------
 	void	FileSelected(FILE_SEARCH *pm);
 	int  	NoSession();
@@ -157,7 +180,6 @@ public:
 	U_INT	Abort(char *err,char *fn);
 	U_INT	GotoReferencePosition();
 	U_INT	HereWeAre();
-	U_INT	BuildObject();
 	U_INT	OneBuilding();
 	//--- Terrain ------------------------------------------------
 	U_INT	TerrainView();

@@ -457,8 +457,9 @@ void Triangulator::ReOrientation()
 //-------------------------------------------------------------------
 //	Process object 
 //-------------------------------------------------------------------
-D2_BPM *Triangulator::BuildOBJ()
-{	BDP.side	= extp.GetNbObj();
+D2_BPM *Triangulator::BuildOBJ(U_INT tp)
+{	otype			= tp;
+	BDP.side	= extp.GetNbObj();
 	BDP.error = 0;
 	BDP.opt.Rep(0);								// No property yet
 	BDP.error = ConvertInFeet();
@@ -575,7 +576,7 @@ void Triangulator::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx)
 //-------------------------------------------------------------------
 void Triangulator::CreateBuilding()
 { OSM_Object  *obj	= osmB;
-	if (0 == obj) obj =	new OSM_Object(OSM_TYPE_BUILDING);
+	if (0 == obj) obj =	new OSM_Object(otype);
   osmB							= obj;
 	GetSuperTileNo(&BDP.geop, &BDP.qgKey, &BDP.supNo);
 	obj->SetParameters(BDP);

@@ -162,6 +162,8 @@ class C3DPart {
   void     *tRef;                           // Texture Reference
   GLuint    xOBJ;                           // Texture Object
   //---List of components --------------------------------------
+	U_SHORT   vloc;														// Vertice Relocation
+	U_SHORT   xloc;														// Indice rlocation
   int       NbVT;                           // Number of vertices
   int       NbIN;                           // Number of indices
   F3_VERTEX   *nVTX;                        // List of vertices
@@ -174,11 +176,16 @@ class C3DPart {
   //------------------------------------------------------------
 public:
   C3DPart();
+	C3DPart(char *txn, int lod, int nbv, int nbx);
  ~C3DPart();
 	//-------------------------------------------------------------
 	void		Release();
 	//-------------------------------------------------------------
 	void		ZRotation(double sn, double cn);
+	void    ExtendTNV(int nbv, int nbx);
+	void		BinRendering();
+	void		W3DRendering();
+	void   *GetReference(char *txn, char tsp);
 	//-------------------------------------------------------------
 	void		AllocateW3dVTX(int nv);
 	void    AllocateOsmVTX(int nv);
@@ -189,6 +196,7 @@ public:
 	void		DrawAsW3D();
 	void		DrawAsOSM();
 	void		DrawAsOBJ();
+	void		DrawAsBIN();
 	//-------------------------------------------------------------
 	void		Draw()		{(this->*Rend)();}
 	//-------------------------------------------------------------
@@ -219,7 +227,14 @@ public:
   inline int				 GetNbIND()           {return NbIN;}
   inline U_CHAR      GetTSP()             {return tsp;}
 	inline C3DPart    *Next()								{return next;}
-  //----------------------------------------------------------------
+	//-----------------------------------------------------------------
+	void			MoveVTX(void *s,int k);
+  void			MoveNRM(void *s,int k);
+  void			MoveTEX(void *s,int k);
+  void			MoveIND(void *s,int k);
+	//-----------------------------------------------------------------
+	void			Push(F3_VERTEX &v, F3_VERTEX &n, F2_COORD &t);
+	//----------------------------------------------------------------
   inline int     *AllocateXList(int n)  {NbIN = n; nIND = new int [n]; return nIND;} 
   inline int      GetNbFace()           {return total;}
   //-----------------------------------------------------------------
@@ -229,10 +244,6 @@ public:
   inline void     SetIND(int k,int x)     {nIND[k] = x;}
   inline void     SetTSP(U_CHAR m)        {tsp = m;}
   //------------------------------------------------------------------
-  inline void     CpyVTX(char *s,int k)   {memcpy(nVTX,s,k);}
-  inline void     CpyNRM(char *s,int k)   {memcpy(nNRM,s,k);}
-  inline void     CpyTEX(char *s,int k)   {memcpy(nTEX,s,k);}
-  inline void     CpyIND(char *s,int k)   {memcpy(nIND,s,k);}
   inline int      GetLOD()                {return lod;}
 };
 //=========================================================================================
@@ -263,7 +274,7 @@ class C3Dmodel: public CqItem, public CDrawByCamera {
   char					state;              // Model state
   char					type;               // BIN or SMF
 	char					mdtr;								// Trace mode
-	char          rfu;								// Futur use
+	char          todm;								// day or night
   pthread_mutex_t		mux;            // Locker
   int          User;                // User count
   char        *fname;               // file name
@@ -290,7 +301,6 @@ public:
   int     LoadPart(char *dir);
   int     AddPodPart(C3DPart *prt);
   void    AddLodPart(C3DPart *prt,int nl);
-  void    AddSqlPart(C3DPart *prt,int lod);
   void    UnloadPart();
   void    UnloadPart(int k);
   void    GetParts(CPolyShop *psh,M3D_PART_INFO &inf);
@@ -300,7 +310,10 @@ public:
   void    DecUser();
   void    IncUser();
 	void		Finalize();
-  //-----For camera Draw ------------------------------------------------
+	//---------------------------------------------------------------------
+	C3DPart *GetPartFor(char *txn, int lod, int nbv, int nbx);
+	C3DPart *GetNewPart(char *txn, int lod, int nbv, int nbx);
+	//-----For camera Draw ------------------------------------------------
   void    PreDraw(CCamera *cam);
   void    CamDraw(CCamera *cam) {Draw(0);}
   void    EndDraw(CCamera *cam);

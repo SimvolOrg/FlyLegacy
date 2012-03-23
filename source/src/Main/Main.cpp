@@ -1580,9 +1580,6 @@ int main (int argc, char **argv)
 	_snprintf(folder,lgr,"%s/TAXIWAYS",flyRootFolder);
   paddpodfolder (pfs, folder);
   //-----shared sceneries are mounted by ScenerySet------
-	//_snprintf(folder,lgr,"%s/SCENERY/SHARED",flyRootFolder);
-  // paddpodfolder (pfs, folder);
-
   //------ Add any disk files except pod -----
 	TRACE("Mounting Disk file in /ART");
   padddiskfolder (pfs, flyRootFolder, "ART");

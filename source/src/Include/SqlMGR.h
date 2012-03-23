@@ -419,7 +419,7 @@ struct SQL_DB {
 		int			  ucnt;								// User counts
 		int				vers;								// Minimum version
 		int				mode;								// Open mode
-    char      path[MAX_PATH];     // path name
+    char      path[PATH_MAX];     // path name
 		char      name[64];						// File name
     sqlite3  *sqlOB;              // Object database
     char      exp;                // Export indicator
@@ -533,7 +533,8 @@ public:
   inline bool   MainSQL()			{return (sqlTYP == SQL_MGR);}
 	//-----------------------------------------------------------------
 	void					DecUser(SQL_DB *db);
-	SQL_DB			 *OpenOSMbase(char *fn,char *S);
+	SQL_DB			 *OpenOSMbase(char *fn,char *S,U_INT M);
+	SQL_DB       *CreateOSMbase(SQL_DB *db,char *S);
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD
