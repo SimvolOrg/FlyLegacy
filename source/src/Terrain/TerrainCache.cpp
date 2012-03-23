@@ -5038,7 +5038,7 @@ void TCacheMGR::Draw3DObjects()
 {	if (globals->noOBJ)    return;
 	std::map<U_INT,C_QGT*>::iterator im;
 	glEnable(GL_ALPHA_TEST);
-  glAlphaFunc(GL_GREATER,0.4);
+  glAlphaFunc(GL_GREATER,0.4f);
  // glEnable(GL_BLEND);
 	glDisable(GL_BLEND);
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

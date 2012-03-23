@@ -97,7 +97,6 @@ class CFuiSketch : public CFuiWindow
 	U_CHAR        wait;						// Waiting terrain
 	U_CHAR				edit;						// Edit step
 	U_CHAR        wfil;						// Waiting file
-	U_CHAR			 modif;						// Modification
 	U_CHAR			 skip;						// Skip object
 	//-------------------------------------------------------------
 	U_INT					otype;					// Object type
@@ -166,7 +165,7 @@ public:
 	bool	ParseTAG(char *txt);
 	bool	ParseReplace(char *txt);
 	void	HaveVertex(double x, double y);
-	void	BuildObject();
+	bool	BuildObject();
 	//------------------------------------------------------------
 	void	CheckTag();
 	void	CheckValue(OSM_VALUE *tab);

@@ -719,8 +719,6 @@ class Triangulator: public CExecutable, public Tracker {
 	std::vector<D2_TRIANGLE*> roof;								// Data
 	//--- Spot to get terrain elevation----------------------------
 	GroundSpot  spot;
-	//--- World position of all building for teleport --------------
-	SPosition   rpos;															// center
 	//--- Roof points ----------------------------------------------
 	D2_POINT   *bevel;														// Bevel array
 	double			t70;															// tan(60°)
@@ -852,8 +850,6 @@ public:
 	void		repD(U_INT p)							{dop.Rep(p);}
 	char    hasR(U_INT p)							{return dop.Has(p);}
 	D2_Style  *GetStyle()							{return BDP.style;}
-	void    SetReference(SPosition p)	{rpos = p;}
-	SPosition &ReferencePosition()		{return rpos;}
 	void		SetIdent(U_INT No,U_INT id)		{BDP.stamp = No; BDP.ident = id;}
 	//------------------------------------------------------
 	void		DrawSingle();

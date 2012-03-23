@@ -160,7 +160,6 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	globals->cam->SetRange(100);
 	SetOptions(TRITOR_ALL);
 	ses.SetTrace(1);
-	modif = 0;
 	tera	= 0;
 	scny	= 1;
 	wait  = 1;
@@ -416,10 +415,9 @@ U_INT CFuiSketch::GotoReferencePosition()
 	fpos	= 0;
 	if (!ParseArea())	return Abort(er2,fnam);
 	//--- Go to reference position --------
-	wfil	= 0;
 	cntw	= 0;
 	nBLDG	= 0;
-	trn->SetReference(rpos);
+	geop  = rpos;
 	rcam->GoToPosition(rpos);			// Teleport
 	globals->Disp.ExecON (PRIO_ABSOLUTE);		// Allow Terrain
 	globals->Disp.ExecOFF(PRIO_TERRAIN);		// Stop after terrain
@@ -444,8 +442,8 @@ void CFuiSketch::EditBuilding()
 //-------------------------------------------------------------------
 //	Build Object
 //-------------------------------------------------------------------
-void CFuiSketch::BuildObject()
-{	if (skip)	return;
+bool CFuiSketch::BuildObject()
+{	if (skip)	return false;
 	bpm = trn->BuildOBJ(otype);
 	trn->SetTag(tagn,valn);
 	if (*smodl)	trn->ReplaceBy(smodl,"OpenStreet/Models", orien);
@@ -454,7 +452,7 @@ void CFuiSketch::BuildObject()
 	geop  = bpm->geop;
 	rcam->GoToPosition(geop);			// Teleport
 	if (bpm->error == 0)	rpos = geop;
-	return ;
+	return true;
 }
 //-----------------------------------------------------------------------
 //	View terrain action
@@ -476,7 +474,6 @@ U_INT CFuiSketch::TerrainView()
 //-----------------------------------------------------------------------
 U_INT CFuiSketch::TerrainHide()
 {	char ret = SKETCH_PAUSE;
-	if (0 == bpm)					return ret;				// No selected building
 	trn->DrawSingle();
 	globals->Disp.ExecOFF (PRIO_ABSOLUTE);						// No Terrain
 	globals->Disp.DrawOFF (PRIO_TERRAIN);							// No Terrain
@@ -497,6 +494,10 @@ U_INT CFuiSketch::TerrainWait()
 	}
 	if (!globals->tcm->TerrainStable())		return SKETCH_WAIT;
 	//--- get terrain elevation ------------------------
+	rpos.alt = globals->tcm->GetGroundAltitude();
+	geop	= rpos;
+	globals->geop.alt = rpos.alt;
+	wfil	= 0;
 	wait	= 0;
 	return nStat;
 }
@@ -517,7 +518,7 @@ U_INT CFuiSketch::HereWeAre()
 U_INT	CFuiSketch::OneBuilding()
 {	if (!ParseBuilding())	return SKETCH_ENDL;
 	//--- build object -----------------
-	BuildObject();
+	if (!BuildObject())		return SKETCH_PAUSE;
 	//--- show style on list box -------
 	U_INT ns = bpm->style->GetSlotSeq();
 	sBOX.GoToItem(ns);
@@ -541,7 +542,7 @@ U_INT CFuiSketch::ReadNext()
 	if (eofl)							return SKETCH_PAUSE;
 	if (!ParseBuilding())	return SKETCH_ENDL;
 	//--- build object ---------------------
-	BuildObject();
+	if (!BuildObject())		return SKETCH_SHOW;
 	time	= 1;
 	//---------------------------------------
 	_snprintf(txt,127,"Load Building %05d",bpm->stamp);
@@ -563,7 +564,6 @@ U_INT	CFuiSketch::ShowBuilding()
 U_INT CFuiSketch::EndLoad()
 {	char txt[128];
 	_snprintf(txt,127,"%05d buildings",nBLDG);
-	if (0 == nBLDG)	return Abort("Invalid file ",fnam);
 	nBAT->SetText(txt);
 	trn->EndOBJ();
 	fclose(FP);
@@ -613,7 +613,7 @@ void CFuiSketch::ChangeStyle()
 	bpm->flHtr		= grp->GetFloorHtr();
 	bpm->roofP		= ses.GetRoofTexture(sty);
 	bpm->roofM		= grp->GetRoofModByNumber(*bpm);
-	modif	= trn->ModifyStyle();
+	trn->ModifyStyle();
 	EditError();
 	return;
 }
@@ -624,7 +624,6 @@ void CFuiSketch::ChangeStyle()
 void	CFuiSketch::RemoveBuilding()
 {	if (NoSelection())	return;
 	int rm = trn->RemoveBuilding();
-	modif	|= rm;
 	nBLDG -= rm;
 	if (rm)	bpm = 0;
 	return;
@@ -636,7 +635,7 @@ void	CFuiSketch::RemoveBuilding()
 void CFuiSketch::ReplaceBuilding()
 {	if (NoSelection())	return;
   double rad = atan2(bpm->sinA,bpm->cosA);
-	modif = trn->ReplaceBy(smodl,"OpenStreet/Models", rad);
+	trn->ReplaceBy(smodl,"OpenStreet/Models", rad);
 	State = SKETCH_PAUSE;
 	return;
 }
@@ -653,7 +652,7 @@ void	CFuiSketch::ResetBuilding()
 //-----------------------------------------------------------------------
 void CFuiSketch::RotateBuilding(double rad)
 {	if (NoSelection())	return;
-	modif	= trn->RotateObject(rad);
+	trn->RotateObject(rad);
 	return;
 }
 //-----------------------------------------------------------------------
@@ -694,9 +693,9 @@ bool CFuiSketch::NoSelection()
 void CFuiSketch::FlyOver()
  { Write(); 
 	 globals->Disp.DrawOFF (PRIO_TERRAIN);		// No Terrain
-	  ses.UpdateCache();
-		Close();
-		return;
+	 ses.UpdateCache();
+	 Close();
+	 return;
 }
 //-----------------------------------------------------------------------
 //	Time slice
@@ -706,12 +705,13 @@ void CFuiSketch::TimeSlice()
 	switch (State)	{
 		//--- Create file selection ------------
 		case SKETCH_FILE:
+			 *sname = 0;
 				CreateFileBox(&FPM);
 				return;
 		//--- Wait file selection --------------
 		case SKETCH_WSEL:
-			  if (0 == *FPM.sfil)	State = Abort(erm," Editor will close");
-			  else								State = BuildStyList();
+			  if (0 == *sname)	State = Abort(erm," Editor will close");
+			  else							State = BuildStyList();
 				return;
 		//--- Create reference position --------
 		case SKETCH_REFER:
@@ -821,7 +821,7 @@ void CFuiSketch::Write()
 {	char txt[128];
 	char *ed = "Area SW[%.2lf, %.2lf] NE[%.2lf, %.2lf] \n";
 	if (0 == edit)	return;
-	if (0 == modif)	return;
+	if (0 == nBLDG)	return;
 	FILE *fp = fopen(fnam,"w");
 	if (0 == fp)		return;
 	//--- Edit area --------------------------------
@@ -855,6 +855,7 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		//--- View terrain ---------------------
 		case 'vter':
 			if (wfil)	return;
+		//	if (0 == nBLDG)		return;
 			if (tera)	State = TerrainHide();
 			else			State = TerrainView();
 			return;
