@@ -204,6 +204,14 @@ void CFuiManager::Cleanup (void)
 //  Compute a new screen position
 //---------------------------------------------------------------------------------
 Tag CFuiManager::GenTag()
+{  U_INT x;
+   return GetaTag(&x,&x);
+}
+//---------------------------------------------------------------------------------
+//  Generate a Tag for windows that are dupplicated
+//  Compute a new screen position
+//---------------------------------------------------------------------------------
+Tag CFuiManager::GetaTag(U_INT *x, U_INT *y)
 {  char txt[8];
    sprintf(txt,"N%03u",int(widn++));
    Tag idn  = StringToTag(txt);
@@ -211,6 +219,8 @@ Tag CFuiManager::GenTag()
    yPos  += 32;
    if (xPos > 800)  xPos = 10;
    if (yPos > 780)  yPos = 40;
+	 *x = xPos;
+	 *y = yPos;
    return idn;
 }
 
@@ -387,12 +397,13 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       window = new CFuiConfirmQuit (windowId, "UI/TEMPLATES/FileQuit.win");
       break;
     //---Error message ----------------------------------------
+			/*
     case FUI_WINDOW_ERMSG:
       windowId  = GenTag();
       window		= new CFuiErrorMSG (windowId, "UI/TEMPLATES/ERRORMSG.win");
 			window->MoveTo(xPos,yPos);
       break;
-
+			*/
     case FUI_WINDOW_SITUATION_LOAD:
       window  = new CFuiWindow (windowId, "UI/TEMPLATES/FileLoadSituation.WIN");
       break;
@@ -756,7 +767,7 @@ void CFuiManager::DrawHelp (float time,int x, int y)
 /// Display a error window
 //------------------------------------------------------------------------------
 void CFuiManager::DialogError(char *msg,char *from)
-{	CFuiErrorMSG *win = (CFuiErrorMSG *)CreateFuiWindow(FUI_WINDOW_ERMSG);
+{	CFuiErrorMSG *win = new CFuiErrorMSG(FUI_WINDOW_ERMSG,0);
   char *ttl = "ERROR";
   if (from)	ttl = from;
 	win->SetTitle(ttl);

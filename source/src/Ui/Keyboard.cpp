@@ -793,7 +793,7 @@ void BindAllKeys (CKeyMap *keymap)
 
 /// \todo Add caps, CR (13), shifted special characters
 SGlutToFlyLegacyKey glutKeyMap[] =
-{
+{ {0, 0},
   // Control keys
   { 1,            1 },
   { 2,            2 },

@@ -27,8 +27,10 @@
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainElevation.h"
 #include "../Include/TerrainTexture.h"
+#include "../Include/ScenerySet.h"
 #include "../Include/ElevationTracker.h"
 #include "../Include/Triangulator.h"
+#include "../Include/OSMobjects.h"
 #include "../Include/MagneticModel.h"
 #include "../Include/FileThread.h"
 #include "../Include/Fui.h"
@@ -1536,22 +1538,22 @@ void CSuperTile::TraceEnd()
 	TRACE("QGT(%03d-%03d) ST%02d free %05d Objects",qx,qz,NoSP,nb);
 }
 //-------------------------------------------------------------------------
-// Seach a pack or create one
+// Seach a part with same reference as the given one
 //-------------------------------------------------------------------------
-C3DPack *CSuperTile::Locate(OSM_Object *obj)
-{	C3DPack *pak = 0;
-	void    *ref = obj->GetGroupTREF();
-	for (pak = batQ.GetFirst(); pak != 0; pak = pak->Next())
-	{	if (!pak->SameREF(ref))			continue;
-		U_INT nbv = pak->GetNBVTX();
-		if (nbv < globals->pakCAP)	return pak;
+C3DPart *CSuperTile::SearchOSMPart(CShared3DTex *ref)
+{	C3DPart *prt = 0;
+	for (prt = batQ.GetFirst(); (prt != 0); prt = prt->Next())
+	{	if (!prt->SameREF(ref))			continue;
+		U_INT nbv = prt->GetNBVTX();
+		if (nbv < globals->pakCAP)	return prt;
 		break;
 	}
-	//--- Allocate a new 3D pack --------------------------
-	pak	= new C3DPack(obj->GetKey());
-	//--- Allocate a new part -----------------------------
-	batQ.PutHead(pak);
-	return pak;
+	//--- Allocate a new 3D part --------------------------
+	prt	= new C3DPart();
+	prt->Reserve(ref); 
+	//--- Add a new part -----------------------------
+	batQ.PutHead(prt);
+	return prt;
 }
 //-------------------------------------------------------------------------
 // Add osm object to try
@@ -1560,10 +1562,14 @@ void CSuperTile::AddToPack(OSM_Object *obj)
 {	//--- Check for object --------------------
 	double rad = FN_RAD_FROM_ARCS(mPos.lat);
 	double rdf = cos(rad);
-	C3DPack  *pak	= Locate(obj);
 	SPosition pos	= obj->GetPosition();
 	CVector T  = FeetComponents(mPos, pos,rdf);
-	pak->ExtendPart(obj, T);
+	//--- Search a part with same texture ------
+	CShared3DTex *ref = obj->GetPartTREF();
+	C3DPart *p0 = obj->GetPart();
+	C3DPart *p1 = SearchOSMPart(ref);
+	p1->ExtendWith(p0,T);
+	return;
 }
 //-------------------------------------------------------------------------
 //  Reload VBO if needed
@@ -1656,17 +1662,19 @@ void CSuperTile::AllocateVertices(char opt)
 //-----------------------------------------------------------------------------
 void CSuperTile::BindVBO()
 {	glBindBuffer(GL_ARRAY_BUFFER,aVBO);
-	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2 * UNIT_SIZE) );
+	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2 * sizeof(double)) );
 	glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),0);
 	return;
 }
 //-------------------------------------------------------------------------
 //	Check if super tile is all textured
 //-------------------------------------------------------------------------
-bool CSuperTile::IsTextured()
+bool CSuperTile::IsTextured(char opt)
 { CTextureDef *txn = 0;
-	if (InFarQ())				return true;
-	if (!Visibility())	return true;
+	if (InFarQ())									return true;
+	if (!Visibility())						return true;
+	if (IsReady())								return true;
+	if ((0 == opt) && NeedOBJ())	return true;
 	for (U_INT nd = 0; nd != TC_TEXSUPERNBR; nd++)
     { txn = Tex+nd;
 			U_INT xob = txn->GetDOBJ();
@@ -1885,7 +1893,8 @@ bool CSuperTile::Update()
   //--- Update LOD -------------------------------------------
   if (dEye > lim)		Outside3DRing();
 	else							Inside3DRing();
-	return (!woQ.IsEmpty());
+	bool OK = (woQ.NotEmpty()) || (batQ.NotEmpty());
+	return (OK);
 }
 //-------------------------------------------------------------------------
 //  SuperTile Draw 3D Objects Here
@@ -1895,14 +1904,16 @@ bool CSuperTile::Update()
 //-------------------------------------------------------------------------
 int CSuperTile::Draw3D(U_CHAR mod)
 {	//----------------------------------------------------------
-	char       pof = 1;									// Polygon offset on
   CWobj     *obj = 0;
   int        nbo = 0;
+//	glPushAttrib(GL_ALL_ATTRIB_BITS);
   white[3]       = alpha;
-  glMaterialfv (GL_FRONT_AND_BACK, GL_DIFFUSE, white);
-	glPolygonOffset(0.0F,5);
+  glColorMaterial (GL_FRONT_AND_BACK, GL_DIFFUSE);
+	glColor4fv(white);
+	//--------------------------------------------------------
+	bool OK = (globals->noOBJ == 0);
 	//----------------------------------------------------------
-  for (obj = woQ.GetFirst(); obj!=0; obj = woQ.GetNext(obj))
+  for (obj = woQ.GetFirst(); ((obj!= 0) && OK); obj = woQ.GetNext(obj))
   { //----Translate to object origin -------------------------
     obj->Update(mod);
     SVector tr;
@@ -1910,27 +1921,29 @@ int CSuperTile::Draw3D(U_CHAR mod)
     //--------------------------------------------------------
     glPushMatrix();
     glTranslated(tr.x,tr.y,tr.z);     // To object origin
-    glRotated(obj->GetYRotation(),0,0,1);
+    if (obj->Rotate())	glRotated(obj->GetYRotation(),0,0,1);
     //---Draw object ----------------------------------------
-		if (pof & obj->GetZB())	{pof = 0; glPolygonOffset(0,0);}
+		if (obj->GetZB())		glDisable(GL_DEPTH_TEST);							//{pof = 0; glPolygonOffset(0,0);}
     obj->DrawModel(mod,LOD);
-    //----------------------------------------------------------------
+		if (obj->GetZB())		glEnable(GL_DEPTH_TEST);
+    //-------------------------------------------------------
     glPopMatrix();
     nbo++;
   }
-	//--- Draw 3D pack -------------------------------------------------
-	GLint nrm = 0;
-	if (batQ.IsEmpty())	return nbo;
-	glGetIntegerv(GL_NORMAL_ARRAY,&nrm);
-	glDisableClientState(GL_NORMAL_ARRAY);
+	
+	//--- Draw the OSM queue ----------------------------------
+	if (globals->noOSM)	return nbo;
+	glColorMaterial (GL_FRONT, GL_DIFFUSE);
 	glPushMatrix();
 	CVector T;
 	globals->tcm->RelativeFeetTo(mPos,T);
-	glTranslated(T.x, T.y, T.z);		// Got to supertile center
-	C3DPack *pak;
-	for (pak = batQ.GetFirst(); pak != 0; pak= pak->Next()) pak->Draw();
+	glTranslated(T.x, T.y, T.z);		// Go to supertile center
+	//--- DRAW OSM Objects ------------------------------------
+	C3DPart *prt;
+	glFrontFace(GL_CCW);
+	for (prt = batQ.GetFirst(); prt != 0; prt= prt->Next())	   prt->Draw();
+	//----------------------------------------------------------
 	glPopMatrix();
-	glEnableClientState(nrm);
   return nbo;
 }
 //-----------------------------------------------------------------------------
@@ -1938,6 +1951,8 @@ int CSuperTile::Draw3D(U_CHAR mod)
 //-----------------------------------------------------------------------------
 void CSuperTile::GetLine(CListBox *box)
 { CWobj     *obj = 0;
+  float dmile = FN_MILE_FROM_FEET(dEye);
+	if (dmile > 2) return;
   woQ.Lock();
   for (obj = woQ.GetFirst(); obj!=0; obj = woQ.GetNext(obj))
   { CObjLine *lin = new CObjLine(obj);
@@ -1953,6 +1968,7 @@ void CSuperTile::Add3DObject(CWobj *obj, char t)
 {	obtr	= t;	
 	if (obj->NoZB()) woQ.PutHead(obj);
   else             woQ.PutEnd(obj);
+
   return;
 }
 //=========================================================================
@@ -2018,6 +2034,7 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
 	visb	= 0;
   Metar = 0;
 	strn	= tm->GetTRNoption();
+	osmDB = 0;
 	//--- Get VBO option -----------------------
 	int opt = 0;
 	GetIniVar("Performances","UseTerrainVBO",&opt);
@@ -2060,6 +2077,8 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
 C_QGT::~C_QGT()
 { //--------Deregister Scenery ---------------------------
 	globals->scn->Deregister(qKey);
+	globals->scn->CloseOSM(osmDB);
+	//------------------------------------------------------
 	if (0 == qSTAT) FreeAllVertices();
   if (trn)  delete trn;
   tcm->FreeSEA(this);
@@ -2660,7 +2679,7 @@ CTextureDef *C_QGT::GetTexDescriptor(U_INT tx,U_INT tz)
   return &sp->Tex[nt];
 }
 //-------------------------------------------------------------------------
-//  Given TX and TZ (indices of Detatil tile) return SuperTile context
+//  Given TX and TZ (indices of Detail tile) return SuperTile context
 //-------------------------------------------------------------------------
 CSuperTile *C_QGT::GetSuperTile(int tx,int tz)
 { U_INT No = ((tz >> TC_BY04) << TC_BY08) | (tx >> TC_BY04);
@@ -2671,6 +2690,21 @@ CSuperTile *C_QGT::GetSuperTile(int tx,int tz)
 //-------------------------------------------------------------------------
 CSuperTile *C_QGT::GetSuperTile(U_INT No)
 { return (No > 63)?(0):(&Super[No]); }
+//-------------------------------------------------------------------------
+//  Return OSM part with same texture reference 
+//-------------------------------------------------------------------------
+C3DPart	*C_QGT::GetOSMPart(char No,char dir, char *ntx)
+{ CSuperTile *sup = (No > 63)?(0):(&Super[No]);
+	if (0 == sup)		return 0;
+	//--- Get texture reference --------------------------
+	TEXT_INFO txd;
+	txd.Dir = dir;
+	strncpy(txd.name,ntx,FNAM_MAX);
+	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
+	C3DPart *prt = sup->SearchOSMPart(ref);
+	globals->txw->Free3DTexture(ref);
+	return prt;
+}
 //-------------------------------------------------------------------------
 //  STEP 3:
 //  Set Detail Tile elevation from QTR file
@@ -3084,6 +3118,26 @@ int C_QGT::StepSUP()
   return 1;
 }
 //-------------------------------------------------------------------------
+//	Load 3D objects
+//-------------------------------------------------------------------------
+int C_QGT::Step3DO()
+{	int pm = 0;
+	if (!globals->noOBJ) pm = tcm->Locate3DO(this);
+	//---Open OSM database ----------------------------------
+	osmDB = globals->scn->RegisterOSM(this);
+	Step = TC_QT_OS1;
+	return pm;
+}
+//-------------------------------------------------------------------------
+//	Load Objects from OSM layer
+//	Load up to 8 Supertiles
+//-------------------------------------------------------------------------
+int C_QGT::StepOSM()
+{	if (0 == osmDB)		return 0;
+	osmDB = globals->scn->LoadOSMLayer(osmDB,1000);
+	return (osmDB != 0);
+}
+//-------------------------------------------------------------------------
 //	Check for identity
 //-------------------------------------------------------------------------
 bool C_QGT::AreWe(U_INT qx,U_INT qz)
@@ -3332,10 +3386,10 @@ void C_QGT::Abortv()
 //-------------------------------------------------------------------------
 // Check if supertiles are all textured
 //-------------------------------------------------------------------------
-bool C_QGT::AllTextured()
+bool C_QGT::AllTextured(char opt)
 {	CSuperTile *sp = Super;
   for (int No = 0; No != TC_SUPERT_NBR; No++,sp++)
-	{	if (sp->IsTextured()) continue;
+	{	if (sp->IsTextured(opt)) continue;
 		else	return false;	}	
 	//--- OK ready -------------------------------------
 	return true;
@@ -3482,6 +3536,7 @@ TCacheMGR::TCacheMGR()
   if (wire) globals->noTER++;
   if (wire) globals->noAPT++;
   if (wire) globals->noOBJ++;
+	if (wire) globals->noOSM++;
   if (wire) globals->noMET++;
   if (wire) globals->noAWT++;
   //------Magnetic refresh indicator ---------------------
@@ -4402,20 +4457,20 @@ CTextureDef *TCacheMGR::GetTexDescriptor(C_QGT *qgt,U_INT tx,U_INT tz)
 //-----------------------------------------------------------------
 //	Check for terrain ready
 //------------------------------------------------------------------
-bool TCacheMGR::TerrainStable()
+bool TCacheMGR::TerrainStable(char opt)
 { if (qgtMAP.size() == 0)			return false;
 	std::map<U_INT,C_QGT*>::iterator rp;
 	pthread_cond_signal(&thCond);    // Signal file THREAD
 	if (ActQ.NotEmpty())			return false;
 	for (rp = qgtMAP.begin(); rp != qgtMAP.end(); rp++)
 	{	C_QGT *qt = (*rp).second;
-	  if (qt->InLoad())					return false;
-		if (qt->NotReady())				return false;
-		if (qt->NotVisible())			continue;
-		if (!qt->AllTextured())		return false;
+	  if (qt->InLoad())						return false;
+		if (qt->NotReady())					return false;
+		if (qt->NotVisible())				continue;
+		if (!qt->AllTextured(opt))	return false;
 	}
-	if (!MeshReady())						return false;
-	if (!SPotReady())						return false;
+	if (!MeshReady())							return false;
+	if (!SPotReady())							return false;
 	if (tr)		TRACE("TERRAIN IS READY");
 	glFlush();
 	glFinish();
@@ -4858,11 +4913,16 @@ int TCacheMGR::OneAction()
 			return qgt->StepSUP();
     //---Locate 3D objects per QGT ------------------------
     case TC_QT_3DO:
-			pm = objMGR->LocateObjects(qgt);
+			pm = qgt->Step3DO();
 			//----------------------------------------------------
       if (tr) TRACE("TCM: -- Time: %04.2fQGT(%3d-%3d) Load %06d Objects",Time(),qgt->xKey,qgt->zKey,pm);
       //----------------------------------------------------
-      return LastAction();
+			return  1;
+      //return LastAction();
+		//--- Load OSM layer 1 ---------------------------------
+		case TC_QT_OS1:
+			if (qgt->StepOSM())	return 1;
+			return LastAction();
     //---- Delete the QGT --------------------------------
     case TC_QT_DEL:
       return FreeTheQGT(qgt);
@@ -5035,8 +5095,7 @@ void TCacheMGR::UpdateGroundPlane()
 //	Camera is at aircraft origin, scale is 1 in every direction
 //-----------------------------------------------------------------------------
 void TCacheMGR::Draw3DObjects()
-{	if (globals->noOBJ)    return;
-	std::map<U_INT,C_QGT*>::iterator im;
+{	std::map<U_INT,C_QGT*>::iterator im;
 	glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER,0.4f);
  // glEnable(GL_BLEND);

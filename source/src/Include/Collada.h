@@ -246,6 +246,8 @@ class ColladaParser {
 	U_INT			nbVT;													// Total of vertices
 	std::vector<CAcmVPack*> pack;
 	CAcmVPack *pak;
+	//--- Texture description -------------------------------------
+	TEXT_INFO	 txd;
 	//-------------------------------------------------------------
   PODFILE  *pf;                           // Current file
   FILE     *file;                         // Window file

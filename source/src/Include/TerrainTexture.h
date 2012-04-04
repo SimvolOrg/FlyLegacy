@@ -62,6 +62,11 @@ struct TC_PIX_STATE
   U_CHAR  In;                                   // Inside value
 };
 //=============================================================================
+//  Type of shared texture
+//=============================================================================
+#define SHX_POD   (0)
+#define SHX_SQL   (1)
+//=============================================================================
 //  Class CWaterTexture : to store fixed water file textures
 //  NOTE:  The RGBA texture is managed by the shared texture object. 
 //         Here this is just a pointer. So dont delete the texture here.
@@ -114,26 +119,44 @@ public:
   inline char GetBlend()          {return Blend;}
 };
 //=============================================================================
+//	Texture State
+//=============================================================================
+#define SHX_INIT (0)
+#define SHX_ISOK (1)
+#define SHX_NULL (2)
+#define SHX_SKIP (3)
+//=============================================================================
 //  Class CShared3DTex for 3D texture sharing
-//  NOTE:  The texture name include path ART/ so the real texture
-//          ident start at path+4
+//  NOTE:  The texture name include path 
 //=============================================================================
 class CShared3DTex {
   //-----Attribute -----------------------------------------
+	char          State;												// State
+	char					rfu1;													// Reserved
   U_INT         Use;                          // User count
   TEXT_INFO     x3d;                          // Texture info
   //--------------------------------------------------------
 public:
   CShared3DTex(char *tn,char tsp, char dir = 0);
+	CShared3DTex(TEXT_INFO &txd);
  ~CShared3DTex();
  char                 *GetIdent()      {return  x3d.path;}
  //----------------------------------------------------------
- inline TEXT_INFO     *GetInfo()                      {return &x3d;}
- inline U_INT          IncUser()                      {Use++; return Use;}
- inline bool           DecUser()                      {Use--; return (Use != 0);}
- inline U_INT          GetOBJ()                       {return x3d.xOBJ;}
- inline void           SetXOBJ(GLuint r)              {x3d.xOBJ = r;}
-};
+ bool		BindTexture();
+ void		GetDimension(TEXT_INFO &txd);
+ bool		SameTexture(char dir, char *txn);
+ char  *TextureData(char &dir);
+ //----------------------------------------------------------
+ inline void					 SetOK()								{State = SHX_ISOK;}
+ inline TEXT_INFO     *GetInfo()              {return &x3d;}
+ inline TEXT_INFO     *GetDescription()				{return & x3d;}
+ inline U_INT          IncUser()              {Use++; return Use;}
+ inline bool           DecUser()              {Use--; return (Use != 0);}
+ inline U_INT          GetOBJ()               {return x3d.xOBJ;}
+ inline void           SetXOBJ(GLuint r)      {x3d.xOBJ = r;}
+ inline U_INT					 GetUser()							{return Use;}
+ inline char          *GetPath()							{return x3d.path;}
+ };
 //=============================================================================
 //  Class CArtParser to read texture files with several options
 //
@@ -204,7 +227,8 @@ public:
   int       PixlRGBA(U_CHAR opt);
   int       PixlBGRO(U_CHAR opt);
   int       ByteTIFF(U_CHAR opt);
-  //---------------------------------------------------------------------
+	int				RgbaTIFF(U_CHAR opt);
+	//---------------------------------------------------------------------
   void      WriteBitmap(FREE_IMAGE_FORMAT ff,char *fn,int wd,int ht,U_CHAR *buf);
   //---------------------------------------------------------------------
   GLubyte  *TransferRGB();
@@ -366,14 +390,17 @@ public:
   //----------------------------------------------------------
   void    GetShdOBJ(CTextureDef *txn);
   GLuint  GetTaxiTexture();
-  void   *GetM3DPodTexture(char *fn,U_CHAR tsp,char opt=0);
-  void   *GetM3DSqlTexture(char *fn,U_CHAR tsp);
+	//------------------------------------------------------------
+	CShared3DTex   *RefTo3DTexture (TEXT_INFO &txd);
+	//------------------------------------------------------------
+	CShared3DTex   *AddSHX(CShared3DTex *shx ,char type);
+	CShared3DTex	 *GetM3DPodTexture(TEXT_INFO &txd);
+	CShared3DTex	 *GetM3DSqlTexture(TEXT_INFO &txd);
+	//------------------------------------------------------------
   void    Get3DTIF(TEXT_INFO *inf);
   void    Get3DRAW(TEXT_INFO *inf);
 	void		GetAnyTexture(TEXT_INFO *inf);
-	void   *RefTo3DTexture(char *fn);
   GLuint  Get3DObject(void *tref);
-	void		ReserveReference(void *tref);
   void    Free3DTexture(void *sht);
 	void		GetTextureParameters(void *ref,TEXT_INFO &inf);
 	void		ReserveOne(void *ref);

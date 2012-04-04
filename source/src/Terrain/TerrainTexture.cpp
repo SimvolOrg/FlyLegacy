@@ -289,6 +289,7 @@ CSharedTxnTex::~CSharedTxnTex()
 //=============================================================================
 CShared3DTex::CShared3DTex(char *tn,char tsp, char dir)
 { Use       = 1;
+	State			= SHX_INIT;
   x3d.azp   = tsp;
   x3d.bpp   = 4;
   x3d.xOBJ  = 0;
@@ -297,6 +298,65 @@ CShared3DTex::CShared3DTex(char *tn,char tsp, char dir)
 	strncpy  (x3d.path,tn,FNAM_MAX);
   x3d.path[TC_LAST_INFO_BYTE]   = 0;
 }
+//-----------------------------------------------------------------------------
+//	Create a shared texture
+//-----------------------------------------------------------------------------
+CShared3DTex::CShared3DTex(TEXT_INFO &txd)
+{ Use   = 1;
+	State	= SHX_INIT;
+  x3d		= txd;
+}
+//-----------------------------------------------------------------------------
+//  Bind the texture object
+//-----------------------------------------------------------------------------
+bool CShared3DTex::BindTexture()
+{	U_INT xob;
+	switch (State)	{
+			//--- Assign a texture object for texture --
+			case SHX_INIT:
+			  xob = globals->txw->Get3DObject(this);
+				if (0 == xob) 
+					{State = SHX_NULL; return false;}
+				x3d.xOBJ = xob;
+				State = SHX_ISOK;
+			//--- Bind the texture object --------------
+			case SHX_ISOK:
+				glBindTexture(GL_TEXTURE_2D,x3d.xOBJ);
+				return true;
+			//--- Invalid texture -----------------------
+			case SHX_NULL:
+				WARNINGLOG("Texture not loaded  %s",x3d.path);
+				State = SHX_SKIP;
+				return false;
+			//--- Skip it ------------------------------
+			case SHX_SKIP:
+				return false;
+	}
+		gtfo("CSared3DTex tampered");
+		return false;
+}
+//-----------------------------------------------------------------------------
+//  Update texture descriptor
+//-----------------------------------------------------------------------------
+void CShared3DTex::GetDimension(TEXT_INFO &txd)
+{	txd.wd	= x3d.wd;
+	txd.ht	= x3d.ht;
+	txd.dim = x3d.dim;
+	return;
+}
+//-----------------------------------------------------------------------------
+//  Check for same texture
+//-----------------------------------------------------------------------------
+bool CShared3DTex::SameTexture(char dir, char *txn)
+{	bool   OK = (dir == x3d.Dir) && (strncmp(txn,x3d.name,FNAM_MAX) ==0);
+	return OK;
+}
+//-----------------------------------------------------------------------------
+//  Check for same texture
+//-----------------------------------------------------------------------------
+char *CShared3DTex::TextureData(char &dir)
+ { dir = x3d.Dir;
+	 return x3d.name;		}
 //-----------------------------------------------------------------------------
 //  Free resources
 //-----------------------------------------------------------------------------
@@ -422,11 +482,25 @@ int CArtParser::PixlRGBA(U_CHAR alf)
   return 1;
 }
 //--------------------------------------------------------------------
+//  Pixel RGBA for TIF Only 
+//--------------------------------------------------------------------
+int CArtParser::RgbaTIFF(U_CHAR alf)
+	{ // rgb has to be freed before any new allocation
+  FreeFFF (FIF_BMP); 
+  rgb = new U_INT[dim];
+	U_INT *dst = rgb;
+  for (U_INT z=0; z<htr; z++)
+  { U_INT *src = (U_INT*)FreeImage_GetScanLine(ref,z);
+    for (U_INT x=0; x<wid; x++)   *dst++ = *src++;
+  }
+  return 1;
+}
+//--------------------------------------------------------------------
 //  Pixel RGB Only 
 //--------------------------------------------------------------------
 int CArtParser::ByteTIFF(U_CHAR alf)
 { // rgb has to be freed before any new allocation
-  if (bpp != 24)  gtfo("Unsupported format");
+  if (bpp != 24)  return RgbaTIFF(alf);
   FreeFFF (FIF_BMP); 
   //----------------------------------------
   U_INT *buf = new U_INT[dim];
@@ -1462,6 +1536,7 @@ bool CTextureWard::LoadImageJPG(char *fn, S_IMAGE &ref)
 //---------------------------------------------------------------
 void CTextureWard::LoadAnyTexture(char *pn,TEXT_DEFN &txd)
 {	TEXT_INFO txf;                // Texture info;
+	txf.azp = 0;
   //--- Read the texture ----------------------
   CArtParser img(TC_HIGHTR);
   strncpy(txf.path,pn,TC_TEXTURE_NAME_DIM);
@@ -1540,6 +1615,33 @@ void CTextureWard::GetAnyTexture(TEXT_INFO *inf)
   img.GetAnyTexture(*inf);
 }
 //-----------------------------------------------------------------------------
+//	Insert Texture texture reference
+//	NOTE: Even if the real texture cant be read, the reference is kept to avoid
+//				to check everywhere else if it exists.
+//-----------------------------------------------------------------------------
+CShared3DTex *CTextureWard::AddSHX(CShared3DTex *shx ,char type)
+{	TEXT_INFO *inf = shx->GetDescription();
+	char			*dot;
+	switch (type)	{
+			//--- POD TEXTURE ----------------------------
+			case SHX_POD:
+					dot = strrchr(inf->path,'.');
+					if (0 == dot)							break;
+					if (strcmp(dot,".RAW") == 0)  Get3DRAW(inf);
+					else                          GetAnyTexture(inf);
+					break;
+			case SHX_SQL:
+			//--- SQL TEXTURE -----------------------------
+					globals->sql->GetM3DTexture(inf);
+					break;
+	}
+	//--- Insert the shared texture into the map ------
+	pthread_mutex_lock (&t3dMux);
+	t3dMAP[inf->path]  = shx;
+  pthread_mutex_unlock (&t3dMux);
+	return shx;
+}
+//-----------------------------------------------------------------------------
 //  Get A 3D model Texture
 //  Format may be either
 //  1)RAW-ACT
@@ -1547,35 +1649,40 @@ void CTextureWard::GetAnyTexture(TEXT_INFO *inf)
 //	Allocated a shared object for this texture name
 //	Return the shared objet as a reference to this texture
 //-----------------------------------------------------------------------------
-void *CTextureWard::GetM3DPodTexture(char *fn,U_CHAR tsp,char dir)
-{ _strupr(fn);
-  char key[PATH_MAX];
-	//--- build a full name as key -------------------------
-	if (0 == dir)	_snprintf(key,FNAM_MAX,"ART/%s",fn);
-	else					strncpy  (key,fn,FNAM_MAX);
-	key[FNAM_MAX]	= 0;
+CShared3DTex *CTextureWard::GetM3DPodTexture(TEXT_INFO &txd)
+{ _snprintf(txd.path,FNAM_MAX,textMSK[txd.Dir],txd.name);
 	//-------------------------------------------------------
-  void *ref = RefTo3DTexture(key);
+  CShared3DTex *ref = RefTo3DTexture(txd);
   if   (ref)  return ref;
-  char *dot = strstr(fn,".");
-  if (0 == dot) return 0;
   //---Add a new shared texture --------------------------
-  CShared3DTex *shx = new CShared3DTex(key,tsp,dir);
-  TEXT_INFO    *inf = shx->GetInfo();
-  if (strcmp(dot,".RAW") == 0)  Get3DRAW(inf);
-	else                          GetAnyTexture(inf);
-  if (0 == inf->mADR)  {delete shx; shx = 0;}
-  //--Insert new shared object ---------------------------
-  pthread_mutex_lock (&t3dMux);
-	if (shx)   t3dMAP[key]  = shx;
-  pthread_mutex_unlock (&t3dMux);
+  CShared3DTex *shx = new CShared3DTex(txd);
+	AddSHX(shx ,SHX_POD);
+	//--- Update caller with texture parameters ------------
+	shx->GetDimension(txd);
+  return shx;
+}
+//-----------------------------------------------------------------------------
+//  Get A 3D model Texture
+//  from SQL database.  This function runs in SQL thread
+//-----------------------------------------------------------------------------
+CShared3DTex *CTextureWard::GetM3DSqlTexture(TEXT_INFO &txd)
+{ //-- Make a key with ART directory ---------------------
+	_snprintf(txd.path,FNAM_MAX,textMSK[txd.Dir],txd.name);
+  //------------------------------------------------------
+	CShared3DTex *ref = RefTo3DTexture(txd);
+  if   (ref)  	return ref;
+  //---Add a new shared texture --------------------------
+  CShared3DTex *shx = new CShared3DTex(txd);
+	AddSHX(shx ,SHX_SQL);
+	shx->GetDimension(txd);
   return shx;
 }
 //-----------------------------------------------------------------------------
 //	Return texture parameters 
 //-----------------------------------------------------------------------------
 void CTextureWard::GetTextureParameters(void *ref,TEXT_INFO &dst)
-{ CShared3DTex *shx = (CShared3DTex *)ref;
+{ if (0 == ref)	return;
+	CShared3DTex *shx = (CShared3DTex *)ref;
   TEXT_INFO    *src = shx->GetInfo();
 	dst = *src;
 	dst.mADR = 0;
@@ -1590,52 +1697,20 @@ void CTextureWard::ReserveOne(void *ref)
 	return;
 }
 //-----------------------------------------------------------------------------
-//  Get A 3D model Texture
-//  from SQL database.  This function runs in SQL thread
-//-----------------------------------------------------------------------------
-void *CTextureWard::GetM3DSqlTexture(char *fn,U_CHAR tsp)
-{ char key[PATH_MAX];
-  //-- Make a key with ART directory ---------------------
-  _snprintf(key,FNAM_MAX,"ART/%s",fn);
-	key[FNAM_MAX]	= 0;
-  //------------------------------------------------------
-	void *ref = RefTo3DTexture(key);
-  if   (ref)  	return ref;
-  //---Add a new shared texture --------------------------
-  CShared3DTex *shx = new CShared3DTex(key,tsp);
-  TEXT_INFO    *inf = shx->GetInfo();
-  globals->sql->GetM3DTexture(inf);
-  //--Insert new shared object ---------------------------
-  pthread_mutex_lock (&t3dMux);
-  if (shx)  t3dMAP[key]  = shx; 
-  pthread_mutex_unlock (&t3dMux);
-  return shx;
-}
-
-//-----------------------------------------------------------------------------
 //  Locate shared 3DW texture
 //-----------------------------------------------------------------------------
-void *CTextureWard::RefTo3DTexture(char *fn)
+CShared3DTex *CTextureWard::RefTo3DTexture(TEXT_INFO &txd)
 { pthread_mutex_lock (&t3dMux);
   CShared3DTex *shx = 0;
-  std::map<std::string,CShared3DTex*>::iterator itx = t3dMAP.find(fn);
+  std::map<std::string,CShared3DTex*>::iterator itx = t3dMAP.find(txd.path);
   if (itx != t3dMAP.end())
   { shx = (*itx).second;
     shx->IncUser();
+		//TRACE("AFTER REFERENCE %d to %s",shx->GetUser(),shx->GetPath());
   }
   pthread_mutex_unlock (&t3dMux);
+	if (shx)	shx->GetDimension(txd);
   return shx;
-}
-//-----------------------------------------------------------------------------
-//  Reserve one more user to the texture reference
-//-----------------------------------------------------------------------------
-void CTextureWard::ReserveReference(void *ref)
-{	if (0 == ref)			return;
-	CShared3DTex *shx =  (CShared3DTex *)ref;
-	pthread_mutex_lock (&t3dMux);
-	shx->IncUser();
-	pthread_mutex_unlock (&t3dMux);
-	return;
 }
 //-----------------------------------------------------------------------------
 //  Return a TIF Texture for 3D object
@@ -1701,6 +1776,7 @@ GLuint CTextureWard::Get3DObject(void *tref)
 void CTextureWard::Free3DTexture(void *sht)
 { CShared3DTex *shx = (CShared3DTex *)sht;
   if (0 == shx)   return;
+	//TRACE("BEFORE DECREMENT: %d to %s",shx->GetUser(), shx->GetPath());
   //---Decrement count and release if 0 user ----
   pthread_mutex_lock (&t3dMux);
   if (!shx->DecUser())
@@ -1708,7 +1784,6 @@ void CTextureWard::Free3DTexture(void *sht)
 	    TEXT_INFO *inf = shx->GetInfo();
 			NbG3D         -= inf->type;
       delete shx;
-			
     }
   pthread_mutex_unlock (&t3dMux);
   return;

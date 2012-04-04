@@ -53,7 +53,9 @@
 //=============================================================================
 class CPolyShop;
 class OSM_Object;
+class CShared3DTex;
 //=============================================================================
+#define MODEL_DNT			0x02
 #define MODEL_NIT     0x01
 #define MODEL_DAY     0x00
 #define MODEL_HI      0x00
@@ -155,19 +157,18 @@ class C3DPart {
 	//------------------------------------------------------------
   U_CHAR    tsp;                            // Transparent indicator
   U_CHAR    lod;                            // Level of detail
-	U_CHAR    rf1;														// not used
+	U_CHAR    nzb;														// No depth test
 	U_CHAR    rf2;														// not used
 	//------------------------------------------------------------
-  char     *ntex;                           // Texture name
-  void     *tRef;                           // Texture Reference
-  GLuint    xOBJ;                           // Texture Object
+  CShared3DTex *tRef;                       // Texture Reference
+	
   //---List of components --------------------------------------
 	U_SHORT   vloc;														// Vertice Relocation
 	U_SHORT   xloc;														// Indice rlocation
   int       NbVT;                           // Number of vertices
   int       NbIN;                           // Number of indices
   F3_VERTEX   *nVTX;                        // List of vertices
-	TC_VTAB     *vTAB;												// Vertices
+	GN_VTAB     *gTAB;												// Vertice table
   F3_VERTEX   *nNRM;                        // Norme coordinates
   F2_COORD    *nTEX;                        // Texture coordinates
   int         *nIND;                        // Indice list
@@ -176,49 +177,55 @@ class C3DPart {
   //------------------------------------------------------------
 public:
   C3DPart();
-	C3DPart(char *txn, int lod, int nbv, int nbx);
+	C3DPart(char dir, char *txn, int lod, int nbv, int nbx);
+	C3DPart(char dir, char *txn,int lq,int nbx);
  ~C3DPart();
 	//-------------------------------------------------------------
 	void		Release();
+	void		Trace(char lod);
 	//-------------------------------------------------------------
 	void		ZRotation(double sn, double cn);
 	void    ExtendTNV(int nbv, int nbx);
 	void		BinRendering();
 	void		W3DRendering();
-	void   *GetReference(char *txn, char tsp);
+	void    ExtendWith(C3DPart *p1, SVector &T);
+	int 		MoveAndTranslate(C3DPart *ps,SVector &T);
+	void		Append(TC_VTAB *tab, U_INT ofs, U_INT lg);
+	void		Append(GN_VTAB *tab, U_INT ofs,U_INT lg);
+	void		ExtendOSM(int nbv,GN_VTAB *src);
+	void		AllocateIND();
+	void		ExtendGTB(int nbv);
+	void		SQLstrip(int nbx,F3_VERTEX *V,F3_VERTEX *N,F2_COORD *T,int *X);
 	//-------------------------------------------------------------
 	void		AllocateW3dVTX(int nv);
-	void    AllocateOsmVTX(int nv);
-	void    AllocateObjVTX(int nv);
-	void		CopyForOSM(C3DPart *s);
-	void		ReceiveOSM(C3DPart *ps, char opt);
-	void		Translate(SVector &T);
+	void		AllocateOsmGVT(int nv);
 	void		DrawAsW3D();
-	void		DrawAsOSM();
-	void		DrawAsOBJ();
+	void		DrawAsGVT();
 	void		DrawAsBIN();
 	//-------------------------------------------------------------
 	void		Draw()		{(this->*Rend)();}
 	//-------------------------------------------------------------
-  void    SetTexName(char *txn);
-	void		SetTexture(char *txn);
+  void    SetAllTexName   (char dir,char *txn);
   void    GetInfo(M3D_PART_INFO &inf);
+	bool		SameTexture(char dir, char *txn);
+	char   *TextureName();
+	//---------------------------------------------------------------
+	CShared3DTex   *GetReference(TEXT_INFO &txd);
+	void	 Reserve(CShared3DTex *ref);
   //-------------------------------------------------------------
+	inline bool     NoZB()						{return (nzb != 0);}
 	inline bool     SameREF(void *r)	{return (tRef == r);}
   inline bool     IsEmpty()   {return (0 == NbVT) || (0 == NbIN);}
   inline void     ReduceIndice(int k) {if (k < NbIN) NbIN = k;}
-	inline U_INT    GetXOBJ()					{return xOBJ;}
   //---------------------------------------------------------------
 	inline void			ResetNBVT()				{NbVT = 0;}	
-	inline void     SetTREF(void *r)	{tRef = r;}
   inline void     SetLOD(int k)			{lod  = k;}
-  inline void     SetXOBJ(U_INT ob)	{xOBJ = ob;}
-  inline void    *GetTREF()					{return tRef;}
   inline void     AddFace(int nf)		{total += nf;}
-  inline char    *TextureName()			{return ntex;}
-	inline void    *SwapTREF()				{void *r = tRef;tRef = 0;return r;}
+	//---------------------------------------------------------------
+	inline void     SetTREF(CShared3DTex *r)	{tRef = r;}
+  inline CShared3DTex    *GetTREF()					{return tRef;}
   //----------------------------------------------------------------
-	inline TC_VTAB    *GetVTAB()						{return vTAB;}
+	inline GN_VTAB    *GetGTAB()						{return gTAB;}
   inline F3_VERTEX  *GetVLIST()           {return nVTX;}
   inline F3_VERTEX  *GetNLIST()           {return nNRM;}
   inline F2_COORD   *GetTLIST()           {return nTEX;}
@@ -227,7 +234,10 @@ public:
   inline int				 GetNbIND()           {return NbIN;}
   inline U_CHAR      GetTSP()             {return tsp;}
 	inline C3DPart    *Next()								{return next;}
-	//-----------------------------------------------------------------
+	inline F3_VERTEX  *VTX(int n)						{return nVTX + n;}
+	inline F3_VERTEX  *NVX(int n)						{return nNRM + n;}
+	inline F2_COORD   *NTX(int n)						{return nTEX + n;}
+	//----------------------------------------------------------------
 	void			MoveVTX(void *s,int k);
   void			MoveNRM(void *s,int k);
   void			MoveTEX(void *s,int k);
@@ -243,7 +253,9 @@ public:
   inline void     SetTEX(int k,F2_COORD  *t)   {nTEX[k] = *t;}
   inline void     SetIND(int k,int x)     {nIND[k] = x;}
   inline void     SetTSP(U_CHAR m)        {tsp = m;}
-  //------------------------------------------------------------------
+	inline void			SetLOD(U_CHAR l)				{lod = l;}
+	inline void     SetZB(char z)						{nzb = z;}
+	//------------------------------------------------------------------
   inline int      GetLOD()                {return lod;}
 };
 //=========================================================================================
@@ -277,7 +289,7 @@ class C3Dmodel: public CqItem, public CDrawByCamera {
 	char          todm;								// day or night
   pthread_mutex_t		mux;            // Locker
   int          User;                // User count
-  char        *fname;               // file name
+  char        *fname;               // day file name
   CVector      exts;                // Extension
   //---viewing parameters -----------------------------------------------
   float         aBot;               // Ground elevation
@@ -297,12 +309,10 @@ public:
   //---------------------------------------------------------------------
 	Queue<C3DPart>  &GetQueue(int k)	{return pLOD[k];	}
 	//---------------------------------------------------------------------
-  double  MaxExtend();
+	double  MaxExtend();
   int     LoadPart(char *dir);
   int     AddPodPart(C3DPart *prt);
   void    AddLodPart(C3DPart *prt,int nl);
-  void    UnloadPart();
-  void    UnloadPart(int k);
   void    GetParts(CPolyShop *psh,M3D_PART_INFO &inf);
   void    GetParts(CExport   *exp,M3D_PART_INFO &inf);
   void    Counts(M3D_PART_INFO &tt);
@@ -310,13 +320,19 @@ public:
   void    DecUser();
   void    IncUser();
 	void		Finalize();
+	void		TracePart(char lod);
 	//---------------------------------------------------------------------
-	C3DPart *GetPartFor(char *txn, int lod, int nbv, int nbx);
-	C3DPart *GetNewPart(char *txn, int lod, int nbv, int nbx);
+	C3DPart *GetPartFor(char dir,char *txn, int lod, int nbv, int nbx);
+	C3DPart *GetNewPart(char dir,char *txn, int lod, int nbv, int nbx);
+
+	C3DPart *GetPartFor(char dir,char *txn, int lod, int nbx);
+	C3DPart *GetNewPart(char dir,char *txn, int lod, int nbx);
 	//-----For camera Draw ------------------------------------------------
   void    PreDraw(CCamera *cam);
   void    CamDraw(CCamera *cam) {Draw(0);}
   void    EndDraw(CCamera *cam);
+	//--- for debugging ---------------------------------------------------
+	bool    AreYou(char *s) {	return (strcmp(s,fname) == 0);}
   //---------------------------------------------------------------------
   inline bool  NeedLoad()         {return (0 == state);}
   inline void  SaveTop(float t)   {if (t > aTop)  aTop = t;}
@@ -329,9 +345,12 @@ public:
   inline void   SetTop(float t)   {aTop = t;}
   inline void   SetGround(float g){aBot = g;}
   inline void   SetDirection(U_INT d) {rDIR = d;}
-  //----------------------------------------------------------------------
+	inline void		SetTOD(char k)		{todm = k;}
+	inline char   GetTOD()					{return todm;}
+	//----------------------------------------------------------------------
   inline void   SetState(char s)  {state = s;}
   inline bool   IsOK()            {return (state == M3D_LOADED);}
+	inline bool   InError()					{return (state != M3D_LOADED);}
 	inline bool   IsEmpty()					{return (state == M3D_EMPTY);}
   //----------------------------------------------------------------------
   inline void     SetExtend(CVector l,CVector u)  {exts = u; exts.Subtract(l);}
@@ -383,7 +402,6 @@ class CWobj: public CqItem, public CStreamObject {
   friend class C3Dfile;
 protected:
   //----------------------------------------------------------
-	U_INT				serial;									// Serial number				
   pthread_mutex_t		mux;					    // Mutex for lock
   U_INT       type;										// Object type
   U_INT       User;                   // Number of users
@@ -404,7 +422,7 @@ protected:
   float       pDis;                   // Distance to plane
   //-----------------------------------------------------------
 	U_CHAR     obtr;									  // Trace
-	U_CHAR     rfu;											// Futur use
+	U_CHAR     roty;										// rotation
 	U_CHAR		 snap;										// Snap to ground
   U_CHAR     nozb;                    // No Z Buffer
   U_CHAR     nozu;                    // No Z underlay
@@ -431,6 +449,7 @@ public:
   void            Check();
   void            DecUser();
   void            IncUser()     {User++;}
+	void						TraceMe();
   //----------------------------------------------------------
   void  EditModel(CFuiCanva *c,char *n, M3D_PART_INFO &inf);
 	void	EditPos(char *t1,char *t2);				// edit object position
@@ -441,10 +460,11 @@ public:
   void            Trace(U_CHAR tq, char *tod);
   void            SetDayRef(char *fn);
   void            SetNitRef(char *fn);
-  void            GetInfo(CFuiCanva *cnv);
+	void            GetInfo(CFuiCanva *cnv);
   void            SetObjName(char *n);
   void            SetObjDesc(char *d);
-  //-----------------------------------------------------------
+	void						SetOrientation(SVector &v);
+	//-----------------------------------------------------------
   char           *ModelName(U_CHAR rq);
   //-------Return absolute coordinates as integers ------------
   U_INT           GetIntLongitude();
@@ -452,6 +472,7 @@ public:
   //----------------------------------------------------------
   void            PushLight(C3DLight *obj);
   C3DLight       *PopALight();
+	void						SetFlag(U_INT f);
   //----------------------------------------------------------
   void            AddModel(C3Dmodel *mod,U_CHAR q);
   int             LoadMyModel();
@@ -469,9 +490,10 @@ public:
   virtual  void   ModelLoaded(C3Dmodel *m) {}
   virtual  void   Update(U_CHAR rfq) {}
   virtual  int    DrawModel(char tod,char lod);
+	//--- for debugging ----------------------------------------
+	bool	AreYou(char *s)	{return modL[0]->AreYou(s);}
   //----------------------------------------------------------
   inline void     SetPosition(SPosition &p) {oPos = p;}
-  inline void     SetOrientation(SVector &v){oAng = v;}
   //----------------------------------------------------------
   inline Tag      GetKind()               {return kind;}
   inline U_INT    GetFlag()               {return flag;}
@@ -479,11 +501,13 @@ public:
   inline U_CHAR   GetZU()                 {return nozu;}
   //-----Inline ------------------------------------------------
   inline C3Dmodel  *GetDayModel()         {return modL[MODEL_DAY];}
-  //----Various functions --------------------------------------
+	inline C3Dmodel  *GetNitModel()					{return modL[MODEL_NIT];}
+	inline C3Dmodel  *GetTodModel(char t)		{return modL[t];}
+	//----Various functions --------------------------------------
   inline SPosition *ObjPosition()         {return &oPos;}
   inline SVector   *ObjOrientation()      {return &oAng;}
   inline char      *GetName()             {return name;}
-  inline float      GetElevation()        {return oPos.alt;}
+  inline double     GetElevation()        {return oPos.alt;}
   inline char      *GetHold()             {return desc;}
   //------------------------------------------------------------
   inline int        GetPM1()              {return count;}
@@ -499,8 +523,8 @@ public:
   inline bool       IsaHold()             {return (kind == 'hold');}
   inline bool       NoHold()              {return (shar == 0);}
   inline bool       IsaShare()            {return (shar != 0);}
+	inline char       Rotate()							{return roty;}
   //-------------------------------------------------------------
-	inline U_INT			GetSerial()						{return serial;}
 	inline U_INT			GetType()						  {return type;}
   inline void       SetParameter(CmHead *obj) {pmOB = obj;}
   inline CmHead    *GetUserParam()        {return pmOB.Pointer();}
@@ -508,17 +532,16 @@ public:
   inline char      *GetDescription()      {return desc;}
   inline float      GetPDIST()            {return pDis;}
   inline double     GetYRotation()        {return oAng.y;}
-  //-------------------------------------------------------------
+	inline U_INT			GetUsers()						{return User;}
+	//-------------------------------------------------------------
   inline C_QGT     *GetQGT()    {return inf.qgt;}
   //-------------------------------------------------------------
 	inline void				SetType(U_INT t)			{type		= t;}
-	inline void				SetSerial(U_INT n)		{serial = n;}
-  inline void       SetFlag(U_INT f)      {flag = f;}
   inline void       SetDistance(float d)  {pDis = d;}
   inline void       SetParent(C3Dworld *w){wd3D = w;}
   inline C3DLight  *GetLight()            {return Lite;}
-  inline void       SetNOZB(char f)       {nozb = f;}
-  inline void       SetNOZU(char f)       {nozu = f;}
+  inline void       SetNOZB(char f)       {nozb |= f;}
+  inline void       SetNOZU(char f)       {nozu |= f;}
 	inline void				SetSnap()							{snap = 1;}
 	inline void				SetTrace(char t)			{obtr = t;}
 	//--------------------------------------------------------------
@@ -610,16 +633,18 @@ public:
 //============================================================================
 class C3Dfile: public CStreamObject {
   //-----ATTRIBUTES -------------------------------------------
-  C3DMgr    *wMgr;                    // 3D Maganer
   C_QGT     *oQGT;                    // Object's QGT 
   CObjQ      exQ;                     // Object queue for export
   CWhld     *hld;                     // Last place holder found
 	U_INT			cntr;											// Add object count
+	U_INT			serial;										// Serial number
   char       namef[64];               // File name
   char       fullN[PATH_MAX];					// Current file ident
+	char       exp;											// Export indicator
+	char			 rfu;											// Reserved
   //-----------------------------------------------------------
 public:
-  C3Dfile(C3DMgr *m,C_QGT *qgt);     // Constructor
+  C3Dfile(C_QGT *qgt,char x);     // Constructor
  ~C3Dfile();
   void  Abort(Tag tag);
   void  Abort(char *msg);
@@ -628,9 +653,11 @@ public:
   bool  MarkHold(CWobj *obj);
 	void	AutoGen(SStream *st);
   //-----------------------------------------------------------
-  inline CWobj *GetWOBJ()            {return exQ.Pop();}
-  //------------------------------------------------------------
-  inline bool   ForExport()          {return (wMgr == 0);}
+  inline CWobj *GetWOBJ()							{return exQ.Pop();}
+	inline C_QGT *GetQGT()							{return oQGT;}
+	inline int    GetQLG()							{return exQ.NbObjects();}
+	///------------------------------------------------------------
+  inline bool   ForExport()           {return (exp != 0);}
   };
 //=============================================================================
 //  Class Dummy to eliminate all uneeded tag and values
@@ -655,8 +682,6 @@ class C3Dworld {
 protected:
   //---ATTRIBUTES ------------------------------------------------
   U_CHAR          tr;                         // Trace option
-	//---Object serial number --------------------------------------
-	U_INT						serial;
 	//--------------------------------------------------------------
   CObjQ           woQ;                        // QGT world objects
   C_QGT          *qgt;                        // Mother QGT
@@ -701,7 +726,7 @@ public:
 	inline int				GetNwoQ()							{return woQ.NbObjects();}
 };
 //=============================================================================
-//  Class C3DMgr  This class manages the world 3D objects
+//  Class C3DMgr  This class manages the world 3D objects for a QGT
 //  -3D object enters and leaves cache following the life of a QGT
 //=============================================================================
 class C3DMgr  {
@@ -711,6 +736,7 @@ class C3DMgr  {
   U_CHAR     tr;                      // Trace indicator
 	U_CHAR     lpod;										// Look also in pod
 	U_CHAR		  sql;										// SQL database
+	U_INT			 serial;									// serial number
   TCacheMGR *tcm;                     // Terrain cache
   C_QGT     *qgt;                     // Current QGT
 	//----------------------------------------------------------
@@ -733,7 +759,8 @@ public:
   void      TraceCount();
   void      LocateVOR();
 	int 			LocateObjects(C_QGT *qgt);
-  void      NoTexture(char *fn,char *tn);
+	int				LoadFromPod(C3Dfile &scf);
+	void      NoTexture(char *fn,char *tn);
   void      Warning(CWobj *obj,char *msg);
 	void			TraceLoad(int nb,char *src,C_QGT *qgt);
   //------------------------------------------------------------
@@ -741,7 +768,8 @@ public:
   void      FreeModelKey(char *key);
   int       LoadTheModel(C3Dmodel *mod);
   C3Dmodel *ModelToLoad();
-  //------------------------------------------------------------
+	U_INT			modQsize();
+	//------------------------------------------------------------
   void      LightToDraw(C3DLight *f);
   void      CreateVOR();
   //------------------------------------------------------------
@@ -761,38 +789,7 @@ public:
   //------Statistical data -------------------------------------
   void      GetStats(CFuiCanva *cnv);
 	//------------------------------------------------------------
-	void			vCount(int k)
-	{	pthread_mutex_lock (&mux);
-		globals->NbPOL += k;
-		pthread_mutex_unlock (&mux);
-	}
-};
-//=============================================================================
-//  3D pack for OSM data
-//=============================================================================
-class C3DPack {
-	friend class Queue<C3DPack>;
-	//--- Attributes -----------------------------------------------
-	C3DPack  *next;															// Next object
-	C3DPack  *prev;															// Previous object
-	//--------------------------------------------------------------
-	U_INT			qgKey;														// QGT key
-	//--------------------------------------------------------------
-	C3DPart  *part;															// Part (vertice)
-	//---------------------------------------------------------------
-public:
-	C3DPack(U_INT qk);
- ~C3DPack();
-	//---------------------------------------------------------------
-	void		ExtendPart(OSM_Object *obj, SVector &T);
-	void		Draw()		{if (part) part->Draw();	}
-	//---------------------------------------------------------------
-	C3DPack *Next()							{return next;}	
-	//----------------------------------------------------------------
-	bool		SameREF(void *ref)	{return part->SameREF(ref);}
-	U_INT		GetNBVTX()					{return (part)?(part->GetNBVTX()):(0);}
-	//----------------------------------------------------------------
-
+	void			vCount(int k);
 };
 //============================END OF FILE =================================================
 #endif  // MODEL3D_H

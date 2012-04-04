@@ -267,6 +267,7 @@ void *FileThread(void *p)
         if (!sql.SQLmod())          {mod->LoadPart(dir); mod->DecUser(); continue;}
 				if (!sql.GetM3Dmodel(mod))  {mod->LoadPart(dir); mod->DecUser(); continue;}
         //-------------------------------------------------------------------------
+//				mod->TracePart(0);
 				mod->Finalize();
         mod->DecUser();
       }

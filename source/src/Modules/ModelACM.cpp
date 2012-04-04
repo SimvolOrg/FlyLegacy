@@ -1009,20 +1009,13 @@ void CModelACM::AddPart(short No,int index,CAcmPart *part)
   return;
 }
 //-----------------------------------------------------------------------------
-//  Get Texture reference
-//-----------------------------------------------------------------------------
-U_INT CModelACM::GetTextureRef(char *fn,char trs)
-{ void *ref = globals->txw->GetM3DPodTexture(fn,trs);
-  U_INT obj = globals->txw->Get3DObject(ref);
-  return obj;
-}
-//-----------------------------------------------------------------------------
 //  Load a new model ACM from ACM file
 //  t :     The top part type for drawing
 //  d :     The child dependent part type
 //-----------------------------------------------------------------------------
 void  CModelACM::LoadFrom(char* acmFilename)
-{ //---List of vertex tables ----------------------------------
+{ TEXT_INFO	txd;										// Texture descriptor
+	//---List of vertex tables ----------------------------------
 	std::vector<CAcmVPack*> pack;
 	CAcmVPack *pak = 0;
 	//MEMORY_LEAK_MARKER ("macm_load");
@@ -1093,9 +1086,8 @@ void  CModelACM::LoadFrom(char* acmFilename)
     // Diffuse value, specular value, specular power, use transparency,
     //   use environment mapping, texture name
     int diffuse, specular, specpower, transparent, envmap;
-    char texturename[LINE_LENGTH];
     if (sscanf (s, "%d,%d,%d,%d,%d,%s",
-      &diffuse, &specular, &specpower, &transparent, &envmap, texturename) != 6) {
+      &diffuse, &specular, &specpower, &transparent, &envmap, txd.name) != 6) {
       // Error
       gtfo ("CModelACM : Error parsing material parameters in %s", acmFilename) ;
     }
@@ -1104,9 +1096,12 @@ void  CModelACM::LoadFrom(char* acmFilename)
     part->setTransparent();
     part->SetEnvMapped (envmap != 0);
     //-----Load texture from texture ward -------------------------------
-    void *ref = globals->txw->GetM3DPodTexture(texturename,transparent);
-    U_INT obj = globals->txw->Get3DObject(ref);
-    part->SetTexREF(ref,obj);
+		txd.apx  = 0xFF;
+		txd.azp  = transparent;
+		txd.Dir  = TEXDIR_ART;
+    tRef = globals->txw->GetM3DPodTexture(txd);
+    U_INT obj = globals->txw->Get3DObject(tRef);
+    part->SetTexREF(tRef,obj);
     //-------------------------------------------------------------------
 
     // If the line before last was "v1" then skip the next line, which is

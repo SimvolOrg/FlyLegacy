@@ -45,6 +45,7 @@
 #include "../Include/DrawVehicleSmoke.h"
 #include "../Include\BlackBox.h"
 #include "../Include/ElevationTracker.h"
+#include "../Include/OSMobjects.h"
 #include "../Include/LogFile.h"
 #include "../Plugin\Plugin.h"   // 
 #include "../Include/Ui.h"                 // sdk:
@@ -52,7 +53,9 @@
 class CFmtxMap;
 class Triangulator;
 //=============================================================================================
-extern char *Dupplicate(char *s, int lgm);
+extern char *ReadTheFile(FILE *f, char *buf);
+extern char *textMSK[];
+extern char *textDIR[];
 //=============================================================================================
 //	Define APPLICATION PROFILE
 //	APPLICATION PROFILE is used by specifics windows like editors.
@@ -65,7 +68,8 @@ extern char *Dupplicate(char *s, int lgm);
 //-----------------------------------------------------------------------
 #define PROF_NO_OBJ			(0x00000010)				// No Object drawing
 #define PROF_NO_MET			(0x00000020)				// No Meteo effect
-#define PROF_EDITOR			(0x00000040)				// This is an editor
+#define PROF_NO_OSM     (0x00000040)				// No OSM objects
+#define PROF_EDITOR			(0x00000080)				// This is an editor
 //-----------------------------------------------------------------------
 #define PROF_NO_PLN			(0x00000100)				// No plane
 //-----------------------------------------------------------------------
@@ -244,8 +248,6 @@ typedef struct {
 	BBM				mBox;												// Master black box
 	//--- Dispatcher --------------------------------------------------
 	CDispatcher Disp;
-	//--- Triangulator ------------------------------------------------
-	Triangulator *trn;
   //----World position ----------------------------------------------
 	double		aMax;		// Altitude maximum
 	double		exf;		// feet factor expension at aircraft position
@@ -263,6 +265,7 @@ typedef struct {
   U_CHAR      noEXT;                    // No external aircraft
 	U_CHAR			noINT;										// No internal aircarft
   U_CHAR      noOBJ;                    // No Objects
+	U_CHAR      noOSM;										// No OSM objects
   U_CHAR      noAPT;                    // No Airport
   U_CHAR      noMET;                    // No Meteo
   CWobj       *wObj;										// Current object in focus
@@ -309,8 +312,10 @@ typedef struct {
   float             dST;                // Simu time delta from last Frame
   //---------Interface with master radio -----------------------------
   BUS_RADIO        *Radio;              // Radio block
-  CILS             *cILS;
-	// Current ILS
+  CILS             *cILS;								// Current ILS
+	//--- OSM interface ------------------------------------------------
+	U_INT							xobj;								// Last binded texture
+	OSM_Object       *osmS;								// Selected object
   //---------Globals cameras parameters-------------------------------
   CCameraRunway         *cap;           // Camera airport
   CCameraSpot           *csp;           // spot camera
@@ -320,6 +325,7 @@ typedef struct {
 	//-------- Situation file ------------------------------------------
 	char                  sitFilename[PATH_MAX];  /// Filename of .SIT file to load
   //-------- Various global objects ----------------------------------
+	Triangulator					*trn;
   CClock                *clk;           // Global clock
   CTimeManager          *tim;           // Time manager
   CCursorManager        *cum;           // Cursor manager           
@@ -433,10 +439,8 @@ typedef struct {
   bool      dxt1aSupported;     ///< Compressed texture format DXT1 with alpha supported
   bool      dxt3Supported;      ///< Compressed texture format DXT3 supported
   bool      dxt5Supported;      ///< Compressed texture format DXT5 supported
-
-#ifdef HAVE_OPAL
+	//--- OPAL simulation --------------------------------------------
   opal::Simulator *opal_sim;
-#endif
   bool  simulation;
   bool  fps_limiter;
   char  sBar;
@@ -456,6 +460,7 @@ typedef struct {
   USHORT random_flag;
   int   num_of_autogen;     // num_of_autogen objects
 } SGlobals;
+
 //=========================================================================
 extern SGlobals *globals;   // Declared in Main.cpp
 //==========================================================================

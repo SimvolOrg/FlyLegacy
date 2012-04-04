@@ -543,6 +543,7 @@ void CCamera::ToggleBox()
 void CCamera::GoToPosition(SPosition &dst)
 { globals->m3d->ReleaseVOR();
   globals->geop = dst;
+	move	= 0;
   return;
 }
 
@@ -1438,6 +1439,7 @@ CRabbitCamera::CRabbitCamera()
   theta = DegToRad (0.0f);
   phi   = DegToRad (30.0f);
 	//---------------------------------------------
+	move		= 0;		//no move
 	trak	  = 0;		// No tracker
 	twin		= 0;		// No window
   //--- Link to cameras -------------------------
@@ -1537,6 +1539,14 @@ bool CRabbitCamera::PickObject(U_INT mx, U_INT my)
 	return true;
 }
 //-------------------------------------------------------------------------
+//	Start camera move IN
+//-------------------------------------------------------------------------
+void CRabbitCamera:: MoveTo (double inc, double tg)
+{	moveInc = (range < tg)?(inc):(-inc);
+	moveTgt	= tg;
+	move    = 1;
+}
+//-------------------------------------------------------------------------
 //  Update camera position
 //  -offset are in feet from aircraft posiiton
 //-------------------------------------------------------------------------
@@ -1544,6 +1554,11 @@ void CRabbitCamera::UpdateCamera (SPosition wpos, SVector tori,float dT)
 {	RockArround(wpos,tori,dT);
 	//--- Update camera world position ---------------------
 	UpdateCameraPosition(wpos);
+	//--- check for automove -------------------------------
+	if (0 == move)			return;
+	if ((moveInc > 0) && (range >= moveTgt))	move = 0;
+	if ((moveInc < 0) && (range <= moveTgt)) 	move = 0;
+	if (move) range += moveInc;
 	return;
 }
 //=========================================================================

@@ -31,7 +31,9 @@
 #include "../Include/FuiParts.h"
 #include "../Include/Export.h"
 #include "../Include/Import.h"
+#include "../Include/Pod.h"
 #include "../Include/TerrainElevation.h"
+#include "../Include/OSMobjects.h"
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainTexture.h"
 #include "../Include/Airport.h"
@@ -328,6 +330,7 @@ void SqlOBJ::ImportConfiguration(char *fn)
 	globals->Disp.Lock(PRIO_PLANE);
 	globals->noAPT  = 7;
 	globals->noOBJ  = 7;
+	globals->noOSM	= 7;
 	return;
 }
 //-----------------------------------------------------------------------------
@@ -402,12 +405,20 @@ void SqlOBJ::Warn1(SQL_DB &db)
   //MEMORY_LEAK_MARKER ("prepare_v2 s");
   return stm;
 }
- //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //  ABORT for error
 //-----------------------------------------------------------------------------
 void SqlOBJ::Abort(SQL_DB &db)
 { gtfo("SQL Database %s error %s",db.path,(char*)sqlite3_errmsg(db.sqlOB));
   return;
+}
+//-----------------------------------------------------------------------------
+//  Set a warning in log and close
+//-----------------------------------------------------------------------------
+void SqlOBJ::Warn2(SQL_DB &db,int er)
+{	STREETLOG("Error code %d in database %s",er, db.path);
+	db.use = 0;
+	return;
 }
 //==============================================================================
 // Read version
@@ -520,7 +531,7 @@ void SqlOBJ::DeleteElevation(U_INT key)
 //--------------------------------------------------------------------
 //	Create the database first using script
 //--------------------------------------------------------------------
-SQL_DB *SqlOBJ::CreateOSMbase(SQL_DB *db,char *S)
+SQL_DB *SqlOBJ::CreateSQLbase(SQL_DB *db,char **S)
 { if (0 == S)	{delete db; return 0; }
 	char *fn = db->path;
 	db->mode = (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
@@ -532,14 +543,45 @@ SQL_DB *SqlOBJ::CreateOSMbase(SQL_DB *db,char *S)
 		return 0;
 	}
 	//-- now execute the script uppon the database -------------
+	char **tab = S;
+	char  *req = 0;
+	for (req = *tab; (strcmp(req,"***") != 0); tab++, req = *tab)
+	{	sqlite3_stmt * stm = CompileREQ(req,*db);
+		int rep = sqlite3_step(stm);
+		sqlite3_finalize(stm);					// Close statement
+		if (rep == SQLITE_DONE) continue;
+		//--- any error: close and exit -----------------
+		WARNINGLOG("SQL error %d on %s:",rep,req);
+		db->opn = 0;
+		db->use = 0;
+		sqlite3_close(db->sqlOB);
+		delete db;
+		return 0;
+	}
+	//--- Set Create status ---------------------------
+	db->opn	= 2;
+	db->use = 2;
 	return db;
 }
 //--------------------------------------------------------------------
+//  Close requested database
+//--------------------------------------------------------------------
+void *SqlOBJ::CloseOSMbase(SQL_DB *db)
+{	db->ucnt--;
+	if (db->ucnt > 0)				return db;
+	//---  close database and delete all resources ----------
+	sqlite3_close(db->sqlOB);
+	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(db->path);
+	if (rb != dbase.end())	dbase.erase(rb);
+	delete db;
+	return 0;
+}
+//--------------------------------------------------------------------
 //  Open requested database
-//	If the file does not exists and scrit S is supplied*
+//	If the file does not exists and script S is supplied*
 //	then create the base with script S
 //--------------------------------------------------------------------
-SQL_DB *SqlOBJ::OpenOSMbase(char *fn,char *S, U_INT M)
+SQL_DB *SqlOBJ::OpenSQLbase(char *fn,char **S)
 { SQL_DB *db = 0;
 	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(fn);
 	if (rb != dbase.end())
@@ -549,14 +591,15 @@ SQL_DB *SqlOBJ::OpenOSMbase(char *fn,char *S, U_INT M)
 	}
 	db = new SQL_DB();
 	strncpy(db->path,fn,FNAM_MAX);
-	db->mode  = M;
+	db->mode  = SQLITE_OPEN_READWRITE;
 	
 	//--- Check if file exist ------------------------
 	FILE *pf	= fopen(fn,"r");
 	bool  ok		= (pf != 0);
 	if (pf)	fclose(pf);
 	//--- if file exist open the database in mode ----
-	if (!ok)	return CreateOSMbase(db,S);
+	if (!ok)	return CreateSQLbase(db,S);
+	//--- OK file exist -------------------------------
 	int rep  = sqlite3_open_v2(fn,  &db->sqlOB,db->mode,0 );
   if (rep)  WarnE(*db);
   else      Warn1(*db);
@@ -564,18 +607,114 @@ SQL_DB *SqlOBJ::OpenOSMbase(char *fn,char *S, U_INT M)
 	dbase[fn] = db;				// Enter database in list
 	return db;
 }
-//==================================================================================
-//	Decrement user and close the base when no more used
-//==================================================================================
-void SqlOBJ::DecUser(SQL_DB *db)
-{	db->ucnt--;
-	if (db->ucnt > 0)	return;
-	//---  close database and delete all resources ----------
-	sqlite3_close(db->sqlOB);
-	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(db->path);
-	if (rb == dbase.end())	return;
-	dbase.erase(rb);
-	delete db;
+//--------------------------------------------------------------------
+//	Read OSM QGT
+//--------------------------------------------------------------------
+void SqlOBJ::GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj)
+{	int rep = 0;
+  char *req = "SELECT * FROM QGT;*";
+	sqlite3_stmt * stm = CompileREQ(req,db);
+	//---Bind Key as primary Key ---------------------
+	while (SQLITE_ROW == sqlite3_step(stm))
+    { U_INT key = sqlite3_column_int(stm,0);
+      if (fun)  fun(key,obj);			// Callback with key
+    }
+	return;
+}
+//--------------------------------------------------------------------
+//	Read OSM layer
+//--------------------------------------------------------------------
+int SqlOBJ::GetSuperTileOSM(SQL_DB &db)
+{ int		rep		= 0;
+	char	req[1024];
+	char  nbs   = 0;
+	U_INT idn		= db.Ident;
+	C_QGT *qgt	= db.qgt;
+	char *msk		= "SELECT * FROM OSMbuilding WHERE (QGT = %u AND Ident > %u);*";
+	_snprintf(req,1024,msk,qgt->FullKey(),idn);
+	sqlite3_stmt * stm = CompileREQ(req,db);
+	C3DPart *part = 0;
+	U_INT    nbo  = 0;
+	//----------------------------------------------------------------------
+  while (SQLITE_ROW == sqlite3_step(stm))
+    { db.Ident	 = sqlite3_column_int(stm,0);						// Last identity
+			char   sNo = sqlite3_column_int(stm,3);						// Super tile
+			char	 dir = sqlite3_column_int(stm,4);						// Directory
+			char	*ntx = (char*)sqlite3_column_text(stm,5);		// Texture name
+			part = qgt->GetOSMPart(sNo,dir,ntx);
+			if (0 == part)									break;						// What???
+			//--- Add data to this part --------------------
+			int nbv		 = sqlite3_column_int(stm,6);						// Nber vertices
+			GN_VTAB  *src = (GN_VTAB*) sqlite3_column_blob(stm,8);
+			part->ExtendOSM(nbv,src);
+			nbo++;																						// Increment loaded supertile
+			if (nbo >= db.limit)						break;						// Stop loading				
+    }
+    //-----Close request ---------------------------------------------------
+    sqlite3_finalize(stm);
+    return nbo;
+}
+//--------------------------------------------------------------------
+//	Update OSM object: Update Texture table
+//--------------------------------------------------------------------
+void SqlOBJ::UpdateOSMqgt(SQL_DB &db,U_INT key)
+{	int rep = 0;
+  char *req = "INSERT or REPLACE into QGT VALUES (?1);*";
+	sqlite3_stmt * stm = CompileREQ(req,db);
+	//---Bind Key as primary Key ---------------------
+	rep = sqlite3_bind_int(stm, 1,key);
+  if (rep != SQLITE_OK)   Warn2(db,rep);
+	//--- Execute statement--------------------------------------------------
+  rep      = sqlite3_step(stm);               // Insert value in database
+  if (rep != SQLITE_DONE) Warn2(db,rep);
+  sqlite3_finalize(stm);                      // Close statement
+	return;
+}
+//--------------------------------------------------------------------
+//	Update OSM object
+//--------------------------------------------------------------------
+void SqlOBJ::UpdateOSMobj(SQL_DB &db, OSM_Object *obj, GN_VTAB *tab)
+{ int			rep	 = 0;
+	char		dir  = 0;
+	char	 *tnam = obj->TextureData(dir);
+	D2_BPM     &bpm		= obj->GetParameters();
+	SPosition   pos = obj->GetPosition();
+	C3DPart    *prt = obj->GetPart();
+	char *req = "INSERT or REPLACE into OSMbuilding "
+								"VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9);*";
+	sqlite3_stmt * stm = CompileREQ(req,db);
+	//---Bind Object identity as primary Key ---------------------
+	rep = sqlite3_bind_int(stm, 1,obj->GetIdent());
+  if (rep != SQLITE_OK)   Warn2(db,rep);
+	//---Bind QGT key as parameter 2 -----------------------------
+	rep = sqlite3_bind_int(stm, 2,obj->GetKey());
+  if (rep != SQLITE_OK)   Warn2(db,rep);
+	//---Bind Type as parameter 3 --------------------------------
+	rep = sqlite3_bind_int(stm, 3,obj->GetType());
+  if (rep != SQLITE_OK)   Warn2(db,rep);
+	//---Bind SuperTile No as parameter  4 -----------------------
+	rep = sqlite3_bind_int(stm, 4,obj->GetSupNo());
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//---Bind texture directory as parameter 5 --------------------
+	rep = sqlite3_bind_int(stm, 5,dir);
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//---Bind texture name as parameter 5 -------------------------
+  rep = sqlite3_bind_text(stm,6,tnam,-1,SQLITE_TRANSIENT);
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//---Bind Number of vertices as parameter 6 -------------------
+	rep = sqlite3_bind_int(stm, 7,prt->GetNBVTX());
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//---Bind size of vertice blob as parameter 7 -----------------
+	int dim = prt->GetNBVTX() * sizeof(GN_VTAB);
+	rep = sqlite3_bind_int(stm, 8,dim);
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//--- Bind Strip of vertice as parameter 8 ---------------------
+	rep = sqlite3_bind_blob(stm,9,tab, dim, SQLITE_TRANSIENT);
+	if (rep != SQLITE_OK)		Warn2(db,rep);
+	//--- Execute statement--------------------------------------------------
+  rep      = sqlite3_step(stm);               // Insert value in database
+  if (rep != SQLITE_DONE) Warn2(db,rep);
+  sqlite3_finalize(stm);                      // Close statement
 	return;
 }
 //==================================================================================
@@ -2606,10 +2745,11 @@ void SqlMGR::DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj)
   pos->lon	= sqlite3_column_double(stm, CLN_OBJ_LON);
   pos->lat	= sqlite3_column_double(stm, CLN_OBJ_LAT);
   //---Get Orientation -----------------------------------------
-  SVector *ori = obj->ObjOrientation();
-  ori->x		= sqlite3_column_double(stm, CLN_OBJ_ORX); 
-  ori->y		= sqlite3_column_double(stm, CLN_OBJ_ORY);
-  ori->z		= sqlite3_column_double(stm, CLN_OBJ_ORZ);
+	SVector v;
+	v.x		= sqlite3_column_double(stm, CLN_OBJ_ORX); 
+  v.y		= sqlite3_column_double(stm, CLN_OBJ_ORY);
+  v.z		= sqlite3_column_double(stm, CLN_OBJ_ORZ);
+	obj->SetOrientation(v);
   //---Other flags ---------------------------------------------
   int zb		= sqlite3_column_int (stm,CLN_OBJ_NZB);
   obj->SetNOZB(zb);
@@ -2647,7 +2787,7 @@ void SqlMGR::ReadOBJLite(CWobj *obj,int xk, int yk)
   return;
 }
 //---------------------------------------------------------------------------------
-//  Read object lights
+//  Read object texture
 //---------------------------------------------------------------------------------
 void SqlMGR::ReadOBJFile(CWobj *obj,int row)
 { //---Extract parameters -------------------------------------
@@ -3003,43 +3143,29 @@ bool SqlTHREAD::CheckM3DModel(char *name)
   return (rep == SQLITE_ROW)?(true):(false);
 }
 //---------------------------------------------------------------------------------
-//  Check if texture is same as previous part
-//  
-//---------------------------------------------------------------------------------
-/*bool SqlTHREAD::CheckLastPart(C3Dmodel *modl, char *txn)
-{	
-}
-*/
-//---------------------------------------------------------------------------------
 //  Decode 3DPart
 //  NOTE: Type is ignored for now
 //---------------------------------------------------------------------------------
-int SqlTHREAD::DecodeM3DPart(sqlite3_stmt *stm,C3Dmodel *modl)
+int SqlTHREAD::DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl)
 { int   tsp =        sqlite3_column_int (stm,CLN_MOD_TSP);
   char *txn = (char*)sqlite3_column_text(stm,CLN_MOD_TXN);
   int   nbv =        sqlite3_column_int (stm,CLN_MOD_NVT);
   int   nbx =        sqlite3_column_int (stm,CLN_MOD_NIX);
 	int   lod =        sqlite3_column_int (stm,CLN_MOD_LOD);
-	C3DPart *prt = modl->GetPartFor(txn,lod, nbv, nbx);
+	//C3DPart *prt = modl->GetPartFor(TEXDIR_ART,txn,lod, nbv, nbx);
+	C3DPart *prt = modl->GetPartFor(TEXDIR_ART,txn,lod, nbx);
 	//---- Build this part --------------------------------
   float top =  float(sqlite3_column_double(stm, CLN_MOD_TOP));
   modl->SaveTop(top);
   float bot =  float(sqlite3_column_double(stm, CLN_MOD_BOT));
   modl->SaveBot(bot);
   int   dim =        sqlite3_column_bytes(stm,CLN_MOD_VTX);
-  char *src = (char*)sqlite3_column_blob (stm,CLN_MOD_VTX);
-  prt->MoveVTX(src,dim);
-  dim =              sqlite3_column_bytes(stm,CLN_MOD_NTB);
-  src =       (char*)sqlite3_column_blob (stm,CLN_MOD_NTB);
-  prt->MoveNRM(src,dim);
-  dim =              sqlite3_column_bytes(stm,CLN_MOD_TTB);
-  src =       (char*)sqlite3_column_blob (stm,CLN_MOD_TTB);
-  prt->MoveTEX(src,dim);
-  dim =              sqlite3_column_bytes(stm,CLN_MOD_ITB);
-  src =       (char*)sqlite3_column_blob (stm,CLN_MOD_ITB);
-  prt->MoveIND(src,dim);
-  //----Add this part --------------------------------------
-
+  F3_VERTEX *V = (F3_VERTEX*)sqlite3_column_blob (stm,CLN_MOD_VTX);
+  F3_VERTEX *N = (F3_VERTEX*)sqlite3_column_blob (stm,CLN_MOD_NTB);
+  F2_COORD  *T = (F2_COORD*)sqlite3_column_blob (stm,CLN_MOD_TTB);
+  int       *X = (int*)sqlite3_column_blob (stm,CLN_MOD_ITB);
+  prt->SQLstrip(nbx,V,N,T,X);
+  //----return number of faces -------------------------------
   int nbf = (nbx / 3);
   return nbf;
 }
@@ -3076,12 +3202,13 @@ int SqlTHREAD::GetM3Dmodel(C3Dmodel *modl)
   int   nf = 0;                           // Number of faces
   _snprintf(req,1024,"SELECT * FROM mod WHERE name='%s';*",fn);
   sqlite3_stmt *stm = CompileREQ(req,modDBE);
-  while (SQLITE_ROW == sqlite3_step(stm)) nf += DecodeM3DPart(stm,modl);
+  while (SQLITE_ROW == sqlite3_step(stm)) nf += DecodeM3DdayPart(stm,modl);
   if (nf)	modl->SetState(M3D_LOADED);
   //---Free statement --------------------------------------------------
   sqlite3_finalize(stm);
   return nf;
 }
+
 //===================================================================================
 //  Decode a Generic terrain Texture
 //===================================================================================

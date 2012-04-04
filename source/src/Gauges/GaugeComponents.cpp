@@ -1069,6 +1069,8 @@ void CTexturedGauge::ReadLayer(SStream *str,TEXT_DEFN &df)
 { char fn[128];
   ReadString(fn,128,str);
   TEXT_INFO txf;  // Texture info;
+	txf.apx = 0;
+	txf.azp = 0;
   CArtParser img(TC_HIGHTR);
   strncpy(txf.name,fn,TC_TEXTURE_NAME_NAM);
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",fn);

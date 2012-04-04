@@ -87,15 +87,19 @@ public:
 //=============================================================================================
 class CFuiErrorMSG : public CFuiWindow
 {	//------------------------------------------------------------
-	CFuiLabel *mesg;
+	CFuiLabel  *mLAB;			// Message label
+	CFuiButton *oBUT;			// Yes button
+	CFuiButton *nBUT;			// No  button
 public :
-  CFuiErrorMSG (Tag id, const char* filename);
-	CFuiErrorMSG (CFuiWindow *mwin);
+  CFuiErrorMSG (Tag id, char nb);
+	CFuiErrorMSG (CFuiWindow *mwin, char nb);
+	//--------------------------------------------------------------
+	void	Init(char nb);
   void	NotifyChildEvent (Tag id, Tag component, EFuiEvents event);
 	//--------------------------------------------------------------
 	bool	CheckProfile(char a)	{return true;}
 	//--------------------------------------------------------------
-	inline void Display(char *m)	{mesg->SetText(m);}
+	inline void Display(char *m)	{mLAB->SetText(m);}
 };
 
 //==================================================================================

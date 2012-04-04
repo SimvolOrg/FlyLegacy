@@ -71,11 +71,16 @@ class SqlMGR;
 #define EXP_OBJ_NFILE	4										// Next file
 #define EXP_OBJ_WRITE 5										// Write OBJ
 #define EXP_OBJ_EXIT	6										// Exit
+//============================================================================
+//	IMPORT Airport Objects
+//============================================================================
+#define IMP_APT_INIT  (1)
 //---------------------------------------------------------------
 #define EXP_MNOT	0
 #define EXP_MW3D	1												// Export M3D models
 #define EXP_TRNF	2												// Export TRN files
 #define EXP_WOBJ	3												// Export world objects
+#define IMP_APTO  4												// Import airport objects
 //============================================================================
 //  Class to export DATA for SQL Database
 //============================================================================
@@ -91,6 +96,7 @@ class CExport {
 	char Clear;															// Clear request
   TEXT_INFO  inf;                         // Texture info
   M3D_PART_INFO pif;                      // Part info
+	SQL_DB   *DB;														// Curent database
   //-------------------------------------------------------------
   char gen;                               // Export indicator
   char elv;                               // Export ELV
@@ -219,8 +225,8 @@ public:
   int   TimeSlice(float dT);
   void  Keyboard(U_INT key,U_INT mod);
   //----Scenery OBJECTS --------------------------------------------
-	int		ExecuteOBJ();
 	void  ExportSceneryOBJ();
+	int		ExecuteOBJ();
 	void	InitOBJmsg();
 	void	GetFirstOBJ();
 	void	GetNextOBJ();

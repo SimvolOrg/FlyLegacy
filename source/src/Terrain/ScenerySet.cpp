@@ -28,17 +28,34 @@
 #include "../Include/FlyLegacy.h"
 #include "../Include/Globals.h"
 #include "../Include/Ui.h"
-#include "../Include/Terrain.h"
+#include "../Include/ScenerySet.h"
 #include "../Include/Fui.h"
 #include "../Include/Pod.h"
 
 using namespace std;
+struct SQL_DB;
 //==========================================================================
 //   Global function to process a file from a POD 
 //==========================================================================
 int ScnpodCB(PFS *pfs, PFSPODFILE *p)
 {	int stop = globals->scn->CheckForScenery(p);
 	return stop;
+}
+//==================================================================================
+//	Global function to add a database
+//==================================================================================
+int OsmBaseCB(char *fn,void *upm)
+{	CSceneryDBM *dbm = (CSceneryDBM *)upm;
+  //TRACE("FP add:%s",fn);
+	return dbm->AddOSMbase(fn);
+}
+//==================================================================================
+//	Global function to add a QGT for OSM base
+//==================================================================================
+void osmQGTkey(U_INT key, void *obj)
+{	CSceneryDBM *dbm = (CSceneryDBM *)obj;
+	dbm->AddGQTforOSM(key);
+	return;
 }
 //==========================================================================
 //	Scenery POD to define a POD for scenery
@@ -103,21 +120,35 @@ void CSceneryDBM::Init (void)
   //--- Load SCF files from FlyLegacy /Scenery folder
   strcpy (searchPath, "SCENERY/");
   LoadInFolderTree (searchPath);
+	//--- Locate OSM folder ----------------------------
+	fname[0] = 0;
+	GetIniString("SQL","OSMDB",fname,FNAM_MAX);
+	if (0 == *fname)	strcpy(fname,"./SQL");
+	_snprintf(path,FNAM_MAX,"%s/*.db",fname);
+	//--- Add OSM databases ----------------------------
+	//ApplyToFiles("Scenery/BaseOSM/*.db",OsmBaseCB,this);
+	ApplyToFiles(path,OsmBaseCB,this);
 	SCENE("========END INITIAL LOAD==================");
 	return;
 }
-
+//--------------------------------------------------------------------------------
+//	Get a Scenery Pack or create it
+//--------------------------------------------------------------------------------
+CSceneryPack *CSceneryDBM::GetQGTPack(U_INT key)
+{	std::map<U_INT,CSceneryPack*>::iterator rp = sqgt.find(key);
+	if (rp != sqgt.end()) return (*rp).second;
+	//--- Create a new pack ----------------------------------
+	CSceneryPack *pak = new CSceneryPack(key);
+	sqgt[key] = pak;
+	return pak;
+}
 //--------------------------------------------------------------------------------
 //	Add a pod to the QGT pack
 //--------------------------------------------------------------------------------
 void	CSceneryDBM::AddPodToQGT(CSceneryPOD *pod)
 {	U_INT key = pod->GetKey();
-	std::map<U_INT,CSceneryPack*>::iterator ip = sqgt.find(key);
-	if (ip != sqgt.end())	{(*ip).second->AddPod(pod); return;}
-	//---- create a new pack ----------------------------------
-	CSceneryPack *pak = new CSceneryPack(key);
+	CSceneryPack *pak = GetQGTPack(key);
 	pak->AddPod(pod);
-	sqgt[key] = pak;
 	return;
 }
 //--------------------------------------------------------------------------------
@@ -231,8 +262,8 @@ void CSceneryDBM::ProcessPOD(char *path,char *fn)
 	//--- Search the QGT ---------------------
   _snprintf(name,lim,"%s%s",path,fn);
 	char *dbp = strstr(name,scn) + lgr;
-	strncpy(podn,dbp,lim);
-	podn[lim] = 0;
+	strncpy(fname,dbp,lim);
+	fname[lim] = 0;
 	//--- Look into each files ---------------
 	scanpod(pfs,name,ScnpodCB);
 
@@ -406,6 +437,80 @@ void CSceneryDBM::MountSharedPod(char * path,char *fn)
 	SCENE("   Ticket(%06d) Mount %s",tk,name);
 	return;
 }
+//=================================================================================
+// CSceneryDBM
+//	Add OSM database
+//
+//=================================================================================
+int CSceneryDBM::AddOSMbase(char *fn)
+{ char *slh = strrchr(path,'/');
+	if (0 == slh)					return 1;
+	*slh = 0;
+	_snprintf(fname,FNAM_MAX,"%s/%s",path,fn);
+	*slh = '/';
+	cdb = globals->sqm->OpenSQLbase(fname,0);
+	if (0 == cdb)					return 1;
+	if (0 == cdb->use)		return 1;
+	//--- Get covered QGTs -----------------------
+	globals->sqm->GetQGTlistOSM(*cdb,osmQGTkey,this);
+	globals->sqm->CloseOSMbase(cdb);
+	cdb	= 0;
+	SCENE("Add OSM database %s",fname);
+	return 1;
+}
+//---------------------------------------------------------------------------------
+//	Add a scenery pack for >OSM QGT
+//---------------------------------------------------------------------------------
+void CSceneryDBM::AddGQTforOSM(U_INT key)
+{ CSceneryPack *pak = GetQGTPack(key);
+	pak->AddOSM(cdb->path);
+	return;
+}
+//=================================================================================
+// CSceneryDBM
+//	Register for QGT:  Open  first database that reference this QGT
+//
+//=================================================================================
+SQL_DB* CSceneryDBM::RegisterOSM(C_QGT *qgt)
+{	return GetOSMbase(qgt,0);
+}
+//------------------------------------------------------------------
+//	Return a new database 
+//------------------------------------------------------------------
+SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
+{	std::map<U_INT,CSceneryPack*>::iterator rp = sqgt.find(qgt->FullKey());
+	if (rp == sqgt.end())				return 0;
+	//--- OPEN the database -------------------------------
+	const char *fn = (*rp).second->GetOSMname(nb);
+	if (0 == fn)								return 0;
+	SQL_DB *db = globals->sqm->OpenSQLbase((char*)fn,0);
+	if (0 == db)								return 0;
+	db->base	= 0;
+	db->Ident = 0;
+	db->qgt		= qgt;
+	return db;
+}
+//------------------------------------------------------------------
+//	Close OSM database 
+//------------------------------------------------------------------
+void	CSceneryDBM::CloseOSM(SQL_DB *db)
+{	if (db) globals->sqm->CloseOSMbase(db);
+	return;
+}
+//------------------------------------------------------------------
+//	Close OSM database 
+//------------------------------------------------------------------
+SQL_DB *CSceneryDBM::LoadOSMLayer(SQL_DB *db,U_INT lim)
+{ //--- compute limit ---(it may be over 63 it will stop anyway)---
+	db->limit		= lim;
+	U_INT nbs		= globals->sqm->GetSuperTileOSM(*db);
+	if (nbs == lim)			return db;
+	//--- change database -----------------------------
+	C_QGT *qgt	= db->qgt;
+	int nb			= db->base + 1;
+	globals->sqm->CloseOSMbase(db);
+	return GetOSMbase(qgt,nb);
+}
 //==============================================================================
 //	Scenery pack:  held all sceneries for a given QGT
 //==============================================================================
@@ -420,6 +525,7 @@ CSceneryPack::CSceneryPack(U_INT k)
 CSceneryPack::~CSceneryPack()
 {	for (U_INT k = 0; k < apod.size(); k++) delete apod[k];
 	apod.clear();
+	aosm.clear();
 }
 //------------------------------------------------------------------
 //	Mount all pods not already mounted
@@ -439,5 +545,12 @@ void CSceneryPack::RemovePODs(CSceneryDBM *dbm)
 		pod->Remove();
 	}
 	return;
+}
+//------------------------------------------------------------------
+//	OSM interface: Return database name
+//------------------------------------------------------------------
+const char *CSceneryPack::GetOSMname(U_INT k)
+{	if (k >= aosm.size())		return 0;
+	return aosm[k].c_str();
 }
 //===================END OF FILE ===============================================================

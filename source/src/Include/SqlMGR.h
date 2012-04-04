@@ -42,6 +42,7 @@ class CWobj;
 class C3DLight;
 class C_STile;
 class TRN_HDTL;
+class OSM_Object;
 struct TRACK_EDIT;
 struct ELV_PATCHE;
 //=====================================================================================
@@ -427,15 +428,25 @@ struct SQL_DB {
     char      use;                // Use database
     char      mgr;                // Thread only if no export
     char     *dbn;                // Database name
-		//--- Constructor ------------------------------
+		//---OSM interface -----------------------------
+		int				base;								// Current base
+		C_QGT    *qgt;								// Current QGT
+		U_INT			Ident;							// Last object ident
+		U_INT     limit;							// Load limit
+	//--- Constructor ------------------------------
 		SQL_DB::SQL_DB()
-		{	ucnt	= 0;
+		{	ucnt	= 1;
 			mode	= SQLITE_OPEN_READONLY;
 			exp		= 0;
 			opn		= 0;
 			use		= 0;
 			vers	= 0;
 			dbn		= 0;
+		}
+		//----------------------------------------------
+		void SQL_DB::Copy(SQL_DB &db)
+		{ strncpy(path,db.path,FNAM_MAX);
+			strncpy(name,db.name,64);
 		}
 		//----------------------------------------------
 		void IncUser()	{ucnt++;}
@@ -516,6 +527,7 @@ public:
   int           Open(SQL_DB &db);
   void          WarnE(SQL_DB &db);
   void          Warn1(SQL_DB &db);
+	void					Warn2(SQL_DB &db,int rep);
 	int						ReadVersion(SQL_DB &db);
 	void					ImportConfiguration(char *fn);
 	//-----------------------------------------------------------------
@@ -532,9 +544,14 @@ public:
   inline char   UseELV()			{return elvDBE.use;}
   inline bool   MainSQL()			{return (sqlTYP == SQL_MGR);}
 	//-----------------------------------------------------------------
-	void					DecUser(SQL_DB *db);
-	SQL_DB			 *OpenOSMbase(char *fn,char *S,U_INT M);
-	SQL_DB       *CreateOSMbase(SQL_DB *db,char *S);
+	SQL_DB			 *OpenSQLbase(char *fn,char **S);
+	SQL_DB       *CreateSQLbase(SQL_DB *db,char **S);
+	void				 *CloseOSMbase(SQL_DB *pm);
+	void					UpdateOSMobj(SQL_DB &db, OSM_Object *obj, GN_VTAB *tab);
+	void  				UpdateOSMqgt(SQL_DB &db, U_INT key);
+	//--- Get items from OSM database ---------------------------------
+	void					GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj);
+	int 					GetSuperTileOSM(SQL_DB &db);
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD
@@ -709,7 +726,7 @@ public:
   //--3DMODEL --------------------------------------------------------
   bool  CheckM3DModel(char *name);
   int   GetM3DTexture(TEXT_INFO *inf);
-  int   DecodeM3DPart(sqlite3_stmt *stm,C3Dmodel *modl);
+  int   DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl);
   int   GetM3Dmodel(C3Dmodel *modl);
   //---Generic texture -----------------------------------------------
   GLubyte *GetGenTexture(TEXT_INFO &txd);

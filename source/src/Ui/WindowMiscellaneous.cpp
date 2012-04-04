@@ -630,24 +630,50 @@ void CFuiConfirmQuit::NotifyChildEvent (Tag id, Tag component, EFuiEvents evn)
 // Error Message
 //
 //=========================================================================
-CFuiErrorMSG::CFuiErrorMSG (Tag id, const char* filename)
-: CFuiWindow (id, filename, NULL, NULL, NULL)
-{ mesg = (CFuiLabel*)GetComponent ('mesg');
+CFuiErrorMSG::CFuiErrorMSG (Tag id, char nb)
+: CFuiWindow (id, 0, 500, 26, 0)
+{ Init(nb);
 }
 //-------------------------------------------------------------------------
 //	Modal constructor
 //-------------------------------------------------------------------------
-CFuiErrorMSG::CFuiErrorMSG(CFuiWindow * mwin)
-	:  CFuiWindow (FUI_WINDOW_ERMSG, "UI/TEMPLATES/ERRORMSG.win", NULL, NULL, NULL)
+CFuiErrorMSG::CFuiErrorMSG(CFuiWindow * mwin, char nb)
+	:  CFuiWindow (FUI_WINDOW_ERMSG, 0, 500, 26, NULL)
 {	MoWind	= mwin;
-	mesg = (CFuiLabel*)GetComponent ('mesg');
-	if (0 == mesg)	gtfo("Invalid file UI/TEMPLATES/ERRORMSG.win");
+	Init(nb);
+}
+//-------------------------------------------------------------------------
+//	Init windows 
+//	Create msg, yes button and no button
+//-------------------------------------------------------------------------
+void CFuiErrorMSG::Init(char nb)
+{	U_INT x,y;
+	windowId = globals->fui->GetaTag(&x,&y);
+	U_INT wit = MakeRGBA(255,255,255,255);
+	mLAB = new CFuiLabel(10, 2, 390, 20, this);
+	AddChild('mesg',mLAB,"",0, wit);
+	//--- Create OK button -----------------------------
+	oBUT		= new CFuiButton(400, 2, 40,20, this);
+	AddChild('_yes',oBUT,"OK");
+	//--- Create optional No button --------------------
+	if (nb) 
+	{	nBUT  = new CFuiButton(456, 2, 40,20, this);
+		AddChild('_no_',nBUT,"NO");
+	}
+	//--------------------------------------------------
+	close	= 1;
+	title = 1;
+	SetTransparentMode();
+	//--- Create the windows ---------------------------
+	ReadFinished();
+	MoveTo(x,y);
 }
 //-------------------------------------------------------------------------
 //  Event notification
 //-------------------------------------------------------------------------
 void CFuiErrorMSG::NotifyChildEvent (Tag id, Tag itm, EFuiEvents evn)
-{	if (MoWind)	MoWind->ClearModal();
+{	if (MoWind) MoWind->NotifyChildEvent('dial',itm,evn);
+	if (MoWind)	MoWind->ClearModal();
 	Close();
 	return;
 }

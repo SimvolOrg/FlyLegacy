@@ -63,7 +63,7 @@ struct B19_HEADER {
 };
 //----- a triangle -------------------------------
 struct OBJ_TRIANGLE {
-	TC_VTAB vtx[3];
+	GN_VTAB vtx[3];				
 };
 //========================================================================
 //  TIF STRUCTURES
@@ -138,14 +138,16 @@ protected:
 	char      trace;									// Trace request
 	char			type;										// Type of file
 	U_CHAR     Tsp;										// Transparent mode
-	U_CHAR     Dir;										// Directory						
+	U_CHAR     Dir;										// Directory
+	//--- Texture description ------------------------------
+	TEXT_INFO  txd;
 	//----Model extension ----------------------------------
   CVector    vmax;                  // Maximum coordinates
   CVector    vmin;                  // Minimum coordinates
 	//--- Part Queue ---------------------------------------
 	Queue<C3DPart> partQ;							// List of parts
 	//------------------------------------------------------
-	void      *tREF;									// Texture reference
+	CShared3DTex   *tREF;									// Texture reference
 	char  txname[TC_TEXTURE_NAME_DIM];    // Texture name
 	//--- METHODS ------------------------------------------
 public:
@@ -153,11 +155,12 @@ public:
 	int		StopParse (PODFILE *p,char *msg);
 	void	SaveExtension(F3_VERTEX &vt);
 	void	SaveExtension(TC_VTAB &vt);
+	void	SaveExtension(GN_VTAB &vt);
 	int   GetStatement(char *s);
 	//------------------------------------------------------
 	int		LoadModel(C3Dmodel *mod);
 	//------------------------------------------------------
-	C3DPart *GetOnlyFirstPart();
+	C3DPart *GetOnlyOnePart();
 	};
 //========================================================================
 //
@@ -443,13 +446,13 @@ public:
 //=======================================================================================
 class COBJparser: public CParser {
 	//---- ATTRIBUTES -----------------------------------------
+	U_INT			pm;							// Parameter
 	C3Dmodel *model;
 	C3DPart  *part;
-	char      img[PATH_MAX];
 	//---- List of space vertices -----------------------------
-	std::vector<TC_VTAB *>			vpos;	
-	std::vector<TC_VTAB *>			vtex;
-	std::vector<TC_VTAB *>			vnor;
+	std::vector<GN_VTAB *>			vpos;	
+	std::vector<GN_VTAB *>			vtex;
+	std::vector<GN_VTAB *>			vnor;
 	std::vector<OBJ_TRIANGLE*>	vtri;
 	//---- METHODS --------------------------------------------
 public:
@@ -458,8 +461,8 @@ public:
 	//---------------------------------------------------------
 	void	SetDirectory(char *d);
 	//---------------------------------------------------------
-	void	BuildW3DPart();
-	void	BuildOSMPart();
+	void	   BuildW3DPart();
+	C3DPart *BuildOSMPart(char dir);
 	//---------------------------------------------------------
 	int		Decode(char *fn, char t);
 	bool	ParseMaterial(char *s);
@@ -470,5 +473,7 @@ public:
 	bool	Parse3Faces(char *s);
 	//----------------------------------------------------------
 	bool	BuildTriangleVertex(int dst, U_INT nv, U_INT nt);
+	//----------------------------------------------------------
+	char *TextureName()	{return txd.name;}
 };
 //=======END OF FILE ============================================================================

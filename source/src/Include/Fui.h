@@ -274,8 +274,10 @@ enum EFuiEvents
   EVENT_THBRATIO      = 'trat',   // JSDEV* for scroll bar
   EVENT_ANYSUBEVENT   = 0,    
   EVENT_NOSUBEVENT    = 0,
-  EVENT_DIR_CLOSE     = 'dlos',    // Window directory close
-  EVENT_POP_CLICK    = 'pclk',     // Line clicked in a Popup
+  EVENT_DIR_CLOSE     = 'dlos',   // Window directory close
+  EVENT_POP_CLICK    = 'pclk',    // Line clicked in a Popup
+	EVENT_DLG_YES			 = '_yes',		// Yes button clicked
+	EVENT_DLG_NO       = '_no_',		// No button
 };
 
 enum EFuiBinding {
@@ -770,7 +772,8 @@ public:
   virtual void        Initialize(CmHead*obj,U_SHORT type){}
 	virtual void				FileSelected(FILE_SEARCH *pm) {;}
 					void				CreateFileBox(FILE_SEARCH *fpm);
-					void				CreateDialogBox(char *ttl, char *msg);			
+					void				CloseModal();
+					void				CreateDialogBox(char *ttl, char *msg, char nb = 0);			
           void        AddZoomButton();
           void        AddMiniButton();
           bool        ClickImage (int mx, int my, EMouseButton button,S_IMAGE &info);
@@ -2004,6 +2007,7 @@ public:
   void Init (void);
   void Cleanup (void);
   Tag  GenTag();
+	Tag  GetaTag(U_INT *x, U_INT *y);
 	void						 ExportMessage(char *msg);
   //----- CFuiManager methods ------------------------------------------------
   CFuiWindow*      CreateFuiWindow(Tag id,int lim=0);

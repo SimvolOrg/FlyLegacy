@@ -150,7 +150,8 @@ void C_NavigationGauge::DecodeFlag(SStream *str)
   ReadString(txf.name,TC_TEXTURE_NAME_NAM,str);
   //--- Read the texture ----------------------
   CArtParser img(TC_HIGHTR);
- // txf.tsp   = 1;
+  txf.apx   = 0xFF;
+	txf.azp   = 0;
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",txf.name);
   img.GetAnyTexture(txf);
   Flag.Copy(txf);

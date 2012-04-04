@@ -170,10 +170,6 @@ void CRandomEvents::Timeslice (float dT,U_INT Frame)
         globals->random_flag |=  RAND_TURBULENCE;}
       break;
   }
-  //if (val ==    8) TRACE ("CRandomEvents::Timeslice 0008"); 
-  //if (val ==  100) TRACE ("CRandomEvents::Timeslice 0100"); 
-  //if (val ==   28) TRACE ("CRandomEvents::Timeslice 0028"); 
-  //if (val ==   38) TRACE ("CRandomEvents::Timeslice 0038"); 
 
 }
 
@@ -625,7 +621,7 @@ bool CSlewManager::StopMove()
 //=========================================================================
 //	TELEPORT PROFILE
 //=========================================================================
-#define PROF_TELEPORT (PROF_NO_OBJ | PROF_NO_MET | PROF_NO_APT )
+#define PROF_TELEPORT (PROF_NO_MET | PROF_NO_APT )
 //=========================================================================
 // CSituation
 //=========================================================================
@@ -1005,7 +1001,7 @@ void CSituation::TeleportS1()
 {	char txt[128];
 	_snprintf(txt,127,"%05d Teleporting to destination. PLEASE WAIT",wait++);
 	DrawNoticeToUser(txt,4);
-	bool ok = globals->tcm->TerrainStable();
+	bool ok = globals->tcm->TerrainStable(1);
 	if (!ok)			return DrawNormal();
 	//-- OK terrain ready at destination --------------
 	globals->Disp.ExecULK(PRIO_PLANE);		// Allow time slice
@@ -1033,7 +1029,7 @@ void CSituation::ShortTeleport(SPosition *P, SVector *O)
 // Teleport Step 01:  Wait for some time slice. Set camera to look down
 //----------------------------------------------------------------------------
 void CSituation::TeleportS2()
-{	bool ok = globals->tcm->TerrainStable();
+{	bool ok = globals->tcm->TerrainStable(1);
 	if (!ok)					return	DrawNormal();
 	State = SIT_NORMAL;
 	if (0 == sVeh)		return	DrawNormal();

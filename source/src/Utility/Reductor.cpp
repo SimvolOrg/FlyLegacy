@@ -861,9 +861,8 @@ bool CPolyShop::OpenPart(CrTriangle *tr)
   Part  = new C3DPart();
 	Part->AllocateW3dVTX(pnNVT);
   Part->SetTSP(phd->GetTSP());
-  Part->SetTexName(phd->GetTXN());
+  Part->SetAllTexName(TEXDIR_ART,phd->GetTXN());
   Part->AllocateXList(pnNIN);
-  Part->SetXOBJ(phd->GetXOB());
   vaTAB = Part->GetVLIST();
   vnTAB = Part->GetNLIST();
   txTAB = Part->GetTLIST();

@@ -403,13 +403,18 @@ void CVector::CrossProduct(const SVector &u, const SVector &v) {
   y = u.z*v.x - u.x*v.z;
   z = u.x*v.y - u.y*v.x;
 }
+//---------------------------------------------------------------
+//  Integrate 
+//---------------------------------------------------------------
 
 void CVector::Integrate(double dt, CVector &dv1, CVector &dv2) {
    x += dt*(3*dv1.x - dv2.x)/2;
    y += dt*(3*dv1.y - dv2.y)/2;
    z += dt*(3*dv1.z - dv2.z)/2;
 }
-
+//---------------------------------------------------------------
+//  Normalize the vector
+//---------------------------------------------------------------
 void CVector::Normalize(void) {
   double length = Length();
   x /= length;

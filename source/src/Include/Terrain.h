@@ -37,16 +37,6 @@
 
 
 #include <stdarg.h>
-#include "FlyLegacy.h"
-#include "Utility.h"
-#include "LogFile.h"
-#include "3dMath.h"
-#include <pthread.h>
-#include <vector>
-#include <queue>
-#include <string>
-#include <set>
-#include <list>
 #include <map>
 ///--------------------JS------------------------------------------------------------------
 //
@@ -56,6 +46,7 @@
 //   colour given a terrain elevation value.  This can be used for untextured
 //   terrain to aid debugging
 //
+/*
 class CElevationShader {
 private:
   static CElevationShader  instance;
@@ -75,101 +66,6 @@ protected:
   int           baseIndex;              ///< First index of land elevations
   int           maxIndex;               ///< Last index of land elevations
 };
-//===================================================================================
-class CSceneryDBM;
-//==================================================================================
-//	Class CSceneryPOD to hold a scenery POD associated to a QGT or a GBT
-//==================================================================================
-class CSceneryPOD {
-	//--- ATTRIBUTES --------------------------------------------
-protected:
-	int			users;											// User count
-	U_INT		Key;												// QGT key
-	char    fName[PATH_MAX];						/// Pod Full name
-	//--- Methods -----------------------------------------------
-public:
-	CSceneryPOD(U_INT key, char *fn);
-	//------------------------------------------------------------
-	void		Mount();
-	void		Remove();
-	//------------------------------------------------------------
-	inline U_INT GetKey()							{return Key;}
-  inline char *GetName()						{return fName;}
-	inline void  IncUser()						{users++;}
-};
-//==================================================================================
-//	Class CSceneryPack to hold all scenery associated to a QGT
-//	A list of ScenerySet is maintain in this Pack
-//==================================================================================
-class CSceneryPack {
-	friend class CSceneryDBM;
-private:
-	//--- ATTRIBUTES ------------------------------------
-	U_INT key;												// QGT key
-	U_INT	gx;													// X index
-	U_INT gz;													// Z index
-	std::vector<CSceneryPOD*> apod;
-	//----------------------------------------------------
-public:
-	CSceneryPack(U_INT key);
- ~CSceneryPack();
-  //-----------------------------------------------------
-	void	AddPod(CSceneryPOD *pod) {apod.push_back(pod);}
-	//-----------------------------------------------------
-	void	MountPODs (CSceneryDBM *dbm);
-	void	RemovePODs(CSceneryDBM *dbm);
-	};
-//==================================================================================
-// CSceneryDBM
-//
-// The scenery set database contains information about sliced scenery areas read
-//   from .SCF (Scenery Control Files).  Each SCF is encapsulated by a CScenerySet
-//   instance and represents a rectangular area of contiguous sliced scenery.
-//
-// This is a singleton class.
-//
-//  JS: As one scenery file is located in a QGT, might as well register each
-//      scenery in a map with the QGT coordinates as a key
-//============================================================================
-class CSceneryDBM {
-	friend class CSceneryPack;
-public:
-	CSceneryDBM();
- ~CSceneryDBM();
-public:
-  // CSceneryDBM methods
-  void    Init (void);
-  void    Cleanup (void);
-	void		AddPodToQGT(CSceneryPOD *pod);
-	void		AddPodToGBT(CSceneryPOD *pod);
-	int		  CheckForScenery(PFSPODFILE *p);
-	//-----------------------------------------------------------------------
-	void		MountAll();
-  void    Register(U_INT key);
-	void    Deregister(U_INT key);
-	//--- For shared scenery pod --------------------------------------------
-	void		MountSharedPod(char *pat,char *fn);
-  //  Load initial files --------------------------------------------------
-protected:
-  void    LoadInFolderTree (const char *path);
-	void		Warn01(char *fn);
-	void		SendPOD(char *pn);
-	//------------------------------------------------------------------------
-	int     CheckDatabase(char *pn);
-	void		LookForPOD(char *path);
-	void		ProcessPOD(char *path,char *fn);
-	int			GetSceneryType(char *path);
-	int 		SceneryForGBT(PFSPODFILE *p,int gx,int gz);
-  //------------------------------------------------------------------------
-protected:
-	PFS *pfs;
-	U_CHAR	tr;													// Trace indicator
-	int		  exp;
-	char podn[PATH_MAX];
-	std::map<U_INT,CSceneryPack*> sqgt;
-	std::map<U_INT,CSceneryPack*> sgbt;
-};
-
-
+*/
 //================END OF FILE ===========================================================
 #endif // TERRAIN_H

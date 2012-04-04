@@ -120,7 +120,8 @@ public:
   virtual void  RangeOutSlow (void);
   virtual void  RangeOutFast (void);
   virtual void  RangeReset (void);
-
+	virtual void  MoveTo (double inc, double tg) {;}
+	void  StopMove() {move = 0;}
   // Camera position manipulation methods.  These do nothing by default, specific
   //   camera subclasses must implement them
   virtual void  PanLeft (void) {}
@@ -254,7 +255,10 @@ protected:
 	SPosition camPos;			// Camera position
   CVector   offset;     // Camera offset from target vehicle location (in feet)
   CVector   orient;     // Camera orientation with respect to world axes
-	//-----Camera orientation -----------------------------------
+	//---  Camera automove parameters ----------------------------
+	double		moveInc;		// Zoom increment
+	double    moveTgt;		// Zoom target
+	//-----Camera orientation ------------------------------------
   CVector   Up;         //  Up vector (
 	CVector   Fw;         //  Forward
 	CVector   Lf;					// Left 
@@ -273,8 +277,8 @@ protected:
 	double    ffac;				// Flare factor
   //----Locking ------------------------------------------------
   char      Lock;       // Lock indicator
-	//----Picking ------------------------------------------------
 	char			pick;				// Picking indicator
+	char      move;				// move indicator
   //----Next and previous cammeras -----------------------------
   Tag       cIden;      // Camera identity
   Tag       cNext;      // Camera next
@@ -321,6 +325,8 @@ public:
 	bool		PickObject(U_INT mx, U_INT my);
 	//-------------------------------------------------------------
 	void	UpdateCamera (SPosition tpos, SVector tori,float dT);
+	//-------------------------------------------------------------
+	void  MoveTo (double inc, double tg);
  	//-------------------------------------------------------------
 	void  PanLeft()		{RabbitLeft();}
 	void  PanRight()	{RabbitRight();}

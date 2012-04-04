@@ -1329,7 +1329,7 @@ float GetHEIGHT(TC_VTAB *qd)
 //============================================================================
 //	Rotate vertex arround Z axis
 //============================================================================
-void ZRotate(TC_VTAB &v, double sn, double cn)
+void ZRotate(GN_VTAB &v, double sn, double cn)
 {	double x = v.VT_X;
 	double y = v.VT_Y;
 	double M0	= +cn; 
@@ -1338,8 +1338,56 @@ void ZRotate(TC_VTAB &v, double sn, double cn)
 	double M3 = +cn;
   v.VT_X  = ((x * M0) + (y * M2));
 	v.VT_Y  = ((x * M1) + (y * M3));
+	//--------------------------------
+	x	= v.VN_X;
+	y = v.VN_Y;
+	v.VN_X  = ((x * M0) + (y * M2));
+	v.VN_Y  = ((x * M1) + (y * M3));
 	return;
 }
-
+//============================================================================
+//	Compute matrix for R(T) rotation R of translation T
+//============================================================================
+void MatRT(SVector &T,double deg, double *M)
+{	//--- compute global transformation -------------------
+	double A = DegToRad(deg);
+	double S = sin(A);
+	double C = cos(A);
+	//---First line-------
+	M[0]		= +C;
+	M[1]		= +S;
+	M[2]		=  0;
+	//--- Second line ----
+	M[3]		= -S;
+	M[4]		= +C;
+	M[5]		=  0;
+	//--- Third line ----
+	M[6]    =  0;
+	M[7]		=  0;
+	M[8]		=  1;
+	//--- Fourth line ---
+	M[9]		= T.x;
+	M[10]		= T.y;
+	M[11]		= T.z;
+	return;
+}
+//============================================================================
+//	Compute matrix for T(R) Rotation R then translation T
+//============================================================================
+void RotRT(GN_VTAB &s, double *M)
+{	double vx = (s.VT_X * M[0]) + (s.VT_Y * M[3]) + M[9];
+	double vy = (s.VT_X * M[1]) + (s.VT_Y * M[4]) + M[10];
+	double vz =                   (s.VT_Z * M[8]) + M[11];
+	//--------------------------------------------------------
+	double nx = (s.VN_X * M[0]) + (s.VN_Y * M[3]);				// + M[9];
+	double ny = (s.VN_X * M[1]) + (s.VN_Y * M[4]);				// + M[10];
+	//--------------------------------------------------------
+	s.VT_X	= vx;
+	s.VT_Y	= vy;
+	s.VT_Z	= vz;
+	s.VN_X	= nx;
+	s.VN_Y	= ny;
+	return;
+}
 //=======================END OF FILE ======================================================
 

@@ -104,5 +104,6 @@ public:
   CmHead  *PopFromQ1();
   CmHead  *PopFromQ2();
 };
+
 //============================END OF FILE =================================================
 #endif // QUEUES_H

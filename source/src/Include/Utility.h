@@ -1227,7 +1227,9 @@ float         GetTopPos(TC_VTAB *qd);
 float         GetWIDTH(TC_VTAB *qd);
 float         GetHEIGHT(TC_VTAB *qd);
 //=========================================================================================
-void ZRotate(TC_VTAB &v, double sn, double cn);
+void ZRotate(GN_VTAB &v, double sn, double cn);
+void MatRT(SVector &T, double deg, double *M);
+void RotRT(GN_VTAB &s, double *M);
 //=========================================================================================
 void  BlitTransparentSurface (SSurface *surface, int xOffset, int yOffset, int y_isiz);
 void  BlitOpaqueSurface (SSurface *surface, int xOffset, int yOffset, int y_isiz);

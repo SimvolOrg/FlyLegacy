@@ -45,6 +45,7 @@
 #include "../Include/Database.h"
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainElevation.h"
+#include "../Include/ScenerySet.h"
 #include "../Include/Cloud.h"
 #include "../Include/LightSystem.h"
 #include "../Include/Utility.h"
@@ -66,6 +67,7 @@
 #include "../Include/BlackBox.h"
 #include "../Include/TerrainTexture.h"
 #include "../Include/Triangulator.h"
+#include "../Include/OSMobjects.h"
 //----Windows particular -------------------------
 #include <math.h>
 #include <pthread.h>
@@ -316,15 +318,34 @@ DAMAGE_MSG damMSG[] = {
   {2,0,'crgr',"Gear %s destroyed"},       // 2 Gear destroyed
   {3,0,'crby',"STRUCTURAL DAMAGE"},       // 3 Body destroyed
 };
-/**
- *  Lookup the ICAO Spelling Alphabet word (ALPHA, BRAVO, etc.) for the supplied character.
- *
- *  \param  car
- *    Character for which to get ICAO Spelling Alphabet word; must be in range a-z or A-Z
- *  \return 
- *    String containing ICAO Spelling Alphabet word for the character
- *
- */
+//================================================================================
+//   Textures mask directory
+//================================================================================
+char *textMSK[] =
+{	"ART/%s",										// 0 => ART directory
+	"OpenStreet/Models/%s",			// 1 => OSM models
+	"OpenStreet/Textures/%s",		// 2 => OSM Textures
+	"ART/",											// 3  reserved
+};
+//================================================================================
+//   Textures real directory
+//================================================================================
+char *textDIR[] =
+{	"ART",										// 0 => ART directory
+	"OpenStreet/Models",			// 1 => OSM models
+	"OpenStreet/Textures",		// 2 => OSM Textures
+	"ART/",										// 3  reserved
+};
+
+//================================================================================
+//  Lookup the ICAO Spelling Alphabet word (ALPHA, BRAVO, etc.) for the supplied character.
+//
+//  \param  car
+//    Character for which to get ICAO Spelling Alphabet word; must be in range a-z or A-Z
+//  \return 
+//    String containing ICAO Spelling Alphabet word for the character
+//
+//================================================================================
 char *GetStandardAlphabet(char car)
 { car |= ' ';                   // set lower case
   car -= 'A';                   // index
@@ -422,7 +443,43 @@ void TraceObjectSize()
 	TRACE("%30s size = %05d","CFuiZoomButton",		sizeof(CFuiZoomButton));
 	TRACE("----Systems---------------------------------");
 }
-
+//=====================================================================================
+//	Helper: String dupplication 
+//=====================================================================================
+char *Dupplicate(char *s, int lgm)
+{	int lgr = strlen(s) + 1;
+	if (lgr > lgm)	lgr = lgm;
+	char *d = new char[lgr];
+	strncpy(d,s,lgr);
+	d[lgr-1] = 0;
+	return d;
+}
+//==================================================================
+//	Read a file:  
+//	Read a line and trim space, tabulation, line feed, etc
+//==================================================================
+char *ReadTheFile(FILE *f, char *buf)
+{	bool go = true;
+	while (go)
+	{*buf  = 0;
+		char *txt = fgets(buf,128,f);
+		buf[127] = 0;
+		if (0 == txt)		return buf;
+		//--- Load a character and skip all unwanted --------
+		char car = *txt;
+		if (0 == car)		continue;
+		while (car)
+		{	bool sk = (car == 0x09) || (car == ' ') || (car == 0x0D) || (car == 0x0A);
+			if (!sk)		break;
+			else	{ txt++; car = *txt;}
+		}
+		if (0			== car)								continue;
+		if (strncmp(txt,"//", 2) == 0)	continue;
+		TrimTrailingWhitespace(txt);
+		return txt;
+	}
+	return 0;
+}
 //============================================================================
 //  Set Initial profile from ini file 
 //	Lock, unlock individual feature 
@@ -434,6 +491,7 @@ void InitialProfile()
 { globals->noTER = 0;
 	globals->noAPT = 0;
 	globals->noOBJ = 0;
+	globals->noOSM = 0;
 	globals->noEXT = 0;
 	globals->noINT = 0;
 	globals->noMET = 0;
@@ -441,11 +499,14 @@ void InitialProfile()
 	int nt   = 0;
 	//--- Check for terrain rendition ---------------------
   GetIniVar("Sim", "NoTerrain", &nt);
-  if (nt) globals->noTER = 1;
-  if (nt) globals->noAPT = 1;
-  if (nt) globals->noOBJ = 1;
-  if (nt) globals->noMET = 1;
-  if (nt) globals->noAWT = 1;
+  if (nt) 
+		{	globals->noTER = 1;
+			globals->noAPT = 1;
+			globals->noOBJ = 1;
+			globals->noTER = 1;
+      globals->noMET = 1;
+      globals->noAWT = 1;
+	 }
 	//--- Check for airport rendition ---------------------
 	int na = 0;
   GetIniVar("Sim", "NoAirport", &na);
@@ -454,6 +515,11 @@ void InitialProfile()
 	int no = 0;
   GetIniVar("Sim", "NoModel", &no);        // Skip 3D objects
   if (no) globals->noOBJ = 1;
+	//--- Check for OSM rendition ----------------------
+	int ns = 0;
+  GetIniVar("Sim", "NoOSM", &ns);        // Skip OSM objects
+  if (ns) globals->noOSM = 1;
+
 	//--- Check for plane rendition ------------------------
 	int np = 0;
   GetIniVar("Sim", "NoAircraft", &np);
@@ -468,17 +534,6 @@ void InitialProfile()
 	globals->aPROF.Rep(0);
 	return;
 }
-//=====================================================================================
-//	String dupplication 
-//=====================================================================================
-char *Dupplicate(char *s, int lgm)
-{	int lgr = strlen(s) + 1;
-	if (lgr > lgm)	lgr = lgm;
-	char *d = new char[lgr];
-	strncpy(d,s,lgr);
-	d[lgr-1] = 0;
-	return d;
-}
 //============================================================================
 //  Set special application profile
 //============================================================================
@@ -491,6 +546,7 @@ void SpecialProfile(Tag set,U_INT p)
 	if (p & PROF_NO_INT)	globals->noINT += dta;
 	if (p & PROF_NO_EXT)	globals->noEXT += dta;
 	if (p & PROF_NO_OBJ)	globals->noOBJ += dta;
+	if (p & PROF_NO_OSM)	globals->noOSM += dta;
 	if (p & PROF_NO_MET)	globals->noMET += dta;
 	//--- Check for NO plane at all -----------
 	if (p & PROF_NO_PLN)  
@@ -1097,7 +1153,7 @@ float tmp_timerS = 0.0f,
 //	Wait for terrain to be ready
 //===========================================================================
 int WaitTerrain()
-{ if (!globals->tcm->TerrainStable())	return APP_SIMULATION;
+{ if (!globals->tcm->TerrainStable(1))	return APP_SIMULATION;
 	globals->init = 0;
 	globals->zero = 1;
 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
@@ -1474,12 +1530,6 @@ int main (int argc, char **argv)
   globals->NulChar    = 0;
   //---Profile init --------------------------------------------------
   globals->noAWT    = 1;                      // No animated water
-  globals->noTER    = 0;                      // Allow Terrain
-  globals->noEXT    = 0;                      // Allow aircraft external drawing
-	globals->noINT		= 0;											// Allow aircraft internal drawing
-  globals->noAPT    = 0;                      // Allow Airport
-  globals->noOBJ    = 0;                      // Allow Object
-  globals->noMET    = 0;                      // Allow Meteo
   //---Terrain parameters --------------------------------------------
 	globals->pakCAP		= 1000;										// 1000 vertices
   globals->maxView  = 40;                     // Default Maximum view (miles)

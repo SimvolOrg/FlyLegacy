@@ -962,6 +962,8 @@ void CPanel::SetMain(char m)
 //-----------------------------------------------------------------------
 void CPanel::LoadTexture(char *fn)
 { TEXT_INFO txf;  // Texture info;
+	txf.apx = 0;
+	txf.azp = 0;
   CArtParser img(TC_HIGHTR);
  // txf.tsp   = 1;
   strncpy(txf.name,fn,TC_TEXTURE_NAME_NAM);

@@ -453,7 +453,8 @@ void CFuiMBROS::Teleport()
   pos.alt += (wObj->GetZExtend() + 20) * 0.5;
   //----Set Camera parameters  -----------------
   double ex = wObj->GetYExtend() * 12;
-  sCam->SetRange(ex);
+  //sCam->SetRange(ex);
+	sCam->MoveTo(10,ex);
   sCam->SetAngle(15,30);
   globals->m3d->ReleaseVOR();
   globals->geop = pos;

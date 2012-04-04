@@ -54,7 +54,6 @@ class CMemCount;
 class CVertex;
 class CFuiTED;
 class OSM_Object;
-class C3DPack;
 struct ELV_VTX;
 struct ELV_PATCHE;
 //=============================================================================
@@ -192,7 +191,7 @@ public:
     U_CHAR       visible;									// Visibility indicator
     float        white[4];                // Diffuse color for blending
 		//--- OSM management --------------------------------------------
-		Queue<C3DPack> batQ;									// Building Queue
+		Queue<C3DPart> batQ;									// Building Queue
     //---------------------------------------------------------------
     SPosition    mPos;                        // Center position
     CVector      sRad;												// Radius
@@ -212,14 +211,14 @@ public:
 		//-----------------------------------------------------------
 		void					LoadVBO();
 		//-----------------------------------------------------------
-		C3DPack      *Locate(OSM_Object *obj);
+		C3DPart			 *SearchOSMPart(CShared3DTex *ref);
 		void					AddToPack(OSM_Object *obj);
 		//-----------------------------------------------------------
 		void					Reallocate(char opt);
     void					AllocateVertices(char opt);
     void          RazNames();
     void          BuildBorder(C_QGT *qt,U_INT No);
-		bool					IsTextured();
+		bool					IsTextured(char opt);
     //-----------------------------------------------------------
     void          GetLine(CListBox *box);
     //-----------------------------------------------------------
@@ -233,7 +232,6 @@ public:
 		void					TraceEnd();
 		void					TraceRealloc(CmQUAD *qd);
     //-----------------------------------------------------------
-		inline Queue<C3DPack> *GetBatQ()					{return & batQ;}
     inline CTextureDef    *GetTexDesc(int nd) {return (Tex + nd);}
     //-----------------------------------------------------------
     inline void   SetVisibility(char v)   {visible = v;}
@@ -243,7 +241,9 @@ public:
     inline float  GetAlpha()              {return alpha;}
 		//--- Vertex buffer manageement -----------------------------
 		inline TC_GTAB* GetVertexTable()			{return vBUF;}
+		inline SPosition GeoPosition()				{return mPos;}
     //-----------------------------------------------------------
+		inline int  GetNumber()	{return NoSP;}
     inline U_CHAR GetLOD()  {return LOD;}
     inline void zrSwap()  {swap = 0;}
     inline bool IsReady() {return (State == TC_TEX_RDY);}
@@ -493,6 +493,8 @@ private:
   U_INT         qKey;                     // QGT key (X,Z)
   U_INT         rKey;                     // Request parameter
   SPosition     Scene;                    // Mid position for scenery
+	//--- OSM interface -------------------------------------------
+	SQL_DB       *osmDB;										// Database handle
   //--------Band parameters--------------------------------------
   U_CHAR        rCode;                    // Request code
   U_CHAR        visb;                     // is visible
@@ -594,7 +596,9 @@ public:
 	int					StepPCH();					// Elevation patche
 	int					StepSEA();					// Set coast data
 	int					StepSUP();					// Finalize Super Tile
-  //---------State management ----------------------------------
+	int					Step3DO();					// Load 3D objects
+	int					StepOSM();					// Load OSM layer(s)
+	//---------State management ----------------------------------
   void				LockState()  {pthread_mutex_lock   (&stMux);}
   void				UnLockState(){pthread_mutex_unlock (&stMux);}
   bool				NotReady()   {return (Step != TC_QT_RDY);}
@@ -621,6 +625,8 @@ public:
 	bool				AreWe(U_INT qx,U_INT qz);
 	int					HasTRN();
 	void				Reallocate(CmQUAD *qd);
+	//--- Object management ----------------------------------------
+	C3DPart		 *GetOSMPart(char supNo,char dir, char *ntx);
   //----------Mesh Management ------------------------------------
 	SPosition		GetBase();
 	int         CenterTile(CVertex *sw,CVertex *nw,CVertex *ne,CVertex *se);
@@ -646,7 +652,7 @@ public:
   CTextureDef    *GetTexList(U_INT No)    {return Super[No].Tex;}
   CSuperTile     *GetSuperTile(int tx,int tz);
   CSuperTile     *GetSuperTile(U_INT No);
-	bool						AllTextured();
+	bool						AllTextured(char opt);
 //--------Delete resources --------------------------------------
   int         FreeQuad(CmQUAD *cp);
   int         FreeVertices(CmQUAD *cp);
@@ -864,7 +870,7 @@ public:
 	GroundSpot *GetSpot()		{return &Spot;}
 	void				GetPlaneSpot(SPosition &p);
 	bool				SPotReady()	{return Spot.Valid();}
-	bool				TerrainStable();
+	bool				TerrainStable(char opt);
 	//----------TIME management ----------------------------------
   void        UpdateTOD();
   U_CHAR      SetLuminosity();
@@ -922,7 +928,8 @@ public:
   //--------Return scale parameters ------------------------------
   inline SVector *GetScale()        {return &scale;}
   //--------Terrain Parameters -----------------------------------
-  inline bool     Teleporting()       {return (Tele != 0);}
+	inline int      Locate3DO(C_QGT *q)	{return objMGR->LocateObjects(q);}
+	inline bool     Teleporting()       {return (Tele != 0);}
   inline double   GetHorizon()        {return hLine;}
   inline float    GetMagnecticNorth() {return magDV;}
   inline float    GetGroundAltitude() {return Spot.alt;}
@@ -1004,6 +1011,7 @@ public:
   void        SetSkyFog(float dens);
   //---OSM Management -------------------------------------------
 	void				AddToPack(OSM_Object *obj);
+	std::map<U_INT,C_QGT*> &GetQgtList()	{return qgtMAP;}
   //----------Misc items  ---------------------------------------
   void        DrawSun();
   void        GetSunPosition (void);

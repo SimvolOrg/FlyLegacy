@@ -1174,6 +1174,13 @@ CFuiWindow::~CFuiWindow (void)
   }
 }
 //-------------------------------------------------------------------
+//  Close modal window
+//-------------------------------------------------------------------
+void CFuiWindow::CloseModal()
+{	if (modal)	modal->ModalClose();
+	modal = 0;
+}
+//-------------------------------------------------------------------
 //  Read all tags
 //-------------------------------------------------------------------
 int CFuiWindow::Read (SStream *stream, Tag tag)
@@ -1793,12 +1800,12 @@ void CFuiWindow::CreateFileBox(FILE_SEARCH *fpm)
 //------------------------------------------------------------------------------
 //	Create a modal Dialog box
 //------------------------------------------------------------------------------
-void CFuiWindow::CreateDialogBox(char *ttl, char *msg)
+void CFuiWindow::CreateDialogBox(char *ttl, char *msg, char nb)
 {	if (modal)					return;
-	CFuiErrorMSG *win = new CFuiErrorMSG(this);
+	CFuiErrorMSG *win = new CFuiErrorMSG(this,nb);
+	win->SetTitle(ttl);
 	modal							= win;
 	win->Display(msg);
-	win->MoveTo(300,200);
 	return;
 }
 //------------------------------------------------------------------------------

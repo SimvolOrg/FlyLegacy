@@ -118,7 +118,7 @@ bool KeyAirGroup (CKeyDefinition *kdf, int code)
 { Tag kid = kdf->GetTag();
   bool ac = (globals->pln != 0);
 	if (0 == ac)				return false;
-  if (kid == 'actr')	return globals->pln->CenterControls();
+  if (kid == 'acta')	return globals->pln->CenterControls();
   // Inhibit aircraft control when in slew mode
   if (globals->slw->IsEnabled ()) return false;
   if (kdf->NoPCB())               return false;

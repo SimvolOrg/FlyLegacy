@@ -23,6 +23,7 @@
 #include <math.h>
 #include "../Include/Globals.h"
 #include "../Include/Triangulator.h"
+#include "../Include/OSMobjects.h"
 #include "../Include/RoofModels.h"
 #include "../Include/TerrainTexture.h"
 #include "../Include/fileparser.h"
@@ -189,6 +190,17 @@ int GeoTest::InTriangle(D2_POINT &P, D2_TRIANGLE &T)
 	if (p3 == GEO_ON_PQ)				on++;
 	return (on)?(GEO_ON_SIDE):(GEO_INSIDE); 
 	}
+//--------------------------------------------------------------------------------------
+//	Compute the normal to plan (A,B,C)
+//--------------------------------------------------------------------------------------
+CVector GeoTest::PlanNorme(D2_POINT &B, D2_POINT &A, D2_POINT &C)
+{	CVector rb((B.x - A.x), (B.y - A.y), (B.z - A.z));
+	CVector rc((C.x - A.x), (C.y - A.y), (C.z - A.z));
+	CVector cp;
+	cp.CrossProduct(rb,rc);
+	cp.Normalize();
+	return cp;
+}
 //====================================================================================
 //	POINTS routines
 //	Compute mid point with or without withdraw
@@ -203,27 +215,35 @@ void D2_POINT::LocalShift(double tx,double ty)
 //---------------------------------------------------------------------------
 //	Save vertex
 //---------------------------------------------------------------------------
-TC_VTAB *D2_POINT::SaveVertex(TC_VTAB *tab)
+GN_VTAB *D2_POINT::SaveData(GN_VTAB *tab, CVector &N)
 {	tab->VT_X = x;
 	tab->VT_Y = y;
 	tab->VT_Z = z;
+	//--------------------------------
+	tab->VN_X = N.x;
+	tab->VN_Y = N.y;
+	tab->VN_Z = N.z;
+	//--------------------------------
 	tab->VT_S = s;
 	tab->VT_T = t;
 	return (tab + 1);
 }
+
 //====================================================================================
 //	TRIANGLE routines
 //	
 //====================================================================================
+//---------------------------------------------------------------------
 //	Store vertices in part
 //---------------------------------------------------------------------
-U_INT D2_TRIANGLE::StoreVertices(C3DPart *p, U_INT n)
-{ TC_VTAB *tab = p->GetVTAB() + n;
-  tab	= B->SaveVertex(tab);
-	tab = A->SaveVertex(tab);
-	tab = C->SaveVertex(tab);
+U_INT D2_TRIANGLE::StoreData(C3DPart *p, U_INT n)
+{ GN_VTAB *tab = p->GetGTAB() + n;
+  tab	= B->SaveData(tab,N);
+	tab = A->SaveData(tab,N);
+	tab = C->SaveData(tab,N);
 	return (3 + n);
 }
+
 //====================================================================================
 //	TRIANGULATOR global variable
 //====================================================================================
@@ -292,13 +312,14 @@ void Triangulator::DrawMarks()
 //-------------------------------------------------------------------
 void Triangulator::Draw()
 {	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glDisable(GL_LIGHTING);
+	//glDisable(GL_LIGHTING);
 	glEnable(GL_TEXTURE_2D);
 	glColor3f(255,255,255);
 	//--- Set client state  ------------------------------------------
 	glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
 	glFrontFace(GL_CCW);
 	//----------------------------------------------------------------
   char d1 = 0;
@@ -489,8 +510,15 @@ void Triangulator::SetTag(char *t, char *v)
 //-------------------------------------------------------------------
 void Triangulator::EditTag(char *txt)
 {	*txt = 0;
-	if (0 == osmB)		return;
-	osmB->EditTag(txt);
+	if (osmB)	osmB->EditTag(txt);
+	return;
+}
+//-------------------------------------------------------------------
+//	Edit object parameters
+//-------------------------------------------------------------------
+void Triangulator::EditPrm(char *txt)
+{	*txt = 0;
+  if (osmB)	osmB->EditPrm(txt);
 	return;
 }
 //-------------------------------------------------------------------
@@ -518,18 +546,18 @@ bool Triangulator::MakeBuilding()
 //	Replace by a 3D object
 //	
 //-------------------------------------------------------------------
-U_CHAR Triangulator::ReplaceBy(char *fn, char *dir, double rad)
+U_CHAR Triangulator::ReplaceBy(char *fn, char rdir)
 {	if (0 == osmB)			return 0;
 	if (0 == *fn)				return 0;
+	//TRACE("REPLACE BUILDING %d",BDP.stamp);
   COBJparser obj(OSM_OBJECT);
-	obj.SetDirectory(dir);
+	obj.SetDirectory(textDIR[rdir]);
   obj.Decode(fn,OSM_OBJECT);
-	C3DPart *prt = obj.GetOnlyFirstPart();
+	C3DPart *prt = obj.BuildOSMPart(rdir);
+	char    *tnm = obj.TextureName();
 	if (0 == prt)				return 0;
-	osmB->Replace(fn,prt);
-	osmB->bpm.opt.Set(D2B_REPLACED);
-	osmB->orien = rad;
-	return osmB->Rotate();
+	osmB->SetModelParameters(fn,tnm,rdir,prt);
+	return 1;
 }
 //-------------------------------------------------------------------
 //	End of object 
@@ -579,6 +607,7 @@ void Triangulator::CreateBuilding()
 	if (0 == obj) obj =	new OSM_Object(otype);
   osmB							= obj;
 	GetSuperTileNo(&BDP.geop, &BDP.qgKey, &BDP.supNo);
+	//TRACE("CREATE BUILDING %d",BDP.stamp);
 	obj->SetParameters(BDP);
 	//--- Save a copy of the base points -----------
 	osmB->ReceiveQ(extp);
@@ -588,13 +617,17 @@ void Triangulator::CreateBuilding()
 //	Save all data in building
 //-------------------------------------------------------------------
 void Triangulator::SaveBuildingData()
-{	U_INT nvtx		= CountVertices();
+{ osmB->SetXY(BDP.lgx,BDP.lgy);	
+	U_INT nvtx		= CountVertices();
   C3DPart *prt	= osmB->GetPart();
-	prt->AllocateOsmVTX(nvtx);
+	prt->AllocateOsmGVT(nvtx);
 	//--- build all vertices ------------------------------
 	U_INT n = 0;
-	for (U_INT k=0; k < walls.size(); k++) n = walls[k]->StoreVertice(prt,n);
-	for (U_INT k=0; k < roof.size() ; k++) n = roof[k]->StoreVertices(prt,n);
+	//--- Save wall vertices ------------------------------
+	for (U_INT k=0; k < walls.size(); k++) n = walls[k]->StoreData(prt,n);
+	//--- Save roof vertices ------------------------------
+	for (U_INT k=0; k < roof.size() ; k++) n = roof[k]->StoreData(prt,n);
+	//--- Cross check validity ----------------------------
 	if (n > nvtx)	gtfo("Bad vertice count");
 	//--- Release walls and roof --------------------------
 	for (U_INT k=0; k < walls.size(); k++)	delete walls[k];
@@ -806,8 +839,7 @@ void Triangulator::Requalify(D2_SLOT *sa)
 //	Result of triangulation is used as the flat roof
 //-------------------------------------------------------------------
 bool Triangulator::GetAnEar()
-{ 
-	D2_SLOT  *sa = 0;
+{ D2_SLOT  *sa = 0;
 	for (sa = slot.GetFirst(); sa != 0; sa= sa->next)
 	{ if (sa->IsReflex())				continue;
 		if (NotAnEar(sa))					continue;
@@ -862,7 +894,8 @@ bool Triangulator::NotAnEar(D2_SLOT *sa)
 //	Start triangulation.  The result is a flat roof
 //-------------------------------------------------------------------
 char Triangulator::Triangulation()
-{	roof.reserve(slot.GetNbObj() - 1);
+{	tri.N = CVector(0,0,1);
+	roof.reserve(slot.GetNbObj() - 1);
 	while (slot.GetNbObj() != 2)	if (!GetAnEar()) 	return 3;
 	slot.Clear();
 	if (trace) TraceOut();
@@ -1158,18 +1191,6 @@ void Triangulator::Rotate(double x, double y)
 	ry = ((x * rotM[1]) + (y * rotM[3]));
 }
 //----------------------------------------------------------------
-//	Transform a local coordinate to the world coordinate
-//----------------------------------------------------------------
-void Triangulator::Rotate(TC_VTAB &v, double sn, double cn)
-{	double x = v.VT_X;
-	double y = v.VT_Y;
-	PositiveROT(sn, cn);
-	Rotate(x,y);
-	v.VT_X = rx;
-	v.VT_Y = ry;
-	return;
-}
-//----------------------------------------------------------------
 //	Qualify an edge with previous point
 //	We qualify the edge pa which is the previous point of pb
 //	because pa is already computed.
@@ -1237,10 +1258,10 @@ void Triangulator::GetBevelVector(D2_POINT *pa, double dy,D2_POINT *P)
 //----------------------------------------------------------------
 //	Build a foot print of the beveled roof
 //----------------------------------------------------------------
-int Triangulator::SetBevelArray(int d,D2_BEVEL &pm)
+int Triangulator::SetBevelArray(D2_BEVEL &pm)
 { //--- Bevel distance ------------------------
 	double dy = fabs(pm.H / pm.tang);
-	D2_POINT *dst = bevel + d;
+	D2_POINT *dst = bevel;
 	D2_POINT *src;
 	//--------------------------------------------------
 	double    ce = pm.pah + pm.H;								// Ceil height
@@ -1295,7 +1316,7 @@ int Triangulator::BuildBevelFloor(int No, int inx, double afh, double H)
 	pm.pah			= afh;
 	pm.H				= H;
 	bevel		    = new D2_POINT[nbp];
-	SetBevelArray(0,pm);
+	SetBevelArray(pm);
 	double    ce = afh + H;								// Ceil height
 	//--- Build this floor -------------------------------
   D2_POINT *pa = 0;
@@ -1310,6 +1331,7 @@ int Triangulator::BuildBevelFloor(int No, int inx, double afh, double H)
 		fa->se		= *pb;
 		fa->ne		=  bevel[pb->rng];
 		fa->nw		=  bevel[pa->rng];
+		fa->SetNorme(&geo);
 		//--- Set Face top position ------
 		fa->ne.V	= 1;
 		fa->nw.V	= 1;
@@ -1351,6 +1373,7 @@ int	Triangulator::BuildNormaFloor(int No,int inx, double afh, double H)
 		//--- Now we build a face with pa as the base points
 		D2_POINT *pb = extp.CyNext(pa);
 		fa->Extrude(afh,ce,pa,pb);
+		fa->SetNorme(&geo);
 		et->faces.push_back(fa);
 		pa->z		= ce;
 		pb->z		= ce;
@@ -1466,6 +1489,13 @@ void D2_FACE::Extrude(double fh, double ch, D2_POINT *p0, D2_POINT *p1)
 	//--- Save heights ----------------
 	sw.z = se.z = fh;
 	ne.z = nw.z = ch;
+	return;
+}
+//---------------------------------------------------------------
+//	Compute the face normal
+//---------------------------------------------------------------
+void	D2_FACE::SetNorme(GeoTest *geo)
+{	N = geo->PlanNorme(nw, se, sw);
 	return;
 }
 //---------------------------------------------------------------
@@ -1590,18 +1620,19 @@ void D2_FACE::RotationMC(D2_POINT *P)
 //---------------------------------------------------------------
 //	Save vertices in part for 2 triangles
 //---------------------------------------------------------------
-U_INT	D2_FACE::StoreVertices(C3DPart *prt, U_INT n)
-{	TC_VTAB *tab = prt->GetVTAB() + n;
-	tab = sw.SaveVertex(tab);
-	tab = se.SaveVertex(tab);
-	tab = nw.SaveVertex(tab);
+U_INT	D2_FACE::StoreData(C3DPart *prt, U_INT n)
+{	GN_VTAB *tab = prt->GetGTAB() + n;
+	tab = sw.SaveData(tab,N);
+	tab = se.SaveData(tab,N);
+	tab = nw.SaveData(tab,N);
 
-	tab = nw.SaveVertex(tab);
-	tab = se.SaveVertex(tab);
-	tab = ne.SaveVertex(tab);
+	tab = nw.SaveData(tab,N);
+	tab = se.SaveData(tab,N);
+	tab = ne.SaveData(tab,N);
 
 	return 6;
 }
+
 //=========================================================================
 //	D2-Stair class
 //=========================================================================
@@ -1632,11 +1663,22 @@ void D2_FLOOR::TextureFloor(D2_Style *s)
 //---------------------------------------------------------------
 //	Save vertices in Part 
 //---------------------------------------------------------------
+/*
 U_INT	D2_FLOOR::StoreVertice(C3DPart *p,U_INT x)
 {	U_INT n = x;
 	for (U_INT k=0; k < faces.size(); k++) n += faces[k]->StoreVertices(p,n);
 	return n;
 }
+*/
+//---------------------------------------------------------------
+//	Save vertices in Part 
+//---------------------------------------------------------------
+U_INT	D2_FLOOR::StoreData(C3DPart *p,U_INT x)
+{	U_INT n = x;
+	for (U_INT k=0; k < faces.size(); k++) n += faces[k]->StoreData(p,n);
+	return n;
+}
+
 //---------------------------------------------------------------
 //	Return vertices number 
 //---------------------------------------------------------------
@@ -1672,11 +1714,8 @@ D2_Group::D2_Group(char *gn, D2_Session *s)
 	//--- Index -----------------------------
 	indx			= 0;
 	//--- No texture yet --------------------
-	*path			= 0;
+	*txd.name	= 0;
 	//----------------------------------------
-	sbldg		  = 0;
-	//----------------------------------------
-	xOBJ			= 0;
 	tREF			= 0;
 }
 //-----------------------------------------------------------------
@@ -1689,6 +1728,7 @@ D2_Group::~D2_Group()
 	for (rp = building.begin(); rp != building.end(); rp++)  delete (*rp).second;
 	building.clear();
 	//-------------------------------------------------
+	//TRACE("GROUP DESTROYED and free %s",tinf.path);
 	globals->txw->Free3DTexture(tREF);
 
 }
@@ -1720,8 +1760,9 @@ bool D2_Group::Parse(FILE *f, D2_Session *sn)
 	bool go   = true;
 	while (go)
 	{	pos	= ftell(f);
-	  char *pm = sn->ReadFile(f,buf);
-		if (DecodeParam(pm))	continue;
+	  char *line = ReadTheFile(f,buf);
+		_strupr(line);
+		if (DecodeParam(line))	continue;
 		//--- Convert all units --------------------------------
 		sfMin		= SQRF_FROM_SQRMTR(sfMin);	// M² to FEET²
 		sfMax		= SQRF_FROM_SQRMTR(sfMax);
@@ -1788,12 +1829,8 @@ bool D2_Group::DecodeParam(char *prm)
 	nf = sscanf(buf," HEIGHT %lf", &flHtr);
 	if	(1 == nf)	return true;
 	//--- Check texture file -------------------------------
-	nf = sscanf_s(buf," TEXTURE %64s",tex,64);
-	if  (1 == nf)
-	{	tex[63]	= 0;
-		_snprintf(path,FNAM_MAX,"OpenStreet/Textures/%s",tex);
-		return true;
-	}
+	nf = sscanf_s(buf," TEXTURE %64s",txd.name,64);
+	if  (1 == nf)	return true;
 	//--- Check for roof model -----------------------------
 	nf = sscanf_s(buf," ROOF ( %8[^ ,)] , %lf ) ( FREQ = %d)",tex,12,&a,&w);
 	if (nf == 3)	return AddRoof(tex,a,w);
@@ -1912,13 +1949,15 @@ CRoofModel *D2_Group::GetRoofModByNumber(D2_BPM &bpm)
 //	Load texture for this group
 //-----------------------------------------------------------------
 void D2_Group::LoadTexture()
-{	if (*path == 0)		return;
-	if (xOBJ)		      return;
-	tREF	= globals->txw->GetM3DPodTexture(path,1,1);
-	globals->txw->GetTextureParameters(tREF,tinf);
-	xOBJ	= globals->txw->Get3DObject(tREF);
+{	if (*txd.name == 0)		return;
+	//-- init the descriptor -------------------------------
+	txd.Dir		= TEXDIR_OSM_TX;
+	txd.apx   = 0xFF;
+	txd.azp   = 0x00;
+	//TRACE("GROUP LOAD TEXTURE %s",ntex);
+	tREF	= globals->txw->GetM3DPodTexture(txd);
 	//--- Fill default roof parameters ---------------------
-	tRoof.DefaultParameters(tinf);
+	tRoof.DefaultParameters(txd);
 	return;
 }
 //-----------------------------------------------------------------
@@ -1926,13 +1965,13 @@ void D2_Group::LoadTexture()
 //-----------------------------------------------------------------
 void D2_Group::DrawBuilding()
 {	std::map<U_INT,OSM_Object*>::iterator rp;
-	glBindTexture(GL_TEXTURE_2D,xOBJ);
+	if (tREF) tREF->BindTexture();
 	for (rp = building.begin(); rp != building.end(); rp++)
 	{	OSM_Object *bld = (*rp).second;
-		if (bld != sbldg)	bld->Draw();
-		if (bld->Skip())	continue;
-		bld->Draw();
+		if (bld != globals->osmS)		bld->Draw();
+		if (globals->clk->GetON())	bld->Draw();
 	}
+	return;
 }
 //-----------------------------------------------------------------
 //	Add a building if not already in list
@@ -2415,9 +2454,7 @@ OSM_Object::OSM_Object(U_INT tp)
 	tag					= 0;
 	val					= 0;
 	part				= 0;
-	blink				= 0;
 	orien       = 0;
-	rmodl				= 0;
 }
 //-----------------------------------------------------------------
 //	Destroy resources
@@ -2428,8 +2465,8 @@ OSM_Object::~OSM_Object()
 {	int a = 0;
 	if (tag)			delete [] tag;
 	if (val)			delete [] val;
-	if (rmodl)		delete [] rmodl;
 	if (part)			delete part;
+	//TRACE("DELETE BUILDING %d",bpm.stamp);
 }
 //-----------------------------------------------------------------
 //	Transfer Queue and Clear items
@@ -2501,6 +2538,16 @@ void OSM_Object::SetTag(char *am, char *vl)
 	return;
 }
 //-----------------------------------------------------------------
+//	Edit Object
+//-----------------------------------------------------------------
+void OSM_Object::EditPrm(char *txt)
+{	U_INT nb  = bpm.stamp;
+	double lx = FN_METRE_FROM_FEET(bpm.lgx);
+	double ly = FN_METRE_FROM_FEET(bpm.lgy);
+	_snprintf(txt,127,"BUILDING %05d lg:%.1lf wd:%.1lf",nb,lx,ly);
+	return;
+}
+//-----------------------------------------------------------------
 //	Edit Tag
 //-----------------------------------------------------------------
 void OSM_Object::EditTag(char *txt)
@@ -2518,13 +2565,36 @@ void OSM_Object::SetParameters(D2_BPM &p)
 	bpm				= p;
 	D2_Group *grp = bpm.group;
 	grp->AddBuilding(this);
-	U_INT xob	= grp->GetXOBJ();
 	//--- Set part parameters ----------------------
-	C3DPart   *prt  = new C3DPart();
-	prt->SetXOBJ(xob);
+	C3DPart      *prt  = new C3DPart();
+	CShared3DTex *ref  = grp->GetTREF();
+	prt->Reserve(ref);
 	if (part)	delete part;
 	part	= prt;
 	return;
+}
+//-----------------------------------------------------------------
+//	Translate all vertices to SuperTile center
+//-----------------------------------------------------------------
+GN_VTAB *OSM_Object::StripToSupertile()
+{ C_QGT *qgt			= globals->tcm->GetQGT(bpm.qgKey);
+	CSuperTile *sup = qgt->GetSuperTile(bpm.supNo);
+	SPosition   p0  = sup->GeoPosition();
+	double rad      = FN_RAD_FROM_ARCS(p0.lat);
+	double rdf      = cos(rad);
+	SPosition   p1	= GetPosition();
+	CVector T  = FeetComponents(p0, p1,rdf);
+  U_INT nbv				= part->GetNBVTX();
+	if (0 == nbv)		return 0;
+	GN_VTAB *src	= part->GetGTAB();
+	GN_VTAB *vtx  = new GN_VTAB[nbv];
+	GN_VTAB *dst  = vtx;
+	for (U_INT k=0; k<nbv; k++)
+	{	*dst	= *src++;
+		 dst->Add(T);
+		 dst++;
+	}
+	return vtx;
 }
 //-----------------------------------------------------------------
 //	Return group texture reference
@@ -2534,19 +2604,25 @@ void *OSM_Object::GetGroupTREF()
 	return bpm.group->GetTREF();
 }
 //-----------------------------------------------------------------
-//	Return group texture name
+//	Return Part texture reference
 //-----------------------------------------------------------------
-char *OSM_Object::TextureName()
-{ if (0 == bpm.group)		return 0;
-	return bpm.group->TextureName();
-}
+CShared3DTex *OSM_Object::GetPartTREF()
+{return (part)?(part->GetTREF()):(0);}
 //-----------------------------------------------------------------
 //	Select this building
 //-----------------------------------------------------------------
 void OSM_Object::Select()
-{	bpm.group->SelectedBLDG(this);
+{	globals->osmS = this;
 	bpm.selc	= 1;
 	return;
+}
+//-----------------------------------------------------------------
+//	Return Texture parameters
+//-----------------------------------------------------------------
+char *OSM_Object::TextureData(char &d)
+{	CShared3DTex *ref = GetPartTREF();
+	if (0 == ref)				return 0;
+	return ref->TextureData(d);
 }
 //-----------------------------------------------------------------
 //	Change selection on building
@@ -2556,31 +2632,24 @@ void OSM_Object::SwapSelect()
 	else		Select();
 	return;
 }
-
 //-----------------------------------------------------------------
 //	Deselect this building
 //-----------------------------------------------------------------
 void OSM_Object::Deselect()
-{	bpm.group->SelectedBLDG(0);
+{	globals->osmS = 0;
 	bpm.selc	= 0;
 	return;
 }
 //-----------------------------------------------------------------
-//	Blink every 4 frames
-//-----------------------------------------------------------------
-bool OSM_Object::Skip()
-{	blink++;
-	blink &= 31;
-	return (blink > 16)?(true):(false); 
-}
-//-----------------------------------------------------------------
 //	Swap part
 //-----------------------------------------------------------------
-void OSM_Object::Replace(char *fn, C3DPart *prt)
-{	rmodl	= Dupplicate(fn,63);
-	orien	= 0;
+void OSM_Object::SetModelParameters(char *fn, char *tn, char dir, C3DPart *prt)
+{	rmodl.SetTexture(dir,fn);
+	orien	= atan2(bpm.sinA,bpm.cosA);
+	bpm.opt.Set(D2B_REPLACED);
 	if (part)	delete part;
 	part = prt;
+	Rotate();
 	return;
 }
 //-----------------------------------------------------------------
@@ -2605,6 +2674,7 @@ void OSM_Object::DrawLocal()
 //-----------------------------------------------------------------
 void OSM_Object::Write(FILE *fp)
 {	char txt[128];
+  char prm[128];
 	_snprintf(txt,127,"Start %05d id=%d\n", bpm.stamp, bpm.ident);
 	fputs(txt,fp);
 	//--- Write style ----------------------------------
@@ -2626,9 +2696,10 @@ void OSM_Object::Write(FILE *fp)
 		fputs(txt,fp);
 	}
 	//--- Write replace if any -------------------------
-	if (0 == rmodl)			return;
-	
-	_snprintf(txt,127,"Replace (Z=%.7lf) with %s\n",orien,rmodl);
+	if (0 == rmodl.name)			return;
+	//--- Write the replace directive ------------------
+	_snprintf(prm,64,"%d:%s",rmodl.dir,rmodl.name);
+	_snprintf(txt,127,"Replace (Z=%.7lf) with %s\n",orien,prm);
 	fputs(txt,fp);
 	//--- all ok ---------------------------------------
 	return;

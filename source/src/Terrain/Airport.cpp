@@ -1356,7 +1356,7 @@ void CAptObject::DrawGround()
 	//--- Activate ground VBO ------------------------------
 	glBindBuffer(GL_ARRAY_BUFFER,gVBO);
   glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),0);
-	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2*UNIT_SIZE));
+	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2*sizeof(double)));
 	//-------------------------------------------------------
 	std::vector<CGroundTile*>::iterator it;
 	for (it = grnd.begin();it != grnd.end(); it++)

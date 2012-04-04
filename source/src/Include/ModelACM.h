@@ -48,6 +48,7 @@ typedef enum {
 class CAnimatedModel;
 class CModelACM;
 class Xgeom;
+class CShared3DTex;
 //=============================================================================
 //  CGizmo:  Display a showing symbol
 //=============================================================================
@@ -410,7 +411,7 @@ public:
   void  GetExtension(SVector &v);
   void  GetMiniExtension(SVector &v)  {v = minB;}
   void  GetBodyExtension(SVector &v);
-  U_INT GetTextureRef(char *fn,char opt);
+  //U_INT GetTextureRef(char *fn,char opt);
 	//--- Configure rendering -------------------------------------
 	void  ConfMEM(char opt);			// Memory configurartion
 	void	ConfVBO(char opt);			// VBO configuration
@@ -452,7 +453,9 @@ protected:
 	U_INT		 oVBO;																	// Buffer object
 	U_INT		 cOBJ;																	// Current Texture object
 	VCONF		 Rend;																	// Configuration vector
-	//---Shadows parameters ------------------------------------------------------
+	//--- Texture parameters -----------------------------------------------------
+	CShared3DTex *tRef;															// Texture reference
+	//--- Shadows parameters -----------------------------------------------------
   float	sMatrix[16];														  // Shadow matrix
   //---Mother vehicule ---------------------------------------------------------
   CVehicleObject *mveh;

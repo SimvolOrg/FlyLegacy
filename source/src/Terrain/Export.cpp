@@ -23,6 +23,7 @@
  */
 #include "../Include/Database.h"
 #include "../Include/TerrainElevation.h"
+#include "../Include/ScenerySet.h"
 #include "../Include/Export.h"
 #include "../Include/SqlMGR.h"
 #include "../Include/FileParser.h"
@@ -1657,7 +1658,7 @@ void  CExport::WriteOBJ()
 //  Export the file
 //-----------------------------------------------------------------------------------------
 void CExport::ExportOBJ(char *fn)
-{	C3Dfile   sny(0,0);
+{	C3Dfile   sny(0,1);
   sny.Decode(fn,0);					// Decode all objects
 	//----Write all objects -------------------------------
   CWobj *obj = sny.GetWOBJ();
@@ -1700,6 +1701,7 @@ int CExport::ExecuteOBJ()
 	globals->appState = APP_EXIT_SCREEN;
 	return 0;
 }
+
 //=========================================================================================
 //  Call back to check if file is in database
 //=========================================================================================
@@ -1765,8 +1767,7 @@ void CExport::InitTRNmsg()
 //  Dispatch export TRN action
 //-----------------------------------------------------------------------------------------
 int  CExport::ExecuteTRN()
-{ int rc;
-	Clear = 0;
+{ Clear = 0;
 	switch (State)	{
 		//--- Initial state -----------------------
 		case EXP_TRN_INIT:

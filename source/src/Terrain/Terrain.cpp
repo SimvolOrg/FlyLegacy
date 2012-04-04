@@ -34,6 +34,7 @@ using namespace std;
 //
 // CElevationShader
 //
+/*
 CElevationShader    CElevationShader::instance;
 
 CElevationShader::CElevationShader (void)
@@ -52,7 +53,8 @@ CElevationShader::CElevationShader (void)
   baseIndex = 48;         // Palette index of lowest positive elevation
   maxIndex = 256;         // Palette index of highest elevation
 }
-
+*/
+/*
 void CElevationShader::Init (void)
 {
   // Load .act (palette) for relief shading
@@ -74,7 +76,8 @@ void CElevationShader::Init (void)
     WARNINGLOG ("CElevationShader : Cannot load topograpic shading palette");
   }
 }
-
+*/
+/*
 void CElevationShader::GetElevationRGB (const float elev, float &r, float &g, float &b)
 {
   static const float zeroEpsilon = 3.0;
@@ -101,5 +104,5 @@ void CElevationShader::GetElevationRGB (const float elev, float &r, float &g, fl
   g = relief[i][1];
   b = relief[i][2];
 }
-
+*/
 //================END OF FILE ======================================================

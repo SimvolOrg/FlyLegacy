@@ -121,6 +121,7 @@ void CStreamObject::DecodeStripName(SStream *str, char *fn, TEXT_DEFN &txd)
 void CStreamObject::ReadStrip(SStream *str,TEXT_DEFN &txd)
 {	char *erm = "Texture %s does not contain integral frame number";
   TEXT_INFO txf;                // Texture info;
+	txf.azp = 0;
   DecodeStripName(str,txf.name,txd);
   //--- Read the texture ----------------------
   CArtParser img(TC_HIGHTR);
@@ -156,7 +157,7 @@ void CStreamObject::ReadMonoStrip(SStream *str,TEXT_DEFN &txd,int *px, int *py)
   DecodeMonoName(str,txf.name,px,py);
   //--- Read the texture ----------------------
   CArtParser img(TC_HIGHTR);
-//  txf.tsp   = 1;
+  txf.azp   = 0;
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",txf.name);
   img.GetAnyTexture(txf);
   txd.Copy(txf);
@@ -171,6 +172,7 @@ void CStreamObject::ReadBMAP(SStream *str,TEXT_DEFN &txd)
 { char fn[128];
 	ReadString(fn,128,str);
 	TEXT_INFO txf;  // Texture info;
+	txf.azp = 0;
   CArtParser img(TC_HIGHTR);
   strncpy(txf.name,fn,TC_TEXTURE_NAME_NAM);
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",fn);

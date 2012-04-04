@@ -1396,8 +1396,10 @@ void ColladaParser::SetMaterial(CAcmPart *part,char *kmat)
   std::map<std::string,Ximag*>::iterator ig = Imags.find(kim);
   Ximag *nim = (*ig).second;
   //-----Load texture from texture ward -----------
-  char *tname = nim->tname;
-  void *ref = globals->txw->GetM3DPodTexture(tname,0);
+  strncpy(txd.name,nim->tname,FNAM_MAX);
+	txd.apx = 0xFF;
+	txd.azp = 0x00;
+  void *ref = globals->txw->GetM3DPodTexture(txd);
   U_INT obj = globals->txw->Get3DObject(ref);
   part->SetTexREF(ref,obj);
   return;

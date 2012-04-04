@@ -28,6 +28,8 @@
 #pragma once
 #endif // _MSC_VER > 1000
 #include "../Include/3dMath.h"
+#include "../Include/Cameras.h"
+#include "../Include/Geomath.h"
 //==========================================================================================
 //	Triangle indices
 //	Each index gives 2 informations about the vertex in the roof model
@@ -42,6 +44,10 @@ class D2_Group;
 class D2_Style;
 class CRoofModel;
 class	D2_TParam;
+class CShared3DTex;
+//------------------------------------------------
+struct D2_BPM;
+struct SQL_DB;
 //==========================================================================================
 #define TX_BH		(1)								// Full height texturing
 //==== GEOMETRIC FUNCTIONS =================================================================
@@ -189,6 +195,7 @@ void Clear()
 	};
 };
 
+
 //======================================================================================
 //  2D point coordinates
 //======================================================================================
@@ -248,7 +255,7 @@ struct D2_POINT {
 	//------------------------------------------
 	void	D2_POINT::LocalShift(double tx,double ty);
 	//------------------------------------------
-	TC_VTAB *D2_POINT::SaveVertex(TC_VTAB *tab);
+	GN_VTAB *D2_POINT::SaveData(GN_VTAB *tab, CVector &N);
 	//-----------------------------------------
 	void	D2_POINT::Convex()			{R = 0;}
 	void	D2_POINT::Reflex()			{R = 1;}
@@ -289,6 +296,7 @@ struct D2_TRIANGLE {
 	D2_POINT *B;				// Previous point
 	D2_POINT *A;				// current vertex
 	D2_POINT *C;				// Next point
+	CVector   N;				// Normal
 	//----------------------------------------------
 	D2_TRIANGLE::D2_TRIANGLE() { type = 0; A=B=C=0; strncpy(idn,"D2TR",4);}
 	//---- Allocate D2_POINTS ----------------------
@@ -304,7 +312,8 @@ struct D2_TRIANGLE {
 			C = N;
 		}
 	//------------------------------------------------------
-	U_INT	StoreVertices(C3DPart *p, U_INT n);
+	//U_INT	StoreVertices(C3DPart *p, U_INT n);
+	U_INT StoreData(C3DPart *p, U_INT n);
 };
 
 //=========================================================================================
@@ -323,6 +332,7 @@ public:
 	int 	InTriangle(D2_POINT &A, D2_POINT &P, D2_POINT &Q, D2_POINT &R);
 	int   InTriangle(D2_POINT &A, D2_TRIANGLE &T);
 	int	  Positive(D2_TRIANGLE &T);
+	CVector PlanNorme(D2_POINT &A, D2_POINT &B, D2_POINT &C);
 	//-------------------------------------------------------------
 	inline void		SetPrecision(double p)	{precision = p;}
 	inline double GetPrecision()					{return precision;}
@@ -403,6 +413,7 @@ public:
 	D2_POINT se;										// SE corner
 	D2_POINT ne;										// NE corner
 	D2_POINT nw;										// NW corner
+	CVector  N;											// Normal
 	//--- public Methods -------------------------------
 public:
 	D2_FACE()	{strncpy(idn,"D2FA",4);}
@@ -412,6 +423,7 @@ public:
 	void D2_FACE::Copy(D2_POINT *A, D2_POINT *B, D2_POINT *C);
 	//--------------------------------------------------
 	void		Extrude(double f,double c,D2_POINT *sw,D2_POINT *se);
+	void		SetNorme(GeoTest *geo);
 	void		TextureFace(D2_Style *s);
 	void		MoveToSW();
 	void		CRotation();
@@ -420,8 +432,10 @@ public:
 	void		RotationMC(D2_POINT *p);
 	//-------------------------------------------------
 	U_INT		StoreVertices(C3DPart *prt, U_INT n);
+	U_INT	  StoreData(C3DPart *prt, U_INT n);
 	//--------------------------------------------------
 	char		SwFaceType()							{ return sw.F;}
+
 };
 //====================================================================================
 //	Class floor for floor extrusion
@@ -444,6 +458,7 @@ public:
  //----------------------------------------------------------
   void	TextureFloor(D2_Style *s);
 	U_INT	StoreVertice(C3DPart *p,U_INT x);
+	U_INT	StoreData(C3DPart *p,U_INT x);
 	U_INT	VerticesNumber();
 };
 //====================================================================================
@@ -617,10 +632,8 @@ class D2_Group: public  D2_Ratio {
 	char 		rmno;														// Selected roof model
 	char		rfu2;														// Reserved
 	//--- Texture parameters --------------------------------------
-	TEXT_INFO tinf;													// Texture definition
-	U_INT		xOBJ;														// Texture Object
-	void   *tREF;														// Texture reference
-	char    path[PATH_MAX];									// File name
+	TEXT_INFO txd;													// Texture definition
+	CShared3DTex *tREF;											// Texture reference
 	//---- Turn index ---------------------------------------------
 	short    indx;													// Turn index
 	//---- Floor parameters ---------------------------------------
@@ -630,7 +643,6 @@ class D2_Group: public  D2_Ratio {
 	U_INT    nItem;													// Instance number
 	//--- Default roof texture -------------------------------------
 	D2_TParam tRoof;												// Texture roof
-	OSM_Object *sbldg;											// Selected building
 	//--- Building list --------------------------------------------
 	std::map<U_INT,OSM_Object*>building;		// List of building in group
 	//--- Queues for selector --------------------------------------
@@ -651,7 +663,7 @@ public:
 	bool		AddRoof(char *name, double a, int w);
 	void		AddStyle(D2_Style *sy);		
 	//--------------------------------------------------------------
-	void    GetTexDim(U_INT &x,U_INT &y) {x = tinf.wd; y = tinf.ht;}
+	void    GetTexDim(U_INT &x,U_INT &y) {x = txd.wd; y = txd.ht;}
 	//--------------------------------------------------------------
 	D2_Style    *GetStyle(char *nsty);
 	D2_Style    *GetOneStyle();
@@ -673,21 +685,19 @@ public:
 	//--------------------------------------------------------------
 	void			SetMansar(char m)		{mans = m;	}
 	//--------------------------------------------------------------
-	void			SelectedBLDG(OSM_Object *b)	{sbldg	= b;}
 	void			SetRoofModelNumber(U_INT n)		{rmno		= n;}
 	//--------------------------------------------------------------
 	U_INT			GetFloorNbr()				{return	flNbr;}
 	double    GetFloorHtr()				{return flHtr;}
 	//--------------------------------------------------------------
-	U_INT     GetXOBJ()						{return xOBJ;}
-	void     *GetTREF()						{return tREF;}
+	CShared3DTex *GetTREF()				{return tREF;}
 	//--------------------------------------------------------------
 	char			HasTrace()					{return tr;}
 	//--------------------------------------------------------------
-	D2_TParam *GetRoofTexDefault()	{return &tRoof;}
+	D2_TParam *GetRoofTexDefault(){return &tRoof;}
 	//--------------------------------------------------------------
 	char     *GetName()						{return name;}
-	char     *TextureName()				{return tinf.path;}
+	char     *TextureName()				{return txd.name;}
 	//--------------------------------------------------------------
 	std::vector<CRoofModel*>		&GetRoofList()		{return roofM;}
 	Queue<D2_Style> *GetStyleQ()	{return &styleQ;}
@@ -764,6 +774,8 @@ class Triangulator: public CExecutable, public Tracker {
 	OSM_Object *remB;															// Removed building
 	U_INT   xOBJ;																	// Current texture
 	U_INT		otype;																// Object type
+	//---  Texture descriptor ----------------------------
+	TEXT_INFO txd;																// Texture desc
 	//--- Drawing mode -----------------------------------
 	char		dMOD;																	// Drawing mode													
 	//--- METHODS ----------------------------------------
@@ -771,17 +783,18 @@ public:
 	Triangulator(D2_Session *s);
  ~Triangulator();
 	//-----------------------------------------------------
- void				CheckAll();
+  GeoTest  *GetGeotester()	{return &geo;}
+	//-----------------------------------------------------
+  void			CheckAll();
 	void			ClearRoof();
 	D2_POINT *GetBevelPoint(D2_POINT *p);
 	D2_POINT *ChangePoint(D2_POINT *pp);
 	D2_POINT *AllocateBevel(int nb);
 	void			TranslatePoint(D2_POINT &p, double x, double y, double z);
 	void			LocalCoordinates(D2_POINT &p);
-	void			Rotate(TC_VTAB &v, double sn, double cs);
 	//----------------------------------------------------
 	void    	GetBevelVector(D2_POINT *pa, double dy,D2_POINT *dst);
-	int				SetBevelArray(int dst,D2_BEVEL &pm);
+	int				SetBevelArray(D2_BEVEL &pm);
   //-----------------------------------------------------
 	void		AddVertex(double x, double y);
 	void		NewHole();
@@ -803,7 +816,7 @@ public:
 	U_INT		CountVertices();
 	void		CreateBuilding();
 	void		SaveBuildingData();
-	U_CHAR  ReplaceBy(char *mod, char *dir, double rad);
+	U_CHAR  ReplaceBy(char *mod,char rdir);
 	int     RemoveBuilding();
 	D2_BPM *RestoreBuilding(U_INT *cnt);
 	U_CHAR	RotateObject(double rad);
@@ -860,6 +873,7 @@ public:
 	D2_BPM *BuildOBJ(U_INT type);
 	void		SetTag(char *t, char *v);
 	void		EditTag(char *txt);
+	void		EditPrm(char *txt);
 	void		EndOBJ();
 	//------------------------------------------------------
 	U_CHAR	ModifyStyle();
@@ -868,71 +882,7 @@ public:
 	D2_BPM *GetBuildingParameters()			{return &BDP;}
 	//-------------------------------------------------------
 };
-//====================================================================================
-//	Object from OSM
-//====================================================================================
-//-------------------------------------------------------------------------
-class OSM_Object {
-	friend class Triangulator;
-	//--- Attributes -------------------------------------------------
-	U_INT		type;													// Type of object
-	D2_BPM  bpm;													// Building parameters
-	U_INT		blink;												// Blink time
-	//--- Replacing  object ------------------------------------------
-	char   *rmodl;												// Replacing model
-	double  orien;												// Orientation (rad);
-	//--- OSM properties ---------------------------------------------
-	char	 *tag;													// From OSM
-	char   *val;													// Value
-	//--- List of base POINTS ---------------------------------------
-	Queue<D2_POINT> base;									// Base Points
-	//--- can be replaced --------------------------------------------
-	C3DPart			 *part;										// Object component
-	//--- Methods ----------------------------------------------------
-public:
-	OSM_Object(U_INT tp);
- ~OSM_Object();
-  //----------------------------------------------------------------
-  void    SetTag(char *am, char *v);
-	void		EditTag(char *txt);
-	bool    Skip();
-	void		Swap(Queue<D2_POINT> &Q);
-	void		Invert(Queue<D2_POINT> &H);
-	//----------------------------------------------------------------
-	void		ReceiveQ(Queue<D2_POINT> &Q);
-	//----------------------------------------------------------------
-	U_CHAR	Rotate();
-	U_CHAR  IncOrientation(double rad);
-	//----------------------------------------------------------------
-	U_INT		GetKey()									{return bpm.qgKey;}
-	U_INT		GetSupNo()								{return bpm.supNo;}
-	void   *GetGroupTREF();
-	char   *TextureName();
-	//-----------------------------------------------------------------
-	void		SetPart(C3DPart *p)				{part = p;}
-	void		Select();
-	void		Deselect();
-	void		SwapSelect();
-	void		Replace(char *fn, C3DPart *prt);
 
-	//----------------------------------------------------------------
-	void    SetParameters(D2_BPM &p);
-	//----------------------------------------------------------------
-	D2_BPM &GetParameters()			        {return bpm;}	
-	SPosition GetPosition()							{return bpm.geop;}
-	double    GetRDF()									{return bpm.rdf;}
-	//----------------------------------------------------------------
-	U_INT		 GetStamp()									{return bpm.stamp;}
-	//----------------------------------------------------------------
-	C3DPart *GetPart()									{return part;}
-	//----------------------------------------------------------------
-	char		Selection()								  {return bpm.selc;}
-	//--- draw as a single object ------------------------------------
-	void		Draw();
-	void		DrawLocal();
-	//----------------------------------------------------------------
-	void		Write(FILE *fp);
-};
 //====================================================================================
 //	data for session 
 //====================================================================================
@@ -940,8 +890,12 @@ class D2_Session {
 	//--- ATTRIBUTES ------------------------------------------------
 	char  tr;																// Trace indicator
 	char  name[64];													// Session name
+	//--- Groups parameters -----------------------------------------
 	Queue<D2_Group> groupQ;									// Group queue for selection
 	std::map<std::string,D2_Group*> grpM;		// Groups
+	//--- Replacement MAP -------------------------------------------
+	std::multimap<U_INT,std::string> repL;	// Replacement list
+	//---------------------------------------------------------------
 	U_INT  fpos;														// File position
 	Triangulator    *trn;										// Triangulator
 	char   buf[256];												// Read buffer
@@ -962,16 +916,19 @@ public:
 	//----Session decoding ------------------------------------------
   void	Abort(char *msg);
 	bool	Stop01(char *ln);
-	char *ReadFile(FILE *f, char *buf);
+	bool	ParseTheSession(FILE *f);
 	bool	ReadParameters(char *dir);
-	bool  ParseSession(FILE *f);
-	bool	ParseGroups(FILE *f);
-	bool  ParseStyles(FILE *f);
+	bool	ParseReplace(FILE *f, char *ln);
+	bool	ParseGroups(FILE *f, char *ln);
+	bool  ParseStyles(FILE *f, char *ln);
+	//--- return a replacing object ---------------------------------
+	bool  GetReplacement(U_INT type, char *modl, char *d);
 	//---------------------------------------------------------------
 	void	Write(FILE *fp, U_INT cnt);
+	void	SaveInDatabase(SQL_DB &db);
 	//---------------------------------------------------------------
 	void				 GetBuildParameters(D2_BPM *p);
-	OSM_Object *GetBuilding(U_INT k);
+	OSM_Object  *GetBuilding(U_INT k);
 	D2_Style    *GetStyle(char *nsty);
 	D2_TParam   *GetRoofTexture(D2_Style *sty);
 	//---------------------------------------------------------------

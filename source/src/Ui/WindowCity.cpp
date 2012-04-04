@@ -30,7 +30,12 @@
 #include "../Include/Model3D.h"
 #include "../Include/TerrainTexture.h"
 #include "../Include/FuiOption.h"
+#include "../Include/OSMobjects.h"
+#include "../Include/SqlMGR.h"
+#include "../Include/ScenerySet.h"
 #include <vector>
+using namespace std;
+//==========================================================================================
 char *EndOSM = "***";
 //==========================================================================================
 //  List of AMENITY VALUES Tags
@@ -61,10 +66,34 @@ OSM_TAG TagLIST[] = {
 	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
+//	Check for legible value
+//==========================================================================================
+int CheckValue(OSM_VALUE *tab,char *v)
+{	while (strcmp(tab->value,EndOSM) != 0)
+	{ if  (strcmp(tab->value,v) == 0)	return tab->type;
+		tab++;
+	}
+  //--- Unsupported value --------------------
+	return 0;
+}
+//==========================================================================================
+//	Check for legible tag
+//==========================================================================================
+int CheckTag(char *t ,char *v)
+{	OSM_TAG *tab = TagLIST;
+	while (strcmp(tab->tag,EndOSM) != 0)
+	{	if  (strcmp(tab->tag,t)   == 0)	return CheckValue(tab->table,v);
+		tab++;
+	}
+	//--- tag not supported --------------------
+	return 0;
+}
+
+//==========================================================================================
 //  Window to display building sketch
 //==========================================================================================
 CFuiSketch::CFuiSketch(Tag idn, const char *filename)
-:CFuiWindow(idn,filename,220,470,0)
+:CFuiWindow(idn,filename,220,500,0)
 { title = 1;
   close = 1;
   zoom  = 0;
@@ -139,9 +168,11 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	Box4->AddChild('rrot', rROT,"right");
 	rROT->SetRepeat(0.1F);
 	//-----------------------------------------------
-	bTRY  = new CFuiButton(10, 446, 200, 20, this);
+	bTRY  = new CFuiButton( 10, 446, 80, 20, this);
 	AddChild('btry',bTRY,"FLY IT",0);
-
+	//-----------------------------------------------
+	bSAV  = new CFuiButton(100, 446, 110, 20, this);
+	AddChild('bsav',bSAV,"Save in Database",0);
 	//-----------------------------------------------	
 	ReadFinished();
 	//--- Open triangulation ------------------------
@@ -152,12 +183,13 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	ctx.mode	= 0;
   rcam			= globals->ccm->SetRabbitCamera(ctx,RABBIT_S_AND_C);
 	rcam->SetTracker(trn, this);
+	rcam->SetRange(100);
+	rcam->MoveTo(10,3000);
 	//--- Set transparent mode ----------------------
 	SetTransparentMode();
 	//-----------------------------------------------
 	oneD = DegToRad(double(1));
 	//------------------------------------------------
-	globals->cam->SetRange(100);
 	SetOptions(TRITOR_ALL);
 	ses.SetTrace(1);
 	tera	= 0;
@@ -167,12 +199,13 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	wfil	= 1;
 	FP		= 0;
 	bpm		= 0;
+	sqlp	= 0;
 	//--- delete aircraft for more memory ------------
 	//SAFE_DELETE( globals->pln);
 	//--- Set Initial state --------------------------
-	globals->Disp.ExecOFF (PRIO_ABSOLUTE);	// Only TRN
+	globals->Disp.ExecON  (PRIO_ABSOLUTE);	// Allow terrain TimeSlice
+	globals->Disp.ExecOFF (PRIO_TERRAIN);		// Nothing exe after terrain
 	globals->Disp.DrawON  (PRIO_ABSOLUTE);	// Drawing
-	globals->Disp.DrawOFF (PRIO_TERRAIN);		// No Terrain
 	globals->Disp.ExecLOK (PRIO_WEATHER);		// No weather
 	//-------------------------------------------------
 	globals->fui->SetBigFont();
@@ -197,13 +230,14 @@ CFuiSketch::~CFuiSketch()
 {	//--- Close File ------------------------------------
 	if (FP)	fclose(FP);
 	//--- Restore State ---------------------------------
-	globals->Disp.DrawON (PRIO_TERRAIN);		// No Terrain
-	globals->Disp.ExecON (PRIO_TERRAIN);		// No Terrain
+	globals->Disp.DrawON (PRIO_TERRAIN);		// Allow Terrain TimeSlice
+	globals->Disp.ExecON (PRIO_TERRAIN);		// Allow Terrain Draww
 	globals->Disp.ExecULK(PRIO_WEATHER);
 	//--- Back to position ------------------------------
 	SAFE_DELETE(globals->trn);
 
-//	globals->stop = 1;
+  if (sqlp)	globals->sqm->CloseOSMbase(sqlp);
+	sqlp = 0;
 	//---- Marker 2 -------------------------------------
 	char *ds = new char[32];
 	strcpy(ds,"*END CityEDIT*");
@@ -232,6 +266,7 @@ void CFuiSketch::FileSelected(FILE_SEARCH *fpm)
 		case 1:
 			strncpy(smodl,fpm->sfil,FNAM_MAX);
 			State = SKETCH_ROBJ;
+			rpdir = TEXDIR_OSM_MD;
 			break;
 	}
 
@@ -256,7 +291,6 @@ bool CFuiSketch::ParseBuilding()
   fsetpos( FP, &fpos); 
 	char *ch = ReadTheFile(FP,txt);
 	_strupr(txt);
-	skip	= 0;
 	otype = OSM_BUILDING;
 	*tagn = *valn = *smodl = 0;
 	//--- Check for a building number -------------------------
@@ -312,7 +346,7 @@ bool CFuiSketch::ParseVTX(char *txt)
 	while (go)
 	{	int nf = sscanf(src," V ( %lf , %lf ) %n",&y,&x,&rd);
 		if (nf != 2)	return (nv != 0);
-		if (skip == 0) trn->AddVertex(x,y);
+		if (otype) trn->AddVertex(x,y);
 		src += rd;
 		nv++;
 	}
@@ -323,32 +357,8 @@ bool CFuiSketch::ParseVTX(char *txt)
 //-------------------------------------------------------------------
 bool CFuiSketch::ParseHOL(char *txt)
 {	if (strncmp(txt,"HOLE",4) != 0)			return false;
-	if (skip == 0)	trn->NewHole();
+	if (otype)	trn->NewHole();
 	return true;
-}
-//-------------------------------------------------------------------
-//	Check for legible value
-//-------------------------------------------------------------------
-void CFuiSketch::CheckValue(OSM_VALUE *tab)
-{	while (strcmp(tab->value,EndOSM) != 0)
-	{ otype	= tab->type;
-		if  (strcmp(tab->value,valn) == 0)	return;
-		tab++;
-	}
-  //--- unsupported object --------------------
-	skip	= 1;
-}
-//-------------------------------------------------------------------
-//	Check for legible tag
-//-------------------------------------------------------------------
-void CFuiSketch::CheckTag()
-{	OSM_TAG *tab = TagLIST;
-	while (strcmp(tab->tag,EndOSM) != 0)
-	{	if  (strcmp(tab->tag,tagn)   == 0)	return CheckValue(tab->table);
-		tab++;
-	}
-	//--- tag not supported --------------------
-	skip	= 1;
 }
 //-------------------------------------------------------------------
 //	Parse Tag directive
@@ -356,15 +366,15 @@ void CFuiSketch::CheckTag()
 bool CFuiSketch::ParseTAG(char *txt)
 {	int nf = sscanf(txt,"TAG ( %32[^ =)] = %32[^ )] ) ",tagn, valn);
 	if (nf != 2)		return false;
-	CheckTag();
+	otype = CheckTag(tagn,valn);
 	return true;
 }
 //-------------------------------------------------------------------
 //	Parse replace directive
 //-------------------------------------------------------------------
 bool CFuiSketch::ParseReplace(char *txt)
-{ int nf = sscanf(txt,"Replace ( Z = %lf ) with %s",&orien,smodl);
-	return (nf == 2);
+{ int nf = sscanf(txt,"Replace ( Z = %lf ) with %d:%s",&orien,&rpdir,smodl);
+	return (nf == 3);
 }
 //-------------------------------------------------------------------
 //	Abort
@@ -403,9 +413,21 @@ bool CFuiSketch::ParseArea()
 //-------------------------------------------------------------------
 //	Compute reference position
 //-------------------------------------------------------------------
+void CFuiSketch::BuildDBname()
+{ _snprintf(dbase,FNAM_MAX,"OpenStreet/Databases/%s",sname);
+	char *dot = strrchr(dbase,'.');
+	if (0 == dot)	return;
+	strcpy(dot,".db");
+	return;
+}
+//-------------------------------------------------------------------
+//	Compute reference position
+//-------------------------------------------------------------------
 U_INT CFuiSketch::GotoReferencePosition()
 {	char *er1 = "Cant open file ";
 	char *er2 = "Invalid file ";
+	//--- build a proposed database name if no one ----------------
+	if (*dbase == 0)	BuildDBname();
 	rpos.lon	= 0;
 	rpos.lat	= 0;
 	rpos.alt	= 0;
@@ -421,6 +443,7 @@ U_INT CFuiSketch::GotoReferencePosition()
 	rcam->GoToPosition(rpos);			// Teleport
 	globals->Disp.ExecON (PRIO_ABSOLUTE);		// Allow Terrain
 	globals->Disp.ExecOFF(PRIO_TERRAIN);		// Stop after terrain
+	rcam->SetRange(300);
 	nStat = SKETCH_OPEN;
 	return SKETCH_WAIT;
 }
@@ -429,10 +452,7 @@ U_INT CFuiSketch::GotoReferencePosition()
 //-------------------------------------------------------------------
 void CFuiSketch::EditBuilding()
 {	char txt[128];
-	U_INT nb  = bpm->stamp;
-	double lx = FN_METRE_FROM_FEET(bpm->lgx);
-	double ly = FN_METRE_FROM_FEET(bpm->lgy);
-	_snprintf(txt,127,"BUILDING %05d lg:%.1lf wd:%.1lf",nb,lx,ly);
+	trn->EditPrm(txt);
 	nBAT->SetText(txt);
 	//--------------------------------------------
 	trn->EditTag(txt);
@@ -440,13 +460,30 @@ void CFuiSketch::EditBuilding()
 	return;
 }
 //-------------------------------------------------------------------
+//	Check fro replacement
+//-------------------------------------------------------------------
+void CFuiSketch::AutoReplace()
+{ char rd;
+	if (!ses.GetReplacement(otype,smodl,&rd))		return;
+	trn->ReplaceBy(smodl,rd);
+	return;
+}
+//-------------------------------------------------------------------
 //	Build Object
 //-------------------------------------------------------------------
 bool CFuiSketch::BuildObject()
-{	if (skip)	return false;
+{	if (0 == otype)	return false;
 	bpm = trn->BuildOBJ(otype);
 	trn->SetTag(tagn,valn);
-	if (*smodl)	trn->ReplaceBy(smodl,"OpenStreet/Models", orien);
+	//--- Replace directive -----------------
+	if (*smodl)
+	{	bpm->sinA = sin(orien);
+		bpm->cosA = cos(orien);
+		trn->ReplaceBy(smodl,rpdir);
+	}
+	//--- Auto replace ----------------------
+	else				AutoReplace();
+	//---------------------------------------
 	nBLDG++;
 	EditBuilding();
 	geop  = bpm->geop;
@@ -473,14 +510,13 @@ U_INT CFuiSketch::TerrainView()
 //	Hide terrain action
 //-----------------------------------------------------------------------
 U_INT CFuiSketch::TerrainHide()
-{	char ret = SKETCH_PAUSE;
-	trn->DrawSingle();
-	globals->Disp.ExecOFF (PRIO_ABSOLUTE);						// No Terrain
-	globals->Disp.DrawOFF (PRIO_TERRAIN);							// No Terrain
+{	trn->DrawSingle();
+	globals->Disp.ExecOFF (PRIO_ABSOLUTE);				// No Terrain
+	globals->Disp.DrawOFF (PRIO_TERRAIN);					// No Terrain
 	tera  = 0;
-	vTER->SetText("View Terrain");										// View or Edit
-	globals->fui->CaptureMouse(0);										// Stop Capture
-	return ret;													// just pause till next event
+	vTER->SetText("View Terrain");								// View or Edit
+	globals->fui->CaptureMouse(0);								// Stop Capture
+	return SKETCH_PAUSE;													// just pause till next event
 }
 //-----------------------------------------------------------------------
 //	Wait terrain for ready to set the terrain altitude
@@ -492,7 +528,7 @@ U_INT CFuiSketch::TerrainWait()
 	{	_snprintf(txt,128,"TELEPORTING TO DESTINATION (%06u).  PLEASE WAIT",cntw++);
 		DrawNoticeToUser(txt,1);
 	}
-	if (!globals->tcm->TerrainStable())		return SKETCH_WAIT;
+	if (!globals->tcm->TerrainStable(0))		return SKETCH_WAIT;
 	//--- get terrain elevation ------------------------
 	rpos.alt = globals->tcm->GetGroundAltitude();
 	geop	= rpos;
@@ -516,9 +552,12 @@ U_INT CFuiSketch::HereWeAre()
 //	Get next building from OFE file
 //-----------------------------------------------------------------------
 U_INT	CFuiSketch::OneBuilding()
-{	if (!ParseBuilding())	return SKETCH_ENDL;
-	//--- build object -----------------
-	if (!BuildObject())		return SKETCH_PAUSE;
+{	bool go = true;
+	while (go)
+	{	if (!ParseBuilding())	return SKETCH_ENDL;
+		//--- build object -----------------
+		if (BuildObject())		break;
+	}
 	//--- show style on list box -------
 	U_INT ns = bpm->style->GetSlotSeq();
 	sBOX.GoToItem(ns);
@@ -531,7 +570,6 @@ U_INT CFuiSketch::StartLoad()
 {	if (eofl)			return SKETCH_PAUSE;
 	if (tera)			TerrainHide();
 	rcam->SetAngle(30,15);
-	rcam->SetRange(150);
 	return SKETCH_LOAD;
 }
 //-----------------------------------------------------------------------
@@ -572,7 +610,7 @@ U_INT CFuiSketch::EndLoad()
 	edit  = 1;
 	TerrainView();
 	rcam->GoToPosition(rpos);
-	rcam->SetRange(500);
+	rcam->MoveTo(10,1000);
 	globals->fui->CaptureMouse(this);
 	vTer	= "Zoom Building";
 	vTER->SetText(vTer);
@@ -582,6 +620,7 @@ U_INT CFuiSketch::EndLoad()
 	vALL->SetText("End of File");
 	//--- inhibit next button --------------------------------------
 	nBUT->SetId('null');
+	DrawNoticeToUser("GOING to TERRAIN NOW......",1);
 	return SKETCH_PAUSE;
 }
 //-----------------------------------------------------------------------
@@ -634,8 +673,7 @@ void	CFuiSketch::RemoveBuilding()
 //-----------------------------------------------------------------------
 void CFuiSketch::ReplaceBuilding()
 {	if (NoSelection())	return;
-  double rad = atan2(bpm->sinA,bpm->cosA);
-	trn->ReplaceBy(smodl,"OpenStreet/Models", rad);
+	trn->ReplaceBy(smodl,rpdir);
 	State = SKETCH_PAUSE;
 	return;
 }
@@ -697,15 +735,49 @@ void CFuiSketch::FlyOver()
 	 Close();
 	 return;
 }
+//---------------------------------------------------------------------
+// Save database Step 1
+//---------------------------------------------------------------------
+U_INT CFuiSketch::SaveStep1()
+{	if (0 == nBLDG)		return State;
+	//--- Save the file first ---------------------------
+	Write();
+	//--- Ask confirmation ------------------------------
+	char txt[512];
+	_snprintf(txt,380,"Save in database %s ?", dbase);
+	dial = 0;
+	CreateDialogBox("PLEASE CONFIRM",txt,1);
+	return SKETCH_SAVE2;
+}
+//---------------------------------------------------------------------
+// Save database Step 2:  Open or create database
+//---------------------------------------------------------------------
+U_INT CFuiSketch::SaveStep2()
+{ char *erm = "There was database error. Check OpenStreet.log";
+	char *okm = "DATABASE is now UPDATED ";
+	char *msg;
+	if (dial == '_no_')	return SKETCH_PAUSE;
+	sqlp = globals->sqm->OpenSQLbase(dbase,ScriptCreateOSM);
+	if (sqlp->use)	ses.SaveInDatabase(*sqlp);
+	int OK = sqlp->use;
+	globals->sqm->CloseOSMbase(sqlp);
+	sqlp = 0;
+	msg = (OK)?(okm):(erm);
+	//--- Advise user --------------------------------
+	globals->fui->DialogError(msg,"CITY EDITOR");
+	return SKETCH_PAUSE;
+}
 //-----------------------------------------------------------------------
 //	Time slice
 //-----------------------------------------------------------------------
 void CFuiSketch::TimeSlice()
-{	char *erm = "No file to edit";
+{	TCacheMGR *tcm = 0;
+	char *erm = "No file to edit";
 	switch (State)	{
 		//--- Create file selection ------------
 		case SKETCH_FILE:
 			 *sname = 0;
+			 *dbase = 0;
 				CreateFileBox(&FPM);
 				return;
 		//--- Wait file selection --------------
@@ -752,7 +824,10 @@ void CFuiSketch::TimeSlice()
 		case SKETCH_ABORT:
 				Close();
 				return;
-
+		//--- Save Database Step 1----------------
+		case SKETCH_SAVE2:
+				State = SaveStep2();
+				return;
 	}
 	return;
 }
@@ -775,9 +850,9 @@ void CFuiSketch::CollectModels()
 //-----------------------------------------------------------------------
 int CFuiSketch::NoSession()
 {	char txt[256];
-	_snprintf(txt,255,"No Session parameter file in %s", spath);
+	_snprintf(txt,255,"Error with file %s", spath);
 	STREETLOG("%s",txt);
-  CreateDialogBox("SESSION",txt);
+  CreateDialogBox("ATTENTION PLEASE",txt);
 	return SKETCH_ABORT;
 }
 //-----------------------------------------------------------------------
@@ -794,6 +869,9 @@ int CFuiSketch::BuildStyList()
 	sBOX.AddSlot(&styTT);
 	ses.FillStyles(&sBOX);
 	sBOX.Display();
+	//--- Lock terrain now ------------------
+	globals->Disp.DrawOFF (PRIO_TERRAIN);
+	rcam->StopMove();
 	return SKETCH_REFER;
 }
 //-----------------------------------------------------------------------
@@ -803,7 +881,6 @@ void CFuiSketch::Swap3D()
 {	scny ^= 1;
 	int md = (scny)?(-1):(+1);
 	globals->noOBJ += md;
-	globals->noAPT += md;
 	return;
 }
 //-----------------------------------------------------------------------
@@ -904,6 +981,15 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		case 'btry':
 			FlyOver();
 			return;
+		//--- Update database --------------------
+		case 'bsav':
+			if (0 == edit)	return;
+			State = SaveStep1();
+			return;
+		//--- Dialogue button --------------------
+		case 'dial':
+			dial = itm;
+			return;
 	}
 	return;
 
@@ -927,6 +1013,7 @@ D2_Session::D2_Session()
 //-----------------------------------------------------------------
 D2_Session::~D2_Session()
 {	grpM.clear();
+	repL.clear();
 	delete roof;
 	delete rtex;
 }
@@ -946,93 +1033,86 @@ bool	D2_Session::ReadParameters(char *dir)
 	_snprintf(path,128,"%s/session.txt",dir);
 	FILE  *f  = fopen(path,"r");
   if (0 == f)  return false;
-	bool ok = ParseSession(f);
+	bool ok = ParseTheSession(f);
 	fclose(f);
 	return ok;
-}
-//-----------------------------------------------------------------
-//	Read file 
-//-----------------------------------------------------------------
-char *D2_Session::ReadFile(FILE *f, char *buf)
-{	bool go = true;
-	while (go)
-	{	fpos = ftell(f);
-	 *buf  = 0;
-		char *ch = fgets(buf,128,f);
-		buf[127] = 0;
-		if (0 == ch)		return buf;
-		while ((*ch == 0x09) || (*ch == ' '))	ch++;
-		if (strncmp(ch,"//", 2) == 0)		continue;
-		if (*ch == 0x0A)								continue;
-		return ch;
-	}
-	return 0;
 }
 //-----------------------------------------------------------------
 //	Read session Name
 //	NOTE: When all style parameters are OK we may compute the
 //				style ratio inside of each group. 
 //-----------------------------------------------------------------
-bool D2_Session::ParseSession(FILE *f)
-{	ReadFile(f,buf);
-	char *nm = 0;
-	int nf = sscanf_s(buf,"Session %63s", name,63);
+bool D2_Session::ParseTheSession(FILE *f)
+{	char *line = ReadTheFile(f,buf);
+	int nf = sscanf_s(line,"Session %63s", name,63);
 	name[63] = 0;
 	if (nf!= 1)				return false;
-	//--- Parse Groups ----------------------
-	ParseGroups(f);
-	fseek(f,fpos,SEEK_SET);
-	ParseStyles(f);
-	//--- Normally we got the end statement here
-	ReadFile(f,buf);
-	_strupr(buf);
+	//--- Decode all parameters ----------------------
+	bool go = true;
+	while (go)
+	{	fpos = ftell(f);
+	  line = ReadTheFile(f,buf);
+		if (ParseReplace(f,line))		continue;
+		if (ParseGroups(f,line))		continue;
+		if (ParseStyles(f,line))		continue;
+		break;
+	}
+	//--- Should be the end? ------------------------
 	char *ok = strstr(buf,"FIN");
 	if (ok)		return true;
-	//--------------------------------------
+	//-----------------------------------------------
 	STREETLOG("Error arround %s in Session file",buf);
-	gtfo("Error in Session file");
 	return false;
+}
+
+//-----------------------------------------------------------------
+//	Parse replacement list 
+//-----------------------------------------------------------------
+bool D2_Session::ParseReplace(FILE *f, char *line)
+{	char txt[128];
+	char key[128];
+	char val[128];
+  char obj[128];
+	strncpy(txt,line,127);
+	int nf	= sscanf_s(txt," Replace ( %63[^ ),] , %63[^ ),] ) with %63[^ ]",key,63,val,63,obj,63);
+	if (nf != 3)		return false;
+	//---------------------------------------------------------
+	U_INT type = CheckTag(key,val);
+	if (0 == type)	return false;
+	//--- Add one replacement ---------------------------------
+	std::pair <U_INT,std::string> p(type,obj);
+	repL.insert(p);
+	return true;
 }
 //-----------------------------------------------------------------
 //	Read a group 
 //-----------------------------------------------------------------
-bool D2_Session::ParseGroups(FILE *f)
+bool D2_Session::ParseGroups(FILE *f, char *line)
 {	char gnm[64];
-	bool go = true;
-	while (go)
-	{	fpos = ftell(f);
-		ReadFile(f,buf);
-		int nf =	sscanf_s(buf," GROUP %63s",gnm,63);
-		gnm[63]  = 0;
-		if (nf != 1)		return false;
-		//--- Allocate a new group -----------------
-		D2_Group *gp = new D2_Group(gnm,this);
-		grpM[gnm] = gp;
-		gp->Parse(f,this);
-		groupQ.PutLast(gp);
-	}
-	return false;
+	int nf	=	sscanf_s(line," Group %63s",gnm,63);
+	    nf += sscanf_s(line," GROUP %63s",gnm,63);
+	gnm[63]  = 0;
+	if (nf != 1)		return false;
+	//--- Allocate a new group -----------------
+	D2_Group *gp = new D2_Group(gnm,this);
+	grpM[gnm] = gp;
+	gp->Parse(f,this);
+	groupQ.PutLast(gp);
+	return true;
 }
 //-----------------------------------------------------------------
 //	Read a Style 
 //-----------------------------------------------------------------
-bool D2_Session::ParseStyles(FILE *f)
-{ char buf[128];
-  char snm[64];
+bool D2_Session::ParseStyles(FILE *f, char *line)
+{ char snm[64];
 	char gnm[64];
-	bool go = true;
-	while (go)
-	{	int pos = ftell(f);
-		ReadFile(f,buf);
-		int nf	= sscanf_s(buf," STYLE %63[^ (] ( %64[^)]s )",snm, 63, gnm, 63);
-		snm[63] = 0;
-		gnm[63]	= 0;
-		if (nf == 2)	{ AddStyle(f,snm,gnm);	continue; }
-		//--- Back up one line --------------------
-		fseek(f,pos,SEEK_SET);
-		return false;
-	}
-	return false;
+	int nf	= sscanf_s(line," Style %63[^ (] ( %64[^)]s )",snm, 63, gnm, 63);
+	    nf += sscanf_s(line," STYLE %63[^ (] ( %64[^)]s )",snm, 63, gnm, 63);
+	snm[63] = 0;
+	gnm[63]	= 0;
+	if (nf != 2)		return false;
+	//--- Have a new style -----------------------
+	return AddStyle(f,snm,gnm);
 }
 
 //-----------------------------------------------------------------
@@ -1046,17 +1126,17 @@ bool D2_Session::AddStyle(FILE *f,char *sn,char *gn)
 	D2_Style *sy = new D2_Style(sn,gp);
 	//--- Decode Style parameters ---------------
 	bool go = true;
-	char buf[128];
 	while (go)	
 	{	fpos = ftell(f);	
-		char * ch = ReadFile(f,buf);
-		if (sy->DecodeStyle(ch))	continue;
+		char * line = ReadTheFile(f,buf);
+		_strupr(line);
+		if (sy->DecodeStyle(line))	continue;
 		//-- have a new style for the group -----
 		gp->AddStyle(sy);
 		//--- Exit now --------------------------
 		fseek(f,fpos,SEEK_SET);
 		if (sy->IsOK())				return true;
-		gtfo("STYLE error %s, see OpenStreet.log file",sn);
+		go = false;
 	}
 	return false;
 }
@@ -1088,6 +1168,28 @@ D2_TParam *D2_Session::GetRoofTexture(D2_Style *sty)
 	if (0 == rft)	rft = rtex;					// Assign default
 	rft->SetStyle(sty);
 	return rft;
+}
+//------------------------------------------------------------------
+//	Get a replacement for object type
+//------------------------------------------------------------------
+bool D2_Session::GetReplacement(U_INT type, char *modl, char *rd)
+{	int nbr = repL.count(type);
+	if (0 == nbr)		return false;
+	//--- Get range -------------------------------------
+	pair<multimap<U_INT,string>::iterator,
+			 multimap<U_INT,string>::iterator> 
+						R = repL.equal_range(type);
+	int k = RandomNumber(nbr);
+	multimap<U_INT,string>::iterator rp;
+	//--- search the kth element ------------------------
+	for (rp = R.first; rp != R.second; rp++)
+	{	if (k-- > 0)	continue;
+		string  mdl = (*rp).second;	
+		strncpy(modl,mdl.c_str(),64);
+	*rd = TEXDIR_OSM_MD;
+		return true;
+	}
+	return false;
 }
 //------------------------------------------------------------------
 //	Select all parameters
@@ -1183,6 +1285,34 @@ void D2_Session::UpdateCache()
 	{	obj = GetBuilding(k);
 		if (obj) globals->tcm->AddToPack(obj);
 	}
+	return;
+}
+//------------------------------------------------------------------
+//	Save all buildings in database
+//	Building coordinate are adjusted relative to SuperTileCenter
+//------------------------------------------------------------------
+void D2_Session::SaveInDatabase(SQL_DB &db)
+{	U_INT bno = 1;
+	U_INT wrt = 0;
+	OSM_Object *obj = 0;
+	U_INT qkey = 0;
+	for (bno = 1; bno <= Stamp; bno++)
+	{	obj = GetBuilding(bno);
+		if (0 == obj)	continue;
+		//--- Check for QGT registering -----------
+		U_INT okey = obj->GetKey();
+		if (qkey != okey) globals->sqm->UpdateOSMqgt(db,okey);
+		qkey	= okey;
+		wrt++;
+		//--- Get a strip of translated vertices --
+		GN_VTAB *tab = obj->StripToSupertile();
+		if (0 == tab)			continue;
+		globals->sqm->UpdateOSMobj(db,obj,tab);
+		delete [] tab;
+		//--- Check for any error -----------------
+		if (db.use == 0)		return;
+	}
+	STREETLOG("Saved  %05d Buildings", wrt);
 	return;
 }
 //============================END OF FILE ================================================================================

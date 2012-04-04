@@ -191,30 +191,6 @@ CRoofModel *FindRoofParameters(char *name, double a)
 	}
 	return 0;
 }
-//==================================================================
-//	Read file 
-//==================================================================
-char *ReadTheFile(FILE *f, char *buf)
-{	bool go = true;
-	while (go)
-	{*buf  = 0;
-		char *txt = fgets(buf,128,f);
-		buf[127] = 0;
-		if (0 == txt)		return buf;
-		//--- Load a character and skip all unwanted --------
-		char car = *txt;
-		if (0 == car)		continue;
-		while (car)
-		{	bool sk = (car == 0x09) || (car == ' ') || (car == 0x0D) || (car == 0x0A);
-			if (!sk)		break;
-			else	{ txt++; car = *txt;}
-		}
-		if (0			== car)								continue;
-		if (strncmp(txt,"//", 2) == 0)	continue;
-		return txt;
-	}
-	return 0;
-}
 
 //====================================================================================
 //	PROCEDURAL Roof Model
@@ -255,6 +231,7 @@ void CRoofModel::Release()
 //---------------------------------------------------------------
 void CRoofModel::SetRoofData(D2_BPM *pm,Triangulator *tr)
 {	trn		= tr;
+	geo		= tr->GetGeotester();
 	bpm		= pm;
 	roofP	= bpm->roofP;
 	style	= bpm->style;
@@ -366,6 +343,7 @@ void CRoofModel::GenerateTriangles(std::vector<D2_TRIANGLE*> &out)
 	for (int n=0; n < nbx; n++)
 	{	D2_TRIANGLE *T = new D2_TRIANGLE(1);
 		m = FillTextureCoordinates(*T,n,m);
+		T->N = geo->PlanNorme(*T->A, *T->B, *T->C);
 		out.push_back(T);
 	}
 	return;
@@ -642,7 +620,9 @@ void CRoofFLAT::BuildRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out)
 	return;	}
 
 //----------------------------------------------------------------------
-//	Generate a flat roof
+//	Generate a flat roof:  There is no output.  The flat roof is already
+//	computed as a result of the foot print triangulation
+//	
 //	Flat roof points are textured against the locals coordinates lx,ly
 //	and roof extension
 //----------------------------------------------------------------------

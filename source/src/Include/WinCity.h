@@ -25,10 +25,11 @@
 #define WINCITY_H
 //=========================================================================================
 #include "../Include/FlyLegacy.h"
+#include "../include/globals.h"
 #include "../Include/Fui.h"
 #include "../include/FuiUser.h"
 #include "../include/3DMath.h"
-#include "../include/globals.h"
+#include "../Include/OSMobjects.h"
 #include "../Include/Triangulator.h"
 #include "../Include/RoofModels.h"
 //==========================================================================================
@@ -47,6 +48,8 @@
 #define SKETCH_WSEL  (11)
 #define SKETCH_ROBJ  (12)
 #define SKETCH_ABORT (13)
+#define SKETCH_SAVE2 (14)
+#define SKETCH_PODMS (15)
 //==========================================================================================
 // Type of object
 //==========================================================================================
@@ -97,19 +100,26 @@ class CFuiSketch : public CFuiWindow
 	U_CHAR        wait;						// Waiting terrain
 	U_CHAR				edit;						// Edit step
 	U_CHAR        wfil;						// Waiting file
-	U_CHAR			 skip;						// Skip object
+	U_CHAR				pack;						// Packing mode
+	//--- Dialogue button -----------------------------------------
+	Tag					  dial;
 	//-------------------------------------------------------------
+	char          rpdir;					// Replacing directory
 	U_INT					otype;					// Object type
 	char					tagn[64];				// Tag name
 	char					valn[64];				// Value name
 	double				orien;					// Replacing orientation
 	//-------------------------------------------------------------
 	int					  time;
+	//--- Database interface --------------------------------------
+	SQL_DB       *sqlp;
 	//---- Search file parameters ---------------------------------
 	FILE_SEARCH   FPM;
 	char					spath[PATH_MAX];
 	char					sname[PATH_MAX];
 	char          smodl[PATH_MAX];
+	char          dbase[PATH_MAX];
+	char          rpack[PATH_MAX];
 	//-------------------------------------------------------------
 	CFuiGroupBox	*gBOX;					// Option group box
 	CFuiLabel			*aLAB;					// Label for group
@@ -131,6 +141,7 @@ class CFuiSketch : public CFuiWindow
 	CFuiGroupBox  *Box3;					// Separator
 	CFuiGroupBox  *Box4;
 	CFuiButton    *bTRY;					// Try button
+	CFuiButton    *bSAV;					// Save button
 	//--- Titles --------------------------------------------------
 	CSlot					 styTT;					// style title
 	CSlot          modTT;					// Model title
@@ -150,6 +161,7 @@ class CFuiSketch : public CFuiWindow
   CAMERA_CTX       ctx;         // Original camera and situation
 	//--- Rabbit camera -----------------------------------------
 	CRabbitCamera   *rcam;
+	double           range;
 	//-------------------------------------------------------------
 public:
 	CFuiSketch(Tag idn, const char *filename);
@@ -167,14 +179,12 @@ public:
 	void	HaveVertex(double x, double y);
 	bool	BuildObject();
 	//------------------------------------------------------------
-	void	CheckTag();
-	void	CheckValue(OSM_VALUE *tab);
-	//------------------------------------------------------------
 	void	FileSelected(FILE_SEARCH *pm);
 	int  	NoSession();
 	int  	BuildStyList();
 	//------------------------------------------------------------
 	void	EditBuilding();
+	void	AutoReplace();
 	//------------------------------------------------------------
 	U_INT	Abort(char *err,char *fn);
 	U_INT	GotoReferencePosition();
@@ -206,6 +216,9 @@ public:
 	//------------------------------------------------------------
 	void	Write();
 	void	FlyOver();
+	void	BuildDBname();
+	U_INT	SaveStep1();
+	U_INT SaveStep2();
 	//--- mouse --------------------------------------------------
 	bool	MouseCapture(int mx, int my, EMouseButton bt);
 	//--- Keyboard -----------------------------------------------

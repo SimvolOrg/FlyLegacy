@@ -2298,6 +2298,37 @@ struct VECTOR_DIR {
 	SPosition org;											// Origin
 	double    rdf;											// Reduction factor
 };
+//============================================================================
+//	TEXTURE DIRECTORY
+//============================================================================
+#define TEXDIR_ART			(0)
+#define TEXDIR_OSM_MD		(1)
+#define TEXDIR_OSM_TX		(2)
+//============================================================================
+extern char *Dupplicate(char *s, int lgm);
+//============================================================================
+//  Structure texture name for 3D Part
+//============================================================================
+struct TEXT_NAME {
+	int		dir;
+	char *name;
+	//-----------------------------------------------------------
+	 TEXT_NAME()  {dir = TEXDIR_ART; name = 0;}
+	//--- Destructor --------------------------------------------
+	~TEXT_NAME() { if (name)  delete name; }
+	//-----------------------------------------------------------
+	void	SetTexture(char d, char *n) 
+	{ dir = d;
+		if (name)	delete [] name;
+		name = Dupplicate(n,128);
+	}
+	//-----------------------------------------------------------
+	char	GetDirectory()	{return dir;}
+	char *GetName()				{return name;}
+	//-------------------------------------------------------------
+	void	Clear()	{if (name) delete name; name = 0;}
+};
+
 //=============================================================================
 //  PIXEL DEFINITION
 //=============================================================================
@@ -2356,8 +2387,6 @@ struct TC_SCREEN {
 //	UNIT SIZE
 //=============================================================================
 #define UNIT_OPENGL GL_DOUBLE
-#define UNIT_COORD double
-#define UNIT_SIZE (sizeof(UNIT_COORD))
 //=============================================================================
 //  VERTEX TABLE
 //=============================================================================
@@ -2417,11 +2446,11 @@ struct TC_VTAB {
 //  VERTEX TABLE for ground description
 //=============================================================================
 struct TC_GTAB {
-  UNIT_COORD GT_S;                                     // S coordinate
-  UNIT_COORD GT_T;                                     // T coordinate
-  UNIT_COORD GT_X;                                     // X corrdinate
-  UNIT_COORD GT_Y;                                     // Y coordinate
-  UNIT_COORD GT_Z;                                     // Z coordinate
+  double GT_S;                                     // S coordinate
+  double GT_T;                                     // T coordinate
+  double GT_X;                                     // X corrdinate
+  double GT_Y;                                     // Y coordinate
+  double GT_Z;                                     // Z coordinate
   //----Copy from another table -------------------------
   void  TC_GTAB::Dupplicate(TC_GTAB *s, int n)
   { TC_GTAB *dst = this;
@@ -2444,7 +2473,22 @@ struct VTP_2D {
   return; }
   //------------------------------------------------------
 };
-
+//=============================================================================
+//  3D POINT DEFINITION
+//=============================================================================
+struct F3_VERTEX {
+  float VT_X;
+  float VT_Y;
+  float VT_Z;
+	//-------------------------------------------------
+};
+//=============================================================================
+//  2D TEXTURE COORDINATES
+//=============================================================================
+struct F2_COORD {
+  float VT_S;
+  float VT_T;
+};
 //=============================================================================
 //  VERTEX TABLE with NORMAL VECTOR and TEXTURE COORDINATES
 //=============================================================================
@@ -2458,7 +2502,53 @@ struct GN_VTAB {
   float VT_Y;                                     // Y coordinate
   float VT_Z;                                     // Z coordinate
 	//--------------------------------------------------------------
-};
+	GN_VTAB::GN_VTAB() {VT_S = VT_T = VN_X = VN_Y = VN_Z = VT_X = VT_Y = VT_Z = 0;}
+	//--------------------------------------------------------------
+	void Add(SVector &T)
+	{	VT_X += T.x;
+		VT_Y += T.y;
+		VT_Z += T.z;
+	}
+	//--------------------------------------------------------------
+	void InvertHD1(GN_VTAB &v)
+	{ VT_X =  v.VT_X;
+		VT_Z =  v.VT_Y;
+		VT_Y = -v.VT_Z;
+	}
+  //--------------------------------------------------------------
+	void Copy(GN_VTAB &v)
+	{	*this = v;	}
+	//--------------------------------------------------------------
+  void ROT2D(double *M)
+	{	double X = VT_X;
+		double Y = VT_Y;
+		VT_X = (X * M[0]) + (Y * M[3]) + M[6];
+		VT_Y = (X * M[1]) + (Y * M[4]) + M[7];
+		X = VN_X;
+		Y = VN_Y;
+		VN_X = (X * M[0]) + (Y * M[3]) + M[6];
+		VN_Y = (X * M[1]) + (Y * M[4]) + M[7];
+		return;
+	}
+	//---------------------------------------------------------------
+	void DupVTX(F3_VERTEX *V)
+	{	VT_X	= V->VT_X;
+		VT_Y  = V->VT_Y;
+		VT_Z  = V->VT_Z;
+	}
+	//---------------------------------------------------------------
+	void DupVNX(F3_VERTEX *V)
+	{	VN_X	= V->VT_X;
+		VN_Y  = V->VT_Y;
+		VN_Z  = V->VT_Z;
+	}
+	//---------------------------------------------------------------
+	void DupTVX(F2_COORD *V)
+	{	VT_S	= V->VT_S;
+		VT_T  = V->VT_T;
+	}
+	//---------------------------------------------------------------
+	};
 //=============================================================================
 //  VERTEX TABLE with 2 TEXTURE COORDINATES and color values
 //=============================================================================
@@ -2674,7 +2764,8 @@ struct  TEXT_INFO {
 	U_INT			dim;													// Texture dimension
   U_CHAR    apx;                          // alpha when pixel
 	U_CHAR		azp;													// alpha when 0 pixle
-  char      bpp;                          // Byte per plan
+	char			Dir;													// Directory
+	char      bpp;                          // Byte per plan
   char      res;                          // Resolution     (if needed)
   char      type;                         // Terrain type   (if needed)
   U_INT     xOBJ;                         // Texture object (if needed)
@@ -2683,18 +2774,19 @@ struct  TEXT_INFO {
   char      name[TC_TEXTURE_NAME_NAM];    // Texture name
   char      path[TC_TEXTURE_NAME_DIM];    // Texture full name
 	//--- Constructor --------------------------------------------------
-	TEXT_INFO::TEXT_INFO()
-	{	key			= 0;
+  TEXT_INFO::TEXT_INFO()
+	{	Dir			= 0;
+		key			= 0;
 		wd = ht = 0;
-		apx			= 0xFF;
-		azp			= 0;
+		apx			= 0x00;
+		azp			= 0xFF;
 		xOBJ		= 0;
 		name[0]	= 0;
 		mADR    = 0;
 		nite    = 0;
 	}
-};
-//---------------------------------------------------------------------
+	};
+	//===================================================================
 struct TEXT_DEFN  {
   short wd;                               // Texture width
   short ht;                               // Texture height
@@ -3594,6 +3686,7 @@ typedef void (AptFunCB(CmHead   *obj));                         // Call back for
 typedef void (PavFunCB(CPaveRWY *pav,CAptObject *apo));         // Call back for Pavement
 typedef void (tgxFunCB(CTgxLine *tgx));                         // Call back for generic texture
 typedef void (ElvFunCB(REGION_REC &));                          // Call back for elevation
+typedef void (IntFunCB(U_INT k, void *obj));		  							// Call back for integer 
 //======================================================================================
 /*! \brief "Go To Failure Output" :-) Exit application due to fatal error.
  *

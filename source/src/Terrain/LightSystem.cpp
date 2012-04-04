@@ -1632,7 +1632,7 @@ void CExternalLightManager::ReadHalo()
 { char *fn = "LiteHalo.bmp";
 	TEXT_INFO txf;  // Texture info;
   CArtParser img(TC_HIGHTR);
-//  txf.tsp   = 1;
+  txf.azp = 0;
   strncpy(txf.name,fn,TC_TEXTURE_NAME_NAM);
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",fn);
   img.GetAnyTexture(txf);
