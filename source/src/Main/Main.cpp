@@ -318,23 +318,30 @@ DAMAGE_MSG damMSG[] = {
   {2,0,'crgr',"Gear %s destroyed"},       // 2 Gear destroyed
   {3,0,'crby',"STRUCTURAL DAMAGE"},       // 3 Body destroyed
 };
-//================================================================================
-//   Textures mask directory
-//================================================================================
-char *textMSK[] =
-{	"ART/%s",										// 0 => ART directory
-	"OpenStreet/Models/%s",			// 1 => OSM models
-	"OpenStreet/Textures/%s",		// 2 => OSM Textures
-	"ART/",											// 3  reserved
-};
-//================================================================================
-//   Textures real directory
-//================================================================================
-char *textDIR[] =
-{	"ART",										// 0 => ART directory
-	"OpenStreet/Models",			// 1 => OSM models
-	"OpenStreet/Textures",		// 2 => OSM Textures
-	"ART/",										// 3  reserved
+//==========================================================================================
+//  List of replacement directory per object type
+//==========================================================================================
+char *directoryTAB [] = {
+	"ART",														// 0 => ART 
+	"OpenStreet/Textures",						// 1 => User OSM session
+	"OpenStreet/Models/Buildings",		// 2 => OSM Building
+	"OpenStreet/Models/Trees",				// 3 => OSM trees
+	"OpenStreet/Models/Lights",				// 4 => OSM Lights
+	};
+//--- Per object type ----------------------------------------
+char replOBJ[] = {
+	FOLDER_ART,							// 0 Not a OSM object
+	FOLDER_OSM_BLDG,				// 1  OSM_BUILDING		(1)
+	FOLDER_OSM_BLDG,				// 2  OSM_CHURCH			(2)
+	FOLDER_OSM_BLDG,				// 3  OSM_POLICE			(3)
+	FOLDER_OSM_BLDG,				// 4  OSM_FIRE_STA		(4)
+	FOLDER_OSM_BLDG,				// 5  OSM_TOWNHALL		(5)
+	FOLDER_OSM_BLDG,				// 6  OSM_SCHOOL			(6)
+	FOLDER_OSM_BLDG,				// 7  OSM_COLLEGE			(7)
+	FOLDER_OSM_BLDG,				// 8  OSM_HOSPITAL		(8)
+	//----------------------------------------------------------
+	FOLDER_OSM_TREE,				// 9  OSM_TREE				(9)
+	FOLDER_OSM_LITE,				// 10 OSM_LIGHT				(10)
 };
 
 //================================================================================

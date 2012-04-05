@@ -1814,7 +1814,6 @@ COBJparser::~COBJparser()
 //------------------------------------------------------------------------------
 void COBJparser::SetDirectory(char *dir)
 {	strncpy(txname,dir,TC_TEXTURE_NAME_DIM);
-	Dir	= TEXDIR_OSM_MD;
 	return;
 }
 //------------------------------------------------------------------------------

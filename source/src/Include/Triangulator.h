@@ -48,6 +48,7 @@ class CShared3DTex;
 //------------------------------------------------
 struct D2_BPM;
 struct SQL_DB;
+struct OSM_REP;
 //==========================================================================================
 #define TX_BH		(1)								// Full height texturing
 //==== GEOMETRIC FUNCTIONS =================================================================
@@ -89,18 +90,6 @@ struct SQL_DB;
 #define PAN_DORM_SW		(9)			// Dormer 
 #define PAN_DORM_NE   (10)
 #define PAN_DORM_XP		(11)
-//====================================================================================
-//	Object type
-//====================================================================================
-#define OSM_BUILDING  (1)
-#define OSM_FENCE     (2)
-#define OSM_CHURCH		(3)
-#define OSM_POLICE    (4)
-#define OSM_FIRE			(5)
-#define OSM_TOWNHALL	(6)
-#define OSM_SCHOOL		(7)
-#define OSM_COLLEGE		(8)
-#define OSM_HOSPITAL	(9)
 //====================================================================================
 //	TRIANGULATOR Drawing options
 //====================================================================================
@@ -155,8 +144,6 @@ struct D2_BPM {
 	U_SHORT	supNo;												// Super tile No
 	U_SHORT	rfu1;													// Reserved
 	//----------------------------------------------------
-	double				sinA;										// Angle
-	double				cosA;										// Angle
 	double        flHtr;									// Floor height
 	double				rdf;										// Reduction factor
 	U_INT					ident;									// Object identity
@@ -712,15 +699,22 @@ struct D2_BEVEL {
 	double      pah;															// Point absolute height
 	double			H;																// floor height
 };
+//====================================================================================
+//
+//====================================================================================
 
 //====================================================================================
 //	TRIANGULATOR for triangulation of polygones
 //====================================================================================
-class Triangulator: public CExecutable, public Tracker {
+class CBuilder: public CExecutable, public Tracker {
+	//--- Callback vectors ----------------------------------------
+	typedef D2_BPM *(CBuilder::*buildCB)(U_INT);		// Build vector
 	//--- ATTRIBUTES ----------------------------------------------
 	COption		dop;																// Drawing option
 	GeoTest	  geo;																// Geo tester
 	D2_Session *session;													// Current session
+	//--- Callback vectors -----------------------------------------
+	buildCB		buildFN;														// Build vector
 	//--------------------------------------------------------------
 	Queue <D2_POINT> extp;												// External contour
 	Queue <D2_POINT> hole;												// Hole contour
@@ -759,12 +753,13 @@ class Triangulator: public CExecutable, public Tracker {
 	//-------------------------------------------------------------
 	double	surf;																	// Ground surface
 	//----------------------------------------------------
+	double sinA, cosA;														// Rotation angle
 	double  rotM[4];															// Rotation matrix
 	//----------------------------------------------------
 	char    trace;																// Trace indicator
 	char    vRFX;																	// Reflex indicator
 	char    hIND;																	// Hole indicator
-	char    face;																	// Type of face	
+	char    face;																	// Type of face
 	//----------------------------------------------------
 	U_INT   num;																	// Null number
 	U_INT		seq;																	// Sequence number
@@ -780,8 +775,8 @@ class Triangulator: public CExecutable, public Tracker {
 	char		dMOD;																	// Drawing mode													
 	//--- METHODS ----------------------------------------
 public:
-	Triangulator(D2_Session *s);
- ~Triangulator();
+	CBuilder(D2_Session *s);
+ ~CBuilder();
 	//-----------------------------------------------------
   GeoTest  *GetGeotester()	{return &geo;}
 	//-----------------------------------------------------
@@ -815,11 +810,13 @@ public:
 	//--- Building management ----------------------------
 	U_INT		CountVertices();
 	void		CreateBuilding();
-	void		SaveBuildingData();
-	U_CHAR  ReplaceBy(char *mod,char rdir);
-	int     RemoveBuilding();
-	D2_BPM *RestoreBuilding(U_INT *cnt);
-	U_CHAR	RotateObject(double rad);
+	void		StartOBJ();
+	U_CHAR  ReplaceOBJ(OSM_REP *rp,char or);
+	int     RemoveOBJ();
+	D2_BPM *RestoreOBJ(U_INT *cnt);
+	U_CHAR	RotateOBJ(double rad);
+	D2_BPM *SelectOBJ(U_INT No);
+	void		SetOrientationOBJ();
 	//-----------------------------------------------------
 	inline double			GetSurface()			{return surf;}
 	inline U_INT			GetSideNbr()			{return extp.GetNbObj();}
@@ -868,9 +865,9 @@ public:
 	void		DrawSingle();
 	void		DrawGroups();
 	//------------------------------------------------------
-	bool		MakeBuilding();
-	void		StartOBJ();
-	D2_BPM *BuildOBJ(U_INT type);
+	bool		RiseBuilding();
+	void		SaveBuildingData();
+	D2_BPM *MakeBLDG(U_INT type);
 	void		SetTag(char *t, char *v);
 	void		EditTag(char *txt);
 	void		EditPrm(char *txt);
@@ -878,9 +875,10 @@ public:
 	//------------------------------------------------------
 	U_CHAR	ModifyStyle();
 	void    ReOrientation();
-	D2_BPM *SelectBuilding(U_INT No);
 	D2_BPM *GetBuildingParameters()			{return &BDP;}
-	//-------------------------------------------------------
+	//--- Call back functions --------------------------------
+	D2_BPM *BuildOBJ(U_INT t)	{ return (this->*buildFN)(t);}
+	//--------------------------------------------------------
 };
 
 //====================================================================================
@@ -894,10 +892,11 @@ class D2_Session {
 	Queue<D2_Group> groupQ;									// Group queue for selection
 	std::map<std::string,D2_Group*> grpM;		// Groups
 	//--- Replacement MAP -------------------------------------------
-	std::multimap<U_INT,std::string> repL;	// Replacement list
+	std::multimap<U_INT,OSM_REP*> repL;			// Replacement list
+  std::multimap<U_INT,OSM_REP*>::iterator rp;
 	//---------------------------------------------------------------
 	U_INT  fpos;														// File position
-	Triangulator    *trn;										// Triangulator
+	CBuilder    *trn;												// CBuilder
 	char   buf[256];												// Read buffer
 	//--- Default roof ----------------------------------------------
 	CRoofModel *roof;
@@ -922,13 +921,13 @@ public:
 	bool	ParseGroups(FILE *f, char *ln);
 	bool  ParseStyles(FILE *f, char *ln);
 	//--- return a replacing object ---------------------------------
-	bool  GetReplacement(U_INT type, char *modl, char *d);
+	bool  GetReplacement(OSM_REP &rpm);
 	//---------------------------------------------------------------
 	void	Write(FILE *fp, U_INT cnt);
 	void	SaveInDatabase(SQL_DB &db);
 	//---------------------------------------------------------------
 	void				 GetBuildParameters(D2_BPM *p);
-	OSM_Object  *GetBuilding(U_INT k);
+	OSM_Object  *GetObjectOSM(U_INT k);
 	D2_Style    *GetStyle(char *nsty);
 	D2_TParam   *GetRoofTexture(D2_Style *sty);
 	//---------------------------------------------------------------
@@ -942,10 +941,11 @@ public:
 	inline void SetTrace(char t)	{tr = t;}
 	inline void BackTo(int p)			{fpos = p;}
 	inline char HasTrace()				{return tr;}
-	inline void SetTRN(Triangulator *t)	{trn = t;}
+	inline void SetTRN(CBuilder *t)	{trn = t;}
 	//---------------------------------------------------------------
 	CRoofModel *GetDefaultRoof()					{return roof;}
 	D2_TParam  *GetDefaultRoofTexture() 	{return rtex;}
+	U_INT       GetStamp()								{return Stamp;}
  };
 
 //============================= END OF FILE ======================================================

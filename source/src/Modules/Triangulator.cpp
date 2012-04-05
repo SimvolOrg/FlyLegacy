@@ -1,5 +1,5 @@
 //====================================================================================
-// Triangulator.cpp
+// CBuilder.cpp
 //
 // Part of Fly! Legacy project
 //
@@ -256,7 +256,7 @@ char *FaceType[] =
 //====================================================================================
 //	TRIANGULATOR for triangulation of polygones
 //====================================================================================
-Triangulator::Triangulator(D2_Session *s)
+CBuilder::CBuilder(D2_Session *s)
 {	trace = 0;
 	session		= s;
 	dop.Set(TRITOR_DRAW_ROOF);
@@ -278,7 +278,7 @@ Triangulator::Triangulator(D2_Session *s)
 //-------------------------------------------------------------------
 //	Release resources 
 //-------------------------------------------------------------------
-Triangulator::~Triangulator()
+CBuilder::~CBuilder()
 {	Clean();
 	if (remB)		delete remB;
 	//--- clear building list ---------------------------
@@ -288,7 +288,7 @@ Triangulator::~Triangulator()
 //-------------------------------------------------------------------
 //	Time Slice 
 //-------------------------------------------------------------------
-int Triangulator::TimeSlice(float dT,U_INT frame)
+int CBuilder::TimeSlice(float dT,U_INT frame)
 {
 	return 0;
 }
@@ -298,7 +298,7 @@ int Triangulator::TimeSlice(float dT,U_INT frame)
 //-------------------------------------------------------------------
 //	Draw all groups 
 //-------------------------------------------------------------------
-void Triangulator::DrawMarks()
+void CBuilder::DrawMarks()
 {	std::map<std::string,D2_Group*> grp = session->GetGroups();
 	std::map<std::string,D2_Group*>::iterator rp;
 
@@ -310,7 +310,7 @@ void Triangulator::DrawMarks()
 //-------------------------------------------------------------------
 //	Draw Interface 
 //-------------------------------------------------------------------
-void Triangulator::Draw()
+void CBuilder::Draw()
 {	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	//glDisable(GL_LIGHTING);
 	glEnable(GL_TEXTURE_2D);
@@ -337,7 +337,7 @@ void Triangulator::Draw()
 //-------------------------------------------------------------------
 //	Draw as lines 
 //-------------------------------------------------------------------
-int Triangulator::LineMode()
+int CBuilder::LineMode()
 {	// Draw triangulation
 	glDisable(GL_TEXTURE_2D);
 	glPolygonMode(GL_FRONT,GL_LINE);
@@ -346,7 +346,7 @@ int Triangulator::LineMode()
 //-------------------------------------------------------------------
 //	Draw as color 
 //-------------------------------------------------------------------
-int Triangulator::FillMode()
+int CBuilder::FillMode()
 {	// Draw triangulation
 	glEnable(GL_TEXTURE_2D);
 	glPolygonMode(GL_FRONT,GL_FILL);
@@ -359,7 +359,7 @@ int Triangulator::FillMode()
 //-------------------------------------------------------------------
 //	Add a new vertex
 //-------------------------------------------------------------------
-void Triangulator::AddVertex(double x, double y)
+void CBuilder::AddVertex(double x, double y)
 {	double xa   = FN_ARCS_FROM_DEGRE(x);
 	double ya   = FN_ARCS_FROM_DEGRE(y);
 	D2_POINT *p = new D2_POINT(xa,ya);
@@ -379,7 +379,7 @@ void Triangulator::AddVertex(double x, double y)
 //-------------------------------------------------------------------
 //	Hole annunciator
 //-------------------------------------------------------------------
-void Triangulator::NewHole()
+void CBuilder::NewHole()
 {	hIND	= 'H';
 	//--- Merge with previous hole if any --------
 	Merge();
@@ -392,7 +392,7 @@ void Triangulator::NewHole()
 //-------------------------------------------------------------------
 //	Cleaner
 //-------------------------------------------------------------------
-void Triangulator::Clean()
+void CBuilder::Clean()
 {	extp.Clear();
 	hole.Clear();
 	slot.Clear();
@@ -410,7 +410,6 @@ void Triangulator::Clean()
 	vRFX			= 0;
 	hIND			= 'X';
 	BDP.Clear();
-	//BDP.roofM = session->GetDefaultRoof();
 	TO				= 0;
   //--- Reset all parameters ----------------------
 	return;
@@ -418,7 +417,7 @@ void Triangulator::Clean()
 //-------------------------------------------------------------------
 //	Check every thing for debugging
 //-------------------------------------------------------------------
-void Triangulator::CheckAll()
+void CBuilder::CheckAll()
 {	if (extp.NotEmpty())
 	int a = 0;
   if (slot.NotEmpty())
@@ -433,18 +432,17 @@ void Triangulator::CheckAll()
 //-------------------------------------------------------------------
 //	Draw One 
 //-------------------------------------------------------------------
-void Triangulator::DrawSingle()
+void CBuilder::DrawSingle()
 {	dMOD = 0;
 	if (0 == osmB)	return;
 	osmB->Deselect();
 	BDP.selc	= 0;
 	return;
 }
-
 //-------------------------------------------------------------------
 //	Draw all 
 //-------------------------------------------------------------------
-void Triangulator::DrawGroups()
+void CBuilder::DrawGroups()
 {	dMOD = 1;
 	if (0 == osmB)	return;
 	osmB->Deselect();
@@ -453,14 +451,15 @@ void Triangulator::DrawGroups()
 //-------------------------------------------------------------------
 //	Start a new object 
 //-------------------------------------------------------------------
-void Triangulator::StartOBJ()
+void CBuilder::StartOBJ()
 {	Clean();
+	buildFN = &CBuilder::MakeBLDG;
 	return;
 }
 //-------------------------------------------------------------------
 //	Rebuild if orientation error 
 //-------------------------------------------------------------------
-void Triangulator::ReOrientation()
+void CBuilder::ReOrientation()
 {	if (BDP.error != 4)		return;
 	slot.Clear();
 	//------------------------------------------
@@ -476,9 +475,9 @@ void Triangulator::ReOrientation()
 	return;
 }
 //-------------------------------------------------------------------
-//	Process object 
+//	Make a building
 //-------------------------------------------------------------------
-D2_BPM *Triangulator::BuildOBJ(U_INT tp)
+D2_BPM *CBuilder::MakeBLDG(U_INT tp)
 {	otype			= tp;
 	BDP.side	= extp.GetNbObj();
 	BDP.error = 0;
@@ -494,21 +493,21 @@ D2_BPM *Triangulator::BuildOBJ(U_INT tp)
 	BDP.style->AssignBPM(&BDP);
 	BDP.roofP		= session->GetRoofTexture(sty);
 	BDP.roofM		= grp->GetRoofModByNumber(BDP);
-	MakeBuilding();
+	RiseBuilding();
 	//--------------------------------------
 	return &BDP;
 }
 //-------------------------------------------------------------------
 //	Add tag
 //-------------------------------------------------------------------
-void Triangulator::SetTag(char *t, char *v)
+void CBuilder::SetTag(char *t, char *v)
 {	if (0 == osmB)	return;
 	osmB->SetTag(t,v);
 }
 //-------------------------------------------------------------------
 //	Edit tag
 //-------------------------------------------------------------------
-void Triangulator::EditTag(char *txt)
+void CBuilder::EditTag(char *txt)
 {	*txt = 0;
 	if (osmB)	osmB->EditTag(txt);
 	return;
@@ -516,7 +515,7 @@ void Triangulator::EditTag(char *txt)
 //-------------------------------------------------------------------
 //	Edit object parameters
 //-------------------------------------------------------------------
-void Triangulator::EditPrm(char *txt)
+void CBuilder::EditPrm(char *txt)
 {	*txt = 0;
   if (osmB)	osmB->EditPrm(txt);
 	return;
@@ -524,7 +523,7 @@ void Triangulator::EditPrm(char *txt)
 //-------------------------------------------------------------------
 //  Build the building
 //-------------------------------------------------------------------
-bool Triangulator::MakeBuilding()
+bool CBuilder::RiseBuilding()
 {	dlg	= BDP.dlg;
 	//--- Step 1: Create OSM object -----
 	CreateBuilding();
@@ -546,23 +545,26 @@ bool Triangulator::MakeBuilding()
 //	Replace by a 3D object
 //	
 //-------------------------------------------------------------------
-U_CHAR Triangulator::ReplaceBy(char *fn, char rdir)
+U_CHAR CBuilder::ReplaceOBJ(OSM_REP *rpp, char or)
 {	if (0 == osmB)			return 0;
-	if (0 == *fn)				return 0;
+	if (0 == rpp->obr)	return 0;
+	if (or) {rpp->sinA = sinA; rpp->cosA = cosA; }
 	//TRACE("REPLACE BUILDING %d",BDP.stamp);
-  COBJparser obj(OSM_OBJECT);
-	obj.SetDirectory(textDIR[rdir]);
-  obj.Decode(fn,OSM_OBJECT);
-	C3DPart *prt = obj.BuildOSMPart(rdir);
-	char    *tnm = obj.TextureName();
+	char *dir = directoryTAB[rpp->dir];
+	osmB->ReplaceBy(rpp);
+  COBJparser fpar(OSM_OBJECT);
+	fpar.SetDirectory(dir);
+  fpar.Decode(rpp->obr,OSM_OBJECT);
+	C3DPart *prt = fpar.BuildOSMPart(rpp->dir);
 	if (0 == prt)				return 0;
-	osmB->SetModelParameters(fn,tnm,rdir,prt);
+	//--- Change model parameters --------------
+	osmB->ChangePart(prt);
 	return 1;
 }
 //-------------------------------------------------------------------
 //	End of object 
 //-------------------------------------------------------------------
-void Triangulator::EndOBJ()
+void CBuilder::EndOBJ()
 {	Clean();
 	return;
 }
@@ -573,7 +575,7 @@ void Triangulator::EndOBJ()
 //	For the roof :
 //		- 3 vertices per triangle
 //-------------------------------------------------------------------
-U_INT Triangulator::CountVertices()
+U_INT CBuilder::CountVertices()
 {	U_INT nvtx = 3 * roof.size();
 	for (U_INT k=0; k < walls.size(); k++) nvtx += walls[k]->VerticesNumber();
 	return nvtx;
@@ -581,7 +583,7 @@ U_INT Triangulator::CountVertices()
 //-------------------------------------------------------------------
 //	Set Style from name
 //-------------------------------------------------------------------
-void Triangulator::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx)
+void CBuilder::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx)
 {	D2_Style *sty = session->GetStyle(nsty);
 	BDP.style = sty;
 	if (0 == sty)		return;
@@ -597,12 +599,9 @@ void Triangulator::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx)
 	return;
 }
 //-------------------------------------------------------------------
-//	Create OSM object 
-//	NOTE: If we have to modify the vertices then the call
-//				to this function must be removed from BuildOBJ and
-//				deferred until Object is OK
+//	Create OSM building 
 //-------------------------------------------------------------------
-void Triangulator::CreateBuilding()
+void CBuilder::CreateBuilding()
 { OSM_Object  *obj	= osmB;
 	if (0 == obj) obj =	new OSM_Object(otype);
   osmB							= obj;
@@ -616,7 +615,7 @@ void Triangulator::CreateBuilding()
 //-------------------------------------------------------------------
 //	Save all data in building
 //-------------------------------------------------------------------
-void Triangulator::SaveBuildingData()
+void CBuilder::SaveBuildingData()
 { osmB->SetXY(BDP.lgx,BDP.lgy);	
 	U_INT nvtx		= CountVertices();
   C3DPart *prt	= osmB->GetPart();
@@ -646,7 +645,7 @@ void Triangulator::SaveBuildingData()
 //-----------------------------------------------------------------------
 //	Modify the style
 //-----------------------------------------------------------------------
-U_CHAR Triangulator::ModifyStyle()
+U_CHAR CBuilder::ModifyStyle()
 {	//--- deselect previous selection------------------
 	if (0 == osmB)		return 0;
 	BDP.opt.Raz(D2B_REPLACED);
@@ -654,13 +653,13 @@ U_CHAR Triangulator::ModifyStyle()
 	//---- Restore foot print -------------------------
 	osmB->Swap(extp);
 	MakeSlot();
-	MakeBuilding();
+	RiseBuilding();
 	return 1;
 }
 //-----------------------------------------------------------------------
 //	Select one building
 //-----------------------------------------------------------------------
-D2_BPM *Triangulator::SelectBuilding(U_INT No)
+D2_BPM *CBuilder::SelectOBJ(U_INT No)
 {	//--- Deselect previous selection------------------
 	char same = (BDP.stamp == No);
 	char bldg = (osmB != 0);
@@ -669,8 +668,8 @@ D2_BPM *Triangulator::SelectBuilding(U_INT No)
 	//--- see for new building ------------------------
 	else
 	{	if (bldg)	osmB->Deselect();
-		//--- Get the new Building ------------------------
-		OSM_Object *bld = session->GetBuilding(No);
+		//--- Get the new object ------------------------
+		OSM_Object *bld = session->GetObjectOSM(No);
 		//--- Establish the new building ------------------
 		osmB		= bld;
 		osmB->Select();
@@ -683,7 +682,7 @@ D2_BPM *Triangulator::SelectBuilding(U_INT No)
 //-----------------------------------------------------------------------
 //	Delete the current building
 //-----------------------------------------------------------------------
-int  Triangulator::RemoveBuilding()
+int  CBuilder::RemoveOBJ()
 {	if (0 == osmB)		return 0;
 	if (remB)					delete remB;
 	remB		= osmB;
@@ -694,7 +693,7 @@ int  Triangulator::RemoveBuilding()
 //-----------------------------------------------------------------------
 //	Restore the last deleted building
 //-----------------------------------------------------------------------
-D2_BPM *Triangulator::RestoreBuilding(U_INT *cnt)
+D2_BPM *CBuilder::RestoreOBJ(U_INT *cnt)
 {	if (0 == remB)			return &BDP;
 	BDP		= remB->GetParameters();
 	BDP.group->AddBuilding(remB);
@@ -711,7 +710,7 @@ D2_BPM *Triangulator::RestoreBuilding(U_INT *cnt)
 //	NOTE: Only the vertice are rotated.  The building original
 //			orientationmust be kept unchanged
 //----------------------------------------------------------------
-U_CHAR Triangulator::RotateObject(double rad)
+U_CHAR CBuilder::RotateOBJ(double rad)
 {	if (0 == osmB)													return 0;
 	//--- Set building orientation --------------------
 	if (!osmB->bpm.opt.Has(D2B_REPLACED))	  return 0;
@@ -721,7 +720,7 @@ U_CHAR Triangulator::RotateObject(double rad)
 //-------------------------------------------------------------------
 //	Convert Coordinates in feet relative to object center
 //-------------------------------------------------------------------
-char Triangulator::ConvertInFeet()
+char CBuilder::ConvertInFeet()
 {	SPosition &geop = BDP.geop;
 	U_INT nvx = extp.GetNbObj();
 	if (0 == nvx)			return 1;
@@ -752,7 +751,7 @@ char Triangulator::ConvertInFeet()
 //-------------------------------------------------------------------
 //	Clear any slot left
 //-------------------------------------------------------------------
-void Triangulator::ReleaseSlot()
+void CBuilder::ReleaseSlot()
 {	D2_SLOT *sp;
 	for (sp = slot.Pop(); sp != 0; sp = slot.Pop())
 	{	delete sp; 	}
@@ -761,7 +760,7 @@ void Triangulator::ReleaseSlot()
 //-------------------------------------------------------------------
 //	Recreate slot from foot print
 //-------------------------------------------------------------------
-void Triangulator::MakeSlot()
+void CBuilder::MakeSlot()
 { ReleaseSlot();
 	D2_POINT *pp;
 	for (pp = extp.GetFirst(); pp != 0; pp = pp->next)
@@ -775,7 +774,7 @@ void Triangulator::MakeSlot()
 //	Create slot for triangulation
 //	Compute ground surface
 //-------------------------------------------------------------------
-char Triangulator::QualifyPoints()
+char CBuilder::QualifyPoints()
 {	int nbp = extp.GetNbObj();
   if (nbp < 3)				return 2;
 	if (hole.GetNbObj() > 2)			Merge();	
@@ -821,7 +820,7 @@ char Triangulator::QualifyPoints()
 //-------------------------------------------------------------------
 //	Compute type of points at triangle extremity
 //-------------------------------------------------------------------
-void Triangulator::Requalify(D2_SLOT *sa)
+void CBuilder::Requalify(D2_SLOT *sa)
 {	if (slot.GetNbObj() <= 3)		return;
 	//--- Check the B extremity ------------------------------
 	D2_SLOT *sb = slot.CyPrev(sa);
@@ -838,7 +837,7 @@ void Triangulator::Requalify(D2_SLOT *sa)
 //	the Ear list
 //	Result of triangulation is used as the flat roof
 //-------------------------------------------------------------------
-bool Triangulator::GetAnEar()
+bool CBuilder::GetAnEar()
 { D2_SLOT  *sa = 0;
 	for (sa = slot.GetFirst(); sa != 0; sa= sa->next)
 	{ if (sa->IsReflex())				continue;
@@ -869,7 +868,7 @@ bool Triangulator::GetAnEar()
 //	Starting from C and up to B look for any reflex vertex
 //	Check if any reflex is in triangle ABC or on a side of ABC
 //-------------------------------------------------------------------
-bool Triangulator::NotAnEar(D2_SLOT *sa)
+bool CBuilder::NotAnEar(D2_SLOT *sa)
 {	//--- Extract the oriented triangle -----------------
   D2_SLOT  *sb = slot.CyPrev(sa);
 	D2_SLOT  *sc = slot.CyNext(sa);
@@ -893,7 +892,7 @@ bool Triangulator::NotAnEar(D2_SLOT *sa)
 //-------------------------------------------------------------------
 //	Start triangulation.  The result is a flat roof
 //-------------------------------------------------------------------
-char Triangulator::Triangulation()
+char CBuilder::Triangulation()
 {	tri.N = CVector(0,0,1);
 	roof.reserve(slot.GetNbObj() - 1);
 	while (slot.GetNbObj() != 2)	if (!GetAnEar()) 	return 3;
@@ -905,7 +904,7 @@ char Triangulator::Triangulation()
 //-------------------------------------------------------------------
 //	Trace Input
 //-------------------------------------------------------------------
-void Triangulator::TraceInp()
+void CBuilder::TraceInp()
 {	char  ida[6];
   char *dim;
   D2_POINT *pa;
@@ -920,7 +919,7 @@ void Triangulator::TraceInp()
 //-------------------------------------------------------------------
 //	Trace Faces
 //-------------------------------------------------------------------
-void Triangulator::TraceFace()
+void CBuilder::TraceFace()
 {	char  ida[6];
   char *type = "None";
   D2_POINT *pa;
@@ -938,7 +937,7 @@ void Triangulator::TraceFace()
 //-------------------------------------------------------------------
 //	Trace triangulation
 //-------------------------------------------------------------------
-void Triangulator::TraceOut()
+void CBuilder::TraceOut()
 {	char ida[6];
 	char idb[6];
 	char idc[6];	
@@ -955,7 +954,7 @@ void Triangulator::TraceOut()
 //-------------------------------------------------------------------
 //	Join external polygon to Hole polygon
 //-------------------------------------------------------------------
-void Triangulator::Merge()
+void CBuilder::Merge()
 {	if (3 > hole.GetNbObj())		return;
 	if (3 > extp.GetNbObj())		return;
 	//--- search  for a pair of mutually visible points --
@@ -972,7 +971,7 @@ void Triangulator::Merge()
 //-------------------------------------------------------------------
 //	Search a hole point visible from xp
 //-------------------------------------------------------------------
-D2_POINT *Triangulator::MatchHole(D2_POINT *xp)
+D2_POINT *CBuilder::MatchHole(D2_POINT *xp)
 {	D2_POINT *hp = 0;
 	for (hp = hole.GetFirst(); hp != 0; hp = hp->next)
 	{	if (!CheckInternal(xp,hp))		continue;
@@ -985,7 +984,7 @@ D2_POINT *Triangulator::MatchHole(D2_POINT *xp)
 //	check that no edge of external contour masks 
 //	xp from hp
 //-------------------------------------------------------------------
-bool Triangulator::CheckExternal(D2_POINT *xp, D2_POINT *hp)
+bool CBuilder::CheckExternal(D2_POINT *xp, D2_POINT *hp)
 {	//--- exclude Edges incident to xp -------------------
 	D2_POINT *p1 = extp.CyNext(xp);
 	D2_POINT *p2 = 0;
@@ -1001,7 +1000,7 @@ bool Triangulator::CheckExternal(D2_POINT *xp, D2_POINT *hp)
 //	check that no edge of internal contour masks 
 //	xp from hp
 //-------------------------------------------------------------------
-bool Triangulator::CheckInternal(D2_POINT *xp, D2_POINT *hp)
+bool CBuilder::CheckInternal(D2_POINT *xp, D2_POINT *hp)
 { //--- Exclude Edges incident to hp ------------------
 	D2_POINT *p1 = hole.CyNext(hp);
 	D2_POINT *p2 = 0;
@@ -1032,7 +1031,7 @@ bool Triangulator::CheckInternal(D2_POINT *xp, D2_POINT *hp)
 //			H2 = copy of HP
 //			X2 = copy of XP
 //-------------------------------------------------------------------
-void Triangulator::Splice(D2_POINT *xp, D2_POINT *hp)
+void CBuilder::Splice(D2_POINT *xp, D2_POINT *hp)
 {	//--- Transfer hole chain here ------------------------------
 	int       nn = hole.GetNbObj();
 	D2_POINT *hn = hole.SwapFirst();
@@ -1084,16 +1083,16 @@ void Triangulator::Splice(D2_POINT *xp, D2_POINT *hp)
 //	Before calling this type, the style must be selected and set
 //	We need it to precompute some texture coefficients
 //=========================================================================
-void Triangulator::OrientFaces()
+void CBuilder::OrientFaces()
 {	TO	= extp.GetFirst();
 	D2_Style *sty = BDP.style;
 	//--- Compute rotation matrix -------------------
   D2_POINT *pa = TO;
 	D2_POINT *pb = extp.CyNext(pa);
-  BDP.cosA = (pb->x - pa->x) / dlg;					// Cos(A)
-	BDP.sinA = (pb->y - pa->y) / dlg;					// Sin(A)
+  cosA = (pb->x - pa->x) / dlg;					// Cos(A)
+	sinA = (pb->y - pa->y) / dlg;					// Sin(A)
 	//--- As we want a -A rotation, we change the signe of sin(A) aka dy
-	NegativeROT(BDP.sinA,BDP.cosA);
+	NegativeROT(sinA,cosA);
 	//----Init extension ----------------------------------
 	minx		= maxx = 0;
 	miny    = maxy = 0;
@@ -1139,16 +1138,16 @@ void Triangulator::OrientFaces()
 	double tx = (-TO->x);	
 	double ty = (-TO->y);	
 	//-------------------------
-	mat[0]	= +BDP.cosA;
-	mat[1]	= -BDP.sinA;
+	mat[0]	= +cosA;
+	mat[1]	= -sinA;
 	mat[2]	= 0;
 	///------------------------
-	mat[3]	= +BDP.sinA;
-	mat[4]	= +BDP.cosA;
+	mat[3]	= +sinA;
+	mat[4]	= +cosA;
 	mat[5]	= 0;
 	//-------------------------
-	mat[6]	= (tx * BDP.cosA) + (BDP.sinA * ty) - minx;
-	mat[7]	= (ty * BDP.cosA) - (BDP.sinA * tx) - miny;
+	mat[6]	= (tx * cosA) + (sinA * ty) - minx;
+	mat[7]	= (ty * cosA) - (sinA * tx) - miny;
 	mat[8]	= 1;
 	//-----------------------------------------------------
 	if (trace) TraceFace();
@@ -1157,7 +1156,7 @@ void Triangulator::OrientFaces()
 //----------------------------------------------------------------
 //	Global transform
 //----------------------------------------------------------------
-void Triangulator::LocalCoordinates(D2_POINT &p)
+void CBuilder::LocalCoordinates(D2_POINT &p)
 {	gx = (p.x * mat[0]) + (p.y * mat[3]) + mat[6];
 	gy = (p.x * mat[1]) + (p.y * mat[4]) + mat[7];
 	p.lx = gx;
@@ -1167,7 +1166,7 @@ void Triangulator::LocalCoordinates(D2_POINT &p)
 //----------------------------------------------------------------
 //	Init a Negative Rotation
 //----------------------------------------------------------------
-void Triangulator::NegativeROT(double sn, double cs)
+void CBuilder::NegativeROT(double sn, double cs)
 {	//--- As we want a -A rotation, we change the signe of sin(A)
 	rotM[0]	= +cs; rotM[1] = -sn;
 	rotM[2] = +sn; rotM[3] = +cs;
@@ -1176,7 +1175,7 @@ void Triangulator::NegativeROT(double sn, double cs)
 //----------------------------------------------------------------
 //	Init a Positive Rotation
 //----------------------------------------------------------------
-void Triangulator::PositiveROT(double sn, double cs)
+void CBuilder::PositiveROT(double sn, double cs)
 {	//--- As we want a +A rotation, we keep the normal way
 	rotM[0]	= +cs; rotM[1] = +sn;
 	rotM[2] = -sn; rotM[3] = +cs;
@@ -1186,7 +1185,7 @@ void Triangulator::PositiveROT(double sn, double cs)
 //----------------------------------------------------------------
 //	Rotation
 //----------------------------------------------------------------
-void Triangulator::Rotate(double x, double y)
+void CBuilder::Rotate(double x, double y)
 {	rx = ((x * rotM[0]) + (y * rotM[2]));
 	ry = ((x * rotM[1]) + (y * rotM[3]));
 }
@@ -1195,7 +1194,7 @@ void Triangulator::Rotate(double x, double y)
 //	We qualify the edge pa which is the previous point of pb
 //	because pa is already computed.
 //----------------------------------------------------------------
-void Triangulator::QualifyEdge(D2_POINT *pb)
+void CBuilder::QualifyEdge(D2_POINT *pb)
 {	D2_POINT *pa = extp.CyPrev(pb);
 	double dx = pb->lx - pa->lx;
 	double dy = pb->ly - pa->ly;
@@ -1210,7 +1209,7 @@ void Triangulator::QualifyEdge(D2_POINT *pb)
 //=========================================================================
 //	Extruding the building faces
 //=========================================================================
-void Triangulator::BuildWalls()
+void CBuilder::BuildWalls()
 {	Wz = 0;
   double H = BDP.flHtr;
 	for (int k=1; k <= BDP.flNbr; k++)
@@ -1222,13 +1221,13 @@ void Triangulator::BuildWalls()
 //----------------------------------------------------------------
 //	Trace Bevel point
 //----------------------------------------------------------------
-void Triangulator::TraceBevel(D2_POINT *p)
+void CBuilder::TraceBevel(D2_POINT *p)
 {	TRACE("BEVEL  B%05d rng=%04d Xp=%.4lf Yp=%.4lf P.x=%.4lf P.y=%.4lf P.z=%.4lf lx=%.4lf ly=%.4lf",BDP.stamp,p->rng, Xp,Yp,p->x, p->y, p->z,p->lx,p->ly);
 }
 //----------------------------------------------------------------
 //	Check that bevel point is inside the building, at good height
 //----------------------------------------------------------------
-bool Triangulator::SetPointInside(D2_POINT *p, D2_POINT *s, double H)
+bool CBuilder::SetPointInside(D2_POINT *p, D2_POINT *s, double H)
 {	bool in = (p->lx >= 0) && (p->lx <= Xp);
 	in     &= (p->ly >= 0) && (p->ly <= Yp);
 	p->z  = H;
@@ -1242,7 +1241,7 @@ bool Triangulator::SetPointInside(D2_POINT *p, D2_POINT *s, double H)
 //	Compute a local bevel vector then apply global transformation
 //	to get the final point
 //----------------------------------------------------------------
-void Triangulator::GetBevelVector(D2_POINT *pa, double dy,D2_POINT *P)
+void CBuilder::GetBevelVector(D2_POINT *pa, double dy,D2_POINT *P)
 {	D2_FACE trio;
 	D2_POINT &A = trio.sw;
 	//--- Extract the 3 points -------------------------
@@ -1258,7 +1257,7 @@ void Triangulator::GetBevelVector(D2_POINT *pa, double dy,D2_POINT *P)
 //----------------------------------------------------------------
 //	Build a foot print of the beveled roof
 //----------------------------------------------------------------
-int Triangulator::SetBevelArray(D2_BEVEL &pm)
+int CBuilder::SetBevelArray(D2_BEVEL &pm)
 { //--- Bevel distance ------------------------
 	double dy = fabs(pm.H / pm.tang);
 	D2_POINT *dst = bevel;
@@ -1278,7 +1277,7 @@ int Triangulator::SetBevelArray(D2_BEVEL &pm)
 //----------------------------------------------------------------
 //	Allocate bevel points
 //----------------------------------------------------------------
-D2_POINT *Triangulator::AllocateBevel(int nb)
+D2_POINT *CBuilder::AllocateBevel(int nb)
 {	bevel = new D2_POINT[nb];
 	return bevel;
 }
@@ -1288,13 +1287,13 @@ D2_POINT *Triangulator::AllocateBevel(int nb)
 //	It must be rotated back to world coordinates before to be
 //	added to the POINT
 //----------------------------------------------------------------
-void Triangulator::TranslatePoint(D2_POINT &p, double tx, double ty, double tz)
+void CBuilder::TranslatePoint(D2_POINT &p, double tx, double ty, double tz)
 {	//---- Adjust local components ----------------
 	p.lx	+= tx;
 	p.ly	+= ty;
 	p.z   += tz;
 	//---- Compute real translation vector -------
-	PositiveROT(BDP.sinA, BDP.cosA);
+	PositiveROT(sinA, cosA);
 	Rotate(tx, ty);
 	p.x		+= rx;
 	p.y		+= ry;
@@ -1308,7 +1307,7 @@ void Triangulator::TranslatePoint(D2_POINT &p, double tx, double ty, double tz)
 //	-First we compute the bevl vector componnent in local coordinates
 //	-Then we rotate it in the world referential
 //----------------------------------------------------------------
-int Triangulator::BuildBevelFloor(int No, int inx, double afh, double H)
+int CBuilder::BuildBevelFloor(int No, int inx, double afh, double H)
 {	D2_Style *sty = BDP.style;
 	D2_BEVEL pm;
 	U_INT nbp		= extp.GetNbObj();
@@ -1358,12 +1357,12 @@ int Triangulator::BuildBevelFloor(int No, int inx, double afh, double H)
 //----------------------------------------------------------------
 //	return corresponding bevel point
 //----------------------------------------------------------------
-D2_POINT *Triangulator::GetBevelPoint(D2_POINT *p)
+D2_POINT *CBuilder::GetBevelPoint(D2_POINT *p)
 {	return bevel + p->rng;	}
 //----------------------------------------------------------------
 //	Build a normal floor
 //----------------------------------------------------------------
-int	Triangulator::BuildNormaFloor(int No,int inx, double afh, double H)
+int	CBuilder::BuildNormaFloor(int No,int inx, double afh, double H)
 {	double    ce = afh + H;								// Ceil height
   D2_POINT *pa = 0;
 	D2_FLOOR *et = new D2_FLOOR(No,TEXD2_FLOORZ,afh,ce);
@@ -1391,7 +1390,7 @@ return ce;
 //	ce = ceil height
 //	We also adjust the roof height in (extp)
 //----------------------------------------------------------------
-void Triangulator::BuildFloor(int No, double afh, double H)
+void CBuilder::BuildFloor(int No, double afh, double H)
 {	//--- Compute face code -----------------------------
 	D2_Style *sty = BDP.style;
 	int  flNbr		= BDP.flNbr;
@@ -1413,7 +1412,7 @@ void Triangulator::BuildFloor(int No, double afh, double H)
 //----------------------------------------------------------------
 //	Reorder the tour with origin as first point
 //----------------------------------------------------------------
-void Triangulator::Reorder()
+void CBuilder::Reorder()
 {	int k = extp.GetNbObj();
 	while (extp.GetFirst() != TO)	
 	{	if (k <0)	return;
@@ -1426,12 +1425,12 @@ void Triangulator::Reorder()
 //----------------------------------------------------------------
 //	Change Point
 //----------------------------------------------------------------
-D2_POINT *Triangulator::ChangePoint(D2_POINT *pp)
+D2_POINT *CBuilder::ChangePoint(D2_POINT *pp)
 {	return bevel + pp->rng; }
 //----------------------------------------------------------------
 //	Empty actual roof
 //----------------------------------------------------------------
-void Triangulator::ClearRoof()
+void CBuilder::ClearRoof()
 {	//--- Delete current roof -----------------------------
 	for (U_INT k=0; k < roof.size(); k++) delete roof[k];
 	roof.clear();
@@ -1440,7 +1439,7 @@ void Triangulator::ClearRoof()
 //----------------------------------------------------------------
 //	Select roof model
 //----------------------------------------------------------------
-void Triangulator::SelectRoof()
+void CBuilder::SelectRoof()
 {	if (BDP.roofM->GetClearIndicator())	ClearRoof();
 	//--- Assign roof parameters---------------------
 	BDP.roofM->SetRoofData(&BDP, this);
@@ -1451,7 +1450,7 @@ void Triangulator::SelectRoof()
 //----------------------------------------------------------------
 //	Texturing pass
 //----------------------------------------------------------------
-void Triangulator::Texturing()
+void CBuilder::Texturing()
 {	if (0 == BDP.style)		return;
 	//------------------------------------------------- 
 	for (U_INT k = 0; k < walls.size(); k++) 
@@ -1951,7 +1950,7 @@ CRoofModel *D2_Group::GetRoofModByNumber(D2_BPM &bpm)
 void D2_Group::LoadTexture()
 {	if (*txd.name == 0)		return;
 	//-- init the descriptor -------------------------------
-	txd.Dir		= TEXDIR_OSM_TX;
+	txd.Dir		= FOLDER_OSM_USER;
 	txd.apx   = 0xFF;
 	txd.azp   = 0x00;
 	//TRACE("GROUP LOAD TEXTURE %s",ntex);
@@ -2444,264 +2443,5 @@ void D2_TParam::TextureSideRoof(D2_TRIANGLE &T)
 	TextureYRoofPoint(T.A);
 	TextureYRoofPoint(T.C);
 }
-//==========================================================================
-//  OSM Object
-//==========================================================================
-OSM_Object::OSM_Object(U_INT tp)
-{	type				= tp;
-	bpm.stamp		= 0;
-	bpm.group		= 0;
-	tag					= 0;
-	val					= 0;
-	part				= 0;
-	orien       = 0;
-}
-//-----------------------------------------------------------------
-//	Destroy resources
-//	Queue will be deleted when object is deleted and it will delete
-//	all queued objects
-//-----------------------------------------------------------------
-OSM_Object::~OSM_Object()
-{	int a = 0;
-	if (tag)			delete [] tag;
-	if (val)			delete [] val;
-	if (part)			delete part;
-	//TRACE("DELETE BUILDING %d",bpm.stamp);
-}
-//-----------------------------------------------------------------
-//	Transfer Queue and Clear items
-//-----------------------------------------------------------------
-void OSM_Object::Swap(Queue<D2_POINT> &H)
-{	//--- Clear the receiver ---------------------------
-	H.Clear();
-	//--- Transfert base in foot print -----------------
-	base.TransferQ(H);
-	if (part)		delete part;
-	part = 0;
-	return;
-}
-//-----------------------------------------------------------------
-//	Transfer Queue and invert items
-//-----------------------------------------------------------------
-void OSM_Object::Invert(Queue<D2_POINT> &H)
-{	//--- Clear the receiver ---------------------------
-	H.Clear();
-	//--- Transfert base in foot print -----------------
-	D2_POINT *pp;
-	for (pp = base.Pop(); pp != 0; pp = base.Pop())
-	{	H.PutHead(pp);	}
-	if (part)		delete part;
-	part = 0;
-	return;
-}
 
-//-----------------------------------------------------------------
-//	Transfer queue
-//-----------------------------------------------------------------
-void OSM_Object::ReceiveQ(Queue<D2_POINT> &H)
-{	D2_POINT *pp;
-  D2_POINT *np;
-	for (pp = H.GetFirst(); pp != 0; pp = pp->next)
-	{	np = new D2_POINT(pp,'R');
-		base.PutLast(np);
-	}
-	return;
-}
-//-----------------------------------------------------------------
-//	Rotation to align the building
-//-----------------------------------------------------------------
-U_CHAR OSM_Object::Rotate()
-{	if (bpm.opt.Not(D2B_REPLACED))	  return 0;
-	double sn = sin(orien);
-	double cn = cos(orien);
-	part->ZRotation(sn,cn);
-	return 1;
-}
-//-----------------------------------------------------------------
-//	Change rotation
-//-----------------------------------------------------------------
-U_CHAR OSM_Object::IncOrientation(double rad)
-{	orien = WrapTwoPi(orien + rad);
-	double sn = sin(rad);
-	double cn = cos(rad);
-	part->ZRotation(sn,cn);
-	return 1;
-}
-//-----------------------------------------------------------------
-//	Save amenity
-//-----------------------------------------------------------------
-void OSM_Object::SetTag(char *am, char *vl)
-{	if (0 ==  *am)	return;
-  tag = Dupplicate(am,64);
-	if (0 == *vl)		return;
-	val	= Dupplicate(vl,64);
-	return;
-}
-//-----------------------------------------------------------------
-//	Edit Object
-//-----------------------------------------------------------------
-void OSM_Object::EditPrm(char *txt)
-{	U_INT nb  = bpm.stamp;
-	double lx = FN_METRE_FROM_FEET(bpm.lgx);
-	double ly = FN_METRE_FROM_FEET(bpm.lgy);
-	_snprintf(txt,127,"BUILDING %05d lg:%.1lf wd:%.1lf",nb,lx,ly);
-	return;
-}
-//-----------------------------------------------------------------
-//	Edit Tag
-//-----------------------------------------------------------------
-void OSM_Object::EditTag(char *txt)
-{	if (0 == tag)		return;
-	_snprintf(txt,127,"%s : %s",tag,val);
-	return;
-}
-//-----------------------------------------------------------------
-//	Save building in mother group
-//-----------------------------------------------------------------
-void OSM_Object::SetParameters(D2_BPM &p)
-{	//--- check for group change ----------------------------
-	bool chge = (bpm.group != 0) && (bpm.group != p.group);
-	if (chge) bpm.group->RemBuilding(this);
-	bpm				= p;
-	D2_Group *grp = bpm.group;
-	grp->AddBuilding(this);
-	//--- Set part parameters ----------------------
-	C3DPart      *prt  = new C3DPart();
-	CShared3DTex *ref  = grp->GetTREF();
-	prt->Reserve(ref);
-	if (part)	delete part;
-	part	= prt;
-	return;
-}
-//-----------------------------------------------------------------
-//	Translate all vertices to SuperTile center
-//-----------------------------------------------------------------
-GN_VTAB *OSM_Object::StripToSupertile()
-{ C_QGT *qgt			= globals->tcm->GetQGT(bpm.qgKey);
-	CSuperTile *sup = qgt->GetSuperTile(bpm.supNo);
-	SPosition   p0  = sup->GeoPosition();
-	double rad      = FN_RAD_FROM_ARCS(p0.lat);
-	double rdf      = cos(rad);
-	SPosition   p1	= GetPosition();
-	CVector T  = FeetComponents(p0, p1,rdf);
-  U_INT nbv				= part->GetNBVTX();
-	if (0 == nbv)		return 0;
-	GN_VTAB *src	= part->GetGTAB();
-	GN_VTAB *vtx  = new GN_VTAB[nbv];
-	GN_VTAB *dst  = vtx;
-	for (U_INT k=0; k<nbv; k++)
-	{	*dst	= *src++;
-		 dst->Add(T);
-		 dst++;
-	}
-	return vtx;
-}
-//-----------------------------------------------------------------
-//	Return group texture reference
-//-----------------------------------------------------------------
-void *OSM_Object::GetGroupTREF()
-{	if (0 == bpm.group)		return 0;
-	return bpm.group->GetTREF();
-}
-//-----------------------------------------------------------------
-//	Return Part texture reference
-//-----------------------------------------------------------------
-CShared3DTex *OSM_Object::GetPartTREF()
-{return (part)?(part->GetTREF()):(0);}
-//-----------------------------------------------------------------
-//	Select this building
-//-----------------------------------------------------------------
-void OSM_Object::Select()
-{	globals->osmS = this;
-	bpm.selc	= 1;
-	return;
-}
-//-----------------------------------------------------------------
-//	Return Texture parameters
-//-----------------------------------------------------------------
-char *OSM_Object::TextureData(char &d)
-{	CShared3DTex *ref = GetPartTREF();
-	if (0 == ref)				return 0;
-	return ref->TextureData(d);
-}
-//-----------------------------------------------------------------
-//	Change selection on building
-//-----------------------------------------------------------------
-void OSM_Object::SwapSelect()
-{	if (bpm.selc)	Deselect();
-	else		Select();
-	return;
-}
-//-----------------------------------------------------------------
-//	Deselect this building
-//-----------------------------------------------------------------
-void OSM_Object::Deselect()
-{	globals->osmS = 0;
-	bpm.selc	= 0;
-	return;
-}
-//-----------------------------------------------------------------
-//	Swap part
-//-----------------------------------------------------------------
-void OSM_Object::SetModelParameters(char *fn, char *tn, char dir, C3DPart *prt)
-{	rmodl.SetTexture(dir,fn);
-	orien	= atan2(bpm.sinA,bpm.cosA);
-	bpm.opt.Set(D2B_REPLACED);
-	if (part)	delete part;
-	part = prt;
-	Rotate();
-	return;
-}
-//-----------------------------------------------------------------
-//	Draw as a terrain object
-//-----------------------------------------------------------------
-void OSM_Object::Draw()
-{	glLoadName(bpm.stamp);
-	glPushMatrix();
-	SVector T = FeetComponents(globals->geop, this->bpm.geop, bpm.rdf);
-	glTranslated(T.x, T.y, T.z);  //T.z);
-	part->Draw();	
-	glPopMatrix();
-}
-//-----------------------------------------------------------------
-//	Draw as a single local object
-//	We dont translate camera at building center
-//-----------------------------------------------------------------
-void OSM_Object::DrawLocal()
-{	part->Draw();	 }
-//-----------------------------------------------------------------
-//	Write the building
-//-----------------------------------------------------------------
-void OSM_Object::Write(FILE *fp)
-{	char txt[128];
-  char prm[128];
-	_snprintf(txt,127,"Start %05d id=%d\n", bpm.stamp, bpm.ident);
-	fputs(txt,fp);
-	//--- Write style ----------------------------------
-	char *nsty = bpm.style->GetSlotName();
-	int   rmno = bpm.roofM->GetRoofModNumber();
-	int   rofn = bpm.roofP->GetRoofTexNumber();
-	_snprintf(txt,127,"Style %s rofm=%d rftx=%d\n",nsty,rmno,rofn);
-	fputs(txt,fp);
-	//--- Write tag ------------------------------------
-	char *vl = (tag)?(val):("---");
-	if (tag)
-		{	_snprintf(txt,127,"Tag (%s = %s)\n",tag,vl);
-			fputs(txt,fp);
-		}
-	//--- Write all points -----------------------------
-	D2_POINT *pp;
-	for (pp = base.GetFirst(); pp != 0; pp = pp->next)
-	{	_snprintf(txt,127,"V(%.7lf, %.7lf)\n", pp->dgy, pp->dgx);
-		fputs(txt,fp);
-	}
-	//--- Write replace if any -------------------------
-	if (0 == rmodl.name)			return;
-	//--- Write the replace directive ------------------
-	_snprintf(prm,64,"%d:%s",rmodl.dir,rmodl.name);
-	_snprintf(txt,127,"Replace (Z=%.7lf) with %s\n",orien,prm);
-	fputs(txt,fp);
-	//--- all ok ---------------------------------------
-	return;
-}
 //======================= END OF FILE =========================================================

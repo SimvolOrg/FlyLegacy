@@ -229,7 +229,7 @@ void CRoofModel::Release()
 //	a[2]	= NE corner
 //	a[3]	= NW corner
 //---------------------------------------------------------------
-void CRoofModel::SetRoofData(D2_BPM *pm,Triangulator *tr)
+void CRoofModel::SetRoofData(D2_BPM *pm,CBuilder *tr)
 {	trn		= tr;
 	geo		= tr->GetGeotester();
 	bpm		= pm;

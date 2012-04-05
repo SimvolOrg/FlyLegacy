@@ -1650,7 +1650,8 @@ CShared3DTex *CTextureWard::AddSHX(CShared3DTex *shx ,char type)
 //	Return the shared objet as a reference to this texture
 //-----------------------------------------------------------------------------
 CShared3DTex *CTextureWard::GetM3DPodTexture(TEXT_INFO &txd)
-{ _snprintf(txd.path,FNAM_MAX,textMSK[txd.Dir],txd.name);
+{ char *dir = directoryTAB[txd.Dir];
+	_snprintf(txd.path,FNAM_MAX,"%s/%s",dir,txd.name);
 	//-------------------------------------------------------
   CShared3DTex *ref = RefTo3DTexture(txd);
   if   (ref)  return ref;
@@ -1667,7 +1668,8 @@ CShared3DTex *CTextureWard::GetM3DPodTexture(TEXT_INFO &txd)
 //-----------------------------------------------------------------------------
 CShared3DTex *CTextureWard::GetM3DSqlTexture(TEXT_INFO &txd)
 { //-- Make a key with ART directory ---------------------
-	_snprintf(txd.path,FNAM_MAX,textMSK[txd.Dir],txd.name);
+	char *dir = directoryTAB[txd.Dir];
+	_snprintf(txd.path,FNAM_MAX,"%s/%s",dir,txd.name);
   //------------------------------------------------------
 	CShared3DTex *ref = RefTo3DTexture(txd);
   if   (ref)  	return ref;

@@ -48,22 +48,10 @@
 #define SKETCH_WSEL  (11)
 #define SKETCH_ROBJ  (12)
 #define SKETCH_ABORT (13)
-#define SKETCH_SAVE2 (14)
-#define SKETCH_PODMS (15)
-//==========================================================================================
-// Type of object
-//==========================================================================================
-struct OSM_VALUE {
-	char *value;
-	U_INT type;
-};
-//==========================================================================================
-// Type of object
-//==========================================================================================
-struct OSM_TAG {
-	char      *tag;
-	OSM_VALUE *table;					// Value table
-};
+#define SKETCH_SAVEA (14)
+#define SKETCH_SAVEB (15)
+#define SKETCH_SAVEF (16)
+#define SKETCH_PODMS (17)
 
 //==========================================================================================
 class CFuiFileBox;
@@ -85,11 +73,15 @@ class CFuiSketch : public CFuiWindow
 	U_INT					seqNo;					// Sequence number
 	//-------------------------------------------------------------
 	U_INT					cntw;						// Waiting counter
-	U_INT					count;					// Vertices count
 	U_INT         nBLDG;					// Building number
 	SPosition     rpos;						// Reference position;
 	SPosition     geop;						// Building position
 	double				alti;						// Altitude
+	//--- Database parameters -------------------------------------
+	U_INT					qKey;						// QGT key
+	U_INT					Stamp;					// Object count
+	U_INT					objno;					// Object current
+	U_INT					count;					// Object saved
 	//-------------------------------------------------------------
 	SPosition     SW;							// South west corner
 	SPosition     NE;							// NE corner
@@ -103,11 +95,13 @@ class CFuiSketch : public CFuiWindow
 	U_CHAR				pack;						// Packing mode
 	//--- Dialogue button -----------------------------------------
 	Tag					  dial;
-	//-------------------------------------------------------------
-	char          rpdir;					// Replacing directory
+	//--- OSM object attributs ------------------------------------
+	U_INT					oprop;					// Object properties
 	U_INT					otype;					// Object type
 	char					tagn[64];				// Tag name
 	char					valn[64];				// Value name
+	//--- Replacing attributs for object --------------------------
+	OSM_REP       repPM;					// Replacement parameters
 	double				orien;					// Replacing orientation
 	//-------------------------------------------------------------
 	int					  time;
@@ -117,7 +111,6 @@ class CFuiSketch : public CFuiWindow
 	FILE_SEARCH   FPM;
 	char					spath[PATH_MAX];
 	char					sname[PATH_MAX];
-	char          smodl[PATH_MAX];
 	char          dbase[PATH_MAX];
 	char          rpack[PATH_MAX];
 	//-------------------------------------------------------------
@@ -152,9 +145,9 @@ class CFuiSketch : public CFuiWindow
 	//-------------------------------------------------------------
 	COption        optD;					// Option box
 	//--- Radian increment for One degre --------------------------
-	double					 oneD;
+	double				 oneD;
 	//-------------------------------------------------------------
-	Triangulator    *trn;					// Triangulator
+	CBuilder        *trn;					// CBuilder
 	D2_Session       ses;					// Session
 	D2_BPM          *bpm;					// Building parameters
 	//---Original context -----------------------------------------
@@ -218,7 +211,9 @@ public:
 	void	FlyOver();
 	void	BuildDBname();
 	U_INT	SaveStep1();
-	U_INT SaveStep2();
+	U_INT	SaveCheck();
+	U_INT SaveObject();
+	U_INT SaveEnd();
 	//--- mouse --------------------------------------------------
 	bool	MouseCapture(int mx, int my, EMouseButton bt);
 	//--- Keyboard -----------------------------------------------

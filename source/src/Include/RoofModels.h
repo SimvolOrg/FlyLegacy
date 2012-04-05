@@ -81,8 +81,8 @@ protected:
 	U_INT			tot;													// Total
 	//--- Building parameters -------------------------------------
 	D2_BPM   *bpm;
-	//--- Triangulator --------------------------------------------
-	Triangulator *trn;											// Pointer to
+	//--- CBuilder --------------------------------------------
+	CBuilder *trn;											// Pointer to
 	GeoTest  *geo;													// Geo tester
 	//---METHODS --------------------------------------------------
 public:
@@ -103,7 +103,7 @@ public:
 	U_INT		GetIdent(){	return ident;}
 	//-------------------------------------------------------------
 	void	StoreBase(Queue <D2_POINT> &inp, double H);
-	void	SetRoofData(D2_BPM *pm, Triangulator *tr);
+	void	SetRoofData(D2_BPM *pm, CBuilder *tr);
 	void	GenerateTriangles(std::vector<D2_TRIANGLE*> &out);
 	//--------------------------------------------------------------
 	void	SetRoofModNumber(U_CHAR n)		{rmno	= n;}
@@ -166,7 +166,7 @@ class  CRoofM4P : public CRoofModel
 public:
 	CRoofM4P(D2_ROOF_PM &pm);
 	void      GenerateRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out);
-	void			Texturing(Triangulator *,std::vector<D2_TRIANGLE*> &out);
+	void			Texturing(CBuilder *,std::vector<D2_TRIANGLE*> &out);
 };
 //====================================================================================
 //	Roof Model with 6 slopes
@@ -177,7 +177,7 @@ class  CRoofM6P : public CRoofModel
 public:
 	CRoofM6P(D2_ROOF_PM &pm);
 	void      GenerateRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &out);
-	void			Texturing(Triangulator *,std::vector<D2_TRIANGLE*> &out);
+	void			Texturing(CBuilder *,std::vector<D2_TRIANGLE*> &out);
 };
 
 //==============================================================================================

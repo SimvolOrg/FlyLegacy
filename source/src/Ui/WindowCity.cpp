@@ -36,60 +36,6 @@
 #include <vector>
 using namespace std;
 //==========================================================================================
-char *EndOSM = "***";
-//==========================================================================================
-//  List of AMENITY VALUES Tags
-//==========================================================================================
-OSM_VALUE amenityVAL[] = {
-	{"PLACE_OF_WORSHIP",	OSM_CHURCH},
-	{"POLICE",						OSM_POLICE},
-	{"FIRE_STATION",			OSM_FIRE},
-	{"TOWNHALL",					OSM_TOWNHALL},
-	{"SCHOOL",						OSM_SCHOOL},
-	{"COLLEGE",						OSM_COLLEGE},
-	{"HOSPITAL",					OSM_HOSPITAL},
-	{EndOSM,					0},									  // End of table
-};
-//==========================================================================================
-//  List of BUILDING VALUES Tags
-//==========================================================================================
-OSM_VALUE  buildingVAL[] = {
-		{"SCHOOL",						OSM_SCHOOL},
-		{EndOSM,					0},									// End of table
-};
-//==========================================================================================
-//  List of admitted Tags
-//==========================================================================================
-OSM_TAG TagLIST[] = {
-	{"AMENITY",			amenityVAL},
-	{"BUILDING",		buildingVAL},
-	{EndOSM,					0},									// End of table
-};
-//==========================================================================================
-//	Check for legible value
-//==========================================================================================
-int CheckValue(OSM_VALUE *tab,char *v)
-{	while (strcmp(tab->value,EndOSM) != 0)
-	{ if  (strcmp(tab->value,v) == 0)	return tab->type;
-		tab++;
-	}
-  //--- Unsupported value --------------------
-	return 0;
-}
-//==========================================================================================
-//	Check for legible tag
-//==========================================================================================
-int CheckTag(char *t ,char *v)
-{	OSM_TAG *tab = TagLIST;
-	while (strcmp(tab->tag,EndOSM) != 0)
-	{	if  (strcmp(tab->tag,t)   == 0)	return CheckValue(tab->table,v);
-		tab++;
-	}
-	//--- tag not supported --------------------
-	return 0;
-}
-
-//==========================================================================================
 //  Window to display building sketch
 //==========================================================================================
 CFuiSketch::CFuiSketch(Tag idn, const char *filename)
@@ -176,7 +122,7 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	//-----------------------------------------------	
 	ReadFinished();
 	//--- Open triangulation ------------------------
-	trn	= new Triangulator(&ses);
+	trn	= new CBuilder(&ses);
 	globals->trn = trn;
 	//-----------------------------------------------
 	ctx.prof	= PROF_SKETCH;
@@ -264,9 +210,8 @@ void CFuiSketch::FileSelected(FILE_SEARCH *fpm)
 			_snprintf(fnam,FNAM_MAX,"%s/%s",spath,sname);
 			break;
 		case 1:
-			strncpy(smodl,fpm->sfil,FNAM_MAX);
+			repPM.obr = Dupplicate(fpm->sfil,FNAM_MAX);
 			State = SKETCH_ROBJ;
-			rpdir = TEXDIR_OSM_MD;
 			break;
 	}
 
@@ -292,7 +237,8 @@ bool CFuiSketch::ParseBuilding()
 	char *ch = ReadTheFile(FP,txt);
 	_strupr(txt);
 	otype = OSM_BUILDING;
-	*tagn = *valn = *smodl = 0;
+	*tagn = *valn = 0;
+	 repPM.Clear();
 	//--- Check for a building number -------------------------
 	int nf = sscanf(ch,"START %d ID=%d ",&seqNo, &ident);
 	if (nf != 2)		return false;
@@ -366,15 +312,21 @@ bool CFuiSketch::ParseHOL(char *txt)
 bool CFuiSketch::ParseTAG(char *txt)
 {	int nf = sscanf(txt,"TAG ( %32[^ =)] = %32[^ )] ) ",tagn, valn);
 	if (nf != 2)		return false;
-	otype = CheckTag(tagn,valn);
+	GetOSMattributs(tagn,valn,&otype,&oprop);
 	return true;
 }
 //-------------------------------------------------------------------
 //	Parse replace directive
 //-------------------------------------------------------------------
 bool CFuiSketch::ParseReplace(char *txt)
-{ int nf = sscanf(txt,"Replace ( Z = %lf ) with %d:%s",&orien,&rpdir,smodl);
-	return (nf == 3);
+{ char objn[PATH_MAX];
+	int nf = sscanf(txt,"Replace ( Z = %lf ) with %s",&orien,objn);
+	if (nf != 2)  return false;
+	repPM.type	= otype;
+	repPM.prop	= oprop;
+	repPM.dir		= GetOSMfolder(otype);
+	repPM.obr		= Dupplicate(objn,FNAM_MAX);
+	return true;
 }
 //-------------------------------------------------------------------
 //	Abort
@@ -460,12 +412,13 @@ void CFuiSketch::EditBuilding()
 	return;
 }
 //-------------------------------------------------------------------
-//	Check fro replacement
+//	Check for replacement
 //-------------------------------------------------------------------
 void CFuiSketch::AutoReplace()
-{ char rd;
-	if (!ses.GetReplacement(otype,smodl,&rd))		return;
-	trn->ReplaceBy(smodl,rd);
+{ repPM.Clear();
+	repPM.type = otype;
+	if (!ses.GetReplacement(repPM))		return;
+	trn->ReplaceOBJ(&repPM,1);
 	return;
 }
 //-------------------------------------------------------------------
@@ -476,10 +429,10 @@ bool CFuiSketch::BuildObject()
 	bpm = trn->BuildOBJ(otype);
 	trn->SetTag(tagn,valn);
 	//--- Replace directive -----------------
-	if (*smodl)
-	{	bpm->sinA = sin(orien);
-		bpm->cosA = cos(orien);
-		trn->ReplaceBy(smodl,rpdir);
+	if (repPM.obr)
+	{	repPM.sinA = sin(orien);
+		repPM.cosA = cos(orien);
+		trn->ReplaceOBJ(&repPM,0);
 	}
 	//--- Auto replace ----------------------
 	else				AutoReplace();
@@ -662,7 +615,7 @@ void CFuiSketch::ChangeStyle()
 //-----------------------------------------------------------------------
 void	CFuiSketch::RemoveBuilding()
 {	if (NoSelection())	return;
-	int rm = trn->RemoveBuilding();
+	int rm = trn->RemoveOBJ();
 	nBLDG -= rm;
 	if (rm)	bpm = 0;
 	return;
@@ -673,7 +626,7 @@ void	CFuiSketch::RemoveBuilding()
 //-----------------------------------------------------------------------
 void CFuiSketch::ReplaceBuilding()
 {	if (NoSelection())	return;
-	trn->ReplaceBy(smodl,rpdir);
+	trn->ReplaceOBJ(&repPM,1);
 	State = SKETCH_PAUSE;
 	return;
 }
@@ -682,7 +635,7 @@ void CFuiSketch::ReplaceBuilding()
 //	NOTE:  We must be in edit mode
 //-----------------------------------------------------------------------
 void	CFuiSketch::ResetBuilding()
-{	bpm = trn->RestoreBuilding(&nBLDG);
+{	bpm = trn->RestoreOBJ(&nBLDG);
 	return;
 }
 //-----------------------------------------------------------------------
@@ -690,7 +643,7 @@ void	CFuiSketch::ResetBuilding()
 //-----------------------------------------------------------------------
 void CFuiSketch::RotateBuilding(double rad)
 {	if (NoSelection())	return;
-	trn->RotateObject(rad);
+	trn->RotateOBJ(rad);
 	return;
 }
 //-----------------------------------------------------------------------
@@ -709,7 +662,7 @@ bool CFuiSketch::MouseCapture(int mx, int my, EMouseButton bt)
 //	One object selected
 //-----------------------------------------------------------------------
 void CFuiSketch::OnePicking(U_INT No)
-{	bpm = trn->SelectBuilding(No);
+{	bpm = trn->SelectOBJ(No);
   if (0 == bpm)		return;
 	EditBuilding();
 	geop	= trn->GetPosition();
@@ -721,8 +674,8 @@ void CFuiSketch::OnePicking(U_INT No)
 //	Check if selected
 //-----------------------------------------------------------------------
 bool CFuiSketch::NoSelection()
-{	if (0 == bpm)													return true;
-	if ((0 == bpm->selc) && (1 == tera))	return true;
+{	if (0 == bpm)					return true;
+	if (1 == tera)				return true;
 	return false;
 }
 //-----------------------------------------------------------------------
@@ -747,26 +700,69 @@ U_INT CFuiSketch::SaveStep1()
 	_snprintf(txt,380,"Save in database %s ?", dbase);
 	dial = 0;
 	CreateDialogBox("PLEASE CONFIRM",txt,1);
-	return SKETCH_SAVE2;
+	return SKETCH_SAVEA;
+}
+//---------------------------------------------------------------------
+//  Check for answer 
+//---------------------------------------------------------------------
+U_INT CFuiSketch::SaveCheck()
+{	if (dial == '_no_')	return SKETCH_PAUSE;
+	//--- Init for database saving -------------------
+	Stamp	= ses.GetStamp();			// Total objects
+	objno	= 1;
+	qKey	= 0;
+	count = 0;
+	sqlp = globals->sqm->OpenSQLbase(dbase,ScriptCreateOSM);
+	int ok = sqlp->use;
+	return (ok)?(SKETCH_SAVEB):(SKETCH_SAVEF);
+}
+//---------------------------------------------------------------------
+//  Save one building at a time
+//---------------------------------------------------------------------
+U_INT CFuiSketch::SaveObject()
+{	char txt[128];
+	//--- OK for saving databaes -------------------
+	while (objno <= Stamp)
+		{	OSM_Object *obj = ses.GetObjectOSM(objno++);
+			if (0 == obj)	continue;
+			//---- Process QGT key first -----------
+			U_INT okey = obj->GetKey();
+		  if (qKey != okey) globals->sqm->UpdateOSMqgt(*sqlp,okey);
+			qKey	= okey;
+			count++;
+			//--- Get a strip of translated vertices --
+			GN_VTAB *tab = obj->StripToSupertile();
+			if (0 == tab)					continue;
+			globals->sqm->UpdateOSMobj(*sqlp,obj,tab);
+			delete [] tab;
+			//--- Display message ---------------------
+			_snprintf(txt,127," Saving object %05d. DONT CLOSE EDITOR",count);
+			DrawNoticeToUser(txt,2);
+			//--- Check for any error -----------------
+			char ok = sqlp->use;
+			return (ok)?(SKETCH_SAVEB):(SKETCH_SAVEF);
+		}
+	return SKETCH_SAVEF;
 }
 //---------------------------------------------------------------------
 // Save database Step 2:  Open or create database
 //---------------------------------------------------------------------
-U_INT CFuiSketch::SaveStep2()
+U_INT CFuiSketch::SaveEnd()
 { char *erm = "There was database error. Check OpenStreet.log";
 	char *okm = "DATABASE is now UPDATED ";
 	char *msg;
-	if (dial == '_no_')	return SKETCH_PAUSE;
-	sqlp = globals->sqm->OpenSQLbase(dbase,ScriptCreateOSM);
-	if (sqlp->use)	ses.SaveInDatabase(*sqlp);
+	
 	int OK = sqlp->use;
 	globals->sqm->CloseOSMbase(sqlp);
 	sqlp = 0;
 	msg = (OK)?(okm):(erm);
+	//------------------------------------------------
+	STREETLOG("Saved  %05d Buildings", count);
 	//--- Advise user --------------------------------
 	globals->fui->DialogError(msg,"CITY EDITOR");
 	return SKETCH_PAUSE;
 }
+
 //-----------------------------------------------------------------------
 //	Time slice
 //-----------------------------------------------------------------------
@@ -824,23 +820,33 @@ void CFuiSketch::TimeSlice()
 		case SKETCH_ABORT:
 				Close();
 				return;
+		//--- Check save answer --------------------
+		case SKETCH_SAVEA:
+				State = SaveCheck();
+				return;
+		//--- Save one building --------------------
+		case SKETCH_SAVEB:
+				State = SaveObject();
+				return;
 		//--- Save Database Step 1----------------
-		case SKETCH_SAVE2:
-				State = SaveStep2();
+		case SKETCH_SAVEF:
+				State = SaveEnd();
 				return;
 	}
 	return;
 }
 //-----------------------------------------------------------------------
-//	Collect all models
+//	Collect all models for the actual object type
 //-----------------------------------------------------------------------
 void CFuiSketch::CollectModels()
 {	if (NoSelection())	return;
+	repPM.type	= otype;
+	repPM.dir	= GetOSMfolder(otype);
 	FPM.userp	= 1;
 	FPM.close = 1;
 	FPM.sbdir = 0;
 	FPM.text  = "Select a Model";
-	FPM.dir   = "OpenStreet/Models";
+	FPM.dir   = GetOSMdirectory(otype);
 	FPM.pat		= "*.OBJ";
 	CreateFileBox(&FPM);
 	return;
@@ -1002,7 +1008,7 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 D2_Session::D2_Session()
 {	tr			= 0;
 	trn			= 0;
-	Stamp		= 0;
+	Stamp		= 1;
 	roof = new CRoofFLAT('fixe');
 	//--- Assign a default roof texture ------------------
 	rtex = new D2_TParam();
@@ -1013,6 +1019,7 @@ D2_Session::D2_Session()
 //-----------------------------------------------------------------
 D2_Session::~D2_Session()
 {	grpM.clear();
+	for (rp = repL.begin(); rp != repL.end(); rp++) delete (*rp).second;
 	repL.clear();
 	delete roof;
 	delete rtex;
@@ -1076,11 +1083,11 @@ bool D2_Session::ParseReplace(FILE *f, char *line)
 	strncpy(txt,line,127);
 	int nf	= sscanf_s(txt," Replace ( %63[^ ),] , %63[^ ),] ) with %63[^ ]",key,63,val,63,obj,63);
 	if (nf != 3)		return false;
-	//---------------------------------------------------------
-	U_INT type = CheckTag(key,val);
-	if (0 == type)	return false;
+	//--- Insert an entry in replacement list -----------------
+	OSM_REP *rpm = GetOSMreplacement(key, val, obj);
+	if (0 == rpm)	return false;
 	//--- Add one replacement ---------------------------------
-	std::pair <U_INT,std::string> p(type,obj);
+	std::pair <U_INT,OSM_REP*> p(rpm->type,rpm);
 	repL.insert(p);
 	return true;
 }
@@ -1171,22 +1178,27 @@ D2_TParam *D2_Session::GetRoofTexture(D2_Style *sty)
 }
 //------------------------------------------------------------------
 //	Get a replacement for object type
+//	NOTE:		When we replace the original object (otype) with an
+//					object from the model catalog, 
+//					we dont change the original property?
 //------------------------------------------------------------------
-bool D2_Session::GetReplacement(U_INT type, char *modl, char *rd)
-{	int nbr = repL.count(type);
+bool D2_Session::GetReplacement(OSM_REP &rpm)
+{	U_INT otype = rpm.type;
+	int nbr = repL.count(otype);
 	if (0 == nbr)		return false;
 	//--- Get range -------------------------------------
-	pair<multimap<U_INT,string>::iterator,
-			 multimap<U_INT,string>::iterator> 
-						R = repL.equal_range(type);
+	pair<multimap<U_INT,OSM_REP*>::iterator, 
+		   multimap<U_INT,OSM_REP *>::iterator> 
+			 R = repL.equal_range(otype);
 	int k = RandomNumber(nbr);
-	multimap<U_INT,string>::iterator rp;
 	//--- search the kth element ------------------------
+
 	for (rp = R.first; rp != R.second; rp++)
 	{	if (k-- > 0)	continue;
-		string  mdl = (*rp).second;	
-		strncpy(modl,mdl.c_str(),64);
-	*rd = TEXDIR_OSM_MD;
+		OSM_REP *rpp = (*rp).second;	
+		rpm.prop = rpp->prop;
+		rpm.dir  = rpp->dir;
+		rpm.obr  =  Dupplicate(rpp->obr,FNAM_MAX);
 		return true;
 	}
 	return false;
@@ -1216,19 +1228,19 @@ void D2_Session::GetBuildParameters(D2_BPM *p)
 	//--- check parameters -----------------
 	if (0 == sty) Abort("No Style found");
 	//--- Save parameters -------------------
-	Stamp++;
 	bpm->stamp  = Stamp;
 	bpm->group	= grp;
 	bpm->style	= sty;
 	bpm->flNbr		= grp->GetFloorNbr();
 	bpm->flHtr		= grp->GetFloorHtr();
 	bpm->mans			= sty->IsMansart();
+	Stamp++;
 	return;
 }
 //------------------------------------------------------------------
 //	Return building 
 //------------------------------------------------------------------
-OSM_Object *D2_Session::GetBuilding(U_INT No)
+OSM_Object *D2_Session::GetObjectOSM(U_INT No)
 {	std::map<std::string,D2_Group*>::iterator rg;
 	for (rg = grpM.begin(); rg != grpM.end(); rg++)
 	{	D2_Group   *grp = (*rg).second;
@@ -1266,7 +1278,7 @@ void D2_Session::Write(FILE *fp, U_INT cnt)
 	OSM_Object *bld = 0;
 
 	for (bno = 1; bno <= Stamp; bno++)
-	{	bld = GetBuilding(bno);
+	{	bld = GetObjectOSM(bno);
 		if (0 == bld)	continue;
 		bld->Write(fp);
 		wrt++;
@@ -1282,7 +1294,7 @@ void D2_Session::Write(FILE *fp, U_INT cnt)
 void D2_Session::UpdateCache()
 {	OSM_Object *obj;
 	for (U_INT k=1; k <= Stamp; k++)
-	{	obj = GetBuilding(k);
+	{	obj = GetObjectOSM(k);
 		if (obj) globals->tcm->AddToPack(obj);
 	}
 	return;
@@ -1297,7 +1309,7 @@ void D2_Session::SaveInDatabase(SQL_DB &db)
 	OSM_Object *obj = 0;
 	U_INT qkey = 0;
 	for (bno = 1; bno <= Stamp; bno++)
-	{	obj = GetBuilding(bno);
+	{	obj = GetObjectOSM(bno);
 		if (0 == obj)	continue;
 		//--- Check for QGT registering -----------
 		U_INT okey = obj->GetKey();

@@ -51,11 +51,21 @@
 #include "../Include/Ui.h"                 // sdk:
 //=============================================================================================
 class CFmtxMap;
-class Triangulator;
+class CBuilder;
+class OSM_Object;
 //=============================================================================================
 extern char *ReadTheFile(FILE *f, char *buf);
-extern char *textMSK[];
-extern char *textDIR[];
+extern char *directoryTAB [];
+extern char  replOBJ[];
+//=============================================================================================
+//	Directory number
+//=============================================================================================
+#define FOLDER_ART				(0)
+#define FOLDER_OSM_USER		(1)
+#define FOLDER_OSM_BLDG		(2)
+#define FOLDER_OSM_TREE		(3)
+#define FOLDER_OSM_LITE		(4)
+#define FOLDER_MAX        (5)
 //=============================================================================================
 //	Define APPLICATION PROFILE
 //	APPLICATION PROFILE is used by specifics windows like editors.
@@ -325,7 +335,7 @@ typedef struct {
 	//-------- Situation file ------------------------------------------
 	char                  sitFilename[PATH_MAX];  /// Filename of .SIT file to load
   //-------- Various global objects ----------------------------------
-	Triangulator					*trn;
+	CBuilder					*trn;
   CClock                *clk;           // Global clock
   CTimeManager          *tim;           // Time manager
   CCursorManager        *cum;           // Cursor manager           
