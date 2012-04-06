@@ -924,7 +924,6 @@ public:
 	bool  GetReplacement(OSM_REP &rpm);
 	//---------------------------------------------------------------
 	void	Write(FILE *fp, U_INT cnt);
-	void	SaveInDatabase(SQL_DB &db);
 	//---------------------------------------------------------------
 	void				 GetBuildParameters(D2_BPM *p);
 	OSM_Object  *GetObjectOSM(U_INT k);

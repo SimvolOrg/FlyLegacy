@@ -1299,32 +1299,4 @@ void D2_Session::UpdateCache()
 	}
 	return;
 }
-//------------------------------------------------------------------
-//	Save all buildings in database
-//	Building coordinate are adjusted relative to SuperTileCenter
-//------------------------------------------------------------------
-void D2_Session::SaveInDatabase(SQL_DB &db)
-{	U_INT bno = 1;
-	U_INT wrt = 0;
-	OSM_Object *obj = 0;
-	U_INT qkey = 0;
-	for (bno = 1; bno <= Stamp; bno++)
-	{	obj = GetObjectOSM(bno);
-		if (0 == obj)	continue;
-		//--- Check for QGT registering -----------
-		U_INT okey = obj->GetKey();
-		if (qkey != okey) globals->sqm->UpdateOSMqgt(db,okey);
-		qkey	= okey;
-		wrt++;
-		//--- Get a strip of translated vertices --
-		GN_VTAB *tab = obj->StripToSupertile();
-		if (0 == tab)			continue;
-		globals->sqm->UpdateOSMobj(db,obj,tab);
-		delete [] tab;
-		//--- Check for any error -----------------
-		if (db.use == 0)		return;
-	}
-	STREETLOG("Saved  %05d Buildings", wrt);
-	return;
-}
 //============================END OF FILE ================================================================================

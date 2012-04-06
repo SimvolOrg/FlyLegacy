@@ -1442,10 +1442,6 @@ void CAptObject::SetCameraPosition()
 //-----------------------------------------------------------------------------------------
 void CAptObject::RebuildLight(CRunway *rwy)
 {	CRwyGenerator(rwy,this,3);
-//	CRLP *lpf = rwy->GetRLP();
-//  lpf->Flush();
-//  SetRunwayData(rwy);
-//  BuildRunwayLight(rwy);
   return;
 }
 //-----------------------------------------------------------------------------------------

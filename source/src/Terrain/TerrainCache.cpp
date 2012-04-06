@@ -1306,7 +1306,7 @@ U_INT CmQUAD::WorldTileKey()
 //-------------------------------------------------------------------------
 //  Draw the ground detail in normal mode (no VBO)
 //-------------------------------------------------------------------------
-void CmQUAD::DrawNML()
+/*void CmQUAD::DrawNML()
 { //--- For final quad, draw the detail tile ---------------
 	CmQUAD *qd = qARR;
 	for (U_INT k = 0; k != qDim; k++,qd++)
@@ -1321,6 +1321,7 @@ void CmQUAD::DrawNML()
   if (!globals->tcm->PlaneQuad(this))		return;
   return Contour();
 }
+*/
 //-------------------------------------------------------------------------
 //  Draw the ground detail with list of indices
 //-------------------------------------------------------------------------
@@ -1906,7 +1907,6 @@ int CSuperTile::Draw3D(U_CHAR mod)
 {	//----------------------------------------------------------
   CWobj     *obj = 0;
   int        nbo = 0;
-//	glPushAttrib(GL_ALL_ATTRIB_BITS);
   white[3]       = alpha;
   glColorMaterial (GL_FRONT_AND_BACK, GL_DIFFUSE);
 	glColor4fv(white);
@@ -1968,7 +1968,6 @@ void CSuperTile::Add3DObject(CWobj *obj, char t)
 {	obtr	= t;	
 	if (obj->NoZB()) woQ.PutHead(obj);
   else             woQ.PutEnd(obj);
-
   return;
 }
 //=========================================================================
@@ -3129,16 +3128,15 @@ int C_QGT::Step3DO()
 	return pm;
 }
 //-------------------------------------------------------------------------
-//	Load Objects from OSM layer
-//	Load up to 8 Supertiles
+//	Load Objects from OSM layer (up to 1000 objects)
 //-------------------------------------------------------------------------
 int C_QGT::StepOSM()
 {	if (0 == osmDB)		return 0;
-	osmDB = globals->scn->LoadOSMLayer(osmDB,1000);
+	osmDB = globals->scn->LoadOSMLayer(osmDB,globals->dblim);
 	return (osmDB != 0);
 }
 //-------------------------------------------------------------------------
-//	Check for identity
+//	Check for identity (for debug only)
 //-------------------------------------------------------------------------
 bool C_QGT::AreWe(U_INT qx,U_INT qz)
 {	bool ok = (qx == xKey) && (qz == zKey);

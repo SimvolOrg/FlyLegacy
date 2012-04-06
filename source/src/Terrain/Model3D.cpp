@@ -361,7 +361,7 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   //--------------------------------------------------------------
   int lf    = 500;                        // Decoding factor default
   GetIniVar("Performances","ObjectLoadFactor",&lf);
-  dFactor   = lf;
+	globals->dblim   = lf;
   //--------------------------------------------------------------
 	int lq = 1;
 	GetIniVar("Performances","LookOnlyInSQL",&lq);
@@ -2495,11 +2495,6 @@ void C3Dworld::TimeSlice(float dT)
   for ( obj = woQ.GetFirst(); obj != 0; obj = woQ.GetNext(obj))
       { float dst = obj->RefreshDistance();
         if (dst > ftDET)     continue;
-        //---- verify water
-        if (globals->num_of_autogen) {
-          SPosition pos = obj->GetPosition ();
-          if (pos.alt < 215.0) continue; // DBL_EPSILON
-        }
         //---- detach from waiting queue and decode ----------
         prv  = woQ.Detach(obj);
         AssignToSuperTile(obj);

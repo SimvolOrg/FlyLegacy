@@ -741,8 +741,6 @@ class C3DMgr  {
   C_QGT     *qgt;                     // Current QGT
 	//----------------------------------------------------------
 	pthread_mutex_t		mux;					    // Mutex for lock
-  //---------Decoding parameters -----------------------------
-  int       dFactor;                  // Load factor
   //------------VOR OBJECT -----------------------------------
   CWobj     *oVOR;                    // VOR Object
   float      gVOR;                    // VOR ground
@@ -777,8 +775,6 @@ public:
   void      Draw(char tod);
   void      DrawObjectLights();
   void      SetDrawingState();
-  //------------------------------------------------------------
-  inline    int       GetLoadFactor()         {return dFactor;}
   //------------------------------------------------------------
   inline    void      ReleaseVOR()            {oVOR->ReleaseOBJ();}
   inline    void      EndOfQGT(C_QGT *qt)     {oVOR->EndOfQGT(qt);}

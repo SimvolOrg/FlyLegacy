@@ -375,7 +375,8 @@ void VPilot::PreStart(float dT)
 void VPilot::EnterTakeOff()
 {	State = VPL_TAKE_OFF;
   apil->Engage();
-	apil->EnterTakeOFF(1);
+	int er = apil->EnterTakeOFF(1);
+	if (er) TRACE ("Enter Take Off fail code %d",er);
 	gc		= 1;
 	return;
 }

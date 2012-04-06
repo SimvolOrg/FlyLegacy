@@ -1220,7 +1220,7 @@ int AutoPilot::BadSignal(char s)
 //-----------------------------------------------------------------------
 void AutoPilot::SpeedHold()
 {	ugaz &= globals->jsm->GasDisconnected();
-	if ((0 == ugaz) && (vStat == AP_VRT_TKO))		return Disengage(1);
+//	if ((0 == ugaz) && (vStat == AP_VRT_TKO))		return Disengage(1);
 	if ( 0 == ugaz)	return;
 	//--- Select speed to hold ---------------
 	cRAT = SelectSpeed();
@@ -2155,17 +2155,17 @@ bool AutoPilot::Engage()
 //	External interface to enter take-off mode
 //	Check all pre-conditions
 //-----------------------------------------------------------------------
-bool AutoPilot::EnterTakeOFF(char x)
+int AutoPilot::EnterTakeOFF(char x)
 {	wgrd  = mveh->WheelsAreOnGround();
 	rend	= globals->apm->GetDepartingEND();
-	if (vROT <= 0)						return false;					// Vrot present
-	if (0 == rend)						return false;					// Runway end position
-	if (!wgrd)								return false;					// Wheels on ground
-	if (0 == gazS)						return false;					// Gas controller
-  if (aSPD > 20)						return false;					// Speed lower then 20KTS
-	if (AP_LAT_ROL != lStat)	return false;					// Initial lateral mode
-	if (AP_VRT_VSP != vStat)	return false;					// Initial vertical mode
-	if (!mveh->AllEngineOn())	return false;					// All engine running
+	if (vROT <= 0)						return 1;					// Vrot present
+	if (0 == rend)						return 2;					// Runway end position
+	if (!wgrd)								return 3;					// Wheels on ground
+	if (0 == gazS)						return 4;					// Gas controller
+  if (aSPD > 25)						return 5;					// Speed lower then 20KTS
+	if (AP_LAT_ROL != lStat)	return 6;					// Initial lateral mode
+	if (AP_VRT_VSP != vStat)	return 7;					// Initial vertical mode
+	if (!mveh->AllEngineOn())	return 8;					// All engine running
 	//----- Engage Throttle control ----
 	SetGasControl(1);
 	ailS->Neutral();
@@ -2176,7 +2176,7 @@ bool AutoPilot::EnterTakeOFF(char x)
 	vStat = AP_VRT_TKO;
 	//--- externally controlled ---------
 	xCtl	= x;
-	return true;
+	return 0;
 }
 //-----------------------------------------------------------------------
 //	GPS interface to enter automatic mode

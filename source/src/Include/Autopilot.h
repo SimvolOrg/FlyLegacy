@@ -483,7 +483,7 @@ public:
 	//--- External interface --------------------------------------------
 	bool				Init();
 	bool 				Engage();
-	bool				EnterTakeOFF(char x);
+	int				  EnterTakeOFF(char x);
 	bool				EnterGPSMode();
 	void				ReleaseControl()		{xCtl = 0;}
 	void				SetWPTmode(double alt);

@@ -485,7 +485,7 @@ SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
 	if (0 == fn)								return 0;
 	SQL_DB *db = globals->sqm->OpenSQLbase((char*)fn,0);
 	if (0 == db)								return 0;
-	db->base	= 0;
+	db->base	= nb;
 	db->Ident = 0;
 	db->qgt		= qgt;
 	return db;
@@ -501,7 +501,7 @@ void	CSceneryDBM::CloseOSM(SQL_DB *db)
 //	Close OSM database 
 //------------------------------------------------------------------
 SQL_DB *CSceneryDBM::LoadOSMLayer(SQL_DB *db,U_INT lim)
-{ //--- compute limit ---(it may be over 63 it will stop anyway)---
+{ //--- Set limit ---(it may be over 63 it will stop anyway)---
 	db->limit		= lim;
 	U_INT nbs		= globals->sqm->GetSuperTileOSM(*db);
 	if (nbs == lim)			return db;
