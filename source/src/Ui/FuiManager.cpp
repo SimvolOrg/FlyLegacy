@@ -581,7 +581,7 @@ void CFuiManager::EnterDrawing()
   glDisable(GL_LIGHTING);								// No lighting
   glDepthMask(GL_FALSE);                // Do not write in depth buffer
   glDisable (GL_DEPTH_TEST);            // Dont check Z depth
-  glDisable (GL_COLOR_MATERIAL);
+  //glDisable (GL_COLOR_MATERIAL);
 	glEnable(GL_TEXTURE_2D);
   glPolygonMode(GL_FRONT,GL_FILL);
   glBindTexture(GL_TEXTURE_2D,xOBJ);

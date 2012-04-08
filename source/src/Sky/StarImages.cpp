@@ -676,10 +676,9 @@ void CStarImages::DrawConstellations (void)
     glDisable (GL_LIGHTING);
     glDisable (GL_CULL_FACE);
     glDisable (GL_TEXTURE_2D);
-    glDisable (GL_COLOR_MATERIAL);
+   // glDisable (GL_COLOR_MATERIAL);
     glEnable (GL_BLEND);
     glDisable (GL_DEPTH_TEST);
-//    glDisable (GL_FOG);
     glEnable (GL_LINE_SMOOTH);
     glLineWidth (1.0f);
 

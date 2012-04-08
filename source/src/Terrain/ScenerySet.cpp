@@ -488,6 +488,7 @@ SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
 	db->base	= nb;
 	db->Ident = 0;
 	db->qgt		= qgt;
+	SCENE("Mounting databse %s",fn);
 	return db;
 }
 //------------------------------------------------------------------
@@ -495,6 +496,7 @@ SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
 //------------------------------------------------------------------
 void	CSceneryDBM::CloseOSM(SQL_DB *db)
 {	if (db) globals->sqm->CloseOSMbase(db);
+  if (db) SCENE("Closing databse %s",db->name);
 	return;
 }
 //------------------------------------------------------------------

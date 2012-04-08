@@ -1810,7 +1810,7 @@ void CExternalLightManager::DrawSpotLights()
   //----- Draw individual lights--------------------------------
   glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
 	glDisable(GL_LIGHTING);
-	glDisable(GL_COLOR_MATERIAL);
+	//glDisable(GL_COLOR_MATERIAL);
   //--- Draw each ligth ----------------------------------------
   for (i=sLit.begin(); i!=sLit.end(); i++) {i->second->DrawAsSpot(); }
   //--- Restore GL state ---------------------------------------

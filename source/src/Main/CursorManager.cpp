@@ -508,7 +508,7 @@ void CCursorManager::Draw (void)
 
   glPushAttrib (GL_ENABLE_BIT);
   glDisable (GL_DEPTH_TEST);
-  glDisable (GL_COLOR_MATERIAL);
+ // glDisable (GL_COLOR_MATERIAL);
   glColor3f (1.0, 1.0, 1.0);
   glEnable (GL_TEXTURE_2D);
   cCur->Draw();

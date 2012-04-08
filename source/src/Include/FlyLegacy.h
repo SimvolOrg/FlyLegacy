@@ -2778,8 +2778,8 @@ struct  TEXT_INFO {
 	{	Dir			= 0;
 		key			= 0;
 		wd = ht = 0;
-		apx			= 0x00;
-		azp			= 0xFF;
+		apx			= 0xFF;
+		azp			= 0x00;
 		xOBJ		= 0;
 		name[0]	= 0;
 		mADR    = 0;

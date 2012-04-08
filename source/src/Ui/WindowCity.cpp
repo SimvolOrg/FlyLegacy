@@ -708,6 +708,7 @@ U_INT CFuiSketch::SaveStep1()
 U_INT CFuiSketch::SaveCheck()
 {	if (dial == '_no_')	return SKETCH_PAUSE;
 	//--- Init for database saving -------------------
+	TerrainHide();
 	Stamp	= ses.GetStamp();			// Total objects
 	objno	= 1;
 	qKey	= 0;

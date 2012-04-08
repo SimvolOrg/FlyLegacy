@@ -2551,7 +2551,6 @@ void C3Dworld::AddToWOBJ(CWobj *obj)
 void C3Dworld::Draw(U_CHAR tod)
 {  U_CHAR     mod = ('N' == tod)?(MODEL_NIT):(MODEL_DAY);
   //----------------------------------------------------------
-	globals->xobj	= 0;
   CSuperTile *sup = 0;
   for (U_INT No = 0; No != TC_SUPERT_NBR; No++) 
   { sup = qgt->GetSuperTile(No);

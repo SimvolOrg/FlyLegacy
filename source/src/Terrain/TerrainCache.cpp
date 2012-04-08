@@ -1513,6 +1513,7 @@ CSuperTile::CSuperTile()
 	qgt			= 0;
   sta3D   = TC_3D_OUTSIDE;
   white[0] = white[1] = white[2] = white[3] = 1;
+	dEye		= float(FN_FEET_FROM_MILE(100));
 	//------------------------------------------------
 	State   = TC_TEX_NEW;
 	visible = 0;
@@ -1894,6 +1895,7 @@ bool CSuperTile::Update()
   //--- Update LOD -------------------------------------------
   if (dEye > lim)		Outside3DRing();
 	else							Inside3DRing();
+	if (alpha <= 0)		return false;
 	bool OK = (woQ.NotEmpty()) || (batQ.NotEmpty());
 	return (OK);
 }
@@ -1908,8 +1910,9 @@ int CSuperTile::Draw3D(U_CHAR mod)
   CWobj     *obj = 0;
   int        nbo = 0;
   white[3]       = alpha;
-  glColorMaterial (GL_FRONT_AND_BACK, GL_DIFFUSE);
+	glColorMaterial (GL_FRONT, GL_DIFFUSE);
 	glColor4fv(white);
+	glEnable(GL_ALPHA_TEST);
 	//--------------------------------------------------------
 	bool OK = (globals->noOBJ == 0);
 	//----------------------------------------------------------
@@ -1930,9 +1933,10 @@ int CSuperTile::Draw3D(U_CHAR mod)
     glPopMatrix();
     nbo++;
   }
-	
+	glDisable(GL_ALPHA_TEST);
 	//--- Draw the OSM queue ----------------------------------
 	if (globals->noOSM)	return nbo;
+	glDisable(GL_ALPHA_TEST);
 	glColorMaterial (GL_FRONT, GL_DIFFUSE);
 	glPushMatrix();
 	CVector T;
@@ -1944,7 +1948,7 @@ int CSuperTile::Draw3D(U_CHAR mod)
 	for (prt = batQ.GetFirst(); prt != 0; prt= prt->Next())	   prt->Draw();
 	//----------------------------------------------------------
 	glPopMatrix();
-  return nbo;
+	return nbo;
 }
 //-----------------------------------------------------------------------------
 //  Add a line for each object to draw
@@ -2697,6 +2701,8 @@ C3DPart	*C_QGT::GetOSMPart(char No,char dir, char *ntx)
 	if (0 == sup)		return 0;
 	//--- Get texture reference --------------------------
 	TEXT_INFO txd;
+	txd.apx = 0xFF;
+	txd.azp = 0xFF;
 	txd.Dir = dir;
 	strncpy(txd.name,ntx,FNAM_MAX);
 	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
@@ -5096,8 +5102,8 @@ void TCacheMGR::Draw3DObjects()
 {	std::map<U_INT,C_QGT*>::iterator im;
 	glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER,0.4f);
- // glEnable(GL_BLEND);
-	glDisable(GL_BLEND);
+  glEnable(GL_BLEND);
+	glEnable(GL_COLOR_MATERIAL);
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glShadeModel(GL_SMOOTH);
 	glCullFace (GL_BACK);
@@ -5110,6 +5116,7 @@ void TCacheMGR::Draw3DObjects()
     if (qt->NotVisible())   continue;
     qt->w3D.Draw(cTod);                         // Draw for day or night
   }
+	glDisable (GL_COLOR_MATERIAL);
 	return;
 }
 

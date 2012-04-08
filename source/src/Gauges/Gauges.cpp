@@ -2157,7 +2157,7 @@ void  CDLLGauge::Draw (void)
   glPushAttrib (GL_ALL_ATTRIB_BITS);
   //glDepthMask(GL_FALSE);                // Do not write in depth buffer
   glDisable (GL_DEPTH_TEST);
-  glDisable (GL_COLOR_MATERIAL);
+  //glDisable (GL_COLOR_MATERIAL);
   glDisable(GL_TEXTURE_2D);
 //*************************************************************************
   int y_diff = globals->cScreen->Height - panel->GetHeight ();
