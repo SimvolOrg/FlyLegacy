@@ -1550,7 +1550,7 @@ C3DPart *CSuperTile::SearchOSMPart(CShared3DTex *ref)
 		if (nbv < globals->pakCAP)	return prt;
 		break;
 	}
-	//--- Allocate a new 3D part --------------------------
+	//--- Allocate a new 3D part ---------------------
 	prt	= new C3DPart();
 	prt->Reserve(ref); 
 	//--- Add a new part -----------------------------

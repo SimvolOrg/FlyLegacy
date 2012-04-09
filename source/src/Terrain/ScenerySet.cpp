@@ -500,7 +500,9 @@ void	CSceneryDBM::CloseOSM(SQL_DB *db)
 	return;
 }
 //------------------------------------------------------------------
-//	Close OSM database 
+//	Load OSM objects
+//		stop when frame limit is reached
+//		switch database until no more is detected
 //------------------------------------------------------------------
 SQL_DB *CSceneryDBM::LoadOSMLayer(SQL_DB *db,U_INT lim)
 { //--- Set limit ---(it may be over 63 it will stop anyway)---

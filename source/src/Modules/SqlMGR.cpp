@@ -623,6 +623,9 @@ void SqlOBJ::GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj)
 }
 //--------------------------------------------------------------------
 //	Read OSM layer
+//	NOTE:		Filter on Max Objects to load is done here by dividing the
+//					object identity by 100 and checking the rest against the
+//					percentile allowed
 //--------------------------------------------------------------------
 int SqlOBJ::GetSuperTileOSM(SQL_DB &db)
 { int		rep		= 0;
@@ -638,11 +641,12 @@ int SqlOBJ::GetSuperTileOSM(SQL_DB &db)
 	//----------------------------------------------------------------------
   while (SQLITE_ROW == sqlite3_step(stm))
     { db.Ident	 = sqlite3_column_int(stm,0);						// Last identity
+			U_INT  rst = db.Ident % 100;											// Modulo 100
+			if (rst >= globals->osmax)			continue;					// Eliminate
 			char   sNo = sqlite3_column_int(stm,3);						// Super tile
 			char	 dir = sqlite3_column_int(stm,4);						// Directory
 			char	*ntx = (char*)sqlite3_column_text(stm,5);		// Texture name
 			part = qgt->GetOSMPart(sNo,dir,ntx);
-			if (0 == part)									break;						// What???
 			//--- Add data to this part --------------------
 			int nbv		 = sqlite3_column_int(stm,6);						// Nber vertices
 			GN_VTAB  *src = (GN_VTAB*) sqlite3_column_blob(stm,8);

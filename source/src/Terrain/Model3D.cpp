@@ -362,6 +362,12 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   int lf    = 500;                        // Decoding factor default
   GetIniVar("Performances","ObjectLoadFactor",&lf);
 	globals->dblim   = lf;
+	//--------------------------------------------------------------
+	int osmax = 100;
+	GetIniVar("Performances","MaxObjectToLoad",&osmax);
+	if (osmax < 1)		osmax = 1;
+	if (osmax > 100)	osmax	= 100;
+	globals->osmax = osmax;
   //--------------------------------------------------------------
 	int lq = 1;
 	GetIniVar("Performances","LookOnlyInSQL",&lq);
@@ -1296,6 +1302,7 @@ int CWobj::Read(SStream *st,Tag tag)
   case 'iang':
     ReadVector(&oAng,st);
     oAng.y = -RadToDeg(oAng.y);
+		roty   = (oAng.y == 0)?(0):(1);
     return TAG_READ;
 
   case 'kmmd':

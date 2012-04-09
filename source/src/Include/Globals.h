@@ -382,7 +382,8 @@ typedef struct {
   float             ftLD1;              // 3D limit for LOD1 (1/2)
   float             ftLD2;              // 3D limit for LOD2 (1/4)
   float             ftLD3;              // 3D limit for LOD3 (1/8)
-	U_INT							dblim;							// Object load factor form DB
+	U_INT							dblim;							// Object load factor from DB
+	U_INT							osmax;							// Maximum osm object loaded
   //------- Default fonts  -------------------------------------------
   SFonts            fonts;
   //-------- Default logs  -------------------------------------------
