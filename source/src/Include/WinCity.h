@@ -73,7 +73,6 @@ class CFuiSketch : public CFuiWindow
 	U_INT					seqNo;					// Sequence number
 	//-------------------------------------------------------------
 	U_INT					cntw;						// Waiting counter
-	U_INT         nBLDG;					// Building number
 	SPosition     rpos;						// Reference position;
 	SPosition     geop;						// Building position
 	double				alti;						// Altitude
@@ -92,11 +91,10 @@ class CFuiSketch : public CFuiWindow
 	U_CHAR        wait;						// Waiting terrain
 	U_CHAR				edit;						// Edit step
 	U_CHAR        wfil;						// Waiting file
-	U_CHAR				pack;						// Packing mode
+	U_CHAR        grnd;						// Altitude option
 	//--- Dialogue button -----------------------------------------
 	Tag					  dial;
 	//--- OSM object attributs ------------------------------------
-	U_INT					oprop;					// Object properties
 	U_INT					otype;					// Object type
 	char					tagn[64];				// Tag name
 	char					valn[64];				// Value name
@@ -183,6 +181,7 @@ public:
 	U_INT	GotoReferencePosition();
 	U_INT	HereWeAre();
 	U_INT	OneBuilding();
+	void	ShowStyle();
 	//--- Terrain ------------------------------------------------
 	U_INT	TerrainView();
 	U_INT	TerrainHide();
@@ -197,8 +196,8 @@ public:
 	//--- Actions ------------------------------------------------
 	bool	EditError();
 	void	ChangeStyle();
-	void	RemoveBuilding();
-	void	ResetBuilding();
+	void	RemoveObject();
+	void	RestoreObject();
 	void	RotateBuilding(double sa);
 	void	ReplaceBuilding();
 	//--- Picking object -----------------------------------------

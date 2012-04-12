@@ -29,6 +29,21 @@
 #include "../Include/fileparser.h"
 #include <math.h>
 //===================================================================================
+//	Vector Table to build Objects
+//===================================================================================
+CBuilder::buildCB osmCB[] = {
+	0,														// Not an object
+	&CBuilder::MakeBLDG,					// OSM_BUILDING		(1)
+	&CBuilder::MakeBLDG,					// OSM_CHURCH			(2)
+	&CBuilder::MakeBLDG,					// OSM_POLICE			(3)
+	&CBuilder::MakeBLDG,					// OSM_FIRE_STA		(4)
+	&CBuilder::MakeBLDG,					// OSM_TOWNHALL		(5)
+	&CBuilder::MakeBLDG,					// OSM_SCHOOL			(6)
+	&CBuilder::MakeBLDG,					// OSM_COLLEGE		(7)
+	&CBuilder::MakeBLDG,					// OSM_HOSPITAL		(8)
+	0,														// OSM_TREE				(9)
+	&CBuilder::MakeLITE,					// OSM_LIGHT     (10)
+};
 //===================================================================================
 //	UNIT CONVERTER 
 //===================================================================================
@@ -280,7 +295,6 @@ CBuilder::CBuilder(D2_Session *s)
 //-------------------------------------------------------------------
 CBuilder::~CBuilder()
 {	Clean();
-	if (remB)		delete remB;
 	//--- clear building list ---------------------------
 	//	Individual buildings are deleted from D2_Group
 	globals->Disp.Clear(PRIO_ABSOLUTE);
@@ -296,42 +310,22 @@ int CBuilder::TimeSlice(float dT,U_INT frame)
 //	Drawing interface
 //===================================================================
 //-------------------------------------------------------------------
-//	Draw all groups 
+//	Draw all groups  : DrawMarks is called from camera for picking mode 
+//											DO NOT CHANGE THE NAME
 //-------------------------------------------------------------------
 void CBuilder::DrawMarks()
-{	std::map<std::string,D2_Group*> grp = session->GetGroups();
-	std::map<std::string,D2_Group*>::iterator rp;
-
-	for (rp = grp.begin(); rp != grp.end(); rp++)
-	{	D2_Group *gpp = (*rp).second;
-		gpp->DrawBuilding();	}
-	return;
-}
+{	return session->Draw();	}
 //-------------------------------------------------------------------
 //	Draw Interface 
 //-------------------------------------------------------------------
 void CBuilder::Draw()
-{	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	//glDisable(GL_LIGHTING);
-	glEnable(GL_TEXTURE_2D);
-	glColor3f(255,255,255);
-	//--- Set client state  ------------------------------------------
-	glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glFrontFace(GL_CCW);
-	//----------------------------------------------------------------
-  char d1 = 0;
+{	char d1 = 0;
 	if (dop.Has(TRITOR_DRAW_FILL))	FillMode();
 	else														LineMode();
 	//--- Draw current mode ------------------------------------------
 	if (dMOD == 1)	DrawMarks();
-	else	
+	else
 	if (osmB)	osmB->DrawLocal();
-	//--- Reset attributes -------------------------------------------
-	glPopClientAttrib();
-	glPopAttrib();
 	return;
 }
 //-------------------------------------------------------------------
@@ -359,7 +353,7 @@ int CBuilder::FillMode()
 //-------------------------------------------------------------------
 //	Add a new vertex
 //-------------------------------------------------------------------
-void CBuilder::AddVertex(double x, double y)
+void CBuilder::AddVertex(char a, double x, double y)
 {	double xa   = FN_ARCS_FROM_DEGRE(x);
 	double ya   = FN_ARCS_FROM_DEGRE(y);
 	D2_POINT *p = new D2_POINT(xa,ya);
@@ -374,6 +368,10 @@ void CBuilder::AddVertex(double x, double y)
 	//--- Compute object barycenter --------------------
 	BDP.geop.lon	+= xa;
 	BDP.geop.lat  += ya;
+	if (0 == a)										return;
+	//--- Get terrain altitude -------------------------
+	GroundSpot lnd(xa,ya);
+  p->z = globals->tcm->GetGroundAt(lnd);
 	return;
 }
 //-------------------------------------------------------------------
@@ -432,7 +430,7 @@ void CBuilder::CheckAll()
 //-------------------------------------------------------------------
 //	Draw One 
 //-------------------------------------------------------------------
-void CBuilder::DrawSingle()
+void CBuilder::ModeSingle()
 {	dMOD = 0;
 	if (0 == osmB)	return;
 	osmB->Deselect();
@@ -442,7 +440,7 @@ void CBuilder::DrawSingle()
 //-------------------------------------------------------------------
 //	Draw all 
 //-------------------------------------------------------------------
-void CBuilder::DrawGroups()
+void CBuilder::ModeGroups()
 {	dMOD = 1;
 	if (0 == osmB)	return;
 	osmB->Deselect();
@@ -453,9 +451,22 @@ void CBuilder::DrawGroups()
 //-------------------------------------------------------------------
 void CBuilder::StartOBJ()
 {	Clean();
-	buildFN = &CBuilder::MakeBLDG;
 	return;
 }
+//-------------------------------------------------------------------
+//	Build a new object 
+//-------------------------------------------------------------------
+D2_BPM *CBuilder::BuildOBJ(U_INT type,char *T, char *V)
+{ otype			= type;
+	BDP.stamp	= session->GetNextStamp();
+	BDP.side	= extp.GetNbObj();
+	BDP.error = 0;
+	BDP.opt.Rep(propOSM[type]);								// initial property
+	BDP.error = ConvertInFeet();
+	OSM_Object *obj = 	new OSM_Object(type,T,V);
+  osmB			= obj;
+	GetSuperTileNo(&BDP.geop, &BDP.qgKey, &BDP.supNo);
+	return (this->*osmCB[type])(type);}
 //-------------------------------------------------------------------
 //	Rebuild if orientation error 
 //-------------------------------------------------------------------
@@ -478,31 +489,48 @@ void CBuilder::ReOrientation()
 //	Make a building
 //-------------------------------------------------------------------
 D2_BPM *CBuilder::MakeBLDG(U_INT tp)
-{	otype			= tp;
-	BDP.side	= extp.GetNbObj();
-	BDP.error = 0;
-	BDP.opt.Rep(0);								// No property yet
-	BDP.error = ConvertInFeet();
+{	osmB->RenderBLDG();
 	BDP.error = QualifyPoints();
 	if (BDP.error)		ReOrientation();
 	BDP.dlg		= dlg;
 	//--- Set generation parameters ---------
-	session->GetBuildParameters(&BDP);
-	D2_Style *sty = BDP.style;
-	D2_Group *grp = BDP.group;
-	BDP.style->AssignBPM(&BDP);
-	BDP.roofP		= session->GetRoofTexture(sty);
-	BDP.roofM		= grp->GetRoofModByNumber(BDP);
+	BDP.style = session->GetaStyle(&BDP);
+	SaveParam(BDP);
 	RiseBuilding();
 	//--------------------------------------
 	return &BDP;
 }
 //-------------------------------------------------------------------
-//	Add tag
+//	Init building parameters from style 
 //-------------------------------------------------------------------
-void CBuilder::SetTag(char *t, char *v)
-{	if (0 == osmB)	return;
-	osmB->SetTag(t,v);
+void CBuilder::SaveParam(D2_BPM &prm)
+{	D2_Style *sty = prm.style;
+  sty->AssignBPM(&prm);
+	if (0 == prm.flNbr)
+	{	D2_Group *grp = sty->GetGroup();
+		grp->SelectOneRoof(prm);
+		//--- Get everything in bpm ------------
+		prm.group	= grp;
+		prm.roofP	= session->GetRoofTexture(sty);
+		prm.roofM	= grp->GetRoofModByNumber(prm.mans);
+		prm.flNbr	= grp->GetFloorNbr();
+		prm.flHtr	= grp->GetFloorHtr();
+		prm.mans	= sty->IsMansart();
+//		prm.roofP->SetStyle(sty); 
+	}
+	//--- Save in object ----------------------
+	osmB->SetParameters(prm);
+	return;
+}
+//-------------------------------------------------------------------
+//	Make a Light row.  Compute light height from terrain
+//-------------------------------------------------------------------
+D2_BPM *CBuilder::MakeLITE(U_INT tp)
+{	osmB->Copy(BDP);
+	osmB->ReceiveQ(extp);
+	osmB->BuildLightRow(6);						// 6 meters above ground
+	session->AddLight(osmB);
+	return &BDP;
 }
 //-------------------------------------------------------------------
 //	Edit tag
@@ -525,8 +553,9 @@ void CBuilder::EditPrm(char *txt)
 //-------------------------------------------------------------------
 bool CBuilder::RiseBuilding()
 {	dlg	= BDP.dlg;
-	//--- Step 1: Create OSM object -----
-	CreateBuilding();
+	//--- Step 1: Save OSM parameters -----
+	//--- Save a copy of the base points -----------
+	osmB->ReceiveQ(extp);
 	//--- Step 2:  Triangulation --------
 	BDP.error = Triangulation();
 	//--- Step 3: Face orientation ----- 
@@ -543,11 +572,12 @@ bool CBuilder::RiseBuilding()
 }
 //-------------------------------------------------------------------
 //	Replace by a 3D object
-//	
+//	option or tells whether orientation is defined in rpp parameter
 //-------------------------------------------------------------------
 U_CHAR CBuilder::ReplaceOBJ(OSM_REP *rpp, char or)
-{	if (0 == osmB)			return 0;
-	if (0 == rpp->obr)	return 0;
+{	if (0 == osmB)							return 0;
+	if (0 == rpp->obr)					return 0;
+	if (!osmB->CanBeReplaced())	return 0;
 	if (or) {rpp->sinA = sinA; rpp->cosA = cosA; }
 	//TRACE("REPLACE BUILDING %d",BDP.stamp);
 	char *dir = directoryTAB[rpp->dir];
@@ -556,9 +586,9 @@ U_CHAR CBuilder::ReplaceOBJ(OSM_REP *rpp, char or)
 	fpar.SetDirectory(dir);
   fpar.Decode(rpp->obr,OSM_OBJECT);
 	C3DPart *prt = fpar.BuildOSMPart(rpp->dir);
-	if (0 == prt)				return 0;
+	if (0 == prt)							return 0;
 	//--- Change model parameters --------------
-	osmB->ChangePart(prt);
+	osmB->ReplacePart(prt);
 	return 1;
 }
 //-------------------------------------------------------------------
@@ -588,28 +618,15 @@ void CBuilder::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx)
 	BDP.style = sty;
 	if (0 == sty)		return;
 	D2_Group *grp = sty->GetGroup();
-	sty->SelectRoofNum(rftx);
 	grp->SetRoofModelNumber(rfmo);
 	//--- Set all parameters -------------------
 	BDP.group		= grp;
 	BDP.flNbr		= grp->GetFloorNbr();
 	BDP.flHtr		= grp->GetFloorHtr();
 	BDP.mans		= sty->IsMansart();
-	BDP.roofM		= 0;
-	return;
-}
-//-------------------------------------------------------------------
-//	Create OSM building 
-//-------------------------------------------------------------------
-void CBuilder::CreateBuilding()
-{ OSM_Object  *obj	= osmB;
-	if (0 == obj) obj =	new OSM_Object(otype);
-  osmB							= obj;
-	GetSuperTileNo(&BDP.geop, &BDP.qgKey, &BDP.supNo);
-	//TRACE("CREATE BUILDING %d",BDP.stamp);
-	obj->SetParameters(BDP);
-	//--- Save a copy of the base points -----------
-	osmB->ReceiveQ(extp);
+	BDP.roofM		= grp->GetRoofModByNumber(BDP.mans);
+	BDP.roofP   = sty->SelectRoofNum(rftx);
+//	BDP.roofP->SetStyle(sty);
 	return;
 }
 //-------------------------------------------------------------------
@@ -643,16 +660,20 @@ void CBuilder::SaveBuildingData()
 //	Edit the requested building
 //===================================================================
 //-----------------------------------------------------------------------
-//	Modify the style
+//	Modify the style (new Parameters are in the BDP structure)
 //-----------------------------------------------------------------------
-U_CHAR CBuilder::ModifyStyle()
-{	//--- deselect previous selection------------------
-	if (0 == osmB)		return 0;
-	BDP.opt.Raz(D2B_REPLACED);
-	osmB->SetParameters(BDP);
-	//---- Restore foot print -------------------------
-	osmB->Swap(extp);
+U_CHAR CBuilder::ModifyStyle(D2_Style *sty)
+{	if (0 == osmB)							return 0;
+	if(!osmB->CanBeModified())	return 0;
+  //--- check if style can be modified -------------
+  osmB->Swap(extp);
 	MakeSlot();
+	//--- change style -------------------------------
+	BDP.flNbr = 0;
+	BDP.style = sty;
+	BDP.opt.Raz(OSM_PROP_REPL);
+	SaveParam(BDP);
+	//---- Restore foot print -------------------------
 	RiseBuilding();
 	return 1;
 }
@@ -682,27 +703,25 @@ D2_BPM *CBuilder::SelectOBJ(U_INT No)
 //-----------------------------------------------------------------------
 //	Delete the current building
 //-----------------------------------------------------------------------
-int  CBuilder::RemoveOBJ()
+D2_BPM *CBuilder::RemoveOBJ()
 {	if (0 == osmB)		return 0;
-	if (remB)					delete remB;
 	remB		= osmB;
-	BDP.group->RemBuilding(remB);
+	osmB->Remove();
 	osmB		= 0;
-	return 1;
+	return 0;
 }
 //-----------------------------------------------------------------------
 //	Restore the last deleted building
 //-----------------------------------------------------------------------
-D2_BPM *CBuilder::RestoreOBJ(U_INT *cnt)
+D2_BPM *CBuilder::RestoreOBJ()
 {	if (0 == remB)			return &BDP;
 	BDP		= remB->GetParameters();
-	BDP.group->AddBuilding(remB);
 	if (osmB)	osmB->Deselect();
 	osmB	= remB;
+	osmB->Restore();
 	osmB->Select();
 	BDP.selc	= 1;
 	remB			= 0;
-	*cnt++;
 	return &BDP;
 }
 //----------------------------------------------------------------
@@ -711,9 +730,9 @@ D2_BPM *CBuilder::RestoreOBJ(U_INT *cnt)
 //			orientationmust be kept unchanged
 //----------------------------------------------------------------
 U_CHAR CBuilder::RotateOBJ(double rad)
-{	if (0 == osmB)													return 0;
+{	if (0 == osmB)							return 0;
 	//--- Set building orientation --------------------
-	if (!osmB->bpm.opt.Has(D2B_REPLACED))	  return 0;
+	if (!osmB->CanBeRotated())	return 0;
 	//------------------------------------------------
 	return osmB->IncOrientation(rad);
 }
@@ -744,7 +763,6 @@ char CBuilder::ConvertInFeet()
 		CVector feet = FeetComponents(geop,to,BDP.rdf);
 		pp->x		= feet.x;
 		pp->y		= feet.y;
-		pp->z		= 0;
 	}
 	return 0;
 }
@@ -1896,6 +1914,7 @@ int D2_Group::ValueGroup(D2_BPM *bpm)
 	val += ValueSurface (bpm->surf);
 	val += ValueSide    (bpm->side);
 	val += ValueLength  (bpm->lgx);
+	//TRACE("NB=%04d Quota=%0d VAL=%04d Groupe %s",objNB,quota,val,name);
 	return val;
 }
 //-----------------------------------------------------------------
@@ -1920,7 +1939,7 @@ D2_Style *D2_Group::GetStyle(char *nsty)
 //-----------------------------------------------------------------
 //	Select a roof  based on quota, mansard style and side number
 //-----------------------------------------------------------------
-U_INT D2_Group::GetOneRoof(D2_BPM &bpm)
+U_INT D2_Group::SelectOneRoof(D2_BPM &bpm)
 {	CRoofModel *rofm = roofsQ.GetFirst();
 	//--- check roof model -------------------
 	rmno	= 0;
@@ -1935,12 +1954,11 @@ U_INT D2_Group::GetOneRoof(D2_BPM &bpm)
 //-----------------------------------------------------------------
 //	Get a roof by number 
 //-----------------------------------------------------------------
-CRoofModel *D2_Group::GetRoofModByNumber(D2_BPM &bpm)
+CRoofModel *D2_Group::GetRoofModByNumber(char mans)
 {	CRoofModel *dfm = ssn->GetDefaultRoof();
 	if (0 == rmno)					return dfm;
   if (0 == roofM.size())	return dfm;
-	if (bpm.mans)						return dfm;
-	if (bpm.side > 4)				return dfm;
+	if (mans)								return dfm;
 	return roofM[rmno - 1];
 }
 
@@ -1966,10 +1984,7 @@ void D2_Group::DrawBuilding()
 {	std::map<U_INT,OSM_Object*>::iterator rp;
 	if (tREF) tREF->BindTexture();
 	for (rp = building.begin(); rp != building.end(); rp++)
-	{	OSM_Object *bld = (*rp).second;
-		if (bld != globals->osmS)		bld->Draw();
-		if (globals->clk->GetON())	bld->Draw();
-	}
+	{	(*rp).second->Draw();	}
 	return;
 }
 //-----------------------------------------------------------------
@@ -2178,7 +2193,7 @@ bool D2_Style::AddRoof(D2_TParam &p)
 	tp->AdjustFrom(p, this, Tw, Th);
 	roofT.push_back(tp);
 	rtexQ.PutLast(tp);
-	tp->SetRoofTexNumber(roofT.size() + 1);
+	tp->SetRoofTexNumber(roofT.size());
 	return true;
 }
 //----------------------------------------------------------------------
@@ -2223,10 +2238,12 @@ D2_TParam *D2_Style::GetRoofTexture()
 //----------------------------------------------------------------------
 //	Get a roof texture for generation 
 //----------------------------------------------------------------------
-void D2_Style::SelectRoofNum(U_INT rfno)
-{	if (rfno < roofT.size())	sText = roofT[rfno];
-	else											sText = 0;
-	return;
+D2_TParam *D2_Style::SelectRoofNum(U_INT rfno)
+{	U_INT dim = roofT.size();
+  if (0 == dim)	gtfo("D2_TParam error");
+  if (rfno >= dim)	rfno = dim - 1;
+	sText = roofT[rfno];
+	return sText;
 }
 //----------------------------------------------------------------------
 //	Compute the S,T texture coordinates for point pp

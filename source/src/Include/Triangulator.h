@@ -131,8 +131,6 @@ struct OSM_REP;
 #define TEXD2_HMOD_GFLOOR (1)
 #define TEXD2_HMOD_MFLOOR (2)
 #define TEXD2_HMOD_ZFLOOR (3)
-//---- Building options ----------------------------------------
-#define D2B_REPLACED  (0x01)
 //====================================================================================
 //	Building parameter
 //	
@@ -177,6 +175,7 @@ void Clear()
 		roofM	= 0;
 		roofP	= 0;
 		selc	= 0;
+		flNbr = 0;
 		geop.lat = geop.lon = geop.alt = 0;
 		lgx = lgy = 0;
 	};
@@ -563,7 +562,7 @@ public:
 	//-------------------------------------------------------------
 	void					SelectRoofTexture();
 	D2_TParam		 *GetRoofTexture();
-	void					SelectRoofNum(U_INT rfno);
+	D2_TParam    *SelectRoofNum(U_INT rfno);
 	//-------------------------------------------------------------
 	void      TexturePoint(D2_POINT *p, char tp, char fx,char hb = 0);			// Compute x texture coordinate
 	void			TextureSideWall(D2_TRIANGLE &T, char ft, char hb);
@@ -654,8 +653,8 @@ public:
 	//--------------------------------------------------------------
 	D2_Style    *GetStyle(char *nsty);
 	D2_Style    *GetOneStyle();
-	U_INT        GetOneRoof(D2_BPM &pm);
-	CRoofModel  *GetRoofModByNumber(D2_BPM &pm);
+	U_INT        SelectOneRoof(D2_BPM &pm);
+	CRoofModel  *GetRoofModByNumber(char mans);
 	U_INT				 GetRoofNumber()	{return rmno;}
 	//---------------------------------------------------------------
 	int				   ValueGroup(D2_BPM *pm);
@@ -670,6 +669,7 @@ public:
 	//--- Draw all buildings ---------------------------------------
 	void			DrawBuilding();
 	//--------------------------------------------------------------
+	D2_Group *Next()							{return next;}								
 	void			SetMansar(char m)		{mans = m;	}
 	//--------------------------------------------------------------
 	void			SetRoofModelNumber(U_INT n)		{rmno		= n;}
@@ -708,13 +708,13 @@ struct D2_BEVEL {
 //====================================================================================
 class CBuilder: public CExecutable, public Tracker {
 	//--- Callback vectors ----------------------------------------
+public:
 	typedef D2_BPM *(CBuilder::*buildCB)(U_INT);		// Build vector
+protected:
 	//--- ATTRIBUTES ----------------------------------------------
 	COption		dop;																// Drawing option
 	GeoTest	  geo;																// Geo tester
 	D2_Session *session;													// Current session
-	//--- Callback vectors -----------------------------------------
-	buildCB		buildFN;														// Build vector
 	//--------------------------------------------------------------
 	Queue <D2_POINT> extp;												// External contour
 	Queue <D2_POINT> hole;												// Hole contour
@@ -759,7 +759,7 @@ class CBuilder: public CExecutable, public Tracker {
 	char    trace;																// Trace indicator
 	char    vRFX;																	// Reflex indicator
 	char    hIND;																	// Hole indicator
-	char    face;																	// Type of face
+	char    rfu;																	// reserved
 	//----------------------------------------------------
 	U_INT   num;																	// Null number
 	U_INT		seq;																	// Sequence number
@@ -791,7 +791,7 @@ public:
 	void    	GetBevelVector(D2_POINT *pa, double dy,D2_POINT *dst);
 	int				SetBevelArray(D2_BEVEL &pm);
   //-----------------------------------------------------
-	void		AddVertex(double x, double y);
+	void		AddVertex(char a, double x, double y);
 	void		NewHole();
 	void		ForceStyle(char *nsty,U_INT rfmo, U_INT rftx);
 	char		ConvertInFeet();
@@ -809,11 +809,10 @@ public:
 	void		DrawMarks();
 	//--- Building management ----------------------------
 	U_INT		CountVertices();
-	void		CreateBuilding();
 	void		StartOBJ();
 	U_CHAR  ReplaceOBJ(OSM_REP *rp,char or);
-	int     RemoveOBJ();
-	D2_BPM *RestoreOBJ(U_INT *cnt);
+	D2_BPM *RemoveOBJ();
+	D2_BPM *RestoreOBJ();
 	U_CHAR	RotateOBJ(double rad);
 	D2_BPM *SelectOBJ(U_INT No);
 	void		SetOrientationOBJ();
@@ -860,24 +859,26 @@ public:
 	void		repD(U_INT p)							{dop.Rep(p);}
 	char    hasR(U_INT p)							{return dop.Has(p);}
 	D2_Style  *GetStyle()							{return BDP.style;}
-	void		SetIdent(U_INT No,U_INT id)		{BDP.stamp = No; BDP.ident = id;}
+	void		SetIdent(U_INT id)				{BDP.ident = id;}
+	//--- Drawing interface --------------------------------
+	void		ModeSingle();
+	void		ModeGroups();
 	//------------------------------------------------------
-	void		DrawSingle();
-	void		DrawGroups();
+	D2_BPM *MakeBLDG(U_INT type);
+	D2_BPM *MakeLITE(U_INT type);
 	//------------------------------------------------------
 	bool		RiseBuilding();
 	void		SaveBuildingData();
-	D2_BPM *MakeBLDG(U_INT type);
-	void		SetTag(char *t, char *v);
 	void		EditTag(char *txt);
 	void		EditPrm(char *txt);
 	void		EndOBJ();
+	void		SaveParam(D2_BPM &bpm);
 	//------------------------------------------------------
-	U_CHAR	ModifyStyle();
+	U_CHAR	ModifyStyle(D2_Style *sty);
 	void    ReOrientation();
 	D2_BPM *GetBuildingParameters()			{return &BDP;}
 	//--- Call back functions --------------------------------
-	D2_BPM *BuildOBJ(U_INT t)	{ return (this->*buildFN)(t);}
+	D2_BPM *BuildOBJ(U_INT tp, char *T, char *V);	
 	//--------------------------------------------------------
 };
 
@@ -886,18 +887,22 @@ public:
 //====================================================================================
 class D2_Session {
 	//--- ATTRIBUTES ------------------------------------------------
-	char  tr;																// Trace indicator
-	char  name[64];													// Session name
+	char  tr;																	// Trace indicator
+	char  name[64];														// Session name
+	//--- Street lights queue ---------------------------------------
+	std::map<U_INT,OSM_Object*> litQ;					// Light queue
+	std::map<U_INT,OSM_Object*>::iterator rl;	
 	//--- Groups parameters -----------------------------------------
-	Queue<D2_Group> groupQ;									// Group queue for selection
-	std::map<std::string,D2_Group*> grpM;		// Groups
+	Queue<D2_Group> groupQ;										// Group queue for selection
+	std::map<std::string,D2_Group*> grpQ;			// Groups
+	std::map<std::string,D2_Group*>::iterator rg;
 	//--- Replacement MAP -------------------------------------------
-	std::multimap<U_INT,OSM_REP*> repL;			// Replacement list
+	std::multimap<U_INT,OSM_REP*> repQ;				// Replacement list
   std::multimap<U_INT,OSM_REP*>::iterator rp;
 	//---------------------------------------------------------------
-	U_INT  fpos;														// File position
-	CBuilder    *trn;												// CBuilder
-	char   buf[256];												// Read buffer
+	U_INT			fpos;														// File position
+	CBuilder *trn;														// CBuilder
+	char			buf[256];												// Read buffer
 	//--- Default roof ----------------------------------------------
 	CRoofModel *roof;
 	D2_TParam  *rtex;
@@ -905,7 +910,6 @@ class D2_Session {
 	U_INT	gpn;															// Starting group number
 	U_INT	Stamp;														// Number of generated objects
 	//---------------------------------------------------------------
-	D2_BPM		 *bpm;												// Building parameters
 	D2_Group   *grp;												// Selected group
 	D2_Style   *sty;												// Selected style
 	//---METHODS ----------------------------------------------------
@@ -922,10 +926,12 @@ public:
 	bool  ParseStyles(FILE *f, char *ln);
 	//--- return a replacing object ---------------------------------
 	bool  GetReplacement(OSM_REP &rpm);
+	//--- Draw everything -------------------------------------------
+	void  Draw();
 	//---------------------------------------------------------------
-	void	Write(FILE *fp, U_INT cnt);
+	void	Write(FILE *fp);
 	//---------------------------------------------------------------
-	void				 GetBuildParameters(D2_BPM *p);
+	D2_Style    *GetaStyle(D2_BPM *p);
 	OSM_Object  *GetObjectOSM(U_INT k);
 	D2_Style    *GetStyle(char *nsty);
 	D2_TParam   *GetRoofTexture(D2_Style *sty);
@@ -934,17 +940,20 @@ public:
 	void		UpdateCache();
 	//---------------------------------------------------------------
 	bool		AddStyle(FILE *f,char *sn,char *gn);
-	//---------------------------------------------------------------
-	std::map<std::string,D2_Group*> &GetGroups();
+	void		AddLight(OSM_Object *L);
 	//---------------------------------------------------------------
 	inline void SetTrace(char t)	{tr = t;}
 	inline void BackTo(int p)			{fpos = p;}
 	inline char HasTrace()				{return tr;}
 	inline void SetTRN(CBuilder *t)	{trn = t;}
 	//---------------------------------------------------------------
+	bool				IsEmpty()					{ return (1 == Stamp);}
+	//---------------------------------------------------------------
 	CRoofModel *GetDefaultRoof()					{return roof;}
 	D2_TParam  *GetDefaultRoofTexture() 	{return rtex;}
 	U_INT       GetStamp()								{return Stamp;}
+	U_INT				GetNextStamp()						{return Stamp++;}
+	U_INT				GetNbObject()							{return (Stamp-1);}
  };
 
 //============================= END OF FILE ======================================================

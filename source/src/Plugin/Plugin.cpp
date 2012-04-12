@@ -248,7 +248,7 @@ CPluginMain::~CPluginMain()
 //----------------------------------------------------------------
 int CPluginMain::On_LoadPlugins (void) const
 {			  CExecutable *exe = (CExecutable*)this;
-        globals->Disp.Enter(exe, PRIO_SDK, DISP_EXCONT,  0);
+        globals->Disp.Enter(exe, PRIO_DLL, DISP_EXCONT,  0);
 
         m_dwa.clear ();
         //m_dll.clear ();

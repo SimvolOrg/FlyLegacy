@@ -488,32 +488,33 @@ SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
 	db->base	= nb;
 	db->Ident = 0;
 	db->qgt		= qgt;
-	SCENE("Mounting databse %s",fn);
+	qgt->IncUser();
+	TRACE("Mounting database %s",fn);
 	return db;
 }
 //------------------------------------------------------------------
-//	Close OSM database 
+//	Open databases for this qgt
 //------------------------------------------------------------------
-void	CSceneryDBM::CloseOSM(SQL_DB *db)
-{	if (db) globals->sqm->CloseOSMbase(db);
-  if (db) SCENE("Closing databse %s",db->name);
+void CSceneryDBM::LoadBasesOSM(C_QGT *qgt)
+{ bool go = true;
+	int  nb = 0;
+	osmQ.Lock();
+	while (go)
+	{	SQL_DB *db = GetOSMbase(qgt,nb++);
+		if (0 == db)	break;
+		osmQ.PutEnd(db);
+	}
+	osmQ.Unlock();
 	return;
 }
 //------------------------------------------------------------------
-//	Load OSM objects
-//		stop when frame limit is reached
-//		switch database until no more is detected
+//	Supply next databse to load
 //------------------------------------------------------------------
-SQL_DB *CSceneryDBM::LoadOSMLayer(SQL_DB *db,U_INT lim)
-{ //--- Set limit ---(it may be over 63 it will stop anyway)---
-	db->limit		= lim;
-	U_INT nbs		= globals->sqm->GetSuperTileOSM(*db);
-	if (nbs == lim)			return db;
-	//--- change database -----------------------------
-	C_QGT *qgt	= db->qgt;
-	int nb			= db->base + 1;
-	globals->sqm->CloseOSMbase(db);
-	return GetOSMbase(qgt,nb);
+SQL_DB *CSceneryDBM::NextBaseOSM()
+{	osmQ.Lock();
+  SQL_DB *db = osmQ.Pop();
+	osmQ.Unlock();
+	return db;
 }
 //==============================================================================
 //	Scenery pack:  held all sceneries for a given QGT

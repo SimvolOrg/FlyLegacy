@@ -27,6 +27,7 @@
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainElevation.h"
 #include "../Include/TerrainTexture.h"
+#include "../Include/ScenerySet.h"
 #include "../Include/Fui.h"
 #include "../Include/3dMath.h"
 #include "../Include/sky.h"
@@ -224,22 +225,28 @@ void GetQTRfile(C_QGT *qgt,TCacheMGR *tcm)
 //  FILE THREAD LOOP
 //=================================================================================
 void *FileThread(void *p)
-{ C3DMgr    *m3d	= globals->m3d;
-  TCacheMGR *tcm	= (TCacheMGR*) p;
+{ C3DMgr      *m3d	= globals->m3d;
+	CSceneryDBM *scn	= globals->scn;
+  TCacheMGR   *tcm	= (TCacheMGR*) p;
+	char         thn  = tcm->GetThreadNumber();
   SqlTHREAD sql;												// Local instance of SQL manager
 	globals->elvDB	= sql.UseELV();
   C_QGT    *qgt		= 0;
-  C3Dmodel *mod		= 0;
-  globals->sql		= &sql;
   U_INT     key		= 0;
-  //--- Region parameters ----------------
+	//--- Declare first instance ----------------
+	if (0 == globals->sql)  globals->sql = &sql;
+	//--- Thread parameters ---------------------
+	pthread_cond_t  *cond = tcm->GetTHcond();
+	pthread_mutex_t *tmux = tcm->GetaMux();
+	TRACE("SQL Thread started");
+  //--- Region parameters --------------------
   REGION_REC  reg;
-  while (sql.IsRuning())
-    { pthread_cond_wait(tcm->GetTHcond(),tcm->GetTHmux());        // Wait for signal
+  while (tcm->RunThread())
+    { pthread_cond_wait(cond,tmux);						// Wait for signal
       //----Process load texture Queue first -------------------------------------
-      for (qgt = tcm->PopLoadTEX(); qgt != 0; qgt = tcm->PopLoadTEX())  TextureLoad(qgt);
+      for (qgt = tcm->PopLoadTEX(); (qgt != 0); qgt = tcm->PopLoadTEX())  TextureLoad(qgt);
       //----Process file Requests ------------------------------------------------
-      for (qgt = tcm->PopFileREQ(); qgt != 0; qgt = tcm->PopFileREQ())
+      for (qgt = tcm->PopFileREQ(); (qgt != 0); qgt = tcm->PopFileREQ())
           {     switch (qgt->GetReqCode()) {
                     case TC_POD_QTR:
                       GetQTRfile(qgt,tcm);
@@ -247,7 +254,7 @@ void *FileThread(void *p)
                     case TC_SQL_ELV:
                       reg.qgt = qgt;
                       reg.key = qgt->FullKey();
-                      sql.GetQgtElevation(reg,ELVtoCache);
+											sql.GetQgtElevation(reg,ELVtoCache);
                       qgt->PostIO();
                       continue;
                     case TC_REQ_TRN:
@@ -260,20 +267,27 @@ void *FileThread(void *p)
 
                 } // end of switch
           }
-      //----Process 3DModel requests ----------------------------------------------
+      //--- Process 3DModel requests ----------------------------------------------
+		  C3Dmodel *mod		= 0;
 			char *dir = "MODELS";
-      for (mod = m3d->ModelToLoad(); mod != 0; mod = m3d->ModelToLoad())
+      for (mod = m3d->ModelToLoad(); (mod != 0); mod = m3d->ModelToLoad())
       { char *mn = mod->GetFileName();
         if (!sql.SQLmod())          {mod->LoadPart(dir); mod->DecUser(); continue;}
 				if (!sql.GetM3Dmodel(mod))  {mod->LoadPart(dir); mod->DecUser(); continue;}
         //-------------------------------------------------------------------------
-//				mod->TracePart(0);
 				mod->Finalize();
         mod->DecUser();
       }
+			//--- Process OSM models requests--------------------------------------------
+			SQL_DB *db = 0;
+			for (db = scn->NextBaseOSM(); (db != 0); db = scn->NextBaseOSM())
+			{	globals->sqm->GetSuperTileOSM(*db);
+				globals->sqm->CloseOSMbase(db);
+			}
     }
 	//--- File thread is stopped ------------------
-	TRACE("FileThread STOP");
+	TRACE("FileThread %d STOP",thn);
+	pthread_mutex_unlock(tmux);
 	pthread_exit(0);
   return 0;
 }

@@ -921,29 +921,6 @@ void CAptObject::LocateGround()
 { CmQUAD *qdl = globals->tcm->GetTileQuad(glim.xmin,glim.zmin);
   CmQUAD *qdu = globals->tcm->GetTileQuad(glim.xmax,glim.zmax);
   MarkGround(glim);           // Mark ground tiles
-  //-----Compute bounding box absolute coordinates------------
-	/*
-  CVertex *sw = qdl->GetCorner(TC_SWCORNER);
-  CVertex *ne = qdu->GetCorner(TC_NECORNER);
-  double   x0 = sw->GetAbsoluteLongitude();
-  double   y0 = sw->GetWY();
-  double   x1 = ne->GetAbsoluteLongitude();
-  double   y1 = ne->GetWY();
-
-  //-----Compute extension in feet ------------------------
-  gBound.x = (x1 - x0) * FN_FEET_FROM_ARCS(1);
-  gBound.y = (y1 - y0) * FN_FEET_FROM_ARCS(1);
-  gBound.z = 0;
-  //-----Adjust to airport origin -----------------------------
-  x0       = LongitudeDifference(x0,Org.lon);
-  y0       = y0 - Org.lat;
-  x1       = LongitudeDifference(x1,Org.lon);
-  y1       = y1 - Org.lat;
-  //----Center coordinates -------------------------------------
-  center.x = (x0 + x1) * 0.5;               // X relative airport
-  center.y = (y0 + y1) * 0.5;               // Y relative airport
-  center.z = 0;                             // Z absolute elevation
-	*/
   return;
 }
 //---------------------------------------------------------------------------------

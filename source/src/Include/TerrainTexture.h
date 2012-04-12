@@ -365,7 +365,8 @@ public:
   U_INT   KeyForWater(U_CHAR res);
   U_INT   KeyForRunway(U_CHAR grnd,U_CHAR seg);
   U_INT   KeyForTaxiway(U_CHAR res);
-  GLuint  GetLiteTexture(U_CHAR No);
+	//----------------------------------------------------------
+  GLuint  GetLiteTexture(U_CHAR No)     {return LiOBJ[No];}
   //-----Inlines ---------------------------------------------
   inline  void    SetResolution(U_CHAR r) {Resn = r;}
   inline  U_CHAR  GetMaxRes(U_CHAR t)   {return MaxiRES[t];}
@@ -435,7 +436,6 @@ public:
   GLuint  GetTexOBJ(GLuint obj,int x,int y,GLubyte *tex,U_INT type);
   GLuint  GetRepeatOBJ(GLuint obj,U_CHAR res,GLubyte *tex);
   GLuint  GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex);
-  GLuint  GetLitOBJ(GLuint obj,U_INT dim, GLubyte *tex);
   GLuint  GetWatOBJ(CTextureDef *txn);
   void    GetSupOBJ(CSuperTile *sp);
   //----------------------------------------------------------

@@ -192,16 +192,18 @@ public:
 	int 		MoveAndTranslate(C3DPart *ps,SVector &T);
 	void		Append(TC_VTAB *tab, U_INT ofs, U_INT lg);
 	void		Append(GN_VTAB *tab, U_INT ofs,U_INT lg);
-	void		ExtendOSM(int nbv,GN_VTAB *src);
+	void		ExtendOSM(int nbv,GN_VTAB *src, int lay);
 	void		AllocateIND();
 	void		ExtendGTB(int nbv);
 	void		SQLstrip(int nbx,F3_VERTEX *V,F3_VERTEX *N,F2_COORD *T,int *X);
 	//-------------------------------------------------------------
 	void		AllocateW3dVTX(int nv);
 	void		AllocateOsmGVT(int nv);
+	void		AllocateOsmLIT(int nv);
 	void		DrawAsW3D();
 	void		DrawAsGVT();
 	void		DrawAsBIN();
+	void		DrawAsLIT();
 	//-------------------------------------------------------------
 	void		Draw()		{(this->*Rend)();}
 	//-------------------------------------------------------------
@@ -257,6 +259,8 @@ public:
 	inline void     SetZB(char z)						{nzb = z;}
 	//------------------------------------------------------------------
   inline int      GetLOD()                {return lod;}
+	//------------------------------------------------------------------
+	VREND						GetRendering()					{return Rend; }	
 };
 //=========================================================================================
 #define M3D_SMF 1

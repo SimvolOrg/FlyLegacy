@@ -113,8 +113,9 @@ public:
 	//--- OSM interface -----------------------------------------------------
 	SQL_DB *RegisterOSM(C_QGT *qt);
 	SQL_DB *GetOSMbase(C_QGT *qgt, int nb);
-	void		CloseOSM(SQL_DB *db);
-	SQL_DB *LoadOSMLayer(SQL_DB *db, U_INT lim);
+	//-----------------------------------------------------------------------
+	void		LoadBasesOSM(C_QGT *qgt);
+	SQL_DB *NextBaseOSM();
 	//--- For shared scenery pod --------------------------------------------
 	void		MountSharedPod(char *pat,char *fn);
   //  Load initial files --------------------------------------------------
@@ -138,6 +139,8 @@ protected:
 	char path [PATH_MAX];
 	std::map<U_INT,CSceneryPack*> sqgt;
 	std::map<U_INT,CSceneryPack*> sgbt;
+	//--- Queue of Scenery descriptor ----------------------------------------
+	qHDR	<SQL_DB> osmQ;
 };
 
 

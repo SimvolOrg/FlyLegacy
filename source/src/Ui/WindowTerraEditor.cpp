@@ -106,7 +106,7 @@ CFuiTED::CFuiTED(Tag idn, const char *filename)
 	ctx.prof = TED_PROF;
 	ctx.mode	= SLEW_RCAM;
 	rcam	= globals->ccm->SetRabbitCamera(ctx,RABBIT_S_AND_C);
-	rcam->SetTracker(trak, 0);
+	rcam->SetTracker(trak, this);
 }
 //----------------------------------------------------------------------
 //	Delete all resources

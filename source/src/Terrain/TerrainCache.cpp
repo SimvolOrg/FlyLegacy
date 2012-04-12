@@ -1500,7 +1500,8 @@ C_QGT *qgtQ::Pop()
 //  SUPER TILE
 //=========================================================================
 CSuperTile::CSuperTile()
-{ Next    = 0;
+{ //Next    = 0;
+	next		= 0;
   MiniH   = 0;
   MaxiH   = 0;
   Reso    = 0;
@@ -1509,6 +1510,7 @@ CSuperTile::CSuperTile()
   alpha   = 0;
   LOD     = 0;
 	obtr		= 0;
+	nobj		= 0;
   nbVTX   = 0;
 	qgt			= 0;
   sta3D   = TC_3D_OUTSIDE;
@@ -1542,9 +1544,9 @@ void CSuperTile::TraceEnd()
 //-------------------------------------------------------------------------
 // Seach a part with same reference as the given one
 //-------------------------------------------------------------------------
-C3DPart *CSuperTile::SearchOSMPart(CShared3DTex *ref)
+C3DPart *CSuperTile::SearchOSMPart(CShared3DTex *ref, char layer)
 {	C3DPart *prt = 0;
-	for (prt = batQ.GetFirst(); (prt != 0); prt = prt->Next())
+	for (prt = osmQ[layer].GetFirst(); (prt != 0); prt = prt->Next())
 	{	if (!prt->SameREF(ref))			continue;
 		U_INT nbv = prt->GetNBVTX();
 		if (nbv < globals->pakCAP)	return prt;
@@ -1554,7 +1556,8 @@ C3DPart *CSuperTile::SearchOSMPart(CShared3DTex *ref)
 	prt	= new C3DPart();
 	prt->Reserve(ref); 
 	//--- Add a new part -----------------------------
-	batQ.PutHead(prt);
+	osmQ[layer].PutHead(prt);
+	nobj++;
 	return prt;
 }
 //-------------------------------------------------------------------------
@@ -1566,10 +1569,12 @@ void CSuperTile::AddToPack(OSM_Object *obj)
 	double rdf = cos(rad);
 	SPosition pos	= obj->GetPosition();
 	CVector T  = FeetComponents(mPos, pos,rdf);
+	T.z       += obj->GetZCOR();
 	//--- Search a part with same texture ------
 	CShared3DTex *ref = obj->GetPartTREF();
 	C3DPart *p0 = obj->GetPart();
-	C3DPart *p1 = SearchOSMPart(ref);
+	char layer  = obj->GetLayer();
+	C3DPart *p1 = SearchOSMPart(ref,layer);
 	p1->ExtendWith(p0,T);
 	return;
 }
@@ -1896,7 +1901,7 @@ bool CSuperTile::Update()
   if (dEye > lim)		Outside3DRing();
 	else							Inside3DRing();
 	if (alpha <= 0)		return false;
-	bool OK = (woQ.NotEmpty()) || (batQ.NotEmpty());
+	bool OK = (woQ.NotEmpty()) || (nobj != 0);
 	return (OK);
 }
 //-------------------------------------------------------------------------
@@ -1905,7 +1910,7 @@ bool CSuperTile::Update()
 //	NOTE:  All ground objects that need polygon offset (noZB) must
 //				 be queued in front of queue
 //-------------------------------------------------------------------------
-int CSuperTile::Draw3D(U_CHAR mod)
+int CSuperTile::Draw3D(U_CHAR tod)
 {	//----------------------------------------------------------
   CWobj     *obj = 0;
   int        nbo = 0;
@@ -1918,7 +1923,7 @@ int CSuperTile::Draw3D(U_CHAR mod)
 	//----------------------------------------------------------
   for (obj = woQ.GetFirst(); ((obj!= 0) && OK); obj = woQ.GetNext(obj))
   { //----Translate to object origin -------------------------
-    obj->Update(mod);
+    obj->Update(tod);
     SVector tr;
     globals->tcm->RelativeFeetTo(*obj->ObjPosition(),tr);
     //--------------------------------------------------------
@@ -1927,26 +1932,33 @@ int CSuperTile::Draw3D(U_CHAR mod)
     if (obj->Rotate())	glRotated(obj->GetYRotation(),0,0,1);
     //---Draw object ----------------------------------------
 		if (obj->GetZB())		glDisable(GL_DEPTH_TEST);							//{pof = 0; glPolygonOffset(0,0);}
-    obj->DrawModel(mod,LOD);
+    obj->DrawModel(tod,LOD);
 		if (obj->GetZB())		glEnable(GL_DEPTH_TEST);
-    //-------------------------------------------------------
+    //--------------------------------------------------------
     glPopMatrix();
     nbo++;
   }
-	glDisable(GL_ALPHA_TEST);
-	//--- Draw the OSM queue ----------------------------------
+	//--- Draw the OSM object ----------------------------------
 	if (globals->noOSM)	return nbo;
+	//--- Environment for buildings ----------------------------
 	glDisable(GL_ALPHA_TEST);
 	glColorMaterial (GL_FRONT, GL_DIFFUSE);
+	glFrontFace(GL_CCW);
+	//----------------------------------------------------------
 	glPushMatrix();
 	CVector T;
 	globals->tcm->RelativeFeetTo(mPos,T);
 	glTranslated(T.x, T.y, T.z);		// Go to supertile center
-	//--- DRAW OSM Objects ------------------------------------
+	//--- DRAW OSM building layer ----------------------------
 	C3DPart *prt;
-	glFrontFace(GL_CCW);
-	for (prt = batQ.GetFirst(); prt != 0; prt= prt->Next())	   prt->Draw();
-	//----------------------------------------------------------
+	for (prt = osmQ[OSM_LAYER_BLDG].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsGVT();
+	//--- DRAW OSM Light layer   -----------------------------
+	if (tod == MODEL_NIT)
+	{	DebDrawOSMlight(lightOSM, alphaOSM);
+		for (prt = osmQ[OSM_LAYER_LITE].GetFirst(); prt != 0; prt= prt->Next())	 prt->DrawAsLIT();
+		EndDrawOSMlight();
+	}
+	//---  Restore matrix ------------------------------------
 	glPopMatrix();
 	return nbo;
 }
@@ -1977,6 +1989,7 @@ void CSuperTile::Add3DObject(CWobj *obj, char t)
 //=========================================================================
 //  QUEUE of SUPER TILES
 //=========================================================================
+
 CSupQueue::CSupQueue()
 { pthread_mutex_init (&mux,  NULL);
   First = 0;
@@ -1986,11 +1999,11 @@ CSupQueue::CSupQueue()
 //------------------------------------------------------------------
 //  Put item at end of Queue
 //------------------------------------------------------------------
-void CSupQueue::PutLast(CSuperTile *sp)
+void CSupQueue::PutEnd(CSuperTile *sp)
 { CSuperTile *end = Last;
-  sp->Next  = 0;
+  sp->Next(0);
   Last      = sp;
-  if (end)  end->Next = sp;
+  if (end)  end->Next(sp);
   if (0 == First) First = sp;
   NbSP++;
   return;
@@ -2000,8 +2013,8 @@ void CSupQueue::PutLast(CSuperTile *sp)
 //------------------------------------------------------------------
 CSuperTile *CSupQueue::Pop()
 { CSuperTile  *deb = First;
-  if (deb)  First = deb->Next;
-  if (deb)   deb->Next = 0;
+  if (deb)   First = deb->Next();
+  if (deb)   deb->Next(0);
   if (0 == First) Last = 0;
   if (deb) NbSP--;
   return deb;
@@ -2010,14 +2023,15 @@ CSuperTile *CSupQueue::Pop()
 //  Detach the current item and return the Next one
 //------------------------------------------------------------------
 CSuperTile *CSupQueue::Detach(CSuperTile *sp)
-{ CSuperTile *nex = sp->Next;
-  if (Prev) Prev->Next  = nex;
+{ CSuperTile *nex = sp->Next();
+  if (Prev) Prev->Next(nex);
   else      First       = nex;
   if (sp == Last) Last  = Prev;
-  sp->Next  = 0;
+  sp->Next(0);
   NbSP--;
   return nex;
 }
+
 //=========================================================================
 //  QUARTER GLOBAL TILE DESCRIPTOR
 //  Initialize the QGT descriptor
@@ -2080,7 +2094,6 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
 C_QGT::~C_QGT()
 { //--------Deregister Scenery ---------------------------
 	globals->scn->Deregister(qKey);
-	globals->scn->CloseOSM(osmDB);
 	//------------------------------------------------------
 	if (0 == qSTAT) FreeAllVertices();
   if (trn)  delete trn;
@@ -2696,7 +2709,7 @@ CSuperTile *C_QGT::GetSuperTile(U_INT No)
 //-------------------------------------------------------------------------
 //  Return OSM part with same texture reference 
 //-------------------------------------------------------------------------
-C3DPart	*C_QGT::GetOSMPart(char No,char dir, char *ntx)
+C3DPart	*C_QGT::GetOSMPart(char No,char dir, char *ntx, char layer)
 { CSuperTile *sup = (No > 63)?(0):(&Super[No]);
 	if (0 == sup)		return 0;
 	//--- Get texture reference --------------------------
@@ -2706,9 +2719,17 @@ C3DPart	*C_QGT::GetOSMPart(char No,char dir, char *ntx)
 	txd.Dir = dir;
 	strncpy(txd.name,ntx,FNAM_MAX);
 	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
-	C3DPart *prt = sup->SearchOSMPart(ref);
+	C3DPart *prt = sup->SearchOSMPart(ref, layer);
 	globals->txw->Free3DTexture(ref);
 	return prt;
+}
+//-------------------------------------------------------------------------
+//  Return OSM part with same texture reference 
+//-------------------------------------------------------------------------
+void C_QGT::OsmOK(char No)
+{	CSuperTile *sup = (No > 63)?(0):(&Super[No]);
+	sup->StBat(0);
+	return;
 }
 //-------------------------------------------------------------------------
 //  STEP 3:
@@ -3107,7 +3128,7 @@ int C_QGT::StepSUP()
           //----Put Super Tile in Far Queue ------
 					sp->RenderOUT();
 					sp->WantINQ();
-          FarsQ.PutLast(sp);
+					FarsQ.PutEnd(sp);
           sp++;
         }
   //----Compute QGT mid point and Z radius ------------------
@@ -3129,17 +3150,15 @@ int C_QGT::Step3DO()
 {	int pm = 0;
 	if (!globals->noOBJ) pm = tcm->Locate3DO(this);
 	//---Open OSM database ----------------------------------
-	osmDB = globals->scn->RegisterOSM(this);
 	Step = TC_QT_OS1;
 	return pm;
 }
 //-------------------------------------------------------------------------
-//	Load Objects from OSM layer (up to 1000 objects)
+//	Load Objects from OSM layer 
 //-------------------------------------------------------------------------
 int C_QGT::StepOSM()
-{	if (0 == osmDB)		return 0;
-	osmDB = globals->scn->LoadOSMLayer(osmDB,globals->dblim);
-	return (osmDB != 0);
+{	globals->scn->LoadBasesOSM(this);
+	return 0;
 }
 //-------------------------------------------------------------------------
 //	Check for identity (for debug only)
@@ -3191,7 +3210,7 @@ int C_QGT::PutOutside()
   CSuperTile   *sup = GetSuperTile(tx,tz);
   NearQ.Lock();
   CSuperTile   *sp  = NearQ.GetFirst();
-  NearQ.UnLock();
+  NearQ.Unlock();
   while (sp)
   { //--------Leaving inner circle ---------------------------
     if (sp != sup) {sp = NearQ.GetNext(sp); continue;}
@@ -3200,7 +3219,7 @@ int C_QGT::PutOutside()
     sp->RazNames();
     CSuperTile *nx = NearQ.Detach(sp);
 		sp->WantINQ();
-    FarsQ.PutLast(sp);
+		FarsQ.PutEnd(sp);
     tcm->FormatName(this,sp);
     return 0;
   }
@@ -3229,7 +3248,7 @@ int C_QGT::UpdateInnerCircle()
       txw->FreeAllTextures(sp);
       CSuperTile *nx = NearQ.Detach(sp);
 			sp->WantINQ();
-      FarsQ.PutLast(sp);
+			FarsQ.PutEnd(sp);
       sp  = nx;
       continue;
     }
@@ -3239,8 +3258,8 @@ int C_QGT::UpdateInnerCircle()
       sp->aRes = TC_MEDIUM; 
       CSuperTile *nx = NearQ.Detach(sp);
       LoadQ.Lock();
-      LoadQ.PutLast(sp);
-      LoadQ.UnLock();
+			LoadQ.PutEnd(sp);
+      LoadQ.Unlock();
       sp  = nx;
       continue;
     }
@@ -3250,8 +3269,8 @@ int C_QGT::UpdateInnerCircle()
       sp->aRes = TC_HIGHTR; 
       CSuperTile *nx = NearQ.Detach(sp);
       LoadQ.Lock();
-      LoadQ.PutLast(sp);
-      LoadQ.UnLock();
+			LoadQ.PutEnd(sp);
+      LoadQ.Unlock();
       sp  = nx;
       continue;
     }
@@ -3259,7 +3278,7 @@ int C_QGT::UpdateInnerCircle()
     sp = NearQ.GetNext(sp);
     
   }
-  NearQ.UnLock();
+  NearQ.Unlock();
   //------------------------------------------------------------
   //  When a Super Tile is entering the inner circle
 	//	Vertex buffer is allocated and the 
@@ -3277,8 +3296,8 @@ int C_QGT::UpdateInnerCircle()
 			sp->AllocateVertices(vbu);
       CSuperTile *nx = FarsQ.Detach(sp);
       LoadQ.Lock();
-      LoadQ.PutLast(sp);
-      LoadQ.UnLock();
+			LoadQ.PutEnd(sp);
+      LoadQ.Unlock();
       sp  = nx;
     }
   UnLockState();
@@ -3293,8 +3312,8 @@ int C_QGT::UpdateInnerCircle()
 //---------------------------------------------------------------------
 void C_QGT::EnterNearQ(CSuperTile *sp)
 { NearQ.Lock();
-  NearQ.PutLast(sp);
-  NearQ.UnLock();
+	NearQ.PutEnd(sp);
+  NearQ.Unlock();
   return;
 }
 //---------------------------------------------------------------------
@@ -3303,7 +3322,7 @@ void C_QGT::EnterNearQ(CSuperTile *sp)
 CSuperTile *C_QGT::PopLoad()
 { LoadQ.Lock();
   CSuperTile *sp = LoadQ.Pop();
-  LoadQ.UnLock();
+  LoadQ.Unlock();
   return sp;
 }
 //---------------------------------------------------------------------
@@ -3313,7 +3332,7 @@ void C_QGT::FlushTextures()
 { CSuperTile *sp = NearQ.Pop();
   while (sp)
   { txw->FreeAllTextures(sp);    
-    FarsQ.PutLast(sp);
+		FarsQ.PutEnd(sp);
     sp  = NearQ.Pop();
   }
  return;
@@ -3609,7 +3628,9 @@ TCacheMGR::TCacheMGR()
   //MEMORY_LEAK_MARKER ("objMGR");
   //------Get Night color----------------------------------------
   UpdateTOD();
-  //-----Init File Thread ------------------------------------
+  //-----Init File Thread ---------------------------------------
+	stop		 = 0;
+	tnbr		 = 0;
   int pmax = sched_get_priority_max (SCHED_OTHER);
   int pmin = sched_get_priority_min (SCHED_OTHER);
   int pmid = (pmin + pmax) >> 1;
@@ -3627,8 +3648,10 @@ TCacheMGR::TCacheMGR()
   pthread_attr_setschedparam (&attr, &param);
   //--- Create thread for file access ---------------------------
   thRUN   = 0;                              // Thread stop
-  int rs  = pthread_create (&thIden, &attr, FileThread, this);
-  if (0 != rs)  Abort("Cannot Create File Thread");
+  int r1  = pthread_create (&t1id, &attr, FileThread, this);
+  if (0 != r1)  Abort("Cannot Create File Thread");
+	int r2  = pthread_create (&t2id, &attr, FileThread, this);
+  if (0 != r2)  Abort("Cannot Create File Thread");
   pthread_attr_destroy(&attr);
   //-----Reserve a big bloc of memory to ensure continuity ------
   char *res = new char[2000000];
@@ -3647,7 +3670,7 @@ TCacheMGR::TCacheMGR()
 	globals->etrk.SetTCM(this);
 	//--- Enter in dispatcher -------------------------------------
 	globals->Disp.Enter(this, PRIO_TERRAIN, DISP_EXCONT, 1);
-TRACE("ENd TCACHE Constructor");
+TRACE("End TCACHE Constructor");
 }
 ///------------------------------------------------------------------------
 //  End of TCache: TODO 
@@ -3655,10 +3678,11 @@ TRACE("ENd TCACHE Constructor");
 //  delete all allocated resources
 //-------------------------------------------------------------------------
 TCacheMGR::~TCacheMGR()
-{ globals->sql->Stop();
-	pthread_cond_signal(&thCond);
-  pthread_join(thIden,0);
-  //---delete coordinate tables ----------------------
+{ stop = 1;
+	pthread_cond_broadcast(&thCond);
+  pthread_join(t1id,0);
+	pthread_join(t2id,0);
+  //---Delete coordinate tables ----------------------
   delete [] TexRES[TC_MEDIUM];
   delete [] TexRES[TC_HIGHTR];
   delete [] TexRES[TC_EPDRES];

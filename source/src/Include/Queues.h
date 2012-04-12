@@ -104,6 +104,147 @@ public:
   CmHead  *PopFromQ1();
   CmHead  *PopFromQ2();
 };
+//=====================================================================
+//	Generic class simple Queue
+//=====================================================================
+template <class T> class qHDR {
+protected:
+	//--- ATTRIBUTES ------------------------------------------
+	pthread_mutex_t		mux;					  // Mutex for lock
+	U_SHORT			NbOb;									// Item number
+	T	 *First;					              // First object in queue
+	T	 *Last;													// Last  object in queue
+	T  *Prev;
+	//--- METHODS ---------------------------------------------
+public:
+  qHDR();
+ ~qHDR();
+ //----------------------------------------------------------
+ void		 Clear();
+ T			*Pop();
+ //----------------------------------------------------------
+ void    PutEnd (T *obj);
+ void		 PutHead(T *obj);
+ void		 Append (qHDR &q);
+ U_INT   ReplaceWith(qHDR *q);
+ T      *Detach(T *obj);
+ void    Raz();
+ //----------------------------------------------------------
+ inline  void  Lock()  {pthread_mutex_lock   (&mux); }
+ inline  void  Unlock(){pthread_mutex_unlock (&mux); }
+ inline  T*  GetFirst()         {Prev  = 0; return First;}
+ inline  T*  GetLast()          {return Last; }
+ inline  T  *GetNext(T *obj)    {Prev = obj; return obj->Next();}
+ //-------------Not empty -----------------------------------------
+ bool    NotEmpty()            {return (First != 0);}
+ bool    IsEmpty()             {return (First == 0);}
+
+};
+//==========================================================================
+//  GENERIC SIMPLE QUEUE MANAGEMENT
+//==========================================================================
+template <class T> qHDR<T>::qHDR()
+{ pthread_mutex_init (&mux,0);
+	NbOb    = 0;
+  First   = 0;
+  Last    = 0;
+  Prev    = 0;
+}
+//----------------------------------------------------------
+//	Destory all elements
+//----------------------------------------------------------
+template <class T> qHDR<T>::~qHDR()
+{	Clear();	}
+//-----------------------------------------------------------------------
+//	Delete all objects in the queue
+//-------------------------------------------------------------------------
+template <class T> void qHDR<T>::Clear()
+{	T *obj		= 0;
+	for (obj	= Pop(); obj != 0; obj = Pop()) 	if (obj) delete obj;
+	return;
+}
+//---------------------------------------------------------------------
+//	Pop the first object from Queue
+//---------------------------------------------------------------------
+template <class T> T*	qHDR<T>::Pop()	
+{	T	*obj	  = First;															// Pop the first
+	if (obj)	{First  = obj->Next(); NbOb--; }		  // Update header
+	if (Last == obj)	  Last = 0;					          // Queue is now empty
+	if (obj)	obj->Next(0);
+	return obj;	}
+//-------------------------------------------------------------------------
+//  Insert Item at end
+//-------------------------------------------------------------------------
+template <class T> void qHDR<T>::PutEnd(T *obj)
+{ if (0 == obj)  return;
+  NbOb++;																			// Increment count
+	obj->Next(0);																// No next
+	T    *lo = Last;														// Get the last object
+	Last	   = obj;															// This is the last
+	if (lo == 0)	  First = obj;		            // Queue was empty
+  else		lo->Next(obj);		                  // Link previous to new item  
+  return;
+}
+//-----------------------------------------------------------------
+//  Set new item at first position
+//-----------------------------------------------------------------
+template <class T> void qHDR<T>::PutHead(T *obj)
+{ NbOb++;								                      // Increment count
+  obj->Next(First);                           // Link to next
+  First       = obj;                          // New First
+  if (0 == Last)  Last = obj;                 // Was empty
+  return;
+}
+//-------------------------------------------------------------------------
+//  Append Queue 2
+//-------------------------------------------------------------------------
+template <class T> void qHDR<T>::Append(qHDR<T> &q2)
+{ T *end = Last;
+  T *db2 = q2.First;
+  T *ed2 = q2.Last;
+  if (end)  end->Next(db2);
+  if (ed2)  Last        = ed2;
+  if (0 == First) First = db2;
+  NbOb += q2.NbOb;
+  //--------Clear Q2 -----------------------
+  q2.First = 0;
+  q2.Last  = 0;
+  q2.NbOb  = 0;
+  return;
+}
+//-------------------------------------------------------------------------
+//  Set a copy of the queue
+//-------------------------------------------------------------------------
+template <class T> U_INT  qHDR<T>::ReplaceWith(qHDR<T> *q2)
+{ int old = NbOb;
+  NbOb    = q2->NbOb ;
+  First   = q2->First;
+  Last    = q2->Last;
+  Prev    = 0;
+  return old;
+}
+//------------------------------------------------------------------
+//  Detach the current item (The NExt is still the next)
+//------------------------------------------------------------------
+template <class T> T *qHDR<T>::Detach(T *obj)
+{ T *nex = obj->Next();
+  if (Prev) Prev->Next(nex);
+  else      First       = nex;
+  if (obj == Last) Last = Prev;
+  obj->Next(0);
+  NbOb--;								                      // decrement count
+  return Prev;
+}
+//-------------------------------------------------------------------------
+//  Clear Queue
+//-------------------------------------------------------------------------
+template <class T> void  qHDR<T>::Raz()
+{ NbOb  = 0;
+  First = 0;
+  Last  = 0;
+  Prev  = 0;
+  return;
+}
 
 //============================END OF FILE =================================================
 #endif // QUEUES_H

@@ -94,10 +94,10 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	Box3->AddChild('nsty', nSTY,"Change Style");
 	//--- Delete object ---------------------------
 	dOBJ	= new CFuiButton(106, 4, 90, 20,this);
-	Box3->AddChild('delt', dOBJ,"Remove building");
+	Box3->AddChild('delt', dOBJ,"Remove object");
 	//--- Restore object ---------------------------
 	gOBJ	= new CFuiButton(106, 30, 90, 20,this);
-	Box3->AddChild('gobj', gOBJ,"Restore building");
+	Box3->AddChild('gobj', gOBJ,"Restore object");
 
 	//--- Create a group box 4 -------------------
 	Box4	= new CFuiGroupBox(10, 400, 200, 36, this);
@@ -189,7 +189,6 @@ CFuiSketch::~CFuiSketch()
 	strcpy(ds,"*END CityEDIT*");
 	STREETLOG("END CITY EDITOR");
 	globals->ccm->RestoreCamera(ctx);
-
 }
 //----------------------------------------------------------------------
 //	Override check profile
@@ -236,13 +235,14 @@ bool CFuiSketch::ParseBuilding()
   fsetpos( FP, &fpos); 
 	char *ch = ReadTheFile(FP,txt);
 	_strupr(txt);
-	otype = OSM_BUILDING;
-	*tagn = *valn = 0;
-	 repPM.Clear();
+	otype = OSM_BUILDING;		// Building by default
+	grnd	= 0;							// Ground option
+	*tagn = *valn = 0;			// Clear tag-value
+	 repPM.Clear();					// Clear replacement
 	//--- Check for a building number -------------------------
 	int nf = sscanf(ch,"START %d ID=%d ",&seqNo, &ident);
 	if (nf != 2)		return false;
-	trn->SetIdent(seqNo,ident); 
+	trn->SetIdent(ident); 
 	return ParseFile();
 }
 //-------------------------------------------------------------------
@@ -275,7 +275,6 @@ bool CFuiSketch::ParseStyle(char *txt)
 	U_INT rofm = 0;
 	U_INT rftx = 0;
 	int nf = sscanf_s(txt," Style %63s rofm = %d rftx = %d",nsty,63, &rofm, &rftx);
-	
 	if (nf == 3)  trn->ForceStyle(nsty,rofm,rftx);
 	return (nf == 3);
 }
@@ -292,7 +291,7 @@ bool CFuiSketch::ParseVTX(char *txt)
 	while (go)
 	{	int nf = sscanf(src," V ( %lf , %lf ) %n",&y,&x,&rd);
 		if (nf != 2)	return (nv != 0);
-		if (otype) trn->AddVertex(x,y);
+		if (otype) trn->AddVertex(grnd,x,y);
 		src += rd;
 		nv++;
 	}
@@ -312,7 +311,8 @@ bool CFuiSketch::ParseHOL(char *txt)
 bool CFuiSketch::ParseTAG(char *txt)
 {	int nf = sscanf(txt,"TAG ( %32[^ =)] = %32[^ )] ) ",tagn, valn);
 	if (nf != 2)		return false;
-	GetOSMattributs(tagn,valn,&otype,&oprop);
+	GetOSMattributs(tagn,valn,&otype);
+	if (otype == OSM_LIGHT) grnd = 1;
 	return true;
 }
 //-------------------------------------------------------------------
@@ -323,7 +323,6 @@ bool CFuiSketch::ParseReplace(char *txt)
 	int nf = sscanf(txt,"Replace ( Z = %lf ) with %s",&orien,objn);
 	if (nf != 2)  return false;
 	repPM.type	= otype;
-	repPM.prop	= oprop;
 	repPM.dir		= GetOSMfolder(otype);
 	repPM.obr		= Dupplicate(objn,FNAM_MAX);
 	return true;
@@ -390,7 +389,6 @@ U_INT CFuiSketch::GotoReferencePosition()
 	if (!ParseArea())	return Abort(er2,fnam);
 	//--- Go to reference position --------
 	cntw	= 0;
-	nBLDG	= 0;
 	geop  = rpos;
 	rcam->GoToPosition(rpos);			// Teleport
 	globals->Disp.ExecON (PRIO_ABSOLUTE);		// Allow Terrain
@@ -409,6 +407,8 @@ void CFuiSketch::EditBuilding()
 	//--------------------------------------------
 	trn->EditTag(txt);
 	nTAG->SetText(txt);
+	//--- Get object position --------------------
+	geop  = bpm->geop;
 	return;
 }
 //-------------------------------------------------------------------
@@ -426,8 +426,7 @@ void CFuiSketch::AutoReplace()
 //-------------------------------------------------------------------
 bool CFuiSketch::BuildObject()
 {	if (0 == otype)	return false;
-	bpm = trn->BuildOBJ(otype);
-	trn->SetTag(tagn,valn);
+	bpm = trn->BuildOBJ(otype,tagn,valn);
 	//--- Replace directive -----------------
 	if (repPM.obr)
 	{	repPM.sinA = sin(orien);
@@ -437,9 +436,7 @@ bool CFuiSketch::BuildObject()
 	//--- Auto replace ----------------------
 	else				AutoReplace();
 	//---------------------------------------
-	nBLDG++;
 	EditBuilding();
-	geop  = bpm->geop;
 	rcam->GoToPosition(geop);			// Teleport
 	if (bpm->error == 0)	rpos = geop;
 	return true;
@@ -448,7 +445,7 @@ bool CFuiSketch::BuildObject()
 //	View terrain action
 //-----------------------------------------------------------------------
 U_INT CFuiSketch::TerrainView()
-{	trn->DrawGroups();
+{	trn->ModeGroups();
 	rcam->GoToPosition(geop);			// Teleport
 	globals->Disp.ExecON (PRIO_ABSOLUTE);		// Allow Terrain
 	globals->Disp.ExecOFF(PRIO_TERRAIN);		// Stop after terrain
@@ -463,7 +460,7 @@ U_INT CFuiSketch::TerrainView()
 //	Hide terrain action
 //-----------------------------------------------------------------------
 U_INT CFuiSketch::TerrainHide()
-{	trn->DrawSingle();
+{	trn->ModeSingle();
 	globals->Disp.ExecOFF (PRIO_ABSOLUTE);				// No Terrain
 	globals->Disp.DrawOFF (PRIO_TERRAIN);					// No Terrain
 	tera  = 0;
@@ -497,9 +494,20 @@ U_INT CFuiSketch::HereWeAre()
 {	rcam->SetAngle(30,15);
 	globals->Disp.ExecOFF (PRIO_ABSOLUTE);		// No Terrain
 	globals->Disp.DrawOFF (PRIO_TERRAIN);		  // No Terrain
-	trn->DrawSingle();
+	trn->ModeSingle();
 	eofl	= 0;
 	return SKETCH_NEXT;
+}
+//-----------------------------------------------------------------------
+//	Show style on box
+//-----------------------------------------------------------------------
+void CFuiSketch::ShowStyle()
+{	//--- show style on list box ---------
+	D2_Style *sty = bpm->style;
+	if (0 == sty)		return;
+	U_INT     ns	= sty->GetSlotSeq();
+	sBOX.GoToItem(ns);
+	return;
 }
 //-----------------------------------------------------------------------
 //	Get next building from OFE file
@@ -511,9 +519,8 @@ U_INT	CFuiSketch::OneBuilding()
 		//--- build object -----------------
 		if (BuildObject())		break;
 	}
-	//--- show style on list box -------
-	U_INT ns = bpm->style->GetSlotSeq();
-	sBOX.GoToItem(ns);
+	//--- show style on list box ---------
+	ShowStyle();
 	return SKETCH_PAUSE;
 }
 //-----------------------------------------------------------------------
@@ -554,7 +561,8 @@ U_INT	CFuiSketch::ShowBuilding()
 //-----------------------------------------------------------------------
 U_INT CFuiSketch::EndLoad()
 {	char txt[128];
-	_snprintf(txt,127,"%05d buildings",nBLDG);
+	U_INT nbo = ses.GetNbObject();
+	_snprintf(txt,127,"%05d Objects",nbo);
 	nBAT->SetText(txt);
 	trn->EndOBJ();
 	fclose(FP);
@@ -563,7 +571,7 @@ U_INT CFuiSketch::EndLoad()
 	edit  = 1;
 	TerrainView();
 	rcam->GoToPosition(rpos);
-	rcam->MoveTo(10,1000);
+	rcam->MoveTo(10,1800);
 	globals->fui->CaptureMouse(this);
 	vTer	= "Zoom Building";
 	vTER->SetText(vTer);
@@ -591,21 +599,11 @@ bool CFuiSketch::EditError()
 //	Change the current style
 //-----------------------------------------------------------------------
 void CFuiSketch::ChangeStyle()
-{	if (0 == bpm)										return;
+{	if (0 == bpm)					return;
 	if ((tera) && (bpm->selc == 0))	return;
   EditError();
 	D2_Style *sty = (D2_Style*)sBOX.GetSelectedSlot();
-	D2_Group *grp = sty->GetGroup();
-	grp->GetOneRoof(*bpm);
-	sty->AssignBPM(bpm);
-	bpm->style		= sty;
-	bpm->group    = sty->GetGroup();
-	bpm->mans			= sty->IsMansart();
-	bpm->flNbr		= grp->GetFloorNbr();
-	bpm->flHtr		= grp->GetFloorHtr();
-	bpm->roofP		= ses.GetRoofTexture(sty);
-	bpm->roofM		= grp->GetRoofModByNumber(*bpm);
-	trn->ModifyStyle();
+	trn->ModifyStyle(sty);
 	EditError();
 	return;
 }
@@ -613,11 +611,9 @@ void CFuiSketch::ChangeStyle()
 //	Remove current building
 //	NOTE:  We must be in edit mode
 //-----------------------------------------------------------------------
-void	CFuiSketch::RemoveBuilding()
+void	CFuiSketch::RemoveObject()
 {	if (NoSelection())	return;
-	int rm = trn->RemoveOBJ();
-	nBLDG -= rm;
-	if (rm)	bpm = 0;
+	bpm = trn->RemoveOBJ();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -634,8 +630,8 @@ void CFuiSketch::ReplaceBuilding()
 //	Restore last deleted building
 //	NOTE:  We must be in edit mode
 //-----------------------------------------------------------------------
-void	CFuiSketch::ResetBuilding()
-{	bpm = trn->RestoreOBJ(&nBLDG);
+void	CFuiSketch::RestoreObject()
+{	bpm = trn->RestoreOBJ();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -665,9 +661,7 @@ void CFuiSketch::OnePicking(U_INT No)
 {	bpm = trn->SelectOBJ(No);
   if (0 == bpm)		return;
 	EditBuilding();
-	geop	= trn->GetPosition();
-	U_INT ns = bpm->style->GetSlotSeq();
-	sBOX.GoToItem(ns);
+	ShowStyle();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -675,8 +669,9 @@ void CFuiSketch::OnePicking(U_INT No)
 //-----------------------------------------------------------------------
 bool CFuiSketch::NoSelection()
 {	if (0 == bpm)					return true;
-	if (1 == tera)				return true;
-	return false;
+	if (0 == tera)				return false;
+	if (bpm->selc)				return false;
+	return true;
 }
 //-----------------------------------------------------------------------
 //	Fly Over the city
@@ -692,7 +687,7 @@ void CFuiSketch::FlyOver()
 // Save database Step 1
 //---------------------------------------------------------------------
 U_INT CFuiSketch::SaveStep1()
-{	if (0 == nBLDG)		return State;
+{	if (ses.IsEmpty())		return State;
 	//--- Save the file first ---------------------------
 	Write();
 	//--- Ask confirmation ------------------------------
@@ -725,7 +720,8 @@ U_INT CFuiSketch::SaveObject()
 	//--- OK for saving databaes -------------------
 	while (objno <= Stamp)
 		{	OSM_Object *obj = ses.GetObjectOSM(objno++);
-			if (0 == obj)	continue;
+			if (0 == obj)						continue;
+			if (!obj->IsValid())		continue;
 			//---- Process QGT key first -----------
 			U_INT okey = obj->GetKey();
 		  if (qKey != okey) globals->sqm->UpdateOSMqgt(*sqlp,okey);
@@ -904,14 +900,14 @@ void	CFuiSketch::Draw()
 void CFuiSketch::Write()
 {	char txt[128];
 	char *ed = "Area SW[%.2lf, %.2lf] NE[%.2lf, %.2lf] \n";
-	if (0 == edit)	return;
-	if (0 == nBLDG)	return;
+	if (0 == edit)			return;
+	if (ses.IsEmpty())	return;
 	FILE *fp = fopen(fnam,"w");
-	if (0 == fp)		return;
+	if (0 == fp)				return;
 	//--- Edit area --------------------------------
 	_snprintf(txt,127,ed,SW.lat, SW.lon, NE.lat, NE.lon);
 	fputs(txt,fp);
-	ses.Write(fp,nBLDG);
+	ses.Write(fp);
 	fclose(fp);
 	return;
 }
@@ -939,7 +935,6 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		//--- View terrain ---------------------
 		case 'vter':
 			if (wfil)	return;
-		//	if (0 == nBLDG)		return;
 			if (tera)	State = TerrainHide();
 			else			State = TerrainView();
 			return;
@@ -964,13 +959,11 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 			return;
 		//--- Delete building ------------------
 		case 'delt':
-			if (!edit)	return;
-			RemoveBuilding();
+			RemoveObject();
 			return;
 		//--- Restore building ------------------
 		case 'gobj':
-			if (!edit)	return;
-			ResetBuilding();
+			RestoreObject();
 			return;
 		//--- Replace building ------------------
 		case 'robj':
@@ -1019,9 +1012,11 @@ D2_Session::D2_Session()
 //	Destroy resources
 //-----------------------------------------------------------------
 D2_Session::~D2_Session()
-{	grpM.clear();
-	for (rp = repL.begin(); rp != repL.end(); rp++) delete (*rp).second;
-	repL.clear();
+{	grpQ.clear();
+	for (rp = repQ.begin(); rp != repQ.end(); rp++) delete (*rp).second;
+	repQ.clear();
+	for (rl = litQ.begin(); rl != litQ.end(); rl++)	delete (*rl).second;
+	litQ.clear();
 	delete roof;
 	delete rtex;
 }
@@ -1089,7 +1084,7 @@ bool D2_Session::ParseReplace(FILE *f, char *line)
 	if (0 == rpm)	return false;
 	//--- Add one replacement ---------------------------------
 	std::pair <U_INT,OSM_REP*> p(rpm->type,rpm);
-	repL.insert(p);
+	repQ.insert(p);
 	return true;
 }
 //-----------------------------------------------------------------
@@ -1103,7 +1098,7 @@ bool D2_Session::ParseGroups(FILE *f, char *line)
 	if (nf != 1)		return false;
 	//--- Allocate a new group -----------------
 	D2_Group *gp = new D2_Group(gnm,this);
-	grpM[gnm] = gp;
+	grpQ[gnm] = gp;
 	gp->Parse(f,this);
 	groupQ.PutLast(gp);
 	return true;
@@ -1128,8 +1123,8 @@ bool D2_Session::ParseStyles(FILE *f, char *line)
 //-----------------------------------------------------------------
 bool D2_Session::AddStyle(FILE *f,char *sn,char *gn)
 {	//--- Find group ----------------------------
-	std::map<std::string,D2_Group*>::iterator rg = grpM.find(gn);
-	if (rg == grpM.end())	return Stop01(sn);
+	rg = grpQ.find(gn);
+	if (rg == grpQ.end())	return Stop01(sn);
 	D2_Group *gp = (*rg).second;
 	D2_Style *sy = new D2_Style(sn,gp);
 	//--- Decode Style parameters ---------------
@@ -1159,8 +1154,7 @@ void D2_Session::Abort(char *msgr)
 //	Force a Style 
 //-----------------------------------------------------------------
 D2_Style *D2_Session::GetStyle(char *nsty)
-{	std::map<std::string,D2_Group*>::iterator rg;
-	for (rg = grpM.begin(); rg != grpM.end(); rg++)
+{	for (rg = grpQ.begin(); rg != grpQ.end(); rg++)
 	{	D2_Group *grp		= (*rg).second;
 		D2_Style *sty   = grp->GetStyle(nsty);
 		if (0 == sty)	continue;
@@ -1185,19 +1179,18 @@ D2_TParam *D2_Session::GetRoofTexture(D2_Style *sty)
 //------------------------------------------------------------------
 bool D2_Session::GetReplacement(OSM_REP &rpm)
 {	U_INT otype = rpm.type;
-	int nbr = repL.count(otype);
+	int nbr = repQ.count(otype);
 	if (0 == nbr)		return false;
 	//--- Get range -------------------------------------
 	pair<multimap<U_INT,OSM_REP*>::iterator, 
 		   multimap<U_INT,OSM_REP *>::iterator> 
-			 R = repL.equal_range(otype);
-	int k = RandomNumber(nbr);
+			 R = repQ.equal_range(otype);
+	int  k = RandomNumber(nbr);
 	//--- search the kth element ------------------------
 
 	for (rp = R.first; rp != R.second; rp++)
 	{	if (k-- > 0)	continue;
 		OSM_REP *rpp = (*rp).second;	
-		rpm.prop = rpp->prop;
 		rpm.dir  = rpp->dir;
 		rpm.obr  =  Dupplicate(rpp->obr,FNAM_MAX);
 		return true;
@@ -1205,45 +1198,49 @@ bool D2_Session::GetReplacement(OSM_REP &rpm)
 	return false;
 }
 //------------------------------------------------------------------
-//	Select all parameters
+//	Select a style 
 //------------------------------------------------------------------
-void D2_Session::GetBuildParameters(D2_BPM *p)
+D2_Style *D2_Session::GetaStyle(D2_BPM *p)
 {	int val = -1;
 	grp			= 0;
-	bpm			= p;
-	if (p->stamp > Stamp)	Stamp = p->stamp;
-	if (p->style)	return;
-	std::map<std::string,D2_Group*>::iterator rg;
-	for (rg = grpM.begin(); rg != grpM.end(); rg++)
-	{	D2_Group *gp		= (*rg).second;
-		int vg = gp->ValueGroup(p);
+	D2_Group *gp = 0;
+	if (p->style)				return p->style;
+	for (gp = groupQ.GetFirst(); gp != 0; gp = gp->Next())
+	{	int vg = gp->ValueGroup(p);
 		if (vg <= val)		continue;
 		grp = gp;				// Save group
 		val	= vg;				// Save value
 	}
-	//----We have one group -----------------
+	//--- Do we have one group -------------
 	if (0 == grp) Abort("No Group found");
-	if (grp->ReachQuota()) groupQ.SwitchToLast(grp);
+	//TRACE("SELECTED GROUP %s",grp->GetName());
+	if (grp->ReachQuota()) 	groupQ.SwitchToLast(grp);
 	sty = grp->GetOneStyle();
-	grp->GetOneRoof(*p);
 	//--- check parameters -----------------
 	if (0 == sty) Abort("No Style found");
 	//--- Save parameters -------------------
-	bpm->stamp  = Stamp;
-	bpm->group	= grp;
-	bpm->style	= sty;
-	bpm->flNbr		= grp->GetFloorNbr();
-	bpm->flHtr		= grp->GetFloorHtr();
-	bpm->mans			= sty->IsMansart();
-	Stamp++;
+	return sty;
+}
+//-----------------------------------------------------------------
+//	Add a building if not already in list
+//-----------------------------------------------------------------
+void D2_Session::AddLight(OSM_Object *L)
+{	U_INT No = L->GetStamp();
+	std::map<U_INT,OSM_Object*>::iterator rp = litQ.find(No);
+	if (rp != litQ.end())		return;
+	litQ[No]	= L;
 	return;
 }
+
 //------------------------------------------------------------------
 //	Return building 
 //------------------------------------------------------------------
 OSM_Object *D2_Session::GetObjectOSM(U_INT No)
-{	std::map<std::string,D2_Group*>::iterator rg;
-	for (rg = grpM.begin(); rg != grpM.end(); rg++)
+{	//--- search in lights -------------------------
+	rl = litQ.find(No);
+	if (rl != litQ.end())		return (*rl).second;
+	//--- search in groups -------------------------
+	for (rg = grpQ.begin(); rg != grpQ.end(); rg++)
 	{	D2_Group   *grp = (*rg).second;
 		OSM_Object *bld = (*rg).second->FindBuilding(No);
 		if (bld)	return bld;
@@ -1256,8 +1253,7 @@ OSM_Object *D2_Session::GetObjectOSM(U_INT No)
 void D2_Session::FillStyles(CListBox *box)
 {	Queue <D2_Style > *Q;
 	D2_Style *sty = 0;
-	std::map<std::string,D2_Group*>::iterator rg;
-	for (rg = grpM.begin(); rg != grpM.end(); rg++)
+	for (rg = grpQ.begin(); rg != grpQ.end(); rg++)
 	{	D2_Group *grp = (*rg).second;
 		Q	= grp->GetStyleQ();
 		for (sty = Q->GetFirst(); sty != 0; sty = sty->GetNext())
@@ -1266,14 +1262,27 @@ void D2_Session::FillStyles(CListBox *box)
 	return;
 }
 //------------------------------------------------------------------
-//	Return Group number k
+//	Draw everything
 //------------------------------------------------------------------
-std::map<std::string,D2_Group*> &D2_Session::GetGroups()
-{	return grpM;	}
+void D2_Session::Draw()
+{	//--- Draw all buildings --------------------
+	DebDrawOSMbuilding();							// Drawing environment
+	for (rg = grpQ.begin(); rg != grpQ.end(); rg++)
+	{	D2_Group *gpp = (*rg).second;
+		gpp->DrawBuilding();	
+	}
+	EndDrawOSMbuilding();
+	//--- Draw all lights ------------------------
+	GLfloat col[4] = {1,1,0.5,1};
+	DebDrawOSMlight(lightOSM,alphaOSM);
+	for (rl = litQ.begin(); rl != litQ.end(); rl++)	(*rl).second->Draw();
+	EndDrawOSMlight();
+	return;
+}
 //------------------------------------------------------------------
 //	Write all buildings
 //------------------------------------------------------------------
-void D2_Session::Write(FILE *fp, U_INT cnt)
+void D2_Session::Write(FILE *fp)
 {	U_INT bno = 1;
 	U_INT wrt = 0;
 	OSM_Object *bld = 0;
@@ -1285,7 +1294,7 @@ void D2_Session::Write(FILE *fp, U_INT cnt)
 		wrt++;
 	}
 	fputs("END\n",fp);
-	STREETLOG("Imported %05d Buildings", cnt);
+	STREETLOG("Imported %05d Buildings", (Stamp - 1));
 	STREETLOG("Updated  %05d Buildings", wrt);
 	return;
 }
@@ -1296,7 +1305,8 @@ void D2_Session::UpdateCache()
 {	OSM_Object *obj;
 	for (U_INT k=1; k <= Stamp; k++)
 	{	obj = GetObjectOSM(k);
-		if (obj) globals->tcm->AddToPack(obj);
+		bool ok = (0 != obj) && (obj->IsValid());
+		if	(ok) globals->tcm->AddToPack(obj);
 	}
 	return;
 }

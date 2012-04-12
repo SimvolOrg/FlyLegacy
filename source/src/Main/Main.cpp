@@ -1081,11 +1081,12 @@ void InitApplication (void)
   globals->wtm = new CWeatherManager();
 	TRACE("Create Fui Manager");
   globals->fui->Init();
+	TRACE("START SCENERY MGR");
+	globals->scn = new CSceneryDBM();
   //------Start terrain ---------------------------------
 	TRACE("Start TERRAIN CACHE");
   globals->tcm = new TCacheMGR();
-	TRACE("START SCENERY MGR");
-	globals->scn = new CSceneryDBM();
+	//-----------------------------------------------------
 	TRACE("START CLOUD SYSTEM");
   globals->cld = new CCloudSystem();
   globals->wtm->Init();

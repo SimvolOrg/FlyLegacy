@@ -233,8 +233,9 @@ void CRoofModel::SetRoofData(D2_BPM *pm,CBuilder *tr)
 {	trn		= tr;
 	geo		= tr->GetGeotester();
 	bpm		= pm;
-	roofP	= bpm->roofP;
 	style	= bpm->style;
+	roofP	= bpm->roofP;
+	roofP->SetStyle(style);
 	return;
 }
 //---------------------------------------------------------------

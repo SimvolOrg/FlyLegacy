@@ -2077,6 +2077,16 @@ void C3DPart::AllocateOsmGVT(int nv)
 	return;
 }
 //----------------------------------------------------------------------
+// Allocate vertices for OSM Lights
+//----------------------------------------------------------------------
+void C3DPart::AllocateOsmLIT(int nv)
+{	NbVT  = nv;
+	gTAB  = new GN_VTAB[nv];
+	Rend  = &C3DPart::DrawAsLIT;
+	globals->m3d->vCount(NbVT);
+	return;
+}
+//----------------------------------------------------------------------
 //	Rotation around Z axis
 //----------------------------------------------------------------------
 void C3DPart::ZRotation(double sn, double cn)
@@ -2146,9 +2156,8 @@ void C3DPart::AllocateIND()
 //----------------------------------------------------------------------
 //	Extend part for additional vertices
 //----------------------------------------------------------------------
-void C3DPart::ExtendOSM(int nbv,GN_VTAB *src)
-{	Rend  = &C3DPart::DrawAsGVT;
-	int tot = NbVT + nbv;
+void C3DPart::ExtendOSM(int nbv,GN_VTAB *src,int lay)
+{	int tot = NbVT + nbv;
 	int dim = NbVT * sizeof(GN_VTAB);
   //--- Allocate for total vertices ----
 	GN_VTAB *tab = new GN_VTAB[tot];
@@ -2256,16 +2265,16 @@ void C3DPart::Append(GN_VTAB *tab, U_INT ofs,U_INT lg)
 //-----------------------------------------------------------------------------
 //	Extend this part with the given part
 //-----------------------------------------------------------------------------
-void C3DPart::ExtendWith(C3DPart *p1, SVector &T)
-{	U_INT		 tot	= p1->GetNBVTX() + NbVT;
+void C3DPart::ExtendWith(C3DPart *p0, SVector &T)
+{	U_INT		 tot	= p0->GetNBVTX() + NbVT;
   GN_VTAB *tab  = gTAB;
 	U_INT    nb1  = NbVT;
 	//---Extend with new strip of vertices ---
 	NbVT	= tot;
 	gTAB  = new GN_VTAB[tot];
-	Rend  = &C3DPart::DrawAsGVT;
+	Rend  = p0->GetRendering();
 	//---------------------------------------
-	int ofs  = MoveAndTranslate(p1,T);
+	int ofs  = MoveAndTranslate(p0,T);
 	//--- Append previous vertices to end ----
 	Append(tab,ofs,nb1);
 	//--- Delete original vertices -----------
@@ -2386,6 +2395,15 @@ void C3DPart::DrawAsGVT()
 	glNormalPointer  (  GL_FLOAT,sizeof(GN_VTAB),&(gTAB->VN_X));
   glDrawArrays(GL_TRIANGLES,0, NbVT);
   return;
+}
+//----------------------------------------------------------------------
+//  Draw the part as light for point sprite
+//----------------------------------------------------------------------
+void C3DPart::DrawAsLIT()
+{	tRef->BindTexture();
+	glVertexPointer  (3,GL_FLOAT,sizeof(GN_VTAB),&(gTAB->VT_X));
+	glDrawArrays(GL_POINTS,0, NbVT);
+	return;
 }
 //=============================================================================
 //  Destroy world object queue

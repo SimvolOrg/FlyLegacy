@@ -1777,7 +1777,7 @@ void CExternalLightManager::DrawOmniLights()
   glPushAttrib (GL_ALL_ATTRIB_BITS);
   glEnable (GL_TEXTURE_2D);
   glEnable (GL_ALPHA_TEST);
-  glAlphaFunc(GL_GREATER,0);
+  glAlphaFunc(GL_GREATER,float(0.1));
   //----- Draw individual lights--------------------------------
   glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   glEnableClientState(GL_VERTEX_ARRAY);

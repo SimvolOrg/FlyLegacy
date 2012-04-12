@@ -166,9 +166,10 @@ class CSuperTile  {
 	typedef void (CSuperTile::*VREND)(void);	// Rending vector
   //---Member data ---------------------------------------
 public:
-    CSuperTile   *Next;                   // Linkage
+    CSuperTile   *next;                   // Linkage
 		//---------------------------------------------------------------
 		C_QGT				*qgt;											// QGT 
+		//---------------------------------------------------------------
     U_CHAR       State;                   // Request code
     U_CHAR       NoSP;                    // Super Tile number [0-63]
     U_CHAR       sta3D;                   // 3D state
@@ -191,7 +192,10 @@ public:
     U_CHAR       visible;									// Visibility indicator
     float        white[4];                // Diffuse color for blending
 		//--- OSM management --------------------------------------------
-		Queue<C3DPart> batQ;									// Building Queue
+		U_SHORT       nobj;										// OSM objects
+		U_CHAR				rfu1;
+		U_CHAR				sbat;										// batQ locked
+		Queue<C3DPart> osmQ[2];								// Building Queue
     //---------------------------------------------------------------
     SPosition    mPos;                        // Center position
     CVector      sRad;												// Radius
@@ -211,7 +215,7 @@ public:
 		//-----------------------------------------------------------
 		void					LoadVBO();
 		//-----------------------------------------------------------
-		C3DPart			 *SearchOSMPart(CShared3DTex *ref);
+		C3DPart			 *SearchOSMPart(CShared3DTex *ref, char layer);
 		void					AddToPack(OSM_Object *obj);
 		//-----------------------------------------------------------
 		void					Reallocate(char opt);
@@ -266,6 +270,11 @@ public:
 		inline void RenderOUT()	{Rend = &CSuperTile::DrawOuterSuperTile;}
 		inline void RenderINR()	{Rend = &CSuperTile::DrawInnerSuperTile;}
 		inline void Draw()		{(this->*Rend)();}
+		//-----------------------------------------------------
+		inline CSuperTile *Next()				{return next;}
+		inline void Next(CSuperTile *s)	{next = s;}
+		//------------------------------------------------------
+		inline void	StBat(U_CHAR s)			{sbat = s;}
   };
 //============================================================================
 //  QUEUE of SUPERTILES
@@ -279,20 +288,19 @@ class CSupQueue {
     //--------Methods ------------------------------------
 public:
     CSupQueue();
-    void        PutLast(CSuperTile *sp);
+    void        PutEnd(CSuperTile *sp);
     CSuperTile  *Pop();
     CSuperTile  *Detach(CSuperTile *sp);
     //-------in lines ------------------------------------
-    CSuperTile  *GetFirst()                {Prev = 0;  return First;}
-    CSuperTile  *GetNext(CSuperTile *sp)    {Prev = sp; return sp->Next;}
+    CSuperTile  *GetFirst()               {Prev = 0;  return First;}
+    CSuperTile  *GetNext(CSuperTile *sp)  {Prev = sp; return sp->Next();}
     bool        IsEmpty()                 {return (First == 0);}
     bool        NotEmpty()                {return (First != 0);}
     bool        NotFull()                 {return (NbSP != 64);}
     int         GetNumberItem()           {return NbSP;}
     void        Lock()                    {pthread_mutex_lock (&mux);}
-    void        UnLock()                  {pthread_mutex_unlock (&mux);}
+    void        Unlock()                  {pthread_mutex_unlock (&mux);}
 };
-
 
 //============================================================================
 //  Class CmQUAD.  This class describe a Detail Tile
@@ -548,6 +556,9 @@ private:
   CSupQueue FarsQ;                        // Far  Super Tiles
   CSupQueue NearQ;                        // Near Super Tiles
   CSupQueue LoadQ;                        // Loading Queue
+	//qHDR <CSuperTile> FarsQ;									// Far supertiles
+	//qHDR <CSuperTile> NearQ;									// Near Queue
+	//qHDR <CSuperTile> LoadQ;									// Texture load queue
   //----------Methods ------------------------------------------
 public:
   C_QGT(U_INT xk, U_INT zk,TCacheMGR *tm);
@@ -608,7 +619,7 @@ public:
   void				PostIO();
   //---------Queuing management --------------------------------
   CSuperTile *PopLoad();
-  CSuperTile *NextLoad(CSuperTile *sp)  {return sp->Next;}
+//  CSuperTile *NextLoad(CSuperTile *sp)  {return sp->Next;}
   void        EnterNearQ(CSuperTile *sp);
   //---------Position routines ---------------------------------
   bool        GetTileIndices(SPosition &pos,short &tx, short &tz);
@@ -626,7 +637,8 @@ public:
 	int					HasTRN();
 	void				Reallocate(CmQUAD *qd);
 	//--- Object management ----------------------------------------
-	C3DPart		 *GetOSMPart(char supNo,char dir, char *ntx);
+	C3DPart		 *GetOSMPart(char supNo,char dir, char *ntx, char layer);
+	void				OsmOK(char No);
   //----------Mesh Management ------------------------------------
 	SPosition		GetBase();
 	int         CenterTile(CVertex *sw,CVertex *nw,CVertex *ne,CVertex *se);
@@ -718,7 +730,7 @@ class TCacheMGR: public CExecutable {
   U_INT       nKEY;                         // New Key
   U_SHORT     qRDY;                         // Number qgt waiting ready
   //------Terrain parameters ------------------------------------
-  U_CHAR      rfu1;                         // Aircraft yBand
+  U_CHAR      stop;                         // stop sql
   U_CHAR      wire;                         // QGT step
   U_CHAR      Terrain;                      // Terrian indicator
 	U_CHAR        strn;											  // Skip trn
@@ -825,9 +837,11 @@ class TCacheMGR: public CExecutable {
   C3DMgr       *objMGR;                     // 3D object Manager
   CTextureWard *txw;                        // Texture   Manager
   //---------Thread management-----------------------------------
-  pthread_t       thIden;                   // Thread identity
+	U_CHAR					tnbr;											// Thread number
+  pthread_t       t1id;											// Thread identity
+	pthread_t       t2id;											// Thread identity
   pthread_cond_t  thCond;                   // Condition variable
-  pthread_mutex_t	thMux;                    // Condition Mutex
+  pthread_mutex_t	thMux;										// Condition Mutex
   U_INT           thSIG;                    // Number of signal posted
   U_INT           thRCV;                    // Number of Signal received
   U_INT           thRUN;                    // Runing signal
@@ -862,6 +876,7 @@ public:
   int         GetCoastMark(int inc,U_INT ax,U_INT az);
   float       AircraftFeetDistance(SPosition &pos);
 	void				SetShadowMatrix( float mat[16],float lp[4]);
+	char        GetThreadNumber()		{return tnbr++;}
   //----------Terrain management -------------------------------
   void        GetTerrainInfo(TC_GRND_INFO &inf, SPosition &pos);
   double      GetGroundAt(GroundSpot &gns);
@@ -925,6 +940,7 @@ public:
   inline float  Elapse()            {return eTime;}
   inline float  GetLuminosity()     {return lumn;}
   inline CVector *SunPosition()     {return &sunP;}
+	inline bool    RunThread()				{return (stop == 0);}	
   //--------Return scale parameters ------------------------------
   inline SVector *GetScale()        {return &scale;}
   //--------Terrain Parameters -----------------------------------
@@ -1039,7 +1055,7 @@ public:
 	//------------------------------------------------------------
   C_QGT      *PopLoadTEX()      {return LodQ.Pop();}
   pthread_cond_t  *GetTHcond()  {return &thCond;}
-  pthread_mutex_t *GetTHmux()   {return &thMux;}
+  pthread_mutex_t *GetaMux()    {return &thMux;}
   //----------Test and debug -----------------------------------
   GLUquadricObj  *GetSphere()   {return sphere;}
   void        CheckW3D();

@@ -1527,7 +1527,7 @@ bool CRabbitCamera::PickObject(U_INT mx, U_INT my)
 	glInitNames();										// Init stack name
 	glPushName(0);										// room for one name
 	StartShoot(0);										// Init camera
-	trak->DrawMarks();											// Redraw markers
+	trak->DrawMarks();								// Redraw markers
 	StopShoot();											// Stop Drawing
 	int hit = glRenderMode(GL_RENDER);
 	pick	= 0;

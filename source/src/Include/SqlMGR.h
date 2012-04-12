@@ -417,6 +417,7 @@ struct ELV_PATCHE;
 //  Define a database
 //=====================================================================================
 struct SQL_DB {
+	SQL_DB     *next;								// Next descriptor
 		int			  ucnt;								// User counts
 		int				vers;								// Minimum version
 		int				mode;								// Open mode
@@ -435,7 +436,9 @@ struct SQL_DB {
 		U_INT     limit;							// Load limit
 	//--- Constructor ------------------------------
 		SQL_DB::SQL_DB()
-		{	ucnt	= 1;
+		{	next	= 0;
+			ucnt	= 1;
+			qgt		= 0;
 			mode	= SQLITE_OPEN_READONLY;
 			exp		= 0;
 			opn		= 0;
@@ -451,6 +454,8 @@ struct SQL_DB {
 		//----------------------------------------------
 		void IncUser()	{ucnt++;}
 		//----------------------------------------------
+		void		Next(SQL_DB *s)	{next = s;}
+		SQL_DB *Next()					{return next; }
 };
 //=====================================================================================
 //  DEFINE A SQL REQUEST
@@ -552,6 +557,7 @@ public:
 	//--- Get items from OSM database ---------------------------------
 	void					GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj);
 	int 					GetSuperTileOSM(SQL_DB &db);
+
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD
@@ -681,6 +687,7 @@ public:
   void    DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj);
   void    Decode3DLight(sqlite3_stmt *stm,CWobj *obj);
 	void		UpdateOBJzb(CWobj *obj);
+	void		UpdateOBJzu(CWobj *obj);
   //---- READING TEXTURE ------------------------------------------------
   void     DecodeLinTexture(sqlite3_stmt *stm, CTgxLine *lin);
   GLubyte *GetGenTexture(TEXT_INFO &inf);

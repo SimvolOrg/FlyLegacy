@@ -1562,7 +1562,6 @@ void CTextureWard::LoadLightTexture(U_CHAR No)
   GLubyte *rgb = (usq)?(sqm->GetAnyTexture(xds)):(img.GetAnyTexture(xds));
   int      dim = SideRES[res];          
   LiOBJ[No]    = GetLitOBJ(xds);
-  if (rgb)  delete []  rgb;
   return;
 }
 //-----------------------------------------------------------------------------
@@ -1575,15 +1574,9 @@ GLuint CTextureWard::LoadIconPNG(char *name)
   //----PATH is ART --------------------------------
   _snprintf(xds.path,TC_TEXTURE_NAME_DIM,"ART/%s.PNG",name);
   //----READ THE FILE ------------------------------
-  GLubyte *rgb = img.GetAnyTexture(xds);
-  GLuint   xob = GetLitOBJ(xds);
-  delete []  rgb;
-  return xob;
+  img.GetAnyTexture(xds);
+  return  GetLitOBJ(xds);
 }
-//-----------------------------------------------------------------------------
-//  Return Texture object
-//-----------------------------------------------------------------------------
-GLuint CTextureWard::GetLiteTexture(U_CHAR No)   {return LiOBJ[No];}
 //-----------------------------------------------------------------------------
 //  Assign runway Texture to the tarmac
 //-----------------------------------------------------------------------------
@@ -1947,23 +1940,6 @@ GLuint CTextureWard::GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
 //-----------------------------------------------------------------------------
 //  Assign a light texture object
 //-----------------------------------------------------------------------------
-GLuint CTextureWard::GetLitOBJ(GLuint obj,U_INT dim,GLubyte *tex)
-{ if (0 == obj) glGenTextures(1,&obj);
-  glBindTexture(GL_TEXTURE_2D,obj);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,1);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-  glTexImage2D   (GL_TEXTURE_2D,0,GL_INTENSITY,dim,dim,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
-  glTexEnvf (GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_BLEND);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
-  return obj;
-}
-//-----------------------------------------------------------------------------
-//  Assign a light texture object
-//-----------------------------------------------------------------------------
 GLuint CTextureWard::GetLitOBJ(TEXT_INFO &xds)
 { U_INT obj = 0;
   if (0 == xds.mADR)  return 0;
@@ -1978,7 +1954,8 @@ GLuint CTextureWard::GetLitOBJ(TEXT_INFO &xds)
   glTexImage2D   (GL_TEXTURE_2D,0,GL_INTENSITY,xds.wd,xds.ht,0,GL_RGBA,GL_UNSIGNED_BYTE,xds.mADR);
   glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
+	delete [] xds.mADR;
+	xds.mADR	= 0;
   return obj;
 }
 //-----------------------------------------------------------------------------
