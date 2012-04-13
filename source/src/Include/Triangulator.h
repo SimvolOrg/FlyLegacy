@@ -49,6 +49,7 @@ class CShared3DTex;
 struct D2_BPM;
 struct SQL_DB;
 struct OSM_REP;
+struct OSM_CONFP;
 //==========================================================================================
 #define TX_BH		(1)								// Full height texturing
 //==== GEOMETRIC FUNCTIONS =================================================================
@@ -570,6 +571,7 @@ public:
 	bool			IsOK();
 	bool			IsMansart()					{return (mans != 0);}
 	D2_Style *GetNext()						{return next;}
+	char      GetMansart()				{return mans;}
 	//-------------------------------------------------------------
 	D2_BPM   *GetBPM()						{return bpm;}
 	char      HasTrace()					{return tr;}
@@ -653,7 +655,7 @@ public:
 	//--------------------------------------------------------------
 	D2_Style    *GetStyle(char *nsty);
 	D2_Style    *GetOneStyle();
-	U_INT        SelectOneRoof(D2_BPM &pm);
+	U_INT        SelectOneRoof(D2_BPM *pm);
 	CRoofModel  *GetRoofModByNumber(char mans);
 	U_INT				 GetRoofNumber()	{return rmno;}
 	//---------------------------------------------------------------
@@ -681,7 +683,8 @@ public:
 	//--------------------------------------------------------------
 	char			HasTrace()					{return tr;}
 	//--------------------------------------------------------------
-	D2_TParam *GetRoofTexDefault(){return &tRoof;}
+	D2_TParam  *GetRoofTexDefault(){return &tRoof;}
+	D2_Session *Session()					{return ssn;}
 	//--------------------------------------------------------------
 	char     *GetName()						{return name;}
 	char     *TextureName()				{return txd.name;}
@@ -709,7 +712,7 @@ struct D2_BEVEL {
 class CBuilder: public CExecutable, public Tracker {
 	//--- Callback vectors ----------------------------------------
 public:
-	typedef D2_BPM *(CBuilder::*buildCB)(U_INT);		// Build vector
+	typedef void (CBuilder::*buildCB)(U_INT);		// Build vector
 protected:
 	//--- ATTRIBUTES ----------------------------------------------
 	COption		dop;																// Drawing option
@@ -768,7 +771,6 @@ protected:
 	OSM_Object *osmB;															// Current building
 	OSM_Object *remB;															// Removed building
 	U_INT   xOBJ;																	// Current texture
-	U_INT		otype;																// Object type
 	//---  Texture descriptor ----------------------------
 	TEXT_INFO txd;																// Texture desc
 	//--- Drawing mode -----------------------------------
@@ -795,15 +797,15 @@ public:
 	void		NewHole();
 	void		ForceStyle(char *nsty,U_INT rfmo, U_INT rftx);
 	char		ConvertInFeet();
-	char	  QualifyPoints();
+	int	    QualifyPoints(D2_BPM *bmp);
 	char		Triangulation();
 	void		MakeSlot();
 	void		ReleaseSlot();
-	void		OrientFaces();
-	void		BuildWalls();
+	void		OrientFaces(D2_BPM *bpm);
+	void		BuildWalls(D2_BPM *bpm);
 	void		Reorder();
-	void		SelectRoof();
-	void		Texturing();
+	void		SelectRoof(D2_BPM *bpm);
+	void		Texturing(D2_BPM *bpm);
 	//---------------------------------------------------
 	void		Draw();					// Drawing interface
 	void		DrawMarks();
@@ -811,10 +813,10 @@ public:
 	U_INT		CountVertices();
 	void		StartOBJ();
 	U_CHAR  ReplaceOBJ(OSM_REP *rp,char or);
-	D2_BPM *RemoveOBJ();
-	D2_BPM *RestoreOBJ();
+	void    RemoveOBJ();
+	void    RestoreOBJ();
 	U_CHAR	RotateOBJ(double rad);
-	D2_BPM *SelectOBJ(U_INT No);
+	bool    SelectOBJ(U_INT No);
 	void		SetOrientationOBJ();
 	//-----------------------------------------------------
 	inline double			GetSurface()			{return surf;}
@@ -841,9 +843,9 @@ protected:
 	//---- Face processing --------------------------------
 	bool		SetPointInside(D2_POINT *p, D2_POINT *s, double H);
 	void		QualifyEdge(D2_POINT *pa);
-	void		BuildFloor(int no,double f, double c);
-	int			BuildBevelFloor(int No, int inx, double afh, double H);
-	int 		BuildNormaFloor(int No, int inx, double afh, double H);
+	void		BuildFloor(int no,double f, D2_BPM *bpm);
+	int			BuildBevelFloor(int No, int inx, double afh, D2_BPM *bpm);
+	int 		BuildNormaFloor(int No, int inx, double afh, D2_BPM *bpm);
 	//------------------------------------------------------
 	void		TraceOut();
 	void		TraceInp();
@@ -864,21 +866,30 @@ public:
 	void		ModeSingle();
 	void		ModeGroups();
 	//------------------------------------------------------
-	D2_BPM *MakeBLDG(U_INT type);
-	D2_BPM *MakeLITE(U_INT type);
+	void    MakeBLDG(U_INT type);
+	void    MakeLITE(U_INT type);
 	//------------------------------------------------------
-	bool		RiseBuilding();
-	void		SaveBuildingData();
-	void		EditTag(char *txt);
-	void		EditPrm(char *txt);
+	bool		RiseBuilding(D2_BPM *bpm);
+	void		SaveBuildingData(C3DPart *P);
 	void		EndOBJ();
-	void		SaveParam(D2_BPM &bpm);
+	//void		SaveOSMParam(D2_BPM *bpm);
+	//--- Helper -------------------------------------------
+	void			EditTag(char *txt);
+	int 			EditPrm(char *txt);
+	void			UpdatePosition(SPosition &P);
+	//------------------------------------------------------
+	void			ClearError()			{BDP.error = 0;}
+	void			ActualPosition(SPosition &P);
+	U_INT     ActualStamp();
+	D2_Style *ActualStyle();
+	int       ActualError();
+	char      ActualFocus();
 	//------------------------------------------------------
 	U_CHAR	ModifyStyle(D2_Style *sty);
-	void    ReOrientation();
+	int     ReOrientation(D2_BPM *bpm);
 	D2_BPM *GetBuildingParameters()			{return &BDP;}
 	//--- Call back functions --------------------------------
-	D2_BPM *BuildOBJ(U_INT tp, char *T, char *V);	
+	void    BuildOBJ(OSM_CONFP *CF);	
 	//--------------------------------------------------------
 };
 
@@ -931,7 +942,7 @@ public:
 	//---------------------------------------------------------------
 	void	Write(FILE *fp);
 	//---------------------------------------------------------------
-	D2_Style    *GetaStyle(D2_BPM *p);
+	void         GetaStyle(D2_BPM *p);
 	OSM_Object  *GetObjectOSM(U_INT k);
 	D2_Style    *GetStyle(char *nsty);
 	D2_TParam   *GetRoofTexture(D2_Style *sty);

@@ -144,7 +144,6 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	edit	= 0;
 	wfil	= 1;
 	FP		= 0;
-	bpm		= 0;
 	sqlp	= 0;
 	//--- delete aircraft for more memory ------------
 	//SAFE_DELETE( globals->pln);
@@ -235,10 +234,9 @@ bool CFuiSketch::ParseBuilding()
   fsetpos( FP, &fpos); 
 	char *ch = ReadTheFile(FP,txt);
 	_strupr(txt);
-	otype = OSM_BUILDING;		// Building by default
-	grnd	= 0;							// Ground option
-	*tagn = *valn = 0;			// Clear tag-value
-	 repPM.Clear();					// Clear replacement
+	confp.Reset();					// Building by default
+ *tagn = *valn = 0;				// Clear tag-value
+	repPM.Clear();					// Clear replacement
 	//--- Check for a building number -------------------------
 	int nf = sscanf(ch,"START %d ID=%d ",&seqNo, &ident);
 	if (nf != 2)		return false;
@@ -291,7 +289,7 @@ bool CFuiSketch::ParseVTX(char *txt)
 	while (go)
 	{	int nf = sscanf(src," V ( %lf , %lf ) %n",&y,&x,&rd);
 		if (nf != 2)	return (nv != 0);
-		if (otype) trn->AddVertex(grnd,x,y);
+		if (confp.otype) trn->AddVertex(confp.zned,x,y);
 		src += rd;
 		nv++;
 	}
@@ -302,7 +300,7 @@ bool CFuiSketch::ParseVTX(char *txt)
 //-------------------------------------------------------------------
 bool CFuiSketch::ParseHOL(char *txt)
 {	if (strncmp(txt,"HOLE",4) != 0)			return false;
-	if (otype)	trn->NewHole();
+	if (confp.otype)	trn->NewHole();
 	return true;
 }
 //-------------------------------------------------------------------
@@ -311,8 +309,7 @@ bool CFuiSketch::ParseHOL(char *txt)
 bool CFuiSketch::ParseTAG(char *txt)
 {	int nf = sscanf(txt,"TAG ( %32[^ =)] = %32[^ )] ) ",tagn, valn);
 	if (nf != 2)		return false;
-	GetOSMattributs(tagn,valn,&otype);
-	if (otype == OSM_LIGHT) grnd = 1;
+	GetOSMconfig(tagn,valn,confp);
 	return true;
 }
 //-------------------------------------------------------------------
@@ -322,8 +319,8 @@ bool CFuiSketch::ParseReplace(char *txt)
 { char objn[PATH_MAX];
 	int nf = sscanf(txt,"Replace ( Z = %lf ) with %s",&orien,objn);
 	if (nf != 2)  return false;
-	repPM.type	= otype;
-	repPM.dir		= GetOSMfolder(otype);
+	repPM.otype	= confp.otype;
+	repPM.dir		= GetOSMfolder(confp.otype);
 	repPM.obr		= Dupplicate(objn,FNAM_MAX);
 	return true;
 }
@@ -400,23 +397,23 @@ U_INT CFuiSketch::GotoReferencePosition()
 //-------------------------------------------------------------------
 //	Edit building
 //-------------------------------------------------------------------
-void CFuiSketch::EditBuilding()
+int CFuiSketch::EditBuilding()
 {	char txt[128];
-	trn->EditPrm(txt);
+	int er  = trn->EditPrm(txt);									// osmB
 	nBAT->SetText(txt);
 	//--------------------------------------------
-	trn->EditTag(txt);
+	trn->EditTag(txt);														// osmB
 	nTAG->SetText(txt);
 	//--- Get object position --------------------
-	geop  = bpm->geop;
-	return;
+	trn->ActualPosition(geop);										// osmB
+	return er;
 }
 //-------------------------------------------------------------------
 //	Check for replacement
 //-------------------------------------------------------------------
 void CFuiSketch::AutoReplace()
 { repPM.Clear();
-	repPM.type = otype;
+	repPM.otype = confp.otype;
 	if (!ses.GetReplacement(repPM))		return;
 	trn->ReplaceOBJ(&repPM,1);
 	return;
@@ -425,8 +422,8 @@ void CFuiSketch::AutoReplace()
 //	Build Object
 //-------------------------------------------------------------------
 bool CFuiSketch::BuildObject()
-{	if (0 == otype)	return false;
-	bpm = trn->BuildOBJ(otype,tagn,valn);
+{	if (0 == confp.otype)	return false;
+	trn->BuildOBJ(&confp);
 	//--- Replace directive -----------------
 	if (repPM.obr)
 	{	repPM.sinA = sin(orien);
@@ -436,9 +433,9 @@ bool CFuiSketch::BuildObject()
 	//--- Auto replace ----------------------
 	else				AutoReplace();
 	//---------------------------------------
-	EditBuilding();
+	int er = EditBuilding();
 	rcam->GoToPosition(geop);			// Teleport
-	if (bpm->error == 0)	rpos = geop;
+	if (0 == er)	rpos = geop;
 	return true;
 }
 //-----------------------------------------------------------------------
@@ -503,7 +500,7 @@ U_INT CFuiSketch::HereWeAre()
 //-----------------------------------------------------------------------
 void CFuiSketch::ShowStyle()
 {	//--- show style on list box ---------
-	D2_Style *sty = bpm->style;
+	D2_Style *sty = trn->ActualStyle();
 	if (0 == sty)		return;
 	U_INT     ns	= sty->GetSlotSeq();
 	sBOX.GoToItem(ns);
@@ -541,9 +538,10 @@ U_INT CFuiSketch::ReadNext()
 	if (!ParseBuilding())	return SKETCH_ENDL;
 	//--- build object ---------------------
 	if (!BuildObject())		return SKETCH_SHOW;
-	time	= 1;
+	time	= 0;
 	//---------------------------------------
-	_snprintf(txt,127,"Load Building %05d",bpm->stamp);
+	U_INT	nobj = trn->ActualStamp();
+	_snprintf(txt,127,"Load Building %05d",nobj);
 	DrawNoticeToUser(txt,1);
 	return SKETCH_SHOW;
 }
@@ -575,7 +573,6 @@ U_INT CFuiSketch::EndLoad()
 	globals->fui->CaptureMouse(this);
 	vTer	= "Zoom Building";
 	vTER->SetText(vTer);
-	bpm		= 0;
 	//--- change ident for 'load all' button -----------------------------
 	vALL->SetId('null');					// Becomes a null button
 	vALL->SetText("End of File");
@@ -589,18 +586,19 @@ U_INT CFuiSketch::EndLoad()
 //-----------------------------------------------------------------------
 bool CFuiSketch::EditError()
 { char txt[128];
-	if (0 == bpm->error)		return false;
-	_snprintf(txt,128,"Build %d Error %d",bpm->stamp,bpm->error);
+	int		error = trn->ActualError();
+	int		stamp	= trn->ActualStamp();
+	if (0 == error)		return false;
+	_snprintf(txt,128,"Build %d Error %d",stamp,error);
 	nBAT->SetText(txt);
-	bpm->error = 0;
+	trn->ClearError();
 	return true;
 }
 //-----------------------------------------------------------------------
 //	Change the current style
 //-----------------------------------------------------------------------
 void CFuiSketch::ChangeStyle()
-{	if (0 == bpm)					return;
-	if ((tera) && (bpm->selc == 0))	return;
+{	if ((tera) && (0 == trn->ActualFocus()))	return;
   EditError();
 	D2_Style *sty = (D2_Style*)sBOX.GetSelectedSlot();
 	trn->ModifyStyle(sty);
@@ -613,7 +611,7 @@ void CFuiSketch::ChangeStyle()
 //-----------------------------------------------------------------------
 void	CFuiSketch::RemoveObject()
 {	if (NoSelection())	return;
-	bpm = trn->RemoveOBJ();
+	trn->RemoveOBJ();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -631,7 +629,7 @@ void CFuiSketch::ReplaceBuilding()
 //	NOTE:  We must be in edit mode
 //-----------------------------------------------------------------------
 void	CFuiSketch::RestoreObject()
-{	bpm = trn->RestoreOBJ();
+{	trn->RestoreOBJ();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -658,8 +656,7 @@ bool CFuiSketch::MouseCapture(int mx, int my, EMouseButton bt)
 //	One object selected
 //-----------------------------------------------------------------------
 void CFuiSketch::OnePicking(U_INT No)
-{	bpm = trn->SelectOBJ(No);
-  if (0 == bpm)		return;
+{	trn->SelectOBJ(No);
 	EditBuilding();
 	ShowStyle();
 	return;
@@ -668,10 +665,9 @@ void CFuiSketch::OnePicking(U_INT No)
 //	Check if selected
 //-----------------------------------------------------------------------
 bool CFuiSketch::NoSelection()
-{	if (0 == bpm)					return true;
-	if (0 == tera)				return false;
-	if (bpm->selc)				return false;
-	return true;
+{	char sel = trn->ActualFocus();	
+	if (0 == tera)	return false;
+	return (sel == 0);
 }
 //-----------------------------------------------------------------------
 //	Fly Over the city
@@ -837,13 +833,13 @@ void CFuiSketch::TimeSlice()
 //-----------------------------------------------------------------------
 void CFuiSketch::CollectModels()
 {	if (NoSelection())	return;
-	repPM.type	= otype;
-	repPM.dir	= GetOSMfolder(otype);
+	repPM.otype	= confp.otype;
+	repPM.dir	= GetOSMfolder(confp.otype);
 	FPM.userp	= 1;
 	FPM.close = 1;
 	FPM.sbdir = 0;
 	FPM.text  = "Select a Model";
-	FPM.dir   = GetOSMdirectory(otype);
+	FPM.dir   = GetOSMdirectory(confp.otype);
 	FPM.pat		= "*.OBJ";
 	CreateFileBox(&FPM);
 	return;
@@ -1073,17 +1069,17 @@ bool D2_Session::ParseTheSession(FILE *f)
 //-----------------------------------------------------------------
 bool D2_Session::ParseReplace(FILE *f, char *line)
 {	char txt[128];
-	char key[128];
+	char tag[128];
 	char val[128];
   char obj[128];
 	strncpy(txt,line,127);
-	int nf	= sscanf_s(txt," Replace ( %63[^ ),] , %63[^ ),] ) with %63[^ ]",key,63,val,63,obj,63);
+	int nf	= sscanf_s(txt," Replace ( %63[^ ),] , %63[^ ),] ) with %63[^ ]",tag,63,val,63,obj,63);
 	if (nf != 3)		return false;
 	//--- Insert an entry in replacement list -----------------
-	OSM_REP *rpm = GetOSMreplacement(key, val, obj);
+	OSM_REP *rpm = GetOSMreplacement(tag, val, obj);
 	if (0 == rpm)	return false;
 	//--- Add one replacement ---------------------------------
-	std::pair <U_INT,OSM_REP*> p(rpm->type,rpm);
+	std::pair <U_INT,OSM_REP*> p(rpm->otype,rpm);
 	repQ.insert(p);
 	return true;
 }
@@ -1178,7 +1174,7 @@ D2_TParam *D2_Session::GetRoofTexture(D2_Style *sty)
 //					we dont change the original property?
 //------------------------------------------------------------------
 bool D2_Session::GetReplacement(OSM_REP &rpm)
-{	U_INT otype = rpm.type;
+{	U_INT otype = rpm.otype;
 	int nbr = repQ.count(otype);
 	if (0 == nbr)		return false;
 	//--- Get range -------------------------------------
@@ -1200,11 +1196,11 @@ bool D2_Session::GetReplacement(OSM_REP &rpm)
 //------------------------------------------------------------------
 //	Select a style 
 //------------------------------------------------------------------
-D2_Style *D2_Session::GetaStyle(D2_BPM *p)
+void	D2_Session::GetaStyle(D2_BPM *p)
 {	int val = -1;
 	grp			= 0;
 	D2_Group *gp = 0;
-	if (p->style)				return p->style;
+	if (p->style)				return;
 	for (gp = groupQ.GetFirst(); gp != 0; gp = gp->Next())
 	{	int vg = gp->ValueGroup(p);
 		if (vg <= val)		continue;
@@ -1219,7 +1215,9 @@ D2_Style *D2_Session::GetaStyle(D2_BPM *p)
 	//--- check parameters -----------------
 	if (0 == sty) Abort("No Style found");
 	//--- Save parameters -------------------
-	return sty;
+	p->style = sty;
+	sty->AssignBPM(p);
+	return;
 }
 //-----------------------------------------------------------------
 //	Add a building if not already in list

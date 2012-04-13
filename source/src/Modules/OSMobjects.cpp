@@ -83,28 +83,30 @@ char *EndOSM = "***";
 //==========================================================================================
 //  List of AMENITY VALUES Tags
 //==========================================================================================
-OSM_VALUE amenityVAL[] = {
-	{"PLACE_OF_WORSHIP",	OSM_CHURCH,			0},
-	{"POLICE",						OSM_POLICE,			0},
-	{"FIRE_STATION",			OSM_FIRE_STA,		0},
-	{"TOWNHALL",					OSM_TOWNHALL,		0},
-	{"SCHOOL",						OSM_SCHOOL,			0},
-	{"COLLEGE",						OSM_COLLEGE,		0},
-	{"HOSPITAL",					OSM_HOSPITAL,		0},
+OSM_CONFP amenityVAL[] = {
+	//--- TAG VALUE -----OTYPE -----------OPROP ---------ZNeed ------------
+	{"PLACE_OF_WORSHIP",	OSM_CHURCH,			OSM_PROP_BLDG,},
+	{"POLICE",						OSM_POLICE,			OSM_PROP_BLDG,},
+	{"FIRE_STATION",			OSM_FIRE_STA,		OSM_PROP_BLDG,},
+	{"TOWNHALL",					OSM_TOWNHALL,		OSM_PROP_BLDG,},
+	{"SCHOOL",						OSM_SCHOOL,			OSM_PROP_BLDG,},
+	{"COLLEGE",						OSM_COLLEGE,		OSM_PROP_BLDG,},
+	{"HOSPITAL",					OSM_HOSPITAL,		OSM_PROP_BLDG,},
 	{EndOSM,					0},									  // End of table
 };
 //==========================================================================================
 //  List of BUILDING VALUES Tags
 //==========================================================================================
-OSM_VALUE  buildingVAL[] = {
-		{"SCHOOL",					OSM_SCHOOL,			0},
+OSM_CONFP  buildingVAL[] = {
+		//--- TAG VALUE -----OTYPE -----------OPROP ---------ZNeed ------------
+		{"SCHOOL",					OSM_SCHOOL,			OSM_PROP_BLDG},
 		{EndOSM,						0},									// End of table
 };
 //==========================================================================================
 //  List of LIGHT VALUES Tags
 //==========================================================================================
-OSM_VALUE  liteVAL[] = {
-		{"YES",							OSM_LIGHT,			0},
+OSM_CONFP  liteVAL[] = {
+		{"YES",							OSM_LIGHT,			OSM_PROP_NONE},
 		{EndOSM,						0},									// End of table
 };
 
@@ -112,9 +114,10 @@ OSM_VALUE  liteVAL[] = {
 //  List of admitted Tags
 //==========================================================================================
 OSM_TAG TagLIST[] = {
-	{"AMENITY",			amenityVAL},
-	{"BUILDING",		buildingVAL},
-	{"LIT",					liteVAL},
+	//--- TAG -----Value Table ---Builder -------Prop --- Layer ---
+	{"AMENITY",			amenityVAL,		OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
+	{"BUILDING",		buildingVAL,	OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
+	{"LIT",					liteVAL,			OSM_BUILD_LITE, 1, OSM_LAYER_LITE},
 	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
@@ -135,6 +138,24 @@ U_INT	propOSM[] = {
 
 };
 //==========================================================================================
+//  Local rendering vector depending on Layer
+//==========================================================================================
+OSM_Object::drawCB renderOSM[] = {
+	&OSM_Object::DrawAsBLDG,							// 0 => OSM_LAYER_BLDG
+	&OSM_Object::DrawAsLITE,							// 1 => OSM_LAYER_LITE
+	0,																		// 2 => OSM_LAYER_TREE
+};
+//==========================================================================================
+//  Vector to write object depending on build
+//==========================================================================================
+OSM_Object::writeCB writeOSM[] = {
+	0,																		// 0 => Not OSM
+	&OSM_Object::WriteAsBLDG,							// 1 => OSM_BUILD_BLDG
+	&OSM_Object::WriteAsLITE,							// 2 => OSM_BUILD_LITE
+	0,																		// 3 => OSM_BUILD_....
+};
+
+//==========================================================================================
 //  Street light parameters
 //==========================================================================================
 float lightOSM[4] = {1,1,float(0.8),1};
@@ -144,27 +165,52 @@ float lightDIS[]  = {0.0f,0.01f,0.00001f};
 //==========================================================================================
 //	Check for legible value
 //==========================================================================================
-void CheckValue(OSM_VALUE *tab,char *v,U_INT *tp)
-{	while (strcmp(tab->value,EndOSM) != 0)
-	{ if  (strcmp(tab->value,v) != 0)	{tab++; continue; }
-		*tp = tab->type;
-		return;
+U_INT CheckValue(OSM_CONFP *tab,char *v)
+{	while (strcmp(tab->val,EndOSM) != 0)
+	{ if  (strcmp(tab->val,v) != 0)	{tab++; continue; }
+		return tab->otype;
 	}
   //--- Unsupported value --------------------
-	*tp = 0;
-	return;
+	return 0;
 }
 //==========================================================================================
 //	Check for legible tag
 //==========================================================================================
-void  GetOSMattributs(char *t ,char *v, U_INT *tp)
+U_INT  GetOSMobjType(char *t ,char *v)
 {	OSM_TAG *tab = TagLIST;
 	while (strcmp(tab->tag,EndOSM) != 0)
-	{	if  (strcmp(tab->tag,t)   == 0)	return CheckValue(tab->table,v,tp);
+	{	if  (strcmp(tab->tag,t)   == 0)	return CheckValue(tab->table,v);
 		tab++;
 	}
 	//--- tag not supported --------------------
-	*tp = 0;
+	return 0;
+}
+
+//==========================================================================================
+//	Get tag value configuration
+//==========================================================================================
+void  GetOSMconfig(char *t ,char *v, OSM_CONFP &V)
+{	OSM_TAG *tab = TagLIST;
+	while (strcmp(tab->tag,EndOSM) != 0)
+	{	if  (strcmp(tab->tag,t)   != 0) {tab++; continue;}
+	  //--- Find the configuration -------------
+		V.build = tab->build;
+		//--- Search config ----------------------
+		OSM_CONFP *cnf = tab->table;	
+	  while (strcmp(cnf->val,EndOSM) != 0)
+		{	if  (strcmp(cnf->val,v) != 0)	{cnf++; continue; }
+			V.otype = cnf->otype;
+			V.prop  = cnf->prop;
+			V.val   = cnf->val;
+			V.tag		= tab->tag;
+			V.zned	= tab->zned;
+			V.layr  = tab->layr;
+			return;
+		}
+		break;
+	}
+	//--- tag not supported --------------------
+	V.otype = 0;
 	return;
 }
 //==========================================================================================
@@ -186,21 +232,23 @@ char GetOSMfolder(U_INT otype)
 //	Return a replacement struct for the tag-value parameters 
 //==========================================================================================
 OSM_REP *GetOSMreplacement(char *T, char *V, char *obj)
-{	U_INT otype;
-	GetOSMattributs(T, V, &otype);
+{	U_INT otype =	GetOSMobjType(T, V);
 	if (0 == otype)			return 0;
 	//--- fill replacement parameters ------------------
 	OSM_REP *rep = new OSM_REP();
-	rep->type = otype;
-	rep->dir  = GetOSMfolder(otype);
-	rep->obr  = Dupplicate(obj,FNAM_MAX);
+	rep->otype	= otype;
+	rep->dir		= GetOSMfolder(otype);
+	rep->obr		= Dupplicate(obj,FNAM_MAX);
 	return rep;
 }
 //==========================================================================
 //  OSM Object
 //==========================================================================
-OSM_Object::OSM_Object(U_INT tp, char *T, char *V)
-{	type				= tp;
+OSM_Object::OSM_Object(OSM_CONFP *CF)
+{	type				= CF->otype;
+	build				= CF->build;
+	zned				= CF->zned;
+	Layer				= CF->layr;
 	State				= 1;
 	bpm.stamp		= 0;
 	bpm.group		= 0;
@@ -209,8 +257,8 @@ OSM_Object::OSM_Object(U_INT tp, char *T, char *V)
 	part				= 0;
 	orien       = 0;
 	style				= 0;
-	if (*T)	tag = Dupplicate(T,64);
-	if (*V) val = Dupplicate(V,64);
+	if (CF->tag)	tag = Dupplicate(CF->tag,64);
+	if (CF->val)	val = Dupplicate(CF->val,64);
 }
 //-----------------------------------------------------------------
 //	Destroy resources
@@ -248,7 +296,13 @@ void OSM_Object::Invert(Queue<D2_POINT> &H)
 	part = 0;
 	return;
 }
-
+//-----------------------------------------------------------------
+//	Adjust translation vector
+//-----------------------------------------------------------------
+void OSM_Object::AdjustZ(CVector *T)
+{	if (zned)	T->z += alti;
+	return;
+}
 //-----------------------------------------------------------------
 //	Transfer queue
 //-----------------------------------------------------------------
@@ -259,6 +313,7 @@ void OSM_Object::ReceiveQ(Queue<D2_POINT> &H)
 	{	np = new D2_POINT(pp,'R');
 		base.PutLast(np);
 	}
+	alti		= -bpm.geop.alt;
 	return;
 }
 //-----------------------------------------------------------------
@@ -284,21 +339,21 @@ U_CHAR OSM_Object::IncOrientation(double rad)
 //-----------------------------------------------------------------
 //	Edit Object
 //-----------------------------------------------------------------
-void OSM_Object::EditPrm(char *txt)
+int OSM_Object::EditPrm(char *txt)
 {	U_INT nb  = bpm.stamp;
+	int   er  = bpm.error;
 	double lx = FN_METRE_FROM_FEET(bpm.lgx);
 	double ly = FN_METRE_FROM_FEET(bpm.lgy);
 	switch (type)	{
 		case OSM_LIGHT:
 			_snprintf(txt,127,"Street Light (%d spots)",bpm.side);
-			return;
+			return er;
 		case OSM_TREE:
-			return;
+			return er;
 		default:
 			_snprintf(txt,127,"BUILDING %05d lg:%.1lf wd:%.1lf",nb,lx,ly);
-			return;
 			}
-	return;
+	return er;
 }
 //-----------------------------------------------------------------
 //	Edit Tag
@@ -309,14 +364,25 @@ void OSM_Object::EditTag(char *txt)
 	return;
 }
 //-----------------------------------------------------------------
-//	Save building in mother group
+//	Assign style to object
 //-----------------------------------------------------------------
-void OSM_Object::SetParameters(D2_BPM &p)
-{	//--- check for group change ----------------------------
-	bool chge = (bpm.group != 0) && (bpm.group != p.group);
-	if (chge) bpm.group->RemBuilding(this);
-	bpm				= p;
-	D2_Group *grp = bpm.group;
+void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
+{ //--- Copy global parameters ------------------
+	D2_BPM *gpm = sty->GetBPM();
+	bpm	 = *gpm;			// Get external parameters --
+	//--- Change block parameter assignation ------
+	sty->AssignBPM(&bpm);
+	D2_Group *grp = sty->GetGroup();
+	//--- Get everything in bpm --------------------
+	bpm.style = sty;
+	bpm.group	= grp;
+	bpm.flNbr	= grp->GetFloorNbr();
+	bpm.flHtr	= grp->GetFloorHtr();
+	bpm.mans	= sty->IsMansart();
+	if (0 == bpm.roofP)	bpm.roofP	= grp->Session()->GetRoofTexture(sty);
+  if (0 == bpm.roofM)	grp->SelectOneRoof(&bpm);
+	if (0 == bpm.roofM)	bpm.roofM	= grp->GetRoofModByNumber(bpm.mans);
+	//--- Add the building -------------------------
 	grp->AddBuilding(this);
 	//--- Set part parameters ----------------------
 	C3DPart      *prt  = new C3DPart();
@@ -324,8 +390,30 @@ void OSM_Object::SetParameters(D2_BPM &p)
 	prt->Reserve(ref);
 	if (part)	delete part;
 	part	= prt;
+	B->RiseBuilding(&bpm);
+	B->SaveBuildingData(prt);
 	return;
 }
+//-----------------------------------------------------------------
+//	Change style to object
+//-----------------------------------------------------------------
+void OSM_Object::ChangeStyle(D2_Style *sty, CBuilder *B)
+{ //--- set block parameter to me----
+	sty->AssignBPM(&bpm);
+  bpm.opt.Raz(OSM_PROP_REPL);
+	bpm.roofM	= 0;
+	bpm.roofP	= 0;
+	//--- Check for group change ------------
+	D2_Group *grp = sty->GetGroup();
+	if (bpm.group == grp)   return AssignStyle(sty,B);
+	//--- Change group ----------------------
+	D2_Group *pgp = bpm.group;
+	pgp->RemBuilding(this);
+	grp->AddBuilding(this);
+	AssignStyle(sty,B);
+	return;
+}
+
 //-----------------------------------------------------------------
 //	Translate all vertices to SuperTile center
 //-----------------------------------------------------------------
@@ -337,7 +425,7 @@ GN_VTAB *OSM_Object::StripToSupertile()
 	double rdf      = cos(rad);
 	SPosition   p1	= GetPosition();
 	CVector T				= FeetComponents(p0, p1,rdf);
-	T.z            += zCor;
+	if (zned)    T.z+= alti;        
   U_INT nbv				= part->GetNBVTX();
 	if (0 == nbv)		return 0;
 	GN_VTAB *src	= part->GetGTAB();
@@ -412,7 +500,6 @@ void OSM_Object::BuildLightRow(double ht)
 {	double H = FN_FEET_FROM_METER(ht);
 	part		 = new C3DPart();
 	part->AllocateOsmLIT(bpm.side);
-	RenderLITE();
 	TEXT_INFO txd;
 	strncpy(txd.name,"GLOBE.PNG",FNAM_MAX);
 	txd.Dir = TEXDIR_OSM_MD;
@@ -428,7 +515,6 @@ void OSM_Object::BuildLightRow(double ht)
 		dst++;
 	}
 	//--- Z correction for drawing in terrain ------
-	zCor	= -bpm.geop.alt;
 	return;
 }
 //-----------------------------------------------------------------
@@ -443,20 +529,10 @@ void OSM_Object::Draw()
 	glLoadName(bpm.stamp);
 	glPushMatrix();
 	SVector T = FeetComponents(globals->geop, this->bpm.geop, bpm.rdf);
-	T.z			 += zCor;
+	if (zned)	T.z	+= alti;
 	glTranslated(T.x, T.y, T.z);  //T.z);
 	part->Draw();	
 	glPopMatrix();
-}
-//==================================================================
-//	Init building vectors
-//==================================================================
-void	OSM_Object::RenderBLDG()
-{	Layer		= OSM_LAYER_BLDG;	
-	drawFN	= &OSM_Object::DrawAsBLDG;
-	writFN	= &OSM_Object::WriteAsBLDG;
-	zCor		= 0;
-	return;
 }
 //-----------------------------------------------------------------
 //	Draw as a Building object
@@ -500,15 +576,6 @@ void OSM_Object::WriteAsBLDG(FILE *fp)
 	//--- all ok ---------------------------------------
 	return;
 }
-//==================================================================
-//	Init light vectors
-//==================================================================
-void	OSM_Object::RenderLITE()
-{	Layer		= OSM_LAYER_LITE;
-	drawFN	= &OSM_Object::DrawAsLITE;
-	writFN	= &OSM_Object::WriteAsLITE;
-	return;
-}
 //-----------------------------------------------------------------
 //	Draw as a light row
 //-----------------------------------------------------------------
@@ -540,6 +607,22 @@ void OSM_Object::WriteAsLITE(FILE *fp)
 		fputs(txt,fp);
 	}
 	//--- all ok ---------------------------------------
+	return;
+}
+//==================================================================
+//	Draw as a local object
+//==================================================================
+void OSM_Object::DrawLocal()
+{	if (0 == State)		return;
+	(this->*renderOSM[Layer])();
+	return;
+}
+//==================================================================
+//	Write object
+//==================================================================
+void OSM_Object::Write(FILE *p)
+{	if (0 == State)		return;
+	(this->*writeOSM[build])(p);
 	return;
 }
 

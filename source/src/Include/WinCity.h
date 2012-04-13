@@ -95,7 +95,8 @@ class CFuiSketch : public CFuiWindow
 	//--- Dialogue button -----------------------------------------
 	Tag					  dial;
 	//--- OSM object attributs ------------------------------------
-	U_INT					otype;					// Object type
+	//U_INT					otype;					// Object type
+	OSM_CONFP			confp;					// Configuration
 	char					tagn[64];				// Tag name
 	char					valn[64];				// Value name
 	//--- Replacing attributs for object --------------------------
@@ -147,7 +148,6 @@ class CFuiSketch : public CFuiWindow
 	//-------------------------------------------------------------
 	CBuilder        *trn;					// CBuilder
 	D2_Session       ses;					// Session
-	D2_BPM          *bpm;					// Building parameters
 	//---Original context -----------------------------------------
   CAMERA_CTX       ctx;         // Original camera and situation
 	//--- Rabbit camera -----------------------------------------
@@ -174,7 +174,7 @@ public:
 	int  	NoSession();
 	int  	BuildStyList();
 	//------------------------------------------------------------
-	void	EditBuilding();
+	int	  EditBuilding();
 	void	AutoReplace();
 	//------------------------------------------------------------
 	U_INT	Abort(char *err,char *fn);

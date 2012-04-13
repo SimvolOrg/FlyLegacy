@@ -35,56 +35,6 @@
 //====================================================================================
 #include "../Include/Model3D.h"
 #include "../Include/Triangulator.h"
-//================================================================================================
-extern	char		*ScriptCreateOSM[];
-extern	char		*ScriptCreateAPO[];
-extern	void		 GetOSMattributs(char *t ,char *v, U_INT *tp);
-extern	char		*GetOSMdirectory(U_INT otype);
-extern	char		 GetOSMfolder(U_INT otype);
-extern	U_INT		 propOSM[];
-extern  float    lightOSM[];
-extern  float    alphaOSM;
-extern  U_INT    lightDIM;
-extern  float    lightDIS[];
-extern	OSM_REP *GetOSMreplacement(char *T, char *V, char *obj);
-//==========================================================================================
-// Type of object
-//==========================================================================================
-struct OSM_VALUE {
-	char *value;
-	U_INT type;
-	U_INT prop;
-};
-//==========================================================================================
-// Type of object
-//==========================================================================================
-struct OSM_TAG {
-	char      *tag;
-	OSM_VALUE *table;					// Value table
-};
-//==========================================================================================
-// replacement structure
-//==========================================================================================
-struct OSM_REP {
-	char  dir;								// Replacement directory (No)
-	char *obr;								// Replacing object
-	U_INT type;								// Object type
-	double sinA;
-	double cosA;
-	//------------------------------------------------------
-	OSM_REP()	{	dir = 0; 	obr	= 0; type = 0; }
-	//------------------------------------------------------
-	~OSM_REP(){	Clear();	}
-  //------------------------------------------------------
-	void Clear()	{if (obr) delete [] obr; obr = 0;}
-	//-------------------------------------------------------
-	void Copy(OSM_REP &R)
-	{	Clear(); 
-		obr = Dupplicate(R.obr, FNAM_MAX);
-		dir = R.dir;
-		type = R.type;
-	}
-};
 //====================================================================================
 //	Object properties
 //====================================================================================
@@ -93,7 +43,13 @@ struct OSM_REP {
 #define OSM_PROP_MREP (0x02)								// Object can be replaced
 #define OSM_PROP_MSTY	(0x04)								// Object can change style
 //--- Building properties ------------------------------------------------
-#define OSM_PROP_BLDG (OSM_PROP_MREP+OSM_PROP_MSTY) 
+#define OSM_PROP_BLDG (OSM_PROP_MREP+OSM_PROP_MSTY)
+//====================================================================================
+//	Object build kind
+//====================================================================================
+ #define OSM_BUILD_BLDG	(1)
+ #define OSM_BUILD_LITE (2)
+ #define OSM_BUILD_AMNY (3)
 //====================================================================================
 //	Object type
 //====================================================================================
@@ -110,6 +66,74 @@ struct OSM_REP {
 //---------------------------------
 #define OSM_MAX       (11)
 
+//==========================================================================================
+// Type of object
+//==========================================================================================
+struct OSM_CONFP {
+	char *val;
+	U_INT otype;
+	U_INT prop;
+	//--------------------------------------------------
+	char  zned;						// Z val is needed
+	char  layr;						// OSM layer
+	U_INT	build;					// Build category
+	char *tag;
+	//---Set default to a building ---------------------
+	void Reset()
+	{ tag   = val = 0;
+		zned	= 0;
+		layr  = OSM_LAYER_BLDG;
+		otype = OSM_BUILDING;
+		prop  = OSM_PROP_BLDG;
+		build = OSM_BUILD_BLDG;
+	}
+};
+//==========================================================================================
+extern	char		*ScriptCreateOSM[];
+extern	U_INT		 GetOSMobjType(char *t ,char *v);
+extern	void		 GetOSMconfig (char *t ,char *v, OSM_CONFP &V);
+extern	char		*GetOSMdirectory(U_INT otype);
+extern	char		 GetOSMfolder(U_INT otype);
+extern	U_INT		 propOSM[];
+extern  float    lightOSM[];
+extern  float    alphaOSM;
+extern  U_INT    lightDIM;
+extern  float    lightDIS[];
+extern	OSM_REP *GetOSMreplacement(char *T, char *V, char *obj);
+//==========================================================================================
+// Type of object
+//==========================================================================================
+struct OSM_TAG {
+	char      *tag;
+	OSM_CONFP *table;					// Value table
+	U_INT			 build;					// Build category
+	char			 zned;					// Z value is needed
+	char			 layr;					// OSM layer
+};
+//==========================================================================================
+// replacement structure
+//==========================================================================================
+struct OSM_REP {
+	char   dir;								// Replacement directory (No)
+	char  *obr;								// Replacing object
+	U_INT  otype;								// Object type
+	double sinA;
+	double cosA;
+	//------------------------------------------------------
+	OSM_REP()	{	dir = 0; 	obr	= 0; otype = 0; }
+	//------------------------------------------------------
+	~OSM_REP(){	Clear();	}
+  //------------------------------------------------------
+	void Clear()	{if (obr) delete [] obr; obr = 0;}
+	//-------------------------------------------------------
+	void Copy(OSM_REP &R)
+	{	Clear(); 
+		obr = Dupplicate(R.obr, FNAM_MAX);
+		dir = R.dir;
+		otype = R.otype;
+	}
+};
+
 //====================================================================================
 //	Object from OSM
 //====================================================================================
@@ -122,12 +146,13 @@ public:
 protected:
 	//--- Attributes -------------------------------------------------
 	U_INT					type;										// Type of object
+	U_INT         build;									// Kind of object
 	D2_BPM				bpm;										// Building parameters
 	//--- States -----------------------------------------------------
 	U_CHAR        State;									// Existing
 	U_CHAR				Layer;									// OSM layer
 	U_CHAR				style;									// Style is forced
-	U_CHAR				rfu3;
+	U_CHAR				zned;										// Need correction
 	//--- Drawing vector ---------------------------------------------
 	drawCB				drawFN;									// local Drawing vector	
 	writeCB				writFN;									// Write function			
@@ -138,17 +163,19 @@ protected:
 	char				 *tag;										// From OSM
 	char				 *val;										// Value
 	//---------------------------------------------------------------
-	double        zCor;										// Z correction
+	double        alti;										// Z correction
 	//--- List of base POINTS ---------------------------------------
 	Queue<D2_POINT> base;									// Base Points
 	//--- can be replaced --------------------------------------------
 	C3DPart			 *part;										// Object component
 	//--- Methods ----------------------------------------------------
 public:
-	OSM_Object(U_INT tp, char *T, char *V);
+	OSM_Object(OSM_CONFP *CF);
  ~OSM_Object();
+  //---  Virtual functions -----------------------------------------
+	virtual void Build()   {;}
   //----------------------------------------------------------------
-	void		EditPrm(char *txt);
+	int 		EditPrm(char *txt);
 	void		EditTag(char *txt);
 	void		Swap(Queue<D2_POINT> &Q);
 	void		Invert(Queue<D2_POINT> &H);
@@ -177,15 +204,22 @@ public:
 	void		ReplacePart(C3DPart *p);
 	void		ReplaceBy(OSM_REP *rpp)			{repMD.Copy(*rpp); } 
 	//----------------------------------------------------------------
-	void     SetParameters(D2_BPM &p);
+	void		AdjustZ(CVector *V);
+	//----------------------------------------------------------------
+	//void     SetParameters(D2_BPM *p);
 	GN_VTAB *StripToSupertile();
+	//----------------------------------------------------------------
+	void		 AssignStyle(D2_Style *sty, CBuilder *B);
+	void		 ChangeStyle(D2_Style *sty, CBuilder *B);
 	//----------------------------------------------------------------
 	D2_BPM &GetParameters()			        {return bpm;}	
 	SPosition GetPosition()							{return bpm.geop;}
 	double    GetRDF()									{return bpm.rdf;}
-	double    GetZCOR()									{return zCor;}
 	//----------------------------------------------------------------
-	U_INT		 GetStamp()									{return bpm.stamp;}
+	U_INT			GetStamp()								{return bpm.stamp;}
+	D2_Style *GetStyle()								{return bpm.style;}
+	U_INT			GetError()								{return bpm.error;}
+	char      GetFocus()								{return bpm.selc;}
 	//----------------------------------------------------------------
 	C3DPart *GetPart()									{return part;}
 	//----------------------------------------------------------------
@@ -199,6 +233,8 @@ public:
 	void		Restore()										{State = 1;}
 	bool	  IsValid()									  {return (1 == State);}
 	bool    IsaLight()									{return (type == OSM_LIGHT);}
+	bool		IsSelected()								{return (bpm.selc != 0);}
+	bool    SameStamp(U_INT n)					{return (bpm.stamp == n);}
 	//----------------------------------------------------------------
 	char	CanBeModified()								{return bpm.opt.Has(OSM_PROP_MSTY);}
 	char  CanBeRotated()								{return bpm.opt.Has(OSM_PROP_REPL);}
@@ -207,13 +243,14 @@ public:
 	void		Draw();
 	void		DrawAsBLDG();
 	void		DrawAsLITE();
-	void		DrawLocal()									{ if (1 == State) (this->*drawFN)();}
-	void		RenderBLDG();
-	void		RenderLITE();
+	void		DrawLocal();									
 	//----------------------------------------------------------------
-	void		Write(FILE *fp)							{ if (1 == State) (this->*writFN)(fp);}
+	void		Write(FILE *fp);							
 	void		WriteAsBLDG(FILE *fp);
 	void    WriteAsLITE(FILE *fp);
+	//----------------------------------------------------------------
+	void		ObjGeoPos(SPosition &P)	{P = bpm.geop;}
+
 };
 //===================================================================================
 //	Environment OSM Building

@@ -1569,7 +1569,7 @@ void CSuperTile::AddToPack(OSM_Object *obj)
 	double rdf = cos(rad);
 	SPosition pos	= obj->GetPosition();
 	CVector T  = FeetComponents(mPos, pos,rdf);
-	T.z       += obj->GetZCOR();
+	obj->AdjustZ(&T);		
 	//--- Search a part with same texture ------
 	CShared3DTex *ref = obj->GetPartTREF();
 	C3DPart *p0 = obj->GetPart();
