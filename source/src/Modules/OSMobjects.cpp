@@ -86,12 +86,12 @@ char *EndOSM = "***";
 OSM_CONFP amenityVAL[] = {
 	//--- TAG VALUE -----OTYPE -----------OPROP ---------ZNeed ------------
 	{"PLACE_OF_WORSHIP",	OSM_CHURCH,			OSM_PROP_BLDG,},
-	{"POLICE",						OSM_POLICE,			OSM_PROP_BLDG,},
-	{"FIRE_STATION",			OSM_FIRE_STA,		OSM_PROP_BLDG,},
-	{"TOWNHALL",					OSM_TOWNHALL,		OSM_PROP_BLDG,},
-	{"SCHOOL",						OSM_SCHOOL,			OSM_PROP_BLDG,},
-	{"COLLEGE",						OSM_COLLEGE,		OSM_PROP_BLDG,},
-	{"HOSPITAL",					OSM_HOSPITAL,		OSM_PROP_BLDG,},
+	{"POLICE",						OSM_POLICE,			OSM_PROP_IGNR,},
+	{"FIRE_STATION",			OSM_FIRE_STA,		OSM_PROP_IGNR,},
+	{"TOWNHALL",					OSM_TOWNHALL,		OSM_PROP_IGNR,},
+	{"SCHOOL",						OSM_SCHOOL,			OSM_PROP_IGNR,},
+	{"COLLEGE",						OSM_COLLEGE,		OSM_PROP_IGNR,},
+	{"HOSPITAL",					OSM_HOSPITAL,		OSM_PROP_IGNR,},
 	{EndOSM,					0},									  // End of table
 };
 //==========================================================================================
@@ -119,23 +119,6 @@ OSM_TAG TagLIST[] = {
 	{"BUILDING",		buildingVAL,	OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
 	{"LIT",					liteVAL,			OSM_BUILD_LITE, 1, OSM_LAYER_LITE},
 	{EndOSM,					0},									// End of table
-};
-//==========================================================================================
-//  Properties per object type
-//==========================================================================================
-U_INT	propOSM[] = {
-	0,														// Not an object
-	OSM_PROP_BLDG,					// OSM_BUILDING		(1)
-	OSM_PROP_BLDG,					// OSM_CHURCH			(2)
-	OSM_PROP_BLDG,					// OSM_POLICE			(3)
-	OSM_PROP_BLDG,					// OSM_FIRE_STA		(4)
-	OSM_PROP_BLDG,					// OSM_TOWNHALL		(5)
-	OSM_PROP_BLDG,					// OSM_SCHOOL			(6)
-	OSM_PROP_BLDG,					// OSM_COLLEGE		(7)
-	OSM_PROP_BLDG,					// OSM_HOSPITAL		(8)
-	OSM_PROP_NONE,					// OSM_TREE				(9)
-	OSM_PROP_NONE,					// OSM_LIGHT     (10)
-
 };
 //==========================================================================================
 //  Local rendering vector depending on Layer
@@ -554,7 +537,8 @@ void OSM_Object::WriteAsBLDG(FILE *fp)
 	char *nsty = bpm.style->GetSlotName();
 	int   rmno = bpm.roofM->GetRoofModNumber();
 	int   rofn = bpm.roofP->GetRoofTexNumber();
-	_snprintf(txt,127,"Style %s rofm=%d rftx=%d\n",nsty,rmno,rofn);
+	int   flnb = bpm.flNbr;
+	_snprintf(txt,127,"Style %s rofm=%d rftx=%d flNbr=%d \n",nsty,rmno,rofn,flnb);
 	fputs(txt,fp);
 	//--- Write tag ------------------------------------
 	char *vl = (tag)?(val):("---");

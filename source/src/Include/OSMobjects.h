@@ -42,8 +42,10 @@
 #define OSM_PROP_REPL (0x01)								// Object is replaced
 #define OSM_PROP_MREP (0x02)								// Object can be replaced
 #define OSM_PROP_MSTY	(0x04)								// Object can change style
+#define OSM_PROP_SKIP (0x08)								// Object is skipped
 //--- Building properties ------------------------------------------------
 #define OSM_PROP_BLDG (OSM_PROP_MREP+OSM_PROP_MSTY)
+#define OSM_PROP_IGNR (OSM_PROP_MREP+OSM_PROP_SKIP)							
 //====================================================================================
 //	Object build kind
 //====================================================================================
@@ -94,7 +96,6 @@ extern	U_INT		 GetOSMobjType(char *t ,char *v);
 extern	void		 GetOSMconfig (char *t ,char *v, OSM_CONFP &V);
 extern	char		*GetOSMdirectory(U_INT otype);
 extern	char		 GetOSMfolder(U_INT otype);
-extern	U_INT		 propOSM[];
 extern  float    lightOSM[];
 extern  float    alphaOSM;
 extern  U_INT    lightDIM;
@@ -235,6 +236,8 @@ public:
 	bool    IsaLight()									{return (type == OSM_LIGHT);}
 	bool		IsSelected()								{return (bpm.selc != 0);}
 	bool    SameStamp(U_INT n)					{return (bpm.stamp == n);}
+	//----------------------------------------------------------------
+	bool    AreYou(char *T)							{return (strcmp(T,tag) == 0);}
 	//----------------------------------------------------------------
 	char	CanBeModified()								{return bpm.opt.Has(OSM_PROP_MSTY);}
 	char  CanBeRotated()								{return bpm.opt.Has(OSM_PROP_REPL);}

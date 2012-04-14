@@ -837,6 +837,7 @@ void CSituation::ReadFinished (void)
   // sdk:save a pointer to 'user' as the first item in the sdk SFlyObjectRef list
   //if (uVeh) sdk_flyobject_list.InsertUserInFirstPosition (uVeh);
   TRACE("CSituation::ReadFinished");
+	globals->tcm->CheckTeleport();
 }
 //---------------------------------------------------------------------------
 // The Prepare method is called after loading of the situation, but

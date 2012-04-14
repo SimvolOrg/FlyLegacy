@@ -366,6 +366,7 @@ public:
 	double GetRX()		{return rx;}
 	double GetRY()    {return ry;}
 	double GetRZ()		{return rz;}
+	double GetTX()		{return (rx > 0)?(rx):(TC_ARCS_PER_QGT);}
 	//--- Return altitude ------------------------------
 	double GetWZ()		{return rz;}
 	//--- Set relative coordinates ---------------------

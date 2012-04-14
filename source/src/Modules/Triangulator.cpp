@@ -466,7 +466,8 @@ void CBuilder::BuildOBJ(OSM_CONFP *CF)
 //	Rebuild if orientation error 
 //-------------------------------------------------------------------
 int CBuilder::ReOrientation(D2_BPM *bpm)
-{	bpm->error = 4;
+{	bpm->error++;
+	if (bpm->error > 1)		return 4;
 	slot.Clear();
 	//---Invert vertices direction ----------
 	Queue<D2_POINT> H;
@@ -478,6 +479,7 @@ int CBuilder::ReOrientation(D2_BPM *bpm)
 	  }
 	//--- Requalify once -------------------
 	QualifyPoints(bpm);
+	bpm->error = 0;
 	return 0;
 }
 //-------------------------------------------------------------------
@@ -503,6 +505,12 @@ void CBuilder::MakeLITE(U_INT tp)
 	session->AddLight(osmB);
 	extp.Clear();
 	return;
+}
+//-------------------------------------------------------------------
+//	Make a Light row.  Compute light height from terrain
+//-------------------------------------------------------------------
+void CBuilder::MakeWALL(U_INT tp)
+{
 }
 //-------------------------------------------------------------------
 //	Edit tag
@@ -585,7 +593,7 @@ U_INT CBuilder::CountVertices()
 //-------------------------------------------------------------------
 //	Set Style from name
 //-------------------------------------------------------------------
-void CBuilder::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx)
+void CBuilder::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx, U_INT flnb)
 {	D2_Style *sty = session->GetStyle(nsty);
 	BDP.style = sty;
 	if (0 == sty)		return;
@@ -594,6 +602,7 @@ void CBuilder::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx)
 	char mans     = sty->GetMansart();
 	BDP.roofP			= sty->SelectRoofNum(rftx);
 	D2_Group *grp = sty->GetGroup();
+	grp->SetFloorNbr(flnb);
 	grp->SetRoofModelNumber(rfmo);
 	BDP.roofM     = grp->GetRoofModByNumber(mans);
 	return;
@@ -680,7 +689,6 @@ void CBuilder::RestoreOBJ()
 	osmB->Restore();
 	osmB->Select();
 	remB			= 0;
-	//BDP		= osmB->GetParameters();
 	return;
 }
 //----------------------------------------------------------------
@@ -756,8 +764,7 @@ void CBuilder::MakeSlot()
 //	Compute ground surface
 //-------------------------------------------------------------------
 int CBuilder::QualifyPoints(D2_BPM *bpm)
-{	if (bpm->error)			return 4;
-  int nbp = extp.GetNbObj();
+{ int nbp = extp.GetNbObj();
 	bpm->error = 0;
   if (nbp < 3)				return 2;
 	if (hole.GetNbObj() > 2)			Merge();	
@@ -1318,6 +1325,9 @@ int CBuilder::BuildBevelFloor(int No, int inx, double afh, D2_BPM *bpm)
 		fa->ne		=  bevel[pb->rng];
 		fa->nw		=  bevel[pa->rng];
 		fa->SetNorme(&geo);
+		//--- Link faces ------------------
+		fa->sw.next = &fa->se;
+		fa->nw.next = &fa->ne;
 		//--- Set Face top position ------
 		fa->ne.V	= 1;
 		fa->nw.V	= 1;
@@ -1341,11 +1351,6 @@ int CBuilder::BuildBevelFloor(int No, int inx, double afh, D2_BPM *bpm)
 	bevel			= 0;
 	return ce;
 }
-//----------------------------------------------------------------
-//	return corresponding bevel point
-//----------------------------------------------------------------
-D2_POINT *CBuilder::GetBevelPoint(D2_POINT *p)
-{	return bevel + p->rng;	}
 //----------------------------------------------------------------
 //	Build a normal floor
 //----------------------------------------------------------------
@@ -1394,9 +1399,6 @@ void CBuilder::BuildFloor(int No, double afh, D2_BPM *bpm)
 	bpm->hgt = ce;			// Save ceil for next floor;
 	return;
 }
-//----------------------------------------------------------------
-//	Build fence
-//----------------------------------------------------------------
 
 //----------------------------------------------------------------
 //	Reorder the tour with origin as first point
@@ -1411,11 +1413,6 @@ void CBuilder::Reorder()
 	} 
 	return;
 }
-//----------------------------------------------------------------
-//	Change Point
-//----------------------------------------------------------------
-D2_POINT *CBuilder::ChangePoint(D2_POINT *pp)
-{	return bevel + pp->rng; }
 //----------------------------------------------------------------
 //	Empty actual roof
 //----------------------------------------------------------------
@@ -1481,6 +1478,9 @@ void D2_FACE::Extrude(double fh, double ch, D2_POINT *p0, D2_POINT *p1)
 	se		= *p1;
 	ne		= *p1;
 	nw		= *p0;
+	//--- Link first point -----------
+	sw.next	= &se;
+	nw.next	= &ne;
 	//--- Set Face top position ------
 	ne.V	= 1;
 	nw.V	= 1;
@@ -1498,18 +1498,29 @@ void	D2_FACE::SetNorme(GeoTest *geo)
 }
 //---------------------------------------------------------------
 //	Texture this face
-//	Y faces are texture as a whole or as floor 
+//	Y faces are texture as a whole or as floor
+//	hb is set when face is either Y+ or Y- 
 //---------------------------------------------------------------
-void D2_FACE::TextureFace(D2_Style *sty)
+void D2_FACE::TextureFaceByPoint(D2_Style *sty)
 {	char hb = (fType & GEO_Y_FACE)?(1):(0);
   sty->TexturePoint(&sw,fType,fIndx,hb);
 	sty->TexturePoint(&se,fType,fIndx,hb);
 	sty->TexturePoint(&ne,fType,fIndx,hb);
 	sty->TexturePoint(&nw,fType,fIndx,hb);
-	//--- check for roof complement ---------------
-	
 	return;
 }
+//---------------------------------------------------------------
+//	Texture this face
+//	Y faces are texture as a whole or as floor
+//	hb is set when face is either Y+ or Y- 
+//---------------------------------------------------------------
+void D2_FACE::TextureFaceByFaces(D2_Style *sty)
+{	char hb = (fType & GEO_Y_FACE)?(1):(0);
+  sty->TextureByFace(&sw,fType,fIndx,hb);
+	sty->TextureByFace(&nw,fType,fIndx,hb);
+	return;
+}
+
 //--------------------------------------------------------------
 //	Dupplicate A,B,C points where
 //	A is between B and C
@@ -1652,22 +1663,14 @@ D2_FLOOR::~D2_FLOOR()
 //	Floor texturing 
 //---------------------------------------------------------------
 void D2_FLOOR::TextureFloor(D2_Style *s)
-{ for (U_INT k=0; k < faces.size(); k++)
+{ char txf = s->TextureMode();
+	for (U_INT k=0; k < faces.size(); k++)
 	{	D2_FACE *fa = faces[k];
-		fa->TextureFace(s);
+		if (txf) fa->TextureFaceByFaces(s);
+		else		 fa->TextureFaceByPoint(s);
 	}
 	return;
 }
-//---------------------------------------------------------------
-//	Save vertices in Part 
-//---------------------------------------------------------------
-/*
-U_INT	D2_FLOOR::StoreVertice(C3DPart *p,U_INT x)
-{	U_INT n = x;
-	for (U_INT k=0; k < faces.size(); k++) n += faces[k]->StoreVertices(p,n);
-	return n;
-}
-*/
 //---------------------------------------------------------------
 //	Save vertices in Part 
 //---------------------------------------------------------------
@@ -1693,6 +1696,7 @@ D2_Group::D2_Group(char *gn, D2_Session *s)
 {	next	= prev	= 0;
 	ssn				= s;
 	tr				= ssn->HasTrace();
+	rlgr = rsuf = rsid	= 0;
 	strncpy(name,gn,64);
 	name[63]	= 0;
 	sfMin			= 0;
@@ -1803,26 +1807,29 @@ bool D2_Group::DecodeParam(char *prm)
 	nf = sscanf(buf," FREQ = %d", &w);
 	if (nf == 1)	{quota = w;							return true; }
 	//--- Check Side length ----------------------------------
-	nf = sscanf(buf," LENGTH [ %lf, %lf ]", &lgMin, &lgMax);
-	if (nf == 2)	{opt.Set(D2_GRP_LNGT);	return true; }
+	nf = sscanf(buf," LENGTH [ %lf, %lf ]  %c ", &lgMin, &lgMax, &rlgr);
+	if (nf >= 2)	{opt.Set(D2_GRP_LNGT);	return true; }
 	//--- Check Side length to infinity ----------------------
-	nf = sscanf(buf," LENGTH [ %lf, * ]", &lgMin);
+	nf = sscanf(buf," LENGTH [ %lf, * ]",   &lgMin);
 	if (nf == 1)	{opt.Set(D2_GRP_LNGT);	return true; }
 	//--- Check for surface --------------------------------
-	nf = sscanf(buf," SURFACE [ %lf , %lf ]", &sfMin, &sfMax);
-	if (nf == 2)	{opt.Set(D2_GRP_SURF);	return true; }
+	nf = sscanf(buf," SURFACE [ %lf , %lf ] %c ", &sfMin, &sfMax, &rsuf);
+	if (nf >= 2)	{opt.Set(D2_GRP_SURF);	return true; }
 	//--- Check for surface to infinity --------------------
-  nf = sscanf(buf," SURFACE [ %lf , * ]",  &sfMin);
+  nf = sscanf(buf," SURFACE [ %lf , * ]",   &sfMin);
 	if (nf == 1)	{opt.Set(D2_GRP_SURF);	return true; }
 	//--- Check for side ------------------------------------
-	nf = sscanf(buf," SIDES [ %u , %u ]", &sdMin, &sdMax);
-	if  (nf == 2) {opt.Set(D2_GRP_SIDE);	return true; }
+	nf = sscanf(buf," SIDES [ %u , %u ] %c ", &sdMin, &sdMax, & rsid);
+	if  (nf >= 2) {opt.Set(D2_GRP_SIDE);	return true; }
 	//--- Check for side to infinity ------------------------
-	nf = sscanf(buf," SIDES [%u , * ]", &sdMin);
+	nf = sscanf(buf," SIDES [ %u , * ]",   &sdMin);
 	if	(nf == 1) {opt.Set(D2_GRP_SIDE);	return true; }
 	//--- Check floor number --------------------------------
-	nf = sscanf(buf," FLOOR %u",   &flNbr);
-	if  (1 == nf)	return true;
+	nf = sscanf(buf," FLOOR [ %u , %u ]",   &flMin, &flMax);
+	if  (2 == nf)	{return true; }
+	//--- Check floor number --------------------------------
+	nf = sscanf(buf," FLOOR %u",   &flMin);
+	if  (1 == nf)	{flMax = flMin;	return true; }
 	//--- Check floor height --------------------------------
 	nf = sscanf(buf," HEIGHT %lf", &flHtr);
 	if	(1 == nf)	return true;
@@ -1859,27 +1866,30 @@ int D2_Group::ValuePosition(SPosition &p)
 //	Evaluate Surface
 //-----------------------------------------------------------------
 int D2_Group::ValueSurface(double sf)
-{	if (opt.Not(D2_GRP_SURF))		return 0;
-	if (sf < sfMin)							return 0;
-	if (sf > sfMax)							return 0;
+{	int bad = (rsuf)?(-10):(0);
+	if (opt.Not(D2_GRP_SURF))		return 0;
+	if (sf < sfMin)							return bad;
+	if (sf > sfMax)							return bad;
 	return	10;
 }
 //-----------------------------------------------------------------
 //	Evaluate Side
 //-----------------------------------------------------------------
 int D2_Group::ValueSide(U_INT sd)
-{	if (opt.Not(D2_GRP_SIDE))		return 0;
-	if (sd < sdMin)							return 0;
-	if (sd > sdMax)							return 0;
+{	int bad = (rsid)?(-10):(0);
+  if (opt.Not(D2_GRP_SIDE))		return 0;
+	if (sd < sdMin)							return bad;
+	if (sd > sdMax)							return bad;
 	return 10;
 }
 //-----------------------------------------------------------------
 //	Evaluate Side
 //-----------------------------------------------------------------
 int D2_Group::ValueLength(double lg)
-{ if (opt.Not(D2_GRP_LNGT))		return 0;
-	if (lg < lgMin)							return 0;
-	if (lg > lgMax)							return 0;
+{ int bad = (rlgr)?(-10):(0);
+	if (opt.Not(D2_GRP_LNGT))		return 0;
+	if (lg < lgMin)							return bad;
+	if (lg > lgMax)							return bad;
 	return 10;
 }
 //-----------------------------------------------------------------
@@ -1997,6 +2007,17 @@ OSM_Object *D2_Group::FindBuilding(U_INT No)
 	if (rp == building.end())	return 0;
 	return (*rp).second;
 }
+//-----------------------------------------------------------------
+//	Get a random number of floors
+//-----------------------------------------------------------------
+int D2_Group::GenFloorNbr()
+{	flNbr	= flMin;
+	int dta = flMax - flMin;
+	if (0 == dta)	return flNbr;
+	int rdm = RandomNumber(dta);
+	flNbr = flMin + rdm;
+	return flNbr; 
+}
 //===================================================================================
 //
 //	Create a new style
@@ -2009,6 +2030,7 @@ D2_Style::D2_Style(char *snm, D2_Group *gp)
 	group			= gp;
 	bpm				= 0;
 	mans		  = 0;
+	texf			= 0;
 	dormer		= 0;
 	sText			= 0;
 	objNB			= 0;				// Instance number
@@ -2066,6 +2088,9 @@ bool D2_Style::DecodeStyle(char *prm)
 	//----------------------------------------------------------------------
   nf = sscanf(buf," FREQ %u",&quota);
 	if (1 == nf)		return true;
+	//--- check mode -------------------------------------------------------
+	nf = sscanf(buf," TEXTURECOVER %lf",&cover);
+	if (nf == 1) 		{	texf = 1; return true;}
 	//--- Check for X+ -----------------------------------------------------
 	pm.code	= GEO_FACE_XP;
 	nf = sscanf(buf,D2_MXP, &pm.x0, &pm.y0, &pm.Rx, &pm.Ry);
@@ -2232,23 +2257,20 @@ D2_TParam *D2_Style::SelectRoofNum(U_INT rfno)
 //	2) Compute S and T coordinates
 //	hb indicates that the full batiment height is taken in account
 //		in texturing the wall
+//	ft => Face Type
+//	fx => Floor index
 //----------------------------------------------------------------------
 void D2_Style::TexturePoint(D2_POINT *pp, char ft, char fx, char hb)
 { //--- Load texture --------------------------------------
   char	 ind = (ft << 2);					// Face Type as index in param
   ind += fx;											// Add floor code
 	//---- Select the texture -------------------------------
-	D2_TParam  *T = param[ind];				// Related exture
+	D2_TParam  *T = param[ind];				// Related Texture
 	double      H = pp->z;						// Point height
 	double      V = pp->VertPos();		// Vertical position
 	double      W = (hb)?(bpm->hgt):(Wz);		// Wall height
 	//--- pr is pixel in rectangle ---------------------------
-	double     pr		= 0;
-	double     md   = 0;
-	double  U = 0;
-	double  P = 0;
-	int     Q = 0;
-
+	double  pr= 0;
 	//---- Compute S coordinate -----------------------------
 	switch (ft)
 	{	case GEO_FACE_XP:
@@ -2283,6 +2305,59 @@ void D2_Style::TexturePoint(D2_POINT *pp, char ft, char fx, char hb)
 	pp->Id(np);
 	return;
 }
+//----------------------------------------------------------------------
+//	Return texture mode
+//	1 => Texture by face if requested and 
+//	building extension is greater than coverage
+//----------------------------------------------------------------------
+char D2_Style::TextureMode()
+{	if	(0 == texf)		return 0;
+	double cv = FN_FEET_FROM_METER(cover);
+	double xt = bpm->lgx;
+	return (cv > xt)?(0):(1);
+}
+//----------------------------------------------------------------------
+//	Compute the S,T texture coordinates for point pp
+//	1) Select texture definition in matrix from face type of pp
+//	2) Compute S and T coordinates
+//	hb indicates that the full batiment height is taken in account
+//		in texturing the wall
+//	ft => Face Type
+//	fx => Floor index
+//----------------------------------------------------------------------
+void D2_Style::TextureByFace(D2_POINT *pp, char ft, char fx, char hb)
+{ //--- Load texture --------------------------------------
+  char	 ind = (ft << 2);					// Face Type as index in param
+  ind += fx;											// Add floor code
+	//---- Select the texture -------------------------------
+	D2_TParam  *T = param[ind];				// Related Texture
+	double      H = pp->z;						// Point height
+	double      V = pp->VertPos();		// Vertical position
+	//double      W = (hb)?(bpm->hgt):(Wz);		// Wall height
+	double      W = Wz;								// Wall height
+	//--- pr => pixel in rectangle ---------------------------
+	double  pr= 0;
+	//---- Compute S coordinate ------------------------------
+	pp->s			= T->x0 / T->Tw;
+	D2_POINT *np = pp->next;
+	//--- Assume texture is 30 meters ------------------------
+	double	cv = FN_FEET_FROM_METER(cover);
+	double  lg = pp->elg;
+	double  vs = (lg / cv);
+	if (vs > 1)	vs = 1;
+	pr				 = (T->Rx * vs);
+	if (np) np->s			 = (T->x0 + pr ) / T->Tw;
+	//---- Compute T coordinate -----------------------------
+	double vt = (double(T->y0) + (V * T->Ry)) / Th;  
+	pp->t	= vt;
+	if (np) np->t = vt;
+	//-------------------------------------------------------
+	if (!group->HasTrace())			return;
+	char id[6];
+	pp->Id(id);
+	return;
+}
+
 //----------------------------------------------------------------------
 //	Texture Triangle wall according to face type ft
 //----------------------------------------------------------------------

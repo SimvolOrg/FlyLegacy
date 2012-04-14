@@ -1270,7 +1270,7 @@ CmQUAD *CmQUAD::Locate2D(CVector &p)
     if (lon < sw->GetRX())    continue;
     if (lat < sw->GetRY())    continue;
     CVertex *ne = qd->GetCorner(TC_NECORNER);
-    if (lon > ne->GetRX())    continue;
+    if (lon > ne->GetTX())    continue;
     if (lat > ne->GetRY())    continue;
     return qd->Locate2D(p); 
   }
@@ -1821,12 +1821,14 @@ void CSuperTile::BuildBorder(C_QGT *qt,U_INT No)
 //  Draw the Super Tile contour
 //-------------------------------------------------------------------------
 void CSuperTile::DrawTour()
-{ glDisable(GL_TEXTURE_2D);
+{ glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
+  glDisable(GL_TEXTURE_2D);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   glVertexPointer(3,GL_FLOAT,0,Tour);
-  glDrawArrays(GL_TRIANGLE_FAN,0,(TC_SPTBORDNBR + 2));
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glEnable(GL_TEXTURE_2D);
+  glDrawArrays(GL_LINE_LOOP,0,(TC_SPTBORDNBR + 2));
+	glPopAttrib();
+	glPopClientAttrib();
   return;
 }
 //-------------------------------------------------------------------------
@@ -1857,11 +1859,19 @@ void CSuperTile::DrawInnerSuperTile()
     { txn = Tex+nd;                                 // Texture descriptor
       CmQUAD *qd = txn->quad;
       //----Stop when plane enter this tile ----------------------------
+			/*
       //    Used only for debuging when uncommented   
-			//       U_INT  ax = txn->quad->GetTileAX();          // Absolute tile X index
-			//       U_INT  az = txn->quad->GetTileAZ();          // Absolute tile Z index 
-			//       if (globals->tcm->PlaneInTile(ax,az))        // This is for test only  
+			       U_INT  ax = txn->quad->GetTileAX();          // Absolute tile X index
+			       U_INT  az = txn->quad->GetTileAZ();          // Absolute tile Z index 
+			       if (globals->tcm->PlaneInTile(ax,az))        // This is for test only
+						 {
+ 							DrawTour();
+							int fr = globals->Frame & 0x07;
+							if (0 == fr)
+							TRACE("QGT %d SUP %02d Dist=%0.4lf", qgt->FullKey(),NoSP, FN_MILE_FROM_FEET(dEye));
+							}
 			//       ax = ax;                                      // Break point here
+			*/
       //---Stop for a given detail tile -------------------------------
       //
       //	if (txn->AreWe(TC_ABSOLUTE_DET(509,0),TC_ABSOLUTE_DET(334,18)))
@@ -3794,6 +3804,7 @@ void TCacheMGR::CheckTeleport()
 { SPosition Port;
   char qgt[64];
   qgt[0]  = 0;
+	/*
   GetIniString("Terrain","Teleport", qgt,10);
   if (*qgt == 0)      return;
   //-----Decode QGT X and Z -----------------------------
@@ -3804,6 +3815,16 @@ void TCacheMGR::CheckTeleport()
   Port.lat  = GetQgtSouthLatitude(qz);
   Port.lon  = FN_ARCS_FROM_QGT(qx);
   Port.alt  = 15000;
+  globals->geop = Port;
+	*/
+	char txt[128];
+	double lon, lat;
+	GetIniString("Terrain","Teleport",txt,128);
+	int nf = sscanf(txt,"( %lf , %lf )",&lon, &lat);
+	if (nf != 2) return;
+	Port.lon = lon;
+	Port.lat = lat;
+	Port.alt  = 15000;
   globals->geop = Port;
   return;
 }
@@ -3963,7 +3984,6 @@ void TCacheMGR::SetTransitionMask(C_QGT *qgt,CTextureDef *txn)
   U_INT kc      = (ax << 16) | az;
   char *cdt     = (globals->seaDB)?(GetCDTdata(kc)):(GetSEAdata(ax,az));
   txn->SetCoast(cdt);
-//  if (txn->Name[10]	== '*')   return;								 // This is a user texture
 	if (txn->UserTEX())					return;
   if (cdt)      {txn->TypTX = TC_TEXCOAST;}          // this is a coast tile
   char *nam     = txn->Hexa;

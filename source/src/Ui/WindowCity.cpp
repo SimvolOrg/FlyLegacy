@@ -269,12 +269,14 @@ bool CFuiSketch::ParseFile()
 //	Parse Style
 //-------------------------------------------------------------------
 bool CFuiSketch::ParseStyle(char *txt)
-{ char      nsty[64];
+{ char  nsty[64];
 	U_INT rofm = 0;
 	U_INT rftx = 0;
-	int nf = sscanf_s(txt," Style %63s rofm = %d rftx = %d",nsty,63, &rofm, &rftx);
-	if (nf == 3)  trn->ForceStyle(nsty,rofm,rftx);
-	return (nf == 3);
+	U_INT flnb = 0;
+	int nf = sscanf_s(txt," Style %63s rofm = %d rftx = %d flNbr = %d",nsty,63, &rofm, &rftx, &flnb);
+	if (nf != 4)		return false;
+	trn->ForceStyle(nsty,rofm,rftx,flnb);
+	return true;
 }
 //-------------------------------------------------------------------
 //	Parse vertex list
@@ -410,28 +412,33 @@ int CFuiSketch::EditBuilding()
 }
 //-------------------------------------------------------------------
 //	Check for replacement
+//	Return true if object is really replaced
 //-------------------------------------------------------------------
-void CFuiSketch::AutoReplace()
+bool CFuiSketch::AutoReplace()
 { repPM.Clear();
 	repPM.otype = confp.otype;
-	if (!ses.GetReplacement(repPM))		return;
-	trn->ReplaceOBJ(&repPM,1);
-	return;
+	if (!ses.GetReplacement(repPM))		return false;
+	char rep = trn->ReplaceOBJ(&repPM,1);
+	return (1 ==rep);								
 }
 //-------------------------------------------------------------------
 //	Build Object
 //-------------------------------------------------------------------
 bool CFuiSketch::BuildObject()
-{	if (0 == confp.otype)	return false;
+{	if (0 == confp.otype)						return false;
 	trn->BuildOBJ(&confp);
+	int	rep = 0;
 	//--- Replace directive -----------------
 	if (repPM.obr)
 	{	repPM.sinA = sin(orien);
 		repPM.cosA = cos(orien);
-		trn->ReplaceOBJ(&repPM,0);
+		rep = trn->ReplaceOBJ(&repPM,0);
 	}
 	//--- Auto replace ----------------------
-	else				AutoReplace();
+	else				rep = AutoReplace();
+	//--- Check for deletion ----------------
+	bool dlt =  (0 == rep) && (confp.prop & OSM_PROP_SKIP);
+	if (dlt)	{	trn->RemoveOBJ();	return false;	}
 	//---------------------------------------
 	int er = EditBuilding();
 	rcam->GoToPosition(geop);			// Teleport
@@ -537,7 +544,7 @@ U_INT CFuiSketch::ReadNext()
 	if (eofl)							return SKETCH_PAUSE;
 	if (!ParseBuilding())	return SKETCH_ENDL;
 	//--- build object ---------------------
-	if (!BuildObject())		return SKETCH_SHOW;
+	if (!BuildObject())		return SKETCH_LOAD;
 	time	= 0;
 	//---------------------------------------
 	U_INT	nobj = trn->ActualStamp();
@@ -994,6 +1001,8 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 //
 //	Start OpenStreet session
 //
+//	NOTE:   The default group is for internal purpose and is never selected
+//					from user parameter
 //===================================================================================
 D2_Session::D2_Session()
 {	tr			= 0;
@@ -1001,8 +1010,14 @@ D2_Session::D2_Session()
 	Stamp		= 1;
 	roof = new CRoofFLAT('fixe');
 	//--- Assign a default roof texture ------------------
+	char *gnm = "$default$";
 	rtex = new D2_TParam();
-
+	//--- Allocate the default group ---------------------
+	D2_Group *grp = new D2_Group(gnm,this);
+	grp->SetTexName("DontRemove.jpg");
+	grp->LoadTexture();
+	grpQ[gnm] = grp;
+	//--- Allocate others items --------------------------
 }
 //-----------------------------------------------------------------
 //	Destroy resources
@@ -1212,6 +1227,7 @@ void	D2_Session::GetaStyle(D2_BPM *p)
 	//TRACE("SELECTED GROUP %s",grp->GetName());
 	if (grp->ReachQuota()) 	groupQ.SwitchToLast(grp);
 	sty = grp->GetOneStyle();
+	grp->GenFloorNbr();			// Generate number of floors
 	//--- check parameters -----------------
 	if (0 == sty) Abort("No Style found");
 	//--- Save parameters -------------------

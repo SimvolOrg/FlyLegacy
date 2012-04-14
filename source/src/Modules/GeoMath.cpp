@@ -529,7 +529,7 @@ void GetQgtMidPoint(int gx,int gz,SPosition &p)
 void GetSuperTileNo(SPosition *P, U_INT *K, U_SHORT *S)
 { U_INT qx, qz;
 	IndicesInQGT (*P, qx, qz);
-	*K = (qx << 16) | qz;
+	*K = QGTKEY(qx,qz);
 	//--- compute supertile Number ----------------------
 	double slat = GetQgtSouthLatitude(qz);
 	double dlat = GetLatitudeDelta(qz);
@@ -540,7 +540,7 @@ void GetSuperTileNo(SPosition *P, U_INT *K, U_SHORT *S)
 	//--- divide each number by 4 -----------------------
 	U_INT sx	= tx >> 2;
 	U_INT sz  = tz >> 2;
-	*S = U_SHORT((sx << 3) | sz);
+	*S = U_SHORT((sz << 3) | sx);
 	return;
 }
 //-----------------------------------------------------------------------------

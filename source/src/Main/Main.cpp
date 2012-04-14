@@ -329,7 +329,7 @@ char *directoryTAB [] = {
 	"OpenStreet/Models/Lights",				// 4 => OSM Lights
 	};
 //--- Per object type ----------------------------------------
-char replOBJ[] = {
+char replOBJ[OSM_MAX] = {
 	FOLDER_ART,							// 0 Not a OSM object
 	FOLDER_OSM_BLDG,				// 1  OSM_BUILDING		(1)
 	FOLDER_OSM_BLDG,				// 2  OSM_CHURCH			(2)

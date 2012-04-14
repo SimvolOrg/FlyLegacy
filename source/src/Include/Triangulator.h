@@ -411,7 +411,8 @@ public:
 	//--------------------------------------------------
 	void		Extrude(double f,double c,D2_POINT *sw,D2_POINT *se);
 	void		SetNorme(GeoTest *geo);
-	void		TextureFace(D2_Style *s);
+	void		TextureFaceByPoint(D2_Style *s);
+	void		TextureFaceByFaces(D2_Style *sty);
 	void		MoveToSW();
 	void		CRotation();
 	//--------------------------------------------------
@@ -529,12 +530,14 @@ class D2_Style: public D2_Ratio, public CSlot {
 	D2_Group  *group;											// Parent group
 	char			 tr;												// Trace
 	char       mans;											// Style mansart on last floor
+	char       texf;											// Texture by face
 	//--- Texture size ---------------------------------------------
 	U_INT			 Tw;												// Texture width
 	U_INT			 Th;												// Texture height
 	//--------------------------------------------------------------
 	D2_BPM    *bpm;												// Building parameters
 	//--------------------------------------------------------------
+	double     cover;											// Texture coverage (feet)
 	double     Wz;												// wall height
 	//----- Queue for selector -------------------------------------
 	Queue<D2_TParam> rtexQ;
@@ -559,6 +562,9 @@ public:
 	bool			AddRoof(D2_TParam &p);
 	bool			AddDormer(D2_TParam &p);
 	//-------------------------------------------------------------
+	char      TextureMode();
+	double    TextureCover()	{return cover;}
+	//-------------------------------------------------------------
 	void			AddGroundFXP(D2_TParam &p);
 	//-------------------------------------------------------------
 	void					SelectRoofTexture();
@@ -566,6 +572,7 @@ public:
 	D2_TParam    *SelectRoofNum(U_INT rfno);
 	//-------------------------------------------------------------
 	void      TexturePoint(D2_POINT *p, char tp, char fx,char hb = 0);			// Compute x texture coordinate
+	void			TextureByFace(D2_POINT *pp, char ft, char fx, char hb);
 	void			TextureSideWall(D2_TRIANGLE &T, char ft, char hb);
 	//-------------------------------------------------------------
 	bool			IsOK();
@@ -618,7 +625,12 @@ class D2_Group: public  D2_Ratio {
 	char		tr;															// Trace
 	char    mans;														// Current style is mansard
 	char 		rmno;														// Selected roof model
-	char		rfu2;														// Reserved
+	char		rfu1;														// reserved value
+	//--- Renforced notation --------------------------------------
+	char    rlgr;														// Renforced lenght
+	char    rsuf;														// Renforced surface
+	char    rsid;														// Renforced side
+	char		rfu2;
 	//--- Texture parameters --------------------------------------
 	TEXT_INFO txd;													// Texture definition
 	CShared3DTex *tREF;											// Texture reference
@@ -626,6 +638,8 @@ class D2_Group: public  D2_Ratio {
 	short    indx;													// Turn index
 	//---- Floor parameters ---------------------------------------
 	short    flNbr;													// Number of floors
+	short    flMin;													// Minimum floors
+	short    flMax;													// Floor maxi
 	double   flHtr;													// Floor height
 	//--- Number of generated objects in this group ----------------
 	U_INT    nItem;													// Instance number
@@ -664,6 +678,7 @@ public:
 	int					 ValueSurface(double sf);
 	int					 ValueSide(U_INT sd);
 	int					 ValueLength(double lg);
+	int					 GenFloorNbr();
 	//--------------------------------------------------------------
 	void				 AddBuilding(OSM_Object *b);
 	void				 RemBuilding(OSM_Object *b);
@@ -671,13 +686,16 @@ public:
 	//--- Draw all buildings ---------------------------------------
 	void			DrawBuilding();
 	//--------------------------------------------------------------
+	void			SetTexName(char *n)	{strncpy(txd.name,n,64);}
+	//--------------------------------------------------------------
 	D2_Group *Next()							{return next;}								
 	void			SetMansar(char m)		{mans = m;	}
 	//--------------------------------------------------------------
 	void			SetRoofModelNumber(U_INT n)		{rmno		= n;}
 	//--------------------------------------------------------------
-	U_INT			GetFloorNbr()				{return	flNbr;}
-	double    GetFloorHtr()				{return flHtr;}
+	U_INT			GetFloorNbr()				{ return	flNbr;}
+	double    GetFloorHtr()				{ return flHtr;}
+	void			SetFloorNbr(U_INT n){ flNbr = n;}
 	//--------------------------------------------------------------
 	CShared3DTex *GetTREF()				{return tREF;}
 	//--------------------------------------------------------------
@@ -784,8 +802,6 @@ public:
 	//-----------------------------------------------------
   void			CheckAll();
 	void			ClearRoof();
-	D2_POINT *GetBevelPoint(D2_POINT *p);
-	D2_POINT *ChangePoint(D2_POINT *pp);
 	D2_POINT *AllocateBevel(int nb);
 	void			TranslatePoint(D2_POINT &p, double x, double y, double z);
 	void			LocalCoordinates(D2_POINT &p);
@@ -795,7 +811,7 @@ public:
   //-----------------------------------------------------
 	void		AddVertex(char a, double x, double y);
 	void		NewHole();
-	void		ForceStyle(char *nsty,U_INT rfmo, U_INT rftx);
+	void		ForceStyle(char *nsty,U_INT rfmo, U_INT rftx, U_INT flnb);
 	char		ConvertInFeet();
 	int	    QualifyPoints(D2_BPM *bmp);
 	char		Triangulation();
@@ -865,9 +881,10 @@ public:
 	//--- Drawing interface --------------------------------
 	void		ModeSingle();
 	void		ModeGroups();
-	//------------------------------------------------------
+	//--- OSM objects --------------------------------------
 	void    MakeBLDG(U_INT type);
 	void    MakeLITE(U_INT type);
+	void		MakeWALL(U_INT type);
 	//------------------------------------------------------
 	bool		RiseBuilding(D2_BPM *bpm);
 	void		SaveBuildingData(C3DPart *P);

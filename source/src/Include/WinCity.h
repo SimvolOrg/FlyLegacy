@@ -175,7 +175,7 @@ public:
 	int  	BuildStyList();
 	//------------------------------------------------------------
 	int	  EditBuilding();
-	void	AutoReplace();
+	bool	AutoReplace();
 	//------------------------------------------------------------
 	U_INT	Abort(char *err,char *fn);
 	U_INT	GotoReferencePosition();
