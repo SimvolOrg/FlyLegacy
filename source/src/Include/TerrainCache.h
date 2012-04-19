@@ -571,7 +571,7 @@ public:
   inline  U_INT       GetReqKey()         {return rKey;}
   inline  void        SetQTR(C_QTR *qtf)  {qtr  = qtf;}
   inline  double      GetDlon() {return  dLon;}
-  inline  double      GetDlat() {return  dLat;}
+  inline  double      GetDlat() {return  (nLat - sLat);}
   inline  U_INT       GetXkey() {return xKey;}
   inline  U_INT       GetZkey() {return zKey;}
   inline  U_INT       FullKey() {return qKey;}

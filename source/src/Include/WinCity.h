@@ -44,15 +44,19 @@
 #define SKETCH_LOAD  (6)
 #define SKETCH_SHOW  (7)
 #define SKETCH_ENDL  (8)
-#define SKETCH_FILE  (10)
 #define SKETCH_WSEL  (11)
 #define SKETCH_ROBJ  (12)
 #define SKETCH_ABORT (13)
 #define SKETCH_SAVEA (14)
 #define SKETCH_SAVEB (15)
-#define SKETCH_SAVEF (16)
-#define SKETCH_PODMS (17)
-
+#define SKETCH_SAVED (16)
+#define SKETCH_SAVEE (17)
+#define SKETCH_SAVEF (18)
+#define SKETCH_PODMS (19)
+//==========================================================================================
+#define CITY_FILE_OFE		(0)
+#define CITY_FILE_MOD   (1)
+#define CITY_FILE_DBA		(2)
 //==========================================================================================
 class CFuiFileBox;
 extern char *Dupplicate(char *s, int lgm);
@@ -68,6 +72,7 @@ class CFuiSketch : public CFuiWindow
 	//--- STATE ---------------------------------------------------
 	U_INT					State;					// Logical state
 	U_INT					nStat;					// Next state after wait
+	U_INT         statP;					// Positive modal state
 	//-------------------------------------------------------------
 	U_INT					ident;					//
 	U_INT					seqNo;					// Sequence number
@@ -209,8 +214,12 @@ public:
 	void	Write();
 	void	FlyOver();
 	void	BuildDBname();
-	U_INT	SaveStep1();
+	bool	CollectBases();
+	U_INT SaveStepA();
+	U_INT SaveStepB();
+	U_INT	SaveStepD();
 	U_INT	SaveCheck();
+	U_INT OpenDatabase(char **sc);
 	U_INT SaveObject();
 	U_INT SaveEnd();
 	//--- mouse --------------------------------------------------
@@ -219,6 +228,7 @@ public:
 	void	TimeSlice();
 	//--- Drawing() ----------------------------------------------
 	void	Draw();
+	void	OnDialog(Tag rep);
 	void	NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 	//--- Dont close tthe windows ---------------------------------
 	bool  CheckProfile(char a);

@@ -526,7 +526,13 @@ OSM_DBREQ *CSceneryDBM::PopOSMrequest()
 	reqQ.Unlock();
 	return R;
 }
-
+//------------------------------------------------------------------
+//	Flush OSM request
+//------------------------------------------------------------------
+void CSceneryDBM::FlushOSM()
+{	OSM_DBREQ *rq = 0;	
+	while (rq = PopOSMrequest())	delete rq;
+}
 //==============================================================================
 //	Scenery pack:  held all sceneries for a given QGT
 //==============================================================================

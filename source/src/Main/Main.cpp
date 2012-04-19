@@ -68,6 +68,8 @@
 #include "../Include/TerrainTexture.h"
 #include "../Include/Triangulator.h"
 #include "../Include/OSMobjects.h"
+#include "../Include/FuiOption.h"
+#include "../Include/Cameras.h"
 //----Windows particular -------------------------
 #include <math.h>
 #include <pthread.h>
@@ -327,6 +329,7 @@ char *directoryTAB [] = {
 	"OpenStreet/Models/Buildings",		// 2 => OSM Building
 	"OpenStreet/Models/Trees",				// 3 => OSM trees
 	"OpenStreet/Models/Lights",				// 4 => OSM Lights
+	"OpenStreet/Databases",						// 5 => OSM Databases
 	};
 //--- Per object type ----------------------------------------
 char replOBJ[OSM_MAX] = {
@@ -429,6 +432,8 @@ void TraceObjectSize()
 	TRACE("%30s size = %05d","CFuiCheckBox",			sizeof(CFuiCheckBox));
 	TRACE("%30s size = %05d","CFuiCloseButton",		sizeof(CFuiCloseButton));
 	TRACE("%30s size = %05d","CFuiComponent",		  sizeof(CFuiComponent));
+	TRACE("%30s size = %05d","CFuiErrorMSG",		  sizeof(CFuiErrorMSG));
+	TRACE("%30s size = %05d","CFuiFileBox",				sizeof(CFuiFileBox));
 	TRACE("%30s size = %05d","CFuiGroupBox",		  sizeof(CFuiGroupBox));
 	TRACE("%30s size = %05d","CFuiLabel",					sizeof(CFuiLabel));
 	TRACE("%30s size = %05d","CFuiList",					sizeof(CFuiList));
@@ -448,7 +453,11 @@ void TraceObjectSize()
 	TRACE("%30s size = %05d","CFuiWindowMenuBar",	sizeof(CFuiWindowMenuBar));
 	TRACE("%30s size = %05d","CFuiWindowTitle",		sizeof(CFuiWindowTitle));
 	TRACE("%30s size = %05d","CFuiZoomButton",		sizeof(CFuiZoomButton));
-	TRACE("----Systems---------------------------------");
+	TRACE("----Cameras------------------------------------");
+	TRACE("%30s size = %05d","CRabbitCamera",			sizeof(CRabbitCamera));
+	TRACE("%30s size = %05d","CCameraCockpit",		sizeof(CCameraCockpit));
+	TRACE("----Components---------------------------------");
+	TRACE("%30s size = %05d","CListBox",					sizeof(CListBox));
 }
 //=====================================================================================
 //	Helper: String dupplication 

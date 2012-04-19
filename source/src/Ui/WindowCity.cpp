@@ -155,18 +155,22 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	//-------------------------------------------------
 	globals->fui->SetBigFont();
 	DrawNoticeToUser("INITIALIZATION",1);
-	//---- Marker 1 -------------------------------------
+	//---- Marker 1 -----------------------------------
 	char *ds = new char[32];
 	strcpy(ds,"*START CityEDIT*");
-	//--------------------------------------------------
+	//---Collect OFE file -----------------------------
 	FPM.close = 0;
 	FPM.sbdir = 1;
-	FPM.userp = 0;
+	FPM.userp = CITY_FILE_OFE;
 	FPM.text  = "SELECT A FILE";
 	FPM.dir		= "OpenStreet";
 	FPM.pat		= "*.ofe";
-	State = SKETCH_FILE;
 	STREETLOG("START CITY EDITOR");
+	*sname = 0;
+	*dbase = 0;
+	 CreateFileBox(&FPM);
+	 State = SKETCH_PAUSE;
+
 };
 //-----------------------------------------------------------------------
 //	destroy this
@@ -184,8 +188,7 @@ CFuiSketch::~CFuiSketch()
   if (sqlp)	globals->sqm->CloseOSMbase(sqlp);
 	sqlp = 0;
 	//---- Marker 2 -------------------------------------
-	char *ds = new char[32];
-	strcpy(ds,"*END CityEDIT*");
+	char *ds = Dupplicate("*END CityEDIT*",32);
 	STREETLOG("END CITY EDITOR");
 	globals->ccm->RestoreCamera(ctx);
 }
@@ -194,22 +197,25 @@ CFuiSketch::~CFuiSketch()
 //----------------------------------------------------------------------
 bool CFuiSketch::CheckProfile(char a)
 {	return true;	}
-
 //-----------------------------------------------------------------------
-//	A file is selected 
+//	A file is selected (virtual called from CFuiFileBox)
 //-----------------------------------------------------------------------
 void CFuiSketch::FileSelected(FILE_SEARCH *fpm)
 { switch (fpm->userp)	{
 		//--- Openstreet file selected ---------
-		case 0:
+		case CITY_FILE_OFE:
 			State = SKETCH_WSEL;
 			strncpy(spath,fpm->sdir,FNAM_MAX);
 			strncpy(sname,fpm->sfil,FNAM_MAX);
 			_snprintf(fnam,FNAM_MAX,"%s/%s",spath,sname);
 			break;
-		case 1:
+		case CITY_FILE_MOD:
 			repPM.obr = Dupplicate(fpm->sfil,FNAM_MAX);
 			State = SKETCH_ROBJ;
+			break;
+		case CITY_FILE_DBA:
+			_snprintf(dbase,FNAM_MAX,"%s/%s",fpm->sdir,fpm->sfil);
+			dial	= '_yes';
 			break;
 	}
 
@@ -686,34 +692,70 @@ void CFuiSketch::FlyOver()
 	 Close();
 	 return;
 }
+//-----------------------------------------------------------------------
+//	Collect databases to save
+//-----------------------------------------------------------------------
+bool CFuiSketch::CollectBases()
+{	FPM.userp	= CITY_FILE_DBA;
+	FPM.close = 1;
+	FPM.sbdir = 0;
+	FPM.text  = "Save in Existing database?";
+	FPM.dir   = "OpenStreet/Databases";
+	FPM.pat		= "*.DB";
+	return CreateFileBox(&FPM);
+}
+//---------------------------------------------------------------------
+// Save database Step 0
+//---------------------------------------------------------------------
+U_INT CFuiSketch::SaveStepA()
+{ dial	= 0;
+	if (CollectBases()) return SKETCH_SAVEA;
+	CloseModal();
+	return SaveStepD();
+}
+//---------------------------------------------------------------------
+// Check if existing database is selected
+//---------------------------------------------------------------------
+U_INT CFuiSketch::SaveStepB()
+{	if (dial != '_yes') return SaveStepD();
+	return OpenDatabase(0);
+}
 //---------------------------------------------------------------------
 // Save database Step 1
 //---------------------------------------------------------------------
-U_INT CFuiSketch::SaveStep1()
-{	if (ses.IsEmpty())		return State;
+U_INT CFuiSketch::SaveStepD()
+{	BuildDBname();
+	if (ses.IsEmpty())		return State;
 	//--- Save the file first ---------------------------
 	Write();
 	//--- Ask confirmation ------------------------------
 	char txt[512];
-	_snprintf(txt,380,"Save in database %s ?", dbase);
+	_snprintf(txt,380,"Create database %s ?", dbase);
 	dial = 0;
 	CreateDialogBox("PLEASE CONFIRM",txt,1);
-	return SKETCH_SAVEA;
+	statP	= SKETCH_SAVED; 
+	return  SKETCH_PAUSE;
 }
 //---------------------------------------------------------------------
 //  Check for answer 
 //---------------------------------------------------------------------
 U_INT CFuiSketch::SaveCheck()
-{	if (dial == '_no_')	return SKETCH_PAUSE;
-	//--- Init for database saving -------------------
+{	if (dial != '_yes')	return SKETCH_PAUSE;
+	return OpenDatabase(ScriptCreateOSM);
+}
+//---------------------------------------------------------------------
+//  Open database for saving 
+//---------------------------------------------------------------------
+U_INT CFuiSketch::OpenDatabase(char **script)
+{//--- Init for database saving -------------------
 	TerrainHide();
 	Stamp	= ses.GetStamp();			// Total objects
 	objno	= 1;
 	qKey	= 0;
 	count = 0;
-	sqlp = globals->sqm->OpenSQLbase(dbase,ScriptCreateOSM);
+	sqlp = globals->sqm->OpenSQLbase(dbase,script);
 	int ok = sqlp->use;
-	return (ok)?(SKETCH_SAVEB):(SKETCH_SAVEF);
+	return (ok)?(SKETCH_SAVEE):(SKETCH_SAVEF);
 }
 //---------------------------------------------------------------------
 //  Save one building at a time
@@ -740,7 +782,7 @@ U_INT CFuiSketch::SaveObject()
 			DrawNoticeToUser(txt,2);
 			//--- Check for any error -----------------
 			char ok = sqlp->use;
-			return (ok)?(SKETCH_SAVEB):(SKETCH_SAVEF);
+			return (ok)?(SKETCH_SAVEE):(SKETCH_SAVEF);
 		}
 	return SKETCH_SAVEF;
 }
@@ -770,12 +812,6 @@ void CFuiSketch::TimeSlice()
 {	TCacheMGR *tcm = 0;
 	char *erm = "No file to edit";
 	switch (State)	{
-		//--- Create file selection ------------
-		case SKETCH_FILE:
-			 *sname = 0;
-			 *dbase = 0;
-				CreateFileBox(&FPM);
-				return;
 		//--- Wait file selection --------------
 		case SKETCH_WSEL:
 			  if (0 == *sname)	State = Abort(erm," Editor will close");
@@ -820,12 +856,15 @@ void CFuiSketch::TimeSlice()
 		case SKETCH_ABORT:
 				Close();
 				return;
-		//--- Check save answer --------------------
 		case SKETCH_SAVEA:
+				State = SaveStepB();
+				return;
+		//--- Check save answer --------------------
+		case SKETCH_SAVED:
 				State = SaveCheck();
 				return;
 		//--- Save one building --------------------
-		case SKETCH_SAVEB:
+		case SKETCH_SAVEE:
 				State = SaveObject();
 				return;
 		//--- Save Database Step 1----------------
@@ -835,6 +874,7 @@ void CFuiSketch::TimeSlice()
 	}
 	return;
 }
+
 //-----------------------------------------------------------------------
 //	Collect all models for the actual object type
 //-----------------------------------------------------------------------
@@ -842,7 +882,7 @@ void CFuiSketch::CollectModels()
 {	if (NoSelection())	return;
 	repPM.otype	= confp.otype;
 	repPM.dir	= GetOSMfolder(confp.otype);
-	FPM.userp	= 1;
+	FPM.userp	= CITY_FILE_MOD;
 	FPM.close = 1;
 	FPM.sbdir = 0;
 	FPM.text  = "Select a Model";
@@ -912,6 +952,15 @@ void CFuiSketch::Write()
 	fputs(txt,fp);
 	ses.Write(fp);
 	fclose(fp);
+	return;
+}
+//---------------------------------------------------------------------
+//  On positive dialog
+//---------------------------------------------------------------------
+void CFuiSketch::OnDialog(Tag rep)
+{	if (rep != '_yes')	return;
+	State = statP;
+	dial  = rep;
 	return;
 }
 //---------------------------------------------------------------------
@@ -987,11 +1036,12 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		//--- Update database --------------------
 		case 'bsav':
 			if (0 == edit)	return;
-			State = SaveStep1();
+			//State = SaveStepD();
+			State = SaveStepA();
 			return;
 		//--- Dialogue button --------------------
 		case 'dial':
-			dial = itm;
+			OnDialog(itm);
 			return;
 	}
 	return;

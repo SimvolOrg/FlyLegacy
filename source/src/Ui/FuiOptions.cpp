@@ -81,7 +81,7 @@ CFuiFileBox::CFuiFileBox(CFuiWindow *mwin,FILE_SEARCH *pm)
 	wDIR->SetText(FPM->text);
 	//--- Add a Button for selection -----------------
   sBUT  = new CFuiButton  ( 44,180, 90, 20, this);
-  AddChild('sbut',sBUT,"OK");
+  AddChild('_yes',sBUT,"OK");
 	//--- Set transparent mode ----------------------
 	SetTransparentMode();
 	ReadFinished();
@@ -113,8 +113,6 @@ void CFuiFileBox::LoadFiles(char *dir)
 void CFuiFileBox::SearchDirectory(ulDirEnt *de, char *dir)
 {	char *nm = de->d_name;
 	if (*nm == '.')									return;
-	if (strcmp(nm,"Models") == 0)		return;
-	if (strcmp(nm,"Textures") == 0)	return;
 	//--- Search here --------------------------
 	char fdir[PATH_MAX];
 	_snprintf(fdir,FNAM_MAX,"%s/%s",dir,nm);
@@ -129,12 +127,13 @@ void CFuiFileBox::SearchFiles(char *dir)
   if (0 == dirp)				return;
 	//--- Get all files in this directory --------
 	LoadFiles(dir);
-	if (0 == FPM->sbdir)	return;
-	//--- Scan all entries for subdirectory -----
-  ulDirEnt* de;
-	while ( (de = ulReadDir(dirp)) != NULL )
-	{	if (!de->d_isdir)		continue; 
-		SearchDirectory(de,dir);
+	if (FPM->sbdir)	
+	{	//--- Scan all entries for subdirectory -----
+		ulDirEnt* de;
+		while ( (de = ulReadDir(dirp)) != NULL )
+		{	if (!de->d_isdir)		continue; 
+			SearchDirectory(de,dir);
+		}
 	}
   ulCloseDir(dirp);
 }
@@ -158,6 +157,7 @@ void CFuiFileBox::OneFile(U_INT nb)
 		FPM->sdir			= lin->GetPath();
 	}
 	if (MoWind) MoWind->FileSelected(FPM);
+	if (MoWind) MoWind->NotifyChildEvent('file','clos',EVENT_DIR_CLOSE);
 	Close();
 }
 //---------------------------------------------------------------------------
@@ -181,7 +181,7 @@ void CFuiFileBox::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 			if (evn == EVENT_DBLE_CLICK)	OneFile(itm);
       else	fBOX.VScrollHandler((U_INT)itm,evn);
       return;
-		case 'sbut':
+		case '_yes':
 			OneFile(itm);
 			return;
 	}

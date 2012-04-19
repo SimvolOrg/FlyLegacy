@@ -65,7 +65,8 @@ extern char  replOBJ[];
 #define FOLDER_OSM_BLDG		(2)
 #define FOLDER_OSM_TREE		(3)
 #define FOLDER_OSM_LITE		(4)
-#define FOLDER_MAX        (5)
+#define FOLDER_OSM_BASE   (5)
+#define FOLDER_MAX        (6)
 //=============================================================================================
 //	Define APPLICATION PROFILE
 //	APPLICATION PROFILE is used by specifics windows like editors.

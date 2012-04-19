@@ -131,6 +131,10 @@ CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
   globals->dbc->RegisterLOGwindow(this);
 	//--- Select first node ----------------------------
 	FillCurrentPlan();
+	//---- Marker 1 -------------------------------------
+	char *ds = new char[32];
+	strcpy(ds,"*START FlightLog*");
+
 }
 //--------------------------------------------------------------------------
 //  Destroy the nav log
@@ -138,6 +142,8 @@ CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
 CFuiFlightLog::~CFuiFlightLog()
 { fpln->Register(0);
   globals->dbc->RegisterLOGwindow(0);
+	//---- Marker 2 -------------------------------------
+	char *ds = Dupplicate("*END FlightLog*",32);
 }
 //--------------------------------------------------------------------------
 //  Set the Mode

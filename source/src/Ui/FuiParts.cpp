@@ -830,16 +830,7 @@ void CListBox::InitP2()
 //  Redisplay after resizing
 //----------------------------------------------------------------------------------
 void CListBox::Resize()
-{ /*
-  U_INT   Nbr     = objlist.size();
-  mLine           = wList->GetNberLine();
-  hROW            = Title;
-  hLIN            = 0;
-  EditPage();
-  wList->SetVSRatio(0);
-  return;
-  */
-}
+{ }
 //----------------------------------------------------------------------------------
 //  Reset values according to number of objects
 //----------------------------------------------------------------------------------

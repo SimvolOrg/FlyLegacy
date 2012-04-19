@@ -165,16 +165,14 @@ CFuiComponent::CFuiComponent (int px, int py, int wd, int ht, CFuiComponent *win
 //  Delete all decoration items
 //------------------------------------------------------------------------
 CFuiComponent::~CFuiComponent (void)
-{
-  // Delete decoration components
+{ // Delete decoration components
   std::list<CFuiComponent*>::iterator i;
   for (i=decorationList.begin(); i!=decorationList.end(); i++) 
   { CFuiComponent *cp = (*i);
     delete (cp);
   }
   decorationList.clear();
-
-  if (surface)  surface = FreeSurface (surface);
+  surface = FreeSurface (surface);
 }
 //------------------------------------------------------------------------
 //  Read all tags
@@ -1136,25 +1134,7 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
   btz       = 0;
   btm       = 0;
   //----Init default size and position -----------------------------
-  int nb = 0;
-  TagToString (s, windowId);
-  sprintf (iniParm, "WindowX_%s", s);
-  GetIniVar ("Windows", iniParm, &nb);
-  if (nb) x = short(nb);
-  nb  = 0;
-  sprintf (iniParm, "WindowY_%s", s);
-  GetIniVar ("Windows", iniParm, &nb);
-  if (nb) y = short(nb);
-  nb  = 0;
-  sprintf (iniParm, "WindowW_%s", s);
-  GetIniVar ("Windows", iniParm, &nb);
-  if (nb) w = short(nb);
-  nb  = 0;
-  sprintf (iniParm, "WindowH_%s", s);
-  GetIniVar ("Windows", iniParm, &nb);
-  if (nb) h = short(nb);
-	//--- Find theme -------------------------------
-	FindThemeWidget ();
+  FindThemeWidget ();
   // Open stream ----------------------------------
   SStream stream;
   if (OpenRStream ((char*)winFilename, stream)) {
@@ -1167,6 +1147,7 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
 //-------------------------------------------------------------------
 CFuiWindow::~CFuiWindow (void)
 { if (modal)	modal->ModalClose();
+	modal		= 0;
 	std::deque<CFuiComponent*>::iterator i;
   for (i=childList.begin(); i!=childList.end(); i++) 
   { CFuiComponent *cp = (*i);
@@ -1451,7 +1432,7 @@ void CFuiWindow::AddZoomButton()
   if (0 == btc) return;
   int xpos = 0;
   int ypos = 0;
-  if (btc) btc->GetPosition(&xpos,&ypos);
+  btc->GetPosition(&xpos,&ypos);
   btz = new CFuiZoomButton (xpos - 20,ypos, 20, 20,this);
   btz->MoveParentTo (x, y);
   fBox[ZOOM] = btz;
@@ -1466,7 +1447,7 @@ void CFuiWindow::AddMiniButton()
   if (0 == btc) return;
   int xpos = 0;
   int ypos = 0;
-  if (btc) btc->GetPosition(&xpos,&ypos);
+  btc->GetPosition(&xpos,&ypos);
   if (btz) btz->GetPosition(&xpos,&ypos);
   btm = new CFuiMinimizeButton (xpos - 20,ypos, 20, 20,this);
   btm->MoveParentTo (x, y);
@@ -1790,12 +1771,12 @@ int CFuiWindow::SwapGroupButton(Tag btn, char *zbt)
 //------------------------------------------------------------------------------
 //	Create a modal search file box
 //------------------------------------------------------------------------------
-void CFuiWindow::CreateFileBox(FILE_SEARCH *fpm)
-{	if (modal)					return;
+bool CFuiWindow::CreateFileBox(FILE_SEARCH *fpm)
+{	if (modal)					return false;
 	CFuiFileBox *fbox = new CFuiFileBox(this,fpm);
 	modal							= fbox;
 	fbox->MoveTo(200,200);
-	return;
+	return (!fbox->IsEmpty());
 }
 //------------------------------------------------------------------------------
 //	Create a modal Dialog box
@@ -4381,7 +4362,8 @@ CFuiList::CFuiList (int x, int y, int w, int h, CFuiComponent *win)
 //  Destroy the window list 
 //-------------------------------------------------------------------------
 CFuiList::~CFuiList()
-{ SAFE_DELETE(cMark);
+{ FreeBitmap(cMark);
+  SAFE_DELETE(cMark);
   SAFE_DELETE(hzBOX);
   SAFE_DELETE(vsBOX);
 }
@@ -4458,9 +4440,6 @@ void CFuiList::ReadFinished (void)
   strncpy (cMark->bitmapName,"ART/CHECKMARK.BMP",63);
   Load_Bitmap (cMark);
   NbLin   = h / hLine;
-  //--------------------------------------------
-	//ChangeFont(&globals->fonts.ftradi9);
-	//fnts = (CFont*)font->font;
   return;
 }
 //-------------------------------------------------------------------------

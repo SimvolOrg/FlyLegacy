@@ -36,8 +36,16 @@ using namespace std;
  * Drawing Primitives
  *
  */
+//----------------------------------------------------------------
+// Free Bitmap
+//----------------------------------------------------------------
+void FreeBitmap(SBitmap *bm)
+{ if(bm && bm->bitmap)delete (CBaseBitmap*)(bm->bitmap);
+  bm->bitmap = NULL;
+  bm->type = TYPE_INVALID;
+}
 
-//
+//=====================================================================================
 // Create a new drawing surface.  In Fly! II, drawing surfaces were RGB
 //   arrays where one specific pixel colour value represented transparency,
 //   usually <0, 0, 0>.  The xSpan field ensured that the first pixel
@@ -1362,14 +1370,6 @@ int Load_Bitmap(SBitmap *bm)
 
   gtfo ("Load_Bitmap : Invalid bitmap name %s", bm->bitmapName);
   return rc;
-}
-//----------------------------------------------------------------
-// Free Bitmap
-//----------------------------------------------------------------
-void FreeBitmap(SBitmap *bm)
-{ if(bm && bm->bitmap)delete (CBaseBitmap*)(bm->bitmap);
-  bm->bitmap = NULL;
-  bm->type = TYPE_INVALID;
 }
 //===================================================================================
 //  ASSIGN THE NUL BITMAP

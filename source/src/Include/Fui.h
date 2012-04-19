@@ -771,7 +771,7 @@ public:
   //----Helpers For derived class only ----------------------------
   virtual void        Initialize(CmHead*obj,U_SHORT type){}
 	virtual void				FileSelected(FILE_SEARCH *pm) {;}
-					void				CreateFileBox(FILE_SEARCH *fpm);
+					bool				CreateFileBox(FILE_SEARCH *fpm);
 					void				CloseModal();
 					void				CreateDialogBox(char *ttl, char *msg, char nb = 0);			
           void        AddZoomButton();

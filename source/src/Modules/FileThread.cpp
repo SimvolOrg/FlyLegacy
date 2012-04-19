@@ -341,6 +341,7 @@ void *FileThread(void *p)
 			if (thn == 1)   ProcessOSM(tcm,&sql);
     }
 	//--- File thread is stopped ------------------
+	if (globals->sql == &sql) globals->sql = 0;
 	TRACE("FileThread %d STOP",thn);
 	pthread_mutex_unlock(tmux);
 	pthread_exit(0);

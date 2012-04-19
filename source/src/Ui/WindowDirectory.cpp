@@ -142,9 +142,7 @@ CFuiDirectory::CFuiDirectory(Tag idn, const char* filename)
   Lock  = 1;
   FillCTYlist();
 	//--- Loose memory marker 1 -----------------------
-	char *mk0 = new char[20];
-	strcpy(mk0,"*StartDirectory*");
-
+	char *mk0 = Dupplicate("*StartDirectory*",32);
 }
 
 //----------------------------------------------------------------------------------
@@ -185,9 +183,7 @@ CFuiDirectory::~CFuiDirectory()
   objBOX.EmptyIt();
   dbc->RegisterDIRwindow(0);
 	//--- Loose memory marker 2 -----------------------
-	char *mk0 = new char[20];
-	strcpy(mk0,"*EndDirectory*");
-
+	char *mk0 = Dupplicate("*EndDirectory*",32);
 }
 //=========================================================================
 //  Country Management

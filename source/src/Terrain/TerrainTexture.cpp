@@ -668,6 +668,7 @@ bool CArtParser::LoadFFF(char *rnm,char azp,FREE_IMAGE_FORMAT ff)
 	int     rdz = 0;
 	TryaPOD(rnm,&buf,rdz);
 	if (0 == buf)	TryFILE(rnm,&buf,rdz);
+	if (0 == buf)	return false;
   //----Wrap it with Freeimage --------------------
   FIMEMORY *hmem  = FreeImage_OpenMemory(buf,rdz);
   ffm  = ff;

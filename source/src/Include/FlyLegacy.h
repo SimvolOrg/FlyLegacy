@@ -1406,18 +1406,19 @@ typedef struct SFont
   void  *font;      // <- returned from APILoadFont; do NOT alter!!!
 } SFont;
 
-
+//-------------------------------------------------------------------------
 struct SBitmap {
   char    bitmapName[64]; // -> passed to APILoadBitmap
   void    *bitmap;				// <- returned from APILoadBitmap; do NOT alter!!!
   EBitmapType type;				// <- returned from APILoadBitmap; do NOT alter!!!
 	//----------------------------------------------------------------------
 	SBitmap() {bitmap = 0;}
- ~SBitmap() { if (bitmap) delete bitmap;}
-  //---------------------------------------------------------------------
-} ;
+	//----Set abort when bitmap is not free ----------------------
+ ~SBitmap() 
+	{if (bitmap)  {int *a = 0; *a = 1;} }
+};
 
-
+//===========================================================================
 typedef struct {
   unsigned long   magic;    // Magic code of 'PBM '
   unsigned long   width;

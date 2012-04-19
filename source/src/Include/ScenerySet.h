@@ -111,6 +111,7 @@ public:
 	SQL_DB		 *GetOSMbase(C_QGT *qgt, int nb);
 	void				AddOSMrequest(OSM_DBREQ *r);
 	OSM_DBREQ  *PopOSMrequest();
+	void				FlushOSM();
 	//-----------------------------------------------------------------------
 	void		MountAll();
   void    Register(C_QGT *qgt);

@@ -1250,7 +1250,7 @@ CmQUAD *CmQUAD::Locate2D(CVector &p,C_QGT *qgt)
 	double lat	= p.y;
 	if (IsaQuad())    return this;
   CmQUAD *qd = qARR;
-	double  dl = qgt->GetDlat();	// Latitude delat
+	double  dl = qgt->GetDlat();	// Latitude delta
 	//--- Search quad along south border ------------
   for (int k = 0; k != qDim; k++, qd++)
   { CVertex *sw = qd->GetCorner(TC_SWCORNER);
@@ -3723,7 +3723,15 @@ TCacheMGR::~TCacheMGR()
   //---delete all terrain types -----------------------
   terBOX->EmptyIt();
   delete terBOX;
-	//--- Stop threads ----------------------------------
+	//--- Wait for inactivity ---------------------------
+	globals->scn->FlushOSM();
+	while (stop == 0) 
+	{	if (LodQ.NotEmpty())							continue;
+		if (FilQ.NotEmpty())							continue;
+		if (globals->m3d->ModelToLoad())	continue;
+		break;
+	}
+	//--- stop thraed -----------------------------------
 	stop = 1;
 	pthread_cond_broadcast(&thCond);
   if (0 == t1OK) pthread_join(t1id,0);

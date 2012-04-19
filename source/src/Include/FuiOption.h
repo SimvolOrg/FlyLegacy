@@ -139,6 +139,7 @@ public:
 	void			SearchFiles(char *dir);
 	void			OneFile(U_INT nb);
 	int 			AddFileName(char *fn);
+	bool			IsEmpty()				{return fBOX.IsEmpty();}
 	//----------------------------------------------------------------------
 	void			NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 	void			Draw();
