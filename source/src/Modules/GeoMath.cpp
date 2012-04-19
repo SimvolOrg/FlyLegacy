@@ -1018,7 +1018,7 @@ char  GroundSpot::GetTerrain()
   //------Compute precise elevation at position ---------------
   CVector  p(lon,lat,0);
 	qgt->RelativeToBase(p);											// Relative to SW corner
-  CmQUAD  *qd = dt->Locate2D(p);              // Smaller QUAD in Detail Tile
+  CmQUAD  *qd = dt->Locate2D(p,qgt);          // Smaller QUAD in Detail Tile
   //----Locate the triangle where p reside --------------------
   if (!qd->PointHeight(p,gNM)) 	p.z = qd->CenterElevation();
   alt         = p.z;

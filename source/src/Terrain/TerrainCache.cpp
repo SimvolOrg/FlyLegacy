@@ -1044,20 +1044,6 @@ bool CmQUAD::PointHeight(CVector &p,CVector &nm)
   if (ct->ToRight(p.x))		return PointInNW(p,nm);
   return PointInNE(p,nm);
 }
-//-------------------------------------------------------------------------
-/// Check for Point in Quad
-//  
-//-------------------------------------------------------------------------
-bool CmQUAD::PointInQuad(CVector &p)
-{	CVertex *sw = GetCorner(TC_SWCORNER);
-	if (p.x < sw->GetRX())	return false;
-	CVertex *se = GetCorner(TC_SECORNER);
-	if (p.x > se->GetRX())	return false;
-	if (p.y < se->GetRY())	return false;
-	CVertex *ne = GetCorner(TC_NECORNER);
-	if (p.y > ne->GetRY())	return false;
-	return false;
-}
 
 //-------------------------------------------------------------------------
 //  Check for point in SW quadran
@@ -1259,20 +1245,22 @@ void CmQUAD::GetTileIndices(U_INT &tx,U_INT &tz)
 /// Locate quad where the position is lying
 //  p coordinates must be local to SW corner of QGT
 //-------------------------------------------------------------------------
-CmQUAD *CmQUAD::Locate2D(CVector &p)
+CmQUAD *CmQUAD::Locate2D(CVector &p,C_QGT *qgt)
 { double lon  = p.x;
 	double lat	= p.y;
 	if (IsaQuad())    return this;
   CmQUAD *qd = qARR;
+	double  dl = qgt->GetDlat();	// Latitude delat
 	//--- Search quad along south border ------------
   for (int k = 0; k != qDim; k++, qd++)
   { CVertex *sw = qd->GetCorner(TC_SWCORNER);
     if (lon < sw->GetRX())    continue;
     if (lat < sw->GetRY())    continue;
+
     CVertex *ne = qd->GetCorner(TC_NECORNER);
     if (lon > ne->GetTX())    continue;
-    if (lat > ne->GetRY())    continue;
-    return qd->Locate2D(p); 
+    if (lat > ne->GetTY(dl))  continue;
+    return qd->Locate2D(p,qgt); 
   }
 	
   return this;
@@ -1513,7 +1501,7 @@ CSuperTile::CSuperTile()
 	nobj		= 0;
   nbVTX   = 0;
 	qgt			= 0;
-  sta3D   = TC_3D_OUTSIDE;
+  sta3D   = SUP3D_OUTSIDE;
   white[0] = white[1] = white[2] = white[3] = 1;
 	dEye		= float(FN_FEET_FROM_MILE(100));
 	//------------------------------------------------
@@ -1544,21 +1532,28 @@ void CSuperTile::TraceEnd()
 //-------------------------------------------------------------------------
 // Seach a part with same reference as the given one
 //-------------------------------------------------------------------------
-C3DPart *CSuperTile::SearchOSMPart(CShared3DTex *ref, char layer)
+void CSuperTile::BuildOSMPart(CShared3DTex *ref, char L, int nv, GN_VTAB *S)
 {	C3DPart *prt = 0;
-	for (prt = osmQ[layer].GetFirst(); (prt != 0); prt = prt->Next())
+	for (prt = osmQ[L].GetFirst(); (prt != 0); prt = prt->Next())
 	{	if (!prt->SameREF(ref))			continue;
 		U_INT nbv = prt->GetNBVTX();
-		if (nbv < globals->pakCAP)	return prt;
-		break;
+		if (nbv > globals->pakCAP)	break;
+		//--- Extend this part -------------------------
+		osmQ[L].Lock();
+		prt->ExtendOSM(nv,S);
+		osmQ[L].UnLock();
+		return;
 	}
 	//--- Allocate a new 3D part ---------------------
 	prt	= new C3DPart();
 	prt->Reserve(ref); 
 	//--- Add a new part -----------------------------
-	osmQ[layer].PutHead(prt);
+	osmQ[L].Lock();
+	prt->ExtendOSM(nv,S);
+	osmQ[L].PutHead(prt);
+	osmQ[L].UnLock();
 	nobj++;
-	return prt;
+	return;
 }
 //-------------------------------------------------------------------------
 // Add osm object to try
@@ -1573,9 +1568,10 @@ void CSuperTile::AddToPack(OSM_Object *obj)
 	//--- Search a part with same texture ------
 	CShared3DTex *ref = obj->GetPartTREF();
 	C3DPart *p0 = obj->GetPart();
-	char layer  = obj->GetLayer();
-	C3DPart *p1 = SearchOSMPart(ref,layer);
-	p1->ExtendWith(p0,T);
+	int      nv = p0->Translate(T);
+	char     L  = obj->GetLayer();
+	GN_VTAB *S  = p0->GetGTAB();
+	BuildOSMPart(ref,L,nv,S);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -1714,66 +1710,50 @@ bool CSuperTile::NeedHigResolution(float rd)
   return true;
 }
 //-------------------------------------------------------------------------
-//  Super Tile inside 3D drawing circle
-//  Process according to 3D state
+//	Refresh 3D state of this supertile
 //-------------------------------------------------------------------------
-int CSuperTile::Inside3DRing()
-{ //-- Update LOD ----------------------------------
-  LOD = 0;
-  if (dEye > globals->ftLD1)  LOD = 1;
-  if (dEye > globals->ftLD2)  LOD = 2;
-  if (dEye > globals->ftLD3)  LOD = 3;
-  switch(sta3D) {
-    case TC_3D_VIEWING:
-      return 1;                             // Already inside
-
-    case TC_3D_FADE_IN:
-      alpha += 0.01f;                       // Increase visibility
-      if (alpha > 1)
-			{	alpha  = 1;
-				sta3D  = TC_3D_VIEWING;
-			}
-      return 1;
-
-    case TC_3D_FADEOUT:
-      sta3D  = TC_3D_FADE_IN;
-      return 1;
-
-    case TC_3D_OUTSIDE:
-      sta3D  = TC_3D_FADE_IN;
-      alpha  = 0;
-      return 1;
-    }
-  return 1;
+void CSuperTile::Refresh3D()
+{	float lim = globals->dwf3DO;			// View limit
+	switch (sta3D)	{
+			//--- Outside of any ring ------------------
+			case SUP3D_OUTSIDE:
+				if (dEye > globals->osmIN)		return;
+				qgt->StartOSMload(NoSP);
+				sta3D	= SUP3D_INS_OSM;
+				return;
+			//--- Still in OSM ring ---------------------
+			case SUP3D_INS_OSM:
+				if (dEye < lim) sta3D = SUP3D_FADE_IN;
+				if (dEye < globals->osmIN)		return;
+				//--- delete OSM objetcs ------------------
+				ClearOSM(OSM_LAYER_BLDG);
+				ClearOSM(OSM_LAYER_LITE);
+				sta3D	= SUP3D_OUTSIDE;
+				return;
+			//--- Fading in view ------------------------
+			case SUP3D_FADE_IN:
+				if (dEye > lim)  {sta3D = SUP3D_FADEOUT; return;}
+				alpha += float(0.01);
+				if (alpha < 1)	return;
+				alpha = 1;
+				sta3D = SUP3D_VIEWING;
+				return;
+			//--- Fading out ----------------------------
+			case SUP3D_FADEOUT:
+				if (dEye < lim)	{sta3D = SUP3D_FADE_IN; return;}
+				alpha -= float(0.01);
+				if (alpha > 0)	return;
+				alpha  = 0;
+				sta3D	 = SUP3D_INS_OSM;
+				return;
+			//--- Just viewing --------------------------
+			case SUP3D_VIEWING:
+				if (dEye < lim)	return;
+				sta3D	= SUP3D_FADEOUT;
+				return;
+	}
+	return;
 }
-//-------------------------------------------------------------------------
-//  Super Tile outside 3D drawing circle
-//  Process according to 3D state
-//-------------------------------------------------------------------------
-int CSuperTile::Outside3DRing()
-{ LOD = 3;
-  switch(sta3D) {
-    case TC_3D_VIEWING:
-      sta3D = TC_3D_FADEOUT;
-      return 0;
-
-    case TC_3D_FADE_IN:
-      sta3D = TC_3D_FADEOUT;
-      return 0;
-
-    case TC_3D_FADEOUT:
-      alpha -= 0.01f;
-      if (alpha > 0)  return 0;
-      alpha  = 0;
-      sta3D  = TC_3D_OUTSIDE;
-      return 0;
-
-    case TC_3D_OUTSIDE:
-      return 0;
-    }
-  return 0;
-}
-
 //-------------------------------------------------------------------------
 //  Clear All texture name (TERRA BROWSER usage)
 //-------------------------------------------------------------------------
@@ -1785,7 +1765,6 @@ void CSuperTile::RazNames()
  }
  return;
 }
-
 //-------------------------------------------------------------------------
 //  Extract border vertices for the Super Tile
 //-------------------------------------------------------------------------
@@ -1905,14 +1884,23 @@ void CSuperTile::DrawInnerSuperTile()
 //	Update distance and alpha blending
 //-------------------------------------------------------------------------
 bool CSuperTile::Update()
-{	if (!Visibility())		return false;
-	float lim = globals->ftDRW;         //nm Limit (real feet)
-  //--- Update LOD -------------------------------------------
-  if (dEye > lim)		Outside3DRing();
-	else							Inside3DRing();
-	if (alpha <= 0)		return false;
+{	//--- Update LOD -------------------------------------------
+	if (!Visibility())		return false;
+	Refresh3D();
+	if (alpha <= 0)				return false;
 	bool OK = (woQ.NotEmpty()) || (nobj != 0);
-	return (OK);
+	if (!OK)							return false;
+	//--- update contrast ----------------------------
+  double d  = 1 - ((dEye  / globals->dwf3DO) * 0.5);
+  white[0]	= d;
+	white[1]	= d;
+	white[2]	= d;
+	//-- Update LOD ----------------------------------
+  LOD = 0;
+  if (dEye > globals->ftLD1)  LOD = 1;
+  if (dEye > globals->ftLD2)  LOD = 2;
+  if (dEye > globals->ftLD3)  LOD = 3;
+	return true;
 }
 //-------------------------------------------------------------------------
 //  SuperTile Draw 3D Objects Here
@@ -1988,6 +1976,14 @@ void CSuperTile::GetLine(CListBox *box)
   return;
 }
 //-----------------------------------------------------------------------------
+//  Clear OSM layer
+//-----------------------------------------------------------------------------
+void CSuperTile::ClearOSM(char lay)
+{	osmQ[lay].Lock();
+	osmQ[lay].Clear();
+	osmQ[lay].UnLock();
+}
+//-----------------------------------------------------------------------------
 //  Add object to draw
 //-----------------------------------------------------------------------------
 void CSuperTile::Add3DObject(CWobj *obj, char t)
@@ -2061,15 +2057,11 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
 	visb	= 0;
   Metar = 0;
 	strn	= tm->GetTRNoption();
-	osmDB = 0;
 	//--- Get VBO option -----------------------
 	int opt = 0;
 	GetIniVar("Performances","UseTerrainVBO",&opt);
 	vbu			= opt;
 	elv			= 0;							// No elevation yet
-  //------Set coordinate bands ---------------
- // xBand  = FN_BAND_FROM_QGT(cx) << TC_BY08;
- // yBand  = FN_BAND_FROM_QGT(cz) << TC_BY08;
   //----Cloud counters by type ---------------
   cloud[0] = cloud[1] = cloud[2] = cloud[3] = 0;
   //-----Corners -----------------------------
@@ -2094,7 +2086,7 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
 	GetQgtMidPoint(cx,cz,mPoint);
 	Scene				= mPoint;
 	//---Register the QGT for scenery --------------------
-	globals->scn->Register(qKey);
+	globals->scn->Register(this);
 }
 
 //----------------------------------------------------------------------------
@@ -2109,6 +2101,7 @@ C_QGT::~C_QGT()
   if (trn)  delete trn;
   tcm->FreeSEA(this);
   tcm->FreeCST(this);
+	for (U_INT k=0; k< osmDB.size(); k++) globals->scn->FreeBasesOSM(osmDB[k]);
 }
 //----------------------------------------------------------------------------
 //  Trace deletion for this QGT
@@ -2279,7 +2272,11 @@ int C_QGT::StepHDT()
 int C_QGT::HasTRN()
 { char  fn[64];														// TRN file name
   if (strn)				return 0;
+	if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d Start   TRN elevations",
+								tcm->Time(),xKey,zKey);
 	if (globals->elvDB)	globals->sqm->GetTRNElevations(this);
+	if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d End SQL TRN elevations",
+								tcm->Time(),xKey,zKey); 
 	if (HasElevation()) {SetStep(TC_QT_TIL);	return 1;}		
 	//---Check for a TRN file ------------------------------------
   U_INT   cx = xKey;
@@ -2717,11 +2714,12 @@ CSuperTile *C_QGT::GetSuperTile(int tx,int tz)
 CSuperTile *C_QGT::GetSuperTile(U_INT No)
 { return (No > 63)?(0):(&Super[No]); }
 //-------------------------------------------------------------------------
-//  Return OSM part with same texture reference 
+//  Build or extend an OSM part with same texture reference for the same
+//				supertile
 //-------------------------------------------------------------------------
-C3DPart	*C_QGT::GetOSMPart(char No,char dir, char *ntx, char layer)
+void C_QGT::ExtendOSMPart(char No,char dir, char *ntx, char L, int nv, GN_VTAB  *S)
 { CSuperTile *sup = (No > 63)?(0):(&Super[No]);
-	if (0 == sup)		return 0;
+	if (0 == sup)		return;
 	//--- Get texture reference --------------------------
 	TEXT_INFO txd;
 	txd.apx = 0xFF;
@@ -2729,16 +2727,27 @@ C3DPart	*C_QGT::GetOSMPart(char No,char dir, char *ntx, char layer)
 	txd.Dir = dir;
 	strncpy(txd.name,ntx,FNAM_MAX);
 	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
-	C3DPart *prt = sup->SearchOSMPart(ref, layer);
+	sup->BuildOSMPart(ref,L,nv,S);
 	globals->txw->Free3DTexture(ref);
-	return prt;
+	return;
 }
+
 //-------------------------------------------------------------------------
 //  Return OSM part with same texture reference 
 //-------------------------------------------------------------------------
 void C_QGT::OsmOK(char No)
 {	CSuperTile *sup = (No > 63)?(0):(&Super[No]);
 	sup->StBat(0);
+	return;
+}
+//-------------------------------------------------------------------------
+//  Init OSM loading for the QGT 
+//-------------------------------------------------------------------------
+void C_QGT::StartOSMload(int sNo)
+{	for (U_INT k=0; k<osmDB.size(); k++)
+	{	OSM_DBREQ *req = new OSM_DBREQ(this,sNo,osmDB[k]);
+		globals->scn->AddOSMrequest(req);
+	}
 	return;
 }
 //-------------------------------------------------------------------------
@@ -3160,15 +3169,7 @@ int C_QGT::Step3DO()
 {	int pm = 0;
 	if (!globals->noOBJ) pm = tcm->Locate3DO(this);
 	//---Open OSM database ----------------------------------
-	Step = TC_QT_OS1;
 	return pm;
-}
-//-------------------------------------------------------------------------
-//	Load Objects from OSM layer 
-//-------------------------------------------------------------------------
-int C_QGT::StepOSM()
-{	globals->scn->LoadBasesOSM(this);
-	return 0;
 }
 //-------------------------------------------------------------------------
 //	Check for identity (for debug only)
@@ -3647,21 +3648,24 @@ TCacheMGR::TCacheMGR()
   thSIG = 0;
   thRCV = 0;
   pthread_cond_init  (&thCond, NULL);
-  pthread_mutex_init (&thMux,  NULL);
+  pthread_mutex_init (&thMux[0],  NULL);
+	pthread_mutex_init (&thMux[1],  NULL);
   pthread_attr_t attr;
   sched_param param;
   pthread_attr_init (&attr);
   pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_JOINABLE);
   pthread_attr_setschedpolicy (&attr, SCHED_OTHER);
-  pthread_attr_setinheritsched (&attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   param.sched_priority = pmax;            //sched_get_priority_max (SCHED_OTHER);
   pthread_attr_setschedparam (&attr, &param);
   //--- Create thread for file access ---------------------------
-  thRUN   = 0;                              // Thread stop
-  int r1  = pthread_create (&t1id, &attr, FileThread, this);
-  if (0 != r1)  Abort("Cannot Create File Thread");
-	int r2  = pthread_create (&t2id, &attr, FileThread, this);
-  if (0 != r2)  Abort("Cannot Create File Thread");
+  thRUN = 0;
+	t1OK	= 1;                              // Thread stop
+  t1OK  = pthread_create (&t1id, &attr, FileThread, this);
+  if (0 != t1OK)  Abort("Cannot Create File Thread");
+	t2OK	= 1;
+	t2OK  = pthread_create (&t2id, &attr, FileThread, this);
+  if (0 != t2OK)  Abort("Cannot Create File Thread");
   pthread_attr_destroy(&attr);
   //-----Reserve a big bloc of memory to ensure continuity ------
   char *res = new char[2000000];
@@ -3688,10 +3692,7 @@ TRACE("End TCACHE Constructor");
 //  delete all allocated resources
 //-------------------------------------------------------------------------
 TCacheMGR::~TCacheMGR()
-{ stop = 1;
-	pthread_cond_broadcast(&thCond);
-  pthread_join(t1id,0);
-	pthread_join(t2id,0);
+{ 
   //---Delete coordinate tables ----------------------
   delete [] TexRES[TC_MEDIUM];
   delete [] TexRES[TC_HIGHTR];
@@ -3702,7 +3703,7 @@ TCacheMGR::~TCacheMGR()
   std::map<U_INT,C_QGT*>::iterator im;
   for (im = qgtMAP.begin(); im != qgtMAP.end(); im++)
   { C_QGT *qt = (*im).second;
-		delete (qt);			//qt->DecUser();
+		delete (*im).second;			//qt->DecUser();
   }
   qgtMAP.clear();
   //---delete all countries ---------------------------
@@ -3722,6 +3723,11 @@ TCacheMGR::~TCacheMGR()
   //---delete all terrain types -----------------------
   terBOX->EmptyIt();
   delete terBOX;
+	//--- Stop threads ----------------------------------
+	stop = 1;
+	pthread_cond_broadcast(&thCond);
+  if (0 == t1OK) pthread_join(t1id,0);
+	if (0 == t2OK) pthread_join(t2id,0);
   //----Close tile types ------------------------------
   delete tFIL;
   gluDeleteQuadric(ground);
@@ -3804,19 +3810,6 @@ void TCacheMGR::CheckTeleport()
 { SPosition Port;
   char qgt[64];
   qgt[0]  = 0;
-	/*
-  GetIniString("Terrain","Teleport", qgt,10);
-  if (*qgt == 0)      return;
-  //-----Decode QGT X and Z -----------------------------
-  U_INT qx  = atoi(qgt+1);
-  U_INT qz  = atoi(qgt+5);
-  if ((qx < 0) || (qx > 511)) return;
-  if ((qz < 0) || (qz > 511)) return;
-  Port.lat  = GetQgtSouthLatitude(qz);
-  Port.lon  = FN_ARCS_FROM_QGT(qx);
-  Port.alt  = 15000;
-  globals->geop = Port;
-	*/
 	char txt[128];
 	double lon, lat;
 	GetIniString("Terrain","Teleport",txt,128);
@@ -4341,7 +4334,7 @@ void TCacheMGR::GetTerrainInfo(TC_GRND_INFO &inf,SPosition &pos)
   CmQUAD *dt  = qgt->GetQUAD(No);
   CVector  p(pos.lon,pos.lat,0);
 	qgt->RelativeToBase(p);
-  CmQUAD *qd  = dt->Locate2D(p);
+  CmQUAD *qd  = dt->Locate2D(p,qgt);
   //----Locate the triangle where p reside ------------
   qd->PointHeight(p,gNM);
   inf.alt     = p.z;
@@ -4363,7 +4356,7 @@ double TCacheMGR::GetGroundAt(GroundSpot &gns)
  
   CVector  p(gns.lon,gns.lat,dt->CenterElevation());
 	qgt->RelativeToBase(p);
-  gns.Quad    = dt->Locate2D(p);
+  gns.Quad    = dt->Locate2D(p,qgt);
   //----Locate the triangle where p reside ------------
   gns.Quad->PointHeight(p,gNM);
   gns.alt     = p.z;
@@ -4963,14 +4956,9 @@ int TCacheMGR::OneAction()
     case TC_QT_3DO:
 			pm = qgt->Step3DO();
 			//----------------------------------------------------
-      if (tr) TRACE("TCM: -- Time: %04.2fQGT(%3d-%3d) Load %06d Objects",Time(),qgt->xKey,qgt->zKey,pm);
+      if (tr) TRACE("TCM: -- Time: %04.2f QGT(%3d-%3d) Load %06d Objects",Time(),qgt->xKey,qgt->zKey,pm);
       //----------------------------------------------------
-			return  1;
-      //return LastAction();
-		//--- Load OSM layer 1 ---------------------------------
-		case TC_QT_OS1:
-			if (qgt->StepOSM())	return 1;
-			return LastAction();
+			return  LastAction();
     //---- Delete the QGT --------------------------------
     case TC_QT_DEL:
       return FreeTheQGT(qgt);
@@ -5473,11 +5461,12 @@ int TCacheMGR::RequestELV(C_QGT *qgt)
 	}
 	//--- Search the QTR files -----------------------------------
   else
-	{	if (tr) TRACE("TCM: -- QGT(%03d-%03d) request QTR",qgt->xKey,qgt->zKey);
+	{	if (tr) TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) request QTR",Time(),qgt->xKey,qgt->zKey);
 		end					= TC_QT_QTR;										// QGT step after read
 		qgt->rCode  = TC_POD_QTR;														// Request code
 		qgt->rKey   = GetQTRindex(qgt->xKey,qgt->zKey);     // QTR file Key
 	}
+	if (tr) TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) Start Thread Elevation",Time(),qgt->xKey,qgt->zKey);
 	return StartIO(qgt,end);
 }
 

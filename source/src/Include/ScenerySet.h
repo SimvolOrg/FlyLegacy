@@ -103,19 +103,19 @@ public:
 	int		  CheckForScenery(PFSPODFILE *p);
 	//-----------------------------------------------------------------------
 	CSceneryPack *GetQGTPack(U_INT key);
-	//--- OSM base detected -------------------------------------------------
-	int 		AddOSMbase(char *fn);
-	void		AddGQTforOSM(U_INT key);
+	//--- OSM interface -----------------------------------------------------
+	int 				AddOSMbase(char *fn);
+	void				AddGQTforOSM(U_INT key);
+	void				LoadBasesOSM(C_QGT *qgt);
+	void				FreeBasesOSM(SQL_DB *db);
+	SQL_DB		 *GetOSMbase(C_QGT *qgt, int nb);
+	void				AddOSMrequest(OSM_DBREQ *r);
+	OSM_DBREQ  *PopOSMrequest();
 	//-----------------------------------------------------------------------
 	void		MountAll();
-  void    Register(U_INT key);
+  void    Register(C_QGT *qgt);
 	void    Deregister(U_INT key);
-	//--- OSM interface -----------------------------------------------------
-	SQL_DB *RegisterOSM(C_QGT *qt);
-	SQL_DB *GetOSMbase(C_QGT *qgt, int nb);
 	//-----------------------------------------------------------------------
-	void		LoadBasesOSM(C_QGT *qgt);
-	SQL_DB *NextBaseOSM();
 	//--- For shared scenery pod --------------------------------------------
 	void		MountSharedPod(char *pat,char *fn);
   //  Load initial files --------------------------------------------------
@@ -138,9 +138,11 @@ protected:
 	char fname[PATH_MAX];
 	char path [PATH_MAX];
 	std::map<U_INT,CSceneryPack*> sqgt;
-	std::map<U_INT,CSceneryPack*> sgbt;
-	//--- Queue of Scenery descriptor ----------------------------------------
-	qHDR	<SQL_DB> osmQ;
+	std::map<U_INT,CSceneryPack*> gbtP;
+	//--- Queue of database descriptor ----------------------------------------
+	qHDR	<SQL_DB>		osmQ;
+	//--- Queue of Database request for OSM -----------------------------------
+	qHDR  <OSM_DBREQ> reqQ;
 };
 
 

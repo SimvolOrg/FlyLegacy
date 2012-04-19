@@ -126,7 +126,6 @@ void CSceneryDBM::Init (void)
 	if (0 == *fname)	strcpy(fname,"./SQL");
 	_snprintf(path,FNAM_MAX,"%s/*.db",fname);
 	//--- Add OSM databases ----------------------------
-	//ApplyToFiles("Scenery/BaseOSM/*.db",OsmBaseCB,this);
 	ApplyToFiles(path,OsmBaseCB,this);
 	SCENE("========END INITIAL LOAD==================");
 	return;
@@ -156,12 +155,12 @@ void	CSceneryDBM::AddPodToQGT(CSceneryPOD *pod)
 //--------------------------------------------------------------------------------
 void	CSceneryDBM::AddPodToGBT(CSceneryPOD *pod)
 {	U_INT key = pod->GetKey();
-	std::map<U_INT,CSceneryPack*>::iterator ip = sgbt.find(key);
-	if (ip != sgbt.end())	{(*ip).second->AddPod(pod); return;}
+	std::map<U_INT,CSceneryPack*>::iterator ip = gbtP.find(key);
+	if (ip != gbtP.end())	{(*ip).second->AddPod(pod); return;}
 	//---- create a new pack ----------------------------------
 	CSceneryPack *pak = new CSceneryPack(key);
 	pak->AddPod(pod);
-	sgbt[key] = pak;
+	gbtP[key] = pak;
 	return;
 }
 //--------------------------------------------------------------------------------
@@ -180,7 +179,7 @@ void CSceneryDBM::Cleanup (void)
 	for (ip=sqgt.begin(); ip!=sqgt.end(); ip++) delete (*ip).second;
 	//----Clean GBT list -------------------------
 	std::map<U_INT,CSceneryPack*>::iterator ig;
-	for (ig=sgbt.begin(); ig!=sgbt.end(); ig++) delete (*ig).second;
+	for (ig=gbtP.begin(); ig!=gbtP.end(); ig++) delete (*ig).second;
 }
 
 //--------------------------------------------------------------
@@ -353,10 +352,11 @@ void CSceneryDBM::LoadInFolderTree (const char *path)
 //=============================================================================
 //	Register by QGT key
 //------------------------------------------------------------------------------
-void CSceneryDBM::Register (U_INT key)
-{	char reg = 1;
-	U_INT gx = (key >> 16);
-	U_INT gz = (key & 0xFFFF);
+void CSceneryDBM::Register (C_QGT *qgt)
+{	char reg	= 1;
+	U_INT	key	= qgt->FullKey();
+	U_INT gx	= (key >> 16);
+	U_INT gz	= (key & 0xFFFF);
 	std::map<U_INT,CSceneryPack*>::iterator p1 = sqgt.find(key);
 	if (p1 != sqgt.end())
 	{//--- Activate all sceneries in QGT --------------------
@@ -365,11 +365,13 @@ void CSceneryDBM::Register (U_INT key)
 	}
 	//--- Look for global tile scenery ----------------------
 	U_INT gbk = key & 0xFFFEFFFE;
-	std::map<U_INT,CSceneryPack*>::iterator p2 = sgbt.find(gbk);
-	if (p2 == sgbt.end())	 return;
+	std::map<U_INT,CSceneryPack*>::iterator p2 = gbtP.find(gbk);
+	if (p2 == gbtP.end())	 return;
 	CSceneryPack *pak = (*p2).second;
 	if (reg)	SCENE("GBT (%03d-%03d) REGISTER",gx,gz);
 	pak->MountPODs(this);
+	//--- Load OSM databases ------------------------------
+	LoadBasesOSM(qgt);
 	return;
 }
 //------------------------------------------------------------------------------
@@ -385,7 +387,7 @@ void CSceneryDBM::MountAll()
 		SCENE("SCENERY MOUNTED for QGT (%03d-%03d)",gx,gz);
 	}
 	//--------------------------------------------------
-	for (p1 = sgbt.begin(); p1 != sgbt.end(); p1++)
+	for (p1 = gbtP.begin(); p1 != gbtP.end(); p1++)
 	{ CSceneryPack *pak = (*p1).second;
 	  pak->MountPODs(this);
 		U_INT gx	= pak->gx;
@@ -410,8 +412,8 @@ void CSceneryDBM::Deregister (U_INT key)
 	}
 	//--- Look for global tile scenery ----------------------
 	U_INT gbk = key & 0xFFFEFFFE;
-	std::map<U_INT,CSceneryPack*>::iterator p2 = sgbt.find(gbk);
-	if (p2 == sgbt.end())	return;
+	std::map<U_INT,CSceneryPack*>::iterator p2 = gbtP.find(gbk);
+	if (p2 == gbtP.end())	return;
 	if (reg)	SCENE("GBT (%03d-%03d) UNREGISTER",gx,gz); 
 	(*p2).second->RemovePODs(this);
 	return;
@@ -471,11 +473,9 @@ void CSceneryDBM::AddGQTforOSM(U_INT key)
 //	Register for QGT:  Open  first database that reference this QGT
 //
 //=================================================================================
-SQL_DB* CSceneryDBM::RegisterOSM(C_QGT *qgt)
-{	return GetOSMbase(qgt,0);
-}
 //------------------------------------------------------------------
-//	Return a new database 
+//	Return a new database
+//	Assign a number for this dabase
 //------------------------------------------------------------------
 SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
 {	std::map<U_INT,CSceneryPack*>::iterator rp = sqgt.find(qgt->FullKey());
@@ -483,39 +483,50 @@ SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
 	//--- OPEN the database -------------------------------
 	const char *fn = (*rp).second->GetOSMname(nb);
 	if (0 == fn)								return 0;
-	SQL_DB *db = globals->sqm->OpenSQLbase((char*)fn,0);
+	SQL_DB *db = globals->sql->OpenSQLbase((char*)fn,0);
 	if (0 == db)								return 0;
-	db->base	= nb;
-	db->Ident = 0;
-	db->qgt		= qgt;
-	qgt->IncUser();
 	TRACE("Mounting database %s",fn);
 	return db;
 }
 //------------------------------------------------------------------
-//	Open databases for this qgt
+//	Open databases for this qgt.  Called by QGT at OSM step
 //------------------------------------------------------------------
 void CSceneryDBM::LoadBasesOSM(C_QGT *qgt)
 { bool go = true;
 	int  nb = 0;
-	osmQ.Lock();
 	while (go)
 	{	SQL_DB *db = GetOSMbase(qgt,nb++);
-		if (0 == db)	break;
-		osmQ.PutEnd(db);
+		if (db)		qgt->AddOsmBase(db);
+		else			break;
 	}
-	osmQ.Unlock();
 	return;
 }
 //------------------------------------------------------------------
-//	Supply next databse to load
+//	Unload OSM base from a QGT
 //------------------------------------------------------------------
-SQL_DB *CSceneryDBM::NextBaseOSM()
-{	osmQ.Lock();
-  SQL_DB *db = osmQ.Pop();
-	osmQ.Unlock();
-	return db;
+void CSceneryDBM::FreeBasesOSM(SQL_DB *db)
+{	globals->sql->CloseOSMbase(db);
+	return;
 }
+//------------------------------------------------------------------
+//	Add a request to load OSM objects
+//------------------------------------------------------------------
+void	CSceneryDBM::AddOSMrequest(OSM_DBREQ *req)
+{	reqQ.Lock();
+	reqQ.PutEnd(req);
+	reqQ.Unlock();
+	return;
+}
+//------------------------------------------------------------------
+//	Pop a request for file Thread
+//------------------------------------------------------------------
+OSM_DBREQ *CSceneryDBM::PopOSMrequest()
+{	reqQ.Lock();
+	OSM_DBREQ *R = reqQ.Pop();
+	reqQ.Unlock();
+	return R;
+}
+
 //==============================================================================
 //	Scenery pack:  held all sceneries for a given QGT
 //==============================================================================

@@ -570,13 +570,13 @@ SQL_DB *SqlOBJ::CreateSQLbase(SQL_DB *db,char **S)
 void *SqlOBJ::CloseOSMbase(SQL_DB *db)
 {	db->ucnt--;
 	if (db->ucnt > 0)				return db;
-	//---  close database and delete all resources ----------
+	//---  Close database and delete all resources ----------
 	TRACE("SQL %d Close OSM database %s",sqlTYP,db->path);
 	sqlite3_close(db->sqlOB);
 	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(db->path);
 	if (rb != dbase.end())	dbase.erase(rb);
-	C_QGT *qgt = db->qgt;
-	if (qgt) qgt->DecUser();
+//	C_QGT *qgt = db->qgt;
+//	if (qgt) qgt->DecUser();
 	delete db;
 	return 0;
 }
@@ -632,37 +632,35 @@ void SqlOBJ::GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj)
 //					object identity by 100 and checking the rest against the
 //					percentile allowed
 //--------------------------------------------------------------------
-int SqlOBJ::GetSuperTileOSM(SQL_DB &db)
-{ int		rep		= 0;
-	char	req[1024];
-	char  nbs   = 0;
-	U_INT idn		= db.Ident;
-	C_QGT *qgt	= db.qgt;
-	char *msk		= "SELECT * FROM OSM_OBJ WHERE (QGT = %u AND Ident > %u);*";
-	_snprintf(req,1024,msk,qgt->FullKey(),idn);
-	sqlite3_stmt * stm = CompileREQ(req,db);
+int SqlOBJ::LoadOSM(OSM_DBREQ *rdq)
+{ int			rep		= 0;
+	char		req[1024];
+	char		nbs   = 0;
+	SQL_DB  *db		= rdq->dbd;								// Database involved
+	C_QGT  *qgt		= rdq->qgt;								// QGT requestor
+	U_INT   sno		= rdq->sNo;								// SuperTile number
+	char   *msk		= "SELECT * FROM OSM_OBJ WHERE ((QGT = %u) AND (SupNo = %d) AND (Ident > %u) );*";
+	_snprintf(req,1024,msk,qgt->FullKey(),sno, rdq->ident);
+	sqlite3_stmt * stm = CompileREQ(req,*db);
 	C3DPart *part = 0;			// Current part
 	U_INT    nbo  = 0;			// Number of loaded objects
-	char     sNo;						// SuperTile number
 	//----------------------------------------------------------------------
   while (SQLITE_ROW == sqlite3_step(stm))
-    { db.Ident	 = sqlite3_column_int(stm,0);						// Last identity
-			U_INT  rst = db.Ident % 100;											// Modulo 100
-			if (rst >= globals->osmax)			continue;					// Eliminate
+    { rdq->ident	 = sqlite3_column_int(stm,0);					// Last identity
+			U_INT  rst = rdq->ident % 100;										// Modulo 100
+			if (rst >= globals->osmMX)			continue;					// Eliminate
 			//--- Add this object on its layer -----------------------------
-			sNo = sqlite3_column_int(stm,4);									// Super tile
 			U_INT  lay = sqlite3_column_int(stm,3);						// OSM layer
 			char	 dir = sqlite3_column_int(stm,5);						// Directory
 			char	*ntx = (char*)sqlite3_column_text(stm,6);		// Texture name
-			part = qgt->GetOSMPart(sNo,dir,ntx,lay);
-			//--- Add data to this part --------------------------------------
+			//--- Extract data ----------------------------------------------
 			int nbv		 = sqlite3_column_int(stm,7);									// Nber vertices
 			GN_VTAB  *src = (GN_VTAB*) sqlite3_column_blob(stm,9);	// BLOB
-			part->ExtendOSM(nbv,src,lay);
+			qgt->ExtendOSMPart(sno,dir, ntx,lay, nbv, src);
 			nbo++;																						// Increment loaded supertile
     }
     //-----Close request ---------------------------------------------------
-	  if (nbo)	qgt->OsmOK(sNo);
+	  if (nbo)	qgt->OsmOK(sno);
     sqlite3_finalize(stm);
     return nbo;
 }
@@ -2867,6 +2865,7 @@ void SqlMGR::Decode3DLight(sqlite3_stmt *stm,CWobj *obj)
 //===================================================================================
 int SqlMGR::GetTRNElevations(C_QGT *qgt)
 {	if (!SQLobj())		return 0;
+  
 	char req[1024];
 	U_INT key = qgt->FullKey();
 	count			= 0;

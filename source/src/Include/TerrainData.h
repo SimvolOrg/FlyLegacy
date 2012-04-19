@@ -363,10 +363,12 @@ public:
 		return (cmp == 0);	}
 	//---------------------------------------------------
 	//--- Return relative coordinates -------------------
-	double GetRX()		{return rx;}
-	double GetRY()    {return ry;}
-	double GetRZ()		{return rz;}
-	double GetTX()		{return (rx > 0)?(rx):(TC_ARCS_PER_QGT);}
+	double GetRX()					{return rx;}
+	double GetRY()					{return ry;}
+	double GetRZ()					{return rz;}
+	//--- Relatives coordinate for NE corner -----------
+	double GetTX()					{return (xKey & TC_1024MOD )?(rx):(TC_ARCS_PER_QGT);}
+	double GetTY(double dl)	{return (zKey & TC_1024MOD )?(ry):(dl);}
 	//--- Return altitude ------------------------------
 	double GetWZ()		{return rz;}
 	//--- Set relative coordinates ---------------------

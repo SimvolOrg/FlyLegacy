@@ -61,10 +61,12 @@ class CShared3DTex;
 #define MODEL_HI      0x00
 #define MODEL_LO      0x01
 //--------------------------------------------------------
-#define TC_3D_OUTSIDE 0           // Outside of drawing
-#define TC_3D_FADE_IN 1           // coming in view
-#define TC_3D_VIEWING 2           // Full view
-#define TC_3D_FADEOUT 3           // Fading out
+#define SUP3D_OUTSIDE 0           // Outside of drawing
+#define SUP3D_LOD_OSM 1						// Loading OSM objects 
+#define SUP3D_FADE_IN 2           // coming in view
+#define SUP3D_VIEWING 3           // Full view
+#define SUP3D_FADEOUT 4           // Fading out
+#define SUP3D_INS_OSM 5						// Inside OSM ring
 //============================================================================
 //  Structure for part info
 //============================================================================
@@ -188,11 +190,10 @@ public:
 	void    ExtendTNV(int nbv, int nbx);
 	void		BinRendering();
 	void		W3DRendering();
-	void    ExtendWith(C3DPart *p1, SVector &T);
-	int 		MoveAndTranslate(C3DPart *ps,SVector &T);
+	int 		Translate(SVector &T);
 	void		Append(TC_VTAB *tab, U_INT ofs, U_INT lg);
-	void		Append(GN_VTAB *tab, U_INT ofs,U_INT lg);
-	void		ExtendOSM(int nbv,GN_VTAB *src, int lay);
+//	void		Append(GN_VTAB *tab, U_INT ofs,U_INT lg);
+	void		ExtendOSM(int nbv,GN_VTAB *src);
 	void		AllocateIND();
 	void		ExtendGTB(int nbv);
 	void		SQLstrip(int nbx,F3_VERTEX *V,F3_VERTEX *N,F2_COORD *T,int *X);

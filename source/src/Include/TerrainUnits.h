@@ -132,8 +132,7 @@
 #define TC_QT_PCH 12								// Elevation patche
 #define TC_QT_SEA 13                // Coast data
 #define TC_QT_3DO 14                // 3D objects
-#define TC_QT_OS1 15								// OSM layer 1
-#define TC_QT_DEL 16               // Candidate to delete
+#define TC_QT_DEL 15               // Candidate to delete
 //--------------------------------------------------------------------
 #define TC_HH_PER_SEC        (double(1) / double(3600))
 //--------------------------------------------------------------------

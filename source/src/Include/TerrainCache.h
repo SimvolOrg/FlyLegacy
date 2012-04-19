@@ -195,7 +195,7 @@ public:
 		U_SHORT       nobj;										// OSM objects
 		U_CHAR				rfu1;
 		U_CHAR				sbat;										// batQ locked
-		Queue<C3DPart> osmQ[2];								// Building Queue
+		Queue<C3DPart> osmQ[2];								// osm Queue
     //---------------------------------------------------------------
     SPosition    mPos;                        // Center position
     CVector      sRad;												// Radius
@@ -210,12 +210,11 @@ public:
 	  bool					Update();	
     bool          NeedMedResolution(float rd);
     bool          NeedHigResolution(float rd);
-    int           Inside3DRing();
-    int           Outside3DRing();
+		void					Refresh3D();
 		//-----------------------------------------------------------
 		void					LoadVBO();
 		//-----------------------------------------------------------
-		C3DPart			 *SearchOSMPart(CShared3DTex *ref, char layer);
+		void          BuildOSMPart(CShared3DTex *ref, char L,int nv,GN_VTAB *S);
 		void					AddToPack(OSM_Object *obj);
 		//-----------------------------------------------------------
 		void					Reallocate(char opt);
@@ -225,6 +224,7 @@ public:
 		bool					IsTextured(char opt);
     //-----------------------------------------------------------
     void          GetLine(CListBox *box);
+		void					ClearOSM(char lay);
     //-----------------------------------------------------------
 		void					DrawOuterSuperTile();
     void          DrawInnerSuperTile();
@@ -240,7 +240,7 @@ public:
     //-----------------------------------------------------------
     inline void   SetVisibility(char v)   {visible = v;}
     inline char   Visibility()            {return visible;}
-    inline bool   IsOutside()             {return (sta3D == TC_3D_OUTSIDE);}
+    inline bool   IsOutside()             {return (sta3D == SUP3D_OUTSIDE);}
     inline float  GetTrueDistance()       {return dEye;}
     inline float  GetAlpha()              {return alpha;}
 		//--- Vertex buffer manageement -----------------------------
@@ -345,7 +345,7 @@ public:
 	int					NbrVerticesInTile();
 	int					InitIndices(CSuperTile *s,char opt);
   void        GetTileIndices(U_INT &tx,U_INT &tz);
-  CmQUAD     *Locate2D(CVector &p);
+  CmQUAD     *Locate2D(CVector &p,C_QGT *qgt);
   U_INT       GetSuperNo();
 	U_INT				GetTileNo();
 	U_INT				WorldTileKey();
@@ -364,7 +364,6 @@ public:
   //-------------------------------------------------------
   bool        PointHeight(CVector &p,CVector &nm);
   //-------------------------------------------------------
-	bool				PointInQuad(CVector &p);
 	bool        PointInSW(CVector &p, CVector nm);
   bool        PointInSE(CVector &p, CVector nm);
   bool        PointInNE(CVector &p, CVector nm);
@@ -502,7 +501,9 @@ private:
   U_INT         rKey;                     // Request parameter
   SPosition     Scene;                    // Mid position for scenery
 	//--- OSM interface -------------------------------------------
-	SQL_DB       *osmDB;										// Database handle
+	U_INT					sqlNO;										// Current Database
+	SQL_DB       *sqlDB;										// Current Descriptor
+	std::vector<SQL_DB*> osmDB;							// Database Queue
   //--------Band parameters--------------------------------------
   U_CHAR        rCode;                    // Request code
   U_CHAR        visb;                     // is visible
@@ -547,7 +548,7 @@ private:
   U_CHAR          vbu;                    // use VBO
 	U_CHAR					elv;										// Has base elevation
   //---------Demux counter--------------------------------------
-  U_CHAR          demux;
+  U_CHAR        demux;
   //------------------------------------------------------------
   CVertex    *Corner[4];                  // Corner vertices
   //---------Array for 1024 initial Detail Tile Quads ----------
@@ -556,9 +557,6 @@ private:
   CSupQueue FarsQ;                        // Far  Super Tiles
   CSupQueue NearQ;                        // Near Super Tiles
   CSupQueue LoadQ;                        // Loading Queue
-	//qHDR <CSuperTile> FarsQ;									// Far supertiles
-	//qHDR <CSuperTile> NearQ;									// Near Queue
-	//qHDR <CSuperTile> LoadQ;									// Texture load queue
   //----------Methods ------------------------------------------
 public:
   C_QGT(U_INT xk, U_INT zk,TCacheMGR *tm);
@@ -608,7 +606,6 @@ public:
 	int					StepSEA();					// Set coast data
 	int					StepSUP();					// Finalize Super Tile
 	int					Step3DO();					// Load 3D objects
-	int					StepOSM();					// Load OSM layer(s)
 	//---------State management ----------------------------------
   void				LockState()  {pthread_mutex_lock   (&stMux);}
   void				UnLockState(){pthread_mutex_unlock (&stMux);}
@@ -619,7 +616,6 @@ public:
   void				PostIO();
   //---------Queuing management --------------------------------
   CSuperTile *PopLoad();
-//  CSuperTile *NextLoad(CSuperTile *sp)  {return sp->Next;}
   void        EnterNearQ(CSuperTile *sp);
   //---------Position routines ---------------------------------
   bool        GetTileIndices(SPosition &pos,short &tx, short &tz);
@@ -636,9 +632,11 @@ public:
 	bool				AreWe(U_INT qx,U_INT qz);
 	int					HasTRN();
 	void				Reallocate(CmQUAD *qd);
-	//--- Object management ----------------------------------------
-	C3DPart		 *GetOSMPart(char supNo,char dir, char *ntx, char layer);
+	//--- OSM management ----------------------------------------
+	void        ExtendOSMPart(char No,char dir, char *ntx, char layer, int nv, GN_VTAB  *src);
 	void				OsmOK(char No);
+  void				AddOsmBase(SQL_DB *db)	{ osmDB.push_back(db); }
+	void        StartOSMload(int sNo);
   //----------Mesh Management ------------------------------------
 	SPosition		GetBase();
 	int         CenterTile(CVertex *sw,CVertex *nw,CVertex *ne,CVertex *se);
@@ -841,10 +839,12 @@ class TCacheMGR: public CExecutable {
   pthread_t       t1id;											// Thread identity
 	pthread_t       t2id;											// Thread identity
   pthread_cond_t  thCond;                   // Condition variable
-  pthread_mutex_t	thMux;										// Condition Mutex
+  pthread_mutex_t	thMux[2];									// Condition Mutex
   U_INT           thSIG;                    // Number of signal posted
   U_INT           thRCV;                    // Number of Signal received
   U_INT           thRUN;                    // Runing signal
+	char            t1OK;
+	char						t2OK;
   //---------TRN File name -------------------------------------
   char        trnName[64];                  // TRN file name
   //---------CULLING  --------------------------------------
@@ -1053,9 +1053,9 @@ public:
   inline void ThreadStop()      {thRUN = 0;}
 	void				ThreadPulse();		
 	//------------------------------------------------------------
-  C_QGT      *PopLoadTEX()      {return LodQ.Pop();}
-  pthread_cond_t  *GetTHcond()  {return &thCond;}
-  pthread_mutex_t *GetaMux()    {return &thMux;}
+  C_QGT      *PopLoadTEX()						{return LodQ.Pop();}
+  pthread_cond_t  *GetTHcond()			  {return &thCond;}
+  pthread_mutex_t *GetaMux(char n)    {return &thMux[n];}
   //----------Test and debug -----------------------------------
   GLUquadricObj  *GetSphere()   {return sphere;}
   void        CheckW3D();

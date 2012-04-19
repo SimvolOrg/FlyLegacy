@@ -333,13 +333,11 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   //----Init all distances -------------------------------------
   float dd  = 24;                         // Default (nm)for detection
   GetIniFloat	("Performances","ObjectDetectDistance",&dd);
-  globals->nmDET  = dd;                   // Limit in miles
-  globals->ftDET  = FN_FEET_FROM_MILE(dd);
+  globals->inf3DO  = FN_FEET_FROM_MILE(dd);
   //-------------------------------------------------------------
   float dw   = 12;                         // Default for drawing
   GetIniFloat	("Performances","ObjectDrawDistance",&dw);
-  globals->nmDRW = dw;                    // Limit in miles
-  globals->ftDRW = FN_FEET_FROM_MILE(dw);
+  globals->dwf3DO = FN_FEET_FROM_MILE(dw);
   //----Level of details -----------------------------------------
   float d1   = 1.5;                    
   GetIniFloat("Performances","ObjectHigDetails",&d1);
@@ -361,13 +359,17 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   //--------------------------------------------------------------
   int lf    = 500;                        // Decoding factor default
   GetIniVar("Performances","ObjectLoadFactor",&lf);
-	globals->dblim   = lf;
+	globals->osmLF   = lf;
 	//--------------------------------------------------------------
 	int osmax = 100;
-	GetIniVar("Performances","MaxObjectToLoad",&osmax);
+	GetIniVar("Performances","OSMmaxToLoad",&osmax);
 	if (osmax < 1)		osmax = 1;
 	if (osmax > 100)	osmax	= 100;
-	globals->osmax = osmax;
+	globals->osmMX  = osmax;
+	//--------------------------------------------------------------
+	float osmin = 10;
+	GetIniFloat("Performances","OSMintroduction",&osmin);
+	globals->osmIN = FN_FEET_FROM_MILE(osmin);
   //--------------------------------------------------------------
 	int lq = 1;
 	GetIniVar("Performances","LookOnlyInSQL",&lq);
@@ -377,9 +379,9 @@ C3DMgr::C3DMgr(TCacheMGR *m )
 	if (0 == sql)	lpod = 1;
   return;
 }
-//--------------------------------------------------------------------
+//----------------------------------------------------------------
 //  Create a unic VOR for drawing the nearest VOR only
-//--------------------------------------------------------------------
+//----------------------------------------------------------------
 void C3DMgr::CreateVOR()
 { CWobj *obj  = new CWvor('nvor');
   obj->pDis   = 25000000;
@@ -2155,8 +2157,11 @@ void C3DPart::AllocateIND()
 }
 //----------------------------------------------------------------------
 //	Extend part for additional vertices
+//	NOTE:  Part is extended under the file thread and may be accessed
+//				by the drawing process.  The layer Queue must be locked
+//				before making extension
 //----------------------------------------------------------------------
-void C3DPart::ExtendOSM(int nbv,GN_VTAB *src,int lay)
+void C3DPart::ExtendOSM(int nbv,GN_VTAB *src)
 {	int tot = NbVT + nbv;
 	int dim = NbVT * sizeof(GN_VTAB);
   //--- Allocate for total vertices ----
@@ -2173,6 +2178,7 @@ void C3DPart::ExtendOSM(int nbv,GN_VTAB *src,int lay)
 	char *dst = (char*) tab + dim;
 	dim = nbv * sizeof(GN_VTAB);
 	memcpy(dst,src,dim);
+	Rend  = &C3DPart::DrawAsGVT;
 	return;
 }
 //----------------------------------------------------------------------
@@ -2255,6 +2261,7 @@ void C3DPart::MoveIND(void *deb,int dim)
 //-----------------------------------------------------------------------------
 //	Append vertice list at given offset
 //-----------------------------------------------------------------------------
+/*
 void C3DPart::Append(GN_VTAB *tab, U_INT ofs,U_INT lg)
 {	if (0 == tab)		return;				// No source
 	GN_VTAB *dst = gTAB + ofs;
@@ -2262,35 +2269,15 @@ void C3DPart::Append(GN_VTAB *tab, U_INT ofs,U_INT lg)
   for (U_INT k=0; k!=lg; k++) *dst++ = *src++;
 	return;
 }
-//-----------------------------------------------------------------------------
-//	Extend this part with the given part
-//-----------------------------------------------------------------------------
-void C3DPart::ExtendWith(C3DPart *p0, SVector &T)
-{	U_INT		 tot	= p0->GetNBVTX() + NbVT;
-  GN_VTAB *tab  = gTAB;
-	U_INT    nb1  = NbVT;
-	//---Extend with new strip of vertices ---
-	NbVT	= tot;
-	gTAB  = new GN_VTAB[tot];
-	Rend  = p0->GetRendering();
-	//---------------------------------------
-	int ofs  = MoveAndTranslate(p0,T);
-	//--- Append previous vertices to end ----
-	Append(tab,ofs,nb1);
-	//--- Delete original vertices -----------
-	if (tab)	delete [] tab;
-	return;
-}
+*/
 //----------------------------------------------------------------------
 // Move part vertice to begining and translate by T vector
 //----------------------------------------------------------------------
-int C3DPart::MoveAndTranslate(C3DPart *ps,SVector &T)
-{	GN_VTAB *src = ps->GetGTAB();
-	GN_VTAB *dst = gTAB;
-	U_INT    end = ps->GetNBVTX();
+int C3DPart::Translate(SVector &T)
+{	GN_VTAB *dst = gTAB;
+	U_INT    end = NbVT;
 	for (U_INT k=0; k < end; k++)
-	{*dst = *src++;
-		dst->Add(T);
+	{	dst->Add(T);
 		dst++;
 	}
 	return end;
@@ -2515,11 +2502,11 @@ void C3Dworld::TimeSlice(float dT)
 { CWobj *obj = 0;
   CWobj *prv = 0;
   int    cnt = 0;
-  float  ftDET = globals->ftDET;      // Detect ring in feet
+  float  inf3DO = globals->inf3DO;      // Detect ring in feet
   //----scan waiting queue for objects entering  Decoding Ring ------
   for ( obj = woQ.GetFirst(); obj != 0; obj = woQ.GetNext(obj))
       { float dst = obj->RefreshDistance();
-        if (dst > ftDET)     continue;
+        if (dst > inf3DO)     continue;
         //---- detach from waiting queue and decode ----------
         prv  = woQ.Detach(obj);
         AssignToSuperTile(obj);

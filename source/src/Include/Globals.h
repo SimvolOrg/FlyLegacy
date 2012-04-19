@@ -375,15 +375,14 @@ typedef struct {
   U_INT             qgtX;               // X index
   U_INT             qgtZ;               // Z index
   //------- Limit parameters -----------------------------------------
-  float             nmDET;              // 3D detect ring in miles
-  float             ftDET;              // 3D detect ring in feet
-  float             nmDRW;              // 3D Drawing limit in miles
-  float             ftDRW;              // 3D Drawing limit in feet
+  float             inf3DO;             // 3D detect ring in feet
+  float             dwf3DO;             // 3D Drawing limit in feet
   float             ftLD1;              // 3D limit for LOD1 (1/2)
   float             ftLD2;              // 3D limit for LOD2 (1/4)
   float             ftLD3;              // 3D limit for LOD3 (1/8)
-	U_INT							dblim;							// Object load factor from DB
-	U_INT							osmax;							// Maximum osm object loaded
+	float							osmIN;							// OSM objects intro distance
+	U_INT							osmLF;							// Object load factor from DB
+	U_INT							osmMX;							// Maximum osm object loaded
   //------- Default fonts  -------------------------------------------
   SFonts            fonts;
   //-------- Default logs  -------------------------------------------

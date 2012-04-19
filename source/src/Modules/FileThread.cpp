@@ -222,68 +222,123 @@ void GetQTRfile(C_QGT *qgt,TCacheMGR *tcm)
   return;
 }
 //=================================================================================
+//  THREAD FOR TEXTURES
+//=================================================================================
+void ProcessTexture( TCacheMGR   *tcm)
+{	C_QGT    *qgt		= 0;
+  for (qgt = tcm->PopLoadTEX(); (qgt != 0); qgt = tcm->PopLoadTEX())
+			{ //TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) THREAD TEXTURE",
+				//											tcm->Time(),qgt->GetXkey(),qgt->GetZkey()); 
+				TextureLoad(qgt);
+				//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
+			}
+			return;
+}
+//=================================================================================
+//  THREAD FOR FILES
+//=================================================================================
+void ProcessFiles(TCacheMGR *tcm, SqlTHREAD *sql)
+{	REGION_REC  reg;
+	for ( C_QGT *qgt = tcm->PopFileREQ(); (qgt != 0); qgt = tcm->PopFileREQ())
+			{ switch (qgt->GetReqCode()) {
+					//--- Load a QTR file --------------------------
+          case TC_POD_QTR:
+							//TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) THREAD QTR",
+							//								tcm->Time(),qgt->GetXkey(),qgt->GetZkey());
+              GetQTRfile(qgt,tcm);
+							//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
+
+              continue;
+					//--- Load elevations ---------------------------
+          case TC_SQL_ELV:
+							//TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) THREAD ELV",
+							//								tcm->Time(),qgt->GetXkey(),qgt->GetZkey());
+              reg.qgt = qgt;
+              reg.key = qgt->FullKey();
+							sql->GetQgtElevation(reg,ELVtoCache);
+              qgt->PostIO();
+							//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
+ 
+              continue;
+					//--- Load coast data ---------------------------
+           case TC_REQ_SEA:
+							//TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) THREAD SEA",
+							//								tcm->Time(),qgt->GetXkey(),qgt->GetZkey());
+              if (sql->SQLsea()) tcm->AllSeaSQL(qgt);
+              else              tcm->AllSeaPOD(qgt);
+              qgt->PostIO();
+							//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
+
+              continue;
+
+        } // end of switch
+		}
+  return;
+}
+//=================================================================================
+//  THREAD FOR 3D MODELS
+//=================================================================================
+void ProcessModels(TCacheMGR *tcm, SqlTHREAD *sql)
+{	C3DMgr   *m3d	= globals->m3d;	
+	C_QGT    *qgt		= 0;
+	char *dir = "MODELS";
+  for (C3Dmodel *mod = m3d->ModelToLoad(); (mod != 0); mod = m3d->ModelToLoad())
+      { char *mn = mod->GetFileName();
+				//TRACE("TCM: -- Time: %04.2f ---------------THREAD MODELS",tcm->Time());
+        if (!sql->SQLmod())						{mod->LoadPart(dir); mod->DecUser(); continue;}
+				if (!sql->GetM3Dmodel(mod))		{mod->LoadPart(dir); mod->DecUser(); continue;}
+        //-------------------------------------------------------------------------
+				mod->Finalize();
+        mod->DecUser();
+				//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
+
+      }
+	return;
+}
+//=================================================================================
+//  THREAD FOR OSM Layers
+//=================================================================================
+void ProcessOSM(TCacheMGR *tcm, SqlTHREAD *sql)
+{	CSceneryDBM *scn	= globals->scn;
+	for (OSM_DBREQ *dbr = scn->PopOSMrequest(); (dbr != 0); dbr = scn->PopOSMrequest())
+			{	C_QGT *qgt = dbr->qgt;
+				//TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) THREAD OSM",
+				//								tcm->Time(),qgt->GetXkey(),qgt->GetZkey());
+			  sql->LoadOSM(dbr);
+				delete dbr;
+				//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
+			}
+	return;
+}
+//=================================================================================
 //  FILE THREAD LOOP
 //=================================================================================
 void *FileThread(void *p)
-{ C3DMgr      *m3d	= globals->m3d;
-	CSceneryDBM *scn	= globals->scn;
+{ 
   TCacheMGR   *tcm	= (TCacheMGR*) p;
 	char         thn  = tcm->GetThreadNumber();
   SqlTHREAD sql;												// Local instance of SQL manager
 	globals->elvDB	= sql.UseELV();
   C_QGT    *qgt		= 0;
   U_INT     key		= 0;
+	char			tr    = 1;									// Trace time
 	//--- Declare first instance ----------------
 	if (0 == globals->sql)  globals->sql = &sql;
 	//--- Thread parameters ---------------------
 	pthread_cond_t  *cond = tcm->GetTHcond();
-	pthread_mutex_t *tmux = tcm->GetaMux();
+	pthread_mutex_t *tmux = tcm->GetaMux(thn);
 	TRACE("SQL Thread started");
   //--- Region parameters --------------------
-  REGION_REC  reg;
   while (tcm->RunThread())
     { pthread_cond_wait(cond,tmux);						// Wait for signal
       //----Process load texture Queue first -------------------------------------
-      for (qgt = tcm->PopLoadTEX(); (qgt != 0); qgt = tcm->PopLoadTEX())  TextureLoad(qgt);
+      if (thn == 0)		ProcessTexture(tcm);
       //----Process file Requests ------------------------------------------------
-      for (qgt = tcm->PopFileREQ(); (qgt != 0); qgt = tcm->PopFileREQ())
-          {     switch (qgt->GetReqCode()) {
-                    case TC_POD_QTR:
-                      GetQTRfile(qgt,tcm);
-                      continue;
-                    case TC_SQL_ELV:
-                      reg.qgt = qgt;
-                      reg.key = qgt->FullKey();
-											sql.GetQgtElevation(reg,ELVtoCache);
-                      qgt->PostIO();
-                      continue;
-                    case TC_REQ_TRN:
-                      continue;
-                    case TC_REQ_SEA:
-                      if (sql.SQLsea()) tcm->AllSeaSQL(qgt);
-                      else              tcm->AllSeaPOD(qgt);
-                      qgt->PostIO();
-                      continue;
-
-                } // end of switch
-          }
+      if (thn == 1)		ProcessFiles(tcm,&sql);
       //--- Process 3DModel requests ----------------------------------------------
-		  C3Dmodel *mod		= 0;
-			char *dir = "MODELS";
-      for (mod = m3d->ModelToLoad(); (mod != 0); mod = m3d->ModelToLoad())
-      { char *mn = mod->GetFileName();
-        if (!sql.SQLmod())          {mod->LoadPart(dir); mod->DecUser(); continue;}
-				if (!sql.GetM3Dmodel(mod))  {mod->LoadPart(dir); mod->DecUser(); continue;}
-        //-------------------------------------------------------------------------
-				mod->Finalize();
-        mod->DecUser();
-      }
+		  if (thn == 0)		ProcessModels(tcm,&sql);
 			//--- Process OSM models requests--------------------------------------------
-			SQL_DB *db = 0;
-			for (db = scn->NextBaseOSM(); (db != 0); db = scn->NextBaseOSM())
-			{	globals->sqm->GetSuperTileOSM(*db);
-				globals->sqm->CloseOSMbase(db);
-			}
+			if (thn == 1)   ProcessOSM(tcm,&sql);
     }
 	//--- File thread is stopped ------------------
 	TRACE("FileThread %d STOP",thn);

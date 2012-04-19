@@ -429,16 +429,10 @@ struct SQL_DB {
     char      use;                // Use database
     char      mgr;                // Thread only if no export
     char     *dbn;                // Database name
-		//---OSM interface -----------------------------
-		int				base;								// Current base
-		C_QGT    *qgt;								// Current QGT
-		U_INT			Ident;							// Last object ident
-		U_INT     limit;							// Load limit
 	//--- Constructor ------------------------------
 		SQL_DB::SQL_DB()
 		{	next	= 0;
 			ucnt	= 1;
-			qgt		= 0;
 			mode	= SQLITE_OPEN_READONLY;
 			exp		= 0;
 			opn		= 0;
@@ -556,7 +550,7 @@ public:
 	void  				UpdateOSMqgt(SQL_DB &db, U_INT key);
 	//--- Get items from OSM database ---------------------------------
 	void					GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj);
-	int 					GetSuperTileOSM(SQL_DB &db);
+	int 					LoadOSM(OSM_DBREQ *req);
 
 };
 //=====================================================================================
