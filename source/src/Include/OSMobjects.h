@@ -306,6 +306,7 @@ inline void DebDrawOSMlight(GLfloat *col, float a)
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_ALPHA_TEST);
+	glEnable(GL_BLEND);
   glAlphaFunc(GL_GREATER,a);
   glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION,lightDIS);
   glPointParameterf (GL_POINT_SIZE_MIN,1);

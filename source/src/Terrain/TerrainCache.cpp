@@ -1937,7 +1937,6 @@ int CSuperTile::Draw3D(U_CHAR tod)
 	//--- Draw the OSM object ----------------------------------
 	if (globals->noOSM)	return nbo;
 	//--- Environment for buildings ----------------------------
-	glDisable(GL_ALPHA_TEST);
 	glColorMaterial (GL_FRONT, GL_DIFFUSE);
 	glFrontFace(GL_CCW);
 	//----------------------------------------------------------
@@ -2719,7 +2718,7 @@ void C_QGT::ExtendOSMPart(char No,char dir, char *ntx, char L, int nv, GN_VTAB  
 	//--- Get texture reference --------------------------
 	TEXT_INFO txd;
 	txd.apx = 0xFF;
-	txd.azp = 0xFF;
+	txd.azp = 0x00;
 	txd.Dir = dir;
 	strncpy(txd.name,ntx,FNAM_MAX);
 	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);

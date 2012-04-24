@@ -484,7 +484,7 @@ void OSM_Object::BuildLightRow(double ht)
 	part		 = new C3DPart();
 	part->AllocateOsmLIT(bpm.side);
 	TEXT_INFO txd;
-	strncpy(txd.name,"GLOBE.PNG",FNAM_MAX);
+	strncpy(txd.name,"GLOBE.TIF",FNAM_MAX);
 	txd.Dir = TEXDIR_OSM_MD;
 	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
 	part->SetTREF(ref);
