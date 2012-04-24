@@ -50,6 +50,24 @@ char *CFuiAxis::devMENU[16] = {
   "",
   "",
 };
+//======================================================================================
+//  Global CALLBACK WHEN SOME MOVE FROM JOYSTICK IS DETECTED
+//======================================================================================
+void  WhenJoyMove(char code,JoyDEV *J, CSimAxe *A, int B, Tag W)
+{ CFuiAxis *win = (CFuiAxis*)globals->fui->GetFuiWindow(W);
+	switch (code)	{
+		case JOY_AXE_MOVE:
+				win->AxeDetected(A);
+				return;
+		case JOY_BUT_MOVE:
+				win->ButtonClick(J,B);
+				return;
+		case JOY_HAT_MOVE:
+				win->HatDetected(J);
+				return;
+	}
+  return;
+}
 
 //======================================================================================
 //  Global CALLBACK WHEN AXE MOVE
@@ -60,11 +78,19 @@ void  WhenAxeMove(CSimAxe *axe, Tag winID)
   return;
 }
 //======================================================================================
-//  Global CALLBACK WHEN BUtton is clicked
+//  Global CALLBACK WHEN Button is clicked
 //======================================================================================
-void  WhenButtonClick(SJoyDEF *jsd, int nbt, Tag id)
+void  WhenButtonClick(JoyDEV *jsd, int nbt, Tag id)
 { CFuiAxis *win = (CFuiAxis*)globals->fui->GetFuiWindow(id);
   win->ButtonClick(jsd,nbt);
+  return;
+}
+//======================================================================================
+//  Global CALLBACK WHEN Hat is moved
+//======================================================================================
+void  WhenHatMove(JoyDEV *jsd, Tag id)
+{ CFuiAxis *win = (CFuiAxis*)globals->fui->GetFuiWindow(id);
+  win->HatDetected(jsd);
   return;
 }
 
@@ -135,9 +161,10 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
 	HatControl();
   //----Allow for Joystick detection ------------------
 	if (jsm->IsBusy()) Close();
-	else	{	jsm->StartDetectMoves(WhenAxeMove,windowId);
-					jsm->StartDetectButton(WhenButtonClick,windowId);
-				}
+	else	jsm->StartDetection(WhenJoyMove,windowId);
+	//---- Marker 1 -----------------------------------
+	char *ds = Dupplicate("***DEB WinAXE",16);
+
 }
 //---------------------------------------------------------------------------
 //  Window is closing
@@ -145,6 +172,8 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
 CFuiAxis::~CFuiAxis()
 { jsm->SaveConfiguration();
 	jsm->SetFree();
+	//---- Marker 2 -----------------------------------
+	char *ds = Dupplicate("***END WinAXE",16);
 }
 //---------------------------------------------------------------------------
 //  Select vehicle type
@@ -164,7 +193,6 @@ void CFuiAxis::NewVehicleType(U_INT No)
 	AxeSelect(0);
   return;
 }
-
 //--------------------------------------------------------------------------
 //  Display list of Axes
 //--------------------------------------------------------------------------
@@ -186,9 +214,17 @@ void CFuiAxis::FillAxes(int tp)
 //  Axe is detected on current selection
 //--------------------------------------------------------------------------
 void CFuiAxis::AxeDetected(CSimAxe *nax)
-{ jsd    = nax->pJoy;
+{ jsd    = nax->jdev;
   axeNo  = nax->iAxe;
-  labWIN->EditText("(J%d): axe %02d IS DETECTED",jsd->JoystickNo(),axeNo);
+  labWIN->EditText("(J%d): axe %02d DETECTED on %s",jsd->JoystickNo(),axeNo,jsd->getDevName());
+  return;
+}
+//--------------------------------------------------------------------------
+//  Hat is detected on current selection
+//--------------------------------------------------------------------------
+void CFuiAxis::HatDetected(JoyDEV *jdv)
+{ jsd    = jdv;
+  labWIN->EditText("(J%d): POV  DETECTED on %s",jsd->JoystickNo(),jsd->getDevName());
   return;
 }
 //--------------------------------------------------------------------------
@@ -197,7 +233,8 @@ void CFuiAxis::AxeDetected(CSimAxe *nax)
 void CFuiAxis::AxeAssign()
 { CSimAxe axn;
   if (0 == jsd)   return;
-  axn.pJoy = jsd;
+	
+  axn.jdev = jsd;
   axn.iAxe = axeNo;
   jsm->AssignAxe(axe,&axn,all);
   jsd      = 0;
@@ -205,6 +242,7 @@ void CFuiAxis::AxeAssign()
 	axeBOX.Refresh();
   return;
 }
+
 //--------------------------------------------------------------------------
 //  Clear Axe from the selected component
 //--------------------------------------------------------------------------
@@ -322,10 +360,11 @@ void CFuiAxis::HatControl()
 //----------------------------------------------------------------------
 //  A button is clicked
 //----------------------------------------------------------------------
-void CFuiAxis::ButtonClick(SJoyDEF *jsn, int nbut)
+void CFuiAxis::ButtonClick(JoyDEV *jsn, int nbut)
 {	if (jsp != jsn)	ButtonList(jsn->getDevName());
 	butBOX.GoToItem(nbut);
 }
+
 //--------------------------------------------------------------------------
 //  Draw the window 
 //--------------------------------------------------------------------------

@@ -33,6 +33,18 @@
 #include "../Include/KeyMap.h"
 #include "../Include/globals.h"
 #include "../Include/fui.h"
+#include "RegStr.h"
+//==============================================================================
+//  Table for AXE NAME 
+//==============================================================================
+char *axeNAME[] = {
+	"0(X)",
+	"1(Y)",
+	"2(Z)",
+	"3(R)",
+	"4(U)",
+	"5(V)",
+};
 //==============================================================================
 //  Table to locate first entry of a given type 
 //==============================================================================
@@ -66,77 +78,186 @@ JOY_NULL_AREA CJoysticksManager::nZON[] = {
   {-0.25f, +0.25f, 0.0f },            // Stick type in [-1,+1];
 };
 
+
 //==============================================================================
-//  Create a JOYSTICK DESCRIPTOR
+//  Create a JOYSTICK DEVICE
 //==============================================================================
-SJoyDEF::SJoyDEF()
-{ spj	= 0;
-	njs	= 0;
-	nax	= 0;
+JoyDEV::JoyDEV(int n)
+{ njs	= n;
 	nht	= 0;
 	uht = 0;
-	axeData	= 0;
-	axePrev	= 0;
 	for (int k=0; k!=32; k++) mBut[k] = 0;
+	//--------------------------------------------
+	axeData[JOY_AXE_X] = 0;
+	axeData[JOY_AXE_Y] = 0;
+	axeData[JOY_AXE_Z] = 0;
+	axeData[JOY_AXE_R] = 0;
+	axeData[JOY_AXE_U] = 0;
+	axeData[JOY_AXE_V] = 0;
+	//--- Get joystick capability ----------------
+	joyGetDevCaps(n, &jCap, sizeof(jCap));
+	nax			= jCap.wNumAxes;
+	nbt			= jCap.wNumButtons;
+	GetJoystickName(njs,jCap.szRegKey,dName);
+	nht			= (jCap.wCaps & JOYCAPS_HASPOV)?(1):(0);
+	float dtx		= jCap.wXmax - jCap.wXmin;
+	axeIncr[0]	= (dtx != 0)?(JOY_RNG_VAL / dtx):(0);	// X inc
+	float dty		= jCap.wYmax - jCap.wYmin;
+	axeIncr[1]	= (dty != 0)?(JOY_RNG_VAL / dty):(0);	// Y inc
+	float dtz		= jCap.wZmax - jCap.wZmin;
+	axeIncr[2]	= (dtz != 0)?(JOY_RNG_VAL / dtz):(0);	// Z inc
+	float dtr		= jCap.wRmax - jCap.wRmin;
+	axeIncr[3]	= (dtr != 0)?(JOY_RNG_VAL / dtr):(0);	// R inc
+	float dtu		= jCap.wUmax - jCap.wUmin;
+	axeIncr[4]	= (dtu != 0)?(JOY_RNG_VAL / dtu):(0);	// U inc
+	float dtv		= jCap.wVmax - jCap.wVmin;
+	axeIncr[5]	= (dtv != 0)?(JOY_RNG_VAL / dtv):(0);	// V inc
+	//--------------------------------------------
+	use		  = 1;
 }
 //----------------------------------------------------------------
 //	Free resources 
 //----------------------------------------------------------------
-SJoyDEF::~SJoyDEF()
-{	SAFE_DELETE_ARRAY( axeData);
-	SAFE_DELETE_ARRAY (axePrev);
-	if (spj)			SDL_JoystickClose(spj);
-}
-//----------------------------------------------------------------
-//	Create the joystick entry
-//----------------------------------------------------------------
-bool SJoyDEF::CreateSDL(int k)
-	{	njs   = k;
-		spj		= SDL_JoystickOpen(k);
-		if (0 == spj)	return false;
-		//-- fill parameters and add joystick --------
-		dName		= (char*)SDL_JoystickName(k);
-    int nba = SDL_JoystickNumAxes(spj);
-		nax	= nba;
-    if(nba > 0)
-    { axeData = new float[nba];
-			axePrev = new float[nba];
-    }
-		//-- get number of buttons and hat ----------
-		nbt	= SDL_JoystickNumButtons(spj);
-		nht	= SDL_JoystickNumHats(spj);
-		TRACE("JOYSTICK: %s axes=%d buttons=%d",dName,nba,nbt);
-		return true;
+JoyDEV::~JoyDEV()
+{	for (int k=0; k<32; k++)
+	{	CSimButton *btn  = mBut[k];
+		if (btn)	delete btn;
 	}
-//----------------------------------------------------------------
-//	Update all axes in SDL mode
-//	save previous value;
-//----------------------------------------------------------------
-void SJoyDEF::UpdateSDL()
-{	//---- Update the axes values for this joystick ----
-	for (int k=0; k<nax; k++)
-	{ int		v0  = SDL_JoystickGetAxis(spj, k);
-		float v1 = float(v0) / 32768;
-		axePrev[k]  = axeData[k];				
-		axeData[k]	= v1;
-	}
-	//---- Update button state ------------------------
-	but	= 0;
-	for (int k=0; k < nbt; k++)
-	{	U_INT st = SDL_JoystickGetButton(spj,k);
-		but |= (st << k);
-	}
-	//---- Update hat --------------------------------
-	if (uht)	hat = SDL_JoystickGetHat(spj,0);
-	return;
 }
 //----------------------------------------------------------------
 //	Check if axe has moved 
 //----------------------------------------------------------------
-U_INT SJoyDEF::HasMoved(CSimAxe *axe)
+U_INT JoyDEV::HasMoved(CSimAxe *axe)
 {	int k = axe->iAxe;						// Internal number
 	float dta = fabs(axeData[k] - axePrev[k]);
-	return (dta > 0.1)?(axe->msk):(0);
+	return (dta > 0.1)?(1):(0);
+}
+//----------------------------------------------------------------
+//	Save actual values 
+//----------------------------------------------------------------
+void	JoyDEV::SaveVal()
+{	int dim = JOY_AXE_NBR * sizeof(float);	
+	memcpy(axePrev,axeData,dim);
+	phat		= hat;
+}
+//----------------------------------------------------------------
+//	Remove this button 
+//----------------------------------------------------------------
+void	JoyDEV::RemoveButton(CSimButton *btn)
+{	int No = btn->GetNo();
+	mBut[No]	= 0;
+	delete btn;
+}
+//----------------------------------------------------------------
+//	Store a button 
+//----------------------------------------------------------------
+void JoyDEV::StoreButton(int n,CSimButton *btn)
+{	n &= 31; 
+	mBut[n] = btn;
+	strcpy(btn->devc,dName);
+	return;
+}
+//----------------------------------------------------------------
+//	Check for Hat move 
+//----------------------------------------------------------------
+bool JoyDEV::HatUnmoved()
+{	bool um = (phat == hat);
+	phat	= hat;
+	return um;
+}
+//---------------------------------------------------------------------------------
+//  Get joystick name from registery (adapted from copyright SDL library)
+//---------------------------------------------------------------------------------
+void JoyDEV::GetJoystickName(int index, char *key, char *buf)
+{	HKEY hTopKey;
+	HKEY hKey;
+	DWORD dim;
+	LONG regresult;
+	char regkey[256];
+	char regvalue[256];
+	char regname[256];
+	_snprintf(regkey,255,"%s\\%s\\%s",REGSTR_PATH_JOYCONFIG,key,REGSTR_KEY_JOYCURR);
+	hTopKey = HKEY_LOCAL_MACHINE;
+	regresult = RegOpenKeyExA(hTopKey, regkey, 0, KEY_READ, &hKey);
+	if (regresult != ERROR_SUCCESS) {
+		hTopKey = HKEY_CURRENT_USER;
+		regresult = RegOpenKeyExA(hTopKey, regkey, 0, KEY_READ, &hKey);
+	}
+	if (regresult != ERROR_SUCCESS) return;
+	//--- find the registry key name for the joystick's properties 
+	dim = sizeof(regname);
+	_snprintf(regvalue,255,"Joystick%d%s",index+1, REGSTR_VAL_JOYOEMNAME);
+	regresult = RegQueryValueExA(hKey, regvalue, 0, 0, (LPBYTE)regname, &dim);
+	RegCloseKey(hKey);
+
+	if (regresult != ERROR_SUCCESS) return;
+	//----- open that registry key  -----------------------------------------
+	_snprintf(regkey, 255, "%s\\%s", REGSTR_PATH_JOYOEM, regname);
+	regresult = RegOpenKeyExA(hTopKey, regkey, 0, KEY_READ, &hKey);
+	if (regresult != ERROR_SUCCESS) return;
+	//----- Get the OEM name size --------------------------------------------
+	dim = sizeof(regvalue);
+	if (dim > 64)	dim = 63;
+	regresult = RegQueryValueExA(hKey, REGSTR_VAL_JOYOEMNAME, 0, 0, NULL, &dim);
+	if (regresult == ERROR_SUCCESS) {
+			// Read from the registry */
+			regresult = RegQueryValueExA(hKey,REGSTR_VAL_JOYOEMNAME, 0, 0,
+				(LPBYTE) buf, &dim);
+		}
+	buf[63]	= 0;
+	RegCloseKey(hKey);
+
+	return;
+}
+//---------------------------------------------------------------------------------
+//  Store Axis value
+//---------------------------------------------------------------------------------
+void JoyDEV::StoreAxe(char No,DWORD raw)
+{ float val = JOY_LOW_VAL + (float (raw) * axeIncr[No]); 
+  float dif = axeData[No] - val;
+	if ((dif > -JOY_THRESH)	&& (dif < +JOY_THRESH))	return;
+	axePrev[No] = axeData[No];
+	axeData[No]	= val / 32768;
+	return;
+}
+//---------------------------------------------------------------------------------
+//  Refresh this joystick
+//---------------------------------------------------------------------------------
+void JoyDEV::Refresh()
+{	JOYINFOEX jinf;
+	jinf.dwSize  = sizeof(jinf);
+	jinf.dwFlags = JOY_RETURNALL|JOY_RETURNPOVCTS;
+	if (JOYERR_NOERROR != joyGetPosEx(njs, &jinf))	return;
+	//--- update axe values -----------------------------------
+	DWORD flag = jinf.dwFlags;
+	float val = 0;
+	if (flag & JOY_RETURNX)	StoreAxe(JOY_AXE_X, jinf.dwXpos);
+	if (flag & JOY_RETURNY)	StoreAxe(JOY_AXE_Y, jinf.dwYpos);
+	if (flag & JOY_RETURNZ) StoreAxe(JOY_AXE_Z, jinf.dwZpos);
+	if (flag & JOY_RETURNR) StoreAxe(JOY_AXE_R, jinf.dwRpos);
+	if (flag & JOY_RETURNU)	StoreAxe(JOY_AXE_U, jinf.dwUpos);
+	if (flag & JOY_RETURNV)	StoreAxe(JOY_AXE_V, jinf.dwVpos);
+	//--- Update button state -----------------------------------
+	if (flag & JOY_RETURNBUTTONS) but	= jinf.dwButtons;
+	//--- Update POV --------------------------------------------
+	if (flag & JOY_RETURNPOV)			hat	= jinf.dwPOV;
+	//-----------------------------------------------------------
+	if (flag & JOY_RETURNPOVCTS)	hat = jinf.dwPOV;
+	return;
+}
+//---------------------------------------------------------------------------------
+//  Process hat
+//---------------------------------------------------------------------------------
+bool JoyDEV::HandleHat()
+{	short val = hat;
+	if (-1 == val)		return false;
+	if ( 0 == nht)		return false;
+	if ( 0 == uht)		return false;
+	if (hat == phat)	return false;
+	//--- Change in hat position -------------------------------
+	hpos		= hat / 100;							// compute angle
+	globals->cam->ActivateView(float(hpos));
+	return true;
 }
 //==============================================================================
 //  CREATE AN AXE DESCRIPTOR
@@ -144,8 +265,8 @@ U_INT SJoyDEF::HasMoved(CSimAxe *axe)
 CSimAxe::CSimAxe()
 { No            = 0;
   end           = 0;
-  name          = "";
-  pJoy          = 0;
+  name          = 0;
+	jdev					= 0;
 	joyn					= 0;
   iAxe          = -1;
   inv						= +1;
@@ -153,13 +274,17 @@ CSimAxe::CSimAxe()
   neutral       = 0;
   msg.sender    = 'Saxe';
   attn          = 1.0f;
+ *devc					= 0;
 }
+//----------------------------------------------------------------------
+//  Delete
+//----------------------------------------------------------------------
+CSimAxe::~CSimAxe(){}
 //----------------------------------------------------------------------
 //  Read AXE PARAMETERS
 //----------------------------------------------------------------------
 int CSimAxe::Read(SStream * st, Tag tag)
 { int b;
-  char dev[128];
   switch(tag)
     {
     case 'attn':  // Attenuation coef
@@ -170,9 +295,9 @@ int CSimAxe::Read(SStream * st, Tag tag)
 			joyn	= short(b);
       return TAG_READ;
     case 'devc':  // joystick name
-      ReadString(dev, 128, st);
-      pJoy  = globals->jsm->Find(dev);
-      return TAG_READ;
+      ReadString(devc, 128, st);
+			jdev  = globals->jsm->Find(devc);
+			return TAG_READ;
 
     case 'Anum':  // Axe number (0 based)
       ReadInt(&b, st);
@@ -196,56 +321,64 @@ int CSimAxe::Read(SStream * st, Tag tag)
 //------------------------------------------------------------------------
 void CSimAxe::Copy(CSimAxe *from)
 { this->gen     = from->gen;
-  this->pJoy    = from->pJoy;
+  this->jdev    = from->jdev;
 	this->joyn		= from->joyn;
   this->iAxe    = from->iAxe;
   this->inv		  = from->inv;
   this->attn    = from->attn;
+	strncpy(devc,from->devc,64);
   return;
 }
+
 //------------------------------------------------------------------------
 //  Check for same axe
 //------------------------------------------------------------------------
 bool CSimAxe::NotAs(CSimAxe *axe)
-{ if (0 == this->pJoy)          return true;
-  if (axe->pJoy != this->pJoy)  return true;
+{ if (0 == this->jdev)          return true;
+  if (axe->jdev != this->jdev)  return true;
   if (axe->iAxe != this->iAxe)  return true;
   return false;
 }
+
 //------------------------------------------------------------------------
 //  Assign joystick values from axn
 //------------------------------------------------------------------------
 void CSimAxe::Assign(CSimAxe *axn)
-{ pJoy   = axn->pJoy;
+{ jdev   = axn->jdev;
   iAxe   = axn->iAxe;
+	char *dvn = jdev->getDevName();
+	strncpy(devc,dvn,64);
 	return;
 }
+
 //------------------------------------------------------------------------
 //  Return axe assignement
 //------------------------------------------------------------------------
 void CSimAxe::Assignment(char *edt,int s)
 { int d = s-1;
-	if (0 == pJoy)  *edt = 0;
-  else	_snprintf(edt,d,"(J%d): Axe %02d",joyn,iAxe);
+	if (0 == jdev)  *edt = 0;
+  else	_snprintf(edt,d,"(J%d): Axe %s",joyn,axeNAME[iAxe]);
 	edt[d] = 0;
   return;
 }
+
 //------------------------------------------------------------------------
 //  Return axe value
 //------------------------------------------------------------------------
 float CSimAxe::Value(JOY_NULL_AREA *nz)
-{ float f = pJoy->axeData[iAxe] * inv;
+{ float f = jdev->axeData[iAxe] * inv;
 	//----Normalize value ------------------------------------------
 	f  = aCOEF[pos] + (bCOEF[pos] * f);
 	int	nx = neutral;
 	if (nx && (f > nz[nx].lo) && (f < nz[nx].hi)) f = nz[nx].md;
   return f * attn;
 }
+
 //------------------------------------------------------------------------
 //  Return raw axe value
 //------------------------------------------------------------------------
 float CSimAxe::RawVal(JOY_NULL_AREA *nz)
-{ float f = pJoy->axeData[iAxe] * inv;
+{ float f = jdev->axeData[iAxe] * inv;
 	//----Normalize value ------------------------------------------
 	int	nx = neutral;
 	if (nx && (f > nz[nx].lo) && (f < nz[nx].hi)) f = nz[nx].md;
@@ -256,19 +389,19 @@ float CSimAxe::RawVal(JOY_NULL_AREA *nz)
 //  CREATE A SIM BUTTON OBJECT
 //==============================================================================
 CSimButton::CSimButton()
-{ pjoy  = 0;
+{	jdev	= 0;
   kset  = 0;
   cmde  = 0;
   nBut  = 0;
   Stat  = 0;
-  joyn  = 0;
+ *devc  = 0;
 }
 //----------------------------------------------------------------------
 //  Unregister the button
 //----------------------------------------------------------------------
 CSimButton::~CSimButton()
-{ if (pjoy) pjoy->StoreVector(nBut,0);
-}
+{ }
+
 //----------------------------------------------------------------------
 //  Check transition from 0 to 1
 //----------------------------------------------------------------------
@@ -281,17 +414,17 @@ bool CSimButton::Tr01(U_INT st)
 //  Read Parameters from button description
 //----------------------------------------------------------------------
 int CSimButton::Read(SStream * stream, Tag tag)
-  { char dev[128];
-    char stag[5];
+  { char stag[5];
+		int pm;
     switch(tag)
     {
     case 'njoy':  // Internal number
-      ReadInt(&joyn,stream);
+      ReadInt(&pm,stream);
       return TAG_READ;
 
     case 'devc':  // joystick name
-      ReadString(dev, 128, stream);
-      pjoy = globals->jsm->Find(dev);
+      ReadString(devc, 128, stream);
+			jdev = globals->jsm->Find(devc);
       return TAG_READ;
 
     case 'Bnum':  // button number <0 - 31>
@@ -325,9 +458,8 @@ int CSimButton::Read(SStream * stream, Tag tag)
 //  Function TagFrom(gen) return the user tag (if any) associated to the generic 
 //        Name
 //===============================================================================
-//    Group commande my be posted to all controls of a same group
+//    Group commands my be posted to all controls of a same group
 //===============================================================================
-CJoysticksManager CJoysticksManager::instance;
 //-------------------------------------------------------------------------
 //	Constructor
 //-------------------------------------------------------------------------
@@ -335,44 +467,44 @@ CJoysticksManager::CJoysticksManager()
 {	jsh		= 0;
 	uht		= 0;
 	busy	= 0;
-	modify	= 0;
+	jFunCB = 0;
+	Init();
 }
 //-------------------------------------------------------------------------
 //	Constructor
 //-------------------------------------------------------------------------
 void CJoysticksManager::PreInit()
 { int opt = 0;
-  pButCB  = NULL;
-  pAxeCB  = NULL;
   globals->jsm        = this;
   //---Init neutral area -------------------------
   SetNulleArea(0.50,0);
   //----------------------------------------------
-  AxeMoved.iAxe  = -1;
-  AxeMoved.pJoy  = 0;
+  AxeMoved.iAxe		= -1;
+//  AxeMoved.pJoy  = 0;
+	AxeMoved.jdev		= 0;
   //--------Assign plane axe name ----------------
   InitAxe( 0,JOY_TYPE_PLAN, JS_AILR_BIT,"Aileron  (Bank)",		'ailr'			, 0, true); 
   InitAxe( 1,JOY_TYPE_PLAN, JS_ELVR_BIT,"Elevator (Pitch)",		'elev'			, 0, true, -1);
-  InitAxe( 2,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)",		'rudr'      , 0, true, -1);
+  InitAxe( 2,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)",		'rudr'      , 0, true,  1);
   InitAxe( 3,JOY_TYPE_PLAN, JS_ELVT_BIT,"Elevator Trim",			'trim'      , 0, true);
 	//---Group toes -------------------------------------------------------------------
-  InitAxe( 4,JOY_TYPE_PLAN, JS_OTHR_BIT,"Right Toe-brake",		'rtoe'			, JOY_GROUP_TOES, false);
-  InitAxe( 5,JOY_TYPE_PLAN, JS_OTHR_BIT,"Left  Toe-brake",		'ltoe'			, JOY_GROUP_TOES, false);
+  InitAxe( 4,JOY_TYPE_PLAN, JS_OTHR_BIT,"Right Toe-brake",		'rtoe'			, 0, false);
+  InitAxe( 5,JOY_TYPE_PLAN, JS_OTHR_BIT,"Left  Toe-brake",		'ltoe'			, 0, false);
 	//---Group throttle ---------------------------------------------------------------
-  InitAxe( 6,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",					'thr1'  , JOY_THROTTLE, false,-1);
-  InitAxe( 7,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 2",					'thr2'  , JOY_THROTTLE, false,-1);
-  InitAxe( 8,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 3",					'thr3'  , JOY_THROTTLE, false,-1);
-  InitAxe( 9,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 4",					'thr4'  , JOY_THROTTLE, false,-1);
+  InitAxe( 6,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",					'thr1'  , JOY_THROTTLE, false,1);
+  InitAxe( 7,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 2",					'thr2'  , JOY_THROTTLE, false,1);
+  InitAxe( 8,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 3",					'thr3'  , JOY_THROTTLE, false,1);
+  InitAxe( 9,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 4",					'thr4'  , JOY_THROTTLE, false,1);
 	//---Group mixture -----------------------------------------------------------------
-  InitAxe(10,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 1",					'mix1'   , JOY_MIXTURE, false);
-  InitAxe(11,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 2",					'mix2'   , JOY_MIXTURE, false);
-  InitAxe(12,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 3",					'mix3'   , JOY_MIXTURE, false);
-  InitAxe(13,JOY_TYPE_PLAN, JS_OTHR_BIT,"Mixture 4",					'mix4'   , JOY_MIXTURE, false);
+  InitAxe(10,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 1",					'mix1'   , JOY_MIXTURE, false);
+  InitAxe(11,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 2",					'mix2'   , JOY_MIXTURE, false);
+  InitAxe(12,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 3",					'mix3'   , JOY_MIXTURE, false);
+  InitAxe(13,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 4",					'mix4'   , JOY_MIXTURE, false);
 	//---Group Propellor ---------------------------------------------------------------
-  InitAxe(14,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 1",							'pro1'      , JOY_PROPEL, false);
-  InitAxe(15,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 2",							'pro2'      , JOY_PROPEL, false);
-  InitAxe(16,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 3",							'pro3'      , JOY_PROPEL, false);
-  InitAxe(17,JOY_TYPE_PLAN, JS_OTHR_BIT,"Prop 4",							'pro4'      , JOY_PROPEL, false);
+  InitAxe(14,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 1",							'pro1'      , JOY_PROPEL, false);
+  InitAxe(15,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 2",							'pro2'      , JOY_PROPEL, false);
+  InitAxe(16,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 3",							'pro3'      , JOY_PROPEL, false);
+  InitAxe(17,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 4",							'pro4'      , JOY_PROPEL, false);
 	//--- Mark controls with neutral area ----------------------------------------------
   NeutralMark(0,JOY_NEUTRAL_STICK);
   NeutralMark(1,JOY_NEUTRAL_STICK);
@@ -410,11 +542,40 @@ void CJoysticksManager::PreInit()
   SetMessage(16,SUBSYSTEM_PROPELLER_CONTROL, 3,'blad');
   SetMessage(17,SUBSYSTEM_PROPELLER_CONTROL, 4,'blad');
   //------------------------------------------------------------------
-	use		= 0;
-	SDL_Init( SDL_INIT_JOYSTICK ); 
-	EnumSDL();
+	CollectDevices();
 	return;
 }
+//---------------------------------------------------------------------------------
+//  OPEN JOYSTICK CONTROL FILE
+//---------------------------------------------------------------------------------
+void CJoysticksManager::Init( )
+{ PreInit();
+	SStream s;
+  if (OpenRStream ("System/FlyLegacyControls.txt",s))
+  { // Successfully opened stream
+    ReadFrom (this, &s);
+    CloseStream (&s);
+  }
+  else WARNINGLOG("CJoystickManager : can't open %s",s.filename);
+}
+//---------------------------------------------------------------------------------
+//  Collect joystick list
+//---------------------------------------------------------------------------------
+void CJoysticksManager::CollectDevices()
+{	JOYINFOEX joyinfo;
+	int nbj = joyGetNumDevs();
+	nDev		= nbj;
+	for (int k=0; k<nbj; k++)
+	{	joyinfo.dwSize = sizeof(joyinfo);
+		joyinfo.dwFlags = JOY_RETURNALL;
+		if ( joyGetPosEx(k, &joyinfo) != JOYERR_NOERROR ) continue;
+		//--- Create  a new device ---------------------------------
+		JoyDEV *jdf		= new JoyDEV(k);
+		devQ.push_back(jdf);
+	}
+	return;
+}
+
 //-------------------------------------------------------------------------
 //	Check if I am free
 //-------------------------------------------------------------------------
@@ -430,24 +591,23 @@ void	CJoysticksManager::SetFree()
 {	busy--;
 	if (busy > 0)	return;
 	//--- Clear all vectors ----------------
-	pAxeCB	= 0;
-	pButCB	= 0;
-	busy	= 0;
+	jFunCB  = 0;
+	busy		= 0;
 	return;
 }
 //-------------------------------------------------------------------------
 //	Create the device list
 //-------------------------------------------------------------------------
-void CJoysticksManager::CreateDevList(char **men,int lim)
-{	std::vector<SJoyDEF *>::iterator jk;
-	int No = 0;
-	for (jk=joyQ.begin(); jk!=joyQ.end(); jk++)
-	{ if (No >= lim)	break;
-		men[No++]	= (*jk)->dName;
+void CJoysticksManager::CreateDevList(char **men,U_INT lim)
+{	U_INT k;
+	for (k=0; k<devQ.size(); k++)
+	{ if (k >= lim)	break;
+		men[k]	= devQ[k]->dName;
 	}
 	//--- Limit the list ------------------------
-	men[No]	= 0;
+	men[k]	= 0;
 }
+
 //----------------------------------------------------------------------------------
 //  Set the nulle area
 //----------------------------------------------------------------------------------
@@ -457,7 +617,6 @@ void CJoysticksManager::SetNulleArea(float n,char m)
   nZON[JOY_NEUTRAL_STICK].md = 0;
   nZON[JOY_NEUTRAL_STICK].hi = +n;
   nZON[JOY_NEUTRAL_STICK].ap = 1 - n;
-	modify	= m;
   return;
 }
 //----------------------------------------------------------------------------------
@@ -525,37 +684,28 @@ void CJoysticksManager::NeutralMark(int nx,U_CHAR type)
 //  Free all resources
 //---------------------------------------------------------------------------------
 CJoysticksManager::~CJoysticksManager()
-{ SDL_Quit();
-	std::map<Tag,CSimAxe *>::iterator it;
+{ std::map<Tag,CSimAxe *>::iterator it;
 	for (it = mapAxe.begin(); it != mapAxe.end(); it++) delete (*it).second;
   mapAxe.clear();
-  for (U_INT k=0; k<joyQ.size(); k++)  delete joyQ[k];
-  joyQ.clear();
-}
-//---------------------------------------------------------------------------------
-//  OPEN JOYSTICK CONTROL FILE
-//---------------------------------------------------------------------------------
-void CJoysticksManager::Init( )
-{ PreInit();
-  if (0 == use)			return;
-	SStream s;
-  if (OpenRStream ("System/FlyLegacyControls.txt",s))
-  { // Successfully opened stream
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
-  else WARNINGLOG("CJoystickManager : can't open %s",s.filename);
+	//--- Clear device list ----------------------
+	for (U_INT k=0; k<devQ.size(); k++)	delete devQ[k];
+	devQ.clear();
+	//--- Clear unassigned list ------------------
+	for (U_INT k=0; k<butQ.size(); k++)
+	{	CSimButton *btn = butQ[k];
+		if (btn)	delete btn;
+	}
 }
 //-------------------------------------------------------------------------
 //	Connect all axis
 //-------------------------------------------------------------------------
-void CJoysticksManager::ConnectAll()
-{	axeCNX = JS_SURF_ALL + JS_TRIM_ALL + JS_THRO_BIT + JS_OTHR_BIT;
+void CJoysticksManager::JoyConnectAll()
+{	axeCNX = JS_SURF_ALL + JS_TRIM_ALL + JS_GROUPBIT + JS_OTHR_BIT;
 	return;	}
 //-------------------------------------------------------------------------
 //	Disconnect requested axis
 //-------------------------------------------------------------------------
-void CJoysticksManager::Disconnect(U_INT m)
+void CJoysticksManager::JoyDisconnect(U_INT m)
 {	axeCNX &= (-1 - m);								// Remove bit from connector mask
 	return;	}
 //-------------------------------------------------------------------------
@@ -637,7 +787,6 @@ void CJoysticksManager::AssignAxe(CSimAxe *axe, CSimAxe *axn, U_CHAR all)
     ReleaseAxe(axk);
 		axk->Assign(axn);
   }
-	modify	= 1;
   return;
 }
 //---------------------------------------------------------------------------------
@@ -651,7 +800,6 @@ void CJoysticksManager::Clear(CSimAxe *axe,U_CHAR all)
 	{	CSimAxe *axn = AxesList + k;
 		if (axn->group == grp) axn->Clear();
 	}
-	modify	= 1;
 	return;
 }
 //---------------------------------------------------------------------------------
@@ -660,19 +808,18 @@ void CJoysticksManager::Clear(CSimAxe *axe,U_CHAR all)
 void CJoysticksManager::Invert(CSimAxe *axe,U_CHAR all)
 { axe->Invert();
   U_CHAR grp = axe->group;
-  modify = 1;
 	if ((0 == all) ||(0 == grp))	return;
   for (int k = 0; k != JOY_AXIS_NUMBER; k++)
   { CSimAxe *axk = AxesList + k;
 		if (axk == axe)								continue;		// Already inverted
     if (axk->group != axe->group) continue;   // Not same group
-    if (axk->pJoy  != axe->pJoy)  continue;   // Not same joystick
+    if (axk->jdev  != axe->jdev)  continue;   // Not same joystick
     if (axk->iAxe  != axe->iAxe)  continue;   // Not same axis
     axk->Invert();
   }
-	//modify	= 1;
   return;
 }
+
 //==========================================================================================
 // read all joystick axes and buttons values
 // If button is pushed an has a callback, call it directly
@@ -680,41 +827,45 @@ void CJoysticksManager::Invert(CSimAxe *axe,U_CHAR all)
 // If button detection mode active, call the button's special callback
 //==========================================================================================
 void CJoysticksManager::Update()
-{ SDL_JoystickUpdate();							// Update all joystick
+{
 	U_INT hat = 0;
-	std::vector<SJoyDEF *>::iterator it;
-  for (it = joyQ.begin(); it != joyQ.end(); it++)
-  { SJoyDEF *jdf = (*it);
-		jdf->UpdateSDL();
-    HandleButton(jdf);
-		if (jdf->uht)	hat = jdf->hat;
+	//----------------------------------------------------------
+	for (U_INT k=0; k<devQ.size(); k++)
+	{	JoyDEV *jsd = devQ[k];
+		jsd->Refresh();
+		HandleButton(jsd);
+		jsd->HandleHat();
     // If axe move detection active, remember the max 
     // delta axe variation to detect new axe/sim assignation
-    if(pAxeCB)  DetectMove(jdf);
-  }
-	if (hat)	HandleHat(hat);
+    if(jFunCB)  DetectMove(jsd);
+	}
 	return;
 }
 //------------------------------------------------------------------------
 //  Move detector
 //------------------------------------------------------------------------
-void CJoysticksManager::DetectMove(SJoyDEF * p)
-{ for(int nba=0; nba<p->nax; nba++)
-  { float dif = p->axePrev[nba] - p->axeData[nba];
+void CJoysticksManager::DetectMove(JoyDEV *J)
+{ for(int nba=0; nba<JOY_AXE_NBR; nba++)
+  { float dif = J->axePrev[nba] - J->axeData[nba];
     // consider a valid move at a minimum of ?
     if(fabs(dif) < 0.05f)			continue;
+		J->axePrev[nba]	= J->axeData[nba];
     AxeMoved.iAxe = nba;
-    AxeMoved.pJoy = p;
-		AxeMoved.joyn = p->jNumber();
-		(*pAxeCB)(&AxeMoved, wmID);
+    AxeMoved.jdev = J;
+		AxeMoved.joyn = J->jNumber();
+		(*jFunCB)(JOY_AXE_MOVE,J,&AxeMoved,0,wmID);
 		return;
 	}
+	//--- Check with hat --------------------------
+	if (J->HatUnmoved())			return;
+	(*jFunCB)(JOY_HAT_MOVE,J,0,0,wmID);
 	return;
 }
+
 //--------------------------------------------------------------------------------
 // Scan button state array and call button callbacks
 //--------------------------------------------------------------------------------
-void CJoysticksManager::HandleButton(SJoyDEF * jsd)
+void CJoysticksManager::HandleButton(JoyDEV * jsd)
 { U_INT one = 1;
   int   end = jsd->nbt;
   for (int k=0; k < end; k++)
@@ -741,84 +892,33 @@ void CJoysticksManager::HandleButton(SJoyDEF * jsd)
   }
   return;
 }
-//--------------------------------------------------------------------------------
-// Handle Hat event
-//--------------------------------------------------------------------------------
-bool CJoysticksManager::HandleHat(U_INT hat)
-{	if (Time)		{Time--; return false; }
-	Time	= 10;
-	if (hat & SDL_HAT_LEFT)		return globals->kbd->Stroke('cmra','cplf');
-	if (hat & SDL_HAT_RIGHT)	return globals->kbd->Stroke('cmra','cprt');
-	if (hat & SDL_HAT_UP)			return globals->kbd->Stroke('cmra','cpup');
-	if (hat & SDL_HAT_DOWN)		return globals->kbd->Stroke('cmra','cpdn');
-	Time	= 0;
-	return false;
-}
 //----------------------------------------------------------------------
 //  Assign callback to button
 //----------------------------------------------------------------------
-bool CJoysticksManager::AssignCallBack(SJoyDEF * pJoy,int k)
-{ if (0 == pButCB)					return false;
-  (*pButCB)(pJoy, k, wbID);
+bool CJoysticksManager::AssignCallBack(JoyDEV * J,int k)
+{ if (0 == jFunCB)					return false;
+	(*jFunCB)(JOY_BUT_MOVE,J,0,k,wmID);
   return true;
 }
-//---------------------------------------------------------------------------------
-// Enum all devices and allocate corresponding 
-// axes array storage with duplicate
-//---------------------------------------------------------------------------------
-void CJoysticksManager::EnumSDL()
-{	int nbj	= SDL_NumJoysticks();
-	SJoyDEF    *joy = 0;
-	for (int k=0; k<nbj; k++)
-	{	joy = new SJoyDEF();
-	  if (joy->CreateSDL(k))	joyQ.push_back(joy);
-		else										delete joy;
-	}
-	use	= joyQ.size();
-	Time	= 0;
-	return;
-}
+
 //------------------------------------------------------------------------------
 //  FIND Joystick descriptor by number
 //------------------------------------------------------------------------------
-SJoyDEF *CJoysticksManager::GetJoystickNo(int No)
-{ std::vector<SJoyDEF *>::iterator it;
-  for (it = joyQ.begin(); it != joyQ.end(); it++)
-  { SJoyDEF *jsd = (*it);
-   if (jsd->njs == No)  return jsd;
-  }
-  return 0;
+JoyDEV *CJoysticksManager::GetJoystickNo(U_INT No)
+{ if (No >= devQ.size())		return 0;
+	return devQ[No];
 }
+
 //==============================================================================
 // FIND JOYSTICK DESCRIPTOR by name 
 //==============================================================================
-SJoyDEF *CJoysticksManager::Find(char * name)
-{
-  std::string str;
-
-  int iPos;
-  if(name)
-  {  std::string strname(name);
-    //
-    // remove last char if blank
-    // (jslib side effect ?)
-    //
-    iPos = strname.find_last_of(' ');
-    if(iPos == int(strname.size()-1)) strname.resize(strname.size()-1);
-
-    if(strname.size() > 0)
-    { 
-      std::vector<SJoyDEF *>::iterator it;
-      for (it = joyQ.begin(); it != joyQ.end(); it++)
-      { SJoyDEF *jdf = (*it);
-        str = jdf->dName;
-        // remove last char if blank
-        iPos = str.find_last_of(' ');
-        if(iPos == int(str.size()-1))    str.resize(str.size()-1);
-				if (str == strname) return jdf;
-      }
-    }
-  }
+JoyDEV *CJoysticksManager::Find(char * name)
+{for (U_INT k=0; k<devQ.size(); k++)
+	{ JoyDEV *jdev = devQ[k];
+		if (jdev->NotNamed(name))	continue;
+		return jdev;
+	}
+  
   return 0;
 }
 //-------------------------------------------------------------------------------
@@ -835,28 +935,31 @@ void CJoysticksManager::Poll(EAllAxes tag, float &v)
 //--------------------------------------------------------------------------------
 bool CJoysticksManager::HasAxe(EAllAxes axe)
 { CSimAxe * pa = GetAxe(axe);
-  return (pa->pJoy != 0);
+  return (pa->jdev != 0);
 }
+
 //-------------------------------------------------------------------------------
 //  Return Axe value
 //  TODO: Implement rating coefficient
 //-------------------------------------------------------------------------------
 float CJoysticksManager::AxeVal(CSimAxe *pa)
 { if (0 == pa)        return 0;
-  if (0 == pa->pJoy)  return 0;
+  if (0 == pa->jdev)  return 0;
   //----Normalize value ------------------------------------------
 	return pa->Value(nZON);
 }
+
 //-------------------------------------------------------------------------------
 //  Return raw Axe value
 //  value before normalization in [0,1] if any
 //-------------------------------------------------------------------------------
 float CJoysticksManager::RawVal(CSimAxe *pa)
 { if (0 == pa)        return 0;
-  if (0 == pa->pJoy)  return 0;
+  if (0 == pa->jdev)  return 0;
   //----Normalize value ------------------------------------------
 	return pa->RawVal(nZON);
 }
+
 //--------------------------------------------------------------------------------
 //	Check if throttle is moved
 //	If moved by user, then give gas control to user
@@ -864,13 +967,15 @@ float CJoysticksManager::RawVal(CSimAxe *pa)
 void CJoysticksManager::CheckControl(Tag tag)
 {	CSimAxe *axe  = GetAxe(tag);
 	if (!axe)									return;
-  SJoyDEF *joy  = axe->pJoy;
+  JoyDEV *joy  = axe->jdev;
 	if (!joy)									return;
 	//--- Reconnect gas control --------------------
-	axeCNX |= joy->HasMoved(axe);
-	globals->fui->DrawNoticeToUser("Joystick: Reconnect controls",5);
+	if (!joy->HasMoved(axe))	return; 
+	axeCNX |= JS_GROUPBIT;
+	globals->fui->DrawNoticeToUser("Joystick recovers controls",5);
 	return;
 }
+
 //--------------------------------------------------------------------------------
 //  Send messages related to PMT group (Prop-Mixture-Throttle)
 //	This function is called from the aircraft TimeSlice() routine
@@ -885,7 +990,7 @@ void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
   for (int k=JOY_FIRST_PMT; k!=JOY_AXIS_NUMBER; k++)
   { axe = AxesList + k;
     if (0 == (axe->group & JOY_GROUP_PMT))  return;
-    if (0 == axe->pJoy)                   continue;
+    if (0 == axe->jdev)                   continue;
 		//--- If disconnected check for reconnection ------
     SMessage *msg = &axe->msg;
 		//--- Skip non existing engine or control ---------
@@ -896,6 +1001,7 @@ void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
   }
   return;
 }
+
 //--------------------------------------------------------------------------------
 //  Send messages related to given group (Prop or Mixture or Throttle)
 //  Any  control in requested group receives a message with the corresponding
@@ -927,12 +1033,13 @@ void CJoysticksManager::ClearGroupPMT()
   for (int k=JOY_FIRST_PMT; k!=JOY_AXIS_NUMBER; k++)
   { axe = AxesList + k;
     if (0 == (axe->group & JOY_GROUP_PMT))  return;
-    if (0 == axe->pJoy)           continue;
+    if (0 == axe->jdev)           continue;
     SMessage *msg = &axe->msg;
     msg->receiver = 0;
   }
   return;
 }
+
 //--------------------------------------------------------------------------------
 //  Get the attenuation coefficient
 //--------------------------------------------------------------------------------
@@ -959,86 +1066,78 @@ float CJoysticksManager::Neutral(float f, int nx)
 //-----------------------------------------------------------------------------------
 //  Use Hat for the given joystick
 //-----------------------------------------------------------------------------------
-void CJoysticksManager::UseHat(SJoyDEF *jsp,char s)
+void CJoysticksManager::UseHat(JoyDEV *jsp,char s)
 {	jsp->SetHat(s);
   jsh	= jsp->jNumber();
 	uht	= s;
-  modify = 1;
 	if (0 == s)		return;
 	//--- Release Hat from other joysticks ------------
-	std::vector<SJoyDEF *>::iterator jk;
-	for (jk=joyQ.begin(); jk!=joyQ.end(); jk++)
-	{	SJoyDEF *jsk = (*jk);
+	std::vector<JoyDEV *>::iterator jk;
+	for (jk=devQ.begin(); jk!=devQ.end(); jk++)
+	{	JoyDEV *jsk = (*jk);
 		if (jsk == jsp)		continue;
 		jsk->SetHat(0);
 	}
-	//modify = 1;
 	return;
 }
+
 //----------------------------------------------------------------------------------
 //  Add a new Button for key definition
 //----------------------------------------------------------------------------------
-CSimButton *CJoysticksManager::AddButton(SJoyDEF *jsd,int nb,CKeyDefinition *kdf)
+CSimButton *CJoysticksManager::AddButton(JoyDEV *jsd,int nbt,CKeyDefinition *kdf)
 { if (kdf->NoPCB())   return 0;
-  if (0 == jsd)       return 0;
-	modify					= 1;
   //----Create and assign the button -----------------------
-  CSimButton *btn = new CSimButton;
-  btn->pjoy       = jsd;
+	CSimButton *btn = new CSimButton();
+	btn->jdev				= jsd;
+	btn->nBut				= nbt;
   btn->kset       = kdf->GetSet();
   btn->cmde       = kdf->GetTag();
-  btn->nBut       = nb;
-  btn->joyn       = jsd->JoystickNo();
   kdf->LinkTo(btn);
   btn->LinkTo(kdf);
-  jsd->StoreVector(nb,btn);
+	jsd->StoreButton(nbt,btn);
+	//--- Remove from unassigned list ------------------------
+	std::vector<CSimButton *>::iterator rb;
+	for (rb = butQ.begin(); rb != butQ.end(); rb++)
+	{	CSimButton *but = (*rb);
+		if (btn->kset != but->kset)		continue;
+		if (btn->cmde != but->cmde)		continue;
+		//------------------------------------------------------
+		butQ.erase(rb);
+		delete but;
+		break;
+	}
   return btn;
 }
+
 //----------------------------------------------------------------------------------
 //  Cancel button by ident (JoyStick No-Button No)
 //----------------------------------------------------------------------------------
-void CJoysticksManager::RemoveButton(SJoyDEF *jsd,int nb)
-{ if (0 == jsd)     return;
-  CSimButton *btn = jsd->GetButton(nb);
-  if (0 == btn)     return;
-  delete btn;
+void CJoysticksManager::RemoveButton(CSimButton *btn)
+{ if (0 == btn)			return;
+	JoyDEV  *jsd    = btn->GetDevice();
+  if (0 == jsd)     return;
+  jsd->RemoveButton(btn);
   return;
 }
+
 //---------------------------------------------------------------------------------
-//	Catch joystick movement for specific windows
+//	Catch any movement for specific windows
 //---------------------------------------------------------------------------------
-bool CJoysticksManager::StartDetectMoves(AxeDetectCB * pFunc, Tag id)
-{ if (pAxeCB)		return false;
-  wmID		= id;
-  pAxeCB	= pFunc;
-  //----- reset detected struct ---------------------
+bool CJoysticksManager::StartDetection(JoyDetectCB *F, Tag W)
+{	if (jFunCB)		return false;
+	jFunCB	= F;
+	wmID		= W;
+	//----- reset detected struct ---------------------
   AxeMoved.iAxe = -1;
-  AxeMoved.pJoy = 0;
+  AxeMoved.jdev = 0;
   // Copy the current state of all joysticks
   // to the copy float array as an Idle state to detect large moves
-  SJoyDEF * p1;
-  std::vector<SJoyDEF *>::iterator it1;
-  for (it1 = joyQ.begin(); it1 != joyQ.end(); it1++)
-  { p1  = (*it1);
-		p1->PushVal();
-  }
+  for (U_INT k=0; k<devQ.size(); k++)
+	{	JoyDEV *jdev = devQ[k];
+	}
 	return true;
 }
-//------------------------------------------------------------------------------
-void CJoysticksManager::StopDetectMoves()
-{ pAxeCB	= 0; }
-//---------------------------------------------------------------------------------
-//	Catch joystick button for specific windows
-//---------------------------------------------------------------------------------
-bool CJoysticksManager::StartDetectButton(ButtonDetectCB * pcb, Tag id)
-	{	if (pButCB)			return false;
-		pButCB	=pcb;
-		wbID		=id;
-		return true;;
-}
-//------------------------------------------------------------------------------
-void CJoysticksManager::StopDetectButton(void)
-{pButCB = 0;}
+
 //===============================================================================
 // CStreamObject methods
 //===============================================================================
@@ -1063,7 +1162,7 @@ int CJoysticksManager::Read (SStream *stream, Tag tag)
 		SetNulleArea(pm,0);
     return TAG_READ;
   case 'jaxe':
-    rax.pJoy	= 0;
+		rax.jdev	= 0;
 		rax.inv		= 1;
     ReadFrom(&rax, stream);
     ProcessAxe(&rax);
@@ -1073,10 +1172,8 @@ int CJoysticksManager::Read (SStream *stream, Tag tag)
     sbt = new CSimButton;
     ReadFrom(sbt,stream);
     if (ProcessButton(sbt))  return TAG_READ;
-		SJoyDEF *joy = sbt->pjoy;
-		char    *jnm = (joy)?(joy->dName):("????");
-    WARNINGLOG("Error button %d Joystick %s.",sbt->nBut,jnm);
-    delete sbt;
+		//-- Enter in unassigned list -----------------
+		butQ.push_back(sbt);
     return TAG_READ;
   }
 
@@ -1098,10 +1195,11 @@ void CJoysticksManager::ProcessHat(SStream *stream)
 	jsh	= char(p1);
 	uht = char(p2);
 	if (0 == p2)	return;
-	SJoyDEF *jsp = GetJoystickNo(p1);
+	JoyDEV *jsp = GetJoystickNo(p1);
 	if (jsp) jsp->SetHat(1);
   return;
 }
+
 //-----------------------------------------------------------------------------------
 //  Process the axe
 //-----------------------------------------------------------------------------------
@@ -1116,7 +1214,7 @@ bool CJoysticksManager::ProcessAxe(CSimAxe *from)
 //  -Enter the descriptor into the map and link to Key definition
 //-----------------------------------------------------------------------------------
 bool CJoysticksManager::ProcessButton(CSimButton *sbt)
-{ SJoyDEF *jsd = sbt->pjoy;
+{ JoyDEV *jsd = sbt->jdev;
   if (0 == jsd)             return false;
   CKeyDefinition *kdf = globals->kbd->FindKeyDefinitionByIds(sbt->kset,sbt->cmde);
   if (0 == kdf)             return false;
@@ -1124,9 +1222,9 @@ bool CJoysticksManager::ProcessButton(CSimButton *sbt)
   int  nb  = sbt->nBut;
   kdf->LinkTo(sbt);
   sbt->LinkTo(kdf);
-  jsd->StoreVector(nb,sbt);
+  jsd->StoreButton(nb,sbt);
   return true;
-}
+	}
 //-----------------------------------------------------------------------------------
 //  Save Axis in configuration file
 //-----------------------------------------------------------------------------------
@@ -1136,8 +1234,11 @@ void CJoysticksManager::SaveAxisConfig(SStream *st)
   int tmp;
   for (int k=0; k != JOY_AXIS_NUMBER; k++)
   { axe = AxesList+k;
-		SJoyDEF *jdf = axe->pJoy;
-	  if (0 == jdf)				continue;
+		JoyDEV *jdf = axe->jdev;
+		//--- skip axe which has never been assigned --------
+		if (axe->NoDevice())				continue;
+		if (axe->NulDev())					continue;
+	 // if (0 == jdf)				continue;
     //---Write axe configuration ------------------------
     WriteTag('jaxe',  "-- joystick axe definition --", st);
     WriteTag('bgno', st);
@@ -1146,10 +1247,10 @@ void CJoysticksManager::SaveAxisConfig(SStream *st)
       WriteFloat(&axe->attn,st);
     }
     WriteTag('njoy',  " -- internal number (must precede devc) --",st);
-		tmp = jdf->jNumber();
+		tmp = (jdf)?(jdf->jNumber()):(0);
     WriteInt(&tmp,st);
     WriteTag('devc',  " -- input device name --------------------", st);
-    WriteString(jdf->dName, st);
+    WriteString(axe->devc, st);
     WriteTag('Anum', "-- device axe number ----------------------", st);
 		tmp	= axe->iAxe;
     WriteInt(&tmp, st);
@@ -1164,31 +1265,37 @@ void CJoysticksManager::SaveAxisConfig(SStream *st)
   return;
 }
 //-----------------------------------------------------------------------------------
+//  Save one Button in configuration file
+//	 
+//-----------------------------------------------------------------------------------
+void CJoysticksManager::SaveOneButton(SStream *st,CSimButton *sbt)
+{	char stag[8];
+	//-----Write the configuration ----------------------------
+  WriteTag('jbtn', "-- button definition --",st);
+  WriteTag('bgno', st); 
+  WriteTag('devc', "-- input device name --",st);
+  WriteString(sbt->devc, st);
+  WriteTag('Bnum',  "-- Button number --",st);
+  WriteInt(&sbt->nBut, st);
+  WriteTag('kyid', "-- KeyDef tag --",st);
+  TagToString(stag, sbt->cmde);
+  WriteString(stag, st);
+  WriteTag('kset', "-- KeySet tag --",st);
+  TagToString(stag, sbt->kset);
+  WriteString(stag,st);
+  WriteTag('endo', st);
+	return;
+}
+//-----------------------------------------------------------------------------------
 //  Save Button in configuration file
 //	 
 //-----------------------------------------------------------------------------------
-void CJoysticksManager::SaveButtonConfig(SStream *st, SJoyDEF *jsd)
-{ char stag[8];
-  CSimButton *sbt = 0;
+void CJoysticksManager::SaveButtonConfig(SStream *st, JoyDEV *jsd)
+{ CSimButton *sbt = 0;
   for (int k=0; k!=jsd->nbt; k++)
   { sbt = jsd->GetButton(k);
     if (0 == sbt) continue;
-    //-----Write the configuration ----------------------------
-    WriteTag('jbtn', "-- button definition --",st);
-    WriteTag('bgno', st); 
-    WriteTag('njoy',  " -- internal number (must precede devc) --",st);
-    WriteInt(&sbt->joyn,st);
-    WriteTag('devc', "-- input device name --",st);
-    WriteString(jsd->dName, st);
-    WriteTag('Bnum',  "-- Button number --",st);
-    WriteInt(&sbt->nBut, st);
-    WriteTag('kyid', "-- KeyDef tag --",st);
-    TagToString(stag, sbt->cmde);
-    WriteString(stag, st);
-    WriteTag('kset', "-- KeySet tag --",st);
-    TagToString(stag, sbt->kset);
-    WriteString(stag,st);
-    WriteTag('endo', st);
+   SaveOneButton(st,sbt);
   }
   return;
 }
@@ -1200,10 +1307,8 @@ void CJoysticksManager::SaveConfiguration()
 	int tmp = 0;
   SStream   s;
   char     *fn = "System/FlyLegacyControls.txt";
-  SJoyDEF *jsd;
-  std::vector<SJoyDEF *>::iterator it;
-	if (0 == use)						return;
-	if (0 == modify)				return;
+  JoyDEV *jsd;
+  std::vector<JoyDEV *>::iterator it;
 	modify		= 0;
 	txt[127]	= 0;
   //---Open a stream file -----------------------------------
@@ -1221,13 +1326,16 @@ void CJoysticksManager::SaveConfiguration()
   WriteFloat(&nValue,&s);
   //---------------------------------------------------------
 	SaveAxisConfig(&s);
-  for (it = joyQ.begin(); it != joyQ.end(); it++)
+  for (it = devQ.begin(); it != devQ.end(); it++)
   { jsd = (*it);
     SaveButtonConfig(&s,jsd);
   }
+	//---Save unassigned list ---------------------------------
+	for (U_INT k=0; k<butQ.size(); k++)	SaveOneButton(&s,butQ[k]);
   //---Close the file ---------------------------------------
   WriteTag('endo', " === End of Joystick Definition file ===", &s);
   CloseStream (&s);
   return;
 }
+
 //===================END OF FILE ==========================================================

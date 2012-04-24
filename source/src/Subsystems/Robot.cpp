@@ -25,6 +25,7 @@
 #include "../Include/Robot.h"
 #include "../Include/FuiParts.h"
 #include "../Include/PlanDeVol.h"
+#include "../Include/joysticks.h"
 using namespace std;
 
 
@@ -322,7 +323,8 @@ void VPilot::Start()
 //	Request to start the virtual pilot
 //--------------------------------------------------------------
 void VPilot::PreFlight(float dT)
-{	EMessageResult rs = MSG_IGNORED;
+{	globals->jsm->JoyDisconnect(JS_GROUPBIT);
+  EMessageResult rs = MSG_IGNORED;
   if (T01 > 0)														return;
 	T01	 = 1;
 	//------------------------------------------------------

@@ -660,9 +660,10 @@ public:
   void						FlushTextures();
   CTextureDef		 *GetTexDescriptor(U_INT tx,U_INT tz);
   CTextureDef    *GetTexList(U_INT No)    {return Super[No].Tex;}
-  CSuperTile     *GetSuperTile(int tx,int tz);
-  CSuperTile     *GetSuperTile(U_INT No);
+	CSuperTile     *GetSuperTile(int tx,int tz);
 	bool						AllTextured(char opt);
+	//-------------------------------------------------------------
+  CSuperTile     *GetSuperTile(U_INT No) { return (No > 63)?(0):(&Super[No]); }
 //--------Delete resources --------------------------------------
   int         FreeQuad(CmQUAD *cp);
   int         FreeVertices(CmQUAD *cp);
@@ -849,9 +850,7 @@ class TCacheMGR: public CExecutable {
   char        trnName[64];                  // TRN file name
   //---------CULLING  --------------------------------------
   C_QGT       *vqt;                         // QGT in test
-	//------Black box ---------------------------------------------
-	BBcache	   *bbox;													// TCache black box
-  //---------Methods -------------------------------------------
+	//---------Methods -------------------------------------------
 public:
   TCacheMGR();
  ~TCacheMGR();
@@ -915,6 +914,7 @@ public:
   bool        SetQGT(GroundSpot &gns);
   CVertex    *GetQgtCorner(C_QGT *qgt,QGT_DIR *tab,U_SHORT cn);
   int         FreeTheQGT(C_QGT *qt);
+	int					EndOfQGT(C_QGT *qgt);
   int         InitMesh();                             // Initial mesh
   int         OneAction();                            // One Action per QGT
   int         RefreshCache();
@@ -1043,7 +1043,6 @@ public:
   void        LockQTR()   {pthread_mutex_lock   (&qtrMux);}
   void        UnLockQTR() {pthread_mutex_unlock (&qtrMux);}
   void        GoThread()  {pthread_cond_signal(&thCond); }
-  void        MarkDelete(C_QGT *qgt);
   void        RequestTextureLoad(C_QGT *qgt);   // Request Textures
   void        GetQTRfile(C_QGT *qgt,TCacheMGR *tcm);
   int         RequestELV(C_QGT *qgt);
@@ -1051,7 +1050,6 @@ public:
     //----------Thread parameters --------------------------------
   inline void ThreadRuns()      {thRUN = 1;}
   inline void ThreadStop()      {thRUN = 0;}
-	void				ThreadPulse();		
 	//------------------------------------------------------------
   C_QGT      *PopLoadTEX()						{return LodQ.Pop();}
   pthread_cond_t  *GetTHcond()			  {return &thCond;}

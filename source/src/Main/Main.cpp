@@ -1123,7 +1123,7 @@ void InitSimulation (void)
   CVector   orid (0,0,180);
   globals->dang  = orid;
 	//----Joystick ---------------------------------------------------
-	CJoysticksManager::Instance().Init( );
+	globals->jsm	 = new CJoysticksManager();
   //------Load situation -------------------------------------------
   globals->sit = new CSituation ();
   TRACE("End of InitSimulation");

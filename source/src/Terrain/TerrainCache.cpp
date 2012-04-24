@@ -667,9 +667,8 @@ CmQUAD::CmQUAD()
 //  End of CmQUAD
 //-------------------------------------------------------------------------
 CmQUAD::~CmQUAD()
-{	if (IsArray())	
-		delete [] qARR;
-	if (iBUF)	delete [] iBUF;
+{	if (IsArray())	delete [] qARR;
+	if (iBUF)	      delete [] iBUF;
 }
 //-------------------------------------------------------------------------
 //  Check if we are for requested tile (testing purpose)
@@ -710,7 +709,6 @@ void CmQUAD::SetParameters(CVertex *ct,U_CHAR lv)
   Center.Edge[TC_NWCORNER]  = ct->Edge[TC_NWCORNER];
   Center.Edge[TC_NECORNER]  = ct->Edge[TC_NECORNER];
   //-----World coordinates --------------------------------------
-  //Center.Coord  = ct->Coord;
 	Center.CopyCOORD(*ct);
   return;
 }
@@ -1995,7 +1993,6 @@ void CSuperTile::Add3DObject(CWobj *obj, char t)
 //=========================================================================
 //  QUEUE of SUPER TILES
 //=========================================================================
-
 CSupQueue::CSupQueue()
 { pthread_mutex_init (&mux,  NULL);
   First = 0;
@@ -2425,19 +2422,19 @@ int C_QGT::FreeVertices(CmQUAD *qd)
   if (ct->IsFull())
   { //-----Free M1 mid point (East Axis)----------------
     m1 = GetEastVertex(sw,ct->xKey,sw->zKey,0);
-    if (0 == m1) Abort("Missing M1 Vertex");
+		//   if (0 == m1) Abort("Missing M1 Vertex");
     if (m1->NoMoreUsed())   FreeHMidVertex(m1);
     //-----Free M2 mid point -(North Axis)--------------
     m2 = GetNorthVertex(sw,sw->xKey,ct->zKey,0);
-    if (0 == m2) Abort("Missing M2 Vertex");
+		//   if (0 == m2) Abort("Missing M2 Vertex");
     if (m2->NoMoreUsed())   FreeVMidVertex(m2);
     //-----Free M3 mid point -(North Axis)--------------
     m3 = GetNorthVertex(se,se->xKey,ct->zKey,0);
-    if (0 == m3) Abort("Missing M3 Vertex");
+		//   if (0 == m3) Abort("Missing M3 Vertex");
     if (m3->NoMoreUsed())   FreeVMidVertex(m3);
     //-----Free M4 mid point (East Axis)----------------
     m4 = GetEastVertex(nw,ct->xKey,nw->zKey,0);
-    if (0 == m4) Abort("Missing M4 Vertex");
+		//    if (0 == m4) Abort("Missing M4 Vertex");
     if (m4->NoMoreUsed())   FreeHMidVertex(m4);
   }
   //-------Free Corner vertices -----------------------
@@ -2464,7 +2461,7 @@ void C_QGT::UnlinkVertex(CVertex *vt)
   return;
 }
 //-----------------------------------------------------------------------
-//  Free a mid point Vertex along East axis
+//  Free a mid point Vertex along East (Horizontal) axis
 //  Unlink from direction and delete
 //-----------------------------------------------------------------------
 void C_QGT::FreeHMidVertex(CVertex *vt)
@@ -2482,7 +2479,7 @@ void C_QGT::FreeHMidVertex(CVertex *vt)
   return;
 }
 //-----------------------------------------------------------------------
-//  Free a mid point Vertex along North axis
+//  Free a mid point Vertex along North (Vertical) axis
 //  Unlink from direction and delete
 //-----------------------------------------------------------------------
 void C_QGT::FreeVMidVertex(CVertex *vt)
@@ -2548,7 +2545,6 @@ CVertex *C_QGT::GetEastVertex(CVertex *vk,U_INT xv,U_INT zv,int op)
 CVertex *C_QGT::GetNorthVertex(CVertex *vk,U_INT xv,U_INT zv,int op)
 { CVertex *pv = vk;
   CVertex *vn = vk->Edge[TC_NORTH];
-  U_INT   nkey  = 0;									// Key from next vertex
   //----scan the NORTH direction ---------------------
   while (vn)
   { if (vn->zKey == zv) return vn;
@@ -2711,8 +2707,8 @@ CSuperTile *C_QGT::GetSuperTile(int tx,int tz)
 //-------------------------------------------------------------------------
 //  Given Key (indices of Detatil tile) return SuperTile context
 //-------------------------------------------------------------------------
-CSuperTile *C_QGT::GetSuperTile(U_INT No)
-{ return (No > 63)?(0):(&Super[No]); }
+//CSuperTile *C_QGT::GetSuperTile(U_INT No)
+//{ return (No > 63)?(0):(&Super[No]); }
 //-------------------------------------------------------------------------
 //  Build or extend an OSM part with same texture reference for the same
 //				supertile
@@ -2925,31 +2921,22 @@ int C_QGT::TerminalQuad(CVertex *ct,CTX_QUAD &ctx)
 int C_QGT::DivideQuad(CVertex *ct,CTX_QUAD &ctx)
 { U_CHAR   end = tcm->GetLastEVindex();       // Last vertex indice in ST
   U_SHORT  dv = ctx.vSub;                     // Vertex subdivision (X and Z)
-  U_INT    vx = 0;                            // Vertex absolute index X
-  U_INT    vz = 0;                            // Vertex absolute index Z;
+	//---- Corner of tile to divide -----------------------------------
   CVertex *sw = ct->Edge[TC_SWCORNER];        // SW corner Vertex
   CVertex *nw = ct->Edge[TC_NWCORNER];        // NW corner Vertex
   CVertex *se = ct->Edge[TC_SECORNER];        // SE corner Vertex
   CVertex *ne = ct->Edge[TC_NECORNER];        // NE corner Vertex
   //-------Locate or Create m1 vertex (mid SW-SE) --------------------
-  vx  = sw->xKey + dv;                        // Vertex m1 X coordinate 
-  vz  = sw->zKey;                             // Vertex m1 Z coordinate
-  CVertex *m1 = GetEastVertex(sw,vx,vz,1);    // Locate or create
-  m1->IncUse();                               // Quad references
+  CVertex *m1 = GetEastVertex(sw,(sw->xKey + dv),(sw->zKey),1);	// Locate or create
+  m1->IncUse();																			// Quad references
   //-------Locate or Create m2 vertex (mid SW-NW) ---------------------
-  vx  = sw->xKey;                             // Vertex m2 X coordinate
-  vz  = sw->zKey + dv;                        // Vertex m2 Z coordinate
-  CVertex *m2 = GetNorthVertex(sw,vx,vz,1);   // Locate or create
+  CVertex *m2 = GetNorthVertex(sw,(sw->xKey),(sw->zKey + dv),1);   // Locate or create
   m2->IncUse();                               // Quad references
   //-------Locate or Create m3 vertex --------------------------------
-  vx  = se->xKey;                             // Vertex m3 X coordinate
-  vz  = se->zKey + dv;                        // Vertex m3 Z coordinate
-  CVertex *m3 = GetNorthVertex(se,vx,vz,1);   // Locate or create
+  CVertex *m3 = GetNorthVertex(se,(se->xKey),(se->zKey + dv),1);   // Locate or create
   m3->IncUse();                               // Quad references
   //-------Locate or Create m4 vertex --------------------------------
-  vx  = nw->xKey + dv;                        // Vertex m4 X coordinate
-  vz  = nw->zKey;                             // Vertex m4 Z coordinate
-  CVertex *m4 = GetEastVertex(nw,vx,vz,1);    // Locate or create
+  CVertex *m4 = GetEastVertex(nw,(nw->xKey + dv),(nw->zKey),1);    // Locate or create
   m4->IncUse();                               // Quad references
   //------Set Center indicator to Full Quad --------------------------
   ct->SetFullQuad();
@@ -3573,6 +3560,8 @@ TCacheMGR::TCacheMGR()
 	if (wire) globals->noOSM++;
   if (wire) globals->noMET++;
   if (wire) globals->noAWT++;
+	//------------------------------------------------------
+	
   //------Magnetic refresh indicator ---------------------
   magRF   = 1;
   //------Init horizon parameters ------------------------
@@ -3684,7 +3673,7 @@ TCacheMGR::TCacheMGR()
 	globals->etrk.SetTCM(this);
 	//--- Enter in dispatcher -------------------------------------
 	globals->Disp.Enter(this, PRIO_TERRAIN, DISP_EXCONT, 1);
-TRACE("End TCACHE Constructor");
+  TRACE("End TCACHE Constructor");
 }
 ///------------------------------------------------------------------------
 //  End of TCache: TODO 
@@ -4091,12 +4080,6 @@ void TCacheMGR::GetTileIndices(int &tx,int &tz)
   return;
 }
 //-------------------------------------------------------------------------
-//  Activate thread one cycle
-//-------------------------------------------------------------------------
-void TCacheMGR::ThreadPulse()
-{	pthread_cond_signal(&thCond);    // Signal file THREAD
-	return; }
-//-------------------------------------------------------------------------
 //  Time slice.  Update the terrain cache
 //-------------------------------------------------------------------------
 int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
@@ -4118,15 +4101,15 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   clock++;                                              // Internal clock
   clock1    = clock & 1023;                             // Derived clock 1
   UpdateTOD();                                          // Update Time of Day
-  bool thrd = (LodQ.NotEmpty() | FilQ.NotEmpty());
-  if  (thrd) pthread_cond_signal(&thCond);    // Signal file THREAD
+  //bool thrd = (LodQ.NotEmpty() | FilQ.NotEmpty());
+  pthread_cond_signal(&thCond);    // Signal file THREAD
   //-----Update QGT formation --------------------------------------------
-  char action = RefreshCache();
+  char nqgt = (nKEY == rKEY)?(0):(RefreshCache());
   UpdateAGL(aPos);
 	//---Update Tracker ----------------------------------------------------
 	globals->etrk.TimeSlice(dT);
 	//--- Update action ----------------------------------------------------
-  if (action)           return 1;
+  if (nqgt)							return 1;												// Have QGT created
   if (OneAction())      return 1;
   //-----No cache refresh.  Update magnetic deviation --------------------
   if (magRF) globals->mag->GetElements (aPos,magDV, magFD);
@@ -4228,14 +4211,13 @@ void TCacheMGR::GetRange(U_INT cz,U_SHORT &up,U_SHORT &dn)
 //        any more front tiles that are in the non -flyable area
 //-------------------------------------------------------------------------
 int TCacheMGR::RefreshCache()
-{	U_INT cx = globals->qgtX;
+{ U_INT cx = globals->qgtX;
   U_INT cz = globals->qgtZ;
-  if (nKEY == rKEY)  return 0;
   //-----------Aircraft enters a new QGT -----------------------------
   if (tr) TRACE("TCM: -- Time: %04.2f---- Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d -------------------",
           dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
   if (tr) TRACE("TCM: -- AIRCRAFT ENTER %d-%d=================================================================",
-          globals->qgtX,globals->qgtZ);
+          cx,cz);
   //----------Get the X reduction factor at this latitude ------------
   scale.x = rFactor * TC_FEET_PER_ARCSEC;   // Scaling parameter 1
 	//----------scan all surrounding QGT tiles for new position --------
@@ -4259,33 +4241,27 @@ int TCacheMGR::RefreshCache()
   { C_QGT *qt   = (*im).second;
     U_INT key   = (*im).first;
     if (IsaActKey(key)) continue;
-    MarkDelete(qt);
+		//-- Mark QGT for deletion ----------------------
+		qRDY -= qt->qSTAT;                   // Update Ready count
+		qt->SetStep(TC_QT_DEL);              // Change to delete state
   }
   //----Keep new reference key ------------------------------------------
-  C_QGT *aqg = GetQGT(cx,cz);                             // Current QGT
+  C_QGT *aqg = GetQGT(cx,cz);           // Current QGT
   if (0 == aqg) 			gtfo("CACHE: corrupted geo position: No corresponding tile");
   Spot.SetQGT(aqg);
   rKEY  = nKEY;
   xKey  = cx;
   zKey  = cz;
-  iqt   = qgtMAP.begin();
-  magRF = 1;                                              // Refresh mag deviation
+  iqt   = qgtMAP.begin();								// Reset QGT scanner
+  magRF = 1;                            // Refresh mag deviation
   //----Set horizon parameters -------------------------------------------
-  fDens     = GetFogDensity(cz);                          // Fog density
-  medRAD    = GetMediumCircle(cz);                        // Medium circle (feet)
-  higRAD    = medRAD * higRAT;														// Hi resolution (feet)
+  fDens     = GetFogDensity(cz);        // Fog density
+  medRAD    = GetMediumCircle(cz);      // Medium circle (feet)
+  higRAD    = medRAD * higRAT;					// Hi resolution (feet)
   //----Initial state --------------------------------------------------------
   return 1;
 }
 
-//-----------------------------------------------------------------------
-//  Check state for deletion
-//-----------------------------------------------------------------------
-void TCacheMGR::MarkDelete(C_QGT *qgt)
-{ qRDY -= qgt->qSTAT;                   // Update Ready count
-  qgt->SetStep(TC_QT_DEL);              // Change to delete state
-  return;
-}
 //-----------------------------------------------------------------------
 //  Call Time slice for each QGT that is in ready state
 //-----------------------------------------------------------------------
@@ -4384,11 +4360,10 @@ void TCacheMGR::UpdateAGL(SPosition &pos)
 	//--- Update AGL and ground plane ---------------------
 	fAGL			=		pos.alt - Spot.alt;
   gplan[3]	=  float(fAGL);			// Ground plane OK
-	//--- Check for aircraft altitude ---------------------
-  return;
+	return;
 }
 //-----------------------------------------------------------------------------
-//	retrun plane spot at ground altitude
+//	return plane spot at ground altitude
 //-----------------------------------------------------------------------------
 void TCacheMGR::GetPlaneSpot(SPosition &p)
 {	p.lon	= Spot.lon;
@@ -4967,9 +4942,12 @@ int TCacheMGR::OneAction()
       if (tr) TRACE("TCM: -- Time: %04.2f QGT(%3d-%3d) Load %06d Objects",Time(),qgt->xKey,qgt->zKey,pm);
       //----------------------------------------------------
 			return  LastAction();
-    //---- Delete the QGT --------------------------------
+    //---- Remove the QGT ----------------------------------
     case TC_QT_DEL:
       return FreeTheQGT(qgt);
+		//--- Delete the QGT ----------------------------------
+		case TC_QT_END:
+			return EndOfQGT(qgt);
     //----- Waiting for file -----------------------------
     case TC_QT_WFF:
       return 1;
@@ -4990,11 +4968,19 @@ int TCacheMGR::FreeTheQGT(C_QGT *qgt)
   qgt->FlushTextures();  
   //---Delete QTR file -------------------------------
   qgt->DeleteQTR();
-  //---Remove from Queue, clean and delete -----------
-  U_INT key = QGTKEY(qgt->xKey,qgt->zKey);
+	//---Remove from table -----------------------------
+	U_INT key = qgt->FullKey();							//QGTKEY(qgt->xKey,qgt->zKey);
   qgtMAP.erase(key);
-  iqt   = qgtMAP.begin();
-  ActQ.Pop();
+	iqt   = qgtMAP.begin();				// QGT scanner recycle
+	qgt->Step = TC_QT_END;
+	return 1;
+}
+//---------------------------------------------------------------------
+//		Delete the QGT
+//---------------------------------------------------------------------
+  //---Remove from Queue, clean and delete -----------
+int TCacheMGR::EndOfQGT(C_QGT *qgt)
+{ ActQ.Pop();
   qgt->DecUser();
   if (ActQ.NotEmpty())  return 1;
   if(tr) 

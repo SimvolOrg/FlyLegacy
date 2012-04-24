@@ -48,6 +48,7 @@
 #include <stdio.h>
 
 //===================================================================================
+class JoyDEV;
 //=============================================================================
 //  Class CFuiKeyMap to display Keyboard mapping
 //=============================================================================
@@ -83,18 +84,18 @@ public:
   void      SelectSet (U_INT No);
   int       InitPopup();
   //------------------------------------------------------------------
-  void      DisplayKeys(Tag idn);
-  bool      CheckKey(int cde,CKeyDefinition *kdf);
-  void      Unassign(CKeyDefinition *kdf,int cde);
-  void      Unassign(SJoyDEF *jsd,int bt);
-  void      DefaultKeys();
-  void      ClearKey();
-  bool      Message(char *msg);
+  void				DisplayKeys(Tag idn);
+  bool				CheckKey(int cde,CKeyDefinition *kdf);
+  void				Unassign(CKeyDefinition *kdf,int cde);
+  void				Unassign(JoyDEV *jsd,int bt);
+  void				DefaultKeys();
+  void				ClearKey();
+  bool				Message(char *msg);
   //------------------------------------------------------------------
   void      StopDetection();
   void      SaveConfiguration();
   //------------------------------------------------------------------
-  void      ButtonHit(SJoyDEF *jsd,int bt);
+  void      ButtonHit(JoyDEV *jsd,int bt);
   void      ClearButton();
   //------------------------------------------------------------------
   void      NotifyResize(short dx,short dy);

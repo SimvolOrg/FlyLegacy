@@ -54,11 +54,12 @@ int WhenKeyHit(Tag winID, int iCode)
 //=================================================================================
 //    CALL BACK FROM JOYSTICK
 //=================================================================================
-void WhenButtonHit(SJoyDEF *jsd, int btn, Tag winID)
-{ CFuiKeyMap *wkn = (CFuiKeyMap*)globals->fui->GetFuiWindow(winID);
-  wkn->ButtonHit(jsd,btn);
+void WhenButtonHit(char code, JoyDEV *J, CSimAxe *A, int B, Tag W)
+{ CFuiKeyMap *win = (CFuiKeyMap*)globals->fui->GetFuiWindow(W);
+  win->ButtonHit(J,B);
   return;
 }
+
 //=================================================================================
 //  Window for keyboard mapping
 //=================================================================================
@@ -99,9 +100,11 @@ CFuiKeyMap::CFuiKeyMap(Tag idn, const char *filename)
   dfk     =  new CKeyFile("System/default.key");        // Load Default Key
 	//-----------------------------------------------------
 	if (jsm->IsBusy())	Close();
-	else	{	jsm->StartDetectButton(WhenButtonHit, windowId);
+	else	{	jsm->StartDetection(WhenButtonHit, windowId);
 					globals->kbd->StartKeyDetect(WhenKeyHit,windowId);
 				}
+	//---- Marker 1 -----------------------------------
+	char *ds = Dupplicate("***DEB WinKey",16);
 }
 //--------------------------------------------------------------------------
 //  Free resources
@@ -113,6 +116,9 @@ CFuiKeyMap::CFuiKeyMap(Tag idn, const char *filename)
    if (item) delete [] item;
    if (iden) delete [] iden;
    if (dfk)  delete dfk;
+	 //---- Marker 2 -----------------------------------
+	 char *ds = Dupplicate("***End WinKey",16);
+
  }
  //-------------------------------------------------------------------------
  //   SAVE KEY AND JOYSTICK CONFIGURATION
@@ -292,30 +298,30 @@ void CFuiKeyMap::DefaultKeys()
 //  -Create a new button definition
 //  -Assign to key
 //--------------------------------------------------------------------------
-void CFuiKeyMap::ButtonHit(SJoyDEF *jsd,int bt)
+void CFuiKeyMap::ButtonHit(JoyDEV *jsd,int bt)
 { if (modOpt == 0) {Message("To Modify set MODE to CHANGE !"); return; }
 	modify = 1;
   Unassign(jsd,bt);
-  CKeyLine          *kln = (CKeyLine*)keyBOX.GetSelectedSlot();
-  CKeyDefinition    *kdf = kln->GetKDef();
-  CSimButton        *old  = kdf->LinkTo(0);
-  if (old)   jsm->RemoveButton(old->pjoy,old->nBut);
-  CSimButton        *sbt  = jsm->AddButton(jsd,bt,kdf);
+  CKeyLine        *kln = (CKeyLine*)keyBOX.GetSelectedSlot();
+  CKeyDefinition  *kdf = kln->GetKDef();
+  CSimButton      *old = kdf->LinkTo(0);
+	jsm->RemoveButton(old);
+  CSimButton      *sbt = jsm->AddButton(jsd,bt,kdf);
   kln->SetJoysDef(sbt);
   keyBOX.Refresh();
   return;
 }
 //--------------------------------------------------------------------------
-//  Remove the button previous definition
+//  Unlink the button from the actual key definition 
 //--------------------------------------------------------------------------
-void CFuiKeyMap::Unassign(SJoyDEF *jsd,int bt)
+void CFuiKeyMap::Unassign(JoyDEV *jsd,int bt)
 { CSimButton        *sbt = jsd->GetButton(bt);
   CKeyDefinition    *kdf = (sbt)?(sbt->kdf):(0);
-  jsm->RemoveButton(jsd,bt);
+	jsm->RemoveButton(sbt);
   if (0 == kdf)      return;
   kdf->LinkTo(0);
   int slot = kdf->GetSlot();
-  CKeyLine          *kln = (CKeyLine*)keyBOX.GetSlot(slot);
+  CKeyLine  *kln = (CKeyLine*)keyBOX.GetSlot(slot);
   if (kln) kln->SetJoysDef(0);
   return;
 }
@@ -329,7 +335,7 @@ void CFuiKeyMap::ClearButton()
   modify  = 1;
   kdf->LinkTo(0);
   kln->SetJoysDef(0);
-  if (old)   globals->jsm->RemoveButton(old->pjoy,old->nBut);
+	globals->jsm->RemoveButton(old);
   keyBOX.Display();
   return;
 }

@@ -446,7 +446,7 @@ void CAirplane::ReadFinished (void)
 //-----------------------------------------------------------------------------
 void CAirplane::BindKeys()
 { CKeyMap *km = globals->kbd;
-	globals->jsm->ConnectAll();
+	globals->jsm->JoyConnectAll();
   km->BindGroup('plne',KeyAirGroup);
   //---Control surfaces ----------------------------------------------------
   km->Bind('adel',aKeyADEL,KEY_REPEAT);

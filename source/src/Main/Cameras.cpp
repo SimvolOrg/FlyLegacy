@@ -1043,19 +1043,22 @@ public:
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished();
   void  SetPanel(CPanel *p);
+	bool  View(float a);
 	//--------------------------------------------------------------------
   inline CPanel  *GetPanel()          {return panel;}
   inline void     GetXSRC(TC_4DF &r){r.x1 = xscr_x; r.y1 = xscr_y;}
   //--------------------------------------------------------------------
 public:
-  Tag     id;         ///< Panel ID, as specified in a PNL file
+  Tag     id;         // Panel ID, as specified in a PNL file
 	char    idn[8];			// Tag for debug
   CPanel *panel;      // Panel 
-  bool    main;       ///< Is this the main (default) panel?
-  float   hdg;        ///< Viewpoint heading (y-axis rotation)
-  float   pit;        ///< Viewpoint pitch (x-axis rotation)
-  Tag     pnls[4];    ///< Links to IDs of other panels in cockpit
-  float   xscr_x;     ///< Exterior scroll factor
+  bool    main;       // Is this the main (default) panel?
+	float   angL;				// Left limit
+  float   hdg;        // Viewpoint heading (y-axis rotation)
+	float   angR;			// Right limit
+  float   pit;        // Viewpoint pitch (x-axis rotation)
+  Tag     pnls[4];    // Links to IDs of other panels in cockpit
+  float   xscr_x;     // Exterior scroll factor
   float   xscr_y;
   int     umdl;       ///< Use exterior model
   //---Camera cockpit-------------------------------------
@@ -1097,6 +1100,8 @@ int CCockpitPanel::Read (SStream *stream, Tag tag)
   //--JS set positive direction for heading ---------------------
   case 'hdg_':
     ReadFloat (&hdg, stream);
+		angL= Wrap360(hdg - 45);
+		angR= Wrap360(hdg + 45);
     hdg = (360 - hdg);
     rc = TAG_READ;
     break;
@@ -1156,7 +1161,13 @@ void CCockpitPanel::SetPanel(CPanel *p)
 	p->SetMain(main);
 	return;
 }
-
+//----------------------------------------------------------------------
+//  Check if panel view the requested direction
+//-----------------------------------------------------------------------
+bool CCockpitPanel::View(float A)
+{	float M = 360 - hdg;
+	return InCircularRange(A,M,float(22.5));
+}
 //=====================================================================================
 // Cockpit (vehicle interior) camera
 //=====================================================================================
@@ -1318,7 +1329,7 @@ void CCameraCockpit::DrawPanel()
   return;
 }
 //------------------------------------------------------------------------
-//  Find cockpit panel by tag
+//  Activate cockpit panel by tag
 //------------------------------------------------------------------------
 void  CCameraCockpit::ActivateCockpitPanel (Tag tag)
 { if (tag == 'NONE')    return;
@@ -1328,6 +1339,23 @@ void  CCameraCockpit::ActivateCockpitPanel (Tag tag)
 	ckPanel = cp;
   if (pn)   pn->SetViewPort();
 	cp->SetPanel(pn);
+  return;
+}
+//------------------------------------------------------------------------
+//  Activate cockpit panel by angle
+//------------------------------------------------------------------------
+void  CCameraCockpit::ActivateView (float A)
+{ std::map<Tag,CCockpitPanel*>::iterator rp;
+	for (rp = panl.begin(); rp != panl.end(); rp++)
+	{	CCockpitPanel *cp = rp->second;
+		if (!cp->View(A))		continue;
+		CPanel        *pn = cp->GetPanel();
+		if (0 == pn)				continue;
+		ckPanel = cp;
+		pn->SetViewPort();
+		cp->SetPanel(pn);
+		return;
+		}
   return;
 }
 //------------------------------------------------------------------------

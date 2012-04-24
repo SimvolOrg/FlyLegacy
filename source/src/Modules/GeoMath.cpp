@@ -1139,9 +1139,19 @@ float ComputeDeviation(float ref,float rad,U_CHAR *flag, U_CHAR pwr)
   *flag       = GetFlag(dtf,pwr);
   return dev;
 }
-//--------------------------------------------------------------------------
+//=========================================================================================
+//	check if value A  is in the circular range R
+//=========================================================================================
+bool InCircularRange(float A, float M, float R)
+{ float dta = Wrap180(A - M);
+	if (dta < -R)		return false;
+	if (dta >	+R)		return false;
+	return true;
+}
+
+//=========================================================================================
 //  Return COAST  index from Quarter Globe Tile indices
-//--------------------------------------------------------------------------
+//=========================================================================================
 U_INT GetSEAindex(U_INT cx,U_INT cz)        
 { U_INT gx = cx >> 1;                                 // X Global TILE
   U_INT gz = cz >> 1;                                 // Z Global TILE

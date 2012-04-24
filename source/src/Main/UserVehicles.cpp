@@ -888,6 +888,10 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
   pgr           = 0;      // Gear control for keyboard
   lastID[0]     = 0;
   lastHW[0]     = 0;
+	//--------------------------------------------------------
+	subs.reserve(100);
+	sext.reserve(8);
+	//--------------------------------------------------------
   pEngineManager = engine_manager;
   // Read from AMP file stream-----------------------------
   SStream s;

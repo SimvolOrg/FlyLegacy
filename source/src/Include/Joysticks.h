@@ -32,10 +32,30 @@
 #include <SDL.h>
 #include <list>
 #include <bitset>
+#include <mmsystem.h>
 //=============================================================================
 class CKeyDefinition;
 class SJoyDEF;
+class JoyDEV;
 class CSimAxe;
+//=====================================================================================
+#define JOY_MAX_DEV		(16)
+#define JOY_AXE_NBR   (6)
+#define JOY_LOW_VAL   (float(-32767))
+#define JOY_UPR_VAL   (float(+32767))
+#define JOY_RNG_VAL   (JOY_UPR_VAL - JOY_LOW_VAL)
+#define JOY_THRESH		(JOY_RNG_VAL / 256)
+//=====================================================================================
+#define JOY_AXE_X			(0)
+#define JOY_AXE_Y			(1)
+#define JOY_AXE_Z			(2)
+#define JOY_AXE_R			(3)
+#define JOY_AXE_U			(4)
+#define JOY_AXE_V			(5)
+//=====================================================================================
+#define JOY_AXE_MOVE		(1)
+#define JOY_HAT_MOVE    (2)
+#define JOY_BUT_MOVE		(3)
 //=====================================================================================
 //  CONTROL CONNECTOR MASK
 //	Used for locking associated axis when autopilot is ON
@@ -48,11 +68,14 @@ enum JoyConnector {
 		JS_ELVT_BIT	= 0x0010,								// Elevator trim	
 		JS_RUDT_BIT = 0x0020,								// Rudder trim
 		JS_THRO_BIT = 0x0040,								// THROTTLE lever
+		JS_MIXT_BIT = 0x0080,								// MIXT lever
+		JS_PROP_BIT = 0x0100,								// Propellor control
 		JS_OTHR_BIT = 0x8000,								// Other axis
 		//-----------------------------------------------------------
-		JS_SURF_APL = (JS_AILR_BIT + JS_ELVR_BIT + JS_AILT_BIT + JS_ELVT_BIT + JS_THRO_BIT),
+		JS_SURF_APL = (JS_AILR_BIT + JS_ELVR_BIT + JS_AILT_BIT + JS_ELVT_BIT),
 		JS_SURF_ALL = (JS_AILR_BIT + JS_ELVR_BIT + JS_RUDR_BIT),
 		JS_TRIM_ALL = (JS_AILT_BIT + JS_ELVT_BIT + JS_RUDT_BIT),
+		JS_GROUPBIT = (JS_THRO_BIT + JS_MIXT_BIT + JS_PROP_BIT),
 };
 //=====================================================================================
 //  Neutral definition
@@ -70,8 +93,8 @@ typedef struct {
 class CSimButton: public CStreamObject
 {
 public:
-  SJoyDEF *      pjoy;          // Joystick descriptor
-  int            joyn;          // Joystick numer
+  char					 devc[64];
+  JoyDEV				*jdev;					// Joystick device		
   Tag            kset;          // Ket set
   Tag            cmde;          // Key command
   int            nBut;          // Button number
@@ -83,14 +106,19 @@ public:
  ~CSimButton();
   int   Read(SStream * stream, Tag tag);
   bool  Tr01(U_INT st);
-  //---Inline -----------------------------------------
+	//----------------------------------------------------
+  //---Inline ------------------------------------------
   inline void LinkTo(CKeyDefinition *d) {kdf = d;}
   inline CKeyDefinition *GetKey() {return kdf;}
+	//----------------------------------------------------
+	JoyDEV *GetDevice()			{return jdev; }
+	int     GetNo()					{return nBut; }
 };
+
 //=============================================================================
 //  Structure to describe a Joystick
 //=============================================================================
-class SJoyDEF
+class JoyDEV
 { 
 public:
   short           njs;				// Internal number
@@ -99,30 +127,40 @@ public:
 	char						nbt;				// Number of buttons
 	char						nht;				// Number of hat
 	char						uht;				// Use this hat
-	char						rfu;
+	char						use;				// Use this joystick
 	//--------------------------------------------------------------
-  float         * axeData;		// array of float per axes
-	float				  * axePrev;		// previous value
+  float           axeData[JOY_AXE_NBR];		// array of float per axes
+	float				    axePrev[JOY_AXE_NBR];		// previous value
+	float           axeIncr[JOY_AXE_NBR];		// Axe increment
   CSimButton    * mBut[32];		// Array of pointer to button
   U_INT			      but;				// One bit per button
 	U_INT						hat;				// Hat position
-	SDL_Joystick  *	spj;				// SDL joystick
-	char          * dName;			// Device name 
+	U_INT						phat;				// Previous hat value
+	U_INT						hpos;				// Hat position
+	char            dName[64];	// Device name 
+	//--- Windows area ---------------------------------------------
+	JOYCAPS         jCap;				// Capability
   //--------------------------------------------------------------
 public:
-  SJoyDEF();
- ~SJoyDEF();
-	void	UpdateSDL();
-	bool	CreateSDL(int k);
+  JoyDEV(int k);
+ ~JoyDEV();
 	U_INT HasMoved(CSimAxe *axe);
+	void	GetJoystickName(int index, char *key, char *buf);
+	void	Refresh();
+	void	StoreAxe(char No,DWORD raw);
+	bool	HandleHat();
+	//-------------------------------------------------------------------------
+	bool	HatUnmoved();
+	bool	NotNamed(char *n)   {return (strcmp(dName,n) != 0);}
+	void	SaveVal();
+	void	RemoveButton(CSimButton *btn);
+	void  StoreButton(int n,CSimButton *b);	
   //-------------------------------------------------------------------------
 	inline char   *getDevName()     {return dName;}
-	inline void	PushVal()	{int dim = nax * sizeof(float); memcpy(axePrev,axeData,dim); }
   //-------------------------------------------------------------------------
 	inline char 				jNumber()													{return njs;}
 	inline char					hNumber()													{return nht;}
 	inline char					HatUsed()													{return uht;}
-  inline void         StoreVector(int n,CSimButton *b)  {n &= 31; mBut[n] = b;}
   inline CSimButton  *GetButton(int n)                  {n &= 31; return mBut[n];}
   inline int          JoystickNo()                      {return njs;}
 	inline void					SetHat(char n)										{uht = n;}
@@ -143,9 +181,10 @@ public:
 	char			  idn[8];		// Tag name for debug
 	//---------------------------------------------------------
   char       *name;     // axe name to display in user window
+	char        devc[64];	// Device controler
   Tag         gen;      // Generic name
   Tag         cmd;      // Datatag
-  SJoyDEF *  pJoy;			// device pointer
+	JoyDEV		 *jdev;			// Device pointer
 	short       joyn;			// Joystick number
   short       iAxe;     // device related axe number
   float       inv;			// invert value sign
@@ -159,6 +198,7 @@ public:
   //--------------------------------------------------------------
 public:
   CSimAxe();
+ ~CSimAxe();
   int   Read (SStream * st, Tag tag);
   void  Copy (CSimAxe *from);
   bool  NotAs(CSimAxe *axe);
@@ -167,18 +207,20 @@ public:
 	void	Assign(CSimAxe *axn);
 	void  Assignment(char *edt,int s);
 	//--------------------------------------------------------------
+	bool	NoDevice()		{return (*devc == 0);}
+	bool  NulDev()			{return (strcmp(devc,"None") == 0);}
 	bool	IsConnected(U_INT m)
-	{	U_INT sel = m & msk;	return ((sel) && (pJoy != 0));  }
+	{	U_INT sel = m & msk;	return ((sel) && (jdev != 0));  }
 	//--------------------------------------------------------------
 	inline void				 SetATTN(float v)	{attn = v;}
 	inline float			 GetATTN()			{return attn;}
   //--------------------------------------------------------------
 	inline void				 Invert()				{inv = -inv;}
-	inline char       *GetDevice()		{return (pJoy)?(pJoy->dName):("");}
-  inline void        Clear()        {pJoy = 0; inv = +1;}
+	inline char       *GetDevice()    {return (jdev)?(jdev->dName):("");}
+	inline void				 Clear()				{jdev = 0; inv =+1; *devc = 0;}
   inline char       *GetName()      {return name;}
   inline int         Positive()     {return pos;}
-  inline bool        IsUnassigned() {return (0 == pJoy);}
+  inline bool        IsUnassigned() {return (0 == jdev);}
   inline int         AxeNo()        {return iAxe;}
   inline int         GetInvert()    {return (inv==1)?(0):(1);}
 };
@@ -217,8 +259,7 @@ typedef enum
 
 } EAllAxes;
 //=====================================================================================
-typedef void(AxeDetectCB(CSimAxe *, Tag));
-typedef void(ButtonDetectCB(SJoyDEF *jsd, int iButton, Tag id));
+typedef void(JoyDetectCB(char code,JoyDEV *J,CSimAxe *A,int B,Tag W));
 //=====================================================================================
 #define JOY_AXIS_NUMBER   30
 #define JOY_TYPE_PLAN   0         // Plane axis
@@ -249,18 +290,13 @@ class CJoysticksManager : public CStreamObject
 {	//---Initial vector --------------------------------------------------
 	typedef void (CJoysticksManager::*VINIT)(SJoyDEF *jp);	// Rending vector
 	//--------------------------------------------------------------------
-private:
-  CJoysticksManager();
-
-  static CJoysticksManager instance;
-
 public:
-  static CJoysticksManager& Instance() { return instance; }
-
-  ~CJoysticksManager();
+	CJoysticksManager();
+ ~CJoysticksManager();
 	void						PreInit();
   void            Init( );
-	void						CreateDevList(char **men,int n);
+	void						CreateDevList(char **men,U_INT n);
+	void						CollectDevices();
 	//--------------------------------------------------------------------
 	bool						IsBusy();
 	void						SetFree();
@@ -274,26 +310,22 @@ public:
   void            NeutralMark(int nx,U_CHAR type);
 	//--------------------------------------------------------------------
   void            Update();
-	void						DetectMove(SJoyDEF * p);
+	void						DetectMove(JoyDEV * p);
 	void            CheckControl(Tag tag);
 	//--------------------------------------------------------------------
-	void						ConnectAll();
-	void						Disconnect(U_INT m);
+	void						JoyConnectAll();
+	void						JoyDisconnect(U_INT m);
 	void						Reconnect(U_INT m);
 	//--------------------------------------------------------------------
   float           Neutral(float f, int nx);
   float           AxeVal(CSimAxe *pa);
 	float           RawVal(CSimAxe *pa);
-  bool            StartDetectMoves(AxeDetectCB * pFunc, Tag id);
-  void            StopDetectMoves(void);
+	bool						StartDetection(JoyDetectCB *F, Tag W);
 	//----Read values ------------------------------------------------------
 	void						Poll(EAllAxes a,float &v);
-	//----In line to start button detection --------------------------------
-	bool						StartDetectButton(ButtonDetectCB *pcb, Tag id);
-  void            StopDetectButton(void);
 	//----------------------------------------------------------------------
-  SJoyDEF        *Find(char * name);
-  SJoyDEF        *GetJoystickNo(int No);
+	JoyDEV         *Find(char *name);
+	JoyDEV         *GetJoystickNo(U_INT No);
   //------Remap a message to given tag -------------------------------------
   void            MapTo(Tag gen, Tag usr);
   Tag             TagFrom(Tag gen);
@@ -303,13 +335,13 @@ public:
   //--- READ CONFIG FILE ---------------------------------------------------
 	void						ProcessHat(SStream *stream);
   bool            ProcessButton(CSimButton *sbt);
-  void            RemoveButton(SJoyDEF *jsd,int bt);
-  CSimButton     *AddButton(SJoyDEF *jsd,int nb,CKeyDefinition *kdf);
-  bool            AssignCallBack(SJoyDEF * pJoy,int k);
+	void            RemoveButton(CSimButton *btn);
+  CSimButton     *AddButton(JoyDEV *J,int nbt,CKeyDefinition *kdf);
+  bool            AssignCallBack(JoyDEV * J,int k);
 	//------------------------------------------------------------------------
   void            AssignAxe(CSimAxe *axe, CSimAxe *axn, U_CHAR all);
 	void						Clear(CSimAxe *axn,U_CHAR all);
-	void						UseHat(SJoyDEF *jsp,char s);
+	void						UseHat(JoyDEV *jsp,char s);
   //------------------------------------------------------------------------
   bool            ProcessAxe(CSimAxe *from);
   CSimAxe        *GetAxe(Tag tag);
@@ -322,7 +354,8 @@ public:
   void            SendGroup(U_INT gr,Tag cmd,U_CHAR nbu);
   void            ClearGroupPMT();
   //------------------------------------------------------------------------
-  void            SaveButtonConfig(SStream *st,SJoyDEF *jsd);
+	void						SaveOneButton(SStream *st,CSimButton *sbt);
+	void            SaveButtonConfig(SStream *st,JoyDEV *jsd);
   void            SaveAxisConfig(SStream *st);
   void            SaveConfiguration();
   void            SetNulleArea(float n,char m); 
@@ -335,8 +368,7 @@ public:
   //------------------------------------------------------------------------
 protected:
 	void					EnumSDL();
-  void          HandleButton(SJoyDEF * pJoy);
-	bool					HandleHat(U_INT hat);
+	void          HandleButton(JoyDEV * jdv);
   //----ATTRIBUTES ----------------------------------------------------------
 private:
 	//-------------------------------------------------------------------------
@@ -344,24 +376,21 @@ private:
 	//-------------------------------------------------------------------------
 	char    modify;
   char		busy;		// Library used 0 = PU 1 = SDL
-	char		use;		// Joystick use
-	char		rfu1;		//reserved
+	char		nDev;		// Number of devices
 	//--- HAT control -------------------------------------
 	char    uht;										// Hat used
 	char		jsh;										// Hat joystick
 	//--- list of components -------------------------------
-	std::vector<SJoyDEF *>   joyQ;
+	std::vector<JoyDEV *>     devQ;
   std::map<Tag,CSimAxe *>   mapAxe;
   CSimAxe AxesList[JOY_AXIS_NUMBER];
   CSimAxe AxeMoved;
+	std::vector<CSimButton*> butQ;
 	//------------------------------------------------------
   Tag     wmID;											// CFuiWindow ID for move callback
-  Tag     wbID;											// CFuiWindow ID for button detect callback
-  AxeDetectCB    *pAxeCB;						// function callback for axe move detection
-  ButtonDetectCB *pButCB;						// function callback for button detection
+	JoyDetectCB		 *jFunCB;						// Detecte joystick moves
 	//-----Control commande -------------------------------
 	Tag			cmde;										// Current command
-	int 		Time;										// Hat timer
   //-----Static tables ----------------------------------
   float   nValue;                 // Neutral value [0,1]
 	//-----------------------------------------------------

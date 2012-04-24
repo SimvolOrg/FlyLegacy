@@ -1194,7 +1194,7 @@ void AutoPilot::Disengage(char gr)
   ailS->Neutral();							// Aileron to O
   rudS->Neutral();
 	flpS->SetPosition(0);
-	globals->jsm->ConnectAll();
+	globals->jsm->JoyConnectAll();
 	ugaz		= 0;
 	rend		= 0;
 	//---- Pull up if altitude is lower than 500 ---------
@@ -2252,8 +2252,8 @@ void AutoPilot::SetGasControl(char s)
 	if (AP_DISENGD == lStat)	return;
 	//--- Set gas control ------------------
 	ugaz	= s;
-	if (0 == ugaz)	globals->jsm->ConnectAll();
-  else						globals->jsm->Disconnect(JS_SURF_APL);
+	if (0 == ugaz)	globals->jsm->JoyConnectAll();
+  else						globals->jsm->JoyDisconnect(JS_SURF_APL + JS_GROUPBIT);
 	if (0 == ugaz)	ailS->Neutral();
 	return;
 }

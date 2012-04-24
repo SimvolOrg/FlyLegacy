@@ -38,7 +38,7 @@
 #include "../Include/Ui.h"
 #include "../Include/FuiParts.h"
 #include "../Include/FuiKeyMap.h"
-
+#include "../Include/joysticks.h"
 using namespace std;
 //===========================================================================
 extern bool GroupUnbind(CKeyDefinition *kdf,int code);
@@ -455,9 +455,9 @@ int a = 0;
 //---------------------------------------------------------------------------
 //  Link to new button, return previous
 //---------------------------------------------------------------------------
-CSimButton *CKeyDefinition::LinkTo(CSimButton *bt)
+CSimButton *CKeyDefinition::LinkTo(CSimButton *btn)
 { CSimButton *old = jbtn; 
-  jbtn = bt; 
+  jbtn			= btn;
   return old;
 }
 //===========================================================================

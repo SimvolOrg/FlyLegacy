@@ -147,6 +147,7 @@ public:
 	virtual bool	NotManual()			{return true;}
 	virtual bool	ToggleMode()		{return false;}	// Toggle mode
 	//------------------------------------------------------------
+	virtual void  ActivateView (float A) {}
   virtual void  HeadPitchUp (void) {}
   virtual void  HeadPitchDown (void) {}
   // sdk: User position method for external cameras position.
@@ -378,7 +379,8 @@ public:
 	void			CameraReferential();
 	Tag       GetCockpitPanel (void);
   void      SetUpVector(SVector &ori);
-  void      ActivateCockpitPanel (Tag tag);
+  void      ActivateCockpitPanel(Tag tag);
+	void			ActivateView(float a);
   void      SetPanel(Tag id,CPanel *p);
   void      ChangeResolution();
   void      DrawPanel();

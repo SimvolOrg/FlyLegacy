@@ -62,7 +62,8 @@ class CFuiAxis: public CFuiWindow
 	CFuiCheckbox      *chkHAT;                // Hat checkbox
   //-------Detected axe -------------------------------------
   int                axeNo;                 // Selected axe
-  SJoyDEF           *jsd;                   // Joystick descriptor
+ // SJoyDEF           *jsd;                   // Joystick descriptor
+	JoyDEV						*jsd;										// Selected device
   //-------AXE LIST -----------------------------------------
   U_CHAR              all;                  // All option
   U_CHAR              rfu;									// Modify indicator
@@ -70,7 +71,8 @@ class CFuiAxis: public CFuiWindow
 	//--- Current selected -----------------------------------
 	CSimAxe						 *axe;									// Current axe
   //----Current selected joystick --------------------------
-	SJoyDEF						 *jsp;									// Selected
+	//SJoyDEF						 *jsp;									// Selected
+	JoyDEV						*jsp;										// Device selected
 	//--------------------------------------------------------
   static char *vehMENU[];
 	static char *devMENU[];										// List of device
@@ -82,6 +84,7 @@ public:
   void      NewVehicleType(U_INT No);
   void      FillAxes(int tp);
   void      AxeDetected(CSimAxe *nax);
+	void			HatDetected(JoyDEV *jsd);
 	//-------ACTIONS -----------------------------------------
   void      AxeAssign();
   void      AxeClear();
@@ -90,7 +93,7 @@ public:
 	void			AxeForce(float inc);
 	void			AxeNeutral();
 	void			ButtonList(char *name);
-	void			ButtonClick(SJoyDEF *jsd, int nbut);
+	void			ButtonClick(JoyDEV *jsd, int nbut);
 	void			HatControl();
 	//-------DRAWING -----------------------------------------
 	void			ShowNeutral();

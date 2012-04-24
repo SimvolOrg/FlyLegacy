@@ -500,7 +500,7 @@ void CKeyLine::SetCode(int cde)
 void CKeyLine::SetJoysDef(CSimButton *sbt)
 { jtext[0] = 0;
   if (0 == sbt)   return;
-  SJoyDEF *jsd = sbt->pjoy;
+	JoyDEV  *jsd = sbt->jdev;
   if (0 == jsd)   return;
   _snprintf(jtext,32,"(J%1d) button%02d",jsd->njs,sbt->nBut);
   return;

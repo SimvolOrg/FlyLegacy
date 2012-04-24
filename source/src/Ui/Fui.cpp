@@ -1111,9 +1111,7 @@ bool CFuiZoomButton::MouseStopClick (int x, int y, EMouseButton button)
 //==================================================================================
 CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short lim)
 : CFuiComponent(0,0,wd,ht)
-{ char s[8];
-  char iniParm[64];
-  this->state = FUI_WINDOW_INIT;
+{ this->state = FUI_WINDOW_INIT;
   this->windowId = wId;
   type = COMPONENT_WINDOW;
   widgetTag = 'defa';
