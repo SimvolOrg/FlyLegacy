@@ -66,10 +66,11 @@ class C_QGT;
 #define OSM_SCHOOL		(6)
 #define OSM_COLLEGE		(7)
 #define OSM_HOSPITAL	(8)
-#define OSM_TREE      (9)
-#define OSM_LIGHT     (10)
+#define OSM_HOTEL			(9)
+#define OSM_TREE      (10)
+#define OSM_LIGHT     (11)
 //---------------------------------
-#define OSM_MAX       (11)
+#define OSM_MAX       (12)
 //==========================================================================================
 // OSM database Request
 //==========================================================================================

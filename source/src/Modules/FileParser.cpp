@@ -1831,21 +1831,33 @@ int COBJparser::Decode(char *fn,char t)
 	char s[256];
   //--- Object type, this should be "WaveFront"
   pgets (s, 256, p);
-	if (strncmp (s, "# WaveFront ",12) != 0)							return StopParse(p,"Format");
 	//--- Bypass name ----------------------------------------------
 	GetStatement(s);
 	//--- Check if material is used --------------------------------
 	while (GetStatement(s))
-	{	if (ParseMaterial(s))							continue;
+	{	if (*s == '#')										continue;
+		if (ParseName(s))									continue;
+		if (ParseLibrary(s))							continue;
+		if (ParseMaterial(s))							continue;
 		if (Parse3Vertex(s))							continue;
 		if (Parse3TCoord(s))							continue;
 		if (Parse3Normes(s))							continue;
+		if (Parse3NFaces(s))							continue;
 		if (Parse4Faces(s))								continue;
 		if (Parse3Faces(s))								continue;
+		
 	}
-	//--- Cloce file  ---------------------------
+	//--- Close file  ---------------------------
 	if (pod)  pclose(pod);
 	return M3D_LOADED;
+}
+//------------------------------------------------------------------------------
+//	Check for Library
+//------------------------------------------------------------------------------
+bool COBJparser::ParseLibrary(char *s)
+{ char lib[128];
+	int nf  = sscanf(s,"mtllib %128s ",lib);
+	return (nf == 1);
 }
 //------------------------------------------------------------------------------
 //	Check for material
@@ -1854,6 +1866,15 @@ bool COBJparser::ParseMaterial(char *s)
 { int nf  = sscanf(s,"usemtl %128s ",txd.name);
 	return (nf == 1);
 }
+//------------------------------------------------------------------------------
+//	Check for name
+//------------------------------------------------------------------------------
+bool COBJparser::ParseName(char *s)
+{ char txt[128];
+	int nf  = sscanf(s,"g %128s ",txt);
+	return (nf == 1);
+}
+
 //------------------------------------------------------------------------------
 //	Check for vertex
 //------------------------------------------------------------------------------
@@ -1879,7 +1900,6 @@ bool COBJparser::Parse3TCoord(char *s)
 	GN_VTAB *vt		= new GN_VTAB();
 	vt->Copy(v);
 	double T = vt->VT_T;
-	vt->VT_T = 1 - T;
 	vtex.push_back(vt);					// Add to list
 	return true;
 }
@@ -1896,7 +1916,7 @@ bool COBJparser::Parse3Normes(char *s)
 	return true;
 }
 //------------------------------------------------------------------------------
-//	Build a triangle
+//	Build a triangle with vertex and texture only
 //------------------------------------------------------------------------------
 bool COBJparser::BuildTriangleVertex(int dst, U_INT vt, U_INT nt)
 {	GN_VTAB *tab = tri.vtx + dst;
@@ -1910,6 +1930,23 @@ bool COBJparser::BuildTriangleVertex(int dst, U_INT vt, U_INT nt)
 	tab->VN_Z	= 0.5;
 	return true;
 }
+//------------------------------------------------------------------------------
+//	Build a triangle with vertex and texture only
+//------------------------------------------------------------------------------
+bool COBJparser::BuildTriangleVertex(int dst, U_INT vt, U_INT nt,U_INT nm)
+{	GN_VTAB *tab = tri.vtx + dst;
+	if (vt >= vpos.size())		return false;
+	*tab      = *vpos[vt];
+	if (nt >= vtex.size())		return false;
+	tab->VT_S = vtex[nt]->VT_S;
+	tab->VT_T = vtex[nt]->VT_T;
+	if (nm >= vnor.size())		return false;
+	tab->VN_X = vnor[nm]->VN_X;
+	tab->VN_Y = vnor[nm]->VN_Y;
+	tab->VN_Z	= vnor[nm]->VN_Z;
+	return true;
+}
+
 //------------------------------------------------------------------------------
 //	Build a 2 triangle face T(V0,V1,V2) and T(V0,V2,V3)
 //	A positive orientable (CCW) is used
@@ -1958,6 +1995,28 @@ bool COBJparser::Parse3Faces(char *s)
 	vtri.push_back(T);
 	return ok;
 }
+//------------------------------------------------------------------------------
+//	Build a 1 triangle face T(V0,V1,V2) and T(V0,V2,V3)
+//	A positive orientable (CCW) is used
+//------------------------------------------------------------------------------
+bool COBJparser::Parse3NFaces(char *s)
+{	int v0,v1,v2;
+	int	n0,n1,n2;
+	int t0,t1,t2;
+	OBJ_TRIANGLE *T = 0;
+	int nf	= sscanf(s,"f %d/%d/%d  %d/%d/%d %d/%d/%d ", &v0,&t0,&n0,&v1,&t1,&n1,&v2,&t2,&n2);
+	if (9 != nf)		return false;
+	//--- Generate 1 Triangles -----------------
+	bool ok = true;
+	ok &= BuildTriangleVertex(0,v0,t0,n0);
+	ok &= BuildTriangleVertex(1,v1,t1,n1);
+	ok &= BuildTriangleVertex(2,v2,t2,n2);
+	T		= new OBJ_TRIANGLE();
+	*T	= tri;
+	vtri.push_back(T);
+	return ok;
+}
+
 //------------------------------------------------------------------------------
 //	Build a Part for a 3D model
 //	Not yet implemented because we must compute normal vector if they are

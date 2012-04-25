@@ -342,9 +342,10 @@ char replOBJ[OSM_MAX] = {
 	FOLDER_OSM_BLDG,				// 6  OSM_SCHOOL			(6)
 	FOLDER_OSM_BLDG,				// 7  OSM_COLLEGE			(7)
 	FOLDER_OSM_BLDG,				// 8  OSM_HOSPITAL		(8)
+	FOLDER_OSM_BLDG,				// 9  OSM_HOTEL				(9)
 	//----------------------------------------------------------
-	FOLDER_OSM_TREE,				// 9  OSM_TREE				(9)
-	FOLDER_OSM_LITE,				// 10 OSM_LIGHT				(10)
+	FOLDER_OSM_TREE,				// 10  OSM_TREE				(10)
+	FOLDER_OSM_LITE,				// 11 OSM_LIGHT				(11)
 };
 
 //================================================================================

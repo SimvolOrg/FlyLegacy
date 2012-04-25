@@ -109,7 +109,13 @@ OSM_CONFP  liteVAL[] = {
 		{"YES",							OSM_LIGHT,			OSM_PROP_NONE},
 		{EndOSM,						0},									// End of table
 };
-
+//==========================================================================================
+//  List of LIGHT VALUES Tags
+//==========================================================================================
+OSM_CONFP	tourismVAL[] = {
+	{"HOTEL",							OSM_HOTEL,			OSM_PROP_BLDG},
+	{"HOSTEL",						OSM_HOTEL,			OSM_PROP_BLDG},
+};
 //==========================================================================================
 //  List of admitted Tags
 //==========================================================================================
@@ -117,6 +123,7 @@ OSM_TAG TagLIST[] = {
 	//--- TAG -----Value Table ---Builder -------Prop --- Layer ---
 	{"AMENITY",			amenityVAL,		OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
 	{"BUILDING",		buildingVAL,	OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
+	{"TOURISM",     tourismVAL,		OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
 	{"LIT",					liteVAL,			OSM_BUILD_LITE, 1, OSM_LAYER_LITE},
 	{EndOSM,					0},									// End of table
 };
@@ -356,6 +363,7 @@ void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
 	//--- Change block parameter assignation ------
 	sty->AssignBPM(&bpm);
 	D2_Group *grp = sty->GetGroup();
+	if (0 == bpm.flNbr)	grp->GenFloorNbr();
 	//--- Get everything in bpm --------------------
 	bpm.style = sty;
 	bpm.group	= grp;
@@ -386,6 +394,7 @@ void OSM_Object::ChangeStyle(D2_Style *sty, CBuilder *B)
   bpm.opt.Raz(OSM_PROP_REPL);
 	bpm.roofM	= 0;
 	bpm.roofP	= 0;
+	bpm.flNbr = 0;
 	//--- Check for group change ------------
 	D2_Group *grp = sty->GetGroup();
 	if (bpm.group == grp)   return AssignStyle(sty,B);
@@ -484,7 +493,7 @@ void OSM_Object::BuildLightRow(double ht)
 	part		 = new C3DPart();
 	part->AllocateOsmLIT(bpm.side);
 	TEXT_INFO txd;
-	strncpy(txd.name,"GLOBE.TIF",FNAM_MAX);
+	strncpy(txd.name,"GLOBE.PNG",FNAM_MAX);
 	txd.Dir = TEXDIR_OSM_MD;
 	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
 	part->SetTREF(ref);
@@ -497,7 +506,6 @@ void OSM_Object::BuildLightRow(double ht)
 		dst->VT_Z = pps->z + H;
 		dst++;
 	}
-	//--- Z correction for drawing in terrain ------
 	return;
 }
 //-----------------------------------------------------------------

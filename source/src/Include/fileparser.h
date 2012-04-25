@@ -465,14 +465,18 @@ public:
 	C3DPart *BuildOSMPart(char dir);
 	//---------------------------------------------------------
 	int		Decode(char *fn, char t);
+	bool	ParseLibrary(char *s);
 	bool	ParseMaterial(char *s);
+	bool	ParseName(char *s);
 	bool	Parse3Vertex(char *s);
 	bool	Parse3TCoord(char *s);
 	bool	Parse3Normes(char *s);
+	bool	Parse3NFaces(char *s);
 	bool	Parse4Faces(char *s);
 	bool	Parse3Faces(char *s);
 	//----------------------------------------------------------
 	bool	BuildTriangleVertex(int dst, U_INT nv, U_INT nt);
+	bool	BuildTriangleVertex(int dst, U_INT vt, U_INT nt,U_INT nm);
 	//----------------------------------------------------------
 	char *TextureName()	{return txd.name;}
 };
