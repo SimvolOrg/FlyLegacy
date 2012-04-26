@@ -214,7 +214,7 @@ public:
 		//-----------------------------------------------------------
 		void					LoadVBO();
 		//-----------------------------------------------------------
-		void          BuildOSMPart(CShared3DTex *ref, char L,int nv,GN_VTAB *S);
+		void          MakeOSMPart(CShared3DTex *ref, char L,int nv,GN_VTAB *S);
 		void					AddToPack(OSM_Object *obj);
 		//-----------------------------------------------------------
 		void					Reallocate(char opt);

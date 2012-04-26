@@ -458,7 +458,9 @@ void CBuilder::BuildOBJ(OSM_CONFP *CF)
 	BDP.error		= 0;
 	BDP.opt.Rep(CF->prop);								// initial property
 	BDP.error		= ConvertInFeet();
+	
 	OSM_Object *obj = 	new OSM_Object(CF);
+	BDP.obj		= obj;
   osmB			= obj;
 	GetSuperTileNo(&BDP.geop, &BDP.qgKey, &BDP.supNo);
 	return (this->*osmCB[build])(type);}
@@ -491,7 +493,6 @@ void CBuilder::MakeBLDG(U_INT tp)
 	//--- Set generation parameters ---------
 	session->GetaStyle(bpm);
 	osmB->AssignStyle(BDP.style,this);
-	//BDP = osmB->GetParameters();
 	//--------------------------------------
 	return;
 }
@@ -505,12 +506,6 @@ void CBuilder::MakeLITE(U_INT tp)
 	session->AddLight(osmB);
 	extp.Clear();
 	return;
-}
-//-------------------------------------------------------------------
-//	Make a Light row.  Compute light height from terrain
-//-------------------------------------------------------------------
-void CBuilder::MakeWALL(U_INT tp)
-{
 }
 //-------------------------------------------------------------------
 //	Edit tag
@@ -1275,21 +1270,22 @@ D2_POINT *CBuilder::AllocateBevel(int nb)
 	return bevel;
 }
 //----------------------------------------------------------------
-//	Translate a point (this is horizontal rotation only)
-//	Tx,Ty,Tz define the local translation vector
+//	Translate a point (this is horizontal rotation only) to
+//	real world coordinates, from local coordinates (lx,ly)
+//	Tx,Ty,Tz define the translation vector
 //	It must be rotated back to world coordinates before to be
 //	added to the POINT
 //----------------------------------------------------------------
-void CBuilder::TranslatePoint(D2_POINT &p, double tx, double ty, double tz)
+void CBuilder::TranslatePoint(D2_POINT &P, CVector &T)
 {	//---- Adjust local components ----------------
-	p.lx	+= tx;
-	p.ly	+= ty;
-	p.z   += tz;
+	P.lx	+= T.x;							//tx;
+	P.ly	+= T.y;							//ty;
+	P.z   += T.z;							//tz;
 	//---- Compute real translation vector -------
 	PositiveROT(sinA, cosA);
-	Rotate(tx, ty);
-	p.x		+= rx;
-	p.y		+= ry;
+	Rotate(T.x,T.y);
+	P.x		+= rx;
+	P.y		+= ry;
 	return;
 }
 //----------------------------------------------------------------
@@ -1697,6 +1693,7 @@ D2_Group::D2_Group(char *gn, D2_Session *s)
 	ssn				= s;
 	tr				= ssn->HasTrace();
 	rlgr = rsuf = rsid	= 0;
+	*pTag = *pVal = 0;
 	strncpy(name,gn,64);
 	name[63]	= 0;
 	sfMin			= 0;
@@ -1824,6 +1821,9 @@ bool D2_Group::DecodeParam(char *prm)
 	//--- Check for side to infinity ------------------------
 	nf = sscanf(buf," SIDES [ %u , * ]",   &sdMin);
 	if	(nf == 1) {opt.Set(D2_GRP_SIDE);	return true; }
+	//--- Check for a tag value pair ------------------------
+	nf = sscanf(buf,"TAG ( %32[^ =)] = %32[^ )] ) ",pTag, pVal);
+	if  (nf == 2)	{return true;}
 	//--- Check floor number --------------------------------
 	nf = sscanf(buf," FLOOR [ %u , %u ]",   &flMin, &flMax);
 	if  (2 == nf)	{return true; }
@@ -1851,6 +1851,15 @@ bool D2_Group::DecodeParam(char *prm)
 void	D2_Group::AddStyle(D2_Style *sty)
 {	styleQ.PutLast(sty);
 	return;
+}
+//-----------------------------------------------------------------
+//	Evaluate Tag value
+//-----------------------------------------------------------------
+int D2_Group::ValueTag(char *T, char *V)
+{	if ((0 == T) ||(0 == V))	return 0;
+	if (strcmp(pTag,T) != 0)	return 0;
+	if (strcmp(pVal,V) != 0)	return 0;
+	return 100;
 }
 //-----------------------------------------------------------------
 //	Evaluate perimeter
@@ -1901,6 +1910,9 @@ int D2_Group::ValueLength(double lg)
 //-----------------------------------------------------------------
 int D2_Group::ValueGroup(D2_BPM *bpm)
 {	int val = 0;
+	char *tag = bpm->obj->GetTag();
+	char *vtg = bpm->obj->GetVal();
+	val += ValueTag(tag,vtg);
 	val += ValuePosition(bpm->geop);
 	val += ValueSurface (bpm->surf);
 	val += ValueSide    (bpm->side);

@@ -107,6 +107,7 @@ OSM_CONFP  buildingVAL[] = {
 //==========================================================================================
 OSM_CONFP  liteVAL[] = {
 		{"YES",							OSM_LIGHT,			OSM_PROP_NONE},
+		{"RESIDENTIAL",			OSM_LIGHT,			OSM_PROP_NONE},
 		{EndOSM,						0},									// End of table
 };
 //==========================================================================================
@@ -123,8 +124,9 @@ OSM_TAG TagLIST[] = {
 	//--- TAG -----Value Table ---Builder -------Prop --- Layer ---
 	{"AMENITY",			amenityVAL,		OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
 	{"BUILDING",		buildingVAL,	OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
-	{"TOURISM",     tourismVAL,		OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
+//	{"TOURISM",     tourismVAL,		OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
 	{"LIT",					liteVAL,			OSM_BUILD_LITE, 1, OSM_LAYER_LITE},
+	{"HIGHWAY",			liteVAL,			OSM_BUILD_LITE, 1, OSM_LAYER_LITE},
 	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
@@ -201,6 +203,7 @@ void  GetOSMconfig(char *t ,char *v, OSM_CONFP &V)
 	}
 	//--- tag not supported --------------------
 	V.otype = 0;
+	STREETLOG("Tag (%s,%s) Skipped",t,v);
 	return;
 }
 //==========================================================================================
@@ -233,6 +236,8 @@ OSM_REP *GetOSMreplacement(char *T, char *V, char *obj)
 }
 //==========================================================================
 //  OSM Object
+//	NOTE:		The first PART is for the main building
+//					Additional parts may come from accessory like climbox, etc
 //==========================================================================
 OSM_Object::OSM_Object(OSM_CONFP *CF)
 {	type				= CF->otype;
@@ -242,11 +247,11 @@ OSM_Object::OSM_Object(OSM_CONFP *CF)
 	State				= 1;
 	bpm.stamp		= 0;
 	bpm.group		= 0;
-	tag					= 0;
-	val					= 0;
+	bpm.obj			= this;
 	part				= 0;
 	orien       = 0;
 	style				= 0;
+	tag	= val		= 0;
 	if (CF->tag)	tag = Dupplicate(CF->tag,64);
 	if (CF->val)	val = Dupplicate(CF->val,64);
 }
@@ -257,10 +262,17 @@ OSM_Object::OSM_Object(OSM_CONFP *CF)
 //-----------------------------------------------------------------
 OSM_Object::~OSM_Object()
 {	int a = 0;
-	if (tag)			delete [] tag;
-	if (val)			delete [] val;
-	if (part)			delete part;
-	//TRACE("DELETE BUILDING %d",bpm.stamp);
+	if (tag)	delete tag;
+	if (val)	delete val;
+	RazPart();
+}
+//-----------------------------------------------------------------
+//	Clear part
+//-----------------------------------------------------------------
+void OSM_Object::RazPart()
+{	if (part)	 delete part;	
+	part	= 0;
+	return;
 }
 //-----------------------------------------------------------------
 //	Transfer Queue and Clear items
@@ -282,12 +294,11 @@ void OSM_Object::Invert(Queue<D2_POINT> &H)
 	D2_POINT *pp;
 	for (pp = base.Pop(); pp != 0; pp = base.Pop())
 	{	H.PutHead(pp);	}
-	if (part)		delete part;
-	part = 0;
+	RazPart();
 	return;
 }
 //-----------------------------------------------------------------
-//	Adjust translation vector
+//	Adjust translation vector with altitude
 //-----------------------------------------------------------------
 void OSM_Object::AdjustZ(CVector *T)
 {	if (zned)	T->z += alti;
@@ -379,7 +390,7 @@ void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
 	C3DPart      *prt  = new C3DPart();
 	CShared3DTex *ref  = grp->GetTREF();
 	prt->Reserve(ref);
-	if (part)	delete part;
+	RazPart();
 	part	= prt;
 	B->RiseBuilding(&bpm);
 	B->SaveBuildingData(prt);
@@ -405,7 +416,6 @@ void OSM_Object::ChangeStyle(D2_Style *sty, CBuilder *B)
 	AssignStyle(sty,B);
 	return;
 }
-
 //-----------------------------------------------------------------
 //	Translate all vertices to SuperTile center
 //-----------------------------------------------------------------
@@ -417,9 +427,11 @@ GN_VTAB *OSM_Object::StripToSupertile()
 	double rdf      = cos(rad);
 	SPosition   p1	= GetPosition();
 	CVector T				= FeetComponents(p0, p1,rdf);
-	if (zned)    T.z+= alti;        
+	if (zned)    T.z+= alti;
+	//----------------------------------------------     
   U_INT nbv				= part->GetNBVTX();
 	if (0 == nbv)		return 0;
+	//--- Copy vertices from main part -------------
 	GN_VTAB *src	= part->GetGTAB();
 	GN_VTAB *vtx  = new GN_VTAB[nbv];
 	GN_VTAB *dst  = vtx;

@@ -22,6 +22,28 @@
 #include "../Include/3DMath.h"
 #include "../Include/TerrainUnits.h"
 //=============================================================================
+//  Class for transformation
+//=============================================================================
+class HTransformer	{
+	//--- Private components -------------------------------
+	double cn;												// Cosinus alpha
+	double sn;												// Sinus Alpha
+	double M0; 
+	double M1;
+	double M2; 
+	double M3;
+	//-----------------------------------------------------
+	double tx;
+	double ty;
+	double tz;											// Translation vector
+	//------------------------------------------------------
+	double rx,ry;										// Rotated tranlation
+	//--METHODS---------------------------------------------
+public:
+	HTransformer(double c, double s, SVector &t);
+	GN_VTAB ComputeRT(GN_VTAB *vtx);
+};
+//=============================================================================
 //  class for Terrain info
 //=============================================================================
 class GroundSpot {

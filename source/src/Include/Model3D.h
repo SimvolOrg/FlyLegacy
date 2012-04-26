@@ -192,7 +192,6 @@ public:
 	void		W3DRendering();
 	int 		Translate(SVector &T);
 	void		Append(TC_VTAB *tab, U_INT ofs, U_INT lg);
-//	void		Append(GN_VTAB *tab, U_INT ofs,U_INT lg);
 	void		ExtendOSM(int nbv,GN_VTAB *src);
 	void		AllocateIND();
 	void		ExtendGTB(int nbv);
@@ -226,6 +225,7 @@ public:
   inline void     AddFace(int nf)		{total += nf;}
 	//---------------------------------------------------------------
 	inline void     SetTREF(CShared3DTex *r)	{tRef = r;}
+	inline void			SetGTAB(int n, GN_VTAB *t){gTAB = t; NbVT = n;}
   inline CShared3DTex    *GetTREF()					{return tRef;}
   //----------------------------------------------------------------
 	inline GN_VTAB    *GetGTAB()						{return gTAB;}

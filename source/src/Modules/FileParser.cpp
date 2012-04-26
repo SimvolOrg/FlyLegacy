@@ -1789,7 +1789,8 @@ bool CBtParser::GetRegionElevation(REGION_REC &reg)
 //==================================================================================
 COBJparser::COBJparser(char t)
 	:CParser(t)
-{	GN_VTAB *V = new GN_VTAB;
+{	trfm = 0;
+	GN_VTAB *V = new GN_VTAB;
 	vpos.push_back(V);			// Add dummy vector 0
 	GN_VTAB *T = new GN_VTAB;
 	vtex.push_back(T);			// Add dummy texture
@@ -1814,6 +1815,16 @@ COBJparser::~COBJparser()
 //------------------------------------------------------------------------------
 void COBJparser::SetDirectory(char *dir)
 {	strncpy(txname,dir,TC_TEXTURE_NAME_DIM);
+	return;
+}
+//------------------------------------------------------------------------------
+//	Set directory 
+//------------------------------------------------------------------------------
+void COBJparser::SetTransform(CVector t,double c,double s)
+{	trfm	= 1;
+	T			= t;
+	S			= s;
+	C			= c;
 	return;
 }
 //------------------------------------------------------------------------------
@@ -1845,7 +1856,7 @@ int COBJparser::Decode(char *fn,char t)
 		if (Parse3NFaces(s))							continue;
 		if (Parse4Faces(s))								continue;
 		if (Parse3Faces(s))								continue;
-		
+		if (*s == 'g')										continue;
 	}
 	//--- Close file  ---------------------------
 	if (pod)  pclose(pod);
@@ -2027,6 +2038,19 @@ void COBJparser::BuildW3DPart()
 	
 }
 //------------------------------------------------------------------------------
+//	Transform the vertices
+//------------------------------------------------------------------------------
+void COBJparser::Transform(double c,double s,SVector T)
+{	HTransformer HT(c,s,T);
+	for (U_INT k=0; k < vtri.size(); k++)
+	{	OBJ_TRIANGLE *Tr = vtri[k];
+		HT.ComputeRT(Tr->vtx + 0);
+		HT.ComputeRT(Tr->vtx + 1);
+		HT.ComputeRT(Tr->vtx + 2);
+	}
+	return;
+} 
+//------------------------------------------------------------------------------
 //	Build a Part for OSM object
 //------------------------------------------------------------------------------
 C3DPart *COBJparser::BuildOSMPart(char dir)
@@ -2037,10 +2061,10 @@ C3DPart *COBJparser::BuildOSMPart(char dir)
 	GN_VTAB *dst = prt->GetGTAB();
 	//------------------------------------------------------------
 	for (U_INT k=0; k < vtri.size(); k++)
-	{	OBJ_TRIANGLE *T = vtri[k];
-		*dst++ = T->vtx[0];
-		*dst++ = T->vtx[1];
-		*dst++ = T->vtx[2];
+	{	OBJ_TRIANGLE *Tr = vtri[k];
+		*dst++ = Tr->vtx[0];
+		*dst++ = Tr->vtx[1];
+		*dst++ = Tr->vtx[2];
 	}
 	//---- Get a texture reference -------------------------------
 	txd.Dir = dir;
@@ -2050,5 +2074,4 @@ C3DPart *COBJparser::BuildOSMPart(char dir)
 	prt->SetTREF(ref);
 	return prt;
 }
-
 //===================================END OF FILE ==========================================

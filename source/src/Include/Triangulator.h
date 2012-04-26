@@ -143,6 +143,8 @@ struct D2_BPM {
 	U_SHORT	supNo;												// Super tile No
 	U_SHORT	rfu1;													// Reserved
 	//----------------------------------------------------
+	OSM_Object   *obj;										// Related object
+	//----------------------------------------------------
 	double        flHtr;									// Floor height
 	double				rdf;										// Reduction factor
 	U_INT					ident;									// Object identity
@@ -168,6 +170,9 @@ struct D2_BPM {
 	//-----------------------------------------------------
 public:
 	D2_BPM() {Clear();}
+~	D2_BPM()
+	{}
+
 	//-----------------------------------------------------
 void Clear()
 	{	mans	= 0;
@@ -631,6 +636,9 @@ class D2_Group: public  D2_Ratio {
 	char    rsuf;														// Renforced surface
 	char    rsid;														// Renforced side
 	char		rfu2;
+	//--- TAG-VALUE -----------------------------------------------
+	char		pTag[64];												// Tag parameter
+	char    pVal[64];												// Value parameter
 	//--- Texture parameters --------------------------------------
 	TEXT_INFO txd;													// Texture definition
 	CShared3DTex *tREF;											// Texture reference
@@ -673,12 +681,13 @@ public:
 	CRoofModel  *GetRoofModByNumber(char mans);
 	U_INT				 GetRoofNumber()	{return rmno;}
 	//---------------------------------------------------------------
-	int				   ValueGroup(D2_BPM *pm);
-	int				   ValuePosition(SPosition &p);
-	int					 ValueSurface(double sf);
-	int					 ValueSide(U_INT sd);
-	int					 ValueLength(double lg);
-	int					 GenFloorNbr();
+	int						ValueGroup(D2_BPM *pm);
+	int						ValueTag(char *T, char *V);
+	int						ValuePosition(SPosition &p);
+	int						ValueSurface(double sf);
+	int						ValueSide(U_INT sd);
+	int						ValueLength(double lg);
+	int						GenFloorNbr();
 	//--------------------------------------------------------------
 	void				 AddBuilding(OSM_Object *b);
 	void				 RemBuilding(OSM_Object *b);
@@ -803,7 +812,7 @@ public:
   void			CheckAll();
 	void			ClearRoof();
 	D2_POINT *AllocateBevel(int nb);
-	void			TranslatePoint(D2_POINT &p, double x, double y, double z);
+	void			TranslatePoint(D2_POINT &p, CVector &T);
 	void			LocalCoordinates(D2_POINT &p);
 	//----------------------------------------------------
 	void    	GetBevelVector(D2_POINT *pa, double dy,D2_POINT *dst);
@@ -884,7 +893,6 @@ public:
 	//--- OSM objects --------------------------------------
 	void    MakeBLDG(U_INT type);
 	void    MakeLITE(U_INT type);
-	void		MakeWALL(U_INT type);
 	//------------------------------------------------------
 	bool		RiseBuilding(D2_BPM *bpm);
 	void		SaveBuildingData(C3DPart *P);

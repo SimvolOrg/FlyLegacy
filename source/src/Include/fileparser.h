@@ -449,6 +449,11 @@ class COBJparser: public CParser {
 	U_INT			pm;							// Parameter
 	C3Dmodel *model;
 	C3DPart  *part;
+	char			trfm;						// Transform indicator
+	char      rfu1;						// Reserved
+	CVector   T;							// Translation vector
+	double    S;							// Sinus
+	double    C;							// Cosinus
 	//---- List of space vertices -----------------------------
 	std::vector<GN_VTAB *>			vpos;	
 	std::vector<GN_VTAB *>			vtex;
@@ -460,9 +465,11 @@ public:
  ~COBJparser();
 	//---------------------------------------------------------
 	void	SetDirectory(char *d);
+	void	SetTransform(CVector T,double C,double S);
 	//---------------------------------------------------------
 	void	   BuildW3DPart();
 	C3DPart *BuildOSMPart(char dir);
+	void		 Transform(double c,double s,SVector T);
 	//---------------------------------------------------------
 	int		Decode(char *fn, char t);
 	bool	ParseLibrary(char *s);

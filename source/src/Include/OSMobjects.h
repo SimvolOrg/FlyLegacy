@@ -173,6 +173,9 @@ protected:
 	U_INT					type;										// Type of object
 	U_INT         build;									// Kind of object
 	D2_BPM				bpm;										// Building parameters
+	//----------------------------------------------------------------
+	char				 *tag;
+	char				 *val;
 	//--- States -----------------------------------------------------
 	U_CHAR        State;									// Existing
 	U_CHAR				Layer;									// OSM layer
@@ -185,8 +188,6 @@ protected:
 	OSM_REP			  repMD;									// Replacing model
 	double				orien;									// Orientation (rad);
 	//--- OSM properties ---------------------------------------------
-	char				 *tag;										// From OSM
-	char				 *val;										// Value
 	//---------------------------------------------------------------
 	double        alti;										// Z correction
 	//--- List of base POINTS ---------------------------------------
@@ -200,6 +201,7 @@ public:
   //---  Virtual functions -----------------------------------------
 	virtual void Build()   {;}
   //----------------------------------------------------------------
+	void		RazPart();
 	int 		EditPrm(char *txt);
 	void		EditTag(char *txt);
 	void		Swap(Queue<D2_POINT> &Q);
@@ -231,7 +233,6 @@ public:
 	//----------------------------------------------------------------
 	void		AdjustZ(CVector *V);
 	//----------------------------------------------------------------
-	//void     SetParameters(D2_BPM *p);
 	GN_VTAB *StripToSupertile();
 	//----------------------------------------------------------------
 	void		 AssignStyle(D2_Style *sty, CBuilder *B);
@@ -247,6 +248,8 @@ public:
 	char      GetFocus()								{return bpm.selc;}
 	//----------------------------------------------------------------
 	C3DPart *GetPart()									{return part;}
+	char    *GetTag()										{return tag;	}
+	char    *GetVal()										{return val;	}
 	//----------------------------------------------------------------
 	char		Selection()								  {return bpm.selc;}
 	char    GetLayer()									{return Layer;}
@@ -311,7 +314,7 @@ inline void DebDrawOSMlight(GLfloat *col, float a)
   glAlphaFunc(GL_GREATER,a);
   glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION,lightDIS);
   glPointParameterf (GL_POINT_SIZE_MIN,1);
-  glPointParameterf (GL_POINT_SIZE_MAX,64);
+  glPointParameterf (GL_POINT_SIZE_MAX,40);
   glPointSize(lightDIM);
   glEnable(GL_POINT_SPRITE);
   glTexEnvi(GL_POINT_SPRITE,GL_COORD_REPLACE,GL_TRUE);

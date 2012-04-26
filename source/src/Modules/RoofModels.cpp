@@ -242,9 +242,10 @@ void CRoofModel::SetRoofData(D2_BPM *pm,CBuilder *tr)
 //	Translate point A to B using X,Y,Z as translation
 //---------------------------------------------------------------
 void CRoofModel::Translate(U_INT src, U_INT dst, char *id, double X, double Y, double Z)
-{	bevel[dst] = bevel[src];
+{	CVector T(X,Y,Z);
+  bevel[dst] = bevel[src];
 	if (id) bevel[dst].SetID(id);
-	trn->TranslatePoint(bevel[dst],X,Y,Z);
+	trn->TranslatePoint(bevel[dst],T);
 	return;
 }
 //---------------------------------------------------------------
@@ -632,5 +633,4 @@ void  CRoofFLAT::GenerateRoof(Queue <D2_POINT> &inp, std::vector<D2_TRIANGLE*> &
 	for (pp = inp.GetFirst(); pp != 0; pp = pp->next) roofP->TextureLocalPoint(pp);
 	return;
 }
-	
 //=========================END 0F FILE ====================================================

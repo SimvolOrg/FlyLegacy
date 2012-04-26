@@ -1356,48 +1356,31 @@ void ZRotate(GN_VTAB &v, double sn, double cn)
 	return;
 }
 //============================================================================
-//	Compute matrix for R(T) rotation R of translation T
+//	Horizontal Transformer
 //============================================================================
-void MatRT(SVector &T,double deg, double *M)
-{	//--- compute global transformation -------------------
-	double A = DegToRad(deg);
-	double S = sin(A);
-	double C = cos(A);
-	//---First line-------
-	M[0]		= +C;
-	M[1]		= +S;
-	M[2]		=  0;
-	//--- Second line ----
-	M[3]		= -S;
-	M[4]		= +C;
-	M[5]		=  0;
-	//--- Third line ----
-	M[6]    =  0;
-	M[7]		=  0;
-	M[8]		=  1;
-	//--- Fourth line ---
-	M[9]		= T.x;
-	M[10]		= T.y;
-	M[11]		= T.z;
-	return;
+HTransformer::HTransformer(double c,double s,SVector &t)
+{	cn	= c;
+	sn	= s;
+	tx  = t.x;
+	ty	= t.y;
+	tz	= t.z;
+	//--- Init matrix ----------------
+	double M0	= +cn; 
+	double M1 = +sn;
+	double M2 = -sn; 
+	double M3 = +cn;
 }
-//============================================================================
-//	Compute matrix for T(R) Rotation R then translation T
-//============================================================================
-void RotRT(GN_VTAB &s, double *M)
-{	double vx = (s.VT_X * M[0]) + (s.VT_Y * M[3]) + M[9];
-	double vy = (s.VT_X * M[1]) + (s.VT_Y * M[4]) + M[10];
-	double vz =                   (s.VT_Z * M[8]) + M[11];
-	//--------------------------------------------------------
-	double nx = (s.VN_X * M[0]) + (s.VN_Y * M[3]);				// + M[9];
-	double ny = (s.VN_X * M[1]) + (s.VN_Y * M[4]);				// + M[10];
-	//--------------------------------------------------------
-	s.VT_X	= vx;
-	s.VT_Y	= vy;
-	s.VT_Z	= vz;
-	s.VN_X	= nx;
-	s.VN_Y	= ny;
-	return;
+//---------------------------------------------------------------------
+//	Transform vertex (translate then rotate)
+//---------------------------------------------------------------------
+GN_VTAB HTransformer::ComputeRT(GN_VTAB *vtx)
+{ //--- rotate the translation vector -------------------
+  rx = ((tx * M0) + (ty * M2));
+	ry = ((tx * M1) + (ty * M3));
+	//-------------------------------
+	vtx->VT_X	+= rx;
+	vtx->VT_Y	+= ry;
+	return *vtx;
 }
 //=======================END OF FILE ======================================================
 

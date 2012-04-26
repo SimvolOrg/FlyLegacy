@@ -1530,7 +1530,7 @@ void CSuperTile::TraceEnd()
 //-------------------------------------------------------------------------
 // Seach a part with same reference as the given one
 //-------------------------------------------------------------------------
-void CSuperTile::BuildOSMPart(CShared3DTex *ref, char L, int nv, GN_VTAB *S)
+void CSuperTile::MakeOSMPart(CShared3DTex *ref, char L, int nv, GN_VTAB *S)
 {	C3DPart *prt = 0;
 	for (prt = osmQ[L].GetFirst(); (prt != 0); prt = prt->Next())
 	{	if (!prt->SameREF(ref))			continue;
@@ -1569,7 +1569,7 @@ void CSuperTile::AddToPack(OSM_Object *obj)
 	int      nv = p0->Translate(T);
 	char     L  = obj->GetLayer();
 	GN_VTAB *S  = p0->GetGTAB();
-	BuildOSMPart(ref,L,nv,S);
+	MakeOSMPart(ref,L,nv,S);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -2722,7 +2722,7 @@ void C_QGT::ExtendOSMPart(char No,char dir, char *ntx, char L, int nv, GN_VTAB  
 	txd.Dir = dir;
 	strncpy(txd.name,ntx,FNAM_MAX);
 	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
-	sup->BuildOSMPart(ref,L,nv,S);
+	sup->MakeOSMPart(ref,L,nv,S);
 	globals->txw->Free3DTexture(ref);
 	return;
 }
