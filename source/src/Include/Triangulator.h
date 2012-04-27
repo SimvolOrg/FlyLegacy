@@ -210,6 +210,7 @@ struct D2_POINT {
 	double x;																		// X coordinate
   double y;																		// Y coordinate
 	double z;																		// Z coordinate
+	double a;																		// Ground altitude
 	//--- Texture coordinate -----------------------------------
 	double s;																		// along x
 	double t;																		// along y
@@ -818,7 +819,7 @@ public:
 	void    	GetBevelVector(D2_POINT *pa, double dy,D2_POINT *dst);
 	int				SetBevelArray(D2_BEVEL &pm);
   //-----------------------------------------------------
-	void		AddVertex(char a, double x, double y);
+	void		AddVertex(double x, double y);
 	void		NewHole();
 	void		ForceStyle(char *nsty,U_INT rfmo, U_INT rftx, U_INT flnb);
 	char		ConvertInFeet();

@@ -503,6 +503,7 @@ void CCamera::Save(CAMERA_CTX &ctx)
 	//--- save global position ----------
 	ctx.ori   = globals->iang;
 	ctx.pos		= globals->geop;
+	ctx.mode	= 0;										// No slew mode
   return;
 };
 //-------------------------------------------------------------------------
@@ -520,6 +521,9 @@ void CCamera::Restore(CAMERA_CTX &ctx)
   if (veh) veh->SetObjectPosition(ctx.pos);
 	if (veh) veh->SetObjectOrientation(ctx.ori);
 	if (veh) veh->SetPhysicalOrientation(ctx.ori);
+	//--- Check for slew mode --------------
+	if (ctx.mode == 0)				return;
+	globals->slw->SetSlew();
   return;
 }
 //-----------------------------------------------------------------

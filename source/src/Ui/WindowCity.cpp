@@ -124,6 +124,8 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	//--- Open triangulation ------------------------
 	trn	= new CBuilder(&ses);
 	globals->trn = trn;
+	//--- set reference position = aircraft position -
+	rpos			= globals->geop;
 	//-----------------------------------------------
 	ctx.prof	= PROF_SKETCH;
 	ctx.mode	= 0;
@@ -145,8 +147,6 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	wfil	= 1;
 	FP		= 0;
 	sqlp	= 0;
-	//--- delete aircraft for more memory ------------
-	//SAFE_DELETE( globals->pln);
 	//--- Set Initial state --------------------------
 	globals->Disp.ExecON  (PRIO_ABSOLUTE);	// Allow terrain TimeSlice
 	globals->Disp.ExecOFF (PRIO_TERRAIN);		// Nothing exe after terrain
@@ -297,7 +297,7 @@ bool CFuiSketch::ParseVTX(char *txt)
 	while (go)
 	{	int nf = sscanf(src," V ( %lf , %lf ) %n",&y,&x,&rd);
 		if (nf != 2)	return (nv != 0);
-		if (confp.otype) trn->AddVertex(confp.zned,x,y);
+		if (confp.otype) trn->AddVertex(x,y);
 		src += rd;
 		nv++;
 	}
@@ -684,11 +684,16 @@ bool CFuiSketch::NoSelection()
 }
 //-----------------------------------------------------------------------
 //	Fly Over the city
+//	NOTE:  We return at reference position at 2000 feet
 //-----------------------------------------------------------------------
 void CFuiSketch::FlyOver()
  { Write(); 
 	 globals->Disp.DrawOFF (PRIO_TERRAIN);		// No Terrain
 	 ses.UpdateCache();
+	 //--- return in slew mode at 2000 feet ----------
+	 ctx.mode = 1;							// Slew mode
+	 ctx.pos  = rpos;						// Reference position
+	 ctx.pos.alt += 2000;
 	 Close();
 	 return;
 }

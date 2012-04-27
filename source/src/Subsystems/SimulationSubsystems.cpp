@@ -27,7 +27,7 @@
 #include "../Include/Utility.h"       
 #include "../Include/Atmosphere.h"
 #include "../Include/Fui.h"
-
+ 
 ///////// DEBUG STUFF TO REMOVE LATER ////////////////////////////////
 #ifdef  _DEBUG
 #include "../Include/Fui.h"// ln 3489 
@@ -1079,9 +1079,10 @@ double CPropellerTRIModel::GetPowerRequired(void)
 
   // calculate AAR rift and pirt
   // here a potential bug with RPS :: 
-  double AAR = Vel / (diam * RPS); // Advance ratio angle
+  double AAR = (RPS != 0)?(Vel / (diam * RPS)):(0); // Advance ratio angle
   if (mrift) rift = mrift->Lookup (float(AAR));
   if (mpirt) pirt = mpirt->Lookup (float(AAR));
+
 
   // had to use a magic number to stay close to Fly!II
   double magic_number = DegToRad (1.5);
@@ -1205,6 +1206,9 @@ double CPropellerTRIModel::Calculate(double PowerAvailable)
   Thrust = facT * CT * dyso;                        // JS: was: dynamic_pressure * solidity; // 
   Torque = facQ * CQ * dyso * diam * 0.5;           // JS: was: dynamic_pressure * solidity * diam * 0.5; //
 
+//	if  ((Torque > DBL_MAX) ||  (Torque < -DBL_MAX))
+//	int a = 0;
+
   // adjust P fact // 
   if (mfacP) thrust_displ = mfacP->Lookup (float(blade_AoA)) * pFac * PfcK;
   //
@@ -1255,6 +1259,8 @@ double CPropellerTRIModel::Calculate(double PowerAvailable)
   // arbitrary point.
   if (RPM < 5.0)  RPM = 0;
   eRPM  = float(RPM);
+//	if  ((eRPM > DBL_MAX) ||  (eRPM < -DBL_MAX))
+//	int a = 0;
   return Thrust; // return thrust in pounds
 }
 

@@ -1103,8 +1103,8 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
 	       cod =  0.6;
 	       com = -0.6;
   }
-  double sa = -speedVector.y / ad_speed; // sin(aoa);
-  double ca = speedVector.z / ad_speed; //cos(aoa);
+  double sa = (ad_speed != 0)?(-speedVector.y / ad_speed):(0);						// sin(aoa);
+  double ca = (ad_speed != 0)?( speedVector.z / ad_speed):(1);						//cos(aoa);
   // Luc's comment : Below is the RH version of the computation above
   //  double aoa = atan2(-speedVector.z, fabs (speedVector.y)); // 
   //  double co = (speedVector.y >= 0.0) ? 1.0 : -0.6;
@@ -1218,8 +1218,10 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
   // Force vectors in WingSection coordinates
   // Luc's comment : This paragraph is LH (an RH version is commented below)
   SVector relLiftVector = { 0.0, lift * ca, lift * sa };
-  SVector relDragVector = { 0.0, inducedDrag * sa, -inducedDrag * ca };								///< Luc's comment : This is just induced drag. Parasite drag is still to be added
-  relDragVector = VectorSum (relDragVector, VectorMultiply (speedVector, -parasiteDrag / cf_speed));	// Luc's comment : Adding parasite drag
+  SVector relDragVector = { 0.0, inducedDrag * sa, -inducedDrag * ca }; ///< Luc's comment : This is just induced drag. Parasite drag is still to be added
+	double  parDrag				= (cf_speed != 0)?(-parasiteDrag / cf_speed):(0);
+	relDragVector = VectorSum (relDragVector, VectorMultiply (speedVector,parDrag));	// Luc's comment : Adding parasite drag
+  // relDragVector = VectorSum (relDragVector, VectorMultiply (speedVector, -parasiteDrag / cf_speed));	// Luc's comment : Adding parasite drag
   // 
   // Luc's comment : Need to check the sign of cm. I understans that a positive cm means a pitch down cm, which is LH convention.
   SVector relMomentVector = { pitchMoment, 0.0, 0.0 };

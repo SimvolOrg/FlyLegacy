@@ -81,52 +81,53 @@ char *ScriptCreateAPO[] = {
 //==========================================================================================
 char *EndOSM = "***";
 //==========================================================================================
-//  List of AMENITY VALUES Tags
+//  List of amenity VALUES Tags
 //==========================================================================================
 OSM_CONFP amenityVAL[] = {
-	//--- TAG VALUE -----OTYPE -----------OPROP ---------ZNeed ------------
-	{"PLACE_OF_WORSHIP",	OSM_CHURCH,			OSM_PROP_BLDG,},
-	{"POLICE",						OSM_POLICE,			OSM_PROP_IGNR,},
-	{"FIRE_STATION",			OSM_FIRE_STA,		OSM_PROP_IGNR,},
-	{"TOWNHALL",					OSM_TOWNHALL,		OSM_PROP_IGNR,},
-	{"SCHOOL",						OSM_SCHOOL,			OSM_PROP_IGNR,},
-	{"COLLEGE",						OSM_COLLEGE,		OSM_PROP_IGNR,},
-	{"HOSPITAL",					OSM_HOSPITAL,		OSM_PROP_IGNR,},
+	//--- TAG VALUE ----OTYPE ----------OPROP ---------BVEC ----------LAYER-------------------
+	{"PLACE_OF_WORSHIP",OSM_CHURCH,			OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"POLICE",					OSM_POLICE,			OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"FIRE_STATION",		OSM_FIRE_STA,		OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"TOWNHALL",				OSM_TOWNHALL,		OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"SCHOOL",					OSM_SCHOOL,			OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"COLLEGE",					OSM_COLLEGE,		OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"HOSPITAL",				OSM_HOSPITAL,		OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
 	{EndOSM,					0},									  // End of table
 };
 //==========================================================================================
 //  List of BUILDING VALUES Tags
 //==========================================================================================
 OSM_CONFP  buildingVAL[] = {
-		//--- TAG VALUE -----OTYPE -----------OPROP ---------ZNeed ------------
-		{"SCHOOL",					OSM_SCHOOL,			OSM_PROP_BLDG},
-		{EndOSM,						0},									// End of table
+	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC -----------LAYER -----------
+	{"SCHOOL",				OSM_SCHOOL,			OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{EndOSM,						0},									// End of table
 };
 //==========================================================================================
 //  List of LIGHT VALUES Tags
 //==========================================================================================
 OSM_CONFP  liteVAL[] = {
-		{"YES",							OSM_LIGHT,			OSM_PROP_NONE},
-		{"RESIDENTIAL",			OSM_LIGHT,			OSM_PROP_NONE},
-		{EndOSM,						0},									// End of table
+	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC -----------LAYER ------------
+	{"YES",						OSM_LIGHT,			OSM_PROP_LITE, OSM_BUILD_LITE, OSM_LAYER_LITE},
+	{"RESIDENTIAL",		OSM_LIGHT,			OSM_PROP_LITE, OSM_BUILD_LITE, OSM_LAYER_LITE},
+	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
-//  List of LIGHT VALUES Tags
+//  List of LAND VALUES Tags
 //==========================================================================================
-OSM_CONFP	tourismVAL[] = {
-	{"HOTEL",							OSM_HOTEL,			OSM_PROP_BLDG},
-	{"HOSTEL",						OSM_HOTEL,			OSM_PROP_BLDG},
+OSM_CONFP	landVAL[] = {
+	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC ------------
+	{"FOREST",				OSM_TREE,				OSM_PROP_TREE},
 };
 //==========================================================================================
 //  List of admitted Tags
 //==========================================================================================
 OSM_TAG TagLIST[] = {
-	//--- TAG -----Value Table ---Builder -------Prop --- Layer ---
-	{"AMENITY",			amenityVAL,		OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
-	{"BUILDING",		buildingVAL,	OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
-//	{"TOURISM",     tourismVAL,		OSM_BUILD_BLDG, 0, OSM_LAYER_BLDG},
-	{"LIT",					liteVAL,			OSM_BUILD_LITE, 1, OSM_LAYER_LITE},
-	{"HIGHWAY",			liteVAL,			OSM_BUILD_LITE, 1, OSM_LAYER_LITE},
+	//--- TAG -----Value Table ---- Layer ---
+	{"AMENITY",			amenityVAL,	},
+	{"BUILDING",		buildingVAL,},
+	{"LIT",					liteVAL,		},
+	{"HIGHWAY",			liteVAL,		},
+//	{"LANDUSE",     landVAL,    },
 	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
@@ -186,17 +187,17 @@ void  GetOSMconfig(char *t ,char *v, OSM_CONFP &V)
 	while (strcmp(tab->tag,EndOSM) != 0)
 	{	if  (strcmp(tab->tag,t)   != 0) {tab++; continue;}
 	  //--- Find the configuration -------------
-		V.build = tab->build;
 		//--- Search config ----------------------
 		OSM_CONFP *cnf = tab->table;	
 	  while (strcmp(cnf->val,EndOSM) != 0)
 		{	if  (strcmp(cnf->val,v) != 0)	{cnf++; continue; }
-			V.otype = cnf->otype;
-			V.prop  = cnf->prop;
-			V.val   = cnf->val;
+			V	= *cnf;
+			
+	//		V.otype = cnf->otype;
+ 	//		V.bvec  = cnf->bvec;
+	//		V.prop  = cnf->prop;
+	//		V.val   = cnf->val;
 			V.tag		= tab->tag;
-			V.zned	= tab->zned;
-			V.layr  = tab->layr;
 			return;
 		}
 		break;
@@ -241,8 +242,7 @@ OSM_REP *GetOSMreplacement(char *T, char *V, char *obj)
 //==========================================================================
 OSM_Object::OSM_Object(OSM_CONFP *CF)
 {	type				= CF->otype;
-	build				= CF->build;
-	zned				= CF->zned;
+	bvec				= CF->bvec;
 	Layer				= CF->layr;
 	State				= 1;
 	bpm.stamp		= 0;
@@ -301,7 +301,7 @@ void OSM_Object::Invert(Queue<D2_POINT> &H)
 //	Adjust translation vector with altitude
 //-----------------------------------------------------------------
 void OSM_Object::AdjustZ(CVector *T)
-{	if (zned)	T->z += alti;
+{	if (NeedZ())	T->z += alti;
 	return;
 }
 //-----------------------------------------------------------------
@@ -427,7 +427,7 @@ GN_VTAB *OSM_Object::StripToSupertile()
 	double rdf      = cos(rad);
 	SPosition   p1	= GetPosition();
 	CVector T				= FeetComponents(p0, p1,rdf);
-	if (zned)    T.z+= alti;
+	if (NeedZ())    T.z+= alti;
 	//----------------------------------------------     
   U_INT nbv				= part->GetNBVTX();
 	if (0 == nbv)		return 0;
@@ -513,7 +513,8 @@ void OSM_Object::BuildLightRow(double ht)
 	GN_VTAB *dst = part->GetGTAB();
 	D2_POINT  *pps = 0;
 	for (pps = base.GetFirst(); pps != 0; pps = pps->next)
-	{	dst->VT_X = pps->x;
+	{	pps->z		= pps->a;						// Set real altitude
+		dst->VT_X = pps->x;
 		dst->VT_Y	= pps->y;
 		dst->VT_Z = pps->z + H;
 		dst++;
@@ -532,7 +533,7 @@ void OSM_Object::Draw()
 	glLoadName(bpm.stamp);
 	glPushMatrix();
 	SVector T = FeetComponents(globals->geop, this->bpm.geop, bpm.rdf);
-	if (zned)	T.z	+= alti;
+	if (NeedZ())	T.z	+= alti;
 	glTranslated(T.x, T.y, T.z);  //T.z);
 	part->Draw();	
 	glPopMatrix();
@@ -626,7 +627,7 @@ void OSM_Object::DrawLocal()
 //==================================================================
 void OSM_Object::Write(FILE *p)
 {	if (0 == State)		return;
-	(this->*writeOSM[build])(p);
+	(this->*writeOSM[bvec])(p);
 	return;
 }
 

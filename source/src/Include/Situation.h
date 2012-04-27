@@ -115,6 +115,7 @@ public:
   void    Level(char opt);
   void    StartMode(CAMERA_CTX *ctx);
 	void		StartSlew();
+	void		SetSlew();
   void    StopSlew();
   void    SetAltitude(SPosition *p);
 	//--- Moving ---------------------------------------------------

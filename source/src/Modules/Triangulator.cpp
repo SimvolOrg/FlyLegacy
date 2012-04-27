@@ -348,7 +348,7 @@ int CBuilder::FillMode()
 //-------------------------------------------------------------------
 //	Add a new vertex
 //-------------------------------------------------------------------
-void CBuilder::AddVertex(char a, double x, double y)
+void CBuilder::AddVertex(double x, double y)
 {	double xa   = FN_ARCS_FROM_DEGRE(x);
 	double ya   = FN_ARCS_FROM_DEGRE(y);
 	D2_POINT *p = new D2_POINT(xa,ya);
@@ -363,10 +363,9 @@ void CBuilder::AddVertex(char a, double x, double y)
 	//--- Compute object barycenter --------------------
 	BDP.geop.lon	+= xa;
 	BDP.geop.lat  += ya;
-	if (0 == a)										return;
 	//--- Get terrain altitude -------------------------
 	GroundSpot lnd(xa,ya);
-  p->z = globals->tcm->GetGroundAt(lnd);
+  p->a = globals->tcm->GetGroundAt(lnd);
 	return;
 }
 //-------------------------------------------------------------------
@@ -452,7 +451,7 @@ void CBuilder::StartOBJ()
 //-------------------------------------------------------------------
 void CBuilder::BuildOBJ(OSM_CONFP *CF)
 { U_INT type	= CF->otype;
-  U_INT build = CF->build;
+  U_INT build = CF->bvec;
 	BDP.stamp		= session->GetNextStamp();
 	BDP.side		= extp.GetNbObj();
 	BDP.error		= 0;

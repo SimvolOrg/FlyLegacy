@@ -404,6 +404,17 @@ bool CSlewManager::Swap()
   return true;
 }
 //------------------------------------------------------------------------
+//  Set slew mode
+//------------------------------------------------------------------------
+void CSlewManager::SetSlew()
+{	grnd	= 0;
+	mode	= SLEW_MOVE;
+  ZeroRate();
+	vopt	= 0;
+	globals->pln->RazOPT(VEH_D_CRASH);
+  return;
+}
+//------------------------------------------------------------------------
 //  Start slew mode
 //------------------------------------------------------------------------
 void CSlewManager::StartSlew()

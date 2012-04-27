@@ -46,9 +46,12 @@ class C_QGT;
 #define OSM_PROP_MREP (0x02)								// Object can be replaced
 #define OSM_PROP_MSTY	(0x04)								// Object can change style
 #define OSM_PROP_SKIP (0x08)								// Object is skipped
+#define OSM_PROP_ZNED (0x10)								// Need Z altitude
 //--- Building properties ------------------------------------------------
 #define OSM_PROP_BLDG (OSM_PROP_MREP+OSM_PROP_MSTY)
-#define OSM_PROP_IGNR (OSM_PROP_MREP+OSM_PROP_SKIP)							
+#define OSM_PROP_IGNR (OSM_PROP_MREP+OSM_PROP_SKIP)	
+#define OSM_PROP_TREE (OSM_PROP_NONE)	
+#define OSM_PROP_LITE (OSM_PROP_ZNED)					
 //====================================================================================
 //	Object build kind
 //====================================================================================
@@ -99,19 +102,16 @@ struct OSM_CONFP {
 	char *val;
 	U_INT otype;
 	U_INT prop;
-	//--------------------------------------------------
-	char  zned;						// Z val is needed
+	U_INT	bvec;						// Build vector
 	char  layr;						// OSM layer
-	U_INT	build;					// Build category
 	char *tag;
 	//---Set default to a building ---------------------
 	void Reset()
 	{ tag   = val = 0;
-		zned	= 0;
 		layr  = OSM_LAYER_BLDG;
 		otype = OSM_BUILDING;
 		prop  = OSM_PROP_BLDG;
-		build = OSM_BUILD_BLDG;
+		bvec  = OSM_BUILD_BLDG;
 	}
 };
 //==========================================================================================
@@ -131,9 +131,6 @@ extern	OSM_REP *GetOSMreplacement(char *T, char *V, char *obj);
 struct OSM_TAG {
 	char      *tag;
 	OSM_CONFP *table;					// Value table
-	U_INT			 build;					// Build category
-	char			 zned;					// Z value is needed
-	char			 layr;					// OSM layer
 };
 //==========================================================================================
 // replacement structure
@@ -171,7 +168,7 @@ public:
 protected:
 	//--- Attributes -------------------------------------------------
 	U_INT					type;										// Type of object
-	U_INT         build;									// Kind of object
+	U_INT         bvec;										// Build vector
 	D2_BPM				bpm;										// Building parameters
 	//----------------------------------------------------------------
 	char				 *tag;
@@ -180,7 +177,7 @@ protected:
 	U_CHAR        State;									// Existing
 	U_CHAR				Layer;									// OSM layer
 	U_CHAR				style;									// Style is forced
-	U_CHAR				zned;										// Need correction
+	U_CHAR				rfu;										// reserved
 	//--- Drawing vector ---------------------------------------------
 	drawCB				drawFN;									// local Drawing vector	
 	writeCB				writFN;									// Write function			
@@ -257,18 +254,19 @@ public:
 	void		SetXY(double lx,double ly)	{bpm.lgx = lx; bpm.lgy = ly;}
 	void    Copy(D2_BPM &p)							{bpm = p;}
 	//----------------------------------------------------------------
-	void		Remove()										{State = 0;}
-	void		Restore()										{State = 1;}
-	bool	  IsValid()									  {return (1 == State);}
-	bool    IsaLight()									{return (type == OSM_LIGHT);}
-	bool		IsSelected()								{return (bpm.selc != 0);}
-	bool    SameStamp(U_INT n)					{return (bpm.stamp == n);}
+	void		Remove()							{State = 0;}
+	void		Restore()							{State = 1;}
+	bool	  IsValid()							{return (1 == State);}
+	bool    IsaLight()						{return (type == OSM_LIGHT);}
+	bool		IsSelected()					{return (bpm.selc != 0);}
+	bool    SameStamp(U_INT n)		{return (bpm.stamp == n);}
 	//----------------------------------------------------------------
-	bool    AreYou(char *T)							{return (strcmp(T,tag) == 0);}
+	bool    AreYou(char *T)				{return (strcmp(T,tag) == 0);}
+	char    NeedZ()								{return (bpm.opt.Has(OSM_PROP_ZNED));}
 	//----------------------------------------------------------------
-	char	CanBeModified()								{return bpm.opt.Has(OSM_PROP_MSTY);}
-	char  CanBeRotated()								{return bpm.opt.Has(OSM_PROP_REPL);}
-	char	CanBeReplaced()								{return bpm.opt.Has(OSM_PROP_MREP);}
+	char	CanBeModified()					{return bpm.opt.Has(OSM_PROP_MSTY);}
+	char  CanBeRotated()					{return bpm.opt.Has(OSM_PROP_REPL);}
+	char	CanBeReplaced()					{return bpm.opt.Has(OSM_PROP_MREP);}
 	//--- draw as a single object ------------------------------------
 	void		Draw();
 	void		DrawAsBLDG();
