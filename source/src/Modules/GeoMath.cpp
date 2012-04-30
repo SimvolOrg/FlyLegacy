@@ -1211,7 +1211,14 @@ double AsoluteLatitude(CVertex &v)
 	if (No < 256)	sb = -sb;																// Negative in south
 	return (qgt_latitude[nz].lats + sb);									// Absolute latitude
 }
-
+//==============================================================================
+//	Random number about H in the interval [a,b]
+//==============================================================================
+int RandomCentered(int H, int a, int b)
+{	int n = RandomNumber(b - a);
+	int m = (a + b) >> 1;								// Interval middle
+	return H + n - m;
+}
 //==============================================================================
 // CRandomizer:
 //  Produce a random number N in the requested range R every tim T.  The 
@@ -1365,10 +1372,10 @@ HTransformer::HTransformer(double c,double s,SVector &t)
 	ty	= t.y;
 	tz	= t.z;
 	//--- Init matrix ----------------
-	double M0	= +cn; 
-	double M1 = +sn;
-	double M2 = -sn; 
-	double M3 = +cn;
+	M0	= +cn; 
+	M1 = +sn;
+	M2 = -sn; 
+	M3 = +cn;
 }
 //---------------------------------------------------------------------
 //	Transform vertex (translate then rotate)

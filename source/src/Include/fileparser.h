@@ -470,6 +470,7 @@ public:
 	void	   BuildW3DPart();
 	C3DPart *BuildOSMPart(char dir);
 	void		 Transform(double c,double s,SVector T);
+	int			 GetVerticeStrip(GN_VTAB **dst);
 	//---------------------------------------------------------
 	int		Decode(char *fn, char t);
 	bool	ParseLibrary(char *s);

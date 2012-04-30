@@ -48,7 +48,7 @@ class CShared3DTex;
 //------------------------------------------------
 struct D2_BPM;
 struct SQL_DB;
-struct OSM_REP;
+struct OSM_MDEF;
 struct OSM_CONFP;
 //==========================================================================================
 #define TX_BH		(1)								// Full height texturing
@@ -603,6 +603,7 @@ public:
 #define D2_GRP_SIDE				(0x0002)				// Has sides
 #define D2_GRP_GEOP				(0x0004)				// Has geo position
 #define D2_GRP_LNGT				(0x0008)				// Has length filter
+#define D2_GRP_NMAX				(0x0010)				// Max instances
 //====================================================================================
 //	data for group definition 
 //====================================================================================
@@ -623,6 +624,7 @@ class D2_Group: public  D2_Ratio {
 	double  lgMax;
 	double	sfMin;													// min surface
 	double  sfMax;													// Max surface
+	U_INT   nbMax;													// Max instances
 	U_INT		sdMin;													// side number
 	U_INT		sdMax;													// side max
 	SPosition geop;													// geo center
@@ -683,6 +685,7 @@ public:
 	U_INT				 GetRoofNumber()	{return rmno;}
 	//---------------------------------------------------------------
 	int						ValueGroup(D2_BPM *pm);
+	int						ValueNbmax();
 	int						ValueTag(char *T, char *V);
 	int						ValuePosition(SPosition &p);
 	int						ValueSurface(double sf);
@@ -751,7 +754,7 @@ protected:
 	Queue <D2_POINT> hole;												// Hole contour
 	Queue <D2_SLOT>  slot;												// Slot list
 	std::vector<D2_FLOOR*>    walls;							// Walls
-	std::vector<D2_TRIANGLE*> roof;								// Data
+	std::vector<D2_TRIANGLE*> sflat;								// Flat surface
 	//--- Spot to get terrain elevation----------------------------
 	GroundSpot  spot;
 	//--- Roof points ----------------------------------------------
@@ -838,16 +841,17 @@ public:
 	//--- Building management ----------------------------
 	U_INT		CountVertices();
 	void		StartOBJ();
-	U_CHAR  ReplaceOBJ(OSM_REP *rp,char or);
+	U_CHAR  ReplaceOBJ(OSM_MDEF *rp,char or);
 	void    RemoveOBJ();
 	void    RestoreOBJ();
 	U_CHAR	RotateOBJ(double rad);
 	bool    SelectOBJ(U_INT No);
 	void		SetOrientationOBJ();
 	//-----------------------------------------------------
-	inline double			GetSurface()			{return surf;}
-	inline U_INT			GetSideNbr()			{return extp.GetNbObj();}
-	inline SPosition	GetPosition()			{return BDP.geop;}
+	inline D2_Session *GetSession()			{return session;}
+	inline double			 GetSurface()			{return surf;}
+	inline U_INT			 GetSideNbr()			{return extp.GetNbObj();}
+	inline SPosition	 GetPosition()		{return BDP.geop;}
 	//-----------------------------------------------------
 protected:
   //-----------------------------------------------------
@@ -894,6 +898,7 @@ public:
 	//--- OSM objects --------------------------------------
 	void    MakeBLDG(U_INT type);
 	void    MakeLITE(U_INT type);
+	void		MakeFRST(U_INT type);
 	//------------------------------------------------------
 	bool		RiseBuilding(D2_BPM *bpm);
 	void		SaveBuildingData(C3DPart *P);
@@ -929,13 +934,18 @@ class D2_Session {
 	//--- Street lights queue ---------------------------------------
 	std::map<U_INT,OSM_Object*> litQ;					// Light queue
 	std::map<U_INT,OSM_Object*>::iterator rl;	
+	//--- Forest trees queue ----------------------------------------
+	std::map<U_INT,OSM_Object*> fstQ;					// Forest queue
+	std::map<U_INT,OSM_Object*>::iterator rf;	
 	//--- Groups parameters -----------------------------------------
 	Queue<D2_Group> groupQ;										// Group queue for selection
 	std::map<std::string,D2_Group*> grpQ;			// Groups
 	std::map<std::string,D2_Group*>::iterator rg;
 	//--- Replacement MAP -------------------------------------------
-	std::multimap<U_INT,OSM_REP*> repQ;				// Replacement list
-  std::multimap<U_INT,OSM_REP*>::iterator rp;
+	std::multimap<U_INT,OSM_MDEF*> repQ;				// Replacement list
+  std::multimap<U_INT,OSM_MDEF*>::iterator rp;
+	//--- Forest items ----------------------------------------------
+	std::vector<OSM_MDEF*>				 treQ;			// Tree list			
 	//---------------------------------------------------------------
 	U_INT			fpos;														// File position
 	CBuilder *trn;														// CBuilder
@@ -959,10 +969,12 @@ public:
 	bool	ParseTheSession(FILE *f);
 	bool	ReadParameters(char *dir);
 	bool	ParseReplace(FILE *f, char *ln);
+	bool	ParseForest(FILE *f, char *ln);
 	bool	ParseGroups(FILE *f, char *ln);
 	bool  ParseStyles(FILE *f, char *ln);
 	//--- return a replacing object ---------------------------------
-	bool  GetReplacement(OSM_REP &rpm);
+	bool  GetReplacement(OSM_MDEF &rpm);
+	OSM_MDEF *GetTree();									// Return a tree model
 	//--- Draw everything -------------------------------------------
 	void  Draw();
 	//---------------------------------------------------------------
@@ -978,6 +990,7 @@ public:
 	//---------------------------------------------------------------
 	bool		AddStyle(FILE *f,char *sn,char *gn);
 	void		AddLight(OSM_Object *L);
+	void		AddForest(OSM_Object *F);
 	//---------------------------------------------------------------
 	inline void SetTrace(char t)	{tr = t;}
 	inline void BackTo(int p)			{fpos = p;}

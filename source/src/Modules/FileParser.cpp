@@ -721,7 +721,7 @@ int CSMFparser::ReadPart(PODFILE *p,char *fn)
   //--Read faces -----------------------------------------------
   int f1,f2,f3;
 	txd.azp   = Tsp;
-	txd.Dir   = TEXDIR_ART;
+	txd.Dir   = FOLDER_ART;
 	tREF			= globals->txw->GetM3DPodTexture(txd);
 	part->SetTREF(tREF);
   int np = 0;                             // Part number
@@ -956,7 +956,7 @@ int CBINparser::ReadTexture(PODFILE *p)
 	//--- Change in texture reference.  Process previous part --------------
 	if (part)	AddToModel(part);
 	//--- Allocate a new part ----------------------------------------------
-	part	= new C3DPart(TEXDIR_ART,txn,0,0,0);
+	part	= new C3DPart(FOLDER_ART,txn,0,0,0);
 	part->BinRendering();
 	strncpy(txname,txn,24);
   return 1;
@@ -2073,5 +2073,22 @@ C3DPart *COBJparser::BuildOSMPart(char dir)
 	CShared3DTex *ref	= globals->txw->GetM3DPodTexture(txd);
 	prt->SetTREF(ref);
 	return prt;
+}
+//------------------------------------------------------------------------------
+//	Return a strip of vertices, ignoring the texture name
+//------------------------------------------------------------------------------
+int  COBJparser::GetVerticeStrip(GN_VTAB **buf)
+{	int nbv = vtri.size() * 3;
+	GN_VTAB *tab = new GN_VTAB[nbv];
+	GN_VTAB *dst = tab;
+	//------------------------------------------------------------
+	for (U_INT k=0; k < vtri.size(); k++)
+	{	OBJ_TRIANGLE *Tr = vtri[k];
+		*dst++ = Tr->vtx[0];
+		*dst++ = Tr->vtx[1];
+		*dst++ = Tr->vtx[2];
+	}
+	*buf  = tab;
+	return nbv;
 }
 //===================================END OF FILE ==========================================

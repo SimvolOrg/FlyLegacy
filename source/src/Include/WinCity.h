@@ -105,7 +105,7 @@ class CFuiSketch : public CFuiWindow
 	char					tagn[64];				// Tag name
 	char					valn[64];				// Value name
 	//--- Replacing attributs for object --------------------------
-	OSM_REP       repPM;					// Replacement parameters
+	OSM_MDEF       repPM;					// Replacement parameters
 	double				orien;					// Replacing orientation
 	//-------------------------------------------------------------
 	int					  time;

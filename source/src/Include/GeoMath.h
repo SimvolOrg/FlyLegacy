@@ -162,6 +162,8 @@ bool			TileIsLeft(U_INT k1,U_INT k2);
 void			GetSuperTileNo(SPosition *P, U_INT *K, U_SHORT *S);
 bool			InCircularRange(float A, float M, float R);
 //-----------------------------------------------------------------------------
+int				RandomCentered(int H, int a, int b);
+//-----------------------------------------------------------------------------
 bool    PointInTriangle(CVector &p,CVector &a,CVector &b,CVector &c,CVector &n);
 U_INT   NextVertexKey(U_INT vk,U_INT inc);
 U_INT   GetSEAindex(U_INT cx,U_INT cz);       

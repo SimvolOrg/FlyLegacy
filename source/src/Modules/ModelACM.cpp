@@ -1098,7 +1098,7 @@ void  CModelACM::LoadFrom(char* acmFilename)
     //-----Load texture from texture ward -------------------------------
 		txd.apx  = 0xFF;
 		txd.azp  = transparent;
-		txd.Dir  = TEXDIR_ART;
+		txd.Dir  = FOLDER_ART;
     tRef = globals->txw->GetM3DPodTexture(txd);
     U_INT obj = globals->txw->Get3DObject(tRef);
     part->SetTexREF(tRef,obj);

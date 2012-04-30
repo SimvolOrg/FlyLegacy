@@ -1970,7 +1970,7 @@ C3DPart::C3DPart(char dir, char *txn,int lq, int nbv, int nbx)
 	gTAB	= 0;
   nIND  = 0;
 	strncpy(txd.name,txn,FNAM_MAX);
-	txd.Dir = TEXDIR_ART;
+	txd.Dir = FOLDER_ART;
 	txd.azp = 0xFF;
 	txd.apx = 0xFF;
 	tRef		= GetReference(txd);
@@ -1995,7 +1995,7 @@ C3DPart::C3DPart(char dir, char *txn,int lq,int nbx)
   nTEX  = 0;
   nIND  = 0;
 	strncpy(txd.name,txn,FNAM_MAX);
-	txd.Dir = TEXDIR_ART;
+	txd.Dir = FOLDER_ART;
 	txd.azp = 0xFF;
 	txd.apx = 0xFF;
 	tRef		= GetReference(txd);
@@ -2201,7 +2201,6 @@ void C3DPart::ExtendGTB(int nbv)
 	NbVT		= tot;
 	return;
 }
-
 //----------------------------------------------------------------------
 //	Copy all vertices from SQL
 //----------------------------------------------------------------------
@@ -2258,18 +2257,6 @@ void C3DPart::MoveIND(void *deb,int dim)
 	}
 	return;
 }
-//-----------------------------------------------------------------------------
-//	Append vertice list at given offset
-//-----------------------------------------------------------------------------
-/*
-void C3DPart::Append(GN_VTAB *tab, U_INT ofs,U_INT lg)
-{	if (0 == tab)		return;				// No source
-	GN_VTAB *dst = gTAB + ofs;
-	GN_VTAB *src = tab;
-  for (U_INT k=0; k!=lg; k++) *dst++ = *src++;
-	return;
-}
-*/
 //----------------------------------------------------------------------
 // Move part vertice to begining and translate by T vector
 //----------------------------------------------------------------------
@@ -2373,7 +2360,7 @@ void C3DPart::DrawAsBIN()
   return;
 }
 //----------------------------------------------------------------------
-//  Draw the part for  an OSM formeat
+//  Draw the part for  an OSM format
 //----------------------------------------------------------------------
 void C3DPart::DrawAsGVT()
 {	tRef->BindTexture();

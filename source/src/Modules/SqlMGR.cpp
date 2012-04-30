@@ -3180,7 +3180,7 @@ int SqlTHREAD::DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl)
   int   nbv =        sqlite3_column_int (stm,CLN_MOD_NVT);
   int   nbx =        sqlite3_column_int (stm,CLN_MOD_NIX);
 	int   lod =        sqlite3_column_int (stm,CLN_MOD_LOD);
-	C3DPart *prt = modl->GetPartFor(TEXDIR_ART,txn,lod, nbx);
+	C3DPart *prt = modl->GetPartFor(FOLDER_ART,txn,lod, nbx);
 	//---- Build this part --------------------------------
   float top =  float(sqlite3_column_double(stm, CLN_MOD_TOP));
   modl->SaveTop(top);

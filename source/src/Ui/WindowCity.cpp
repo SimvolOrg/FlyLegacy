@@ -210,7 +210,7 @@ void CFuiSketch::FileSelected(FILE_SEARCH *fpm)
 			_snprintf(fnam,FNAM_MAX,"%s/%s",spath,sname);
 			break;
 		case CITY_FILE_MOD:
-			repPM.obr = Dupplicate(fpm->sfil,FNAM_MAX);
+			repPM.obj = Dupplicate(fpm->sfil,FNAM_MAX);
 			State = SKETCH_ROBJ;
 			break;
 		case CITY_FILE_DBA:
@@ -297,7 +297,7 @@ bool CFuiSketch::ParseVTX(char *txt)
 	while (go)
 	{	int nf = sscanf(src," V ( %lf , %lf ) %n",&y,&x,&rd);
 		if (nf != 2)	return (nv != 0);
-		if (confp.otype) trn->AddVertex(x,y);
+		trn->AddVertex(x,y);
 		src += rd;
 		nv++;
 	}
@@ -308,7 +308,7 @@ bool CFuiSketch::ParseVTX(char *txt)
 //-------------------------------------------------------------------
 bool CFuiSketch::ParseHOL(char *txt)
 {	if (strncmp(txt,"HOLE",4) != 0)			return false;
-	if (confp.otype)	trn->NewHole();
+	trn->NewHole();
 	return true;
 }
 //-------------------------------------------------------------------
@@ -329,7 +329,7 @@ bool CFuiSketch::ParseReplace(char *txt)
 	if (nf != 2)  return false;
 	repPM.otype	= confp.otype;
 	repPM.dir		= GetOSMfolder(confp.otype);
-	repPM.obr		= Dupplicate(objn,FNAM_MAX);
+	repPM.obj		= Dupplicate(objn,FNAM_MAX);
 	return true;
 }
 //-------------------------------------------------------------------
@@ -431,20 +431,23 @@ bool CFuiSketch::AutoReplace()
 //	Build Object
 //-------------------------------------------------------------------
 bool CFuiSketch::BuildObject()
-{	if (0 == confp.otype)						return false;
+{	//-- Check for any deletion --------
+	char dlt =  (confp.prop & OSM_PROP_SKIP);			// Skip flag
+	if (dlt)							return false;						// Delete
+	if (0 == confp.otype)	return false;						// undefined object
+	int nb   = trn->GetSideNbr();									// Number of points
+	if (nb < 4)						return false;						// Lower than 4
+	//--- Build the object ------------------
 	trn->BuildOBJ(&confp);
 	int	rep = 0;
 	//--- Replace directive -----------------
-	if (repPM.obr)
+	if (repPM.obj)
 	{	repPM.sinA = sin(orien);
 		repPM.cosA = cos(orien);
 		rep = trn->ReplaceOBJ(&repPM,0);
 	}
 	//--- Auto replace ----------------------
 	else				rep = AutoReplace();
-	//--- Check for deletion ----------------
-	bool dlt =  (0 == rep) && (confp.prop & OSM_PROP_SKIP);
-	if (dlt)	{	trn->RemoveOBJ();	return false;	}
 	//---------------------------------------
 	int er = EditBuilding();
 	rcam->GoToPosition(geop);			// Teleport
@@ -1083,6 +1086,8 @@ D2_Session::~D2_Session()
 	repQ.clear();
 	for (rl = litQ.begin(); rl != litQ.end(); rl++)	delete (*rl).second;
 	litQ.clear();
+	for (rf = fstQ.begin(); rf != fstQ.end(); rf++)	delete (*rf).second;
+	fstQ.clear();
 	delete roof;
 	delete rtex;
 }
@@ -1104,6 +1109,8 @@ bool	D2_Session::ReadParameters(char *dir)
   if (0 == f)  return false;
 	bool ok = ParseTheSession(f);
 	fclose(f);
+	//--- After parse checking ---------------------
+	if (0 == treQ.size())	SetOSMproperty("LANDUSE","FOREST",OSM_PROP_SKIP);
 	return ok;
 }
 //-----------------------------------------------------------------
@@ -1122,6 +1129,7 @@ bool D2_Session::ParseTheSession(FILE *f)
 	{	fpos = ftell(f);
 	  line = ReadTheFile(f,buf);
 		if (ParseReplace(f,line))		continue;
+		if (ParseForest(f,line))		continue;
 		if (ParseGroups(f,line))		continue;
 		if (ParseStyles(f,line))		continue;
 		break;
@@ -1146,11 +1154,30 @@ bool D2_Session::ParseReplace(FILE *f, char *line)
 	int nf	= sscanf_s(txt," Replace ( %63[^ ),] , %63[^ ),] ) with %63[^ ]",tag,63,val,63,obj,63);
 	if (nf != 3)		return false;
 	//--- Insert an entry in replacement list -----------------
-	OSM_REP *rpm = GetOSMreplacement(tag, val, obj);
+	OSM_MDEF *rpm = GetOSMreplacement(tag, val, obj);
 	if (0 == rpm)	return false;
 	//--- Add one replacement ---------------------------------
-	std::pair <U_INT,OSM_REP*> p(rpm->otype,rpm);
+	std::pair <U_INT,OSM_MDEF*> p(rpm->otype,rpm);
 	repQ.insert(p);
+	return true;
+}
+//-----------------------------------------------------------------
+//	Parse forest directive 
+//-----------------------------------------------------------------
+bool D2_Session::ParseForest(FILE *f, char *line)
+{	char	mod[128];
+	U_INT	freq = 20;
+	int nf = sscanf(line," Forest use ( %63[^ ),] ) Freq = %u", mod, &freq);
+	if (nf == 0)	return false;
+	//--- Create a slot for  modele ----------------
+	OSM_MDEF *mdf	= new OSM_MDEF();
+	mdf->dir			= FOLDER_OSM_TREE;
+	mdf->obj			= Dupplicate(mod,64);
+	mdf->otype		= OSM_TREE;
+	mdf->freq			= freq;
+	mdf->nbre			= 0;
+	//----------------------------------------------
+	treQ.push_back(mdf);
 	return true;
 }
 //-----------------------------------------------------------------
@@ -1243,25 +1270,39 @@ D2_TParam *D2_Session::GetRoofTexture(D2_Style *sty)
 //					object from the model catalog, 
 //					we dont change the original property?
 //------------------------------------------------------------------
-bool D2_Session::GetReplacement(OSM_REP &rpm)
+bool D2_Session::GetReplacement(OSM_MDEF &rpm)
 {	U_INT otype = rpm.otype;
 	int nbr = repQ.count(otype);
 	if (0 == nbr)		return false;
 	//--- Get range -------------------------------------
-	pair<multimap<U_INT,OSM_REP*>::iterator, 
-		   multimap<U_INT,OSM_REP *>::iterator> 
+	pair<multimap<U_INT,OSM_MDEF*>::iterator, 
+		   multimap<U_INT,OSM_MDEF *>::iterator> 
 			 R = repQ.equal_range(otype);
 	int  k = RandomNumber(nbr);
 	//--- search the kth element ------------------------
 
 	for (rp = R.first; rp != R.second; rp++)
 	{	if (k-- > 0)	continue;
-		OSM_REP *rpp = (*rp).second;	
+		OSM_MDEF *rpp = (*rp).second;	
 		rpm.dir  = rpp->dir;
-		rpm.obr  =  Dupplicate(rpp->obr,FNAM_MAX);
+		rpm.obj  =  Dupplicate(rpp->obj,FNAM_MAX);
 		return true;
 	}
 	return false;
+}
+//------------------------------------------------------------------
+//	Get a tree
+//------------------------------------------------------------------
+OSM_MDEF *D2_Session::GetTree()
+{	std::vector<OSM_MDEF*>::iterator rm = treQ.begin();
+	OSM_MDEF *mdf = (*rm);						// Get first  model
+	mdf->nbre++;											// Add instance;
+	int rst = mdf->nbre / mdf->freq;	// Check if quota is reached
+	if (rst != 0)			return mdf;			// Still not
+	//--- Set this model at the end -------------
+	treQ.erase(rm);
+	treQ.push_back(mdf);
+	return mdf;
 }
 //------------------------------------------------------------------
 //	Select a style 
@@ -1291,13 +1332,23 @@ void	D2_Session::GetaStyle(D2_BPM *p)
 	return;
 }
 //-----------------------------------------------------------------
-//	Add a building if not already in list
+//	Add a light if not already in list
 //-----------------------------------------------------------------
 void D2_Session::AddLight(OSM_Object *L)
 {	U_INT No = L->GetStamp();
 	std::map<U_INT,OSM_Object*>::iterator rp = litQ.find(No);
 	if (rp != litQ.end())		return;
 	litQ[No]	= L;
+	return;
+}
+//-----------------------------------------------------------------
+//	Add a forest if not already in list
+//-----------------------------------------------------------------
+void D2_Session::AddForest(OSM_Object *F)
+{	U_INT No = F->GetStamp();
+	std::map<U_INT,OSM_Object*>::iterator rf = fstQ.find(No);
+	if (rf != fstQ.end())		return;
+	fstQ[No]	= F;
 	return;
 }
 
@@ -1346,6 +1397,14 @@ void D2_Session::Draw()
 	DebDrawOSMlight(lightOSM,alphaOSM);
 	for (rl = litQ.begin(); rl != litQ.end(); rl++)	(*rl).second->Draw();
 	EndDrawOSMlight();
+	//--- Draw all forests--------------------------
+	DebDrawOSMbuilding();							// Drawing environment
+	glEnable(GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER,float(0.4));
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+	glDisable(GL_CULL_FACE);
+	for (rf = fstQ.begin(); rf != fstQ.end(); rf++) (*rf).second->Draw();
+	EndDrawOSMbuilding();
 	return;
 }
 //------------------------------------------------------------------

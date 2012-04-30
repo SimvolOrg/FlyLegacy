@@ -50,7 +50,7 @@ class C_QGT;
 //--- Building properties ------------------------------------------------
 #define OSM_PROP_BLDG (OSM_PROP_MREP+OSM_PROP_MSTY)
 #define OSM_PROP_IGNR (OSM_PROP_MREP+OSM_PROP_SKIP)	
-#define OSM_PROP_TREE (OSM_PROP_NONE)	
+#define OSM_PROP_TREE (OSM_PROP_ZNED)	
 #define OSM_PROP_LITE (OSM_PROP_ZNED)					
 //====================================================================================
 //	Object build kind
@@ -58,6 +58,7 @@ class C_QGT;
  #define OSM_BUILD_BLDG	(1)
  #define OSM_BUILD_LITE (2)
  #define OSM_BUILD_AMNY (3)
+ #define OSM_BUILD_TREE	(4)
 //====================================================================================
 //	Object type
 //====================================================================================
@@ -118,13 +119,14 @@ struct OSM_CONFP {
 extern	char		*ScriptCreateOSM[];
 extern	U_INT		 GetOSMobjType(char *t ,char *v);
 extern	void		 GetOSMconfig (char *t ,char *v, OSM_CONFP &V);
+extern	void		 SetOSMproperty(char *t, char *v, U_INT P);
 extern	char		*GetOSMdirectory(U_INT otype);
 extern	char		 GetOSMfolder(U_INT otype);
 extern  float    lightOSM[];
 extern  float    alphaOSM;
 extern  U_INT    lightDIM;
 extern  float    lightDIS[];
-extern	OSM_REP *GetOSMreplacement(char *T, char *V, char *obj);
+extern	OSM_MDEF *GetOSMreplacement(char *T, char *V, char *obj);
 //==========================================================================================
 // Type of object
 //==========================================================================================
@@ -133,26 +135,30 @@ struct OSM_TAG {
 	OSM_CONFP *table;					// Value table
 };
 //==========================================================================================
-// replacement structure
+// Model definition structure
 //==========================================================================================
-struct OSM_REP {
+struct OSM_MDEF {
 	char   dir;								// Replacement directory (No)
-	char  *obr;								// Replacing object
-	U_INT  otype;								// Object type
+	char  *obj;								// Object name
+	U_INT  otype;							// Object type
+	U_SHORT freq;							// Frequency
+	U_SHORT nbre;							// Number of instances
 	double sinA;
 	double cosA;
 	//------------------------------------------------------
-	OSM_REP()	{	dir = 0; 	obr	= 0; otype = 0; }
+	OSM_MDEF()	{	dir = 0; 	obj	= 0; otype = 0; }
 	//------------------------------------------------------
-	~OSM_REP(){	Clear();	}
+	~OSM_MDEF(){	Clear();	}
   //------------------------------------------------------
-	void Clear()	{if (obr) delete [] obr; obr = 0;}
+	void Clear()	{if (obj) delete [] obj; obj = 0;}
 	//-------------------------------------------------------
-	void Copy(OSM_REP &R)
+	void Copy(OSM_MDEF &R)
 	{	Clear(); 
-		obr = Dupplicate(R.obr, FNAM_MAX);
+		obj = Dupplicate(R.obj, FNAM_MAX);
 		dir = R.dir;
 		otype = R.otype;
+		sinA  = R.sinA;
+		cosA  = R.cosA;
 	}
 };
 
@@ -182,7 +188,7 @@ protected:
 	drawCB				drawFN;									// local Drawing vector	
 	writeCB				writFN;									// Write function			
 	//--- Replacing  object ------------------------------------------
-	OSM_REP			  repMD;									// Replacing model
+	OSM_MDEF			  repMD;									// Replacing model
 	double				orien;									// Orientation (rad);
 	//--- OSM properties ---------------------------------------------
 	//---------------------------------------------------------------
@@ -220,13 +226,15 @@ public:
 	void   *GetGroupTREF();
 	//----------------------------------------------------------------
 	void		BuildLightRow(double H);
+	void		BuildForestTour();
+	void		StoreTree(D2_POINT *pp);
 	//----------------------------------------------------------------
 	void		SetPart(C3DPart *p)				{part = p;}
 	void		Select();
 	void		Deselect();
 	void		SwapSelect();
 	void		ReplacePart(C3DPart *p);
-	void		ReplaceBy(OSM_REP *rpp)			{repMD.Copy(*rpp); } 
+	void		ReplaceBy(OSM_MDEF *rpp);		
 	//----------------------------------------------------------------
 	void		AdjustZ(CVector *V);
 	//----------------------------------------------------------------
@@ -271,6 +279,7 @@ public:
 	void		Draw();
 	void		DrawAsBLDG();
 	void		DrawAsLITE();
+	void		DrawAsTREE();
 	void		DrawLocal();									
 	//----------------------------------------------------------------
 	void		Write(FILE *fp);							

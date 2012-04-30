@@ -25,6 +25,7 @@
 #include "../Include/OSMobjects.h"
 #include "../Include/RoofModels.h"
 #include "../Include/Terraintexture.h"
+#include "../Include/fileparser.h"
 //===============================================================================
 //	Script to create an OSM datatbase from scratch
 //===============================================================================
@@ -116,7 +117,7 @@ OSM_CONFP  liteVAL[] = {
 //==========================================================================================
 OSM_CONFP	landVAL[] = {
 	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC ------------
-	{"FOREST",				OSM_TREE,				OSM_PROP_TREE},
+	{"FOREST",				OSM_TREE,				OSM_PROP_TREE, OSM_BUILD_TREE, OSM_LAYER_TREE},
 };
 //==========================================================================================
 //  List of admitted Tags
@@ -136,7 +137,7 @@ OSM_TAG TagLIST[] = {
 OSM_Object::drawCB renderOSM[] = {
 	&OSM_Object::DrawAsBLDG,							// 0 => OSM_LAYER_BLDG
 	&OSM_Object::DrawAsLITE,							// 1 => OSM_LAYER_LITE
-	0,																		// 2 => OSM_LAYER_TREE
+	&OSM_Object::DrawAsTREE,							// 2 => OSM_LAYER_TREE
 };
 //==========================================================================================
 //  Vector to write object depending on build
@@ -156,55 +157,60 @@ U_INT lightDIM    = 64;
 float alphaOSM    = float(0.25);
 float lightDIS[]  = {0.0f,0.01f,0.00001f};
 //==========================================================================================
-//	Check for legible value
+//	Locate OSM value slot
 //==========================================================================================
-U_INT CheckValue(OSM_CONFP *tab,char *v)
-{	while (strcmp(tab->val,EndOSM) != 0)
-	{ if  (strcmp(tab->val,v) != 0)	{tab++; continue; }
-		return tab->otype;
+OSM_CONFP *LocateOSMvalue(char *t,char *v)
+{	OSM_TAG *tab = TagLIST;
+	while (strcmp(tab->tag,EndOSM) != 0)
+	{	if  (strcmp(tab->tag,t)   != 0) {tab++; continue;}
+	OSM_CONFP *cnf = tab->table;	
+	  while (strcmp(cnf->val,EndOSM) != 0)
+		{	if  (strcmp(cnf->val,v) != 0)	{cnf++; continue; }
+			return cnf;
+		}
+		//--- unknown value --------------------------
+		return 0;
 	}
-  //--- Unsupported value --------------------
+	//--- Unknown tag ------------------------------
+	return 0;
+}
+//==========================================================================================
+//	Locate OSM Tag
+//==========================================================================================
+OSM_TAG *LocateOSMtag(char *t)
+{	OSM_TAG *tab = TagLIST;
+	while (strcmp(tab->tag,EndOSM) != 0)
+	{	if  (strcmp(tab->tag,t)   != 0) {tab++; continue;}
+		return tab;
+	}
 	return 0;
 }
 //==========================================================================================
 //	Check for legible tag
 //==========================================================================================
 U_INT  GetOSMobjType(char *t ,char *v)
-{	OSM_TAG *tab = TagLIST;
-	while (strcmp(tab->tag,EndOSM) != 0)
-	{	if  (strcmp(tab->tag,t)   == 0)	return CheckValue(tab->table,v);
-		tab++;
-	}
-	//--- tag not supported --------------------
-	return 0;
-}
+{	OSM_CONFP *cnf = LocateOSMvalue(t,v);
+	return (cnf)?(cnf->otype):(0);	}
 
 //==========================================================================================
 //	Get tag value configuration
 //==========================================================================================
 void  GetOSMconfig(char *t ,char *v, OSM_CONFP &V)
-{	OSM_TAG *tab = TagLIST;
-	while (strcmp(tab->tag,EndOSM) != 0)
-	{	if  (strcmp(tab->tag,t)   != 0) {tab++; continue;}
-	  //--- Find the configuration -------------
-		//--- Search config ----------------------
-		OSM_CONFP *cnf = tab->table;	
-	  while (strcmp(cnf->val,EndOSM) != 0)
-		{	if  (strcmp(cnf->val,v) != 0)	{cnf++; continue; }
-			V	= *cnf;
-			
-	//		V.otype = cnf->otype;
- 	//		V.bvec  = cnf->bvec;
-	//		V.prop  = cnf->prop;
-	//		V.val   = cnf->val;
-			V.tag		= tab->tag;
-			return;
-		}
-		break;
-	}
-	//--- tag not supported --------------------
+{	OSM_CONFP *cnf = LocateOSMvalue(t,v);
+	OSM_TAG   *tab = LocateOSMtag(t);
 	V.otype = 0;
-	STREETLOG("Tag (%s,%s) Skipped",t,v);
+	if (0 == cnf) {STREETLOG("Tag (%s,%s) Skipped",t,v); return;}
+	V	= *cnf;
+	V.tag		= tab->tag;
+	return;
+}
+//==========================================================================================
+//	Set Property
+//==========================================================================================
+void SetOSMproperty(char *t, char *v, U_INT P)
+{	OSM_CONFP *cnf = LocateOSMvalue(t,v);
+	if (0 == cnf)			return;
+	cnf->prop |= P;
 	return;
 }
 //==========================================================================================
@@ -225,14 +231,14 @@ char GetOSMfolder(U_INT otype)
 //==========================================================================================
 //	Return a replacement struct for the tag-value parameters 
 //==========================================================================================
-OSM_REP *GetOSMreplacement(char *T, char *V, char *obj)
+OSM_MDEF *GetOSMreplacement(char *T, char *V, char *obj)
 {	U_INT otype =	GetOSMobjType(T, V);
 	if (0 == otype)			return 0;
 	//--- fill replacement parameters ------------------
-	OSM_REP *rep = new OSM_REP();
+	OSM_MDEF *rep = new OSM_MDEF();
 	rep->otype	= otype;
 	rep->dir		= GetOSMfolder(otype);
-	rep->obr		= Dupplicate(obj,FNAM_MAX);
+	rep->obj		= Dupplicate(obj,FNAM_MAX);
 	return rep;
 }
 //==========================================================================
@@ -487,6 +493,22 @@ void OSM_Object::Deselect()
 	return;
 }
 //-----------------------------------------------------------------
+//	Replace  this object
+//-----------------------------------------------------------------
+void	OSM_Object::ReplaceBy(OSM_MDEF *rpp)
+{	char *dir = directoryTAB[rpp->dir];
+	repMD.Copy(*rpp);
+  COBJparser fpar(OSM_OBJECT);
+	fpar.SetDirectory(dir);
+  fpar.Decode(repMD.obj,OSM_OBJECT);
+	C3DPart *prt = fpar.BuildOSMPart(repMD.dir);
+	if (0 == prt)							return;
+	//--- Change model parameters --------------
+	ReplacePart(prt);
+	return; 
+} 
+
+//-----------------------------------------------------------------
 //	Change part. Object is replaced 
 //-----------------------------------------------------------------
 void OSM_Object::ReplacePart(C3DPart *prt)
@@ -506,7 +528,7 @@ void OSM_Object::BuildLightRow(double ht)
 	part->AllocateOsmLIT(bpm.side);
 	TEXT_INFO txd;
 	strncpy(txd.name,"GLOBE.PNG",FNAM_MAX);
-	txd.Dir = TEXDIR_OSM_MD;
+	txd.Dir = FOLDER_OSM_USER;
 	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
 	part->SetTREF(ref);
 	//--- Init all vertices ----------------
@@ -519,6 +541,48 @@ void OSM_Object::BuildLightRow(double ht)
 		dst->VT_Z = pps->z + H;
 		dst++;
 	}
+	return;
+}
+//-----------------------------------------------------------------
+//	Set a tree at the spot
+//	NOTE:  All trees must share the same texture ARBRES.tif
+//-----------------------------------------------------------------
+void OSM_Object::StoreTree(D2_POINT *pp)
+{	D2_Session *ses = globals->trn->GetSession();	// call session
+	OSM_MDEF   *mdf = ses->GetTree();							// Get a tree model
+	char *dir				= directoryTAB[FOLDER_OSM_TREE];
+	COBJparser fpar(OSM_OBJECT);
+	fpar.SetDirectory(dir);
+  fpar.Decode(mdf->obj,OSM_OBJECT);
+	//--- Compute translation to the spot ------------
+	CVector T(pp->x,pp->y,pp->a);									// Translation to pp
+	fpar.Transform(1,0,T);												// Translate vertices
+	//--- Extend actual part with new vertices -------
+	GN_VTAB *buf;
+	int nbv = fpar.GetVerticeStrip(&buf);
+	part->ExtendOSM(nbv,buf);
+	delete buf;
+	return;
+}
+//-----------------------------------------------------------------
+//	first step: seed a tree at each point
+//	NOTE: Each tree is a 4 triangles figure, thus 
+//				Each tree has 12 vertices
+//-----------------------------------------------------------------
+void OSM_Object::BuildForestTour()
+{	part		 = new C3DPart();
+	TEXT_INFO txd;
+	strncpy(txd.name,"ARBRES.TIF",FNAM_MAX);
+	txd.Dir = FOLDER_OSM_TREE;
+	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
+	part->SetTREF(ref);
+	//-----------------------------------------------------
+	for (D2_POINT *pp=base.GetFirst(); pp != 0; pp = pp->next)
+	{	StoreTree(pp);
+	}
+	//--- Add this object ------------------------------------
+	D2_Session *ses = globals->trn->GetSession();	// call session
+	ses->AddForest(this);
 	return;
 }
 //-----------------------------------------------------------------
@@ -548,6 +612,20 @@ void OSM_Object::DrawAsBLDG()
 	EndDrawOSMbuilding();
 }
 //-----------------------------------------------------------------
+//	Draw as a Tree object
+//	We dont translate camera at building center
+//-----------------------------------------------------------------
+void OSM_Object::DrawAsTREE()
+{	DebDrawOSMbuilding();
+	glEnable(GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER,float(0.4));
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+	glDisable(GL_CULL_FACE);
+	part->Draw();
+	EndDrawOSMbuilding();
+}
+
+//-----------------------------------------------------------------
 //	Write the building
 //-----------------------------------------------------------------
 void OSM_Object::WriteAsBLDG(FILE *fp)
@@ -574,9 +652,9 @@ void OSM_Object::WriteAsBLDG(FILE *fp)
 		fputs(txt,fp);
 	}
 	//--- Write replace if any -------------------------
-	if (0 == repMD.obr)			return;
+	if (0 == repMD.obj)			return;
 	//--- Write the replace directive ------------------
-	_snprintf(txt,127,"Replace (Z=%.7lf) with %s\n",orien,repMD.obr);
+	_snprintf(txt,127,"Replace (Z=%.7lf) with %s\n",orien,repMD.obj);
 	fputs(txt,fp);
 	//--- all ok ---------------------------------------
 	return;

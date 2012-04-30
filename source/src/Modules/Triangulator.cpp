@@ -36,6 +36,7 @@ CBuilder::buildCB osmCB[] = {
 	&CBuilder::MakeBLDG,					// OSM_BLDG		(1)
 	&CBuilder::MakeLITE,					// OSM_LITE			(2)
 	&CBuilder::MakeBLDG,					// OSM_AMNY			(3)
+	&CBuilder::MakeFRST,					// OSM_TREE			(4)
 };
 //===================================================================================
 //	UNIT CONVERTER 
@@ -390,8 +391,8 @@ void CBuilder::Clean()
 	slot.Clear();
 	for (U_INT k=0; k < walls.size(); k++)	delete walls[k];
 	walls.clear();
-	for (U_INT k=0; k < roof.size();  k++)	delete roof[k];
-	roof.clear();
+	for (U_INT k=0; k < sflat.size();  k++)	delete sflat[k];
+	sflat.clear();
 	//--- delete bevel point array ----------
 	if (bevel)	delete [] bevel;
 	//--- Reset all values ------------------
@@ -416,7 +417,7 @@ void CBuilder::CheckAll()
 	int b = 0;
 	if (walls.size() != 0)
 	int c = 0;
-	if (roof.size() != 0)
+	if (sflat.size() != 0)
 	int d = 0;
 	if (bevel)
 	int e = 0;
@@ -507,6 +508,16 @@ void CBuilder::MakeLITE(U_INT tp)
 	return;
 }
 //-------------------------------------------------------------------
+//	Make a forest.  Compute height from terrain
+//-------------------------------------------------------------------
+void CBuilder::MakeFRST(U_INT tp)
+{	osmB->Copy(BDP);
+	osmB->ReceiveQ(extp);
+	osmB->BuildForestTour();
+	extp.Clear();
+	return;
+}
+//-------------------------------------------------------------------
 //	Edit tag
 //-------------------------------------------------------------------
 void CBuilder::EditTag(char *txt)
@@ -546,23 +557,15 @@ bool CBuilder::RiseBuilding(D2_BPM *bpm)
 }
 //-------------------------------------------------------------------
 //	Replace by a 3D object
-//	option or tells whether orientation is defined in rpp parameter
+//	Option tells whether orientation is defined in rpp parameter
 //-------------------------------------------------------------------
-U_CHAR CBuilder::ReplaceOBJ(OSM_REP *rpp, char or)
+U_CHAR CBuilder::ReplaceOBJ(OSM_MDEF *rpp, char or)
 {	if (0 == osmB)							return 0;
-	if (0 == rpp->obr)					return 0;
+	if (0 == rpp->obj)					return 0;
 	if (!osmB->CanBeReplaced())	return 0;
 	if (or) {rpp->sinA = sinA; rpp->cosA = cosA; }
 	//TRACE("REPLACE BUILDING %d",BDP.stamp);
-	char *dir = directoryTAB[rpp->dir];
 	osmB->ReplaceBy(rpp);
-  COBJparser fpar(OSM_OBJECT);
-	fpar.SetDirectory(dir);
-  fpar.Decode(rpp->obr,OSM_OBJECT);
-	C3DPart *prt = fpar.BuildOSMPart(rpp->dir);
-	if (0 == prt)							return 0;
-	//--- Change model parameters --------------
-	osmB->ReplacePart(prt);
 	return 1;
 }
 //-------------------------------------------------------------------
@@ -580,7 +583,7 @@ void CBuilder::EndOBJ()
 //		- 3 vertices per triangle
 //-------------------------------------------------------------------
 U_INT CBuilder::CountVertices()
-{	U_INT nvtx = 3 * roof.size();
+{	U_INT nvtx = 3 * sflat.size();
 	for (U_INT k=0; k < walls.size(); k++) nvtx += walls[k]->VerticesNumber();
 	return nvtx;
 }
@@ -612,14 +615,14 @@ void CBuilder::SaveBuildingData(C3DPart *prt)
 	//--- Save wall vertices ------------------------------
 	for (U_INT k=0; k < walls.size(); k++) n = walls[k]->StoreData(prt,n);
 	//--- Save roof vertices ------------------------------
-	for (U_INT k=0; k < roof.size() ; k++) n = roof[k]->StoreData(prt,n);
+	for (U_INT k=0; k < sflat.size() ; k++) n = sflat[k]->StoreData(prt,n);
 	//--- Cross check validity ----------------------------
 	if (n > nvtx)	gtfo("Bad vertice count");
 	//--- Release walls and roof --------------------------
 	for (U_INT k=0; k < walls.size(); k++)	delete walls[k];
 	walls.clear();
-	for (U_INT k=0; k < roof.size();  k++)  delete roof[k];
-	roof.clear();
+	for (U_INT k=0; k < sflat.size();  k++)  delete sflat[k];
+	sflat.clear();
 	//--- Release bivel plane -----------------------------
 	delete []  bevel;
 	bevel		= 0;
@@ -832,7 +835,7 @@ bool CBuilder::GetAnEar()
 		//------ Get an ear -------------------------------
 		D2_TRIANGLE *t = new D2_TRIANGLE();
 		*t			= tri;
-		roof.push_back(t);
+		sflat.push_back(t);
 		//--- remove ear slot -----------------------------
 		D2_SLOT *sb = slot.CyPrev(sa);
 		D2_SLOT *sc = slot.CyNext(sa);
@@ -881,7 +884,7 @@ bool CBuilder::NotAnEar(D2_SLOT *sa)
 //-------------------------------------------------------------------
 char CBuilder::Triangulation()
 {	tri.N = CVector(0,0,1);
-	roof.reserve(slot.GetNbObj() - 1);
+	sflat.reserve(slot.GetNbObj() - 1);
 	while (slot.GetNbObj() != 2)	if (!GetAnEar()) 	return 3;
 	slot.Clear();
 	if (trace) TraceOut();
@@ -928,8 +931,8 @@ void CBuilder::TraceOut()
 {	char ida[6];
 	char idb[6];
 	char idc[6];	
-	for (U_INT k = 0; k < roof.size();k++)
-	{	D2_TRIANGLE *t = roof[k];
+	for (U_INT k = 0; k < sflat.size();k++)
+	{	D2_TRIANGLE *t = sflat[k];
 		t->A->Id(ida);
 		t->B->Id(idb);
 		t->C->Id(idc); 
@@ -1413,8 +1416,8 @@ void CBuilder::Reorder()
 //----------------------------------------------------------------
 void CBuilder::ClearRoof()
 {	//--- Delete current roof -----------------------------
-	for (U_INT k=0; k < roof.size(); k++) delete roof[k];
-	roof.clear();
+	for (U_INT k=0; k < sflat.size(); k++) delete sflat[k];
+	sflat.clear();
 	return;
 }
 //----------------------------------------------------------------
@@ -1425,7 +1428,7 @@ void CBuilder::SelectRoof(D2_BPM *bpm)
 	//--- Assign roof parameters---------------------
 	CRoofModel *rofm = bpm->roofM;
 	rofm->SetRoofData(bpm, this);
-	rofm->BuildRoof(extp,roof);
+	rofm->BuildRoof(extp,sflat);
 	Zp			= rofm->GetTop();
 	return;
 }
@@ -1697,6 +1700,7 @@ D2_Group::D2_Group(char *gn, D2_Session *s)
 	name[63]	= 0;
 	sfMin			= 0;
 	sfMax			= 10000000;
+	nbMax			= 0;
 	//-- Default is side [4,200000] ---------
 	sdMin			= 4;
 	sdMax			= 200000;
@@ -1802,6 +1806,9 @@ bool D2_Group::DecodeParam(char *prm)
 	//--- Check frequency ----------------------------------
 	nf = sscanf(buf," FREQ = %d", &w);
 	if (nf == 1)	{quota = w;							return true; }
+	//--- Check number max -----------------------------------
+	nf = sscanf(buf," NBMAX = %d", &nbMax);
+	if (nf == 1)  {opt.Set(D2_GRP_NMAX);	return true; }
 	//--- Check Side length ----------------------------------
 	nf = sscanf(buf," LENGTH [ %lf, %lf ]  %c ", &lgMin, &lgMax, &rlgr);
 	if (nf >= 2)	{opt.Set(D2_GRP_LNGT);	return true; }
@@ -1901,6 +1908,15 @@ int D2_Group::ValueLength(double lg)
 	return 10;
 }
 //-----------------------------------------------------------------
+//	Evaluate Max instance
+//-----------------------------------------------------------------
+int D2_Group::ValueNbmax()
+{ if (opt.Not(D2_GRP_NMAX))		return 0;
+	if (objNB > nbMax)					return -100;
+	return 10;
+}
+
+//-----------------------------------------------------------------
 //	Select the group 
 //	Group is selected based on 
 //	sd = number of sides
@@ -1908,7 +1924,7 @@ int D2_Group::ValueLength(double lg)
 //	Position
 //-----------------------------------------------------------------
 int D2_Group::ValueGroup(D2_BPM *bpm)
-{	int val = 0;
+{	int val = ValueNbmax();
 	char *tag = bpm->obj->GetTag();
 	char *vtg = bpm->obj->GetVal();
 	val += ValueTag(tag,vtg);
