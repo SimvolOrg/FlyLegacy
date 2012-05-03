@@ -82,6 +82,15 @@ char *ScriptCreateAPO[] = {
 //==========================================================================================
 char *EndOSM = "***";
 //==========================================================================================
+//  Layer name
+//==========================================================================================
+char *layerNAME[] = {
+		"Buildings",
+		"Forests",
+		"Lights",
+		"",
+};
+//==========================================================================================
 //  List of amenity VALUES Tags
 //==========================================================================================
 OSM_CONFP amenityVAL[] = {
@@ -128,7 +137,7 @@ OSM_TAG TagLIST[] = {
 	{"BUILDING",		buildingVAL,},
 	{"LIT",					liteVAL,		},
 	{"HIGHWAY",			liteVAL,		},
-//	{"LANDUSE",     landVAL,    },
+	{"LANDUSE",     landVAL,    },
 	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
@@ -136,19 +145,19 @@ OSM_TAG TagLIST[] = {
 //==========================================================================================
 OSM_Object::drawCB renderOSM[] = {
 	&OSM_Object::DrawAsBLDG,							// 0 => OSM_LAYER_BLDG
-	&OSM_Object::DrawAsLITE,							// 1 => OSM_LAYER_LITE
-	&OSM_Object::DrawAsTREE,							// 2 => OSM_LAYER_TREE
+	&OSM_Object::DrawAsTREE,							// 1 => OSM_LAYER_TREE
+	&OSM_Object::DrawAsLITE,							// 2 => OSM_LAYER_LITE
 };
 //==========================================================================================
-//  Vector to write object depending on build
+//  Vector to write object depending on build vector
 //==========================================================================================
 OSM_Object::writeCB writeOSM[] = {
 	0,																		// 0 => Not OSM
 	&OSM_Object::WriteAsBLDG,							// 1 => OSM_BUILD_BLDG
-	&OSM_Object::WriteAsLITE,							// 2 => OSM_BUILD_LITE
-	0,																		// 3 => OSM_BUILD_....
+	&OSM_Object::WriteAsGOSM,							// 2 => OSM_BUILD_LITE
+	0,																		// 3 => OSM_BUILD_AMNY
+	&OSM_Object::WriteAsGOSM,							// 4 => OSM_BUILD_TREE
 };
-
 //==========================================================================================
 //  Street light parameters
 //==========================================================================================
@@ -246,13 +255,13 @@ OSM_MDEF *GetOSMreplacement(char *T, char *V, char *obj)
 //	NOTE:		The first PART is for the main building
 //					Additional parts may come from accessory like climbox, etc
 //==========================================================================
-OSM_Object::OSM_Object(OSM_CONFP *CF)
-{	type				= CF->otype;
+OSM_Object::OSM_Object(CBuilder *B,OSM_CONFP *CF, D2_Style *sty)
+{	bld					= B;
+	type				= CF->otype;
 	bvec				= CF->bvec;
 	Layer				= CF->layr;
 	State				= 1;
 	bpm.stamp		= 0;
-	bpm.group		= 0;
 	bpm.obj			= this;
 	part				= 0;
 	orien       = 0;
@@ -260,6 +269,7 @@ OSM_Object::OSM_Object(OSM_CONFP *CF)
 	tag	= val		= 0;
 	if (CF->tag)	tag = Dupplicate(CF->tag,64);
 	if (CF->val)	val = Dupplicate(CF->val,64);
+	if (sty)	ForceStyle(sty);
 }
 //-----------------------------------------------------------------
 //	Destroy resources
@@ -313,10 +323,10 @@ void OSM_Object::AdjustZ(CVector *T)
 //-----------------------------------------------------------------
 //	Transfer queue
 //-----------------------------------------------------------------
-void OSM_Object::ReceiveQ(Queue<D2_POINT> &H)
+void OSM_Object::ReceiveBase(D2_POINT *p0)
 {	D2_POINT *pp;
   D2_POINT *np;
-	for (pp = H.GetFirst(); pp != 0; pp = pp->next)
+	for (pp = p0; pp != 0; pp = pp->next)
 	{	np = new D2_POINT(pp,'R');
 		base.PutLast(np);
 	}
@@ -371,18 +381,60 @@ void OSM_Object::EditTag(char *txt)
 	return;
 }
 //-----------------------------------------------------------------
+//	Force Style parameters
+//-----------------------------------------------------------------
+void OSM_Object::ForceStyle(D2_Style *sty)
+{	bpm.style = sty;
+	if (0 == sty)		return;
+	sty->AssignBPM(&bpm);
+	//--- search roof model and texture --------
+	bpm.roofP			= sty->SelectedTexture();
+	D2_Group *grp = sty->GetGroup();
+	bpm.roofM     = grp->SelectedRoof();
+	bpm.flNbr     = grp->GenFloorNbr();
+}
+//-----------------------------------------------------------------
+//	Make a building
+//-----------------------------------------------------------------
+int OSM_Object::BuildBLDG()
+{	D2_Session *ses = bld->GetSession();
+	bld->QualifyPoints(&bpm);
+	//--- Set generation parameters ---------
+	ses->GetaStyle(&bpm);
+	AssignStyle(bpm.style,bld);
+	//--------------------------------------
+	return OSM_COMPLET;
+}
+//-----------------------------------------------------------------
+//	Make a light row
+//-----------------------------------------------------------------
+int OSM_Object::BuildLITE()
+{	D2_Session *ses = bld->GetSession();
+	ReceiveBase(bld->FirstNode());
+	BuildLightRow(6);						// 6 meters above ground
+	ses->AddLight(this);
+	bld->ClearNode();
+	return OSM_COMPLET;
+}
+//-----------------------------------------------------------------
+//	Make a forest 
+//-----------------------------------------------------------------
+int OSM_Object::BuildFRST()
+{	D2_Session *ses = bld->GetSession();
+	bld->QualifyPoints(&bpm);
+	bld->Triangulation();
+	ReceiveBase(bld->FirstNode());
+	BuildForestTour();
+	ses->AddForest(this);
+	return OSM_PARTIAL;
+}
+//-----------------------------------------------------------------
 //	Assign style to object
 //-----------------------------------------------------------------
 void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
-{ //--- Copy global parameters ------------------
-	D2_BPM *gpm = sty->GetBPM();
-	bpm	 = *gpm;			// Get external parameters --
-	//--- Change block parameter assignation ------
-	sty->AssignBPM(&bpm);
-	D2_Group *grp = sty->GetGroup();
+{ D2_Group *grp = sty->GetGroup();
 	if (0 == bpm.flNbr)	grp->GenFloorNbr();
 	//--- Get everything in bpm --------------------
-	bpm.style = sty;
 	bpm.group	= grp;
 	bpm.flNbr	= grp->GetFloorNbr();
 	bpm.flHtr	= grp->GetFloorHtr();
@@ -392,6 +444,7 @@ void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
 	if (0 == bpm.roofM)	bpm.roofM	= grp->GetRoofModByNumber(bpm.mans);
 	//--- Add the building -------------------------
 	grp->AddBuilding(this);
+	bld->SetBDP(bpm);
 	//--- Set part parameters ----------------------
 	C3DPart      *prt  = new C3DPart();
 	CShared3DTex *ref  = grp->GetTREF();
@@ -408,6 +461,7 @@ void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
 void OSM_Object::ChangeStyle(D2_Style *sty, CBuilder *B)
 { //--- set block parameter to me----
 	sty->AssignBPM(&bpm);
+	bpm.style = sty;
   bpm.opt.Raz(OSM_PROP_REPL);
 	bpm.roofM	= 0;
 	bpm.roofP	= 0;
@@ -418,7 +472,7 @@ void OSM_Object::ChangeStyle(D2_Style *sty, CBuilder *B)
 	//--- Change group ----------------------
 	D2_Group *pgp = bpm.group;
 	pgp->RemBuilding(this);
-	grp->AddBuilding(this);
+	//grp->AddBuilding(this);
 	AssignStyle(sty,B);
 	return;
 }
@@ -543,26 +597,54 @@ void OSM_Object::BuildLightRow(double ht)
 	}
 	return;
 }
+
 //-----------------------------------------------------------------
 //	Set a tree at the spot
 //	NOTE:  All trees must share the same texture ARBRES.tif
 //-----------------------------------------------------------------
 void OSM_Object::StoreTree(D2_POINT *pp)
-{	D2_Session *ses = globals->trn->GetSession();	// call session
+{	D2_Session *ses = bld->GetSession();	// call session
 	OSM_MDEF   *mdf = ses->GetTree();							// Get a tree model
 	char *dir				= directoryTAB[FOLDER_OSM_TREE];
 	COBJparser fpar(OSM_OBJECT);
 	fpar.SetDirectory(dir);
   fpar.Decode(mdf->obj,OSM_OBJECT);
 	//--- Compute translation to the spot ------------
+	double alfa = RandomNumber(180);
+	double  rad = DegToRad(alfa);
+	double   cs = cos(rad);
+	double   sn = sin(rad);
 	CVector T(pp->x,pp->y,pp->a);									// Translation to pp
-	fpar.Transform(1,0,T);												// Translate vertices
+	fpar.Transform(cs,sn,T);											// Translate vertices
 	//--- Extend actual part with new vertices -------
 	GN_VTAB *buf;
 	int nbv = fpar.GetVerticeStrip(&buf);
 	part->ExtendOSM(nbv,buf);
 	delete buf;
+	//TRACE("TREE at x=%lf y=%lf z%lf",pp->x,pp->y,pp->a);
 	return;
+}
+//-----------------------------------------------------------------
+//	Build a scan line about the forest width
+//-----------------------------------------------------------------
+void OSM_Object::ScanLine(double y)
+{	double   x = minLon;
+	D2_POINT pp;
+
+	while (x < maxLon)
+	{	pp.x  = RandomCentered(x,0,70);
+		pp.y  = RandomCentered(y,0,70);
+		x	   += bld->GetSession()->GetSeed();
+		bool in = bld->PointInBase(&pp);
+		if (!in)	continue;
+		//--- Set a tree ----------------------
+		CVector feet(pp.x,pp.y,0);
+		SPosition pos    = bpm.geop;
+		AddFeetTo(pos,feet);
+		GroundSpot lnd(pos.lon,pos.lat);
+		pp.a = globals->tcm->GetGroundAt(lnd);
+		StoreTree(&pp);
+	}
 }
 //-----------------------------------------------------------------
 //	first step: seed a tree at each point
@@ -570,7 +652,9 @@ void OSM_Object::StoreTree(D2_POINT *pp)
 //				Each tree has 12 vertices
 //-----------------------------------------------------------------
 void OSM_Object::BuildForestTour()
-{	part		 = new C3DPart();
+{	minLat = minLon = 0;
+	maxLat = maxLon	= 0;
+	part		 = new C3DPart();
 	TEXT_INFO txd;
 	strncpy(txd.name,"ARBRES.TIF",FNAM_MAX);
 	txd.Dir = FOLDER_OSM_TREE;
@@ -579,11 +663,33 @@ void OSM_Object::BuildForestTour()
 	//-----------------------------------------------------
 	for (D2_POINT *pp=base.GetFirst(); pp != 0; pp = pp->next)
 	{	StoreTree(pp);
+		if (pp->y < minLat)	minLat = pp->y;
+		if (pp->y > maxLat)	maxLat = pp->y;
+		if (pp->x < minLon) minLon = pp->x;
+		if (pp->x > maxLon)	maxLon = pp->x;
 	}
-	//--- Add this object ------------------------------------
-	D2_Session *ses = globals->trn->GetSession();	// call session
-	ses->AddForest(this);
+	pm1	= minLat;
 	return;
+	}
+//-----------------------------------------------------------------
+//	Make a forest row
+//-----------------------------------------------------------------
+int OSM_Object::BuildROWF()
+{ //--- Check for surface -------------------------------
+	if (bpm.surf < SQRF_FROM_SQRMTR(100))	return OSM_COMPLET;	
+  ScanLine(pm1);
+	pm1 += bld->GetSession()->GetSeed();
+	return (pm1 < maxLat)?(OSM_PARTIAL):(OSM_COMPLET);
+}
+//-----------------------------------------------------------------
+//	Draw next row
+//-----------------------------------------------------------------
+int OSM_Object::NextForestRow()
+{	//--- Check for surface -------------------------------
+	if (bpm.surf < SQRF_FROM_SQRMTR(100))	return OSM_COMPLET;
+	ScanLine(pm1);												// Build a row
+	pm1 += 90;
+	return (pm1 > maxLat)?(OSM_COMPLET):(OSM_PARTIAL);
 }
 //-----------------------------------------------------------------
 //	Draw as a terrain object
@@ -593,14 +699,19 @@ void OSM_Object::Draw()
   bool ok		= (this != globals->osmS) || globals->clk->GetON();
 			 ok  &= (State == 1);
 	if (!ok)		return;
+	//--- Get line mode -----------------------------
+	U_INT mode = bld->DrawMode();
+	bool  tour = (mode == 0) && (bpm.selc);
 	//--- Draw my parts -----------------------------
 	glLoadName(bpm.stamp);
 	glPushMatrix();
 	SVector T = FeetComponents(globals->geop, this->bpm.geop, bpm.rdf);
 	if (NeedZ())	T.z	+= alti;
 	glTranslated(T.x, T.y, T.z);  //T.z);
-	part->Draw();	
+	part->Draw();
+	if (tour)	DrawBase();	
 	glPopMatrix();
+	return;
 }
 //-----------------------------------------------------------------
 //	Draw as a Building object
@@ -609,22 +720,47 @@ void OSM_Object::Draw()
 void OSM_Object::DrawAsBLDG()
 {	DebDrawOSMbuilding();	
 	part->Draw();
-	EndDrawOSMbuilding();
+	EndDrawOSM();
+}
+//-----------------------------------------------------------------
+//	Draw Tour
+//-----------------------------------------------------------------
+void OSM_Object::DrawBase()
+{	glColor4f(1,1,1,1);
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_LINE_LOOP);
+	for (D2_POINT *pp=base.GetFirst(); pp != 0; pp = pp->next)
+	{	glVertex3d(pp->x,pp->y,pp->a);	}
+	glEnd();
+	glEnable(GL_TEXTURE_2D);
+	return;
 }
 //-----------------------------------------------------------------
 //	Draw as a Tree object
 //	We dont translate camera at building center
 //-----------------------------------------------------------------
 void OSM_Object::DrawAsTREE()
-{	DebDrawOSMbuilding();
-	glEnable(GL_ALPHA_TEST);
-  glAlphaFunc(GL_GREATER,float(0.4));
-	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-	glDisable(GL_CULL_FACE);
+{	U_INT mode = bld->DrawMode();
+  glPushMatrix();	
+  glTranslated(0,0, -bpm.geop.alt);
+	DebDrawOSMforest();
 	part->Draw();
-	EndDrawOSMbuilding();
+	glPopMatrix();
+	if (0 == mode) bld->DrawGround(1);
+	EndDrawOSM();
+	return;
 }
-
+//-----------------------------------------------------------------
+//	Draw as a light row
+//-----------------------------------------------------------------
+void OSM_Object::DrawAsLITE()
+{	glPushMatrix();
+  glTranslated(0,0, -bpm.geop.alt);
+	DebDrawOSMlight(lightOSM, alphaOSM);
+	part->Draw();
+  EndDrawOSM();
+	glPopMatrix();
+}
 //-----------------------------------------------------------------
 //	Write the building
 //-----------------------------------------------------------------
@@ -660,20 +796,9 @@ void OSM_Object::WriteAsBLDG(FILE *fp)
 	return;
 }
 //-----------------------------------------------------------------
-//	Draw as a light row
+//	Write as a generic object
 //-----------------------------------------------------------------
-void OSM_Object::DrawAsLITE()
-{	glPushMatrix();
-  glTranslated(0,0, -bpm.geop.alt);
-	DebDrawOSMlight(lightOSM, alphaOSM);
-	part->Draw();
-  EndDrawOSMlight();
-	glPopMatrix();
-}
-//-----------------------------------------------------------------
-//	Write the light row
-//-----------------------------------------------------------------
-void OSM_Object::WriteAsLITE(FILE *fp)
+void OSM_Object::WriteAsGOSM(FILE *fp)
 {	char txt[128];
 	_snprintf(txt,127,"Start %05d id=%d\n", bpm.stamp, bpm.ident);
 	fputs(txt,fp);

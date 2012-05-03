@@ -2367,7 +2367,7 @@ void C3DPart::DrawAsGVT()
 	glVertexPointer  (3,GL_FLOAT,sizeof(GN_VTAB),&(gTAB->VT_X));
   glTexCoordPointer(2,GL_FLOAT,sizeof(GN_VTAB),&(gTAB->VT_S));
 	glNormalPointer  (  GL_FLOAT,sizeof(GN_VTAB),&(gTAB->VN_X));
-  glDrawArrays(GL_TRIANGLES,0, NbVT);
+	glDrawArrays(GL_TRIANGLES,0, NbVT);
   return;
 }
 //----------------------------------------------------------------------

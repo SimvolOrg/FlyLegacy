@@ -1478,7 +1478,7 @@ CRabbitCamera::CRabbitCamera()
   cIden = CAMERA_RABBIT;
   cNext = 0;
   cPrev = 0;
-	rmax	= 12000;
+	rmax	= 15000;
 	range = 5000;
 }
 //--------------------------------------------------------------------------

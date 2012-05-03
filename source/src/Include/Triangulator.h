@@ -95,12 +95,11 @@ struct OSM_CONFP;
 //	TRIANGULATOR Drawing options
 //====================================================================================
 #define TRITOR_DRAW_ROOF	(0x00000001)
-#define TRITOR_DRAW_WALL	(0x00000002)
 //--------------------------------------------
 #define TRITOR_DRAW_LINE  (0x00000100)
 #define TRITOR_DRAW_FILL  (0x00000200)
 //---------------------------------------------
-#define TRITOR_ALL (TRITOR_DRAW_ROOF+TRITOR_DRAW_WALL+TRITOR_DRAW_LINE+TRITOR_DRAW_FILL)
+#define TRITOR_ALL (TRITOR_DRAW_ROOF+TRITOR_DRAW_LINE+TRITOR_DRAW_FILL)
 //====================================================================================
 //	Texturing mode
 //====================================================================================
@@ -305,7 +304,7 @@ struct D2_TRIANGLE {
 			C = N;
 		}
 	//------------------------------------------------------
-	//U_INT	StoreVertices(C3DPart *p, U_INT n);
+	void	DrawTour(char opt);
 	U_INT StoreData(C3DPart *p, U_INT n);
 };
 
@@ -595,6 +594,8 @@ public:
 	//--------------------------------------------------------------
 	D2_Group  *GetGroup()					{return group; }
 	D2_TParam *GetDormer()				{return dormer;}
+	//--------------------------------------------------------------
+	D2_TParam *SelectedTexture()	{return sText;}
 };
 //====================================================================================
 //	Group options 
@@ -654,6 +655,8 @@ class D2_Group: public  D2_Ratio {
 	double   flHtr;													// Floor height
 	//--- Number of generated objects in this group ----------------
 	U_INT    nItem;													// Instance number
+	//--- Selected roof model --------------------------------------
+	CRoofModel *sRoof;											// Selected roof
 	//--- Default roof texture -------------------------------------
 	D2_TParam tRoof;												// Texture roof
 	//--- Building list --------------------------------------------
@@ -717,6 +720,8 @@ public:
 	D2_TParam  *GetRoofTexDefault(){return &tRoof;}
 	D2_Session *Session()					{return ssn;}
 	//--------------------------------------------------------------
+	CRoofModel *SelectedRoof()		{return sRoof;}
+	//--------------------------------------------------------------
 	char     *GetName()						{return name;}
 	char     *TextureName()				{return txd.name;}
 	//--------------------------------------------------------------
@@ -734,16 +739,9 @@ struct D2_BEVEL {
 	double			H;																// floor height
 };
 //====================================================================================
-//
-//====================================================================================
-
-//====================================================================================
 //	TRIANGULATOR for triangulation of polygones
 //====================================================================================
 class CBuilder: public CExecutable, public Tracker {
-	//--- Callback vectors ----------------------------------------
-public:
-	typedef void (CBuilder::*buildCB)(U_INT);		// Build vector
 protected:
 	//--- ATTRIBUTES ----------------------------------------------
 	COption		dop;																// Drawing option
@@ -754,8 +752,10 @@ protected:
 	Queue <D2_POINT> hole;												// Hole contour
 	Queue <D2_SLOT>  slot;												// Slot list
 	std::vector<D2_FLOOR*>    walls;							// Walls
-	std::vector<D2_TRIANGLE*> sflat;								// Flat surface
+	std::vector<D2_TRIANGLE*> sflat;							// Flat surface
 	//--- Spot to get terrain elevation----------------------------
+	SPosition   midl;															// Center position
+	SPosition   geop;															// Object geop
 	GroundSpot  spot;
 	//--- Roof points ----------------------------------------------
 	D2_POINT   *bevel;														// Bevel array
@@ -793,19 +793,18 @@ protected:
 	char    trace;																// Trace indicator
 	char    vRFX;																	// Reflex indicator
 	char    hIND;																	// Hole indicator
-	char    rfu;																	// reserved
+	char    dMOD;																	// Drawing mode
 	//----------------------------------------------------
 	U_INT   num;																	// Null number
 	U_INT		seq;																	// Sequence number
 	//--- Current building  ------------------------------
 	D2_BPM  BDP;																	// Building parameters
+	U_INT		ident;
 	OSM_Object *osmB;															// Current building
 	OSM_Object *remB;															// Removed building
 	U_INT   xOBJ;																	// Current texture
 	//---  Texture descriptor ----------------------------
 	TEXT_INFO txd;																// Texture desc
-	//--- Drawing mode -----------------------------------
-	char		dMOD;																	// Drawing mode													
 	//--- METHODS ----------------------------------------
 public:
 	CBuilder(D2_Session *s);
@@ -822,10 +821,10 @@ public:
 	void    	GetBevelVector(D2_POINT *pa, double dy,D2_POINT *dst);
 	int				SetBevelArray(D2_BEVEL &pm);
   //-----------------------------------------------------
+	void		CenterContribution(D2_POINT *p);
 	void		AddVertex(double x, double y);
 	void		NewHole();
-	void		ForceStyle(char *nsty,U_INT rfmo, U_INT rftx, U_INT flnb);
-	char		ConvertInFeet();
+	char		ConvertInFeet(D2_BPM *bpm);
 	int	    QualifyPoints(D2_BPM *bmp);
 	char		Triangulation();
 	void		MakeSlot();
@@ -835,9 +834,12 @@ public:
 	void		Reorder();
 	void		SelectRoof(D2_BPM *bpm);
 	void		Texturing(D2_BPM *bpm);
+	bool		PointInBase(D2_POINT *A);
 	//---------------------------------------------------
 	void		Draw();					// Drawing interface
 	void		DrawMarks();
+	void		DrawTour(SVector &T);
+	void		DrawGround(char opt);
 	//--- Building management ----------------------------
 	U_INT		CountVertices();
 	void		StartOBJ();
@@ -848,10 +850,20 @@ public:
 	bool    SelectOBJ(U_INT No);
 	void		SetOrientationOBJ();
 	//-----------------------------------------------------
+	bool		CanReplace();
+	U_INT   DrawMode()		{return dop.Has(TRITOR_DRAW_FILL);}
+	//--- Copy object parameters --------------------------
+	void		SetBDP(D2_BPM &p)   {BDP = p;}
+	//-----------------------------------------------------
 	inline D2_Session *GetSession()			{return session;}
+	inline GeoTest    *GetGeoTest()			{return &geo;}
 	inline double			 GetSurface()			{return surf;}
 	inline U_INT			 GetSideNbr()			{return extp.GetNbObj();}
 	inline SPosition	 GetPosition()		{return BDP.geop;}
+	//-----------------------------------------------------
+	Queue <D2_POINT>  &GetBase()				{return extp;}
+	D2_POINT					*FirstNode()			{return extp.GetFirst();}
+	void							 ClearNode()			{extp.Clear();}
 	//-----------------------------------------------------
 protected:
   //-----------------------------------------------------
@@ -891,19 +903,14 @@ public:
 	void		repD(U_INT p)							{dop.Rep(p);}
 	char    hasR(U_INT p)							{return dop.Has(p);}
 	D2_Style  *GetStyle()							{return BDP.style;}
-	void		SetIdent(U_INT id)				{BDP.ident = id;}
+	void		SetIdent(U_INT id)				{ident = id;}
 	//--- Drawing interface --------------------------------
 	void		ModeSingle();
 	void		ModeGroups();
-	//--- OSM objects --------------------------------------
-	void    MakeBLDG(U_INT type);
-	void    MakeLITE(U_INT type);
-	void		MakeFRST(U_INT type);
 	//------------------------------------------------------
 	bool		RiseBuilding(D2_BPM *bpm);
 	void		SaveBuildingData(C3DPart *P);
 	void		EndOBJ();
-	//void		SaveOSMParam(D2_BPM *bpm);
 	//--- Helper -------------------------------------------
 	void			EditTag(char *txt);
 	int 			EditPrm(char *txt);
@@ -919,9 +926,11 @@ public:
 	U_CHAR	ModifyStyle(D2_Style *sty);
 	int     ReOrientation(D2_BPM *bpm);
 	D2_BPM *GetBuildingParameters()			{return &BDP;}
-	//--- Call back functions --------------------------------
-	void    BuildOBJ(OSM_CONFP *CF);	
-	//--------------------------------------------------------
+	//--- Copy the object parameter ----------------------- 
+	//--- Call back functions ------------------------------
+	int    BuildOBJ(OSM_CONFP *CF, D2_Style *sty);	
+	int		 BuildNXT();
+	//------------------------------------------------------
 };
 
 //====================================================================================
@@ -933,10 +942,10 @@ class D2_Session {
 	char  name[64];														// Session name
 	//--- Street lights queue ---------------------------------------
 	std::map<U_INT,OSM_Object*> litQ;					// Light queue
-	std::map<U_INT,OSM_Object*>::iterator rl;	
+	std::map<U_INT,OSM_Object*>::iterator ro;	
 	//--- Forest trees queue ----------------------------------------
+	double seed;															// Seed distance
 	std::map<U_INT,OSM_Object*> fstQ;					// Forest queue
-	std::map<U_INT,OSM_Object*>::iterator rf;	
 	//--- Groups parameters -----------------------------------------
 	Queue<D2_Group> groupQ;										// Group queue for selection
 	std::map<std::string,D2_Group*> grpQ;			// Groups
@@ -959,6 +968,8 @@ class D2_Session {
 	//---------------------------------------------------------------
 	D2_Group   *grp;												// Selected group
 	D2_Style   *sty;												// Selected style
+	//--- counters --------------------------------------------------
+	U_INT			cnter[OSM_LAYER_SIZE];				// Conters
 	//---METHODS ----------------------------------------------------
 public:
 	D2_Session();
@@ -970,6 +981,7 @@ public:
 	bool	ReadParameters(char *dir);
 	bool	ParseReplace(FILE *f, char *ln);
 	bool	ParseForest(FILE *f, char *ln);
+	bool	ParseSeed(FILE *f, char *line);
 	bool	ParseGroups(FILE *f, char *ln);
 	bool  ParseStyles(FILE *f, char *ln);
 	//--- return a replacing object ---------------------------------
@@ -992,10 +1004,15 @@ public:
 	void		AddLight(OSM_Object *L);
 	void		AddForest(OSM_Object *F);
 	//---------------------------------------------------------------
-	inline void SetTrace(char t)	{tr = t;}
-	inline void BackTo(int p)			{fpos = p;}
-	inline char HasTrace()				{return tr;}
-	inline void SetTRN(CBuilder *t)	{trn = t;}
+	void		EditCNT();
+	//---------------------------------------------------------------
+	inline void		SetTrace(char t)	{tr = t;}
+	inline void		BackTo(int p)			{fpos = p;}
+	inline char		HasTrace()				{return tr;}
+	inline void		SetTRN(CBuilder *t)	{trn = t;}
+	inline double	GetSeed()					{return seed;}
+	//---------------------------------------------------------------
+	void				IncCNT(int k)				{cnter[k]++;}
 	//---------------------------------------------------------------
 	bool				IsEmpty()					{ return (1 == Stamp);}
 	//---------------------------------------------------------------

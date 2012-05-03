@@ -161,8 +161,11 @@ U_INT			GetTileFromLatitude(double lat);
 bool			TileIsLeft(U_INT k1,U_INT k2);
 void			GetSuperTileNo(SPosition *P, U_INT *K, U_SHORT *S);
 bool			InCircularRange(float A, float M, float R);
+double		MaxDegLongitude(double l1, double l2);
+double		MinDegLongitude(double l1, double l2);
+double		LongitudeFromDegre(double d);
 //-----------------------------------------------------------------------------
-int				RandomCentered(int H, int a, int b);
+double		RandomCentered(double H, int a, int b);
 //-----------------------------------------------------------------------------
 bool    PointInTriangle(CVector &p,CVector &a,CVector &b,CVector &c,CVector &n);
 U_INT   NextVertexKey(U_INT vk,U_INT inc);

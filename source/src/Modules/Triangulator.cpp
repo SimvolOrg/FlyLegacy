@@ -31,18 +31,24 @@
 //===================================================================================
 //	Vector Table to build Objects
 //===================================================================================
-CBuilder::buildCB osmCB[] = {
+OSM_Object::buildCB startbuildCB[] = {
 	0,														// Not an object
-	&CBuilder::MakeBLDG,					// OSM_BLDG		(1)
-	&CBuilder::MakeLITE,					// OSM_LITE			(2)
-	&CBuilder::MakeBLDG,					// OSM_AMNY			(3)
-	&CBuilder::MakeFRST,					// OSM_TREE			(4)
+	&OSM_Object::BuildBLDG,					// OSM_BLDG		(1)
+	&OSM_Object::BuildLITE,					// OSM_LITE			(2)
+	&OSM_Object::BuildBLDG,					// OSM_AMNY			(3)
+	&OSM_Object::BuildFRST,					// OSM_TREE			(4)
 };
 //===================================================================================
-//	UNIT CONVERTER 
+//	Vector Table to build Objects
 //===================================================================================
-#define FOOT_FROM_METERS(X)   (double(X) *  3.2808399)
-#define SQRF_FROM_SQRMTR(X)   (double(X) * 10.7639104)
+OSM_Object::buildCB nextbuildCB[] = {
+	0,														// Not an object
+	0,														// OSM_BLDG			(1)
+	0,														// OSM_LITE			(2)
+	0,														// OSM_AMNY			(3)
+	&OSM_Object::BuildROWF,				// OSM_TREE			(4)
+};
+
 //===================================================================================
 //	Face change for bevel
 //===================================================================================
@@ -252,7 +258,22 @@ U_INT D2_TRIANGLE::StoreData(C3DPart *p, U_INT n)
 	tab = C->SaveData(tab,N);
 	return (3 + n);
 }
-
+//---------------------------------------------------------------------
+//	Draw as line
+//---------------------------------------------------------------------
+void D2_TRIANGLE::DrawTour(char opt)
+{	glColor4f(1,1,1,1);
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_DEPTH_TEST);	
+	glBegin(GL_LINE_LOOP);
+	glVertex3d(B->x,B->y,(opt)?(0):(B->a));
+	glVertex3d(A->x,A->y,(opt)?(0):(A->a));
+	glVertex3d(C->x,C->y,(opt)?(0):(C->a));
+	glEnd();
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_2D);
+	return;
+}
 //====================================================================================
 //	TRIANGULATOR global variable
 //====================================================================================
@@ -268,18 +289,12 @@ char *FaceType[] =
 CBuilder::CBuilder(D2_Session *s)
 {	trace = 0;
 	session		= s;
-	dop.Set(TRITOR_DRAW_ROOF);
-	dop.Set(TRITOR_DRAW_WALL);
 	dop.Set(TRITOR_DRAW_LINE);
 	dop.Set(TRITOR_DRAW_FILL);
-	BDP.roofM	= s->GetDefaultRoof();
-	BDP.roofP	= 0;
 	bevel			= 0;
-	BDP.style	= 0;
 	osmB			= 0;
 	remB			= 0;
 	t70				= tan(DegToRad(double(70)));
-	BDP.stamp	= 0;
 	dMOD			= 0;
 	Clean();
 	globals->Disp.Enter(this, PRIO_ABSOLUTE, DISP_EXSTOP, 1);
@@ -347,10 +362,25 @@ int CBuilder::FillMode()
 //	Public interface
 //===================================================================
 //-------------------------------------------------------------------
+//	Add to barycenter
+//	NOTE: We must compute the object barycenter in modulus for
+//				buildings that happen to be accross the meridien.
+//-------------------------------------------------------------------
+void CBuilder::CenterContribution(D2_POINT *Q)
+{	if (extp.GetNbObj() == 1)			return;
+	//--- Compute Average distance to origin ------
+	D2_POINT *P = extp.GetFirst();
+	midl.lon += LongitudeDifference(Q->x, P->x);
+	midl.lat += (Q->y - P->y);
+	return;
+}
+//-------------------------------------------------------------------
 //	Add a new vertex
+//	NOTE: We must compute the object barycenter in modulus for
+//				buildings that happen to be accross the meridien.
 //-------------------------------------------------------------------
 void CBuilder::AddVertex(double x, double y)
-{	double xa   = FN_ARCS_FROM_DEGRE(x);
+{	double xa   = LongitudeFromDegre(x);
 	double ya   = FN_ARCS_FROM_DEGRE(y);
 	D2_POINT *p = new D2_POINT(xa,ya);
 	char txt[8];
@@ -362,8 +392,10 @@ void CBuilder::AddVertex(double x, double y)
 	p->dgx	= x;
 	p->dgy	= y;
 	//--- Compute object barycenter --------------------
-	BDP.geop.lon	+= xa;
-	BDP.geop.lat  += ya;
+	//geop.lon	+= FN_ARCS_FROM_DEGRE(x);
+	//geop.lat  += ya;
+
+	CenterContribution(p);
 	//--- Get terrain altitude -------------------------
 	GroundSpot lnd(xa,ya);
   p->a = globals->tcm->GetGroundAt(lnd);
@@ -377,6 +409,44 @@ void CBuilder::NewHole()
 	//--- Merge with previous hole if any --------
 	Merge();
 	return;
+}
+//-------------------------------------------------------------------
+//	Convert Coordinates in feet relative to object center
+//-------------------------------------------------------------------
+char CBuilder::ConvertInFeet(D2_BPM *bpm)
+{	SPosition &geop = bpm->geop;
+	U_INT nvx = extp.GetNbObj();
+	if (0 == nvx)			return 1;
+	//--- Compute object geo center ------------------
+	//geop.lon	/= nvx;
+	//geop.lat  /= nvx;
+	//--- Compute middle point -----------------------
+	midl.lon  /= nvx;
+	midl.lat  /= nvx;
+	D2_POINT  *P = extp.GetFirst();
+	SPosition  pos;
+	pos.lon	= P->x;
+	pos.lat	= P->y;
+	Add2dPosition(pos,midl,geop);
+	//--- Get elevation ------------------------------
+	spot.lon   = geop.lon;
+  spot.lat   = geop.lat;
+	geop.alt   = globals->tcm->GetGroundAt(spot);
+	//--- Get Expension factor -----------------------
+	double rad = FN_RAD_FROM_ARCS(geop.lat);			// DegToRad(lat / 3600);
+  bpm->rdf	 = cos(rad);
+	//------------------------------------------------
+	D2_POINT *pp = 0;
+//	SPosition to;
+	for (pp = extp.GetFirst(); pp != 0; pp = pp->next)
+	{ pos.lon	= pp->x;
+		pos.lat  = pp->y;
+		pos.alt	= 0;
+		CVector feet = FeetComponents(geop,pos,bpm->rdf);
+		pp->x		= feet.x;
+		pp->y		= feet.y;
+	}
+	return 0;
 }
 
 //===================================================================
@@ -402,8 +472,9 @@ void CBuilder::Clean()
 	num				= 0;										// Null number
 	vRFX			= 0;
 	hIND			= 'X';
-	BDP.Clear();
 	TO				= 0;
+	geop.lon = geop.lat = geop.alt = 0;
+	midl.lon = midl.lat	= 0;
   //--- Reset all parameters --------------
 	return;
 }
@@ -450,20 +521,30 @@ void CBuilder::StartOBJ()
 //-------------------------------------------------------------------
 //	Build a new object 
 //-------------------------------------------------------------------
-void CBuilder::BuildOBJ(OSM_CONFP *CF)
+int CBuilder::BuildOBJ(OSM_CONFP *CF,D2_Style *sty)
 { U_INT type	= CF->otype;
   U_INT build = CF->bvec;
-	BDP.stamp		= session->GetNextStamp();
-	BDP.side		= extp.GetNbObj();
-	BDP.error		= 0;
-	BDP.opt.Rep(CF->prop);								// initial property
-	BDP.error		= ConvertInFeet();
-	
-	OSM_Object *obj = 	new OSM_Object(CF);
-	BDP.obj		= obj;
+	OSM_Object *obj = new OSM_Object(this,CF,sty);
+	D2_BPM     *bpm = obj->Parameters();
+	bpm->ident			= ident;
+	bpm->geop				= geop;
+	bpm->stamp		  = session->GetNextStamp();
+	bpm->side				= extp.GetNbObj();
+	bpm->opt.Rep(CF->prop);								// initial property
+	ConvertInFeet(bpm);
   osmB			= obj;
-	GetSuperTileNo(&BDP.geop, &BDP.qgKey, &BDP.supNo);
-	return (this->*osmCB[build])(type);}
+	GetSuperTileNo(&bpm->geop, &bpm->qgKey, &bpm->supNo);
+	session->IncCNT(CF->layr);
+	return (obj->*startbuildCB[build])();
+	}
+//-------------------------------------------------------------------
+//	Build a rest of object 
+//-------------------------------------------------------------------
+int CBuilder::BuildNXT()
+{	if (0 == osmB)	return OSM_COMPLET;
+	U_INT build = osmB->GetBuildVector();
+	return (osmB->*nextbuildCB[build])();
+}
 //-------------------------------------------------------------------
 //	Rebuild if orientation error 
 //-------------------------------------------------------------------
@@ -483,39 +564,6 @@ int CBuilder::ReOrientation(D2_BPM *bpm)
 	QualifyPoints(bpm);
 	bpm->error = 0;
 	return 0;
-}
-//-------------------------------------------------------------------
-//	Make a building
-//-------------------------------------------------------------------
-void CBuilder::MakeBLDG(U_INT tp)
-{	D2_BPM *bpm = &BDP;
-	QualifyPoints(bpm);
-	//--- Set generation parameters ---------
-	session->GetaStyle(bpm);
-	osmB->AssignStyle(BDP.style,this);
-	//--------------------------------------
-	return;
-}
-//-------------------------------------------------------------------
-//	Make a Light row.  Compute light height from terrain
-//-------------------------------------------------------------------
-void CBuilder::MakeLITE(U_INT tp)
-{	osmB->Copy(BDP);
-	osmB->ReceiveQ(extp);
-	osmB->BuildLightRow(6);						// 6 meters above ground
-	session->AddLight(osmB);
-	extp.Clear();
-	return;
-}
-//-------------------------------------------------------------------
-//	Make a forest.  Compute height from terrain
-//-------------------------------------------------------------------
-void CBuilder::MakeFRST(U_INT tp)
-{	osmB->Copy(BDP);
-	osmB->ReceiveQ(extp);
-	osmB->BuildForestTour();
-	extp.Clear();
-	return;
 }
 //-------------------------------------------------------------------
 //	Edit tag
@@ -539,11 +587,10 @@ int CBuilder::EditPrm(char *txt)
 //-------------------------------------------------------------------
 bool CBuilder::RiseBuilding(D2_BPM *bpm)
 {	dlg	= bpm->dlg;
-	//--- Step 1: Save OSM parameters -----
 	//--- Step 2:  Triangulation --------
 	bpm->error = Triangulation();
   //--- Save a copy of the base points -----------
-	osmB->ReceiveQ(extp);
+	osmB->ReceiveBase(extp.GetFirst());
 	//--- Step 3: Face orientation ----- 
 	OrientFaces(bpm);
 	//--- Step 4: Build walls -----------
@@ -564,10 +611,15 @@ U_CHAR CBuilder::ReplaceOBJ(OSM_MDEF *rpp, char or)
 	if (0 == rpp->obj)					return 0;
 	if (!osmB->CanBeReplaced())	return 0;
 	if (or) {rpp->sinA = sinA; rpp->cosA = cosA; }
-	//TRACE("REPLACE BUILDING %d",BDP.stamp);
 	osmB->ReplaceBy(rpp);
 	return 1;
 }
+//-------------------------------------------------------------------
+//	Check for replacement
+//-------------------------------------------------------------------
+bool CBuilder::CanReplace()
+{ return (osmB)?(osmB->CanBeReplaced() != 0):(false); }
+
 //-------------------------------------------------------------------
 //	End of object 
 //-------------------------------------------------------------------
@@ -588,23 +640,6 @@ U_INT CBuilder::CountVertices()
 	return nvtx;
 }
 //-------------------------------------------------------------------
-//	Set Style from name
-//-------------------------------------------------------------------
-void CBuilder::ForceStyle(char *nsty, U_INT rfmo, U_INT rftx, U_INT flnb)
-{	D2_Style *sty = session->GetStyle(nsty);
-	BDP.style = sty;
-	if (0 == sty)		return;
-	sty->AssignBPM(&BDP);
-	//--- search roof model and texture --------
-	char mans     = sty->GetMansart();
-	BDP.roofP			= sty->SelectRoofNum(rftx);
-	D2_Group *grp = sty->GetGroup();
-	grp->SetFloorNbr(flnb);
-	grp->SetRoofModelNumber(rfmo);
-	BDP.roofM     = grp->GetRoofModByNumber(mans);
-	return;
-}
-//-------------------------------------------------------------------
 //	Save all data in building
 //-------------------------------------------------------------------
 void CBuilder::SaveBuildingData(C3DPart *prt)
@@ -615,13 +650,13 @@ void CBuilder::SaveBuildingData(C3DPart *prt)
 	//--- Save wall vertices ------------------------------
 	for (U_INT k=0; k < walls.size(); k++) n = walls[k]->StoreData(prt,n);
 	//--- Save roof vertices ------------------------------
-	for (U_INT k=0; k < sflat.size() ; k++) n = sflat[k]->StoreData(prt,n);
+	for (U_INT k=0; k < sflat.size(); k++) n = sflat[k]->StoreData(prt,n);
 	//--- Cross check validity ----------------------------
 	if (n > nvtx)	gtfo("Bad vertice count");
 	//--- Release walls and roof --------------------------
 	for (U_INT k=0; k < walls.size(); k++)	delete walls[k];
 	walls.clear();
-	for (U_INT k=0; k < sflat.size();  k++)  delete sflat[k];
+	for (U_INT k=0; k < sflat.size();  k++) delete sflat[k];
 	sflat.clear();
 	//--- Release bivel plane -----------------------------
 	delete []  bevel;
@@ -655,13 +690,10 @@ bool CBuilder::SelectOBJ(U_INT No)
 	else
 	{	if (osmB)	osmB->Deselect();
 		//--- Get the new object ------------------------
-		OSM_Object *bld = session->GetObjectOSM(No);
+		osmB = session->GetObjectOSM(No);
 		//--- Establish the new building ------------------
-		osmB		= bld;
-		osmB->Select();
+		if (osmB)	osmB->Select();
 	}
-	//---- Restore Parameters -------------------------
-//	BDP		= osmB->GetParameters();
 	return true;
 }
 
@@ -699,36 +731,6 @@ U_CHAR CBuilder::RotateOBJ(double rad)
 	if (!osmB->CanBeRotated())	return 0;
 	//------------------------------------------------
 	return osmB->IncOrientation(rad);
-}
-//-------------------------------------------------------------------
-//	Convert Coordinates in feet relative to object center
-//-------------------------------------------------------------------
-char CBuilder::ConvertInFeet()
-{	SPosition &geop = BDP.geop;
-	U_INT nvx = extp.GetNbObj();
-	if (0 == nvx)			return 1;
-	//--- Compute object geo center ------------------
-	geop.lon	/= nvx;
-	geop.lat  /= nvx;
-	//--- Get elevation ------------------------------
-	spot.lon   = geop.lon;
-  spot.lat   = geop.lat;
-	geop.alt   = globals->tcm->GetGroundAt(spot);
-	//--- Get Expension factor -----------------------
-	double rad = FN_RAD_FROM_ARCS(geop.lat);			// DegToRad(lat / 3600);
-  BDP.rdf = cos(rad);
-	//------------------------------------------------
-	D2_POINT *pp = 0;
-	SPosition to;
-	for (pp = extp.GetFirst(); pp != 0; pp = pp->next)
-	{ to.lon	= pp->x;
-		to.lat  = pp->y;
-		to.alt	= 0;
-		CVector feet = FeetComponents(geop,to,BDP.rdf);
-		pp->x		= feet.x;
-		pp->y		= feet.y;
-	}
-	return 0;
 }
 //-------------------------------------------------------------------
 //	Clear any slot left
@@ -849,7 +851,6 @@ bool CBuilder::GetAnEar()
 		//-------------------------------------------------
 		return true;
 	}
-	STREETLOG("Building %05d Cannot Triangulate", BDP.stamp);
 	return false;
 }
 //-------------------------------------------------------------------
@@ -889,6 +890,19 @@ char CBuilder::Triangulation()
 	slot.Clear();
 	if (trace) TraceOut();
 	return 0;
+}
+//-------------------------------------------------------------------
+//	Check if point is in polygon base
+//-------------------------------------------------------------------
+bool CBuilder::PointInBase(D2_POINT *A)
+{	GeoTest *geo = globals->trn->GetGeoTest();
+	for (U_INT k=0; k<sflat.size(); k++)
+	{	D2_TRIANGLE *T = sflat[k];
+		char in = geo->InTriangle(*A,*T);
+		if (GEO_OUTSIDE == in)	continue;
+		return true;
+	}
+	return false;
 }
 
 //-------------------------------------------------------------------
@@ -1212,7 +1226,8 @@ void CBuilder::BuildWalls(D2_BPM *bpm)
 //	Trace Bevel point
 //----------------------------------------------------------------
 void CBuilder::TraceBevel(D2_POINT *p)
-{	TRACE("BEVEL  B%05d rng=%04d Xp=%.4lf Yp=%.4lf P.x=%.4lf P.y=%.4lf P.z=%.4lf lx=%.4lf ly=%.4lf",BDP.stamp,p->rng, Xp,Yp,p->x, p->y, p->z,p->lx,p->ly);
+{	TRACE("BEVEL  B%05d rng=%04d Xp=%.4lf Yp=%.4lf P.x=%.4lf P.y=%.4lf P.z=%.4lf lx=%.4lf ly=%.4lf",
+				0,p->rng, Xp,Yp,p->x, p->y, p->z,p->lx,p->ly);
 }
 //----------------------------------------------------------------
 //	Check that bevel point is inside the building, at good height
@@ -1444,6 +1459,12 @@ void CBuilder::Texturing(D2_BPM *bpm)
 		fl->TextureFloor(sty);
 	}
 	return;
+}
+//----------------------------------------------------------------
+//	Draw the ground foot print
+//----------------------------------------------------------------
+void CBuilder::DrawGround(char opt)
+{	for (U_INT k=0; k<sflat.size(); k++)	{	sflat[k]->DrawTour(opt); }
 }
 //----------------------------------------------------------------
 //	Helpers
@@ -1974,10 +1995,12 @@ U_INT D2_Group::SelectOneRoof(D2_BPM *bpm)
 //-----------------------------------------------------------------
 CRoofModel *D2_Group::GetRoofModByNumber(char mans)
 {	CRoofModel *dfm = ssn->GetDefaultRoof();
+	sRoof = dfm;
 	if (0 == rmno)					return dfm;
   if (0 == roofM.size())	return dfm;
 	if (mans)								return dfm;
-	return roofM[rmno - 1];
+	sRoof =  roofM[rmno - 1];
+	return sRoof;
 }
 
 //-----------------------------------------------------------------

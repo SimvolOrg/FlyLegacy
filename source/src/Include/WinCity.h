@@ -38,7 +38,6 @@
 #define PROF_SKETCH   (PROF_EDITOR+PROF_NO_TEL+PROF_NO_PLANE)
 #define SKETCH_REFER (0)
 #define SKETCH_PAUSE (1)
-#define SKETCH_NEXT  (2)
 #define SKETCH_WAIT  (4)
 #define SKETCH_OPEN	 (5)
 #define SKETCH_LOAD  (6)
@@ -52,7 +51,7 @@
 #define SKETCH_SAVED (16)
 #define SKETCH_SAVEE (17)
 #define SKETCH_SAVEF (18)
-#define SKETCH_PODMS (19)
+#define SKETCH_CONTB (19)
 //==========================================================================================
 #define CITY_FILE_OFE		(0)
 #define CITY_FILE_MOD   (1)
@@ -87,8 +86,12 @@ class CFuiSketch : public CFuiWindow
 	U_INT					objno;					// Object current
 	U_INT					count;					// Object saved
 	//-------------------------------------------------------------
+	U_INT					items;					// Items number
+	//-------------------------------------------------------------
 	SPosition     SW;							// South west corner
 	SPosition     NE;							// NE corner
+	//--- Style parameter -----------------------------------------
+	D2_Style		 *styl;
 	//-------------------------------------------------------------
 	U_CHAR				tera;						// Terrain indicator
 	U_CHAR				scny;						// Scenery object
@@ -97,6 +100,8 @@ class CFuiSketch : public CFuiWindow
 	U_CHAR				edit;						// Edit step
 	U_CHAR        wfil;						// Waiting file
 	U_CHAR        grnd;						// Altitude option
+	U_CHAR        bldR;						// Build result
+	U_CHAR				step;						// Mode step
 	//--- Dialogue button -----------------------------------------
 	Tag					  dial;
 	//--- OSM object attributs ------------------------------------
@@ -185,7 +190,6 @@ public:
 	U_INT	Abort(char *err,char *fn);
 	U_INT	GotoReferencePosition();
 	U_INT	HereWeAre();
-	U_INT	OneBuilding();
 	void	ShowStyle();
 	//--- Terrain ------------------------------------------------
 	U_INT	TerrainView();

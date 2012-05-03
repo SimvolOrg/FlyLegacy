@@ -754,6 +754,7 @@ void Add2dPosition(SPosition &p1,SPosition &p2, SPosition &r)
   r.alt = p1.alt + p2.alt;
   return;
 }
+
 //========================================================================
 //  Add to position the feet increment in vector
 //  pos contains a geop in absolute arcsec
@@ -957,6 +958,28 @@ float GetFlatDistance(SPosition *To)
     double	disLon	= factor * difLon;													// Reduce x component
 		double	sq			= ((disLon * disLon) + (disLat * disLat));  // squarred distance
 		return   SquareRootFloat(sq);
+}
+//-----------------------------------------------------------------------------
+//	Return the maximum longitude in degre
+//-----------------------------------------------------------------------------
+double MaxDegLongitude(double l1, double l2)
+{	double dta = Wrap180(l2 - l1);
+	return (dta >= 0)?(l2):(l1);
+}
+//-----------------------------------------------------------------------------
+//	Return the maximum longitude in degre
+//-----------------------------------------------------------------------------
+double MinDegLongitude(double l1, double l2)
+{	double dta = Wrap180(l2 - l1);
+	return (dta >= 0)?(l1):(l2);
+}
+//-----------------------------------------------------------------------------
+//	Return the arcseconds from degres
+//-----------------------------------------------------------------------------
+double LongitudeFromDegre(double d)
+{	double a = FN_ARCS_FROM_DEGRE(d);
+	if (a < 0)	a += TC_FULL_WRD_ARCS;
+	return a;
 }
 //=========================================================================================
 //  Class GroundSpot:   Info on a ground spot
@@ -1214,10 +1237,10 @@ double AsoluteLatitude(CVertex &v)
 //==============================================================================
 //	Random number about H in the interval [a,b]
 //==============================================================================
-int RandomCentered(int H, int a, int b)
+double RandomCentered(double H, int a, int b)
 {	int n = RandomNumber(b - a);
 	int m = (a + b) >> 1;								// Interval middle
-	return H + n - m;
+	return H + m - n;
 }
 //==============================================================================
 // CRandomizer:
@@ -1378,15 +1401,27 @@ HTransformer::HTransformer(double c,double s,SVector &t)
 	M3 = +cn;
 }
 //---------------------------------------------------------------------
-//	Transform vertex (translate then rotate)
+//	Transform vertex (Rotate then translate)
 //---------------------------------------------------------------------
 GN_VTAB HTransformer::ComputeRT(GN_VTAB *vtx)
-{ //--- rotate the translation vector -------------------
+{ 
+/*
+//--- rotate the translation vector -------------------
   rx = ((tx * M0) + (ty * M2));
 	ry = ((tx * M1) + (ty * M3));
 	//-------------------------------
 	vtx->VT_X	+= rx;
 	vtx->VT_Y	+= ry;
+	vtx->VT_Z += tz;
+	return *vtx;
+	*/
+	//--- Rotate vertex ------------------
+	rx = (vtx->VT_X * M0) + (vtx->VT_Y * M2);
+	ry = (vtx->VT_X * M1) + (vtx->VT_Y * M3);
+	//--- Transalte now -------------------
+	vtx->VT_X = rx + tx;
+	vtx->VT_Y = ry + ty;
+	vtx->VT_Z += tz;
 	return *vtx;
 }
 //=======================END OF FILE ======================================================

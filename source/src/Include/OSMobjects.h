@@ -47,6 +47,7 @@ class C_QGT;
 #define OSM_PROP_MSTY	(0x04)								// Object can change style
 #define OSM_PROP_SKIP (0x08)								// Object is skipped
 #define OSM_PROP_ZNED (0x10)								// Need Z altitude
+#define OSM_PROP_STOP (0x80)								// Stop on debug
 //--- Building properties ------------------------------------------------
 #define OSM_PROP_BLDG (OSM_PROP_MREP+OSM_PROP_MSTY)
 #define OSM_PROP_IGNR (OSM_PROP_MREP+OSM_PROP_SKIP)	
@@ -75,6 +76,14 @@ class C_QGT;
 #define OSM_LIGHT     (11)
 //---------------------------------
 #define OSM_MAX       (12)
+//====================================================================================
+#define OSM_PARTIAL   (1)
+#define OSM_COMPLET   (2)
+//===================================================================================
+//	UNIT CONVERTER 
+//===================================================================================
+#define FOOT_FROM_METERS(X)   (double(X) *  3.2808399)
+#define SQRF_FROM_SQRMTR(X)   (double(X) * 10.7639104)
 //==========================================================================================
 // OSM database Request
 //==========================================================================================
@@ -126,6 +135,7 @@ extern  float    lightOSM[];
 extern  float    alphaOSM;
 extern  U_INT    lightDIM;
 extern  float    lightDIS[];
+extern	char    *layerNAME[];
 extern	OSM_MDEF *GetOSMreplacement(char *T, char *V, char *obj);
 //==========================================================================================
 // Type of object
@@ -141,8 +151,6 @@ struct OSM_MDEF {
 	char   dir;								// Replacement directory (No)
 	char  *obj;								// Object name
 	U_INT  otype;							// Object type
-	U_SHORT freq;							// Frequency
-	U_SHORT nbre;							// Number of instances
 	double sinA;
 	double cosA;
 	//------------------------------------------------------
@@ -169,10 +177,14 @@ struct OSM_MDEF {
 class OSM_Object {
 	friend class CBuilder;
 public:
+	//--- Callback vectors ----------------------------------------
+	typedef int  (OSM_Object::*buildCB)();						// Build vector
 	typedef void (OSM_Object::*drawCB)();							// Draw vector
 	typedef void (OSM_Object::*writeCB)(FILE *fp);		// Write vector
+
 protected:
 	//--- Attributes -------------------------------------------------
+	CBuilder     *bld;										// Builder
 	U_INT					type;										// Type of object
 	U_INT         bvec;										// Build vector
 	D2_BPM				bpm;										// Building parameters
@@ -184,13 +196,17 @@ protected:
 	U_CHAR				Layer;									// OSM layer
 	U_CHAR				style;									// Style is forced
 	U_CHAR				rfu;										// reserved
-	//--- Drawing vector ---------------------------------------------
-	drawCB				drawFN;									// local Drawing vector	
-	writeCB				writFN;									// Write function			
 	//--- Replacing  object ------------------------------------------
-	OSM_MDEF			  repMD;									// Replacing model
+	OSM_MDEF			 repMD;									// Replacing model
 	double				orien;									// Orientation (rad);
-	//--- OSM properties ---------------------------------------------
+	//--- OSM properties --------------------------------------------
+	double        minLat;									// minimum Latitude
+	double				maxLat;									// Maximum latitude
+	double				minLon;									// Minimum longitude
+	double				maxLon;									// Maximum longitude
+	//--- internal parameters ---------------------------------------
+	double				pm1;										// Parameter 1
+	double				pm2;										// Parameter 2					
 	//---------------------------------------------------------------
 	double        alti;										// Z correction
 	//--- List of base POINTS ---------------------------------------
@@ -199,10 +215,15 @@ protected:
 	C3DPart			 *part;										// Object component
 	//--- Methods ----------------------------------------------------
 public:
-	OSM_Object(OSM_CONFP *CF);
+	OSM_Object(CBuilder *b,OSM_CONFP *CF,D2_Style *sty);
  ~OSM_Object();
-  //---  Virtual functions -----------------------------------------
-	virtual void Build()   {;}
+  //---  build functions -----------------------------------------
+	int			BuildBLDG();									// Make  building
+	int			BuildLITE();									// Make a light row
+	int			BuildFRST();									// Make a forest
+	int			BuildROWF();									// Make a row of forest
+	//---------------------------------------------------------------
+	void		ForceStyle(D2_Style *sty);
   //----------------------------------------------------------------
 	void		RazPart();
 	int 		EditPrm(char *txt);
@@ -210,7 +231,7 @@ public:
 	void		Swap(Queue<D2_POINT> &Q);
 	void		Invert(Queue<D2_POINT> &H);
 	//----------------------------------------------------------------
-	void		ReceiveQ(Queue<D2_POINT> &Q);
+	void		ReceiveBase(D2_POINT *p0);
 	//----------------------------------------------------------------
 	U_CHAR	Rotate();
 	U_CHAR  IncOrientation(double rad);
@@ -227,7 +248,9 @@ public:
 	//----------------------------------------------------------------
 	void		BuildLightRow(double H);
 	void		BuildForestTour();
+	int		  NextForestRow();
 	void		StoreTree(D2_POINT *pp);
+	void		ScanLine(double y);
 	//----------------------------------------------------------------
 	void		SetPart(C3DPart *p)				{part = p;}
 	void		Select();
@@ -244,6 +267,7 @@ public:
 	void		 ChangeStyle(D2_Style *sty, CBuilder *B);
 	//----------------------------------------------------------------
 	D2_BPM &GetParameters()			        {return bpm;}	
+	D2_BPM *Parameters()								{return &bpm;}
 	SPosition GetPosition()							{return bpm.geop;}
 	double    GetRDF()									{return bpm.rdf;}
 	//----------------------------------------------------------------
@@ -258,9 +282,11 @@ public:
 	//----------------------------------------------------------------
 	char		Selection()								  {return bpm.selc;}
 	char    GetLayer()									{return Layer;}
+	char    GetBuildVector()						{return bvec;}
 	//----------------------------------------------------------------
 	void		SetXY(double lx,double ly)	{bpm.lgx = lx; bpm.lgy = ly;}
 	void    Copy(D2_BPM &p)							{bpm = p;}
+	void		SetIdent(U_INT n)						{bpm.ident = n;}
 	//----------------------------------------------------------------
 	void		Remove()							{State = 0;}
 	void		Restore()							{State = 1;}
@@ -280,11 +306,12 @@ public:
 	void		DrawAsBLDG();
 	void		DrawAsLITE();
 	void		DrawAsTREE();
-	void		DrawLocal();									
+	void		DrawLocal();
+	void		DrawBase();									
 	//----------------------------------------------------------------
 	void		Write(FILE *fp);							
 	void		WriteAsBLDG(FILE *fp);
-	void    WriteAsLITE(FILE *fp);
+	void    WriteAsGOSM(FILE *fp);
 	//----------------------------------------------------------------
 	void		ObjGeoPos(SPosition &P)	{P = bpm.geop;}
 
@@ -295,7 +322,7 @@ public:
 inline void DebDrawOSMbuilding()
 { glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glEnable(GL_TEXTURE_2D);
-	glColor3f(255,255,255);
+	glColor3f(1,1,1);
 	//--- Set client state  ------------------------------------------
 	glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   glEnableClientState(GL_VERTEX_ARRAY);
@@ -304,7 +331,7 @@ inline void DebDrawOSMbuilding()
 	glFrontFace(GL_CCW);
 	}
 	//----------------------------------------------------------------
-inline void EndDrawOSMbuilding()
+inline void EndDrawOSM()
 {	glPopClientAttrib();
 	glPopAttrib();
 }
@@ -327,11 +354,19 @@ inline void DebDrawOSMlight(GLfloat *col, float a)
   glTexEnvi(GL_POINT_SPRITE,GL_COORD_REPLACE,GL_TRUE);
 	glMaterialfv (GL_FRONT, GL_EMISSION, col);
 	glColor4fv(col);
+	glFrontFace(GL_CCW);
 }
-//-------------------------------------------------------------------
-inline void EndDrawOSMlight()
-{	glPopClientAttrib();	
-	glPopAttrib();
-}
+//===================================================================================
+//	Environment OSM Building
+//===================================================================================
+inline void DebDrawOSMforest()
+{ DebDrawOSMbuilding();
+	//----------------------------------------------------------------
+	glEnable(GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER,float(0.4));
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+	glDisable(GL_CULL_FACE);
+	}
+
 //======================= END OF FILE ==============================================================
 #endif // OSM_OBJECTS_H

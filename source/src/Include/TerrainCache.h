@@ -195,7 +195,7 @@ public:
 		U_SHORT       nobj;										// OSM objects
 		U_CHAR				rfu1;
 		U_CHAR				sbat;										// batQ locked
-		Queue<C3DPart> osmQ[2];								// osm Queue
+		Queue<C3DPart> osmQ[OSM_LAYER_SIZE];	// osm Queue
     //---------------------------------------------------------------
     SPosition    mPos;                        // Center position
     CVector      sRad;												// Radius

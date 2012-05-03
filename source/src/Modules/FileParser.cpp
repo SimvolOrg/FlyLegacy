@@ -2034,9 +2034,7 @@ bool COBJparser::Parse3NFaces(char *s)
 //	omitted to be consistent with the 3D objects
 //------------------------------------------------------------------------------
 void COBJparser::BuildW3DPart()
-{	return;
-	
-}
+{	return;}
 //------------------------------------------------------------------------------
 //	Transform the vertices
 //------------------------------------------------------------------------------
@@ -2048,6 +2046,7 @@ void COBJparser::Transform(double c,double s,SVector T)
 		HT.ComputeRT(Tr->vtx + 1);
 		HT.ComputeRT(Tr->vtx + 2);
 	}
+	//---------------------------------------------------
 	return;
 } 
 //------------------------------------------------------------------------------

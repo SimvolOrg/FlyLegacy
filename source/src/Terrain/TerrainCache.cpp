@@ -1944,14 +1944,18 @@ int CSuperTile::Draw3D(U_CHAR tod)
 	CVector T;
 	globals->tcm->RelativeFeetTo(mPos,T);
 	glTranslated(T.x, T.y, T.z);		// Go to supertile center
-	//--- DRAW OSM building layer ----------------------------
+	//--- DRAW OSM BUILDING LAYER ----------------------------
 	C3DPart *prt;
 	for (prt = osmQ[OSM_LAYER_BLDG].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsGVT();
+	//--- DRAW OSM FOREST LAYER ------------------------------
+	DebDrawOSMforest();
+	for (prt = osmQ[OSM_LAYER_TREE].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsGVT();
+	EndDrawOSM();
 	//--- DRAW OSM Light layer   -----------------------------
 	if (tod == MODEL_NIT)
 	{	DebDrawOSMlight(lightOSM, alphaOSM);
 		for (prt = osmQ[OSM_LAYER_LITE].GetFirst(); prt != 0; prt= prt->Next())	 prt->DrawAsLIT();
-		EndDrawOSMlight();
+		EndDrawOSM();
 	}
 	//---  Restore matrix ------------------------------------
 	glPopMatrix();
