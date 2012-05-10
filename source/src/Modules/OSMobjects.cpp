@@ -84,24 +84,24 @@ char *EndOSM = "***";
 //==========================================================================================
 //  Layer name
 //==========================================================================================
-char *layerNAME[] = {
+char *layerNAME[OSM_LAYER_SIZE] = {
 		"Buildings",
-		"Forests",
 		"Lights",
-		"",
+		"Forests",
+		"Ground",
 };
 //==========================================================================================
 //  List of amenity VALUES Tags
 //==========================================================================================
 OSM_CONFP amenityVAL[] = {
-	//--- TAG VALUE ----OTYPE ----------OPROP ---------BVEC ----------LAYER-------------------
-	{"PLACE_OF_WORSHIP",OSM_CHURCH,			OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
-	{"POLICE",					OSM_POLICE,			OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
-	{"FIRE_STATION",		OSM_FIRE_STA,		OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
-	{"TOWNHALL",				OSM_TOWNHALL,		OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
-	{"SCHOOL",					OSM_SCHOOL,			OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
-	{"COLLEGE",					OSM_COLLEGE,		OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
-	{"HOSPITAL",				OSM_HOSPITAL,		OSM_PROP_IGNR, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	//--- TAG VALUE ----OTYPE ----------OPROP ---------		BVEC ----------LAYER-------------------
+	{"PLACE_OF_WORSHIP",OSM_CHURCH,			OSM_PROP_BLDG,		OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"POLICE",					OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.0, "WALP"},
+	{"FIRE_STATION",		OSM_FIRE_STA,		OSM_PROP_IGNR,		OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"TOWNHALL",				OSM_TOWNHALL,		OSM_PROP_IGNR,		OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"SCHOOL",					OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 1.5, "HAIE"},
+	{"COLLEGE",					OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.0, "HAIE"},
+	{"HOSPITAL",				OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.0, "WALP"},
 	{EndOSM,					0},									  // End of table
 };
 //==========================================================================================
@@ -109,6 +109,7 @@ OSM_CONFP amenityVAL[] = {
 //==========================================================================================
 OSM_CONFP  buildingVAL[] = {
 	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC -----------LAYER -----------
+	{"YES",						OSM_BUILDING,		OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
 	{"SCHOOL",				OSM_SCHOOL,			OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
 	{EndOSM,						0},									// End of table
 };
@@ -116,18 +117,54 @@ OSM_CONFP  buildingVAL[] = {
 //  List of LIGHT VALUES Tags
 //==========================================================================================
 OSM_CONFP  liteVAL[] = {
-	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC -----------LAYER ------------
-	{"YES",						OSM_LIGHT,			OSM_PROP_LITE, OSM_BUILD_LITE, OSM_LAYER_LITE},
-	{"RESIDENTIAL",		OSM_LIGHT,			OSM_PROP_LITE, OSM_BUILD_LITE, OSM_LAYER_LITE},
+	//--- TAG VALUE --OTYPE ----------OPROP ------------BVEC -----------LAYER ------------
+	{"YES",						OSM_LIGHT,			OSM_PROP_LITE,		OSM_BUILD_LITE,		OSM_LAYER_LITE},
+	{"RESIDENTIAL",		OSM_LIGHT,			OSM_PROP_LITE,		OSM_BUILD_LITE,		OSM_LAYER_LITE},
+	{"PRIMARY",				OSM_PSTREET,		OSM_PROP_PSTREET, OSM_BUILD_PSTR,		OSM_LAYER_DBLE},
+	{"SECONDARY",			OSM_PSTREET,		OSM_PROP_PSTREET, OSM_BUILD_PSTR,		OSM_LAYER_DBLE},
 	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
 //  List of LAND VALUES Tags
 //==========================================================================================
 OSM_CONFP	landVAL[] = {
-	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC ------------
-	{"FOREST",				OSM_TREE,				OSM_PROP_TREE, OSM_BUILD_TREE, OSM_LAYER_TREE},
+	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC -----------LAYER ------------
+	{"FOREST",				OSM_TREE,				OSM_PROP_TREE, OSM_BUILD_TREE, OSM_LAYER_DBLE},
+	{EndOSM,					0},
 };
+//==========================================================================================
+//  List of MAN_MADE VALUES Tags
+//==========================================================================================
+OSM_CONFP manmadeVAL[] = {
+	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC -----------LAYER ------------
+	{"WATER_TOWER",		OSM_CHATODO,		OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"LIGHTHOUSE",    OSM_PHARES,     OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{EndOSM,					0},
+};
+//==========================================================================================
+//  List of Junction VALUES Tags
+//==========================================================================================
+OSM_CONFP junctionVAL[] = {
+	//--- TAG VALUE --OTYPE ----------OPROP -----------BVEC -----------LAYER ------------
+	{"ROUNDABOUT",		OSM_RPOINT,		  OSM_PROP_RPOINT, OSM_BUILD_GRND, OSM_LAYER_GRND},
+	{EndOSM,					0},
+};
+//==========================================================================================
+//  List of barrier VALUES Tags
+//==========================================================================================
+OSM_CONFP barrierVAL[] = {
+	//--- TAG VALUE --OTYPE --------OPROP ----------- BVEC -----------LAYER ------------
+	{"CITY_WALL",		  OSM_FORTIFS,	OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 10, "FORT" },
+	{EndOSM,					0},
+};
+//==========================================================================================
+//  List of Waterway VALUES Tags
+//==========================================================================================
+OSM_CONFP waterwayVAL[] = {
+	//--- TAG VALUE --OTYPE ----------OPROP -----------BVEC -----------LAYER ------------
+	{EndOSM,					0},
+};
+
 //==========================================================================================
 //  List of admitted Tags
 //==========================================================================================
@@ -138,25 +175,32 @@ OSM_TAG TagLIST[] = {
 	{"LIT",					liteVAL,		},
 	{"HIGHWAY",			liteVAL,		},
 	{"LANDUSE",     landVAL,    },
+	{"MAN_MADE",    manmadeVAL,	},
+	{"JUNCTION",		junctionVAL,},
+	{"BARRIER",			barrierVAL,},
 	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
 //  Local rendering vector depending on Layer
 //==========================================================================================
-OSM_Object::drawCB renderOSM[] = {
+OSM_Object::drawCB renderOSM[OSM_LAYER_SIZE] = {
 	&OSM_Object::DrawAsBLDG,							// 0 => OSM_LAYER_BLDG
-	&OSM_Object::DrawAsTREE,							// 1 => OSM_LAYER_TREE
-	&OSM_Object::DrawAsLITE,							// 2 => OSM_LAYER_LITE
+	&OSM_Object::DrawAsLITE,							// 1 => OSM_LAYER_LITE
+	&OSM_Object::DrawAsTREE,							// 2 => OSM_LAYER_TREE
+	&OSM_Object::DrawAsGRND,							// 3 => OSM_LAYER_GRND
+
 };
 //==========================================================================================
 //  Vector to write object depending on build vector
 //==========================================================================================
 OSM_Object::writeCB writeOSM[] = {
-	0,																		// 0 => Not OSM
+	&OSM_Object::SkipWrite,								// 0 =>	OSM_BUILD_GRND										
 	&OSM_Object::WriteAsBLDG,							// 1 => OSM_BUILD_BLDG
 	&OSM_Object::WriteAsGOSM,							// 2 => OSM_BUILD_LITE
 	0,																		// 3 => OSM_BUILD_AMNY
 	&OSM_Object::WriteAsGOSM,							// 4 => OSM_BUILD_TREE
+	&OSM_Object::WriteAsGOSM,							// 5 => OSM_BUILD_PSTR
+	&OSM_Object::WriteAsGOSM,							// 6 =>	OSM_BUILD_FORT
 };
 //==========================================================================================
 //  Street light parameters
@@ -172,12 +216,13 @@ OSM_CONFP *LocateOSMvalue(char *t,char *v)
 {	OSM_TAG *tab = TagLIST;
 	while (strcmp(tab->tag,EndOSM) != 0)
 	{	if  (strcmp(tab->tag,t)   != 0) {tab++; continue;}
-	OSM_CONFP *cnf = tab->table;	
+	  OSM_CONFP *cnf = tab->table;	
 	  while (strcmp(cnf->val,EndOSM) != 0)
 		{	if  (strcmp(cnf->val,v) != 0)	{cnf++; continue; }
 			return cnf;
 		}
 		//--- unknown value --------------------------
+		STREETLOG("Unknow value %s %s",t,v);
 		return 0;
 	}
 	//--- Unknown tag ------------------------------
@@ -205,7 +250,11 @@ U_INT  GetOSMobjType(char *t ,char *v)
 //	Get tag value configuration
 //==========================================================================================
 void  GetOSMconfig(char *t ,char *v, OSM_CONFP &V)
-{	OSM_CONFP *cnf = LocateOSMvalue(t,v);
+{	//--- Skip if we already have major tag --------------------
+	bool mt = (V.tag != 0) && (V.prop & OSM_PROP_MAJT);
+	if (mt)		return;
+	//--- Get this Tag -----------------------------------------
+	OSM_CONFP *cnf = LocateOSMvalue(t,v);
 	OSM_TAG   *tab = LocateOSMtag(t);
 	V.otype = 0;
 	if (0 == cnf) {STREETLOG("Tag (%s,%s) Skipped",t,v); return;}
@@ -314,13 +363,6 @@ void OSM_Object::Invert(Queue<D2_POINT> &H)
 	return;
 }
 //-----------------------------------------------------------------
-//	Adjust translation vector with altitude
-//-----------------------------------------------------------------
-void OSM_Object::AdjustZ(CVector *T)
-{	if (NeedZ())	T->z += alti;
-	return;
-}
-//-----------------------------------------------------------------
 //	Transfer queue
 //-----------------------------------------------------------------
 void OSM_Object::ReceiveBase(D2_POINT *p0)
@@ -384,9 +426,9 @@ void OSM_Object::EditTag(char *txt)
 //	Force Style parameters
 //-----------------------------------------------------------------
 void OSM_Object::ForceStyle(D2_Style *sty)
-{	bpm.style = sty;
-	if (0 == sty)		return;
+{	if (0 == sty)		return;
 	sty->AssignBPM(&bpm);
+
 	//--- search roof model and texture --------
 	bpm.roofP			= sty->SelectedTexture();
 	D2_Group *grp = sty->GetGroup();
@@ -394,9 +436,24 @@ void OSM_Object::ForceStyle(D2_Style *sty)
 	bpm.flNbr     = grp->GenFloorNbr();
 }
 //-----------------------------------------------------------------
+//	Set texture and part
+//-----------------------------------------------------------------
+void OSM_Object::AssignBase()
+{	part  = new C3DPart();
+	TEXT_INFO     txd;
+	txd.Dir		= FOLDER_OSM_USER;
+	txd.apx   = 0xFF;
+	txd.azp   = 0x00;
+	strcpy(txd.name,"Base.jpg");
+	//TRACE("GROUP LOAD TEXTURE %s",ntex);
+	CShared3DTex *ref	= globals->txw->GetM3DPodTexture(txd);
+	part->Reserve(ref);
+	return;
+}
+//-----------------------------------------------------------------
 //	Make a building
 //-----------------------------------------------------------------
-int OSM_Object::BuildBLDG()
+int OSM_Object::BuildBLDG(OSM_CONFP *C)
 {	D2_Session *ses = bld->GetSession();
 	bld->QualifyPoints(&bpm);
 	//--- Set generation parameters ---------
@@ -408,7 +465,7 @@ int OSM_Object::BuildBLDG()
 //-----------------------------------------------------------------
 //	Make a light row
 //-----------------------------------------------------------------
-int OSM_Object::BuildLITE()
+int OSM_Object::BuildLITE(OSM_CONFP *CF)
 {	D2_Session *ses = bld->GetSession();
 	ReceiveBase(bld->FirstNode());
 	BuildLightRow(6);						// 6 meters above ground
@@ -419,14 +476,54 @@ int OSM_Object::BuildLITE()
 //-----------------------------------------------------------------
 //	Make a forest 
 //-----------------------------------------------------------------
-int OSM_Object::BuildFRST()
+int OSM_Object::BuildFRST(OSM_CONFP *CF)
 {	D2_Session *ses = bld->GetSession();
 	bld->QualifyPoints(&bpm);
 	bld->Triangulation();
 	ReceiveBase(bld->FirstNode());
-	BuildForestTour();
+	BuildForestTour(0);
 	ses->AddForest(this);
 	return OSM_PARTIAL;
+}
+//-----------------------------------------------------------------
+//	Build a street lined with trees
+//-----------------------------------------------------------------
+int OSM_Object::BuildSTRT(OSM_CONFP *CF)
+{	D2_Session *ses = bld->GetSession();
+	OSM_MDEF   *mdf = ses->GetStreetTree();
+	bld->QualifyPoints(&bpm);
+	ReceiveBase(bld->FirstNode());
+	BuildForestTour(mdf);
+	ses->AddForest(this);
+	return OSM_COMPLET;
+	}
+//-----------------------------------------------------------------
+//	Build a ground object
+//-----------------------------------------------------------------
+int OSM_Object::BuildGRND(OSM_CONFP *C)
+{	D2_Session *ses = bld->GetSession();
+	bld->QualifyPoints(&bpm);
+	ReceiveBase(bld->FirstNode());
+	ses->AddGround(this);
+	return OSM_COMPLET;
+}
+//-----------------------------------------------------------------
+//	Build fortifications object
+//-----------------------------------------------------------------
+int OSM_Object::BuildWALL(OSM_CONFP *CF)
+{	D2_Session *ses = bld->GetSession();
+	bpm.flHtr				= FN_FEET_FROM_METER(CF->pm1);
+	bld->QualifyPoints(&bpm);
+	ReceiveBase(bld->FirstNode());
+	bld->OrientFaces(&bpm);
+	bld->BuildNormaFloor(0,0,0,&bpm);
+	D2_Style	*sty	= ses->GetBaseStyle(CF->pm2);
+	sty->AssignBPM(&bpm);
+	bld->Texturing(&bpm);
+	AssignBase();
+	bld->SaveBuildingData(part,OSM_PROP_WALL);
+	ses->AddForest(this);
+	return OSM_COMPLET;
 }
 //-----------------------------------------------------------------
 //	Assign style to object
@@ -439,9 +536,12 @@ void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
 	bpm.flNbr	= grp->GetFloorNbr();
 	bpm.flHtr	= grp->GetFloorHtr();
 	bpm.mans	= sty->IsMansart();
-	if (0 == bpm.roofP)	bpm.roofP	= grp->Session()->GetRoofTexture(sty);
-  if (0 == bpm.roofM)	grp->SelectOneRoof(&bpm);
-	if (0 == bpm.roofM)	bpm.roofM	= grp->GetRoofModByNumber(bpm.mans);
+	if (0 == bpm.roofP)		bpm.roofP	= grp->Session()->GetRoofTexture(sty);
+  if (0 == bpm.roofM)		grp->SelectOneRoof(&bpm);
+	if (0 == bpm.roofM)		bpm.roofM	= grp->GetRoofModByNumber(bpm.mans);
+	if (sty->HasHeight())	bpm.flHtr	= sty->GetHeight();
+	bpm.zhtr	= bpm.flHtr;
+	bpm.rtan	= B->GetTangent();
 	//--- Add the building -------------------------
 	grp->AddBuilding(this);
 	bld->SetBDP(bpm);
@@ -452,7 +552,7 @@ void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
 	RazPart();
 	part	= prt;
 	B->RiseBuilding(&bpm);
-	B->SaveBuildingData(prt);
+	B->SaveBuildingData(prt,bpm.opt.GetAll());
 	return;
 }
 //-----------------------------------------------------------------
@@ -461,7 +561,6 @@ void OSM_Object::AssignStyle(D2_Style *sty, CBuilder *B)
 void OSM_Object::ChangeStyle(D2_Style *sty, CBuilder *B)
 { //--- set block parameter to me----
 	sty->AssignBPM(&bpm);
-	bpm.style = sty;
   bpm.opt.Raz(OSM_PROP_REPL);
 	bpm.roofM	= 0;
 	bpm.roofP	= 0;
@@ -472,7 +571,6 @@ void OSM_Object::ChangeStyle(D2_Style *sty, CBuilder *B)
 	//--- Change group ----------------------
 	D2_Group *pgp = bpm.group;
 	pgp->RemBuilding(this);
-	//grp->AddBuilding(this);
 	AssignStyle(sty,B);
 	return;
 }
@@ -487,7 +585,6 @@ GN_VTAB *OSM_Object::StripToSupertile()
 	double rdf      = cos(rad);
 	SPosition   p1	= GetPosition();
 	CVector T				= FeetComponents(p0, p1,rdf);
-	if (NeedZ())    T.z+= alti;
 	//----------------------------------------------     
   U_INT nbv				= part->GetNBVTX();
 	if (0 == nbv)		return 0;
@@ -561,7 +658,13 @@ void	OSM_Object::ReplaceBy(OSM_MDEF *rpp)
 	ReplacePart(prt);
 	return; 
 } 
-
+//-----------------------------------------------------------------
+//	Translate by adjust vector
+//-----------------------------------------------------------------
+void	OSM_Object::AdjustPart()
+{	SVector T = bld->GetAdjustVector();
+	if (part) part->Translate(T);
+}
 //-----------------------------------------------------------------
 //	Change part. Object is replaced 
 //-----------------------------------------------------------------
@@ -589,8 +692,7 @@ void OSM_Object::BuildLightRow(double ht)
 	GN_VTAB *dst = part->GetGTAB();
 	D2_POINT  *pps = 0;
 	for (pps = base.GetFirst(); pps != 0; pps = pps->next)
-	{	pps->z		= pps->a;						// Set real altitude
-		dst->VT_X = pps->x;
+	{	dst->VT_X = pps->x;
 		dst->VT_Y	= pps->y;
 		dst->VT_Z = pps->z + H;
 		dst++;
@@ -602,9 +704,9 @@ void OSM_Object::BuildLightRow(double ht)
 //	Set a tree at the spot
 //	NOTE:  All trees must share the same texture ARBRES.tif
 //-----------------------------------------------------------------
-void OSM_Object::StoreTree(D2_POINT *pp)
+void OSM_Object::StoreTree(D2_POINT *pp, OSM_MDEF *md)
 {	D2_Session *ses = bld->GetSession();	// call session
-	OSM_MDEF   *mdf = ses->GetTree();							// Get a tree model
+	OSM_MDEF   *mdf = (md)?(md):(ses->GetForestTree());				// Get a tree model
 	char *dir				= directoryTAB[FOLDER_OSM_TREE];
 	COBJparser fpar(OSM_OBJECT);
 	fpar.SetDirectory(dir);
@@ -614,7 +716,7 @@ void OSM_Object::StoreTree(D2_POINT *pp)
 	double  rad = DegToRad(alfa);
 	double   cs = cos(rad);
 	double   sn = sin(rad);
-	CVector T(pp->x,pp->y,pp->a);									// Translation to pp
+	CVector T(pp->x,pp->y,pp->z);
 	fpar.Transform(cs,sn,T);											// Translate vertices
 	//--- Extend actual part with new vertices -------
 	GN_VTAB *buf;
@@ -643,7 +745,8 @@ void OSM_Object::ScanLine(double y)
 		AddFeetTo(pos,feet);
 		GroundSpot lnd(pos.lon,pos.lat);
 		pp.a = globals->tcm->GetGroundAt(lnd);
-		StoreTree(&pp);
+		pp.z = pp.a - bpm.geop.alt;
+		StoreTree(&pp,0);
 	}
 }
 //-----------------------------------------------------------------
@@ -651,7 +754,7 @@ void OSM_Object::ScanLine(double y)
 //	NOTE: Each tree is a 4 triangles figure, thus 
 //				Each tree has 12 vertices
 //-----------------------------------------------------------------
-void OSM_Object::BuildForestTour()
+void OSM_Object::BuildForestTour(OSM_MDEF *mdf)
 {	minLat = minLon = 0;
 	maxLat = maxLon	= 0;
 	part		 = new C3DPart();
@@ -662,7 +765,7 @@ void OSM_Object::BuildForestTour()
 	part->SetTREF(ref);
 	//-----------------------------------------------------
 	for (D2_POINT *pp=base.GetFirst(); pp != 0; pp = pp->next)
-	{	StoreTree(pp);
+	{	StoreTree(pp, mdf);
 		if (pp->y < minLat)	minLat = pp->y;
 		if (pp->y > maxLat)	maxLat = pp->y;
 		if (pp->x < minLon) minLon = pp->x;
@@ -674,7 +777,7 @@ void OSM_Object::BuildForestTour()
 //-----------------------------------------------------------------
 //	Make a forest row
 //-----------------------------------------------------------------
-int OSM_Object::BuildROWF()
+int OSM_Object::BuildROWF(OSM_CONFP *CF)
 { //--- Check for surface -------------------------------
 	if (bpm.surf < SQRF_FROM_SQRMTR(100))	return OSM_COMPLET;	
   ScanLine(pm1);
@@ -705,10 +808,9 @@ void OSM_Object::Draw()
 	//--- Draw my parts -----------------------------
 	glLoadName(bpm.stamp);
 	glPushMatrix();
-	SVector T = FeetComponents(globals->geop, this->bpm.geop, bpm.rdf);
-	if (NeedZ())	T.z	+= alti;
+	CVector T = FeetComponents(globals->geop, this->bpm.geop, bpm.rdf);
 	glTranslated(T.x, T.y, T.z);  //T.z);
-	part->Draw();
+	if (part)	part->Draw();
 	if (tour)	DrawBase();	
 	glPopMatrix();
 	return;
@@ -721,16 +823,38 @@ void OSM_Object::DrawAsBLDG()
 {	DebDrawOSMbuilding();	
 	part->Draw();
 	EndDrawOSM();
+	
+}
+//-----------------------------------------------------------------
+//	Draw as a ground object
+//	We dont translate camera at building center
+//-----------------------------------------------------------------
+void OSM_Object::DrawAsGRND()
+{	DebDrawOSMground();
+	DrawBase();
+	EndDrawOSM();
+}
+//-----------------------------------------------------------------
+//	Draw as a double side object
+//	We dont translate camera at building center
+//-----------------------------------------------------------------
+void OSM_Object::DrawAsDBLE()
+{	DebDrawOSMground();
+	part->Draw();
+	EndDrawOSM();
 }
 //-----------------------------------------------------------------
 //	Draw Tour
 //-----------------------------------------------------------------
 void OSM_Object::DrawBase()
-{	glColor4f(1,1,1,1);
+{ glColor4f(1,1,1,1);
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_LINE_LOOP);
 	for (D2_POINT *pp=base.GetFirst(); pp != 0; pp = pp->next)
-	{	glVertex3d(pp->x,pp->y,pp->a);	}
+	{	double htr = (NeedZ())?(pp->a):(0);
+		//glVertex3d(pp->x,pp->y,htr);
+		glVertex3d(pp->x,pp->y,pp->z);	
+		}
 	glEnd();
 	glEnable(GL_TEXTURE_2D);
 	return;
@@ -741,11 +865,8 @@ void OSM_Object::DrawBase()
 //-----------------------------------------------------------------
 void OSM_Object::DrawAsTREE()
 {	U_INT mode = bld->DrawMode();
-  glPushMatrix();	
-  glTranslated(0,0, -bpm.geop.alt);
 	DebDrawOSMforest();
 	part->Draw();
-	glPopMatrix();
 	if (0 == mode) bld->DrawGround(1);
 	EndDrawOSM();
 	return;
@@ -754,12 +875,9 @@ void OSM_Object::DrawAsTREE()
 //	Draw as a light row
 //-----------------------------------------------------------------
 void OSM_Object::DrawAsLITE()
-{	glPushMatrix();
-  glTranslated(0,0, -bpm.geop.alt);
-	DebDrawOSMlight(lightOSM, alphaOSM);
+{	DebDrawOSMlight(lightOSM, alphaOSM);
 	part->Draw();
   EndDrawOSM();
-	glPopMatrix();
 }
 //-----------------------------------------------------------------
 //	Write the building
@@ -817,12 +935,19 @@ void OSM_Object::WriteAsGOSM(FILE *fp)
 	//--- all ok ---------------------------------------
 	return;
 }
+//-----------------------------------------------------------------
+//	Skip write
+//-----------------------------------------------------------------
+void OSM_Object::SkipWrite(FILE *fp)
+{	return;	}
 //==================================================================
 //	Draw as a local object
 //==================================================================
 void OSM_Object::DrawLocal()
 {	if (0 == State)		return;
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	(this->*renderOSM[Layer])();
+	glPopAttrib();
 	return;
 }
 //==================================================================

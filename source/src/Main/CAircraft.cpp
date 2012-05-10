@@ -212,6 +212,7 @@ bool aKeyAFRT(int kid,int key, int mod)
 //--- Wheel brakes -------------------------------
 bool aKeyABRK(int kid,int key, int mod)
 { globals->pln->GroundBrakes (BRAKE_BOTH);
+//TRACE("WHEEL BRAKE");
   return true;
 }
 //--- Left Wheel brake ---------------------------

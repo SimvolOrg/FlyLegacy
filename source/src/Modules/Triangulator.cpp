@@ -27,26 +27,31 @@
 #include "../Include/RoofModels.h"
 #include "../Include/TerrainTexture.h"
 #include "../Include/fileparser.h"
+#include "../Include/FuiParts.h"
 #include <math.h>
 //===================================================================================
 //	Vector Table to build Objects
 //===================================================================================
-OSM_Object::buildCB startbuildCB[] = {
-	0,														// Not an object
-	&OSM_Object::BuildBLDG,					// OSM_BLDG		(1)
-	&OSM_Object::BuildLITE,					// OSM_LITE			(2)
-	&OSM_Object::BuildBLDG,					// OSM_AMNY			(3)
-	&OSM_Object::BuildFRST,					// OSM_TREE			(4)
+OSM_Object::buildCB startbuildCB[OSM_BUILD_VMAX] = {
+	&OSM_Object::BuildGRND,					// OSM_BUILD_GRND			(0)
+	&OSM_Object::BuildBLDG,					// OSM_BUILD_BLDG		  (1)
+	&OSM_Object::BuildLITE,					// OSM_BUILD_LITE			(2)
+	&OSM_Object::BuildBLDG,					// OSM_BUILD_AMNY			(3)
+	&OSM_Object::BuildFRST,					// OSM_BUILD_TREE			(4)
+	&OSM_Object::BuildSTRT,					// OSM_BUILD_STRT			(5)
+	&OSM_Object::BuildWALL,					// OSM_BUILD_FORT			(6)
 };
 //===================================================================================
 //	Vector Table to build Objects
 //===================================================================================
-OSM_Object::buildCB nextbuildCB[] = {
-	0,														// Not an object
+OSM_Object::buildCB nextbuildCB[OSM_BUILD_VMAX] = {
+	0,														// OSM_GRND			(0)
 	0,														// OSM_BLDG			(1)
 	0,														// OSM_LITE			(2)
 	0,														// OSM_AMNY			(3)
 	&OSM_Object::BuildROWF,				// OSM_TREE			(4)
+	0,														// OSM_STRT			(5)
+	0,														// OSM_FORT			(6)
 };
 
 //===================================================================================
@@ -323,12 +328,17 @@ int CBuilder::TimeSlice(float dT,U_INT frame)
 //											DO NOT CHANGE THE NAME
 //-------------------------------------------------------------------
 void CBuilder::DrawMarks()
-{	return session->Draw();	}
+{	glPushMatrix();
+	glTranslated(adjv.x, adjv.y, 0);
+	session->Draw();	
+	glPopMatrix();
+	}
 //-------------------------------------------------------------------
 //	Draw Interface 
 //-------------------------------------------------------------------
 void CBuilder::Draw()
 {	char d1 = 0;
+	glColor4f(1,1,1,1);
 	if (dop.Has(TRITOR_DRAW_FILL))	FillMode();
 	else														LineMode();
 	//--- Draw current mode ------------------------------------------
@@ -392,9 +402,6 @@ void CBuilder::AddVertex(double x, double y)
 	p->dgx	= x;
 	p->dgy	= y;
 	//--- Compute object barycenter --------------------
-	//geop.lon	+= FN_ARCS_FROM_DEGRE(x);
-	//geop.lat  += ya;
-
 	CenterContribution(p);
 	//--- Get terrain altitude -------------------------
 	GroundSpot lnd(xa,ya);
@@ -417,34 +424,32 @@ char CBuilder::ConvertInFeet(D2_BPM *bpm)
 {	SPosition &geop = bpm->geop;
 	U_INT nvx = extp.GetNbObj();
 	if (0 == nvx)			return 1;
-	//--- Compute object geo center ------------------
-	//geop.lon	/= nvx;
-	//geop.lat  /= nvx;
 	//--- Compute middle point -----------------------
 	midl.lon  /= nvx;
 	midl.lat  /= nvx;
 	D2_POINT  *P = extp.GetFirst();
 	SPosition  pos;
-	pos.lon	= P->x;
-	pos.lat	= P->y;
+	pos.lon		= P->x;
+	pos.lat		= P->y;
 	Add2dPosition(pos,midl,geop);
 	//--- Get elevation ------------------------------
-	spot.lon   = geop.lon;
-  spot.lat   = geop.lat;
-	geop.alt   = globals->tcm->GetGroundAt(spot);
+	spot.lon  = geop.lon;
+  spot.lat  = geop.lat;
+	geop.alt  = globals->tcm->GetGroundAt(spot);
 	//--- Get Expension factor -----------------------
 	double rad = FN_RAD_FROM_ARCS(geop.lat);			// DegToRad(lat / 3600);
   bpm->rdf	 = cos(rad);
 	//------------------------------------------------
 	D2_POINT *pp = 0;
-//	SPosition to;
 	for (pp = extp.GetFirst(); pp != 0; pp = pp->next)
-	{ pos.lon	= pp->x;
-		pos.lat  = pp->y;
+	{ double z = (bpm->opt.Has(OSM_PROP_ZNED))?(pp->a - geop.alt):(0);
+	  pos.lon	= pp->x;
+		pos.lat = pp->y;
 		pos.alt	= 0;
 		CVector feet = FeetComponents(geop,pos,bpm->rdf);
 		pp->x		= feet.x;
 		pp->y		= feet.y;
+		pp->z		= z;
 	}
 	return 0;
 }
@@ -535,15 +540,15 @@ int CBuilder::BuildOBJ(OSM_CONFP *CF,D2_Style *sty)
   osmB			= obj;
 	GetSuperTileNo(&bpm->geop, &bpm->qgKey, &bpm->supNo);
 	session->IncCNT(CF->layr);
-	return (obj->*startbuildCB[build])();
+	return (obj->*startbuildCB[build])(CF);
 	}
 //-------------------------------------------------------------------
-//	Build a rest of object 
+//	Build a partial part of object 
 //-------------------------------------------------------------------
-int CBuilder::BuildNXT()
+int CBuilder::BuildNXT(OSM_CONFP *CF)
 {	if (0 == osmB)	return OSM_COMPLET;
 	U_INT build = osmB->GetBuildVector();
-	return (osmB->*nextbuildCB[build])();
+	return (osmB->*nextbuildCB[build])(CF);
 }
 //-------------------------------------------------------------------
 //	Rebuild if orientation error 
@@ -594,7 +599,7 @@ bool CBuilder::RiseBuilding(D2_BPM *bpm)
 	//--- Step 3: Face orientation ----- 
 	OrientFaces(bpm);
 	//--- Step 4: Build walls -----------
-	BuildWalls(bpm);
+	BuildFaces(bpm);
 	//--- Step 5: Select roof model -----
 	SelectRoof(bpm);
 	//--- Step 6: Texturing -------------
@@ -628,29 +633,24 @@ void CBuilder::EndOBJ()
 	return;
 }
 //-------------------------------------------------------------------
-//	return total vertices needed
-//	For each wall:
-//		- 6 vertices per face
-//	For the roof :
-//		- 3 vertices per triangle
-//-------------------------------------------------------------------
-U_INT CBuilder::CountVertices()
-{	U_INT nvtx = 3 * sflat.size();
-	for (U_INT k=0; k < walls.size(); k++) nvtx += walls[k]->VerticesNumber();
-	return nvtx;
-}
-//-------------------------------------------------------------------
 //	Save all data in building
 //-------------------------------------------------------------------
-void CBuilder::SaveBuildingData(C3DPart *prt)
-{	U_INT nvtx		= CountVertices();
+void CBuilder::SaveBuildingData(C3DPart *prt,U_INT prop)
+{	//-----------------------------------------------------
+  bool wall = ((prop & OSM_PROP_WALL)  != 0);
+	bool roof = ((prop & OSM_PROP_ROOF)  != 0);
+	//--- Count vertices ----------------------------------
+	U_INT nvtx	= 0;
+	if (roof)		nvtx += 3 * sflat.size();
+	if (wall)	  for (U_INT k=0; k < walls.size(); k++) nvtx += walls[k]->VerticesNumber();
+	//-----------------------------------------------------
 	prt->AllocateOsmGVT(nvtx);
 	//--- build all vertices ------------------------------
 	U_INT n = 0;
 	//--- Save wall vertices ------------------------------
-	for (U_INT k=0; k < walls.size(); k++) n = walls[k]->StoreData(prt,n);
+	if (wall) for (U_INT k=0; k < walls.size(); k++) n = walls[k]->StoreData(prt,n);
 	//--- Save roof vertices ------------------------------
-	for (U_INT k=0; k < sflat.size(); k++) n = sflat[k]->StoreData(prt,n);
+	if (roof) for (U_INT k=0; k < sflat.size(); k++) n = sflat[k]->StoreData(prt,n);
 	//--- Cross check validity ----------------------------
 	if (n > nvtx)	gtfo("Bad vertice count");
 	//--- Release walls and roof --------------------------
@@ -731,6 +731,15 @@ U_CHAR CBuilder::RotateOBJ(double rad)
 	if (!osmB->CanBeRotated())	return 0;
 	//------------------------------------------------
 	return osmB->IncOrientation(rad);
+}
+//-------------------------------------------------------------------
+//	Return Object Position
+//-------------------------------------------------------------------
+void CBuilder::ObjPosition(SPosition &P)
+{	if (0 == osmB)		return;
+	osmB->ObjGeoPos(P);
+	AddToPosition(P,adjv);
+	return;
 }
 //-------------------------------------------------------------------
 //	Clear any slot left
@@ -1212,14 +1221,10 @@ void CBuilder::QualifyEdge(D2_POINT *pb)
 //=========================================================================
 //	Extruding the building faces
 //=========================================================================
-void CBuilder::BuildWalls(D2_BPM *bpm)
+void CBuilder::BuildFaces(D2_BPM *bpm)
 {	Wz = 0;
-  double H = bpm->flHtr;
 	int  end = bpm->flNbr;
-	for (int k=1; k <= end; k++)
-	{	BuildFloor(k,Wz,bpm);
-		Wz += H;
-	}
+	for (int k=1; k <= end; k++)	Wz += BuildFloor(k,Wz,bpm);
 	return;
 }
 //----------------------------------------------------------------
@@ -1231,6 +1236,7 @@ void CBuilder::TraceBevel(D2_POINT *p)
 }
 //----------------------------------------------------------------
 //	Check that bevel point is inside the building, at good height
+//	Set the beveled vector height (H)
 //----------------------------------------------------------------
 bool CBuilder::SetPointInside(D2_POINT *p, D2_POINT *s, double H)
 {	bool in = (p->lx >= 0) && (p->lx <= Xp);
@@ -1242,18 +1248,18 @@ bool CBuilder::SetPointInside(D2_POINT *p, D2_POINT *s, double H)
 	return false;
 }
 //----------------------------------------------------------------
-//	Return bevel vector for POINT 'a' with distance to edge 'dy'
+//	Return bevel vector for POINT 'a' with distance to edge 'dr'
 //	Compute a local bevel vector then apply global transformation
 //	to get the final point
 //----------------------------------------------------------------
-void CBuilder::GetBevelVector(D2_POINT *pa, double dy,D2_POINT *P)
+void CBuilder::GetBevelVector(D2_POINT *pa, double dr,D2_POINT *P)
 {	D2_FACE trio;
 	D2_POINT &A = trio.sw;
 	//--- Extract the 3 points -------------------------
 	trio.Copy(pa, extp.CyPrev(pa), extp.CyNext(pa));
 	trio.MoveToSW();							// Transform T1= translate
 	trio.CRotation();							// Transform T2= Align AB to X axis
-	trio.BissectorBC(dy);					// Compute bissector in D;
+	trio.BissectorBC(dr);					// Compute bissector in D;
 	trio.RotationMC(P);						// Back to global system of Polygon P
 	//--- Compute relative coordinates -----------------
 	LocalCoordinates(*P);
@@ -1261,17 +1267,20 @@ void CBuilder::GetBevelVector(D2_POINT *pa, double dy,D2_POINT *P)
 }
 //----------------------------------------------------------------
 //	Build a foot print of the beveled roof
+//	dr is the retract distance of beveled edge
+//	from  its mother edge
 //----------------------------------------------------------------
-int CBuilder::SetBevelArray(D2_BEVEL &pm)
-{ //--- Bevel distance ------------------------
-	double dy = fabs(pm.H / pm.tang);
+int CBuilder::SetBevelArray(D2_BEVEL &pm, double dr)
+{ //--- Bevel distance -------------------------------
+	U_INT nbp		= extp.GetNbObj();
+	bevel		    = new D2_POINT[nbp];
 	D2_POINT *dst = bevel;
 	D2_POINT *src;
 	//--------------------------------------------------
 	double    ce = pm.pah + pm.H;								// Ceil height
 	for (src = extp.GetFirst(); src != 0; src = src->next)
 	{	*dst	= *src;								// Copy the source points
-	   GetBevelVector(src, dy,dst);
+	   GetBevelVector(src, dr,dst);
 		 SetPointInside(dst,src,ce);
 		 //--- allocate the point height ---------------
 		 src->z  = pm.pah;					// Elevate source point
@@ -1314,19 +1323,18 @@ void CBuilder::TranslatePoint(D2_POINT &P, CVector &T)
 //	-Then we rotate it in the world referential
 //----------------------------------------------------------------
 int CBuilder::BuildBevelFloor(int No, int inx, double afh, D2_BPM *bpm)
-{	double     H  = bpm->flHtr;
+{	double      H = bpm->zhtr;
   D2_Style *sty = bpm->style;
 	D2_BEVEL pm;
-	U_INT nbp		= extp.GetNbObj();
-	pm.tang			= t70;
+	pm.tang			= bpm->rtan;
 	pm.pah			= afh;
 	pm.H				= H;
-	bevel		    = new D2_POINT[nbp];
-	SetBevelArray(pm);
+	double dr = fabs(H / pm.tang);
+	SetBevelArray(pm,dr);
 	double    ce = afh + H;								// Ceil height
 	//--- Build this floor -------------------------------
   D2_POINT *pa = 0;
-	D2_FLOOR *et = new D2_FLOOR(No,inx,afh,ce);
+	D2_FLOOR *et = new D2_FLOOR(No,inx,afh);
 	D2_FACE  *fa = 0;
 	for (pa = extp.GetFirst(); pa != 0; pa = pa->next)
 	{	fa = new D2_FACE(pa->FaceType(),inx);
@@ -1365,26 +1373,51 @@ int CBuilder::BuildBevelFloor(int No, int inx, double afh, D2_BPM *bpm)
 	return ce;
 }
 //----------------------------------------------------------------
+//	Build a horizontal polygon
+//----------------------------------------------------------------
+void	CBuilder::MakeHPolygon(double H)
+{	D2_POINT *pa;
+	D2_FLOOR *et = new D2_FLOOR(0,0,H);
+	D2_FACE  *fa = 0;
+	for (pa = extp.GetFirst(); pa != 0; pa = pa->next)
+	{	fa = new D2_FACE(pa->FaceType(),0);
+		//--- Now we build a face with 'pa' as the base point
+		D2_POINT *pb = extp.CyNext(pa);
+		//--- Allocate the 4 points ------------
+		fa->sw		= *pa;
+		fa->se		= *pb;
+		fa->ne		=  bevel[pb->rng];
+		fa->nw		=  bevel[pa->rng];
+		fa->SetNorme(&geo);
+		//--------------------------------------
+		et->faces.push_back(fa);
+	}
+	walls.push_back(et);
+	delete [] bevel;
+	bevel	= 0;
+	return;
+}
+//----------------------------------------------------------------
 //	Build a normal floor
 //----------------------------------------------------------------
 int	CBuilder::BuildNormaFloor(int No,int inx, double afh, D2_BPM *bpm)
 {	double     H = bpm->flHtr;
   double    ce = afh + H;								// Ceil height
+	
   D2_POINT *pa = 0;
-	D2_FLOOR *et = new D2_FLOOR(No,TEXD2_FLOORZ,afh,ce);
+	D2_FLOOR *et = new D2_FLOOR(No,TEXD2_FLOORZ,afh);
 	D2_FACE  *fa = 0;
 	for (pa = extp.GetFirst(); pa != 0; pa = pa->next)
 	{	fa = new D2_FACE(pa->FaceType(),inx);
 		//--- Now we build a face with pa as the base points
 		D2_POINT *pb = extp.CyNext(pa);
-		fa->Extrude(afh,ce,pa,pb);
+		fa->Extrude(H,pa,pb);
 		fa->SetNorme(&geo);
 		et->faces.push_back(fa);
-		pa->z		= ce;
-		pb->z		= ce;
+		pa->z  += H;
 	}
-walls.push_back(et);
-return ce;
+	walls.push_back(et);
+	return ce;
 }
 
 //----------------------------------------------------------------
@@ -1396,11 +1429,10 @@ return ce;
 //	ce = ceil height
 //	We also adjust the roof height in (extp)
 //----------------------------------------------------------------
-void CBuilder::BuildFloor(int No, double afh, D2_BPM *bpm)
+double CBuilder::BuildFloor(int No, double afh, D2_BPM *bpm)
 {	//--- Compute face code -----------------------------
 	D2_Style *sty = bpm->style;
 	int  flNbr		= bpm->flNbr;
-	double     H  = bpm->flHtr;
 	double ce = 0;
 	char indx = TEXD2_FLOORM;								// For middle floor
 	if (flNbr == No)	indx = TEXD2_FLOORZ;	// Last floor
@@ -1410,7 +1442,7 @@ void CBuilder::BuildFloor(int No, double afh, D2_BPM *bpm)
 	else			ce	=		BuildNormaFloor(No,indx,afh,bpm);
 	sty->SetWz(ce);
 	bpm->hgt = ce;			// Save ceil for next floor;
-	return;
+	return bpm->flHtr;	// Return floor height
 }
 
 //----------------------------------------------------------------
@@ -1489,10 +1521,9 @@ D2_FACE::~D2_FACE()
 {	int a = 0;	}
 //---------------------------------------------------------------
 //	Extrude a face from  SW point PA
-//	fh = floor height
-//	ch = ceil  height
+//	H = floor height
 //---------------------------------------------------------------
-void D2_FACE::Extrude(double fh, double ch, D2_POINT *p0, D2_POINT *p1)
+void D2_FACE::Extrude(double H, D2_POINT *p0, D2_POINT *p1)
 {	sw		= *p0;
 	se		= *p1;
 	ne		= *p1;
@@ -1504,8 +1535,9 @@ void D2_FACE::Extrude(double fh, double ch, D2_POINT *p0, D2_POINT *p1)
 	ne.V	= 1;
 	nw.V	= 1;
 	//--- Save heights ----------------
-	sw.z = se.z = fh;
-	ne.z = nw.z = ch;
+	nw.z	= sw.z + H;
+	if (p1->First())	se.z -= H; 
+	ne.z  = se.z + H;
 	return;
 }
 //---------------------------------------------------------------
@@ -1515,6 +1547,7 @@ void	D2_FACE::SetNorme(GeoTest *geo)
 {	N = geo->PlanNorme(nw, se, sw);
 	return;
 }
+
 //---------------------------------------------------------------
 //	Texture this face
 //	Y faces are texture as a whole or as floor
@@ -1664,12 +1697,11 @@ U_INT	D2_FACE::StoreData(C3DPart *prt, U_INT n)
 //=========================================================================
 //	D2-Stair class
 //=========================================================================
-D2_FLOOR::D2_FLOOR(char e, char t,double f, double c)
+D2_FLOOR::D2_FLOOR(char e, char t,double f)
 {	strncpy(idn,"D2FL",4);
 	sNo		= e;
 	type	= t;
 	floor = f;
-	ceil  = c;
 } 
 //---------------------------------------------------------------
 //	Free resources 
@@ -1730,8 +1762,10 @@ D2_Group::D2_Group(char *gn, D2_Session *s)
 	lgMin			= 0;
 	lgMax			= 10000;
 	//--- Floor -----------------------------
+	flMin			= 1;
+	flMax			= 2;
 	flNbr			= 1;
-	flHtr			= 2.8;
+	flHtr			= 20;
 	//---------------------------------------
 	nItem			= 1;
 	//--- Index -----------------------------
@@ -1753,7 +1787,6 @@ D2_Group::~D2_Group()
 	//-------------------------------------------------
 	//TRACE("GROUP DESTROYED and free %s",tinf.path);
 	globals->txw->Free3DTexture(tREF);
-
 }
 //-----------------------------------------------------------------
 //	Add a roof model 
@@ -1952,7 +1985,7 @@ int D2_Group::ValueGroup(D2_BPM *bpm)
 	val += ValuePosition(bpm->geop);
 	val += ValueSurface (bpm->surf);
 	val += ValueSide    (bpm->side);
-	val += ValueLength  (bpm->lgx);
+	val += ValueLength  (bpm->dlg);
 	//TRACE("NB=%04d Quota=%0d VAL=%04d Groupe %s",objNB,quota,val,name);
 	return val;
 }
@@ -1974,6 +2007,14 @@ D2_Style *D2_Group::GetStyle(char *nsty)
 	{	if (sty->SameName(nsty))	return sty;
 	}
 	return 0;
+}
+//-----------------------------------------------------------------
+//	Add all styles to list box
+//-----------------------------------------------------------------
+void	D2_Group::ListStyles(CListBox *box)
+{	D2_Style *sty = 0;
+	for (sty = styleQ.GetFirst(); sty != 0; sty = sty->GetNext())	box->AddSlot(sty);
+	return;
 }
 //-----------------------------------------------------------------
 //	Select a roof  based on quota, mansard style and side number
@@ -2079,8 +2120,6 @@ D2_Style::D2_Style(char *snm, D2_Group *gp)
 	Name[63]	= 0;
 	group			= gp;
 	bpm				= 0;
-	mans		  = 0;
-	texf			= 0;
 	dormer		= 0;
 	sText			= 0;
 	objNB			= 0;				// Instance number
@@ -2134,13 +2173,17 @@ bool D2_Style::DecodeStyle(char *prm)
 	strncpy(buf,prm,128);
 	_strupr(buf);
 	//----------------------------------------------------------------------
-	if (strstr(buf,"MANSART")) {mans = 1; return true; }
+	if (strstr(buf,"MANSART")) {opt.Set(STYLE_MANSAR); return true; }
+	//----------------------------------------------------------------------
+	nf = sscanf(buf," HEIGHT %lf",&flHtr);
+	if (1 == nf)		
+	{	opt.Set(STYLE_HFLOOR); flHtr = FN_FEET_FROM_METER(flHtr); return true;}
 	//----------------------------------------------------------------------
   nf = sscanf(buf," FREQ %u",&quota);
 	if (1 == nf)		return true;
 	//--- check mode -------------------------------------------------------
 	nf = sscanf(buf," TEXTURECOVER %lf",&cover);
-	if (nf == 1) 		{	texf = 1; return true;}
+	if (nf == 1) 		{	opt.Set(STYLE_TXFACE); return true;}
 	//--- Check for X+ -----------------------------------------------------
 	pm.code	= GEO_FACE_XP;
 	nf = sscanf(buf,D2_MXP, &pm.x0, &pm.y0, &pm.Rx, &pm.Ry);
@@ -2361,7 +2404,7 @@ void D2_Style::TexturePoint(D2_POINT *pp, char ft, char fx, char hb)
 //	building extension is greater than coverage
 //----------------------------------------------------------------------
 char D2_Style::TextureMode()
-{	if	(0 == texf)		return 0;
+{	if	(opt.Not(STYLE_TXFACE))		return 0;
 	double cv = FN_FEET_FROM_METER(cover);
 	double xt = bpm->lgx;
 	return (cv > xt)?(0):(1);
@@ -2381,16 +2424,14 @@ void D2_Style::TextureByFace(D2_POINT *pp, char ft, char fx, char hb)
   ind += fx;											// Add floor code
 	//---- Select the texture -------------------------------
 	D2_TParam  *T = param[ind];				// Related Texture
-	double      H = pp->z;						// Point height
 	double      V = pp->VertPos();		// Vertical position
-	//double      W = (hb)?(bpm->hgt):(Wz);		// Wall height
 	double      W = Wz;								// Wall height
 	//--- pr => pixel in rectangle ---------------------------
 	double  pr= 0;
 	//---- Compute S coordinate ------------------------------
 	pp->s			= T->x0 / T->Tw;
 	D2_POINT *np = pp->next;
-	//--- Assume texture is 30 meters ------------------------
+	//--- Get texture cover from parameters ------------------
 	double	cv = FN_FEET_FROM_METER(cover);
 	double  lg = pp->elg;
 	double  vs = (lg / cv);

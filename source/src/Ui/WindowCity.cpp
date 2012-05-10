@@ -39,47 +39,51 @@ using namespace std;
 //  Window to display building sketch
 //==========================================================================================
 CFuiSketch::CFuiSketch(Tag idn, const char *filename)
-:CFuiWindow(idn,filename,220,500,0)
+:CFuiWindow(idn,filename,220,560,0)
 { title = 1;
   close = 1;
   zoom  = 0;
   mini  = 0;
+	CFuiGroupBox *box;
+	CFuiLabel    *lab;
+	CFuiCheckBox *chk;
+	CFuiButton   *but;
 	//--- white color -------------------------------
 	U_INT wit = MakeRGBA(255,255,255,255);
 	//--- Set title ---------------------------------
 	strcpy(text,"CITY EDITOR");
-	gBOX  = new CFuiGroupBox(10,8,200,50,this);
-  AddChild('gbox',gBOX,"");
+	box  = new CFuiGroupBox(10,8,200,50,this);
+  AddChild('gbox',box,"");
 	//--- Label --------------------------------------
-  aLAB  = new CFuiLabel   ( 4, 4,56, 20, this);
-  gBOX->AddChild('labl',aLAB,"Options:",wit);
+  lab  = new CFuiLabel   ( 4, 4,56, 20, this);
+  box->AddChild('labl',lab,"Options:",wit);
 	//---Fill option ---------------------------------
   fOPT  = new CFuiCheckBox(60, 4,160,20,this);
-  gBOX->AddChild('fopt',fOPT,"Fill mode",wit);
+  box->AddChild('fopt',fOPT,"Fill mode",wit);
 	//--- Other 3D objects ---------------------------
-  vOPT  = new CFuiCheckBox(60,24,160,20,this);
-  gBOX->AddChild('vopt',vOPT,"View scenery objects",wit);
-	vOPT->SetState(1);
+  chk  = new CFuiCheckBox(60,24,160,20,this);
+  box->AddChild('vopt',chk,"View scenery objects",wit);
+	chk->SetState(1);
 
 	//--- Second group box ------------------------
-	Box2 = new CFuiGroupBox(10,66,200,100,this);
-	AddChild('box2',Box2,"");
+	box = new CFuiGroupBox(10,66,200,100,this);
+	AddChild('box2',box,"");
 	//--- Terrain button---------------------------
 	vTer	= "Hide Terrain";
 	vTER = new CFuiButton( 106, 46,  90, 20,this);
-	Box2->AddChild('vter', vTER,"View Terrain");
+	box->AddChild('vter', vTER,"View Terrain");
 	//--- NEXT button---------------------------
 	nBUT	= new CFuiButton(  4, 72,  90, 20,this);
-	Box2->AddChild('nbut', nBUT,"Next");
-	//--- View All button --------------------------
+	box->AddChild('nbut', nBUT,"Next");
+	//--- Load All button --------------------------
 	vALL	= new CFuiButton(106, 72,  90, 20,this);
-	Box2->AddChild('vall', vALL,"Load all");
+	box->AddChild('vall', vALL,"Load all");
 	//-----------------------------------------------
 	nBAT	= new CFuiLabel ( 4,   4, 190, 20, this);
-	Box2->AddChild('nbat', nBAT, "Building",wit);
+	box->AddChild('nbat', nBAT, "Building",wit);
 	//-----------------------------------------------
 	nTAG  = new CFuiLabel ( 4,  30, 190, 20, this);
-	Box2->AddChild('ntag', nTAG, "Tag",wit);
+	box->AddChild('ntag', nTAG, "Tag",wit);
 
 	//----Create the style List box -----------------
   sWIN  = new CFuiList  (10,174, 200,140,this);
@@ -87,39 +91,40 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
   AddChild('styl',sWIN,"Styles",FUI_TRANSPARENT,wit);
 
 	//--- Create a group box 3 -------------------
-	Box3	= new CFuiGroupBox(10, 330, 200, 56, this);
-	AddChild('box3',Box3,"", FUI_TRANSPARENT,wit);
+	box	= new CFuiGroupBox(10, 330, 200, 56, this);
+	AddChild('box3',box,"", FUI_TRANSPARENT,wit);
 	//--- Change style ---------------------------
-	nSTY	= new CFuiButton(  4, 4, 90, 20,this);
-	Box3->AddChild('nsty', nSTY,"Change Style");
+	but	= new CFuiButton(  4, 4, 90, 20,this);
+	box->AddChild('nsty', but,"Change Style");
 	//--- Delete object ---------------------------
-	dOBJ	= new CFuiButton(106, 4, 90, 20,this);
-	Box3->AddChild('delt', dOBJ,"Remove object");
+	but	= new CFuiButton(106, 4, 90, 20,this);
+	box->AddChild('delt', but,"Remove object");
 	//--- Restore object ---------------------------
-	gOBJ	= new CFuiButton(106, 30, 90, 20,this);
-	Box3->AddChild('gobj', gOBJ,"Restore object");
+	but	= new CFuiButton(106, 30, 90, 20,this);
+	box->AddChild('gobj', but,"Restore object");
 
 	//--- Create a group box 4 -------------------
-	Box4	= new CFuiGroupBox(10, 400, 200, 36, this);
-	AddChild('box4',Box4,"", FUI_TRANSPARENT,wit);
+	box	= new CFuiGroupBox(10, 400, 200, 36, this);
+	AddChild('box4',box,"", FUI_TRANSPARENT,wit);
 	//----Create Replace button ---------------------	
-	rOBJ	= new CFuiButton(4,  4,  90, 20,this);
-	Box4->AddChild('robj', rOBJ,"Replace object");
+	but	= new CFuiButton(4,  4,  90, 20,this);
+	box->AddChild('robj', but,"Replace object");
 	//----Create Rotation button --------------------	
-	lROT	= new CFuiButton(106,4,  42, 20,this);
-	Box4->AddChild('lrot', lROT,"left");
-	lROT->SetRepeat(0.1F);
+	but	= new CFuiButton(106,4,  42, 20,this);
+	box->AddChild('lrot', but,"left");
+	but->SetRepeat(0.1F);
 	//----Create Rotation button --------------------	
-	rROT	= new CFuiButton(152,4,  42, 20,this);
-	Box4->AddChild('rrot', rROT,"right");
-	rROT->SetRepeat(0.1F);
+	but	= new CFuiButton(152,4,  42, 20,this);
+	box->AddChild('rrot', but,"right");
+	but->SetRepeat(0.1F);
 	//-----------------------------------------------
-	bTRY  = new CFuiButton( 10, 446, 80, 20, this);
-	AddChild('btry',bTRY,"FLY IT",0);
+	but  = new CFuiButton( 10, 532, 80, 20, this);
+	AddChild('btry',but,"FLY IT",0);
 	//-----------------------------------------------
-	bSAV  = new CFuiButton(100, 446, 110, 20, this);
-	AddChild('bsav',bSAV,"Save in Database",0);
+	but  = new CFuiButton(100, 532, 110, 20, this);
+	AddChild('bsav',but,"Save in Database",0);
 	//-----------------------------------------------	
+	CreateMoveBox();
 	ReadFinished();
 	//--- Open triangulation ------------------------
 	trn	= new CBuilder(&ses);
@@ -142,10 +147,6 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	ses.SetTrace(1);
 	tera	= 0;
 	scny	= 1;
-	wait  = 1;
-	edit	= 0;
-	wfil	= 1;
-	FP		= 0;
 	sqlp	= 0;
 	//--- Set Initial state --------------------------
 	globals->Disp.ExecON  (PRIO_ABSOLUTE);	// Allow terrain TimeSlice
@@ -157,21 +158,42 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	DrawNoticeToUser("INITIALIZATION",1);
 	//---- Marker 1 -----------------------------------
 	char *ds = new char[32];
-	strcpy(ds,"*START CityEDIT*");
-	//---Collect OFE file -----------------------------
-	FPM.close = 0;
-	FPM.sbdir = 1;
-	FPM.userp = CITY_FILE_OFE;
-	FPM.text  = "SELECT A FILE";
-	FPM.dir		= "OpenStreet";
-	FPM.pat		= "*.ofe";
+	strcpy(ds,"*START CityEDITOR*");
 	STREETLOG("START CITY EDITOR");
-	*sname = 0;
-	*dbase = 0;
-	 CreateFileBox(&FPM);
-	 State = SKETCH_PAUSE;
-
+	//---Collect OFE file -----------------------------
+	CollectFilesOFE();
 };
+//-----------------------------------------------------------------------
+//	Create move controls 
+//-----------------------------------------------------------------------
+void CFuiSketch::CreateMoveBox()
+{	//--- white color -------------------------------
+	CFuiButton		*but;
+	U_INT wit = MakeRGBA(255,255,255,255); 
+	mBox = new CFuiGroupBox(10,440,200,86);
+	AddChild('mbox',mBox,"MOVE WHOLE SCENERY",0,wit);
+	//--- Reset button ------------------------------
+	but	= new CFuiButton(152,4,  42, 20,this);
+	mBox->AddChild('rset', but,"Reset");
+	//--- Up button --------------------------------
+	but = new CFuiButton( 44,16, 50, 14,this);
+	mBox->AddChild('lat+', but,"Lat+");
+	but->SetRepeat(0.001F);
+	//--- Left button --------------------------------
+	but = new CFuiButton(  4,36, 42, 14,this);
+	mBox->AddChild('lon-', but,"Lon-");
+	but->SetRepeat(0.001F);
+	//--- Down button --------------------------------
+	but = new CFuiButton( 44,56, 50, 14,this);
+	mBox->AddChild('lat-', but,"Lat-");
+	but->SetRepeat(0.001F);
+	//--- right button --------------------------------
+	but = new CFuiButton( 92,36, 42, 14,this);
+	mBox->AddChild('lon+', but,"Lon+");
+	but->SetRepeat(0.001F);
+	//-------------------------------------------------
+	mBox->Hide();
+}
 //-----------------------------------------------------------------------
 //	destroy this
 //-----------------------------------------------------------------------
@@ -192,6 +214,28 @@ CFuiSketch::~CFuiSketch()
 	ses.EditCNT();
 	STREETLOG("END CITY EDITOR");
 	globals->ccm->RestoreCamera(ctx);
+}
+//-----------------------------------------------------------------------
+//	Collect OFE
+//-----------------------------------------------------------------------
+void CFuiSketch::CollectFilesOFE()
+{	wait  = 1;
+	eofl	= 0;
+	edit	= 0;
+	wfil	= 0;
+	FP		= 0;
+ *dbase = 0;
+	FPM.close = 0;
+	FPM.sbdir = 1;
+	FPM.userp = CITY_FILE_OFE;
+	FPM.text  = "SELECT A FILE";
+	FPM.dir		= "OpenStreet";
+	FPM.pat		= "*.ofe";
+ *sname = 0;
+ *dbase = 0;
+	CreateFileBox(&FPM);
+	State = SKETCH_PAUSE;
+	return;
 }
 //----------------------------------------------------------------------
 //	Override check profile
@@ -257,7 +301,7 @@ bool CFuiSketch::ParseFile()
 {	char txt[256];
 	bool go = true;
 	trn->StartOBJ();
-	styl		= 0;
+	styl				= 0;
 	while (go)
 	{	fgetpos (FP,&fpos);
 		char *ch = ReadTheFile(FP,txt);
@@ -287,11 +331,11 @@ bool CFuiSketch::ParseStyle(char *txt)
 	styl		= ses.GetStyle(nsty);
 	char mans     = styl->GetMansart();
 	D2_Group *grp = styl->GetGroup();
+
 	grp->SetFloorNbr(flnb);
 	grp->SetRoofModelNumber(rofm);
 	grp->GetRoofModByNumber(mans);
 	styl->SelectRoofNum(rftx);
-	//trn->ForceStyle(nsty,rofm,rftx,flnb);
 	return true;
 }
 //-------------------------------------------------------------------
@@ -328,6 +372,8 @@ bool CFuiSketch::ParseTAG(char *txt)
 {	int nf = sscanf(txt,"TAG ( %32[^ =)] = %32[^ )] ) ",tagn, valn);
 	if (nf != 2)		return false;
 	GetOSMconfig(tagn,valn,confp);
+if (strcmp(tagn,"AMENITY") == 0)
+int a = 0;
 	return true;
 }
 //-------------------------------------------------------------------
@@ -377,7 +423,14 @@ bool CFuiSketch::ParseArea()
 	rpos.lat = (y1 + y2) * 0.5;
 	rpos.alt = 10000;
 	if (rpos.lon < 0)	rpos.lon += TC_FULL_WRD_ARCS;
-	//--- Get altitude ------------------------------------
+	//--- Check for adjust --------------------------------
+	fgetpos( FP, &fpos);						// Set Backup
+	double x,y;
+	ch = ReadTheFile(FP,txt);
+	nf = sscanf(ch,"Adjust ( %lf , %lf )",&x,&y);
+	if (nf != 2)		{fsetpos( FP, &fpos); return true;}
+	trn->SetAdjust(x,y);
+	fgetpos(FP, &fpos);
 	return true;
 }
 //-------------------------------------------------------------------
@@ -402,6 +455,7 @@ U_INT CFuiSketch::GotoReferencePosition()
 	FP  = fopen(fnam,"rb");
   if (0 == FP)			return Abort(er1,fnam);
 	fpos	= 0;
+	trn->ResetAdjust();
 	if (!ParseArea())	return Abort(er2,fnam);
 	//--- Go to reference position --------
 	cntw	= 0;
@@ -469,6 +523,7 @@ bool CFuiSketch::BuildObject()
 //-----------------------------------------------------------------------
 U_INT CFuiSketch::TerrainView()
 {	trn->ModeGroups();
+	trn->ObjPosition(geop);
 	rcam->GoToPosition(geop);			// Teleport
 	globals->Disp.ExecON (PRIO_ABSOLUTE);		// Allow Terrain
 	globals->Disp.ExecOFF(PRIO_TERRAIN);		// Stop after terrain
@@ -476,6 +531,7 @@ U_INT CFuiSketch::TerrainView()
 	tera  = 1;
 	globals->fui->CaptureMouse(this);
 	vTER->SetText(vTer);
+	if (edit)	mBox->Show();
 	nStat = SKETCH_PAUSE;
 	return SKETCH_WAIT;
 }
@@ -489,6 +545,7 @@ U_INT CFuiSketch::TerrainHide()
 	tera  = 0;
 	vTER->SetText("View Terrain");								// View or Edit
 	globals->fui->CaptureMouse(0);								// Stop Capture
+	mBox->Hide();
 	return SKETCH_PAUSE;													// just pause till next event
 }
 //-----------------------------------------------------------------------
@@ -517,7 +574,6 @@ U_INT CFuiSketch::HereWeAre()
 	globals->Disp.ExecOFF (PRIO_ABSOLUTE);		// No Terrain
 	globals->Disp.DrawOFF (PRIO_TERRAIN);		  // No Terrain
 	trn->ModeSingle();
-	eofl	= 0;
 	step  = 1;
 	return ReadNext();
 }
@@ -574,8 +630,8 @@ U_INT	CFuiSketch::ShowBuilding()
 	{	U_INT	nobj = trn->ActualStamp();
 		items++;
 		_snprintf(txt,127,"items %05d",items);
-		DrawNoticeToUser(txt,1);
-		bldR = trn->BuildNXT();
+		DrawNoticeToUser(txt,10);
+		bldR = trn->BuildNXT(&confp);
 	  return SKETCH_SHOW;
 	}
 	//--- object is complete -------------------
@@ -607,7 +663,7 @@ U_INT CFuiSketch::EndLoad()
 	vTer	= "Zoom Building";
 	vTER->SetText(vTer);
 	//--- change ident for 'load all' button -----------------------------
-	vALL->SetId('null');					// Becomes a null button
+	vALL->SetId('rlod');					// Becomes reload
 	vALL->SetText("End of File");
 	//--- inhibit next button --------------------------------------
 	nBUT->SetId('null');
@@ -704,7 +760,7 @@ bool CFuiSketch::NoSelection()
 }
 //-----------------------------------------------------------------------
 //	Fly Over the city
-//	NOTE:  We return at reference position at 2000 feet
+//	NOTE:  We return at reference position (2000 feet)
 //-----------------------------------------------------------------------
 void CFuiSketch::FlyOver()
  { Write(); 
@@ -792,6 +848,7 @@ U_INT CFuiSketch::SaveObject()
 		{	OSM_Object *obj = ses.GetObjectOSM(objno++);
 			if (0 == obj)						continue;
 			if (!obj->IsValid())		continue;
+			obj->AdjustPart();
 			//---- Process QGT key first -----------
 			U_INT okey = obj->GetKey();
 		  if (qKey != okey) globals->sqm->UpdateOSMqgt(*sqlp,okey);
@@ -829,7 +886,6 @@ U_INT CFuiSketch::SaveEnd()
 	globals->fui->DialogError(msg,"CITY EDITOR");
 	return SKETCH_PAUSE;
 }
-
 //-----------------------------------------------------------------------
 //	Time slice
 //-----------------------------------------------------------------------
@@ -852,7 +908,7 @@ void CFuiSketch::TimeSlice()
 				return;
 		//--- Continue to build ----------------
 		case SKETCH_CONTB:
-				bldR = trn->BuildNXT();
+				bldR = trn->BuildNXT(&confp);
 				State = (bldR == OSM_PARTIAL)?(SKETCH_CONTB):(SKETCH_PAUSE);
 				return;
 		//--- Pausing --------------------------
@@ -922,7 +978,7 @@ void CFuiSketch::CollectModels()
 //-----------------------------------------------------------------------
 int CFuiSketch::NoSession()
 {	char txt[256];
-	_snprintf(txt,255,"Error with file %s", spath);
+	_snprintf(txt,255,"Missing Session for %s", spath);
 	STREETLOG("%s",txt);
   CreateDialogBox("ATTENTION PLEASE",txt);
 	return SKETCH_ABORT;
@@ -976,6 +1032,12 @@ void CFuiSketch::Write()
 	//--- Edit area --------------------------------
 	_snprintf(txt,127,ed,SW.lat, SW.lon, NE.lat, NE.lon);
 	fputs(txt,fp);
+	//--- Edit ajust vector ------------------------
+	SVector T = trn->GetAdjustVector();
+	char  *aj = "Adjust (%lf , %lf)\n";
+	_snprintf(txt,127,aj,T.x,T.y);
+	fputs(txt,fp);
+	//---Write all objects --------------------------
 	ses.Write(fp);
 	fclose(fp);
 	return;
@@ -992,6 +1054,7 @@ void CFuiSketch::OnDialog(Tag rep)
 //---------------------------------------------------------------------
 //  Intercept events
 //---------------------------------------------------------------------
+#define OSM_DISPLACE (double (0.5))
 void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 {	switch (idm)  {
     case 'sysb':
@@ -1027,6 +1090,17 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		case	'vall':
 			if (wfil)	return;
 			State = StartLoad();
+			return;
+		//--- Reload button --------------------
+		case 'rlod':
+	//		vALL->SetId('fnxt');					// Becomes load
+	//		vALL->SetText("Next File");
+			return;
+		//--- Load next file -------------------
+		case 'fnxt':
+		  vALL->SetId('vall');					// Becomes load
+			vALL->SetText("Load all");
+			CollectFilesOFE();
 			return;
 		//--- Style list -----------------------
 		case 'styl':
@@ -1069,12 +1143,31 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		//--- Update database --------------------
 		case 'bsav':
 			if (0 == edit)	return;
-			//State = SaveStepD();
 			State = SaveStepA();
 			return;
 		//--- Dialogue button --------------------
 		case 'dial':
 			OnDialog(itm);
+			return;
+		//--- move latitude up -------------------
+		case 'lat+':
+			trn->Displace(0,+OSM_DISPLACE);
+			return;
+		//--- Move latitude down -----------------
+		case 'lat-':
+			trn->Displace(0,-OSM_DISPLACE);
+			return;
+		//--- Move longitude west ----------------
+		case 'lon-':
+			trn->Displace(-OSM_DISPLACE,0);
+			return;
+		//--- Move longitude east ---------------
+		case 'lon+':
+			trn->Displace(+OSM_DISPLACE,0);
+			return;
+		//--- Reset postion ---------------------
+		case 'rset':
+			trn->ResetAdjust();
 			return;
 	}
 	return;
@@ -1093,13 +1186,13 @@ D2_Session::D2_Session()
 	Stamp		= 1;
 	roof = new CRoofFLAT('fixe');
 	//--- Assign a default roof texture ------------------
-	char *gnm = "$default$";
+	char *gnm = "$base$";
 	rtex = new D2_TParam();
-	//--- Allocate the default group ---------------------
+	//--- Allocate the base group ---------------------
 	D2_Group *grp = new D2_Group(gnm,this);
-	grp->SetTexName("DontRemove.jpg");
+	grp->SetTexName("Base.jpg");
 	grp->LoadTexture();
-	grpQ[gnm] = grp;
+	basg = grp;
 	//--- Clear counters ---------------------------------
 	for (U_INT k=0; k < OSM_LAYER_SIZE; k++) cnter[k] = 0;
 	//--- Allocate others items --------------------------
@@ -1109,6 +1202,7 @@ D2_Session::D2_Session()
 //-----------------------------------------------------------------
 D2_Session::~D2_Session()
 {	//--- Free al resources -----------------------------------
+	delete basg;														// Free base group
 	grpQ.clear();
 	for (rp = repQ.begin(); rp != repQ.end(); rp++) delete (*rp).second;
 	repQ.clear();
@@ -1117,8 +1211,17 @@ D2_Session::~D2_Session()
 	for (ro = fstQ.begin(); ro != fstQ.end(); ro++)	delete (*ro).second;
 	fstQ.clear();
 	delete roof;
+	//--- clear tree queue -------------------------------
 	for (U_INT k=0; k<treQ.size(); k++) delete treQ[k];
+	treQ.clear();
+	//--- Clear street objects ---------------------------
+	for (U_INT k=0; k<strQ.size(); k++)	delete strQ[k];
+	strQ.clear();
+	//--- Clear ground objects ----------------------------
+	for (U_INT k=0; k<gndQ.size(); k++)	delete gndQ[k];
+	gndQ.clear();
 	delete rtex;
+
 }
 //-----------------------------------------------------------------
 //	Edit counters 
@@ -1145,8 +1248,13 @@ bool	D2_Session::ReadParameters(char *dir)
   if (0 == f)  return false;
 	bool ok = ParseTheSession(f);
 	fclose(f);
-	//--- After parse checking ---------------------
+	//--- After parse checking ---------------------------------------
 	if (0 == treQ.size())	SetOSMproperty("LANDUSE","FOREST",OSM_PROP_SKIP);
+	//--- Add default street tree ------------------------------------
+	if (0 == strQ.size())
+	{	SetOSMproperty("HIGHWAY","PRIMARY",  OSM_PROP_SKIP);
+		SetOSMproperty("HIGHWAY","SECONDARY",OSM_PROP_SKIP);
+	}
 	return ok;
 }
 //-----------------------------------------------------------------
@@ -1165,6 +1273,7 @@ bool D2_Session::ParseTheSession(FILE *f)
 	{	fpos = ftell(f);
 	  line = ReadTheFile(f,buf);
 		if (ParseReplace(f,line))		continue;
+		if (ParseStreet(f,line))		continue;
 		if (ParseForest(f,line))		continue;
 		if (ParseSeed(f,line))			continue;
 		if (ParseGroups(f,line))		continue;
@@ -1191,12 +1300,29 @@ bool D2_Session::ParseReplace(FILE *f, char *line)
 	if (nf != 3)		return false;
 	//--- Insert an entry in replacement list -----------------
 	OSM_MDEF *rpm = GetOSMreplacement(tag, val, obj);
-	if (0 == rpm)	return false;
+	if (0 == rpm)	return true;
 	//--- Add one replacement ---------------------------------
 	std::pair <U_INT,OSM_MDEF*> p(rpm->otype,rpm);
 	repQ.insert(p);
 	return true;
 }
+//-----------------------------------------------------------------
+//	Parse Street use directive 
+//-----------------------------------------------------------------
+bool D2_Session::ParseStreet(FILE *f, char *line)
+{	char	mod[128];
+ 	int nf  = sscanf(line," Street use ( %63[^ ),] ) ", mod);
+	if (nf == 0)	return false;
+	//--- Create a slot for  modele ----------------
+	OSM_MDEF *mdf	= new OSM_MDEF();
+	mdf->dir			= FOLDER_OSM_TREE;
+	mdf->obj			= Dupplicate(mod,64);
+	mdf->otype		= OSM_TREE;
+	//----------------------------------------------
+	treQ.push_back(mdf);
+	return true;
+}
+
 //-----------------------------------------------------------------
 //	Parse forest directive 
 //-----------------------------------------------------------------
@@ -1253,15 +1379,21 @@ bool D2_Session::ParseStyles(FILE *f, char *line)
 	//--- Have a new style -----------------------
 	return AddStyle(f,snm,gnm);
 }
-
+//-----------------------------------------------------------------
+//	Get group by name  
+//-----------------------------------------------------------------
+D2_Group *D2_Session::GetGroup(char *gn)
+{	if (strcmp(gn,"Base") == 0)	return basg;
+	rg = grpQ.find(gn);
+	if (rg == grpQ.end())	{Stop01("Group name error"); return 0;}
+	return (*rg).second;
+}
 //-----------------------------------------------------------------
 //	Add a style  
 //-----------------------------------------------------------------
 bool D2_Session::AddStyle(FILE *f,char *sn,char *gn)
 {	//--- Find group ----------------------------
-	rg = grpQ.find(gn);
-	if (rg == grpQ.end())	return Stop01(sn);
-	D2_Group *gp = (*rg).second;
+	D2_Group *gp = GetGroup(gn);
 	D2_Style *sy = new D2_Style(sn,gp);
 	//--- Decode Style parameters ---------------
 	bool go = true;
@@ -1296,8 +1428,14 @@ D2_Style *D2_Session::GetStyle(char *nsty)
 		if (0 == sty)	continue;
 		return sty;
 	}
-	return 0;
+	//--- Search in base styles -------------------
+	return basg->GetStyle(nsty);
 }
+//-----------------------------------------------------------------
+//	Get base style
+//-----------------------------------------------------------------
+D2_Style *D2_Session::GetBaseStyle(char *sn)
+{	return basg->GetStyle(sn);	}
 //------------------------------------------------------------------
 //	Select a roof texture from style
 //------------------------------------------------------------------
@@ -1336,9 +1474,16 @@ bool D2_Session::GetReplacement(OSM_MDEF &rpm)
 //------------------------------------------------------------------
 //	Get a tree
 //------------------------------------------------------------------
-OSM_MDEF *D2_Session::GetTree()
+OSM_MDEF *D2_Session::GetForestTree()
 {	int k = RandomNumber(treQ.size());
 	return treQ[k];
+}
+//------------------------------------------------------------------
+//	Get a tree
+//------------------------------------------------------------------
+OSM_MDEF *D2_Session::GetStreetTree()
+{	int k = RandomNumber(strQ.size());
+	return strQ[k];
 }
 //------------------------------------------------------------------
 //	Select a style 
@@ -1363,7 +1508,6 @@ void	D2_Session::GetaStyle(D2_BPM *p)
 	//--- check parameters -----------------
 	if (0 == sty) Abort("No Style found");
 	//--- Save parameters -------------------
-	p->style = sty;
 	sty->AssignBPM(p);
 	return;
 }
@@ -1387,7 +1531,16 @@ void D2_Session::AddForest(OSM_Object *F)
 	fstQ[No]	= F;
 	return;
 }
-
+//-----------------------------------------------------------------
+//	Add a ground object if not already in list
+//-----------------------------------------------------------------
+void D2_Session::AddGround(OSM_Object *G)
+{	U_INT No = G->GetStamp();
+	std::map<U_INT,OSM_Object*>::iterator ro = gndQ.find(No);
+	if (ro != gndQ.end())		return;
+	gndQ[No]	= G;
+	return;
+}
 //------------------------------------------------------------------
 //	Return building 
 //------------------------------------------------------------------
@@ -1404,32 +1557,42 @@ OSM_Object *D2_Session::GetObjectOSM(U_INT No)
 		OSM_Object *bld = (*rg).second->FindBuilding(No);
 		if (bld)	return bld;
 	}
-	return 0;
+	//--- Search in base ---------------------------
+	return basg->FindBuilding(No);
 }
 //------------------------------------------------------------------
 //	Fill box with styles
 //------------------------------------------------------------------
 void D2_Session::FillStyles(CListBox *box)
-{	Queue <D2_Style > *Q;
-	D2_Style *sty = 0;
+{	D2_Style *sty = 0;
 	for (rg = grpQ.begin(); rg != grpQ.end(); rg++)
 	{	D2_Group *grp = (*rg).second;
-		Q	= grp->GetStyleQ();
-		for (sty = Q->GetFirst(); sty != 0; sty = sty->GetNext())
-		{	box->AddSlot(sty);	}
+		grp->ListStyles(box);
 	}
+	//--- Add base styles --------------------------------
+	basg->ListStyles(box);
 	return;
 }
 //------------------------------------------------------------------
 //	Draw everything
 //------------------------------------------------------------------
 void D2_Session::Draw()
-{	//--- Draw all buildings --------------------
+{	//--- Draw Ground objects -------------------------
+	DebDrawOSMground();							// Drawing environment
+	glDisable(GL_BLEND);
+	glColor4f(1,1,1,1);
+	for (ro = gndQ.begin(); ro != gndQ.end(); ro++)
+	{	(*ro).second->Draw();
+	}
+	glEnable(GL_BLEND);
+	EndDrawOSM();
+  //--- Draw all buildings --------------------------
 	DebDrawOSMbuilding();							// Drawing environment
 	for (rg = grpQ.begin(); rg != grpQ.end(); rg++)
 	{	D2_Group *gpp = (*rg).second;
 		gpp->DrawBuilding();	
 	}
+	basg->DrawBuilding();
 	EndDrawOSM();
 	//--- Draw all forests--------------------------
 	DebDrawOSMforest();							// Drawing environment
@@ -1450,7 +1613,7 @@ void D2_Session::Write(FILE *fp)
 {	U_INT bno = 1;
 	U_INT wrt = 0;
 	OSM_Object *bld = 0;
-
+	//--- Locate all objects to write -----------------
 	for (bno = 1; bno <= Stamp; bno++)
 	{	bld = GetObjectOSM(bno);
 		if (0 == bld)	continue;
@@ -1470,7 +1633,9 @@ void D2_Session::UpdateCache()
 	for (U_INT k=1; k <= Stamp; k++)
 	{	obj = GetObjectOSM(k);
 		bool ok = (0 != obj) && (obj->IsValid());
-		if	(ok) globals->tcm->AddToPack(obj);
+		if	(!ok)		continue;
+		obj->AdjustPart();
+		globals->tcm->AddToPack(obj);
 	}
 	return;
 }

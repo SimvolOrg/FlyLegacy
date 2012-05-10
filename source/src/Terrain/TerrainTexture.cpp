@@ -330,6 +330,7 @@ bool CShared3DTex::BindTexture()
 				return false;
 			//--- Skip it ------------------------------
 			case SHX_SKIP:
+				glBindTexture(GL_TEXTURE_2D,0);
 				return false;
 	}
 		gtfo("CSared3DTex tampered");

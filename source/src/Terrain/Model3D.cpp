@@ -2074,7 +2074,7 @@ void C3DPart::AllocateW3dVTX(int nv)
 void C3DPart::AllocateOsmGVT(int nv)
 {	NbVT  = nv;
 	gTAB  = new GN_VTAB[nv];
-	Rend  = &C3DPart::DrawAsGVT;
+	Rend  = &C3DPart::DrawAsOSM;
 	globals->m3d->vCount(NbVT);
 	return;
 }
@@ -2178,7 +2178,7 @@ void C3DPart::ExtendOSM(int nbv,GN_VTAB *src)
 	char *dst = (char*) tab + dim;
 	dim = nbv * sizeof(GN_VTAB);
 	memcpy(dst,src,dim);
-	Rend  = &C3DPart::DrawAsGVT;
+	Rend  = &C3DPart::DrawAsOSM;
 	return;
 }
 //----------------------------------------------------------------------
@@ -2362,7 +2362,7 @@ void C3DPart::DrawAsBIN()
 //----------------------------------------------------------------------
 //  Draw the part for  an OSM format
 //----------------------------------------------------------------------
-void C3DPart::DrawAsGVT()
+void C3DPart::DrawAsOSM()
 {	tRef->BindTexture();
 	glVertexPointer  (3,GL_FLOAT,sizeof(GN_VTAB),&(gTAB->VT_X));
   glTexCoordPointer(2,GL_FLOAT,sizeof(GN_VTAB),&(gTAB->VT_S));

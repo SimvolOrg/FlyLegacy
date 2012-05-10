@@ -41,29 +41,42 @@ class C_QGT;
 //====================================================================================
 //	Object properties
 //====================================================================================
-#define OSM_PROP_NONE	(0x00)
-#define OSM_PROP_REPL (0x01)								// Object is replaced
-#define OSM_PROP_MREP (0x02)								// Object can be replaced
-#define OSM_PROP_MSTY	(0x04)								// Object can change style
-#define OSM_PROP_SKIP (0x08)								// Object is skipped
-#define OSM_PROP_ZNED (0x10)								// Need Z altitude
-#define OSM_PROP_STOP (0x80)								// Stop on debug
+#define OSM_PROP_NONE	(0x0000)
+#define OSM_PROP_MAJT (0x0001)								// Major Tag
+#define OSM_PROP_REPL (0x0002)								// Object is replaced
+#define OSM_PROP_MREP (0x0004)								// Object can be replaced
+#define OSM_PROP_MSTY	(0x0008)								// Object can change style
+#define OSM_PROP_SKIP (0x0010)								// Object is skipped
+#define OSM_PROP_ZNED (0x0020)								// Need Z altitude
+#define OSM_PROP_WALL	(0x0040)								// Object has walls
+#define OSM_PROP_ROOF (0x0080)								// Object has roof
+#define OSM_PROP_STOP (0x8000)								// Stop on debug
+//------------------------------------------------------------------------
+#define OSM_PROP_BOTH (OSM_PROP_WALL+OSM_PROP_ROOF)
 //--- Building properties ------------------------------------------------
-#define OSM_PROP_BLDG (OSM_PROP_MREP+OSM_PROP_MSTY)
-#define OSM_PROP_IGNR (OSM_PROP_MREP+OSM_PROP_SKIP)	
-#define OSM_PROP_TREE (OSM_PROP_ZNED)	
-#define OSM_PROP_LITE (OSM_PROP_ZNED)					
+#define OSM_PROP_BLDG			(OSM_PROP_MAJT+OSM_PROP_MREP+OSM_PROP_MSTY+OSM_PROP_BOTH)
+#define OSM_PROP_IGNR			(OSM_PROP_MREP+OSM_PROP_SKIP)	
+#define OSM_PROP_TREE			(OSM_PROP_MAJT+OSM_PROP_ZNED)	
+#define OSM_PROP_LITE			(OSM_PROP_MAJT+OSM_PROP_ZNED)
+#define OSM_PROP_PSTREET	(OSM_PROP_MAJT+OSM_PROP_ZNED)	
+#define OSM_PROP_RPOINT		(OSM_PROP_MAJT+OSM_PROP_SKIP)	
+#define OSM_PROP_FORTIFS	(OSM_PROP_MAJT+OSM_PROP_WALL+OSM_PROP_ZNED)
+#define OSM_PROP_DOCKS		(OSM_PROP_MAJT)					
 //====================================================================================
 //	Object build kind
 //====================================================================================
- #define OSM_BUILD_BLDG	(1)
- #define OSM_BUILD_LITE (2)
- #define OSM_BUILD_AMNY (3)
- #define OSM_BUILD_TREE	(4)
+#define OSM_BUILD_GRND	(0)									// Ground object
+#define OSM_BUILD_BLDG	(1)									// Building
+#define OSM_BUILD_LITE	(2)									// Light
+#define OSM_BUILD_AMNY	(3)									// Amenity
+#define OSM_BUILD_TREE	(4)									// Trees
+#define OSM_BUILD_PSTR	(5)									// Street
+#define OSM_BUILD_FORT	(6)									// Fortifications
+#define OSM_BUILD_VMAX	(7)
 //====================================================================================
 //	Object type
 //====================================================================================
-#define OSM_BUILDING  (1)
+#define OSM_BUILDING  (1)					
 #define OSM_CHURCH		(2)
 #define OSM_POLICE    (3)
 #define OSM_FIRE_STA	(4)
@@ -72,10 +85,18 @@ class C_QGT;
 #define OSM_COLLEGE		(7)
 #define OSM_HOSPITAL	(8)
 #define OSM_HOTEL			(9)
-#define OSM_TREE      (10)
-#define OSM_LIGHT     (11)
+#define OSM_CHATODO   (10)									// WATER TOWER
+#define OSM_PHARES		(11)
+#define OSM_PSTREET		(12)									// CITY STREETS
+#define OSM_FORTIFS		(13)									// CITY WALLS (HISTORICAL)
+#define OSM_DOCKS     (14)									// DOCKSs
 //---------------------------------
-#define OSM_MAX       (12)
+#define OSM_TREE      (15)									// FOREST TREES
+#define OSM_LIGHT     (16)									// ROAD LIGHT
+//---------------------------------
+#define OSM_RPOINT		(17)									// ROUNDABOUT
+//----------------------------------
+#define OSM_MAX       (18)
 //====================================================================================
 #define OSM_PARTIAL   (1)
 #define OSM_COMPLET   (2)
@@ -114,6 +135,10 @@ struct OSM_CONFP {
 	U_INT prop;
 	U_INT	bvec;						// Build vector
 	char  layr;						// OSM layer
+	//--- specific parameters ---------------------------
+	double pm1;
+	char  *pm2;
+	//---------------------------------------------------
 	char *tag;
 	//---Set default to a building ---------------------
 	void Reset()
@@ -178,9 +203,9 @@ class OSM_Object {
 	friend class CBuilder;
 public:
 	//--- Callback vectors ----------------------------------------
-	typedef int  (OSM_Object::*buildCB)();						// Build vector
-	typedef void (OSM_Object::*drawCB)();							// Draw vector
-	typedef void (OSM_Object::*writeCB)(FILE *fp);		// Write vector
+	typedef int  (OSM_Object::*buildCB)(OSM_CONFP *C);	// Build vector
+	typedef void (OSM_Object::*drawCB)();								// Draw vector
+	typedef void (OSM_Object::*writeCB)(FILE *fp);			// Write vector
 
 protected:
 	//--- Attributes -------------------------------------------------
@@ -218,10 +243,15 @@ public:
 	OSM_Object(CBuilder *b,OSM_CONFP *CF,D2_Style *sty);
  ~OSM_Object();
   //---  build functions -----------------------------------------
-	int			BuildBLDG();									// Make  building
-	int			BuildLITE();									// Make a light row
-	int			BuildFRST();									// Make a forest
-	int			BuildROWF();									// Make a row of forest
+	void		AssignBase();
+	int			BuildBLDG(OSM_CONFP *CF);			// Make  building
+	int			BuildLITE(OSM_CONFP *CF);			// Make a light row
+	int			BuildFRST(OSM_CONFP *CF);	  	// Make a forest
+	int			BuildSTRT(OSM_CONFP *CF);			// Build a street
+	int			BuildGRND(OSM_CONFP *CF);			// Build ground object
+	int			BuildWALL(OSM_CONFP *CF);			// Build a wall
+	//---------------------------------------------------------------
+	int			BuildROWF(OSM_CONFP *CF);			// Make a row of forest
 	//---------------------------------------------------------------
 	void		ForceStyle(D2_Style *sty);
   //----------------------------------------------------------------
@@ -247,9 +277,9 @@ public:
 	void   *GetGroupTREF();
 	//----------------------------------------------------------------
 	void		BuildLightRow(double H);
-	void		BuildForestTour();
+	void		BuildForestTour(OSM_MDEF *mdf);
 	int		  NextForestRow();
-	void		StoreTree(D2_POINT *pp);
+	void		StoreTree(D2_POINT *pp, OSM_MDEF *mdf);
 	void		ScanLine(double y);
 	//----------------------------------------------------------------
 	void		SetPart(C3DPart *p)				{part = p;}
@@ -257,9 +287,8 @@ public:
 	void		Deselect();
 	void		SwapSelect();
 	void		ReplacePart(C3DPart *p);
-	void		ReplaceBy(OSM_MDEF *rpp);		
-	//----------------------------------------------------------------
-	void		AdjustZ(CVector *V);
+	void		ReplaceBy(OSM_MDEF *rpp);
+	void		AdjustPart();		
 	//----------------------------------------------------------------
 	GN_VTAB *StripToSupertile();
 	//----------------------------------------------------------------
@@ -306,9 +335,12 @@ public:
 	void		DrawAsBLDG();
 	void		DrawAsLITE();
 	void		DrawAsTREE();
+	void		DrawAsGRND();
+	void		DrawAsDBLE();
 	void		DrawLocal();
 	void		DrawBase();									
 	//----------------------------------------------------------------
+	void		SkipWrite(FILE *fp);
 	void		Write(FILE *fp);							
 	void		WriteAsBLDG(FILE *fp);
 	void    WriteAsGOSM(FILE *fp);
@@ -322,7 +354,7 @@ public:
 inline void DebDrawOSMbuilding()
 { glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glEnable(GL_TEXTURE_2D);
-	glColor3f(1,1,1);
+	glColor4f(1,1,1,1);
 	//--- Set client state  ------------------------------------------
 	glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   glEnableClientState(GL_VERTEX_ARRAY);
@@ -335,7 +367,7 @@ inline void EndDrawOSM()
 {	glPopClientAttrib();
 	glPopAttrib();
 }
- //===================================================================================
+//===================================================================================
 //	Environment OSM Light
 //===================================================================================
 inline void DebDrawOSMlight(GLfloat *col, float a)
@@ -367,6 +399,15 @@ inline void DebDrawOSMforest()
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	glDisable(GL_CULL_FACE);
 	}
-
+//===================================================================================
+//	Environment Ground object
+//===================================================================================
+inline void DebDrawOSMground()
+{ DebDrawOSMbuilding();
+	//----------------------------------------------------------------
+	glDisable(GL_ALPHA_TEST);
+	glPolygonMode(GL_FRONT,GL_FILL);
+	glEnable(GL_CULL_FACE);
+	}
 //======================= END OF FILE ==============================================================
 #endif // OSM_OBJECTS_H

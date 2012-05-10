@@ -201,7 +201,7 @@ public:
 	void		AllocateOsmGVT(int nv);
 	void		AllocateOsmLIT(int nv);
 	void		DrawAsW3D();
-	void		DrawAsGVT();
+	void		DrawAsOSM();
 	void		DrawAsBIN();
 	void		DrawAsLIT();
 	//-------------------------------------------------------------

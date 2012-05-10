@@ -1562,7 +1562,6 @@ void CSuperTile::AddToPack(OSM_Object *obj)
 	double rdf = cos(rad);
 	SPosition pos	= obj->GetPosition();
 	CVector T  = FeetComponents(mPos, pos,rdf);
-	obj->AdjustZ(&T);		
 	//--- Search a part with same texture ------
 	CShared3DTex *ref = obj->GetPartTREF();
 	C3DPart *p0 = obj->GetPart();
@@ -1726,12 +1725,13 @@ void CSuperTile::Refresh3D()
 				//--- delete OSM objetcs ------------------
 				ClearOSM(OSM_LAYER_BLDG);
 				ClearOSM(OSM_LAYER_LITE);
+				ClearOSM(OSM_LAYER_DBLE);
 				sta3D	= SUP3D_OUTSIDE;
 				return;
 			//--- Fading in view ------------------------
 			case SUP3D_FADE_IN:
 				if (dEye > lim)  {sta3D = SUP3D_FADEOUT; return;}
-				alpha += float(0.01);
+				alpha += float(0.005);
 				if (alpha < 1)	return;
 				alpha = 1;
 				sta3D = SUP3D_VIEWING;
@@ -1739,7 +1739,7 @@ void CSuperTile::Refresh3D()
 			//--- Fading out ----------------------------
 			case SUP3D_FADEOUT:
 				if (dEye < lim)	{sta3D = SUP3D_FADE_IN; return;}
-				alpha -= float(0.01);
+				alpha -= float(0.005);
 				if (alpha > 0)	return;
 				alpha  = 0;
 				sta3D	 = SUP3D_INS_OSM;
@@ -1946,10 +1946,10 @@ int CSuperTile::Draw3D(U_CHAR tod)
 	glTranslated(T.x, T.y, T.z);		// Go to supertile center
 	//--- DRAW OSM BUILDING LAYER ----------------------------
 	C3DPart *prt;
-	for (prt = osmQ[OSM_LAYER_BLDG].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsGVT();
+	for (prt = osmQ[OSM_LAYER_BLDG].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsOSM();
 	//--- DRAW OSM FOREST LAYER ------------------------------
 	DebDrawOSMforest();
-	for (prt = osmQ[OSM_LAYER_TREE].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsGVT();
+	for (prt = osmQ[OSM_LAYER_DBLE].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsOSM();
 	EndDrawOSM();
 	//--- DRAW OSM Light layer   -----------------------------
 	if (tod == MODEL_NIT)

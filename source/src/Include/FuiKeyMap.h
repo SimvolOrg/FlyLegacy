@@ -84,13 +84,14 @@ public:
   void      SelectSet (U_INT No);
   int       InitPopup();
   //------------------------------------------------------------------
-  void				DisplayKeys(Tag idn);
-  bool				CheckKey(int cde,CKeyDefinition *kdf);
-  void				Unassign(CKeyDefinition *kdf,int cde);
-  void				Unassign(JoyDEV *jsd,int bt);
-  void				DefaultKeys();
-  void				ClearKey();
-  bool				Message(char *msg);
+	void			UnlinkLine(CKeyDefinition *kdf);
+  void			DisplayKeys(Tag idn);
+  bool			CheckKey(int cde,CKeyDefinition *kdf);
+  void			Unassign(CKeyDefinition *kdf,int cde);
+  void			Unassign(JoyDEV *jsd,int bt);
+  void			DefaultKeys();
+  void			ClearKey();
+  bool			Message(char *msg);
   //------------------------------------------------------------------
   void      StopDetection();
   void      SaveConfiguration();

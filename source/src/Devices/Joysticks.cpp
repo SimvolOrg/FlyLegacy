@@ -77,8 +77,6 @@ JOY_NULL_AREA CJoysticksManager::nZON[] = {
   { 0.0f,   0.0f,  0.0f },            // 0 Not used
   {-0.25f, +0.25f, 0.0f },            // Stick type in [-1,+1];
 };
-
-
 //==============================================================================
 //  Create a JOYSTICK DEVICE
 //==============================================================================
@@ -86,6 +84,7 @@ JoyDEV::JoyDEV(int n)
 { njs	= n;
 	nht	= 0;
 	uht = 0;
+	msk	= 0;
 	for (int k=0; k!=32; k++) mBut[k] = 0;
 	//--------------------------------------------
 	axeData[JOY_AXE_X] = 0;
@@ -238,7 +237,11 @@ void JoyDEV::Refresh()
 	if (flag & JOY_RETURNU)	StoreAxe(JOY_AXE_U, jinf.dwUpos);
 	if (flag & JOY_RETURNV)	StoreAxe(JOY_AXE_V, jinf.dwVpos);
 	//--- Update button state -----------------------------------
-	if (flag & JOY_RETURNBUTTONS) but	= jinf.dwButtons;
+	if (flag & JOY_RETURNBUTTONS)
+	{	U_INT bsta = jinf.dwButtons;			// Button state	
+		msk ^=bsta;												// Changing state 
+		but	= bsta;												// Save state
+	}
 	//--- Update POV --------------------------------------------
 	if (flag & JOY_RETURNPOV)			hat	= jinf.dwPOV;
 	//-----------------------------------------------------------
@@ -410,6 +413,7 @@ bool CSimButton::Tr01(U_INT st)
   Stat       = st;
   return ((0 == old) && (0 != st));
 }
+
 //----------------------------------------------------------------------
 //  Read Parameters from button description
 //----------------------------------------------------------------------
@@ -575,7 +579,15 @@ void CJoysticksManager::CollectDevices()
 	}
 	return;
 }
-
+//---------------------------------------------------------------------------------
+//  Limit button detection
+//---------------------------------------------------------------------------------
+void CJoysticksManager::LimitButton(char *dvn,int lim)
+{	JoyDEV *jdf = Find(dvn);
+	if (0 == jdf)	return;
+//	jdf->SetButtonNb(lim);
+	return;
+}
 //-------------------------------------------------------------------------
 //	Check if I am free
 //-------------------------------------------------------------------------
@@ -869,27 +881,30 @@ void CJoysticksManager::HandleButton(JoyDEV * jsd)
 { U_INT one = 1;
   int   end = jsd->nbt;
   for (int k=0; k < end; k++)
-    { U_INT bit = (one << k) & jsd->but;
-      //---Proceed according to mode -------------
-      if ((0 != bit) && AssignCallBack(jsd,k))	continue;
-      //---Process according to type -------------
+    { U_INT nbit = (one << k); 
+			U_INT val  = jsd->IsON(nbit);
+			//---Proceed change according to mode -------------
+      if ((val) && AssignCallBack(jsd,k))	continue;
+      //---Process according to type --------------------
       CSimButton *sbt = jsd->GetButton(k);
-      if (0 == sbt)															continue;
+      if (0 == sbt)																		continue;
       Tag cmde            = sbt->cmde;
       CKeyDefinition *kdf = sbt->kdf;
       Tag             grp =  kdf->GetSet();
       Tag             kid =  kdf->GetTag();
+			val									=  jsd->Val(nbit);
       //---Check type of key --------------------
       switch (kdf->GetType())
       { case KEY_REPEAT:
-            if (bit)							globals->kbd->Stroke(grp,kid);            
+            if (val)							globals->kbd->Stroke(grp,kid);            
             continue;
         case KEY_SET_ON:
-            if (sbt->Tr01(bit))		globals->kbd->Stroke(grp,kid);
+            if (sbt->Tr01(val))		globals->kbd->Stroke(grp,kid);
             continue;
       }
-            
   }
+ //--- Change mask ----------------------------
+ jsd->SwapMask();         
   return;
 }
 //----------------------------------------------------------------------
@@ -1199,6 +1214,9 @@ void CJoysticksManager::ProcessHat(SStream *stream)
 	if (jsp) jsp->SetHat(1);
   return;
 }
+//-----------------------------------------------------------------------------------
+//  Process Hat
+//-----------------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------------
 //  Process the axe

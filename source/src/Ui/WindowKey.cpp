@@ -55,7 +55,8 @@ int WhenKeyHit(Tag winID, int iCode)
 //    CALL BACK FROM JOYSTICK
 //=================================================================================
 void WhenButtonHit(char code, JoyDEV *J, CSimAxe *A, int B, Tag W)
-{ CFuiKeyMap *win = (CFuiKeyMap*)globals->fui->GetFuiWindow(W);
+{ if (code != JOY_BUT_MOVE)		return;
+	CFuiKeyMap *win = (CFuiKeyMap*)globals->fui->GetFuiWindow(W);
   win->ButtonHit(J,B);
   return;
 }
@@ -201,7 +202,6 @@ void CFuiKeyMap::DisplayKeys(Tag idn)
   { CKeyDefinition *kdf = (*it).second;
     CSimButton     *sbt = kdf->GetButton();
     CKeyLine       *kln = new CKeyLine;
-    kdf->SetSlot(x);
     keyBOX.AddSlot(kln);
     kln->SetSlotName((char*)kdf->GetName());
     kln->SetDef(kdf);
@@ -312,6 +312,19 @@ void CFuiKeyMap::ButtonHit(JoyDEV *jsd,int bt)
   return;
 }
 //--------------------------------------------------------------------------
+//  Search line slot for key definition 
+//--------------------------------------------------------------------------
+void CFuiKeyMap::UnlinkLine(CKeyDefinition *kdf)
+{ CKeyLine *line = 0;
+	for (U_INT k = 0; k < keyBOX.GetSize(); k++)
+	{	line = (CKeyLine*)keyBOX.GetSlot(k);
+		if (line->GetKDef() != kdf)	continue;
+		line->SetJoysDef(0);
+		return;
+	}
+	return;
+}
+//--------------------------------------------------------------------------
 //  Unlink the button from the actual key definition 
 //--------------------------------------------------------------------------
 void CFuiKeyMap::Unassign(JoyDEV *jsd,int bt)
@@ -320,9 +333,7 @@ void CFuiKeyMap::Unassign(JoyDEV *jsd,int bt)
 	jsm->RemoveButton(sbt);
   if (0 == kdf)      return;
   kdf->LinkTo(0);
-  int slot = kdf->GetSlot();
-  CKeyLine  *kln = (CKeyLine*)keyBOX.GetSlot(slot);
-  if (kln) kln->SetJoysDef(0);
+	UnlinkLine(kdf);
   return;
 }
 //--------------------------------------------------------------------------
@@ -333,8 +344,8 @@ void CFuiKeyMap::ClearButton()
   CKeyDefinition    *kdf  = kln->GetKDef();
   CSimButton        *old  = kdf->GetButton();
   modify  = 1;
-  kdf->LinkTo(0);
   kln->SetJoysDef(0);
+  kdf->LinkTo(0);
 	globals->jsm->RemoveButton(old);
   keyBOX.Display();
   return;

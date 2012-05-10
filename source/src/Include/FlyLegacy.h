@@ -2225,9 +2225,10 @@ class CImport;
 //  OSM Layer
 //=============================================================================
 #define OSM_LAYER_BLDG	(0)
-#define OSM_LAYER_TREE  (1)
-#define OSM_LAYER_LITE  (2)
-#define OSM_LAYER_SIZE  (3)
+#define OSM_LAYER_LITE  (1)
+#define OSM_LAYER_DBLE  (2)
+#define OSM_LAYER_GRND	(3)
+#define OSM_LAYER_SIZE  (4)
 //============================================================================
 //  Define GAUGE BUS VALUES
 //============================================================================

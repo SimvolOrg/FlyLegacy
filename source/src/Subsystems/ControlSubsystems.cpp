@@ -1893,6 +1893,7 @@ void  CBrakeControl::TimeSlice (float dT,U_INT FrNo)		//
 	globals->jsm->Poll(JS_RITE_TOE,Brake[BRAKE_RITE]);
 	//--- Poll keyboard brake keys --------------------
 	br_timer += dT;
+//TRACE("BRAKE TIME SLICE	HOLD= %d", Hold);  
 	if (br_timer > rf_timer) {
 			br_timer -= rf_timer;
 			if (Hold)  PressBrake(Hold);

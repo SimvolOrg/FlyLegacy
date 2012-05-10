@@ -343,9 +343,15 @@ char replOBJ[OSM_MAX] = {
 	FOLDER_OSM_BLDG,				// 7  OSM_COLLEGE			(7)
 	FOLDER_OSM_BLDG,				// 8  OSM_HOSPITAL		(8)
 	FOLDER_OSM_BLDG,				// 9  OSM_HOTEL				(9)
+	FOLDER_OSM_BLDG,				// 10  OSM_CHATODO		(10)
+	FOLDER_OSM_BLDG,				// 11  OSM_PHARES		  (11)
+	FOLDER_OSM_TREE,				// 12 OSM_PSTREET			(12)
+	FOLDER_OSM_USER,				// 13 OSM_FORTIFS     (13)
+	FOLDER_OSM_BLDG,				// 14 OSM_DOCK				(14)
 	//----------------------------------------------------------
-	FOLDER_OSM_TREE,				// 10  OSM_TREE				(10)
-	FOLDER_OSM_LITE,				// 11 OSM_LIGHT				(11)
+	FOLDER_OSM_TREE,				// 15  OSM_TREE				(15)
+	FOLDER_OSM_LITE,				// 16 OSM_LIGHT				(16)
+	FOLDER_OSM_BLDG,				// 17	OSM_RPOINT			(17) 
 };
 
 //================================================================================

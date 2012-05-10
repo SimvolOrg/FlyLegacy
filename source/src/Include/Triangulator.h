@@ -165,7 +165,10 @@ struct D2_BPM {
 	double        dlg;										// Longuest edge
 	double				lgx;										// Width
 	double				lgy;										// Lenght
-	double				hgt;										// Height						
+	double				hgt;										// Height	
+	//-----------------------------------------------------
+	double        rtan;										// Tang
+	double				zhtr;										// Last floor height					
 	//-----------------------------------------------------
 public:
 	D2_BPM() {Clear();}
@@ -254,6 +257,7 @@ struct D2_POINT {
 	void  D2_POINT::Type(char n)	{R = n;}
 	bool  D2_POINT::IsReflex()	  {return (R == 1);}
 	bool  D2_POINT::NotNulEdge()	{return (*idn != 'N');}
+	bool  D2_POINT::First()				{return (rng == 0);}
 	//------------------------------------------
 	char  D2_POINT::GetType()		{return *idn;}
 	void	D2_POINT::SetEdge(char n)	{*idn = n;}
@@ -414,7 +418,7 @@ public:
 	//--------------------------------------------------
 	void D2_FACE::Copy(D2_POINT *A, D2_POINT *B, D2_POINT *C);
 	//--------------------------------------------------
-	void		Extrude(double f,double c,D2_POINT *sw,D2_POINT *se);
+	void		Extrude(double f,D2_POINT *sw,D2_POINT *se);
 	void		SetNorme(GeoTest *geo);
 	void		TextureFaceByPoint(D2_Style *s);
 	void		TextureFaceByFaces(D2_Style *sty);
@@ -440,13 +444,12 @@ public:
 	char			sNo;										// Stair number
 	char      type;										// Floor type
 	double		floor;									// Height
-	double		ceil;
 	//---------------------------------------------------------
 	std::vector<D2_FACE*> faces;			// Polygon faces
 	//--- METHODS ---------------------------------------------
 public:
 	D2_FLOOR() {strncpy(idn,"D2FL",4);}
-	D2_FLOOR(char e, char t, double f, double c);
+	D2_FLOOR(char e, char t, double f);
  ~D2_FLOOR();
  //----------------------------------------------------------
   void	TextureFloor(D2_Style *s);
@@ -521,6 +524,13 @@ public:
 	double GetRectangHT()			{ return Ry; }
 };
 //====================================================================================
+//	OPtions for style
+//====================================================================================
+#define STYLE_MANSAR			(0x0001)
+#define STYLE_TXFACE			(0x0002)
+#define STYLE_HFLOOR			(0x0004)
+#define STYLE_ZFLOOR			(0x0008)
+//====================================================================================
 //	data for Group of Style definition 
 //====================================================================================
 class D2_Group;
@@ -534,16 +544,19 @@ class D2_Style: public D2_Ratio, public CSlot {
 	char       filn[64];									// Texture file name					
 	D2_Group  *group;											// Parent group
 	char			 tr;												// Trace
-	char       mans;											// Style mansart on last floor
-	char       texf;											// Texture by face
+	//char       mans;											// Style mansart on last floor
+	//char       texf;											// Texture by face
+	//char			 fhtr;											// Height override
+	COption    opt;												// Style option
 	//--- Texture size ---------------------------------------------
 	U_INT			 Tw;												// Texture width
 	U_INT			 Th;												// Texture height
-	//--------------------------------------------------------------
+	//--- Building parameters --------------------------------------
 	D2_BPM    *bpm;												// Building parameters
 	//--------------------------------------------------------------
 	double     cover;											// Texture coverage (feet)
 	double     Wz;												// wall height
+	double     flHtr;											// Floor Height
 	//----- Queue for selector -------------------------------------
 	Queue<D2_TParam> rtexQ;
 	//--------------------------------------------------------------							
@@ -581,16 +594,18 @@ public:
 	void			TextureSideWall(D2_TRIANGLE &T, char ft, char hb);
 	//-------------------------------------------------------------
 	bool			IsOK();
-	bool			IsMansart()					{return (mans != 0);}
-	D2_Style *GetNext()						{return next;}
-	char      GetMansart()				{return mans;}
+	bool			IsMansart()		{return (opt.Has(STYLE_MANSAR) != 0);}
+	D2_Style *GetNext()			{return next;}
+	char      GetMansart()	{return (opt.Has(STYLE_MANSAR)?(1):(0));}
 	//-------------------------------------------------------------
 	D2_BPM   *GetBPM()						{return bpm;}
 	char      HasTrace()					{return tr;}
 	bool			SameName(char *n)		{return (strcmp(Name,n) == 0);}
 	//------ Save building extensions ------------------------------
 	void			SetWz(double r)			{Wz = r;}
-	void			AssignBPM(D2_BPM *p){bpm = p;}
+	void			AssignBPM(D2_BPM *p){bpm = p; p->style = this;}
+	bool			HasHeight()					{return (opt.Has(STYLE_HFLOOR) != 0);}
+	double		GetHeight()					{return flHtr;}
 	//--------------------------------------------------------------
 	D2_Group  *GetGroup()					{return group; }
 	D2_TParam *GetDormer()				{return dormer;}
@@ -606,7 +621,7 @@ public:
 #define D2_GRP_LNGT				(0x0008)				// Has length filter
 #define D2_GRP_NMAX				(0x0010)				// Max instances
 //====================================================================================
-//	data for group definition 
+//	Data for group definition 
 //====================================================================================
 class D2_Session;
 //------------------------------------------------------------------------
@@ -681,6 +696,7 @@ public:
 	//--------------------------------------------------------------
 	void    GetTexDim(U_INT &x,U_INT &y) {x = txd.wd; y = txd.ht;}
 	//--------------------------------------------------------------
+	void				 ListStyles(CListBox *box);
 	D2_Style    *GetStyle(char *nsty);
 	D2_Style    *GetOneStyle();
 	U_INT        SelectOneRoof(D2_BPM *pm);
@@ -736,7 +752,14 @@ public:
 struct D2_BEVEL {
 	double      tang;															// Slope tangent
 	double      pah;															// Point absolute height
-	double			H;																// floor height
+	double			H;
+	//---------------------------------------------------------------------
+	D2_BEVEL() {;}
+	D2_BEVEL(double ht)
+	{	tang = 0;
+		pah  = ht;
+		H		 = 0;
+	}
 };
 //====================================================================================
 //	TRIANGULATOR for triangulation of polygones
@@ -767,6 +790,8 @@ protected:
 	//--- Rotation parameters --------------------------------------
 	double			rx;																// x result
 	double      ry;																// y result
+	//--- Terrain adjust vector ------------------------------------
+	CVector     adjv;															// Adjust vector
 	//--------------------------------------------------------------
 	D2_TRIANGLE tri;															// Internal triangle
 	D2_TRIANGLE qtr;															// Qualify triangle
@@ -819,7 +844,7 @@ public:
 	void			LocalCoordinates(D2_POINT &p);
 	//----------------------------------------------------
 	void    	GetBevelVector(D2_POINT *pa, double dy,D2_POINT *dst);
-	int				SetBevelArray(D2_BEVEL &pm);
+	int				SetBevelArray(D2_BEVEL &pm, double dy);
   //-----------------------------------------------------
 	void		CenterContribution(D2_POINT *p);
 	void		AddVertex(double x, double y);
@@ -830,18 +855,18 @@ public:
 	void		MakeSlot();
 	void		ReleaseSlot();
 	void		OrientFaces(D2_BPM *bpm);
-	void		BuildWalls(D2_BPM *bpm);
+	void		BuildFaces(D2_BPM *bpm);
 	void		Reorder();
 	void		SelectRoof(D2_BPM *bpm);
 	void		Texturing(D2_BPM *bpm);
 	bool		PointInBase(D2_POINT *A);
+	void		MakeHPolygon(double H);
 	//---------------------------------------------------
 	void		Draw();					// Drawing interface
 	void		DrawMarks();
 	void		DrawTour(SVector &T);
 	void		DrawGround(char opt);
 	//--- Building management ----------------------------
-	U_INT		CountVertices();
 	void		StartOBJ();
 	U_CHAR  ReplaceOBJ(OSM_MDEF *rp,char or);
 	void    RemoveOBJ();
@@ -859,13 +884,11 @@ public:
 	inline GeoTest    *GetGeoTest()			{return &geo;}
 	inline double			 GetSurface()			{return surf;}
 	inline U_INT			 GetSideNbr()			{return extp.GetNbObj();}
-	inline SPosition	 GetPosition()		{return BDP.geop;}
+	//inline SPosition	 GetPosition()		{return BDP.geop;}
 	//-----------------------------------------------------
 	Queue <D2_POINT>  &GetBase()				{return extp;}
 	D2_POINT					*FirstNode()			{return extp.GetFirst();}
 	void							 ClearNode()			{extp.Clear();}
-	//-----------------------------------------------------
-protected:
   //-----------------------------------------------------
 	void		Clean();
 	//-----------------------------------------------------
@@ -885,7 +908,7 @@ protected:
 	//---- Face processing --------------------------------
 	bool		SetPointInside(D2_POINT *p, D2_POINT *s, double H);
 	void		QualifyEdge(D2_POINT *pa);
-	void		BuildFloor(int no,double f, D2_BPM *bpm);
+	double  BuildFloor(int no,double f, D2_BPM *bpm);
 	int			BuildBevelFloor(int No, int inx, double afh, D2_BPM *bpm);
 	int 		BuildNormaFloor(int No, int inx, double afh, D2_BPM *bpm);
 	//------------------------------------------------------
@@ -900,16 +923,23 @@ protected:
 	int			TimeSlice(float dT,U_INT frame);
 	//--- Option  management -------------------------------
 public:
-	void		repD(U_INT p)							{dop.Rep(p);}
-	char    hasR(U_INT p)							{return dop.Has(p);}
-	D2_Style  *GetStyle()							{return BDP.style;}
-	void		SetIdent(U_INT id)				{ident = id;}
+	void		repD(U_INT p)								{dop.Rep(p);}
+	char    hasR(U_INT p)								{return dop.Has(p);}
+	D2_Style  *GetStyle()								{return BDP.style;}
+	void		SetIdent(U_INT id)					{ident = id;}
+	void		ResetAdjust()								{adjv.Zero();}
+	void		SetAdjust(double x,double y){adjv.x = x; adjv.y = y;}
+	void		Displace(double x,double y)	{adjv.x += x; adjv.y += y;}
+	SVector GetAdjustVector()						{return adjv;}
+	double	GetTangent()								{return t70;}
+	//------------------------------------------------------
+	void		ObjPosition(SPosition &P);
 	//--- Drawing interface --------------------------------
 	void		ModeSingle();
 	void		ModeGroups();
 	//------------------------------------------------------
 	bool		RiseBuilding(D2_BPM *bpm);
-	void		SaveBuildingData(C3DPart *P);
+	void		SaveBuildingData(C3DPart *P,U_INT prop);
 	void		EndOBJ();
 	//--- Helper -------------------------------------------
 	void			EditTag(char *txt);
@@ -929,7 +959,7 @@ public:
 	//--- Copy the object parameter ----------------------- 
 	//--- Call back functions ------------------------------
 	int    BuildOBJ(OSM_CONFP *CF, D2_Style *sty);	
-	int		 BuildNXT();
+	int		 BuildNXT(OSM_CONFP *CF);
 	//------------------------------------------------------
 };
 
@@ -940,21 +970,27 @@ class D2_Session {
 	//--- ATTRIBUTES ------------------------------------------------
 	char  tr;																	// Trace indicator
 	char  name[64];														// Session name
+	//---------------------------------------------------------------
+	D2_Group	*basg;													// Base group
 	//--- Street lights queue ---------------------------------------
 	std::map<U_INT,OSM_Object*> litQ;					// Light queue
-	std::map<U_INT,OSM_Object*>::iterator ro;	
+	std::map<U_INT,OSM_Object*>::iterator ro;
+	//--- Ground objects --------------------------------------------
+	std::map<U_INT,OSM_Object*>				gndQ;		// Ground Q
 	//--- Forest trees queue ----------------------------------------
 	double seed;															// Seed distance
-	std::map<U_INT,OSM_Object*> fstQ;					// Forest queue
+	std::map<U_INT,OSM_Object*>				fstQ;		// Forest queue
 	//--- Groups parameters -----------------------------------------
-	Queue<D2_Group> groupQ;										// Group queue for selection
-	std::map<std::string,D2_Group*> grpQ;			// Groups
+	Queue<D2_Group> groupQ;										// Group queue for generation
+	std::map<std::string,D2_Group*>		grpQ;		// Groups
 	std::map<std::string,D2_Group*>::iterator rg;
 	//--- Replacement MAP -------------------------------------------
-	std::multimap<U_INT,OSM_MDEF*> repQ;				// Replacement list
+	std::multimap<U_INT,OSM_MDEF*>    repQ;		// Replacement list
   std::multimap<U_INT,OSM_MDEF*>::iterator rp;
 	//--- Forest items ----------------------------------------------
-	std::vector<OSM_MDEF*>				 treQ;			// Tree list			
+	std::vector<OSM_MDEF*>						treQ;			// Tree list
+	//--- Street items ----------------------------------------------
+	std::vector<OSM_MDEF*>						strQ;			// Tree for street		
 	//---------------------------------------------------------------
 	U_INT			fpos;														// File position
 	CBuilder *trn;														// CBuilder
@@ -981,12 +1017,14 @@ public:
 	bool	ReadParameters(char *dir);
 	bool	ParseReplace(FILE *f, char *ln);
 	bool	ParseForest(FILE *f, char *ln);
+	bool	ParseStreet(FILE *f, char *ln);
 	bool	ParseSeed(FILE *f, char *line);
 	bool	ParseGroups(FILE *f, char *ln);
 	bool  ParseStyles(FILE *f, char *ln);
 	//--- return a replacing object ---------------------------------
 	bool  GetReplacement(OSM_MDEF &rpm);
-	OSM_MDEF *GetTree();									// Return a tree model
+	OSM_MDEF *GetForestTree();									// Return a tree model
+	OSM_MDEF *GetStreetTree();									// Return a tree model
 	//--- Draw everything -------------------------------------------
 	void  Draw();
 	//---------------------------------------------------------------
@@ -995,7 +1033,9 @@ public:
 	void         GetaStyle(D2_BPM *p);
 	OSM_Object  *GetObjectOSM(U_INT k);
 	D2_Style    *GetStyle(char *nsty);
+	D2_Style		*GetBaseStyle(char *sn);
 	D2_TParam   *GetRoofTexture(D2_Style *sty);
+	D2_Group    *GetGroup(char *gn);
 	//---------------------------------------------------------------
 	void		FillStyles(CListBox *box);
 	void		UpdateCache();
@@ -1003,6 +1043,7 @@ public:
 	bool		AddStyle(FILE *f,char *sn,char *gn);
 	void		AddLight(OSM_Object *L);
 	void		AddForest(OSM_Object *F);
+	void		AddGround(OSM_Object *G);
 	//---------------------------------------------------------------
 	void		EditCNT();
 	//---------------------------------------------------------------

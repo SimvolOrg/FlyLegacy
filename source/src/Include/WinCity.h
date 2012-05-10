@@ -123,27 +123,14 @@ class CFuiSketch : public CFuiWindow
 	char          dbase[PATH_MAX];
 	char          rpack[PATH_MAX];
 	//-------------------------------------------------------------
-	CFuiGroupBox	*gBOX;					// Option group box
-	CFuiLabel			*aLAB;					// Label for group
   CFuiCheckBox  *fOPT;					// fill Option box
-  CFuiCheckBox  *vOPT;					// View Option box
-	CFuiGroupBox  *Box2;					// Box number 2
 	CFuiButton    *nBUT;					// Next button
 	CFuiButton    *vTER;					// View terrain option
 	CFuiButton		*vALL;					// View all
-	CFuiButton    *nSTY;					// Change style
-	CFuiButton    *dOBJ;					// Delete object
-	CFuiButton    *gOBJ;					// Restore object
-	CFuiButton    *rOBJ;					// Replace object
-	CFuiButton    *lROT;					// Left rotation
-	CFuiButton    *rROT;					// Right rotation
 	CFuiLabel     *nBAT;					// Building n°
 	CFuiLabel     *nTAG;					// Building n°
 	CFuiList      *sWIN;					// style list
-	CFuiGroupBox  *Box3;					// Separator
-	CFuiGroupBox  *Box4;
-	CFuiButton    *bTRY;					// Try button
-	CFuiButton    *bSAV;					// Save button
+	CFuiGroupBox  *mBox;					// Moving box
 	//--- Titles --------------------------------------------------
 	CSlot					 styTT;					// style title
 	CSlot          modTT;					// Model title
@@ -167,6 +154,9 @@ class CFuiSketch : public CFuiWindow
 public:
 	CFuiSketch(Tag idn, const char *filename);
   virtual ~CFuiSketch();
+	//-----------------------------------------------------------
+	void	CreateMoveBox();
+	void	CollectFilesOFE();
   //--- File handling -----------------------------------------
 	void	SetOptions(U_INT p);
 	bool	ParseArea();

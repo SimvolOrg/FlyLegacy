@@ -133,6 +133,7 @@ public:
 	float				    axePrev[JOY_AXE_NBR];		// previous value
 	float           axeIncr[JOY_AXE_NBR];		// Axe increment
   CSimButton    * mBut[32];		// Array of pointer to button
+	U_INT						msk;				// Mask for changing button
   U_INT			      but;				// One bit per button
 	U_INT						hat;				// Hat position
 	U_INT						phat;				// Previous hat value
@@ -155,8 +156,12 @@ public:
 	void	SaveVal();
 	void	RemoveButton(CSimButton *btn);
 	void  StoreButton(int n,CSimButton *b);	
+
   //-------------------------------------------------------------------------
-	inline char   *getDevName()     {return dName;}
+	inline char   *getDevName()				  {	return dName;}
+	inline void		 SwapMask()						{	msk = but;}
+	inline U_INT   IsON(U_INT bit)		  {	return (but & msk & bit);}
+	inline U_INT   Val (U_INT bit)			{	return (but & bit);}
   //-------------------------------------------------------------------------
 	inline char 				jNumber()													{return njs;}
 	inline char					hNumber()													{return nht;}
@@ -297,6 +302,7 @@ public:
   void            Init( );
 	void						CreateDevList(char **men,U_INT n);
 	void						CollectDevices();
+	void						LimitButton(char *dvn,int lim);
 	//--------------------------------------------------------------------
 	bool						IsBusy();
 	void						SetFree();

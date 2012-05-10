@@ -646,18 +646,18 @@ int SqlOBJ::LoadOSM(OSM_DBREQ *rdq)
 	U_INT    nbo  = 0;			// Number of loaded objects
 	//----------------------------------------------------------------------
   while (SQLITE_ROW == sqlite3_step(stm))
-    { rdq->ident	 = sqlite3_column_int(stm,0);					// Last identity
-			U_INT  rst = rdq->ident % 100;										// Modulo 100
-			if (rst >= globals->osmMX)			continue;					// Eliminate
+    { rdq->ident		= sqlite3_column_int(stm,0);					// Last identity
+			U_INT  rst		= rdq->ident % 100;										// Modulo 100
+			if (rst >= globals->osmMX)			continue;						// Eliminate
 			//--- Add this object on its layer -----------------------------
-			U_INT  lay = sqlite3_column_int(stm,3);						// OSM layer
-			char	 dir = sqlite3_column_int(stm,5);						// Directory
-			char	*ntx = (char*)sqlite3_column_text(stm,6);		// Texture name
+			U_INT  lay = sqlite3_column_int(stm,3);							// OSM layer
+			char	 dir = sqlite3_column_int(stm,5);							// Directory
+			char	*ntx = (char*)sqlite3_column_text(stm,6);			// Texture name
 			//--- Extract data ----------------------------------------------
 			int nbv		 = sqlite3_column_int(stm,7);									// Nber vertices
 			GN_VTAB  *src = (GN_VTAB*) sqlite3_column_blob(stm,9);	// BLOB
 			qgt->ExtendOSMPart(sno,dir, ntx,lay, nbv, src);
-			nbo++;																						// Increment loaded supertile
+			nbo++;																							// Increment loaded supertile
     }
     //-----Close request ---------------------------------------------------
 	  if (nbo)	qgt->OsmOK(sno);

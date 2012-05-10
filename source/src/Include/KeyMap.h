@@ -64,7 +64,6 @@ protected:
   //----------------------------------------------------
   Tag           kset;     // Key set
   Tag           kyid;     // Unique key definition tag
-  int           slot;     // Associated slot
 	char          stag[6];	// Set tag
 	char					skey[6];	// Key tag
   char          name[64]; // UI name
@@ -89,8 +88,6 @@ public:
 	//-------------------------------------------------
 	U_INT	Decode(SStream *str);
   //-------------------------------------------------
-  inline void   SetSlot(int s)          {slot = s;}
-  inline int    GetSlot()               {return slot;}
   inline void   SetCode(int iCode)      {code = iCode; };
   inline bool   NoPCB()                 {return (cb == 0);}
   inline bool   HasCB()                 {return (cb != 0);}
