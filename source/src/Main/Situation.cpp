@@ -990,7 +990,9 @@ void CSituation::EnterTeleport(SPosition *P, SVector *O)
 	contx.pos		= *P;
 	contx.ori		= *O;
 	wait				= 0;
+	P->alt			= 0;
 	globals->geop	= *P;			// Target position
+	TRACE("TELEPORT to lon=%lf lat=%lf alt=%lf",P->lon,P->lat,P->alt);
 	//--- prevent aircraft time slice and drawing ---
 	globals->Disp.ExecLOK(PRIO_PLANE);
 	globals->Disp.DrawOFF(PRIO_PLANE);
@@ -1022,6 +1024,8 @@ void CSituation::TeleportS1()
 	//--- Restore vehicle position ----
 	State = SIT_NORMAL;
   globals->ccm->RestoreCamera(contx);
+	SPosition P = globals->geop;
+	TRACE("STABLE at lon=%lf lat=%lf alt=%lf",P.lon,P.lat,P.alt);
 	rcam			= 0;
 	if (sVeh) sVeh->RestOnGround();
 	DrawNormal();

@@ -1804,11 +1804,11 @@ COBJparser::~COBJparser()
 {	for (U_INT k=0; k < vpos.size(); k++)			delete vpos[k];
 	for (U_INT k=0; k < vtex.size(); k++)			delete vtex[k];
 	for (U_INT k=0; k < vnor.size(); k++)			delete vnor[k];
-	for (U_INT k=0; k < vtri.size(); k++)			delete vtri[k];
+	for (U_INT k=0; k < matQ.size(); k++)			delete matQ[k];
 	vpos.clear();
 	vtex.clear();
 	vnor.clear();
-	vtri.clear();
+	matQ.clear();
 }
 //------------------------------------------------------------------------------
 //	Set directory 
@@ -1871,11 +1871,29 @@ bool COBJparser::ParseLibrary(char *s)
 	return (nf == 1);
 }
 //------------------------------------------------------------------------------
+//	Search for material or create one
+//------------------------------------------------------------------------------
+OBJ_MATERIAL *COBJparser::GetMaterial(char *mn)
+{	OBJ_MATERIAL *M = 0;
+	for (U_INT k=0; k<matQ.size(); k++)
+	{	M = matQ[k];
+		if (strcmp(mn, M->name) == 0)	return M;
+	}
+	//--- Create a new entry ----------------------
+	M	= new OBJ_MATERIAL();
+	M->name	= Dupplicate(mn,64);
+	matQ.push_back(M);
+	return M;
+}
+//------------------------------------------------------------------------------
 //	Check for material
 //------------------------------------------------------------------------------
 bool COBJparser::ParseMaterial(char *s)
 { int nf  = sscanf(s,"usemtl %128s ",txd.name);
-	return (nf == 1);
+	if (nf != 1)		return false;
+	//--- Locate or create a new material ------------------
+	mat	= GetMaterial(txd.name);
+	return true;
 }
 //------------------------------------------------------------------------------
 //	Check for name
@@ -1975,7 +1993,7 @@ bool COBJparser::Parse4Faces(char *s)
 	ok &= BuildTriangleVertex(2,v2,t2);
 	T		= new OBJ_TRIANGLE();
 	*T	= tri;
-	vtri.push_back(T);
+	mat->triQ.push_back(T);
 	if (!ok)	 		return false;	
 	//--- Generate the second triangle --------
 	ok &= BuildTriangleVertex(0,v0,t0);
@@ -1983,7 +2001,7 @@ bool COBJparser::Parse4Faces(char *s)
 	ok &= BuildTriangleVertex(2,v3,t3);
 	T		= new OBJ_TRIANGLE();
 	*T	= tri;
-	vtri.push_back(T);
+	mat->triQ.push_back(T);
 	return ok;
 }
 //------------------------------------------------------------------------------
@@ -2003,7 +2021,7 @@ bool COBJparser::Parse3Faces(char *s)
 	ok &= BuildTriangleVertex(2,v2,t2);
 	T		= new OBJ_TRIANGLE();
 	*T	= tri;
-	vtri.push_back(T);
+	mat->triQ.push_back(T);
 	return ok;
 }
 //------------------------------------------------------------------------------
@@ -2024,7 +2042,7 @@ bool COBJparser::Parse3NFaces(char *s)
 	ok &= BuildTriangleVertex(2,v2,t2,n2);
 	T		= new OBJ_TRIANGLE();
 	*T	= tri;
-	vtri.push_back(T);
+	mat->triQ.push_back(T);
 	return ok;
 }
 
@@ -2036,12 +2054,12 @@ bool COBJparser::Parse3NFaces(char *s)
 void COBJparser::BuildW3DPart()
 {	return;}
 //------------------------------------------------------------------------------
-//	Transform the vertices
+//	Transform the vertices in actual material
 //------------------------------------------------------------------------------
-void COBJparser::Transform(double c,double s,SVector T)
+void COBJparser::TransformMat(double c,double s,SVector T)
 {	HTransformer HT(c,s,T);
-	for (U_INT k=0; k < vtri.size(); k++)
-	{	OBJ_TRIANGLE *Tr = vtri[k];
+	for (U_INT k=0; k < mat->triQ.size(); k++)
+	{	OBJ_TRIANGLE *Tr = mat->triQ[k];
 		HT.ComputeRT(Tr->vtx + 0);
 		HT.ComputeRT(Tr->vtx + 1);
 		HT.ComputeRT(Tr->vtx + 2);
@@ -2050,17 +2068,27 @@ void COBJparser::Transform(double c,double s,SVector T)
 	return;
 } 
 //------------------------------------------------------------------------------
-//	Build a Part for OSM object
+//	Transform All the vertices in all material
 //------------------------------------------------------------------------------
-C3DPart *COBJparser::BuildOSMPart(char dir)
-{	int nbv = vtri.size() * 3;
+void COBJparser::TransformALL(double c, double s, SVector T)
+{	for (U_INT k=0; k<matQ.size(); k++)
+	{	mat = matQ[k];
+		TransformMat(c,s,T);
+	}
+}
+//------------------------------------------------------------------------------
+//	Build a Part forcurrent material
+//------------------------------------------------------------------------------
+C3DPart *COBJparser::BuildMATPart(char dir)
+{	U_INT ntr = mat->triQ.size();
+	int		nbv = ntr * 3;
 	C3DPart *prt    = new C3DPart();
 	prt->AllocateOsmGVT(nbv);
 	//--- Copy all  vertices from triangles ----------------------
 	GN_VTAB *dst = prt->GetGTAB();
 	//------------------------------------------------------------
-	for (U_INT k=0; k < vtri.size(); k++)
-	{	OBJ_TRIANGLE *Tr = vtri[k];
+	for (U_INT k=0; k < ntr; k++)
+	{	OBJ_TRIANGLE *Tr = mat->triQ[k];
 		*dst++ = Tr->vtx[0];
 		*dst++ = Tr->vtx[1];
 		*dst++ = Tr->vtx[2];
@@ -2069,25 +2097,51 @@ C3DPart *COBJparser::BuildOSMPart(char dir)
 	txd.Dir = dir;
 	txd.apx = 0xFF;
 	txd.azp = 0x00;
+	strncpy(txd.name,mat->name,64);
 	CShared3DTex *ref	= globals->txw->GetM3DPodTexture(txd);
 	prt->SetTREF(ref);
 	return prt;
 }
+
+//------------------------------------------------------------------------------
+//	Build a list of Part for OSM object
+//------------------------------------------------------------------------------
+C3DPart *COBJparser::BuildOSMPart(char dir)
+{	C3DPart *head = 0;
+	C3DPart *prev	= 0;
+	for (U_INT k=0; k<matQ.size(); k++)
+	{	mat = matQ[k];
+		C3DPart *prt = BuildMATPart(dir);
+		if (0 == head)	head = prt;
+		if (prev)		prev->SetNext(prt);
+		prev = prt;
+	}
+	return head;
+}
+
 //------------------------------------------------------------------------------
 //	Return a strip of vertices, ignoring the texture name
 //------------------------------------------------------------------------------
 int  COBJparser::GetVerticeStrip(GN_VTAB **buf)
-{	int nbv = vtri.size() * 3;
+{	U_INT nbt = mat->triQ.size();
+	int   nbv = nbt * 3;
 	GN_VTAB *tab = new GN_VTAB[nbv];
 	GN_VTAB *dst = tab;
 	//------------------------------------------------------------
-	for (U_INT k=0; k < vtri.size(); k++)
-	{	OBJ_TRIANGLE *Tr = vtri[k];
+	for (U_INT k=0; k < nbt; k++)
+	{	OBJ_TRIANGLE *Tr = mat->triQ[k];
 		*dst++ = Tr->vtx[0];
 		*dst++ = Tr->vtx[1];
 		*dst++ = Tr->vtx[2];
 	}
 	*buf  = tab;
 	return nbv;
+}
+//------------------------------------------------------------------------------
+//	Extend the chain of Parts with new vertices
+//	For each material, search a part to extend or create One
+//------------------------------------------------------------------------------
+void COBJparser::ExtendParts(C3DPart *P)
+{	
 }
 //===================================END OF FILE ==========================================

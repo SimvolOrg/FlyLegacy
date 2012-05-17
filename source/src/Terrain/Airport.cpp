@@ -587,6 +587,7 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 	cVBO		= 0;
 	//---- Locate QGT ----------------------------------------------
   Org     = Airp->GetPosition();
+	Org.alt	= 0;
 	//--------------------------------------------------------------
   apt->SetAPO(this);
   GetLatitudeFactor(Org.lat,rdf,xpf);

@@ -450,7 +450,12 @@ void SqlOBJ::DecodeREG(sqlite3_stmt *stm,REGION_REC &reg)
   reg.type  = sqlite3_column_int(stm,CLN_REG_TYP);
   reg.val   = sqlite3_column_int(stm,CLN_REG_VAL);
   reg.nbv   = 0;
-  if (0 == reg.type)  return;
+	//--- Check for mono elevation -----------------
+	if (EL_UNIC == reg.type)
+	{ reg.val &= 0x7FFFFFFF;
+		return;
+	}
+	//--- Raed matrix value ------------------------
   ReadElevation(reg);
   return;
 }

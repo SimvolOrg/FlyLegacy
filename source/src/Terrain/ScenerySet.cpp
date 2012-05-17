@@ -366,10 +366,11 @@ void CSceneryDBM::Register (C_QGT *qgt)
 	//--- Look for global tile scenery ----------------------
 	U_INT gbk = key & 0xFFFEFFFE;
 	std::map<U_INT,CSceneryPack*>::iterator p2 = gbtP.find(gbk);
-	if (p2 == gbtP.end())	 return;
-	CSceneryPack *pak = (*p2).second;
-	if (reg)	SCENE("GBT (%03d-%03d) REGISTER",gx,gz);
-	pak->MountPODs(this);
+	if (p2 != gbtP.end())
+	{	CSceneryPack *pak = (*p2).second;
+		if (reg)	SCENE("GBT (%03d-%03d) REGISTER",gx,gz);
+		pak->MountPODs(this);
+	}
 	//--- Load OSM databases ------------------------------
 	LoadBasesOSM(qgt);
 	return;

@@ -544,9 +544,6 @@ class D2_Style: public D2_Ratio, public CSlot {
 	char       filn[64];									// Texture file name					
 	D2_Group  *group;											// Parent group
 	char			 tr;												// Trace
-	//char       mans;											// Style mansart on last floor
-	//char       texf;											// Texture by face
-	//char			 fhtr;											// Height override
 	COption    opt;												// Style option
 	//--- Texture size ---------------------------------------------
 	U_INT			 Tw;												// Texture width
@@ -932,6 +929,7 @@ public:
 	void		Displace(double x,double y)	{adjv.x += x; adjv.y += y;}
 	SVector GetAdjustVector()						{return adjv;}
 	double	GetTangent()								{return t70;}
+	void		ClearObject()								{osmB = 0;}
 	//------------------------------------------------------
 	void		ObjPosition(SPosition &P);
 	//--- Drawing interface --------------------------------

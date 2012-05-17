@@ -61,8 +61,8 @@ extern char  replOBJ[];
 //	Directory number
 //=============================================================================================
 #define FOLDER_ART				(0)
-#define FOLDER_OSM_USER		(1)
-#define FOLDER_OSM_BLDG		(2)
+#define FOLDER_OSM_TEXT		(1)
+#define FOLDER_OSM_OBJS		(2)
 #define FOLDER_OSM_TREE		(3)
 #define FOLDER_OSM_LITE		(4)
 #define FOLDER_OSM_BASE   (5)

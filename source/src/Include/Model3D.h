@@ -212,6 +212,7 @@ public:
 	bool		SameTexture(char dir, char *txn);
 	char   *TextureName();
 	//---------------------------------------------------------------
+	CShared3DTex   *GetTREF()		{return tRef;}
 	CShared3DTex   *GetReference(TEXT_INFO &txd);
 	void	 Reserve(CShared3DTex *ref);
   //-------------------------------------------------------------
@@ -226,7 +227,6 @@ public:
 	//---------------------------------------------------------------
 	inline void     SetTREF(CShared3DTex *r)	{tRef = r;}
 	inline void			SetGTAB(int n, GN_VTAB *t){gTAB = t; NbVT = n;}
-  inline CShared3DTex    *GetTREF()					{return tRef;}
   //----------------------------------------------------------------
 	inline GN_VTAB    *GetGTAB()						{return gTAB;}
   inline F3_VERTEX  *GetVLIST()           {return nVTX;}
@@ -258,6 +258,7 @@ public:
   inline void     SetTSP(U_CHAR m)        {tsp = m;}
 	inline void			SetLOD(U_CHAR l)				{lod = l;}
 	inline void     SetZB(char z)						{nzb = z;}
+	inline void			SetNext(C3DPart *n)			{next = n;}
 	//------------------------------------------------------------------
   inline int      GetLOD()                {return lod;}
 	//------------------------------------------------------------------

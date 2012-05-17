@@ -40,6 +40,7 @@ OSM_Object::buildCB startbuildCB[OSM_BUILD_VMAX] = {
 	&OSM_Object::BuildFRST,					// OSM_BUILD_TREE			(4)
 	&OSM_Object::BuildSTRT,					// OSM_BUILD_STRT			(5)
 	&OSM_Object::BuildWALL,					// OSM_BUILD_FORT			(6)
+	&OSM_Object::BuildFLAT,					// OSM_BUILD_FLAT			(6)
 };
 //===================================================================================
 //	Vector Table to build Objects
@@ -52,6 +53,7 @@ OSM_Object::buildCB nextbuildCB[OSM_BUILD_VMAX] = {
 	&OSM_Object::BuildROWF,				// OSM_TREE			(4)
 	0,														// OSM_STRT			(5)
 	0,														// OSM_FORT			(6)
+	0,														// OSM_PARK			(7)
 };
 
 //===================================================================================
@@ -593,7 +595,7 @@ int CBuilder::EditPrm(char *txt)
 bool CBuilder::RiseBuilding(D2_BPM *bpm)
 {	dlg	= bpm->dlg;
 	//--- Step 2:  Triangulation --------
-	bpm->error = Triangulation();
+	Triangulation();
   //--- Save a copy of the base points -----------
 	osmB->ReceiveBase(extp.GetFirst());
 	//--- Step 3: Face orientation ----- 
@@ -676,7 +678,7 @@ U_CHAR CBuilder::ModifyStyle(D2_Style *sty)
   //--- check if style can be modified -------------
   osmB->Swap(extp);
 	MakeSlot();
-	osmB->ChangeStyle(sty,this);
+	osmB->ChangeStyle(sty);
 	return 1;
 }
 //-----------------------------------------------------------------------
@@ -1101,8 +1103,8 @@ void CBuilder::OrientFaces(D2_BPM *bpm)
 	//--- Compute rotation matrix -------------------
   D2_POINT *pa = TO;
 	D2_POINT *pb = extp.CyNext(pa);
-  cosA = (pb->x - pa->x) / dlg;					// Cos(A)
-	sinA = (pb->y - pa->y) / dlg;					// Sin(A)
+  cosA = (pb->x - pa->x) / bpm->dlg;					// Cos(A)
+	sinA = (pb->y - pa->y) / bpm->dlg;					// Sin(A)
 	//--- As we want a -A rotation, we change the signe of sin(A) aka dy
 	NegativeROT(sinA,cosA);
 	//----Init extension ----------------------------------
@@ -1763,7 +1765,7 @@ D2_Group::D2_Group(char *gn, D2_Session *s)
 	lgMax			= 10000;
 	//--- Floor -----------------------------
 	flMin			= 1;
-	flMax			= 2;
+	flMax			= 1;
 	flNbr			= 1;
 	flHtr			= 20;
 	//---------------------------------------
@@ -2050,7 +2052,7 @@ CRoofModel *D2_Group::GetRoofModByNumber(char mans)
 void D2_Group::LoadTexture()
 {	if (*txd.name == 0)		return;
 	//-- init the descriptor -------------------------------
-	txd.Dir		= FOLDER_OSM_USER;
+	txd.Dir		= FOLDER_OSM_TEXT;
 	txd.apx   = 0xFF;
 	txd.azp   = 0x00;
 	//TRACE("GROUP LOAD TEXTURE %s",ntex);
@@ -2064,7 +2066,6 @@ void D2_Group::LoadTexture()
 //-----------------------------------------------------------------
 void D2_Group::DrawBuilding()
 {	std::map<U_INT,OSM_Object*>::iterator rp;
-	if (tREF) tREF->BindTexture();
 	for (rp = building.begin(); rp != building.end(); rp++)
 	{	(*rp).second->Draw();	}
 	return;

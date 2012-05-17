@@ -409,7 +409,6 @@ public:
   inline void ClearGround()             {Flag &= (-1 - QUAD_GND);}
   inline bool IsAptGround()             {return ((Flag & QUAD_GND) != 0);}
   //--------------------------------------------------------------------
-	//inline void			RenderNML()			{Rend = &CmQUAD::DrawNML;}
 	inline void			RenderIND()			{Rend = &CmQUAD::DrawIND;}
 	inline void			RenderVBO()			{Rend = &CmQUAD::DrawVBO;}
 	inline void			DrawTile(){(this->*Rend)();}

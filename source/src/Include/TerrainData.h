@@ -244,7 +244,7 @@ class CVertex {
   //--- Relatives coordinates in QGT ------------------
   double	rx;
 	double  ry;
-	double  rz;
+	double  wdz;
   //------------Methods ---------------------------------
 public:
   CVertex(U_INT xk, U_INT zk);
@@ -295,7 +295,7 @@ public:
 	//---- Check if there is subdivision in index -----------------------
 	inline bool HasSubdivision(U_INT k) { return (FN_SUB_FROM_INDX(k) != 0);}
 	//------------------------------------------------------------------
-	inline void   SetCornerHeight()							{rz      = (Ground / nElev);}
+	inline void   SetCornerHeight()							{SetWZ(Ground / nElev);}
   inline void   SetEdge(U_CHAR e,CVertex *v)  {Edge[e] = v;}
   inline void   SetCorner(U_CHAR c,CVertex *v){Edge[c] = v; if (v) v->IncUse();}
 	//--- For debug ---------------------------------------------------
@@ -343,7 +343,7 @@ public:
 	inline void CopyCOORD(CVertex &v)
 		{	this->rx = v.rx;
 			this->ry = v.ry;
-			this->rz = v.rz;
+			SetWZ(v.wdz);
 		}
 	//--- Check for same QGT in X direction --------------
   bool SameXQGT(U_INT x)
@@ -365,14 +365,15 @@ public:
 	//--- Return relative coordinates -------------------
 	double GetRX()					{return rx;}
 	double GetRY()					{return ry;}
-	double GetRZ()					{return rz;}
+	double GetRZ()					{return wdz;}
 	//--- Relatives coordinate for NE corner -----------
 	double GetTX()					{return (rx > 0 )?(rx):(TC_ARCS_PER_QGT);}
 	double GetTY(double dl)	{return (ry > 0 )?(ry):(dl);}
 	//--- Return altitude ------------------------------
-	double GetWZ()		{return rz;}
+	double GetWZ()		{return wdz;}
 	//--- Set relative coordinates ---------------------
-	void	SetWZ(double a)	{rz = a;}
+	void	SetWZ(double a)	
+	{	wdz = a;	}
  };
 //======================= END OF FILE ==============================================================
 #endif // TERRAIN_DATA_H

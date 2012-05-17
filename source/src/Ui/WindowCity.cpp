@@ -497,13 +497,14 @@ bool CFuiSketch::AutoReplace()
 //-------------------------------------------------------------------
 bool CFuiSketch::BuildObject()
 {	//-- Check for any deletion --------
-	char dlt =  (confp.prop & OSM_PROP_SKIP);			// Skip flag
-	if (dlt)							return false;						// Delete
-	if (0 == confp.otype)	return false;						// undefined object
-	int nb   = trn->GetSideNbr();									// Number of points
-	if (nb < 3)						return false;						// Lower than 3
+	char dlt =  (confp.prop & OSM_PROP_SKIP);				// Skip flag
+	if (dlt)								return false;						// Delete
+	if (0 == confp.otype)		return false;						// undefined object
+	int nb   = trn->GetSideNbr();										// Number of points
+	if (nb < 3)							return false;						// Lower than 3
 	//--- Build the object ------------------
 	bldR = trn->BuildOBJ(&confp, styl);
+	if (bldR == OSM_FAILED)	return false;
 	int	rep = 0;
 	//--- Replace directive -----------------
 	if (repPM.obj)
@@ -1240,6 +1241,7 @@ bool D2_Session::Stop01(char *ln)
 }
 //-----------------------------------------------------------------
 //	Read session parameters 
+//	TODO:  SKIP GENERATION WHEN NO STYLE IS PRESENT
 //-----------------------------------------------------------------
 bool	D2_Session::ReadParameters(char *dir)
 {	char path[128];
@@ -1319,7 +1321,7 @@ bool D2_Session::ParseStreet(FILE *f, char *line)
 	mdf->obj			= Dupplicate(mod,64);
 	mdf->otype		= OSM_TREE;
 	//----------------------------------------------
-	treQ.push_back(mdf);
+	strQ.push_back(mdf);
 	return true;
 }
 

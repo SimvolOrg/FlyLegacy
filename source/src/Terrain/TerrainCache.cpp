@@ -508,7 +508,7 @@ CVertex::CVertex(U_INT xv,U_INT zv)
 	//--- Assign world coordinates -------------------
   rx	= RelativeLongitudeInQGT(xv);
 	ry	= RelativeLatitudeInQGT(zv);
-	rz	= 0;
+	wdz	= 0;
 }
 //-------------------------------------------------------------------------
 //  Fixed vertex
@@ -527,7 +527,7 @@ CVertex::CVertex()
   Edge[TC_EAST]   = 0;
 	rx		= 0;
 	ry		= 0;
-	rz		= 0;
+	wdz		= 0;
 
 }
 //-------------------------------------------------------------------------
@@ -546,7 +546,7 @@ void  CVertex::Init(U_INT xv,U_INT zv)
   //--- Assign world coordinates -------------------
   rx	= RelativeLongitudeInQGT(xv);
 	ry	= RelativeLatitudeInQGT(zv);
-	rz	= 0;
+	wdz	= 0;
   return;
 }
 
@@ -566,6 +566,10 @@ CVector  CVertex::RelativeFrom(CVertex &a)
   v.z = GetWZ() - a.GetWZ();
   return v;
 }
+//-------------------------------------------------------------------------
+// Set altitude
+//-------------------------------------------------------------------------
+
 //-------------------------------------------------------------------------
 //  Check if vertex is above
 //-------------------------------------------------------------------------
@@ -603,7 +607,7 @@ SVector CVertex::GeoCoordinates(C_QGT *qgt)
 	double x		= (qgt->GetXkey() == qx)?(rx):(TC_ARCS_PER_QGT);  // Eastern position
 	v.x					= qgt->GetWesLon() + x;
 	v.y					= qgt->GetSudLat() + ry;
-	v.z					= rz;
+	v.z					= wdz;
 	return   v;
 }
 //-----------------------------------------------------------------------
@@ -677,8 +681,8 @@ bool  CmQUAD::AreWe(U_INT qx,U_INT tx,U_INT qz,U_INT tz)
 { U_INT cx = GetTileAX();
   U_INT cz = GetTileAZ();
   U_INT rx = (qx << TC_BY32) | tx;
-  U_INT rz = (qz << TC_BY32) | tz;
-  if ((rx != cx) || (rz != cz)) return false;
+  U_INT nz = (qz << TC_BY32) | tz;
+  if ((rx != cx) || (nz != cz)) return false;
   cx = cx;                                      // For breakpoint when true
   return true;
 }
@@ -1562,13 +1566,14 @@ void CSuperTile::AddToPack(OSM_Object *obj)
 	double rdf = cos(rad);
 	SPosition pos	= obj->GetPosition();
 	CVector T  = FeetComponents(mPos, pos,rdf);
-	//--- Search a part with same texture ------
-	CShared3DTex *ref = obj->GetPartTREF();
-	C3DPart *p0 = obj->GetPart();
-	int      nv = p0->Translate(T);
-	char     L  = obj->GetLayer();
-	GN_VTAB *S  = p0->GetGTAB();
-	MakeOSMPart(ref,L,nv,S);
+	//--- Add each part to texture queue --------------
+	for (C3DPart *P=obj->GetPart(); P != 0; P=P->Next())
+	{	CShared3DTex *ref = P->GetTREF();
+		int						 nv = P->Translate(T);
+		char					 L  = obj->GetLayer();
+		GN_VTAB				*S  = P->GetGTAB();
+		MakeOSMPart(ref,L,nv,S);
+	}
 	return;
 }
 //-------------------------------------------------------------------------
@@ -3465,10 +3470,10 @@ void C_QGT::DrawContour()
   //----------------------------------------
   glBegin(GL_POLYGON);
 	//--- Draw South border ------------------
-	glVertex3d(sw.rx, sw.ry, sw.rz);
-	glVertex3d(se.rx, se.ry, se.rz);
-	glVertex3d(ne.rx, ne.ry, ne.rz);
-	glVertex3d(nw.rx, nw.ry, nw.rz);
+	glVertex3d(sw.rx, sw.ry, sw.wdz);
+	glVertex3d(se.rx, se.ry, se.wdz);
+	glVertex3d(ne.rx, ne.ry, ne.wdz);
+	glVertex3d(nw.rx, nw.ry, nw.wdz);
   glEnd();
 
   //---Restore depth and color --------------

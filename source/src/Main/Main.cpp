@@ -334,24 +334,25 @@ char *directoryTAB [] = {
 //--- Per object type ----------------------------------------
 char replOBJ[OSM_MAX] = {
 	FOLDER_ART,							// 0 Not a OSM object
-	FOLDER_OSM_BLDG,				// 1  OSM_BUILDING		(1)
-	FOLDER_OSM_BLDG,				// 2  OSM_CHURCH			(2)
-	FOLDER_OSM_BLDG,				// 3  OSM_POLICE			(3)
-	FOLDER_OSM_BLDG,				// 4  OSM_FIRE_STA		(4)
-	FOLDER_OSM_BLDG,				// 5  OSM_TOWNHALL		(5)
-	FOLDER_OSM_BLDG,				// 6  OSM_SCHOOL			(6)
-	FOLDER_OSM_BLDG,				// 7  OSM_COLLEGE			(7)
-	FOLDER_OSM_BLDG,				// 8  OSM_HOSPITAL		(8)
-	FOLDER_OSM_BLDG,				// 9  OSM_HOTEL				(9)
-	FOLDER_OSM_BLDG,				// 10  OSM_CHATODO		(10)
-	FOLDER_OSM_BLDG,				// 11  OSM_PHARES		  (11)
+	FOLDER_OSM_OBJS,				// 1  OSM_BUILDING		(1)
+	FOLDER_OSM_OBJS,				// 2  OSM_CHURCH			(2)
+	FOLDER_OSM_OBJS,				// 3  OSM_POLICE			(3)
+	FOLDER_OSM_OBJS,				// 4  OSM_FIRE_STA		(4)
+	FOLDER_OSM_OBJS,				// 5  OSM_TOWNHALL		(5)
+	FOLDER_OSM_OBJS,				// 6  OSM_SCHOOL			(6)
+	FOLDER_OSM_OBJS,				// 7  OSM_COLLEGE			(7)
+	FOLDER_OSM_OBJS,				// 8  OSM_HOSPITAL		(8)
+	FOLDER_OSM_OBJS,				// 9  OSM_HOTEL				(9)
+	FOLDER_OSM_OBJS,				// 10  OSM_CHATODO		(10)
+	FOLDER_OSM_OBJS,				// 11  OSM_PHARES		  (11)
 	FOLDER_OSM_TREE,				// 12 OSM_PSTREET			(12)
-	FOLDER_OSM_USER,				// 13 OSM_FORTIFS     (13)
-	FOLDER_OSM_BLDG,				// 14 OSM_DOCK				(14)
+	FOLDER_OSM_TEXT,				// 13 OSM_FORTIFS     (13)
+	FOLDER_OSM_OBJS,				// 14 OSM_DOCK				(14)
 	//----------------------------------------------------------
 	FOLDER_OSM_TREE,				// 15  OSM_TREE				(15)
 	FOLDER_OSM_LITE,				// 16 OSM_LIGHT				(16)
-	FOLDER_OSM_BLDG,				// 17	OSM_RPOINT			(17) 
+	FOLDER_OSM_OBJS,				// 17	OSM_RPOINT			(17) 
+	FOLDER_OSM_TEXT,				// 18 OSM_GARDEN			(18)
 };
 
 //================================================================================

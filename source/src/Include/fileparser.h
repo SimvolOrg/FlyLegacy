@@ -61,9 +61,23 @@ struct B19_HEADER {
   int nmz;                      // Normal z
   int magic;      
 };
+
 //----- a triangle -------------------------------
 struct OBJ_TRIANGLE {
 	GN_VTAB vtx[3];				
+};
+//--- Structure to define OBJ material -----------
+struct OBJ_MATERIAL {
+	char *name;
+	std::vector<OBJ_TRIANGLE*> triQ;		// List of triangles
+	//--- constructor ------------------------------
+	OBJ_MATERIAL() {name = 0;}
+	//--- destructor -------------------------------
+ ~OBJ_MATERIAL() 
+ {	if (name) delete name;
+		for (U_INT k=0; k<triQ.size(); k++) delete triQ[k];
+		triQ.clear();	
+ }
 };
 //========================================================================
 //  TIF STRUCTURES
@@ -447,6 +461,7 @@ public:
 class COBJparser: public CParser {
 	//---- ATTRIBUTES -----------------------------------------
 	U_INT			pm;							// Parameter
+	OBJ_MATERIAL *mat;				// Current material
 	C3Dmodel *model;
 	C3DPart  *part;
 	char			trfm;						// Transform indicator
@@ -458,7 +473,7 @@ class COBJparser: public CParser {
 	std::vector<GN_VTAB *>			vpos;	
 	std::vector<GN_VTAB *>			vtex;
 	std::vector<GN_VTAB *>			vnor;
-	std::vector<OBJ_TRIANGLE*>	vtri;
+	std::vector<OBJ_MATERIAL*>  matQ;
 	//---- METHODS --------------------------------------------
 public:
 	COBJparser(char t);
@@ -467,9 +482,14 @@ public:
 	void	SetDirectory(char *d);
 	void	SetTransform(CVector T,double C,double S);
 	//---------------------------------------------------------
+	OBJ_MATERIAL *GetMaterial(char *mn);
+	void		 ExtendParts(C3DPart *P);
+	//---------------------------------------------------------
 	void	   BuildW3DPart();
 	C3DPart *BuildOSMPart(char dir);
-	void		 Transform(double c,double s,SVector T);
+	C3DPart *BuildMATPart(char dir);
+	void		 TransformMat(double c,double s,SVector T);
+	void		 TransformALL(double c,double s,SVector T);
 	int			 GetVerticeStrip(GN_VTAB **dst);
 	//---------------------------------------------------------
 	int		Decode(char *fn, char t);

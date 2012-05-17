@@ -59,7 +59,7 @@ class C_QGT;
 #define OSM_PROP_TREE			(OSM_PROP_MAJT+OSM_PROP_ZNED)	
 #define OSM_PROP_LITE			(OSM_PROP_MAJT+OSM_PROP_ZNED)
 #define OSM_PROP_PSTREET	(OSM_PROP_MAJT+OSM_PROP_ZNED)	
-#define OSM_PROP_RPOINT		(OSM_PROP_MAJT+OSM_PROP_SKIP)	
+#define OSM_PROP_PARK		  (OSM_PROP_MAJT+OSM_PROP_BOTH+OSM_PROP_ZNED)	
 #define OSM_PROP_FORTIFS	(OSM_PROP_MAJT+OSM_PROP_WALL+OSM_PROP_ZNED)
 #define OSM_PROP_DOCKS		(OSM_PROP_MAJT)					
 //====================================================================================
@@ -72,7 +72,8 @@ class C_QGT;
 #define OSM_BUILD_TREE	(4)									// Trees
 #define OSM_BUILD_PSTR	(5)									// Street
 #define OSM_BUILD_FORT	(6)									// Fortifications
-#define OSM_BUILD_VMAX	(7)
+#define OSM_BUILD_FLAT  (7)									// Parks and gardens
+#define OSM_BUILD_VMAX	(8)
 //====================================================================================
 //	Object type
 //====================================================================================
@@ -95,11 +96,13 @@ class C_QGT;
 #define OSM_LIGHT     (16)									// ROAD LIGHT
 //---------------------------------
 #define OSM_RPOINT		(17)									// ROUNDABOUT
+#define OSM_GARDEN		(18)
 //----------------------------------
-#define OSM_MAX       (18)
+#define OSM_MAX       (19)
 //====================================================================================
 #define OSM_PARTIAL   (1)
 #define OSM_COMPLET   (2)
+#define OSM_FAILED		(3)
 //===================================================================================
 //	UNIT CONVERTER 
 //===================================================================================
@@ -244,12 +247,14 @@ public:
  ~OSM_Object();
   //---  build functions -----------------------------------------
 	void		AssignBase();
+	int			BuildFAIL();
 	int			BuildBLDG(OSM_CONFP *CF);			// Make  building
 	int			BuildLITE(OSM_CONFP *CF);			// Make a light row
 	int			BuildFRST(OSM_CONFP *CF);	  	// Make a forest
 	int			BuildSTRT(OSM_CONFP *CF);			// Build a street
 	int			BuildGRND(OSM_CONFP *CF);			// Build ground object
 	int			BuildWALL(OSM_CONFP *CF);			// Build a wall
+	int			BuildFLAT(OSM_CONFP *CF);			// Build a park, garden etc
 	//---------------------------------------------------------------
 	int			BuildROWF(OSM_CONFP *CF);			// Make a row of forest
 	//---------------------------------------------------------------
@@ -292,8 +297,8 @@ public:
 	//----------------------------------------------------------------
 	GN_VTAB *StripToSupertile();
 	//----------------------------------------------------------------
-	void		 AssignStyle(D2_Style *sty, CBuilder *B);
-	void		 ChangeStyle(D2_Style *sty, CBuilder *B);
+	void		 AssignStyle(D2_Style *sty);
+	void		 ChangeStyle(D2_Style *sty);
 	//----------------------------------------------------------------
 	D2_BPM &GetParameters()			        {return bpm;}	
 	D2_BPM *Parameters()								{return &bpm;}
