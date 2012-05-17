@@ -720,7 +720,7 @@ int CSMFparser::ReadPart(PODFILE *p,char *fn)
   int *inx  = part->AllocateXList(dm);
   //--Read faces -----------------------------------------------
   int f1,f2,f3;
-	txd.azp   = Tsp;
+	txd.azp   = 0x00;								//Tsp;
 	txd.Dir   = FOLDER_ART;
 	tREF			= globals->txw->GetM3DPodTexture(txd);
 	part->SetTREF(tREF);
@@ -780,6 +780,7 @@ CBINparser::CBINparser(char t)
   Res   = MODEL_HI;
   xOBJ  = 0;
   nVTX  = 0;
+	strcpy(txname,"");
 }
 //---------------------------------------------------------------------
 //  Free all resources
@@ -814,6 +815,7 @@ int CBINparser::Decode(char *fn, char t)
 	pod				 = p;
   fname			 = fn;
   if (0 == p)                     return StopParse(0, "No FILE");
+//	TRACE("MODEL %s",fn);
   //----Read file type --------------------------------------
   pread (buf, sizeof(int),1, p);
   tp = *(int*)(buf);
@@ -944,6 +946,8 @@ int CBINparser::ReadNormal(PODFILE *p)
 //----------------------------------------------------------------------------
 //  Read texture name
 //	We allocate a new part when texture name change
+//  NOTE: Texture reference is defered until we get the opaque/transparent mode
+//			of the part
 //----------------------------------------------------------------------------
 int CBINparser::ReadTexture(PODFILE *p)
 { char buf[64];
@@ -956,7 +960,7 @@ int CBINparser::ReadTexture(PODFILE *p)
 	//--- Change in texture reference.  Process previous part --------------
 	if (part)	AddToModel(part);
 	//--- Allocate a new part ----------------------------------------------
-	part	= new C3DPart(FOLDER_ART,txn,0,0,0);
+	part	= new C3DPart(FOLDER_ART,"",0,0,0);
 	part->BinRendering();
 	strncpy(txname,txn,24);
   return 1;
@@ -1065,7 +1069,8 @@ int CBINparser::ReadQFaces(PODFILE *p)
 //  Add Part to model
 //------------------------------------------------------------------------------------
 void CBINparser::AddToModel(C3DPart *prt)
-{	prt->AllocateIND();
+{	prt->SetTexture(Tsp,txname);
+	prt->AllocateIND();
 	partQ.PutLast(prt);
   nFace += Tof;
   return;

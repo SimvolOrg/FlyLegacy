@@ -197,6 +197,8 @@ public:
 	void		ExtendGTB(int nbv);
 	void		SQLstrip(int nbx,F3_VERTEX *V,F3_VERTEX *N,F2_COORD *T,int *X);
 	//-------------------------------------------------------------
+	void		SetTexture(U_CHAR t, char *txn);
+	//-------------------------------------------------------------
 	void		AllocateW3dVTX(int nv);
 	void		AllocateOsmGVT(int nv);
 	void		AllocateOsmLIT(int nv);

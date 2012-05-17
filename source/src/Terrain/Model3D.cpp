@@ -1971,7 +1971,7 @@ C3DPart::C3DPart(char dir, char *txn,int lq, int nbv, int nbx)
   nIND  = 0;
 	strncpy(txd.name,txn,FNAM_MAX);
 	txd.Dir = FOLDER_ART;
-	txd.azp = 0xFF;
+	txd.azp = 0x00;
 	txd.apx = 0xFF;
 	tRef		= GetReference(txd);
 	if (nbv) AllocateW3dVTX(nbv);
@@ -2029,6 +2029,19 @@ void C3DPart::BinRendering()
 //----------------------------------------------------------------------
 void C3DPart::W3DRendering()
 {	Rend  = &C3DPart::DrawAsW3D;
+}
+//----------------------------------------------------------------------
+//  Allocate etxure
+//----------------------------------------------------------------------
+void C3DPart::SetTexture(U_CHAR t, char *txn)
+{	TEXT_INFO txd;	
+  strncpy(txd.name,txn,FNAM_MAX);
+	txd.Dir = FOLDER_ART;
+	txd.azp = t;
+	txd.apx = 0xFF;
+	if (tRef) globals->txw->Free3DTexture(tRef);
+	tRef		= GetReference(txd);
+	return;
 }
 //----------------------------------------------------------------------
 //  Trace this part
