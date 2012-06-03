@@ -985,10 +985,11 @@ int CFuiSketch::NoSession()
 	return SKETCH_ABORT;
 }
 //-----------------------------------------------------------------------
-//	Collect all Style
+//	Collect all Styles
 //-----------------------------------------------------------------------
 int CFuiSketch::BuildStyList()
-{	sBOX.SetParameters(this,'styl',(LIST_DONT_FREE+LIST_HAS_TITLE));
+{	STREETLOG("Process file %s",sname);
+	sBOX.SetParameters(this,'styl',(LIST_DONT_FREE+LIST_HAS_TITLE));
   styTT.SetSlotName("Style collection");
 	//--- Look for session parameters --------
 	bool ok = ses.ReadParameters(spath);

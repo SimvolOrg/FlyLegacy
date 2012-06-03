@@ -67,11 +67,12 @@ OSM_CONFP amenityVAL[] = {
 	//--- TAG VALUE ----OTYPE ----------OPROP ---------		BVEC ----------LAYER-------------------
 	{"PLACE_OF_WORSHIP",OSM_CHURCH,			OSM_PROP_BLDG,		OSM_BUILD_BLDG, OSM_LAYER_BLDG},
 	{"POLICE",					OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.5, "WALP"},
-	{"FIRE_STATION",		OSM_FIRE_STA,		OSM_PROP_FORTIFS,	OSM_BUILD_BLDG, OSM_LAYER_DBLE, 2.0, "WALP"},
-	{"TOWNHALL",				OSM_TOWNHALL,		OSM_PROP_IGNR,		OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"FIRE_STATION",		OSM_FIRE_STA,		OSM_PROP_FORTIFS,	OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.0, "WALP"},
+	{"TOWNHALL",				OSM_TOWNHALL,		OSM_PROP_FORTIFS,	OSM_BUILD_FORT, OSM_LAYER_DBLE, 1.5, "HAIE"},
 	{"SCHOOL",					OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 1.5, "HAIE"},
 	{"COLLEGE",					OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.0, "HAIE"},
 	{"HOSPITAL",				OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.0, "WALP"},
+	{"PRISON",				  OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.5, "WALP"},
 	{EndOSM,					0},									  // End of table
 };
 //==========================================================================================
@@ -81,6 +82,7 @@ OSM_CONFP  buildingVAL[] = {
 	//--- TAG VALUE --OTYPE ----------OPROP ---------BVEC -----------LAYER -----------
 	{"YES",						OSM_BUILDING,		OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
 	{"SCHOOL",				OSM_SCHOOL,			OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
+	{"$",							OSM_BUILDING,		OSM_PROP_BLDG, OSM_BUILD_BLDG, OSM_LAYER_BLDG},
 	{EndOSM,						0},									// End of table
 };
 //==========================================================================================
@@ -99,7 +101,7 @@ OSM_CONFP  liteVAL[] = {
 //==========================================================================================
 OSM_CONFP	landVAL[] = {
 	//--- TAG VALUE --OTYPE --------OPROP ---------BVEC -----------LAYER ------------
-	//{"FARMYARD",		  OSM_FORTIFS,	OSM_PROP_FORTIFS+OSM_PROP_STOP, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.5, "FARM" },
+	{"FARMYARD",		  OSM_FORTIFS,	OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.5, "FARM" },
 	{"FOREST",				OSM_TREE,			OSM_PROP_TREE, OSM_BUILD_TREE, OSM_LAYER_DBLE},
 	{EndOSM,					0},
 };
@@ -210,8 +212,9 @@ OSM_CONFP *LocateOSMvalue(char *t,char *v)
 	{	if  (strcmp(tab->tag,t)   != 0) {tab++; continue;}
 	  OSM_CONFP *cnf = tab->table;	
 	  while (strcmp(cnf->val,EndOSM) != 0)
-		{	if  (strcmp(cnf->val,v) != 0)	{cnf++; continue; }
-			return cnf;
+		{	if  (strcmp(cnf->val,v) == 0) return cnf;
+			if	(*cnf->val == '$')				return cnf;
+			cnf++;
 		}
 		//--- unknown value --------------------------
 		STREETLOG("Unknow value %s %s",t,v);
@@ -982,5 +985,4 @@ void OSM_Object::Write(FILE *p)
 	(this->*writeOSM[bvec])(p);
 	return;
 }
-
 //====================== END OF FILE ============================================
