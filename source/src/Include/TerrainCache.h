@@ -192,9 +192,10 @@ public:
     U_CHAR       visible;									// Visibility indicator
     float        white[4];                // Diffuse color for blending
 		//--- OSM management --------------------------------------------
-		U_SHORT       nobj;										// OSM objects
+		U_CHAR        osmp;										// OSM objects
 		U_CHAR				rfu1;
-		U_CHAR				sbat;										// batQ locked
+		U_CHAR				rfu2;
+		U_CHAR				rfu3;										// 
 		Queue<C3DPart> osmQ[OSM_LAYER_SIZE];	// osm Queue
     //---------------------------------------------------------------
     SPosition    mPos;                        // Center position
@@ -225,6 +226,7 @@ public:
     //-----------------------------------------------------------
     void          GetLine(CListBox *box);
 		void					ClearOSM(char lay);
+		void					FlushOSM();
     //-----------------------------------------------------------
 		void					DrawOuterSuperTile();
     void          DrawInnerSuperTile();
@@ -274,7 +276,6 @@ public:
 		inline CSuperTile *Next()				{return next;}
 		inline void Next(CSuperTile *s)	{next = s;}
 		//------------------------------------------------------
-		inline void	StBat(U_CHAR s)			{sbat = s;}
   };
 //============================================================================
 //  QUEUE of SUPERTILES
@@ -633,9 +634,9 @@ public:
 	void				Reallocate(CmQUAD *qd);
 	//--- OSM management ----------------------------------------
 	void        ExtendOSMPart(char No,char dir, char *ntx, char layer, int nv, GN_VTAB  *src);
-	void				OsmOK(char No);
   void				AddOsmBase(SQL_DB *db)	{ osmDB.push_back(db); }
 	void        StartOSMload(int sNo);
+	void				FlushOSM();
   //----------Mesh Management ------------------------------------
 	SPosition		GetBase();
 	int         CenterTile(CVertex *sw,CVertex *nw,CVertex *ne,CVertex *se);
@@ -1060,6 +1061,7 @@ public:
 	void				MoveRabbit(SPosition &dst);
   void        CheckTeleport();
   void        Teleport(SPosition *P, SVector *O);
+	void				FlushOSM();
   //----------Statistics ---------------------------------------
   void        GetStats(CFuiCanva *cnv);
 };

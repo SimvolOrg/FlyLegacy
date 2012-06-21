@@ -34,6 +34,7 @@
 #endif // _MSC_VER > 1000
 //====================================================================================
 class C_QGT;
+class COBJparser;
 //====================================================================================
 
 #include "../Include/Model3D.h"
@@ -61,6 +62,7 @@ class C_QGT;
 #define OSM_PROP_PSTREET	(OSM_PROP_MAJT+OSM_PROP_ZNED)	
 #define OSM_PROP_PARK		  (OSM_PROP_MAJT+OSM_PROP_BOTH+OSM_PROP_ZNED)	
 #define OSM_PROP_FORTIFS	(OSM_PROP_MAJT+OSM_PROP_WALL+OSM_PROP_ZNED)
+#define OSM_PROP_FARMS	  (OSM_PROP_MAJT+OSM_PROP_WALL+OSM_PROP_ZNED)
 #define OSM_PROP_DOCKS		(OSM_PROP_MAJT)					
 //====================================================================================
 //	Object build kind
@@ -73,7 +75,8 @@ class C_QGT;
 #define OSM_BUILD_PSTR	(5)									// Street
 #define OSM_BUILD_FORT	(6)									// Fortifications
 #define OSM_BUILD_FLAT  (7)									// Parks and gardens
-#define OSM_BUILD_VMAX	(8)
+#define OSM_BUILD_FARM	(8)									// Farm contour
+#define OSM_BUILD_VMAX	(9)
 //====================================================================================
 //	Object type
 //====================================================================================
@@ -90,15 +93,20 @@ class C_QGT;
 #define OSM_PHARES		(11)
 #define OSM_PSTREET		(12)									// CITY STREETS
 #define OSM_FORTIFS		(13)									// CITY WALLS (HISTORICAL)
-#define OSM_DOCKS     (14)									// DOCKSs
 //---------------------------------
-#define OSM_TREE      (15)									// FOREST TREES
+#define OSM_DOCK			(14)									// DOCK
+#define OSM_FOREST    (15)									// FOREST TREES
 #define OSM_LIGHT     (16)									// ROAD LIGHT
 //---------------------------------
 #define OSM_RPOINT		(17)									// ROUNDABOUT
-#define OSM_GARDEN		(18)
+#define OSM_GARDEN		(18)									// PARK and Garden
+#define OSM_SPORT     (19)	
+#define OSM_PARKING   (20)									// Parkings
+#define OSM_HEDGE			(21)									// Hedge
+#define OSM_FARM			(22)									// Farmyard
+
 //----------------------------------
-#define OSM_MAX       (19)
+#define OSM_MAX       (23)
 //====================================================================================
 #define OSM_PARTIAL   (1)
 #define OSM_COMPLET   (2)
@@ -177,12 +185,15 @@ struct OSM_TAG {
 //==========================================================================================
 struct OSM_MDEF {
 	char   dir;								// Replacement directory (No)
+	char   num;								// Descriptor number
 	char  *obj;								// Object name
 	U_INT  otype;							// Object type
 	double sinA;
 	double cosA;
 	//------------------------------------------------------
-	OSM_MDEF()	{	dir = 0; 	obj	= 0; otype = 0; }
+	COBJparser *fpar;					// Associated parser if cached
+	//------------------------------------------------------
+	OSM_MDEF()	{	dir = 0; 	obj	= 0; otype = 0; fpar = 0;}
 	//------------------------------------------------------
 	~OSM_MDEF(){	Clear();	}
   //------------------------------------------------------
@@ -255,6 +266,7 @@ public:
 	int			BuildGRND(OSM_CONFP *CF);			// Build ground object
 	int			BuildWALL(OSM_CONFP *CF);			// Build a wall
 	int			BuildFLAT(OSM_CONFP *CF);			// Build a park, garden etc
+	int			BuildFARM(OSM_CONFP *CF);			// Build a farmyard
 	//---------------------------------------------------------------
 	int			BuildROWF(OSM_CONFP *CF);			// Make a row of forest
 	//---------------------------------------------------------------
@@ -284,8 +296,9 @@ public:
 	void		BuildLightRow(double H);
 	void		BuildForestTour(OSM_MDEF *mdf);
 	int		  NextForestRow();
-	void		StoreTree(D2_POINT *pp, OSM_MDEF *mdf);
+	void		StoreTree(D2_POINT *pp, OSM_MDEF *mdf, double e);
 	void		ScanLine(double y);
+	void		SeedLine(D2_POINT *p0, OSM_MDEF *mdf);
 	//----------------------------------------------------------------
 	void		SetPart(C3DPart *p)				{part = p;}
 	void		Select();
@@ -293,7 +306,9 @@ public:
 	void		SwapSelect();
 	void		ReplacePart(C3DPart *p);
 	void		ReplaceBy(OSM_MDEF *rpp);
-	void		AdjustPart();		
+	void		AdjustPart();
+	//----------------------------------------------------------------
+	C3DPart *LocatePart(char d,char *txn);
 	//----------------------------------------------------------------
 	GN_VTAB *StripToSupertile();
 	//----------------------------------------------------------------
@@ -400,10 +415,21 @@ inline void DebDrawOSMforest()
 { DebDrawOSMbuilding();
 	//----------------------------------------------------------------
 	glEnable(GL_ALPHA_TEST);
-  glAlphaFunc(GL_GREATER,float(0.4));
+  glAlphaFunc(GL_GREATER,float(0.6));
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	glDisable(GL_CULL_FACE);
 	}
+//===================================================================================
+//	Environment OSM Building
+//===================================================================================
+inline void DebDrawOSMtrees()
+{ //----------------------------------------------------------------
+	glEnable(GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER,float(0.6));
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+	glDisable(GL_CULL_FACE);
+	}
+
 //===================================================================================
 //	Environment Ground object
 //===================================================================================

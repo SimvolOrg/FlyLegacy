@@ -1603,7 +1603,7 @@ protected:
 class CBKAudioKMA26Gauge : public CBitmapGauge {
 public:
   CBKAudioKMA26Gauge (CPanel *mp);
-
+ ~CBKAudioKMA26Gauge ();
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
 

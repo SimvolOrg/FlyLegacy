@@ -2066,24 +2066,22 @@ void CAirport::Refresh(U_INT FrNo)
 void CAirport::SaveProfile()
 { CRunway *rwy = 0;
   char path[MAX_PATH];
-  SStream   s;
+  CStreamFile  sf;
   char     *fn = GetAptName();
 	int			  d  = MAX_PATH-1;
   U_CHAR   mod = Prop & TC_PCHANGES;
   if (0 == mod) return;
   sprintf_s(path,d,"Runways/%s.RLP",fn);
   //---Open a stream file -----------------------------------
-  strncpy (s.filename, path,FNAM_MAX);
-  strncpy (s.mode, "w",3);
-  if (!OpenStream (&s)) {WARNINGLOG("CAptObject : can't write %s", path); return;}
-  WriteTag('bgno', "========== BEGIN FILE ==========" , &s);
+  sf.OpenWrite(path);
+  sf.DebObject();
   for (rwy = GetNextRunway(rwy); rwy != 0;rwy = GetNextRunway(rwy))
   { CRLP *lpf = rwy->GetRLP();
-    if (lpf)  lpf->WriteProfile(rwy,&s);  
+    if (lpf)  lpf->WriteProfile(rwy,sf);  
   }
   //---Close the file ---------------------------------------
-  WriteTag('endo', " === End of Runway Definition file ===", &s);
-  CloseStream (&s);
+  sf.EndObject();
+  sf.Close();
   Prop &= (-1 - TC_PCHANGES);
   return;
 }

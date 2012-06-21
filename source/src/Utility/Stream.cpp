@@ -474,6 +474,10 @@ void CStreamFile::OpenWrite (const char *filename)
   }
 }
 //------------------------------------------------------------------------
+//  Write open Object
+//------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
 //  Close file
 //------------------------------------------------------------------------
 void CStreamFile::Close (void)
@@ -497,50 +501,55 @@ void CStreamFile::Close (void)
     writeable = false;
   }
 }
-
+//------------------------------------------------------------------
+//	Write a blank line
+//------------------------------------------------------------------
 void CStreamFile::WriteBlankLines (int nLines)
-{
-  if (IsWriteable()) {
-    for (int i=nLines; i > 0; i++) fprintf (f, "\n");
-  }
+{ if (IsWriteable()) {for (int i=nLines; i > 0; i++) fprintf (f, "\n"); }
 }
-
+//------------------------------------------------------------------
+//	Write a comment
+//------------------------------------------------------------------
 void CStreamFile::WriteComment (const char *comment)
-{
-  if (IsWriteable()) {
-    fprintf (f, "// %s\n", comment);
-  }
+{	if (IsWriteable())	fprintf (f, "// %s\n", comment);
 }
-
+//------------------------------------------------------------------
+//	Write a Tag with indentation
+//------------------------------------------------------------------
 void CStreamFile::WriteTag (Tag tag, const char* comment = NULL)
-{
-  if (IsWriteable()) {
-    // Decrease indent level for <endo> tag
-    if (tag == 'endo') {
+{	if (!IsWriteable()) return;
+  // Decrease indent level for <endo> tag
+  if (tag == 'endo') {
       indent--;
       if (indent < 0) indent = 0;
     }
-
-    // Write bracketed tag value
-    char s[8];
-    TagToString (s, tag);
-    WriteIndent();
-    fprintf (f, "<%s>", s);
-
-    // Write optional comment following tag value
-    if (comment != NULL) {
-      fprintf (f, " %s", comment);
-    }
-    
-    fprintf (f, "\n");
-
-    // Increase indent level for <bgno> tag
-    if (tag == 'bgno') {
-      indent++;
-    }
-  }
+  // Write bracketed tag value
+  char s[8];
+  TagToString (s, tag);
+  WriteIndent();
+  fprintf (f, "<%s>", s);
+  // Write optional comment following tag value
+  if (comment)   fprintf (f, " %s", comment);
+  fprintf (f, "\n");
+  // Increase indent level for <bgno> tag
+  if (tag == 'bgno')	indent++;
+	
 }
-
+//------------------------------------------------------------------
+//	Write a bgno tag with indentation
+//------------------------------------------------------------------
+void	CStreamFile::DebObject()
+{	WriteTag('bgno', "========== BEGIN OBJECT ==========");
+}
+//------------------------------------------------------------------
+//	Write a end tag with indentation
+//------------------------------------------------------------------
+void	CStreamFile::EndObject()
+{	WriteTag('endo', "========== END OBJECT ============");
+}
+//------------------------------------------------------------------
+//	Write a integer
+//------------------------------------------------------------------
 void CStreamFile::WriteInt(int *value)
 {
   if (IsWriteable()) {
@@ -572,27 +581,37 @@ void CStreamFile::WriteDouble(double *value)
     fprintf (f, "%lf\n", *value);
   }
 }
-
+//------------------------------------------------------------------
+//	Write a string
+//------------------------------------------------------------------
 void CStreamFile::WriteString(const char *value)
-{
-  if (IsWriteable()) {
-    WriteIndent();
-    fprintf (f, "%s\n", value);
-  }
+{	if (!IsWriteable()) return;
+  WriteIndent();
+  fprintf (f, "%s\n", value);
 }
-
+//------------------------------------------------------------------
+//	Write a Vector
+//------------------------------------------------------------------
 void CStreamFile::WriteVector(SVector *value)
-{
-  if (IsWriteable()) {
-    WriteIndent();
-    fprintf (f, "%lf\n", value->x);
-    WriteIndent();
-    fprintf (f, "%lf\n", value->y);
-    WriteIndent();
-    fprintf (f, "%lf\n", value->z);
-  }
+{	if (!IsWriteable()) return;
+  WriteIndent();
+  fprintf (f, "%lf\n", value->x);
+  WriteIndent();
+  fprintf (f, "%lf\n", value->y);
+  WriteIndent();
+  fprintf (f, "%lf\n", value->z);
 }
-
+//------------------------------------------------------------------
+//	Write Orientation
+//------------------------------------------------------------------
+void CStreamFile::WriteOrientation(SVector &V)
+{	if (!IsWriteable())	return;
+	WriteIndent();
+	fprintf(f, "%1.lf, %1.lf, %1.lf\n",V.x,V.y,V.z);
+}
+//------------------------------------------------------------------
+//	Write a position
+//------------------------------------------------------------------
 void CStreamFile::WritePosition(SPosition *value)
 {
   if (IsWriteable()) {
@@ -602,13 +621,25 @@ void CStreamFile::WritePosition(SPosition *value)
     fprintf (f, "%.6f\n",value->alt);
   }
 }
-
+//------------------------------------------------------------------
+//	Edit a position
+//------------------------------------------------------------------
+void	CStreamFile::EditPosition(SPosition &pos)
+{	char edt[32];
+	WriteTag('geop',"------GEO POSITION (lat,lon,alt)-------");
+	EditLat2DMS(pos.lat, edt, 0);
+	WriteString(edt);
+	EditLon2DMS(pos.lon, edt, 0);
+	WriteString(edt);
+	WriteDouble(&pos.alt);
+}
+//------------------------------------------------------------------
+//	write time
+//------------------------------------------------------------------
 void CStreamFile::WriteTime(SDateTime *value)
-{
-  if (IsWriteable()) {
-    WriteIndent();
-    fprintf (f, "SDateTime not implemented yet\n");
-  }
+{	if (!IsWriteable()) return;
+  WriteIndent();
+  fprintf (f, "SDateTime not implemented yet\n");
 }
 
 void CStreamFile::WriteTimeDelta(SDateTimeDelta *value)
@@ -626,7 +657,9 @@ void CStreamFile::WriteMessage(SMessage *message)
     fprintf (f, "SMessage not implemented yet\n");
   }
 }
-
+//---------------------------------------------------------
+//	Write indentation
+//--------------------------------------------------------
 void CStreamFile::WriteIndent (void)
 {
   for (int i=indent; i>0; --i) fprintf (f, "\t");
@@ -747,7 +780,7 @@ int OpenStream(SStream *stream)
 int OpenRStream(char *fn,SStream &s)
 { if (0 == fn)	return 0;
 	strncpy (s.filename, fn,(PATH_MAX-1));
-  strcpy (s.mode, "r");
+  strcpy  (s.mode, "r");
 	return OpenStream (&globals->pfs, &s);
 }
 //===========================================================================
@@ -1326,81 +1359,4 @@ int  ReadInvertedTag(Tag *tag, SStream*stream)
  *tag	= StringToTag(t);
 	return invert;	}
 
-//--------------------------------------------------------------------
-void  WriteComment (const char *comment, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteComment (comment);
-}
-
-void  WriteTag (Tag tag, SStream *stream)
-{
-  WriteTag (tag, NULL, stream);
-}
-
-void  WriteTag (Tag tag, const char* comment, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteTag (tag, comment);
-}
-
-void  WriteInt(int *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteInt (value);
-}
-
-void  WriteUInt(unsigned int *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteUInt (value);
-}
-
-void  WriteFloat(float *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteFloat (value);
-}
-
-void  WriteDouble(double *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteDouble (value);
-}
-
-void  WriteString(const char *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteString (value);
-}
-
-void  WriteVector(SVector *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteVector (value);
-}
-
-void  WritePosition(SPosition *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WritePosition (value);
-}
-
-void  WriteTime(SDateTime *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteTime (value);
-}
-
-void  WriteTimeDelta(SDateTimeDelta *value, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteTimeDelta (value);
-}
-
-void  WriteMessage(SMessage *message, SStream *stream)
-{
-  CStreamFile* sf = (CStreamFile*)(stream->stream);
-  sf->WriteMessage (message);
-}
-
+//==================== END OF FILE =================================================================

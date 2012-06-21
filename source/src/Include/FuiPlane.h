@@ -134,9 +134,9 @@ public:
 
 };
 //=============================================================================
-//  CFuiSetAir: To chose from aircraft list
+//  CWinPlane: To chose from aircraft list
 //=============================================================================
-class CFuiSetAir: public CFuiWindow {
+class CWinPlane: public CFuiWindow {
   //----------Attribute ------------------------------------------
   CPlaneIdent   airInfo;
   CListBox      airBOX;
@@ -150,8 +150,8 @@ class CFuiSetAir: public CFuiWindow {
   U_SHORT             mask[6];              // Selection mask
   //--------Methods ----------------------------------------------
 public:
-   CFuiSetAir(Tag idn, const char *filename);
-  ~CFuiSetAir();
+   CWinPlane(Tag idn, const char *filename);
+  ~CWinPlane();
   void  EditSelPopup();
   void  ScanAllNFO();
   void  MakeSlot(char * cpln,bool alloc,char *nfo);

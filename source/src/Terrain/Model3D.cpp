@@ -2184,7 +2184,7 @@ void C3DPart::ExtendOSM(int nbv,GN_VTAB *src)
 	{	memcpy((char*)tab,gTAB,dim);
 		delete [] gTAB;
 	}
-	//--- replace with new strip ---------
+	//--- Replace with new strip ---------
 	gTAB	= tab;
 	NbVT	= tot;
 	//--- Add new strip ------------------

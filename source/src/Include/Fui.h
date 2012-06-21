@@ -154,7 +154,7 @@ enum EFuiWindowIdentifier
 	FUI_WINDOW_FILE_BOX							   = 'fbox',
   FUI_WINDOW_STATS                   = 'Stat',
   FUI_WINDOW_DEFAULT                 = '?win',
-
+	FUI_WINDOW_OSM_TUNE								 = 'osmT',
 /*
   // The following window types are reserved for future implementation
   FUI_WINDOW_SITUATION_SAVE          = 'Save',
@@ -401,7 +401,8 @@ public:
   virtual void        MoveParentTo (int xp, int yp);
   virtual void        MoveTo(int xs,int ys);
   virtual void        MoveBy(int dx,int dy);
-  //-------------------------------------------------------------------
+	virtual void				SetTransparentMode(Tag idn) {;}
+	//-------------------------------------------------------------------
   virtual void        Close() {}
   virtual void        SetText(char* text);
   virtual void        EditText(char *fmt, ...){}
@@ -468,6 +469,8 @@ public:
   void                EditFBox(CFuiComponent *box[],int siz);
   void                RedimFBox(CFuiComponent *box[],short dx, short dy);
 	CBitmap*						HaveBitmap(char *fn,char *own);
+	void								RemoveBack(CFuiComponent *cp);
+	void								SetTransparentMode();
   //-------------Other methods -----------------------------------
   void                TiledBand (CBitmap *bm,SSurface *sf,int y0,int y1);
   //------Drawing ------------------------------------------------
@@ -478,7 +481,6 @@ public:
 	void								ColorText(U_INT rgb);
   //----inline method --------------------------------------------
 	inline void     DrawFBoxBack(CFuiComponent *cp)	{if (cp) cp->Draw();}
-  inline void     SetTransparentMode()          {prop |= FUI_TRANSPARENT;}
   inline void     SetProperty(U_INT p)          {prop |= p;}
   inline void     RazProperty(U_INT p)          {prop &= (-1 - p);}
   inline void     SwapProperty(U_INT p)         {prop ^= p;}
@@ -545,6 +547,7 @@ protected:
   SSurface           *surface;
 	//---------------------------------------------------------------------------
 	U_INT								colText;						// Text color
+	U_INT								cBlack;
 };
 
 //==================================================================================
@@ -841,6 +844,7 @@ public:
   void                MoveWindow(int mx,int my);
   void                CreateMenuBar(SStream *str);
   void                SetTransparentMode();
+	void								SetTransparentMode(Tag idn);
   void                SetChildProperty(Tag idn,U_INT p);
   void                SetChildText(Tag idn,char *txt);
   void                SurfaceOrigin(int &x,int &y);
@@ -1459,6 +1463,7 @@ public:
   void                SetEditMode(Tag id,U_CHAR md);
   bool                KeyboardInput(U_INT key);
   void                AddChild(Tag idn,CFuiComponent *cmp,char *txt, U_INT color = 0);
+	void								SetTransparentMode();
 	//----------------------------------------------------------------------
 	void								SetText(char *t);
   //------NOTIFICATIONS --------------------------------------------------
@@ -1513,6 +1518,7 @@ protected:
   //-------------Full box -liste of decorations ---------
   CFuiComponent     *fBox[RSIZ];
   //-----------Color for component------------------------
+	U_INT	 cBlack;
   U_INT  cTxtHLight;
   U_INT  cBakHLight;
   U_INT  cBackTitle;
@@ -1826,7 +1832,6 @@ class CFuiCanva: public CFuiComponent
   CFuiComponent  *fBox[RSIZ];
   U_INT           cTab[2];
   U_INT           white;
-  U_INT           black;
   //---Move detection -----------------------------------------------
   U_SHORT         sx;
   U_SHORT         sy;

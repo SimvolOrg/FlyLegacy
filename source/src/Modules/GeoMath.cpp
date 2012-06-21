@@ -28,6 +28,7 @@
 #include "../Include/GeoMath.h"
 #include "../Include/TerrainUnits.h"
 #include "../Include/TerrainCache.h"
+#include "../Include/TerrainTexture.h"
 #include <math.h>
 //================================================================================
 //================================================================================
@@ -1388,12 +1389,13 @@ void ZRotate(GN_VTAB &v, double sn, double cn)
 //============================================================================
 //	Horizontal Transformer
 //============================================================================
-HTransformer::HTransformer(double c,double s,SVector &t)
-{	cn	= c;
-	sn	= s;
+HTransformer::HTransformer(double c,double s,SVector &t, double e)
+{	cn	= c;							// Cosinus
+	sn	= s;							// Sinus
 	tx  = t.x;
 	ty	= t.y;
 	tz	= t.z;
+	sc	= e;							//Scale
 	//--- Init matrix ----------------
 	M0	= +cn; 
 	M1 = +sn;
@@ -1404,25 +1406,93 @@ HTransformer::HTransformer(double c,double s,SVector &t)
 //	Transform vertex (Rotate then translate)
 //---------------------------------------------------------------------
 GN_VTAB HTransformer::ComputeRT(GN_VTAB *vtx)
-{ 
-/*
-//--- rotate the translation vector -------------------
-  rx = ((tx * M0) + (ty * M2));
-	ry = ((tx * M1) + (ty * M3));
-	//-------------------------------
-	vtx->VT_X	+= rx;
-	vtx->VT_Y	+= ry;
-	vtx->VT_Z += tz;
-	return *vtx;
-	*/
-	//--- Rotate vertex ------------------
+{ //--- Rotate vertex ------------------
 	rx = (vtx->VT_X * M0) + (vtx->VT_Y * M2);
 	ry = (vtx->VT_X * M1) + (vtx->VT_Y * M3);
-	//--- Transalte now -------------------
-	vtx->VT_X = rx + tx;
-	vtx->VT_Y = ry + ty;
+	//--- Translate and scale ------------
+	vtx->VT_X = (rx + tx) * sc;
+	vtx->VT_Y = (ry + ty) * sc;
 	vtx->VT_Z += tz;
+	vtx->VT_Z *= sc;
 	return *vtx;
+}
+//---------------------------------------------------------------------
+//	Transform vertex (Rotate then translate)
+//---------------------------------------------------------------------
+void HTransformer::ComputeRT(GN_VTAB &src,GN_VTAB *dst)
+{ *dst = src;
+	//--- Rotate vertex ------------------
+	rx = (src.VT_X * M0) + (src.VT_Y * M2);
+	ry = (src.VT_X * M1) + (src.VT_Y * M3);
+	//--- Translate now -------------------
+	dst->VT_X		= (rx + tx) * sc;
+	dst->VT_Y		= (ry + ty) * sc;
+	dst->VT_Z  += tz;
+	dst->VT_Z  *= sc;
+	//-------------------------------------
+	dst->VN_X = dst->VN_Y = dst->VN_Z = float(0.01);
+	return;
+}
+//==========================================================================
+//  Edit Latitude in deg min sec
+//==========================================================================
+void EditLat2DMS(float lat, char *edt, char opt)
+{ const char *pole  = (lat < 0)?("S"):("N");
+  long  val   = (lat < 0)?(long(-lat * 100)):(long(lat *100));
+  long  deg   =  0;
+  long  min   =  0;
+  deg   = (val / 360000);
+  val   = (val % 360000);
+  min   = (val / 6000);
+  val   = (val % 6000);
+  if (opt)  sprintf_s(edt,31,"Lat: %3u %2u' %2.2f\" %s",int(deg),int(min),(float(val) / 100), pole);
+	else			sprintf_s(edt,31,     "%3u %2u' %2.2f\" %s",int(deg),int(min),(float(val) / 100), pole);
+	edt[31] = 0;
+  return;
+}
+//==========================================================================
+//  Edit Longitude in deg min sec
+//==========================================================================
+void EditLon2DMS(float lon, char *edt, char opt)
+{ if (lon > (180 * 3600)) lon -= (360 * 3600);
+  const char *meri  = (lon < 0)?("W"):("E");
+  long  val   = (lon < 0)?(long(-lon * 100)):(long(lon * 100));
+  long  deg   =  0;
+  long  min   =  0;
+  deg   = (val / 360000);
+  val   = (val % 360000);
+  min   = (val / 6000);
+  val   = (val % 6000);
+  if (opt)	sprintf_s(edt,31,"Lon: %3u %2u' %3.2f\" %s",int(deg),int(min),(float(val) / 100), meri);
+	else			sprintf_s(edt,31,     "%3u %2u' %3.2f\" %s",int(deg),int(min),(float(val) / 100), meri);
+	edt[31] = 0;
+  return;
+}
+
+//=======================================================================
+//	Write a texture from texture object
+//=======================================================================
+void WriteTexture(U_INT xob,char *dir, char *name)
+{ int			wd,ht = 0;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH, &wd);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,&ht);
+	int     nbp = wd * ht;
+  int     dim = nbp* 4;
+  U_CHAR *buf = new U_CHAR[dim];
+  glBindTexture(GL_TEXTURE_2D,xob);
+  glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,buf);
+  //----------------------------------------------------------------
+  {GLenum e = glGetError ();
+   if (e != GL_NO_ERROR) 
+    WARNINGLOG ("OpenGL Error 0x%04X : %s", e, gluErrorString(e));
+  }
+  //----------------------------------------------------------
+  char	fn[1024];
+  _snprintf(fn,1023,"%s/%s.TIF",dir,name);
+  CArtParser img(0);
+  img.WriteBitmap(FIF_TIFF,fn,wd,ht,buf);
+  delete [] buf;
+  return;
 }
 //=======================END OF FILE ======================================================
 

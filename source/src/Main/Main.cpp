@@ -321,6 +321,16 @@ DAMAGE_MSG damMSG[] = {
   {3,0,'crby',"STRUCTURAL DAMAGE"},       // 3 Body destroyed
 };
 //==========================================================================================
+//  OSM object type
+//==========================================================================================
+struct OSM_TP {
+	char *type;										// Type
+	char  Dir;										// Directory
+	char  Use;										// Use it
+	char	rfu1;										// Reserved
+	char	rfu2;										// Reserved
+};
+//==========================================================================================
 //  List of replacement directory per object type
 //==========================================================================================
 char *directoryTAB [] = {
@@ -332,27 +342,34 @@ char *directoryTAB [] = {
 	"OpenStreet/Databases",						// 5 => OSM Databases
 	};
 //--- Per object type ----------------------------------------
-char replOBJ[OSM_MAX] = {
-	FOLDER_ART,							// 0 Not a OSM object
-	FOLDER_OSM_OBJS,				// 1  OSM_BUILDING		(1)
-	FOLDER_OSM_OBJS,				// 2  OSM_CHURCH			(2)
-	FOLDER_OSM_OBJS,				// 3  OSM_POLICE			(3)
-	FOLDER_OSM_OBJS,				// 4  OSM_FIRE_STA		(4)
-	FOLDER_OSM_OBJS,				// 5  OSM_TOWNHALL		(5)
-	FOLDER_OSM_OBJS,				// 6  OSM_SCHOOL			(6)
-	FOLDER_OSM_OBJS,				// 7  OSM_COLLEGE			(7)
-	FOLDER_OSM_OBJS,				// 8  OSM_HOSPITAL		(8)
-	FOLDER_OSM_OBJS,				// 9  OSM_HOTEL				(9)
-	FOLDER_OSM_OBJS,				// 10  OSM_CHATODO		(10)
-	FOLDER_OSM_OBJS,				// 11  OSM_PHARES		  (11)
-	FOLDER_OSM_TREE,				// 12 OSM_PSTREET			(12)
-	FOLDER_OSM_TEXT,				// 13 OSM_FORTIFS     (13)
-	FOLDER_OSM_OBJS,				// 14 OSM_DOCK				(14)
-	//----------------------------------------------------------
-	FOLDER_OSM_TREE,				// 15  OSM_TREE				(15)
-	FOLDER_OSM_LITE,				// 16 OSM_LIGHT				(16)
-	FOLDER_OSM_OBJS,				// 17	OSM_RPOINT			(17) 
-	FOLDER_OSM_TEXT,				// 18 OSM_GARDEN			(18)
+OSM_TP osmTYPE[OSM_MAX+1] = {
+	{"NONE",				FOLDER_ART,				1},					// 0 Not a OSM object
+	{"OSM_BUILDING",FOLDER_OSM_OBJS,	1},					// 1  OSM_BUILDING		(1)
+	{"OSM_CHURCH",	FOLDER_OSM_OBJS,	1},					// 2  OSM_CHURCH			(2)
+	{"OSM_POLICE",	FOLDER_OSM_OBJS,	1},					// 3  OSM_POLICE			(3)
+	{"OSM_FIRE_STA",FOLDER_OSM_OBJS,	1},					// 4  OSM_FIRE_STA		(4)
+	{"OSM_TOWNHALL",FOLDER_OSM_OBJS,	1},					// 5  OSM_TOWNHALL		(5)
+	{"OSM_SCHOOL",	FOLDER_OSM_OBJS,	1},					// 6  OSM_SCHOOL			(6)
+	{"OSM_COLLEGE",	FOLDER_OSM_OBJS,	1},					// 7  OSM_COLLEGE			(7)
+	{"OSM_HOSPITAL",FOLDER_OSM_OBJS,	1},					// 8  OSM_HOSPITAL		(8)
+	{"OSM_HOTEL",		FOLDER_OSM_OBJS,	1},					// 9  OSM_HOTEL				(9)
+	//-----------------------------------------------------------------------
+	{"OSM_CHATODO",	FOLDER_OSM_OBJS,	1},					// 10 OSM_CHATODO			(10)
+	{"OSM_PHARES",	FOLDER_OSM_OBJS,	1},					// 11 OSM_PHARES		  (11)
+	{"OSM_PSTREET", FOLDER_OSM_TREE,	1},					// 12 OSM_PSTREET			(12)
+	{"OSM_FORTIF",	FOLDER_OSM_TEXT,	1},					// 13 OSM_FORTIFS     (13)
+	{"OSM_DOCK",		FOLDER_OSM_OBJS,	1},					// 14 OSM_DOCK				(14)
+	{"OSM_FOREST",	FOLDER_OSM_TREE,	1},					// 15 OSM_TREE				(15)
+	{"OSM_LIGHT",		FOLDER_OSM_LITE,	1},					// 16 OSM_LIGHT				(16)
+	{"OSM_RPOINT",	FOLDER_OSM_OBJS,	1},					// 17	OSM_RPOINT			(17) 
+	{"OSM_GARDEN",	FOLDER_OSM_TEXT,	1},					// 18 OSM_GARDEN			(18)
+	{"OSM_SPORT",		FOLDER_OSM_TEXT,	1},					// 19 OSM_SPORT 		  (19)
+	//-----------------------------------------------------------------------
+	{"OSM_PARKING",	FOLDER_OSM_TEXT,	1},					// 20 OSM_PARKING 		(20)
+	{"OSM_HEDGE",		FOLDER_OSM_TREE,	1},					// 21 OSM_EDGE				(21)
+	{"OSM_FARM",		FOLDER_OSM_TREE,	1},					// 22 OSM_FARM				(22)
+	{0},
+
 };
 
 //================================================================================
@@ -370,7 +387,54 @@ char *GetStandardAlphabet(char car)
   return (car > 26)?(abcTAB[0]):(abcTAB[car]);
 }
 
-
+//================================================================================
+//	Get Texture directory
+//================================================================================
+char GetOSMTextureDirectory(U_INT t)
+{	if (t >= OSM_MAX)		return 0;
+	return osmTYPE[t].Dir;
+}
+//================================================================================
+//	Get OSM Parameters
+//================================================================================
+char *GetOSMType(U_INT t)
+{	if (t >= OSM_MAX)		return 0;
+	return  osmTYPE[t].type;
+}
+//================================================================================
+//	Get OSM Parameters
+//================================================================================
+char GetOSMUse(U_INT t)
+{	if (t >= OSM_MAX)		return 0;
+	return  osmTYPE[t].Use;
+}
+//================================================================================
+//	Swap OSM use
+//================================================================================
+char SwapOSMuse(U_INT t)
+{	if (t >= OSM_MAX)		return 0;
+	osmTYPE[t].Use ^= 1;
+	return osmTYPE[t].Use;
+}
+//================================================================================
+//	Inhibit OSM
+//================================================================================
+void InhibitOSM(char *type)
+{	OSM_TP *osm = osmTYPE;
+	while (osm->type)
+	{	if (0 != strcmp(osm->type,type)) {osm++; continue;}
+		osm->Use = 0;
+		return;
+	}
+	return;
+}
+//================================================================================
+//	Check if OSM allowed
+//================================================================================
+bool OSMnotUsed(char type)
+{	if (type >= OSM_MAX)	return true;
+	return (osmTYPE[type].Use == 0);
+}
 //=============================================================================================
 #ifdef _WIN32
 //

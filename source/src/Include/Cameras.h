@@ -224,9 +224,9 @@ public:
   double GetRange()          {return range;}
   void   SetMaxRange(double m){rmax  = m;}
   void   GetUpVector (SVector &v) {v = Up;}
-  double GetTargetLon()      {return Tgt.lon;}
-  double GetTargetLat()      {return Tgt.lat;}
-  double GetTargetAlt()      {return Tgt.alt;}
+  double GetTargetLon()      {return tgtPos.lon;}
+  double GetTargetLat()      {return tgtPos.lat;}
+  double GetTargetAlt()      {return tgtPos.alt;}
   float  GetFOV ()           {return fov;}
   SVector   &CamOffset()     {return offset;}
 	void   GetOffset (SVector &v)            {v = offset;}
@@ -244,7 +244,6 @@ protected:
 	char			intcm;			// Type of camera (1= inside)
 	char			extcm;			// Type of camera (1= outside
 	//--------Camera parameters ----------------------------------
-  SPosition Tgt;        // Camera target world position 
   double    range;      // Range
   double    dmin;       // Minimum distance
   double    rmin, rmax; // Min/max range

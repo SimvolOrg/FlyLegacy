@@ -795,6 +795,22 @@ void  CListBox::SetParameters(CFuiWindow *win,Tag idn,U_INT tp,short lh)
   return InitP1();
 }
 //----------------------------------------------------------------------------------
+//  Init property and text color
+//----------------------------------------------------------------------------------
+void	CListBox::SetProperties(U_INT p,U_INT col)
+{	if (0 == wList)		return;
+	wList->SetProperty(p);
+	wList->SetColour(col);
+	return;
+}
+//----------------------------------------------------------------------------------
+//  Init property and text color
+//----------------------------------------------------------------------------------
+void CListBox::SetTransparentMode()
+{	if (0 == wList)	return;
+	wList->SetTransparentMode();
+}
+//----------------------------------------------------------------------------------
 //  Init parameters
 //----------------------------------------------------------------------------------
 void CListBox::InitP1()

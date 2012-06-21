@@ -28,10 +28,11 @@ class HTransformer	{
 	//--- Private components -------------------------------
 	double cn;												// Cosinus alpha
 	double sn;												// Sinus Alpha
-	double M0; 
-	double M1;
-	double M2; 
-	double M3;
+	double M0;												// Rotation
+	double M1;												// Rotation
+	double M2;												// ROtation
+	double M3;												// Rotation
+	double sc;												// Scale
 	//-----------------------------------------------------
 	double tx;
 	double ty;
@@ -40,8 +41,10 @@ class HTransformer	{
 	double rx,ry;										// Rotated tranlation
 	//--METHODS---------------------------------------------
 public:
-	HTransformer(double c, double s, SVector &t);
+	HTransformer(double c, double s, SVector &t, double e = 1);
 	GN_VTAB ComputeRT(GN_VTAB *vtx);
+	void		ComputeRT(GN_VTAB &src,GN_VTAB *dst);
+
 };
 //=============================================================================
 //  class for Terrain info
@@ -312,6 +315,12 @@ double	RelativeLatitudeInQGT(U_INT vz);
 double	AbsoluteLongitude(CVertex &v);
 double	AsoluteLatitude(CVertex &v);
 void		MidRadius(SVector &v, U_INT qz);
+//========================================================================
+//  Edit latitude   LAT 99° 99' 99.99'' N for example
+//       longitude  Lon 99° 99' 99.99'' W
+//========================================================================
+void EditLat2DMS(float lat, char *edt, char opt=1);
+void EditLon2DMS(float lon, char *edt, char opt=1);
 
 //========================================================================================
 #endif // !defined(GEOMATH_H)

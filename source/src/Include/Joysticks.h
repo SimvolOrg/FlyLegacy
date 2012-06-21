@@ -360,9 +360,9 @@ public:
   void            SendGroup(U_INT gr,Tag cmd,U_CHAR nbu);
   void            ClearGroupPMT();
   //------------------------------------------------------------------------
-	void						SaveOneButton(SStream *st,CSimButton *sbt);
-	void            SaveButtonConfig(SStream *st,JoyDEV *jsd);
-  void            SaveAxisConfig(SStream *st);
+	void						SaveOneButton   (CStreamFile &sf,CSimButton *sbt);
+	void            SaveButtonConfig(CStreamFile &sf,JoyDEV *jsd);
+  void            SaveAxisConfig(CStreamFile &sf);
   void            SaveConfiguration();
   void            SetNulleArea(float n,char m); 
   float           GetAttenuation(EAllAxes cmd);

@@ -40,7 +40,9 @@ OSM_Object::buildCB startbuildCB[OSM_BUILD_VMAX] = {
 	&OSM_Object::BuildFRST,					// OSM_BUILD_TREE			(4)
 	&OSM_Object::BuildSTRT,					// OSM_BUILD_STRT			(5)
 	&OSM_Object::BuildWALL,					// OSM_BUILD_FORT			(6)
-	&OSM_Object::BuildFLAT,					// OSM_BUILD_FLAT			(6)
+	&OSM_Object::BuildFLAT,					// OSM_BUILD_FLAT			(7)
+	&OSM_Object::BuildFARM,					// OSM_BUILD_FARM			(8)
+
 };
 //===================================================================================
 //	Vector Table to build Objects
@@ -50,10 +52,11 @@ OSM_Object::buildCB nextbuildCB[OSM_BUILD_VMAX] = {
 	0,														// OSM_BLDG			(1)
 	0,														// OSM_LITE			(2)
 	0,														// OSM_AMNY			(3)
-	&OSM_Object::BuildROWF,				// OSM_TREE			(4)
+	&OSM_Object::BuildROWF,				// OSM_FOREST		(4)
 	0,														// OSM_STRT			(5)
 	0,														// OSM_FORT			(6)
 	0,														// OSM_PARK			(7)
+	0,														// OSM_FARM			(8)
 };
 
 //===================================================================================

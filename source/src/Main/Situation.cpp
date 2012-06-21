@@ -643,7 +643,7 @@ CSituation::CSituation()
 	State					= SIT_NORMAL;
   //MEMORY_LEAK_MARKER (">SIT Construct")
   // Perform base initialization
-	FrameNo	= 0;										// JSDEV*
+	FrameNo	= 0;										
  // Open SIT file from pod filesystem
   OpenSitFile ();
   //MEMORY_LEAK_MARKER ("<SIT Construct")
@@ -797,8 +797,7 @@ CSimulatedObject* CSituation::GetASimulated (void)
 //  Process Plane type
 //---------------------------------------------------------------------------------
 CAirplane* CSituation::GetAnAircraft (void)
-{
-  CAirplane *plan = NULL;
+{ CAirplane *plan = NULL;
   char buffer_ [128] = {"ufo"};
 
   if (IsSectionHere ("PHYSICS")) {
@@ -875,6 +874,30 @@ void CSituation::Prepare (void)
   globals->plugins.On_Link_DLLSystems (0,0,NULL);// 
 	//--- Call for dispatcher declaration ----------------
   
+}
+//---------------------------------------------------------------------------------
+//  Write file
+//---------------------------------------------------------------------------------
+void CSituation::WriteFile()
+{	CAirplane *pln =  globals->pln;
+	if (0 == pln)										return;
+	if (!pln->AllWheelsOnGround())	return;
+  char *nfo = globals->pln->GetNFOname();
+	CStreamFile sf;
+  sf.OpenWrite (globals->sitFilename);
+  sf.DebObject();
+	sf.WriteTag('wobj',"-------- World Object -----------");
+	sf.WriteString("plan");
+	sf.DebObject();						// Start plane object
+	sf.EditPosition(globals->geop);
+	sf.WriteTag('_NFO',"--- vehicle info file -----------");
+	sf.WriteString(nfo);
+	sf.WriteTag('user',"--- User vehicle ----------------");
+	sf.WriteTag('iang',"--- Inertial Angular Position ---");
+	sf.WriteOrientation(globals->iang);
+	sf.EndObject();						// End plane Object
+  sf.EndObject();
+  sf.Close();
 }
 //----------------------------------------------------------------------------
 // This method is called on every simulation cycle, in order to update

@@ -39,7 +39,7 @@
 #include <vector>
 #include <map>
 #include <plib/sg.h>
-#include "../Include/FlyLegacy.h"
+#include "../Include/Stream.h"
 #include "../Include/TerrainUnits.h"
 //
 // Various constants

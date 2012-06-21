@@ -192,6 +192,7 @@ public:
   void              PrintUserVehicle   (FILE *f);
   void              Prepare            (void);
 	//----------------------------------------------------
+	void							WriteFile();
 	//----------------------------------------------------
   void              Timeslice (float dT,U_INT Frame);
 	//----------------------------------------------------

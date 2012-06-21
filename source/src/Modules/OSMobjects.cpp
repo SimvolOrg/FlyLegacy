@@ -73,6 +73,7 @@ OSM_CONFP amenityVAL[] = {
 	{"COLLEGE",					OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.0, "HAIE"},
 	{"HOSPITAL",				OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.0, "WALP"},
 	{"PRISON",				  OSM_FORTIFS,		OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.5, "WALP"},
+	{"PARKING",					OSM_PARKING,	  OSM_PROP_PARK,    OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10,  "PARKING" },         
 	{EndOSM,					0},									  // End of table
 };
 //==========================================================================================
@@ -94,6 +95,7 @@ OSM_CONFP  liteVAL[] = {
 	{"RESIDENTIAL",		OSM_LIGHT,			OSM_PROP_LITE,		OSM_BUILD_LITE,		OSM_LAYER_LITE},
 	{"PRIMARY",				OSM_PSTREET,		OSM_PROP_PSTREET, OSM_BUILD_PSTR,		OSM_LAYER_DBLE},
 	{"SECONDARY",			OSM_PSTREET,		OSM_PROP_PSTREET, OSM_BUILD_PSTR,		OSM_LAYER_DBLE},
+	{"LIVING_STREET",	OSM_LIGHT,		  OSM_PROP_LITE,    OSM_BUILD_LITE,		OSM_LAYER_LITE},
 	{EndOSM,					0},									// End of table
 };
 //==========================================================================================
@@ -101,8 +103,8 @@ OSM_CONFP  liteVAL[] = {
 //==========================================================================================
 OSM_CONFP	landVAL[] = {
 	//--- TAG VALUE --OTYPE --------OPROP ---------BVEC -----------LAYER ------------
-	{"FARMYARD",		  OSM_FORTIFS,	OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 2.5, "FARM" },
-	{"FOREST",				OSM_TREE,			OSM_PROP_TREE, OSM_BUILD_TREE, OSM_LAYER_DBLE},
+	{"FARMYARD",		  OSM_FARM,		OSM_PROP_FARMS, OSM_BUILD_FARM, OSM_LAYER_DBLE,},
+	{"FOREST",				OSM_FOREST,	OSM_PROP_TREE,	OSM_BUILD_TREE, OSM_LAYER_DBLE},
 	{EndOSM,					0},
 };
 //==========================================================================================
@@ -128,6 +130,7 @@ OSM_CONFP junctionVAL[] = {
 OSM_CONFP barrierVAL[] = {
 	//--- TAG VALUE --OTYPE --------OPROP ----------- BVEC -----------LAYER ------------
 	{"CITY_WALL",		  OSM_FORTIFS,	OSM_PROP_FORTIFS, OSM_BUILD_FORT, OSM_LAYER_DBLE, 10, "FORT" },
+	{"HEDGE",		      OSM_HEDGE,		OSM_PROP_FARMS, OSM_BUILD_FARM, OSM_LAYER_DBLE,},
 	{EndOSM,					0},
 };
 //==========================================================================================
@@ -151,8 +154,8 @@ OSM_CONFP leisureVAL[] = {
 //==========================================================================================
 OSM_CONFP sportVAL[] = {
 	//--- TAG VALUE --OTYPE ----------OPROP -----------BVEC -----------LAYER ------------
-	{"SOCCER",		    OSM_GARDEN,	    OSM_PROP_PARK,   OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10, "SOCCER" },
-	{"TENNIS",		    OSM_GARDEN,	    OSM_PROP_PARK,   OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10, "TENNIS" },
+	{"SOCCER",		    OSM_SPORT,	    OSM_PROP_PARK,   OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10, "SOCCER" },
+	{"TENNIS",		    OSM_SPORT,	    OSM_PROP_PARK,   OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10, "TENNIS" },
 	{EndOSM,					0},
 };
 
@@ -194,7 +197,8 @@ OSM_Object::writeCB writeOSM[] = {
 	&OSM_Object::WriteAsGOSM,							// 4 => OSM_BUILD_TREE
 	&OSM_Object::WriteAsGOSM,							// 5 => OSM_BUILD_PSTR
 	&OSM_Object::WriteAsGOSM,							// 6 =>	OSM_BUILD_FORT
-	&OSM_Object::SkipWrite,								// 7 =>	OSM_BUILD_FLAT
+	&OSM_Object::WriteAsGOSM,							// 7 =>	OSM_BUILD_FLAT
+	&OSM_Object::WriteAsGOSM,							// 8 =>	OSM_BUILD_FARM
 };
 //==========================================================================================
 //  Street light parameters
@@ -271,7 +275,7 @@ void SetOSMproperty(char *t, char *v, U_INT P)
 //==========================================================================================
 char *GetOSMdirectory(U_INT otype)
 {	if (otype >= OSM_MAX)	return "";
-	int num  = replOBJ[otype];
+	int num  = GetOSMTextureDirectory(otype);
 	return     directoryTAB[num];
 }
 //==========================================================================================
@@ -279,7 +283,7 @@ char *GetOSMdirectory(U_INT otype)
 //==========================================================================================
 char GetOSMfolder(U_INT otype)
 {	if (otype >= OSM_MAX) return 0;
-	return replOBJ[otype];
+	return GetOSMTextureDirectory(otype);
 }
 //==========================================================================================
 //	Return a replacement struct for the tag-value parameters 
@@ -404,7 +408,7 @@ int OSM_Object::EditPrm(char *txt)
 		case OSM_LIGHT:
 			_snprintf(txt,127,"Street Light (%d spots)",bpm.side);
 			return er;
-		case OSM_TREE:
+		case OSM_FOREST:
 			return er;
 		default:
 			_snprintf(txt,127,"BUILDING %05d lg:%.1lf wd:%.1lf",nb,lx,ly);
@@ -547,9 +551,20 @@ int OSM_Object::BuildFLAT(OSM_CONFP *CF)
 	return OSM_COMPLET;
 }
 //-----------------------------------------------------------------
-//	Build mixt of light and trees (in residential)
+//	Build farmyard
 //-----------------------------------------------------------------
-
+int OSM_Object::BuildFARM(OSM_CONFP *CF)
+{	D2_Session *ses = bld->GetSession();
+	OSM_MDEF   *mdf = ses->GetStreetTree();
+	bld->QualifyPoints(&bpm);
+	ReceiveBase(bld->FirstNode());
+	//--- Build farm tour -----------------------
+	for (D2_POINT *pp = base.GetFirst(); pp != 0; pp = pp->next)
+	{	SeedLine(pp,mdf);
+	}
+	ses->AddForest(this);
+	return OSM_COMPLET;
+}
 //-----------------------------------------------------------------
 //	Assign style to object
 //-----------------------------------------------------------------
@@ -724,29 +739,50 @@ void OSM_Object::BuildLightRow(double ht)
 	}
 	return;
 }
-
+//-----------------------------------------------------------------
+//	Locate a part for the texture
+//-----------------------------------------------------------------
+C3DPart *OSM_Object::LocatePart(char d,char *txn)
+{	C3DPart *prt = 0;
+	for (prt = part; prt != 0; prt = prt->Next())
+	{	if (prt->SameTexture(d,txn))	return prt;
+	}
+	//--- Allocate a part for this texture -----
+	prt		 = new C3DPart();
+	TEXT_INFO txd;
+	strncpy(txd.name,txn,FNAM_MAX);
+	txd.Dir = d;
+	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
+	prt->SetTREF(ref);
+	//--- Insert this part ahead ----------------
+	prt->SetNext(part);
+	part	= prt;
+	return prt;
+}
 //-----------------------------------------------------------------
 //	Set a tree at the spot
 //	NOTE:  All trees must share the same texture ARBRES.tif
+//	 A MODIFIER ICI
+//	Chrcher la part qui correspond à la texture et etendre cette part
 //-----------------------------------------------------------------
-void OSM_Object::StoreTree(D2_POINT *pp, OSM_MDEF *md)
-{	D2_Session *ses = bld->GetSession();	// call session
-	OSM_MDEF   *mdf = (md)?(md):(ses->GetForestTree());				// Get a tree model
-	char *dir				= directoryTAB[FOLDER_OSM_TREE];
-	COBJparser fpar(OSM_OBJECT);
-	fpar.SetDirectory(dir);
-  fpar.Decode(mdf->obj,OSM_OBJECT);
-	//--- Compute translation to the spot ------------
+void OSM_Object::StoreTree(D2_POINT *pp, OSM_MDEF *md, double e)
+{	D2_Session *ses		= bld->GetSession();	// call session
+	OSM_MDEF   *mdf		= (md)?(md):(ses->GetForestTree());				// Get a tree model
+	COBJparser *fpar	= mdf->fpar;
+	//--- Compute transformation --------------------
 	double alfa = RandomNumber(180);
 	double  rad = DegToRad(alfa);
 	double   cs = cos(rad);
 	double   sn = sin(rad);
-	CVector T(pp->x,pp->y,pp->z);
-	fpar.TransformALL(cs,sn,T);											// Translate vertices
+	CVector  tr(pp->x,pp->y,pp->z);
+	fpar->SetTransform(tr,cs,sn, e);
+	//--- Locate part --------------------------------
+	char *txn = fpar->TextureName();
+	C3DPart *prt = LocatePart(FOLDER_OSM_TREE,txn);
 	//--- Extend actual part with new vertices -------
 	GN_VTAB *buf;
-	int nbv = fpar.GetVerticeStrip(&buf);
-	part->ExtendOSM(nbv,buf);
+	int nbv = fpar->TransformVerticeStrip(&buf);
+	prt->ExtendOSM(nbv,buf);
 	delete buf;
 	//TRACE("TREE at x=%lf y=%lf z%lf",pp->x,pp->y,pp->a);
 
@@ -772,26 +808,45 @@ void OSM_Object::ScanLine(double y)
 		GroundSpot lnd(pos.lon,pos.lat);
 		pp.a = globals->tcm->GetGroundAt(lnd);
 		pp.z = pp.a - bpm.geop.alt;
-		StoreTree(&pp,0);
+		StoreTree(&pp,0,1);
 	}
 }
 //-----------------------------------------------------------------
+//	Fill a line segment from P0 to P1
+//-----------------------------------------------------------------
+void OSM_Object::SeedLine(D2_POINT *p0, OSM_MDEF *mdf)
+{	double    un = bld->GetSession()->GetEdge();
+	double		sc = bld->GetSession()->GetEDSC();
+	D2_POINT  pp = *p0;
+	double    lg = p0->elg;
+	double    ds = 0;						// edge distance
+	D2_POINT  p1 = *(base.CyNext(p0));
+	double		dx = p1.x - pp.x;
+	double		dy = p1.y - pp.y;
+	double    dz = p1.z - pp.z;
+	//--- Seed small trees along side -------
+	while (ds < lg)
+	{	double rdn = RandomNumber(10);
+		double ech = sc * (rdn * 0.1) + sc;
+		StoreTree(&pp,mdf,ech);
+		ds += un;									// Next distance
+		double rat	= ds / lg;		// Coordinates ratio
+		pp.x	= p0->x + (rat * dx);
+		pp.y	= p0->y + (rat * dy);
+		pp.z  = p0->z + (rat * dz);
+	}
+	return;
+}
+//-----------------------------------------------------------------
 //	first step: seed a tree at each point
-//	NOTE: Each tree is a 4 triangles figure, thus 
-//				Each tree has 12 vertices
+//	TODO:  Remove part allocation from here
 //-----------------------------------------------------------------
 void OSM_Object::BuildForestTour(OSM_MDEF *mdf)
 {	minLat = minLon = 0;
 	maxLat = maxLon	= 0;
-	part		 = new C3DPart();
-	TEXT_INFO txd;
-	strncpy(txd.name,"ARBRES.TIF",FNAM_MAX);
-	txd.Dir = FOLDER_OSM_TREE;
-	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
-	part->SetTREF(ref);
 	//-----------------------------------------------------
 	for (D2_POINT *pp=base.GetFirst(); pp != 0; pp = pp->next)
-	{	StoreTree(pp, mdf);
+	{	StoreTree(pp, mdf,1);
 		if (pp->y < minLat)	minLat = pp->y;
 		if (pp->y > maxLat)	maxLat = pp->y;
 		if (pp->x < minLon) minLon = pp->x;

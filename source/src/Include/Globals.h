@@ -56,7 +56,11 @@ class OSM_Object;
 //=============================================================================================
 extern char *ReadTheFile(FILE *f, char *buf);
 extern char *directoryTAB [];
-extern char  replOBJ[];
+extern char  GetOSMTextureDirectory(U_INT type);
+extern void  InhibitOSM(char *type);
+extern char *GetOSMType(U_INT t);
+extern char  GetOSMUse(U_INT t);
+extern char  SwapOSMuse(U_INT t);
 //=============================================================================================
 //	Directory number
 //=============================================================================================

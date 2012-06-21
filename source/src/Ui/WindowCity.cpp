@@ -33,6 +33,7 @@
 #include "../Include/OSMobjects.h"
 #include "../Include/SqlMGR.h"
 #include "../Include/ScenerySet.h"
+#include "../Include/pod.h"
 #include <vector>
 using namespace std;
 //==========================================================================================
@@ -148,6 +149,10 @@ CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 	tera	= 0;
 	scny	= 1;
 	sqlp	= 0;
+	savm	= 0;
+	int sv = 0;
+	GetIniVar("OpenStreet","QuickSave",&sv);
+	savm	= sv;
 	//--- Set Initial state --------------------------
 	globals->Disp.ExecON  (PRIO_ABSOLUTE);	// Allow terrain TimeSlice
 	globals->Disp.ExecOFF (PRIO_TERRAIN);		// Nothing exe after terrain
@@ -865,6 +870,7 @@ U_INT CFuiSketch::SaveObject()
 			DrawNoticeToUser(txt,2);
 			//--- Check for any error -----------------
 			char ok = sqlp->use;
+			if (ok && savm)	continue;
 			return (ok)?(SKETCH_SAVEE):(SKETCH_SAVEF);
 		}
 	return SKETCH_SAVEF;
@@ -1095,8 +1101,6 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 			return;
 		//--- Reload button --------------------
 		case 'rlod':
-	//		vALL->SetId('fnxt');					// Becomes load
-	//		vALL->SetText("Next File");
 			return;
 		//--- Load next file -------------------
 		case 'fnxt':
@@ -1186,6 +1190,8 @@ D2_Session::D2_Session()
 {	tr			= 0;
 	trn			= 0;
 	Stamp		= 1;
+	edge		= 2;
+	edsc		= 0.1;
 	roof = new CRoofFLAT('fixe');
 	//--- Assign a default roof texture ------------------
 	char *gnm = "$base$";
@@ -1223,7 +1229,10 @@ D2_Session::~D2_Session()
 	for (U_INT k=0; k<gndQ.size(); k++)	delete gndQ[k];
 	gndQ.clear();
 	delete rtex;
-
+	//--- Clear parser queue -----------------------------
+	std::map<std::string,COBJparser*>::iterator rf;
+	for (rf = filQ.begin(); rf != filQ.end(); rf++)	delete (*rf).second;
+	filQ.clear();
 }
 //-----------------------------------------------------------------
 //	Edit counters 
@@ -1258,6 +1267,8 @@ bool	D2_Session::ReadParameters(char *dir)
 	{	SetOSMproperty("HIGHWAY","PRIMARY",  OSM_PROP_SKIP);
 		SetOSMproperty("HIGHWAY","SECONDARY",OSM_PROP_SKIP);
 	}
+	//--- Edge seed distance -----------------------------
+	edge	= FN_FEET_FROM_METER(edge);
 	return ok;
 }
 //-----------------------------------------------------------------
@@ -1279,6 +1290,7 @@ bool D2_Session::ParseTheSession(FILE *f)
 		if (ParseStreet(f,line))		continue;
 		if (ParseForest(f,line))		continue;
 		if (ParseSeed(f,line))			continue;
+		if (ParseEdge(f,line))			continue;
 		if (ParseGroups(f,line))		continue;
 		if (ParseStyles(f,line))		continue;
 		break;
@@ -1317,12 +1329,8 @@ bool D2_Session::ParseStreet(FILE *f, char *line)
  	int nf  = sscanf(line," Street use ( %63[^ ),] ) ", mod);
 	if (nf == 0)	return false;
 	//--- Create a slot for  modele ----------------
-	OSM_MDEF *mdf	= new OSM_MDEF();
-	mdf->dir			= FOLDER_OSM_TREE;
-	mdf->obj			= Dupplicate(mod,64);
-	mdf->otype		= OSM_TREE;
-	//----------------------------------------------
-	strQ.push_back(mdf);
+	OSM_MDEF *mdf	= GetParser(mod);
+	if (mdf)	strQ.push_back(mdf);
 	return true;
 }
 
@@ -1332,15 +1340,47 @@ bool D2_Session::ParseStreet(FILE *f, char *line)
 bool D2_Session::ParseForest(FILE *f, char *line)
 {	char	mod[128];
  	int nf  = sscanf(line," Forest use ( %63[^ ),] ) ", mod);
-	if (nf == 0)	return false;
+	if (nf == 0)					return false;
+	//--- Create a slot for  modele ----------------
+	OSM_MDEF *mdf	= GetParser(mod);
+	if (mdf)	treQ.push_back(mdf);
+	return true;
+}
+//-----------------------------------------------------------------
+//	Create a Parser corresponding to modele name in tree models
+//	Parsers are put in cache to accelarate forest  building
+//-----------------------------------------------------------------
+COBJparser *D2_Session::CreateParser(char *mod)
+{	//--- Check if file exist --------------------
+	char fn[PATH_MAX];
+	char *dir	= directoryTAB[FOLDER_OSM_TREE];
+	_snprintf(fn,256,"%s/%s",dir,mod);
+	//--- Create a new parser in cache -----------
+	COBJparser *fpar = new COBJparser(OSM_OBJECT);
+	fpar->SetDirectory(dir);
+  int er = fpar->Decode(mod,OSM_OBJECT);
+	if (er != M3D_LOADED) {delete fpar;	return 0;}
+	fpar->Reduce();
+	filQ[mod] = fpar;
+	return fpar;
+}
+//-----------------------------------------------------------------
+//	Get parser number corresponding to modele name in tree models
+//	Parsers are put in cache to accelarate forest  building
+//-----------------------------------------------------------------
+OSM_MDEF *D2_Session::GetParser(char *mod)
+{	COBJparser *fpar = 0;
+	std::map<std::string,COBJparser*>::iterator rf = filQ.find(mod);
+	if (rf != filQ.end())	fpar	= (*rf).second;
+	else									fpar	= CreateParser(mod);
+	if (fpar == 0)				return 0;
 	//--- Create a slot for  modele ----------------
 	OSM_MDEF *mdf	= new OSM_MDEF();
-	mdf->dir			= FOLDER_OSM_TREE;
-	mdf->obj			= Dupplicate(mod,64);
-	mdf->otype		= OSM_TREE;
-	//----------------------------------------------
-	treQ.push_back(mdf);
-	return true;
+	mdf->dir			= FOLDER_OSM_TREE;			// Directory
+	mdf->obj			= 0;										// No Modele name
+	mdf->otype		= OSM_FOREST;						// Object type
+	mdf->fpar			= fpar;									// Parser in cache
+	return mdf;
 }
 //-----------------------------------------------------------------
 //	Parse forest directive 
@@ -1352,6 +1392,19 @@ bool D2_Session::ParseSeed(FILE *f, char *line)
 	seed = FN_FEET_FROM_METER(pm);
 	return true;
 }
+//-----------------------------------------------------------------
+//	Parse edge directive 
+//-----------------------------------------------------------------
+bool D2_Session::ParseEdge(FILE *f, char *line)
+{	double pm;
+  double ech;
+	int nf  = sscanf(line," Edge seed ( %lf , %lf) ", &pm, &ech);
+	if (nf != 2)		return false;
+	edge = pm;
+	edsc = ech;
+	return true;
+}
+
 //-----------------------------------------------------------------
 //	Read a group 
 //-----------------------------------------------------------------

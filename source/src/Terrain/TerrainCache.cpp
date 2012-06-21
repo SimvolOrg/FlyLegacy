@@ -1500,7 +1500,7 @@ CSuperTile::CSuperTile()
   alpha   = 0;
   LOD     = 0;
 	obtr		= 0;
-	nobj		= 0;
+	osmp		= 0;
   nbVTX   = 0;
 	qgt			= 0;
   sta3D   = SUP3D_OUTSIDE;
@@ -1554,7 +1554,7 @@ void CSuperTile::MakeOSMPart(CShared3DTex *ref, char L, int nv, GN_VTAB *S)
 	prt->ExtendOSM(nv,S);
 	osmQ[L].PutHead(prt);
 	osmQ[L].UnLock();
-	nobj++;
+	osmp = 1;
 	return;
 }
 //-------------------------------------------------------------------------
@@ -1712,6 +1712,17 @@ bool CSuperTile::NeedHigResolution(float rd)
   return true;
 }
 //-------------------------------------------------------------------------
+//	Flush OSM objects
+//-------------------------------------------------------------------------
+void CSuperTile::FlushOSM()
+{	ClearOSM(OSM_LAYER_BLDG);
+	ClearOSM(OSM_LAYER_LITE);
+	ClearOSM(OSM_LAYER_DBLE);
+	sta3D = SUP3D_OUTSIDE;
+	osmp	= 0;
+	return;
+}
+//-------------------------------------------------------------------------
 //	Refresh 3D state of this supertile
 //-------------------------------------------------------------------------
 void CSuperTile::Refresh3D()
@@ -1731,6 +1742,7 @@ void CSuperTile::Refresh3D()
 				ClearOSM(OSM_LAYER_BLDG);
 				ClearOSM(OSM_LAYER_LITE);
 				ClearOSM(OSM_LAYER_DBLE);
+				osmp	= 0;
 				sta3D	= SUP3D_OUTSIDE;
 				return;
 			//--- Fading in view ------------------------
@@ -1890,14 +1902,8 @@ bool CSuperTile::Update()
 {	//--- Update LOD -------------------------------------------
 	if (!Visibility())		return false;
 	Refresh3D();
-	if (alpha <= 0)				return false;
-	bool OK = (woQ.NotEmpty()) || (nobj != 0);
+	bool OK = (woQ.NotEmpty()) || (osmp != 0);
 	if (!OK)							return false;
-	//--- update contrast ----------------------------
-  double d  = 1 - ((dEye  / globals->dwf3DO) * 0.5);
-  white[0]	= d;
-	white[1]	= d;
-	white[2]	= d;
 	//-- Update LOD ----------------------------------
   LOD = 0;
   if (dEye > globals->ftLD1)  LOD = 1;
@@ -1940,7 +1946,7 @@ int CSuperTile::Draw3D(U_CHAR tod)
     nbo++;
   }
 	//--- Draw the OSM object ----------------------------------
-	if (globals->noOSM)	return nbo;
+	if (globals->noOSM || (osmp == 0))	return nbo;
 	//--- Environment for buildings ----------------------------
 	glColorMaterial (GL_FRONT, GL_DIFFUSE);
 	glFrontFace(GL_CCW);
@@ -1953,9 +1959,13 @@ int CSuperTile::Draw3D(U_CHAR tod)
 	C3DPart *prt;
 	for (prt = osmQ[OSM_LAYER_BLDG].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsOSM();
 	//--- DRAW OSM FOREST LAYER ------------------------------
-	DebDrawOSMforest();
+	//DebDrawOSMforest();
+	DebDrawOSMtrees();
 	for (prt = osmQ[OSM_LAYER_DBLE].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsOSM();
-	EndDrawOSM();
+	//EndDrawOSM();
+	glDisable(GL_ALPHA_TEST);
+	glPolygonMode(GL_FRONT,GL_FILL);
+	glEnable(GL_CULL_FACE);
 	//--- DRAW OSM Light layer   -----------------------------
 	if (tod == MODEL_NIT)
 	{	DebDrawOSMlight(lightOSM, alphaOSM);
@@ -2189,7 +2199,7 @@ int C_QGT::CheckSeaSQL(int k)
 void C_QGT::TimeSlice(float dT)
 { //----------------------------------------------------------------
 	demux++;
-  char tm = (demux & 0x03);
+  char tm = (demux & 0x07);
   if (0 == tm)  {UpdateInnerCircle(); return;}    // Update textures
   if (1 == tm)  {w3D.TimeSlice(dT);   return;}    // Update 3D object
   if (2 == tm)    return;                         // do nothing (rfu)
@@ -2713,11 +2723,6 @@ CSuperTile *C_QGT::GetSuperTile(int tx,int tz)
   return &Super[No];
 }
 //-------------------------------------------------------------------------
-//  Given Key (indices of Detatil tile) return SuperTile context
-//-------------------------------------------------------------------------
-//CSuperTile *C_QGT::GetSuperTile(U_INT No)
-//{ return (No > 63)?(0):(&Super[No]); }
-//-------------------------------------------------------------------------
 //  Build or extend an OSM part with same texture reference for the same
 //				supertile
 //-------------------------------------------------------------------------
@@ -2737,14 +2742,6 @@ void C_QGT::ExtendOSMPart(char No,char dir, char *ntx, char L, int nv, GN_VTAB  
 }
 
 //-------------------------------------------------------------------------
-//  Return OSM part with same texture reference 
-//-------------------------------------------------------------------------
-void C_QGT::OsmOK(char No)
-{	CSuperTile *sup = (No > 63)?(0):(&Super[No]);
-	sup->StBat(0);
-	return;
-}
-//-------------------------------------------------------------------------
 //  Init OSM loading for the QGT 
 //-------------------------------------------------------------------------
 void C_QGT::StartOSMload(int sNo)
@@ -2752,6 +2749,18 @@ void C_QGT::StartOSMload(int sNo)
 	{	OSM_DBREQ *req = new OSM_DBREQ(this,sNo,osmDB[k]);
 		globals->scn->AddOSMrequest(req);
 	}
+	return;
+}
+//-------------------------------------------------------------------------
+//  Clear Supertile from OSM objects 
+//-------------------------------------------------------------------------
+void C_QGT::FlushOSM()
+{	if (NotReady())	return;
+	CSuperTile *sp = Super;
+  for (U_INT No = 0; No != TC_SUPERT_NBR; No++)
+  { sp->FlushOSM();
+    sp++;
+  }
 	return;
 }
 //-------------------------------------------------------------------------
@@ -3838,6 +3847,15 @@ void TCacheMGR::Teleport(SPosition *P, SVector *O)
   globals->m3d->ReleaseVOR();
   Terrain       = 0;
   return;
+}
+//-------------------------------------------------------------------------
+//  Clear OSM objects from currenrt QGT
+//-------------------------------------------------------------------------
+void TCacheMGR::FlushOSM()
+{	std::map<U_INT,C_QGT*>::iterator rp;
+	for (rp = qgtMAP.begin(); rp != qgtMAP.end(); rp ++)
+	{	(*rp).second->FlushOSM();	}
+	return;
 }
 //-------------------------------------------------------------------------
 //  Allocate texture coordinates for a given texture size

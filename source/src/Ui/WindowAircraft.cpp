@@ -100,7 +100,7 @@ int CPlaneIdent::Read (SStream *stream, Tag tag)
 //  Display a list of available aircraftt with icon and make according to the popup filter
 //  NOTE:  Due to the flag ok in the VehicleSelect.win, the button id is renamed okok
 //=========================================================================================
-CFuiSetAir::CFuiSetAir(Tag idn, const char *filename)
+CWinPlane::CWinPlane(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,0,0,0)
 { fSlot.FixeIt();
   airBOX.SetParameters(this,'crft',0,64);
@@ -120,7 +120,7 @@ CFuiSetAir::CFuiSetAir(Tag idn, const char *filename)
 //----------------------------------------------------------------------------------
 //  Destroy the window
 //----------------------------------------------------------------------------------
-CFuiSetAir::~CFuiSetAir()
+CWinPlane::~CWinPlane()
 { airBOX.EmptyIt();
 }
 
@@ -130,7 +130,7 @@ CFuiSetAir::~CFuiSetAir()
 //  1-This is the current plane
 //  2-The classification does not match
 //-------------------------------------------------------------------------------
-void CFuiSetAir::MakeSlot(char *cpln, bool alloc,char *nfo)
+void CWinPlane::MakeSlot(char *cpln, bool alloc,char *nfo)
 { if (strcmp(cpln,airInfo.GetMake()) == 0)      return;
   if (airInfo.HasNotClass(mask[selOpt]))        return;
   if (airInfo.NotComplete())                    return;
@@ -155,7 +155,7 @@ void CFuiSetAir::MakeSlot(char *cpln, bool alloc,char *nfo)
 //  The first entry is a fixed slot with current aircraft if 
 //  it matches the filter
 //-------------------------------------------------------------------------
-void  CFuiSetAir::ScanAllNFO()
+void  CWinPlane::ScanAllNFO()
 { CVehicleObject *veh = globals->pln;
   cPlane  = "";
   if (veh)
@@ -178,7 +178,7 @@ void  CFuiSetAir::ScanAllNFO()
 //-------------------------------------------------------------------------
 //  Change aircraft
 //-------------------------------------------------------------------------
-void CFuiSetAir::ChangeAircraft()
+void CWinPlane::ChangeAircraft()
 { CAirLine *slot = (CAirLine*)airBOX.GetSelectedSlot();
   char     *nfo  = slot->GetNFO();
   globals->sit->ClearUserVehicle();
@@ -197,7 +197,7 @@ void CFuiSetAir::ChangeAircraft()
 //-------------------------------------------------------------------------
 //  EVENT notifications
 //-------------------------------------------------------------------------
-void  CFuiSetAir::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
+void  CWinPlane::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 { switch (idm)  {
   case 'sysb':
     return SystemHandler(evn);
@@ -215,7 +215,7 @@ void  CFuiSetAir::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 //----------------------------------------------------------------------------------
 //  Edit popup Selection
 //----------------------------------------------------------------------------------
-void CFuiSetAir::EditSelPopup()
+void CWinPlane::EditSelPopup()
 { selPOP->CreatePage(&mSEL,AirMENU);
   SetPopTitle(0);
   return;
@@ -223,7 +223,7 @@ void CFuiSetAir::EditSelPopup()
 //----------------------------------------------------------------------------------
 //  Set Popup title and reselect all aircrafts according to filter
 //----------------------------------------------------------------------------------
-void CFuiSetAir::SetPopTitle(U_SHORT No)
+void CWinPlane::SetPopTitle(U_SHORT No)
 { selOpt  = No;
   selPOP->SetButtonText((char*)mSEL.aText[No]);
   airBOX.EmptyIt();
@@ -233,7 +233,7 @@ void CFuiSetAir::SetPopTitle(U_SHORT No)
 //--------------------------------------------------------------------------
 //  Notification from popup
 //--------------------------------------------------------------------------
-void CFuiSetAir::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
+void CWinPlane::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
 { if (evn == EVENT_POP_CLICK) SetPopTitle((U_INT)itm);
   return;
 }

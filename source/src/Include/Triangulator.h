@@ -30,6 +30,7 @@
 #include "../Include/3dMath.h"
 #include "../Include/Cameras.h"
 #include "../Include/Geomath.h"
+#include "../Include/fileparser.h"
 //==========================================================================================
 //	Triangle indices
 //	Each index gives 2 informations about the vertex in the roof model
@@ -45,6 +46,7 @@ class D2_Style;
 class CRoofModel;
 class	D2_TParam;
 class CShared3DTex;
+class COBJparser;
 //------------------------------------------------
 struct D2_BPM;
 struct SQL_DB;
@@ -986,10 +988,11 @@ class D2_Session {
 	std::multimap<U_INT,OSM_MDEF*>    repQ;		// Replacement list
   std::multimap<U_INT,OSM_MDEF*>::iterator rp;
 	//--- Forest items ----------------------------------------------
-	std::vector<OSM_MDEF*>						treQ;			// Tree list
+	std::vector<OSM_MDEF*>						treQ;			// forest Tree list
 	//--- Street items ----------------------------------------------
-	std::vector<OSM_MDEF*>						strQ;			// Tree for street		
+	std::vector<OSM_MDEF*>						strQ;			// street Tree list	
 	//---------------------------------------------------------------
+	std::map<std::string,COBJparser*> filQ;		// Parser queue
 	U_INT			fpos;														// File position
 	CBuilder *trn;														// CBuilder
 	char			buf[256];												// Read buffer
@@ -1002,6 +1005,9 @@ class D2_Session {
 	//---------------------------------------------------------------
 	D2_Group   *grp;												// Selected group
 	D2_Style   *sty;												// Selected style
+	//--- Edge seed -------------------------------------------------
+	double   edge;													// Seed space (feet)
+	double   edsc;													// Scale
 	//--- counters --------------------------------------------------
 	U_INT			cnter[OSM_LAYER_SIZE];				// Conters
 	//---METHODS ----------------------------------------------------
@@ -1014,11 +1020,12 @@ public:
 	bool	ParseTheSession(FILE *f);
 	bool	ReadParameters(char *dir);
 	bool	ParseReplace(FILE *f, char *ln);
-	bool	ParseForest(FILE *f, char *ln);
-	bool	ParseStreet(FILE *f, char *ln);
-	bool	ParseSeed(FILE *f, char *line);
-	bool	ParseGroups(FILE *f, char *ln);
-	bool  ParseStyles(FILE *f, char *ln);
+	bool	ParseForest	(FILE *f, char *ln);
+	bool	ParseStreet	(FILE *f, char *ln);
+	bool	ParseSeed		(FILE *f, char *line);
+	bool	ParseEdge		(FILE *f, char *line);
+	bool	ParseGroups	(FILE *f, char *ln);
+	bool  ParseStyles	(FILE *f, char *ln);
 	//--- return a replacing object ---------------------------------
 	bool  GetReplacement(OSM_MDEF &rpm);
 	OSM_MDEF *GetForestTree();									// Return a tree model
@@ -1034,6 +1041,8 @@ public:
 	D2_Style		*GetBaseStyle(char *sn);
 	D2_TParam   *GetRoofTexture(D2_Style *sty);
 	D2_Group    *GetGroup(char *gn);
+	OSM_MDEF    *GetParser(char *name);
+	COBJparser  *CreateParser(char *mod);
 	//---------------------------------------------------------------
 	void		FillStyles(CListBox *box);
 	void		UpdateCache();
@@ -1050,6 +1059,8 @@ public:
 	inline char		HasTrace()				{return tr;}
 	inline void		SetTRN(CBuilder *t)	{trn = t;}
 	inline double	GetSeed()					{return seed;}
+	inline double GetEdge()					{return edge;}
+	inline double GetEDSC() 				{return edsc;}
 	//---------------------------------------------------------------
 	void				IncCNT(int k)				{cnter[k]++;}
 	//---------------------------------------------------------------

@@ -89,7 +89,7 @@ FPL_MODE fplREND[] = {
 CFuiFlightLog::CFuiFlightLog(Tag idn, const char* filename)
 :CFuiWindow(idn,filename,0,0,0)
 { char *erm = "Incorrect FlightPlanLog.WIN file";
-	//--- Flight plan aprameters ------------------------
+	//--- Flight plan parameters ------------------------
   fpln	= globals->pln->GetFlightPlan();
 	fpln->Register(this);
   //----- Get components ------------------------------

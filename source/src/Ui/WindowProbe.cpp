@@ -416,12 +416,11 @@ CFuiStat::CFuiStat(Tag idn, const char *filename)
   close = 1;
   zoom  = 0;
   mini  = 0;
+	U_INT wit = MakeRGBA(255,255,255,255);
+	SetTransparentMode();
   //--------Create info canvas ------------------------------
   info  = new CFuiCanva(10,10,220,380,this);
-  info->SetId('info');
-  info->ReadFinished();
-  childList.push_back(info);
-  info->BeginPage();
+	AddChild('info',info,"",FUI_TRANSPARENT,wit);
   //--------Display subsystems ------------------------------
   CFuiWindow::ReadFinished();
   tcm = globals->tcm;

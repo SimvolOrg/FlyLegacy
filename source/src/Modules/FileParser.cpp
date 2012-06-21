@@ -1801,20 +1801,31 @@ COBJparser::COBJparser(char t)
 	vtex.push_back(T);			// Add dummy texture
 	GN_VTAB *N = new GN_VTAB;
 	vnor.push_back(N);			// Add dummy normal
+	E	= 1;
 }
 //------------------------------------------------------------------------------
 //	Free all resources
 //------------------------------------------------------------------------------
 COBJparser::~COBJparser()
+{	Free(1);
+}
+//------------------------------------------------------------------------------
+//	Free all resources
+//------------------------------------------------------------------------------
+void COBJparser::Free(char opt)
 {	for (U_INT k=0; k < vpos.size(); k++)			delete vpos[k];
 	for (U_INT k=0; k < vtex.size(); k++)			delete vtex[k];
 	for (U_INT k=0; k < vnor.size(); k++)			delete vnor[k];
-	for (U_INT k=0; k < matQ.size(); k++)			delete matQ[k];
 	vpos.clear();
 	vtex.clear();
 	vnor.clear();
+	if (0 == opt)		return;
+	//--- Free material queues -----------------------------
+	for (U_INT k=0; k < matQ.size(); k++)			delete matQ[k];
 	matQ.clear();
+	return;
 }
+
 //------------------------------------------------------------------------------
 //	Set directory 
 //------------------------------------------------------------------------------
@@ -1825,11 +1836,12 @@ void COBJparser::SetDirectory(char *dir)
 //------------------------------------------------------------------------------
 //	Set directory 
 //------------------------------------------------------------------------------
-void COBJparser::SetTransform(CVector t,double c,double s)
+void COBJparser::SetTransform(CVector t,double c,double s,double e)
 {	trfm	= 1;
 	T			= t;
 	S			= s;
 	C			= c;
+	E			= e;
 	return;
 }
 //------------------------------------------------------------------------------
@@ -2059,30 +2071,7 @@ bool COBJparser::Parse3NFaces(char *s)
 void COBJparser::BuildW3DPart()
 {	return;}
 //------------------------------------------------------------------------------
-//	Transform the vertices in actual material
-//------------------------------------------------------------------------------
-void COBJparser::TransformMat(double c,double s,SVector T)
-{	HTransformer HT(c,s,T);
-	for (U_INT k=0; k < mat->triQ.size(); k++)
-	{	OBJ_TRIANGLE *Tr = mat->triQ[k];
-		HT.ComputeRT(Tr->vtx + 0);
-		HT.ComputeRT(Tr->vtx + 1);
-		HT.ComputeRT(Tr->vtx + 2);
-	}
-	//---------------------------------------------------
-	return;
-} 
-//------------------------------------------------------------------------------
-//	Transform All the vertices in all material
-//------------------------------------------------------------------------------
-void COBJparser::TransformALL(double c, double s, SVector T)
-{	for (U_INT k=0; k<matQ.size(); k++)
-	{	mat = matQ[k];
-		TransformMat(c,s,T);
-	}
-}
-//------------------------------------------------------------------------------
-//	Build a Part forcurrent material
+//	Build a Part for current material
 //------------------------------------------------------------------------------
 C3DPart *COBJparser::BuildMATPart(char dir)
 {	U_INT ntr = mat->triQ.size();
@@ -2127,17 +2116,19 @@ C3DPart *COBJparser::BuildOSMPart(char dir)
 //------------------------------------------------------------------------------
 //	Return a strip of vertices, ignoring the texture name
 //------------------------------------------------------------------------------
-int  COBJparser::GetVerticeStrip(GN_VTAB **buf)
-{	U_INT nbt = mat->triQ.size();
+int  COBJparser::TransformVerticeStrip(GN_VTAB **buf)
+{	HTransformer HT(C,S,T,E);					// Init tranformer
+	//-------------------------------------------------------------
+	U_INT nbt = mat->triQ.size();
 	int   nbv = nbt * 3;
 	GN_VTAB *tab = new GN_VTAB[nbv];
 	GN_VTAB *dst = tab;
 	//------------------------------------------------------------
 	for (U_INT k=0; k < nbt; k++)
 	{	OBJ_TRIANGLE *Tr = mat->triQ[k];
-		*dst++ = Tr->vtx[0];
-		*dst++ = Tr->vtx[1];
-		*dst++ = Tr->vtx[2];
+		HT.ComputeRT(Tr->vtx[0],dst++);
+		HT.ComputeRT(Tr->vtx[1],dst++);
+		HT.ComputeRT(Tr->vtx[2],dst++);
 	}
 	*buf  = tab;
 	return nbv;

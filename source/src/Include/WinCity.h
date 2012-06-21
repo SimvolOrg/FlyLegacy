@@ -102,6 +102,7 @@ class CFuiSketch : public CFuiWindow
 	U_CHAR        grnd;						// Altitude option
 	U_CHAR        bldR;						// Build result
 	U_CHAR				step;						// Mode step
+	U_CHAR				savm;						// Save mode
 	//--- Dialogue button -----------------------------------------
 	Tag					  dial;
 	//--- OSM object attributs ------------------------------------

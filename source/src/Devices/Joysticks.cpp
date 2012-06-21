@@ -1246,7 +1246,7 @@ bool CJoysticksManager::ProcessButton(CSimButton *sbt)
 //-----------------------------------------------------------------------------------
 //  Save Axis in configuration file
 //-----------------------------------------------------------------------------------
-void CJoysticksManager::SaveAxisConfig(SStream *st)
+void CJoysticksManager::SaveAxisConfig(CStreamFile &sf)
 { char stag[8];
   CSimAxe *axe = 0;
   int tmp;
@@ -1256,29 +1256,28 @@ void CJoysticksManager::SaveAxisConfig(SStream *st)
 		//--- skip axe which has never been assigned --------
 		if (axe->NoDevice())				continue;
 		if (axe->NulDev())					continue;
-	 // if (0 == jdf)				continue;
     //---Write axe configuration ------------------------
-    WriteTag('jaxe',  "-- joystick axe definition --", st);
-    WriteTag('bgno', st);
+    sf.WriteTag('jaxe',  "-- joystick axe definition --");
+    sf.DebObject();
     if (axe->attn != 1)
-    { WriteTag('attn', "-- Attenuation coefficient --",st);
-      WriteFloat(&axe->attn,st);
+    { sf.WriteTag('attn', "-- Attenuation coefficient --");
+      sf.WriteFloat(&axe->attn);
     }
-    WriteTag('njoy',  " -- internal number (must precede devc) --",st);
+    sf.WriteTag('njoy',  " -- internal number (must precede devc) --");
 		tmp = (jdf)?(jdf->jNumber()):(0);
-    WriteInt(&tmp,st);
-    WriteTag('devc',  " -- input device name --------------------", st);
-    WriteString(axe->devc, st);
-    WriteTag('Anum', "-- device axe number ----------------------", st);
+    sf.WriteInt(&tmp);
+    sf.WriteTag('devc',  " -- input device name --------------------");
+    sf.WriteString(axe->devc);
+    sf.WriteTag('Anum', "-- device axe number ----------------------");
 		tmp	= axe->iAxe;
-    WriteInt(&tmp, st);
-    WriteTag('Ctrl', "-- sim control tag ------------------------", st);
+    sf.WriteInt(&tmp);
+    sf.WriteTag('Ctrl', "-- sim control tag ------------------------");
     TagToString(stag, axe->gen);
-    WriteString(stag, st);
-    WriteTag('invt', st);
+    sf.WriteString(stag);
+    sf.WriteTag('invt',"");
     tmp = axe->inv;
-    WriteInt(&tmp, st);
-    WriteTag('endo',st);
+    sf.WriteInt(&tmp);
+    sf.EndObject();
   }
   return;
 }
@@ -1286,34 +1285,34 @@ void CJoysticksManager::SaveAxisConfig(SStream *st)
 //  Save one Button in configuration file
 //	 
 //-----------------------------------------------------------------------------------
-void CJoysticksManager::SaveOneButton(SStream *st,CSimButton *sbt)
+void CJoysticksManager::SaveOneButton(CStreamFile &sf,CSimButton *sbt)
 {	char stag[8];
 	//-----Write the configuration ----------------------------
-  WriteTag('jbtn', "-- button definition --",st);
-  WriteTag('bgno', st); 
-  WriteTag('devc', "-- input device name --",st);
-  WriteString(sbt->devc, st);
-  WriteTag('Bnum',  "-- Button number --",st);
-  WriteInt(&sbt->nBut, st);
-  WriteTag('kyid', "-- KeyDef tag --",st);
+  sf.WriteTag('jbtn', "-- button definition --");
+  sf.DebObject(); 
+  sf.WriteTag('devc', "-- input device name --");
+  sf.WriteString(sbt->devc);
+  sf.WriteTag('Bnum',  "-- Button number --");
+  sf.WriteInt(&sbt->nBut);
+  sf.WriteTag('kyid', "-- KeyDef tag --");
   TagToString(stag, sbt->cmde);
-  WriteString(stag, st);
-  WriteTag('kset', "-- KeySet tag --",st);
+  sf.WriteString(stag);
+  sf.WriteTag('kset', "-- KeySet tag --");
   TagToString(stag, sbt->kset);
-  WriteString(stag,st);
-  WriteTag('endo', st);
+  sf.WriteString(stag);
+  sf.EndObject();
 	return;
 }
 //-----------------------------------------------------------------------------------
 //  Save Button in configuration file
 //	 
 //-----------------------------------------------------------------------------------
-void CJoysticksManager::SaveButtonConfig(SStream *st, JoyDEV *jsd)
+void CJoysticksManager::SaveButtonConfig(CStreamFile &sf, JoyDEV *jsd)
 { CSimButton *sbt = 0;
   for (int k=0; k!=jsd->nbt; k++)
   { sbt = jsd->GetButton(k);
     if (0 == sbt) continue;
-   SaveOneButton(st,sbt);
+    SaveOneButton(sf,sbt);
   }
   return;
 }
@@ -1323,36 +1322,34 @@ void CJoysticksManager::SaveButtonConfig(SStream *st, JoyDEV *jsd)
 void CJoysticksManager::SaveConfiguration()
 { char txt[128];
 	int tmp = 0;
-  SStream   s;
+  CStreamFile   sf;
   char     *fn = "System/FlyLegacyControls.txt";
   JoyDEV *jsd;
   std::vector<JoyDEV *>::iterator it;
 	modify		= 0;
 	txt[127]	= 0;
   //---Open a stream file -----------------------------------
-  strcpy (s.filename, fn);
-  strcpy (s.mode, "w");
-  if (!OpenStream (&s)) {WARNINGLOG("CJoystickManager : can't write %s", fn); return;}
+  sf.OpenWrite(fn); 
   //--Write file header -------------------------------------
-  WriteTag('bgno', " === Begin Joystick Definition File =====" , &s); 
+  sf.WriteTag('bgno', " === Begin Joystick Definition File ====="); 
   //-- Write global setting ---------------------------------
-	WriteTag('vHat', " -- Hat is used to change cockpit view ---",&s);
+	sf.WriteTag('vHat', " -- Hat is used to change cockpit view ---");
 	_snprintf(txt,126,"J%d, %d",jsh,uht);
-	WriteString(txt,&s);
+	sf.WriteString(txt);
   //-- Write neutral coefficient ----------------------------
-  WriteTag('neut', " -- Neutral [0-1] stick coefficient ------", &s);
-  WriteFloat(&nValue,&s);
+  sf.WriteTag('neut', " -- Neutral [0-1] stick coefficient ------");
+  sf.WriteFloat(&nValue);
   //---------------------------------------------------------
-	SaveAxisConfig(&s);
+	SaveAxisConfig(sf);
   for (it = devQ.begin(); it != devQ.end(); it++)
   { jsd = (*it);
-    SaveButtonConfig(&s,jsd);
+    SaveButtonConfig(sf,jsd);
   }
 	//---Save unassigned list ---------------------------------
-	for (U_INT k=0; k<butQ.size(); k++)	SaveOneButton(&s,butQ[k]);
+	for (U_INT k=0; k<butQ.size(); k++)	SaveOneButton(sf,butQ[k]);
   //---Close the file ---------------------------------------
-  WriteTag('endo', " === End of Joystick Definition file ===", &s);
-  CloseStream (&s);
+  sf.EndObject();
+  sf.Close();
   return;
 }
 

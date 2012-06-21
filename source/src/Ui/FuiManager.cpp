@@ -26,6 +26,8 @@
 #include "../Include/Fui.h"
 #include "../Include/FuiUser.h"
 #include "../Include/FuiParts.h"
+#include "../Include/WinAbout.h"
+#include "../Include/WinScenery.h"
 #include "../Include/FuiPlane.h"
 #include "../Include/FuiDLLs.h"
 #include "../Include/FuiProbe.h"
@@ -53,7 +55,6 @@ CFuiManager::CFuiManager(void)
 	wCap		= 0;
 	xOBJ		= 0;
 	notex		= 0;
-
 }
 //------------------------------------------------------------------------
 //    Close Fui Manager
@@ -290,7 +291,7 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
     //---AIRCRAFT LIST ------------------------------------------
     case FUI_WINDOW_VEHICLE_SELECT:
-      window  = new CFuiSetAir (windowId,"UI/TEMPLATES/VehicleSelect.WIN");
+      window  = new CWinPlane (windowId,"UI/TEMPLATES/VehicleSelect.WIN");
       break;
     //---FUEL DETAIL --------------------------------------------
     case FUI_WINDOW_VEHICLE_FUEL:
@@ -355,6 +356,11 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
     //---JOYSTICK MANAGEMENT ----------------------------------------
     case FUI_WINDOW_OPTIONS_SETUP_AXES:
       window  = new CFuiAxis (windowId,"UI/TEMPLATES/OptionsSetupAxes.WIN");
+      break;
+		//---OSM TUNING  ----------------------------------------
+    case FUI_WINDOW_OSM_TUNE:
+      window  = new CWinOSM (windowId,"UI/TEMPLATES/WinOSM.WIN");
+			window->MoveTo(10,40);
       break;
     //---AIRCRAFT CHECKLIST -----------------------------------
     case FUI_WINDOW_CHECKLIST:
@@ -461,7 +467,8 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       window  = new CFuiWindow (windowId, "Ui/TEMPLATES/ALERT.WIN");
       break;
     case FUI_WINDOW_HELP_ABOUT:
- //     window  = new CFuiWindow (windowId, "UI/TEMPLATES/HelpAbout.WIN");
+      window  = new CFuiAbout(windowId, "UI/TEMPLATES/HelpAbout.WIN");
+			window->MoveTo(350,200);
       return 0;
 
     default:

@@ -720,76 +720,66 @@ void CKeyMap::SaveCurrentConfig()
 { char codk[128];
   char stag[8];
   int i;
-  SStream s;
+  CStreamFile sf;
   std::map<Tag,CKeySet*>::const_iterator it;
   std::map<Tag,CKeyDefinition*>::const_iterator kit;
   CKeySet        * pset;
   CKeyDefinition * pkey;
-
-//  strncpy (s.filename, "System/FlyLegacyKey.txt",(PATH_MAX-1));
-	strncpy (s.filename, "System/Keymap.txt",(PATH_MAX-1));
-  strncpy (s.mode, "w",3);
-  if (OpenStream (&s))
-  {
-    //
-    // file header and version
-    //
-    WriteString("//=================================================",&s);
-    WriteString("// Please note that Keyset are ordered by name     ",&s);
-    WriteString("// Menus should come first as they intercept keys  ",&s);
-    WriteString("// that may be dispatched to lower entity such as  ",&s);
-    WriteString("// Aircraft or ground vehicles                     ",&s);
-    WriteString("//=================================================",&s);
-    WriteTag('bgno', "========== BEGIN OBJECT ==========" , &s);
-    WriteTag('vers', "---- configuration version ----", &s);
-    WriteInt(&vers, &s);
-
-    for(it = kset.begin(); it != kset.end(); it++)
-    {
-      pset = it->second;
-      WriteTag('kset', "=== KeySet Definition File ===" , &s);
-      TagToString(stag, it->first);
-      WriteString(stag, &s);
-      WriteTag('bgno', "========== BEGIN OBJECT ==========" , &s);
-      WriteTag('name', "---- key set name ----", &s);
-      WriteString(pset->GetName(), &s);
-      WriteTag('user', "---- user can modify ----", &s);
-      i = pset->GetUserModifiableState();
-      WriteInt(&i, &s);
-      WriteTag('enab', "---- enabled ----", &s);
-      i = pset->GetEnabledState();
-      WriteInt(&i, &s);
-      for(kit = pset->dkey.begin(); kit != pset->dkey.end(); kit++)
-      {
-        pkey = kit->second;
-        WriteTag('kkey', "---- key definition ----", &s);
-        WriteTag('bgno', "========== BEGIN OBJECT ==========", &s);
-        WriteTag('kyid', "---- key ID ----", &s);
+  sf.OpenWrite("System/Keymap.txt");
+  //
+  // file header and version
+  //
+  sf.WriteString("//=================================================");
+  sf.WriteString("// Please note that Keyset are ordered by name     ");
+  sf.WriteString("// Menus should come first as they intercept keys  ");
+  sf.WriteString("// that may be dispatched to lower entity such as  ");
+  sf.WriteString("// Aircraft or ground vehicles                     ");
+  sf.WriteString("//=================================================");
+  sf.DebObject();
+  sf.WriteTag('vers', "---- configuration version ----");
+  sf.WriteInt(&vers);
+  for(it = kset.begin(); it != kset.end(); it++)
+  {	pset = it->second;
+    sf.WriteTag('kset', "=== KeySet Definition File ===");
+    TagToString(stag, it->first);
+    sf.WriteString(stag);
+    sf.WriteTag('bgno', "========== BEGIN OBJECT ==========");
+    sf.WriteTag('name', "---- key set name ----");
+    sf.WriteString(pset->GetName());
+    sf.WriteTag('user', "---- user can modify ----");
+    i = pset->GetUserModifiableState();
+    sf.WriteInt(&i);
+    sf.WriteTag('enab', "---- enabled ----");
+    i = pset->GetEnabledState();
+    sf.WriteInt(&i);
+    for(kit = pset->dkey.begin(); kit != pset->dkey.end(); kit++)
+      { pkey = kit->second;
+        sf.WriteTag('kkey', "---- key definition ----");
+        sf.DebObject();
+        sf.WriteTag('kyid', "---- key ID ----");
         TagToString(stag, kit->first);
-        WriteString(stag, &s);
-        WriteTag('name', "---- key name ----", &s);
-        WriteString(pkey->GetName(), &s);
-        WriteTag('code', "---- key code & modifier ----", &s);
+        sf.WriteString(stag);
+        sf.WriteTag('name', "---- key name ----");
+        sf.WriteString(pkey->GetName());
+        sf.WriteTag('code', "---- key code & modifier ----");
 				i = pkey->GetCode();
 				formatKeyCode(codk,i,0);
-				WriteString(codk,&s);
- //       WriteInt(&i, &s);
-        WriteTag('user', "---- user definable ----", &s);
+				sf.WriteString(codk);
+        sf.WriteTag('user', "---- user definable ----");
         i = pkey->IsUserMod();
-        WriteInt(&i, &s);
-        WriteTag('enab', "---- enabled ----", &s);
+        sf.WriteInt(&i);
+        sf.WriteTag('enab', "---- enabled ----");
         i = pkey->IsEnabled();
-        WriteInt(&i, &s);
-        WriteTag('endo', "========== END OBJECT ==========" , &s);
+        sf.WriteInt(&i);
+        sf.EndObject();
       }
-      WriteTag('endo', "========== END OBJECT ==========" , &s);
+      sf.EndObject();
     }
-    //
-    // File end
-    //
-    WriteTag('endo', "========== END OBJECT ==========" , &s);
-    CloseStream(&s);
-  }
+  // File end
+  //
+  sf.EndObject();
+  sf.Close();
+	return;
 }
 //--------------------------------------------------------------------------
 //  Print all keys

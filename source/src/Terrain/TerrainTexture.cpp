@@ -315,8 +315,7 @@ bool CShared3DTex::BindTexture()
 			//--- Assign a texture object for texture --
 			case SHX_INIT:
 			  xob = globals->txw->Get3DObject(this);
-				if (0 == xob) 
-					{State = SHX_NULL; return false;}
+				if (0 == xob) 	{State = SHX_NULL; return false;}
 				x3d.xOBJ = xob;
 				State = SHX_ISOK;
 			//--- Bind the texture object --------------
@@ -472,7 +471,7 @@ int CArtParser::ConvertRGBA(U_CHAR alf)
 //--------------------------------------------------------------------
 int CArtParser::PixlRGBA(U_CHAR alf)
 { // rgb has to be freed before any new allocation
-  FreeFFF (FIF_TARGA); 
+  if (rgb) delete [] rgb; 
   rgb = new U_INT[dim];
   U_INT *dst = rgb;
 	U_INT  afa = (alf)?(0):(0xFF000000);
@@ -486,13 +485,14 @@ int CArtParser::PixlRGBA(U_CHAR alf)
 //  Pixel RGBA for TIF Only 
 //--------------------------------------------------------------------
 int CArtParser::RgbaTIFF(U_CHAR alf)
-	{ // rgb has to be freed before any new allocation
-  FreeFFF (FIF_BMP); 
+{ // rgb has to be freed before any new allocation
+  if (rgb) delete [] rgb; 
   rgb = new U_INT[dim];
 	U_INT *dst = rgb;
   for (U_INT z=0; z<htr; z++)
   { U_INT *src = (U_INT*)FreeImage_GetScanLine(ref,z);
-    for (U_INT x=0; x<wid; x++)   *dst++ = *src++;
+    for (U_INT x=0; x<wid; x++)
+			{ *dst++ = *src++;	}
   }
   return 1;
 }
@@ -502,7 +502,7 @@ int CArtParser::RgbaTIFF(U_CHAR alf)
 int CArtParser::ByteTIFF(U_CHAR alf)
 { // rgb has to be freed before any new allocation
   if (bpp != 24)  return RgbaTIFF(alf);
-  FreeFFF (FIF_BMP); 
+  if (rgb) delete [] rgb; 
   //----------------------------------------
   U_INT *buf = new U_INT[dim];
   U_INT *dst = buf;
@@ -529,8 +529,8 @@ int CArtParser::ByteTIFF(U_CHAR alf)
 //--------------------------------------------------------------------
 int CArtParser::PixlBGRO(U_CHAR alf)
 { // rgb has to be freed before any new allocation
-  if (bpp != 24)  gtfo("Unsupported format");
-  FreeFFF (FIF_BMP); 
+  if (bpp != 24)  return Pixl4BMP(alf);	//gtfo("Unsupported format");
+  if (rgb) delete [] rgb; 
   //----------------------------------------
   U_INT *buf = new U_INT[dim];
   U_INT *dst = buf;
@@ -551,6 +551,36 @@ int CArtParser::PixlBGRO(U_CHAR alf)
   }
   return 1;
 }
+//--------------------------------------------------------------------
+//  Pixel RGBA Transfert ()
+//	The pic is also line inverted
+//--------------------------------------------------------------------
+int CArtParser::Pixl4BMP(U_CHAR alf)
+{ // rgb has to be freed before any new allocation
+  if (bpp != 32)  gtfo("Unsupported format");
+  if (rgb) delete [] rgb; 
+  //----------------------------------------
+  U_INT *buf = new U_INT[dim];
+  U_INT *dst = buf;
+  rgb        = buf;
+  U_INT af1 = (U_INT)(0xFF000000);
+	U_INT	af2	=	(alf << 24);
+  for (U_INT z=(htr-1); z>0; z--)
+  { BYTE *src = FreeImage_GetScanLine(ref,z);
+    for (U_INT x=0; x<wid; x++)
+    { char  B   = *src++;
+      char  G   = *src++;
+      char  R   = *src++;
+			char  A   = *src++;
+      U_INT pix = MakeRGBA(R,G,B,A);
+      if (pix ) pix |= af1;
+			else			pix |= af2;
+      *dst++ = pix;
+    }
+  }
+  return 1;
+}
+
 //--------------------------------------------------------------------
 //  Byte Transfert
 //	Memory format:  RGB
@@ -1609,11 +1639,11 @@ void CTextureWard::GetAnyTexture(TEXT_INFO *inf)
 {	CArtParser img(TC_HIGHTR);
   img.GetAnyTexture(*inf);
 }
-//-----------------------------------------------------------------------------
+//=============================================================================
 //	Insert Texture texture reference
 //	NOTE: Even if the real texture cant be read, the reference is kept to avoid
 //				to check everywhere else if it exists.
-//-----------------------------------------------------------------------------
+//=============================================================================
 CShared3DTex *CTextureWard::AddSHX(CShared3DTex *shx ,char type)
 {	TEXT_INFO *inf = shx->GetDescription();
 	char			*dot;
@@ -1703,7 +1733,6 @@ CShared3DTex *CTextureWard::RefTo3DTexture(TEXT_INFO &txd)
   if (itx != t3dMAP.end())
   { shx = (*itx).second;
     shx->IncUser();
-		//TRACE("AFTER REFERENCE %d to %s",shx->GetUser(),shx->GetPath());
   }
   pthread_mutex_unlock (&t3dMux);
 	if (shx)	shx->GetDimension(txd);
@@ -1786,7 +1815,7 @@ void CTextureWard::Free3DTexture(void *sht)
   return;
 }
 //-----------------------------------------------------------------------------
-//  Assign a texture object with mipmap level depending on resolution
+//  Assign a texture object with no mipmap level 
 //-----------------------------------------------------------------------------
 GLuint CTextureWard::GetTexOBJ(GLuint obj,int x,int y,GLubyte *tex,U_INT type)
 { if (0 == obj) glGenTextures(1,&obj);

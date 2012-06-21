@@ -5155,11 +5155,15 @@ ECursorResult CBKKFC150Gauge::MouseMoved (int x, int y)
 //===========================================================================
 CBKAudioKMA26Gauge::CBKAudioKMA26Gauge (CPanel *mp)
 : CBitmapGauge(mp)
-{
-  radi = 0;
+{ radi = 0;
   mesg.id     = MSG_GETDATA;
   mesg.group  = 'mark';
 }
+//-----------------------------------------------------------------
+//  Destroye
+//-----------------------------------------------------------------
+CBKAudioKMA26Gauge::~CBKAudioKMA26Gauge()
+{}
 //-----------------------------------------------------------------
 //  read all parameters
 //-----------------------------------------------------------------

@@ -697,11 +697,15 @@ public:
   void    AddSlot(CSlot *slot);
   void    Apply(SlotCB fn);
   void    SetParameters(CFuiWindow *win,Tag idn,U_INT tp,short lh = 0);
+	void		SetProperties(U_INT p,U_INT col);
   void    Reset();
   bool    VScrollHandler(U_INT pm,EFuiEvents evn);
   CSlot  *Search(void *key);
   void    Resize();
-  //----New External interface -----------------------------------
+	//--- Change properties ----------------------------------------
+	void	  SetTransparentMode();		
+	void    SetTextColor(U_INT col)	{if (wList) wList->SetColour(col);}
+	//---new External interface -----------------------------------
   void    MoveUpItem();
   void    MoveDwItem();
   void    DeleteItem();

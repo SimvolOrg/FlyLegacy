@@ -283,12 +283,6 @@ public:
 //========================================================================
 float RandNoise(int x);
 float RandNoise(int x, int y);
-//========================================================================
-//  Edit latitude   LAT 99° 99' 99.99'' N for example
-//       longitude  Lon 99° 99' 99.99'' W
-//========================================================================
-void EditLat2DMS(float lat, char *edt);
-void EditLon2DMS(float lon, char *edt);
 //========================================================================================
 //  Homographic projection
 //  Given 

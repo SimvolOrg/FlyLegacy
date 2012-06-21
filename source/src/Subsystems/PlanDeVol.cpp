@@ -1263,37 +1263,36 @@ void CWPoint::UpdateRange(CVehicleObject *veh)
 //------------------------------------------------------------
 //  Save this waypoint
 //------------------------------------------------------------
-void CWPoint::Save(SStream *s)
+void CWPoint::Save(CStreamFile &sf)
 { char mrk[2] = {' ',0};
   char txt[256];
   if (IsVisited()) mrk[0] = 'X';
-  WriteTag('wpnt', "--------- Waypoint ---------------", s);
+  sf.WriteTag('wpnt', "--------- Waypoint ---------------");
   TagToString(txt,type);
-  WriteString(txt,s);
-  WriteTag('bgno', "========== BEGIN OBJECT ==========", s);
-  WriteTag('name', "---------- Waypoint name -----", s);
-  WriteString(Name,s);
-	WriteTag('iden', "-----------Waypoint identity--", s);
-	WriteString(Iden,s);
-  WriteTag('llps', "---------Lat/lon,alt position ", s);
-  WritePosition(GetDBobject()->ObjPosition(),s);
-  WriteTag('dbky', "---------Database key --------", s);
-  WriteString(dbKey,s);
+  sf.WriteString(txt);
+  sf.DebObject();
+  sf.WriteTag('name', "---------- Waypoint name -----");
+  sf.WriteString(Name);
+	sf.WriteTag('iden', "-----------Waypoint identity--");
+	sf.WriteString(Iden);
+  sf.WriteTag('llps', "---------Lat/lon,alt position ");
+  sf.WritePosition(GetDBobject()->ObjPosition());
+  sf.WriteTag('dbky', "---------Database key --------");
+  sf.WriteString(dbKey);
 	TagToString(txt,user);
-  WriteTag('user', "---------Waypoint usage-------", s);
-  WriteString(txt,s);
-  WriteTag('altd', "---Altitude (feet) at WPT-----", s);
-  WriteInt(&altitude,s);
-	WriteTag('tkof', "---Take off runway -----------", s);
-	WriteString(tkoRWY,s);
-	WriteTag('land', "---Landing runway ------------", s);
-	WriteString(lndRWY,s);
+  sf.WriteTag('user', "---------Waypoint usage-------");
+  sf.WriteString(txt);
+  sf.WriteTag('altd', "---Altitude (feet) at WPT-----");
+  sf.WriteInt(&altitude);
+	sf.WriteTag('tkof', "---Take off runway -----------");
+	sf.WriteString(tkoRWY);
+	sf.WriteTag('land', "---Landing runway ------------");
+	sf.WriteString(lndRWY);
 	if (ilsF != 0) 
-	{	WriteTag('ILS_', "---ILS FREQUENCY -------------", s);
-		WriteFloat(&ilsF,s);
+	{	sf.WriteTag('ILS_', "---ILS FREQUENCY -------------");
+		sf.WriteFloat(&ilsF);
 	}
-  WriteTag('endo', "========== END OBJECT ============", s);
-
+  sf.EndObject();
   return;
 }
 //----------------------------------------------------------------------
@@ -2218,28 +2217,26 @@ void CFPlan::Save()
   _snprintf(renm,(PATH_MAX-1),"FLIGHTPLAN/%s.BAK",Name);
   if (0 != Version) RenameFile(name,renm);
   Version++;
-  SStream s;
-  strncpy (s.filename,name, (PATH_MAX-1));
-  strncpy (s.mode, "w",3);
-  if (!OpenStream (&s))     return;
-  WriteTag('bgno', "========== BEGIN OBJECT ==========", &s);
-	WriteTag('form', "---- Format Type -----------------", &s);
+  CStreamFile sf;
+  sf.OpenWrite(name);
+  sf.DebObject();
+	sf.WriteTag('form', "---- Format Type -----------------");
 	_snprintf(txt,d,"wpno=%02d, format=FM01",genWNO);
-	WriteString(txt, &s);
-  WriteTag('desc', "========== Description ===========", &s);
-  WriteString(Desc, &s);
-  WriteTag('vers', "---------- version number --------", &s);
-  WriteInt((int*)(&Version), &s);
-	WriteTag('ceil', "-----------Average ceil ----------", &s);
-	WriteInt(&cALT,&s);
+	sf.WriteString(txt);
+  sf.WriteTag('desc', "========== Description ===========");
+  sf.WriteString(Desc);
+  sf.WriteTag('vers', "---------- version number --------");
+  sf.WriteInt((int*)(&Version));
+	sf.WriteTag('ceil', "-----------Average ceil ----------");
+	sf.WriteInt(&cALT);
   //---Save individual Waypoint ------------------------
 	for (U_INT k=1; k < wPoints.GetSize(); k++) 
 	{	CWPoint *wpt = (CWPoint*)wPoints.GetSlot(k);
-		wpt->Save(&s); 
+		wpt->Save(sf); 
 	}
 	//---------------------------------------------------
-  WriteTag('endo', "========== END OBJECT ============", &s);
-  CloseStream(&s);
+  sf.EndObject();
+  sf.Close();
 	modify	= 0;
   //---Make it appear in next FP Manager window------
   return;

@@ -363,7 +363,7 @@ public:
 	void		FillWPT(CmHead *obj);
 	void		Unassign();
 	//-------------------------------------------------------------
-	void		Save(SStream *s);
+	void		Save(CStreamFile &sf);
 	//-------------------------------------------------------------
 	void		SetTkoRwy(char *r);
 	void		SetLndRwy(char *r);

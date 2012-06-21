@@ -600,39 +600,6 @@ void HVector::Extract(CVector &v)
 	v.z	= z / w;
 	return;
 }
-//==========================================================================
-//  Edit Latitude in deg min sec
-//==========================================================================
-void EditLat2DMS(float lat, char *edt)
-{ const char *pole  = (lat < 0)?("S"):("N");
-  long  val   = (lat < 0)?(long(-lat * 100)):(long(lat *100));
-  long  deg   =  0;
-  long  min   =  0;
-  deg   = (val / 360000);
-  val   = (val % 360000);
-  min   = (val / 6000);
-  val   = (val % 6000);
-  sprintf_s(edt,31,"Lat: %s %3u %2u' %2.2f\"",pole,int(deg),int(min),(float(val) / 100));
-	edt[31] = 0;
-  return;
-}
-//==========================================================================
-//  Edit Longitude in deg min sec
-//==========================================================================
-void EditLon2DMS(float lon, char *edt)
-{ if (lon > (180 * 3600)) lon -= (360 * 3600);
-  const char *meri  = (lon < 0)?("W"):("E");
-  long  val   = (lon < 0)?(long(-lon * 100)):(long(lon * 100));
-  long  deg   =  0;
-  long  min   =  0;
-  deg   = (val / 360000);
-  val   = (val % 360000);
-  min   = (val / 6000);
-  val   = (val % 6000);
-  sprintf_s(edt,31,"Lon: %s %3u %2u' %3.2f\"",meri,int(deg),int(min),(float(val) / 100));
-	edt[31] = 0;
-  return;
-}
 //================================================================================
 // Quaternion
 //================================================================================

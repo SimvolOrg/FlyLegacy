@@ -520,8 +520,8 @@ public:
   void  MergeLoUser(RWY_EPF *lop);
   int   GetModel(U_INT mod,U_INT msk);
   //-----------------------------------------------------------
-  void  WriteProfile(CRunway *rwy,SStream *s);
-  void  WriteValues (U_CHAR *prof,SStream *s);
+  void  WriteProfile(CRunway *rwy,CStreamFile &sf);
+  void  WriteValues (U_CHAR *prof,CStreamFile &sf);
   //-----------------------------------------------------------
   void  SetLight(U_CHAR *ls,U_CHAR *lpf);
   //-------------------------------------------------------------
@@ -685,6 +685,20 @@ private:
   std::map<Tag, CExternalLight*> nLit;					// Nav lights
 	std::map<Tag, CExternalLight*> sLit;					// Spot lights
 };
+//=======================================================================================
+//  CLASS CRLPparser to decode Runway Light Profile
+//=======================================================================================
+class CRLParser: public CStreamObject {
+    //--- ATTRIBUTES --------------------------------------------
+    CAirportMgr *apm;
+    RWY_EPF prof;                               // Runway profile
+    //-----------------------------------------------------------
+public:
+    CRLParser(CAirportMgr *ap,char *fn);
+    void  Decode(char *fn);
+    int   Read(SStream *st,Tag tag);
+    void  ReadFinished();
+  };
 
 //============================END OF FILE =================================================
 #endif  LIGHTSYSTEM_H

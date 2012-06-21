@@ -1434,10 +1434,10 @@ void CBitmap::operator delete(void *obj)
 }
 //=================================================================================
 CBitmap::~CBitmap()
-{ if (m_bm.type == TYPE_NULL) return;
-  CBaseBitmap *bm = (CBaseBitmap*)m_bm.bitmap;
+{ CBaseBitmap *bm = (CBaseBitmap*)m_bm.bitmap;
+	m_bm.bitmap = 0;
+	if (m_bm.type == TYPE_NULL) return;
   if (bm) delete bm;
-  m_bm.bitmap = 0;
 }
 //=================================================================================
 //  Change type to allow the NULL bitmap deletion

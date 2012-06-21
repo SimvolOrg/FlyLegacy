@@ -309,6 +309,11 @@ CCamera::CCamera (void)
   Up.x  = 0;
   Up.y  = 0;
   Up.z  = 1.0f;
+	//----Default target -----------------------------
+  tgtPos.lon = 0;
+  tgtPos.lat = 0;
+  tgtPos.alt = 0;
+	//--------------------------------------------------
   rmin  = globals->camRange;
   rmax  = 5000;
   dmin  = globals->nearP + 10;
@@ -2090,14 +2095,6 @@ CCameraRunway::CCameraRunway (void)
   orient.x = DegToRad (90.0);
   orient.y = 0;
   orient.z = 0;
-  //------------------------------------------------
-  offset.x = 0;
-  offset.y = 0;
-  offset.z = 0;
-  //----Default target -----------------------------
-  Tgt.lon = 0;
-  Tgt.lat = 0;
-  Tgt.alt = 0;
   //----UP is toward north direction ---------------
   Up.x  = 0;
   Up.y  = 1;
@@ -2121,9 +2118,7 @@ void CCameraRunway::UpdateCamera (SPosition wpos, SVector tgtOrient,float Dt)
 double CCameraRunway::SetOrigin(SPosition *org)
 { double magl = 3.2;				// 3.2 miles above ground
 	//----------------------------------------------
-	Tgt.lon = org->lon;
-  Tgt.lat = org->lat;
-  Tgt.alt = org->alt;
+	tgtPos = *org;
   //---Compute zoom range ------------------------
   rmin      = org->alt + 100;
   rmax      = org->alt + NmToFeet (10.0f);
@@ -2181,10 +2176,10 @@ void CCameraRunway::Zoom(int zf)
 void CCameraRunway::MoveBy(float dx,float dy)
 { double mx = (20 * dx) * (offset.z / FN_FEET_FROM_MILE(4));
   double my = (20 * dy) * (offset.z / FN_FEET_FROM_MILE(4));;
-  Tgt.lon  -= FN_ARCS_FROM_FEET(mx);
-  Tgt.lat  += FN_ARCS_FROM_FEET(my);
-  GroundSpot spot(Tgt.lon,Tgt.lat);
-  Tgt.alt   = globals->tcm->GetGroundAt(spot);
+  tgtPos.lon  -= FN_ARCS_FROM_FEET(mx);
+  tgtPos.lat  += FN_ARCS_FROM_FEET(my);
+  GroundSpot spot(tgtPos.lon,tgtPos.lat);
+  tgtPos.alt   = globals->tcm->GetGroundAt(spot);
   return;
 }
 //==============================================================================
@@ -2205,14 +2200,6 @@ CCameraObject::CCameraObject (void)
   // Initialize orientation to point arround
   theta = DegToRad (30.0f);
   phi   = DegToRad (15.0f);
-  //------------------------------------------------
-  offset.x = 0;
-  offset.y = 0;
-  offset.z = 0;
-  //------------------------------------------------
-  Tgt.lon = 0;
-  Tgt.lat = 0;
-  Tgt.alt = 0;
   //----FOV is 40°----------------------------------
   fov = 40.0f;
   //------------------------------------------------

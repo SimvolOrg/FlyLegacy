@@ -279,7 +279,7 @@ class CBKAP140Gauge : public CRadioGauge {
   //----------------------------------------------------------------
 public:
   CBKAP140Gauge (CPanel *mp);
-
+ ~CBKAP140Gauge();
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished();

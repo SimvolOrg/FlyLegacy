@@ -1435,6 +1435,12 @@ CBKAP140Gauge::CBKAP140Gauge (CPanel *mp)
   rFont = (CVariFontBMP*)globals->fonts.ftradi9.font;
 }
 //------------------------------------------------------------------
+//  Frre object
+//------------------------------------------------------------------
+CBKAP140Gauge::~CBKAP140Gauge()
+{	int a = 0;
+}
+//------------------------------------------------------------------
 //  Copy from similar gauge
 //------------------------------------------------------------------
 void CBKAP140Gauge::CopyFrom(SStream *stream)

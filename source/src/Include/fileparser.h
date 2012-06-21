@@ -20,8 +20,12 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
+#ifndef FILEPARSER_H
+#define FILEPARSER_H
+
 #include "../Include/FlyLegacy.h"
 #include "../Include/Model3d.h"
+#include "../Include/LightSystem.h"
 //======================================================================================
 class CAirportMgr;
 class C3Dmodel;
@@ -300,20 +304,6 @@ public:
   inline void Trace()     {trace = 1;}
 };
 //=======================================================================================
-//  CLASS CRLPparser to decode Runway Light Profile
-//=======================================================================================
-class CRLParser: public CStreamObject {
-    //--- ATTRIBUTES --------------------------------------------
-    CAirportMgr *apm;
-    RWY_EPF prof;                               // Runway profile
-    //-----------------------------------------------------------
-public:
-    CRLParser(CAirportMgr *ap,char *fn);
-    void  Decode(char *fn);
-    int   Read(SStream *st,Tag tag);
-    void  ReadFinished();
-  };
-//=======================================================================================
 //  CLASS CMETARparser to decode metar bulletins
 //=======================================================================================
 class METARparser {
@@ -469,6 +459,7 @@ class COBJparser: public CParser {
 	CVector   T;							// Translation vector
 	double    S;							// Sinus
 	double    C;							// Cosinus
+	double    E;							// Scale
 	//---- List of space vertices -----------------------------
 	std::vector<GN_VTAB *>			vpos;	
 	std::vector<GN_VTAB *>			vtex;
@@ -478,9 +469,10 @@ class COBJparser: public CParser {
 public:
 	COBJparser(char t);
  ~COBJparser();
+	void	Free(char opt);
 	//---------------------------------------------------------
 	void	SetDirectory(char *d);
-	void	SetTransform(CVector T,double C,double S);
+	void	SetTransform(CVector T,double C,double S, double e=1);
 	//---------------------------------------------------------
 	OBJ_MATERIAL *GetMaterial(char *mn);
 	void		 ExtendParts(C3DPart *P);
@@ -488,9 +480,9 @@ public:
 	void	   BuildW3DPart();
 	C3DPart *BuildOSMPart(char dir);
 	C3DPart *BuildMATPart(char dir);
-	void		 TransformMat(double c,double s,SVector T);
-	void		 TransformALL(double c,double s,SVector T);
-	int			 GetVerticeStrip(GN_VTAB **dst);
+	int			 TransformVerticeStrip(GN_VTAB **dst);
+	//--- Free all except material queues ---------------------
+	void		 Reduce()  {Free(0);	}
 	//---------------------------------------------------------
 	int		Decode(char *fn, char t);
 	bool	ParseLibrary(char *s);
@@ -509,3 +501,4 @@ public:
 	char *TextureName()	{return txd.name;}
 };
 //=======END OF FILE ============================================================================
+#endif FILEPARSER_H

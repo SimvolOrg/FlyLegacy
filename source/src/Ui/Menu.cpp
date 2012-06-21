@@ -69,23 +69,17 @@ static puMenuBar *menu = 0;
 //  Toggle a window
 //-----------------------------------------------------------------
 void toggle_window (Tag id, const char* winFilename)
-{ 
-  if (globals->fui->IsWindowCreated (id)) {
-    // Destroy
-    globals->fui->DestroyFuiWindow (id);
-
-  } else {
-    // Create
-    globals->fui->CreateFuiWindow (id);
-  }
+{ if (globals->fui->IsWindowCreated(id)) globals->fui->DestroyFuiWindow (id);
+	else																	 globals->fui->CreateFuiWindow (id);
 }
 //=========================================================================================
 // File Menu
 //=========================================================================================
 //  Load Situation
 //--------------------------------------------------------------------------
-void file_load_situation_cb (puObject* obj)
-{ globals->fui->CreateOneWindow(FUI_WINDOW_SITUATION_LOAD,0);
+void file_save_situation_cb (puObject* obj)
+{ CSituation *sit = globals->sit;
+	if (sit)	sit->WriteFile();
 }
 //--------------------------------------------------------------------------
 //  File manage DLL
@@ -106,7 +100,7 @@ char *file_legends[] =
   "--------------------",
   "Manage DLLs...",
   "--------------------",
-  "Load Situation...",
+  "Save Situation...",
   NULL
 };
 
@@ -116,7 +110,7 @@ puCallback file_cb[] =
   NULL,
   file_manage_dll_cb,             // file_manage_dll_cb,
   NULL,
-  NULL,                           //file_load_situation_cb,
+  file_save_situation_cb,
   NULL
 };
 //==============================================================================
@@ -147,6 +141,12 @@ void options_keys_buttons_cb (puObject* obj)
 void options_setup_axes_cb (puObject* obj)
 { globals->kbd->Stroke('menu','axes');  }
 //------------------------------------------------------------------
+// OSM tuning
+//------------------------------------------------------------------
+void options_osm_tune_cb (puObject* obj)
+{ globals->fui->ToggleFuiWindow(FUI_WINDOW_OSM_TUNE); }
+
+//------------------------------------------------------------------
 // Start up
 //------------------------------------------------------------------
 void options_startup_cb (puObject* obj)
@@ -161,8 +161,8 @@ char *options_legends[] =
 {
   /*"Scenery...",*/
   /*"--------------------",*/
-  /*"Startup...",*/
-  /*"--------------------",*/
+  "OSM tuning",
+  "--------------------",
   "Define Axes Parameters",
   "Keys & Buttons...",
   /*"--------------------",*/
@@ -176,8 +176,8 @@ puCallback options_cb[] =
 {
   /*NULL,*/                     //options_scenery_cb,
   /*NULL,*/
-  /*options_startup_cb,*/       // options_startup_cb,
-  /*NULL,*/
+  options_osm_tune_cb,					// options_startup_cb,
+  NULL,
   options_setup_axes_cb,
   options_keys_buttons_cb,
   /*NULL,*/
@@ -963,49 +963,45 @@ void debug_dump_electrical_cb (puObject* obj)
 
 void debug_stream_test_cb (puObject* obj)
 {
-  SStream* s = new SStream;
-  strncpy (s->filename, "teststream.txt",(PATH_MAX-1));
-  strncpy (s->mode, "w",3);
-  OpenStream (s);
-
-  WriteComment ("Comment...testing testing testing", s);
-  WriteComment ("", s);
-  WriteTag ('bgno', "---- object ----", s);
-  WriteTag ('bgno', "---- nested Object ----", s);
-  WriteTag ('int_', "---- int ----", s);
+  CStreamFile sf;
+  sf.OpenWrite("teststream.txt");
+  sf.WriteComment ("Comment...testing testing testing");
+  sf.WriteComment ("");
+  sf.DebObject();
+  sf.DebObject();
+  sf.WriteTag ('int_', "---- int ----");
   int i = 500;
-  WriteInt (&i, s);
-  WriteTag ('uint', "---- unsigned int ----", s);
+  sf.WriteInt (&i);
+  sf.WriteTag ('uint', "---- unsigned int ----");
   unsigned int ui = 12345678;
-  WriteUInt (&ui, s);
+  sf.WriteUInt (&ui);
   float f = 12345.67f;
-  WriteTag ('flot', "---- float ----", s);
-  WriteFloat (&f, s);
+  sf.WriteTag ('flot', "---- float ----");
+  sf.WriteFloat (&f);
   double d = 987654.3210;
-  WriteTag ('dubl', "---- double ----", s);
-  WriteDouble (&d, s);
-  WriteTag ('stng', "---- string ----", s);
-  WriteString ("This a string", s);
+  sf.WriteTag ('dubl', "---- double ----");
+  sf.WriteDouble (&d);
+  sf.WriteTag ('stng', "---- string ----");
+  sf.WriteString ("This a string");
   SVector v;
   v.x = 1.0;
   v.y = 2.0;
   v.z = 3.0;
-  WriteTag ('vect', "--- vector ----", s);
-  WriteVector (&v, s);
+  sf.WriteTag ('vect', "--- vector ----");
+  sf.WriteVector (&v);
   SPosition pos;
   pos.lat = 1000.0;
   pos.lon = 2000.0;
   pos.alt = 3000.0;
-  WriteTag ('posn', "---- position ----", s);
-  WritePosition (&pos, s);
+  sf.WriteTag ('posn', "---- position ----");
+  sf.WritePosition (&pos);
   SMessage mesg;
-  WriteTag ('mesg', "---- message ----", s);
-  WriteMessage (&mesg, s);
-  WriteTag ('endo', s);
-  WriteTag ('endo', s);
+  sf.WriteTag ('mesg', "---- message ----");
+  sf.WriteMessage (&mesg);
+  sf.EndObject();
+  sf.EndObject();
 
-  CloseStream (s);
-  delete s;
+  sf.Close();
 }
 
 //=============================================================================
@@ -1191,7 +1187,7 @@ char *help_legends[] =
 
 puCallback help_cb[] =
 {
-  NULL,                 // helpAbout_cb,
+  helpAbout_cb,                 // helpAbout_cb,
   NULL
 };
 

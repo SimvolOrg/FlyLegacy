@@ -1008,48 +1008,48 @@ int CRLP::GetModel(U_INT mod,U_INT msk)
 //  Write the runway profile
 //  TODO: Write only what differs from default
 //--------------------------------------------------------------------------------
-void CRLP::WriteProfile(CRunway *rwy,SStream *s)
+void CRLP::WriteProfile(CRunway *rwy,CStreamFile &sf)
 { if (0 == modify)  return;
   char txt[256];
-  WriteTag('rwId', " === Runway End Profile definition ===", s);
+  sf.WriteTag('rwId', " === Runway End Profile definition ===");
   _snprintf (txt,256,"%s        // Hi end",rwy->GetHiEnd());
-  WriteString(txt,s);
-  WriteValues(HiPF,s);
-  WriteTag('rwId', " === Runway End Profile definition ===", s);
+  sf.WriteString(txt);
+  WriteValues(HiPF,sf);
+  sf.WriteTag('rwId', " === Runway End Profile definition ===");
   _snprintf (txt,256,"%s        // Lo end",rwy->GetLoEnd());
-  WriteString(txt,s);
-  WriteValues(LoPF,s);
+  sf.WriteString(txt);
+  WriteValues(LoPF,sf);
   modify = 0;
   return;
 }
 //------------------------------------------------------------------------------------
 //  Write profile parameters
 //------------------------------------------------------------------------------------
-void CRLP::WriteValues(U_CHAR *prof,SStream *s)
+void CRLP::WriteValues(U_CHAR *prof,CStreamFile &sf)
 { U_CHAR mod;
   U_CHAR msk = prof[TC_PROF_MSK];
-  WriteTag('bgno', " ====== Begin Object ====",s);
-  WriteTag('aprL', "     // Approach lights system",s);
+  sf.DebObject();
+  sf.WriteTag('aprL', "     // Approach lights system");
   mod = prof[TC_PROF_APR];
-  WriteString(aprsTAG[mod],s);
-  WriteTag('Tbar', "     // Threshold lights",s);
+  sf.WriteString(aprsTAG[mod]);
+  sf.WriteTag('Tbar', "     // Threshold lights");
   mod = prof[TC_PROF_TBR];
-  WriteString(tbarTAG[mod],s);
-  WriteTag('Wbar', "     // Wing bar lights",s);
+  sf.WriteString(tbarTAG[mod]);
+  sf.WriteTag('Wbar', "     // Wing bar lights");
   mod = prof[TC_PROF_WBR];
-  WriteString(yenoTAG[mod],s);
-  WriteTag('tdzL', "     // Touch Down zone",s);
+  sf.WriteString(yenoTAG[mod]);
+  sf.WriteTag('tdzL', "     // Touch Down zone");
   mod = prof[TC_PROF_TDZ];
-  WriteString(yenoTAG[mod],s);
-  WriteTag('ctrL', "     // Center lights",s);
+  sf.WriteString(yenoTAG[mod]);
+  sf.WriteTag('ctrL', "     // Center lights");
   mod = GetModel(moCT,msk);
-  WriteString(instTAG[mod],s);
-  WriteTag('edgL', "     // Edge Lights",s);
+  sf.WriteString(instTAG[mod]);
+  sf.WriteTag('edgL', "     // Edge Lights");
   mod = GetModel(moED,msk);
-  WriteString(instTAG[mod],s);
+  sf.WriteString(instTAG[mod]);
   mod = prof[TC_PROF_PAP];
-  WriteString(papiTAG[mod],s);
-  WriteTag('endo', " === End Object ======================", s);
+  sf.WriteString(papiTAG[mod]);
+  sf.EndObject();
   return;
 }
 

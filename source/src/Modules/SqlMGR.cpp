@@ -24,6 +24,7 @@
 //  This interface the simulator DATABASE
 //==================================================================================
 #include "../Include/FlyLegacy.h"
+#include "../Include/Globals.h"
 #include "../Include/Endian.h"
 #include "../Include/Utility.h"
 #include "../Include/SqlMGR.h"
@@ -648,12 +649,15 @@ int SqlOBJ::LoadOSM(OSM_DBREQ *rdq)
 	_snprintf(req,1024,msk,qgt->FullKey(),sno, rdq->ident);
 	sqlite3_stmt * stm = CompileREQ(req,*db);
 	C3DPart *part = 0;			// Current part
+	U_INT		 typ  = 0;			// Object type
 	U_INT    nbo  = 0;			// Number of loaded objects
 	//----------------------------------------------------------------------
   while (SQLITE_ROW == sqlite3_step(stm))
     { rdq->ident		= sqlite3_column_int(stm,0);					// Last identity
 			U_INT  rst		= rdq->ident % 100;										// Modulo 100
 			if (rst >= globals->osmMX)			continue;						// Eliminate
+			typ						= sqlite3_column_int(stm,2);					// Type
+			if (0 == GetOSMUse(typ))				continue;						// Not loaded
 			//--- Add this object on its layer -----------------------------
 			U_INT  lay = sqlite3_column_int(stm,3);							// OSM layer
 			char	 dir = sqlite3_column_int(stm,5);							// Directory
@@ -665,7 +669,6 @@ int SqlOBJ::LoadOSM(OSM_DBREQ *rdq)
 			nbo++;																							// Increment loaded supertile
     }
     //-----Close request ---------------------------------------------------
-	  if (nbo)	qgt->OsmOK(sno);
     sqlite3_finalize(stm);
     return nbo;
 }

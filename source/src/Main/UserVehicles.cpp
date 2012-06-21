@@ -3715,12 +3715,8 @@ CVehicleInfo::CVehicleInfo (char* nfoFilename)
   *phyFilename = 0; // PHY file
   // Open stream for NFO file
   SStream s;
-  strncpy (s.filename, nfoFilename,FNAM_MAX);
-  strncpy (s.mode, "r",3);
-  bool success = OpenStream(&s) != 0;
-  if (!success) {
-    success = OpenRStream("WORLD",nfoFilename,s) != 0;
-  }
+  int success = OpenRStream(nfoFilename,s);
+  if (!success)  success = OpenRStream("WORLD",nfoFilename,s); 
 
   if (success) {
     ReadFrom (this, &s);

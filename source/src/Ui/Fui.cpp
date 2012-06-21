@@ -440,7 +440,6 @@ CFuiPicture *CFuiComponent::CreateHBoxPicture (const char* name, int wd,int ht)
   //---Specify width either from request or from bitmap ------------
   int bwd = (wd)?(wd):(bmw);
 	int bht = (ht)?(ht):(bmh);
- // rc = new CFuiPicture (0, 0, bwd, bmh);
 	rc = new CFuiPicture (0, 0, bwd, bht);
   rc->SetBitmap (bm);
   return rc;
@@ -508,6 +507,30 @@ void CFuiComponent::DrawHBox(CFuiPicture *box[])
   if (box[1]) box[1]->Draw();
   if (box[2]) box[2]->Draw();
   return;
+}
+//---------------------------------------------------------------------------------
+// remove the back component
+//---------------------------------------------------------------------------------
+void CFuiComponent::RemoveBack(CFuiComponent *cb)
+{	if (0 == cb)        return;
+  std::list<CFuiComponent*>::iterator i;
+  std::list<CFuiComponent*>::iterator e;
+  for (i=decorationList.begin(); i!=decorationList.end();)
+  { e = i++;
+    CFuiComponent *cp = (*e);
+    if (cp != cb) continue;
+    decorationList.erase(e);
+    delete cb;
+    return;
+  }
+}
+//---------------------------------------------------------------------------------
+//Set Transparent mode
+//---------------------------------------------------------------------------------
+void CFuiComponent::SetTransparentMode()
+{	prop   |= FUI_TRANSPARENT;
+	colText = MakeRGBA(255,255,255,255);
+	return;
 }
 //---------------------------------------------------------------------------------
 //	Return bitmap according to the name
@@ -1296,6 +1319,18 @@ void CFuiWindow::SetChildProperty(Tag idn,U_INT p)
   return;
 }
 //--------------------------------------------------------------------------
+//  Set transparent mode for a child
+//--------------------------------------------------------------------------
+void CFuiWindow::SetTransparentMode(Tag idn)
+{	CFuiComponent *cp = GetComponent(idn);
+	if (0 == cp)		return;
+	cp->SetTransparentMode();
+	U_INT wit = MakeRGBA(255,255,255,255);
+	cp->SetColour(wit);
+	cp->EditText();
+	return;
+}
+//--------------------------------------------------------------------------
 //  Set Child Text
 //--------------------------------------------------------------------------
 void CFuiWindow::SetChildText(Tag idn,char *txt)
@@ -1309,20 +1344,16 @@ void CFuiWindow::SetChildText(Tag idn,char *txt)
 void CFuiWindow::SetTransparentMode()
 { SetProperty(FUI_TRANSPARENT);
   CFuiComponent *cb = fBox[BAKW];
-  if (0 == cb)        return;
-  std::list<CFuiComponent*>::iterator i;
-  std::list<CFuiComponent*>::iterator e;
-  for (i=decorationList.begin(); i!=decorationList.end();)
-  { e = i++;
-    CFuiComponent *cp = (*e);
-    if (cp != cb) continue;
-    decorationList.erase(e);
-    delete cb;
-    fBox[BAKW] = 0;
-    return;
-  }
+	fBox[BAKW]	= 0;
+	RemoveBack(cb);
+	U_INT wit = MakeRGBA(255,255,255,255);
+	SetColour(wit);
   return;
 }
+//-------------------------------------------------------------------------------
+//  Set Transparent mode (after creation)
+//-------------------------------------------------------------------------------
+
 //-------------------------------------------------------------------------------
 //  Create Menu Bar on title is any
 //
@@ -2175,8 +2206,8 @@ CFuiPopupMenu::CFuiPopupMenu (int x, int y, int w, int h, CFuiComponent *win)
 { type = COMPONENT_POPUPMENU;
   widgetTag = 'defa';
   wName		= "PopupMenu";
-  colHili = MakeRGB(255,255,255);
-  colText = MakeRGB(0,0,0);
+  colHili = MakeRGBA(255,255,255,255);
+  colText = MakeRGBA(0,0,0,255);
   just1 = just2 = just3 = 0;
   hCar          = 0;
   selection     = 0;
@@ -2248,9 +2279,12 @@ void CFuiPopupMenu::ReadFinished (void)
 { FindThemeWidget ();
   CFuiComponent::ReadFinished ();
   CreateHBox (hBox, w);
-  // Get text colour
+  //--- Get text colour ---------------------------
+	cBlack		= MakeRGBA(0,0,0,255);
+	U_INT wit = MakeRGBA(255,255,255,255);
   colText = tw->GetColour ("TEXT");
   colHili = tw->GetColour ("SELECTION");
+	if (prop & FUI_TRANSPARENT) colText = wit;
   //---Fix surface dimension -----------
   hCar    = fnts->TextHeight("H");
   wCar    = fnts->TextWidth ("H");
@@ -2350,7 +2384,7 @@ void CFuiPopupMenu::SetButtonText(char *txt)
   int yf  = y0   + hCar;
   int x0  = w >> 1;
   FillRect(surface,0,y0,w,yf,0);
-  fnts->DrawTextC(surface,x0,y0, colText,bText);
+  fnts->DrawTextC(surface,x0,y0, cBlack,bText);
   return;
 }
 //----------------------------------------------------------------------
@@ -4128,8 +4162,10 @@ void CFuiGroupBox::ReadFinished (void)
 { CFuiComponent::ReadFinished ();
   FindThemeWidget ();
   CreateFBox(this,fBox,x,y,w,h);
-  // Get text colour
+  //--- Set text colour -------------------
+	U_INT wit = MakeRGBA(255,255,255,255);
   colText = tw->GetColour ("TEXT");
+	if (prop & FUI_TRANSPARENT) colText = wit;
   fnts->DrawNText(surface,4,0,colText,text);
 }
 //--------------------------------------------------------------------------
@@ -4291,6 +4327,17 @@ void CFuiGroupBox::SetChildText(Tag idn, char *txt)
   return;
 }
 //-----------------------------------------------------------------------------
+//  Set all members transparent
+//-----------------------------------------------------------------------------
+void CFuiGroupBox::SetTransparentMode()
+{ prop |= FUI_TRANSPARENT;
+	CFuiComponent *cmp = fBox[BAKW];
+	fBox[BAKW] = 0;
+	RemoveBack(cmp);
+	//--- change label item transparent --------------------
+
+}
+//-----------------------------------------------------------------------------
 //  Set Edit mode
 //-----------------------------------------------------------------------------
 void CFuiGroupBox::SetEditMode(Tag idn,U_CHAR md)
@@ -4413,17 +4460,18 @@ int CFuiList::Read (SStream *stream, Tag tag)
 void CFuiList::ReadFinished (void)
 {
   CFuiComponent::ReadFinished ();
-
+	U_INT wit =  MakeRGBA(255,255,255,255);
   FindThemeWidget ();
   //-------- Compute definitive drawing surface ----------------
   halfW = (w >> 1);          // Half wide
   halfH = (h >> 1);          // Half height
   CreateFBox(this,fBox,x,y,w,h);
   //--------- Get text colour ----------------------------------
+	cBlack			= MakeRGBA(0,0,0,255);
   colText     = tw->GetColour ("TEXT");
   cTxtHLight  = tw->GetColour ("TEXTHILITE");
   cBakHLight  = tw->GetColour ("HILITE");
-
+	if (prop & FUI_TRANSPARENT) colText = wit;
   // Create Scrollbar object if required
   if(hscr) hzBOX = new CFuiScrollBar(0, h, w, h, this, false);
   if(vscr) vsBOX = new CFuiScrollBar(w, 0, w, h, this, true);
@@ -4496,8 +4544,9 @@ short CFuiList::IncLineHeight(short ht)
 void	CFuiList::SetTransparentMode()
 {	prop |= FUI_TRANSPARENT;
 	CFuiComponent *cmp = fBox[BAKW];
-	if (cmp) delete cmp;
 	fBox[BAKW] = 0;
+	RemoveBack(cmp);
+	colText = MakeRGBA(255,255,255,255);
 	return;
 }
 //--------------------------------------------------------------------------
@@ -4532,6 +4581,7 @@ void  CFuiList::SetBackTitle()
   int yd  = 0;
   int yf  = yd + hLine;
   FillRect(surface, 0, yd, (w - cw), yf, cBackTitle);
+	cText	= cBlack;
   return;
 }
 //----------------------------------------------------------------------------------
@@ -4560,7 +4610,7 @@ void CFuiList::ClearBand(int ln,int nbl)
 //  Set selection if needed and text color
 //----------------------------------------------------------------------------------
 void CFuiList::NewLine(short ln)
-{ cText   = colText;
+{	if (cText != cBlack)	cText   = colText;
   bool sl = (ln >= aROW) && (ln < bROW);
   if (!sl)    return;  
   DrawSelection(ln,cBakHLight);
@@ -4745,7 +4795,6 @@ void CFuiList::SetSelectionTo(U_SHORT nl)
 void CFuiList::Underline(short lin)
 { short yb = (lin * hLine) + (hLine - 1);
   DrawFastLine(surface,0,yb,(w-1),yb,cText);
-
   return;
 }
 //====================================================================================
@@ -5739,12 +5788,12 @@ CFuiCanva::CFuiCanva (int x, int y, int w, int h, CFuiComponent *win)
   row     = 0;
   InitFBox(fBox,RSIZ);
   white   = MakeRGB(255,255,255);
-  black   = MakeRGB(0,0,0);
   cTab[0] = MakeRGB(0,0,0);             // Normal drawing black
   cTab[1] = MakeRGB(255,0,0);           // Selected drawing red
   //-----------------------------------------------------------------
   move    = 0;
   Cam     = 0;
+	colText = MakeRGB(0,0,0);
 }
 //-----------------------------------------------------------------------------
 //  Destroy the window
@@ -5846,7 +5895,7 @@ void CFuiCanva::BeginPage()
 void  CFuiCanva::AddText(short col, char *txt,char nl)
 { U_SHORT xc  = col * wCar;
   U_SHORT yd  = row * hLin;
-  if (yd < surface->ySize) fnts->DrawNText(surface,xc ,yd ,black ,txt);
+  if (yd < surface->ySize) fnts->DrawNText(surface,xc ,yd ,colText ,txt);
   row += nl;
   return;
 }
@@ -5860,7 +5909,7 @@ void  CFuiCanva::AddText(short col, char nl,char *fmt, ...)
   { va_list argp;
     va_start(argp, fmt);
     _vsnprintf(text,128,fmt,argp);
-    fnts->DrawNText(surface,xc ,yd ,black ,text);
+    fnts->DrawNText(surface,xc ,yd ,colText ,text);
   }
   row += nl;
   return;

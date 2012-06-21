@@ -226,6 +226,7 @@ public:
   int       IndxRGBA(U_CHAR opt);
   int       PixlRGBA(U_CHAR opt);
   int       PixlBGRO(U_CHAR opt);
+	int				Pixl4BMP(U_CHAR opt);
   int       ByteTIFF(U_CHAR opt);
 	int				RgbaTIFF(U_CHAR opt);
 	//---------------------------------------------------------------------
