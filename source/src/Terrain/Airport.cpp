@@ -595,7 +595,7 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   oTAXI   = globals->txw->GetTaxiTexture();
   cutOF   = 1500;                         // Altitude cut-off
   //--------------------------------------------------------------
-	bgr			= 1;
+	bgr			= 0;
 	txBGR   = 0;
   tcm     = globals->tcm;
   scale   = tcm->GetScale();
