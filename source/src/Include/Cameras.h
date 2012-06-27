@@ -159,8 +159,9 @@ public:
 	//--- Rabbit methods -----------------------------------------
 	virtual void	RabbitMoveTo(SPosition *pos)  {;}
 	//--- Picking methods ----------------------------------------
-	virtual void  StartPicking()	{;}
-	virtual void	StopPicking()		{;}
+	void		StartPicking();
+	void		SetTracker(Tracker *t, CFuiWindow *w);
+	void		StopPicking()		{;}
 	//------------------------------------------------------------
   virtual void Print (FILE *f);
   //------------------------------------------------------------
@@ -168,6 +169,7 @@ public:
 	//--- Check camera type --------------------------------------
 	bool IsOf(Tag t) {return (GetCameraType() == t);}
   //------------------------------------------------------------
+	void		SetAbove(SPosition pos);
 	void		GoToPosition(SPosition &dst);
 	void		ToggleBox();
   void    OffsetFrom(SPosition &pos,CVector &v);
@@ -206,40 +208,40 @@ public:
   SVector *GetOffset() {return &offset;}
   void  SetOffset(SVector &v) {offset = v;}
   void  SetUpDir(SVector &u)  {Up = u;}
-  //------------------------------------------------------------
-  void  SetLock()            {Lock = 1;}
-  void  SetLock(char k)      {Lock = k;}
 	//------------------------------------------------------------
-  bool  IsLocked()           {return (Lock != 0);}
 	float GetRate()						{return Rate;}
 	void  SetAngles(SVector &a)	{theta = a.x; phi = a.y;}
-  //------------------------------------------------------------
+  //---Position parameters -------------------------------------
+	void   FootPerPixel();
+	double GetFPIX()			{return fpp;}
 	double GetAzimuth()		{return orient.z;}
 	double GetElevation()	{return orient.x;}
-	double	GetTheta()					{return theta;}
-	double GetPhi()						{return phi;}
-  float  GetXofs()           {return offset.x;}
-  float  GetYofs()           {return offset.y;}
-  float  GetZofs()           {return offset.z;}
-  double GetRange()          {return range;}
+	double GetTheta()						{return theta;}
+	double GetPhi()							{return phi;}
+  float  GetXofs()						{return offset.x;}
+  float  GetYofs()						{return offset.y;}
+  float  GetZofs()						{return offset.z;}
+  double GetRange()						{return range;}
   void   SetMaxRange(double m){rmax  = m;}
   void   GetUpVector (SVector &v) {v = Up;}
-  double GetTargetLon()      {return tgtPos.lon;}
-  double GetTargetLat()      {return tgtPos.lat;}
-  double GetTargetAlt()      {return tgtPos.alt;}
-  float  GetFOV ()           {return fov;}
-  SVector   &CamOffset()     {return offset;}
+  double GetTargetLon()				{return tgtPos.lon;}
+  double GetTargetLat()				{return tgtPos.lat;}
+  double GetTargetAlt()				{return tgtPos.alt;}
+  float  GetFOV ()						{return fov;}
+  SVector   &CamOffset()			{return offset;}
 	void   GetOffset (SVector &v)            {v = offset;}
   void   GetOrientation (SVector &v)       {v = orient;}
 	//------------------------------------------------------------
 	char	GetINTMOD()					{return intcm;}
 	char  GetEXTMOD()					{return extcm;}
-	void	IncT1()							{T1++;}
-	void  IncT2()							{T2++;}
+	//---Tracking functions --------------------------------------
+	bool		PickObject(U_INT mx, U_INT my);
+
   //---CAMERA ATTRIBUTES ---------------------------------------
+public:
+	COption   Prof;				// Camera profile
 protected:
 	float			Rate;				// Rotation rate (1/4 sec unit)
-	COption   Prof;				// Camera profile
 	//--- Camera type (inside or outside) ------------------------
 	char			intcm;			// Type of camera (1= inside)
 	char			extcm;			// Type of camera (1= outside
@@ -272,11 +274,9 @@ protected:
 	double    tgf;				// Tangent of FOV
 	double    ratio;			// Aspect ratio
   double    nearP;      // Near plan
-	double    htr;				// height of nera plan
-	double    wdt;				// Widht of near plan
 	double    ffac;				// Flare factor
+	double		fpp;				// Feet per pixel
   //----Locking ------------------------------------------------
-  char      Lock;       // Lock indicator
 	char			pick;				// Picking indicator
 	char      move;				// move indicator
   //----Next and previous cammeras -----------------------------
@@ -290,9 +290,16 @@ protected:
   //----Camera angles ------------------------------------------
   double     theta;     // Around Z
   double      phi;      // Around X
-	//--- Trace temporaire ----------------------------------------
-	char				T1;
-	char				T2;
+	//--- Picking parameters -------------------------------------
+	GLuint				bHit[8];									// Hit buffer
+	//------------------------------------------------------------
+	CAMERA_CTX    *ctx;										  // Original context
+	//--- Picking parameters -------------------------------------
+	int		picx;															// Screen cursor
+	int		picy;															// Screen cursor
+	Tracker    *trak;												// Tracker
+	CFuiWindow *twin;												// Associated Windows to warn
+
 };
 //====================================================================================
 // Rabbit camera
@@ -302,36 +309,22 @@ protected:
 //====================================================================================
 class CRabbitCamera : public CCamera {
 	//--- ATTRIBUTES ---------------------------------------------
-	GLuint				bHit[8];									// Hit buffer
-	//------------------------------------------------------------
-	CAMERA_CTX    *ctx;										  // Original context
-	//--- Picking parameters -------------------------------------
-	int		px;																// Screen cursor
-	int		py;																// Screen cursor
-	Tracker    *trak;												// Tracker
-	CFuiWindow *twin;												// Associated Windows to warn
 	//--- METHODS ------------------------------------------------
 public:
 	CRabbitCamera();
  ~CRabbitCamera();
   //------------------------------------------------------------
-	void		SetTracker(Tracker *t, CFuiWindow *w);
-	void		StartPicking();
-	void		RabbitLeft();
-	void		RabbitRight();
 	void		RabbitMoveTo(SPosition *pos);
 	void		TurnRabbit(SVector v);
-	//-------------------------------------------------------------
-	bool		PickObject(U_INT mx, U_INT my);
 	//-------------------------------------------------------------
 	void	UpdateCamera (SPosition tpos, SVector tori,float dT);
 	//-------------------------------------------------------------
 	void  MoveTo (double inc, double tg);
  	//-------------------------------------------------------------
-	void  PanLeft()		{RabbitLeft();}
-	void  PanRight()	{RabbitRight();}
-	void  PanUp()			{RoundUp();}
-	void  PanDown()   {RoundDown();}
+	void  PanLeft();	
+	void  PanRight();	
+	void  PanUp();			
+	void  PanDown();   
 	//-------------------------------------------------------------
 	inline void Store(CAMERA_CTX *t) {ctx = t;}
 };

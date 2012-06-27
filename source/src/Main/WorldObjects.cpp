@@ -613,11 +613,7 @@ int CVehicleObject::Read (SStream *stream, Tag tag)
 //  Read Wheel parameters
 //-----------------------------------------------------------------------------------
 void CVehicleObject::ReadParameters(CStreamObject *obj,char *fn)
-{ SStream s;
-  if (OpenRStream ("WORLD",fn,s)) {
-    ReadFrom (obj, &s);
-    CloseStream (&s);
-  }
+{ SStream s(obj,"WORLD",fn);
 }
 //-----------------------------------------------------------------------------------
 //  All parameters are read
@@ -845,10 +841,12 @@ void CVehicleObject::SetPanel (Tag tag)
 //  Print object parameters
 //----------------------------------------------------------------------
 void CVehicleObject::Print (FILE *f)
-{ if (cam) cam->Print(f);
+{ /*
+	if (cam) cam->Print(f);
   if (amp) amp->Print (f);
   if (lod) lod->Print (f);
   if (elt) elt->Print (f);
+	*/
 }
 //-----------------------------------------------------------------------
 //  Timeslice all features of vehicle

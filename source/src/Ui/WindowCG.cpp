@@ -65,11 +65,7 @@ extern CModelACM *GetDayModelACM();
 //==================================================================================
 CFuiWinCG::CFuiWinCG(Tag idn, const char* filename)
 :CFuiWindow(idn,filename,516,552,0)
-{ title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
-  view  = 0;
+{ view  = 0;
   //----Init color -----------------------------------
   bk.R  = 0.235f;
   bk.G  = 0.658f;

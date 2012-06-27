@@ -1104,10 +1104,17 @@ void CheckTuningMenu()
 //============================================================================
 
 //----------------------------------------------------------------------------
-//  Model Sketch editor: skth
+//  city editor: skth
 //----------------------------------------------------------------------------
 void city_editor_cb(puObject *obj)
-{ globals->kbd->Stroke('menu','skch');	}
+{ toggle_window (FUI_WINDOW_CITY_EDIT,0); }
+//----------------------------------------------------------------------------
+//  Taxiway editor: taxi
+//----------------------------------------------------------------------------
+/*
+void taxi_editor_cb(puObject *obj)
+{ toggle_window (FUI_WINDOW_TAXIWAY,0);	}
+*/
 //----------------------------------------------------------------------------
 //  Model terra editor: mted
 //----------------------------------------------------------------------------
@@ -1146,6 +1153,7 @@ void tune_probe_cb(puObject *obj)
 //--------------------------------------------------------
 char *tune_legends[] =
 { "CITY Editor",
+	//"TAXIWAY editor",
 	"TERRA Editor",
 	"----------------",
 	"OBJECT Browser",
@@ -1160,6 +1168,7 @@ char *tune_legends[] =
 //------------------------------------------------------------------------
 puCallback tune_cb[] =
 { city_editor_cb,
+	//taxi_editor_cb,
 	model_teditor_cb,
 	NULL,
 	model_browser_cb,

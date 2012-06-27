@@ -433,7 +433,7 @@ void CSkyManager::PreDraw (void)
 // Dump the contents of the CSkyManager class to a file for debugging
 //
 void CSkyManager::Print (FILE *f)
-{
+{ /*
   //
   // Sky dome shading parameter sets
   //
@@ -474,4 +474,6 @@ void CSkyManager::Print (FILE *f)
 
   FormatRADec (saturn->GetRightAscension(), saturn->GetDeclination(), radec);
   fprintf (f, "Saturn:   %8s\n", radec);
+	*/
 }
+//==================== END OF FILE ======================================================================

@@ -37,10 +37,7 @@
 //========================================================================================
 CFuiTED::CFuiTED(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,500,108,0)
-{ title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 1;
+{ mini  = 1;
 	abtn	= 1;
 	obtn	= 1;
 	//-----------------------------------------------

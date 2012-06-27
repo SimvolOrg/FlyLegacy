@@ -36,10 +36,6 @@
 CFuiPID::CFuiPID(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,440,210,0)
 { strncpy(text,"PID TUNING",255);
-  title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
   sPID  = 0;
   Inc   = 0.10;
   //--------Create label ------------------------------

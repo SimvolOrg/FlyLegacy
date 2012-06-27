@@ -40,8 +40,8 @@ extern char *LiteNAM[];
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
 //=============================================================================
-void CAirport::WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,SStream &st)
-{ CStreamFile* sf = (CStreamFile*)(st.stream);
+void CAirport::WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,CStreamFile &stf)
+{ CStreamFile* sf = &stf;
   U_INT k = (gx << 16) | gz;
   fprintf (sf->f, "%d%s", k, sep);                  // Tile key
   fprintf (sf->f, "%s%s", akey,sep);                // Airport Key
@@ -99,8 +99,8 @@ void CAirport::WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,SStream &st)
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
 //=============================================================================
-void CRunway::WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,SStream &st)
-{ CStreamFile* sf = (CStreamFile*)(st.stream);
+void CRunway::WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,CStreamFile &stf)
+{ CStreamFile* sf = &stf;
   U_INT k = (gx << 16) | gz;                        // Full key
   fprintf (sf->f, "%d%s", No,sep);                  // Sequence number
   fprintf (sf->f, "%s%s", rapt,sep);                // Airport key
@@ -182,8 +182,8 @@ void CRunway::WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,SStream &st)
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
 //=============================================================================
-void CNavaid::WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st)
-{ CStreamFile* sf = (CStreamFile*)(st.stream);
+void CNavaid::WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &stf)
+{ CStreamFile* sf = &stf;
   U_INT k = (gx << 16) | gz;                           // Full key
   //---Remove any , inside name -----------------------------------
   char *dot = strchr(name,',');
@@ -213,8 +213,8 @@ void CNavaid::WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st)
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
 //=============================================================================
-void CILS::WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st)
-{ CStreamFile* sf = (CStreamFile*)(st.stream);
+void CILS::WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &stf)
+{ CStreamFile* sf = &stf;
   U_INT k = (gx << 16) | gz;                           // Full key
   //---Remove any , inside name -----------------------------------
   char *dot = strchr(name,',');
@@ -240,8 +240,8 @@ void CILS::WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st)
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
 //=============================================================================
-void CCOM::WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st)
-{ CStreamFile* sf = (CStreamFile*)(st.stream);
+void CCOM::WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &stf)
+{ CStreamFile* sf = &stf;
   U_INT k = (gx << 16) | gz;                            // Full key
   //---Remove any , inside name -----------------------------------
   char *dot = strchr(cnam,',');
@@ -266,8 +266,8 @@ void CCOM::WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st)
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
 //=============================================================================
-void CWPT::WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st)
-{ CStreamFile* sf = (CStreamFile*)(st.stream);
+void CWPT::WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &stf)
+{ CStreamFile* sf = &stf;
   U_INT k = (gx << 16) | gz;                            // Full key
   //---Remove any , inside name -----------------------------------
   char *dot = strchr(wnam,',');
@@ -294,8 +294,8 @@ void CWPT::WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st)
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
 //=============================================================================
-void CCountry::WriteCVS(char *sep,SStream &st)
-{ CStreamFile* sf = (CStreamFile*)(st.stream);
+void CCountry::WriteCVS(char *sep,CStreamFile &stf)
+{ CStreamFile* sf = &stf;
   //---Remove any , inside name -----------------------------------
   char *dot = strchr(cnam,',');
   if (dot) *dot= '-';
@@ -308,8 +308,8 @@ void CCountry::WriteCVS(char *sep,SStream &st)
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
 //=============================================================================
-void CState::WriteCVS(char *sep,SStream &st)
-{ CStreamFile* sf = (CStreamFile*)(st.stream);
+void CState::WriteCVS(char *sep,CStreamFile &stf)
+{ CStreamFile* sf = &stf;
   //---Remove any , inside name -----------------------------------
   char *dot = strchr(name,',');
   if (dot) *dot= '-';
@@ -425,13 +425,13 @@ void CExport::ListAirport(U_INT nt,ClQueue &qhd)
 //-----------------------------------------------------------------------------------------
 //  Export Airports for the requested globe tile
 //-----------------------------------------------------------------------------------------
-void CExport::ExportAPT(U_INT gx,U_INT gz,char *sep,SStream &st)
+void CExport::ExportAPT(U_INT gx,U_INT gz,char *sep)
 { ClQueue   aptQ;
   CAirport *apt;
   U_INT   ntile = (gx << 16) | gz;
   ListAirport(ntile,aptQ);
   for (apt = (CAirport*)aptQ.GetFirst(); apt != 0; apt = (CAirport*)aptQ.NextInQ1(apt))
-  {   apt->WriteCVS(noRec++,gx,gz,sep,st);
+  {   apt->WriteCVS(noRec++,gx,gz,sep,sf);
   }
   return;
 }
@@ -441,26 +441,22 @@ void CExport::ExportAPT(U_INT gx,U_INT gz,char *sep,SStream &st)
 void CExport::ExportAirportsAsCVS()
 { U_INT gx = 0;
   U_INT gz = 0;
-  SStream    st;
   char *fn = "Export/APT.csv";
   noRec    = 0;
   //---Open a stream file -----------------------------------
-  strcpy (st.filename, fn);
-  strcpy (st.mode, "w");
-  if (!OpenStream (&st)) {WARNINGLOG("EXPORT : can't write %s", fn); return;}
+	sf.OpenWrite(fn);
   for (gx = 0; gx < 256; gx++)
     for (gz = 0; gz < 256; gz++)
-       ExportAPT(gx,gz,Sep,st);
+       ExportAPT(gx,gz,Sep);
   //---Close the file ----------------------------------------
-  CloseStream (&st);
+  sf.Close();
   return;
 }
 //-----------------------------------------------------------------------------------------
 //  Export all Runways
 //-----------------------------------------------------------------------------------------
 void CExport::ExportRunwaysAsCVS()
-{ SStream    st;
-  char *fn = "Export/RWY.csv";
+{ char *fn = "Export/RWY.csv";
   CDatabase *db = CDatabaseManager::Instance().GetRWYDatabase();
   if (NoDatabase(db)) return;
   long end      = db->GetNumRecords();
@@ -468,20 +464,18 @@ void CExport::ExportRunwaysAsCVS()
   CRunway *rwy  = new CRunway(ANY,RWY);
   long     No   = 0;
   //---Open a stream file -----------------------------------
-  strcpy (st.filename, fn);
-  strcpy (st.mode, "w");
-  if (!OpenStream (&st)) {WARNINGLOG("EXPORT : can't write %s", fn); return;}
+	sf.OpenWrite(fn);
   //---Get file parameters ----------------------------------
   while (No != end)
   { offset   = db->RecordOffset(No);
     db->GetRawRecord (offset);
     db->DecodeRecord(offset,rwy);
-    rwy->WriteCVS(No,0,0,Sep,st);
+    rwy->WriteCVS(No,0,0,Sep,sf);
     No++;
   }
   delete rwy;
   //---Close the file ----------------------------------------
-  CloseStream (&st);
+  sf.Close();
   return;
 }
 //-----------------------------------------------------------------------------------------
@@ -490,30 +484,27 @@ void CExport::ExportRunwaysAsCVS()
 void CExport::ExportNavaidsAsCVS()
 { U_INT gx = 0;
   U_INT gz = 0;
-  SStream    st;
   char *fn = "Export/NAV.csv";
   noRec    = 0;
   //---Open a stream file -----------------------------------
-  strcpy (st.filename, fn);
-  strcpy (st.mode, "w");
-  if (!OpenStream (&st)) {WARNINGLOG("EXPORT : can't write %s", fn); return;}
+	sf.OpenWrite(fn);
   for (gx = 0; gx < 256; gx++)
     for (gz = 0; gz < 256; gz++)
-       ExportNAV(gx,gz,Sep,st);
+       ExportNAV(gx,gz,Sep);
   //---Close the file ----------------------------------------
-  CloseStream (&st);
+  sf.Close();
   return;
 }
 //-----------------------------------------------------------------------------------------
 //  Export Airports for the requested globe tile
 //-----------------------------------------------------------------------------------------
-void CExport::ExportNAV(U_INT gx,U_INT gz,char *sep,SStream &st)
+void CExport::ExportNAV(U_INT gx,U_INT gz,char *sep)
 { ClQueue   navQ;
   CNavaid  *nav;
   U_INT   ntile = (gx << 16) | gz;
   ListNavaid(ntile,navQ);
   for (nav = (CNavaid*)navQ.GetFirst(); nav != 0; nav = (CNavaid*)navQ.NextInQ1(nav))
-  {nav->WriteCVS(gx,gz,sep,st);
+  {nav->WriteCVS(gx,gz,sep,sf);
   }
   return;
 }
@@ -549,30 +540,27 @@ void CExport::ListNavaid(U_INT nt,ClQueue &qhd)
 void CExport::ExportILSAsCVS()
 { U_INT gx = 0;
   U_INT gz = 0;
-  SStream    st;
   char *fn = "Export/ILS.csv";
   noRec    = 0;
   //---Open a stream file -----------------------------------
-  strcpy (st.filename, fn);
-  strcpy (st.mode, "w");
-  if (!OpenStream (&st)) {WARNINGLOG("EXPORT : can't write %s", fn); return;}
+	sf.OpenWrite(fn);
   for (gx = 0; gx < 256; gx++)
     for (gz = 0; gz < 256; gz++)
-       ExportILS(gx,gz,Sep,st);
+       ExportILS(gx,gz,Sep);
   //---Close the file ----------------------------------------
-  CloseStream (&st);
+  sf.Close();
   return;
 }
 //-----------------------------------------------------------------------------------------
 //  Export ILS for the requested globe tile
 //-----------------------------------------------------------------------------------------
-void CExport::ExportILS(U_INT gx,U_INT gz,char *sep,SStream &st)
+void CExport::ExportILS(U_INT gx,U_INT gz,char *sep)
 { ClQueue   ilsQ;
   CILS     *ils;
   U_INT   ntile = (gx << 16) | gz;
   ListILS(ntile,ilsQ);
   for (ils = (CILS*)ilsQ.GetFirst(); ils != 0; ils = (CILS*)ilsQ.NextInQ1(ils))
-  {ils->WriteCVS(gx,gz,sep,st);
+  {	ils->WriteCVS(gx,gz,sep,sf);
   }
   return;
 }
@@ -608,31 +596,27 @@ void CExport::ListILS(U_INT nt,ClQueue &qhd)
 void CExport::ExportComAsCVS()
 { U_INT gx = 0;
   U_INT gz = 0;
-  SStream    st;
   char *fn = "Export/COM.csv";
   noRec    = 0;
   //---Open a stream file -----------------------------------
-  strcpy (st.filename, fn);
-  strcpy (st.mode, "w");
-  if (!OpenStream (&st)) {WARNINGLOG("EXPORT : can't write %s", fn); return;}
+	sf.OpenWrite(fn);
   for (gx = 0; gx < 256; gx++)
     for (gz = 0; gz < 256; gz++)
-       ExportCOM(gx,gz,Sep,st);
+       ExportCOM(gx,gz,Sep);
   //---Close the file ----------------------------------------
-  CloseStream (&st);
+  sf.Close();
   return;
 }
 //-----------------------------------------------------------------------------------------
 //  Export COM for the requested globe tile
 //-----------------------------------------------------------------------------------------
-void CExport::ExportCOM(U_INT gx,U_INT gz,char *sep,SStream &st)
+void CExport::ExportCOM(U_INT gx,U_INT gz,char *sep)
 { ClQueue   comQ;
   CCOM     *com;
   U_INT   ntile = (gx << 16) | gz;
   ListCOM(ntile,comQ);
   for (com = (CCOM*)comQ.GetFirst(); com != 0; com = (CCOM*)comQ.NextInQ1(com))
-  {com->WriteCVS(gx,gz,sep,st);
-  }
+  {com->WriteCVS(gx,gz,sep,sf);  }
   return;
 }
 ///----------------------------------------------------------------------------
@@ -667,30 +651,27 @@ void CExport::ExportWptAsCVS()
 { if (0 == gen)   return;
   U_INT gx = 0;
   U_INT gz = 0;
-  SStream    st;
   char *fn = "Export/WPT.csv";
   noRec    = 0;
   //---Open a stream file -----------------------------------
-  strcpy (st.filename, fn);
-  strcpy (st.mode, "w");
-  if (!OpenStream (&st)) {WARNINGLOG("EXPORT : can't write %s", fn); return;}
+	sf.OpenWrite(fn);
   for (gx = 0; gx < 256; gx++)
     for (gz = 0; gz < 256; gz++)
-       ExportWPT(gx,gz,Sep,st);
+       ExportWPT(gx,gz,Sep);
   //---Close the file ----------------------------------------
-  CloseStream (&st);
+  sf.Close();
   return;
 }
 //-----------------------------------------------------------------------------------------
 //  Export WPT for the requested globe tile
 //-----------------------------------------------------------------------------------------
-void CExport::ExportWPT(U_INT gx,U_INT gz,char *sep,SStream &st)
+void CExport::ExportWPT(U_INT gx,U_INT gz,char *sep)
 { ClQueue   wptQ;
   CWPT     *wpt;
   U_INT   ntile = (gx << 16) | gz;
   ListWPT(ntile,wptQ);
   for (wpt = (CWPT*)wptQ.GetFirst(); wpt != 0; wpt = (CWPT*)wptQ.NextInQ1(wpt))
-  {wpt->WriteCVS(gx,gz,sep,st);
+  {wpt->WriteCVS(gx,gz,sep,sf);
   }
   return;
 }
@@ -723,22 +704,19 @@ void CExport::ListWPT(U_INT nt,ClQueue &qhd)
 //  Export all Contry
 //-----------------------------------------------------------------------------------------
 void CExport::ExportCtyAsCVS()
-{ SStream    st;
-  char *fn = "Export/CTY.csv";
+{ char *fn = "Export/CTY.csv";
   noRec    = 0;
   //---Open a stream file -----------------------------------
-  strcpy (st.filename, fn);
-  strcpy (st.mode, "w");
-  if (!OpenStream (&st)) {WARNINGLOG("EXPORT : can't write %s", fn); return;}
-  ExportCTY(Sep,st);
+	sf.OpenWrite(fn);
+  ExportCTY(Sep);
   //---Close the file ----------------------------------------
-  CloseStream (&st);
+  sf.Close();
   return;
 }
 //-----------------------------------------------------------------------------------------
 //  Export all Contry
 //-----------------------------------------------------------------------------------------
-void CExport::ExportCTY(char *sep,SStream &st)
+void CExport::ExportCTY(char *sep)
 { CDatabaseCTY *db  = (CDatabaseCTY*)CDatabaseManager::Instance().GetCTYDatabase();
   if (NoDatabase(db)) return;
   U_INT     No      = 0;
@@ -749,7 +727,7 @@ void CExport::ExportCTY(char *sep,SStream &st)
   { offset  =     db->RecordOffset(No++);
     db->GetRawRecord(offset);
     db->DecodeRecord(cty);
-    cty->WriteCVS(sep,st);
+    cty->WriteCVS(sep,sf);
   }
   delete cty;
   return ;
@@ -758,22 +736,19 @@ void CExport::ExportCTY(char *sep,SStream &st)
 //  Export all State
 //-----------------------------------------------------------------------------------------
 void CExport::ExportStaAsCVS()
-{ SStream    st;
-  char *fn = "Export/STA.csv";
+{ char *fn = "Export/STA.csv";
   noRec    = 0;
   //---Open a stream file -----------------------------------
-  strcpy (st.filename, fn);
-  strcpy (st.mode, "w");
-  if (!OpenStream (&st)) {WARNINGLOG("EXPORT : can't write %s", fn); return;}
-  ExportSTA(Sep,st);
+	sf.OpenWrite(fn);
+  ExportSTA(Sep);
   //---Close the file ----------------------------------------
-  CloseStream (&st);
+  sf.Close();
   return;
 }
 //-----------------------------------------------------------------------------------------
 //  Export all STATES
 //-----------------------------------------------------------------------------------------
-void CExport::ExportSTA(char *sep,SStream &st)
+void CExport::ExportSTA(char *sep)
 { CDatabaseSTA *db  = (CDatabaseSTA*)CDatabaseManager::Instance().GetSTADatabase();
   if (NoDatabase(db)) return;
   U_INT     No      = 0;
@@ -784,7 +759,7 @@ void CExport::ExportSTA(char *sep,SStream &st)
   { offset  =     db->RecordOffset(No++);
     db->GetRawRecord(offset);
     db->DecodeRecord(sta);
-    sta->WriteCVS(sep,st);
+    sta->WriteCVS(sep,sf);
   }
   delete sta;
   return ;
@@ -1870,12 +1845,16 @@ void  CExport::WriteTRN()
 //  Export a TRN file
 //---------------------------------------------------------------------------
 void CExport::ExportTRN(char *fn)
-{ SStream s;                                // Stream file
+{ if (!pexists(&globals->pfs,fn))	return;
+	ftrn = new C_TRN(0,0);			// Create TRN
+	SStream s(ftrn,fn);					// Stream file
+	/*
   if (!OpenRStream (fn, s))  return;
   ftrn = new C_TRN(0,0);
 	ftrn->Export();
   ReadFrom (ftrn, &s);
   CloseStream (&s);
+	*/
   //--- Process all Super tile -----------------------------
 	for (short   sz = 0; sz != TC_SUPERT_PER_QGT; sz++)
   { for (short sx = 0; sx != TC_SUPERT_PER_QGT; sx++)

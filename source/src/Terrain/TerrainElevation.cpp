@@ -1226,40 +1226,6 @@ void C_CTEX::Abort(char *fn, char *em)
   return;
 }
 //-----------------------------------------------------------------------------------
-//  Decode the texture file
-//-----------------------------------------------------------------------------------
-void C_CTEX::DecodeTEX(char *fname)
-{ char tex[128];
-  SStream s;                                // Stream file
-  if (!OpenRStream (fname,s))  Abort(fname,"Can read");
-  ReadUInt(&nbt,&s);                        // Number of textures
-  for (U_INT k = 0; k != nbt; k++) 
-  { ReadString (tex, 16, &s);
-    NormeName(tex);
-    strncpy(text[k],tex,TC_TEXNAMESIZE);
-  }
-  return;
-}
-//-----------------------------------------------------------------------------------
-//  Decode the TREF file.  Assign texture names
-//  REF are for detail tiles 
-//  The first DT is suposed to be the SW corner of the QGT? then next row up (z+1,x)
-//------------------------------------------------------------------------------------
-void C_CTEX::DecodeREF(char *fname)
-{ U_INT ref = 0;
-  U_INT tx  = 0;
-  U_INT tz  = 0;
-  SStream s;                                // Stream file
-  if (!OpenRStream (fname, s))  Abort(fname,"Can read");
-  while (ReadUInt(&ref,&s))
-  { if (ref >= nbt) Abort(fname,"Bad ref");
-    Assign(text[ref],tx,tz);
-    tz = (tz + 1) & TC_032MODULO;
-    if (0 == tz)  tx++;
-  }
-  return;
-}
-//-----------------------------------------------------------------------------------
 //  Assign texture name to the Detail Tile nt
 //-----------------------------------------------------------------------------------
 void C_CTEX::Assign(char *tnm,U_SHORT tx,U_SHORT tz)

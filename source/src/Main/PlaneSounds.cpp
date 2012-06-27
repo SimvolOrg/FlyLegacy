@@ -40,11 +40,7 @@ CVehicleSound::CVehicleSound (char *sfxFilename)
   pMax    = 1.5f;
   pMin    = 0.8f;
   //---------------------------------------
-  SStream s;
-  if (OpenRStream ("WORLD",sfxFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",sfxFilename);
 }
 //-------------------------------------------------------------------------
 //  Destroy this object

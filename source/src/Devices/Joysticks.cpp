@@ -554,13 +554,7 @@ void CJoysticksManager::PreInit()
 //---------------------------------------------------------------------------------
 void CJoysticksManager::Init( )
 { PreInit();
-	SStream s;
-  if (OpenRStream ("System/FlyLegacyControls.txt",s))
-  { // Successfully opened stream
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
-  else WARNINGLOG("CJoystickManager : can't open %s",s.filename);
+	SStream s(this,"System","FlyLegacyControls.txt");
 }
 //---------------------------------------------------------------------------------
 //  Collect joystick list

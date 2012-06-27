@@ -62,16 +62,13 @@ char *AptBTN[] = {
 //=======================================================================================
 CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,600,360,0)
-{ Type  = -1;
+{ strncpy(text,"TERRA BROWSER",255);
+	//-------------------------------------------------
+	Type  = -1;
   inf.mADR = 0;
   inf.xOBJ = 0;
   inf.res  = TC_HIGHTR;
   mode     = 1;
-  strncpy(text,"TERRA BROWSER",255);
-  title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
 	obtn	= 0;
 	abtn	= 0;
   //----Create a label title ----------------------
@@ -310,10 +307,6 @@ void CFuiTBROS::Draw()
 CFuiMBROS::CFuiMBROS(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,360,730,0)
 { strncpy(text,"3D-MODELS BROWSER",255);
-  title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
   Mod   = 0;
   //---Allocate camera object -----------------------------
   oCam   = new CCameraObject();

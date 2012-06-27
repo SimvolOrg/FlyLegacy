@@ -33,11 +33,7 @@
 //==================================================================================
 CFuiChart::CFuiChart(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,800,800,0)
-{ title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 1;
-  SetTransparentMode();
+{ SetTransparentMode();
   SetProperty(FUI_XY_RESIZING);
   //---Init info image -------------------------------
   MapInfo.rgba = 0;

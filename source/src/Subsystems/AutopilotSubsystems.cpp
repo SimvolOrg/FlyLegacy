@@ -401,12 +401,9 @@ void CPIDbox::Probe(CFuiCanva *cnv)
 //        Class to decode all PID controllers
 //===============================================================================================
 CPIDdecoder::CPIDdecoder(char *fn,AutoPilot *ap)
-{ SStream s;
+{ 
   apil  = ap;
-  if (OpenRStream ("WORLD",fn,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+	SStream s(this,"WORLD",fn);
 }
 
 //------------------------------------------------------------------------------------

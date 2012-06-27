@@ -58,11 +58,7 @@ CAnimatedModel::CAnimatedModel (CVehicleObject *v,char* lodFilename,Tag t)
   //-------Init spinners -------------------------------
   for (int k=0; k<ENGINE_MAX; k++) aSpin[k] = 0;
   //-------Read the parameters -------------------------
-  SStream s;
-  if (OpenRStream ("WORLD",lodFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",lodFilename) ;
 }
 
 //----------------------------------------------------------------------
@@ -534,10 +530,11 @@ void CAnimatedModel::TimeSlice(float dT)
 }
 //------------------------------------------------------------------------
 void CAnimatedModel::Print (FILE *f)
-{
+{ /*
   fprintf (f, "Day Models\n");
   fprintf (f, "==========\n");
   Model->Print (f);
+	*/
 }
 
 //======================END OF FILE ==============================================

@@ -299,8 +299,7 @@ char *FaceType[] =
 CBuilder::CBuilder(D2_Session *s)
 {	trace = 0;
 	session		= s;
-	dop.Set(TRITOR_DRAW_LINE);
-	dop.Set(TRITOR_DRAW_FILL);
+	dop.Set(TRITOR_DRAW_LINE + TRITOR_DRAW_FILL);
 	bevel			= 0;
 	osmB			= 0;
 	remB			= 0;
@@ -317,13 +316,6 @@ CBuilder::~CBuilder()
 	//--- clear building list ---------------------------
 	//	Individual buildings are deleted from D2_Group
 	globals->Disp.Clear(PRIO_ABSOLUTE);
-}
-//-------------------------------------------------------------------
-//	Time Slice 
-//-------------------------------------------------------------------
-int CBuilder::TimeSlice(float dT,U_INT frame)
-{
-	return 0;
 }
 //===================================================================
 //	Drawing interface

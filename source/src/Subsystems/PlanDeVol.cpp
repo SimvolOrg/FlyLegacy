@@ -398,11 +398,7 @@ void PlaneCheckList::OpenList(char *tail)
   int d = PATH_MAX - 1;
   _snprintf(name,d,"WORLD/VEH_%s.LCK",tail);
   if (!pexists(&globals->pfs,name)) return;
-  SStream s;
-	if (OpenRStream(name,s))
-  { ReadFrom (this, &s);                 
-    CloseStream (&s);
-  }
+  SStream s(this,name);
   return;
 }
 //-------------------------------------------------------------------------
@@ -1408,14 +1404,19 @@ bool CFPlan::AssignPlan(char *fn)
 	_strupr(fn);
   _snprintf(name,(PATH_MAX-1),"FLIGHTPLAN/%s.FPL",fn);
   ClearPlan();
-  SStream s;
+ 
 	//--- Read plan and set loaded state ------
+	format  = '0000';
+	SStream s(this,name);
+	if (s.ok) strncpy(Name,fn,64);
+	/*
   if (OpenRStream (name,s))
 	{ format  = '0000';
 		ReadFrom (this, &s);                 
 		CloseStream (&s);
 		strncpy(Name,fn,64);
 	}
+	*/
 	//--- Advise GPS of changed plan ----------
 	if (realp) WarnGPS();				 
 	return true;
@@ -2079,15 +2080,6 @@ bool CFPlan::IsOnFinal()
 bool CFPlan::NotFor3D()
 {	bool nak = (!AtDepAirport() || IsUsed());
 	return nak;	}
-//-----------------------------------------------------------------
-//	Save nearest waypoint
-//-----------------------------------------------------------------
-void CFPlan::SaveNearest(CWPoint *wpt)
-{	float d = wpt->GetPlnDistance();
-  if (d > nWPT->GetPlnDistance())	return;
-	nWPT	= wpt;
-	return;
-}
 //--------------------------------------------------------------------
 //  Called from vector map to draw the route
 //--------------------------------------------------------------------

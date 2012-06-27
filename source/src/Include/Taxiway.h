@@ -36,14 +36,20 @@
 //============================================================================
 //  Node structure for runway and taxiways
 //============================================================================
-class CTaxiNode: public CStreamObject 
-{ //---------------------------------------------------------------
+class TaxNODE: public CStreamObject 
+{ friend class TaxiTracker;
+	//---------------------------------------------------------------
+protected:
+	Tag						idn;												// Node ident
   SPosition     pos;                        // Offset from origin. 1 unit = 16 feets
   U_SHORT       direction;                  // Direction for ????
+	char					type;												// Type of node
+	char					rfu1;												// Reserved
   //-----------Methods --------------------------------------------
 public:
-   CTaxiNode();
-  ~CTaxiNode();
+   TaxNODE();
+	 TaxNODE(Tag id,SPosition &P);
+  ~TaxNODE();
   int           Read (CStreamFile *sf, Tag tag);    // Read method
   //----------------------------------------------------------------
 	inline  SPosition *AdPosition()						{return &pos;}				
@@ -52,22 +58,25 @@ public:
 //============================================================================
 //  Edge structure for runway and taxiways
 //============================================================================
-class CTaxiEdge: public CStreamObject
+class TaxEDGE: public CStreamObject
 { //------------Attribute ----------------------------------------
-  U_SHORT       oNode;                        // Node number for origin
-  U_SHORT       xNode;                        // Node number for extremity
+public:
+	Tag						idn;													// Identity
+  U_SHORT				oNode;                        // Node number for origin
+  U_SHORT				xNode;                        // Node number for extremity
   short         type;                         // Type of edge
   float         thick;
   //-----------Methods ------------------------------------------
 public:
-   CTaxiEdge();
-  ~CTaxiEdge();
+   TaxEDGE();
+  ~TaxEDGE();
   int           Read (CStreamFile *sf, Tag tag);    // Read method
+	bool					ReferTo(Tag tn);
   //-----------innline ------------------------------------------
-  inline  void    SetOrigin(short nn)         {oNode = nn;}
-  inline  void    SetExtrem(short nn)         {xNode = nn;}
-  inline  U_SHORT GetOrigin()                 {return oNode;}
-  inline  U_SHORT GetExtrem()                 {return xNode;}
+  inline  void    SetOrigin(U_SHORT nn)       {oNode = nn;}
+  inline  void    SetExtrem(U_SHORT nn)       {xNode = nn;}
+  inline  Tag			GetOrigin()                 {return oNode;}
+  inline  Tag			GetExtrem()                 {return xNode;}
   inline  short   GetType()                   {return type;}
   inline  float   GetThick()                  {return thick;}
 };
@@ -79,8 +88,8 @@ class CDataBGR: public CStreamObject
 	CAptObject		 *apo;																// Airport object
   SPosition       pos;                                // File Origin
   SPosition       dpo;																// Polygon origin
-  std::vector<CTaxiNode *>  nodelist;                 // List of nodes
-  std::vector<CTaxiEdge *>  edgelist;                 // List of edges
+  std::vector<TaxNODE *>  nodelist;                 // List of nodes
+  std::vector<TaxEDGE *>  edgelist;                 // List of edges
   //-------------Scale factor -------------------------------------
   float           scale;
   //------------ Color --------------------------------------------
@@ -94,8 +103,8 @@ public:
   int         Read (CStreamFile *sf, Tag tag);    // Read method
 	void				ProcessNode(CStreamFile *sf);
 	//---------------------------------------------------------------
-  CTaxiNode  *GetNode(U_INT No);
-  CTaxiEdge  *GetEdge(U_INT No);
+  TaxNODE  *GetNode(U_INT No);
+  TaxEDGE  *GetEdge(U_INT No);
   bool        GetLine(U_INT No,int &x0,int &y0,int &x1,int &y1);
   bool        DrawSegment(U_INT No,SSurface *sf,int xm,int ym);
   //-----------------------------------------------------------------

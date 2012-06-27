@@ -123,10 +123,6 @@ void CPlotter::DrawPixel(short xa, short xb)
 CFuiPlot::CFuiPlot(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,900,400,0)
 { SetTransparentMode();
-  title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
   SetText("PLOTTER");
   //--- Init group box -----------------------------------
   gBOX = new CFuiGroupBox(0,0,120,400,this);

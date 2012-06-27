@@ -935,7 +935,7 @@ void CAcmPart::DrawAsBlade()
 
 //-----------------------------------------------------------------------------
 void CAcmPart::Print (FILE *f)
-{
+{ /*
   int index = 0;
   fprintf (f, "  Name  : %s\n", name);
   fprintf (f, "  Index : %d\n", index);
@@ -956,6 +956,7 @@ void CAcmPart::Print (FILE *f)
     CAcmPart *child = *it;
     child->Print (f);
   }
+	*/
 }
 //-----------------------------------------------------------------------------
 //  Create a new model ACM

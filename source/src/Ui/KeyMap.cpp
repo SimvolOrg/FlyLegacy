@@ -633,13 +633,8 @@ CKeyMap::CKeyMap ()
 //  Check for file name and open it
 //--------------------------------------------------------------------------
 void CKeyMap::OpenKey(char *fn)
-{ SStream s;
-  if (OpenRStream (fn,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-    return;
-  }
-  gtfo ("ERROR : Could not read key mappings from %s",fn);
+{ SStream s(this,fn);
+	if (!s.ok) gtfo ("key file %s not found",fn);
   return;
 }
 //--------------------------------------------------------------------------

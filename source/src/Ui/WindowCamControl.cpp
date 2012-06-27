@@ -34,7 +34,8 @@
 //=====================================================================================
 CFuiCamControl::CFuiCamControl(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,240,180,0)
-{	SetProperty(FUI_TRANSPARENT);
+{	title = 0;
+	SetProperty(FUI_TRANSPARENT);
 	SetProperty(FUI_NO_BORDER);
 	//MEMORY_LEAK_MARKER (">CAMERA CONTRL");
 	//---- Set the back bitmap ----------------------
@@ -115,8 +116,8 @@ bool CFuiCamControl::InsideClick (int mx, int my, EMouseButton buttons)
 //	Mouse move: Process according to state
 //---------------------------------------------------------------------
 bool	CFuiCamControl::MouseMove (int x, int y)
-{	CFuiWindow::MouseMove(x,y);
-	return true;
+{	if (!MouseHit(x,y)) return false;
+  return CFuiWindow::MouseMove(x,y);
 }
 //---------------------------------------------------------------------
 //	Draw the window

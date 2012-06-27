@@ -48,22 +48,32 @@
 //============================================================================
 //  Node structure 
 //============================================================================
-CTaxiNode::CTaxiNode()
+TaxNODE::TaxNODE()
 { pos.lon  = 0;
   pos.lat  = 0;
   pos.alt  = 0;
   direction = 0;
+	type			= 0;
+}
+//------------------------------------------------------------------
+//  Constructor with position given
+//------------------------------------------------------------------
+TaxNODE::TaxNODE(Tag id,SPosition &P)
+{	idn	= id;
+	pos = P;
+	direction = 0;
+	type			= 0;
 }
 //------------------------------------------------------------------
 //  Destroy it
 //------------------------------------------------------------------
-CTaxiNode::~CTaxiNode()
+TaxNODE::~TaxNODE()
 {}
 
 //------------------------------------------------------------------
 //  read the tags
 //------------------------------------------------------------------
-int CTaxiNode::Read (CStreamFile *sf, Tag tag)    // Read method
+int TaxNODE::Read (CStreamFile *sf, Tag tag)    // Read method
 { double  nd;
   long    ln;
   switch (tag) {
@@ -78,7 +88,7 @@ int CTaxiNode::Read (CStreamFile *sf, Tag tag)    // Read method
 
   case 'flow':
     sf->ReadLong(ln);
-    direction = (U_SHORT)ln;
+    direction = U_SHORT(ln);
     return TAG_READ;
   }
   return TAG_READ;
@@ -87,7 +97,7 @@ int CTaxiNode::Read (CStreamFile *sf, Tag tag)    // Read method
 //============================================================================
 //  Edge structure 
 //============================================================================
-CTaxiEdge::CTaxiEdge()
+TaxEDGE::TaxEDGE()
 { oNode   = 0;
   xNode   = 0;
   thick   = 0;
@@ -96,12 +106,12 @@ CTaxiEdge::CTaxiEdge()
 //------------------------------------------------------------------
 //  Destroy it
 //------------------------------------------------------------------
-CTaxiEdge::~CTaxiEdge()
+TaxEDGE::~TaxEDGE()
 {}
 //------------------------------------------------------------------
 //  read the tags
 //------------------------------------------------------------------
-int CTaxiEdge::Read (CStreamFile *sf, Tag tag)    // Read method
+int TaxEDGE::Read (CStreamFile *sf, Tag tag)    // Read method
 { long  nl;
   switch (tag) {
   case 'thck':
@@ -114,6 +124,15 @@ int CTaxiEdge::Read (CStreamFile *sf, Tag tag)    // Read method
     return TAG_READ;
   }
   return TAG_READ;
+}
+//------------------------------------------------------------------
+//  Check for reference to node ta
+//------------------------------------------------------------------
+bool TaxEDGE::ReferTo(Tag tr)
+{	Tag ta = idn >> 16;
+	if (ta == tr)	return true;
+	Tag tb = idn & 0x000FFF;
+	return (tb == tr);
 }
 //============================================================================
 //  Class CDataBGR for Taxiway line definition
@@ -131,14 +150,14 @@ CDataBGR::~CDataBGR()
 //------------------------------------------------------------------
 //  Return Edge Number
 //------------------------------------------------------------------
-CTaxiEdge* CDataBGR::GetEdge(U_INT No)
+TaxEDGE* CDataBGR::GetEdge(U_INT No)
 { if (No >= edgelist.size())   return 0;
   return edgelist[No];
 }
 //------------------------------------------------------------------
 //  Return Node Number
 //------------------------------------------------------------------
-CTaxiNode* CDataBGR::GetNode(U_INT No)
+TaxNODE* CDataBGR::GetNode(U_INT No)
 { if (No >= nodelist.size())   return 0;
   return nodelist[No];
 }
@@ -160,10 +179,10 @@ bool CDataBGR::DrawSegment(U_INT No,SSurface *sf,int xm,int ym)
 //  Destroy the BGR items
 //------------------------------------------------------------------
 void  CDataBGR::EmptyAll()
-{ std::vector<CTaxiNode *>::iterator nd;
+{ std::vector<TaxNODE *>::iterator nd;
   for (nd = nodelist.begin(); nd != nodelist.end();nd++) delete (*nd);
   nodelist.clear();
-  std::vector<CTaxiEdge *>::iterator ed;
+  std::vector<TaxEDGE *>::iterator ed;
   for (ed = edgelist.begin(); ed != edgelist.end();ed++) delete (*ed);
   edgelist.clear();
   return;
@@ -182,7 +201,7 @@ void CDataBGR::AdjustOrigin()
 //  Process a node
 //------------------------------------------------------------------
 void CDataBGR::ProcessNode(CStreamFile *sf)
-{ CTaxiNode *txn = new CTaxiNode();
+{ TaxNODE *txn = new TaxNODE();
   sf->ReadFrom(txn);
 	SPosition *loc = txn->AdPosition();
 	double     xpf = apo->GetXPF();
@@ -198,7 +217,7 @@ int CDataBGR::Read (CStreamFile *sf, Tag tag)    // Read method
 { long    nb;
   double  nd;
   
-  CTaxiEdge *edg = 0;
+  TaxEDGE *edg = 0;
   switch (tag) {
 	//--- origin of coordinates ------------------
   case 'orgn':
@@ -217,7 +236,7 @@ int CDataBGR::Read (CStreamFile *sf, Tag tag)    // Read method
     return TAG_READ;
 
   case 'edge':
-    edg = new CTaxiEdge();
+    edg = new TaxEDGE();
     sf->ReadLong(nb);
     edg->SetOrigin((short)nb);
     sf->ReadLong(nb);
@@ -248,11 +267,7 @@ CDataTMS::CDataTMS(CAptObject *apo)
 //  Open and read the file
 //------------------------------------------------------------------
 bool CDataTMS::DecodeBinary(char *fname)
-{ SStream s;
-  if (OpenRStream(fname,s) == 0)   return false;
-  CStreamFile *sf = (CStreamFile*)s.stream;
-  sf->ReadFrom (this);
-  CloseStream (&s);
+{ SStream s(this,fname);
   return true;
 }
 //------------------------------------------------------------------

@@ -37,10 +37,7 @@
 //==================================================================================
 CFuiLoad::CFuiLoad(Tag idn, const char*filename)
 : CFuiWindow(idn,filename,520,300,0)
-{ title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
+{ SetTitle("LOAD STATION MANAGER");
   //-----------------------------------------------------------
   wLBL  = new CFuiLabel(6, 4,200,20);
   AddChild('?lbl',wLBL,"LOAD STATIONS:");
@@ -108,7 +105,6 @@ CFuiLoad::CFuiLoad(Tag idn, const char*filename)
   //----Register and create ----------------------
   globals->wld = this;
   CFuiWindow::ReadFinished();
-  SetTitle("LOAD STATION MANAGER");
   U_INT type = LIST_NOHSCROLL;
   sBOX.SetParameters(this,'wsta',type);
   GetStations();

@@ -918,8 +918,6 @@ public:
 	//--- Drawing routines ---------------------------------
 	int 		LineMode();					// Drawing interface
 	int 		FillMode();
-	//--- TimeSlice must return 0 to inhibit further processing --
-	int			TimeSlice(float dT,U_INT frame);
 	//--- Option  management -------------------------------
 public:
 	void		repD(U_INT p)								{dop.Rep(p);}

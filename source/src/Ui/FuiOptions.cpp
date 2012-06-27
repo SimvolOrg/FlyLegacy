@@ -29,26 +29,6 @@
 //================================================================================================
 WORD Ramp[3][256];                                    // Current ramp
 HDC  hdc = 0;                                           // Current HDC
-//========================================================================================
-//  Window for global options
-//========================================================================================
-CFuiOptions::CFuiOptions(Tag idn, const char *filename)
-:CFuiWindow(idn,filename,280,200,0)
-{ gBOX  = new CFuiCheckBox(10,8,260,60,this);
-  AddChild('gcor',gBOX,"Gamma Correction");
-  //--------------------------------------------------------
-  ReadFinished();
-}
-//-----------------------------------------------------------------------------------
-//  Check if gamma ramp is already saved
-//-----------------------------------------------------------------------------------
-bool CFuiOptions::CheckNoFile()
-{ char *fn = "System/Gamma.cof";
-  FILE* f = fopen (fn, "r");
-  if (!f) return true;
-  fclose(f);
-  return false;
-}
 //==================================================================================
 //	Global function to add a file
 //==================================================================================
@@ -64,8 +44,7 @@ int fileBoxCB(char *fn,void *upm)
 CFuiFileBox::CFuiFileBox(CFuiWindow *mwin,FILE_SEARCH *pm)
 	:CFuiWindow(FUI_WINDOW_FILE_BOX,0,180,210,0)
 {	MoWind	= mwin;
-	FPM = pm;
-	title = 1;
+	FPM   = pm;
 	close = FPM->close;
   //--- white color -------------------------------
 	U_INT wit = MakeRGBA(255,255,255,255);

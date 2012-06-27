@@ -678,7 +678,7 @@ void CSkyDomeImage::Draw (void)
 // This is called from the parent CSkyManager class
 //
 void CSkyDomeImage::Print (FILE *f)
-{
+{	/*
   /// \todo  Print currently selected Perez parameter set
 
   // Display Perez parameter sets
@@ -735,6 +735,7 @@ void CSkyDomeImage::Print (FILE *f)
       p->y_zenith.t2[0], p->y_zenith.t1[0], p->y_zenith.t0[0]);
 
     fprintf (f, "\n");
+		
   }
 
   int iv, jv;
@@ -776,5 +777,6 @@ void CSkyDomeImage::Print (FILE *f)
         jv, vtx_ring_angles[iv][jv][0], vtx_ring_angles[iv][jv][1]);
     }
   }
+	*/
 }
 

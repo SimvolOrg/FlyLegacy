@@ -300,7 +300,6 @@ CCamera::CCamera (void)
 { fov   = globals->fovX;          // Degrees
 	ffac	= 1;
   range = globals->camRange;      // xx feet initial
-  Lock  = 0;
 	pick	= 0;											// Picking indicator
 	intcm	= 0;
 	extcm = 1;
@@ -317,6 +316,9 @@ CCamera::CCamera (void)
   rmin  = globals->camRange;
   rmax  = 5000;
   dmin  = globals->nearP + 10;
+	//--------------------------------------------------
+	trak	  = 0;		// No tracker
+	twin		= 0;		// No window
   //----SW base corner ------------------------------------------------
   Pan[0].VT_S   = 0;
   Pan[0].VT_T   = 0;
@@ -350,9 +352,6 @@ CCamera::CCamera (void)
   SetMinAGL();
   // Define a clamp value just less than 90 degrees
   clamp = DegToRad (89.99999f);
-	//--- Temporaire ---------------------------------------
-	T1 = 0;
-	T2 = 0;
 }
 //-------------------------------------------------------------------------
 // Camera is destroyed
@@ -367,11 +366,27 @@ CCamera::~CCamera()
 void CCamera::SetCameraParameters(double fv,double rt)
 {	ratio = rt;
 	fov   = fv;
-	//--- Compute height and width of near section ---------
-	tgf   = tan(DegToRad(fv * 0.5));
-	htr		= nearP * tgf;
-	wdt		= htr   * ratio;
+	//--- Compute tangent of near section ---------
+	tgf   = tan(DegToRad(fv * 0.4));
 	return;
+}
+//-------------------------------------------------------------------------
+//	Get Foot per pixel
+//	Given the camera AGL and the Fov we can compute the foot per
+//	pixel in the Y direction:    
+//	dis(y) / AGL = tan(Fov * 0.5) => dis(y) = AGL * tan(fov * 0.5)
+//	FFP = dis(y) / RES (screen resolution)
+//  NOTE:: We assume that pixel ratio is 1. Otherwise the distance computation
+//				 will be false because 1 pixel height will have a different
+//				foot per pixel than one pixel width.
+//-------------------------------------------------------------------------
+void CCamera::FootPerPixel()
+{ //--- compute Y distance ---------------------------
+	int vp[4];
+	glGetIntegerv(GL_VIEWPORT,vp);
+	double dy = range * tan(DegToRad(fov * 0.5));
+	double yr = (vp[3] >> 1);
+	fpp       = dy / yr;
 }
 //-------------------------------------------------------------------------
 // Compute camera referential relative to target position tgt
@@ -555,7 +570,25 @@ void CCamera::GoToPosition(SPosition &dst)
 	move	= 0;
   return;
 }
-
+//-------------------------------------------------------------------------
+//  Set Above terrain
+//-------------------------------------------------------------------------
+void CCamera::SetAbove(SPosition pos)
+{ // Initialize orientation to point straight down
+	double  ang = 90;
+	theta		 = 0 ;
+	phi      = DegToRad(ang);
+  //----UP is toward north direction ---------------
+  Up.x  = 0;
+  Up.y  = 1;
+  Up.z  = 0;
+  //----FOV is 40°----------------------------------
+  fov = 40.0f;
+	tgf = tan(DegToRad(fov * 0.5));
+	//--- compute feet per pixel ---------------------
+	FootPerPixel();
+	return;
+}
 //------------------------------------------------------------------------
 //  Screen is resized
 //-------------------------------------------------------------------------
@@ -637,6 +670,7 @@ void CCamera::ShowRange()
 { char txt[256];
   _snprintf(txt,255,"Range: %.0f feet",range);
   globals->fui->DrawNoticeToUser(txt,5);
+	FootPerPixel();
   return;
 }
 //------------------------------------------------------------------------
@@ -935,6 +969,8 @@ void CCamera::Projection(VIEW_PORT &vp,TEXT_INFO &inf)
 //-------------------------------------------------------------------------
 // Rotate arround aircraft
 //  -offset are in feet from aircraft position
+//	Tpos => Target position
+//	Tori => Target orientation
 //-------------------------------------------------------------------------
 void CCamera::RockArround (SPosition tpos, SVector tori,float dT)
 { tgtPos = tpos;
@@ -987,10 +1023,58 @@ void CCamera::RoundDown (void)
   if (GoodHeight(ang)) phi = ang;
   return;
 }
-
+//----------------------------------------------------------------------
+//	Pick objects
+//	 The tracker is the programm which draw all 'pickable' objects 
+//	 it is called at DrawMarks() to draw all objects
+//	 If a hit occurs, the tracker is called at OneSolution(hit#)
+//	 Associated to the tracker the tracking window twin is also called
+//	 at OnePicking(hit#)
+//	 hit# is the picked object identity 
+//----------------------------------------------------------------------
+bool CCamera::PickObject(U_INT mx, U_INT my)
+{	//--- Init picking -------------------------------------
+	pick	= 1;
+	picx	= mx;
+	picy	= my;
+	glSelectBuffer(8,bHit);						// Supply buffer
+	glRenderMode(GL_SELECT);					// Start select mode
+	glInitNames();										// Init stack name
+	glPushName(0);										// room for one name
+	StartShoot(0);										// Init camera
+	trak->DrawMarks();								// Redraw markers
+	StopShoot();											// Stop Drawing
+	int hit = glRenderMode(GL_RENDER);
+	pick	= 0;
+	if (0 == hit)					return false;
+	//--- change selected vertex ---------------------------
+	U_INT vno = bHit[3];							// Number hited
+	trak->OneSelection(vno);
+	twin->OnePicking(vno);
+	return true;
+}
+//-------------------------------------------------------------------------
+//  Start picking by loading picking matrix
+//	This function should be called by the camera when Perspective matrix
+//	mode is set and before the gluPerspective() is called
+//-------------------------------------------------------------------------
+void CCamera::StartPicking()
+{ if (0 == pick)	return;
+	GLint vp[4];
+	glGetIntegerv(GL_VIEWPORT,vp);
+	int   hy = vp[3] - picy + vp[1];
+	gluPickMatrix(double(picx),double(hy),10,10,vp);
+	return;
+}
+//-------------------------------------------------------------------------
+// Save tracker
+//-------------------------------------------------------------------------
+void CCamera::SetTracker(Tracker *t, CFuiWindow *w )
+{	trak	= t;	
+	twin	= w;}
 //------------------------------------------------------------------------
 void CCamera::Print (FILE *f)
-{
+{/*
   fprintf (f, "CCamera : \n");
   fprintf (f, "  Horizontal FOV:   %f deg\n", fov);
   fprintf (f, "  Pitch (deg)   :   %f\n", RadToDeg(orient.x));
@@ -1000,6 +1084,7 @@ void CCamera::Print (FILE *f)
   fprintf (f, "  Frustum :\n");
   for (int i=0; i<6; i++) {
   }
+	*/
 }
 
 /*==================================================================================
@@ -1477,8 +1562,6 @@ CRabbitCamera::CRabbitCamera()
   phi   = DegToRad (30.0f);
 	//---------------------------------------------
 	move		= 0;		//no move
-	trak	  = 0;		// No tracker
-	twin		= 0;		// No window
   //--- Link to cameras -------------------------
   cIden = CAMERA_RABBIT;
   cNext = 0;
@@ -1491,25 +1574,6 @@ CRabbitCamera::CRabbitCamera()
 //--------------------------------------------------------------------------
 CRabbitCamera::~CRabbitCamera()
 {	}
-//-------------------------------------------------------------------------
-// Save tracker
-//-------------------------------------------------------------------------
-void CRabbitCamera::SetTracker(Tracker *t, CFuiWindow *w )
-{	trak	= t;	
-	twin	= w;}
-//-------------------------------------------------------------------------
-//  Start picking by loading picking matrix
-//	This function should be called by the camera when Perspective matrix
-//	mode is set and before the gluPerspective() is called
-//-------------------------------------------------------------------------
-void CRabbitCamera::StartPicking()
-{ if (0 == pick)	return;
-	GLint vp[4];
-	glGetIntegerv(GL_VIEWPORT,vp);
-	int   hy = vp[3] - py + vp[1];
-	gluPickMatrix(double(px),double(hy),10,10,vp);
-	return;
-}
 //-------------------------------------------------------------------------
 //	Set Rabbit orientation
 //-------------------------------------------------------------------------
@@ -1532,8 +1596,9 @@ void CRabbitCamera::RabbitMoveTo(SPosition *pos)
 //  Rabbit camera does not turn arround veh but rather turns the veh
 //	so the slew always face the camera
 //-------------------------------------------------------------------------
-void CRabbitCamera::RabbitLeft()
-{	SVector ori = globals->iang;
+void CRabbitCamera::PanLeft()
+{	if (Prof.Not(CAM_SIDE_ROT))	return;
+	SVector ori = globals->iang;
 	ori.z       = WrapTwoPi (ori.z - DegToRad (double(0.5)));	
 	TurnRabbit(ori);
 	return;
@@ -1542,38 +1607,24 @@ void CRabbitCamera::RabbitLeft()
 //  Rabbit camera does not turn arround veh but rather turns the veh
 //	so the slew always face the camera
 //-------------------------------------------------------------------------
-void CRabbitCamera::RabbitRight()
-{	SVector ori = globals->iang;
+void CRabbitCamera::PanRight()
+{	if (Prof.Not(CAM_SIDE_ROT))	return;
+	SVector ori = globals->iang;
 	ori.z       = WrapTwoPi (ori.z + DegToRad (double(0.5)));	
 	TurnRabbit(ori);
 	return;
 }
-//----------------------------------------------------------------------
-//	Pick objects
-//	-Draw all markers in pick mode in a small cube centered on mouse
-//	 to detect if a hit occured.
-//	When a hit is detected, the selction is changed to the new marker
-//----------------------------------------------------------------------
-bool CRabbitCamera::PickObject(U_INT mx, U_INT my)
-{	//--- Init picking -------------------------------------
-	pick	= 1;
-	px		= mx;
-	py		= my;
-	glSelectBuffer(8,bHit);						// Supply buffer
-	glRenderMode(GL_SELECT);					// Start select mode
-	glInitNames();										// Init stack name
-	glPushName(0);										// room for one name
-	StartShoot(0);										// Init camera
-	trak->DrawMarks();								// Redraw markers
-	StopShoot();											// Stop Drawing
-	int hit = glRenderMode(GL_RENDER);
-	pick	= 0;
-	if (0 == hit)					return false;
-	//--- change selected vertex ---------------------------
-	U_INT vno = bHit[3];							// Number hited
-	trak->OneSelection(vno);
-	twin->OnePicking(vno);
-	return true;
+//-------------------------------------------------------------------------
+//  turn up
+//-------------------------------------------------------------------------
+void CRabbitCamera::PanUp()
+{	if (Prof.Has(CAM_VERT_ROT))	RoundUp();
+}
+//-------------------------------------------------------------------------
+//  turn down
+//-------------------------------------------------------------------------
+void CRabbitCamera::PanDown()
+{	if (Prof.Has(CAM_VERT_ROT))	RoundDown();
 }
 //-------------------------------------------------------------------------
 //	Start camera move IN
@@ -1591,7 +1642,7 @@ void CRabbitCamera::UpdateCamera (SPosition wpos, SVector tori,float dT)
 {	RockArround(wpos,tori,dT);
 	//--- Update camera world position ---------------------
 	UpdateCameraPosition(wpos);
-	//--- check for automove -------------------------------
+	//--- Check for automove -------------------------------
 	if (0 == move)			return;
 	if ((moveInc > 0) && (range >= moveTgt))	move = 0;
 	if ((moveInc < 0) && (range <= moveTgt)) 	move = 0;
@@ -2882,13 +2933,7 @@ CCameraManager::CCameraManager (CVehicleObject *veh,char* fn)
   tCam    = CAMERA_SPOT;
   aCam    = 0;
   globals->ccm = this;
-  SStream s;
-  if (OpenRStream ("WORLD",fn,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  } else {
-    WARNINGLOG ("CCameraManager : Cannot open .CAM file %s", fn);
-  }
+  SStream s(this, "WORLD",fn);
 }
 //-----------------------------------------------------------------
 //  Free camera list
@@ -3085,7 +3130,6 @@ void CCameraManager::ZeroRate()
 void CCameraManager::UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT)
 { // Get updated eye position from the active camera
   aCam->UpdateCamera (tgtPos, tgtOrient);
-  // Store target position for Print() method
   this->tgtPos    = tgtPos;
   this->tgtOrient = tgtOrient;
   return;
@@ -3192,8 +3236,7 @@ void CCameraManager::NextCamera (void)
 //  Keyboard command
 //---------------------------------------------------------------
 void CCameraManager::KbEvent(Tag id)
-{ if (aCam->IsLocked()) return;
-  SelectCamera (id);
+{ SelectCamera (id);
   return;
 }
 //-------------------------------------------------------------------------
@@ -3208,7 +3251,7 @@ bool CCameraManager::KeyCameraCockpitEvent(int id)
 //  Print parameter from camera
 //---------------------------------------------------------------
 void CCameraManager::Print (FILE *f)
-{
+{ /*
   char debug[256];
 
   fprintf (f, "Camera Manager:\n\n");
@@ -3244,5 +3287,6 @@ void CCameraManager::Print (FILE *f)
   fprintf (f, "  Deg   %6.3f       %6.3f       %6.3f\n",
     RadToDeg (tgtOrient.h), RadToDeg (tgtOrient.p), RadToDeg (tgtOrient.r));
   fprintf (f, "\n");
+	*/
 }
 //=====================END OF FILE ===========================================================

@@ -1589,7 +1589,7 @@ void CExternalLight::DrawT1()
 //  Print the light
 //-------------------------------------------------------------------------------
 void CExternalLight::Print (FILE *f)
-{
+{ /*
   char s[8];
   TagToString (s, unId);
   fprintf (f, "Light unique ID : %s\n", s);
@@ -1605,6 +1605,7 @@ void CExternalLight::Print (FILE *f)
   fprintf (f, "     Duty Cycle : %8.5f\n", duty);
 
   /// @todo Print external light purpose
+	*/
 }
 //=========================================================================================
 //
@@ -1614,11 +1615,7 @@ void CExternalLight::Print (FILE *f)
 CExternalLightManager::CExternalLightManager (CVehicleObject *mv, char *fn)
 { mveh  = mv;
   xLit  = 0;
-  SStream s;
-  if (OpenRStream ("WORLD",fn,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",fn);
 	//----Get halo texture --------------------------
 	Build2DHalo(32);
 	//--- Set up vector in intersector --------------

@@ -300,7 +300,7 @@ void CMagneticModel::GetElements (SPosition pos, float& D, float& H)
 }
 
 void CMagneticModel::Test (const char* filename)
-{
+{ /*
   int n, m;
 
   FILE* f = fopen (filename, "w");
@@ -369,5 +369,6 @@ void CMagneticModel::Test (const char* filename)
 
     fclose (f);
   }
+	*/
 }
 

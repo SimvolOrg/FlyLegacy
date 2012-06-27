@@ -1016,8 +1016,6 @@ public:
   char       *GetCDTdata(U_INT key);
   void        FreeCST(C_QGT *qgt);
   void        DecCST(U_INT key);
-  //---------TRN FILE -------------------------------------------
-  int         TryEPD(C_QGT *qgt,char *name);
   //---------Drawing primitives ----------------------------------
   void        Draw();
 	void				Draw3DObjects();

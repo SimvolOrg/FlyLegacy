@@ -312,7 +312,7 @@ int CFuiTheme::Decode(char *t,char *s)
 }
 //==============================================================================
 void CFuiTheme::Print (FILE *f)
-{
+{ /*
   fprintf (f, "THEMENAME\t%s\n", name);
   char s[8];
   TagToString (s, id);
@@ -324,5 +324,6 @@ void CFuiTheme::Print (FILE *f)
     fprintf (f, "\n");
   }
   fprintf (f, "\n");
+	*/
 }
 

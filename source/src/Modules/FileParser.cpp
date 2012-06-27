@@ -1090,10 +1090,7 @@ CRLParser::CRLParser(CAirportMgr *ap, char *fn)
 //  Decode the file if it exists
 //----------------------------------------------------------------------------------
 void CRLParser::Decode(char *fk)
-{ SStream s;
-  if (!OpenRStream (fk,s))  return;
-  ReadFrom (this, &s);
-  CloseStream (&s);
+{ SStream s(this,fk);
   return;
 }
 //----------------------------------------------------------------------------------

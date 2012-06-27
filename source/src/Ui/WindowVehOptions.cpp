@@ -30,13 +30,11 @@
 //==========================================================================
 CFuiVehOption::CFuiVehOption(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,280,220,0)
-{ //---Init windows -----------------------------------------
+{ SetText("AIRCRAFT OPTIONS");
+	//---Init windows -----------------------------------------
   mveh  = globals->pln;
   char  ok = 0;
   //--- Get components --------------------------------------
-  title = 1;
-  close = 1;
-  SetText("AIRCRAFT OPTIONS");
   aBOX  = new CFuiGroupBox(10,8,260,60,this);
   AddChild('abox',aBOX,"");
   aLAB  = new CFuiLabel( 4, 4,76, 20, this);

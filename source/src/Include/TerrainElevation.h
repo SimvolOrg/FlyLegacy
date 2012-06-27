@@ -324,8 +324,6 @@ class C_CTEX: public CStreamObject {
 public:
   C_CTEX(C_QGT *qgt,U_INT tr);                        // Constructor
   void  Abort(char *fn, char *em);
-  void  DecodeTEX(char *fname);                       // Decode TEX file
-  void  DecodeREF(char *fname);                       // Decode REF file
   void  Assign(char *tn,U_SHORT tx,U_SHORT tz);       // Assign texture
   void  NormeName(char *txt);
 };

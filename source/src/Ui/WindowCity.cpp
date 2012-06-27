@@ -41,18 +41,16 @@ using namespace std;
 //==========================================================================================
 CFuiSketch::CFuiSketch(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,220,560,0)
-{ title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
+{ //--- Set title ---------------------------------
+	strcpy(text,"CITY EDITOR");
+	//-----------------------------------------------
 	CFuiGroupBox *box;
 	CFuiLabel    *lab;
 	CFuiCheckBox *chk;
 	CFuiButton   *but;
 	//--- white color -------------------------------
 	U_INT wit = MakeRGBA(255,255,255,255);
-	//--- Set title ---------------------------------
-	strcpy(text,"CITY EDITOR");
+	
 	box  = new CFuiGroupBox(10,8,200,50,this);
   AddChild('gbox',box,"");
 	//--- Label --------------------------------------

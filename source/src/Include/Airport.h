@@ -41,8 +41,8 @@
 class CAptObject;
 class CCameraRunway;
 class CPicQUAD;
-class CTaxiNode;
-class CTaxiEdge;
+class TaxNODE;
+class TaxEDGE;
 class CDataBGR;
 class CRunway;
 //============================================================================
@@ -351,8 +351,6 @@ public:
   inline void      LightPlease()              {lreq ^= 1;}
   //----------------------------------------------------------------------
   inline double    GetGround()                {return ground;}
-//  inline double    GetXnormal(double f)       {return (f * ppx);}
-//  inline double    GetYnormal(double f)       {return (f * ppy);}
   inline double    GetRDF()                   {return rdf;}
   inline double    GetXPF()                   {return xpf;}
   inline SPosition GetOrigin()                {return Org;}

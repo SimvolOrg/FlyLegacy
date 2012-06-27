@@ -97,6 +97,8 @@ class CExport {
   TEXT_INFO  inf;                         // Texture info
   M3D_PART_INFO pif;                      // Part info
 	SQL_DB   *DB;														// Curent database
+	//--- Stream file ---------------------------------------------
+	CStreamFile sf;
   //-------------------------------------------------------------
   char gen;                               // Export indicator
   char elv;                               // Export ELV
@@ -175,13 +177,13 @@ public:
   void  ExportCtyAsCVS();
   void  ExportStaAsCVS();
   //-----GENERIC NAVIGATION OBJECTS----------------------------
-  void  ExportAPT(U_INT gx,U_INT gz,char *sep,SStream &st);
-  void  ExportNAV(U_INT gx,U_INT gz,char *sep,SStream &st);
-  void  ExportILS(U_INT gx,U_INT gz,char *sep,SStream &st);
-  void  ExportCOM(U_INT gx,U_INT gz,char *sep,SStream &st);
-  void  ExportWPT(U_INT gx,U_INT gz,char *sep,SStream &st);
-  void  ExportCTY(char *sep,SStream &st);
-  void  ExportSTA(char *sep,SStream &st);
+  void  ExportAPT(U_INT gx,U_INT gz,char *sep);
+  void  ExportNAV(U_INT gx,U_INT gz,char *sep);
+  void  ExportILS(U_INT gx,U_INT gz,char *sep);
+  void  ExportCOM(U_INT gx,U_INT gz,char *sep);
+  void  ExportWPT(U_INT gx,U_INT gz,char *sep);
+  void  ExportCTY(char *sep);
+  void  ExportSTA(char *sep);
   //----COAST DATA---------------------------------------------
   void  ExportCoastInDB();
   void  ExportCoastFile(char *name,int gx,int gz);

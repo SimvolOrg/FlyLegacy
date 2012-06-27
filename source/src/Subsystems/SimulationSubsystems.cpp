@@ -908,11 +908,7 @@ void CPropellerModel::ReadFinished (void)
 {
   if (read_PRP_file_flag) {
     read_PRP_file_flag = false;
-    SStream s;
-    if (OpenRStream ("WORLD",propeller_filename,s)) {
-      ReadFrom (this, &s);
-      CloseStream (&s);
-    }
+    SStream s(this,"WORLD",propeller_filename);
     return;
   }
   //

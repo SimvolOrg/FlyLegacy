@@ -45,10 +45,6 @@ char *prob_OP2[] = {"Base",0};
 CFuiProbe::CFuiProbe(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,500,600,0)
 { strncpy(text,"SUBSYSTEM PROBE",255);
-  title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
   //--------Create the subsystem list -----------------------
   wSub  = new CFuiList(20,10,170,380,this);
   wSub->SetVScroll();

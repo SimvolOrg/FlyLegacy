@@ -105,16 +105,11 @@ protected:
  * Stream functions implemented in Stream.cpp
  */
 
-int   DoesFileExist(const char *filename, EFileSearchLocation where);
-int   DoesPodVolumeExist(const char *volumeName);
 int   OpenRStream(char *pn,char *fn, SStream &s);
 int   OpenRStream(char *fn, SStream &s);
 int   OpenStream(SStream *stream);
 int   OpenStream(PFS *pfs, SStream *stream);
 void  CloseStream(SStream *stream);
-long  sTell(SStream *st);
-void  sSeek(SStream *st,long pos);
-//void  WriteTo(SDLLObject *object, SStream *stream);
 void  ReadFrom(CStreamObject *object, SStream *stream);
 void  SkipObject(SStream *stream);
 bool  AdvanceToTag(unsigned int tag, SStream *stream);

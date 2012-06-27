@@ -379,7 +379,7 @@ void CSubsystem::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
 }
 //----------------------------------------------------------------------------------
 void CSubsystem::Print (FILE *f)
-{
+{ /*
   fprintf (f, "CSubsystem:\n");
   fprintf (f, "  type=%s\tunId=%s\thw=", type_string, unId_string);
   switch (hwId) {
@@ -482,6 +482,7 @@ void CSubsystem::Print (FILE *f)
   fprintf (f, "  unit=%d\tgNum=%d\n", uNum, gNum);
   fprintf (f, "  timK = %f\tratK=%f\n", timK, ratK);
   fprintf (f, "  indn = %f\tindnTarget=%f\n", indn, indnTarget);
+	*/
 }
 //-------------------------------------------------------------------------
 //	NULL Subsystem constructor: Init all values to NULL

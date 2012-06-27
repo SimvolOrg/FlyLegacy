@@ -835,6 +835,8 @@ void InitGlobalsNoPodFilesystem (char *root)
   globals->mScreen.Y      = y;
   globals->mScreen.Width  = w;
   globals->mScreen.Height = h;
+	globals->mScreen.xRes		= w;
+	globals->mScreen.yRes		= h;
   globals->mScreen.Depth  = bpp;
   globals->mScreen.Refresh  = refresh;
   globals->mScreen.bMouseOn = true;

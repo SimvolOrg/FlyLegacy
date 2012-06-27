@@ -109,11 +109,7 @@ int CGaugeNeedle::Read (SStream *stream, Tag tag)
       char *dot = strchr(file,'.');
       if (dot && (strcmp(dot,".PBM") == 0))	strcpy(dot,".NDL");
       if (dot && (strcmp(dot,".PBG") == 0))	strcpy(dot,".NDL");
-      SStream s;
-      if (OpenRStream ("DATA",file,s)) {
-        ReadFrom (this, &s);
-        CloseStream (&s);
-      }
+      SStream s(this,"DATA",file);
       return TAG_READ;
     }
     break;

@@ -116,11 +116,7 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
   mRpm.sender = 'simu';
   mMap.sender = 'simu';
 	//--- Read the SVH file -------------------------
-  SStream s;
-  if (OpenRStream ("WORLD",svhFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",svhFilename);
 	//--- Init messages -----------------------------
   mAlt.id = MSG_GETDATA;
   mSpd.id = MSG_GETDATA;
@@ -467,11 +463,7 @@ CFuelSystem::CFuelSystem (CVehicleObject *v,char* gasFilename, CEngineManager *e
   GetIniVar("TRACE","FuelSystem",&t);
   Tr  = char(t);
   // Populate data members from GAS stream file
-  SStream s;
-  if (OpenRStream ("WORLD",gasFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",gasFilename);
 }
 //-----------------------------------------------------------------------
 //  Destroy the system
@@ -894,12 +886,7 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
 	//--------------------------------------------------------
   pEngineManager = engine_manager;
   // Read from AMP file stream-----------------------------
-  SStream s;
-  //---Read all subsystems --------------------------------
-  if (OpenRStream ("WORLD",ampFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",ampFilename);
 	//-- Add Fligth Plan subsystem ----------------------
 	CFPlan	*fp = new CFPlan(mveh,1);
 	subs.push_back (fp);
@@ -1811,7 +1798,7 @@ void CElectricalSystem::Timeslice(float dT,U_INT FrNo)
 
 
 void CElectricalSystem::Print (FILE *f)
-{
+{ /*
   fprintf (f, "Electrical System:\n\n");
 
   // Print each electrical subsystem
@@ -1822,6 +1809,7 @@ void CElectricalSystem::Print (FILE *f)
     s->Print (f);
     fprintf (f, "\n");
   }
+	*/
 }
 
 //===============================================================================
@@ -1834,12 +1822,7 @@ CPitotStaticSystem::CPitotStaticSystem (CVehicleObject *v, char* pssFilename)
   ports.clear ();
   _total_pressure_node = 0.0;
 
-  SStream s;
-  if (OpenRStream ("WORLD",pssFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
-
+  SStream s(this,"WORLD",pssFilename);
 }
 //--------------------------------------------------------------------
 CPitotStaticSystem::~CPitotStaticSystem (void)
@@ -1936,12 +1919,7 @@ CVariableLoadouts::CVariableLoadouts (CVehicleObject *v,char* vldFilename,  CWei
   // !!! must be before Read from Stream below ...
   vld_wgh = wgh;
 
-  SStream s;
-  if (OpenRStream ("WORLD",vldFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
-
+  SStream s(this,"WORLD",vldFilename);
 }
 //----------------------------------------------------------------------------------
 //  Destroy
@@ -1997,11 +1975,7 @@ CCockpitManager::CCockpitManager (CVehicleObject *v,char* pitFilename)
 	CPanelLight *lit	= new CPanelLight(0);
 	lite[0]						= lit;
   //-----  Read cockpit manager stream ---------
-  SStream s;
-  if (OpenRStream ("WORLD",pitFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",pitFilename);
 }
 //-----------------------------------------------------------------------------
 //	JSDEV* Preapre all panels messages
@@ -2469,11 +2443,7 @@ int CEngine::Read (SStream *stream, Tag tag)
 void CEngine::ReadEngineParameters()
 { if (0 == *ngnFilename) return;
   ngnModel->SetEngineData(eData);
-  SStream st; 
-  if (OpenRStream ("WORLD",ngnFilename,st)) {
-      ReadFrom (ngnModel, &st);
-      CloseStream (&st);
-      }
+  SStream st(ngnModel,"WORLD",ngnFilename);
   return;
 }
 //-----------------------------------------------------------------------
@@ -3021,11 +2991,7 @@ CEngineManager::CEngineManager (CVehicleObject *v,char* ngnFilename)
   prop_total_torque.x = prop_total_torque.y = prop_total_torque.z = 0.0;
   thrust_X_offset = 0.0f;
 
-  SStream s;
-  if (OpenRStream ("WORLD",ngnFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",ngnFilename);
 }
 //----------------------------------------------------------------------
 //	remove all engine definitions
@@ -3441,11 +3407,7 @@ CControlMixer::CControlMixer (CVehicleObject *v,char* mixFilename)
 { mveh  = v;              // Save vehicle object
   rPos  = 0.05f;          // Coupled rudder default value 
   rNeg  = 0.05f;          // Coupled rudder default value
-  SStream s;
-  if (OpenRStream ("WORLD",mixFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",mixFilename);
 }
 //---------------------------------------------------------------------
 //  Destroy this object
@@ -3714,16 +3676,8 @@ CVehicleInfo::CVehicleInfo (char* nfoFilename)
   *pidFilename = 0;
   *phyFilename = 0; // PHY file
   // Open stream for NFO file
-  SStream s;
-  int success = OpenRStream(nfoFilename,s);
-  if (!success)  success = OpenRStream("WORLD",nfoFilename,s); 
-
-  if (success) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  } else {
-    gtfo ("CVehicleInfo : Could not open NFO stream %s", nfoFilename);
-  }
+  SStream s(this,"WORLD",nfoFilename);
+	if (!s.ok) gtfo ("File %s not found", nfoFilename);
 }
 
 int CVehicleInfo::Read (SStream *stream, Tag tag)

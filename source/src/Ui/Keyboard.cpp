@@ -300,10 +300,17 @@ bool mKeyWTED(int kid,int code, int mod)
   return true;
 }
 //-----------------------------------------------------------------
-//  Open Sketch editor
+//  Open city editor
 //-----------------------------------------------------------------
 bool mKeyMKCH(int kid,int code, int mod)
-{ globals->fui->ToggleFuiWindow(FUI_WINDOW_SKETCH);
+{ globals->fui->ToggleFuiWindow(FUI_WINDOW_CITY_EDIT);
+  return true;
+}
+//-----------------------------------------------------------------
+//  Open taxiway editor
+//-----------------------------------------------------------------
+bool mKeyTAXI(int kid,int code, int mod)
+{ globals->fui->ToggleFuiWindow(FUI_WINDOW_TAXIWAY);
   return true;
 }
 
@@ -353,7 +360,8 @@ static void BindMenuKeys (CKeyMap *keymap)
   keymap->Bind('tbro', mKeyTBRO, KEY_SET_ON);
   keymap->Bind('plot', mKeyPLOT, KEY_SET_ON);
 	keymap->Bind('wted', mKeyWTED, KEY_TOGGLE);
-	keymap->Bind('skch', mKeyMKCH, KEY_TOGGLE);
+	keymap->Bind('city', mKeyMKCH, KEY_TOGGLE);
+	keymap->Bind('taxi', mKeyTAXI, KEY_TOGGLE);
   return;
 }
 //=================================================================================

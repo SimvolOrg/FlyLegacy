@@ -859,7 +859,7 @@ public:
   void  Refresh(U_INT FrNo);
   bool  IsSelected(float hz);
   bool  IsInRange(void);
-  void  WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st);
+  void  WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &st);
   //----------------------------------------------------------------
   inline  char      *GetApKey()              {return capt;}
   inline  CAirport  *GetAirport()            {return (CAirport*)apOBJ.Pointer();}
@@ -955,7 +955,7 @@ public:
 	inline	U_CHAR		SignalType()				{return SIGNAL_VOR;}
   //------------------------------------------------------
 	void	    Refresh(U_INT FrNo);							// Update navaid
-  void      WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st);
+  void      WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &sf);
   //-------------------------------------------------------
 protected:
   void      SetAttributes();
@@ -1003,7 +1003,7 @@ public:
   CWPT(OTYPE qo,QTYPE qa);           // Constructor
 	void			Init(char *idn,SPosition *pos);
   void			SetPosition(SPosition p);
-  void      WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st);
+  void      WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &st);
   //--------Virtual functions ---------------------------
   inline float      GetRadial()	      {return radial;}
 	inline float      GetNmiles()	      {return nmiles;}
@@ -1128,7 +1128,7 @@ public:
 	void	  Refresh(U_INT FrNo);							// Update ILS
 	CILS*	  IsThisILSOK(float freq);          // Check for tuning
 	bool		IsSelected(float freq);
-  void    WriteCVS(U_INT gx,U_INT gz,char *sep,SStream &st);
+  void    WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &st);
   void    SetGlidePRM();
   //-----Parameters --------------------------------------------------
   void    SetIlsParameters(CRunway *run,ILS_DATA *dt,float dir);
@@ -1298,7 +1298,7 @@ public:
   void		Trace(char *op,U_INT FrNo,U_INT key);
   int     GetCode();
   int     GetLetter();
-  void    WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,SStream &st);
+  void    WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,CStreamFile &st);
   //------Light switching ------------------------------------------
   char    ChangeLights(char ls);
   //----------------------------------------------------------------
@@ -1495,7 +1495,7 @@ public:
   char       *GetAptName();
   void        RebuildLights(CRunway *rwy);
   void        SaveProfile();
-  void        WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,SStream &st);
+  void        WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,CStreamFile &sf);
 	//--------------------------------------------------------
 	float       GetTakeOffSpot(char *rend,SPosition **dp,ILS_DATA **d);
 	ILS_DATA   *GetNearestRwyEnd(SPosition *pos,SPosition **dst);
@@ -1606,7 +1606,7 @@ class CCountry {
   char    cnam[40];               // Country name
   //---------------------------------------------------------------
 public:
-  void  WriteCVS(char *sep,SStream &st);
+  void  WriteCVS(char *sep,CStreamFile &st);
   //--------------inline ------------------------------------------
   inline  char*   GetKey()  {return cuid;}
   inline  char*   GetName() {return cnam;}
@@ -1624,7 +1624,7 @@ class CState {
   char   nsta[4];                 // State key
   char   name[40];                // state name
 public:
-  void   WriteCVS(char *sep,SStream &st);
+  void   WriteCVS(char *sep,CStreamFile &st);
   //------------inline ---------------------------------------------
   inline  char*   GetSKey() {return skey;}
   inline  char*   GetCKey() {return sctr;}

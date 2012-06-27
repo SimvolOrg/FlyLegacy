@@ -1203,13 +1203,7 @@ SDLLObject*	APICreateFlyObject(char *initFile)
   if (sobj) {
     //globals->sit->dVeh = sobj; // lc 121609
     sobj->sim_objects_active = true;
-    SStream s;
-		_snprintf(s.filename,(PATH_MAX-1),"WORLDOBJ/%s",initFile);
-    strncpy (s.mode, "r",3);
-    if (OpenStream (&s)) {
-      ReadFrom (sobj, &s);
-      CloseStream (&s);
-    }
+    SStream s(sobj,"WORLDOBJ",initFile);
     SDLLObject *obj = new SDLLObject;
     if (obj) {
       obj->flyObject.objectPtr = sobj;

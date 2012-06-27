@@ -1032,7 +1032,7 @@ ETimeOfDay CTimeManager::GetTimeOfDay (void)
 // Dump the contents of the CTimeManager class to a file for debugging
 //
 void CTimeManager::Print (FILE *f)
-{
+{ /*
   fprintf (f, "Time Manager :\n\n");
 
   // Print base date/time data
@@ -1068,5 +1068,6 @@ void CTimeManager::Print (FILE *f)
   fprintf (f, "Local Time : %02d:%02d:%02d.%03d\n",
     dt.time.hour, dt.time.minute, dt.time.second, dt.time.msecs);
   fprintf (f, "\n");
+	*/
 }
 

@@ -474,10 +474,6 @@ void CStreamFile::OpenWrite (const char *filename)
   }
 }
 //------------------------------------------------------------------------
-//  Write open Object
-//------------------------------------------------------------------------
-
-//------------------------------------------------------------------------
 //  Close file
 //------------------------------------------------------------------------
 void CStreamFile::Close (void)
@@ -603,11 +599,15 @@ void CStreamFile::WriteVector(SVector *value)
 }
 //------------------------------------------------------------------
 //	Write Orientation
+//	Change system coordianate 
 //------------------------------------------------------------------
 void CStreamFile::WriteOrientation(SVector &V)
 {	if (!IsWriteable())	return;
+	double tx = 0;
+	double ty = -V.z;
+	double tz =  V.y;
 	WriteIndent();
-	fprintf(f, "%1.lf, %1.lf, %1.lf\n",V.x,V.y,V.z);
+	fprintf(f, "%.6lf, %.6lf, %.6lf\n",tx,ty,tz);
 }
 //------------------------------------------------------------------
 //	Write a position
@@ -665,27 +665,6 @@ void CStreamFile::WriteIndent (void)
   for (int i=indent; i>0; --i) fprintf (f, "\t");
 }
 
-//==========================================================================
-//  global function to get the file position
-//==========================================================================
-long sTell(SStream *st)
-{ CStreamFile* sf = (CStreamFile*)st->stream;
-  if (!sf->IsReadable())  return -1;
-  PODFILE *pod = sf->podfile;
-  if (!pod)               return -1;
-  return ptell(pod);
-}
-//==========================================================================
-//  global function to set the file position
-//==========================================================================
-void sSeek(SStream *st, long pos)
-{ CStreamFile* sf = (CStreamFile*)st->stream;
-  if (!sf->IsReadable())  return;
-  PODFILE *pod = sf->podfile;
-  if (!pod)               return;
-  pseek(pod,pos,SEEK_SET);
-  return;
-}
 //==========================================================================
 // Local function that reads the next line from the stream file, discards
 //   comment lines, and returns a pointer to the start of the first
@@ -763,15 +742,6 @@ Tag    snexttag (char* s, int maxLength, SStream *stream)
   return tag;
 }
 
-//===========================================================================
-// OpenStream - Open a stream file for reading
-//
-// The function returns 1 if the stream was successfully opened, 0 otherwise
-//==========================================================================
-int OpenStream(SStream *stream)
-{
-  return OpenStream (&globals->pfs, stream);
-}
 //===========================================================================
 // OpenStream - Open a stream file for reading
 //
@@ -1358,5 +1328,42 @@ int  ReadInvertedTag(Tag *tag, SStream*stream)
 	while (strlen(t) < 4) strcat(t," ");				// Pad with space
  *tag	= StringToTag(t);
 	return invert;	}
+//==================================================================================
+//	SStream constructor
+//==================================================================================
+void StreamWarn(char *pn, char *fn)
+{	WARNINGLOG("Can't open %s/%s",pn,fn);
+	return;
+}
+//==================================================================================
+//	SStream constructor
+//==================================================================================
+SStream::SStream(CStreamObject *O,char *fn)
+{	ok = false;
+	if (OpenRStream (fn,*this)) 
+	{	ReadFrom (O,this);
+	  CStreamFile* sf = (CStreamFile*)stream;
+		sf->Close ();
+		delete sf;
+		stream = 0;
+		ok = true;
+	}
+	else StreamWarn("",fn);
+}
+//==================================================================================
+//	SStream constructor
+//==================================================================================
+SStream::SStream(CStreamObject *O,char *pn, char *fn)
+{	ok	= false;
+	if (OpenRStream (pn,fn,*this)) 
+  {	ReadFrom (O,this);
+		CStreamFile* sf = (CStreamFile*)stream;
+		sf->Close ();
+		delete sf;
+		stream = 0;
+		ok	= true;
+	}
+	else StreamWarn(pn,fn);
+}
 
 //==================== END OF FILE =================================================================

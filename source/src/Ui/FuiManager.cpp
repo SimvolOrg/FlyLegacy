@@ -38,6 +38,7 @@
 #include "../Include/PlanDeVol.h"
 #include "../Include/Ui.h"
 #include "../Include/WinCity.h"
+#include "../Include/WinTaxiway.h"
 #include "../Include/FuiOption.h"
 #include <malloc.h>
 #include <map>
@@ -328,11 +329,17 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       window  = new CFuiTED(windowId,"UI/TEMPLATES/TERRAEDITOR.WIN");
       window->MoveTo(580,50);
       break;
-		//---Sketch editor-----------------------------------------
-    case FUI_WINDOW_SKETCH:
+		//---City editor-----------------------------------------
+    case FUI_WINDOW_CITY_EDIT:
 			if (globals->aPROF.Has(PROF_TOOL))	return 0;
       window  = new CFuiSketch(windowId,"UI/TEMPLATES/CITY_EDITOR.WIN");
       window->MoveTo(1036,840);
+      break;
+		//---Taxiway editor-----------------------------------------
+    case FUI_WINDOW_TAXIWAY:
+			if (globals->aPROF.Has(PROF_TOOL))	return 0;
+      window  = new CFuiTaxi(windowId,"UI/TEMPLATES/TAXY_EDITOR.WIN");
+      window->MoveTo(900,840);
       break;
     //---SUBSYSTEM PROBE-----------------------------------------
     case FUI_WINDOW_PROBE:
@@ -836,6 +843,7 @@ bool  CFuiManager::KeyboardInput(U_INT key)
 //--------------------------------------------------------------------
 bool CFuiManager::MouseToWind(int mx, int my, EMouseButton bt)
 { if (0 == wCap)			return false;
+	if (wCap != wTop)		MoveOnTop(wCap);
   return wCap->MouseCapture(mx, my, bt);
 }
 ///-------------------------------------------------------------------

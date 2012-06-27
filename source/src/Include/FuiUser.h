@@ -69,8 +69,8 @@ class CFuiThemeWidget;
 class CFuiPage;
 class CFloatMenu;
 class CDataBGR;
-class CTaxiNode;
-class CTaxiEdge;
+class TaxNODE;
+class TaxEDGE;
 //================================================================================
 // CFuiVectorMap
 //================================================================================
@@ -220,7 +220,7 @@ protected:
   bool        InsideClick (int x, int y, EMouseButton button);
   bool        StopClickInside(int x, int y, EMouseButton button);
   bool        InsideMove(int x, int y);
-	bool				OpenPOP(int mx,int my);
+	//bool				OpenPOP(int mx,int my);
   bool        OpenPopOBJ(int mx,int my);
   //-------MENU EDITION --------------------------------------------------
   int         SetRWYitem(char k);
@@ -274,6 +274,7 @@ protected:
 	//--- Runway List --------------------------------------------------
   bool        OpenRwyLIST(int mx,int my);
 	int					SetRWYends(char k);
+	int					EditRWYend(char *dst,char *end,SPosition P);
   void        DrawRunways();
   void        DrawByCamera(CCamera *cam);
 	//--- Runway Management --------------------------------------------
@@ -356,7 +357,7 @@ protected:
 	char       *cMENU[VMAP_MENU_SIZE];			  // item descriptor (char*)
 	void       *pMENU[VMAP_MENU_SIZE];				// Item related
   FL_MENU     smen;                         // menu descriptor
-  CFuiPage   *MyPop;                        // Popup
+  CFuiPage   *mPop;                         // Popup
   U_CHAR      selOPT;                       // Selected option
   int         xOrg;                         // Pop Origin
   int         yOrg;                         // Pop Origin

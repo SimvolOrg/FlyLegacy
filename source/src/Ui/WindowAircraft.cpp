@@ -64,8 +64,8 @@ bool  CPlaneIdent::ScanInfoFile(const char *filname)
 { SStream s;
   make[0] = 0;
   icon[0] = 0;
-  if (OpenRStream((char *)filname,s) == 0)    return false;
   item    = 0;
+  if (OpenRStream((char *)filname,s) == 0)    return false;
   ReadFrom (this, &s);
   CloseStream (&s);
   return true;

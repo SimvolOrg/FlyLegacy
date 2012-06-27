@@ -465,6 +465,7 @@ public:
 	virtual void  TimeSlice(float dT,U_INT FrNo)	{;}
 	//--- Interface with real GPS ----------------------------
 	//	Real GPS must supplies those functions ---------------
+  virtual CWPoint  *SelectedNode() {return 0;}
 	virtual void			ModifiedPlan()	{;}
 	virtual void			TrackWaypoint(CWPoint *wpt,bool e) {;}
 	virtual void			UpdNavigationData(CWPoint *w) {;}

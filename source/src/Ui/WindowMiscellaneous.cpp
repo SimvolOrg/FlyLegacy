@@ -661,8 +661,6 @@ void CFuiErrorMSG::Init(char nb)
 		AddChild('_no_',nBUT,"NO");
 	}
 	//--------------------------------------------------
-	close	= 1;
-	title = 1;
 	SetTransparentMode();
 	//--- Create the windows ---------------------------
 	ReadFinished();

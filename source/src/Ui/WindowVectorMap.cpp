@@ -137,7 +137,7 @@ char *AptVAR2 = "-----------------------------";
 //=======================================================================
 //	Runway idents
 //=======================================================================
-char rwyIDN[16 * 8] = {0};
+char rwyIDN[16 * 64] = {0};
 //=======================================================================
 //  MENUS FOR LIGHT PROFILE
 //  Changing item here must also change TC_APR_XXXX definitions in LightSystem.h
@@ -246,6 +246,7 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
 { type = COMPONENT_VECTOR_MAP;
   widgetTag = 'defa';
   wName = "VectorMap";
+	//------------------------------------------------------
   dbc   = globals->dbc;
   fpln  = fpln = globals->pln->GetFlightPlan();
   Focus = 0;
@@ -318,7 +319,7 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   option    = globals->vmpOpt;
   //-----------Init floating menu ------------------------
   smen.NbCar    = 20;
-  MyPop         = 0;
+  mPop					= 0;
   //----------Init screen table --------------------------
   sTable.NbSlot = 0;
   sTable.xSlot  = sTable.sList;
@@ -404,7 +405,7 @@ void  CFuiVectorMap::LoadOthBitmap(char *bmp,VM_BMP no)
 CFuiVectorMap::~CFuiVectorMap (void)
 { //---Clear the cache screen table at exit ----------------       
   ResetScreenTable();
-  if (MyPop)  delete MyPop;
+  if (mPop)  delete mPop;
   //----waypoints --------------------
   for (int k=1; k<BM_NBR; k++) 
   { CBitmap  *bmp  = OthBMAP[k];
@@ -1104,7 +1105,7 @@ bool CFuiVectorMap::MoveOverPOP(int mx, int my)
 { if (Focus.IsNull())		return true;
 	EditPopDistance(mx,my);
   if (Focus->Isa(WPT))	return true;
-  MyPop->Refresh(1);
+  mPop->Refresh(1);
   return true;
 }
 //---------------------------------------------------------------------------------
@@ -1112,7 +1113,7 @@ bool CFuiVectorMap::MoveOverPOP(int mx, int my)
 //  If object is Hit assign it to smart pointer Focus. This will manage user count
 //---------------------------------------------------------------------------------
 bool CFuiVectorMap::InsideMove(int mx,int my)
-{ if ((VWIN_MAP == dStat) && (MyPop))     return MoveOverPOP(mx,my);
+{ if ((VWIN_MAP == dStat) && (mPop))			return MoveOverPOP(mx,my);
   if  (VWIN_DOC == dStat)                 return MoveDOC(mx,my);
   if  (VWIN_LST == dStat)                 return true;
   if  (VWIN_RWY == dStat)                 return MoveRWY(mx,my);
@@ -1328,14 +1329,15 @@ bool CFuiVectorMap::EditPopAPT(CmHead *obj)
 //----------------------------------------------------------------------------------
 //  Open Popup menu
 //----------------------------------------------------------------------------------
-bool CFuiVectorMap::OpenPOP(int mx,int my)
-{ MyPop = new CFuiPage(mx,my,&smen,this);
+/* bool CFuiVectorMap::OpenPOP(int mx,int my)
+{ mPop = new CFuiPage(mx,my,&smen,this);
 	xOrg  = mx;
   yOrg  = my;
-  MyPop->SetState(1);
-  RegisterFocus(MyPop);
+  mPop->SetState(1);
+  RegisterFocus(mPop);
 	return true;
 }
+*/
 //==================================================================================
 //	DOCUMENT List 
 //==================================================================================
@@ -1374,7 +1376,7 @@ bool CFuiVectorMap::OpenDocLIST(int mx,int my)
 { smen.Ident = 'ldoc';
 	smen.aText = DocMENU;
   dStat = VWIN_LST;
-  return OpenPOP(mx,my);
+  return OpenPopup(mx,my,&smen);
 }
 //---------------------------------------------------------------------------------
 //  dStat = 2 => We are selecting a document
@@ -1417,7 +1419,7 @@ bool CFuiVectorMap::OpenPopDOC(int mx,int my)
 	smen.aText = cMENU;
   smen.aText[0] = "CLOSE DOCUMENT";
   smen.aText[1] = 0;
-	return OpenPOP(mx,my);
+	return OpenPopup(mx,my,&smen);
 }
 //----------------------------------------------------------------------------------
 //  Draw the document
@@ -1460,33 +1462,43 @@ bool CFuiVectorMap::OpenRwyLIST(int mx,int my)
 	int k					= SetRWYends(1);
   smen.aText[k++] = "CLOSE VIEW";
   smen.aText[k]		= 0;
-  return OpenPOP(mx,my);
+  return OpenPopup(mx,my,&smen);
+}
+//----------------------------------------------------------------------------------
+//  Edit runway end
+//----------------------------------------------------------------------------------
+int CFuiVectorMap::EditRWYend(char *dst,char *end,SPosition P)
+{	char lon[32];
+	char lat[32];
+	EditLat2DMS(P.lat,lat);
+  EditLon2DMS(P.lon,lon);
+	int lg = sprintf(dst,"*%s  %s %s",end, lon, lat) + 1;
+	return lg;
 }
 //----------------------------------------------------------------------------------
 //  Build a list of runway ends
 //----------------------------------------------------------------------------------
 int CFuiVectorMap::SetRWYends(char k)
-{ char     *dst = rwyIDN;
+{ int				lgr = 0;
+	char     *dst = rwyIDN;
 	CAirport *apt = obAirp;
   ClQueue  *qhd = &apt->rwyQ;
   CRunway *rwy;
   for (rwy = (CRunway*)qhd->GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
-  { char *end = rwy->GetHiEnd();
-	  sprintf(dst,"*%s",end);
+  { lgr = EditRWYend(dst,rwy->GetHiEnd(),rwy->GetHiPos());		//sprintf(dst,"*%s",end) + 1;
 		smen.aText[k]	= dst;
-		dst	+= 8;
+		dst	+= lgr;
 		k++;
-		end	= rwy->GetLoEnd();
-		sprintf(dst,"*%s",end);
+		lgr = EditRWYend(dst,rwy->GetLoEnd(),rwy->GetLoPos());			//sprintf(dst,"*%s",end);
 		smen.aText[k]	= dst;
-		dst	+= 8;
+		dst	+= lgr;
 		k++;
   }
   return k;
 }
 //----------------------------------------------------------------------------------
 //  Draw Top runway View
-//  Open a camera on top of aircraft.
+//  Open a camera on top of airport.
 //  -Draw runways and taxiways
 //  -Draw aircraft icon
 //----------------------------------------------------------------------------------
@@ -1558,10 +1570,15 @@ int CFuiVectorMap::ClickRwyMENU(short itm)
 }
 //---------------------------------------------------------------------------------
 //  Position aircraft for start on runway
+//	itm is the index into the ruway list
 //---------------------------------------------------------------------------------
 int CFuiVectorMap::StartonRWY(short itm)
 { char *idn = smen.aText[itm] + 1;
-	globals->apm->SetOnRunway(obAirp,idn);
+	char end[4];
+	int  k = 0;
+	while ((*idn != ' ') && (k < 3))	end[k++] = *idn++;
+	end[k] = 0;
+	globals->apm->SetOnRunway(obAirp,end);
 	return 1;
 }
 //==================================================================================
@@ -1597,7 +1614,7 @@ bool CFuiVectorMap::OpenWptMENU(int mx,int my)
 	smen.aText = WptMENU;
   wpos  = geop;
 	SetElevation(wpos);
-  return OpenPOP(mx,my);
+  return OpenPopup(mx,my,&smen);
 }
 //---------------------------------------------------------------------------------
 //  Click waypoint menu
@@ -1646,7 +1663,7 @@ bool CFuiVectorMap::OpenWptINFO(int mx, int my)
 	wayNAME[120]= 0;
 	sprintf(disHD,"%.1f nm from previous",wpt->GetDistance());
 	smen.aText[MENU_SLOT01] = disHD;
-	return OpenPOP(mx,my);
+	return OpenPopup(mx,my,&smen);
 }
 //=================================================================================
 //  Draw taxiway Nodes
@@ -1672,17 +1689,13 @@ bool CFuiVectorMap::OpenPopOBJ(int mx,int my)
   //--- Edit Menu ----------------------
 	smen.Ident	= 'mmap';
   if (!EditPopITM()) return true;
-	return OpenPOP(mx,my);
+	return OpenPopup(mx,my,&smen);
 }
 //----------------------------------------------------------------------------------
 //  Close the floating menu
 //----------------------------------------------------------------------------------
 int CFuiVectorMap::ClosePopMenu()
-{ if (0 == MyPop) return 0;
-  MyPop->SetState(0);
-  ClearFocus(MyPop);
-  delete MyPop;
-  MyPop     = 0;
+{ ClosePopup();
   Focus     = 0;
   //---When closing popup, we cant stay in state 2 ----------
   if (VWIN_LST == dStat)  dStat = VWIN_MAP;

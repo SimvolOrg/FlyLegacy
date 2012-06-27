@@ -1,5 +1,5 @@
 //============================================================================================
-// WindowAbout.cpp
+// WinScenery.cpp
 //
 // Part of Fly! Legacy project
 //
@@ -27,13 +27,8 @@
 //===========================================================================================
 CWinOSM::CWinOSM(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,160,500,0)
-{ //--- white color -------------------------------
-	
+{ //--- Init window-------------------------------
 	SetTransparentMode();
-  title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
   SetText("OSM tuning");
 	InitOptions();
 	CFuiWindow::ReadFinished();

@@ -87,11 +87,7 @@ CAerodynamicModel::CAerodynamicModel (CVehicleObject *v, char* svhFilename)
   moment.Raz();												  // JS wasx = moment.y = moment.z = 0.0;
 
   //--- Read from stream file -----------
-  SStream s;
-  if (OpenRStream ("WORLD",svhFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"WORLD",svhFilename);
 }
 //----------------------------------------------------------------------
 //  Destroy it
@@ -1305,13 +1301,8 @@ CPhysicModelAdj::CPhysicModelAdj (CVehicleObject *v,char* phyFilename)
   Kpmn = 100.0f;         // 100.0f  /// propeller magic number
   Ghgt = 0.0f;           // 0.00f   /// gear adjust const
   //-- Read from stream file --------------------------------
-  SStream s;
-  if (OpenRStream ("WORLD",phyFilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
-  //---JS Abort if a name is specified and no file exists ---
-  else gtfo("No PHY file found %s", s.filename);
+  SStream s(this,"WORLD",phyFilename);
+	if (!s.ok) gtfo("PHY file not found %s", s.filename);
 }
 //----------------------------------------------------------------
 //  Destructor

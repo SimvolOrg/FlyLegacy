@@ -1193,7 +1193,6 @@ int	CUFOObject::UpdateNewPositionState(float dT, float spd)
 // Add this section to the FlyLegacy.ini file
 // or it's a CAircraftObject which is being created
 //
-#ifdef HAVE_OPAL
 
 opal::Vec3r CVectorToVec3r (const CVector &v)
 {
@@ -1903,7 +1902,7 @@ void COPALObject::SetOpalSlewOrientation (const SVector &v)
 
 static int print_counter = 0;
 void COPALObject::Print (FILE *f)
-{
+{ /*
   fprintf(f, "COPALObject::Print\n");
 
     if (!log) {
@@ -1920,10 +1919,10 @@ void COPALObject::Print (FILE *f)
       SAFE_DELETE (log); 
       wng->SetLogPointer (NULL);
     }
+		*/
 }
 
 
-#endif // HAVE_OPAL
 //
 // CHelicopterObject
 //

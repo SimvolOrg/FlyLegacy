@@ -168,27 +168,7 @@ CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
   // If the filename has a .PNL extension, then this is a dynamic panel,
   //   otherwise it is static
 
-  SStream s;
-	_snprintf(s.filename,(PATH_MAX-1),"DATA/%s",filename);
-  strncpy (s.mode, "r",3);
-
-  const char *p = strrchr (filename, '.');
-  if (p && (stricmp (p, ".PNL") != 0)) {
-
-    // Filename suffix is the screen height in pixels
-    // for LEGACY, get the maximum resolution
-    int wrkrnd = 768;
-    // end workaround
-    char ext[16];
-    _snprintf (ext,15,".%d", wrkrnd);
-		ext[15] = 0;
-    strncat (s.filename, ext,4);
-  }
-	TRACE("Read panel %s",filename);
-  if (OpenStream (&s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+	SStream(this,"DATA",(char*)filename);
   // -----Add a pointer to camera entry --------------
   CCameraCockpit *cam = (CCameraCockpit *)globals->ccm->GetCamera('cock');
   cam->SetPanel(id,this);

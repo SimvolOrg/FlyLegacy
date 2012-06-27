@@ -4225,12 +4225,13 @@ void CK89gps::Probe(CFuiCanva *cnv)
 //	
 //---------------------------------------------------------------------
 CWPoint *CK89gps::SelectedNode()
-{ if ((curPOS < 1) || (curPOS > 4))     return 0;
+{ if (aState != K89_FPLP1)							return 0;
+	if ((curPOS < 1) || (curPOS > 4))     return 0;
   if (IsChar(' ',(curPOS-1),K89_CLN09)) return 0;
 	if (0 == basWP)												return 0;
 	//--- Compute sequence number -------------------
-	int seq = basWP->GetSequence() + curPOS - 2;
-  return FPL->GetWaypoint(seq);  
+	int seq = basWP->GetSequence() + curPOS - 1;
+  return  FPL->GetWaypoint(seq);
 }
 //---------------------------------------------------------------------
 //  Flight Plan is modified
@@ -4252,7 +4253,7 @@ void CK89gps::ModifiedPlan()
 //	Activate Plan if any and get first node to track
 //----------------------------------------------------------------------------------
 void GPSRadio::EnterTRK()
-{	CWPoint *wp = FPL->GetBestWaypoint();
+{	CWPoint *wp = SelectedNode();
 	if (0 == wp)									return;
 	if (GPSR_STBY != gpsTK)				return;   // Not the good state
 	if (!APL->EnterGPSMode())			return;

@@ -306,11 +306,7 @@ CFlyCursor::CFlyCursor (const char* csrfilename)
   // Initialize fields
   strncpy (curs,csrfilename,64);
   // Open .CSR file stream and parse tags
-  SStream s;
-  if (OpenRStream ("DATA",(char*)csrfilename,s)) {
-    ReadFrom (this, &s);
-    CloseStream (&s);
-  }
+  SStream s(this,"DATA",(char*)csrfilename);
 }
 
 //--------------------------------------------------------------

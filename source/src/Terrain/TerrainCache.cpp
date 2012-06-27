@@ -2302,14 +2302,12 @@ int C_QGT::HasTRN()
   U_SHORT qz = cz & 1;                      // Quadrant Z index
   _snprintf (fn,64,"DATA/D%03d%03d/G%01d%01d.TRN", gx,gz,qx, qz);
   //---------Create a TRN object -------------------------------
-  SStream s;                                // Stream file
   if (!pexists(&globals->pfs, fn)) return 0;						///
-  if (!OpenRStream (fn,s))  Abort("Can read TRN");
-  trn = new C_TRN(this,tr);
-  if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d Open TRN %s",
+	trn = new C_TRN(this,tr);
+	if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d Open TRN %s",
           tcm->Time(),xKey,zKey,fn);
-  ReadFrom (trn, &s);
-  CloseStream (&s);
+	SStream s(trn,fn);                                // Stream file
+	//------------------------------------------------------------
 	IndElevation();														// QGT has elevation
   SetStep(TC_QT_TRN);												// Next Step is TRN assigned
   return 1;
@@ -4852,21 +4850,6 @@ void TCacheMGR::AllSeaSQL(C_QGT *qgt)
 //  Check for EPD file for this QGT
 //====================================================================================
 
-//---------------------------------------------------------------------
-//  Read and decode EPD file
-//---------------------------------------------------------------------
-int TCacheMGR::TryEPD(C_QGT *qgt,char *name)
-{ char *dot = strstr(name,".");
-  strcpy(dot,".TEX");
-  if (!pexists(&globals->pfs,name)) return 0;
-  //----Create and decode the Texture and REF files ---------
-  C_CTEX    ftx(qgt,tr);
-  ftx.DecodeTEX(name);
-  //----Decode the REF file ----------------------------------
-  strcpy(dot,".REF");
-  ftx.DecodeREF(name);
-  return 0;
-}
 //---------------------------------------------------------------------
 //  ABORT for MESH ERROR
 //---------------------------------------------------------------------

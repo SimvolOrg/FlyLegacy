@@ -1139,15 +1139,18 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
   type = COMPONENT_WINDOW;
   widgetTag = 'defa';
   wName			= "Window";
-  mini = zoom = close = 0;
-  mPop      = 0;
+  mTop      = 0;
+	mPop			= 0;
   limit     = lim;
 	modal			= 0;
   //------Init the decoration items---------------------------------
   InitFBox(fBox,MSIZ);
 	edge			= 0;
-	//----------------------------------------------------------------
-	title			= 0;
+	//--- Standard interface -----------------------------------------
+	title	= 1;
+  close = 1;
+  zoom  = 0;
+  mini  = 0;
   //---Init all bitmaps to null-------------------------------------
   mBar      = 0;
   tBar      = 0;
@@ -1157,11 +1160,7 @@ CFuiWindow::CFuiWindow (Tag wId, const char* winFilename,int wd,int ht, short li
   //----Init default size and position -----------------------------
   FindThemeWidget ();
   // Open stream ----------------------------------
-  SStream stream;
-  if (OpenRStream ((char*)winFilename, stream)) {
-    ReadFrom (this, &stream);
-    CloseStream (&stream);
-  }
+  SStream s(this,(char*)winFilename);
 }
 //-------------------------------------------------------------------
 //  Destroy the window
@@ -1690,8 +1689,7 @@ void CFuiWindow::EventNotify(Tag wtg,Tag cpn,EFuiEvents evn,EFuiEvents sub)
 //  Draw the window decoration and child
 //-----------------------------------------------------------------------------
 void CFuiWindow::Draw (void)
-{ 
-  //----Drawing  windows c omponents  ---------
+{ //----Drawing  windows c omponents  ---------
   DrawFBoxBack(fBox[BAKW]);
   DrawFBox(fBox,MSIZ);
   //---- Draw child components ----------------
@@ -1699,7 +1697,7 @@ void CFuiWindow::Draw (void)
   for (ir=childList.rbegin(); ir!=childList.rend(); ir++) 
   {   (*ir)->Draw();
   }
-  if (mPop) mPop->Draw();
+  if (mTop) mTop->Draw();
 }
 //-------------------------------------------------------------------------------
 //  Modify visibility of the child component
@@ -1769,9 +1767,30 @@ bool CFuiWindow::KeyboardInput(U_INT key)
 //  Register a popup menu
 //------------------------------------------------------------------------------
 void CFuiWindow::RegisterPopup(CFuiPage *pop)
-{ mPop   = pop;
+{ mTop   = pop;
   return;
 }
+//----------------------------------------------------------------------------------
+//  Open Popup menu
+//----------------------------------------------------------------------------------
+bool CFuiWindow::OpenPopup(int mx,int my, FL_MENU *smen)
+{ mPop = new CFuiPage(mx,my,smen,this);
+  mPop->SetState(1);
+  RegisterFocus(mPop);
+	return true;
+}
+//----------------------------------------------------------------------------------
+//  Close the floating menu
+//----------------------------------------------------------------------------------
+int CFuiWindow::ClosePopup()
+{ if (0 == mPop) return 0;
+  mPop->SetState(0);
+  ClearFocus(mPop);
+  delete mPop;
+  mPop     = 0;
+  return 1;
+}
+
 //------------------------------------------------------------------------------
 //  Build groupbox with Airport and Object Hide button
 //------------------------------------------------------------------------------
@@ -1825,7 +1844,7 @@ void CFuiWindow::CreateDialogBox(char *ttl, char *msg, char nb)
 //          surface is created, after ReadFinished()
 //------------------------------------------------------------------------------
 bool CFuiWindow::WindowHit (int sx, int sy)
-{ if (mPop && (mPop->MouseHit(sx,sy)))        return true;
+{ if (mTop && (mTop->MouseHit(sx,sy)))        return true;
   int rx = sx - surface->xScreen;
   int ry = sy - surface->yScreen;
   if ((rx < Rect.x0) || (sx > (x + Rect.x1))) return false;
@@ -1847,7 +1866,7 @@ bool CFuiWindow::MouseMove (int mx, int my)
     return true;
   }
   //---------Try popup ---------------------------------------------
-  if (mPop && (mPop->MouseMove(mx,my)))     return true;
+  if (mTop && (mTop->MouseMove(mx,my)))     return true;
   //-------- Otherwise send to child widget ------------------------
   std::deque<CFuiComponent*>::iterator i;
   for (i=childList.begin(); i!=childList.end(); i++) if ((*i)->MouseMove(mx,my))	return true;
@@ -1882,7 +1901,7 @@ bool CFuiWindow::InsideClick (int mx,int my, EMouseButton button)
 //  The MouseClick event follows a priority scheme that must not be altered
 //-------------------------------------------------------------------------------
 bool CFuiWindow::MouseClick (int mx, int my, EMouseButton button)
-{ if ((mPop) && (mPop->MouseClick(mx, my, button)))  return RegisterFocus(mPop);
+{ if ((mTop) && (mTop->MouseClick(mx, my, button)))  return RegisterFocus(mTop);
   if ((mBar) && (mBar->MouseClick(mx, my, button)))  return RegisterFocus(mBar);
   // If mouse click has not been handled yet, send to child widgets
   CFuiComponent * comp = NULL;
@@ -1896,7 +1915,7 @@ bool CFuiWindow::MouseClick (int mx, int my, EMouseButton button)
 	if (edge) {edge->ClickOver(mx,my);			return RegisterFocus(edge);}
   //----Check if clicked inside ------------------------------------
   if (InsideClick(mx,my,button))          return true;
-  if (0 == mPop)  ClearFocus(0);
+  if (0 == mTop)  ClearFocus(0);
 	return false;
 	}
 //---------------------------------------------------------------------------------
@@ -1904,13 +1923,11 @@ bool CFuiWindow::MouseClick (int mx, int my, EMouseButton button)
 //----------------------------------------------------------------------------------
 bool CFuiWindow::MouseStopClick (int mx, int my, EMouseButton button)
 {
-  if ((state == FUI_WINDOW_MOVE) && (button == MOUSE_BUTTON_LEFT)) {
-    state = FUI_WINDOW_OPEN;
-    return true;
-  }
+  if ((state == FUI_WINDOW_MOVE) && (button == MOUSE_BUTTON_LEFT)) { state = FUI_WINDOW_OPEN; return true;}
   globals->cum->SetArrow();    
   // If mouse click has not been handled yet, send to focused component
-  if (cFocus && (cFocus != this) && (cFocus->MouseStopClick (mx, my, button)))   return true;
+  bool fw =  (cFocus && (cFocus != this) && (cFocus->MouseStopClick (mx, my, button)));
+	if (fw) {	ClearFocus(0); return true;}
   StopClickInside(mx, my, button);
   return MouseHit(mx,my);
 }
@@ -2570,6 +2587,11 @@ CFuiCheckBox::CFuiCheckBox (int x, int y, int w, int h, CFuiComponent *win)
   bmBT    = 0;
   state   = 0;
 }
+//-----------------------------------------------------------
+//   Free resources 
+//-----------------------------------------------------------
+CFuiCheckBox::~CFuiCheckBox()
+{}
 //-----------------------------------------------------------
 //    Read parameters 
 //-----------------------------------------------------------

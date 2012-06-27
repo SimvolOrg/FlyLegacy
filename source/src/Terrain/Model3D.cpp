@@ -722,12 +722,7 @@ int C3Dfile::Decode(char *fname,char *pn)
   namef[63] = 0;
   //---Open the file -------------------------------
 	cntr			= 0;
-  SStream s;
-  if (OpenRStream (fname,s))
-  { // Successfully opened stream
-    ReadFrom (this, &s);                 
-    CloseStream (&s);
-  }
+  SStream s(this,fname);
   return cntr;
 }
 //--------------------------------------------------------------------

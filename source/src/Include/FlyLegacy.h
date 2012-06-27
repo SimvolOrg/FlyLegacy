@@ -1435,12 +1435,17 @@ typedef struct {
 //===============================================================================
 // SStream represents a stream text file, see Stream.h and Stream.cpp for details
 //===============================================================================
-
+class CStreamObject;
+//-----------------------------------------------------
 typedef struct SStream
-{
-  char  filename[PATH_MAX];
+{ char  filename[PATH_MAX];
   char  mode[3];
+	bool  ok;
   void  *stream;
+	//----------------------------------------------------
+	SStream() {;}									// Standard constructor
+	SStream(CStreamObject *object, char *fn);						// Open file for read 
+	SStream(CStreamObject *object, char *pn, char *fn);	// Open file in path for read
 } SStream;
 
 //===============================================================================
@@ -1858,6 +1863,7 @@ typedef struct SFlightPlan
 
 // added for multiple screen management
 typedef struct {
+		int xRes, yRes;
     int Width, Height, Depth, Refresh, X, Y, ID;
     bool bMouseOn;
     char full;

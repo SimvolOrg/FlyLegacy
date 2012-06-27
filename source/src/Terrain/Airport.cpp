@@ -1061,12 +1061,8 @@ void CAptObject::ReadTaxiNodes()
 	//--- Check if already open ---------------
 	bgr		= 0;
   _snprintf(pn,64,"DATA/%s.BGR",fn);
-  SStream s;
-  if (OpenRStream(pn,s) == 0)    return;
-  CStreamFile *sf = (CStreamFile*)s.stream;
   txBGR = new CDataBGR(this);
-	sf->ReadFrom (txBGR);
-  CloseStream (&s);
+	SStream s(txBGR,pn);
   return;
 }
 

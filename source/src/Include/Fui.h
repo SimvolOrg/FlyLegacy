@@ -150,11 +150,12 @@ enum EFuiWindowIdentifier
   FUI_WINDOW_TBROS                   = 'tbro',
 	FUI_WINDOW_TEDITOR								 = 'wted',
   FUI_WINDOW_MBROS                   = 'mbro',
-	FUI_WINDOW_SKETCH									 = 'skch',
+	FUI_WINDOW_CITY_EDIT							 = 'city',
 	FUI_WINDOW_FILE_BOX							   = 'fbox',
   FUI_WINDOW_STATS                   = 'Stat',
   FUI_WINDOW_DEFAULT                 = '?win',
 	FUI_WINDOW_OSM_TUNE								 = 'osmT',
+	FUI_WINDOW_TAXIWAY								 = 'taxi',
 /*
   // The following window types are reserved for future implementation
   FUI_WINDOW_SITUATION_SAVE          = 'Save',
@@ -783,6 +784,9 @@ public:
           bool        MoveImage(int mx,int my,S_IMAGE &info);
           bool        ResetImage(S_IMAGE &info);
           void        RegisterPopup(CFuiPage *pge);
+					bool				OpenPopup(int mx,int my, FL_MENU *smen);
+					int					ClosePopup();
+
   CFuiGroupBox       *BuildGroupEdit(int x,int y);
 	int									SwapGroupButton(Tag btn, char *zbt);
   //------------System button handler -----------------------------
@@ -892,7 +896,8 @@ protected:
 	CFuiComponent      *edge;											// Selected edge for resize
   int               lastX, lastY;               ///< Cursor position at last move update
   //------------Popup management -----------------------------------
-  CFuiPage          *mPop;
+  CFuiPage          *mTop;											// Registered Popup
+	CFuiPage          *mPop;											// Windows own Popup 
   //------------Cursor management for resize -----------------------
   Tag               xCurs;                      // right Cursor 
   Tag               yCurs;                      // bottom Cursor 
@@ -1035,7 +1040,7 @@ class CFuiCheckBox : public CFuiComponent
 public:
   // Constructors / destructor
   CFuiCheckBox (int x = 0, int y = 0, int w = 0, int h = 0, CFuiComponent *win = 0);
-
+	~CFuiCheckBox();
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished (void);

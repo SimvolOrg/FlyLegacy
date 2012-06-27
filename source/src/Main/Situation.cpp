@@ -652,14 +652,8 @@ CSituation::CSituation()
 //  Open situation file
 //-------------------------------------------------------------------------
 void CSituation::OpenSitFile()
-{ SStream s;
-  if (OpenRStream (globals->sitFilename,s)) {
-    // Successfully opened stream
-    ReadFrom (this, &s);
-    CloseStream (&s);
-    return;
-  }
-  gtfo ("CSituation : Cannot open SIT file %s", s.filename);
+{ SStream s(this,globals->sitFilename);
+	if (!s.ok)	gtfo ("file %s not found", s.filename);
   return;
 }
 //-------------------------------------------------------------------------
@@ -895,6 +889,7 @@ void CSituation::WriteFile()
 	sf.WriteTag('user',"--- User vehicle ----------------");
 	sf.WriteTag('iang',"--- Inertial Angular Position ---");
 	sf.WriteOrientation(globals->iang);
+	sf.WriteComment("--NOTE that Y=-Z and Z = Y in the  sit file ---");
 	sf.EndObject();						// End plane Object
   sf.EndObject();
   sf.Close();

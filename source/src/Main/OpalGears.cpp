@@ -351,7 +351,7 @@ void CGearOpal::ProbeBrake(CFuiCanva *cnv)
 //	(a negative accelerattion) as
 //	
 //	acc = 1/2((asp*asp)/D); where asp = approach speed in feet/sec
-//  (This is a constant once asp and D are defined)
+//  (acc is then a constant once asp and D are defined)
 //
 //	Knowing the aircraft mass M, we can compute the brake force 
 //	opposite the forward movement as F=M.acc (lbs/feet/sec)

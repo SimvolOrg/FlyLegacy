@@ -58,10 +58,6 @@ CFuiAbout::CFuiAbout(Tag idn, const char *filename)
 { //--- white color -------------------------------
 	U_INT wit = MakeRGBA(255,255,255,255);
 	SetTransparentMode();
-  title = 1;
-  close = 1;
-  zoom  = 0;
-  mini  = 0;
   SetText("ABOUT FlyLegacy");
 	//--- Add a canva ------------------------------------
   info  = new CFuiCanva(10,4,220,300,this);
