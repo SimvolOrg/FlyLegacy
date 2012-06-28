@@ -1927,7 +1927,7 @@ bool CFuiWindow::MouseStopClick (int mx, int my, EMouseButton button)
   globals->cum->SetArrow();    
   // If mouse click has not been handled yet, send to focused component
   bool fw =  (cFocus && (cFocus != this) && (cFocus->MouseStopClick (mx, my, button)));
-	if (fw) {	ClearFocus(0); return true;}
+	if  (fw)		return true;
   StopClickInside(mx, my, button);
   return MouseHit(mx,my);
 }
