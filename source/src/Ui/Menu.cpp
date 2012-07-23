@@ -35,6 +35,7 @@
 #include "../Include/Export.h"
 #include "../Include/Import.h"
 #include "../Include/TerrainCache.h"
+#include "../Plugin/Plugin.h"
 //==================================================================================
 extern Tag    snexttag (char* s, int maxLength, SStream *stream);
 
@@ -264,7 +265,7 @@ void vehicle_cg_cb (puObject* obj)
 //----------------------------------------------------------------------
 void vehicle_vpilot_cb (puObject* obj)
 { if (!globals->pln)	return;
-	globals->pln->VirtualPilot(); }
+	globals->pln->StartVirtualPilot(); }
 //----------------------------------------------------------------------
 //  Vehicle dammage report
 //----------------------------------------------------------------------
@@ -971,13 +972,12 @@ void debug_stream_test_cb (puObject* obj)
   sf.DebObject();
   sf.WriteTag ('int_', "---- int ----");
   int i = 500;
-  sf.WriteInt (&i);
+  sf.WriteInt (i);
   sf.WriteTag ('uint', "---- unsigned int ----");
-  unsigned int ui = 12345678;
-  sf.WriteUInt (&ui);
+  sf.WriteUInt (12345678);
   float f = 12345.67f;
   sf.WriteTag ('flot', "---- float ----");
-  sf.WriteFloat (&f);
+  sf.WriteFloat (f);
   double d = 987654.3210;
   sf.WriteTag ('dubl', "---- double ----");
   sf.WriteDouble (&d);
@@ -1111,10 +1111,9 @@ void city_editor_cb(puObject *obj)
 //----------------------------------------------------------------------------
 //  Taxiway editor: taxi
 //----------------------------------------------------------------------------
-/*
 void taxi_editor_cb(puObject *obj)
 { toggle_window (FUI_WINDOW_TAXIWAY,0);	}
-*/
+
 //----------------------------------------------------------------------------
 //  Model terra editor: mted
 //----------------------------------------------------------------------------
@@ -1153,7 +1152,7 @@ void tune_probe_cb(puObject *obj)
 //--------------------------------------------------------
 char *tune_legends[] =
 { "CITY Editor",
-	//"TAXIWAY editor",
+	"CIRCUIT editor",
 	"TERRA Editor",
 	"----------------",
 	"OBJECT Browser",
@@ -1168,7 +1167,7 @@ char *tune_legends[] =
 //------------------------------------------------------------------------
 puCallback tune_cb[] =
 { city_editor_cb,
-	//taxi_editor_cb,
+	taxi_editor_cb,
 	model_teditor_cb,
 	NULL,
 	model_browser_cb,
@@ -1241,11 +1240,12 @@ void OpenMasterMenu (void)
 //============================================================================
 char			 *nul_Legend[] = {0};
 puCallback  nul_cb[] = {0};
+void FillSDKmenu();
 //============================================================================
 // Menu initialization
 //============================================================================
 void OpenUserMenu (void)
-{ std::vector <sdkmenu::SMenuData>::const_iterator i_md;
+{ 
 
   menu = new puMenuBar(-1);
 	menu->setStyle(PUSTYLE_SHADED | PUSTYLE_BEVELLED);
@@ -1270,6 +1270,8 @@ void OpenUserMenu (void)
 
   //----Change colors ----------------------------------------------------
   //----------------------------------------------------------------------
+	FillSDKmenu();
+	/*
   int addin_menus_counter = 0; 
   for (i_md = globals->sdk_menu.md_.begin (); i_md != globals->sdk_menu.md_.end (); ++i_md) {
     //
@@ -1297,7 +1299,7 @@ void OpenUserMenu (void)
 
     addin_menus_counter++;
   }
-
+*/
   menu->close ();
   //--- Hide menu by default ------------------------
   // hide_menu ();
@@ -1310,5 +1312,106 @@ void OpenUserMenu (void)
 void CloseUserMenu()
 {	delete menu;
 	menu	= 0;
+}
+//=====================================================================
+//	(JS) To be deleted latter after removing SDK
+//======================================================================
+void _0_0_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][0].windowID, sdk_en[0][0].componentID, sdk_en[0][0].event, sdk_en[0][0].subEvent);}
+void _0_1_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][1].windowID, sdk_en[0][1].componentID, sdk_en[0][1].event, sdk_en[0][1].subEvent);}
+void _0_2_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][2].windowID, sdk_en[0][2].componentID, sdk_en[0][2].event, sdk_en[0][2].subEvent);}
+void _0_3_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][3].windowID, sdk_en[0][3].componentID, sdk_en[0][3].event, sdk_en[0][3].subEvent);}
+void _0_4_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][4].windowID, sdk_en[0][4].componentID, sdk_en[0][4].event, sdk_en[0][4].subEvent);}
+void _0_5_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][5].windowID, sdk_en[0][5].componentID, sdk_en[0][5].event, sdk_en[0][5].subEvent);}
+void _0_6_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][6].windowID, sdk_en[0][6].componentID, sdk_en[0][6].event, sdk_en[0][6].subEvent);}
+void _0_7_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][7].windowID, sdk_en[0][7].componentID, sdk_en[0][7].event, sdk_en[0][7].subEvent);}
+void _0_8_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][8].windowID, sdk_en[0][8].componentID, sdk_en[0][8].event, sdk_en[0][8].subEvent);}
+void _0_9_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[0][9].windowID, sdk_en[0][9].componentID, sdk_en[0][9].event, sdk_en[0][9].subEvent);}
+
+void _1_0_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][0].windowID, sdk_en[1][0].componentID, sdk_en[1][0].event, sdk_en[1][0].subEvent);}
+void _1_1_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][1].windowID, sdk_en[1][1].componentID, sdk_en[1][1].event, sdk_en[1][1].subEvent);}
+void _1_2_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][2].windowID, sdk_en[1][2].componentID, sdk_en[1][2].event, sdk_en[1][2].subEvent);}
+void _1_3_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][3].windowID, sdk_en[1][3].componentID, sdk_en[1][3].event, sdk_en[1][3].subEvent);}
+void _1_4_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][4].windowID, sdk_en[1][4].componentID, sdk_en[1][4].event, sdk_en[1][4].subEvent);}
+void _1_5_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][5].windowID, sdk_en[1][5].componentID, sdk_en[1][5].event, sdk_en[1][5].subEvent);}
+void _1_6_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][6].windowID, sdk_en[1][6].componentID, sdk_en[1][6].event, sdk_en[1][6].subEvent);}
+void _1_7_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][7].windowID, sdk_en[1][7].componentID, sdk_en[1][7].event, sdk_en[1][7].subEvent);}
+void _1_8_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][8].windowID, sdk_en[1][8].componentID, sdk_en[1][8].event, sdk_en[1][8].subEvent);}
+void _1_9_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[1][9].windowID, sdk_en[1][9].componentID, sdk_en[1][9].event, sdk_en[1][9].subEvent);}
+
+void _2_0_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][0].windowID, sdk_en[2][0].componentID, sdk_en[2][0].event, sdk_en[2][0].subEvent);}
+void _2_1_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][1].windowID, sdk_en[2][1].componentID, sdk_en[2][1].event, sdk_en[2][1].subEvent);}
+void _2_2_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][2].windowID, sdk_en[2][2].componentID, sdk_en[2][2].event, sdk_en[2][2].subEvent);}
+void _2_3_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][3].windowID, sdk_en[2][3].componentID, sdk_en[2][3].event, sdk_en[2][3].subEvent);}
+void _2_4_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][4].windowID, sdk_en[2][4].componentID, sdk_en[2][4].event, sdk_en[2][4].subEvent);}
+void _2_5_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][5].windowID, sdk_en[2][5].componentID, sdk_en[2][5].event, sdk_en[2][5].subEvent);}
+void _2_6_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][6].windowID, sdk_en[2][6].componentID, sdk_en[2][6].event, sdk_en[2][6].subEvent);}
+void _2_7_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][7].windowID, sdk_en[2][7].componentID, sdk_en[2][7].event, sdk_en[2][7].subEvent);}
+void _2_8_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][8].windowID, sdk_en[2][8].componentID, sdk_en[2][8].event, sdk_en[2][8].subEvent);}
+void _2_9_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[2][9].windowID, sdk_en[2][9].componentID, sdk_en[2][9].event, sdk_en[2][9].subEvent);}
+
+void _3_0_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][0].windowID, sdk_en[3][0].componentID, sdk_en[3][0].event, sdk_en[3][0].subEvent);}
+void _3_1_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][1].windowID, sdk_en[3][1].componentID, sdk_en[3][1].event, sdk_en[3][1].subEvent);}
+void _3_2_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][2].windowID, sdk_en[3][2].componentID, sdk_en[3][2].event, sdk_en[3][2].subEvent);}
+void _3_3_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][3].windowID, sdk_en[3][3].componentID, sdk_en[3][3].event, sdk_en[3][3].subEvent);}
+void _3_4_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][4].windowID, sdk_en[3][4].componentID, sdk_en[3][4].event, sdk_en[3][4].subEvent);}
+void _3_5_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][5].windowID, sdk_en[3][5].componentID, sdk_en[3][5].event, sdk_en[3][5].subEvent);}
+void _3_6_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][6].windowID, sdk_en[3][6].componentID, sdk_en[3][6].event, sdk_en[3][6].subEvent);}
+void _3_7_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][7].windowID, sdk_en[3][7].componentID, sdk_en[3][7].event, sdk_en[3][7].subEvent);}
+void _3_8_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][8].windowID, sdk_en[3][8].componentID, sdk_en[3][8].event, sdk_en[3][8].subEvent);}
+void _3_9_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[3][9].windowID, sdk_en[3][9].componentID, sdk_en[3][9].event, sdk_en[3][9].subEvent);}
+
+void _4_0_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][0].windowID, sdk_en[4][0].componentID, sdk_en[4][0].event, sdk_en[4][0].subEvent);}
+void _4_1_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][1].windowID, sdk_en[4][1].componentID, sdk_en[4][1].event, sdk_en[4][1].subEvent);}
+void _4_2_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][2].windowID, sdk_en[4][2].componentID, sdk_en[4][2].event, sdk_en[4][2].subEvent);}
+void _4_3_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][3].windowID, sdk_en[4][3].componentID, sdk_en[4][3].event, sdk_en[4][3].subEvent);}
+void _4_4_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][4].windowID, sdk_en[4][4].componentID, sdk_en[4][4].event, sdk_en[4][4].subEvent);}
+void _4_5_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][5].windowID, sdk_en[4][5].componentID, sdk_en[4][5].event, sdk_en[4][5].subEvent);}
+void _4_6_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][6].windowID, sdk_en[4][6].componentID, sdk_en[4][6].event, sdk_en[4][6].subEvent);}
+void _4_7_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][7].windowID, sdk_en[4][7].componentID, sdk_en[4][7].event, sdk_en[4][7].subEvent);}
+void _4_8_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][8].windowID, sdk_en[4][8].componentID, sdk_en[4][8].event, sdk_en[4][8].subEvent);}
+void _4_9_cb (puObject* obj)       {globals->plugins->On_EventNotice (NULL, sdk_en[4][9].windowID, sdk_en[4][9].componentID, sdk_en[4][9].event, sdk_en[4][9].subEvent);}
+
+
+char *sdk_menu_legends[5][10] = {{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+                                 {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+                                 {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+                                 {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+                                 {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
+
+puCallback sdk_menu_cb[5][10] = {{_0_0_cb, _0_1_cb, _0_2_cb, _0_3_cb, _0_4_cb, _0_5_cb, _0_6_cb, _0_7_cb, _0_8_cb, _0_9_cb},
+                                 {_1_0_cb, _1_1_cb, _1_2_cb, _1_3_cb, _1_4_cb, _1_5_cb, _1_6_cb, _1_7_cb, _1_8_cb, _1_9_cb},
+                                 {_2_0_cb, _2_1_cb, _2_2_cb, _2_3_cb, _2_4_cb, _2_5_cb, _2_6_cb, _2_7_cb, _2_8_cb, _2_9_cb},
+                                 {_3_0_cb, _3_1_cb, _3_2_cb, _3_3_cb, _3_4_cb, _3_5_cb, _3_6_cb, _3_7_cb, _3_8_cb, _3_9_cb},
+                                 {_4_0_cb, _4_1_cb, _4_2_cb, _4_3_cb, _4_4_cb, _4_5_cb, _4_6_cb, _4_7_cb, _4_8_cb, _4_9_cb}};
+//========================================================================================================================
+void FillSDKmenu()
+{ std::vector <sdkmenu::SMenuData>::const_iterator i_md;
+	int addin_menus_counter = 0; 
+  for (i_md = globals->sdk_menu.md_.begin (); i_md != globals->sdk_menu.md_.end (); ++i_md) {
+    //
+    std::vector <std::string>::const_iterator i_item_str;
+    std::vector <unsigned long>::const_iterator i_item_ID = i_md->itemID.begin ();
+    int counter = 0;
+    for (i_item_str = i_md->items.begin (); i_item_str != i_md->items.end (); ++i_item_str, ++i_item_ID)
+    {
+      if (counter < sdkmenu::MAX_SDK_SUBMENU_NUM) {
+        sdk_menu_legends[addin_menus_counter][counter]             = (char *)i_item_str->c_str ();
+        sdk_en          [addin_menus_counter][counter].windowID    = 0;
+        sdk_en          [addin_menus_counter][counter].componentID = i_md->menuID;
+        sdk_en          [addin_menus_counter][counter].event       = EVENT_SELECTITEM;
+        sdk_en          [addin_menus_counter][counter].subEvent    = (*i_item_ID);
+      }
+
+      counter++;
+    }
+
+		//----------------------------------------------------------------------
+    menu->add_submenu ( i_md->str.c_str (),
+                        sdk_menu_legends[addin_menus_counter],
+                        sdk_menu_cb[addin_menus_counter]
+                      );
+
+    addin_menus_counter++;
+  }
 }
 //============================END OF FILE=====================================================================

@@ -31,13 +31,14 @@
 #endif // _MSC_VER > 1000
 #include "../Include/Gears.h"
 //===================================================================================================
+class COpalGroundSuspension;
 //====================================================================================
 //  Opal Suspension
 //====================================================================================
 class COpalSuspension : public CSuspension {
 
 public:
-  COpalSuspension            (CVehicleObject *v, char *name, CWeightManager *wgh, char = TRICYCLE);
+  COpalSuspension (CVehicleObject *v, COpalGroundSuspension *mgsp,char *name, CWeightManager *wgh, char = TRICYCLE);
   virtual ~COpalSuspension   (void);
 
   ///< CStreamObject methods
@@ -57,19 +58,19 @@ public:
 class COpalGroundSuspension : public CGroundSuspension {
 
 public:
-  COpalGroundSuspension                (CVehicleObject *v,char* whlFilename, CWeightManager *wghman);
+  COpalGroundSuspension                (CVehicleObject *v,CWeightManager *wghman);
   virtual ~COpalGroundSuspension       (void);
 
   /*! CStreamObject methods */
-  virtual int   Read                   (SStream *stream, Tag tag);
-  virtual void  ReadFinished           (void);
-  //virtual void  Write                      (SStream *stream);
-
+  int   Read                   (SStream *stream, Tag tag);
+  void  ReadFinished           (void);
+	//--- Gear methods ------------------------------------------------------
+	//-----------------------------------------------------------------------
   /*! CGroundSuspension generic methods */
-  virtual void  Timeslice              (float dT);
+  void  Timeslice              (float dT);
 
 private:
-  double max_wheel_height_backup;
+  double max_wheel_H;
 };
 //=================================================================================
 //  Class gear managed under opal-ode
@@ -129,12 +130,11 @@ protected:
   double    Radius;                   // In meters (rim + tire)
   //--------------------------------------------------------------------
 	double    speed;										// Rolling speed
+  double    banking;
   float     bad_pres_resis;
-  float     side_whl_vel;
-  float     rolling_force,
-            side_force;
-  float     diffK;
-  opal::Force      glf;                       ///< linear force
+  double    diffK;										// Differential braking amplifier
+	double    torque;										// For differential brake
+  opal::Force      glf;               ///< linear force
   opal::Force      gt_;
   CVector vb[2];        ///< Acceleration in body fram (m/s^2)
   CVector ab[2];        ///< Acceleration in body fram (m/s^2)

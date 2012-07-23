@@ -359,7 +359,7 @@ class CAcmSpin {
   //--- Attributes --------------------------------------------------
   CAcmPart *part;                             // Spinner
   CVector   pos;                              // Position
-  TC_2DF    ofs;                              // Offset
+  F2_VERTEX ofs;                              // Offset
   char      draw;                             // Draw indicator
   //-----------------------------------------------------------------
 public:

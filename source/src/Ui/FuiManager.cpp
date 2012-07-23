@@ -40,6 +40,7 @@
 #include "../Include/WinCity.h"
 #include "../Include/WinTaxiway.h"
 #include "../Include/FuiOption.h"
+#include "../Plugin/Plugin.h"
 #include <malloc.h>
 #include <map>
 
@@ -333,13 +334,13 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
     case FUI_WINDOW_CITY_EDIT:
 			if (globals->aPROF.Has(PROF_TOOL))	return 0;
       window  = new CFuiSketch(windowId,"UI/TEMPLATES/CITY_EDITOR.WIN");
-      window->MoveTo(1036,840);
+      window->MoveTo(1036,100);
       break;
 		//---Taxiway editor-----------------------------------------
     case FUI_WINDOW_TAXIWAY:
 			if (globals->aPROF.Has(PROF_TOOL))	return 0;
       window  = new CFuiTaxi(windowId,"UI/TEMPLATES/TAXY_EDITOR.WIN");
-      window->MoveTo(900,840);
+      window->MoveTo(900,100);
       break;
     //---SUBSYSTEM PROBE-----------------------------------------
     case FUI_WINDOW_PROBE:
@@ -659,7 +660,7 @@ void CFuiManager::Draw ()
   }
   EnterDrawing();
   // sdk: Draw DLL windows plugins
-  globals->plugins.DrawDLLWindow ();
+  globals->plugins->DrawDLLWindow ();
   //------------------------------------------------------
   // Draw windows following priority deque
   //  NOTE: The top windows is the last displayed
@@ -1016,11 +1017,11 @@ CFuiComponent* CFuiManager::FindComponent (Tag windowID, Tag id)
 ///
 ///--------------------------------------------------------------------------
 void CFuiManager::MoveOnTop(CFuiWindow *win)
-{
-  // First remove it
+{ // First remove it
   RemoveFromDisplay(win);
   // Then push in front
   winList.push_back(win);
+	wTop	= win;
 }
 ///--------------------------------------------------------------------------
 /// Delete window from drawing list

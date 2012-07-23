@@ -34,6 +34,7 @@
 #include "../Include/AnimatedModel.h"
 #include "../Include/collada.h"
 #include "../Include/Weather.h"
+#include "../Plugin/Plugin.h"
 #include <algorithm> // used in SortChildTransparency ()
 #include <float.h>
 using namespace std;
@@ -748,10 +749,10 @@ void CAcmPart::Draw (char mode)
         }
 
       case PART_SOBJ:
-        { glTranslated (transform.dx + globals->plugins.dVeh->sobj_offset.x,
-                  transform.dy + globals->plugins.dVeh->sobj_offset.y,
-                  transform.dz + globals->plugins.dVeh->sobj_offset.z);
-          SVector  vect = globals->plugins.dVeh->GetOrientDegre ();
+        { glTranslated (transform.dx + globals->plugins->dVeh->sobj_offset.x,
+                  transform.dy + globals->plugins->dVeh->sobj_offset.y,
+                  transform.dz + globals->plugins->dVeh->sobj_offset.z);
+          SVector  vect = globals->plugins->dVeh->GetOrientDegre ();
           glRotated ( vect.z, 0, 0, 1);      // Heading around Z
           glRotated ( vect.x, 1, 0, 0);      // Pitch   around X
           glRotated ( vect.y, 0, 1, 0);      // Bank    around Y
@@ -1536,7 +1537,8 @@ void CGizmo::PreDraw()
 //--------------------------------------------------------------------
 void CGizmo::PreCros()
 { PreDraw();
-  glColor4f(1,0,0,1);
+  //glColor4f(1,0,0,1);
+	ColorGL(COLOR_RED);
   return;
 }
 //--------------------------------------------------------------------
@@ -1567,7 +1569,8 @@ void CGizmo::EndCros()
 void CGizmo::PreFuel()
 { PreDraw();
   glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
-  glColor4f(0,0,1,1);
+  //glColor4f(0,0,1,1);
+	ColorGL(COLOR_PURE_BLUE);
   return;
 }
 //--------------------------------------------------------------------
@@ -1598,7 +1601,8 @@ void CGizmo::EndFuel()
 //--------------------------------------------------------------------
 void CGizmo::PreLoad()
 { PreDraw();
-  glColor4f(1,0,0,1);
+  //glColor4f(1,0,0,1);
+	ColorGL(COLOR_RED);
   return;
 }
 //--------------------------------------------------------------------

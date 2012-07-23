@@ -20,10 +20,9 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
+#include "../Include/Globals.h"       // globals reference
 #include "../Include/PistonEngine.h"
 #include "../Include/Subsystems.h"
-#include "../Include/WorldObjects.h"  // CWorldObject  
-#include "../Include/Globals.h"       // globals reference
 #include "../Include/Utility.h"       
 #include "../Include/Atmosphere.h"
 #include "../Include/Fui.h"

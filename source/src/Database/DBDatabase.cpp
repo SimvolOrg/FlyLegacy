@@ -125,6 +125,7 @@ void CDatabase::AddIndex (const char *dbiFilename)
 { if (state == DB_OFF)		return;
   pair<Tag,CDatabaseIndex*> dbiInsert;
   dbiInsert.second = new CDatabaseIndex (dbiFilename);
+	//TRACE("CDatabaseIndex: %08x",U_INT(dbiInsert.second));
   dbiInsert.first = dbiInsert.second->GetKeyId();
   dbi.insert (dbiInsert);
   char idn[8];
@@ -194,6 +195,8 @@ void CDatabase::Mount (PODFILE *f)
   state   = DB_MOUNTED;
   podfile = f;
   buf     = new char[recLength];
+	//TRACE("CDatabase.buf: %08x-%d",U_INT(buf),recLength);
+
 }
 //-------------------------------------------------------------------
 // Mount the database but do not load any of the records into memory

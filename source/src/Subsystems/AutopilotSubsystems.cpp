@@ -401,8 +401,8 @@ void CPIDbox::Probe(CFuiCanva *cnv)
 //        Class to decode all PID controllers
 //===============================================================================================
 CPIDdecoder::CPIDdecoder(char *fn,AutoPilot *ap)
-{ 
-  apil  = ap;
+{ apil	= ap;
+  vpil	= ap->GetMVEH()->amp->GetVirtualPilot();
 	SStream s(this,"WORLD",fn);
 }
 
@@ -500,6 +500,11 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 			ReadString(txt,128,st);
 			DecodeTHRO(txt);
 			return TAG_READ;
+		//--- Angle of approach to runway -----------------------
+		case 'aprw':
+			ReadDouble(&prm,st);
+			apil->SetAPRW(prm);
+			return TAG_READ;
 		//---Disengage altitude ---------------------------------
 		case 'land':
 			DecodeLanding(st);
@@ -581,6 +586,12 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 			ReadFrom(pbx,st);
 			apil->AddPID(pbx);
 			return TAG_READ;
+		//--- Auto start list ------------------------
+		case 'strt':
+			return	vpil->StrtProcedure(st);
+		//--- Auto stop procedure --------------------
+		case 'stop':
+			return	vpil->StopProcedure(st);
   }
 
   return TAG_IGNORED;
@@ -653,6 +664,7 @@ AutoPilot::AutoPilot (void)
 	fSPD		= 0;						// Final speed
 	cRAT		= 0;						// Crrent speed 
 	aCUT		= 0;						// Altitude for cut throttle
+	xAPW		= 45;						// Angle of Approach to runway
   //---Vertical parameters -------------------------------
   eVRT    = 0;
   rALT.Set(400,1);
@@ -674,12 +686,8 @@ AutoPilot::AutoPilot (void)
   abrt    = 0;
   //-------------------------------------------------------
   for (int k=0; k<PID_MAX; k++) pidL[k] = 0;
-	//--- Init throttle PID ---------------------------------
-	CPIDbox *box		= new CPIDbox(PID_GAS,this);
-	pidL[PID_GAS]		= box;
-	box->SetCoef(0.3f,0,0.05f);
-	box->SetMini(0);
-	pidQ.PutEnd(box);
+	//-------------------------------------------------------
+	
   //-------------------------------------------------------
   mTRN.sender = unId;
   mTRN.group  = 'turn';             // Turn coordinator
@@ -698,11 +706,10 @@ AutoPilot::AutoPilot (void)
   mVSI.id = MSG_GETDATA;              // Get data
   mVSI.dataType = TYPE_REAL;          // Double format
   //-------------------------------------------------------
-	mGAZ.group	= 'THRO';								// THROTTLE
-  mGAZ.sender = unId;
-  mGAZ.user.u.datatag = 'gets';       // throttle
-  mGAZ.id = MSG_GETDATA;              // Get data
-  mGAZ.dataType = TYPE_REAL;          // Double format
+	mREG.group	= SUBSYSTEM_SPEED_REGULATOR;	// Speed regulator
+	mREG.id		 = MSG_GETDATA;
+	mREG.user.u.datatag = '$TYP';
+	//-------------------------------------------------------
   //-------------------------------------------------------
   double d3 = 3.0;
   double r3 = DegToRad(d3);           // 3° in radian
@@ -761,17 +768,11 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
   mveh->FindReceiver(&mHDG);
 	cmpS = (CSubsystem*)mHDG.receiver;
 	if (0 == cmpS)	inUse = 0;
-	//--- Get throttle controller ---------------
-	mGAZ.voidData = 0;
-	Send_Message(&mGAZ);
-	gazS	= (CThrottleControl*)mGAZ.receiver;
-	mGAZ.user.u.datatag = 'thro';
-	//--- Send Speed ----------------------------
-	Send_Message(&mSPD);
-	//--- Check if autothrottle is available ----
-	bool ok = (aCUT > 0);
-	if (ok)		return;
-	gazS		= 0;
+	//--- Get Speed regulator -------------------
+	Send_Message(&mREG);
+	sreg	= (CSpeedRegulator*)mREG.voidData;
+	//--- rnd of init ---------------------------
+
   return;
 }
 //------------------------------------------------------------------------------------
@@ -878,7 +879,8 @@ AutoPilot::~AutoPilot()
 //  Read parameters 
 //-----------------------------------------------------------------------------------
 int AutoPilot::Read (SStream *stream, Tag tag)
-{ float pm;
+{ SMessage msg;
+	float pm;
   switch (tag) {
   case 'atop':
     // Autopilot specification
@@ -904,7 +906,7 @@ int AutoPilot::Read (SStream *stream, Tag tag)
     return TAG_READ;
   //----Speed system --------------------------
 	case 'sped':
-		ReadMessage(&mSPD, stream);
+		ReadMessage(&msg, stream);
 		return TAG_READ;
   //----Navigation radio ---------------------
   case 'nav1':
@@ -917,9 +919,8 @@ int AutoPilot::Read (SStream *stream, Tag tag)
     return TAG_READ;
 	//--- Throttle control --------------------
 	case 'thro':
-		ReadMessage(&mGAZ, stream);
+		ReadMessage(&msg, stream);
 		return TAG_READ;
-
   //---Altitude limit ------------------------
   case 'aLim':
     ReadFloat(&pm,stream);
@@ -1003,15 +1004,12 @@ void AutoPilot::SetAMIS(double a,double b)
 //  This is to intercept AXIS destination as well
 //---------------------------------------------------------------------
 bool AutoPilot::MsgForMe (SMessage *msg)
-{ if (msg) {
-    bool matchGroup = ((msg->group == unId) || (msg->group == 'AXIS'));
-    bool hwNull     = (msg->user.u.hw == HW_UNKNOWN);
-    bool hwMatch    = (msg->user.u.hw == (unsigned int) hwId);
-    bool unitNull   = (msg->user.u.unit == 0);
-    bool unitMatch  = (msg->user.u.unit == uNum);
-    return matchGroup && (hwNull || hwMatch) && (unitNull || unitMatch);
-  }
-  return false;
+{ bool matchGroup = ((msg->group == unId) || (msg->group == 'AXIS'));
+  bool hwNull     = (msg->user.u.hw == HW_UNKNOWN);
+  bool hwMatch    = (msg->user.u.hw == (unsigned int) hwId);
+  bool unitNull   = (msg->user.u.unit == 0);
+  bool unitMatch  = (msg->user.u.unit == uNum);
+  return matchGroup && (hwNull || hwMatch) && (unitNull || unitMatch);
 }
 //--------------------------------------------------------------------
 //  Receive a message 
@@ -1191,7 +1189,7 @@ void AutoPilot::Disengage(char gr)
   ailS->Neutral();							// Aileron to O
   rudS->Neutral();
 	flpS->SetPosition(0);
-	globals->jsm->JoyConnectAll();
+	sreg->SetOFF();
 	ugaz		= 0;
 	rend		= 0;
 	//---- Pull up if altitude is lower than 500 ---------
@@ -1216,16 +1214,9 @@ int AutoPilot::BadSignal(char s)
 //	NOTE: Adjust throttle to target speed
 //-----------------------------------------------------------------------
 void AutoPilot::SpeedHold()
-{	ugaz &= globals->jsm->GasDisconnected();
-//	if ((0 == ugaz) && (vStat == AP_VRT_TKO))		return Disengage(1);
-	if ( 0 == ugaz)	return;
-	//--- Select speed to hold ---------------
-	cRAT = SelectSpeed();
-	Send_Message(&mSPD);
-	double cor = (mSPD.realData - cRAT);
-	double val = pidL[PID_GAS]->Update(dTime,cor,0);
-	gazS->Target(val);
-	return;
+{	if (0 == ugaz)				return;
+	cRAT		= SelectSpeed();
+	ugaz = (sreg->SetSpeed(cRAT))?(1):(0);
 }
 //-----------------------------------------------------------------------
 //  Manage Lateral mode with ailerons
@@ -1240,18 +1231,6 @@ void AutoPilot::LateralHold()
   double   avl = bbox->Update(dTime,turn,trn);      // Banking to controller
   ailS->PidValue(avl);                              // result to ailerons
 	if (trace)  TRACE("HOLD: aHDG=%.2f rHDG=%.2f",aHDG,rHDG);
-  return;
-}
-//-----------------------------------------------------------------------
-//  Manage Lateral mode with rudder
-//  Maintain the target heading rHDG
-//-----------------------------------------------------------------------
-void AutoPilot::RudderHold()
-{ CPIDbox *rbox = pidL[PID_RUD];                    // Rudder controller
-  double   err  = Norme180(aHDG - rHDG);            // Error in [-180,+180]
-  double   val  = rbox->Update(dTime,err,0);        // to controller
-  rudS->PidValue(-val);                              // result to rudder
-	//  TRACE("HOLD: aHDG=%.2f rHDG=%.2f",aHDG,rHDG);
   return;
 }
 //-----------------------------------------------------------------------
@@ -1290,7 +1269,8 @@ void AutoPilot::AltitudeHold()
 //  2°Activate ROL Controller
 //-----------------------------------------------------------------------
 void AutoPilot::ModeROL()
-{ double bnk = mveh->GetRRtoLDBank();               // Get Bank angle
+{ rHDG	= cmpS->GaugeBusFT01();					// Current mag heading
+	double bnk = mveh->GetRRtoLDBank();               // Get Bank angle
   double cor = pidL[PID_ROL]->Update(dTime,bnk,0);  // Feet to controller
   double val = pidL[PID_BNK]->Update(dTime,cor,0);  // Turn rate
   ailS->PidValue(val);                              // Send to aileron 
@@ -1320,7 +1300,7 @@ void	AutoPilot::ModeLT0()
 //  Decision point is based on time for the aircraft to complete ARC AB
 //  Assuming a standard turning speed of 2° sec (A complete 360° turn in 3 minutes)
 //  the time T0 is given by
-//  T0 = A / 3   where A = (R - D)mod360, the angle from direction D
+//  T0 = A / 2   where A = (R - D)mod360, the angle from direction D
 //  to direction R (the reference direction)
 //  At anytime we know the distance from the aircraft P to the R direction
 //  at point H.
@@ -1347,7 +1327,7 @@ void AutoPilot::ModeLT1()
 	if (trace)		TRACE("T0=%.4f T1=%.4f hRF=%.4f rHDG=%.4f aHDG=%.4f",vTIM0,vTIM1,Radio->hREF,rHDG,aHDG);
   if (vTIM1 > vTIM0) return CrossDirection();
   //----Enter second leg ------------------------------------------------
-  if (trace)	TRACE("ENter LT2");
+  if (trace)	TRACE("Enter LT2");
   lStat = AP_LAT_LT2;
   StateChanged(sEVN);
 	return;
@@ -1446,12 +1426,10 @@ void	AutoPilot::ModeTGA()
 //	
 //-----------------------------------------------------------------------
 void AutoPilot::ModeGND()
-{	//--- Compute error -----------------------------------
-	gHDG	  = mveh->GetHeading();				// Actual Heading
-	rHDG		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),rend->refP);
-	hERR		= Wrap180(rHDG - gHDG) * 100;
-  double val  = pidL[PID_RUD]->Update(dTime,hERR,0);			// to controller
-	rudS->PidValue(val);																		// To rudder
+{	//--- Steer to target --------------------------
+	sreg->SteerTo(rend->refP);					// Steer to direction
+	SPosition &S	= rend->lndP;					// runway origin
+	rend->sect		= GetSectorNumber(S,globals->geop);
 	//TRACE("rHDG=%.5f DIR=%.5f hERR=%.5f val=%.5f",rHDG,gHDG,hERR,val);
 	//---- hold level ---------------------------
 	ModeROL();
@@ -1487,8 +1465,8 @@ void AutoPilot::Rotate()
 	ailS->Neutral();									// Reset ailerons
   pidL[PID_ALT]->Init();            // init PID
   pidL[PID_AOA]->Init();            // init PID
-	pidL[PID_RUD]->Init();
 	EnterROL();
+	sreg->SteerOFF();									// Stop steering
 	return;
 }
 //-----------------------------------------------------------------------
@@ -1624,12 +1602,12 @@ void AutoPilot::ModeFLR()
   return;
 }
 //-----------------------------------------------------------------------
-//	Final groung segment:  Do nothing
-//	Everything is managed from lateral ground mode (ModeGND)
+//	Final groung segment:  
+//			Compute runway segment:
 ///-----------------------------------------------------------------------
 void AutoPilot::ModeFIN()
-{	return;	}
-
+{	
+	return;	}
 
 //-----------------------------------------------------------------------
 //  Manage Head mode
@@ -1785,11 +1763,11 @@ void AutoPilot::GetCrossHeading()
 	//--- normal approach ------------------------
   if ((aprm) && (sect))
 	{	lStat = AP_LAT_LT1;
-	  double cor	= (Radio->rDEV > 0)?(+90):(-90);
-		double haf  = cor * 0.5;
+	  double cor	= (Radio->rDEV > 0)?(+xAPW):(-xAPW);
+		double qrt  = cor * 0.25;
 		xHDG				= Wrap360(Radio->hREF + cor);
-		xCOR				= Wrap360(Radio->hREF + haf);
-	  TRACE("CROSS (aprm) hREF=%.4f rDEV=%.4f xHDG=%.4f",Radio->hREF,Radio->rDEV,xHDG);
+		xCOR				= Wrap360(Radio->hREF + qrt);
+	  //TRACE("CROSS (aprm) hREF=%.4f rDEV=%.4f xHDG=%.4f",Radio->hREF,Radio->rDEV,xHDG);
 	  //	trace = 1;
 		return;
 	}
@@ -1854,7 +1832,7 @@ void AutoPilot::EnterAPR()
   StateChanged(AP_STATE_APR);
   sEVN  = AP_STATE_ATK;             // next state
 	//--- Get landing data  ---------------------------------
-	rend		= Radio->nav->GetLandSpot();
+	rend		= Radio->rSRC->GetLandSpot();
 	//TRACE("EnterAPR lndDIR=%.4f",rend->lnDIR);
   //---Compute a direction perpendicular to the radial ----
   GetCrossHeading();
@@ -2002,8 +1980,10 @@ void AutoPilot::DecVSP()
 void AutoPilot::StateDIS(int evn)
 { //--- Process only autopilot engage ------------------
   if (AP_EVN_ENG != evn)  return;
-  vTime = 0;
-	cALT	= altS->GaugeBusFT01();		// Current altitude
+  vTime		= 0;
+	cALT	= altS->GaugeBusFT01();					// Current altitude
+	rHDG	= cmpS->GaugeBusFT01();					// Current mag heading
+	aSPD  = mveh->GetPreCalculedKIAS();		// Current speed
   EnterINI(); 
   return;
 }
@@ -2152,26 +2132,28 @@ bool AutoPilot::Engage()
 //	External interface to enter take-off mode
 //	Check all pre-conditions
 //-----------------------------------------------------------------------
-int AutoPilot::EnterTakeOFF(char x)
+int AutoPilot::EnterTakeOFF(char x, LND_DATA *rwd)
 {	wgrd  = mveh->WheelsAreOnGround();
-	rend	= globals->apm->GetDepartingEND();
+	rend	= rwd;
 	if (vROT <= 0)						return 1;					// Vrot present
 	if (0 == rend)						return 2;					// Runway end position
 	if (!wgrd)								return 3;					// Wheels on ground
-	if (0 == gazS)						return 4;					// Gas controller
-  if (aSPD > 25)						return 5;					// Speed lower then 20KTS
+	if (0 == sreg)						return 4;					// No speed regulator
 	if (AP_LAT_ROL != lStat)	return 6;					// Initial lateral mode
 	if (AP_VRT_VSP != vStat)	return 7;					// Initial vertical mode
 	if (!mveh->AllEngineOn())	return 8;					// All engine running
 	//----- Engage Throttle control ----
-	SetGasControl(1);
+	ugaz = SetGasControl(1);
+	//--- Engage steering mode ---------
+	sreg->SteerTo(rend->refP);
+	//--- Trim all surfaces ------------
 	ailS->Neutral();
 	rudS->Neutral();
 	elvT->Neutral();
 	//---- Lateral state to steer mode --
 	lStat	= AP_LAT_GND;
 	vStat = AP_VRT_TKO;
-	//--- externally controlled ---------
+	//--- Externally controlled ---------
 	xCtl	= x;
 	return 0;
 }
@@ -2180,12 +2162,11 @@ int AutoPilot::EnterTakeOFF(char x)
 //	Check all pre-conditions
 //-----------------------------------------------------------------------
 bool AutoPilot::EnterGPSMode()
-{	//--- Try Take-off ---------------------------
-	if (0 != xCtl)						return false;
+{	if (0 != xCtl)						return false;
 	if (cAGL < 500)						return false;
 	if (AP_DISENGD == vStat)	return false;
 	if (AP_VRT_TKO == vStat)	return false;
-	if (0 == gazS)						return false;
+	if (0 == sreg)						return false;
 	return true;
 }
 //-----------------------------------------------------------------------
@@ -2235,7 +2216,7 @@ void AutoPilot::SetWPTmode(double alt)
 //-----------------------------------------------------------------------
 void AutoPilot::SwapGasControl()
 {	ugaz ^= 1;
-	SetGasControl(ugaz);
+	ugaz  = SetGasControl(ugaz);
 	return;
 }
 //-----------------------------------------------------------------------
@@ -2244,15 +2225,15 @@ void AutoPilot::SwapGasControl()
 //	and elevators are disconnected from pilot control.
 //	To recover control, throttle must be moved
 //-----------------------------------------------------------------------
-void AutoPilot::SetGasControl(char s)
-{	if (0 == gazS)						return;
-	if (AP_DISENGD == lStat)	return;
-	//--- Set gas control ------------------
-	ugaz	= s;
-	if (0 == ugaz)	globals->jsm->JoyConnectAll();
-  else						globals->jsm->JoyDisconnect(JS_SURF_APL + JS_GROUPBIT);
-	if (0 == ugaz)	ailS->Neutral();
-	return;
+char AutoPilot::SetGasControl(char s)
+{	if (0 == sreg)						return 0;
+	if (AP_DISENGD == lStat)	return 0;
+	//--- Set/ Stop gas control ------------------
+	if (0 == s)	
+	{	sreg->SetOFF();	ailS->Neutral();}											
+  else				
+	s = (sreg->SetON(JS_SURF_APL))?(1):(0);			
+	return s;
 }
 //-----------------------------------------------------------------------
 //  Dispatch event altitude alert
@@ -2290,23 +2271,16 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 		cnv->AddText( 1,1,"hDEV %.5f",Radio->hDEV);
 		cnv->AddText( 1,1,"Feet %.0f",Radio->fdis);
   }
-	if (lStat == AP_LAT_LT0)
-  { cnv->AddText( 1,1,"vHRZ %.5f",vHRZ);
-    cnv->AddText( 1,1,"dREF %.2f",dREF);
-  }
-	if (lStat == AP_LAT_LT1)
+	if ((lStat == AP_LAT_LT0) || (lStat == AP_LAT_LT1)) 
   { cnv->AddText( 1,1,"vHRZ %.5f",vHRZ);
     cnv->AddText( 1,1,"dREF %.2f",dREF);
   }
 	if (lStat == AP_LAT_LT2)
 	{	cnv->AddText( 1,1,"cFAC %.5f",cFAC);
 	}
-	if (aprm)	
+	if ((aprm)|| (vStat == AP_VRT_ALT))
 	{	cnv->AddText( 1,1,"rALT %.0f",rALT.Get());
 	}
-  if (vStat == AP_VRT_ALT)
-  { cnv->AddText( 1,1,"rALT %.0f",rALT.Get());
-  }
 	if (vStat == AP_VRT_GST)
 	{	cnv->AddText( 1,1,"vAMP %.0f,",vAMP);
 	}
@@ -2315,8 +2289,9 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 		cnv->AddText( 1,1,"rVSP %.5f",rVSP);
   }
 	if (vStat == AP_VRT_FLR)
-  { cnv->AddText( 1,"dTDP %.0f",dTDP);
-  }
+  { cnv->AddText( 1,1,"dTDP %.0f",dTDP);	}
+	if (lStat == AP_LAT_GND)
+  { cnv->AddText( 1,1,"Sector %03u",rend->sect);	}
   return;
 }
 //-----------------------------------------------------------------------

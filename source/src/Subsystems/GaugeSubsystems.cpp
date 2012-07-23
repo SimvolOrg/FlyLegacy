@@ -301,8 +301,7 @@ void CVerticalSpeedIndicator::TimeSlice (float dT,U_INT FrNo)
 // CAirspeedIndicator
 //==============================================================================
 CAirspeedIndicator::CAirspeedIndicator (void)
-{
-  TypeIs (SUBSYSTEM_AIRSPEED);
+{ TypeIs (SUBSYSTEM_AIRSPEED);
   maxOperatingMach = 0;
   maxOperatingSpeed = 0;
 }
@@ -336,11 +335,11 @@ int CAirspeedIndicator::Read (SStream *stream, Tag tag)
 //--------------------------------------------------------------------------------
 //  Message received
 //--------------------------------------------------------------------------------
-
 EMessageResult CAirspeedIndicator::ReceiveMessage (SMessage *msg)
 { switch (msg->id) {
     case MSG_GETDATA:
       switch (msg->user.u.datatag) {
+			case '$VAL':
       case 'sped':
       case 'kias': // 
         msg->realData = indn;
@@ -1418,7 +1417,7 @@ void CMarkerPanel::TimeSlice(float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
   if (0 == Radio)                 return;
   if (SIGNAL_ILS != Radio->ntyp)  return;
-  CILS *ils = (CILS*)Radio->nav;
+  CILS *ils = (CILS*)Radio->rSRC;
   CVector pos(Radio->hDEV,Radio->fdis,mveh->GetAltitude());
   if (ils->InOUTM(pos,outm)) outm.Flash(dT);
   if (ils->InMIDL(pos,medm)) medm.Flash(dT);

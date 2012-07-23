@@ -220,12 +220,12 @@ CK155radio::CK155radio()
 //  All parameters read.  Register master radio
 //-------------------------------------------------------------------------
 void CK155radio::ReadFinished()
-{ Radio.rnum = uNum;
+{ busRD.rnum = uNum;
 	//--- Radio unit 1 is a master radio holding the Radio BUS
   if (1 == uNum)
 	{	mveh->RegisterNAV(unId);
 		mveh->RegisterCOM(unId);
-		mveh->RegisterRadioBUS(&Radio);
+		mveh->RegisterRadioBUS(&busRD);
 		mveh->RegisterRAD(this);
 	}
   CRadio::ReadFinished();
@@ -568,10 +568,10 @@ int CK155radio::NAVenterCDI()
 //--------------------------------------------------------------------------
 int CK155radio::RefreshCDI()
 { SetField(navTAB,K155_FCDI_GR,"%s",cdiFLD);
-  if (VOR)  return SetOBS(0);
-  if (ILS)  return SetILS();
+	if (SRC->SignalType() == SIGNAL_VOR)	 return SetCDI(0);
+	if (SRC->SignalType() == SIGNAL_ILS)	 return SetILS();
   //-----Flag mode --------------------------------------------
-  SetField(navTAB,K155_FOBS_DG,"%03u",OBS);
+  SetField(navTAB,K155_FOBS_DG,"%03u",CDI);
   strncpy(nDat5+2,"FLAGS",4);
   cdiST     = 0;                      // FLAG
   return 1;
@@ -590,8 +590,8 @@ int CK155radio::SetFlag()
 //  Enter ILS mode 
 //--------------------------------------------------------------------------
 int CK155radio::SetILS()
-{ float dir = ILS->GetRwyDirection();
-  cdiDEV    = ComputeDeviation(dir,ILS->GetRadial(),&cdiST,sPower);
+{ float dir = SRC->GetRefDirection();
+  cdiDEV    = ComputeDeviation(dir,SRC->GetRadial(),&cdiST,sPower);
   SetField(navTAB,K155_FOBS_DG,"%s","LOC");
   SetFlag();
   return 1;
@@ -599,13 +599,12 @@ int CK155radio::SetILS()
 //--------------------------------------------------------------------------
 //  Change OBS from internal
 //--------------------------------------------------------------------------
-int CK155radio::SetOBS(short inc)
-{ if (0 == VOR) return 0;
-  OBS += inc;
-  if (  0 > OBS) OBS -= inc;
-  if (359 < OBS) OBS -= inc;
-  cdiDEV  = ComputeDeviation(OBS,VOR->GetRadial(),&cdiST,sPower);
-  SetField(navTAB,K155_FOBS_DG,"%03u",OBS);
+int CK155radio::SetCDI(short inc)
+{ CDI += inc;
+  if (  0 > CDI) CDI -= inc;
+  if (359 < CDI) CDI -= inc;
+  cdiDEV  = ComputeDeviation(CDI,SRC->GetRadial(),&cdiST,sPower);
+  SetField(navTAB,K155_FOBS_DG,"%03u",CDI);
   SetFlag();
   return 1;
 }
@@ -624,13 +623,13 @@ int CK155radio::NAVstateCDI(U_INT evn)
         return 1;
       //---Modify OBS value -------------------------------------
       case K55EV_OBSD_D1:
-        SetOBS(mDir * 100);
+        SetCDI(mDir * 100);
         return 1;
       case K55EV_OBSD_D2:
-        SetOBS(mDir * 10);
+        SetCDI(mDir * 10);
         return 1;
       case K55EV_OBSD_D3:
-        SetOBS(mDir);
+        SetCDI(mDir);
         return 1;
       //---Swap active and Standby NAV -------------------------
       case K55EV_TRSF_NV:
@@ -651,22 +650,18 @@ int CK155radio::NAVstateCDI(U_INT evn)
 //  Get the station direction
 //--------------------------------------------------------------------------
 int CK155radio::SetStationBearing()
-{ float rad = 0;
-	if (Radio.nav)	Radio.nav->GetRadial();
-//  if (VOR)  rad = VOR->GetRadial();
-//  if (ILS)  rad = ILS->GetRadial();
+{ float rad = busRD.rSRC->GetRadial();
   int dir   = GetRounded(rad);
-  OBS       = dir;
-  SetField(navTAB,K155_FOBS_DG,"%03u",OBS);
-  return OBS;
+  CDI       = dir;
+  SetField(navTAB,K155_FOBS_DG,"%03u",CDI);
+  return CDI;
 }
 //--------------------------------------------------------------------------
 //  Refresh Bearing
 //--------------------------------------------------------------------------
 int CK155radio::RefreshBearing()
-{ if (Radio.nav)	return SetStationBearing();
-//	if (VOR)  return SetStationBearing();
-//  if (ILS)  return SetStationBearing();
+{ U_CHAR sig = SRC->SignalType();
+	if (sig != SIGNAL_OFF)	return SetStationBearing();
   SetField(navTAB,K155_FOBS_DG,"%s","---");
   nDat5[7]  = '\x81';     // To flag
   return 1;
@@ -720,22 +715,18 @@ int CK155radio::NAVstateBRG(U_INT evn)
 //  Get the station Radial
 //--------------------------------------------------------------------------
 int CK155radio::SetStationRadial()
-{ float rad = 0;
-	if (Radio.nav)	Radio.nav->GetRadial();
-//  if (VOR)  rad = VOR->GetRadial();
-//  if (ILS)  rad = ILS->GetRadial();
-  int dir = GetRounded(rad) - 180;
-  OBS     = Wrap360(dir);
-  SetField(navTAB,K155_FOBS_DG,"%03u",OBS);
-  return OBS;
+{ float rad		= busRD.rSRC->GetRadial();
+  int dir			= GetRounded(rad) - 180;
+  CDI					= Wrap360(dir);
+  SetField(navTAB,K155_FOBS_DG,"%03u",CDI);
+  return CDI;
 }
 //--------------------------------------------------------------------------
 //  Refresh Radial
 //--------------------------------------------------------------------------
 int CK155radio::RefreshRadial()
-{ if (Radio.nav)	SetStationRadial();
-//	if (VOR)  return SetStationRadial();
-//  if (ILS)  return SetStationRadial();
+{ U_CHAR sig = SRC->SignalType();
+	if (sig != SIGNAL_OFF)	SetStationRadial();
   SetField(navTAB,K155_FOBS_DG,"%s","---");
   nDat5[7]  = '\x81';     // To flag
   return 1;
@@ -898,7 +889,7 @@ int CK155radio::NAVstateTIM(U_INT evn)
 //-----------------------------------------------------------------------
 int CK155radio::PowerOFF()
 { sPower      = 0;
-  Radio.actv  = 0;
+  busRD.actv  = 0;
 	FreeRadios(1);
   if (1 == uNum)  globals->rdb->TuneTo(0);
   return 0;
@@ -908,7 +899,7 @@ int CK155radio::PowerOFF()
 //-----------------------------------------------------------------------
 int CK155radio::PowerON()
 {	if (sPower == 1)	return 1;
-  Radio.actv = 1;
+  busRD.actv = 1;
   sPower  = 1;
   COMenterNormal();
   cTurn   = 1;
@@ -960,12 +951,7 @@ void CK155radio::Update(float dT,U_INT FrNo,char exs)
 	//--- Refresh comm radio -----------------------------------------------
   COM = globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh com
 	//----When external source, refresh only COM ---------------------------
-	if (exs)	return;
-  //----Refresh other  stations ------------------------------------------
-  VOR	= globals->dbc->GetTunedNAV(VOR,FrNo,ActNav.freq);     // Refresh VOR
-	if (VOR)	return;
-  ILS = globals->dbc->GetTunedILS(ILS,FrNo,ActNav.freq);     // Refresh ILS
-  if (1 == uNum)    globals->cILS = ILS;
+	SelectSource();
   return;
 }
 //==========================================================================

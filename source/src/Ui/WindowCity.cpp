@@ -225,7 +225,7 @@ void CFuiSketch::CollectFilesOFE()
 {	wait  = 1;
 	eofl	= 0;
 	edit	= 0;
-	wfil	= 0;
+	wfil	= 1;
 	FP		= 0;
  *dbase = 0;
 	FPM.close = 0;
@@ -1132,6 +1132,7 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 			return;
 		//--- Rotate left ------------------------
 		case 'lrot':
+			if (wfil)	return;
 			RotateBuilding(-oneD);
 			return;
 		//--- Rotate right -----------------------
@@ -1155,22 +1156,27 @@ void CFuiSketch::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 			return;
 		//--- move latitude up -------------------
 		case 'lat+':
+			if (wfil)	return;
 			trn->Displace(0,+OSM_DISPLACE);
 			return;
 		//--- Move latitude down -----------------
 		case 'lat-':
+			if (wfil)	return;
 			trn->Displace(0,-OSM_DISPLACE);
 			return;
 		//--- Move longitude west ----------------
 		case 'lon-':
+			if (wfil)	return;
 			trn->Displace(-OSM_DISPLACE,0);
 			return;
 		//--- Move longitude east ---------------
 		case 'lon+':
+			if (wfil)	return;
 			trn->Displace(+OSM_DISPLACE,0);
 			return;
 		//--- Reset postion ---------------------
 		case 'rset':
+			if (wfil)	return;
 			trn->ResetAdjust();
 			return;
 	}
@@ -1634,7 +1640,8 @@ void D2_Session::Draw()
 {	//--- Draw Ground objects -------------------------
 	DebDrawOSMground();							// Drawing environment
 	glDisable(GL_BLEND);
-	glColor4f(1,1,1,1);
+	//glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
 	for (ro = gndQ.begin(); ro != gndQ.end(); ro++)
 	{	(*ro).second->Draw();
 	}

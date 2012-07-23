@@ -23,10 +23,15 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 //======================================================================
-#include "../Include/FlyLegacy.h"
+#include "../Include/Globals.h"
 class	CPanel;
 class CGauge;
 class CAirplane;
+class TaxiwayMGR;
+class CSpeedRegulator;
+class TaxEDGE;
+class TaxNODE;
+class TaxiRoute;
 //=========================================================================
 //  ROBOT RETURN CODE
 //=========================================================================
@@ -149,16 +154,43 @@ public:
 	inline bool	Inactive()		{return (ROBOT_STOP == step);}
 };
 //=================================================================
+//  Class Procedure:  Support list of messages for procedures
+//=================================================================
+class Procedure: public CStreamObject {
+protected:
+	std::vector<SMessage*> msgQ;
+	//---------------------------------------------------
+public:
+	Procedure();
+ ~Procedure();
+  //--------------------------------------------------
+	int		ReadAUTO(SStream *st);
+	//--------------------------------------------------
+	SMessage *DecodeMSG(char *txt);
+	SMessage *IntMessage(char *txt);
+	SMessage *FltMessage(char *txt);
+	//--------------------------------------------------
+	bool			Execute(U_INT No);
+
+};
+//=================================================================
 //	Virtual pilot states
 //=================================================================
 #define VPL_IS_IDLE			(0)
-#define VPL_PREFLT01		(1)
-#define VPL_PREFLT02		(2)
-#define VPL_STARTING		(3)
-#define VPL_TAKE_OFF		(4)
-#define VPL_CLIMBING		(5)
-#define VPL_TRACKING		(6)
-#define VPL_LANDING     (7)
+#define VPL_PROCEDURE		(1)
+#define VPL_GOTAKEOFF   (2)
+#define VPL_PREFLIGHT		(3)
+#define VPL_STARTING		(4)
+#define VPL_TAKE_OFF		(5)
+#define VPL_CLIMBING		(6)
+#define VPL_TRACKING		(7)
+#define VPL_LANDING     (8)
+#define VPL_HASLAND			(9)
+#define VPL_GETPARK	    (10)
+#define VPL_TAXIING			(11)
+#define VPL_STOPPED		  (12)
+#define VPL_FIXEPOINT		(13)
+#define VPL_EMERGENCY		(14)
 //=================================================================
 //  Virtual Pilot to pilot the aircraft
 //  
@@ -166,50 +198,81 @@ public:
 class VPilot: public CSubsystem {
 protected:
 	//--- ATTRIBUTES --------------------------------------
-	char							 State;
-	char							 cnt;
-	bool							 gc;				// Gas control
+	char							 State;			// Current state
+	char               nStat;			// Next state
+	char							 sRol;			// Rolling state
+	char							 alrm;			// Alarm set
 	U_CHAR						 msgNo;
+	//--- Procedures --------------------------------------
+	Procedure          Pstrt;			// Start procedure
+	Procedure					 Pstop;			// Stop procedure
+	Procedure         *Pexec;			// Procedure to execute
+	char              *fmt;				// Message from pilot 
+	//--- Taxing parameters -------------------------------
+	TaxiRoute					*route;			// Ground route
+	double						 dist;			// Distance to node
 	//-----------------------------------------------------
 	U_INT							 FrNo;
 	float							 T01;				// Timer
 	CWPoint					  *wayP;			// Target WayPoint
 	//-----------------------------------------------------
+	LND_DATA					*rend;			// Runway end
 	CAirplane         *pln;				// Airplane
 	CFPlan						*fpln;			// Flight plan to execute
 	AutoPilot         *apil;			// Auto pilote
+	CSpeedRegulator   *sreg;			// Speed regulator
 	CRadio					  *Radio;			// Radio n°1
-	BUS_RADIO         *busR;			// Radio bus
+	CAptObject				*apo;				// Current airport
+	CAirportMgr       *apm;				// Airport manager
+	TaxiwayMGR        *taxiM;			// Taxyway manager
 	//--- Radio messages ----------------------------------
 	SMessage           mrad;			// Radio message
 	//-----------------------------------------------------
 public:
 	VPilot();
+ ~VPilot();
+  void  PrepareMsg(CVehicleObject *veh);
 	bool	GetRadio();
 	//-----------------------------------------------------
 	void	Error(int No);
 	void	Warn(int No);
+	void	StepProcedure(float dT);
+	void	StartProcedure(Procedure *P,char nxt,char *fmt);
 	//--- Action routines ---------------------------------
-	void	PreFlight(float dT);
+	void	StartOnSpot();
+	void	GoToTakeOff();
+	void	StandFixe();
 	void	CheckPreFlight();
-	void	PreStart(float dT);
-	void	EnterTakeOff();
+	void	StartTakeOff();
 	void	EnterFinal();
 	void	ChangeWaypoint();
-	void	Refresh();
 	float SetDirection();
+	void	StartTaxiing(char nxt);
+	//-----------------------------------------------------
+	void	GroundSpeed();
 	//--- State routines ----------------------------------
 	void	Start();
 	void	HandleBack();
+	void	GroundBraking();
 	//--- Mode routines -----------------------------------
 	void	ModeTKO();
 	void	ModeCLM();
 	void	ModeTracking();
 	void	ModeLanding();
+	void	ModeExit();
+	void	GoParking();
+	void	ModeTaxi();
+	void	ModeInPark();
+	//--- Externnal call -----------------------------------
+	void	PutOnRunway(CAirport *apt,char *rwid);
+	void	Engage();
 	//------------------------------------------------------
 	void TimeSlice (float dT,U_INT FrNo);
 	//------------------------------------------------------
 	void	Probe(CFuiCanva *cnv);
+	//------------------------------------------------------
+	int		StrtProcedure(SStream *st) {return Pstrt.ReadAUTO(st);}
+	int		StopProcedure(SStream *st) {return Pstop.ReadAUTO(st);}
 };
 //=======================END OF FILE ======================================================================
 #endif ROBOT_H

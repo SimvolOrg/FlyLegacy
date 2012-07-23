@@ -272,7 +272,8 @@ U_INT D2_TRIANGLE::StoreData(C3DPart *p, U_INT n)
 //	Draw as line
 //---------------------------------------------------------------------
 void D2_TRIANGLE::DrawTour(char opt)
-{	glColor4f(1,1,1,1);
+{	//glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_DEPTH_TEST);	
 	glBegin(GL_LINE_LOOP);
@@ -335,7 +336,8 @@ void CBuilder::DrawMarks()
 //-------------------------------------------------------------------
 void CBuilder::Draw()
 {	char d1 = 0;
-	glColor4f(1,1,1,1);
+	//glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
 	if (dop.Has(TRITOR_DRAW_FILL))	FillMode();
 	else														LineMode();
 	//--- Draw current mode ------------------------------------------

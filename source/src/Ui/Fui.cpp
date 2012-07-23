@@ -27,18 +27,18 @@
 #pragma warning(disable:4201)  // For file mmsystem.h
 //---------------------------------------------------------------------------------
 #include <stdarg.h>
+#include "../Include/Globals.h"
 #include "../Include/Ui.h"
 #include "../Include/Fui.h"
 #include "../Include/FuiUser.h"
 #include "../Include/FuiParts.h"
 #include "../Include/FuiOption.h"
 #include "../Include/Utility.h"
-#include "../Include/Globals.h"
 #include "../Include/CursorManager.h"
 #include "../Include/database.h"
 #include "../Include/MagneticModel.h"
-#include "../Include/WorldObjects.h"
 #include "../Include/TerrainTexture.h"
+#include "../Plugin/Plugin.h"
 //--------------------------------------------------------------------
 using namespace std;
 
@@ -4603,7 +4603,7 @@ void  CFuiList::SetBackTitle()
   int yd  = 0;
   int yf  = yd + hLine;
   FillRect(surface, 0, yd, (w - cw), yf, cBackTitle);
-	cText	= cBlack;
+	//cText	= cBlack;
   return;
 }
 //----------------------------------------------------------------------------------
@@ -6396,7 +6396,6 @@ void CFuiDLL::EventNotify(Tag win,Tag cpn,EFuiEvents evn,EFuiEvents sub )
 	  }
   #endif
 
-  //globals->plugins.On_EventNotice (0, win, cpn, evn, sub);
 }
 
 void CFuiDLL::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
@@ -6419,7 +6418,7 @@ void CFuiDLL::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 	  }
   #endif
 
-  globals->plugins.On_EventNotice (0, windowId, idm, evn, EVENT_NOSUBEVENT);
+  globals->plugins->On_EventNotice (0, windowId, idm, evn, EVENT_NOSUBEVENT);
   return;
 }
 

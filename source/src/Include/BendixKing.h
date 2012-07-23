@@ -80,9 +80,8 @@ public:
   void    PushChanelFreq(short nc);
   void    ChangeChanel(short inc,short state);
   void    SwapComTurn();
-  void    SetGlide(SMessage *msg);
   int     RefreshCDI();
-  int     SetOBS(short inc);
+  int     SetCDI(short inc);
   int     SetILS();
   int     SetFlag();
   int     SetStationBearing();
@@ -564,9 +563,6 @@ class COldWayPoint;
 #define K89_FULL_DISPLAY 0
 #define K89_PART_DISPLAY 1
 #define K89_OPEN_DISPLAY 2
-//=============================================================
-#define GPS_MODE_FPLAN (0)       // Normal mode
-#define GPS_MODE_DIRECT (1)       // Direct To
 
 //=============================================================
 // CK89gps  Subsystem
@@ -751,8 +747,6 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   void              CopyDisplay(U_SHORT *src,U_SHORT *des);
   int               PushContext();
   void              PopContext();
-	void							PushMode(U_CHAR m);
-	void							PopMode();
   //---------Transition routines     ---------------------------
   void              InitState(U_CHAR mode);
   int               ChangeMode(K89_EVENT evn);
@@ -820,7 +814,7 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   int               NULpage01(K89_EVENT evn);   // State 33 NUL mode no data page
   int               SETpage01(K89_EVENT evn);   // State 34 SET mode page 01
 	//-------INTERFACE WITH REAL GPS ----- -------------------------
-	void							TrackWaypoint(CWPoint *wpt,bool e);
+	void							TrackWaypoint(CWPoint *wpt,char mode);
 	void							ModifiedPlan();
 	CWPoint          *SelectedNode();
 	void							NavIsActive();
@@ -846,7 +840,6 @@ public:  CK89gps (CVehicleObject *v,CK89gauge *g);
   inline short      GetCDIline()              {return cdiLN;}
   inline float      GetCDIdev()               {return cdiDEV;}
   inline void       SetMouseDir(char md)      {msDIR = md;}
-	inline bool				IsDirectMode()						{return (Mode == GPS_MODE_DIRECT);}
 	//--------------------------------------------------------------
 	inline void       SetGauge(CGauge *g)				{Gauge  = (CK89gauge*)g;}
   //==============Data members ===================================

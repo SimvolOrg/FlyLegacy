@@ -39,12 +39,12 @@
 
 
 #include <plib/pu.h>
-#include "../Include/FlyLegacy.h"
+#include "../Include/Globals.h"
+#include "../Include/WorldObjects.h"
 #include "../Include/database.h"
 #include "../Include/Queues.h"
 #include "../Include/3DMath.h"
 #include "../Include/UserVehicles.h"
-#include "../Include/WorldObjects.h"
 #include "../Include/Terrain.h"
 #include "../Include/TimeManager.h"
 #include "../Include/Cameras.h"
@@ -54,47 +54,15 @@
 
 //=======================================================================
 class CFuiRadioBand;
+class CSimulatedObject;
 //=======================================================================
 //=======================================================================
 typedef enum  {
 
   NO_RND_EVENTS          = 0,
-  RAND_TURBULENCE        = (1 << 1)
+  EVN_RAND_TURBULENCE        = (1 << 1)
 
 } ERandomEvents;
-//=======================================================================
-/*! LC: \class CRandomEvents CLASS manager
-  
-    This class maintains a serie of random events
-    that occurrs during the timeslice situation
-    and allows to trigger events wherever it 's needed
- */
- //=======================================================================
-class CRandomEvents
-{	char on;
-	bool                     dirty;                                       ///< oject state memo
-	int                      rc;
-  CRandomizer random;
-	//--- METHODS -------------------------------------------
-	void Copy                (const CRandomEvents &aCopy);                ///< inactivated
-	CRandomEvents            (const CRandomEvents &aCopy);                ///< {Copy(aCopy);} inactivated
-	CRandomEvents& operator= (const CRandomEvents &aCopy);                ///< inactivated
-	//-------------------------------------------------------
-public:
-  CRandomEvents(void);
-	///< constructeurs et destructeurs
-  virtual ~CRandomEvents   (void);
-
-	///< methods
-  void Timeslice           (float dT,U_INT Frame);
-  
-  ///< set
-
-	///< get
-	
-  ///< Clone
-	CRandomEvents Clone(void);                                            ///< inactivated
-};
 //===========================================================================
 //    class CSlewManager
 //============================================================================
@@ -172,7 +140,6 @@ protected:
 	CRabbitCamera   *rcam;						// Rabbit camera
 	//---------------------------------------------------
 	CSimulatedObject *sVeh;						// Object simulated
-	CRandomEvents     rEVN;						// Event generator
   //---- Methods --------------------------------------
 public:
    CSituation                          (void);

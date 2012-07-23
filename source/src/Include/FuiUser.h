@@ -227,7 +227,7 @@ protected:
   int         SetLITitem(char k);
   int         SetCOMitem(char k);
   int         SetILSitem(char k);
-  int         EditILS(ILS_DATA *dat, int k);
+  int         EditILS(LND_DATA *dat, int k);
   bool        EditPopITM();
   bool        EditPopAPT(CmHead *obj);
   void        EditPopDistance(int mx,int my);
@@ -390,7 +390,6 @@ protected:
 	char			 *nmDoc;												// Current doc name
 	int					rmDoc;												// Remaining space
   //------Runway view management --------------------------------
-	CDataBGR   *txDATA;												// Taxiways data
   void       *obView;                       // Airport object to view
   CAirport   *obAirp;                       // Airport description
   int         heading;                      // Plane heading (°)

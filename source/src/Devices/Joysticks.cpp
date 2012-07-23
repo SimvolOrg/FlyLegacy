@@ -266,7 +266,8 @@ bool JoyDEV::HandleHat()
 //  CREATE AN AXE DESCRIPTOR
 //==============================================================================
 CSimAxe::CSimAxe()
-{ No            = 0;
+{ strncpy(mem,"jAxe",4);
+	No            = 0;
   end           = 0;
   name          = 0;
 	jdev					= 0;
@@ -569,6 +570,7 @@ void CJoysticksManager::CollectDevices()
 		if ( joyGetPosEx(k, &joyinfo) != JOYERR_NOERROR ) continue;
 		//--- Create  a new device ---------------------------------
 		JoyDEV *jdf		= new JoyDEV(k);
+
 		devQ.push_back(jdf);
 	}
 	return;
@@ -1255,22 +1257,20 @@ void CJoysticksManager::SaveAxisConfig(CStreamFile &sf)
     sf.DebObject();
     if (axe->attn != 1)
     { sf.WriteTag('attn', "-- Attenuation coefficient --");
-      sf.WriteFloat(&axe->attn);
+      sf.WriteFloat(axe->attn);
     }
     sf.WriteTag('njoy',  " -- internal number (must precede devc) --");
 		tmp = (jdf)?(jdf->jNumber()):(0);
-    sf.WriteInt(&tmp);
+    sf.WriteInt(tmp);
     sf.WriteTag('devc',  " -- input device name --------------------");
     sf.WriteString(axe->devc);
     sf.WriteTag('Anum', "-- device axe number ----------------------");
-		tmp	= axe->iAxe;
-    sf.WriteInt(&tmp);
+    sf.WriteInt(axe->iAxe);
     sf.WriteTag('Ctrl', "-- sim control tag ------------------------");
     TagToString(stag, axe->gen);
     sf.WriteString(stag);
     sf.WriteTag('invt',"");
-    tmp = axe->inv;
-    sf.WriteInt(&tmp);
+    sf.WriteInt(axe->inv);
     sf.EndObject();
   }
   return;
@@ -1287,7 +1287,7 @@ void CJoysticksManager::SaveOneButton(CStreamFile &sf,CSimButton *sbt)
   sf.WriteTag('devc', "-- input device name --");
   sf.WriteString(sbt->devc);
   sf.WriteTag('Bnum',  "-- Button number --");
-  sf.WriteInt(&sbt->nBut);
+  sf.WriteInt(sbt->nBut);
   sf.WriteTag('kyid', "-- KeyDef tag --");
   TagToString(stag, sbt->cmde);
   sf.WriteString(stag);
@@ -1332,7 +1332,7 @@ void CJoysticksManager::SaveConfiguration()
 	sf.WriteString(txt);
   //-- Write neutral coefficient ----------------------------
   sf.WriteTag('neut', " -- Neutral [0-1] stick coefficient ------");
-  sf.WriteFloat(&nValue);
+  sf.WriteFloat(nValue);
   //---------------------------------------------------------
 	SaveAxisConfig(sf);
   for (it = devQ.begin(); it != devQ.end(); it++)

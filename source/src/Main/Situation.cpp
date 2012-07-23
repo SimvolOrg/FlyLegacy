@@ -59,6 +59,7 @@
 #include "../Include/DrawVehicleSmoke.h"
 #include "../Include/PlanDeVol.h"
 #include "../Include/Triangulator.h"
+#include "../Plugin/Plugin.h"
 using namespace std;
 //=====================================================================================
 //    GLOBAL function to get the day model 
@@ -135,44 +136,6 @@ void CDispatcher::DrawExternal()
 		}
 	return;
 }
-///=====================================================================================
-/// CRandomEvents
-///=====================================================================================
-//	Constructor
-//---------------------------------------------------------------------------
-CRandomEvents::CRandomEvents()
-{	TRACE ("CRandomEvents::Init");
-  rc = 0;
-  dirty = false;
-  rc++;
-  random.Set (0.0f, 1000, 1.0f);
-	//--- Get ini file ----------------------
-	int rd = 0;
-	GetIniVar ("Sim", "randomEvents", &rd);
-  on = rd;
-}
-//---------------------------------------------------------------------------
-CRandomEvents::~CRandomEvents (void) 
-{;}
-
-void CRandomEvents::Timeslice (float dT,U_INT Frame)
-{ if (0 == on)	return;
-  random.TimeSlice (dT);
-  int val = random.GetValue ();
-  //TRACE ("CRandomEvents::Timeslice %d %u", val, globals->random_flag);
-  switch (val) {
-    case 28 :
-      if ((globals->random_flag & RAND_TURBULENCE) != 0)
-      { //TRACE ("turb(-) %d =%u", val, globals->random_flag);
-        globals->random_flag &= ~RAND_TURBULENCE;}
-      else
-      { //TRACE ("turb(+) %d =%u", val, globals->random_flag);
-        globals->random_flag |=  RAND_TURBULENCE;}
-      break;
-  }
-
-}
-
 
 //==========================================================================
 //  Global Group function for Slew manager 'slew'
@@ -737,7 +700,7 @@ int CSituation::Read (SStream *stream, Tag tag)
         case TYPE_FLY_AIRPLANE:
           { TRACE(".. Type is FLY_AIRPLANE");
             // sdk: prepare plugin dlls = DLLInstantiate
-            if (globals->plugins_num) globals->plugins.On_Instantiate (0,0,NULL);
+            if (globals->plugins_num) globals->plugins->On_Instantiate (0,0,NULL);
             // 122809
             CAirplane *plan = GetAnAircraft();
 						sVeh     = plan;
@@ -859,13 +822,13 @@ void CSituation::Prepare (void)
   /// SDK Stuffs JS/  Can we delete this????
   // sdk: don't know whether it's the right place or not ...
   // also added in main CleanupGlobals
-  globals->plugins.On_EndSituation ();
+  globals->plugins->On_EndSituation ();
 
   // sdk: prepare plugin dlls = DLLStartSituation
-  globals->plugins.On_StartSituation ();
+  globals->plugins->On_StartSituation ();
 
   // sdk: prepare plugin dlls = DLLInstantiate //
-  globals->plugins.On_Link_DLLSystems (0,0,NULL);// 
+  globals->plugins->On_Link_DLLSystems (0,0,NULL);// 
 	//--- Call for dispatcher declaration ----------------
   
 }
@@ -905,8 +868,6 @@ void CSituation::Timeslice (float dT,U_INT frame)
   dTime   = dT;
   FrameNo = frame;
 	globals->Disp.TimeSlice(dT,frame);	// Call dispatcher
-  //--- random events --------------------------------------
-	rEVN.Timeslice(dT,frame);
   return;
 }
 //----------------------------------------------------------------------------
@@ -995,7 +956,7 @@ void CSituation::DrawNormal()
 	//---Restore everything ---------------------------------------
   cam->StopShoot();
   // Check for an OpenGL error
-  CHECK_OPENGL_ERROR
+  // CHECK_OPENGL_ERROR
 }
 //----------------------------------------------------------------------------
 // Enter in teleport mode

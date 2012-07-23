@@ -268,8 +268,8 @@ void CElvTracker::DrawOneMark(TVertex *vdf)
 	glPushMatrix();
 	glTranslated(tran.x,tran.y,tran.z);			// Camera at vertex
 	//----------------------------------------------------------
-	float *color = (vdf == svrt)?(E_red):(E_blue);
-	glColor4fv(color);
+	U_INT col = (vdf ==svrt)?(COLOR_RED):(COLOR_LIGHT_BLUE);
+	ColorGL(col);
 	glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(3,GL_FLOAT,0,pyramTAB);

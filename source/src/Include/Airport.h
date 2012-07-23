@@ -33,7 +33,6 @@
 
 //=========================================================================================
 #include "../Include/Globals.h"
-#include "../Include/FlyLegacy.h"
 #include "../Include/TerrainCache.h"
 #include "../Include/LightSystem.h"
 #include "../Include/GeoMath.h"
@@ -43,8 +42,8 @@ class CCameraRunway;
 class CPicQUAD;
 class TaxNODE;
 class TaxEDGE;
-class CDataBGR;
 class CRunway;
+class TaxiwayMGR;
 //============================================================================
 //  GENERAL DEFINITIONS 
 //============================================================================
@@ -213,7 +212,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   friend class CAirportMgr;
 	friend class CRunway;
   //--------------Attributes -----------------------------------------------
-	U_CHAR					bgr;																// BGR indicator
+	U_CHAR					rfu1;																// BGR indicator
 	U_CHAR					tr;																	// Trace option
   U_CHAR          txy;                                // Taxiway in SQL
   U_CHAR          visible;                            // Visibility
@@ -227,8 +226,8 @@ class CAptObject : public CqItem, public CDrawByCamera {
   SPosition       apos;                               // Aircraft position
   SVector         cpos;                               // Camera position
 	float						nmiles;															// Distance in miles
-	//--- Taxiway nodes ------------------------------------------------------
-	CDataBGR       *txBGR;															// Taxiway nodes
+	//--- Taxiway Manager  ---------------------------------------------------
+	TaxiwayMGR		*taxiMGR;														// Taxiway manager
   //------------------------------------------------------------------------
   TCacheMGR      *tcm;
   //------COLORS -----------------------------------------------------------
@@ -322,23 +321,29 @@ public:
 	 //-------------------------------------------------------------------
    void   ComputeElevation(TC_VTAB *tab);
    void   RebuildLight(CRunway *rwy);
-  //-----LIGHTS  BUILDING-------------------------------------------------
-   void  BeaconLight();
+	 //-----LIGHTS  BUILDING-------------------------------------------------
+   void   BeaconLight();
    //---------------------------------------------------------------------
    void  OnePavement(CPaveRWY *p,U_INT n);
-  //-----AIRPORT Management ----------------------------------------------
+   //-----AIRPORT Management ----------------------------------------------
    char *GetApName();
    void  AddPOD();                  // ADD File profile to POD
    void  RemPOD();                  // Remove File profile from POD
    void  ChangeLights(char ls);     // Switch lights ON/OFF
    void  UpdateLights(float dT);    // Update light state
-	 void  ReadTaxiNodes();						// Taxiway node & edges
+	 //----------------------------------------------------------------------
+	 LND_DATA *GetRunwayData(char * key, char *rwid);
+	 //----------------------------------------------------------------------
+	 void	 ClearTaxiways();
+	 void	 LoadTaxiways();
 	//-----Identifier ------------------------------------------------------
    inline bool      SameApt(CAirport *a)      {return (a == Airp);}
-	//--- Toatl triangles --------------------------------------------------
-	 inline void			AddPAV(U_INT n)						{nPAV += n;}
-	 inline void			AddEDG(U_INT n)						{nEDG += n;}
-	 inline void			AddCTR(U_INT n)						{nCTR += n;}
+	//--- Total triangles --------------------------------------------------
+	inline void			AddPAV(U_INT n)						{nPAV += n;}
+	inline void			AddEDG(U_INT n)						{nEDG += n;}
+	inline void			AddCTR(U_INT n)						{nCTR += n;}
+	//--- taxiways interface -----------------------------------------------
+	TaxiwayMGR      *GetTaxiMGR()							{return taxiMGR;}
   //----------------------------------------------------------------------
   inline bool      IsVisible()                {return (visible != 0);}
   inline bool      NotVisible()               {return (visible == 0);}
@@ -361,7 +366,8 @@ public:
   inline void      SetZGrid(int nz)           {gz = nz;}
   inline void      SetLLC(SPosition p)        {llc = p;}
   //----------------------------------------------------------------------
-  inline char     *GetAptName()           {return Airp->GetAptName();}
+  inline char     *GetAptName()						{return Airp->GetAptName();}
+	inline char     *GetAptKey()						{return Airp->GetKey();}
   //----------------------------------------------------------------------
   inline CAirport *GetAirport()               {return Airp;}
   inline void      AddPavement(CPaveQ &q) {pavQ.Append(q);}
@@ -426,8 +432,6 @@ class CAirportMgr {
 	//--- Letter and band VBO -----------------------------------------
 	U_INT						xOBJ;												// yellow texture
 	U_INT						bVBO;												// Band & letter VBO buffer
-	//--- Departing runway --------------------------------------------
-	ILS_DATA       *rdep;												// Departing spot
   //-----------------------------------------------------------------
   TCacheMGR      *tcm;
   U_INT           tr;                         // Trace indicator
@@ -456,9 +460,10 @@ public:
 	void		SaveNearest(CAptObject *apo);
 	//--- EXTERNAL INTERFACE ------------------------------------------
 	bool		AreWeAt(char *key);
-	bool		SetOnRunway(CAirport *apt,char *idn);
 	char   *NearestIdent();
 	bool    GetTakeOffDirection(SPosition **opp,SPosition *p);
+	//-----------------------------------------------------------------
+	LND_DATA *SetOnRunway(CAirport *apt,char *idn);
   //----AIRPORT BUILDING --------------------------------------------
   int       SetRunwayProfile(CAirport *apt);
   void      AddProfile(RWY_EPF &epf);
@@ -477,7 +482,8 @@ public:
 	inline float				LightSize()							{return lSiz;}
 	//-----------------------------------------------------------------
 	inline CAptObject  *GetNearestAPT()					{return nApt;}
-	inline ILS_DATA    *GetDepartingEND()				{return rdep;}
+	//------------------------------------------------------------------
+	
 };
 
 //============================END OF FILE =================================================

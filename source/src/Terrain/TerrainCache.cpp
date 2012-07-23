@@ -735,7 +735,7 @@ void CmQUAD::Contour()
   //---Disable depth and set red color -----
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_LIGHTING);
-  glColor3f(1,0,0);
+  ColorGL(COLOR_RED);
   glLineWidth(4);
 
   //----------------------------------------
@@ -1923,7 +1923,8 @@ int CSuperTile::Draw3D(U_CHAR tod)
   int        nbo = 0;
   white[3]       = alpha;
 	glColorMaterial (GL_FRONT, GL_DIFFUSE);
-	glColor4fv(white);
+	//glColor4fv(white);
+	ColorGL(COLOR_WHITE);
 	glEnable(GL_ALPHA_TEST);
 	//--------------------------------------------------------
 	bool OK = (globals->noOBJ == 0);
@@ -3471,7 +3472,8 @@ void C_QGT::DrawContour()
   //---Disable depth and set red color -----
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_LIGHTING);
-  glColor3f(1,0,0);
+  //glColor3f(1,0,0);
+	ColorGL(COLOR_RED);
   glLineWidth(4);
 
   //----------------------------------------
@@ -3612,6 +3614,7 @@ TCacheMGR::TCacheMGR()
   TexRES[TC_EPDRES] = InitTextureCoord(esid,TC_EPDRES);
   //--------Open the type tile file -----------------------------
   tFIL      = new CTerraFile("DATA/TILETYPE.IMG");
+
   //---------Init colors ----------------------------------------
   fogC[3] = 1.0f;
   //-------------------------------------------------------------
@@ -3640,6 +3643,7 @@ TCacheMGR::TCacheMGR()
   //-----------Create 3D object model ---------------------------
   //MEMORY_LEAK_MARKER ("objMGR");
   objMGR  = new C3DMgr(this);
+
   //MEMORY_LEAK_MARKER ("objMGR");
   //------Get Night color----------------------------------------
   UpdateTOD();
@@ -3762,9 +3766,9 @@ void TCacheMGR::OneCountry(CCtyLine *cty)
 { int  lgr  = strlen(cty->GetSlotName()) + 1;
   char *cn  = cty->GetSlotKey();
   U_INT key = (cn[0] << 8) | (cn[1]);
-  //MEMORY_LEAK_MARKER ("nm1")
+  //MEMORY_LEAK_MARKER ("*nm1")
   char *nm  = new char[lgr];
-  //MEMORY_LEAK_MARKER ("nm2")
+  //MEMORY_LEAK_MARKER ("*nm2")
   strncpy(nm,cty->GetSlotName(),lgr);
   ctyMAP[key] = nm;
   return;
@@ -5307,7 +5311,8 @@ void TCacheMGR::Draw()
   //  Draw vehicle inside
   //-----------------------------------------------------------------
   glMaterialfv (GL_FRONT, GL_EMISSION, GetDeftEmission());
-  glColor4f(1,1,1,1);
+  //glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
   if (veh) veh->DrawInside(cam);
 
   //-----------------------------------------------------------------

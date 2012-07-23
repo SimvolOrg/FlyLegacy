@@ -28,7 +28,7 @@
 
 #include "../Include/FlyLegacy.h"
 #include "../Include/FuiDLLs.h"
-
+#include "../Plugin/Plugin.h"
 //=======================================================================
 //  LCDEV* CFuiDLLsWindow
 //=======================================================================
@@ -92,10 +92,10 @@ void CFuiDLLsWindow::Init (void)
     dllBOX.AddSlot(dln);
     dln->SetKText (" - DLLs system disabled = no dll charged");
   } else {
-    globals->plugins.BuildExportList ();
+    globals->plugins->BuildExportList ();
     std::vector <std::string>::iterator it_str;
-    for (it_str  = globals->plugins.dll_export_listing.begin ();
-         it_str != globals->plugins.dll_export_listing.end ();
+    for (it_str  = globals->plugins->dll_export_listing.begin ();
+         it_str != globals->plugins->dll_export_listing.end ();
          it_str++) {
          CDllLine *dln = new CDllLine;
          dllBOX.AddSlot(dln);

@@ -42,9 +42,8 @@ class HTransformer	{
 	//--METHODS---------------------------------------------
 public:
 	HTransformer(double c, double s, SVector &t, double e = 1);
-	GN_VTAB ComputeRT(GN_VTAB *vtx);
 	void		ComputeRT(GN_VTAB &src,GN_VTAB *dst);
-
+	void		TransformTSR(CVector &src,F3_VERTEX *dst);
 };
 //=============================================================================
 //  class for Terrain info
@@ -149,16 +148,19 @@ double		GetLatitudeArcs(U_INT tz);
 double		GetLatitudeDelta(U_INT tz);
 double		LatitudeIncrement(U_INT qz);
 double		GetTileSWcorner(U_INT ax,U_INT az,SVector &v);
-double		GetAngleFromGeoPosition(SPosition &p1,SPosition &p2);
+double		GetAngleFromGeoPosition(SPosition &p1,SPosition &p2,double *dist);
 void			GetVertexCoordinates(U_INT vx,U_INT vz,SVector &v);
+//-----------------------------------------------------------------------------
 void			Add2dPosition(SPosition &p1,SPosition &p2, SPosition &r);
 void			AddMilesTo(SPosition &pos,double mx,double my);
 void			AddFeetTo(SPosition &pos,SVector &v);
 void			GetLatitudeFactor(double lat,double &rf,double &cp);
 void			GetQgtMidPoint(int gx,int gz,SPosition &p);
+//-----------------------------------------------------------------------------
 int				GetRounded(float nb);
 double		RoundAltitude(double a);
 int				RoundAltitude(int a);
+//-----------------------------------------------------------------------------
 U_INT			AbsoluteTileKey(int qx, int dx);
 U_INT			GetTileFromLatitude(double lat);
 bool			TileIsLeft(U_INT k1,U_INT k2);
@@ -167,6 +169,7 @@ bool			InCircularRange(float A, float M, float R);
 double		MaxDegLongitude(double l1, double l2);
 double		MinDegLongitude(double l1, double l2);
 double		LongitudeFromDegre(double d);
+U_SHORT		GetSectorNumber(SPosition &S,SPosition &D);
 //-----------------------------------------------------------------------------
 double		RandomCentered(double H, int a, int b);
 //-----------------------------------------------------------------------------
@@ -181,9 +184,10 @@ double		GetReductionFactor(U_INT cz);
 void			FeetCoordinates(SPosition &pos,SVector &v);
 void			FeetCoordinates(SVector &v, double rdf);
 SVector		FeetComponents(SPosition &from, SPosition &To, double rdf);
+SPosition GetAlignedSpot(SPosition &org, SPosition ext, double R);
 //-----------------------------------------------------------------------------
-void    InitGlobeTileTable ();
-void    InitQgtTable(float vmax);
+void			InitGlobeTileTable ();
+void			InitQgtTable(float vmax);
 //-----------------------------------------------------------------------------
 float   ComputeDeviation(float ref,float rad,U_CHAR *flag, U_CHAR pwr);
 //-----------------------------------------------------------------------------

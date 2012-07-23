@@ -20,10 +20,10 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-
+#include "../Include/WorldObjects.h"
 #include "../Include/Subsystems.h"
 #include "../Include/UserVehicles.h"
-#include "../Include/WorldObjects.h"
+
 using namespace std;
 
 //

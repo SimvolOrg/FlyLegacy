@@ -47,11 +47,13 @@ char *prob_WHL[] =
 //            when the object is a wheel
 //    2) Add ident and hardware type for probe purpose
 //=====================================================================================
-CSuspension::CSuspension (CVehicleObject *v,char *name, CWeightManager *wgh, char tps)
+CSuspension::CSuspension (CVehicleObject *v, CGroundSuspension *gssp, char *name, char tps)
 { Tag  idn = 'whl0';                                // Wheel identity
   mveh  = v;                                        // Save parent vehicle
   idn  |= mveh->GetWheelNum();                      // Get wheel number
   SetIdent(idn);                                    // Set identity
+	gear_data.mgsp = gssp;														// Set mother suspension
+	
   hwId  = HW_WHEEL;
   strncpy (gear_data.susp_name, name, 56);
   whel = new CAcmGears(v,gear_data.susp_name);      // Animated gear
@@ -61,7 +63,6 @@ CSuspension::CSuspension (CVehicleObject *v,char *name, CWeightManager *wgh, cha
   wInd        = 0;              // Wheel index
   reset_crash = 1;              // default is 1 crash detection enabled / 2 = reset
   type        = tps;            // Type 
-  wgm         = wgh;
   GetIniVar ("PHYSICS", "enableCrashDetect", &reset_crash);
   //-----------------------------------------------------------------
   InitGear();
@@ -202,9 +203,9 @@ int CSuspension::Read (SStream *stream, Tag tag)
       ReadVector (&gear_data.bPos, stream);// 0,-4.15,5.07
       whel->AddSound(gear_data.bPos);
       return  TAG_READ;
-
-    case 'dvvd':// -- 1.428 Design Visual Vertical Displacement (ft) --
-      ReadFloat (&gear_data.dvvd, stream);// 1.3
+		// -- 1.428 Design Visual Vertical Displacement (ft) -- ignored
+    case 'dvvd':
+      ReadFloat (&tm, stream);// 1.3
       return  TAG_READ;
 
     case 'vfx_':// -- Visual Effects --
@@ -221,13 +222,15 @@ int CSuspension::Read (SStream *stream, Tag tag)
       return  TAG_READ;
 
     case 'brak'://
-      int tmp_brak;
-      ReadInt (&tmp_brak, stream);
-      if (tmp_brak) gear_data.brak = 1;
+      int brak;
+      ReadInt (&brak, stream);
+      gear_data.brak = brak;
+			if (brak) mveh->IncWheelBrake();
       return  TAG_READ;
-
+		//--- Break force is ignored. It is now computed from SVH data 
+		//	and force is equaly spread among wheel with brak flag 
     case 'brkF'://
-      ReadFloat (&gear_data.brkF, stream);
+      ReadFloat (&tm,stream);
       return  TAG_READ;
     }
 
@@ -241,17 +244,26 @@ int CSuspension::Read (SStream *stream, Tag tag)
 //  All parameters are read
 //--------------------------------------------------------------------------
 void CSuspension::ReadFinished (void)
-{ //----Set wheel side -------------------------------------------
-  gear_data.Side = BRAKE_NONE;
-  if (gear_data.bPos.x < 0) gear_data.Side = (BRAKE_LEFT);
-  if (gear_data.bPos.x > 0) gear_data.Side = (BRAKE_RITE);
+{ int nbw			= mveh->GetWheelBrake();
+	double coef = (nbw)?( double(1) / nbw):(0);
+	//----Set wheel side -------------------------------------------
+  gear_data.Side	= BRAKE_NONE;
+	gear_data.sideF	= 0;
+	gear_data.repBF	= coef;
+	//--- set brake to Left gear ---------------------
+  if ((gear_data.bPos.x < 0)  && (gear_data.brak))
+			{	gear_data.Side = (BRAKE_LEFT);
+				gear_data.sideF = +1;
+			}
+	//--- Set brake to right gear --------------------
+  if ((gear_data.bPos.x > 0)	&& (gear_data.brak))
+			{	gear_data.Side = (BRAKE_RITE);
+				gear_data.sideF = -1;
+			}
   //----Compute wheel radius in feet -----------------------------
   gear_data.whrd = gear_data.tirR + gear_data.rimR;
   Tire->SetRadius(gear_data.whrd);
   //---------------------------------------------------------------
-#ifdef _DEBUG
-  DEBUGLOG ("CSuspension::ReadFinished");
-#endif
   gear->SetGearData (&gear_data);
 }
 
@@ -316,7 +328,6 @@ void CSuspension::Timeslice (float dT)
 {
   // 1) aerodynamic purpose
   // get the gear position relative to the actual CG
-  //SVector *actualCG = wgm->wb.GetCGOffset ();  ///< LH feet // removed for it sets 0,0,0
   SVector actualCG_;
   mveh->wgh->GetVisualCG (actualCG_);  ///< RH feet
   SVector actualCG; 
@@ -372,17 +383,6 @@ const SVector& CSuspension::GetBodyMoment_ISU (void)
   return (gear->GetBodyGearMoment_ISU ());
 }
 //-----------------------------------------------------------------
-const SVector* CSuspension::GetGearLoc2CG (void)
-{
-  return gear->GetGear2CG ();
-}
-//-----------------------------------------------------------------
-const SVector* CSuspension::GetGearLoc2CG_ISU (void)
-{
-  gear->GearLoc2CG_ISU ();
-  return gear->GetGear2CG_ISU ();
-}
-//-----------------------------------------------------------------
 bool CSuspension::IsSteerWheel (void)
 { bool val = false; 
   (gear_data.ster) ? val = true : val = false;
@@ -416,17 +416,7 @@ void CSuspension::Probe(CFuiCanva *cnv)
 CGear::CGear (CVehicleObject *vh,CSuspension *sp)
 { mveh = vh;            // Save parent vehicle
   susp = sp;            // Save suspension
-  vGearLoc2CG.x      = vGearLoc2CG.y      = vGearLoc2CG.z      = 0.0;
-  vGearLoc2CG_ISU.x  = vGearLoc2CG_ISU.y  = vGearLoc2CG_ISU.z  = 0.0;
-  vForce.x           = vForce.y           = vForce.z           = 0.0;
-  vMoment.x          = vMoment.y          = vMoment.z          = 0.0;
-  vForce_ISU.x       = vForce_ISU.y       = vForce_ISU.z       = 0.0;
-  vMoment_ISU.x      = vMoment_ISU.y      = vMoment_ISU.z      = 0.0;
-  vLocalForce.x      = vLocalForce.y      = vLocalForce.z      = 0.0;
-  vLocalMoment.x     = vLocalMoment.y     = vLocalMoment.z     = 0.0;
-  vLocalForce_ISU.x  = vLocalForce_ISU.y  = vLocalForce_ISU.z  = 0.0;
-  vLocalMoment_ISU.x = vLocalMoment_ISU.y = vLocalMoment_ISU.z = 0.0;
-  WPos.lat      = WPos.lon     = WPos.alt     = 0.0;
+	WPos.lat      = WPos.lon     = WPos.alt     = 0.0;
   vWhlVelVec.x  = vWhlVelVec.y = vWhlVelVec.z = 0.0;
 }
 //----------------------------------------------------------------------
@@ -444,12 +434,6 @@ void CGear::ResetValues (void)
   vMoment.Zero();
 }
 
-void CGear::GearLoc2CG_ISU(void)
-{
-  vGearLoc2CG_ISU.x = FN_METRE_FROM_FEET (vGearLoc2CG.x);
-  vGearLoc2CG_ISU.y = FN_METRE_FROM_FEET (vGearLoc2CG.y);
-  vGearLoc2CG_ISU.z = FN_METRE_FROM_FEET (vGearLoc2CG.z);
-}
 //-----------------------------------------------------------------------
 //  check if point is inside the gear volume arround contact point
 //-----------------------------------------------------------------------
@@ -489,11 +473,6 @@ void CGear::GearB2L_Timeslice (void)
   /// \todo calc Wheel position relative to the body in the world coordinates
   /// tmp = the body position is assumed levelled in all axes
   // tmp formula
-  /*
-  WPos.x = vGearLoc2CG.x;
-  WPos.y = vGearLoc2CG.y;
-  WPos.z = vGearLoc2CG.z;
-  */
   // to be tested later
   SVector bodyPos;
   SPosition cgPos = mveh->GetPosition();                  ///< alt in feet lat and lon in arcsec
@@ -568,7 +547,7 @@ const SVector& CGear::GetBodyGearMoment_ISU (void)
 //    1)Wheel index is 0 based.  Interface to grlt (gear light) is 1 based
 //    2) Add subsystem ident for probe purpose
 //================================================================================
-CGroundSuspension::CGroundSuspension (CVehicleObject *v,char* whlFilename,  CWeightManager *wgh)
+CGroundSuspension::CGroundSuspension (CVehicleObject *v,CWeightManager *wgh)
 { SetIdent('susp');                   // suspension manager
   hwId    = HW_UNKNOWN;               // No type
   mveh    = v;                        // Save parent object
@@ -581,10 +560,10 @@ CGroundSuspension::CGroundSuspension (CVehicleObject *v,char* whlFilename,  CWei
   type    = TRICYCLE;                 // JS Assume standard type
   mstbl   = 0;
   mbtbl   = 0;
+	difB	  = 0;
   //---------------------------------------------------------
-  SumGearForces.x = SumGearMoments.x = 0.0;
-  SumGearForces.y = SumGearMoments.y = 0.0;
-  SumGearForces.z = SumGearMoments.z = 0.0;
+	SumGearForces.Raz();
+	SumGearMoments.Raz();
   //---------------------------------------------------------
   mainW.Raz();
   mainR  = 0;
@@ -611,7 +590,7 @@ void CGroundSuspension::ReadSusp(SStream *st)
     ReadString (susp_, 64, st);
     if (sscanf (susp_, "%s %s", susp_type, susp_name) != 2) return;
     if (!strcmp (susp_type, "whel"))
-    {   CSuspension *susp = new CSuspension (mveh, susp_name, whm, type); // global default
+    {   CSuspension *susp = new CSuspension (mveh, this,susp_name, type); // global default
         ReadFrom (susp, st);
         whl_susp.push_back (susp);
         return;
@@ -630,25 +609,16 @@ void CGroundSuspension::ReadSusp(SStream *st)
 // Read all parameters
 //------------------------------------------------------------------------------
 int CGroundSuspension::Read (SStream *stream, Tag tag)
-{ 
-  int rc = TAG_IGNORED;
-  //#ifdef _DEBUG_suspension	
-	 // FILE *fp_debug;
-	 // if((fp_debug = fopen("__DDEBUG_suspension.txt", "a")) != NULL)
-	 // {
-		//  char ss[8];
-  //        TagToString (ss, tag);
-		//  fprintf(fp_debug, "CGroundSuspension::Read %s\n", ss);
-		//  fclose(fp_debug); 
-	 // }
-  //#endif
-
-  switch (tag) {
+{ switch (tag) {
   case 'rMas':
     // rated mass (slugs)
     ReadFloat (&rMas, stream);
     whm->whl_rmas = rMas;
     return TAG_READ;
+	//--- Differential brake amplifier ---------------------
+	case 'difB':
+		ReadDouble(&difB,stream);
+		return TAG_READ;
   //---JS decode suspension type -------------------------
   case 'type':
     { char txt[64];
@@ -678,12 +648,9 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
     return TAG_READ;
   }
 
-  if (rc != TAG_READ) {
-    // Tag was not processed by this object, it is unrecognized
-    WARNINGLOG ("CGroundSuspension::Read : Unrecognized tag <%s>", TagToString(tag));
-  }
-
-  return rc;
+  // Tag was not processed by this object, it is unrecognized
+  WARNINGLOG ("CGroundSuspension::Read : Unrecognized tag <%s>", TagToString(tag));
+  return TAG_IGNORED;
 }
 //---------------------------------------------------------------------------------
 //  Compute main gear axe barycenter
@@ -695,7 +662,7 @@ void CGroundSuspension::ReadFinished (void)
   DEBUGLOG ("CGroundSuspension::ReadFinished");
 #endif
   wheels_num = whl_susp.size ();
-
+	double base = FN_METRE_FROM_FEET(wheel_base);
   //---Compute wheel parameters --(Z is forward direction)---------
   CSuspension *str = 0;                   // Steering wheel
   max_gear = 0.0, min_gear = 0.0, mWPos = 0.0;
@@ -704,6 +671,7 @@ void CGroundSuspension::ReadFinished (void)
   std::vector<CSuspension *>::const_iterator it_whel;
   for (it_whel = whl_susp.begin (); it_whel != whl_susp.end (); it_whel++) {
     CSuspension *s = (CSuspension *) *it_whel;
+		s->SetWheelBase(base);
     max_gear = max (s->GetGearPosZ (), max_gear); // max forward
     min_gear = min (s->GetGearPosZ (), min_gear); // min forward
     mWPos    = min (s->GetGearPosY (), mWPos);    // lower point
@@ -754,15 +722,43 @@ void CGroundSuspension::ReadFinished (void)
     max_wheel_height =  - (mWPos - wheel_min_h);
   else
     max_wheel_height =  - mWPos;
+	//------------------------------------------------------------------------
+	//JS note: This table is used to modulate the Brake force versus 
+	//        ground speed.  Brake force  must decrease with speed
+	//------------------------------------------------------------------------
+	if (0 == mbtbl) 
+	{ // Brake force turn table
+    CFmt1Map *map = new CFmt1Map();
+    mbtbl  = map;
+    map->Add(00.0f, 1.0f);
+    map->Add(30.0f, 0.7f);
+    map->Add(45.0f, 0.5f);
+    map->Add(60.0f, 0.3f);
+    map->Add(90.0f, 0.1f);
+  }
+	//------------------------------------------------------------------------
+	//JS note: This table is used to modulate the steering force versus 
+  //        ground speed.  steering must decrease with speed
+  //------------------------------------------------------------------------
+  if (0 == mstbl) 
+  { // Ground speed turn table 
+    CFmt1Map *map = new CFmt1Map();
+    mstbl   = map;
+    map->Add(00.0f, 5.00f);
+    map->Add(05.0f, 2.00f);
+    map->Add(10.0f, 1.50f);
+    map->Add(20.0f, 0.50f);
+    map->Add(90.0f, 0.01f);
+  }
+
 }
 //---------------------------------------------------------------------------------
 //  Time Slice all wheels
 //---------------------------------------------------------------------------------
 void CGroundSuspension::Timeslice (float dT)
 { nWonG = 0;      // No wheels on ground
-  SumGearForces.x = SumGearMoments.x = 0.0;
-  SumGearForces.y = SumGearMoments.y = 0.0;
-  SumGearForces.z = SumGearMoments.z = 0.0;
+	SumGearForces.Raz();
+	SumGearMoments.Raz();
 
   if (type == TRICYCLE) {;}
   else {;} // \todo different kind of train
@@ -771,7 +767,7 @@ void CGroundSuspension::Timeslice (float dT)
     // is it a steering wheel ?
     CSuspension *ssp = (CSuspension*)(*it_whel);
 		SGearData   *gdt = ssp->GetGearData();
-    if (ssp->IsSteerWheel ()) 	mveh->GetGearChannel(gdt);
+    if (ssp->IsSteerWheel ()) 	mveh->SetRudderDeflection(gdt);
     // is it a braking wheel ?
     /// \todo .../...
     // ... and finally timeslice

@@ -721,6 +721,18 @@ SVector		FeetComponents(SPosition &from, SPosition &to, double rdf)
 	R.z = (to.alt - from.alt);
 	return R;
 }
+//---------------------------------------------------------------------------------
+//	Compute vector director between 2 positions and return spot at ratio R
+//---------------------------------------------------------------------------------
+SPosition GetAlignedSpot(SPosition &org, SPosition ext, double R)
+{	CVector D(LongitudeDifference(ext.lon,org.lon),(ext.lat - org.lat), (ext.alt - org.alt));
+	D.Times(R);
+	SPosition P;
+	P.lon = AddLongitude(org.lon,D.x);
+	P.lat = org.lat + D.y;
+	P.alt = org.alt + D.z;
+	return P;
+}
 //-----------------------------------------------------------------------------
 //  Return Latitude increment per detail tile for this QGT
 //-----------------------------------------------------------------------------
@@ -734,12 +746,15 @@ double GetLatitudeDelta(U_INT qz)
 //	P1 and P2 taking P1 as origin
 //	Compute angle relative to geographical north
 //-----------------------------------------------------------------------------
-double GetAngleFromGeoPosition(SPosition &p1,SPosition &p2)
+double GetAngleFromGeoPosition(SPosition &p1,SPosition &p2, double *dist)
 {	double dlon = LongitudeDifference(p2.lon,p1.lon);
 	double dlat	= p2.lat - p1.lat;
 	double rad  = FN_RAD_FROM_ARCS(p2.lat);
 	double f1   = FN_FEET_FROM_ARCS(dlat);							// Vertical feet
 	double f2   = FN_FEET_FROM_ARCS(dlon) * cos(rad);		// Horizontal feet
+	//-- Compute distance in feet --------------------------------------
+  *dist = sqrt((f1 * f1) + (f2 * f2));
+	//-- Compute angle to target ---------------------------------------
 	double alf  = atan2(f2,f1);												// atan2(Y,X)
 	double deg  = RadToDeg(alf);
 	return deg;
@@ -824,6 +839,12 @@ double DistancePositionInFeet(SPosition &from, SPosition &to)
   v.z = to.alt - from.alt;
   return v.Length();
 }
+//========================================================================
+// Return sector of position D relative to positon S
+//=======================================================================
+U_SHORT GetSectorNumber(SPosition &S,SPosition &D)
+{	return U_SHORT(DistancePositionInFeet(S,D)) / 100; }
+
 //========================================================================
 // SubtractPositionInArcs computes the vector offset between two globe positions.
 //   the result is in arcsec
@@ -1397,24 +1418,10 @@ HTransformer::HTransformer(double c,double s,SVector &t, double e)
 	tz	= t.z;
 	sc	= e;							//Scale
 	//--- Init matrix ----------------
-	M0	= +cn; 
-	M1 = +sn;
-	M2 = -sn; 
-	M3 = +cn;
-}
-//---------------------------------------------------------------------
-//	Transform vertex (Rotate then translate)
-//---------------------------------------------------------------------
-GN_VTAB HTransformer::ComputeRT(GN_VTAB *vtx)
-{ //--- Rotate vertex ------------------
-	rx = (vtx->VT_X * M0) + (vtx->VT_Y * M2);
-	ry = (vtx->VT_X * M1) + (vtx->VT_Y * M3);
-	//--- Translate and scale ------------
-	vtx->VT_X = (rx + tx) * sc;
-	vtx->VT_Y = (ry + ty) * sc;
-	vtx->VT_Z += tz;
-	vtx->VT_Z *= sc;
-	return *vtx;
+	M0	= +cn;						// L1-C1
+	M1	= +sn;						// L1-C2
+	M2	= -sn;						// L2-C1
+	M3	= +cn;						// L2-C2
 }
 //---------------------------------------------------------------------
 //	Transform vertex (Rotate then translate)
@@ -1432,6 +1439,12 @@ void HTransformer::ComputeRT(GN_VTAB &src,GN_VTAB *dst)
 	//-------------------------------------
 	dst->VN_X = dst->VN_Y = dst->VN_Z = float(0.01);
 	return;
+}
+//---------------------------------------------------------------------
+//	Transform vertex (Translate ,scale and rotate)
+//---------------------------------------------------------------------
+void HTransformer::TransformTSR(CVector &src,F3_VERTEX *dst)
+{	 
 }
 //==========================================================================
 //  Edit Latitude in deg min sec

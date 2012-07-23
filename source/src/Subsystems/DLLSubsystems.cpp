@@ -23,7 +23,7 @@
 
 #include "../Include/Subsystems.h"
 #include "../Include/Globals.h"
-
+#include "../Plugin/Plugin.h"
 using namespace std;
 
 //==============================================================================
@@ -50,17 +50,17 @@ CDLLSubsystem::~CDLLSubsystem (void)
   //TRACE ("--------------------------------------------------------");
 #endif
   // sdk: cleanup objects = DLLDestroyObject // 
-  globals->plugins.On_DestroyObject (obj, dll);
+  globals->plugins->On_DestroyObject (obj, dll);
 }
 
 void CDLLSubsystem::Prepare (void)
 {
   // sdk : test whether a dll is present
   if (globals->plugins_num) {
-    void *test = globals->plugins.IsDLL (signature);
+    void *test = globals->plugins->IsDLL (signature);
     if (NULL == test) {
-      globals->plugins.On_DeleteAllObjects ();
-      globals->plugins.On_KillPlugins ();
+      globals->plugins->On_DeleteAllObjects ();
+      globals->plugins->On_KillPlugins ();
       char buf1 [8] = {0};
       TagToString (buf1, signature); 
       TRACE ("test dll '%s' = %d", buf1, test);
@@ -68,8 +68,8 @@ void CDLLSubsystem::Prepare (void)
     }
     else {
     dll = test;
-      globals->plugins.On_Instantiate_DLLSystems (signature,0,NULL);
-      obj = globals->plugins.GetDLLObject (signature);
+      globals->plugins->On_Instantiate_DLLSystems (signature,0,NULL);
+      obj = globals->plugins->GetDLLObject (signature);
     }
   }
 }
@@ -91,7 +91,7 @@ int CDLLSubsystem::Read (SStream *stream, Tag tag)
 
   int ret = TAG_IGNORED;
   if (globals->plugins_num)
-    ret = globals->plugins.On_Read (obj, stream, tag, dll);
+    ret = globals->plugins->On_Read (obj, stream, tag, dll);
   //TRACE ("ret = %d", ret);
   if (ret == TAG_IGNORED) ret = CSubsystem::Read (stream, tag);
   return ret;
@@ -120,6 +120,6 @@ void CDLLSubsystem::SetSignature (const long &sign)
 void CDLLSubsystem::TimeSlice (float dT,U_INT FrNo)
 {
   //CSubsystem::TimeSlice (dT, FrNo);
-  globals->plugins.On_TimeSlice (obj, dT, dll);
+  globals->plugins->On_TimeSlice (obj, dT, dll);
 }
 

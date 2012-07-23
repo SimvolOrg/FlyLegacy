@@ -36,7 +36,6 @@
 #include <crtdbg.h>
 #endif
 //===================================================================================================
-#include "../Include/FlyLegacy.h"
 #include "../Include/Globals.h"
 #include "../Include/Situation.h"
 #include "../Include/KeyMap.h"
@@ -70,6 +69,7 @@
 #include "../Include/OSMobjects.h"
 #include "../Include/FuiOption.h"
 #include "../Include/Cameras.h"
+#include "../Plugin/Plugin.h"
 //----Windows particular -------------------------
 #include <math.h>
 #include <pthread.h>
@@ -371,7 +371,20 @@ OSM_TP osmTYPE[OSM_MAX+1] = {
 	{0},
 
 };
-
+//================================================================================
+//	Color Table
+//================================================================================
+float colorTABLE[] = {
+	0,0,0,0,																	// 0 Black transparent
+	0,0,0,1,																	// 1 Black opaque
+	1,1,1,1,																	// 2 White
+	1,0,0,1,																	// 3 Red color
+	0,1,0,1,																	// 4 pure Green color
+	0,0,1,0,																	// 5 pure Blue color
+	0.11f,0.84f,0.81f,1,											// 6 Light blue
+	1,1,0,1,																	// 7 Yellow
+	float(0.84),float(0.35),0,1,							// 8 Amber
+};
 //================================================================================
 //  Lookup the ICAO Spelling Alphabet word (ALPHA, BRAVO, etc.) for the supplied character.
 //
@@ -452,6 +465,8 @@ void TraceObjectSize()
 {	TRACE("----POD---------------------------------");
 	TRACE("%30s size = %05d","PFSPOD",						sizeof(PFSPOD));
 	TRACE("%30s size = %05d","PFSPODFILE",				sizeof(PFSPODFILE));
+	TRACE("---NAV DATABASE ------------------------");
+	TRACE("%30s size = %05d","CTileCache",				sizeof(CTileCache));
 	TRACE("---TEXTURES ----------------------------");
 	TRACE("%30s size = %05d","CSharedTxnTex",			sizeof(CSharedTxnTex));
 	TRACE("%30s size = %05d","CShared3DTex",			sizeof(CShared3DTex));
@@ -878,9 +893,10 @@ void InitGlobalsNoPodFilesystem (char *root)
   
   // Initialize various application object pointers
   // sdk: toggle plugin feature usage from ini file
+	globals->plugins = new CPluginMain();
   int plugin_allowed = 0;
   GetIniVar ("Sim", "allowDLLFiles", &plugin_allowed);
-  globals->plugins.g_plugin_allowed = (plugin_allowed != 0);
+  globals->plugins->g_plugin_allowed = (plugin_allowed != 0);
 	//--- Create OPAL simulation ----------------------------
   globals->opal_sim = opal::createSimulator ();
   globals->opal_sim->setMaxContacts(2);
@@ -953,12 +969,6 @@ void InitGlobalsNoPodFilesystem (char *root)
       }
     }
 
-    globals->random_flag = NO_RND_EVENTS;
-    
-
-    int num_of_autogen = 0;
-    GetIniVar ("Graphics", "numOfAutogen", &num_of_autogen);
-    globals->num_of_autogen = num_of_autogen;
 		//--- Set initial position and orientation -----------------
     globals->iang.x = 0.0; 
     globals->iang.y = 0.0; 
@@ -968,22 +978,12 @@ void InitGlobalsNoPodFilesystem (char *root)
     globals->dang.z = 0.0;
 		return; 
 }
-
-
 //======================================================================================
 //  Cleanup settings in the Global data structure
 //======================================================================================
 void CleanupGlobals (void)
-{
-  // sdk: cleanup situation call DLLEndSituation
-  if (globals->plugins_num) globals->plugins.On_EndSituation ();
-
-  // sdk: cleanup objects = DLLDestroyObject // 
-  //if (globals->plugins_num) globals->plugins.On_DestroyObject (NULL);
-
-  // sdk: clean-up dll plugins : call DLLKill ()
-  //if (globals->plugins_num) globals->plugins.On_KillPlugins ();
-
+{ if (globals->plugins_num) globals->plugins->On_EndSituation ();
+	delete(globals->plugins);
   CloseUserMenu();   
   CleanupFonts();
 	TRACE("Delete Aircraft");
@@ -1078,7 +1078,7 @@ void ShutdownAll (void)
 	//----------------------------------------------
   // sdk: clean-up dll plugins : call DLLKill ()
 	TRACE("Kill plugins");
-  if (globals->plugins_num) globals->plugins.On_KillPlugins ();
+  if (globals->plugins_num) globals->plugins->On_KillPlugins ();
 	//---------------------------------------------
   // Clean up global variables
 	TRACE("Clean Globals");
@@ -1679,7 +1679,7 @@ int main (int argc, char **argv)
   //-------------------------------------------------------------------
 	//--- Loose memory marker 1 -----------------------
 	char *mk0 = new char[20];
-	strcpy(mk0,"***START****");
+	strcpy(mk0,"*START INIT*");
   //--------------------------------------------------------------------
   // Initialize globals variables
   //-------------------------------------------------------------------
@@ -1687,7 +1687,7 @@ int main (int argc, char **argv)
   TRACE("InitGlobalsNoPodFilesystem OK");
 	//--- Loose memory marker 1 -----------------------
 	char *mk1 = new char[20];
-	strcpy(mk1,"*END*");
+	strcpy(mk1,"*END INIT*");
 
   globals->appState = APP_SPLASH_SCREEN;
   globals->fui = new CFuiManager();
@@ -1744,9 +1744,9 @@ int main (int argc, char **argv)
   // Initialize subsystems so that mouse and keyboard callbacks can be handled
  
   // sdk: load and initialize the dll plugins
-  if (globals->plugins.g_plugin_allowed) {
-    if (globals->plugins_num = globals->plugins.On_LoadPlugins ()) {
-      globals->plugins.On_InitPlugins ();
+  if (globals->plugins->g_plugin_allowed) {
+    if (globals->plugins_num = globals->plugins->On_LoadPlugins ()) {
+      globals->plugins->On_InitPlugins ();
     } else
       globals->plugins_num = 0;
   }

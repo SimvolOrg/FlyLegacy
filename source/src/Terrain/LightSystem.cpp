@@ -1574,8 +1574,8 @@ void CExternalLight::DrawT1()
 	glDisable(GL_TEXTURE_2D);
 	//---------------------------------------------
 	glBegin(GL_LINE_LOOP);
-	glColor4f(0,1,0,1);
-
+	//glColor4f(0,1,0,1);
+	ColorGL(COLOR_PURE_GREEN);
   glVertex3f(vs.x,vs.y,vs.z);
 	glVertex3f(v1.x,v1.y,v1.z);
 	glVertex3f(v2.x,v2.y,v2.z);
@@ -1622,6 +1622,11 @@ CExternalLightManager::CExternalLightManager (CVehicleObject *mv, char *fn)
 	CVector up(0,0,1);
 	secp.SetNP(up);
 }
+//-----------------------------------------------------------
+//  Retrun aircraft rotation matrix
+//-----------------------------------------------------------
+double *CExternalLightManager::GetROTM()
+{	return mveh->GetROTM();}
 //-----------------------------------------------------------
 //  Set texture parameters
 //-----------------------------------------------------------

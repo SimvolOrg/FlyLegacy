@@ -31,6 +31,18 @@
 class CFPlan;
 class CAirplane;
 //===================================================================================
+// No radio source source
+//===================================================================================
+class CNulSource: public CmHead {
+protected:
+	//--- Methods s------------------------------------
+public:
+	CNulSource::CNulSource() {;}
+	//--------------------------------------------------
+	void		DecUser()	{;}
+	CmHead *Select(U_INT frame,float freq);
+};
+//===================================================================================
 // External radio source
 //===================================================================================
 class CExtSource: public CmHead {
@@ -38,15 +50,15 @@ protected:
 	//-------------------------------------------------
 	CVehicleObject *mveh;										// Mother vehicle
 	//--- ATTRIBUTE -----------------------------------
-	char			qAct;													// Index of active queue;													// qType
 	char			active;												// Active indicator
 	U_CHAR    signal;												// Signal type
 	U_CHAR		rfu1;
+	U_CHAR    rfu2;
 	//-------------------------------------------------
 	char      sidn[5];                      // ident = first char from name
   char      snam[64];                     // source name
 	//-------------------------------------------------
-	ILS_DATA *ilsD;													// optional ILS DATA
+	LND_DATA *ilsD;													// optional ILS DATA
 	//-------------------------------------------------
 	SPosition spos;                         // position lat long alti
 	float     smag;                         // Magnetic dev
@@ -57,9 +69,10 @@ protected:
 	double    refD;													// Reference direction
 	//--- METHODS -------------------------------------
 public:
-	CExtSource(): CmHead(ANY,OTH) {active = 0;}
+	CExtSource(): CmHead(ANY,OTH,"ExtS") {active = 0;}
+	void			DecUser()	{;}
 	//--------------------------------------------------
-	void			SetSource(CmHead *src,ILS_DATA *ils,U_INT frm);
+	void			SetSource(CmHead *src,LND_DATA *ils,U_INT frm);
 	void			Refresh(U_INT frm);
 	//--------------------------------------------------
 	inline  void			SetVEH(CVehicleObject *v) {mveh = v;} 
@@ -69,7 +82,7 @@ public:
 	//--------------------------------------------------
 	inline	void			SetRefDirection(float d) {refD = d;}
 	inline	void			SetPosition(SPosition *p)	{spos = *p;}
-	inline	ILS_DATA  *GetLandSpot()		{return ilsD;}
+	inline	LND_DATA  *GetLandSpot()		{return ilsD;}
 	//--------------------------------------------------
 	inline  float			GetFeetDistance()	{ return dsfeet;}
 	inline	float     GetNmiles()				{ return nmiles; }
@@ -120,9 +133,10 @@ protected:
                     char  fText[4];           // Fractional edit
   } CHFREQ;
   //------------COMMON PARTS -----------------------------------
+	CNulSource  nulS;															// Null source
 	U_INT				Frame;
   U_CHAR      sPower;                           // Power state
-  BUS_RADIO   Radio;                            // Computed values
+  BUS_RADIO   busRD;                            // Radio BUS
   //------------COM part ---------------------------------------
   U_CHAR      cState;                           // COM state
   RADIO_FLD   comTAB[K155_DCOM_SZ];             // Control field
@@ -157,10 +171,9 @@ protected:
   U_CHAR      mskFS;                            // Flasher mask
   //--------------NAVAID objects ------ -----------------------------
 	CExtSource  EXT;															// External source
-	CNavaid    *VOR;                              // VOR selected
-  CILS       *ILS;                              // ILS selected
   CCOM       *COM;                              // COM selected
-  U_SHORT     OBS;                              // OBS value
+  U_SHORT     CDI;                              // OBS value
+	CmHead     *SRC;															// Current radio source
   //-----Mouse management ---------------------------------------------
   short    mDir;                                // Mouse direction
   //--------------------------------------------------------------
@@ -173,9 +186,10 @@ public:
   void   ReadFinished();
 	void	 FreeRadios(char opt);
   //--- virtual methods --------------------------------------
-  int    virtual Dispatcher(U_INT evn) {return 1;}
-	int    virtual PowerON()             {sPower = 1; return 1;}
-	void   virtual Update(float dT, U_INT fr, char exs) {;}
+  virtual	int			Dispatcher(U_INT evn) {return 1;}
+	virtual int			PowerON()             {sPower = 1; return 1;}
+	virtual void		Update(float dT, U_INT fr, char exs) {;}
+	virtual void    SelectSource(); 	
   //----------------------------------------------------------
   bool  MsgForMe (SMessage *msg);
   void  TimeSlice (float dT,U_INT FrNo);
@@ -183,7 +197,7 @@ public:
   void  Probe(CFuiCanva *cnv);
   virtual float Frequency()  {return 0;}
 	//--- Enter /leave waypoint mode ---------------------------
-	void	ModeEXT(CmHead *src,ILS_DATA *ils = 0);	// Enter/leave external mode
+	void	ModeEXT(CmHead *src,LND_DATA *ils = 0);	// Enter/leave external mode
 	void	ChangeRefDirection(float d);
 	void	ChangePosition(SPosition *p);
   //-----------------------------------------------------------
@@ -219,11 +233,11 @@ public:
   inline U_CHAR GetFlashMask()    {return mskFS;}
   inline void   SetDirection(int d)   {mDir = d;}
   inline int    GetDirection()        {return mDir;}
-	inline float  GetMilesTo()			{return Radio.mdis;}
+	inline float  GetMilesTo()			{return busRD.mdis;}
 	//-------------------------------------------------------------
-	inline double GetDeviation()		{return Radio.hDEV;}
+	inline double GetDeviation()		{return busRD.hDEV;}
 	//-------------------------------------------------------------
-	inline BUS_RADIO *GetBUS()			{return &Radio;}
+	inline BUS_RADIO *GetBUS()			{return &busRD;}
   //-------------------------------------------------------------
   // CStreamObject methods
   virtual int       Read (SStream *stream, Tag tag);
@@ -467,7 +481,7 @@ public:
 	//	Real GPS must supplies those functions ---------------
   virtual CWPoint  *SelectedNode() {return 0;}
 	virtual void			ModifiedPlan()	{;}
-	virtual void			TrackWaypoint(CWPoint *wpt,bool e) {;}
+	virtual void			TrackWaypoint(CWPoint *wpt,char mode) {;}
 	virtual void			UpdNavigationData(CWPoint *w) {;}
 	virtual CWPoint  *StartingNode()		{return 0;}
 	virtual void			NavIsActive()	{;}
@@ -479,7 +493,6 @@ public:
 	//--------------------------------------------------------
 	float	SelectDirection();
 	void	UpdateTracking(float dT,U_INT frm);
-	void	Refresh();
 	//--------------------------------------------------------
 	void	PowerON();
 	void	EnterTRK();

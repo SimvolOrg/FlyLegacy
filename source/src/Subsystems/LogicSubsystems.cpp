@@ -25,10 +25,8 @@
 /*! \file LogicSubsystems.cpp
  *  \brief Implements vehicle subsystems related to logical connections
  */
-
-#include "../Include/Subsystems.h"
-#include "../Include/WorldObjects.h"			// JSDEV* needed for message prepare
 #include "../Include/Globals.h"						// JSDEV* needed for trace
+#include "../Include/Subsystems.h"
 #include "../Include/Fui.h"						// JSDEV* needed for trace
 #include "../Include/FuiParts.h"
 #include "../Include/FuiProbe.h"
@@ -237,6 +235,8 @@ void CSubsystem::TypeIs (Tag t)
 //	JSDEV* This is now a virtual function called from
 //	Send_Message only when there is yet no receiver in message
 //	This call is not needed in ReceiveMessage
+//	NOTE: Specific joker datatag = '$TYP' force the tag group to be
+//				interpreted as the Type of the component.
 //---------------------------------------------------------------------
 bool CSubsystem::MsgForMe (SMessage *msg)
 { //-------------------------------------------------------
@@ -244,19 +244,17 @@ bool CSubsystem::MsgForMe (SMessage *msg)
   //  respond to  message , just uncomment
   //  the following lines and change id
   //-------------------------------------------------------
-  //Tag idn = 'k89g';                     // Change subsystem name here
-  //if ((unId == idn) && (msg->group == idn))           
+  //Tag idn = 'sREG';                     // Change subsystem name here
+  //if ((type == idn) && (msg->group == idn))           
   // int a = 0;                          // Put a break point here
   //-------------------------------------------------------
-  if (msg) {
-    bool matchGroup = (msg->group == unId);
-    bool hwNull     = (msg->user.u.hw == HW_UNKNOWN);
-    bool hwMatch    = (msg->user.u.hw == (unsigned int) hwId);
-    bool unitNull   = (msg->user.u.unit == 0);
-    bool unitMatch  = (msg->user.u.unit == uNum);
-    return matchGroup && (hwNull || hwMatch) && (unitNull || unitMatch);
-  }
-  return false;
+	bool idByType   = (msg->user.u.datatag == '$TYP');
+  bool matchGroup = (idByType)?(msg->group == type):(msg->group == unId);
+  bool hwNull     = (msg->user.u.hw == HW_UNKNOWN);
+  bool hwMatch    = (msg->user.u.hw == (unsigned int) hwId);
+  bool unitNull   = (msg->user.u.unit == 0);
+  bool unitMatch  = (msg->user.u.unit == uNum);
+  return matchGroup && (hwNull || hwMatch) && (unitNull || unitMatch);
 }
 //---------------------------------------------------------------------
 //	JSDEV* Check if I am the message receiver
@@ -308,6 +306,10 @@ EMessageResult CSubsystem::ReceiveMessage (SMessage *msg)
           case 'indn':
 			      msg->realData = indn;
 			      return MSG_PROCESSED;
+					case 'gets':
+					case '$TYP':
+						msg->voidData = this;
+						return MSG_PROCESSED;
         }
 
       case MSG_SETDATA:

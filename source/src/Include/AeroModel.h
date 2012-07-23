@@ -188,9 +188,7 @@ protected:
   //----------------------------------------------------------------------------
   std::map<std::string,CAeroModelFlap*> flapMap;    ///< Flap data
   std::map<std::string,CAeroModelFlap*> spoilerMap; ///< Spoiler data
-  bool has_splr;
   std::map<std::string,CAeroModelFlap*> trimMap;    ///< Trim data
-  bool has_trim;
   //------------------------------------------------------------------------------
   // aerodynamic calculation data
   CAeroModelAirfoil*  airfoil;        ///< Airfoil object, direct ptr to avoid map lookup

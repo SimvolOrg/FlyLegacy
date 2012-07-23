@@ -38,11 +38,19 @@ char *radFLAG[] = {
 	"FR",
 };
 //===================================================================================
+// No source.  Check for one
+//===================================================================================
+CmHead *CNulSource::Select(U_INT frame,float freq)
+{	CmHead *sta = globals->dbc->FindVOR(frame,freq);
+	if (sta)		return sta;
+	sta					= globals->dbc->FindILS(frame,freq);
+	return (sta)?(sta):(this);
+}
+//===================================================================================
 // CExtSource:   An externnal radio source used to drive the radio
 //===================================================================================
-void CExtSource::SetSource(CmHead *src,ILS_DATA *ils,U_INT frm)
+void CExtSource::SetSource(CmHead *src,LND_DATA *ils,U_INT frm)
 {	active	= 1;
-	qAct		= src->GetActiveQ();					// Store active queue
 	strncpy(sidn,src->GetIdent(),5);			// store ident
 	strncpy(snam,src->GetName(),64);			// Store name
 	spos		= src->GetPosition();					// Geo position
@@ -71,7 +79,7 @@ void CExtSource::Refresh(U_INT fram)
   radial  = Wrap360((float)v.h - smag);
 	nmiles  = (float)v.r * MILE_PER_FOOT;
   dsfeet  =  v.r;
-	//--- compute vertical deviation ----------------
+	//--- Compute vertical deviation ----------------
 	if (0 == ilsD)		return;
 	double alr  = ilsD->refP.alt;
 	double vH		= dsfeet * ilsD->gTan;
@@ -79,6 +87,10 @@ void CExtSource::Refresh(U_INT fram)
 	ilsD->errG  = vdev;			  
 	return;
 }
+//--------------------------------------------------------------------------
+//	Refresh distance and direction to aircraft
+//--------------------------------------------------------------------------
+
 //===================================================================================
 // CRadio
 //	NOTE:  CRadio hold the Radio BUS n°1 
@@ -90,21 +102,23 @@ CRadio::CRadio (void)
   test    = false;
   nState  = 0;
   cState  = 0;
-  VOR     = 0;
-  ILS     = 0;
   COM     = 0;
-  OBS     = 0;
-  Radio.iAng = 0;
-  Radio.gDEV = 0;
-  Radio.hREF = 0;
-  Radio.hDEV = 0;
-  Radio.mdev = 0;
-  Radio.mdis = 0;
-  Radio.fdis = 0;
-  Radio.aDir = 0;
-  memset(&Radio,0,sizeof(BUS_RADIO));
-  Radio.ntyp = SIGNAL_OFF;
-  Radio.flag = VOR_SECTOR_OF;
+  CDI     = 0;
+	SRC			= &nulS;
+  busRD.iAng = 0;
+  busRD.gDEV = 0;
+  busRD.hREF = 0;
+  busRD.hDEV = 0;
+  busRD.mdev = 0;
+  busRD.mdis = 0;
+  busRD.fdis = 0;
+  busRD.aDir = 0;
+	busRD.rSRC = SRC;
+	busRD.actv = 0;
+	busRD.rnum = 0;
+  busRD.ntyp = SIGNAL_OFF;
+  busRD.flag = VOR_SECTOR_OF;
+	busRD.xOBS = 0;
   ActCom.freq   = 0;
   ActCom.fract  = 0;
   ActCom.whole  = 0;
@@ -127,16 +141,13 @@ CRadio::~CRadio()
 //  Primary radio answer to datatag 'Radi' unit 1
 //-------------------------------------------------------------------
 bool CRadio::MsgForMe (SMessage *msg)
-{ if (msg) {
-    bool matchRadio = (msg->group == 'Radi') & (msg->user.u.unit == 1);
-    bool matchGroup = (msg->group == unId) | matchRadio;
-    bool hwNull     = (msg->user.u.hw == HW_UNKNOWN);
-    bool hwMatch    = (msg->user.u.hw == (unsigned int) hwId);
-    bool unitNull   = (msg->user.u.unit == 0);
-    bool unitMatch  = (msg->user.u.unit == uNum);
-    return matchGroup && (hwNull || hwMatch) && (unitNull || unitMatch);
-  }
-  return false;
+{ bool matchRadio = (msg->group == 'Radi') & (msg->user.u.unit == 1);
+  bool matchGroup = (msg->group == unId) | matchRadio;
+  bool hwNull     = (msg->user.u.hw == HW_UNKNOWN);
+  bool hwMatch    = (msg->user.u.hw == (unsigned int) hwId);
+  bool unitNull   = (msg->user.u.unit == 0);
+  bool unitMatch  = (msg->user.u.unit == uNum);
+  return matchGroup && (hwNull || hwMatch) && (unitNull || unitMatch);
 }
 //------------------------------------------------------------------
 //  Store initial frequency
@@ -155,22 +166,22 @@ void CRadio::Probe(CFuiCanva *cnv)
 { char edt[256];
   sprintf_s(edt,63,"Active:     %d",active);
   cnv->AddText(1,edt,1);
-  sprintf_s(edt,63,"Freq:%d=>   %03u.%02u",Radio.rnum,
+  sprintf_s(edt,63,"Freq:%d=>   %03u.%02u",busRD.rnum,
                                       ActCom.whole,
                                       ActCom.fract);
   cnv->AddText(1,edt,1);
 
-  cnv->AddText( 1,1,"xOBS %03d",Radio.xOBS);
-  cnv->AddText( 1,1,"hREF %.5f",Radio.hREF);
-  cnv->AddText( 1,1,"RADI %.5f",Radio.radi);
-	cnv->AddText( 1,1,"rDEV %.5f",Radio.rDEV );
-  cnv->AddText( 1,1,"hDEV %.5f",Radio.hDEV );
-  cnv->AddText( 1,1,"gDEV %.5f",Radio.gDEV);
-  cnv->AddText( 1,1,"mDIS %.5f",Radio.mdis);
-  cnv->AddText( 1,1,"aDIR %.5f",Radio.aDir);
-  cnv->AddText( 1,1,"iANG %.5f",Radio.iAng);
-  cnv->AddText( 1,1,"rTYP %d",Radio.ntyp);
-	cnv->AddText( 1,1,"flag %s",radFLAG[Radio.flag]);
+  cnv->AddText( 1,1,"xOBS %03d",busRD.xOBS);
+  cnv->AddText( 1,1,"hREF %.5f",busRD.hREF);
+  cnv->AddText( 1,1,"RADI %.5f",busRD.radi);
+	cnv->AddText( 1,1,"rDEV %.5f",busRD.rDEV );
+  cnv->AddText( 1,1,"hDEV %.5f",busRD.hDEV );
+  cnv->AddText( 1,1,"gDEV %.5f",busRD.gDEV);
+  cnv->AddText( 1,1,"mDIS %.5f",busRD.mdis);
+  cnv->AddText( 1,1,"aDIR %.5f",busRD.aDir);
+  cnv->AddText( 1,1,"iANG %.5f",busRD.iAng);
+  cnv->AddText( 1,1,"rTYP %d",busRD.ntyp);
+	cnv->AddText( 1,1,"flag %s",radFLAG[busRD.flag]);
   return;
 }
 //---------------------------------------------------------------------------
@@ -318,30 +329,45 @@ void CRadio::RazField(RADIO_FLD *tab,short No)
 //  Free navigation systems
 //--------------------------------------------------------------------------
 void CRadio::FreeRadios(char opt)
-{	if (VOR)	{VOR->DecUser(); VOR = 0;}
-	if (ILS)	{ILS->DecUser(); ILS = 0;}
+{	SRC->DecUser();
+	SRC	= &nulS;
 	if (0 == opt)							return;
 	if (COM)  {COM->DecUser(); COM = 0;}
 	return;
 }
 //--------------------------------------------------------------------------
+//  Select Radio source
+//--------------------------------------------------------------------------
+void CRadio::SelectSource()
+{	//--- Source is external ---------------------------
+	if (EXT.IsActive())		return EXT.Refresh(Frame);
+	//--- Source is a VOR or ILS or NULL ---------------
+	SRC = SRC->Select(Frame,ActNav.freq);     // Refresh NAV
+	//--- Set null source ------------------------------
+	if (SRC)							return;
+	SRC	= &nulS;
+	return;
+}
+
+//--------------------------------------------------------------------------
 //  Enter/leave external mode:  ROBOT/GPS interface
 //	Synchronize radio with type of source
 //--------------------------------------------------------------------------
-void CRadio::ModeEXT(CmHead *src,ILS_DATA *ils)
+void CRadio::ModeEXT(CmHead *src,LND_DATA *ils)
 {	//--- Back to normal mode. Synchro radio with nav ------
 	if (0 == src)	
 	{	EXT.Stop();
 		globals->cILS	= 0;
 	  if (0 == sPower)		return;
-		VOR	= globals->dbc->GetTunedNAV(VOR,Frame,ActNav.freq);     // Refresh VOR
-		ILS = globals->dbc->GetTunedILS(ILS,Frame,ActNav.freq);     // Refresh ILS
-		return Synchronize();
+		SelectSource();
 	}
 	//--- Update external bus ---------------------------
-	EXT.SetSource(src,ils,Frame);
-	if ((uNum == 1)	&& (ils))	globals->cILS	= ils->ils;
-	FreeRadios(0);
+	else
+	{	SRC->DecUser();
+		EXT.SetSource(src,ils,0);
+		SRC	= &EXT;
+		if ((uNum == 1)	&& (ils))	globals->cILS	= ils->ils;
+	}
 	Synchronize();
 	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);
 	return;
@@ -350,11 +376,11 @@ void CRadio::ModeEXT(CmHead *src,ILS_DATA *ils)
 //  Change OBS from external
 //--------------------------------------------------------------------------
 int CRadio::IncXOBS(short inc)
-{ short obs  = Radio.xOBS;
+{ short obs  = busRD.xOBS;
   obs += inc;
   if (  0 > obs) obs  = 359;
   if (359 < obs) obs  = 0;
-	Radio.SetOBS(obs);
+	busRD.SetOBS(obs);
   return obs;
 }
 //--------------------------------------------------------------------------
@@ -369,9 +395,8 @@ void CRadio::ChangePosition(SPosition *p)
 //  Change Reference direction from external
 //--------------------------------------------------------------------------
 void CRadio::ChangeRefDirection(float d)
-{	CmHead *sys = Radio.nav;
-	if (sys)	sys->SetRefDirection(d);
-	Radio.SetOBS(d);
+{	SRC->SetRefDirection(d);
+	busRD.SetOBS(d);
 	Synchronize();
 //	TRACE("RADIO: Ref dir=%.2f",Radio.hREF);
 }
@@ -382,12 +407,10 @@ void CRadio::ChangeRefDirection(float d)
 //--------------------------------------------------------------------------
 void CRadio::TimeSlice (float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
-	bool exs = EXT.IsActive();
-  if (exs)	 EXT.Refresh(FrNo);
 	Frame				= FrNo;
-  Synchronize();
 	//--- Call derived radios -----------------------
-	Update(dT,FrNo,exs);
+	Update(dT,FrNo,0);
+	Synchronize();
 	return;
 }
 //------------------------------------------------------------------
@@ -395,35 +418,23 @@ void CRadio::TimeSlice (float dT,U_INT FrNo)
 //------------------------------------------------------------------
 void	CRadio::Synchronize()
 { float   rad = 0;
-	CmHead *sys = 0;
-	if (EXT.IsActive())	{sys = &EXT;}
-	if (VOR)						{sys = VOR;}
-	if (ILS)						{sys = ILS;}
-	Radio.nav  = sys;
-	if (sys)
-	{		sys->SetNavOBS(Radio.xOBS);
-			rad = sys->GetRadial(); 
-			Radio.radi = rad;
-      Radio.ntyp = sys->SignalType();							
-      Radio.mdis = sys->GetNmiles();
-      Radio.mdev = sys->GetMagDev();
-      Radio.hREF = sys->GetRefDirection();				//Radio.xOBS;
-			Radio.rDEV = Wrap180(Radio.radi - Radio.hREF);
-      Radio.hDEV = ComputeDeviation(Radio.hREF,rad,&Radio.flag,1);    //sPower);
-      Radio.gDEV = sys->GetVrtDeviation();				//0;
-      Radio.fdis = sys->GetFeetDistance();
-      Radio.sens = sys->Sensibility();						//10;
-    }
-	  else 
-  {   Radio.hREF = 0;
-      Radio.flag = VOR_SECTOR_OF;
-      Radio.ntyp = SIGNAL_OFF;
-      Radio.gDEV = 0;
-      Radio.hDEV = 0;
-  }
+	busRD.rSRC  = SRC;
+	CmHead *sys = SRC;
+	sys->SetNavOBS(busRD.xOBS);
+	rad = sys->GetRadial(); 
+	busRD.radi = rad;
+  busRD.ntyp = sys->SignalType();							
+  busRD.mdis = sys->GetNmiles();
+  busRD.mdev = sys->GetMagDev();
+  busRD.hREF = sys->GetRefDirection();				//Radio.xOBS;
+	busRD.rDEV = Wrap180(busRD.radi - busRD.hREF);
+  busRD.hDEV = ComputeDeviation(busRD.hREF,rad,&busRD.flag,1);    //sPower);
+  busRD.gDEV = sys->GetVrtDeviation();				//0;
+  busRD.fdis = sys->GetFeetDistance();
+  busRD.sens = sys->Sensibility();						//10;
   //---Compute angle between reference and aircraft heading --
-  Radio.aDir = mveh->GetMagneticDirection();
-  Radio.iAng = Wrap360(Radio.hREF - Radio.aDir);
+  busRD.aDir = mveh->GetMagneticDirection();
+  busRD.iAng = Wrap360(busRD.hREF - busRD.aDir);
 	return;
 }
 //--------------------------------------------------------------
@@ -433,10 +444,9 @@ void CRadio::SetGlide(SMessage *msg)
 {	msg->sender       = unId;
   msg->realData	    = 0;
   msg->user.u.unit  = 0;
-  if (0 == ILS)     return;  
   msg->user.u.unit  = 1;
-  Radio.gDEV        = ILS->GetGlide();
-  msg->realData	    = Radio.gDEV;
+  busRD.gDEV        = SRC->GetGlide();
+  msg->realData	    = busRD.gDEV;
 	return;
 }
 //--------------------------------------------------------------------------
@@ -559,8 +569,8 @@ EMessageResult CRadio::ReceiveMessage (SMessage *msg)
       switch (msg->user.u.datatag) {
       //--Return external OBS deviation -------
       case 'xDev':
-        msg->realData    = Radio.hDEV;
-        msg->user.u.unit = Radio.flag;
+        msg->realData    = busRD.hDEV;
+        msg->user.u.unit = busRD.flag;
         return MSG_PROCESSED;
       //----Glide slope ------------------
       case 'glid':
@@ -568,7 +578,7 @@ EMessageResult CRadio::ReceiveMessage (SMessage *msg)
         return MSG_PROCESSED;
        //----Get external OBS ------------------
       case 'obs_':
-        msg->intData  = Radio.xOBS;
+        msg->intData  = busRD.xOBS;
         return MSG_PROCESSED;
       case 'tune':
         msg->realData = 0;
@@ -590,7 +600,7 @@ EMessageResult CRadio::ReceiveMessage (SMessage *msg)
         return MSG_PROCESSED;
 
       case 'getr':
-        msg->voidData = &Radio;
+        msg->voidData = &busRD;
         return MSG_PROCESSED;
 
 			case 'gets':
@@ -761,11 +771,7 @@ void CNavRadio::PowerStatus()
 void  CNavRadio::Update (float dT,U_INT FrNo,char exs)
 { PowerStatus();
   if (0 == nState)  return;
-	if (exs)					return;
-  //----Refresh nav stations ---------------------------------------
-  VOR	= globals->dbc->GetTunedNAV(VOR,FrNo,ActNav.freq);     // Refresh VOR
-  if (VOR)          return;
-  ILS = globals->dbc->GetTunedILS(ILS,FrNo,ActNav.freq);     // Refresh ILS
+	SelectSource();
   return;
 }
 

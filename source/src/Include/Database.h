@@ -47,7 +47,6 @@
 #include "FlyLegacy.h"
 #include "Queues.h"
 //============================================================================================
-class CWPoint;
 //============================================================================================
 //
 // Type field translation for some Fly databases 
@@ -261,6 +260,8 @@ class CAptObject;                         // Airport object
 class SqlMGR;                             // SQL Manager
 class CSoundBUF;                          // Sound buffer
 class CFuiFlightLog;                      // Window for flight plan
+class CWPoint;														// Waypoint
+class TaxNODE;														// Taxiway node
 //====================================================================
 //
 // Data (DBD) related methods
@@ -954,6 +955,7 @@ public:
 	inline  double	  Sensibility()				{return 10;}
 	inline	U_CHAR		SignalType()				{return SIGNAL_VOR;}
   //------------------------------------------------------
+	CmHead   *Select(U_INT frame,float freq);
 	void	    Refresh(U_INT FrNo);							// Update navaid
   void      WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &sf);
   //-------------------------------------------------------
@@ -1114,7 +1116,7 @@ protected:
   float	  radial;                         // Aircraf position
 	float	  nmiles;                         // Distance to ILS
   //------------ILS data -------------------------------------------
-  ILS_DATA *ilsD;                         // Pointer to runway ILS data
+  LND_DATA *ilsD;                         // Pointer to runway ILS data
   //------------Markers beacons ------------------------------------
   B_MARK  outM;                           // Outter marker
   B_MARK  medM;                           // Medium marker
@@ -1125,13 +1127,16 @@ protected:
 public:
   CILS(OTYPE qo,QTYPE qa);
   void		Trace(char *op,U_INT FrNo,U_INT key);
+	//-----------------------------------------------------------------
 	void	  Refresh(U_INT FrNo);							// Update ILS
+	CmHead *Select(U_INT frame,float freq);
+	//-----------------------------------------------------------------
 	CILS*	  IsThisILSOK(float freq);          // Check for tuning
 	bool		IsSelected(float freq);
   void    WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &st);
   void    SetGlidePRM();
   //-----Parameters --------------------------------------------------
-  void    SetIlsParameters(CRunway *run,ILS_DATA *dt,float dir);
+  void    SetIlsParameters(CRunway *run,LND_DATA *dt,float dir);
   //-----BEACON MANAGEMENT -------------------------------------------
   char    InMARK(SVector &p, B_MARK &b,CBeaconMark &r);
   inline  char InOUTM(SVector &p,CBeaconMark &r)  {return InMARK(p,outM,r);}
@@ -1163,7 +1168,7 @@ public:
   inline  float GetFeetDistance()       {return ilsD->disF;}
   inline  float GetGlide(void)          {return ilsD->errG;}
 	inline  float GetVrtDeviation()				{return ilsD->errG;}
-	inline  ILS_DATA  *GetLandSpot()			{return ilsD;}
+	inline  LND_DATA  *GetLandSpot()			{return ilsD;}
 	//-----------------------------------------------------------------
 	inline  double	Sensibility()					{return 20;}
 	inline	U_CHAR	SignalType()					{return SIGNAL_ILS;}
@@ -1276,7 +1281,7 @@ protected:
   RwyID       pID[2];                     // Ident parameters both end
   //----------------------------------------------------------------
 	VECTOR_DIR	vdir;												// Vector director
-  ILS_DATA    ilsD[2];                    // Ils data for both ends
+  LND_DATA    ilsD[2];                    // Ils data for both ends
   U_CHAR      ilsT;                       // ils type (HI or LO)
   //-------------Private methods -----------------------------------
   U_CHAR  GetGroundIndex();
@@ -1284,14 +1289,14 @@ protected:
   //------------ Public methods ------------------------------------
 protected:
   void    SetAttributes();
-	void		EndAttributes(ILS_DATA &d,SPosition &p);
+	void		EndAttributes(LND_DATA &d,SPosition &p);
 public:
   CRunway(OTYPE qo,QTYPE qa);
  ~CRunway();
  //------------------------------------------------------------------
   CRunway *GetNext()     {return (CRunway*)CmHead::Cnext;}
  //------------------------------------------------------------------
- 	ILS_DATA  *GetLandDirection(char *e);
+ 	LND_DATA  *GetLandDirection(char *e);
 	double     DistanceToLane(SPosition &p);
  //------------------------------------------------------------------
   void    InitILS(CILS *ils);
@@ -1301,13 +1306,15 @@ public:
   void    WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,CStreamFile &st);
   //------Light switching ------------------------------------------
   char    ChangeLights(char ls);
+	void		FillHiNODE(TaxNODE *N);
+	void		FillLoNODE(TaxNODE *N);
   //----------------------------------------------------------------
   inline  U_CHAR    *GetHiLightSys()    {return rh8l;}
   inline  U_CHAR    *GetLoLightSys()    {return rl8l;}
   inline  SPosition *GetLandPos(char p) {return &ilsD[p].lndP;}
 	inline  float			 GetLandDir(char p)	{return  ilsD[p].lnDIR;}
   inline  char       GetIlsIndex()      {return ilsT;}
-  inline  ILS_DATA  *GetIlsData(char p) {return (ilsD + p);}
+  inline  LND_DATA  *GetIlsData(char p) {return (ilsD + p);}
   //----------------------------------------------------------------
   inline  char      *GetHiEnd()  {return rhid; }
   inline  char      *GetLoEnd()  {return rlid; }
@@ -1497,8 +1504,8 @@ public:
   void        SaveProfile();
   void        WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,CStreamFile &sf);
 	//--------------------------------------------------------
-	float       GetTakeOffSpot(char *rend,SPosition **dp,ILS_DATA **d);
-	ILS_DATA   *GetNearestRwyEnd(SPosition *pos,SPosition **dst);
+	float       GetTakeOffSpot(char *rend,SPosition **dp,LND_DATA **d);
+	LND_DATA   *GetNearestRwyEnd(SPosition *pos,SPosition **dst);
   //---------inline ----------------------------------------
   inline float      GetLatitude(void) {return apos.lat;}
   inline float      GetLongitude(void){return apos.lon;}
@@ -1557,6 +1564,7 @@ public:
   //---------------Runways methods ----------------------------------
   void        AddRunway(CRunway *rwy);          // Add one runway
   CRunway    *FindRunway(char *idn);            // Find runway by end ident
+	LND_DATA   *FindRunwayLND(char *idn);					// Landing data by ident
   //-----------------------------------------------------------------
   inline double     GetAltitude()      {return apos.alt;}
   inline char *     GetIdentity()      {return (*afaa)?(afaa):(aica);}

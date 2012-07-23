@@ -38,7 +38,6 @@
 #include <string.h>
 using namespace std;
 //=======================================================================================
-extern TC_COLOR ColorTAB[];
 //======================================================================================
 struct WIND_SPEED {
     float speed;
@@ -417,15 +416,6 @@ C3DMgr::~C3DMgr()
   globals->m3d = 0;         // Unregister
 }
 //-----------------------------------------------------------------------------
-//  Count 
-//-----------------------------------------------------------------------------
-void	C3DMgr::vCount(int k)
-	{	pthread_mutex_lock (&mux);
-		globals->NbPOL += k;
-		pthread_mutex_unlock (&mux);
-	}
-
-//-----------------------------------------------------------------------------
 //  Set Open GL State
 //-----------------------------------------------------------------------------
 void C3DMgr::SetDrawingState()
@@ -803,75 +793,10 @@ int C3Dfile::Read(SStream *st,Tag tag)
 			cntr++;
       return TAG_READ;}
   case 'auto': // lc added 05.29.11 test for autogen
-   // AutoGen (st);
 		return TAG_READ;
   }
   WARNINGLOG("Scenery file %s: Not an Object tag %s",namef,TagToString(tag));
   return TAG_IGNORED;
-}
-//--------------------------------------------------------------------
-//  Process autogen
-//--------------------------------------------------------------------
-void C3Dfile::AutoGen(SStream *st)
-{ Tag    kind;
-	ReadTag(&kind,st);
- // MEMORY_LEAK_MARKER ("auto")
-  if (kind == 'mobj') 
-	{ CWobj *autobj = 0; 
-		// Process object
-		char name [16] = {0};
-		SPosition pos; pos.lat = 0.0; pos.lon = 0.0; pos.alt = 5000.0;
-    C3Dworld *w3d = oQGT->Get3DW();
-    C_QGT *qgt= w3d->GetQGT ();
-    double midlat = qgt->GetMidLat ();
-    double midlon = qgt->GetMidLon ();
-//  TRACE ("%s %f %f", namef, midlat, midlon);
-		int rdn = (globals->clk->GetMinute() << 8) +  globals->clk->GetSecond();
-		srand(rdn);
-		double var = 0.0;
-		//TRACE ("num_of_autogen=%d", num_of_autogen); 
-		for (int i = 0; i < globals->num_of_autogen; i++) { 
-      autobj = new CWobj(kind);
-      if (0 == autobj)   Abort(kind); 
-      autobj->SetFileName(namef);
-      // random position -1250/+1250 from the center of the QGT
-      var = (rand () % 2500 - 1250);
-      pos.lat = var + midlat;
-      //TRACE ("%f", var);
-      // random position -1250/+1250 from the center of the QGT
-      var = (rand () % 2500 - 1250);
-      pos.lon = var + midlon;
-      //TRACE ("%f", var);
-      autobj->SetPosition (pos);
-      SVector vect; vect.x = vect.z = 0.0;
-      vect.y = static_cast <double> (rand () % 360);
-      //vect.y = DegToRad (vect.y);
-      autobj->SetOrientation (vect);
-      TRACE ("rad. %f", autobj->GetYRotation ()); 
-      U_INT flag = 33077;
-      autobj->SetFlag (flag);
-      sprintf_s (name,15, "test%d", i); 
-      autobj->SetObjName (name);
-      CKmm dOBJ (autobj, MODEL_DAY);
-      //
-//      GroundSpot spot (pos.lon, pos.lat);
-//      spot.GetTerrain ();
-//      char terrain_type = spot.Type;
-//      int  terrain_alt  = spot.alt;
-//      TRACE ("terr. %d ** %d", terrain_type, terrain_alt);
-//      if (spot.Type != TERRAIN_WATER_OCEAN) {
-      //
-      dOBJ.SetMdl ("foret000.bin");//("chene20.bin");
-//      dOBJ.SetMdl ("jument.bin");
-          //
-      w3d->AddToWOBJ(autobj);
-//      } else {
-//        i--;
-//      }
-    }	
-	}
-  //MEMORY_LEAK_MARKER ("auto")
-  return;
 }
 //===================================================================================
 //  C3D model to hold parts from a SMF or BIN file
@@ -2062,7 +1987,6 @@ void C3DPart::Release()
   if (nIND)     delete [] nIND;
 	nIND	= 0;
 	if (gTAB)			delete [] gTAB;
-	globals->m3d->vCount(-NbVT);
 	NbVT	= 0;
 }
 //----------------------------------------------------------------------
@@ -2074,7 +1998,6 @@ void C3DPart::AllocateW3dVTX(int nv)
   nNRM  = new F3_VERTEX[nv];
   nTEX  = new F2_COORD [nv];
 	Rend  = &C3DPart::DrawAsW3D;
-	globals->m3d->vCount(NbVT);
 }
 //----------------------------------------------------------------------
 // Allocate vertices for OSM Object
@@ -2083,7 +2006,6 @@ void C3DPart::AllocateOsmGVT(int nv)
 {	NbVT  = nv;
 	gTAB  = new GN_VTAB[nv];
 	Rend  = &C3DPart::DrawAsOSM;
-	globals->m3d->vCount(NbVT);
 	return;
 }
 //----------------------------------------------------------------------
@@ -2093,7 +2015,6 @@ void C3DPart::AllocateOsmLIT(int nv)
 {	NbVT  = nv;
 	gTAB  = new GN_VTAB[nv];
 	Rend  = &C3DPart::DrawAsLIT;
-	globals->m3d->vCount(NbVT);
 	return;
 }
 //----------------------------------------------------------------------

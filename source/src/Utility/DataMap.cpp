@@ -507,12 +507,14 @@ void CFmt1Map::DecodeFMT1(SStream *s)
   while (strstr (pm, "<endf>") == 0)
   {   // Parse an x y data pair
       CFmt1Slot e;
-      if (sscanf (pm, "%f %f", &e.x, &e.y) == 2) Enter(e);
-      else
-      if (sscanf (pm, "%f,%f", &e.x, &e.y) == 2) Enter(e);
-      else
-      // Generate warning
-      gtfo ("CFmt1Map: Invalid <fmt1> data %s in %s", s, s->filename);
+			if (*pm)	
+			{	if (sscanf (pm, "%f %f", &e.x, &e.y) == 2) Enter(e);
+				else
+				if (sscanf (pm, "%f,%f", &e.x, &e.y) == 2) Enter(e);
+				else
+				// Generate warning
+				gtfo ("CFmt1Map: Invalid <fmt1> data %s in %s", s, s->filename);
+			}
       ReadString (pm, 256, s);
     }
   return;
@@ -557,6 +559,21 @@ void  CFmt1Map::Load(TUPPLE *tab)
   }
   return;
 }
+//---------------------------------------------------------------------
+//  Load FMT1 table from a set of tupples
+//  NOTE:  The set is terminated when both values are -1
+//---------------------------------------------------------------------
+void  CFmt1Map::Load(PAIRF *tab)
+{ char go = 1;
+  char nt = 0;
+  while (go)
+  { PAIRF *t = tab + (nt++);
+    if ((t->inp == -1) && (t->out == -1)) return;
+    Add(t->inp,t->out);
+  }
+  return;
+}
+
 //-----------------------------------------------------------------
 //  Look value in table and interpolate result
 //-----------------------------------------------------------------

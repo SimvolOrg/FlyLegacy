@@ -32,7 +32,6 @@
 #define TC_FILE_TGA  3
 #define TC_FILE_TIF  4
 //-----PI -------------------------------------------------------
-#define PI       (double(SGD_PI))
 #define HLF_PI   (double(TC_PI * 0.5))
 #define PI_PI    (double(TC_PI * TC_PI))
 #define HPI      (double(TC_PI) * 0.5)

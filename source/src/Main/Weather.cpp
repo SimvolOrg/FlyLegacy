@@ -242,8 +242,9 @@ void CWeatherManager::SetDefault()
   Info.wASP   = srf->GetV();            // Average speed
   Info.wGSP   = srf->GetV();            // Average speed
   //---Arm randomizer ----------------------
-  wDIR.Set(265,10,2);          // Randomize direction
-  wSPD.Set(  3, 5,5);          // Randomize speed
+  wDIR.Set(265,10,2);						// Randomize direction
+  wSPD.Set(  3, 5,5);						// Randomize speed
+	wTRB.Set(0, 1000, 1);					// Turbulence event
   //---Create default metar area -----------
   Info.vMIL   = mVIS;       // Visibility
   Info.Layer  = mLAY;       // Cloud layer

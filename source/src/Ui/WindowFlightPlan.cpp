@@ -35,7 +35,7 @@
 //==================================================================================
 int FlightPlanCB(char *fn,void *upm)
 {	CFuiListPlan *win = (	CFuiListPlan *)upm;
-  //TRACE("FP add:%s",fn);
+  WARNINGLOG("FP add:%s",fn);
 	return win->AddToList(fn);
 }
 //==================================================================================

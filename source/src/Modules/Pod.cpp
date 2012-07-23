@@ -674,7 +674,7 @@ void unMountPOD3 (PFS *pfs, PFSPOD* pod)
 //-----------------------------------------------------------------------
 static PFSPOD* pmount (PFS *pPfs, const char* podname)
 {
-  PFSPOD* pPod = new PFSPOD;
+  PFSPOD* pPod = new PFSPOD();
 	pPod->users	= 1;
   strncpy (pPod->name, podname,FNAM_MAX);
   pPod->file = NULL;

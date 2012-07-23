@@ -546,27 +546,27 @@ void	CStreamFile::EndObject()
 //------------------------------------------------------------------
 //	Write a integer
 //------------------------------------------------------------------
-void CStreamFile::WriteInt(int *value)
+void CStreamFile::WriteInt(int val)
 {
   if (IsWriteable()) {
     WriteIndent();
-    fprintf (f, "%d\n", *value);
+    fprintf (f, "%d\n", val);
   }
 }
 
-void CStreamFile::WriteUInt(unsigned int *value)
+void CStreamFile::WriteUInt(U_INT val)
 {
   if (IsWriteable()) {
     WriteIndent();
-    fprintf (f, "%u\n", *value);
+    fprintf (f, "%u\n", val);
   }
 }
 
-void CStreamFile::WriteFloat(float *value)
+void CStreamFile::WriteFloat(float vf)
 {
   if (IsWriteable()) {
     WriteIndent();
-    fprintf (f, "%f\n", *value);
+    fprintf (f, "%f\n", vf);
   }
 }
 

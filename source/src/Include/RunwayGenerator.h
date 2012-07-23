@@ -75,6 +75,11 @@ class CRwyGenerator
   double    egx;                                // X edge generator
   double    egy;                                // Y edge generator
   double    rot;                                // Angle of rotation for runway
+	//--- Landing date work area ---------------------------------------
+	double		d1;
+	double		d2;
+	double		d3;
+	double		d4;
 	//------------------------------------------------------------------
   SVector   scl;                                // Scale factor for letter
   SVector   sct;                                // Scale factor for threshold bands
@@ -100,7 +105,7 @@ public:
 	//---------------------------------------------------------------
 	void		ComputeElevation(SPosition &pos);
 	void		SetRunwayData();
-	void		SetLandingPRM(ILS_DATA *ils,float ln,float tk);
+	void		SetLandingPRM(LND_DATA *ils,float ln,float tk);
 	//---------------------------------------------------------------
 	void		BuildRunwayMidPoints(TC_RSEG_DESC *model);
 	void		BreakMidSegment(TC_RSEG_DESC *model,int lg);

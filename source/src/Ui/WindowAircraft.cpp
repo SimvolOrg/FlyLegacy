@@ -33,6 +33,7 @@
 #include "../Include/Fui.h"
 #include "../Include/FuiPlane.h"
 #include "../Include/Globals.h"
+#include "../Plugin/Plugin.h"
 #include <vector>
 //==================================================================================
 #define WDIR_SEL_APT 0
@@ -186,11 +187,11 @@ void CWinPlane::ChangeAircraft()
 	globals->sit->SetAircraftFrom(nfo);
   Close();
   // sdk: save a pointer to 'user' as the first item in the sdk SFlyObjectRef list
-  globals->plugins.sdk_flyobject_list.InsertUserInFirstPosition (globals->pln);
+  globals->plugins->sdk_flyobject_list.InsertUserInFirstPosition (globals->pln);
   // sdk: used to load dll gauges when switching between aircrafts
   //    TRACE ("RESET USER VEHICLE %d", globals->plugins_num);
   if (globals->plugins_num) {
-    globals->plugins.On_Instantiate_DLLSystems (0, 0, NULL);
+    globals->plugins->On_Instantiate_DLLSystems (0, 0, NULL);
   }
   return;
 }

@@ -342,7 +342,7 @@ void CIniFile::Clear (void)
 {
   std::map<string,CIniSection*>::iterator i;
   for (i=section.begin(); i!=section.end(); i++) {
-    delete i->second;
+    delete (*i).second;
   }
 	section.clear();
 }
@@ -463,11 +463,9 @@ static bool ParseKeyValue (char* s, char* key, char* value)
 //--------------------------------------------------------------------------------------------
 int CIniFile::Load (const char* iniFilename)
 { char buf[1024];
-  _getcwd( buf,1024);
-
+  _getcwd( buf,1024);		// Current working directory
   // Clear all existing INI settings
   Clear ();
-
   // Declare local variables used in parsing of INI file lines
   char sect[64];
   char key[64];

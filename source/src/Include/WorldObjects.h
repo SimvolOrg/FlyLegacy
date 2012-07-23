@@ -332,7 +332,7 @@ public:
 	void		OverallExtension(SVector &v);			// Get 3D model extension 
   //!-----------------------------------------------------------------------
   //! send steering wheel angle to gear
-	void		GetGearChannel    (SGearData *gdt);
+	void		SetRudderDeflection (SGearData *gdt);
   void    SetPartKeyframe   (char* part, float value);
   void    SetPartTransparent(char* part, bool ok = true);
   //----Set spinner part -------------------------------------------------------------------
@@ -385,7 +385,7 @@ public:
 	GPSRadio             *GPSR;							// GPS
 	CRadio               *mRAD;							// Master Radio
 	//--- Wheel interface ---------------------------------------------------------
-	float									brkDIF;						// Differential brake force
+	double								brkDIF;						// Differential brake force
   //-----Sound object collection ------------------------------------------------
   std::map<Tag,CSoundOBJ*> sounds;            // Sound objects related to vehicle
 	//====== METHODS ==============================================================
@@ -406,14 +406,14 @@ public:
 	//--- Gear Management -------------------------------------------------------------
 	void					SetABS(char p)					{whl->SetABS(p);}
 	float         GetBrakeForce(int p)    {return amp->GetBrakeForce(p);}
-  char          GetWheelNum()           {return  WOW_nber++;}
+  char          GetWheelNum()           {return wNbr++;}
   bool          WheelsAreOnGround()     {return whl->WheelsAreOnGround();}
   char          NbWheelsOnGround()      {return whl->GetNbWheelOnGround();}  
 	bool					AllWheelsOnGround()			{return whl->AllWheelsOnGround();}
 	//--- Brake interface -------------------------------------------------------------
-	float					GetDifBrake()						{return brkDIF;}
+	double				GetDifBrake()						{return brkDIF;}
 	void					RazDifBrake()						{brkDIF  = 0;}
-	void					AddDifBrake(float b)		{brkDIF += b;}
+	void					AddDifBrake(double b)		{brkDIF += b;}
   //--- Fuel Management -------------------------------------------------------------
   inline void   GetFuelCell(std::vector<CFuelCell*> &vf)  {if (wgh) wgh->GetFuelCell(vf);}
   inline void   GetLoadCell(std::vector<CLoadCell*> &vl)  {if (wgh) wgh->GetLoadCell(vl);}
@@ -429,8 +429,10 @@ public:
 	inline  CPhysicModelAdj  *GetPHY()				{return phy;}
 	//-----------------------------------------------------------------------------------------
 protected:
+	//--- Engine parameters --------------------------------------------------------
   char   nEng;															// Engine number
 	U_CHAR engR;															// Number of running engines
+	//--- Aero parameters ----------------------------------------------------------
   float  dihedral_coeff;										///< dihedral coeff SVH <dieh>
   float  acrd_coeff;												///< acrd coeff in SVH file
   float  pitch_coeff;												///< pitch coeff SVH <pitd>
@@ -441,15 +443,15 @@ protected:
   float		gear_drag;                        ///< drag from gear
 	//--- turbulence  parameters ---------------------------------------------------
   int     turbulence_effect;                ///< turbulence effect toggle
-  //CVector turb_v;                           ///< turbulence 3D direction
   //---Aerodata drawing ----------------------------------------------------------
   float		draw_aero;                        ///< draw aeromodel data for lines lenght
   //---Wheels parameters ---------------------------------------------------------
-  char    WOW_nber;                         // Wheel number
-  char    rfuw;                             // Reserved
+  char    wNbr;															// Wheel number
+  char    wBrk;                             // Wheel with brakes
   //---Wheels functions ----------------------------------------------------------
-public:    
-  inline  float GetGSpeed()               {return 0;}
+public:
+	inline  void	IncWheelBrake()										{wBrk++;}
+	inline  int   GetWheelBrake()										{return wBrk;}
 	//---Engine internal interface -------------------------------------------------
 	inline  void RazEngR()										{engR	= 0;}
 	inline  void IncEngR()										{engR++;}
@@ -604,7 +606,7 @@ public:
   void         RudderTrimDecr      (void);      ///< Decrement rudder trim one step
   void         RudderTrimSet       (float fv);  ///< Set rudder trim value
   void         GroundBrakes        (U_CHAR b);  ///< Set Ground Brakes on-off
-  void         ParkBrake           (void);      ///< set parking brake
+  void         ParkBrake           (U_CHAR b);  ///< set parking brake
   void         GearUpDown          (void);      ///< gear up/down
 	//--- Surface position interface --------------------------------------------------
   float        Aileron             (void);      ///< Get aileron position
@@ -619,7 +621,8 @@ public:
 	//--------------------------------------------------------------------------
 	void				 GroundAt(double alt);
 	//--- ACCES TO SUBSYSTEMS --------------------------------------------------
-	inline    void				 VirtualPilot()	{amp->vpil->Start();}
+	inline    void				 StartVirtualPilot()	{amp->vpil->Start();}
+	inline    VPilot      *VirtualPilot()				{return amp->vpil;}
   //------Message interface --------------------------------------------------
   inline    void         SendNaviMsg()  {Send_Message(&Navi);}
   inline    void         SendApilMsg()  {Send_Message(&Apil);}

@@ -29,15 +29,14 @@
  *    implements the common parent class CCamera as well as
  *    camera-specific descendent classes.
  */
-
-#include "../Include/WorldObjects.h"
+#include "../Include/Globals.h"
 #include "../Include/Cameras.h"
 #include "../Include/Utility.h"
 #include "../Include/Ui.h"
-#include "../Include/Globals.h"
 #include "../Include/Fui.h"
 #include "../Include/TerrainTexture.h"
 #include "../Include/Airport.h"
+#include "../Plugin/Plugin.h"
 using namespace std;
 //==========================================================================
 class CCameraCockpit;
@@ -367,7 +366,7 @@ void CCamera::SetCameraParameters(double fv,double rt)
 {	ratio = rt;
 	fov   = fv;
 	//--- Compute tangent of near section ---------
-	tgf   = tan(DegToRad(fv * 0.4));
+	tgf   = tan(DegToRad(fv * 0.5));
 	return;
 }
 //-------------------------------------------------------------------------
@@ -424,16 +423,16 @@ void CCamera::SetReferential(SPosition &tgt)
 bool CCamera::GeoPosInFrustum(SPosition &P, CVector &R, char *T)
 {	bool in = true;
 	//--- Compute Vector from camera to Position -(in feet components)-----
-	CVector fwp = PJ + R;								// Relocate to point position
+	CVector fwp = PJ + R;								// Vector camera to point R
 	//--- Compute and test the forward coordinate -------------------------
-	double  yp  = fwp.DotProduct(Ry);
+	double  yp  = fwp.DotProduct(Ry);		// Y coordinate in camera ref
 	if (yp < nearP)			{	T[FTUM_REAR]++; in= false;}
 	//--- Compute and test the Up direction --------------------------------
-	double  zp		= fwp.DotProduct(Rz);
-	double  zlim  = yp * tgf * ffac;						// Limit in X direction
+	double  zp		= fwp.DotProduct(Rz);  // z coordinate in camera ref
+	double  zlim  = yp * tgf * ffac;						// Limit in Z direction
 	if (zp < -zlim)			{	T[FTUM_BELOW]++; in = false;}
 	if (zp >  zlim)			{ T[FTUM_ABOVE]++; in = false;}
-	//--- Compute and test the right direction ------------------------------
+	//--- Compute and test the side directions ------------------------------
 	double	xp		= fwp.DotProduct(Rx);
 	double  xlim  = zlim * ratio;
 	if (xp < -xlim)			{ T[FTUM_LEFT]++;		in = false; }
@@ -441,7 +440,9 @@ bool CCamera::GeoPosInFrustum(SPosition &P, CVector &R, char *T)
 	return in;
 }
 //-------------------------------------------------------------------------
-// Check for box in frustum 
+// Check for box in frustum
+//  The box is defined by the center position P and the vector B 
+//	for each extension
 //	ff is a flare factor to account for error when testing point in
 //	frustum
 //	NOTE:  Both P and B must have coordinates in arcsec
@@ -457,7 +458,7 @@ bool CCamera::BoxInFrustum(SPosition &P, CVector &B, double ff)
 	ffac	= ff;
 	PJ = FeetComponents(camPos,P,globals->rdf);
 	//--- Check corner 1 -------------------------
-	CVector c1(-T.x,-T.y,-T.z);
+  CVector c1(-T.x,-T.y,-T.z);
 	if (GeoPosInFrustum(P,c1,pos))	return true;
 	//--- Check corner 2 --------------------------
 	CVector c2(-T.x,-T.y,+T.z);
@@ -481,11 +482,13 @@ bool CCamera::BoxInFrustum(SPosition &P, CVector &B, double ff)
 	CVector c8(+T.x,+T.y,+T.z);
 	if (GeoPosInFrustum(P,c8,pos))	return true;
 	//--- Check if box is astride ------------------
+	
 	if (pos[FTUM_REAR]  == 8)		return false;
+	if (pos[FTUM_BELOW] == 8)		return false;
 	if (pos[FTUM_LEFT]  == 8)		return false;
 	if (pos[FTUM_RIGHT] == 8)		return false;
 	if (pos[FTUM_ABOVE] == 8)		return false;
-	if (pos[FTUM_BELOW] == 8)		return false;
+
 	//--- Box may be visible ------------------------------
 	//	NOTE: When we are here, then all parts are in front
 	//				but some are spread on different sides of the
@@ -931,7 +934,8 @@ void CCamera::Projection(VIEW_PORT &vp,U_INT xOBJ)
   glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   //----Set pre conditions ------------------------------------
   glViewport(vp.x0,vp.y0,wd,ht);
-  glColor4f(1,1,1,1);
+ // glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
   glDisable(GL_LIGHTING);
   glEnable  (GL_TEXTURE_2D);
   glDisable (GL_DEPTH_TEST);
@@ -2518,7 +2522,8 @@ void CCameraObject::DrawOnWin(VIEW_PORT &vp,CFuiWindow *win)
   glViewport(0,0,wd,ht);
   glClearColor(bCOL.R, bCOL.G, bCOL.B, bCOL.A);
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );  
-  glColor4f(1,1,1,1);
+  //glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
   //---Call draw function ------------------------------------------------
   win->DrawByCamera(this); 
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);      // Normal rendering
@@ -2538,7 +2543,8 @@ void CCameraObject::DrawOnWin(VIEW_PORT &vp,CFuiWindow *win)
   glDisable (GL_DEPTH_TEST);
   glViewport(vp.x0,vp.y0,vp.wd,vp.ht);
   //----Draw the Quad at screen position ---------------------
-  glColor4f(1,1,1,1);
+  //glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
   glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
   glPolygonMode(GL_FRONT,GL_FILL);
   glInterleavedArrays(GL_T2F_V3F,0,Pan);
@@ -2769,106 +2775,6 @@ void CCanva::WriteTexture()
   if (nzr) img.WriteBitmap(FIF_BMP,fn,wd,ht,buf);
   delete [] buf;
   return;
-}
-
-//================================================================================
-// CCameraDLL
-//
-// Additional cameras with DLL plugins
-//================================================================================
-CCameraDLL::CCameraDLL (Tag &camera_type_, const char *camera_name_, int &is_interior_camera_)
-: CCamera ()
-{
-  #ifdef _DEBUG
-    //TRACE ("--------------------------------------------------------");
-    //TRACE ("DLL CAMERA ...");
-  #endif
-  obj = NULL;
-  dll = NULL;
-  enabled = false;
-  //
-  camera_type = camera_type_;
-  strncpy (camera_name, camera_name_, FILENAME_MAX);
-  is_interior_camera = is_interior_camera_;
-  //
-  signature = camera_type;
-  Prepare ();
-  //
-  #ifdef _DEBUG
-    //TRACE ("CREATE DLL CAMERA");
-  #endif 
-  eyePos_.lat = eyePos_.lon = eyePos_.alt = 0.0;
-  eyeOri_.x = eyeOri_.y = eyeOri_.z = 0.0;
-  eyeOri_.p = eyeOri_.h = eyeOri_.r = 0.0;
-}
-
-CCameraDLL::~CCameraDLL (void)
-{
-#ifdef _DEBUG
-  //TRACE ("DELETE DLL CAMERA %p %p", obj, dll);
-  //TRACE ("--------------------------------------------------------");
-#endif
-  // sdk: cleanup objects = DLLDestroyObject // 
-  globals->plugins.On_DestroyObject (obj, dll); 
-}
-
-void CCameraDLL::Prepare (void)
-{
-  // sdk : test whether a dll is present
-  if (globals->plugins_num) {
-    void *test = globals->plugins.IsDLL (signature);
-    if (NULL == test) {
-      globals->plugins.On_DeleteAllObjects ();
-      globals->plugins.On_KillPlugins ();
-      char buf1 [8] = {0};
-      TagToString (buf1, signature); 
-      //TRACE ("test dll '%s' = %d", buf1, test);
-      gtfo ("failed to find a DLL for '%s'", buf1);
-    }
-    else {
-    dll = test;
-      globals->plugins.On_Instantiate_DLLCamera (signature,0,NULL);
-      obj = globals->plugins.GetDLLObject (signature);
-    }
-  }
-}
-
-
-void CCameraDLL::GetLookatPoint (SVector &v)
-{
-  v.x = v.y = v.z = 0.0;
-  glRotated (RadToDeg (eyeOri_.y), 0.0, 0.0, 1.0); // roll
-  glRotated (RadToDeg (eyeOri_.z), 0.0, 1.0, 0.0); // head
-  glRotated (RadToDeg (eyeOri_.x), 1.0, 0.0, 0.0); // pitch
-}
-
-void CCameraDLL::UpdateCamera (SPosition wPos, SVector tgtOri, float dT)
-{ tgtPos = wPos;
-  // only eyePos and eyeOri should be modified
-  globals->plugins.On_UpdateCamera (obj, &tgtPos, &tgtOri, &eyePos_, &eyeOri_, dT, dll);
-  //
-  offset = SubtractPositionInFeet (tgtPos, eyePos_);
-}
-
-Tag CCameraDLL::GetCameraType (void)
-{
-  return camera_type;
-}
-
-void CCameraDLL::GetCameraName (char* name, int maxLength)
-{
-  strncpy (name, camera_name, maxLength);
-}
-
-
-void CCameraDLL::SetObject (SDLLObject *object)
-{
-  obj = object;
-}
-
-void CCameraDLL::SetSignature (const long &sign)
-{
-  signature = sign;
 }
 
 //===================================================================================

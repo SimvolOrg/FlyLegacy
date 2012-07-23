@@ -1708,7 +1708,8 @@ void CPanel::Draw (CCameraCockpit *cam)
   }
 	
 	//--- Draw all bands -----------------------------------------------
-	glColor4f(0,0,0,1);
+	//glColor4f(0,0,0,1);
+	ColorGL(COLOR_BLACK_OPAQUE);
   glDisable(GL_LIGHTING);
   glDisable(GL_BLEND);
 	glDisable(GL_TEXTURE_2D);

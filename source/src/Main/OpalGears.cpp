@@ -27,6 +27,7 @@
 #include "../Include/OpalGears.h"
 #include "../Include/Collisions.h"
 #include "../Include/Fui.h"
+#include "../Include/TerrainUnits.h"
 using namespace std;
 //====================================================================================
 
@@ -58,7 +59,7 @@ CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
 #endif
   }
   bad_pres_resis = 0.0f;
-  side_whl_vel = rolling_force  = side_force      = 0.0f; 
+  banking  = 0; 
   glf.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
   gt_.type = opal::LOCAL_TORQUE;
 
@@ -133,6 +134,7 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
   glf.pos   = main_pos;
   //------------------------------------------------------
   //  Compute mass repartition coefficient
+	//	wheel_base is in meter
   //------------------------------------------------------
   double fac  = (gearData->ster)?(1):(0.5f);
   double base =  gearData->wheel_base;
@@ -141,6 +143,7 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
   //  Save the moment lever if this is a steering wheel
   //  Vm Distances are relative to CG in meters
   //------------------------------------------------------
+	gearData->masR = cMass;
   if (gearData->ster)
   { CVector Vm (0,ty,0);
     susp->StoreGearVM(Vm,cMass);
@@ -182,17 +185,6 @@ char CGearOpal::GCompression(char pp)
   if (lim && (mass > lim) )		return susp->GearShock(10);   // Gear destroyed
   //----Check for compression -(in feet) --------------------------
   double lim1 = -gearData->maxC;
-  ////
-  //#ifndef _DEBUG	
-  //{	FILE *fp_debug;
-	 // if(!(fp_debug = fopen("__DDEBUG_g.txt", "a")) == NULL)
-	 // {
-		//  int test = 0;
-		//  fprintf(fp_debug, "%f>%f %f<%f\n", mass, lim, wagl, lim1);
-		//  fclose(fp_debug); 
-  //}	}
-  //#endif
-  
   if (wagl < lim1)                        return susp->GearShock(1);    // Gear impaired
 	//--- Check for ground transition ------------------------------
   if (pp == 0)  susp->PlayTire(0);
@@ -258,6 +250,7 @@ void CGearOpal::VtForce_Timeslice (float dT)
 //* vLocalForce = local forces applied to the aircraft in body frame
 //* body frame : in lbs
 //-----------------------------------------------------------------------
+/*
 void CGearOpal::DirectionForce_Timeslice (float dT)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
   float steer_angle_rad = 0.0f;
@@ -271,41 +264,109 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
   }
   double wvel = fabs(vWhlVelVec.y);					// JS: wheel velocity
   susp->MoveWheelTo(wvel,dT);               // JS: Interface to wheel
-  side_whl_vel    = vWhlVelVec.x;
-	speed						= vWhlVelVec.y + fabs (vWhlVelVec.x);
+	speed						= vWhlVelVec.y;						//vWhlVelVec.y + fabs (vWhlVelVec.x);
   //--- process steering wheel ----------------------------------
   if (gearData->ster) {
-    double base = gearData->wheel_base;
+    double base = gearData->wheel_base;			// In meter
     // JS: Correction for bug in excessive rate turn ---------------------
-    double turn_rate   = speed * tan (steer_angle_rad) * base;      
+    double turn_rate   = speed * tan (steer_angle_rad) * base; 
     double lat_acc     = speed * (turn_rate + mveh->GetDifBrake());
     side_force         = lat_acc * mveh->GetMassInKgs() * gearData->stbl;
+		//--- Compute radius ----------------------------------------
+		double sind		= sin(steer_angle_rad);			// Sinus
+		double rturn	= (fabs(sind) < DBL_EPSILON)?(0):(base / sind); // Turn radius
+		side_force   *= fabs(rturn) * 0.5;
 		//---TRACE("GEAR turn %.4f",gearData->deflect);
     //-- turn nose wheel ----------------------------------------
     susp->TurnWheelTo(gearData->kframe);
     mveh->RazDifBrake();
   }
 	//--- Create torque with lateral force (only nose wheel)-------
-  gt_.vec.z = (opal::real)(side_force); /// K)      /* mass on a tricycle wheel*/;
+  gt_.vec.z = (opal::real)(side_force); /// K)      // mass on a tricycle wheel;
   //--- Very basic lateral bank simulation in steep turns -------
   gt_.vec.y = gt_.vec.z / (gearData->damR * gearData->maxC * damp_ground_rot); //
   //-------------------------------------------------------------
   gt_.duration = static_cast<opal::real> (dT);
-  phyM->addForce (gt_);
+  if (gearData->ster) phyM->addForce (gt_);
   local_velocity.x = static_cast<opal::real> (0.0f);
 	return;
 }
+*/
+//-----------------------------------------------------------------------
+//* compute the steering forces on the wheel with yaw
+//	1)	We compute the Angular velocity of turning:
+//			angv = f(speed,turn radius)
+//			turn radius is a function of the gear deflection and 
+//			distance between lateral wheels and nose wheel
+//	2) Additional angle is added from differential braking force
+//			add = f(DifBraking, steerCap) wherer sterCap is the maximum
+//			braking angle of the nose wheel
+//	3) Banking is simulated by adding a rolling force proportional
+//			to speed and turning angle so the aircarft may tip over if
+//			turning too much in high speed
+//	4) Animations are performed on 3D model
+//-----------------------------------------------------------------------
+
+void CGearOpal::DirectionForce_Timeslice (float dT)
+{ opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
+  double angr = 0.0f;
+  susp->MoveWheelTo(vWhlVelVec.y,dT);       // Animated 3D model wheel
+	speed				= vWhlVelVec.y;								// linear velocity in forward direction;
+	//--- Process node gear ------------------------------------------
+  double   angv   = 0;											// Angular velovcity
+  if (gearData->ster) {
+		//--- Compute keyframe for 3D model -----------------------------
+		float kfr = 0.5 * (1 + gearData->deflect);
+		gearData->kframe	= kfr;
+    //--- Get turning angle from steering ---------------------------
+    angr		= DegToRad (gearData->deflect * gearData->mStr); // JS * gearData->mStr * 5.0f);
+		//--- Add steering effect from differential brake ---------------
+		double dif_brk    = mveh->GetDifBrake() * gearData->mgsp->GetDifBraking();
+		double amp				= gearData->mStr * dif_brk / (2.8);  
+		angr							= WrapPiPi(angr + DegToRad(amp));
+		//--- process steering wheel ----------------------------------
+    double base		= gearData->wheel_base;			// In meter
+		double sind		= sin(angr);			// Sinus
+		double rturn	= (fabs(sind) < 0.0001)?(0):(base / sind); // Turn radius
+		angv		= (rturn == 0)?(0):(speed / rturn);
+		angv		= RadToDeg(angv) * gearData->stbl;
+		//--- Simulate banking on turn ---------------------------------
+    double turn_rate  = speed * tan (angr) * base;      
+    double lat_acc    = speed * turn_rate;
+    banking						= lat_acc * mveh->GetMassInKgs() * 0.25;
+		//---TRACE("GEAR turn %.4f",gearData->deflect);
+    //-- turn nose wheel in 3D model --------------------------------
+    susp->TurnWheelTo(gearData->kframe);
+    mveh->RazDifBrake();
+		//---Create banking force ---------------------------------------
+		gt_.vec.x = 0;
+		gt_.vec.z = 0;
+		gt_.vec.y = banking;
+		//--------------------------------------------------------------
+	  opal::Vec3r vec = phyM->getLocalAngularVel();
+		vec.z = angv;
+		phyM->setLocalAngularVel(vec);
+		local_velocity.x = static_cast<opal::real> (0.0f);
+	  //-------------------------------------------------------------
+		gt_.duration = static_cast<opal::real> (dT);
+		phyM->addForce (gt_);
+	}
+	return;
+}
+
 //-------------------------------------------------------------------------
 //  Display gear parameters
 //-------------------------------------------------------------------------
 void CGearOpal::Probe(CFuiCanva *cnv)
 { cnv->AddText(1,1,"OnGr: %d",gearData->onGd);
 	cnv->AddText(1,1,"sABS: %d",gearData->sABS);
-	cnv->AddText(1,1,"wagl: %.4f(ft)",gearData->wagl);
+	cnv->AddText(1,1,"wagl: %.4lf(ft)",gearData->wagl);
 	cnv->AddText(1,1,"powL: %.4f",gearData->powL);
-	cnv->AddText(1,1,"imPW: %.4f(flbs)",gearData->imPW);
+	cnv->AddText(1,1,"imPW: %.4lf(flbs)",gearData->imPW);
 	cnv->AddText(1,1,"dflect:%.4f",gearData->deflect );
-	cnv->AddText(1,1,"amor: %.4f",gearData->amor);
+	cnv->AddText(1,1,"Banking: %.4lf",banking);
+	cnv->AddText(1,1,"Torque: %.4lf",torque);
+	cnv->AddText(1,1,"AngVel: %.4lf",gearData->angv);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -317,7 +378,7 @@ void CGearOpal::ProbeBrake(CFuiCanva *cnv)
 	//---Break force -----------------------------
   cnv->AddText(1,1,"bdif:  %.04f",mveh->GetDifBrake());
   //--- Acceleration ----------------------------
-  cnv->AddText(1,1,"sideF:  %.04f",side_force);
+  cnv->AddText(1,1,"Bank:  %.04f",banking);
 	//--- Table ----------------------------
   cnv->AddText(1,1,"stbl:  %.04f",gearData->stbl);
   //--- Torque ----------------------------
@@ -364,25 +425,25 @@ void CGearOpal::ProbeBrake(CFuiCanva *cnv)
 //---------------------------------------------------------------
 void CGearOpal::BrakeForce(float dT)
 {	opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
-	//--- pedal force -----------------------------------------
+	//--- pedal force -------------------------------------------
 	char  side  = gearData->Side;
   float btbl  = gearData->btbl;                 // Gear coefficient
-  float force = mveh->GetBrakeForce(side) * btbl * 1.2f;
-	//--- compute brake force ---------------------------------
+  float pedal = mveh->GetBrakeForce(side) * btbl * 1.2f;
+	//--- compute total brake force -----------------------------
 	CSimulatedVehicle *svh = mveh->svh;
 	double ac = svh->GetBrakeAcceleration();			// acceleration
 	double ms = cMass * mveh->GetMassInLbs();			// Mass in pounds
 	double bf = -(ac) * ms;												// foot-pound-sec
-	//--- Is proportional to pedal ----------------------------
-	bf *= force;
-	//--- Check velocity -------------------------------------
+	//--- Is proportional to pedal and repartion among wheels ---
+	bf *= pedal * gearData->repBF;
+	//--- Check velocity ----------------------------------------
 	double lv  = local_velocity.y;				
-	if (fabs(lv) < 0.001) lv = 0;
-	if (lv <= 0)	bf = -bf;
-	gearData->brakF	= bf;													// Brake force to apply
-		//--- Compute a torque value to add to steering one -----
-	double  dfb   = (bf * 0.05 * gearData->bPos.x) / ms;
-	mveh->AddDifBrake(dfb);
+	if (fabs(lv) < 0.01) {lv = 0; bf = 0;}
+	if (lv < 0)	bf = -bf; 
+	//--- Save force to apply  ----------------------------------
+	gearData->brakF	= (gearData->brak)?(bf):(0);		// Brake force to apply
+	// compute differential force -----------------------------
+	mveh->AddDifBrake(pedal * gearData->sideF);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -516,8 +577,8 @@ void CTailGearOpal::VtMoment_Timeslice (void)
  * COpalSuspension
  */
 //============================================================================================
-COpalSuspension::COpalSuspension (CVehicleObject *v,char *name, CWeightManager *wgh, char tps)
-: CSuspension(v,name,wgh,tps)
+COpalSuspension::COpalSuspension (CVehicleObject *v, COpalGroundSuspension *mgsp, char *nm, CWeightManager *wgh, char tps)
+: CSuspension(v,mgsp,nm,tps)
 { 
 }
 
@@ -597,24 +658,17 @@ void COpalSuspension::Timeslice (float dT)
  * see copyright
  */
 //=====================================================================================
-COpalGroundSuspension::COpalGroundSuspension (CVehicleObject *v,char* name,  CWeightManager *wgh)
-:CGroundSuspension(v,name,wgh)
+COpalGroundSuspension::COpalGroundSuspension(CVehicleObject *v,CWeightManager *wgh)
+:CGroundSuspension(v,wgh)
 //--- Init specific parameters -------------------------------------
 {
-#ifdef _DEBUG
-  DEBUGLOG ("Starting COpalGroundSuspension");
-#endif
-  max_wheel_height_backup = 0.0;
+  max_wheel_H = max_wheel_height;
 }
 //-----------------------------------------------------------------
 //  Destroy this object
 //-----------------------------------------------------------------
 COpalGroundSuspension::~COpalGroundSuspension (void)
-{ 
-#ifdef _DEBUG
-  DEBUGLOG ("COpalGroundSuspension::~COpalGroundSuspension");
-#endif
-}
+{ }
 //-----------------------------------------------------------------
 //  Read All Tags
 //-----------------------------------------------------------------
@@ -623,44 +677,14 @@ int COpalGroundSuspension::Read (SStream *stream, Tag tag)
   int rc = TAG_IGNORED;
 
   switch (tag) {
-  case 'rMas':
-    // rated mass (slugs)
-    ReadFloat (&rMas, stream);
-    whm->whl_rmas = rMas;
-    return TAG_READ;
-  //---JS decode suspension type -------------------------
-  case 'type':
-    { char txt[64];
-      ReadString(txt,64,stream);
-      if (strcmp(txt,"TRICYCLE")      == 0) type = TRICYCLE;
-      if (strcmp(txt,"TAIL_DRAGGER")  == 0) type = TAIL_DRAGGER;
-      if (strcmp(txt,"SNOW")          == 0) type = SNOW;
-      if (strcmp(txt,"SKIDS")         == 0) type = SKIDS;
-      return TAG_READ;
-    }
-    //--JS decode steering table -------------------------------
-  case 'stbl':                              
-    { CDataSearch map(stream);
-      mstbl = map.GetTable(); 
-      return TAG_READ;
-    }
-    //--LC decode brake table -------------------------------
-  case 'btbl':                              
-    { CDataSearch map(stream);
-      mbtbl = map.GetTable();
-      return TAG_READ;
-    }
   case 'susp':
     // a suspension object
     char susp_[64], susp_type[8], susp_name[56];
     ReadString (susp_, 64, stream);
-#ifdef _DEBUG
-    DEBUGLOG ("COpalGroundSuspension::Read %s", susp_);
-#endif
     if (sscanf (susp_, "%s %s", susp_type, susp_name) == 2) {
       if (!strcmp (susp_type, "whel")) {
         //////////////////////////////////////////////////
-        CSuspension *susp = new COpalSuspension (mveh,susp_name, whm, type); //  default
+        CSuspension *susp = new COpalSuspension (mveh,this,susp_name, whm, type); //  default
         //////////////////////////////////////////////////
         ReadFrom (susp, stream);
         whl_susp.push_back (susp);
@@ -674,12 +698,9 @@ int COpalGroundSuspension::Read (SStream *stream, Tag tag)
       } 
       WARNINGLOG ("COpalGroundSuspension::Read : bad susp type");
       return TAG_READ;
-    }
-  }
-
-    // Tag was not processed by this object, it is unrecognized
-  WARNINGLOG ("COpalGroundSuspension::Read : Unrecognized tag <%s>", TagToString(tag));
-  return TAG_IGNORED;
+		}
+	}
+  return CGroundSuspension::Read(stream,tag);
 }
 //------------------------------------------------------------------------
 //  All parameters are read.  Finalize
@@ -690,44 +711,21 @@ void COpalGroundSuspension::ReadFinished (void)
   DEBUGLOG ("COpalGroundSuspension::ReadFinished");
 #endif
   CGroundSuspension::ReadFinished ();
+	
   double base = FN_METRE_FROM_FEET(wheel_base);
   std::vector<CSuspension *>::const_iterator it_whel; 
   for (it_whel = whl_susp.begin (); it_whel != whl_susp.end (); it_whel++) {
     CSuspension *ssp = (CSuspension *)(*it_whel);
     ssp->SetWheelBase(base);
     ssp->InitGearJoint (type,this);
-  }
 
- //------------------------------------------------------------------------
- //JS note: This table is used to modulate the Brake force versus 
- //        ground speed.  Brake force  must decrease with speed
- //------------------------------------------------------------------------
- if (0 == mbtbl) 
- { // Brake force turn table
-    CFmt1Map *map = new CFmt1Map();
-    mbtbl  = map;
-    map->Add(00.0f, 1.0f);
-    map->Add(30.0f, 0.7f);
-    map->Add(45.0f, 0.5f);
-    map->Add(60.0f, 0.3f);
-    map->Add(90.0f, 0.1f);
   }
-  //------------------------------------------------------------------------
- //JS note: This table is used to modulate the steering force versus 
-  //        ground speed.  steering must decrease with speed
-  //------------------------------------------------------------------------
-  if (0 == mstbl) 
-  { // Ground speed turn table 
-    CFmt1Map *map = new CFmt1Map();
-    mstbl   = map;
-    map->Add(00.0f, 5.00f);
-    map->Add(05.0f, 2.00f);
-    map->Add(10.0f, 1.50f);
-    map->Add(20.0f, 0.50f);
-    map->Add(90.0f, 0.01f);
-  }
+	
  return;
 }
+//------------------------------------------------------------------------
+//	Gear is down
+//------------------------------------------------------------------------
 
 //------------------------------------------------------------------------
 //  JS to LC: Removed brake force from wheel definition as it is
@@ -739,37 +737,33 @@ void COpalGroundSuspension::Timeslice (float dT)
   /// engine & aerodynamics cycle
   if (!globals->simulation) return;
   nWonG   = 0;      // No wheels on ground
-  SumGearMoments.x = 0.0;
-  SumGearMoments.y = 0.0;
-  SumGearMoments.z = 0.0;
+	SumGearMoments.Raz();
   //--- Compute velocity in Miles per Hours ---------
   double vt = (mveh->GetBodyVelocityVector ())->z;
   double velocity = NMILE_PER_METRE_SEC(vt);
   float fstbl = mstbl->Lookup (velocity); // 1.0f;
   float fbtbl = mbtbl->Lookup (velocity); // 1.0f;
 
-  std::vector<CSuspension *>::const_iterator it_whel;
-  //-- Check for gear position ----------------------
-  if (mveh->lod->AreGearRetracted())
-  { max_wheel_height_backup = max_wheel_height;
-    max_wheel_height = 0.0;
-  }
-  if (mveh->lod->AreGearDown())
-  { max_wheel_height = max_wheel_height_backup;
-  }
-  //
-  for (it_whel = whl_susp.begin (); it_whel != whl_susp.end (); it_whel++) {
+  std::vector<CSuspension *>::const_iterator rw;
+  for (rw = whl_susp.begin (); rw != whl_susp.end (); rw++) {
     // is it a steering wheel ?
-    CSuspension *ssp = (CSuspension*)(*it_whel);
+    CSuspension *ssp = (*rw);			//(CSuspension*)(*rw);
 		SGearData *gdt	= ssp->GetGearData();
 		gdt->stbl				= fstbl;
 		gdt->btbl				= fbtbl;
-    if (mveh->lod->AreGearDown()) { /// this is the completely extended gear position
-      if (ssp->IsSteerWheel ()) mveh->GetGearChannel(gdt);
-      // ... and finally timeslice
+		//--- Process gear down ----------------------------
+    if (mveh->lod->AreGearDown()) 
+		{ /// this is the completely extended gear position
+			max_wheel_height = max_wheel_H;
+      if (ssp->IsSteerWheel ()) mveh->SetRudderDeflection(gdt);
       ssp->Timeslice (dT);
       if (ssp->IsOnGround()) nWonG++;
     }
+		//--- Process Gear retracted -----------------------
+		if (mveh->lod->AreGearRetracted())
+		{ max_wheel_H = max_wheel_height;
+			max_wheel_height = 0.0;
+		}
   }
 
   /// All the computation below is LH

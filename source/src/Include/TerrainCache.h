@@ -39,14 +39,13 @@
 //=============================================================================
 #define QUAD_RESOLUTION (64)
 //=============================================================================
-#include "../Include/FlyLegacy.h"
-#include "../Include/Model3D.h"
+#include "../Include/Globals.h"
 #include "../Include/FileThread.h"
 #include "../Include/TerrainUnits.h"
 #include "../Include/TerrainData.h"
 #include "../Include/GeoMath.h"
 #include "../Include/3dMath.h"
-#include "../Include/BlackBox.h"
+#include "../Include/Model3D.h"
 #include <map>
 //=============================================================================
 class CTerraFile;

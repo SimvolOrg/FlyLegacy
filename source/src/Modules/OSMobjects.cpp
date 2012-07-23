@@ -26,6 +26,7 @@
 #include "../Include/RoofModels.h"
 #include "../Include/Terraintexture.h"
 #include "../Include/fileparser.h"
+#include "../Include/SqlMGR.h"
 //===============================================================================
 //	Script to create an OSM datatbase from scratch
 //===============================================================================
@@ -929,7 +930,8 @@ void OSM_Object::DrawAsDBLE()
 //	Draw Tour
 //-----------------------------------------------------------------
 void OSM_Object::DrawBase()
-{ glColor4f(1,1,1,1);
+{ //glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_LINE_LOOP);
 	for (D2_POINT *pp=base.GetFirst(); pp != 0; pp = pp->next)
@@ -1040,4 +1042,145 @@ void OSM_Object::Write(FILE *p)
 	(this->*writeOSM[bvec])(p);
 	return;
 }
+//==================================================================================
+//
+//	SQL FUNCTIONS RELATED  to OSM
+//
+//==================================================================================
+//--------------------------------------------------------------------
+//  Close requested database
+//--------------------------------------------------------------------
+void *SqlOBJ::CloseOSMbase(SQL_DB *db)
+{	db->ucnt--;
+	if (db->ucnt > 0)				return db;
+	//---  Close database and delete all resources ----------
+	TRACE("SQL %d Close OSM database %s",sqlTYP,db->path);
+	sqlite3_close(db->sqlOB);
+	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(db->path);
+	if (rb != dbase.end())	dbase.erase(rb);
+	delete db;
+	return 0;
+}
+//--------------------------------------------------------------------
+//	Read OSM QGT
+//--------------------------------------------------------------------
+void SqlOBJ::GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj)
+{	int rep = 0;
+  char *req = "SELECT * FROM QGT;*";
+	sqlite3_stmt * stm = CompileREQ(req,db);
+	//---Bind Key as primary Key ---------------------
+	while (SQLITE_ROW == sqlite3_step(stm))
+    { U_INT key = sqlite3_column_int(stm,0);
+      if (fun)  fun(key,obj);			// Callback with key
+    }
+	return;
+}
+//--------------------------------------------------------------------
+//	Read OSM layer
+//	NOTE:		Filter on Max Objects to load is done here by dividing the
+//					object identity by 100 and checking the rest against the
+//					percentile allowed
+//--------------------------------------------------------------------
+int SqlOBJ::LoadOSM(OSM_DBREQ *rdq)
+{ int			rep		= 0;
+	char		req[1024];
+	char		nbs   = 0;
+	SQL_DB  *db		= rdq->dbd;								// Database involved
+	C_QGT  *qgt		= rdq->qgt;								// QGT requestor
+	U_INT   sno		= rdq->sNo;								// SuperTile number
+	char   *msk		= "SELECT * FROM OSM_OBJ WHERE ((QGT = %u) AND (SupNo = %d) AND (Ident > %u) );*";
+	_snprintf(req,1024,msk,qgt->FullKey(),sno, rdq->ident);
+	sqlite3_stmt * stm = CompileREQ(req,*db);
+	C3DPart *part = 0;			// Current part
+	U_INT		 typ  = 0;			// Object type
+	U_INT    nbo  = 0;			// Number of loaded objects
+	//----------------------------------------------------------------------
+  while (SQLITE_ROW == sqlite3_step(stm))
+    { rdq->ident		= sqlite3_column_int(stm,0);					// Last identity
+			U_INT  rst		= rdq->ident % 100;										// Modulo 100
+			if (rst >= globals->osmMX)			continue;						// Eliminate
+			typ						= sqlite3_column_int(stm,2);					// Type
+			if (0 == GetOSMUse(typ))				continue;						// Not loaded
+			//--- Add this object on its layer -----------------------------
+			U_INT  lay = sqlite3_column_int(stm,3);							// OSM layer
+			char	 dir = sqlite3_column_int(stm,5);							// Directory
+			char	*ntx = (char*)sqlite3_column_text(stm,6);			// Texture name
+			//--- Extract data ----------------------------------------------
+			int nbv		 = sqlite3_column_int(stm,7);									// Nber vertices
+			GN_VTAB  *src = (GN_VTAB*) sqlite3_column_blob(stm,9);	// BLOB
+			qgt->ExtendOSMPart(sno,dir, ntx,lay, nbv, src);
+			nbo++;																							// Increment loaded supertile
+    }
+    //-----Close request ---------------------------------------------------
+    sqlite3_finalize(stm);
+    return nbo;
+}
+
+//--------------------------------------------------------------------
+//	Update OSM object: Update Texture table
+//--------------------------------------------------------------------
+void SqlOBJ::UpdateOSMqgt(SQL_DB &db,U_INT key)
+{	int rep = 0;
+  char *req = "INSERT or REPLACE into QGT VALUES (?1);*";
+	sqlite3_stmt * stm = CompileREQ(req,db);
+	//---Bind Key as primary Key ---------------------
+	rep = sqlite3_bind_int(stm, 1,key);
+  if (rep != SQLITE_OK)   Warn2(db,rep);
+	//--- Execute statement--------------------------------------------------
+  rep      = sqlite3_step(stm);               // Insert value in database
+  if (rep != SQLITE_DONE) Warn2(db,rep);
+  sqlite3_finalize(stm);                      // Close statement
+	return;
+}
+//--------------------------------------------------------------------
+//	Update OSM object
+//--------------------------------------------------------------------
+void SqlOBJ::UpdateOSMobj(SQL_DB &db, OSM_Object *obj, GN_VTAB *tab)
+{ int			rep	 = 0;
+	char		dir  = 0;
+	char	 *tnam = obj->TextureData(dir);
+	D2_BPM     &bpm		= obj->GetParameters();
+	SPosition   pos = obj->GetPosition();
+	C3DPart    *prt = obj->GetPart();
+	char *req = "INSERT or REPLACE into OSM_OBJ "
+								"VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10);*";
+	sqlite3_stmt * stm = CompileREQ(req,db);
+	//---Bind Object identity as primary Key ---------------------
+	rep = sqlite3_bind_int(stm, 1,obj->GetIdent());
+  if (rep != SQLITE_OK)   Warn2(db,rep);
+	//---Bind QGT key as parameter 2 -----------------------------
+	rep = sqlite3_bind_int(stm, 2,obj->GetKey());
+  if (rep != SQLITE_OK)   Warn2(db,rep);
+	//---Bind Type as parameter 3 --------------------------------
+	rep = sqlite3_bind_int(stm, 3,obj->GetType());
+  if (rep != SQLITE_OK)   Warn2(db,rep);
+	//---Bind Layer as parameter 4 -------------------------------
+	rep = sqlite3_bind_int(stm, 4,obj->GetLayer());
+	if (rep != SQLITE_OK)   Warn2(db,rep);
+	//---Bind SuperTile No as parameter  5 -----------------------
+	rep = sqlite3_bind_int(stm, 5,obj->GetSupNo());
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//---Bind texture directory as parameter 6 --------------------
+	rep = sqlite3_bind_int(stm, 6,dir);
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//---Bind texture name as parameter 7 -------------------------
+  rep = sqlite3_bind_text(stm,7,tnam,-1,SQLITE_TRANSIENT);
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//---Bind Number of vertices as parameter 8 -------------------
+	rep = sqlite3_bind_int(stm, 8,prt->GetNBVTX());
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//---Bind size of vertice blob as parameter 9 -----------------
+	int dim = prt->GetNBVTX() * sizeof(GN_VTAB);
+	rep = sqlite3_bind_int(stm, 9,dim);
+  if (rep != SQLITE_OK)		Warn2(db,rep);
+	//--- Bind Strip of vertice as parameter 10 ---------------------
+	rep = sqlite3_bind_blob(stm,10,tab, dim, SQLITE_TRANSIENT);
+	if (rep != SQLITE_OK)		Warn2(db,rep);
+	//--- Execute statement--------------------------------------------------
+  rep      = sqlite3_step(stm);               // Insert value in database
+  if (rep != SQLITE_DONE) Warn2(db,rep);
+  sqlite3_finalize(stm);                      // Close statement
+	return;
+}
+
 //====================== END OF FILE ============================================

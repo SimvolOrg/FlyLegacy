@@ -30,18 +30,15 @@
  *   the implementation of related classes such as CGaugeNeedle,
  *   CGaugeClickArea, etc.
  */
-
-#include "../Include/FlyLegacy.h"
+#include "../Include/Globals.h"
 #include "../Include/Gauges.h"
 #include "../Include/Ui.h"
-#include "../Include/Globals.h"
 #include "../Include/Subsystems.h"
 #include "../Include/Fui.h"
 #include "../Include/AudioManager.h"
 #include "../Include/CursorManager.h"
 #include "../Include/Weather.h"
 #include "../Include/database.h"
-#include "../Include/WorldObjects.h"
 #include "../Include/PlanDeVol.h"
 #include "../Include/BendixKing.h"
 #include "../Include/Atmosphere.h"
@@ -203,7 +200,7 @@ CK89gps::CK89gps (CVehicleObject *v,CK89gauge *g)
   Gauge   = g;
   radi    = 0;
   aState  = K89_PWROF;
-  Mode    = GPS_MODE_FPLAN;                      // Base mode
+  Mode    = WPT_MODE_FPLAN;                      // Base mode
   powr    = 0;
   rGPS    = globals->dbc->GetGPSrequest();
   vState  = K89_VNA_OFF;
@@ -2099,14 +2096,14 @@ int CK89gps::LeaveDIRmode()
 int CK89gps::SetDIRwaypoint()
 { //--- Check for real waypoint ------------------------------------
 	if (dirWPT.Assigned())
-	{	PushMode(GPS_MODE_DIRECT);
+	{	Mode = WPT_MODE_DIRECT;
 		FPL->AssignDirect(dirWPT.Pointer());
 		actWPT	   = dirWPT.Pointer();
 		dirWPT  = 0;
 	}
 	else
-	{ PopMode();
-		if (Mode == GPS_MODE_FPLAN) FPL->RestoreNode();
+	{ Mode = WPT_MODE_FPLAN;
+		FPL->RestoreNode();
 	}
   //--In both cases, VNAV is not valid anymore ---------------------
   InitVnavWPT();                        // Reset VNAV
@@ -2778,7 +2775,7 @@ int CK89gps::ALTpage02(K89_EVENT evn)
         return 1;
     //------FD2 Change cursor. Except if not a FPL waypoint ---
     case K89_FD2:
-        if (IsDirectMode()) return 1;
+        if (Mode == WPT_MODE_DIRECT) return 1;
         curPOS  = 2;
         return GetNextALTWaypoint();
     //------FD3 Change cursor ---------------------------------
@@ -3040,7 +3037,7 @@ int CK89gps::ChangeALTcursor()
       curPOS--;
       break;
   }
-  if ((2 == curPOS) && (IsDirectMode())) curPOS += msDIR;
+  if ((2 == curPOS) && (Mode == WPT_MODE_DIRECT)) curPOS += msDIR;
   return 1;
 }
 //=============================================================================
@@ -3630,21 +3627,6 @@ int CK89gps::PushContext()
   sBuf.HndNO    = HndNO;
   CopyDisplay(Display,sBuf.Display);
   return 1;
-}
-//----------------------------------------------------------------------------
-//	Push actual mode
-//----------------------------------------------------------------------------
-void CK89gps::PushMode(U_CHAR m)
-{	pMod = Mode;
-	Mode = m;
-	return;
-}
-//----------------------------------------------------------------------------
-//	Pop actual mode
-//----------------------------------------------------------------------------
-void CK89gps::PopMode()
-{	Mode = pMod;
-	pMod = 0;
 }
 //----------------------------------------------------------------------------
 //  Restore previous context
@@ -4239,11 +4221,10 @@ CWPoint *CK89gps::SelectedNode()
 //---------------------------------------------------------------------
 void CK89gps::ModifiedPlan()
 {	FPL     = mveh->GetFlightPlan();
-	Mode		= GPS_MODE_FPLAN;
 	actWP		= FPL->GetActiveNode();
 	basWP		= FPL->HeadNode();									// Base waypoint
   fpMax   = FPL->Size();
-	TrackWaypoint(actWP,false);
+	TrackWaypoint(actWP,WPT_MODE_FPLAN);
 	return;
 }
 //----------------------------------------------------------------------------------
@@ -4278,13 +4259,13 @@ void GPSRadio::EnterTRK()
 //	Otherwise, the next waypoint from the flight plan or 0
 //
 //---------------------------------------------------------------------
-void CK89gps::TrackWaypoint(CWPoint *wpt,bool endir)
+void CK89gps::TrackWaypoint(CWPoint *wpt,char mode)
 {	actWP	= wpt;														// Save it
 	UpdNavigationData(wpt);
 	prvIDN		= FPL->PreviousIdent(wpt);
 	insDIS		= FPL->GetInDIS();
 	//--- Check for end of DIRECT TO mode -------------
-	if (endir)	PushMode(GPS_MODE_FPLAN);
+	Mode = mode;
 	//--- Now assign the active waypoint --------------
 	actWPT = (wpt)?(wpt->GetDBobject()):(0);
 	if (0 == wpt)		return;									// Ignore it
@@ -4481,21 +4462,6 @@ float GPSRadio::SelectDirection()
   return wTRK->GoDirect(mveh);
 }
 //--------------------------------------------------------------
-//	Refresh direction to waypoint if needed
-//	Correct any drift due to long legs
-//--------------------------------------------------------------
-void GPSRadio::Refresh()
-{	float dev = RAD->GetDeviation();
-	float rdv = fabs(dev);
-	bool  dto = ((rdv > 5) || (wTRK->IsDirect()));
-	//--- check if Direct to is active ----------
-	if (!dto)	return; 
-  float dir = wTRK->GoDirect(mveh);
-	RAD->ChangePosition(wTRK->GetGeoP());
-	RAD->ChangeRefDirection(dir);
-	return;
-}
-//--------------------------------------------------------------
 //	Go back to standby mode
 //	Relax Radio BUS
 //	Go back to radio mode
@@ -4544,7 +4510,7 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 		case GPSR_TRAK:
 			if (APL->IsDisengaged())	EnterSBY();
 			if (0 == wTRK)						return;
-			if (wTRK->IsActive())	    return Refresh();
+			if (wTRK->IsActive())	    return wTRK->CorrectDrift(RAD,mveh);		//Refresh();
 			SetTrack();
 			return;
 		//--- Just watch the auto pilot ------------

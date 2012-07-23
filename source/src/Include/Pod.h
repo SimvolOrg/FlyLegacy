@@ -39,7 +39,7 @@
 #include <set>
 #include <string>
 #include "../Include/FlyLegacy.h"
-#include "LogFile.h"
+#include "../Include/LogFile.h"
 //================================================================================================
 #ifdef _MSC_VER
 #pragma warning( disable : 4786 )
@@ -98,7 +98,8 @@ typedef enum {
 //   POD archive file within a pod filesystem.  The podList member of the PFS
 //   struct is composed a list of these structs.
 //
-typedef struct {
+struct PFSPOD {
+	char					mem[4];					// memory foot print
 	unsigned int  users;					// Users count
   char          name[PATH_MAX]; // Full path and filename of the POD
   EPodFormat    format;         // Specific POD format
@@ -111,7 +112,9 @@ typedef struct {
 
   FILE*       file;           // FILE*
   int         refs;           // Number of active references to the POD
-} PFSPOD;
+	//--------------------------------------------------------------------
+	PFSPOD() {strncpy(mem,"SPOD",4);}
+};
 
 //==================================================================================
 // The following structure summarizes information about a single file within
@@ -121,6 +124,7 @@ typedef struct {
 //   recorded.
 //==================================================================================
 struct PFSPODFILE {
+	char					mem[4];												// memory foot print
 	unsigned int  user;													// User count
   PFSPOD*       pod;                          // Reference to containing POD
   char          name[POD_FILENAME_LENGTH+1];  // Name of file within the POD
@@ -130,7 +134,7 @@ struct PFSPODFILE {
   unsigned int  checksum;                     // Checksum
   unsigned int  priority;                     // Mount priority
 	//----------------------------------------------------------------------
-	PFSPODFILE::PFSPODFILE()	{user = 0;}
+	PFSPODFILE::PFSPODFILE()	{user = 0; strncpy(mem,"podF",4);}
 	void		PFSPODFILE::IncUser()			{user++;}
 	void		PFSPODFILE::DecUser()			{user--; if (0 == user) delete this;}
 	bool		PFSPODFILE::NoUser()			{return (user == 0);}
@@ -175,7 +179,8 @@ typedef struct {
 //   disk file; the application should not care where the file is stored.  All
 //   POD filesystem functions operate using pointers to this struct type.
 //=====================================================================================
-typedef struct {
+struct PODFILE {
+	char						mem[4];				// Memory foot print
   char            fullFilename[PATH_MAX];   ///< Full filename for DISK files
   char            filename[PATH_MAX]; // Relative filename
   EContentSource  source;       // Source for file, either disk or POD
@@ -195,7 +200,8 @@ typedef struct {
   long      back;               // This is the position to come back when requested
   //-----------------------------------------------------------------------------------
 public:
-} PODFILE;
+	PODFILE() {strncpy(mem,"FPOD",4);}
+};
 
 //================================================================================================
 //	Function prototype for file processing

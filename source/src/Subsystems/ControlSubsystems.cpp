@@ -27,6 +27,7 @@
 #include "../Include/Joysticks.h"
 #include "../Include/Fui.h"
 #include "../Include/AnimatedModel.h"
+#include "../Include/WinTaxiway.h"
 #include "../Include/Gauges.h"
 using namespace std;
 //=================================================================================
@@ -287,7 +288,37 @@ CRudderControl::CRudderControl (void)
 {
   TypeIs (SUBSYSTEM_RUDDER_CONTROL);
   oADJ  = 1;
-  macrd  = 0;
+  macrd = 0;
+	pidK	= 0.0005;
+	pidD	= 0.0;
+	pidI	= 0.0;
+
+}
+//--------------------------------------------------------------------------------
+//  Read PID parameters 
+//--------------------------------------------------------------------------------
+int CRudderControl::Read(SStream * stream, Tag tag)
+  { 
+    switch(tag)
+    {	case 'pidK':  
+				ReadDouble(&pidK,stream);
+				return TAG_READ;
+		case 'pidD':
+				ReadDouble(&pidD,stream);
+				return TAG_READ;
+		case 'pidI':
+				ReadDouble(&pidI,stream);
+				return TAG_READ;
+		}
+		return CAeroControl::Read(stream, tag);
+}
+//--------------------------------------------------------------------------------
+//  Set PID coefficients
+//--------------------------------------------------------------------------------
+void	CRudderControl::SetCoef(CPIDbox *B)
+{	B->SetCoef(pidK,pidI,pidD);
+	B->SetMini(-20);
+	B->SetMaxi(+20);
 }
 //--------------------------------------------------------------------------------
 //  Adjust the raw value by banking factor if one is defined
@@ -370,17 +401,12 @@ void CEngineControl::Monitor(Tag tag)
 //  For mono engine default unit is always 1
 //-------------------------------------------------------------------------
 bool CEngineControl::MsgForMe (SMessage *msg)
-{ bool me = false;
-  if (msg) {
-    bool matchGroup = (msg->group == unId);
-    bool engnNull   = (msg->user.u.engine == 0);
-    bool engnMatch  = (msg->user.u.engine == eNum);
-    bool unitNull   = (msg->user.u.unit   == 0);
-    bool unitMatch  = (msg->user.u.unit   == uNum);
-    me = (matchGroup && (engnNull || engnMatch) && (unitNull || unitMatch));
-  }
-
-  return me;
+{ bool matchGroup = (msg->group == unId);
+  bool engnNull   = (msg->user.u.engine == 0);
+  bool engnMatch  = (msg->user.u.engine == eNum);
+  bool unitNull   = (msg->user.u.unit   == 0);
+  bool unitMatch  = (msg->user.u.unit   == uNum);
+  return (matchGroup && (engnNull || engnMatch) && (unitNull || unitMatch));
 }
 //-------------------------------------------------------------------------
 //  Receive a message
@@ -1842,8 +1868,9 @@ int CBrakeControl::Decr (char pos,float rt)
 //-------------------------------------------------------------------------------
 // Swap Parking position
 //-------------------------------------------------------------------------------
-void CBrakeControl::SwapPark()
-{ Park ^= 1;
+void CBrakeControl::SwapPark(U_CHAR opt)
+{ if (opt)	{Park = 1;	return;}
+	Park ^= 1;
   if (gage)  gage->SubsystemCall(this,Park);
   return;
 }
@@ -1977,8 +2004,7 @@ CAileronTrimControl::CAileronTrimControl (void)
 // CGearControl
 //================================================================================
 CGearControl::CGearControl (void)
-{
-  TypeIs (SUBSYSTEM_GEAR_CONTROL);
+{ TypeIs (SUBSYSTEM_GEAR_CONTROL);
   hwId  = HW_OTHER;
   hydr  = 0;
   lock  = 0;
@@ -2018,15 +2044,17 @@ void CGearControl::ReadFinished()
 //------------------------------------------------------------
 void CGearControl::Swap()
 { Pos ^= 1;
-  ChangePosition();
+  RotateGear();
 }
 //--------------------------------------------------------------------------------
 //  Change Status
 //  Send a request to the LOD model.  
-//  NOTE:  The LOD model expect a request with postion inverted i.e 0 is Down
-//-TODO: Check power status if needed
+//  NOTE:  The LOD model expects a request with position inverted 
+//	0 => Gear is Down
+//	1^=> Gear is Up
+//
 //---------------------------------------------------------------------------------
-void CGearControl::ChangePosition()
+void CGearControl::RotateGear()
 { CAnimatedModel *mlod = mveh->GetLOD();
   if (0 == mlod)    return;
   //----Request LOD to move gear -------
@@ -2051,7 +2079,7 @@ EMessageResult CGearControl::ReceiveMessage (SMessage *msg)
           { int old = Pos;
             if (msg->dataType == TYPE_INT)  Pos = msg->intData;
             if (msg->dataType == TYPE_REAL) Pos = int(msg->realData);
-            if (old != Pos) ChangePosition();
+            if (old != Pos) RotateGear();
             return MSG_PROCESSED;
           }
         }
@@ -2414,4 +2442,235 @@ int COxygen::Read (SStream *stream, Tag tag)
 
   return rc;
 }
+//==========================================================================================
+//	CSpeedRegulator
+//==========================================================================================
+CSpeedRegulator::CSpeedRegulator()
+{	TypeIs (SUBSYSTEM_SPEED_REGULATOR); 
+  hwId  = HW_OTHER;
+	//--- Create the PID controller for speed-------------------------
+	sPID		= new CPIDbox(0,0);
+	sPID->SetCoef(0.3,0,0.05);
+	sPID->SetMini(0);
+	//--- Create the PID controller for rudder -----------------------
+	rPID		= new CPIDbox(0,0);
+	rPID->SetCoef(0.002,0,0.0f);
+	steer		= 0;
+	route		= 0;
+	limit		= 4;
+	//--- Init gaz message -------------------------------------------
+	msg.group						= SUBSYSTEM_THROTTLE_CONTROL;
+  msg.sender					= SUBSYSTEM_SPEED_REGULATOR;
+  msg.id							= MSG_GETDATA;
+  msg.dataType				= TYPE_REAL;
+	msg.user.u.datatag	= 'gets';       // throttle
+  msg.user.u.engine	= 1;
+	state								= 0;						// Inactive
+}
+//--------------------------------------------------------------------------------
+//	Get throttle adress
+//	NOTE: When  throttle for engine does not exist, messages are redirected
+//				to the 'null' subsystem, so no test is necessary.
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::GetThrottle(int u)
+{	msg.voidData = 0;
+  msg.receiver = 0;
+	msg.user.u.engine	= u + 1;
+	Send_Message(&msg);
+	thro[u]	= (CThrottleControl*)msg.voidData;
+	jsm			= globals->jsm;
+}
+//-----------------------------------------------------
+//  Read Parameters
+//------------------------------------------------------
+int CSpeedRegulator::Read (SStream *sf, Tag tag)
+{ double pm; 
+	switch (tag) {
+			//--- Rudder PID parameters --------------
+			case 'rdKP':							// Rudder PID KP
+				ReadDouble(&pm,sf);
+				rPID->SetKP(pm);
+				return TAG_READ;
+			case 'rdKD':							// Rudder PID KD
+				ReadDouble(&pm,sf);
+				rPID->SetKD(pm);
+				return TAG_READ;
+			case 'rdKI':							// Rudder pID KI
+				ReadDouble(&pm,sf);
+				rPID->SetKI(pm);
+				return TAG_READ;
+			//--- SPEED PID parameters --------------
+			case 'spdK':							// Speed PID KP
+				ReadDouble(&pm,sf);
+				sPID->SetKP(pm);
+				return TAG_READ;
+			case 'spdD':							// Speed PID KD
+				ReadDouble(&pm,sf);
+				sPID->SetKD(pm);
+				return TAG_READ;
+			case 'sdpI':							// Speed PID KI
+				ReadDouble(&pm,sf);
+				sPID->SetKI(pm);
+				return TAG_READ;
+			//--- Angle to speed converter ------
+			case 'angl':
+				angs.DecodeFMT1(sf);
+				return TAG_READ;
+			case 'dist':
+			//--- Ratio from distance ----------
+				srat.DecodeFMT1(sf);
+				return TAG_READ;
+			//--- Distance to reach position ---
+			case 'endp':
+				ReadDouble(&limit,sf);
+				return TAG_READ;
+	}
+	return TAG_IGNORED;
+}
+
+
+//--------------------------------------------------------------------------------
+//	Get throttle adress
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::PrepareMsg(CVehicleObject *veh)
+{	mveh	= veh;
+	//--- Get throttle controller ---------------
+	GetThrottle(0);
+	GetThrottle(1);
+	GetThrottle(2);
+	GetThrottle(3);
+	//--- Get Rudder controller -----------------
+	rudS		=  mveh->amp->GetRudders();
+	//-------------------------------------------
+	CDependent::PrepareMsg(veh);
+	state   = 0;
+	return;
+}
+//--------------------------------------------------------------------------------
+//	Disconnect the regulator
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::SetOFF()
+{	state = 0;
+	steer = 0;
+	jsm->JoyConnectAll();
+}
+//--------------------------------------------------------------------------------
+//	Connect the regulator
+//	NOTE:  The regulator discnnect only the engine control from the joystick
+//				 Additionnal control to disconnect are specified as CTRL
+//				Autopilot , when using the regulator should disconnect all
+//				surface controls (rudder, elevators, ailerons, etc)
+//--------------------------------------------------------------------------------
+bool CSpeedRegulator::SetON(U_INT CTRL)
+{	//--- Disconnect surface control and engine controls -------
+  globals->jsm->JoyDisconnect(CTRL + JS_GROUPBIT);
+	speed	=  mveh->GetPreCalculedKIAS();
+	state	= 1;
+	steer = 0;
+	return true;
+}
+//--------------------------------------------------------------------------------
+//	Send rudder steering orders 
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::RudderControl(float  dT)
+{	hdg		= mveh->GetHeading();					// Actual Heading
+	ref		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),tgp,&fdist);
+	aErr  = Wrap180(ref - hdg) * 100;		// error in [-180, + 180]
+  cor		= rPID->Update(dT,aErr,0);		// to controller
+	rudS->PidValue(cor);								// To rudder
+	return;
+}
+//--------------------------------------------------------------------------------
+//	Route control 
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::RouteControl()
+{	if (fdist > 4)			return;
+	SPosition *pos = route->NextPosition();
+	if (pos)	{tgp  = *pos; return; }
+	steer = 0;
+	return;
+}
+//--------------------------------------------------------------------------------
+//	TimeSlice
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::TimeSlice(float dT, U_INT FrNo)
+{	CDependent::TimeSlice(dT, FrNo);
+	if (0 == state)			return;
+	//--- Compute deviation and send correction --------------
+	char gaz = globals->jsm->GasDisconnected();
+	if ( 0 == gaz)			return SetOFF();
+	//--- Select speed to hold ---------------
+	aSPD	= mveh->GetPreCalculedKIAS();
+	cor		= (aSPD - speed);
+	val		= sPID->Update(dT,cor,0);
+	//--- Send to all controllers ------------
+	if (thro[0]) thro[0]->Target(val);
+	if (thro[1]) thro[1]->Target(val);
+	if (thro[2]) thro[2]->Target(val);
+	if (thro[3]) thro[3]->Target(val);
+	//--- Steering mode ----------------------
+	switch (steer)	{
+			case 0:
+				return;
+			case 1:
+				RudderControl(dT);
+				return;
+			case 2:
+				RudderControl(dT);
+				RouteControl();
+				return;
+	}
+	return;
+}
+//--------------------------------------------------------------------------------
+//	Set Taxi speed
+//--------------------------------------------------------------------------------
+double CSpeedRegulator::TaxiSpeed()
+{	double err = aErr * 0.01;
+	double sp1 =  angs.Lookup(err);
+	double rat =  srat.Lookup(fdist);
+	speed = (sp1 * rat);
+	return fdist;
+}
+//--------------------------------------------------------------------------------
+//	Steer to position
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::SteerTo(SPosition &P)
+{	if (0 == state)			return;
+	tgp   = P;
+	steer = 1;
+	rPID->Init();
+	return;
+}
+//--------------------------------------------------------------------------------
+//	Follow the taxi route
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::RouteTo(TaxiRoute *R)
+{	SPosition *pos	= R->NextPosition();
+	if (0 == pos)				return;
+	if (0 == state)			return;
+	route	= R;
+	steer	= 2;
+	tgp		= *pos;
+	return;
+}
+//--------------------------------------------------------------------------------
+//	Steer OFF
+//--------------------------------------------------------------------------------
+void CSpeedRegulator::SteerOFF()
+{	steer = 0;
+}
+//--------------------------------------------------------------------
+//  Edit regulator data
+//--------------------------------------------------------------------
+void CSpeedRegulator::Probe(CFuiCanva *cnv)
+{ cnv->AddText(1,1,"STEER=%d",steer);
+	cnv->AddText(1,1,"HDG=%.6lf",hdg);
+  cnv->AddText(1,1,"REF=%.6lf",ref);
+	cnv->AddText(1,1,"ERR=%.6lf",aErr);
+	cnv->AddText(1,1,"COR=%.6lf",cor);
+	cnv->AddText(1,1,"Speed %.6f",speed);
+	
+}
+
 //=============================END OF FILE ===================================================================

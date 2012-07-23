@@ -176,6 +176,8 @@ public:
 class CSimAxe: public CStreamObject
 {
 public:
+	char				mem[4];		// Memory print
+	//---------------------------------------------------------
   U_CHAR      No;       // Entry Index
   U_CHAR      type;     // 0 plane 1 heli
   U_CHAR      end;      // Last entry

@@ -65,8 +65,6 @@
  */
 
 #include "../Include/Globals.h"
-#include "../Include/FlyLegacy.h"
-#include "../Include/WorldObjects.h"
 #include "../Include/Utility.h"
 #include "../Include/Fui.h"
 #include "../Include/FuiParts.h"
@@ -477,7 +475,7 @@ CVehicleObject::CVehicleObject (void)
 	mRAD	= 0;
 	aPIL	= 0;
   //--------------------------------------------------------
-  WOW_nber  = 0;
+  wNbr  = wBrk = 0;
   //---- Initialize user vehicle subclasses ----------------
   nfo = NULL;
   svh = NULL;
@@ -670,8 +668,8 @@ void CVehicleObject::ReadFinished (void)
   //MEMORY_LEAK_MARKER ("whl")
 
   if (*nfo->GetWHL()) {
-    if (is_opal_object)  whl = new COpalGroundSuspension (this,nfo->GetWHL(), wgh);
-    else                 whl = new CGroundSuspension (this,nfo->GetWHL(), wgh);
+    if (is_opal_object)  whl = new COpalGroundSuspension (this, wgh);
+    else                 whl = new CGroundSuspension (this, wgh);
   }
   //MEMORY_LEAK_MARKER ("whl")
 
@@ -1131,7 +1129,7 @@ void CVehicleObject::OverallExtension(SVector &v)
 //---------------------------------------------------------------------------------
 //  Init deflection for steering gear
 //---------------------------------------------------------------------------------
-void CVehicleObject::GetGearChannel(SGearData *gdt)
+void CVehicleObject::SetRudderDeflection(SGearData *gdt)
 {	if (0 == amp)	return;
 	CAeroControl *p = amp->pRuds;
 	if (0 == p)		return;

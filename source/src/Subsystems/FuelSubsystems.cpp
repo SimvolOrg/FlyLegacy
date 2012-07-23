@@ -20,9 +20,8 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-
-#include "../Include/Subsystems.h"
 #include "../Include/WorldObjects.h"
+#include "../Include/Subsystems.h"
 #include "../Include/Fui.h"
 #ifdef _DEBUG	
 #include "../Include/Utility.h" 

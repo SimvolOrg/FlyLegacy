@@ -45,6 +45,7 @@ class AutoPilot;
 class CAeroControl;
 class CAirplane;
 class CSoundBUF;
+class VPilot;
 //====================================================================================
 //	Class to linearize changing values
 //====================================================================================
@@ -184,111 +185,6 @@ protected:
 #define LAND_NONE   (0)         // No option
 #define LAND_DISCT  (1)         // Disengage at decision altitude
 #define LAND_FLARE  (2)         // Use flare leg
-//====================================================================================
-// PID controller for Autopilot
-//  A PID controller monitors a value (aircraft heading for instance)against a
-//  reference value and supplies an output value used to act on a control surface
-//  Autopilot are built by cascading a set of PID
-//  This particular PID controler is based on Flightgear PID controller
-//  Thanks to Roy Ovesen for permission to use his formulea
-//  It uses the following inputs ---------------------------------------------
-//    Yn  is the sampled value to control at step n
-//    Rn  is the target  value to reach at step n
-//    Kp  is the proportional gain coefficient
-//    Kb  is the proportional reference weighing factor
-//    Kc  is the derivative reference weighing factor
-//    Ti  integrator timing (sec)
-//    Td  Derivator timing (sec)
-//====================================================================================
-class CPIDbox: public CDependent,public CqItem  {
-  //---ATTRIBUTS -----------------------------------------
-  U_SHORT  nPid;                      // Pid Index
-  U_CHAR   drvt;                      // Use derivative term
-  U_CHAR   intg;                      // Use integrator term
-  U_CHAR   anti;                      // use anti saturation
-  double   rate;                      // Output level
-  AutoPilot *apil;              // Autopilot
-  //-------------------------------------------------------
-  static Tag PidIDENT[];
-  //---Controller input values ------------------------------------
-  double  Ts;                         // Time between sample
-  double  Yn;                         // Sample of value
-  double  Rn;                         // Target value
-  double  Kp;                         // Proportional gain
-  double  Ti;                         // Integrator Timing
-  double  Td;                         // Derivator Timing
-  double  Ta;                         // Antisaturator timer
-  double  Ki;                         // Integrator term
-  double  Ks;                         // Saturator term
-  double  es;                         // Saturator error
-  double  Kd;                         // Derivative term
-  //---Saturation values ---------------------------------
-  double  vmin;                       // Minimum output
-  double  vmax;                       // Maximum output
-  //------------------------------------------------------
-  double  en;         // error step n
-  double  en1;        // error step n-1
-  double  en2;        // error step n-2
-  double  eSum;       // error sum
-  double  yPrv;       // Y at previous step
-  double  iMax;       // Integrator limit
-  double  vSat;       // Saturation value
-  //------------------------------------------------------
-  double  Un;         // Controller output 
-  double  Vn;         // Clamped output
-  //---Methodds ------------------------------------------
-public:
-  CPIDbox(U_CHAR No,AutoPilot *ap);
- ~CPIDbox();
-  //------------------------------------------------------
-  void      Probe(CFuiCanva *cnv);
-  //------------------------------------------------------
-  int       Read(SStream *st,Tag tag);
-  void      ReadFinished();
-  void      SetMsgInp(SMessage *msg,Tag idn, Tag prm);
-  double    Integrate(double kd);
-  void      SetDTIME(double t);
-  void      SetITIME(double t);
-  void      SetATIME(double t);
-  //-------------------------------------------------------
-  void      Init();
-	void      SetCoef(double kp,double ti,double td);
-  void      TrakSaturation(double val,double minv, double maxv);
-  double    Update(float Dt,double Y,double R);
-  double    GetValue(Tag pm);
-  double    Clamp(double v);
-  void      SetValue(Tag pm,double val);
-  void      SetClamp(CAeroControl *c);
-  //-------------------------------------------------------
-  inline int  GetPidNo()          {return nPid;}
-  inline void Rate(double r)      {rate = r;}
-	//-------------------------------------------------------
-	inline float	GetVN()						{return Vn;}
-  //-----Set values ---------------------------------------
-  inline void SetSample(double s) {Yn = s;}
-  inline void SetTarget(double t) {Rn = t;}
-	inline void ClearKI()						{Ki = 0;}
-  //-------------------------------------------------------
-  inline void SetMaxi(double m)   {if (m < vmax) vmax = m;}
-  inline void SetMini(double m)   {if (m > vmin) vmin = m;}
-};
-//=========================================================================================
-//  CLASS CPIDQ
-//        Class to collect list of PIDbox
-//=========================================================================================
-class CPIDQ : public CQueue {
-  //---------------------------------------------------------------------
-public:
-  inline void Lock()                {pthread_mutex_lock (&mux);}
-  inline void UnLock()              {pthread_mutex_unlock (&mux);}
-  //----------------------------------------------------------------------
-  //~CPIDQ();                        // Destructor
-  //----------------------------------------------------------------------
-  inline void PutEnd(CPIDbox *box)           {CQueue::PutEnd(box);}
-  inline CPIDbox *Pop()                      {return (CPIDbox*)CQueue::Pop();}
-  inline CPIDbox *GetFirst()                 {return (CPIDbox*)CQueue::GetFirst();}
-  inline CPIDbox *GetNext(CPIDbox *box)      {return (CPIDbox*)CQueue::GetNext(box);}
-};
 
 //====================================================================================
 //    GENERIC AUTOPILOT MODE
@@ -338,8 +234,8 @@ protected:
   CAeroControl *elvS;                       // Elevator surface
   CAeroControl *rudS;                       // Rudder surface
   CAeroControl *elvT;                       // Elevator trim
-	//---------------------------------------------------------
-	CThrottleControl *gazS;										// gas controller
+	//--------------------------------------------------------------------
+	CSpeedRegulator  *sreg;										// Speed Regulator
   //---Tracking control ------------------------------------------------
   double     Turn;                          // Turn adjust coef
 	double     gain;													// gain factor
@@ -371,8 +267,7 @@ protected:
 	double     nTDP;							// Touch down point
 	double     dTDP;							// Distance to touch down point
 	//--- Ground target ---------------------------------------------------
-	ILS_DATA  *rend;							// Runway end
-	//SPosition	*gPOS;							// Ground position
+	LND_DATA  *rend;							// Runway end
 	//--- Autothrottle parameters -----------------------------------------
 	double     cRAT;							// Current rate to maintain
 	double     xRAT;							// Cruise rate
@@ -393,6 +288,7 @@ protected:
 	double     gHDG;													// ground heading
   double     xHDG;                          // cross heading
 	double     xCOR;													// 45° correction
+	double     xAPW;													// Cross angle of attaq
 	double     nHDG;													// Next heading
   double     hERR;                          // Lateral error
   double     vTIM0;                         // Time for ARC AB
@@ -404,7 +300,6 @@ protected:
   double     vAMP;                          // Vertical amplifier
   double     eVSP;                          // VSP error 
   double     rVSP;                          // Reference VSP
-//  double     rALT;                          // Reference altitude
 	VLinear     rALT;													// Reference altitude	
   //---Current parameters -------------------------------------------
 	double      cFAC;												  // Current factor
@@ -437,8 +332,7 @@ protected:
   SMessage    mNAV;           // NAV gauge message
   SMessage    mALT;           // Altitude message
   SMessage    mVSI;           // VSI message
-	SMessage    mGAZ;						// Throttle message
-	SMessage    mSPD;						// SPEED message
+	SMessage    mREG;						// Speed regulator
   //---METHODS---------------------------------------------------------
 public:
   AutoPilot (void);
@@ -475,6 +369,7 @@ public:
   inline void SetTrak(double t,double a)  {Turn		= t; gain = a;}
   inline void SetGLDopt(double g)         {glide	= g;}
   inline void SetDISopt(double a)         {aLND		= a;}
+	inline void SetAPRW(double a)						{xAPW   = a;}
 	void				SetLndFLP(char p,double a)	{lndFP = p; lndFA = a;}
 	void				SetTkoFLP(char p,double a)  {tkoFP = p; tkoFA = a;}
 	void				SetTKOopt(double s, double a);
@@ -483,7 +378,7 @@ public:
 	//--- External interface --------------------------------------------
 	bool				Init();
 	bool 				Engage();
-	int				  EnterTakeOFF(char x);
+	int				  EnterTakeOFF(char x,LND_DATA *rdt);
 	bool				EnterGPSMode();
 	void				ReleaseControl()		{xCtl = 0;}
 	void				SetWPTmode(double alt);
@@ -522,7 +417,6 @@ public:
   //-------ACTION ROUTINES --------------------------------------------
   void            AltitudeHold();
   void            LateralHold();
-  void            RudderHold();
   void            GlideHold();
 	void						SpeedHold();
   void            IncVSP();
@@ -558,7 +452,7 @@ public:
 	void						StateGND(int evn);
   void            NewEvent(int evn);
 	void						SwapGasControl();
-	void						SetGasControl(char s);
+	char						SetGasControl(char s);
   //-------------------------------------------------------------------
   inline char     armALT()  {return alta;}
   //-------------------------------------------------------------------
@@ -567,13 +461,18 @@ public:
   inline char IlsMode() {return (signal == SIGNAL_ILS);}
   inline char Flash()   {return flsh;}
 	//--- Virtual pilot interface ---------------------------------------
-	inline bool BellowAGL(double a)	{return (cAGL < a);}
-	inline bool IsDisengaged()		  {return (lStat == AP_DISENGD);}
-  inline bool IsEngaged()					{return (lStat != AP_DISENGD);}
-	inline bool ModeGround()				{return (vStat == AP_VRT_FIN);}
-	inline bool HasGasControl()			{return (ugaz != 0);}
+	inline bool			BellowAGL(double a)	{return (cAGL < a);}
+	inline bool			IsDisengaged()		  {return (lStat == AP_DISENGD);}
+  inline bool			IsEngaged()					{return (lStat != AP_DISENGD);}
+	inline bool			ModeGround()				{return (vStat == AP_VRT_FIN);}
+	inline bool			HasGasControl()			{return (ugaz != 0);}
+	//-------------------------------------------------------------------
+	inline double   GetSpeed()					{return aSPD;}
+	//-------------------------------------------------------------------
+	inline LND_DATA *GetRunwayData()		{return rend;}
   //-------------------------------------------------------------------
-  inline    bool        engLite()     {return (AP_STATE_DIS != lStat);}
+  inline    bool   engLite()					{return (AP_STATE_DIS != lStat);}
+
 };
 //========================================================================================
 //  DEFINE the K140 DISPLAY FIELDs
@@ -634,6 +533,7 @@ public:
 class CPIDdecoder: public CStreamObject {
   //------Attributes ---------------------------------------------
   AutoPilot *apil;                          // Autopilot
+	VPilot    *vpil;													// Virtual pilot
   //--------------------------------------------------------------
 public:
   CPIDdecoder(char *fn,AutoPilot *ap);

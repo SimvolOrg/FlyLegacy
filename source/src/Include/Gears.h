@@ -36,10 +36,14 @@ class CGroundSuspension;
 //  all the WHL file data
 //========================================================================================
 struct SGearData {
+	CGroundSuspension  *mgsp;						// Mother suspension for shared data
+	//------------------------------------------------------------------------
   char onGd;                          // On Ground
   char shok;                          // Shock number
   char Side;                          // Side of wheel (left or right)
 	char sABS;													// ABS brake on landing
+	char brak;                         // 0 not brake 1= brake
+	//------------------------------------------------------------------------
   char susp_name[56];
   char long_[64];                    ///< -- Longitudinal Crash Part Name --
   CDamageModel oy_N;                 ///< -- Longitudinal Damage Entry --
@@ -61,24 +65,18 @@ struct SGearData {
   float whrd;                         // Wheel radius (ft);
   CVector bPos;                       //< -- Tire Contact Point (model coodinates) --
   CVector gPos;                       //  Tire contact point (CG relative)
-  float dvvd;                         //< -- Design Visual Vertical Displacement (ft) --
   std::vector<std::string> vfx_;      //< -- Visual Effects --
 	//--- Wheel above ground level (feet) ------------------------------------
 	double wagl;
 	///-------Vertical damping for ground contact ----------------------------
   double damR;                        ///< -- damping ratio --
 	double amor;												// Amortizing force
+	//---- Acceleration ------------------------------------------------------
+	double angv;												// Angular velocity
   ///-------Brake parameters -----------------------------------------------
-	double	brakF;											// Brake force	
-  float brak;                         // 0 not brake 1= brake
-  float inpB;                         // Normalized input [0,1]
-  float ffac;                         // Fudge factor
-  float locV;                         // Local velocity
-  float rBKF;                         // Rolling force
-  float cBKF;                         // Brake coefficient
-  float brkF;                         // Brake force from whl file
-  float brakK;                        // Brake coefficient from PHY
-  float diffK;                        // Brake differential from PHY
+	double	brakF;											// Brake force in (m/sec)
+	double  sideF;											// side factor for pedal
+	double  repBF;											// Brake repartition factor
   ///----- sterring wheel data ---------------------------------------------
   float deflect;
   float scaled;
@@ -109,16 +107,15 @@ struct SGearData {
     tirR              = 0.0f;        // -- Tire Radius (ft) --
     rimR              = 0.0f;        // -- Rim Radius (ft) --
     drag              = 0.0f;
-    dvvd              = 0.0f;        // -- Design Visual Vertical Displacement (ft) --
     // vfx_;                         // -- Visual Effects --
     // endf;                         //
     brak              = 0;            // -- has brake
-    brkF              = 0.0f;        // -- brake force
     vfx_.clear ();
     deflect           = 0.0f;        // -- direction wheel deflection
     scaled            = 0.0f;        // -- direction wheel deflection scale
     kframe            = 0.5f;
     wheel_base        = 0.0f;        // -- distance from main gear and nose gear (metres)
+		angv							= 0;					 // Angular velocity
   }
 };
 //================================================================================
@@ -242,8 +239,6 @@ public :
 public:
   ///< Utilities
   ///< =========
-  /*! transform gear location from ft to meters */
-  void GearLoc2CG_ISU    (void);
   /*! wheel to CG in ft */
   const SVector* GetGear2CG        (void) {return &vGearLoc2CG;}    
   /*! wheel to CG in meters */
@@ -287,7 +282,6 @@ protected:
   CAcmGears        *whel;                             // Movinf part
   CAcmTire         *Tire;                             // Tire parts
   CVehicleObject   *mveh;                             // Parent vehicle
-  CWeightManager   *wgm;
   CGear            *gear;
   SGearData         gear_data;
 public:
@@ -295,7 +289,7 @@ public:
   char          type;                                 // Type of suspension
   char          wInd;                                 // Wheel index
   //----Full constructor ----------------------------------------
-  CSuspension (CVehicleObject *v, char *susp_name, CWeightManager *wghman, char type_ = TRICYCLE);
+  CSuspension (CVehicleObject *v, CGroundSuspension *gssp, char *susp_name,  char type_ = TRICYCLE);
   virtual ~CSuspension             (void);
   void    InitGear();
   ///< CStreamObject methods
@@ -325,10 +319,6 @@ public:
   bool IsSteerWheel();
   void SetWheelBase(float b)        {gear_data.wheel_base = b;}
   //-----------------------------------------------------------------
-  /*! Find the location of the gear relative to the CG in ft */
-  const SVector* GetGearLoc2CG         (void);
-  /*! Find the location of the gear relative to the CG in meters */
-  const SVector* GetGearLoc2CG_ISU     (void);
   char  GearShock(char pw);
   void  GearDamaged(char nsk);
   //-------GetGear Position ----------------------------------------
@@ -351,7 +341,7 @@ public:
   inline void PlayTire(int p)         {whel->PlayTire(p);}
   inline bool IsOnGround()            {return (0 != gear_data.onGd);}
 	//-- Set ABS anti skid feature ---------------------
-	inline	void SetABS(char p)		{gear_data.sABS	= p;}	
+	inline	void SetABS(char p)					{gear_data.sABS	= p;}	
 	//-----------------------------------------------------------------
 	inline SGearData *GetGearData()			{return &gear_data;}
   //-----------------------------------------------------------------
@@ -407,7 +397,7 @@ private:
 class CGroundSuspension: public CSubsystem {           // : public CWhl {
 public:
   CGroundSuspension()              {mveh = 0;}
-  CGroundSuspension                (CVehicleObject *v, char* whlFilename, CWeightManager *wghman);
+  CGroundSuspension                (CVehicleObject *v, CWeightManager *wghman);
   virtual ~CGroundSuspension       (void);
 
   /*! CStreamObject methods */
@@ -432,6 +422,7 @@ public:
   //----------------------------------------------------------------------------------
   inline void     GetAllWheels(std::vector<CSuspension *> &whl) { whl = whl_susp;}
   inline CVector *GetMainGearCenter() {return &mainW;}
+	inline double   GetDifBraking()			{return difB;}
   inline double   GetMainGearRadius() {return  mainR;}
   inline double   GetBodyAGL()        {return  bAGL;}
   inline double   GetPositionAGL()    {return  (bAGL + mainR - 1);}
@@ -460,6 +451,7 @@ protected:
   float         deflect;                                      // Deflection
   float         scale;                                        // Scale
   //----------------------------------------------------------------------------------
+	double				difB;																					// Differntial brake
   double        wheel_base;                                   // Inter axes distance
   double        bAGL;                                         // Body AGL (in feet)
   double        mainR;                                        // Main average radius
@@ -524,9 +516,7 @@ private:
   ///< =============
 
   float     bad_pres_resis;
-  float     side_whl_vel;
-  float     rolling_force,
-            side_force;
+  float     banking;
 };
 
 #endif // GEARS_H

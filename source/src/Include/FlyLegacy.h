@@ -1355,7 +1355,6 @@ typedef struct SMessage
   EMessageDataType  dataType;       // result data type
   unsigned int      result;			    // message result code
 	unsigned int			index;					// Index value
-//  DLLObjectRef  sender;       
   Tag               sender;         // Sender tag
   DLLObjectRef      receiver;
   char              dst[8];         // string destination
@@ -1479,6 +1478,7 @@ typedef struct SVector
 // 'lon' is the longitude, in arcseconds west of the Prime Meridian
 // 'alt' is the altitude in feed above MSL
 //=================================================================================
+
 typedef struct SPosition
 {
   double  lat;
@@ -1486,6 +1486,10 @@ typedef struct SPosition
   double  alt;
 } SPosition;
 
+
+//----------------------------------------
+	//SPosition::SPosition() {lat = lon = alt = 0;}
+//------------------------------------------------
 typedef struct SPositionList
 {
   SPosition pos;    // points should be stored clockwise
@@ -2073,39 +2077,6 @@ protected:
   SBitmap m_bm;
 };
 
-
-
-/*
- * Database functions
- */
-
-//
-// These functions all return a linked list of the appropriate database entity.
-//   The calling application is responsible for calling APIFree... when done
-//   with the list
-//
-int GetLocalILS(SILS **ils);
-int GetLocalComms(SComm **comms);
-int GetLocalCenters(SComm **comms);
-int GetLocalWaypoints(SWaypoint **waypoints);
-
-//
-// The calling application is responsible for allocating the database structs passed
-//   in to the following functions
-//
-int GetAirport(char *airportKey, SAirport *airport);
-
-//
-// The following functions implement specific database searches, returning a linked
-//   list of database records which match the specified key value.
-//
-int SearchNavaidsByID(char *id, int navType, SNavaid **navaids);
-int SearchNavaidsByName(char *name, SNavaid **navaids);
-int SearchWaypointsByName(char *name, SWaypoint **waypoints);
-int SearchAirportsByICAO(char *icaoID, SAirport **airports);
-int SearchAirportsByName(char *name, SAirport **airports);
-int SearchILS(char *airportKey, char *runwayEndID, SILS **ils);
-
 //
 //  INI functions
 //
@@ -2371,13 +2342,6 @@ struct TC_COLORS {
 //=============================================================================
 //  Vector 2D float
 //=============================================================================
-struct TC_2DF {
-  float VT_X;
-  float VT_Y;
-};
-//=============================================================================
-//  Vector 2D float
-//=============================================================================
 struct TC_4DF {
   float x0;
   float y0;
@@ -2488,6 +2452,14 @@ struct VTP_2D {
   return; }
   //------------------------------------------------------
 };
+//=============================================================================
+//  Vector 2D float
+//=============================================================================
+struct F2_VERTEX {
+  float VT_X;
+  float VT_Y;
+};
+
 //=============================================================================
 //  3D POINT DEFINITION
 //=============================================================================
@@ -2641,6 +2613,14 @@ struct TUPPLE2 {
   float out1;                   // Output value 1
   float out2;                   // output value 2
 };
+//=====================================================================
+//  Tuple for loading table lookup with 2 output value
+//=====================================================================
+struct PAIRF {
+  float inp;                    // Input value
+  float out;                   // Output value 1
+};
+
 //=====================================================================
 //  Tuple for loading table lookup with 3 output value
 //=====================================================================
@@ -2956,10 +2936,13 @@ typedef void (CExecutable::*ExeDR)(void);
 inline int RandomNumber(int mod) {return (rand() % mod);}
 //==============================================================================
 // JS: CRandomizer:
-//  Produce a random number N in the requested range R every tim T.  The 
+//  Produce a random number N in the requested range R every time T.  The 
 //  value N is reached in T secondes from the previous one
-//  a:     the lower bound
-//  a:     The upper bound
+//  vdeb:     the lower bound
+//  amp:			Range amplitude
+//	aval:		  Actual random value until next time T
+//	cTim:			Time interval T
+//------------------------------------------------------------------------------
 //  T:     Time constant to reach the next random value
 //==============================================================================
 class CRandomizer {
@@ -3040,9 +3023,10 @@ enum OTYPE {  ANY = 0x00,       // Any
 //====================================================================
 //  Data to control ILS
 //====================================================================
-typedef struct {
+struct LND_DATA {
 		CRunway   *rwy;														// Related runway
     CILS      *ils;                           // ILS object
+		LND_DATA  *opp;														// Opposite 
     SPosition  lndP;                          // Landing point (on tarmac)
     SPosition  refP;                          // reference point
     SPosition  farP;                          // Far point for drawing
@@ -3050,15 +3034,19 @@ typedef struct {
     float      errG;                          // Glide error (in tan unit)
     float      gTan;                          // Tan of glide slope
     float      altT;                          // altitude above threshold
+		//--- Direction (0 == hi, 1 == low) ------------
+		char			 rDir;													// Runway direction
+		char			 rfu1;													// Reserved
+		U_SHORT    sect;													// Runway sector
 		//--- LAnding direction ------------------------
-		float      lnDIR;												  // Landing direction
-		float      tkDIR;													// Take OFF direction
-    //---Distances to define this ILS --------------
-    float      d1;                            // Landing distance
-    float      d2;                            // reference distance
-    float      d3;                            // Far distance
-		float      d4;														// Opposite
-} ILS_DATA;
+		float      lnDIR;												  // Landing  mag dev
+		float      tkDIR;													// Take OFF mag dev
+		//--- Runway ident -----------------------------
+		char       ridn[4];												// Runway end identifier
+    //--- Airport definition -----------------------
+    CAptObject *apo;
+		//------------------------------------------------
+};
 //===================================================================================
 //  NOTE:  dLon and dLat are working area used for several purposes 
 //===================================================================================
@@ -3070,6 +3058,7 @@ protected:
 #define ACTV 1						// Active
 #define TDEL 2						// To delete
 	//------------Attributes -----------------------------------
+	char          idn[4];						// Identity
 	pthread_mutex_t		mux;					// Mutex for lock
 	U_CHAR				State;					  // State
 	U_CHAR				uCount;					  // User count
@@ -3090,7 +3079,7 @@ protected:
 	CmHead			*Tprev;					  // queue Q2 previous item
 	//------------------------------------------------------------
 public:
-	CmHead(OTYPE qo,QTYPE qa);			        // New object
+	CmHead(OTYPE qo,QTYPE qa, char * idn);  // New object
   CmHead();                               // Default constructor
   virtual ~CmHead() {}                    // Virtual destructor
   virtual char      *GetName()        {return 0;}  // Get Name
@@ -3110,6 +3099,7 @@ public:
 	virtual double		 Sensibility()		{return 0;}
 	virtual U_CHAR		 SignalType()     {return SIGNAL_OFF;}
 	virtual float			 GetFeetDistance(){return 0;}
+	virtual float			 GetGlide()       {return 0;}
 	//------------------------------------------------------------
   virtual void       Refresh(U_INT FrNo) {return;}
   virtual float      GetLatitude()    {return 0;}
@@ -3119,15 +3109,17 @@ public:
   virtual SPosition *ObjPosition()    {return 0;}
 	virtual SPosition *GetFarPoint()    {return 0;}
 	//------------------------------------------------------------
-	virtual ILS_DATA  *GetLandSpot()		{return 0;}
+	virtual LND_DATA  *GetLandSpot()		{return 0;}
 	//------------------------------------------------------------
 	virtual void			 SetNavOBS(float d)   {;}
 	virtual void       SetRefDirection(float d)	{;}
 	virtual void			 SetNmiles(float m) {;}
 	virtual void			 SetFeet(float f)   {;}
+	//--- Refresh signal -----------------------------------------
+	virtual	CmHead    *Select(U_INT frame,float freq) {return 0;}
 	//------------------------------------------------------------
+	virtual	void  DecUser();				          // Decrement user count
 	        void  IncUser(void);					    // Increment user count
-	        void  DecUser();				          // Decrement user count
 	        bool  NeedUpdate(U_INT FrNo);		  // Need update
           int   GetRadioIndex();
           void  SetState(U_CHAR sta);
@@ -3554,11 +3546,11 @@ struct BUS_RADIO {U_CHAR    rnum;       // Radio num
                   double    aDir;       // Aircraft direction (relative to VOR/ILS)
                   double    iAng;       // Intercept angle plane to OBS/ILS
                   double    sens;       // Horizontal sensibility
-                  CmHead    *nav;       // Nav object
+                  CmHead   *rSRC;       // Radio Source
 	//--- Set OBS ----------------------------------------------
 	void BUS_RADIO::SetOBS(short dir)
 	{ xOBS = dir;
-		if (nav)	nav->SetNavOBS(dir);
+		rSRC->SetNavOBS(dir);
 		return;
 	}
 	//----------------------------------------------------------

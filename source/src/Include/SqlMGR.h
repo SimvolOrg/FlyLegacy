@@ -26,6 +26,7 @@
 #include "../Include/FlyLegacy.h"
 #include "../Include/Globals.h"
 #include "../sqlite/sqlite3.h"
+//#include "../Include/OSMobjects.h"
 //=====================================================================================
 class CWPoint;
 class CAirport;
@@ -43,6 +44,9 @@ class C3DLight;
 class C_STile;
 class TRN_HDTL;
 class OSM_Object;
+class TaxNODE;
+class TaxEDGE;
+class TaxiwayMGR;
 struct TRACK_EDIT;
 struct ELV_PATCHE;
 //=====================================================================================
@@ -656,7 +660,7 @@ public:
 	int			 DeleteM3DModel(char *fn);
 	int			 RemoveM3DModel(char *name);
 	int		   RemoveM3DTexture(sqlite3_stmt *stm);
-  //----WRITING TAXIWAY DATA --------------------------------------------
+  //----WRITING PAVEMENT DATA --------------------------------------------
   void     WritePavement(CPaveRWY *pave,char *key);
   void     WriteTaxiLigth(CBaseLITE *lite, char * key);
   int      DecodePAVE(CAptObject *apo);
@@ -699,6 +703,13 @@ public:
 	//--- WRITING PATCHE ELEVATIONS ---------------------------------------
 	int		WritePatche (ELV_PATCHE &p);
 	int		DeletePatche(ELV_PATCHE &p);
+	//--- TAXIWAY INTERFACE -----------------------------------------------
+	int		RemoveTaxiData(char *key);
+	int		AddTaxiNode(char *key,TaxNODE *N);
+	int		AddTaxiEdges(char *key,TaxiwayMGR *txm);
+	int		ReadTaxiNodes(char *key, TaxiwayMGR *txm);
+	int		ReadTaxiEdges(char *key, TaxiwayMGR *txm);
+
 };
 //=============================================================================
 //  SQL THREAD

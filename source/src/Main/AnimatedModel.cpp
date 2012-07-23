@@ -102,9 +102,7 @@ int CAnimatedModel::ReadModel(SStream *st)
   if (mDefn  > lod)       return TAG_READ;   // Lower Resolution
 	//--- Keep the new candidate name -------------------------------------
 	if (mName)	delete mName;
-	int lg = strlen(fullname);
-	mName	 = new char[lg+1];
-	strcpy(mName,fullname);
+	mName  = Dupplicate(fullname,MAX_PATH);
 	mDefn	 = lod;
   return TAG_READ;
 

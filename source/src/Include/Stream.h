@@ -67,9 +67,10 @@ public:
 	void              WriteBlankLines (int i);
   void              WriteComment (const char *comment);
   void              WriteTag (Tag tag, const char *comment);
-  void              WriteInt (int *value);
-  void              WriteUInt (unsigned int *value);
-  void              WriteFloat(float *value);
+  void              WriteInt (int val);
+	void							WriteUInt (U_INT val);
+	//void              WriteFloat(float *value);
+	void							WriteFloat(float vf);
   void              WriteDouble(double *value);
   void              WriteString(const char *value);
   void              WriteVector(SVector *value);

@@ -1376,6 +1376,7 @@ public:
  ~CFmt1Map();
  //---------------------------------------------------------------------
  void  Load(TUPPLE *t);
+ void	 Load(PAIRF  *p);
  void  DecodeFMT1(SStream *s);
  void  Enter(CFmt1Slot &e);
  void  Add(float x,float y);

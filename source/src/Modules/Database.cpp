@@ -25,15 +25,12 @@
 /*! \file Database.cpp
  *  \brief Implements application API to Fly! databases
  */
-
-#include "../Include/FlyLegacy.h"
-#include "../Include/Database.h"
 #include "../Include/Globals.h"
+#include "../Include/Database.h"
 #include "../Include/Endian.h"
 #include "../Include/Fui.h"
 #include "../Include/FuiParts.h"
 #include "../Include/Utility.h"
-#include "../Include/WorldObjects.h"
 #include "../Include/SqlMGR.h"
 #include "../Include/TerrainCache.h"
 #include "../Include/Weather.h"
@@ -1343,190 +1340,6 @@ void CDatabaseRWY::DecodeRecord (CRwyLine *slot)
   slot->rwid = n;
   return;
 }
-//===================================================================================
-//
-// Search for an airport using its unique DAFIF key
-//===================================================================================
-int GetAirport(char *airportKey, SAirport *airport)
-{
-  int rc = 0;
-
-  return rc;
-}
-
-//
-// Return a list of all navaids in the database whose ID field matches the
-//   specified key value.
-//
-int SearchNavaidsByID(char *id, int navType, SNavaid **navaids)
-{
-  int rc = 0;
-
-  return rc;
-}
-
-//
-// Return a list of all navaids in the database whose name matches the
-//   specified key value.
-//
-int SearchNavaidsByName(char *name, SNavaid **navaids)
-{
-  int rc = 0;
-  *navaids = NULL;
-  SNavaid *tail = NULL;
-
-  // Get handle to airport database
-  CDatabase *dbNavaid = CDatabaseManager::Instance().GetNAVDatabase();
-  if (dbNavaid == NULL) return rc;
-
-  // Start search of navaid name
-  unsigned long offset = dbNavaid->Search ('mann', name);
-  if (offset != 0) {
-    // Allocate buffer for database record
-    char *rec = dbNavaid->GetBuffer();
-    while (offset != 0) {
-      // Read and decode the navaid
-      dbNavaid->GetRawRecord (offset);
-      SNavaid *navaid = new SNavaid;
-      DecodeNavaidRecord (rec, navaid);
-
-      // Add to the list
-      rc++;
-      if (*navaids == NULL) {
-        // List is still empty; add this navaid as the first element
-        *navaids = navaid;
-      } else {
-        // List is non-empty; link this navaid to the tail of the list
-        tail->next = navaid;
-        navaid->prev = tail;
-      }
-
-      // Update tail pointer so it always points to last navaid added
-      tail = navaid;
-
-      // Get offset of next matching record
-      offset = dbNavaid->SearchNext ();
-    }
-
-  }
-
-  return rc;
-}
-
-
-//
-// Return a list of all waypoints in the database whose name field matches the
-//   specified key value.
-//
-int SearchWaypointsByName(char *name, SWaypoint **waypoints)
-{
-  int rc = 0;
-
-  return rc;
-}
-
-
-//
-// Search the airports database based on the ICAO airport ID
-//
-int SearchAirportsByICAO(char *icaoID, SAirport **airports)
-{
-  int rc = 0;
-  *airports = NULL;
-
-  // Get handle to airport database
-  CDatabase *dbAirport = CDatabaseManager::Instance().GetAPTDatabase();
-  if (dbAirport == NULL) return rc;
-
-  // Start search of ICAO Index to airport database
-  unsigned long offset = dbAirport->Search ('acia', icaoID);
-  if (offset != 0) {
-    char *rec = dbAirport->GetBuffer();
-    dbAirport->GetRawRecord (offset);
-
-    // Allocate first SAirport struct
-    MEMORY_LEAK_MARKER ("first")
-    SAirport *first = new SAirport;
-    MEMORY_LEAK_MARKER ("first")
-    DecodeAirportRecord (rec, first);
-
-    // Save pointer to first navaid in return parameter
-    *airports = first;
-    rc++;
-
-    /// \todo Continue searching for duplicate FAA IDs ?
-
-    // Free buffer for raw database record
-  }
-
-  return rc;
-}
-
-//
-// Search the airports database based on the airport name
-//
-int SearchAirportsByName(char *name, SAirport **airports)
-{
-  int rc = 0;
-
-  /// \todo Search airports by name
-
-  return rc;
-}
-
-
-//
-// Search for a specific ILS facility.  The airportKey value is the unique
-//   DAFIF identifier for the airport, and the runwayEndID is the runway end
-//   to search, e.g. "23L"
-//
-int SearchILS(char *airportKey, char *runwayEndID, SILS **ils)
-{
-  int rc = 0;
-
-  /// \todo Search ILS facility
-
-  return rc;
-}
-
-
-//===================================================================================
-
-//
-// Return a linked list of all ILS within a 200nm radius
-//
-int GetLocalILS(SILS **ils)
-{
-  int rc = 0;
-  return rc;
-}
-
-//
-// Return a linked list of all Comms facilities within a 200nm radius
-//
-int GetLocalComms(SComm **comms)
-{
-  int rc = 0;
-  return rc;
-}
-
-//
-// Return a linked list of all Center comms facilities within a 200nm radius
-//
-int GetLocalCenters(SComm **comms)
-{
-  int rc = 0;
-  return rc;
-}
-
-//
-// Return a linked list of all Waypoints within a 200nm radius
-//
-int GetLocalWaypoints(SWaypoint **waypoints)
-{
-  int rc = 0;
-  return rc;
-}
 //==========================================================================
 //  Smart pointer to CmHead object
 //==========================================================================
@@ -1585,7 +1398,7 @@ void CObjPtr::operator=(CObjPtr &q)
 //	CCOMM object
 //==========================================================================
 CCOM::CCOM(OTYPE qo,QTYPE qa)
-:CmHead(qo,qa)
+:CmHead(qo,qa,"com*")
 {	 nmiles = 0;            
 }
 //-----------------------------------------------------------------------
@@ -1656,7 +1469,7 @@ bool CCOM::IsInRange(void)
 //	CWPT object
 //==========================================================================
 CWPT::CWPT(OTYPE qo,QTYPE qa)
-:CmHead(qo,qa)
+:CmHead(qo,qa,"wpt*")
 {	radial	= 0;
 	nmiles	= 0;
 	wmag		= 0;
@@ -1726,7 +1539,7 @@ void CWPT::Trace(char *op,U_INT FrNo,U_INT key)
 //	CNavaid object
 //==========================================================================
 CNavaid::CNavaid(OTYPE qo,QTYPE qa)
-:CmHead(qo,qa)
+:CmHead(qo,qa,"nav*")
 {	radial	= 0;
 	nmiles	= 0;
   dsfeet  = 0;
@@ -1790,6 +1603,15 @@ void	CNavaid::Refresh(U_INT FrNo)
 	return;
 }
 //-----------------------------------------------------------------
+//	Check if VOR is selected
+//-----------------------------------------------------------------
+CmHead *CNavaid::Select(U_INT frame,float freq)
+{	CmHead *nav = IsThisNavOK(freq);
+	if (nav)  Refresh(frame);
+  else      nav = globals->dbc->FindVOR(frame,freq);
+	return nav;				                       
+}
+//-----------------------------------------------------------------
 //	Check for freq and range match
 //	Object must be in ACT state
 //	When selected, increment user count
@@ -1850,7 +1672,7 @@ void CNavaid::Trace(char *op,U_INT FrNo,U_INT key)
 //	CAirport object
 //==========================================================================
 CAirport::CAirport(OTYPE qo,QTYPE qa)
-:CmHead(qo,qa)
+:CmHead(qo,qa,"apt*")
 {	NbILS   = 0;
   MapTp   = 0;
   Prop    = 0;
@@ -1911,9 +1733,25 @@ CRunway *CAirport::FindRunway(char *rend)
   return rwy;
 }
 //-----------------------------------------------------------------
+//	Find  a runway by end identifier
+//-----------------------------------------------------------------
+LND_DATA *CAirport::FindRunwayLND(char *rend)
+{ CRunway *rwy = 0;
+  int      ind = 0;
+  rwyQ.Lock();
+  for (rwy = (CRunway*)rwyQ.GetFirst(); rwy != 0; rwy = (CRunway*)rwy->NextInQ1())
+	{ if (strcmp(rend,rwy->GetHiEnd()) == 0)  {ind = 0; break;}
+	  if (strcmp(rend,rwy->GetLoEnd()) == 0)  {ind = 1; break;}
+  }
+	//-- Unlock RWY Queue -------------------------------
+  rwyQ.Unlock();
+  return (rwy)?(rwy->GetIlsData(ind)):(0);
+}
+
+//-----------------------------------------------------------------
 //	Find  a runway take-off spot by end identifier
 //-----------------------------------------------------------------
-float CAirport::GetTakeOffSpot(char *rend,SPosition **dep,ILS_DATA **ils)
+float CAirport::GetTakeOffSpot(char *rend,SPosition **dep,LND_DATA **ils)
 { CRunway   *rwy = 0;
   float rot = 0;
   rwyQ.Lock();
@@ -1938,9 +1776,9 @@ float CAirport::GetTakeOffSpot(char *rend,SPosition **dep,ILS_DATA **ils)
 //	Find nearest (to pos) runway take off direction
 //	We must compute plane distance to ruway center line
 //-----------------------------------------------------------------
-ILS_DATA *CAirport::GetNearestRwyEnd(SPosition *pos,SPosition **dst)
+LND_DATA *CAirport::GetNearestRwyEnd(SPosition *pos,SPosition **dst)
 {	CRunway   *rwy = 0;
-  ILS_DATA  *nrs = 0;
+  LND_DATA  *nrs = 0;
 	char      *idn = 0;
   float      dis = 1000;
 	rwyQ.Lock();
@@ -2131,7 +1969,7 @@ char CBeaconMark::Set(char s)
 //	CILS object
 //==========================================================================
 CILS::CILS(OTYPE qo,QTYPE qa)
-:CmHead(qo,qa)
+:CmHead(qo,qa,"ils*")
 { rwy     = 0;                              // Clear runway
   ilsVEC  = 0;                              // ils vector
  	radial	= 0;                              // Clear radial
@@ -2208,9 +2046,9 @@ char CILS::InMARK(SVector &pos, B_MARK &b,CBeaconMark &m)
 //------------------------------------------------------------------------
 //  Initialize ILS with runway parameters
 //------------------------------------------------------------------------
-void CILS::SetIlsParameters(CRunway *rwy,ILS_DATA *dt, float dir)
+void CILS::SetIlsParameters(CRunway *rwy,LND_DATA *dt, float dir)
 { this->rwy   = rwy;
-  float mdir  = Wrap360(dir - mDev);				// Magnetic deviation
+  float mdir  = Wrap360(dir - mDev);				// Magnetic direction
   ilsVEC      = Wrap360(dir + 180);					// Runway vector
   ilsD        = dt;
   ilsD->ils   = this;
@@ -2290,6 +2128,16 @@ void	CILS::Refresh(U_INT FrNo)
 	return;
 }
 //-----------------------------------------------------------------
+//	Check if ILS is selected
+//-----------------------------------------------------------------
+CmHead *CILS::Select(U_INT frame,float freq)
+{	CmHead *ils = IsThisILSOK(freq);
+	if (ils)  Refresh(frame);
+  else      ils = globals->dbc->FindILS(frame,freq);
+	return ils;				                       
+}
+
+//-----------------------------------------------------------------
 //	Trace ILS
 //-----------------------------------------------------------------
 void  CILS::Trace(char *op,U_INT FrNo,U_INT key)
@@ -2303,7 +2151,7 @@ void  CILS::Trace(char *op,U_INT FrNo,U_INT key)
 //	CRunway object
 //==========================================================================
 CRunway::CRunway(OTYPE qo,QTYPE qa)
-:CmHead(qo,qa)
+:CmHead(qo,qa,"rwy*")
 {	lpf     = 0;                  // Ligth profile
   ilsT    = 0;                  // No ils
   mlite   = RWY_LS_APPRO;
@@ -2318,7 +2166,7 @@ CRunway::~CRunway()
 //-----------------------------------------------------------------
 //  Init end
 //-----------------------------------------------------------------
-void CRunway::EndAttributes(ILS_DATA &d,SPosition &p)
+void CRunway::EndAttributes(LND_DATA &d,SPosition &p)
 {  //---Init landing parameters ---------------------------
   double alti = rwyATHR[lgCode];
 	d.rwy	  = this;
@@ -2407,7 +2255,7 @@ void CRunway::InitILS(CILS *ils)
 //---------------------------------------------------------------------------------
 //  return Landing direction
 //---------------------------------------------------------------------------------
-ILS_DATA  *CRunway::GetLandDirection(char *e)
+LND_DATA  *CRunway::GetLandDirection(char *e)
 {	//--- landing in hi end --------------
 	if (0 == strcmp(e,rhid))	return (ilsD + RWY_HI_END);
 	//--- landing in lo end --------------
@@ -2460,6 +2308,25 @@ char CRunway::ChangeLights(char ls)
   if (2 == ls)  slite ^= mlite;           // invert
   return (mlite == RWY_LS_APPRO)?(0):(1);
 }
+//---------------------------------------------------------------------------------
+//  Fill Hi Taxiway Node
+//---------------------------------------------------------------------------------
+void CRunway::FillHiNODE(TaxNODE *node)
+{	node->SetRWY(rhid);
+	node->SetREF(ilsD + 0);
+	node->SetPosition(ilsD[RWY_HI_END].lndP);
+	return;
+}
+//---------------------------------------------------------------------------------
+//  Fill Hi Taxiway Node
+//---------------------------------------------------------------------------------
+void CRunway::FillLoNODE(TaxNODE *node)
+{	node->SetRWY(rlid);
+	node->SetREF(ilsD + 1);
+	node->SetPosition(ilsD[RWY_LO_END].lndP);
+	return;
+}
+
 //-----------------------------------------------------------------
 //	Trace RUNWAY
 //-----------------------------------------------------------------
@@ -2474,7 +2341,7 @@ void  CRunway::Trace(char *op,U_INT FrNo,U_INT key)
 //	CObstacle object
 //==========================================================================
 CObstacle::CObstacle(OTYPE qo,QTYPE qa)
-:CmHead(qo,qa)
+:CmHead(qo,qa,"obs*")
 {	
 }
 //-----------------------------------------------------------------
@@ -2497,8 +2364,9 @@ void  CObstacle::Trace(char *op,U_INT FrNo,U_INT key)
 //==========================================================================
 //	Base classe for all linked objects
 //----------------------------------------------------------------------
-CmHead::CmHead(OTYPE qo,QTYPE qa)
-{ oTyp  = (OTYPE)(qo);
+CmHead::CmHead(OTYPE qo,QTYPE qa, char *id)
+{ strncpy(idn,id,4);					// Memory leaker
+	oTyp  = (OTYPE)(qo);
   qAct  = (QTYPE)(qa);
 	//-------------------------------------------
 	uptr		= 0;
@@ -2520,7 +2388,8 @@ CmHead::CmHead(OTYPE qo,QTYPE qa)
 //  ALternate constructor
 //----------------------------------------------------------------------
 CmHead::CmHead() 
-{ oTyp  = (ANY);
+{ strncpy(idn,"CmHD",4);
+	oTyp  = (ANY);
   qAct  = (ANY);
 	//-------------------------------------------
 	uptr		= 0;
@@ -2599,7 +2468,7 @@ int CmHead::GetRadioIndex()
 //	new Tile cache.  
 //=========================================================================
 CTileCache::CTileCache(OTYPE qo,QTYPE qa)
-:CmHead(qo,qa)
+:CmHead(qo,qa,"CTil")
 {	tr = globals->dbc->GetTrace();
   int inx  = 0;
 	for (inx = 0; inx != QDIM; inx++)
@@ -2897,36 +2766,42 @@ CmHead *CDbCacheMgr::AllocateObj(QTYPE qx)
   if (qx >= QDIM) return 0;
 	switch (qx)	{
 		case TIL:
+			//MEMORY_LEAK_MARKER("DBC.TIL");
 			obj = new CTileCache(DBM,TIL);
 			break;
 		case APT:
+			//MEMORY_LEAK_MARKER("DBC.APT");
  			obj	= new CAirport  (DBM,APT);
 			break;
 		case VOR:
+			//MEMORY_LEAK_MARKER("DBC.VOR");
 			obj	= new CNavaid   (DBM,VOR);
 			break;
 		case NDB:
+			//MEMORY_LEAK_MARKER("DBC.NDB");
 			obj	= new CNavaid   (DBM,NDB);
 			break;
 		case ILS:
+			//MEMORY_LEAK_MARKER("DBC.ILS");
       obj = new CILS      (DBM,ILS);
 			break;
 		case COM:
+			//MEMORY_LEAK_MARKER("DBC.COM");
       obj = new CCOM      (DBM,COM);
 			break;
 		case RWY:
+			//MEMORY_LEAK_MARKER("DBC.RWY");
       obj = new CRunway   (DBM,RWY);
 			break;
 		case WPT:
+			//MEMORY_LEAK_MARKER("DBC.WPT");
       obj = new CWPT (DBM,WPT);
 			break;
     case OBN:
+			//MEMORY_LEAK_MARKER("DBC.OBN");
       obj = new CObstacle (DBM,OBN);
 			break;
 	}
-  //-----Register object size and count ------------
-//  count[qx]++;
-//  total += oSize[qx];
 	return obj;
 }
 //------------------------------------------------------------------------
@@ -3491,6 +3366,7 @@ void CDbCacheMgr::AirportRWYforGPS(CGPSrequest *req,CAirport *apt)
   while (offset  != 0) {
       db->GetRawRecord (offset);
       rwy = new CRunway(SHR,RWY);
+			//MEMORY_LEAK_MARKER("AirportRWYforGPS.RWY");
 			db->DecodeRecord(offset,rwy);
       req->rwyQ.LastInQ1(rwy);
       if (rwy->rlen > 8079.0f)  apt->SetLongRWY();      // Long RWY property
@@ -3571,6 +3447,7 @@ CNavaid* CDbCacheMgr::GetNavaidByNameAndKey(char *name,char *key)
   unsigned long offset    = db->Search ('mann', name);            // Search
   if  (0 == offset)       return 0;
   CNavaid *nav            = new CNavaid(SHR,VOR);
+	//MEMORY_LEAK_MARKER("GetNavaidByNameAndKey.NAV");
   while (offset)
   { db->GetRawRecord(offset);
     db->DecodeRecord(offset,nav);
@@ -3589,6 +3466,7 @@ CAirport* CDbCacheMgr::GetAirportByName(char *name)
   unsigned long offset    = db->Search ('mana', name);            // Search airport
   if (0 == offset)        return 0;
   CAirport  *apt          = new CAirport(SHR,APT);
+	//MEMORY_LEAK_MARKER("GetAirportByName.APT");
   db->GetRawRecord(offset);
   db->DecodeRecord(offset,apt);
   return apt;
@@ -3602,6 +3480,7 @@ CWPT* CDbCacheMgr::GetWaypointByKey(char *key)
   unsigned long offset    = db->Search ('wkey', key);            // Search waypoint
   if (0 == offset)        return 0;
   CWPT  *wpt         = new CWPT(SHR,WPT);
+	//MEMORY_LEAK_MARKER("GetWaypointByKey.WPT");
   db->GetRawRecord(offset);
   db->DecodeRecord(offset,wpt);
   return wpt;
@@ -4006,6 +3885,7 @@ void CDbCacheMgr::ComFromThisAirport(CDataBaseREQ *req)
   if (offset == 0)        return;
   while (0 != offset)
   { if (0 == slot)  slot  = new CComLine;
+		//MEMORY_LEAK_MARKER("ComFromThisAirport.slot");
     db->GetRawRecord (offset);
     db->DecodeRecord(slot);
     bool  ok  = GoodCOMfrequency(slot->GetFreq());
@@ -4032,6 +3912,7 @@ void CDbCacheMgr::AirportCOMforGPS(CGPSrequest *req,CAirport *apt)
   if (offset == 0)        return;
   while (0 != offset)
   { com  = new CCOM(SHR,COM);
+		//MEMORY_LEAK_MARKER("AirportCOMforGPS.com");
     db->GetRawRecord(offset);
     db->DecodeRecord(offset,com);
     req->comQ.LastInQ1(com);
@@ -4072,6 +3953,8 @@ void CDbCacheMgr::IlsFromThisRunway(CDataBaseREQ *req, char* ikey)
   if (offset == 0)        return;
   while (offset)
   { if (0 == slot)  slot  = new CComLine;
+		//MEMORY_LEAK_MARKER("IlsFromThisRunway.slot");
+
     db->GetRawRecord (offset);
     db->DecodeRecord(slot);
     float freq = slot->GetFreq();
@@ -4100,6 +3983,8 @@ void CDbCacheMgr::RunwayILSforGPS(CGPSrequest *req, char *akey,char *kend)
   if (offset == 0)        return;
   while (offset)
   { if (0 == ils)     ils  = new CILS(ANY,ILS);
+		//MEMORY_LEAK_MARKER("RunwayILSforGPS.ils");
+
     db->GetRawRecord (offset);
     db->DecodeRecord(offset,ils);
     frq = ils->GetFrequency();
@@ -4124,6 +4009,7 @@ void CDbCacheMgr::APTByOffset(CDataBaseREQ *req)
   if (0 == db)          return;
   U_LONG  offset  =     req->GetOffset();
   apt   = new CAirport(SHR,APT);
+	//MEMORY_LEAK_MARKER("APTByOffset.apt");
   db->GetRawRecord(offset);
   db->DecodeRecord(offset,apt);
   req->Wind->AddDBrecord(apt,(DBCODE)req->Code);
@@ -4138,6 +4024,8 @@ void CDbCacheMgr::NDBByOffset(CDataBaseREQ *req)
   if (0 == db)          return;
   U_LONG  offset  =     req->GetOffset();
   nav   = new CNavaid(ANY,NDB);
+	//MEMORY_LEAK_MARKER("NDBByOffset.nav");
+
   db->GetRawRecord(offset);
   db->DecodeRecord(offset,nav);
   req->Wind->AddDBrecord(nav,(DBCODE)req->Code);
@@ -4214,6 +4102,7 @@ void CDbCacheMgr::GetAllCountries(CDataBaseREQ *req)
   while (No != end)
   { offset  =     db->RecordOffset(No++);
     if (0 == slot )     slot  = new CCtyLine;
+		//MEMORY_LEAK_MARKER("GetAllCountries.slot");
     db->GetRawRecord(offset);
     db->DecodeRecord(slot);
     if (!FilterCountry(slot,req)) continue;
@@ -4234,6 +4123,7 @@ void CDbCacheMgr::GetCountryName(TCacheMGR *tcm)
   U_INT     end     = (U_INT)GetDBcountryNBrecords();
   U_LONG  offset    = 0;
   CCtyLine *slot    = new CCtyLine;
+	//MEMORY_LEAK_MARKER("GetCountryName.slot");
   while (No != end)
   { offset  =     db->RecordOffset(No++);
     db->GetRawRecord(offset);
@@ -4257,6 +4147,7 @@ void CDbCacheMgr::GetStateByCountry(CDataBaseREQ *req)
   { offset    = db->RecordOffset(No++);
     if (0 == offset)              break;
     if (0 == slot) slot = new CStaLine;
+		//MEMORY_LEAK_MARKER("GetStateByCountry.slot");
     db->GetRawRecord (offset);
     db->DecodeRecord(slot);
     if (strcmp(req->ctykey,slot->GetCTY()) != 0)       continue;
@@ -4281,6 +4172,7 @@ void CDbCacheMgr::GetAirportByArg(CDataBaseREQ *req)
   { offset    = db->RecordOffset(No++);
     if (0 == offset)              break;
     if (0 == slot)  slot  = new CAptLine;
+		//MEMORY_LEAK_MARKER("GetAirportByArg.slot");
     db->GetRawRecord (offset);
     if (!FilterAirport(rec,req)) continue;
     db->DecodeRecord(slot);
@@ -4306,6 +4198,7 @@ void CDbCacheMgr::GetNavaidByArg(CDataBaseREQ *req)
   { offset    = db->RecordOffset(No++);
     if  (0 == offset)             break;
     if  (0 == slot) slot = new CNavLine;
+		//MEMORY_LEAK_MARKER("GetNavaidByArg.slot");
     db->GetRawRecord (offset);
     if (!FilterNavaid(rec,req))   continue;
     db->DecodeRecord(slot);
@@ -4331,6 +4224,7 @@ void CDbCacheMgr::GetWaypointByArg(CDataBaseREQ *req)
   { offset    = db->RecordOffset(No++);
     if  (0 == offset)             break;
     if  (0 == slot) slot = new CWptLine;
+		//MEMORY_LEAK_MARKER("GetWaypointByArg.slot");
     db->GetRawRecord (offset);
     if (!FilterWaypoint(rec,req))   continue;
     db->DecodeRecord(slot);
@@ -4350,6 +4244,7 @@ void CDbCacheMgr::NAVByOffset(CDataBaseREQ *req)
   if (0 == db)          return;
   U_LONG  offset  =     req->GetOffset();
   nav   = new CNavaid(ANY,VOR);
+	//MEMORY_LEAK_MARKER("NAVByOffset.nav");
   db->GetRawRecord(offset);
   db->DecodeRecord(offset,nav);
   req->Wind->AddDBrecord(nav,(DBCODE)req->Code);
@@ -4370,6 +4265,7 @@ void CDbCacheMgr::RwyFromThisAirport(CDataBaseREQ *req)
   if (offset == 0)      return;
   while (offset  != 0) {
       slot  = new CRwyLine;
+			//MEMORY_LEAK_MARKER("RwyFromThisAirport.slot");
       db->GetRawRecord (offset);
 			db->DecodeRecord(slot);
       slot->SetOFS(offset);
@@ -4402,6 +4298,7 @@ void CDbCacheMgr::AirportByIdentFromPOD(char *iden,CAirport **ptr)
   unsigned long offset    = db->Search ('acia', iden);            // Search
   if  (0 == offset)       return;
   CAirport *apt           = new CAirport(SHR,APT);
+	//MEMORY_LEAK_MARKER("AirportByIdentFromPOD.apt");
   apt->IncUser();
   while (offset)
   { db->GetRawRecord(offset);
@@ -4821,6 +4718,7 @@ CAirport *CDbCacheMgr::MatchAPTforGPS(CGPSrequest *req,int dir)
     db->GetRawRecord (offset);
     if (!FilterAirport(rec,req)) continue;
     apt  = new CAirport(SHR,APT);
+		//MEMORY_LEAK_MARKER("MatchAPTforGPS.apt");
     db->DecodeRecord(offset,apt);
     req->offset = apt->GetRecNo();
     break;
@@ -4848,6 +4746,7 @@ CNavaid *CDbCacheMgr::MatchNAVforGPS(CGPSrequest *req,int dir)
     db->GetRawRecord (offset);
     if (!FilterNavaid(rec,req))  continue;
     nav  = new CNavaid(ANY,req->actQ);
+		//MEMORY_LEAK_MARKER("MatchNAVforGPS.nav");
     db->DecodeRecord(offset,nav);
     req->offset = nav->GetRecNo();
     break;
@@ -4876,6 +4775,7 @@ CWPT *CDbCacheMgr::MatchWPTforGPS(CGPSrequest *req,int dir)
     db->GetRawRecord (offset);
     if (!FilterWaypoint(rec,req)) continue;
     wpt  = new CWPT(SHR,WPT);
+		//MEMORY_LEAK_MARKER("MatchWPTforGPS.wpt");
     db->DecodeRecord(offset,wpt);
     req->offset = wpt->GetRecNo();
     break;
@@ -4896,6 +4796,7 @@ void CDbCacheMgr::GetAPTbyIdent()
   CAirport *apt           = 0;
   while (offset)
   { if (0 == apt) apt = new CAirport(SHR,APT);
+		//MEMORY_LEAK_MARKER("GetAPTbyIdent.apt");
     db->GetRawRecord(offset);
     db->DecodeRecord(offset,apt);
     if (strcmp(iden,apt->GetIdent()) != 0)  break;
@@ -4922,6 +4823,7 @@ void CDbCacheMgr::GetVORbyIdent()
   CNavaid *nav            = 0;
   while (offset)
   { if (0 == nav) nav = new CNavaid(ANY,VOR);
+		//MEMORY_LEAK_MARKER("GetVORbyIdent.nav");
     db->GetRawRecord(offset);
     db->DecodeRecord(offset,nav);
     if (strcmp(nav->naid,iden) != 0)  break;
@@ -4949,6 +4851,7 @@ void CDbCacheMgr::GetNDBbyIdent()
   CNavaid *nav            = 0;
   while (offset)
   { if (0 == nav) nav = new CNavaid(ANY,NDB);
+		//MEMORY_LEAK_MARKER("GetNDBbyIdent.nav");
     db->GetRawRecord(offset);
     db->DecodeRecord(offset,nav);
     if (strcmp(nav->naid,iden) != 0)  break;
@@ -4984,6 +4887,7 @@ void CDbCacheMgr::GetWPTbyIdent()
     if (0 == fn)          continue;
     if (fn != rec+14)     continue;
     if (0 == wpt)     wpt = new CWPT(SHR,WPT);
+		//MEMORY_LEAK_MARKER("GetWPTbyIdent.wpt");
     db->DecodeRecord(offset,wpt);
     rGPS.wptQ.LastInQ1(wpt);
     wpt->SetDistLat(rGPS.wptNo++);
@@ -5021,7 +4925,7 @@ CDatabaseManager::CDatabaseManager (void) {}
 void CDatabaseManager::Init (void)
 { PFS *pfs = &globals->pfs; 
 	//---------------------------------------------
-  //MEMORY_LEAK_MARKER ("database_init")
+  MEMORY_LEAK_MARKER ("database_init")
   if (0 == globals->sqm->SQLgen())
   {TRACE("------------DB Loading AIRPORTS");
 	 paddpod(pfs,"DATABASE/AIRPORT.POD");
@@ -5137,7 +5041,7 @@ void CDatabaseManager::Init (void)
     db[DB_WAYPOINT] = dbWaypoint;
     TRACE("WPT     count %u",dbWaypoint->GetNumRecords());
   }
- // MEMORY_LEAK_MARKER ("database_init")
+  MEMORY_LEAK_MARKER ("database_EndInit")
   // load string translation for various database "type" field
   InitTypeDBTranslation();
 	TRACE("________ ALL DATABASES LOADED _____________");

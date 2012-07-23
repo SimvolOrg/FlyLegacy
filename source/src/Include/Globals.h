@@ -47,15 +47,16 @@
 #include "../Include/ElevationTracker.h"
 #include "../Include/OSMobjects.h"
 #include "../Include/LogFile.h"
-#include "../Plugin\Plugin.h"   // 
 #include "../Include/Ui.h"                 // sdk:
 //=============================================================================================
 class CFmtxMap;
 class CBuilder;
 class OSM_Object;
+class CPluginMain;
 //=============================================================================================
 extern char *ReadTheFile(FILE *f, char *buf);
 extern char *directoryTAB [];
+extern float colorTABLE[];
 extern char  GetOSMTextureDirectory(U_INT type);
 extern void  InhibitOSM(char *type);
 extern char *GetOSMType(U_INT t);
@@ -101,6 +102,18 @@ extern char  SwapOSMuse(U_INT t);
 #define PROF_NO_PLANE   (PROF_NO_INT+PROF_NO_EXT+PROF_ACBUSY)
 #define PROF_TOOL       (PROF_EDITOR | PROF_ACBUSY)
 //=======================================================================================
+//  Color index
+//=======================================================================================
+#define COLOR_BLACK_TRANS				(0)					// Black tranparent
+#define COLOR_BLACK_OPAQUE			(1)					// black OPAQUE
+#define COLOR_WHITE							(2)					// White color
+#define COLOR_RED								(3)					// Red color
+#define COLOR_PURE_GREEN				(4)					// Pure green
+#define COLOR_PURE_BLUE					(5)					// Pure blue
+#define COLOR_LIGHT_BLUE				(6)					// Light blue
+#define COLOR_YELLOW						(7)					// Pure yelllow
+#define COLOR_AMBER							(8)					// Orange
+//=======================================================================================
 //  Edit column for statistics
 //=======================================================================================
 #define STATS_NUM (20)
@@ -109,7 +122,11 @@ extern char  SwapOSMuse(U_INT t);
 //=======================================================================================
 #define APT_OPT_ALIT          (0x00000001)        // Alight airport
 //=======================================================================================
-
+//	GL Color
+//=======================================================================================
+inline void ColorGL(U_INT col)
+	{	glColor4fv(colorTABLE + (col << 2));
+	}
 //=======================================================================================
 //-------------------Font definition -------------------------------
 typedef struct {
@@ -402,8 +419,8 @@ typedef struct {
   U_INT              cnt2;
   //------------------------------------------------------------------
   // sdk: Plugin manager
-  CPluginMain				plugins;
-  int               plugins_num;
+  CPluginMain			*plugins;
+  int              plugins_num;
   // sdk: Main menu additions if any  // 
   sdkmenu::CSDKMenu sdk_menu;
   //-----Screen parameters -------------------------------------------
@@ -434,6 +451,7 @@ typedef struct {
   COption       aptOpt;         // Airport options
   COption       scnOpt;         // Scenary options
   COption       vmpOpt;					// VMap    options
+	COption       evnOpt;					// Event 
   //-------------Vector map parameter --------------------------------
   float         vmapZoom;   // Vector map zoom
   U_INT         vmapTrns;   // Transparency
@@ -473,8 +491,6 @@ typedef struct {
   bool  caging_fixed_alt;
   bool  caging_fixed_wings;
 
-  USHORT random_flag;
-  int   num_of_autogen;     // num_of_autogen objects
 } SGlobals;
 
 //=========================================================================

@@ -160,8 +160,7 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
     return TAG_READ;
   case 'wing':
     // Wing section
-    {
-      char name[80];
+    { char name[80];
       ReadString (name, 80, stream);
       CAeroModelWingSection *wing = new CAeroModelWingSection(mveh,name);
       ReadFrom (wing, stream);
@@ -754,7 +753,6 @@ CAeroModelWingSection::CAeroModelWingSection (CVehicleObject *v,char* name)
   cl = cdi = cm = 0.0;
   col_ = cod_ = com_ = 1.0f;
   mflpS = NULL;
-//  flpS  = 0;
   CPhysicModelAdj *phy = mveh->GetPHY();
   if (!phy) { /// PHY file
     float tmp = ADJ_LIFT_COEFF;
@@ -776,8 +774,6 @@ CAeroModelWingSection::CAeroModelWingSection (CVehicleObject *v,char* name)
       col=%f cod=%f com=%f (%p)",
       name, col_, cod_, com_, phy);
   }
-
-  has_splr = has_trim = false;
 }
 //------------------------------------------------------------------------
 //  Destroy this object
@@ -795,7 +791,6 @@ CAeroModelWingSection::~CAeroModelWingSection (void)
   trimMap.clear();
 	//---------------------------------------------------
   SAFE_DELETE (damage);
-//  SAFE_DELETE (flpS);
   SAFE_DELETE (mflpS);
 
 }
@@ -850,15 +845,13 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
     }
     return TAG_READ;
   case 'splr':
-    { has_splr = true;
-      CAeroModelFlap* splr = new CAeroModelFlap(this);
+    { CAeroModelFlap* splr = new CAeroModelFlap(this);
       ReadFrom (splr, stream);
       spoilerMap[splr->GetChannelName()] = splr;
     }
     return TAG_READ;
   case 'trim':
-    { has_trim = true;
-      CAeroModelFlap* trim = new CAeroModelFlap(this);
+    { CAeroModelFlap* trim = new CAeroModelFlap(this);
       ReadFrom (trim, stream);
       trimMap[trim->GetChannelName()] = trim;
     }

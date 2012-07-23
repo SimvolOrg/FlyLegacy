@@ -43,6 +43,9 @@ class CFPlan;
 #define WPT_MOD_LEG	(0)										// Leg Mode
 #define WPT_MOD_DIR (1)										// Direct mode
 #define WPT_MOD_LND (2)										// Mode landing
+//=============================================================
+#define WPT_MODE_FPLAN  (0)       // Normal mode
+#define WPT_MODE_DIRECT (1)       // Direct To
 //============================================================================
 //  Vector Map Node
 //============================================================================
@@ -233,18 +236,12 @@ protected:
 	//---  Autorobot ---------------------------------------------
   CRobot *d2r2;																	// Robot location
   std::vector<CheckChapter*>   vCHAP;						// Table of Chapters
-	std::vector<SMessage*>	     autoM;						// Auto start messages
   //---METHODS--------------------------------------------------
 public:
   PlaneCheckList(CVehicleObject *v);
  ~PlaneCheckList();
 	//------------------------------------------------------------
-	void PrepareMsg(CVehicleObject *veh);
-  //------------------------------------------------------------
-	bool		FltMessage(char *txt);
-	bool		IntMessage(char *txt);
-	bool		DecodeMSG(char *txt);
-  void		ReadAUTO(SStream *st);		
+	
   void    OpenList(char *tail);
   int     Read(SStream *st,Tag tag);
   char  **GetChapters();
@@ -252,9 +249,6 @@ public:
   void    Close();
 	void    RegisterWindow(CFuiCkList *w);
 	bool    Execute(D2R2_ACTION &a);
-	//------------------------------------------------------------
-	bool		AutoStart();
-	SMessage *GetSMessage(U_INT k);
   //------------------------------------------------------------
   EMessageResult ReceiveMessage (SMessage *msg);
   //------------------------------------------------------------
@@ -325,7 +319,7 @@ public:
 	void		Populate();
 	void		PopulateUser();
 	//----------------------------------------------------------
-	ILS_DATA	*GetLandingData();
+	LND_DATA	*GetLandingData();
 	bool		EnterLanding(CRadio *rad);
 	//---HELPERS -----------------------------------------------
 	void		SetSeq(U_SHORT s);
@@ -337,6 +331,7 @@ public:
 	void    SetPosition(SPosition p);
   void		SetReferenceDIR(double d);
 	float		GoDirect(CVehicleObject *v);
+	void		CorrectDrift(CRadio *R, CVehicleObject *V);
 	//--- Position Management ----------------------------------
 	bool		CannotChange();
 	bool		HorizontalMove(SPosition *pos);
@@ -406,7 +401,6 @@ public:
 	inline SPosition* GetGeoP()							{return &position;}
 	inline Tag				GetUser()							{return user;}
 	inline float			GetFrequency()				{return DBwpt->GetFrequency();}
-	inline float			GetILSFrequency()			{return ilsF;}
 	inline float			GetDTK()							{return rDir;}	
 	inline float			GetCAP()							{return dDir;}
 	inline double     GetMagDeviation()			{return DBwpt->GetMagDev();}

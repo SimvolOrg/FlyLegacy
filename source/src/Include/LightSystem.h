@@ -34,7 +34,7 @@
 
 //=========================================================================================
 #include "../Include/Globals.h"
-#include "../Include/FlyLegacy.h"
+#include "../Include/WorldObjects.h"
 #include "../Include/3dMath.h"
 //==========================================================================================
 class TCacheMGR;
@@ -658,6 +658,8 @@ public:
 
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
+  double		*GetROTM();
+	//---------------------------------------------------
 	void	ReadHalo();
 	void	Build2DHalo(int sid);
 	void	AddNaviLite(CExternalLight *n);
@@ -666,13 +668,12 @@ public:
 	double		DistanceToGround(CVector *v0,CVector *v1);
   void      SetPowerState (Tag id, bool power);
   void      Timeslice (float dT);
-	//--- Drawing ----------------------------------
+	//--- Drawing --------------------------------------
 	void			DrawOmniLights();
 	void			DrawSpotLights();
   void      Print (FILE *f);
 
   //------------------------------------------
-  inline double		*GetROTM()                      {return mveh->GetROTM();}
 	inline U_INT		 GetHalo()											{return txo;}
 	inline CVector   GetIntersection()							{return secp.PR;}
   //------------------------------------------

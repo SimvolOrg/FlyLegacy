@@ -22,6 +22,7 @@
  *
  */
 #include "../Include/Taxiway.h"
+#include "../Include/WinTaxiway.h"
 #include "../Include/TerrainCache.h"
 #include "../Include/TerrainTexture.h"
 ///----------------------------------------------------------------------------
@@ -49,209 +50,208 @@
 //  Node structure 
 //============================================================================
 TaxNODE::TaxNODE()
-{ pos.lon  = 0;
-  pos.lat  = 0;
-  pos.alt  = 0;
-  direction = 0;
-	type			= 0;
+{ RazINP(); RazOUT();}
+//------------------------------------------------------------------
+// Copy Constructor
+//------------------------------------------------------------------
+TaxNODE::TaxNODE(Tag id,TaxNODE *N)
+{	*this = *N;
+	 idn  = id;
+	 RazINP();
+	 RazOUT();
 }
 //------------------------------------------------------------------
 //  Constructor with position given
 //------------------------------------------------------------------
-TaxNODE::TaxNODE(Tag id,SPosition &P)
-{	idn	= id;
-	pos = P;
-	direction = 0;
-	type			= 0;
+TaxNODE::TaxNODE(Tag id,SPosition *P)
+{	Pos.lon  = 0;
+  Pos.lat  = 0;
+  Pos.alt  = 0;
+	Init(id,P);
 }
+//------------------------------------------------------------------
+//  Init Node
+//------------------------------------------------------------------
+void TaxNODE::Init(Tag id, SPosition *P)
+{	idn			= id;
+	RazINP();
+	RazOUT();
+	sector	= 0;
+	if (P)	Pos = *P;
+	type	= TAXI_NODE_EXIT;
+}
+
+//------------------------------------------------------------------
+//  Set Position
+//------------------------------------------------------------------
+void TaxNODE::SetPosition(SPosition &P)
+{	Pos = P;
+	GroundSpot lnd(P.lon,P.lat);
+  Pos.alt = globals->tcm->GetGroundAt(lnd);
+	if (NotType(TAXI_NODE_AXES))	return;
+	SPosition &S = lndR->lndP;						// Landing spot
+	sector = GetSectorNumber(S,Pos);
+	return;
+}
+//------------------------------------------------------------------
+//  Swap for opposite runway
+//------------------------------------------------------------------
+void TaxNODE::SwapRunway()
+{	if (NotType(TAXI_NODE_AXES))	return;
+	if (type == TAXI_NODE_TKOF )	return;
+	LND_DATA *lnd = lndR->opp;
+	lndR	= lnd;
+	strncpy(rwy,lndR->ridn,4);			// New ident
+	SPosition &S = lndR->lndP;			// New origin
+	sector = GetSectorNumber(S,Pos);
+	return;
+}
+//------------------------------------------------------------------
+//  Check for shortcut candidate in output circuit
+//------------------------------------------------------------------
+bool TaxNODE::IsOutOK()
+{	if (type == TAXI_NODE_EXIT)	return true;
+	if (nout[1] >  1)						return true;
+	if (ninp[1] >  1)						return true;
+	return false;
+}
+//------------------------------------------------------------------
+//  Check for shortcut candidate in input circuit
+//------------------------------------------------------------------
+bool TaxNODE::IsInpOK()
+{	bool pk = (ninp[0] == 0) && (type == TAXI_NODE_TAXI);
+	if (pk)											return true;
+	if (nout[0] > 1)						return true;
+	return false;
+}
+
 //------------------------------------------------------------------
 //  Destroy it
 //------------------------------------------------------------------
 TaxNODE::~TaxNODE()
 {}
+//------------------------------------------------------------------
+//  Check for Landing parking
+//------------------------------------------------------------------
+bool TaxNODE::LndParking()
+{	bool ok = (0 != ninp[1]) && (0 == nout[1]) && (TAXI_NODE_TAXI == type);
+	return ok;	}
+//------------------------------------------------------------------
+//  Check for Take-off parking
+//------------------------------------------------------------------
+bool TaxNODE::TkoParking()
+{	bool ok = (0 == ninp[0]) && (0 != nout[0]) && (TAXI_NODE_TAXI == type);
+	return ok;	}
 
 //------------------------------------------------------------------
-//  read the tags
+// Read the Node file 
 //------------------------------------------------------------------
-int TaxNODE::Read (CStreamFile *sf, Tag tag)    // Read method
-{ double  nd;
-  long    ln;
-  switch (tag) {
-  case 'vloc':
-    sf->ReadDouble(nd);			// X coordinate in unit 16 feet
-    pos.lon   = nd * 16;		
-    sf->ReadDouble(nd);			// Y coordinate in unit 16 feet
-    pos.alt   = nd * 16;
-    sf->ReadDouble(nd);
-    pos.lat   = nd * 16;
-    return TAG_READ;
-
-  case 'flow':
-    sf->ReadLong(ln);
-    direction = U_SHORT(ln);
-    return TAG_READ;
-  }
-  return TAG_READ;
+int TaxNODE::Read (SStream *sf, Tag tag)
+{ int	pm;
+	char str[128];
+	switch (tag) {
+		case 'geop':
+			ReadString(str,128,sf);
+			sscanf(str,"%lf , %lf , %lf",&Pos.lat,&Pos.lon,&Pos.alt);
+			return TAG_READ;
+		case 'rwid':
+			ReadString(str,128,sf);
+			strncpy(rwy,str,4);
+			return TAG_READ;
+		case 'type':
+			ReadInt(&pm,sf);
+			type = U_CHAR(pm);
+			return TAG_READ;
+		case 'sect':
+			ReadInt(&pm,sf);
+			sector = U_SHORT(pm);
+			return TAG_READ;
+	}
+	return TAG_EXIT;
+}
+//------------------------------------------------------------------
+//  All parameters are read
+//------------------------------------------------------------------
+//------------------------------------------------------------------
+// Save the Node in file 
+//------------------------------------------------------------------
+void TaxNODE::Save(CStreamFile &sf)
+{	//-----------------------------------------
+	sf.WriteTag('node',"");
+	sf.WriteUInt(idn);
+	sf.DebObject();
+	sf.WriteTag('geop',"--- position -----");
+	sf.WritePosition(&Pos);
+	sf.WriteTag('rwid',"--- Runway end ---");
+	sf.WriteString(rwy);
+	sf.WriteTag('type',"--- node type ----");
+	sf.WriteUInt(type);
+	sf.WriteTag('sect',"--- Ruway sector -");
+	sf.WriteUInt(sector);
+	sf.EndObject();
 }
 
 //============================================================================
 //  Edge structure 
 //============================================================================
 TaxEDGE::TaxEDGE()
-{ oNode   = 0;
-  xNode   = 0;
-  thick   = 0;
-  type    = 0;
+{ idn		= 0;
+	scut	= 0;
 }
+//------------------------------------------------------------------
+//  Build a edge
+//------------------------------------------------------------------
+TaxEDGE::TaxEDGE(U_SHORT n1, U_SHORT n2)
+{	idn = (n1 << 16) | n2;	scut = 0;}
 //------------------------------------------------------------------
 //  Destroy it
 //------------------------------------------------------------------
 TaxEDGE::~TaxEDGE()
 {}
 //------------------------------------------------------------------
-//  read the tags
+// Read the Edge file 
 //------------------------------------------------------------------
-int TaxEDGE::Read (CStreamFile *sf, Tag tag)    // Read method
-{ long  nl;
-  switch (tag) {
-  case 'thck':
-    sf->ReadFloat(thick);
-    return TAG_READ;
-
-  case 'type':
-    sf->ReadLong(nl);
-    type  = short(nl);
-    return TAG_READ;
-  }
-  return TAG_READ;
+int TaxEDGE::Read (SStream *sf, Tag tag)
+{ return TAG_READ;
 }
 //------------------------------------------------------------------
-//  Check for reference to node ta
+//  Check for reference to node tr
 //------------------------------------------------------------------
 bool TaxEDGE::ReferTo(Tag tr)
-{	Tag ta = idn >> 16;
-	if (ta == tr)	return true;
-	Tag tb = idn & 0x000FFF;
-	return (tb == tr);
-}
-//============================================================================
-//  Class CDataBGR for Taxiway line definition
-//============================================================================
-CDataBGR::CDataBGR(CAptObject	*ap)
-{ apo			= ap;
-  white   = MakeRGB(255,255,255);
+{	Tag ta = LEFT_NODE(idn);
+	if (LEFT_NODE(idn) == tr)	return true;
+	if (RITE_NODE(idn) == tr) return true;
+	return false;
 }
 //------------------------------------------------------------------
-//  Destroy the BGR items
+//  Check for reference to node tr without shorcut
 //------------------------------------------------------------------
-CDataBGR::~CDataBGR()
-{ EmptyAll();
+bool TaxEDGE::NoCandidate(Tag A)
+{	if (LEFT_NODE(idn) != A)			return true;
+	if (LEFT_NODE(scut)!= 0)			return true;
+	return false;
 }
 //------------------------------------------------------------------
-//  Return Edge Number
+// Save the shortcut 
 //------------------------------------------------------------------
-TaxEDGE* CDataBGR::GetEdge(U_INT No)
-{ if (No >= edgelist.size())   return 0;
-  return edgelist[No];
+void TaxEDGE::SetShortCut(Tag C)
+{	//---- left short cut -------------------
+	scut &= 0x0000FFFF;				// Save rigth part
+	scut |= (C << 16);				// Save left part
 }
 //------------------------------------------------------------------
-//  Return Node Number
+// Save the edge in file 
 //------------------------------------------------------------------
-TaxNODE* CDataBGR::GetNode(U_INT No)
-{ if (No >= nodelist.size())   return 0;
-  return nodelist[No];
-}
-//------------------------------------------------------------------
-//  Return line number No
-//------------------------------------------------------------------
-bool CDataBGR::GetLine(U_INT nber,int &x0,int &y0,int &x1,int &y1)
-{ 
-  return false;
-}
-//------------------------------------------------------------------
-//  Draw segment No
-//------------------------------------------------------------------
-bool CDataBGR::DrawSegment(U_INT No,SSurface *sf,int xm,int ym)
-{ 
-  return false;
-}
-//------------------------------------------------------------------
-//  Destroy the BGR items
-//------------------------------------------------------------------
-void  CDataBGR::EmptyAll()
-{ std::vector<TaxNODE *>::iterator nd;
-  for (nd = nodelist.begin(); nd != nodelist.end();nd++) delete (*nd);
-  nodelist.clear();
-  std::vector<TaxEDGE *>::iterator ed;
-  for (ed = edgelist.begin(); ed != edgelist.end();ed++) delete (*ed);
-  edgelist.clear();
-  return;
-}
-//------------------------------------------------------------------
-//  Adjust origin to airport origin
-//------------------------------------------------------------------
-void CDataBGR::AdjustOrigin()
-{	SPosition org = apo->GetOrigin();
-  dpo.lat = pos.lat - org.lat;
-  dpo.lon = LongitudeDifference(pos.lon,org.lon);
-	dpo.alt = 0;
+void TaxEDGE::Save(CStreamFile &sf)
+{	char edt[64];
+	sf.WriteTag('edge',"--- path edge -----");
+  Tag t1 = idn >> 16;					// Left Tag
+	Tag t2 = idn & 0x0000FFFF;	// Right tag
+	Tag t3 = scut >> 16;				// Shortcut
+	_snprintf(edt,64,"%05d-%05d (%05d)",t1,t2,t3);
+	sf.WriteString(edt);
 	return;
 }
-//------------------------------------------------------------------
-//  Process a node
-//------------------------------------------------------------------
-void CDataBGR::ProcessNode(CStreamFile *sf)
-{ TaxNODE *txn = new TaxNODE();
-  sf->ReadFrom(txn);
-	SPosition *loc = txn->AdPosition();
-	double     xpf = apo->GetXPF();
-	loc->lon = FN_ARCS_FROM_FEET(loc->lon * xpf) + dpo.lon;
-	loc->lat = FN_ARCS_FROM_FEET(loc->lat)       + dpo.lat;
-  nodelist.push_back(txn);
-	return;
-}
-//------------------------------------------------------------------
-//  read the tags
-//------------------------------------------------------------------
-int CDataBGR::Read (CStreamFile *sf, Tag tag)    // Read method
-{ long    nb;
-  double  nd;
-  
-  TaxEDGE *edg = 0;
-  switch (tag) {
-	//--- origin of coordinates ------------------
-  case 'orgn':
-    sf->ReadDouble(nd);		// Y coordinate
-    pos.lat = nd;
-    sf->ReadDouble(nd);		// X coordinate
-    pos.lon = nd;
-    sf->ReadLong(nb);
-    sf->ReadLong(nb);
-    sf->ReadLong(nb);
-		AdjustOrigin();
-    return TAG_READ;
-
-  case 'node':
-    ProcessNode(sf);
-    return TAG_READ;
-
-  case 'edge':
-    edg = new TaxEDGE();
-    sf->ReadLong(nb);
-    edg->SetOrigin((short)nb);
-    sf->ReadLong(nb);
-    edg->SetExtrem((short)nb);
-    sf->ReadFrom(edg);
-//TRACE("EDGE %03u org %03u ext %03u type %u thick %f",
-//      edgelist.size(),edg->GetOrigin(),edg->GetExtrem(),edg->GetType(),edg->GetThick());
-    edgelist.push_back(edg);
-    return TAG_READ;
-
-}
- 
-  return TAG_READ;
-}
-
 
 //============================================================================
 //
@@ -632,6 +632,269 @@ int CTileTMS::ReadLightParam(CStreamFile *sf)
   inx++;
   return nbr;
 }
+//==================================================================================
+//  TaxiwayMgr manages the paths from runway to parking and is part of
+//	Airport Object
+//	Taxiway descriptors are loaded only for near airport where plane may land
+//==================================================================================
+TaxiwayMGR::TaxiwayMGR(CAptObject *apo)
+{	this->apo	= apo;
+	apt	= apo->GetAirport();
+	txx[TKO_CIRCUIT]	= new TaxiCircuit(this,0);
+	txx[LND_CIRCUIT]	= new TaxiCircuit(this,1);
+	Seq				= 0;
+	LoadAirport();
+}
+//------------------------------------------------------------------
+//	Destroy it
+//------------------------------------------------------------------
+TaxiwayMGR::~TaxiwayMGR()
+{	std::map<Tag,TaxNODE*>::iterator r0;
+	for (r0 = nodQ.begin(); r0 != nodQ.end(); r0++) delete (*r0).second;
+	rwyQ.clear();
+	nodQ.clear();
+	delete (txx[TKO_CIRCUIT]);
+	delete (txx[LND_CIRCUIT]);
+}
+//------------------------------------------------------------------
+//	Load airport taxiway
+//------------------------------------------------------------------
+void TaxiwayMGR::LoadAirport()
+{	//ReadTheFile();
 
+	char *key	= apt->GetKey();
+	if (0 == globals->txyDB)		return;
+	globals->sqm->ReadTaxiNodes(key,this);
+	globals->sqm->ReadTaxiEdges(key,this);
+}
+//-------------------------------------------------------------------------------------------
+//	Enter Node from file to be used by virtual  pilote
+//-------------------------------------------------------------------------------------------
+void TaxiwayMGR::EnterNode(TaxNODE *N)
+{	U_INT idn	 = N->idn;
+	nodQ[idn]  = N;
+	if (N->HasType(TAXI_NODE_AXES))	N->lndR = apt->FindRunwayLND(N->rwy);
+	if (idn >= Seq)	Seq = idn + 1;
+	if (N->HasType(TAXI_NODE_AXES))	rwyQ.push_back(N);
+	return;
+}
+//-------------------------------------------------------------------------------------------
+//	Get a node by identifier
+//-------------------------------------------------------------------------------------------
+TaxNODE *TaxiwayMGR::GetNode(Tag T)
+{	std::map<Tag,TaxNODE*>::iterator rp = nodQ.find(T);
+	return (rp == nodQ.end())?(0):((*rp).second);
+}
+//-------------------------------------------------------------------------------------------
+//	Search node for runway rwid, that start in a sector greater than No
+//-------------------------------------------------------------------------------------------
+void	TaxiwayMGR::SetExitPath(LND_DATA *rwd,TaxiRoute *txr)
+{	char dir = LND_CIRCUIT;
+	txr->Clear();
+	N0	= N1 = 0;
+	char *rid = rwd->ridn;
+	for (U_INT k = 0; k < rwyQ.size(); k++)
+	{	TaxNODE *R = rwyQ[k];
+		if (R->IsNotRWY(rid))				continue;
+		if (R->sector <= rwd->sect)	continue;
+		//--- Found exit node from runway --------
+		N0		= R;
+		Tag E = txx[dir]->RandomEnd(R);
+		N1		= GetNode(E);
+		//--- Compute path to parking ------------
+		bool ok = txx[dir]->SearchThePath(N0->idn,E);
+		E0  = txx[dir]->FirstPathEdge();
+		txr->SetRoute(this,dir,rwd);
+		return;
+	}
+	return;
+}
+//-------------------------------------------------------------------------------------------
+//	Return next node on circuit 
+//-------------------------------------------------------------------------------------------
+TaxNODE *TaxiwayMGR::NextCircuitNode(char d)
+{	//--- Change to next node ----------------------
+	if (N0 == N1)		return 0;
+	if (0  == E0)		return 0;
+	Tag N = RITE_NODE(E0->idn);
+	N0		= GetNode(N);
+	if (0 == N0)		return 0;
+	E0		= txx[d]->NextPathEdge();
+	return N0;
+}
+//-------------------------------------------------------------------------------------------
+//	Search a near node leading to take-off spot
+//-------------------------------------------------------------------------------------------
+void TaxiwayMGR::GetTkofPath(char *rid, TaxiRoute *txr)
+{	char dir = TKO_CIRCUIT;
+	txr->Clear();
+	for (U_INT k = 0; k < rwyQ.size(); k++)
+	{	TaxNODE *R = rwyQ[k];
+		if (R->IsNotRWY(rid))			continue;
+		if (R->IsNotTKO())				continue;
+		//--- Search nearest node --------------
+		Tag D = txx[dir]->GetNearTkoSpot(R);
+		if (0 == D)								return;
+		//--- Compute path to take off ---------
+		N0 = GetNode(D);			// Starting node
+		N1 = R;								// Ending node
+		//--- Compute path to runway -----------
+		bool ok = txx[dir]->SearchThePath(N0->idn,R->idn);
+		if (!ok)									return;
+		//--- Bypass first node as we are on it --
+		E0  = txx[dir]->FirstPathEdge();
+		N0	= NextCircuitNode(dir);
+		//--- Locate runway end ----------------
+		LND_DATA *rend;
+		SPosition tkp;
+		SPosition *pp = &tkp;
+		apt->GetTakeOffSpot(rid,&pp,&rend);
+		//--- Set the route ------------------
+		txr->SetRoute(this,dir,rend);
+		return;
+	}
+	return;
+}
 
+//===========================================================================================
+//	Taxiway Manager:  Read from file
+//===========================================================================================
+bool TaxiwayMGR::ReadTheFile()
+{	if (0 == apt)					return false;
+	char fn[256];
+	char *id = apt->GetIdent();
+	_snprintf(fn,256,"Taxiways/%s.txt",id);
+	SStream(this, fn);
+	return true;
+}
+//===========================================================================================
+//	Read taxiway
+//----------------------------------------------------------
+int TaxiwayMGR::Read(SStream *sf,Tag tag)
+{	U_INT idn;
+	switch (tag)	{
+			//--- Read a node ----------------
+			case 'node':
+				{	ReadUInt(&idn,sf);
+					TaxNODE *node = new TaxNODE();
+					node->idn	= idn;
+					ReadFrom(node,sf);
+					
+					EnterNode(node);
+					return TAG_READ;
+				}
+			//--- Read take-off circuit ----------------
+			case 'tkof':
+				{	ReadFrom(txx[TKO_CIRCUIT],sf);
+					return TAG_READ;
+				}
+			//--- Read Take-off paths -------------------
+			case 'tkop':
+				{	ReadFrom(txx[TKO_CIRCUIT],sf);
+					return TAG_READ;
+				}
+			//--- Read landing circuit -----------------
+			case 'lndg':
+				{	ReadFrom(txx[LND_CIRCUIT],sf);
+					return TAG_READ;
+				}
+			//--- Read Landing paths--------------------
+			case 'lndp':
+				{	ReadFrom(txx[LND_CIRCUIT],sf);
+					return TAG_READ;
+				}
+
+	}
+	return TAG_EXIT;
+}
+
+//-------------------------------------------------------------------------------------------
+//	Create a node of given type
+//-------------------------------------------------------------------------------------------
+TaxNODE* TaxiwayMGR::NewNode(char type)
+{	SPosition P;
+	TaxNODE *node = new TaxNODE(Seq,&P);
+	nodQ[Seq]	= node;
+	Seq++;
+	node->SetTYP(type);
+	return node;
+}
+//-------------------------------------------------------------------------------------------
+//	Create a node by copy
+//-------------------------------------------------------------------------------------------
+TaxNODE* TaxiwayMGR::DupNode(TaxNODE *S,SPosition &P,char T)
+{	TaxNODE *node = new TaxNODE(Seq,S);
+	node->SetTYP(T);
+  node->SetPosition(P);
+	nodQ[Seq]	= node;
+	Seq++;
+	return node;
+}
+//-------------------------------------------------------------------------------------------
+//	Delete node 
+//-------------------------------------------------------------------------------------------
+void TaxiwayMGR::DeleteNode(Tag A)
+{ std::map<Tag,TaxNODE*>::iterator r0 = nodQ.find(A);
+	if (r0 == nodQ.end())		return;
+	TaxNODE *nod = (*r0).second;
+	delete nod;
+	nodQ.erase(r0);
+	return;
+}
+//----------------------------------------------------------
+//	Save as a file
+//----------------------------------------------------------
+void TaxiwayMGR::SaveItems(CStreamFile &sf)
+{	std::map<Tag,TaxNODE*>::iterator r0;
+	//--- Save nodes -----------------------------------
+	for (r0 = nodQ.begin(); r0 != nodQ.end(); r0++)
+	{	(*r0).second->Save(sf);	}
+	//--- Save Edges ------------------------------------
+	txx[TKO_CIRCUIT]->Save('tkof','tkop',sf);
+	txx[LND_CIRCUIT]->Save('lndg','lndp',sf);
+}
+//===========================================================================================
+//	Taxiway editor:  Save taxiway
+//===========================================================================================
+//	Save to file
+//-------------------------------------------------------------------------------
+void TaxiwayMGR::SaveToFile(TaxiTracker &T)
+{	if (0 == apt)		return;
+  //--- Mark used nodes -------------------------
+	T.ComputeAllShortCut();
+	char  fn[256];
+	char  cm[256];
+	char *an = apt->GetName();
+	char *id = apt->GetIdent();
+	_snprintf(fn,256,"Taxiways/%s.txt",id);
+	_snprintf(cm,256,"---Taxiways for %s airport --- ",an);
+	CStreamFile sf;
+  sf.OpenWrite(fn);
+  sf.WriteComment(cm);
+	sf.DebObject();
+	//trak.SaveToFile(sf);
+	SaveItems(sf);
+	sf.EndObject();
+	sf.Close();
+	return;
+}
+//-------------------------------------------------------------------------------
+//	Save to database
+//-------------------------------------------------------------------------------
+void TaxiwayMGR::SaveToBase(TaxiTracker &T)
+{	if (0 == apt)								return;
+	if (0 == globals->txyDB)		return;
+	T.ComputeAllShortCut();
+	char *key		= apt->GetKey();
+	SqlMGR *sqm = globals->sqm;
+	//--- remove all data from airport ---------------------
+	sqm->RemoveTaxiData(key);
+	//--- Save all nodes -----------------------------------
+	std::map<Tag,TaxNODE*>::iterator rn;
+	for (rn = nodQ.begin(); rn != nodQ.end(); rn++)
+	{	sqm->AddTaxiNode(key,(*rn).second);}
+	//--- Save all edges -----------------------------------
+	sqm->AddTaxiEdges(key,this);
+	return;
+}
 //===================================END OF FILE ==========================================

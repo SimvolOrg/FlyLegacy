@@ -23,7 +23,6 @@
 //=====================================================================================
 #include "../Include/Globals.h"
 #include "../Include/PlanDeVol.h"
-#include "../Include/WorldObjects.h"
 #include "../Include/FuiUser.h"
 #include "../Include/3DMath.h"
 using namespace std;
@@ -381,13 +380,9 @@ PlaneCheckList::PlaneCheckList(CVehicleObject *v)
 }
 //-------------------------------------------------------------------------
 PlaneCheckList::~PlaneCheckList()
-{	//--- Clear messages -------------------------
-	int end = autoM.size();
-	for (int k=0; k<end; k++)   delete autoM[k];
-	autoM.clear();
-	//--- Clear chapters -------------------------
-	end	= vCHAP.size();
-	for (int k=0; k < end;k++)	delete vCHAP[k];
+{	//--- Clear chapters -------------------------
+	U_INT end	= vCHAP.size();
+	for (U_INT k=0; k < end;k++)	delete vCHAP[k];
 	vCHAP.clear();
 }
 //-------------------------------------------------------------------------
@@ -401,98 +396,7 @@ void PlaneCheckList::OpenList(char *tail)
   SStream s(this,name);
   return;
 }
-//-------------------------------------------------------------------------
-//	New message for autostart
-//-------------------------------------------------------------------------
-bool PlaneCheckList::DecodeMSG(char *txt)
-{	if (IntMessage(txt))		return true;
-  if (FltMessage(txt))		return true;
-	return false;
-}
-//-------------------------------------------------------------------------
-//	Decode message for autostart
-//-------------------------------------------------------------------------
-bool PlaneCheckList::IntMessage(char *txt)
-{ char ds[6];
-	char fn[6];
-	char hw[16];
-	int nk;
-	int p1;
-	int nf = sscanf(txt,"int %d to %4s - %4s %n",&p1,ds,fn,&nk);
-	if (3 != nf)		return false;	
-	//--- Build a message ---------------------
-	SMessage *msg = new SMessage();
-	msg->id				= MSG_SETDATA;
-  msg->group		= StringToTag(ds);
-	msg->user.u.datatag = StringToTag(fn);
-	msg->intData	= p1;
-	strncpy(msg->dst,ds,5);
-	//--- Add one message ---------------------
-	autoM.push_back(msg);
-	//--- check for hardware id ---------------	
-	txt += nk;
-	if (0 == *txt)	return true;
-	nf = sscanf(txt,"( %16[^ )]s", hw);
-	if (1 != nf)		return true;
-	msg->user.u.hw = GetHardwareType(hw);
-	return true;
-}
-//-------------------------------------------------------------------------
-//	Prepare message for autostart
-//-------------------------------------------------------------------------
-void PlaneCheckList::PrepareMsg(CVehicleObject *veh)
-{	int end = autoM.size();
-	for (int k=0; k<end; k++)
-	{ SMessage *msg = autoM[k];
-		msg->sender = unId;
-		veh->FindReceiver(msg);
-	}
-	return;
-}
-//-------------------------------------------------------------------------
-//	Decode message for autostart
-//-------------------------------------------------------------------------
-bool PlaneCheckList::FltMessage(char *txt)
-{ char ds[6];
-	char fn[6];
-	char hw[16];
-	int nk;
-	float p1;
-	int nf = sscanf(txt,"real %f to %4s - %4s %n",&p1,ds,fn,&nk);
-	if (3 != nf)		return false;	
-	//--- Build a message ---------------------
-	SMessage *msg = new SMessage();
-	msg->id				= MSG_SETDATA;
-  msg->group		= StringToTag(ds);
-	msg->user.u.datatag = StringToTag(fn);
-	msg->realData = p1;
-	strncpy(msg->dst,ds,5);
-	//--- Add one message ---------------------
-	autoM.push_back(msg);
-	//--- check for hardware id ---------------	
-	txt += nk;
-	if (0 == *txt)	return true;
-	nf = sscanf(txt,"( %16[^ )]s", hw);
-	if (1 != nf)		return true;
-	msg->user.u.hw = GetHardwareType(hw);
-	return true;
-}
 
-//-------------------------------------------------------------------------
-//  Read auto statement
-//-------------------------------------------------------------------------
-void PlaneCheckList::ReadAUTO(SStream *st)
-{	char txt[128];
-  char end[6];
-	bool go = 1;
-	while (go)
-	{	ReadString(txt,128,st);
-		sscanf(txt,"%4[^ ,;=]s",end);
-		go = (strncmp("endm",end,2) != 0);
-		if (go)	DecodeMSG(txt);
-	}
-	return;
-}
 //-------------------------------------------------------------------------
 //  Read chapters
 //-------------------------------------------------------------------------
@@ -508,9 +412,6 @@ int PlaneCheckList::Read(SStream *st,Tag tag)
 				vCHAP.push_back(chap);
 				return TAG_READ;
 			}
-		case 'auto':
-			ReadAUTO(st);
-			return TAG_READ;
   }
   return TAG_IGNORED;
 }
@@ -574,25 +475,6 @@ EMessageResult PlaneCheckList::ReceiveMessage (SMessage *msg)
     return MSG_PROCESSED;
   }
   return MSG_IGNORED;}
-//--------------------------------------------------------------------------
-//  Autostart
-//--------------------------------------------------------------------------
-bool PlaneCheckList::AutoStart()
-{	int end = autoM.size();
-	if (0 == end)	return false;
-	for(int k=0; k<end; k++)
-	{	SMessage *msg = autoM[k];
-		if (MSG_PROCESSED == Send_Message(msg)) continue;
-		return false;
-	}
-	return true;
-}
-//--------------------------------------------------------------------------
-//  Return message n° 
-//--------------------------------------------------------------------------
-SMessage *PlaneCheckList::GetSMessage(U_INT k)
-{	if (k >= autoM.size())	return 0;
-	return autoM[k];	}
 //===============================================================================
 //	CWPoint
 //===============================================================================
@@ -667,6 +549,21 @@ void CWPoint::ClearDate (SDateTime &sd)
   sd.time.msecs   = 0;
   sd.time.second  = 0;
   return;
+}
+//--------------------------------------------------------------
+//	Refresh direction to waypoint if needed
+//	Correct any drift due to long legs
+//--------------------------------------------------------------
+void CWPoint::CorrectDrift(CRadio *R, CVehicleObject *V)
+{	float dev = R->GetDeviation();
+	float adv = fabs(dev);
+	bool  dto = ((adv > 5) || IsDirect());
+	//--- check if Direct to is active ----------
+	if (!dto)	return; 
+  float dir = GoDirect(V);
+	R->ChangePosition(&position);
+	R->ChangeRefDirection(dir);
+	return;
 }
 
 //-----------------------------------------------------------
@@ -859,32 +756,28 @@ void CWPoint::SetSeq(U_SHORT s)
 //--------------------------------------------------------------------
 //  Return landing data
 //--------------------------------------------------------------------
-ILS_DATA *CWPoint::GetLandingData()
+LND_DATA *CWPoint::GetLandingData()
 {	if (NotAirport())	return 0;
-  CAirport *apw = (CAirport*)GetDBobject();
-	if (0 == apw)			return 0;
-	char *key			= apw->GetKey();
 	//--- Locate airport in cache ----------
-  CAirport *apt = globals->dbc->FindAPTbyKey(key);
-	if (0 == apt)	return 0;
-	//--- Locate runway end ----------------
-	CRunway  *rwy = apt->FindRunway(lndRWY);
-	if (0 == rwy)					return 0;
-	ILS_DATA *ils = rwy->GetLandDirection(lndRWY);
-	//--- Set reference direction to runway direction --
-	rDir = ils->lnDIR;
-	return ils;
+  CAirport *apt = globals->dbc->FindAPTbyKey(dbKey);
+	if (0 == apt)			return 0;
+	//--- Locate nearest airport ----------------
+	CAptObject  *apo = apt->GetAPO();				
+	LND_DATA    *lnd = apo->GetRunwayData(dbKey,lndRWY);
+	if (0 == lnd)			return 0;
+	rDir = lnd->lnDIR;
+	return lnd;
 }
 //--------------------------------------------------------------------
 //  Set Landing configuration
 //--------------------------------------------------------------------
 bool CWPoint::EnterLanding(CRadio *rad)
-{ ILS_DATA *ils = GetLandingData();
-	if (0 == ils)		return false;
+{ LND_DATA *lnd = GetLandingData();
+	if (0 == lnd)		return false;
 	//--- Set landing mode -------------
-	position	= ils->refP;
+	position	= lnd->refP;
 	SetLandingMode();
-	rad->ModeEXT(GetDBobject(),ils);
+	rad->ModeEXT(GetDBobject(),lnd);
 	return true;
 }
 //----------------------------------------------------------------------
@@ -1279,14 +1172,14 @@ void CWPoint::Save(CStreamFile &sf)
   sf.WriteTag('user', "---------Waypoint usage-------");
   sf.WriteString(txt);
   sf.WriteTag('altd', "---Altitude (feet) at WPT-----");
-  sf.WriteInt(&altitude);
+  sf.WriteInt(altitude);
 	sf.WriteTag('tkof', "---Take off runway -----------");
 	sf.WriteString(tkoRWY);
 	sf.WriteTag('land', "---Landing runway ------------");
 	sf.WriteString(lndRWY);
 	if (ilsF != 0) 
 	{	sf.WriteTag('ILS_', "---ILS FREQUENCY -------------");
-		sf.WriteFloat(&ilsF);
+		sf.WriteFloat(ilsF);
 	}
   sf.EndObject();
   return;
@@ -1864,14 +1757,14 @@ void CFPlan::UpdateActiveNode(U_INT frm)
 //-----------------------------------------------------------------
 void CFPlan::ActivateNode(CWPoint *nxt)
 {	//--- First process current waypoint termination ---
-	bool endir			= (aWPT == &dWPT) && 	(nxt != &dWPT);
-	if (aWPT)	aWPT->SetActive(0);
+	char mode	= (nxt == &dWPT)?(WPT_MODE_DIRECT):(WPT_MODE_FPLAN);
+	if (aWPT)	 aWPT->SetActive(0);
 	//--- Free the direct waypoint ---------------------
-	if (endir) dWPT.Unassign();
+	if (nxt != &dWPT) dWPT.Unassign();
 	//--- Now activate the new one ---------------------
 	aWPT	= nxt;
 	if (nxt)	nxt->SetActive(1);
-	if (GPS)	GPS->TrackWaypoint(nxt,endir);
+	if (GPS)	GPS->TrackWaypoint(nxt,mode);
 	if (0 == nxt)		return StopPlan();
 	nxt->SetLegMode();
 	return;
@@ -2145,7 +2038,8 @@ void CFPlan::DrawOn3DW()
 		if (prv)
 		{	fr.FeetTranslation(rdf,org,*prv->GetGeoP());
 			glBegin(GL_LINES);
-			glColor4f(1,0,0,1);
+		//	glColor4f(1,0,0,1);
+			ColorGL(COLOR_RED);
 			glVertex3dv(&fr.x);
 			glVertex3dv(&to.x);
 			glEnd();
@@ -2218,9 +2112,9 @@ void CFPlan::Save()
   sf.WriteTag('desc', "========== Description ===========");
   sf.WriteString(Desc);
   sf.WriteTag('vers', "---------- version number --------");
-  sf.WriteInt((int*)(&Version));
+  sf.WriteUInt(Version);
 	sf.WriteTag('ceil', "-----------Average ceil ----------");
-	sf.WriteInt(&cALT);
+	sf.WriteInt(cALT);
   //---Save individual Waypoint ------------------------
 	for (U_INT k=1; k < wPoints.GetSize(); k++) 
 	{	CWPoint *wpt = (CWPoint*)wPoints.GetSlot(k);

@@ -1749,7 +1749,8 @@ int CCloudPuff::BuildImpostor(int vp)
   //---- Drawing parameters -----------------------------
   glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   csys->SetDrawState();
-  glColor4f(1,1,1,1);
+  //glColor4f(1,1,1,1);
+	ColorGL(COLOR_WHITE);
   //-------------------------------------------------------
   glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
   glBindTexture(GL_TEXTURE_2D,pTex);
@@ -1964,7 +1965,8 @@ void CCloudPuff::DrawVoluBound()
 //----------------------------------------------------------------------------
 void CCloudPuff::DrawParticles()
 { V_PART *tab = vtab;
-  glColor4f(1,0,0,1);
+  //glColor4f(1,0,0,1);
+	ColorGL(COLOR_RED);
   glDisable(GL_TEXTURE_2D);
   glLineWidth(2);
   for (int No=0; No<nPart; No++)
@@ -1988,7 +1990,8 @@ void CCloudPuff::DrawParticles()
 //----------------------------------------------------------------------------
 void CCloudPuff::ImpostorTour()
 { TC_VTAB *tab = impTAB;
-  glColor4f(1,0,0,1);
+  //glColor4f(1,0,0,1);
+	ColorGL(COLOR_RED);
   glDisable(GL_TEXTURE_2D);
   glLineWidth(2);
   glBegin(GL_LINE_LOOP);

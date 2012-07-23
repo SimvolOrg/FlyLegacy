@@ -35,6 +35,7 @@
 
 
 #include "../Include/Globals.h"
+#include "../Include/BaseSubsystem.h"
 #include "../Include/FlyLegacy.h"
 #include "../Include/Subsystems.h"
 #include "../Include/PistonEngine.h"
@@ -43,7 +44,6 @@
 #include "../Include/Utility.h"
 #include "../Include/FuiPlane.h"
 #include "../Include/AudioManager.h"
-#include "../Include/WorldObjects.h"
 #include "../Include/Atmosphere.h"
 #include "../Include/Joysticks.h" 
 #include "../Include/3Dmath.h"
@@ -869,6 +869,7 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
 { mveh  = v;              // Save parent vehicle
   mveh->amp     = this;   // Needed earlier for initialisation (autopilot)
   // Initialize control subsystem pointers
+	sReg					= 0;
   pAils         = 0;
   pElvs         = 0;
   pRuds         = 0;
@@ -892,10 +893,11 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
 	subs.push_back (fp);
 	fpln	= fp;
 
-  //---Add some extra ones -------------------------------
+  //---Add robot ---------------------------------------
 	d2r2	= new CRobot();							// Check list executer
 	d2r2->SetParent(v);
   subs.push_back(d2r2);							// Add to amp list
+	//---Add virtual pilot -------------------------------
 	vpil	= new VPilot();							// Virtual pilot
 	vpil->SetParent(v);
 	subs.push_back(vpil);							// Add to amp list
@@ -1220,6 +1222,10 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
         s = new AutoPilot;
         //MEMORY_LEAK_MARKER ("electr45")
         break;
+			case SUBSYSTEM_SPEED_REGULATOR:
+				s = new CSpeedRegulator;
+				sReg	= (CSpeedRegulator*)s;
+				break;
       case SUBSYSTEM_K150_PANEL:
         //MEMORY_LEAK_MARKER ("electr46")
         s = new CKAP150Panel;
@@ -2387,13 +2393,10 @@ CEngine::~CEngine (void)
 //	JSDEV* Identify engine message
 //---------------------------------------------------------------------
 bool CEngine::MsgForMe (SMessage *msg)
-{if (msg) {
-    bool matchGroup = (msg->group == unId);
-    bool engnNull   = (msg->user.u.engine == 0);
-    bool engnMatch  = (msg->user.u.engine == eNum);
-    return matchGroup && (engnNull || engnMatch);
-  }
-  return false;
+{	bool matchGroup = (msg->group == unId);
+  bool engnNull   = (msg->user.u.engine == 0);
+  bool engnMatch  = (msg->user.u.engine == eNum);
+  return matchGroup && (engnNull || engnMatch);
 }
 //--------------------------------------------------------------------------
 //  Read parameters

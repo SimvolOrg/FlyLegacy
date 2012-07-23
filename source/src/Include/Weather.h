@@ -162,6 +162,7 @@ protected:
   //-----Wind randomizer ----------------------------------------
   CRandomizer     wSPD;                     // Wind spd
   CRandomizer     wDIR;                     // Wind direction
+	CRandomizer     wTRB;											// Wind turbulence
   //-----Wind parameters ----------------------------------------
   double        cosw;   // Longitude speed increment in arcsec per second
   double        sinw;   // Latitude  speed increment in arcsec per second
@@ -226,6 +227,7 @@ public:
   inline int      GetCloudLayer()     {return cArea->GetLayer();}
   //-------------------------------------------------------------
   inline void     SetCeil(float h)    {cArea->SetCeil(h);}
+	inline float		GetTurbulence(float dT)	{return wTRB.TimeSlice(dT);}
 };
 
 #endif // WEATHER_H_

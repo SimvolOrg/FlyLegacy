@@ -76,6 +76,7 @@ public:
   void   InvertXY() {double cy = y; y = z; z = cy;}
   float  FastLength();      // Fast sqrt 
   double Length();          ///< return the lenght of this vector
+	double Hdist()	{return sqrt((x*x) + (y*y));}
   double SqLength();        // squared length
   void    Zero()  {x = y = z = 0;}
   void    Set(double x, double y, double z);  //< Set the components of the vector

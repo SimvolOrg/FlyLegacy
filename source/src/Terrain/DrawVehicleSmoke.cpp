@@ -32,7 +32,6 @@
 #include "../Include/Globals.h"
 #include "../Include/TerrainTexture.h" // CArtParser
 #include "../Include/DrawVehicleSmoke.h"
-
 using namespace std;
 
 ///==============================================================================

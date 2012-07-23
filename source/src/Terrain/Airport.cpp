@@ -48,6 +48,7 @@
 //=========================================================================================
 #include "../Include/Airport.h"
 #include "../Include/Taxiway.h"
+#include "../Include/WinTaxiway.h"
 #include "../Include/Terraintexture.h"
 #include "../Include/LightSystem.h"
 #include "../Include/FileParser.h"
@@ -151,8 +152,8 @@ U_CHAR  LiteBC2[] = {
 //=============================================================================
 //  VBO for Bands and letters
 //=============================================================================
-TC_WORLD vboBUF[] = {
-	//--- White bands -------------------------------
+F3_VERTEX vboBUF[] = {
+	//--- White bands -(from left to right) ---------
 	{10,20},{10,120},{ 16,20},{ 16,120},		// OFS 00
   {22,20},{22,120},{ 28,20},{ 28,120},		// OFS 04
   {34,20},{34,120},{ 40,20},{ 40,120},		// OFS 08
@@ -249,7 +250,7 @@ TC_WORLD vboBUF[] = {
 //=============================================================================
 //  Offset for NUMBER 0 to 9 and letter L,C,R
 //=============================================================================
-GLint ofsBD[] = { 0, 4, 8,12,16,20,24,28};
+GLint ofsBD[] = { 0, 4, 8,12,16,20,24,28};			// Up to 8 bands
 GLint ofsN0[] = {32,36,40,44,};
 GLint ofsN1[] = {48,52,56,};
 GLint ofsN2[] = {60,64,68,72,76,80};
@@ -595,8 +596,6 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   oTAXI   = globals->txw->GetTaxiTexture();
   cutOF   = 1500;                         // Altitude cut-off
   //--------------------------------------------------------------
-	bgr			= 0;
-	txBGR   = 0;
   tcm     = globals->tcm;
   scale   = tcm->GetScale();
   //-----Colors --------------------------------------------------
@@ -631,6 +630,8 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 	if (tr) TRACE("===AIRPORT CONSTRUCTION: %s",apt->GetName());
 	//--- Generate a sphere for test ------------------------------
 	sphere = gluNewQuadric();
+	//--- Load Taxiway circuits -----------------------------------
+	taxiMGR = 0;
 }
 //----------------------------------------------------------------------------------
 //  Constructor for export only
@@ -699,8 +700,8 @@ CAptObject::~CAptObject()
 	tmcQ.clear();
 	//--- Free ground VBO -----------------------
 	if (gBUF)		delete [] gBUF;
-	//--- free BGR ------------------------------
-	if (txBGR)	delete txBGR;
+	//-------------------------------------------
+	delete taxiMGR;
 	//-------------------------------------------
   UnmarkGround();
 	gluDeleteQuadric(sphere);
@@ -860,6 +861,21 @@ int CAptObject::GetTaxiways()
   int nl = globals->sqm->DecodeLITE(this);
 	//--- Compact all data into VBO --------------------
   return 1;
+}
+//---------------------------------------------------------------------------------
+//  Build Taxiway management
+//---------------------------------------------------------------------------------
+void CAptObject::LoadTaxiways()
+{	if (taxiMGR)		return;
+	taxiMGR = new TaxiwayMGR(this);
+}
+//---------------------------------------------------------------------------------
+//  Clear Taxiway management
+//---------------------------------------------------------------------------------
+void CAptObject::ClearTaxiways()
+{	if (taxiMGR)	delete taxiMGR;
+	taxiMGR = 0;
+	return;
 }
 //---------------------------------------------------------------------------------
 //  Add one pavement to Queue
@@ -1053,17 +1069,16 @@ void CAptObject::UpdateLights(float dT)
   return;
 }
 //-----------------------------------------------------------------------
-//	Read Taxiway nodes
+//	Return runway data
 //-----------------------------------------------------------------------
-void CAptObject::ReadTaxiNodes()
-{ char  pn[PATH_MAX];
-	char *fn = Airp->GetIdentity();
-	//--- Check if already open ---------------
-	bgr		= 0;
-  _snprintf(pn,64,"DATA/%s.BGR",fn);
-  txBGR = new CDataBGR(this);
-	SStream s(txBGR,pn);
-  return;
+LND_DATA *CAptObject::GetRunwayData(char * key, char *rwid)
+{	char *idn			= Airp->GetKey();
+	if (strcmp(idn,key) != 0)		return 0;
+	//--- Locate runway end ----------------
+	CRunway  *rwy = Airp->FindRunway(rwid);
+	if (0 == rwy)								return 0;
+	LND_DATA *ils = rwy->GetLandDirection(rwid);
+	return ils;
 }
 
 //-----------------------------------------------------------------------
@@ -1072,8 +1087,6 @@ void CAptObject::ReadTaxiNodes()
 //-----------------------------------------------------------------------
 void CAptObject::TimeSlice(float dT)
 { //-----------------------------------------------------	
-	//--- Process BGR request -----------------------------
-	if (bgr)	ReadTaxiNodes();
 	//--- Process Ground resolution -----------------------
 	if (0 == gBUF)	BuildGroundVBO();
 	//--- Process lighting order --------------------------
@@ -1186,7 +1199,8 @@ void CAptObject::Draw()
   glTranslated(ofap.x,ofap.y,ofap.z);               // Camera at airport origin
   //-----Draw all pavements -----------------------------------------------
   glFrontFace(GL_CW);
-  glColor4fv(white);
+ // glColor4fv(white);
+	ColorGL(COLOR_WHITE);
   glBindTexture(GL_TEXTURE_2D,oTAXI);
 	//if (tr) TRACE("TCM: --Draw pavement %s",Airp->GetName());
 	//if (tr) TRACE("pVBO =%d , nPAV = %d",pVBO,nPAV);
@@ -1200,7 +1214,7 @@ void CAptObject::Draw()
   //-----Draw runways -----------------------------------------------------
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 
-  glColor4fv(white);
+	ColorGL(COLOR_WHITE);
 	std::vector<CTarmac*>::iterator tm;
 	for(tm=tmcQ.begin(); tm!=tmcQ.end(); tm++) (*tm)->Draw();
   //-----Draw Center marks if distance < 2Nm  -----------------------------
@@ -1265,7 +1279,8 @@ void CAptObject::CamDraw(CCamera *ac)
   
   //-----Draw all pavements -----------------------------------------------
   glBindTexture(GL_TEXTURE_2D,oTAXI);
-  glColor4fv(white);
+  //glColor4fv(white);
+	ColorGL(COLOR_WHITE);
 	DrawVBO(pVBO,nPAV);
   //-----Draw all edges ---------------------------------------------------
 	apm->BindYellow();
@@ -1284,6 +1299,7 @@ void CAptObject::CamDraw(CCamera *ac)
   float  elv = tcm->GetGroundAltitude();    // ground at aircraft position
   glFrontFace(GL_CCW);
   glColor4fv(yellow);
+	ColorGL(COLOR_YELLOW);
   trs.x  = LongitudeDifference(apos.lon,ac->GetTargetLon());
   trs.y  = apos.lat - ac->GetTargetLat();
   trs.z  = elv - ac->GetTargetAlt();
@@ -1521,7 +1537,6 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
 	//--- Current location ---------------------------
 	nApt				= 0;
 	endp				= 0;
-	rdep				= 0;
   //-----For test. ------------------------------------------------
   int op = 0;
   GetIniVar("TRACE","DrawILS",&op);
@@ -1560,7 +1575,7 @@ void CAirportMgr::TimeSlice(float dT)
         apo->TimeSlice(dT);
 				SaveNearest(apo);																	// Save nearest airport
         if (dst <= Limit)   continue;
-        //---------Remove entry --------------------------------
+        //-----Destroy airport when out of reach --------------------
 				if (apo == nApt)	nApt = 0;				// No more nearest
         apt->SetAPO(0);										// Remove pointer
 				endp		= 0;
@@ -1591,9 +1606,12 @@ void CAirportMgr::TimeSlice(float dT)
 //----------------------------------------------------------------------------------
 void CAirportMgr::SaveNearest(CAptObject *apo)
 {	float dis = apo->GetNmiles();
-	if (0 == nApt)	{nApt = apo;	return;}
-	if (nApt->GetNmiles() < dis)	return;				// Still to far 
+	if (nApt && nApt->GetNmiles() < dis)	return;	// Still to far
+	if (nApt	== apo)											return;
+	//--- Have a new nearest  airport ----------------------------------
+	if (nApt)	nApt->ClearTaxiways();						// taxiway no more needed
 	nApt	= apo;																// New candidate
+	apo->LoadTaxiways();												// Load Taxiways
 	return;
 }
 //----------------------------------------------------------------------------------
@@ -1608,23 +1626,23 @@ bool CAirportMgr::AreWeAt(char *key)
 //----------------------------------------------------------------------------------
 //	Position aircraft at the runway threshold
 //----------------------------------------------------------------------------------
-bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
-{	endp					= 0;
+LND_DATA *CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
+{	LND_DATA *rwd = 0;
 	CAirport *dep = (nApt)?(nApt->GetAirport()):(0);
 	if (apt)	dep = apt;
-	if (0 == dep)		return false;
+	if (0 == dep)		return 0;
 	//------------------------------------------------
-	float rot =     dep->GetTakeOffSpot(idn,&tko,&rdep);
-  if (0 == tko)		return false;
+	float rot =     dep->GetTakeOffSpot(idn,&tko,&rwd);
+  if (0 == tko)		return 0;
 	CAirplane *pln = globals->pln;
-  if (0 == pln)		return false;
-	
+  if (0 == pln)		return 0;
+	//--- Teleport on runway with good orientation---
 	SVector ori   = pln->GetOrientation();
 	ori.z					= DegToRad(rot);
 	ori.x					= 0;
 	ori.y					= 0;
 	globals->sit->ShortTeleport(tko,&ori);
-	return true;
+	return rwd;
 }
 //----------------------------------------------------------------------------------
 //	Return the nearest direction 
@@ -1632,7 +1650,7 @@ bool CAirportMgr::SetOnRunway(CAirport *apt,char *idn)
 bool CAirportMgr::GetTakeOffDirection(SPosition **opp,SPosition *p)
 {	CAirport *dep = (nApt)?(nApt->GetAirport()):(0);
 	if (0 == dep)			return false;
-	ILS_DATA *ils = dep->GetNearestRwyEnd(p,opp);
+	LND_DATA *ils = dep->GetNearestRwyEnd(p,opp);
 	if (0 == ils)			return false;
 	return true;
 }
@@ -1647,7 +1665,7 @@ char *CAirportMgr::NearestIdent()
 //----------------------------------------------------------------------------------
 void CAirportMgr::bindLETTERs()
 {	glBindBuffer(GL_ARRAY_BUFFER,bVBO);
-	glVertexPointer  (3,GL_FLOAT,sizeof(TC_WORLD),0);
+	glVertexPointer  (3,GL_FLOAT,sizeof(F3_VERTEX),0);
 	return;
 }
 //----------------------------------------------------------------------------------

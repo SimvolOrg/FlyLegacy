@@ -68,7 +68,7 @@ CDatabaseIndex::~CDatabaseIndex ()
 {
   if (stringIndex != NULL) delete stringIndex;
   if (doubleIndex != NULL) delete doubleIndex;
-  if (intIndex != NULL) delete intIndex;
+  if (intIndex != NULL)    delete intIndex;
 }
 
 //
@@ -231,25 +231,6 @@ unsigned long CDatabaseIndex::GetKeyLength (void)
   return keyLength;
 }
 
-//
-// Search the index for the specified value
-//
-/*
-unsigned long CDatabaseIndex::Search (const char* key)
-{
-  unsigned long rc = 0;
-
-  if (stringIndex != NULL) {
-    stringRange = stringIndex->equal_range (key);
-    stringIter = stringRange.first;
-    if (stringIter != stringRange.second) {
-      rc = stringIter->second;
-    }
-  }
-
-  return rc;
-}
-*/
 
 unsigned long CDatabaseIndex::Search (const char* key)
 {
@@ -299,26 +280,6 @@ unsigned long CDatabaseIndex::Search (long key)
   return rc;
 }
 
-//
-// Search the index for the specified value
-//
-/*
-unsigned long CDatabaseIndex::SearchNext (void)
-{
-  unsigned long rc = 0;
-
-  if (stringIndex != NULL) {
-    stringIter++;
-    if (stringIter != stringRange.second) {
-      rc = stringIter->second;
-    }
-  }
-
-  // TODO Also search on int and double iters as appropriate
-
-  return rc;
-}
-*/
 unsigned long CDatabaseIndex::SearchNext (void)
 { unsigned long rc = 0;
 
@@ -349,3 +310,4 @@ void CDatabaseIndex::Dump (FILE *f)
   fprintf (f, "  Num elements: %d", nElements);
   fprintf (f, "\n");
 }
+//=========================== END OF FILE ================================================================

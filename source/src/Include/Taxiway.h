@@ -29,31 +29,90 @@
 #endif // _MSC_VER > 1000
 
 
-#include "../Include/Globals.h"
-#include "../Include/FlyLegacy.h"
 #include "../Include/Airport.h"
 //============================================================================
+#define LEFT_NODE(X)  (X >> 16)						// Left part
+#define RITE_NODE(X)  (X & 0x0000FFFF)		// Rigth part
+//============================================================================
+#define TAXI_NODE_LIMT			(0x60)						// runway Limit
+#define TAXI_NODE_EXIT			(0x41)						// runway exit
+#define TAXI_NODE_TKOF			(0x62)						// runway take-off
+#define TAXI_NODE_TAXI			(0x03)						// Taxiway node
+#define TAXI_NODE_PARK			(0x04)						// Parking node
+//----------------------------------------------------------------------
+#define TAXI_NODE_FIXE			(0x20)						// Node is fixed
+#define TAXI_NODE_AXES			(0x40)						// Node in runway axis
 //============================================================================
 //  Node structure for runway and taxiways
+//	NOTE:  Sector is defined relative to landing point (see LND_DATA)
+//				From this point, every 100 feet counts one sector.
 //============================================================================
 class TaxNODE: public CStreamObject 
 { friend class TaxiTracker;
+	friend class TaxiCircuit;
+	friend class TaxiwayMGR;
+	friend class SqlMGR;
 	//---------------------------------------------------------------
 protected:
 	Tag						idn;												// Node ident
-  SPosition     pos;                        // Offset from origin. 1 unit = 16 feets
-  U_SHORT       direction;                  // Direction for ????
-	char					type;												// Type of node
-	char					rfu1;												// Reserved
+  SPosition     Pos;                        // world position
+	char          rwy[4];											// Runway ident
+	U_CHAR				type;												// Type of node
+	//--- Edge counter (one per circuit)	---------------------------
+	U_SHORT				ninp[2];										// Number of input edges
+	U_SHORT				nout[2];										// Number of output edges
+	U_SHORT				sector;											// Runway sector
+	//--- Reference to landing point --------------------------------
+	LND_DATA     *lndR;												// Landing reference
   //-----------Methods --------------------------------------------
 public:
    TaxNODE();
-	 TaxNODE(Tag id,SPosition &P);
+	 TaxNODE(Tag id,TaxNODE *N);
+	 TaxNODE(Tag id,SPosition *P);
   ~TaxNODE();
-  int           Read (CStreamFile *sf, Tag tag);    // Read method
-  //----------------------------------------------------------------
-	inline  SPosition *AdPosition()						{return &pos;}				
-  inline  void  SetDirection(U_INT d)       {direction = d;}
+		int			Read (SStream *stream, Tag tag);    // Read method
+	  //----------------------------------------------------------------
+		void		Init(Tag id, SPosition *P);
+		void		SetPosition(SPosition &P);
+		void		SwapRunway();
+		bool    IsOutOK();
+		bool		IsInpOK();
+		//-----------------------------------------------------------------
+		bool		LndParking();				// Check for landing parking
+		bool		TkoParking();				// Check for take-off parking
+		//----------------------------------------------------------------
+		void		Save(CStreamFile &sf);
+		//----------------------------------------------------------------
+		SPosition *AtPosition()						{return &Pos;}
+		SPosition &Position()							{return Pos;}
+		//----------------------------------------------------------------
+		void		SetRWY(char *R)			{strncpy(rwy,R,4);	}
+		void    SetTYP(char T)			{type = T;}
+		void		SetREF(LND_DATA *D)	{lndR = D;}
+		//-----------------------------------------------------------------
+		bool		IsNotRWY(char *r)		{return (strncmp(r,rwy,4) != 0);}
+		bool		IsNotTKO()					{return (type != TAXI_NODE_TKOF);}
+		//-----------------------------------------------------------------
+		bool		NoEdge(char t)			{return (nout[t] == 0) && (ninp[t] == 0);}
+		bool		IsPath(char t)			{return (nout[t] == 1);}
+		bool    EndPath(char t)			{return (nout[t] != 1);}
+		bool		NoOutput(char t)		{return (nout[t] == 0);}
+		bool    NoInput(char t)			{return (ninp[t] == 0);}
+		//-----------------------------------------------------------------
+		Tag			GetIdent()					{return idn;}
+		bool		HasIdent(Tag T)			{return (idn != T);}
+		//-----------------------------------------------------------------
+		bool		IsType(char T)			{return (T == type);}
+		bool    NotType(char T)			{return ((T & type) != T);}
+		bool		HasType(char T)			{return ((T & type) == T);}
+		//----------------------------------------------------------------
+		void		IncINP(char t)			{ninp[t]++;}
+		void    IncOUT(char t)			{nout[t]++;}
+		void		DecINP(char t)			{ninp[t]--;}
+		void		DecOUT(char t)			{nout[t]--;}
+		//-----------------------------------------------------------------
+		void		RazINP()	{ninp[0] = ninp[1] = 0;}
+		void    RazOUT()  {nout[0] = nout[1] = 0;}
 };
 //============================================================================
 //  Edge structure for runway and taxiways
@@ -62,23 +121,21 @@ class TaxEDGE: public CStreamObject
 { //------------Attribute ----------------------------------------
 public:
 	Tag						idn;													// Identity
-  U_SHORT				oNode;                        // Node number for origin
-  U_SHORT				xNode;                        // Node number for extremity
-  short         type;                         // Type of edge
-  float         thick;
+	Tag						scut;													// Short cut
   //-----------Methods ------------------------------------------
 public:
    TaxEDGE();
+	 TaxEDGE(U_SHORT n1, U_SHORT n2);
   ~TaxEDGE();
-  int           Read (CStreamFile *sf, Tag tag);    // Read method
-	bool					ReferTo(Tag tn);
-  //-----------innline ------------------------------------------
-  inline  void    SetOrigin(U_SHORT nn)       {oNode = nn;}
-  inline  void    SetExtrem(U_SHORT nn)       {xNode = nn;}
-  inline  Tag			GetOrigin()                 {return oNode;}
-  inline  Tag			GetExtrem()                 {return xNode;}
-  inline  short   GetType()                   {return type;}
-  inline  float   GetThick()                  {return thick;}
+	 //--------------------------------------------------------------
+	 int			Read (SStream *stream, Tag tag);    // Read method
+	 bool			ReferTo(Tag tn);
+	 void			SetShortCut(Tag C);
+	 bool			NoCandidate(Tag A);
+   //-----------innline ------------------------------------------
+	 void			Save(CStreamFile &sf);
+	 //-------------------------------------------------------------
+	 void			StoreShortCut(Tag S)	{scut = S;}
 };
 //============================================================================
 //  Class CDataBGR for Taxiway line description
@@ -100,8 +157,8 @@ public:
   ~CDataBGR();
   void        EmptyAll();
 	void				AdjustOrigin();
-  int         Read (CStreamFile *sf, Tag tag);    // Read method
-	void				ProcessNode(CStreamFile *sf);
+  int         Read (SStream *stream, Tag tag);    // Read method
+	void				ProcessNode(SStream *sf);
 	//---------------------------------------------------------------
   TaxNODE  *GetNode(U_INT No);
   TaxEDGE  *GetEdge(U_INT No);
@@ -202,6 +259,7 @@ public:
   //---------------------------------------------------------------
   inline void   SetLLC(SPosition p)     {llc = p;}
 };
+
 
 //============================END OF FILE =================================================
 #endif  // TAXIWAY_H

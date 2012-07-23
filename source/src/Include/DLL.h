@@ -28,7 +28,6 @@
 #pragma once
 #endif // _MSC_VER > 1000
 //====================================================================================
-#include "../Include/FlyLegacy.h"
 #include "../Include/WorldObjects.h"
 //===========================================================================================
 //  Class CDLLWindow to display a window from a DLL plugin

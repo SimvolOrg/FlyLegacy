@@ -732,7 +732,7 @@ void CKeyMap::SaveCurrentConfig()
   sf.WriteString("//=================================================");
   sf.DebObject();
   sf.WriteTag('vers', "---- configuration version ----");
-  sf.WriteInt(&vers);
+  sf.WriteInt(vers);
   for(it = kset.begin(); it != kset.end(); it++)
   {	pset = it->second;
     sf.WriteTag('kset', "=== KeySet Definition File ===");
@@ -742,11 +742,9 @@ void CKeyMap::SaveCurrentConfig()
     sf.WriteTag('name', "---- key set name ----");
     sf.WriteString(pset->GetName());
     sf.WriteTag('user', "---- user can modify ----");
-    i = pset->GetUserModifiableState();
-    sf.WriteInt(&i);
+    sf.WriteInt(pset->GetUserModifiableState());
     sf.WriteTag('enab', "---- enabled ----");
-    i = pset->GetEnabledState();
-    sf.WriteInt(&i);
+    sf.WriteInt(pset->GetEnabledState());
     for(kit = pset->dkey.begin(); kit != pset->dkey.end(); kit++)
       { pkey = kit->second;
         sf.WriteTag('kkey', "---- key definition ----");
@@ -761,11 +759,9 @@ void CKeyMap::SaveCurrentConfig()
 				formatKeyCode(codk,i,0);
 				sf.WriteString(codk);
         sf.WriteTag('user', "---- user definable ----");
-        i = pkey->IsUserMod();
-        sf.WriteInt(&i);
+        sf.WriteInt(pkey->IsUserMod());
         sf.WriteTag('enab', "---- enabled ----");
-        i = pkey->IsEnabled();
-        sf.WriteInt(&i);
+        sf.WriteInt(pkey->IsEnabled());
         sf.EndObject();
       }
       sf.EndObject();

@@ -6,9 +6,7 @@
 
 #include "Plugin.h"
 #include "dllintf.h"
-#ifdef _DEBUG
 #include "..\include\utility.h"
-#endif
 #include "..\include\globals.h"
 #include "../Include/MagneticModel.h"
 #include "../Include/GeoMath.h"
@@ -1837,7 +1835,7 @@ void CDLLSimulatedObject::DrawExternal (void)
         draw_flag    = false;
         globals->pln = (CAirplane*)this;
         lod->Draw (BODY_TRANSFORM);       // 1 = simulated DLL object
-        globals->plugins.dVeh = NULL;
+        globals->plugins->dVeh = NULL;
       }
     }
   }
@@ -1878,7 +1876,7 @@ CDLLWindow::~CDLLWindow (void)
 #endif
   if (surf) surf = FreeSurface (surf);
   // sdk: cleanup objects = DLLDestroyObject // 
-  globals->plugins.On_DestroyObject (obj, dll);
+  globals->plugins->On_DestroyObject (obj, dll);
 }
 //---------------------------------------------------------------------------------
 //  
@@ -1912,7 +1910,7 @@ void  CDLLWindow::TimeSlice (float dT)
 { if (0 == surf) return;
   // sdk: Draw the DLLDraw
   //--------------------------------------------------------------------
-  //if (globals->plugins_num) globals->plugins.On_Draw (obj, surf);
+  //if (globals->plugins_num) globals->plugins->On_Draw (obj, surf);
   //--- e.g. Draw a line in a windows ---------------------------
   //EraseSurfaceRGB (surf, back);
   //DrawFastLine (surf, 0, 0, 500, 5, black);
@@ -1930,7 +1928,7 @@ void  CDLLWindow::Draw (void)
   if (globals->plugins_num) {
     glRasterPos2i (surf->xScreen, surf->yScreen + surf->ySize);
     //
-    globals->plugins.On_Draw (obj, surf, dll); // 
+    globals->plugins->On_Draw (obj, surf, dll); // 
     // Blit is performed in the dll
     //glDrawBuffer (GL_BACK);
     //glDrawPixels  (surf->xSize,   surf->ySize,
@@ -2154,7 +2152,7 @@ void GetDLLKill (const std::vector <HMODULE>::iterator it_)
       ++counter;
 //    pFunc4 ();
       if (flag_instantiate) {
-        //if (globals->plugins_num) globals->plugins.On_DeleteObjects ();
+        //if (globals->plugins_num) globals->plugins->On_DeleteObjects ();
         #ifdef _DEBUG_dll2
         if (plg_object) {
           FILE *fp_debug;
@@ -2166,7 +2164,7 @@ void GetDLLKill (const std::vector <HMODULE>::iterator it_)
         }
         #endif
         FreeInitialDLLObjectList ();
-        //if (globals->plugins_num) globals->plugins.On_DeleteObjects ();
+        //if (globals->plugins_num) globals->plugins->On_DeleteObjects ();
         SAFE_FREE (plg_object);
         flag_instantiate = false;
       }

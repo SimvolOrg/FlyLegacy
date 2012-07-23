@@ -352,7 +352,6 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   LoadAptBitmap("ICONS/FP-ICO14.BMP",TYP09);
   LoadAptBitmap("ICONS/FP-ICO15.BMP",TYP10);
   //----------------------------------------------------------
-	txDATA	= 0;
   ilsBMP  = 0;
   //----------------------------------------------------------
   InitMenu();
@@ -419,8 +418,6 @@ CFuiVectorMap::~CFuiVectorMap (void)
   //----IMAGE ----------------------
   if (DocInfo.rgba)  delete [] DocInfo.rgba;
   DocInfo.rgba = 0;
-	//--- Taxiways -------------------
-	if (txDATA)  delete txDATA;
 	//--- Flight plan ----------------
 	fpln = globals->pln->GetFlightPlan();
 	fpln->Save();
@@ -1281,7 +1278,7 @@ int CFuiVectorMap::SetILSitem(char k)
 //----------------------------------------------------------------------------------
 //  Edit this ILS
 //----------------------------------------------------------------------------------
-int CFuiVectorMap::EditILS(ILS_DATA *dat, int k)
+int CFuiVectorMap::EditILS(LND_DATA *dat, int k)
 { CILS     *ils = dat->ils;
   if (0 == ils)                 return k;
   int   ind  = RadioLST.ind;
@@ -1578,7 +1575,7 @@ int CFuiVectorMap::StartonRWY(short itm)
 	int  k = 0;
 	while ((*idn != ' ') && (k < 3))	end[k++] = *idn++;
 	end[k] = 0;
-	globals->apm->SetOnRunway(obAirp,end);
+	globals->pln->VirtualPilot()->PutOnRunway(obAirp,end);
 	return 1;
 }
 //==================================================================================

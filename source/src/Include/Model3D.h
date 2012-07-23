@@ -23,12 +23,10 @@
  */
 #ifndef MODEL3D_H
 #define MODEL3D_H
-
-#include "../Include/3dMath.h"
-#include "../Include/FlyLegacy.h"
-#include "../Include/LightSystem.h"
 #include "../Include/Globals.h"
 #include "../Include/Queues.h"
+#include "../Include/3dMath.h"
+#include "../Include/LightSystem.h"
 //===================================================================================
 #define TC_SNAP_GROUND    (0x00000001)         // Snap to ground
 #define TC_SHARE_PLACE    (0x40000000)         // Share place 
@@ -659,7 +657,6 @@ public:
   int   Decode(char *fname,char *pn);
   int   Read(SStream *st,Tag tag);
   bool  MarkHold(CWobj *obj);
-	void	AutoGen(SStream *st);
   //-----------------------------------------------------------
   inline CWobj *GetWOBJ()							{return exQ.Pop();}
 	inline C_QGT *GetQGT()							{return oQGT;}
@@ -792,8 +789,6 @@ public:
   inline    GLUquadricObj *GetSphere()        {return sphere;}
   //------Statistical data -------------------------------------
   void      GetStats(CFuiCanva *cnv);
-	//------------------------------------------------------------
-	void			vCount(int k);
 };
 //============================END OF FILE =================================================
 #endif  // MODEL3D_H

@@ -8,6 +8,8 @@
 #include "..\Include\Utility.h"
 #include "..\Include\GeoMath.h"
 #include "..\Include\DLL.h"
+#include "../Plugin/Plugin.h"
+#include "../Include/Cameras.h"
 #include <stdio.h>
 
 ///////// DEBUG STUFF TO REMOVE LATER ////////////////////////////////
@@ -1209,7 +1211,7 @@ SDLLObject*	APICreateFlyObject(char *initFile)
       obj->flyObject.objectPtr = sobj;
       obj->flyObject.classSig = sobj->GetTypePointer ();
       obj->flyObject.superSig = NULL;
-      globals->plugins.sdk_flyobject_list.InsertDLLObjInList (obj);
+      globals->plugins->sdk_flyobject_list.InsertDLLObjInList (obj);
       #ifdef _DEBUG
         TRACE ("APICreateFlyObject %p %p", sobj, obj);
       #endif
@@ -1263,7 +1265,7 @@ int	APIGetUserObject(SFlyObjectRef *object)
         - every user change (sit->) is responsible for this first
           element pointer modification or NULL
 */
-  std::list<SFlyObjectList>::iterator it = globals->plugins.sdk_flyobject_list.fo_list.begin ();
+  std::list<SFlyObjectList>::iterator it = globals->plugins->sdk_flyobject_list.fo_list.begin ();
   object->objectPtr = (*it).ref.objectPtr;
   object->classSig = globals->pln->GetTypePointer ();
   if (object->objectPtr) return 0;
@@ -1819,7 +1821,7 @@ int	APIGetObjectGroundSpeed(SFlyObjectRef *object, float *speed)
   if (object->objectPtr) {
     CVehicleObject *os = static_cast<CVehicleObject *> (object->objectPtr);
     if (os) {
-      *speed = os->GetGSpeed ();
+      *speed = 0;
       return 0;
     }
     return 1;
@@ -4071,6 +4073,267 @@ int	APIWriteDataItemFloat(const char *blockName, unsigned int label, float data)
 {
   return 0;
 }
+//========================================================================================================
+//	Here are all functions in various objects that will be removed when SDk is removed
+//========================================================================================================
+//================================================================================
+// CCameraDLL
+//
+// Additional cameras with DLL plugins
+//================================================================================
+CCameraDLL::CCameraDLL (Tag &camera_type_, const char *camera_name_, int &is_interior_camera_)
+: CCamera ()
+{
+  #ifdef _DEBUG
+    //TRACE ("--------------------------------------------------------");
+    //TRACE ("DLL CAMERA ...");
+  #endif
+  obj = NULL;
+  dll = NULL;
+  enabled = false;
+  //
+  camera_type = camera_type_;
+  strncpy (camera_name, camera_name_, FILENAME_MAX);
+  is_interior_camera = is_interior_camera_;
+  //
+  signature = camera_type;
+  Prepare ();
+  //
+  #ifdef _DEBUG
+    //TRACE ("CREATE DLL CAMERA");
+  #endif 
+  eyePos_.lat = eyePos_.lon = eyePos_.alt = 0.0;
+  eyeOri_.x = eyeOri_.y = eyeOri_.z = 0.0;
+  eyeOri_.p = eyeOri_.h = eyeOri_.r = 0.0;
+}
+
+CCameraDLL::~CCameraDLL (void)
+{
+#ifdef _DEBUG
+  //TRACE ("DELETE DLL CAMERA %p %p", obj, dll);
+  //TRACE ("--------------------------------------------------------");
+#endif
+  // sdk: cleanup objects = DLLDestroyObject // 
+  globals->plugins->On_DestroyObject (obj, dll); 
+}
+
+void CCameraDLL::Prepare (void)
+{
+  // sdk : test whether a dll is present
+  if (globals->plugins_num) {
+    void *test = globals->plugins->IsDLL (signature);
+    if (NULL == test) {
+      globals->plugins->On_DeleteAllObjects ();
+      globals->plugins->On_KillPlugins ();
+      char buf1 [8] = {0};
+      TagToString (buf1, signature); 
+      //TRACE ("test dll '%s' = %d", buf1, test);
+      gtfo ("failed to find a DLL for '%s'", buf1);
+    }
+    else {
+    dll = test;
+      globals->plugins->On_Instantiate_DLLCamera (signature,0,NULL);
+      obj = globals->plugins->GetDLLObject (signature);
+    }
+  }
+}
+
+
+void CCameraDLL::GetLookatPoint (SVector &v)
+{
+  v.x = v.y = v.z = 0.0;
+  glRotated (RadToDeg (eyeOri_.y), 0.0, 0.0, 1.0); // roll
+  glRotated (RadToDeg (eyeOri_.z), 0.0, 1.0, 0.0); // head
+  glRotated (RadToDeg (eyeOri_.x), 1.0, 0.0, 0.0); // pitch
+}
+
+void CCameraDLL::UpdateCamera (SPosition wPos, SVector tgtOri, float dT)
+{ tgtPos = wPos;
+  // only eyePos and eyeOri should be modified
+  globals->plugins->On_UpdateCamera (obj, &tgtPos, &tgtOri, &eyePos_, &eyeOri_, dT, dll);
+  //
+  offset = SubtractPositionInFeet (tgtPos, eyePos_);
+}
+
+Tag CCameraDLL::GetCameraType (void)
+{
+  return camera_type;
+}
+
+void CCameraDLL::GetCameraName (char* name, int maxLength)
+{
+  strncpy (name, camera_name, maxLength);
+}
+
+
+void CCameraDLL::SetObject (SDLLObject *object)
+{
+  obj = object;
+}
+
+void CCameraDLL::SetSignature (const long &sign)
+{
+  signature = sign;
+}
+
+//===============================================================
+// CDLLGauge
+//===============================================================
+CDLLGauge::CDLLGauge (void)
+{  
+  #ifdef _DEBUG
+    //TRACE ("--------------------------------------------------------");
+    //TRACE ("DLL GAUGE ...");
+  #endif
+  obj = NULL;
+  dll = NULL;
+  dllgsurf = NULL;
+  enabled = false;
+  signature = 0;
+
+}
+//----------------------------------------------------------
+
+CDLLGauge::~CDLLGauge()
+{
+  if (dllgsurf) dllgsurf = FreeSurface (dllgsurf);
+
+#ifdef _DEBUG
+  //TRACE ("DELETE DLL GAUGE %p %p", obj, dll);
+  //TRACE ("--------------------------------------------------------");
+#endif
+  // sdk: cleanup objects = DLLDestroyObject // 
+  globals->plugins->On_DestroyObject (obj, dll);
+}
+
+void CDLLGauge::Prepare (void)
+{
+  // sdk : test whether a dll is present
+  if (globals->plugins_num) {
+    void *test = globals->plugins->IsDLL (signature);
+    if (NULL == test) {
+      globals->plugins->On_DeleteAllObjects ();
+      globals->plugins->On_KillPlugins ();
+      char buf1 [8] = {0};
+      TagToString (buf1, signature); 
+      TRACE ("test dll '%s' = %d", buf1, test);
+      gtfo ("failed to find a DLL for '%s'", buf1);
+    }
+    else {
+      dll = test;
+      globals->plugins->On_Instantiate_DLLGauges (signature,0,NULL);
+      obj = globals->plugins->GetDLLObject (signature);
+    }
+  }
+}
+
+int CDLLGauge::Read (SStream *stream, Tag tag)
+{
+#ifdef _DEBUG
+  TRACE ("READ DLL GAUGE %p %p %p", dll, obj, stream);
+#endif
+
+  switch (tag) {
+  case 'unid':
+    ReadTag (&unId, stream);
+    TagToString (unid_s, unId);
+    signature = unId;
+    Prepare (); //
+    return TAG_READ;
+  }
+
+  int ret = TAG_IGNORED;
+  if (globals->plugins_num)
+    ret = globals->plugins->On_Read (obj, stream, tag, dll);
+  TRACE ("ret = %d", ret);
+  if (ret == TAG_IGNORED) ret = CGauge::Read (stream, tag);
+  return ret;
+}
+
+void CDLLGauge::ReadFinished (void)
+{
+  //Prepare ();
+  //// sdk : test whether a dll is present
+  //if (globals->plugins_num) {
+  //  bool test = globals->plugins->IsDLL (signature);
+  //  if (!test) {
+  //    globals->plugins->On_DeleteAllObjects ();
+  //    globals->plugins->On_KillPlugins ();
+  //    char buf1 [8] = {0};
+  //    TagToString (buf1, signature); 
+  //    TRACE ("test dll '%s' = %d", buf1, test);
+  //    gtfo ("failed to find a DLL for '%s'", buf1);
+  //  }
+  //}
+  // x2  = x1 + w;
+  // y2  = y1 - h;
+  short x1 = 0,
+      y1 = 0;
+  short x2 = 0,
+      y2 = 0; 
+  GetSize (&x1, &y1, &x2, &y2);
+#ifdef _DEBUG
+  //TRACE ("CREATE DLL GAUGE SURF %d %d %d %d", x1, y1, x2, y2);
+#endif  
+  //CGauge::ReadFinished (); return;
+  //
+  if (dllgsurf) dllgsurf = FreeSurface (dllgsurf);
+  dllgsurf = CreateSurface (x2, y2);
+  if (0 == dllgsurf) GTFO ("CDLLGauge::ReadFinished surf pb");
+  dllgsurf->xScreen = x1;
+  dllgsurf->yScreen = y1;
+}
+
+void CDLLGauge::SetObject (SDLLObject *object)
+{
+  obj = object;
+}
+
+void CDLLGauge::SetSignature (const long &sign)
+{
+//#ifdef _DEBUG
+//  TRACE ("SIGNATURE DLL GAUGE");
+//#endif
+  signature = sign;
+}
+
+void  CDLLGauge::Draw (void)
+{ // Set projection matrix to 2D screen size
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+  gluOrtho2D (0, globals->cScreen->Width, globals->cScreen->Height, 0);
+
+  // Clear modelview matrix
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glLoadIdentity();
+
+  // Set up OpenGL drawing state
+  glPushAttrib (GL_ALL_ATTRIB_BITS);
+  //glDepthMask(GL_FALSE);                // Do not write in depth buffer
+  glDisable (GL_DEPTH_TEST);
+  //glDisable (GL_COLOR_MATERIAL);
+  glDisable(GL_TEXTURE_2D);
+//*************************************************************************
+  int y_diff = globals->cScreen->Height - panel->GetHeight ();
+  glRasterPos2i (dllgsurf->xScreen - panel->GetXOffset (),
+    dllgsurf->yScreen + dllgsurf->ySize - panel->GetYOffset () + y_diff);
+  globals->plugins->On_Draw (obj, dllgsurf, dll); //  
+//*************************************************************************
+  // Restore original OpenGL state
+  glPopAttrib();
+
+  // Restore original modelview matrix
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
+
+  // Restore original projection matrix
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
+}
+
+
 
 
 

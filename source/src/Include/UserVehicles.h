@@ -54,6 +54,7 @@ class CGroundSuspension;
 class CgHolder;
 class CFPlan;
 class VPilot;
+class CRobot;
 //=======================================================================================
 //
 // Sound effects for an engine; corresponds to <engn> sub-object in .SFX file
@@ -499,6 +500,7 @@ public:
   inline CElevatorControl       *GetElevators()   {return pElvs;}
   inline CRudderControl         *GetRudders()     {return pRuds;}
   inline CElevatorTrimControl   *GetElevatorTrim(){return eTrim;}
+	inline CSpeedRegulator        *GetSpeedRegulator() {return sReg;}
 	//---------------------------------------------------------------------
 	inline  CFPlan                *GetFlightPlan()	{return fpln;}
 	inline	CRobot                *GetRobot()				{return d2r2;}
@@ -513,14 +515,15 @@ public:
 	CFPlan								*fpln;						// Flight Plan
 	VPilot								*vpil;						// Virtual pilot
 	CRobot                *d2r2;						// Robot
+	CSpeedRegulator				*sReg;						// Speed regulator
   CAileronControl       *pAils;						// Aileron
   CElevatorControl      *pElvs;						// elevator
   CRudderControl        *pRuds;						// Ruder
   CFlapControl          *pFlaps;					// Flaps
-  CAileronTrimControl   *aTrim;
-  CElevatorTrimControl  *eTrim;
-  CRudderTrimControl    *rTrim;
-  CEngineManager        *pEngineManager;
+  CAileronTrimControl   *aTrim;						// Aileron trim
+  CElevatorTrimControl  *eTrim;						// Elevator trim
+  CRudderTrimControl    *rTrim;						// Rudder trim
+  CEngineManager        *pEngineManager;	// Engine manager
   CBrakeControl         *pwb;             // Wheel brakes
   CGearControl          *pgr;             // gear control
   //-----------------------------------------------------------------

@@ -65,8 +65,6 @@
  */
 
 #include "../Include/Globals.h"
-#include "../Include/FlyLegacy.h"
-#include "../Include/WorldObjects.h"
 #include "../Include/Utility.h"
 #include "../Include/Fui.h"
 #include "../Include/FuiParts.h"
@@ -79,6 +77,7 @@
 #include "../Include/Weather.h" 
 #include "../Include/3dMath.h"
 #include "../Include/Collisions.h"
+#include "../Plugin/Plugin.h"
 #include <vector>								      // JSDEV* for STL
 
 using namespace std;
@@ -227,7 +226,7 @@ bool aKeyRBRK(int kid,int key, int mod)
 }
 //--- Parking brake ------------------------------
 bool aKeyPBRK(int kid,int key, int mod)
-{ globals->pln->ParkBrake();
+{ globals->pln->ParkBrake(0);
   return true;
 }
 //--- Gear toggle --------------------------------
@@ -295,7 +294,7 @@ bool aKeyTRDN(int kid,int key, int mod)
 
 //---Autopilot Takeoff---------------------------------------
 bool aKeyTKOF(int kid,int key, int mod)
-{	globals->pln->aPIL->EnterTakeOFF(0);
+{	globals->pln->VirtualPilot()->Engage();
 	return true;
 }
 //---Open GPS window (TODO: must check the correct GPS) -----
@@ -591,10 +590,12 @@ bool CAirplane::FindReceiver (SMessage *msg)
   char cgr[8];
   char ctg[8];
   bool fnd = false;
+	if (0 == msg)	return false;
 	if (!fnd) fnd = FindReceiver(msg,amp);
 	if (!fnd) fnd = FindReceiver(msg,gas);
 	if (!fnd) fnd = FindReceiver(msg,eng);
 	if (globals->Trace.Has(TRACE_MSG_PREPA))	TraceMsgPrepa(msg);
+	
 	// Display warning message if message receiver not found
   if (fnd)	return true;
 	msg->receiver = GetNullSubsystem();
@@ -602,6 +603,7 @@ bool CAirplane::FindReceiver (SMessage *msg)
   TagToString (cgr, msg->group);
   TagToString (ctg, msg->user.u.datatag);
   WARNINGLOG ("FindReceiver:(NO RECEIVER) sender=%s  destination=%s  dtag=%s",cid,cgr, ctg);
+	msg->group    = 'Null';
   return false;
 }
 
@@ -633,7 +635,7 @@ bool CAirplane::FindReceiver (SMessage *msg,CFuelSystem *gsys)
 	}
 	return false;	}
 //-----------------------------------------------------------------------------
-//	JSDEV* Find message receiver in gas subsystems
+//	JSDEV* Find message receiver in engine subsystems
 //-----------------------------------------------------------------------------
 bool CAirplane::FindReceiver (SMessage *msg,CEngineManager *engs)
 {	if (engs == NULL)	return false;
@@ -651,12 +653,14 @@ bool CAirplane::FindReceiver (SMessage *msg,CEngineManager *engs)
 EMessageResult CAirplane::ReceiveMessage(SMessage *msg)
 { EMessageResult           rc = SendMessageToAmpSystems(msg);
   //--If not found, try to find message receiver in list of fuel subsystems
-  if (0 == msg->receiver)  rc = SendMessageToGasSystems(msg);
+  if (msg->receiver)		return rc;
+	rc = SendMessageToGasSystems(msg);
   //--If not found try to find a reciver in list of engines ------------
-  if (0 == msg->receiver)  rc = SendMessageToEngSystems(msg);
+  if (msg->receiver)		return rc;
+	rc = SendMessageToEngSystems(msg);
   //--if not found try to find a receiver in external systems -----------
-  if (0 == msg->receiver)  rc = SendMessageToExternals(msg);
-  return rc;
+  if (msg->receiver)		return rc;
+	return SendMessageToExternals(msg);
 }
 //-------------------------------------------------------------------------------
 //	Send to electrical subsystem
@@ -807,6 +811,7 @@ int CAirplane::TimeSlice(float dT,U_INT frame)
 //----------------------------------------------------------------------------
 void CAirplane::ResetCrash(char p)
 { //--- Cut engines --------------------------------------
+	if (globals->aPROF.Has(PROF_EDITOR))	return;
 	CWorldObject::ResetCrash(p);
   park  = p;
   CutAllEngines();
@@ -822,7 +827,7 @@ void CAirplane::EndLevelling()
 { //--- Set orientation ----------------------------------
   ResetZeroOrientation ();
   //--- Set parking brakes ------------------------------
-  if (park) ParkBrake ();
+  if (park) ParkBrake (1);
   damM.Severity		= 0;
 	damM.msg				= 0;
   globals->fui->RazCrash();
@@ -924,10 +929,10 @@ void CAirplane::GroundBrakes (U_CHAR b)
   if (p) p->HoldBrake(b);
 }
 //-----------------------------------------------------------------------------
-void CAirplane::ParkBrake () 
+void CAirplane::ParkBrake (U_CHAR opt) 
 {  // Get pointer to control subsystem in electrical systems
   CBrakeControl *p = amp->pwb;
-  if (p) p->SwapPark();
+  if (p) p->SwapPark(opt);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::GearUpDown (void) // 
@@ -1235,8 +1240,7 @@ COPALObject::COPALObject (void)
   turbulence_effect = 0;
   GetIniVar ("PHYSICS", "turbulenceEffect", &turbulence_effect);
   DEBUGLOG ("turbulenceEffect = %d", turbulence_effect);
-  if (turbulence_effect) globals->random_flag |= RAND_TURBULENCE;
-  //turb_timer = 0.0f;
+  if (turbulence_effect) globals->evnOpt.Set(EVN_RAND_TURBULENCE);
   //--------------------------------------------------------------------------
 	yawMine		= ADJ_YAW_MINE;
 	rollMine	= ADJ_ROLL_MINE;
@@ -1277,7 +1281,7 @@ COPALObject::~COPALObject (void)
   //-----------------------------------------------------
   SAFE_DELETE (log);
   // sdk : remove any left behind dll object
-  if (globals->plugins_num) globals->plugins.On_DeleteObjects ();//
+  if (globals->plugins_num) globals->plugins->On_DeleteObjects ();//
 }
 //---------------------------------------------------------------------------------------
 //  All parameters are read
@@ -1433,10 +1437,6 @@ void COPALObject::ReadFinished (void)
                          mm.inertia[0], mm.inertia[10],mm.inertia[5],
                          linearDamping, angularDamping);
 
-#ifdef _DEBUG
-  DEBUGLOG ("COPALObject::ReadFinished wind Tail pos = %f",wind_pos);
-  DEBUGLOG ("COPALObject::ReadFinished wTrbSpeed     = %f",svh->wTrbSpeed);
-#endif
   //MEMORY_LEAK_MARKER ("readfnopa")
 }
 
@@ -1869,8 +1869,10 @@ void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
   SPosition pos_from  = GetPosition ();
   /// turbulences
   if (turbulence_effect) {
-    if ((globals->random_flag & RAND_TURBULENCE) != 0) {
-      if (bagl > 750.0) { // above 300.0 feet
+			int val = int(globals->wtm->GetTurbulence(dT));
+			if (28 == val) globals->evnOpt.Toggle(EVN_RAND_TURBULENCE);
+			if (globals->evnOpt.Has(EVN_RAND_TURBULENCE)) {
+		    if (bagl > 750.0) { // above 300.0 feet
         float turb_vz = static_cast <float> ((rand () % 200 - 100)) / 100.0f;
         //--- Get final values -----------------------------------------------
         double turbR = static_cast <double> (tVAL.TimeSlice (dT));
@@ -1880,9 +1882,9 @@ void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
         //
         //TRACE ("K  %f %f %f (%f %f)", turb_vz, tmp_val, turbR, svh->wTrbSpeed, svh->wTrbDuration);
         dist.z += turbR;
-      }
-    }
-  }
+				}
+			}
+	}
   //
   ifpos   = dist;
   SPosition pos_to = AddToPositionInFeet (pos_from, dist, globals->exf); // 

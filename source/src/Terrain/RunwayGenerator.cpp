@@ -369,18 +369,24 @@ void CRwyGenerator::SetRunwayData()
   //  Then we compute an origin point (at some more distance)
   //  that is used in the glide slope computation
   //-------------------------------------------------------
-  ILS_DATA   *ils   = rwy->GetIlsData(RWY_HI_END);
-  ils->d1   = rwyMARGE[rwy->GetLgCode()] + hiDSP;
-  ils->d2   = rlgt;
-  ils->d3   = ils->d1 - 15000;
-	ils->d4   = 0;							// Not used
+  LND_DATA   *ils   = rwy->GetIlsData(RWY_HI_END);
+	d1   = rwyMARGE[rwy->GetLgCode()] + hiDSP;
+  d2   = rlgt;
+  d3   = d1 - 15000;
+	d4   = 0;							// Not used
+	ils->opp	= rwy->GetIlsData(RWY_LO_END);
+	ils->rDir	= RWY_HI_END;
+	strncpy(ils->ridn,rwy->GetHiEnd(),4);
   SetLandingPRM(ils,rwy->GetHmDir(),rwy->GetLmDir());
-  //---- same for lo end ---------------------------------
+  //---- idem for lo end ---------------------------------
   ils       = rwy->GetIlsData(RWY_LO_END);
-  ils->d1   = (rlgt - loDSP) - rwyMARGE[rwy->GetLgCode()];
-  ils->d2   = 0;
-  ils->d3   = ils->d1 + 15000;
-	ils->d4   = 0;							// Not used
+	d1   = (rlgt - loDSP) - rwyMARGE[rwy->GetLgCode()];
+  d2   = 0;
+  d3   = d1 + 15000;
+	d4   = 0;
+	ils->opp	= rwy->GetIlsData(RWY_HI_END);
+	ils->rDir	= RWY_LO_END;
+	strncpy(ils->ridn,rwy->GetLoEnd(),4);// Not used
   SetLandingPRM(ils,rwy->GetLmDir(),rwy->GetHmDir());
   //--- SetRunway texture offset in packed texture -------
   wTex  = (rwy->GetPaved() == TC_RWY_PAVED)?(float(1)/8):(float(1)/5);
@@ -407,27 +413,25 @@ void CRwyGenerator::SetRunwayData()
 //																																Far (F)
 //	M, L , R and F are aligned at 3° slope
 //--------------------------------------------------------------------------------
-void CRwyGenerator::SetLandingPRM(ILS_DATA *ils,float ln,float tk)
-{ double d1 = ils->d1;
+void CRwyGenerator::SetLandingPRM(LND_DATA *ils,float ln,float tk)
+{ ils->apo	= apo;
   SPosition  *land  = &ils->lndP;
   land->lon = p0.x + (arcX * d1);  // X coord
   land->lat = p0.y + (arcY * d1);  // Y coord
   ComputeElevation(*land);
   //---- Compute origin point ---------------------
-  double d2 = ils->d2;
   SPosition  *ref  = &ils->refP;
   ref->lon  = p0.x + (arcX * d2) + Org.lon;  // X coord
   ref->lat  = p0.y + (arcY * d2) + Org.lat;  // Y coord
   ref->alt  = land->alt - (fabs(d2 - d1) * ils->gTan);
   //---- Compute far point at 15000 feet ----------
   SPosition  *fpn  = &ils->farP;
-  double d3 = ils->d3;
   fpn->lon  = p0.x + (arcX * d3) + Org.lon;  // X coord
   fpn->lat  = p0.y + (arcY * d3) + Org.lat;  // Y coord
   fpn->alt  = land->alt + (fabs(d3 - d1) * ils->gTan);
   //--- Set landing direction for normal runway ---
-	ils->tkDIR	= ln;											// Take off direction
-	if (0 == ils->ils) ils->lnDIR = ln;		// Landing direction
+	ils->tkDIR	                  = tk;		// Take off mag direction
+	if (0 == ils->ils) ils->lnDIR = ln;		// Landing  mag direction
   return;
 }
 //---------------------------------------------------------------------------------
