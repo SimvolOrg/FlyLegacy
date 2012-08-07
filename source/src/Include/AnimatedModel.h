@@ -103,6 +103,7 @@ public:
   char  WheelOnGround();                  // Check for wheel on ground
   char  WheelPosition(char w);            // Get wheel position
   //----------------------------------------------------------
+	inline U_CHAR	GetGearState()		{return aGear.GetState();}
   inline bool AreGearDown()       {return aGear.AtKFR0();}
   inline bool AreGearRetracted()  {return aGear.AtKFR1();}
   inline void SetGearControl(CGearControl *c) {cGear = c;}

@@ -499,6 +499,7 @@ public:
   inline CAileronControl        *GetAilerons()    {return pAils;}
   inline CElevatorControl       *GetElevators()   {return pElvs;}
   inline CRudderControl         *GetRudders()     {return pRuds;}
+	inline CSteeringControl       *GetSteerCTRL()		{return pSter;}
   inline CElevatorTrimControl   *GetElevatorTrim(){return eTrim;}
 	inline CSpeedRegulator        *GetSpeedRegulator() {return sReg;}
 	//---------------------------------------------------------------------
@@ -520,6 +521,7 @@ public:
   CElevatorControl      *pElvs;						// elevator
   CRudderControl        *pRuds;						// Ruder
   CFlapControl          *pFlaps;					// Flaps
+	CSteeringControl      *pSter;						// Steering controler
   CAileronTrimControl   *aTrim;						// Aileron trim
   CElevatorTrimControl  *eTrim;						// Elevator trim
   CRudderTrimControl    *rTrim;						// Rudder trim

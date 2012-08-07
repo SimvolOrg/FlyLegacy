@@ -96,6 +96,12 @@ class TaxiwayMGR;
 #define TC_LD2SEGINDEX 36
 #define TC_LD1SEGINDEX 37
 //=============================================================================
+// AIRPORT STATE
+//=============================================================================
+#define APT_CREATED	  (0)
+#define APT_HASRUNWAY (1)
+#define APT_IS_READY  (2)
+//=============================================================================
 //  Runway segment descriptor
 //=============================================================================
 struct TC_RSEG_DESC {
@@ -212,7 +218,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   friend class CAirportMgr;
 	friend class CRunway;
   //--------------Attributes -----------------------------------------------
-	U_CHAR					rfu1;																// BGR indicator
+	U_CHAR					state;															// Airport state
 	U_CHAR					tr;																	// Trace option
   U_CHAR          txy;                                // Taxiway in SQL
   U_CHAR          visible;                            // Visibility
@@ -254,6 +260,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
 	U_INT			nEDG;																// Total Edges primitives
 	U_INT     nCTR;																// Total Center primitives
 	U_INT			nTAR;																// Total Tarmac primitives
+	U_INT			nDES;																// Total vertices in designator
 	U_INT     pVBO;																// VBO pavement
 	U_INT			eVBO;																// VBO Edge
 	U_INT			cVBO;																// VBO center
@@ -298,14 +305,17 @@ public:
     CAptObject(CAirport *apt);                // For export only
    ~CAptObject();
    bool   InitBound();
+	 bool		BuildAll();
+	 bool   SetRunway();
+	 bool   BuildEnd();
    //---TIME SLICE ----------------------------------------------------
    void   TimeSlice(float dT);
    //--- RUNWAY BUILDING ----------------------------------------------
 	 void		TraceRWY(CRunway *rwy);
 	 void		CompactRWY();
+	 void		CompactDesignator();
    int    BuildTaxiways();
    int    GetTaxiways();
-   void   SetRunway();
    void   SetCameraPosition();
    void   AptExtension(GroundSpot &gs);
 	 //--- Airport ground management -------------------------------------
@@ -336,8 +346,10 @@ public:
 	 //----------------------------------------------------------------------
 	 void	 ClearTaxiways();
 	 void	 LoadTaxiways();
+	//--- Runway VBO used by Tarmac -----------------------------------------
+	inline U_INT				GetRVBO()							{return rVBO;}
 	//-----Identifier ------------------------------------------------------
-   inline bool      SameApt(CAirport *a)      {return (a == Airp);}
+  inline bool      SameApt(CAirport *a)     {return (a == Airp);}
 	//--- Total triangles --------------------------------------------------
 	inline void			AddPAV(U_INT n)						{nPAV += n;}
 	inline void			AddEDG(U_INT n)						{nEDG += n;}
@@ -392,6 +404,7 @@ public:
   void    Draw();
 	void		DrawGround();
 	void		DrawVBO(U_INT vbo,U_INT n);
+	void		DrawDesignators();
   void    DrawLights(CCamera *cam);
   void    DrawGrid();
   void    DrawILS();

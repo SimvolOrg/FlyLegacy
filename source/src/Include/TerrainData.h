@@ -252,8 +252,9 @@ public:
  ~CVertex();
   //----- Relative vector --------------------------------
   CVector RelativeFrom(CVertex &a);
-  bool    IsAbove(double y);
-  bool    ToRight(double x);
+	//------------------------------------------------------
+  bool    IsAbove(double y) { return (GetRY() >= y);	}
+  bool    ToRight(double x) {	return (GetRX() >= x);	};
 	bool    AreWe(U_INT ax,U_INT az);
   //------Border vertices ----------- --------------------
   CVertex *VertexNB()  {return Edge[TC_NORTH];}

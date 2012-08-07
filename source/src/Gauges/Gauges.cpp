@@ -1813,7 +1813,7 @@ void CGauge::Update (void)
 //  Display Help below the gauge
 //-------------------------------------------------------------------
 void CGauge::DisplayHelp(char *txt)
-{ if (globals->pln->NotOPT(VEH_PN_HELP)) return;
+{ if (panel->GetMVEH()->NotOPT(VEH_PN_HELP)) return;
   char edt[64];
 	int xn = tour[NW_PIX].x;
 	int yn = tour[NW_PIX].y + h;
@@ -1832,7 +1832,7 @@ void CGauge::DisplayHelp(char *txt)
 //  Call Fui
 //-------------------------------------------------------------------
 void CGauge::FuiHelp()
-{ if (globals->pln->NotOPT(VEH_PN_HELP)) return;
+{ if (panel->GetMVEH()->NotOPT(VEH_PN_HELP)) return;
 	int	xn	= tour[NW_PIX].x;			// Screen X coordinate
 	int	yn	= tour[NW_PIX].y + h;	// Screen Y coordinate
   globals->fui->DrawHelp(1,xn,yn); 

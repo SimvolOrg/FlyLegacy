@@ -870,7 +870,7 @@ void debug_dump_time_cb (puObject* obj)
 
 void debug_dump_camera_cb (puObject* obj)
 {
-  CCameraManager *camera = globals->pln->GetCameraManager ();
+  CCameraManager *camera = globals->ccm;
   if (camera != NULL) {
     FILE *f = fopen ("Debug/camera.txt", "w");
     if (f) {

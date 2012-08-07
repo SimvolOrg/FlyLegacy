@@ -2411,7 +2411,7 @@ int CK89gps::FPLpage01(K89_EVENT evn)
   //------NRS ---Nearest mode ------------------------------------
   case K89_NRS:
       return EnterNRSpage01();
-  //------ACT event: Enter Active waypoint -----------------------
+  //------ACT event: Enter Active waypoint page ------------------
   case K89_ACT:
     { if ((curPOS < 1) || (curPOS > 4)) return EnterACTmode(actWPT);
       CmHead *obj = Stack[curPOS - 1];
@@ -4237,6 +4237,8 @@ void GPSRadio::EnterTRK()
 {	CWPoint *wp = SelectedNode();
 	if (0 == wp)									return;
 	if (GPSR_STBY != gpsTK)				return;   // Not the good state
+	if (RAD)	RAD->PowerON();
+	if (APL)	APL->Engage();
 	if (!APL->EnterGPSMode())			return;
 	//--- Stop current plan and start new one ------
 	FPL->StopPlan();
@@ -4435,7 +4437,6 @@ void GPSRadio::SetTrack()
 { float rad = 0;
 	wTRK	= FPL->GetActiveNode();
 	if (0 == wTRK)						return;
-	if (wTRK->IsFirst())			return;  // wait next
 	if (FPL->IsOnFinal())			return EnterAPR();
 	//--- Set Waypoint On External Source ------------------
 	float   dir = SelectDirection();
@@ -4444,6 +4445,7 @@ void GPSRadio::SetTrack()
 	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wTRK->GetAltitude());
+	if (wTRK->IsFirst()) alt = globals->geop.alt;
 	APL->SetWPTmode(alt);
 	return;
 }

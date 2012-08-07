@@ -973,7 +973,7 @@ protected:
   U_CHAR            curPOS;             // Cursor position
   U_CHAR            msgNO;              // Message No
   U_CHAR            OpPAG;              // Calculator page
-  CmHead        *Stack[4];              // Stack for selection
+  CmHead           *Stack[4];           // Stack for selection
   //-----------------------------------------------------------
   K89_CTX           sBuf;              // Context
   //---------GPS subsystem for power control ------------------

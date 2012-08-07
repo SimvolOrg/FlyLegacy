@@ -177,9 +177,10 @@
 #define FN_FEET_FROM_INCH(X) ((double(X) * 0.083333333333))
 #define FN_FEET_FROM_METER(X)((double(X) * 3.2808399))
 #define FN_MILE_FROM_FEET(X) ((double(X) * 0.000164))
-#define FN_MILE_FROM_METER(X)((double(X) * 0.000539))
+#define FN_MILE_FROM_METER(X)((double(X) * 0.00053995))
 //------------------------------------------------------------------------------
 #define FN_METRE_FROM_FEET(X)	(double(X) * 0.304799999)
+#define FN_METER_FROM_MILE(X) (double (X) * 1852)
 //------------------------------------------------------------------------------
 #define FN_SUB_FROM_INDX(X)  (U_INT (X) & (TC_SUBD_PER_QGT - 1))
 //------------------------------------------------------------------------------

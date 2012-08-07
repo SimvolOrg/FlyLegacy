@@ -236,6 +236,7 @@ CRwyGenerator::CRwyGenerator(CRunway *rw,CAptObject *ap, char act)
 {	apo		= ap;
 	rwy		= rw;
 	pave	= act;
+	nbbv	= 0;
 	//--- Init airport parameters ----------------------------------
 	Org		= apo->GetOrigin();				// Airport geoposition
 	xpf   = apo->GetXPF();					// Expension factor
@@ -255,16 +256,21 @@ void CRwyGenerator::BuildRunway(char action)
 }
 //---------------------------------------------------------------------------------
 //  Build a paved runway
+//	To compute threshold bands, the SetNumberBand(12) is called.
+//	This compute the number of bands for half runway width.  So for the complete
+//	runway we need 4 * SetNumberBand().  As each band needs 4 vertices, the total
+//	vertices used by one runway is 16 * SetNumberBand();
+//	Each band takes 12 feet (6 feet white and 6 feet space)
 //---------------------------------------------------------------------------------
 void CRwyGenerator::BuildPavedRunway()
 { //TRACE("  PAVED RUNWAY %s-%s for %s (key=%s)",
 	//							 rwy->GetHiEnd(),rwy->GetLoEnd(),Airp->GetName(),Airp->GetKey());
-	rwy->SetNumberBand(12);
   SetRunwayData();
   if (tlgr <= 0) return;
   BuildRunwayMidPoints(PavedRWY_MODEL);
 	BuildTarmacSegs();
 	BuildRunwayLight();
+	//--- Collect vertices needed for designator and thresholds --------
   return;
 }
 //---------------------------------------------------------------------------------

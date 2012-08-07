@@ -633,7 +633,7 @@ void CWPoint::SetLndRwy(char *r)
 //  Fill common parameters
 //  -Refresh the list
 //-------------------------------------------------------------------------
-void  CWPoint::FillWPT(CmHead *obj)
+void  CWPoint::FillWPT(CmHead *obj, char fp)
 { //--- Set common parameters ----------
 	State	= WPT_STA_OUT;
 	SetDBwpt   (obj);
@@ -641,7 +641,8 @@ void  CWPoint::FillWPT(CmHead *obj)
 	SetIden    (obj->GetIdent());
   SetPosition(obj->GetPosition());
   SetDbKey   (obj->GetKey());
-  SetAltitudeAGL();
+  if (fp) SetAltitudeAGL();
+	if (fp) obj->SetUPTR(this);
 	magdv = obj->GetMagDev();
 	dfeet = 0;
   return;
@@ -877,6 +878,7 @@ void CWPoint::Populate()
 	}
 //TRACE("POPULATE WP with %s",GetDBobject()->GetName());
 	SetOverAltitude(altitude);
+	DBwpt->SetUPTR(this);
 	return;
 }
 //-----------------------------------------------------------
@@ -1302,26 +1304,16 @@ bool CFPlan::AssignPlan(char *fn)
 	format  = '0000';
 	SStream s(this,name);
 	if (s.ok) strncpy(Name,fn,64);
-	/*
-  if (OpenRStream (name,s))
-	{ format  = '0000';
-		ReadFrom (this, &s);                 
-		CloseStream (&s);
-		strncpy(Name,fn,64);
-	}
-	*/
 	//--- Advise GPS of changed plan ----------
 	if (realp) WarnGPS();				 
 	return true;
 }
 //-----------------------------------------------------------------
-// Add a new node to the plan
+// Add a new node to the plan (from file)
 //-----------------------------------------------------------------
 void CFPlan::AddNode(CWPoint *wpt)
 {	wpt->Populate();
   //--- Link object to its node ------------
-	CmHead *obj	= wpt->GetDBobject();
-	obj->SetUPTR(wpt);
 	wPoints.AddSlot(wpt);
 	return;
 }
@@ -1472,8 +1464,7 @@ CWPT *CFPlan::CreateUserWPT(SPosition *p)
 //-------------------------------------------------------------------------
 CWPoint *CFPlan::CreateAPTwaypoint(CAirport *apt)
 { CWPoint   *wpt = new CWPoint(this,'airp');
-	apt->SetUPTR(wpt);
-  wpt->FillWPT(apt);
+  wpt->FillWPT(apt,1);
   return wpt;
 }
 //-------------------------------------------------------------------------
@@ -1481,8 +1472,7 @@ CWPoint *CFPlan::CreateAPTwaypoint(CAirport *apt)
 //-------------------------------------------------------------------------
 CWPoint *CFPlan::CreateNAVwaypoint(CNavaid *nav)
 { CWPoint   *wpt = new CWPoint(this,'snav');
-	nav->SetUPTR(wpt);
-  wpt->FillWPT(nav);
+  wpt->FillWPT(nav,1);
   return wpt;
 }
 //-------------------------------------------------------------------------
@@ -1490,10 +1480,9 @@ CWPoint *CFPlan::CreateNAVwaypoint(CNavaid *nav)
 //-------------------------------------------------------------------------
 CWPoint *CFPlan::CreateWPTwaypoint(CWPT		*pnt)
 {	CWPoint	*wpt = new CWPoint(this,'wayp');
-	pnt->SetUPTR(wpt);
 	wpt->SetUser('uswp');
 	pnt->SetNOD(wpt);
-  wpt->FillWPT(pnt);
+  wpt->FillWPT(pnt,1);
   return wpt;
 }
 
@@ -1638,10 +1627,14 @@ int CFPlan::ModifyCeil(int inc)
 	return cALT;
 }
 //-----------------------------------------------------------------
-// Assign a direct to waypoint
+// Assign a direct to waypoint (from GPS)
+// Set expected altitude from original waypoint
 //-----------------------------------------------------------------
 void CFPlan::AssignDirect(CmHead *obj)
-{	dWPT.FillWPT(obj);
+{	CWPoint *wpt = (CWPoint*)obj->GetUPTR();
+	double   alt = (wpt)?(wpt->GetAltitude()):(0);
+	dWPT.FillWPT(obj,0);
+	if (wpt)	dWPT.SetAltitude(alt);
 	ActivateNode(&dWPT);
 	return;
 }
@@ -1793,8 +1786,7 @@ CWPoint *CFPlan::BaseWPT(CWPoint *b)
 	return  PrevNode(org);
 }
 //-----------------------------------------------------------------
-//	Starting node is the first active node when GPS is switched to
-//	navigation mode.
+//	Starting node is the first node
 //-----------------------------------------------------------------
 CWPoint *CFPlan::StartingNode()
 {	CWPoint *wp =  (CWPoint *)wPoints.HeadPrimary();

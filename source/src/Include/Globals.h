@@ -252,6 +252,10 @@ CDispatcher::CDispatcher();
 	void Clear(char p)
 		{	slot[p].obj	= 0;
 		}
+	//-----------------------------------------------------
+	void PutHead(CExecutable *ex, char p);
+	void PutLast(CExecutable *ex, char p);
+	void Remove (CExecutable *ex, char p);
   //-----------------------------------------------------
 	void Lock  (char p)						{slot[p].lock++;}
 	void Unlock(char p)						{slot[p].lock--;}
@@ -357,7 +361,7 @@ typedef struct {
 	//-------- Situation file ------------------------------------------
 	char                  sitFilename[PATH_MAX];  /// Filename of .SIT file to load
   //-------- Various global objects ----------------------------------
-	CBuilder					*trn;
+	CBuilder					    *trn;
   CClock                *clk;           // Global clock
   CTimeManager          *tim;           // Time manager
   CCursorManager        *cum;           // Cursor manager           

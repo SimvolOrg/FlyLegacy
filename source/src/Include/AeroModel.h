@@ -209,7 +209,7 @@ class CAeroModelFlap : public CStreamObject
 {
 public:
   // Constructor
-  CAeroModelFlap (CAeroModelWingSection *w);
+  CAeroModelFlap ( CVehicleObject *veh,CAeroModelWingSection *w);
  ~CAeroModelFlap();
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
@@ -225,6 +225,7 @@ public:
   inline void Store(CAeroControlChannel *p)		{aero = p;}
   //---------------------------------------------------------------------------
 protected:
+	CVehicleObject       *mveh;								// Mother vehicle
   char                      type;           // Type of surface (F,S,T)
   CAeroModelWingSection    *wing;           // Mother wing
   CAeroControlChannel *aero;           // Corresponding channel

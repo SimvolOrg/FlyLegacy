@@ -46,8 +46,9 @@ class CFuelCell;
 // This class represents a single loadout station
 //======================================================================================
 class CLoadCell : public CStreamObject {
+
 public:
-  CLoadCell (void);
+  CLoadCell (CVehicleObject	*veh);
 
   int   Read (SStream *stream, Tag tag);
   void  Write (SStream *stream);
@@ -65,6 +66,7 @@ public:
   inline void    SetLoad(float w) {load = w;}
 protected:
   //----- ATTRIBUTES -----------------------------------------
+	CVehicleObject	*mveh;		// Mother vehicle
   char  name[64];           // Name of loadout position
   CVector bPos;             // Offset from default center of gravity
   float load;               // Default load value, in pounds

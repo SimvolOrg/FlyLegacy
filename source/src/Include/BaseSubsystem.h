@@ -21,6 +21,8 @@
 //
 //================================================================================================
 #include "../Include/Queues.h"
+#include "../Include/3DMath.h"
+
 //================================================================================================
 
 #ifndef BASE_SUBSYSTEM_H
@@ -331,6 +333,8 @@ typedef enum {
   INDN_LINEAR       = 1,
   INDN_EXPONENTIAL  = 2,
   INDN_MOD360       = 3,
+	INDN_SINUSOID			= 4,
+	INDN_IDLE					= 5,
 } EIndicationMode;
 
 //------------------------------------------------------------------------------ 
@@ -654,6 +658,7 @@ public:
   inline void   SetParent(CVehicleObject *v)  {mveh = v;}
   inline int    GetHWID()     {return hwId;}
   inline int    GetUnum()     {return uNum;}
+	inline float  IndnValue()		{return indn;}
 	//-------------------------------------------------------------------------
 	inline CVehicleObject *GetMVEH() {return mveh;}
 	//----Probe management ----------------------------------------------------
@@ -970,6 +975,121 @@ public:
   inline CPIDbox *Pop()                      {return (CPIDbox*)CQueue::Pop();}
   inline CPIDbox *GetFirst()                 {return (CPIDbox*)CQueue::GetFirst();}
   inline CPIDbox *GetNext(CPIDbox *box)      {return (CPIDbox*)CQueue::GetNext(box);}
+};
+//========================================================================================
+// CDamageModel
+//
+// Damage model definition corresponding to <dmge> object in PRP or WNG files
+//========================================================================================
+class CDamageModel : public CStreamObject {
+public:
+  // Constructors / destructor
+  CDamageModel (void);
+
+  // CStreamObject methods
+  int   Read (SStream *stream, Tag tag);
+
+protected:
+  float           period;         ///< Repair period (hours)
+};
+
+class CGroundSuspension;
+//========================================================================================
+//  struct used to share data between classes
+//  
+//  all the WHL file data
+//========================================================================================
+struct SGearData {
+	CGroundSuspension  *mgsp;						// Mother suspension for shared data
+	//------------------------------------------------------------------------
+  char onGd;                          // On Ground
+  char shok;                          // Shock number
+  char Side;                          // Side of wheel (left or right)
+	char sABS;													// ABS brake on landing
+	char brak;                          // 0 not brake 1= brake
+	char latK;													// Lateral coefficient
+	//------------------------------------------------------------------------
+  char susp_name[56];
+  char long_[64];                    ///< -- Longitudinal Crash Part Name --
+  CDamageModel oy_N;                 ///< -- Longitudinal Damage Entry --
+	float kstr;												 //	Steering coefficient form PHY
+  float stbl;                        ///< -- steering factor from data table
+  float btbl;                        ///< -- braking factor from data table
+  float powL;                        ///< -- Impact Power Limit (ft-lb/sec) (weight * velocity) --
+	//-----------------------------------------------------------------------
+  double imPW;                       // Impact power in ft-lb/sec
+	double masR;											 // Mass repartition on this wheel
+  double maxC;                       ///< -- max compression --
+	//-----------------------------------------------------------------------
+  CDamageModel oy_T;                 ///< -- Tire Damage Entry --
+  // ntwt                            ///< -- Normal Tire Wear Rate vs Groundspeed (ktas) --
+  // ltwt                            ///< -- Lateral Tire Wear Rate vs Lateral Groundspeed (ktas) --
+  float boff;                        ///< -- Blowout Friction Factor --
+  int   ster;                        ///< -- steerable wheel --
+  float mStr;                        ///< -- max steer angle (deg) --
+  float drag;                        ///< -- Drag coefficient
+  float tirR;                        ///< -- Tire Radius (ft) --
+  float rimR;                        ///< -- Rim Radius (ft) --
+  float whrd;                         // Wheel radius (ft);
+  CVector bPos;                       //< -- Tire Contact Point (model coodinates) --
+  CVector gPos;                       //  Tire contact point (CG relative)
+  std::vector<std::string> vfx_;      //< -- Visual Effects --
+	//--- Wheel above ground level (feet) ------------------------------------
+	double wagl;
+	///-------Vertical damping for ground contact ----------------------------
+  double damR;                        ///< -- damping ratio --
+	double amor;												// Amortizing force
+	double swing;												// Sinusoid value
+	//---- Acceleration ------------------------------------------------------
+	double angv;												// Angular velocity
+  ///-------Brake parameters -----------------------------------------------
+	double  xDist;											// Lateral distance to CG (meter)
+	double	brakF;											// Brake force in (m/sec)
+	double  ampBK;											// Brake amplifieer
+	double  repBF;											// Brake repartition factor
+  ///----- sterring wheel data ---------------------------------------------
+  float deflect;
+  float scaled;
+  float kframe;
+	///--- wheelBase (inter wheel lenght between axis in meters) -------------
+  float wheel_base;
+
+  SGearData (void) {
+    onGd              = 0;          // On ground
+    shok              = 0;          // Number of shocks
+		sABS							= 0;					// No ABS
+    strcpy (susp_name,  "");
+    strcpy (long_,      "");         // -- Longitudinal Crash Part Name --
+    // oy_N'                         // -- Longitudinal Damage Entry --
+		kstr							= 1;					 // Steering coefficient form PHY
+    stbl              = 1.0f;        // -- steering factor from data table
+    btbl              = 1.0f;        // -- braking factor from data table
+    powL              = 0.0f;        // -- Impact Power Limit (ft-lb/sec) (weight * velocity) --
+    // oy_T                          // -- Tire Damage Entry --
+    // ntwt                          // -- Normal Tire Wear Rate vs Groundspeed (ktas) --
+    // ltwt                          // -- Lateral Tire Wear Rate vs Lateral Groundspeed (ktas) --
+    boff              = 0.0f;        // -- Blowout Friction Factor --
+    ster              = 0;           // -- steerable wheel --
+    mStr              = 0.0f;        // -- max steer angle (deg) --
+    maxC              = 0.0f;        // -- max compression --
+		masR							= 0.33f;
+    damR              = 0.0f;        // -- damping ratio --
+		amor							= 0;
+    tirR              = 0.0f;        // -- Tire Radius (ft) --
+    rimR              = 0.0f;        // -- Rim Radius (ft) --
+    drag              = 0.0f;
+    // vfx_;                         // -- Visual Effects --
+    // endf;                         //
+    brak              = 0;            // -- has brake
+    vfx_.clear ();
+    deflect           = 0.0f;        // -- direction wheel deflection
+    scaled            = 0.0f;        // -- direction wheel deflection scale
+    kframe            = 0.5f;
+    wheel_base        = 0.0f;        // -- distance from main gear and nose gear (metres)
+		angv							= 0;					 // Angular velocity
+		swing							= 0;
+		xDist							= 0;
+  }
 };
 
 //======================= END OF FILE ==============================================================

@@ -1108,15 +1108,20 @@ void CAirplane::Print (FILE *f)
 //=========================================================================
 
 CUFOObject::CUFOObject (void)
-{
-  SetType(TYPE_FLY_AIRPLANE);
-  DEBUGLOG ("Starting CUFOObject");
-  is_ufo_object = true;
+{ SetType(TYPE_FLY_AIRPLANE);
   int val = 0;
   GetIniVar ("Sim", "showPosition", &val);
   show_position = val ? true : false;
 }
-
+//-------------------------------------------------------------------
+//	Build suspension
+//-------------------------------------------------------------------
+void CUFOObject::SetSuspension(CWeightManager *w)
+{	whl = new CGroundSuspension (this, w);
+}
+//-------------------------------------------------------------------
+//	Simulate UFO
+//-------------------------------------------------------------------
 void CUFOObject::Simulate (float dT,U_INT FrNo) 
 {
   // Call parent class simulation timeslice
@@ -1227,7 +1232,6 @@ opal::Point3r COPALObject::tmp_pos;
 //=========================================================================
 COPALObject::COPALObject (void)
 { SetType(TYPE_FLY_AIRPLANE);
-  is_opal_object	= true;
   log							= NULL;
   Kb							= 0.0;
   bagl            = 0.0;
@@ -1261,17 +1265,19 @@ COPALObject::COPALObject (void)
   // randomisation used in UpdateNewPositionState
   int rdn = (globals->clk->GetMinute() << 8) +  globals->clk->GetSecond();
   srand(rdn);
+	//-----------------------------------------------------------------
+	//  Enter in dispatcher
+	//------------------------------------------------------------------
+	globals->Disp.PutHead(this, PRIO_PLANE);
+
 }
 //---------------------------------------------------------------------------------------
 //  DESTRUCTOR
 //---------------------------------------------------------------------------------------
 COPALObject::~COPALObject (void)
-{ 
-#ifdef _DEBUG
-  DEBUGLOG ("COPALObject::~COPALObject");
-#endif
-  is_opal_object = false;
-  //--- Destroy opal objects -----------------------------
+{ //--- Remove from dispatcher ---------------------------
+	globals->Disp.Remove(this, PRIO_PLANE);
+	//--- Destroy opal objects -----------------------------
   if (globals->opal_sim) {
     if (Ground) globals->opal_sim->destroySolid(Ground);
     if (Plane)  globals->opal_sim->destroySolid(Plane);
@@ -1282,6 +1288,12 @@ COPALObject::~COPALObject (void)
   SAFE_DELETE (log);
   // sdk : remove any left behind dll object
   if (globals->plugins_num) globals->plugins->On_DeleteObjects ();//
+}
+//--------------------------------------------------------------
+//  Build suspension
+//--------------------------------------------------------------
+void COPALObject::SetSuspension(CWeightManager *w)
+{	whl = new COpalGroundSuspension (this, wgh);
 }
 //---------------------------------------------------------------------------------------
 //  All parameters are read
@@ -1438,7 +1450,9 @@ void COPALObject::ReadFinished (void)
                          linearDamping, angularDamping);
 
   //MEMORY_LEAK_MARKER ("readfnopa")
+
 }
+//------------------------------------------------------------------
 
 void COPALObject::ResetOrientation (const CVector &rad_angle)
 {

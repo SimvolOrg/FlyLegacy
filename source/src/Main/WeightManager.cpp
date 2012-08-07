@@ -37,8 +37,9 @@
 //=======================================================================
 // Loadout Unit
 //=======================================================================
-CLoadCell::CLoadCell (void)
-{*name = 0;
+CLoadCell::CLoadCell (CVehicleObject	*veh)
+{ mveh	= veh;
+	*name = 0;
   bPos.x = 0;   bPos.y = 0;   bPos.z = 0;
   load = 0;
   hiLm = 0;
@@ -62,7 +63,7 @@ int CLoadCell::Read (SStream *stream, Tag tag)
   case 'bPos':
     // Offset from default center of gravity
     ReadVector (&bPos, stream);
-    bPos = bPos + globals->pln->wgh->svh_cofg;
+    bPos = bPos + mveh->wgh->svh_cofg;
     bPos.InvertXY();         
     rc = TAG_READ;
     break;
@@ -311,7 +312,7 @@ float CWeightManager::GetTotalMassInLbs (void)
 //------------------------------------------------------------------------
 float CWeightManager::GetTotalMassInKgs (void)
 {
-  float rt = GetTotalMassInLbs () * (float)LBS_TO_KGS;
+  float rt = GetTotalMassInLbs () * float(LBS_TO_KGS);
   return (rt);
 }
 

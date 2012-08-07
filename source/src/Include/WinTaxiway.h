@@ -64,9 +64,9 @@ struct PACK_EDGE {
 	}
 };
 //=============================================================================
-//  Class TaxiRoute:  Used to describe a taxiway route on ground
+//  Class NavRoute:  Used to describe a route on ground or on air
 //=============================================================================
-class TaxiRoute {
+class NavRoute {
 	//--- ATTRIBUTES ------------------------------------------
 protected:
 	TaxiwayMGR	*mgr;														// Taxiway manager
@@ -76,8 +76,8 @@ protected:
 	std::vector<TaxNODE*> nodQ;							// List of NODES
 	//---------------------------------------------------------
 public:
-	 TaxiRoute();
-	~TaxiRoute();
+	 NavRoute();
+	~NavRoute();
 	//---------------------------------------------------------
 	void			Clear();
 	void			SetRoute(TaxiwayMGR *mgr,char d,LND_DATA *rwd);
@@ -120,31 +120,30 @@ public:
 	TaxiCircuit(TaxiwayMGR *H, char t)	{nsup = H; dir = t;}
  ~TaxiCircuit();
 	//-----------------------------------------------------
-	int			 Read(SStream *sf,Tag tag);
+	//int			 Read(SStream *sf,Tag tag);
 	//----------------------------------------------------
-	char		 NodeColor(TaxNODE *N);
 	//----------------------------------------------------
-  TaxEDGE *GetEdge(Tag A);
-	TaxEDGE *GetEdge(Tag A, Tag B);
+  TaxEDGE *GetArc(Tag A);
+	TaxEDGE *GetArc(Tag A, Tag B);
 	//--- Search a path -----------------------------------
 	void		 GetTarget(TaxNODE *D, Tag F);
 	void     StoreToPath(Tag F);
 	bool		 SearchThePath(Tag D, Tag F);
 	bool     CutBack(Tag T);
 	//----------------------------------------------------
-	TaxEDGE *FirstPathEdge();
-	TaxEDGE *NextPathEdge();
+	TaxEDGE *FirstPathArc();
+	TaxEDGE *NextPathArc();
 	Tag			 RandomEnd(TaxNODE *N);
 	Tag			 GetNearTkoSpot(TaxNODE *N);
 	//----------------------------------------------------
-	void		PackEdge(PACK_EDGE *P);
-	void		UnpackEdge(int nbe, void *ze);
+	void		PackArc(PACK_EDGE *P);
+	void		UnpackArc(int nbe, void *ze);
 	void		UnpackPath(int nbp, void *zp);
   //----------------------------------------------------
-	void		AddEdge(TaxEDGE *E);
-	void		DeleteEdge(Tag A);
+	void		AddArc(TaxEDGE *E);
+	void		DeleteArc(Tag A);
 	void		DeleteEdge(Tag A, Tag B);
-	void		FreeEdge(TaxEDGE *edg);
+	void		FreeArc(TaxEDGE *edg);
 	//----------------------------------------------------
 	Tag				GetShortCut(TaxEDGE *E);
 	TaxNODE  *GetExtremityNode(TaxEDGE *E);
@@ -155,11 +154,11 @@ public:
 	void			CollectNodes();
 	void			Test();
 	//----------------------------------------------------
-	void			Save(Tag dir,Tag pat,CStreamFile &sf);
+	//void			Save(Tag dir,Tag pat,CStreamFile &sf);
 	//----------------------------------------------------
 	std::vector<Tag> &GetPath()						{return path;}
 	//-----------------------------------------------------------
-	std::map<Tag,TaxEDGE*> &GetEdgeList() {return edgQ;}
+	std::map<Tag,TaxEDGE*> &GetArcList() {return edgQ;}
 };
 //================================================================================================
 //	Class TaxiwayMgr:  manage taxiway in airport
@@ -178,7 +177,6 @@ protected:
 	//--- Taxiway circuits ---------------------------------------
 	TaxiCircuit *txx[2];						// Taxi circuits
 	//------------------------------------------------------------
-	//------------------------------------------------------------
 	std::vector<TaxNODE*>	 rwyQ;		// Specific ruway node
 	std::map<Tag,TaxNODE*> nodQ;		// TaxNODE
 	//------------------------------------------------------------
@@ -188,8 +186,6 @@ public:
 	//-------------------------------------------------------------
 	//--- Set airport ---------------------------------------------
 	void	LoadAirport();
-	bool	ReadTheFile();
-	int		Read(SStream *sf,Tag tag);
 	//--- Node holder functions -----------------------------------
 	void	TaxiwayMGR::EnterNode(TaxNODE *N);
 	TaxNODE* GetNode(Tag org);
@@ -197,11 +193,11 @@ public:
 	TaxNODE* DupNode(TaxNODE *S,SPosition &P,char T);
 	void		 DeleteNode(Tag A);
 	//--- Path computation ----------------------------------------
-	void	SetExitPath(LND_DATA *lnd, TaxiRoute *txr);
-	void  GetTkofPath(char     *rid, TaxiRoute *txr);
+	void	SetExitPath(LND_DATA *lnd, NavRoute *txr);
+	void  GetTkofPath(char     *rid, NavRoute *txr);
 	//-------------------------------------------------------------
-	void	SaveItems(CStreamFile &sf);
-	void	SaveToFile(TaxiTracker &T);
+	//void	SaveItems(CStreamFile &sf);
+	//void	SaveToFile(TaxiTracker &T);
 	void	SaveToBase(TaxiTracker &T);
 	//-------------------------------------------------------------
 	bool	NotEmpty()	{return (nodQ.size() != 0);}
@@ -217,8 +213,8 @@ public:
 	std::vector<Tag>       &GetPath(char d)	{return txx[d]->GetPath();}
 	std::map<Tag,TaxNODE*> &GetNodeList()		{return nodQ;}
 	//--------------------------------------------------------------
-	void		PackEdge(char d,PACK_EDGE *s)				{return txx[d]->PackEdge(s);}
-	void		UnpackEdge(char d,int n, void *z)		{txx[d]->UnpackEdge(n,z);}
+	void		PackArc(char d,PACK_EDGE *s)				{return txx[d]->PackArc(s);}
+	void		UnpackArc(char d,int n, void *z)		{txx[d]->UnpackArc(n,z);}
 	void		UnpackPath(char d,int n, void *z)		{txx[d]->UnpackPath(n,z);}
 };
 
@@ -378,7 +374,7 @@ public:
 	//--- Menu management ----------------------------------------
 	int		ClickActeMENU(short itm);
 	//--- Save management ----------------------------------------
-	void	SaveToFile();
+	void	SaveData();
 	bool	GetTaxiMGR();
 	//--- Notifications ------------------------------------------
 	void	NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);

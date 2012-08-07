@@ -118,7 +118,6 @@ CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
 { this->id  = id;
 	pit				= pn;						// Panel manager
 	mveh			= pn->GetMVEH();
-	main			= 0;
   strncpy (this->filename, filename,63);
   txOBJ   = 0;
   ngOBJ   = 0;
@@ -930,12 +929,6 @@ void CPanel::AssignLite(Tag t)
 { plite = pit->GetLight(t);
 	if (0 == plite)	gtfo("lite %s undefined in %s",TagToString(t),filename);
 	return;
-}
-//-----------------------------------------------------------------------
-//  Assign main indicator to panel
-//-----------------------------------------------------------------------
-void CPanel::SetMain(char m)
-{	main = m;
 }
 //-----------------------------------------------------------------------
 //  Load panel texture

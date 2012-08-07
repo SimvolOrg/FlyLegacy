@@ -419,19 +419,18 @@ void CRadio::TimeSlice (float dT,U_INT FrNo)
 void	CRadio::Synchronize()
 { float   rad = 0;
 	busRD.rSRC  = SRC;
-	CmHead *sys = SRC;
-	sys->SetNavOBS(busRD.xOBS);
-	rad = sys->GetRadial(); 
+	SRC->SetNavOBS(busRD.xOBS);
+	rad = SRC->GetRadial(); 
 	busRD.radi = rad;
-  busRD.ntyp = sys->SignalType();							
-  busRD.mdis = sys->GetNmiles();
-  busRD.mdev = sys->GetMagDev();
-  busRD.hREF = sys->GetRefDirection();				//Radio.xOBS;
+  busRD.ntyp = SRC->SignalType();							
+  busRD.mdis = SRC->GetNmiles();
+  busRD.mdev = SRC->GetMagDev();
+  busRD.hREF = SRC->GetRefDirection();				//Radio.xOBS;
+	busRD.gDEV = SRC->GetVrtDeviation();				//0;
+  busRD.fdis = SRC->GetFeetDistance();
+  busRD.sens = SRC->Sensibility();						//10;
 	busRD.rDEV = Wrap180(busRD.radi - busRD.hREF);
   busRD.hDEV = ComputeDeviation(busRD.hREF,rad,&busRD.flag,1);    //sPower);
-  busRD.gDEV = sys->GetVrtDeviation();				//0;
-  busRD.fdis = sys->GetFeetDistance();
-  busRD.sens = sys->Sensibility();						//10;
   //---Compute angle between reference and aircraft heading --
   busRD.aDir = mveh->GetMagneticDirection();
   busRD.iAng = Wrap360(busRD.hREF - busRD.aDir);

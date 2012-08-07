@@ -576,7 +576,7 @@ void CCamera::GoToPosition(SPosition &dst)
 //-------------------------------------------------------------------------
 //  Set Above terrain
 //-------------------------------------------------------------------------
-void CCamera::SetAbove(SPosition pos)
+void CCamera::SetAbove(SPosition pos,int mr, int cr)
 { // Initialize orientation to point straight down
 	double  ang = 90;
 	theta		 = 0 ;
@@ -588,6 +588,9 @@ void CCamera::SetAbove(SPosition pos)
   //----FOV is 40°----------------------------------
   fov = 40.0f;
 	tgf = tan(DegToRad(fov * 0.5));
+	//--- Range parameters ---------------------------
+	rmax = mr;
+	SetRange(cr);
 	//--- compute feet per pixel ---------------------
 	FootPerPixel();
 	return;
@@ -1256,7 +1259,6 @@ void CCockpitPanel::ReadFinished()
 //-----------------------------------------------------------------------
 void CCockpitPanel::SetPanel(CPanel *p)
 {	panel = p;
-	p->SetMain(main);
 	return;
 }
 //----------------------------------------------------------------------
@@ -1666,7 +1668,7 @@ CCameraSpot::CCameraSpot (void)
   //--- Link to cameras -------------------------
   cIden = CAMERA_SPOT;
   cNext = CAMERA_OBSERVER;
-  cPrev = CAMERA_COCKPIT;
+  cPrev = CAMERA_ORBIT;
 	rmax  = 15000;
 }
 //-------------------------------------------------------------------------
@@ -2067,7 +2069,7 @@ CCameraOrbit::CCameraOrbit (void)
   phi   = DegToRad (15.0f);
   //---Link to camera --------------
   cIden = CAMERA_ORBIT;
-  cNext = CAMERA_COCKPIT;
+  cNext = CAMERA_SPOT;
   cPrev = CAMERA_OVERHEAD;
 }
 //------------------------------------------------------------------------------------
@@ -2839,7 +2841,15 @@ CCameraManager::CCameraManager (CVehicleObject *veh,char* fn)
   tCam    = CAMERA_SPOT;
   aCam    = 0;
   globals->ccm = this;
-  SStream s(this, "WORLD",fn);
+	//--- Bind keys -----------------------------------------------
+	BindKeys();
+	fcam	 = 0;
+  //--- Add other cameras ---------------------------------------
+  int nb = cam_list.ReadCamerasFile (); /// reads DATA\CAMERAS.TXT
+  if (nb)      ExplicitCameras(nb);
+  else         DefaultCameras(); 
+  //---  Set default camera ----------
+  SelectCamera (fcam);
 }
 //-----------------------------------------------------------------
 //  Free camera list
@@ -2850,7 +2860,13 @@ CCameraManager::~CCameraManager (void)
 	came.clear();
   globals->ccm = 0;
 }
-
+//-----------------------------------------------------------------
+//  Read cockpit camera panels 
+//-----------------------------------------------------------------
+void CCameraManager::ReadPanelCamera(CVehicleObject *veh,char * fn)
+{	mveh	= veh;  
+	SStream s(this, "WORLD",fn);
+}
 //-----------------------------------------------------------------
 //  Read parameters
 //-----------------------------------------------------------------
@@ -2890,9 +2906,13 @@ int CCameraManager::Read (SStream *stream, Tag tag)
 void CCameraManager::DefaultCameras()
 { CCameraSpot *spot = new CCameraSpot;
   came[CAMERA_SPOT] = spot;
-
+	fcam							= CAMERA_SPOT;
+	//----------------------------------------
   CCameraObserver *cobs = new CCameraObserver;
   came[CAMERA_OBSERVER] = cobs;
+	//-----------------------------------------
+	CCameraFlyby *cfly = new CCameraFlyby;
+  came[CAMERA_FLYBY]  = cfly;
 
   CCameraTower *ctwr  = new CCameraTower;
   came[CAMERA_TOWER]  = ctwr;
@@ -2902,9 +2922,7 @@ void CCameraManager::DefaultCameras()
 
   CCameraOrbit *orbit = new CCameraOrbit;
   came[CAMERA_ORBIT]  = orbit;
-
-  CCameraFlyby *cfly = new CCameraFlyby;
-  came[CAMERA_FLYBY]  = cfly;
+	lcam								= CAMERA_ORBIT;
 
   return;
 }
@@ -2922,6 +2940,8 @@ void CCameraManager::Link(CCamera *cam,int k,int last)
   TagToString(tpv,prv);
   cam->SetNext(nxt);
   cam->SetPrev(prv);
+	if (k == 0)			fcam = cam->GetIdent();
+	if (k == last)	lcam = cam->GetIdent();
   return;
 }
 //-------------------------------------------------------------------------
@@ -2985,31 +3005,24 @@ void CCameraManager::ExplicitCameras(int nb)
       }
     }
   }
-  //---Add the cockpit camera if present -------------------
-  if (CAMERA_COCKPIT != tCam)   return;
-  CCamera *ck = GetCamera(CAMERA_COCKPIT);
-  Tag      t1 = StringToTag (cam_list.GetTag (0));
-  CCamera *c1 = GetCamera(t1);
-  Tag      td = StringToTag (cam_list.GetTag (last));
-  CCamera *cd = GetCamera(td);
-  cd->SetNext(CAMERA_COCKPIT);
-  ck->SetPrev(td);
-  c1->SetPrev(CAMERA_COCKPIT);
-  ck->SetNext(t1);
   return;
 }
 //-------------------------------------------------------------------------
 //  All parameters are read
 //-------------------------------------------------------------------------
 void CCameraManager::ReadFinished (void)
-{ BindKeys();
-  // Add other default cameras
-  int nb = cam_list.ReadCamerasFile (); /// reads DATA\CAMERAS.TXT
-  if (nb)      ExplicitCameras(nb);
-  else         DefaultCameras(); 
-  //---  Set default camera ----------
-  SelectCamera (tCam);
-	if (0 == aCam)	gtfo("Can't find camera %s",TagToString(tCam));
+{ //--- Insert camera cockpit if detected -----------
+	if (CAMERA_COCKPIT != tCam)   return;
+  CCamera *ck = GetCamera(CAMERA_COCKPIT);
+	CCamera *c0 = GetCamera(fcam);
+	CCamera *cn = GetCamera(lcam);
+  //--- Link forward ----------------
+  cn->SetNext(CAMERA_COCKPIT);
+	ck->SetNext(fcam);
+	//--- Back link -------------------
+  c0->SetPrev(CAMERA_COCKPIT);
+  ck->SetPrev(lcam);
+	SelectCamera (CAMERA_COCKPIT);
   return;
 }
 //-----------------------------------------------------------------
@@ -3048,20 +3061,16 @@ CCamera *CCameraManager::SelectCamera (Tag id)
 	if (0 == id)					return aCam;
   std::map<Tag,CCamera*>::iterator ic = came.find(id);
   if (ic == came.end()) return aCam;
-  // Notify user of new camera name
-  char name[64];
-	//--- relaxe drawing indicators ---------
+	//--- Relaxe drawing indicators ---------
 	if (aCam)	globals->noEXT -= aCam->GetINTMOD();
 	if (aCam) globals->noINT -= aCam->GetEXTMOD();
 	//--- Change to new camera -------------
   aCam = (*ic).second;
-  aCam->GetCameraName (name, 64);
   Internal = aCam->GetINTMOD();
 	globals->inside = Internal;
 	//--- Set drawing constraints ----------
 	globals->noEXT += aCam->GetINTMOD();
 	globals->noINT += aCam->GetEXTMOD();
-  DrawNoticeToUser (name, 8);
   //---Change resolution ------------------
   aCam->ChangeResolution();
 	globals->cam = aCam;

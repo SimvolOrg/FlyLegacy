@@ -532,7 +532,7 @@ public:
 };
 //===============================================================================
 class CRudderControl;
-class TaxiRoute;
+class NavRoute;
 //===============================================================================
 // Class SpeedRegulator to control Throttle
 //===============================================================================
@@ -552,11 +552,11 @@ protected:
 	//-----------------------------------------------------------------
 	SMessage	msg;								// Message for throttle up to 4 engines
 	//-----------------------------------------------------------------
-	TaxiRoute *route;							// Taxiway route
+	NavRoute *route;							// Taxiway route
 	CThrottleControl *thro[4];		// Throttle subsystems
-  CRudderControl *rudS;         // Rudder surface
-	CPIDbox   *sPID;							// PID controller for speed
-	CPIDbox   *rPID;							// PID controller for rudder
+	CSuspension    *sgear;				// Steering gear
+	CPIDbox        *sPID;					// PID controller for speed
+	CPIDbox				 *gPID;					// PID controller for gear
 	CJoysticksManager *jsm;				// Joystick controller
 	SPosition  tgp;								// Target position
 	//-----------------------------------------------------------------
@@ -572,13 +572,13 @@ public:
 	int   Read (SStream *stream, Tag tag);
 	void	GetThrottle(int u);
 	//-----------------------------------------------------------------
-	void	RouteTo(TaxiRoute *R);
+	void	RouteTo(NavRoute *R);
 	void	SteerTo(SPosition &P);
 	void	SteerOFF();
 	void	SetOFF();
 	bool	SetON(U_INT C);
 	bool	SetSpeed(double sp)	{speed = sp; return (state != 0);}
-	void	RudderControl(float dT);
+	void	SteerControl(float dT);
 	void	RouteControl();
 	//-----------------------------------------------------------------
 	bool	NoSteering()				{return (steer == 0);}

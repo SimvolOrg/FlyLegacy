@@ -80,6 +80,8 @@ class CRwyGenerator
 	double		d2;
 	double		d3;
 	double		d4;
+	//--- Designator parameters ----------------------------------------
+	U_INT			nbbv;																// Number of vertice band
 	//------------------------------------------------------------------
   SVector   scl;                                // Scale factor for letter
   SVector   sct;                                // Scale factor for threshold bands

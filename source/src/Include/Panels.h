@@ -111,7 +111,6 @@ protected:
   //-----------------------------------------------------------------------
   int     xDep;
   int     yDep;
-	char		main;						// This is main panel
 	char		skip;
 	char		trn1;						// Trace n1
   float   xMrg;           // X margin
@@ -169,7 +168,6 @@ public:
  ~CPanel (void);
 
   int   Read (SStream *stream, Tag tag);
-	void	SetMain(char m);
 	void	AssignLite(Tag t);
   void  LoadTexture(char *fn);
 	void	LoadLightMap();
@@ -231,9 +229,6 @@ public:
   void      PageDown (void);
 	//-----------------------------------------------------------------------------
 	inline		TC_VTAB  *GetDynVBO()					{return pBUF;}
-	//-----------------------------------------------------------------------------
-	inline	bool			IsMain()							{return (main != 0);}
-	inline  bool			NotMain()							{return (main == 0);}
   //-----------------------------------------------------------------------------
 	inline	  CPanelLight* GetLight()				{return plite;}
 	inline  char*			GetName()							{return filename;}

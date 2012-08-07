@@ -31,7 +31,7 @@ class TaxiwayMGR;
 class CSpeedRegulator;
 class TaxEDGE;
 class TaxNODE;
-class TaxiRoute;
+class NavRoute;
 //=========================================================================
 //  ROBOT RETURN CODE
 //=========================================================================
@@ -209,7 +209,7 @@ protected:
 	Procedure         *Pexec;			// Procedure to execute
 	char              *fmt;				// Message from pilot 
 	//--- Taxing parameters -------------------------------
-	TaxiRoute					*route;			// Ground route
+	NavRoute					*route;			// Ground route
 	double						 dist;			// Distance to node
 	//-----------------------------------------------------
 	U_INT							 FrNo;

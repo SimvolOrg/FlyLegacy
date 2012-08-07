@@ -36,28 +36,13 @@ using namespace std;
 //=====================================================================
 
 CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
-{ diffK = ADJ_DIFF_CONST;           // 1.0f
-  damp_ground_rot = ADJ_GRND_BANK;  // 10.0f
-  int crash = 1;                    // enabled
+{ int crash = 1;                    // enabled
   GetIniVar ("PHYSICS", "enableCrashDetect", &crash);
   U_INT prop = (crash)?(VEH_D_CRASH):(0);
   mveh->SetOPT(prop);
+	kstr			= 0.5;
 	CPhysicModelAdj *phy = mveh->GetPHY();
-  if (!phy) {             /// PHY file
-    GetIniFloat ("PHYSICS", "adjustGroundBankingConst", &damp_ground_rot);
-#ifdef _DEBUG
-    DEBUGLOG ("CGearOpal start bankDamp%f",
-      damp_ground_rot);
-#endif
-  } else {
-    diffK = phy->Kdff;
-    damp_ground_rot = phy->KrlR;
-#ifdef _DEBUG
-    DEBUGLOG ("CGearOpal start PHY : bankDamp%f \n\
-              diffB%f",
-      damp_ground_rot, diffK);
-#endif
-  }
+  if (phy)	kstr = phy->Kstr;
   bad_pres_resis = 0.0f;
   banking  = 0; 
   glf.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
@@ -87,13 +72,20 @@ void  CGearOpal::GetGearPosition(CVector &mp,double  &rad)
   return;
 }
 //---------------------------------------------------------------------------------
+//  Return torque due to differential braking
+//---------------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------------
 //  Compute wheel shape and contact point relative to COG
 //  NOTE: mPos.y is the contact point relative to visual center VC
 //	(a negative number as it is below the VC while the wheel radius is positive, 
 //	so the wheel axis is at 
 //        (mPos.y + wheel Radius) (in meter)
-//	main_pos: Is the wheel axis position relative to the Center of Gravity (GOG)
+//	main_pos: Is the wheel axis position relative to the Center of Gravity (cog)
 //						This is the point where Opal Forces are applied to the wheel
+//						Distances are in meters
+//	cog				Is the center of mass position relative to the aircraft origin (in feet)
+//	bpos			Is the wheel center relative to aircraft origin (in feet)
 //---------------------------------------------------------------------------------
 void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
@@ -111,18 +103,20 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
   double ty   = FN_METRE_FROM_FEET(gy);
   double tz   = FN_METRE_FROM_FEET(gz);
   //---- Wheel radius --------------------------------------
-  double wradius = FN_METRE_FROM_FEET (gearData->whrd);
-  double axeAGL  = tz + wradius;
-  Radius      = wradius;
+  double wradius	= FN_METRE_FROM_FEET (gearData->whrd);
+  double axeAGL		= tz + wradius;
+  Radius					=	wradius;
   //--- Set wheel axis position AGL-------------------------
   main_pos.x = tx;                           
   main_pos.y = ty;                           
-  main_pos.z = (axeAGL);              
+  main_pos.z = (axeAGL);
+	//--- Compute sighed lateral distance to CG --------------
+	gearData->xDist		= tx;
   //--------------------------------------------------------
   //  JS:  We place the sphere at the wheel axis
   //  all dimensions are in meters
   //--------------------------------------------------------
-  box.contactGroup = 1;
+  box.contactGroup	= 1;
   box.radius  = wradius;
 	box.offset.makeTranslation(tx,ty,axeAGL);
   box.material.hardness   = opal::real(0.9f);
@@ -134,7 +128,7 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
   glf.pos   = main_pos;
   //------------------------------------------------------
   //  Compute mass repartition coefficient
-	//	wheel_base is in meter
+	//	wheel_base is in meters
   //------------------------------------------------------
   double fac  = (gearData->ster)?(1):(0.5f);
   double base =  gearData->wheel_base;
@@ -172,14 +166,13 @@ char CGearOpal::GCompression(char pp)
 	gearData->wagl = wagl;											// Save it
   susp->SetWheelAGL(wagl);
   //----Check that wheel is just above ground ----------------------
-  //U_INT fr    = globals->sit->GetFrameNo();//082911
-  //TRACE("%06d: WHeel GRND=%.04f bagl=%.04f wagl=%.04f %s",fr,grd,bagl,wagl,gearData->susp_name);
+  //TRACE("%06d: WHeel GRND=%.04f bagl=%.04f wagl=%.04f %s",globals->sit->GetFrameNo(),grd,bagl,wagl,gearData->susp_name);
   if (wagl > 0.5)   return 0;
   //----Compute impact power in pound per feet per sec ------------
-	double vert = vWhlVelVec.z;
+	double vert = vWhlVelVec.z;									// Meter per second
   double mass = mveh->wgh->GetTotalMassInLbs();
 	if (fabs(vert) < 0.1)		vert = 0; 
-  mass       *= MetresToFeet (vert);
+  mass       *= FN_FEET_FROM_METER(vert);
   gearData->imPW = mass;                      // Impact on wheel
   double lim  = gearData->powL;
   if (lim && (mass > lim) )		return susp->GearShock(10);   // Gear destroyed
@@ -247,53 +240,6 @@ void CGearOpal::VtForce_Timeslice (float dT)
 
 //-----------------------------------------------------------------------
 //* compute the steering forces on the wheel with yaw
-//* vLocalForce = local forces applied to the aircraft in body frame
-//* body frame : in lbs
-//-----------------------------------------------------------------------
-/*
-void CGearOpal::DirectionForce_Timeslice (float dT)
-{ opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
-  float steer_angle_rad = 0.0f;
-  // rudder mixer sends angle value from -1 to 1
-
-  if (gearData->ster) {
-		float kfr = 0.5 * (1 + gearData->deflect);
-		gearData->kframe	= kfr;
-    //--JS fix bugs: mStr is in degre and should be inside, not outside of DegToRad
-    steer_angle_rad		= DegToRad (gearData->deflect * gearData->mStr); // JS * gearData->mStr * 5.0f);
-  }
-  double wvel = fabs(vWhlVelVec.y);					// JS: wheel velocity
-  susp->MoveWheelTo(wvel,dT);               // JS: Interface to wheel
-	speed						= vWhlVelVec.y;						//vWhlVelVec.y + fabs (vWhlVelVec.x);
-  //--- process steering wheel ----------------------------------
-  if (gearData->ster) {
-    double base = gearData->wheel_base;			// In meter
-    // JS: Correction for bug in excessive rate turn ---------------------
-    double turn_rate   = speed * tan (steer_angle_rad) * base; 
-    double lat_acc     = speed * (turn_rate + mveh->GetDifBrake());
-    side_force         = lat_acc * mveh->GetMassInKgs() * gearData->stbl;
-		//--- Compute radius ----------------------------------------
-		double sind		= sin(steer_angle_rad);			// Sinus
-		double rturn	= (fabs(sind) < DBL_EPSILON)?(0):(base / sind); // Turn radius
-		side_force   *= fabs(rturn) * 0.5;
-		//---TRACE("GEAR turn %.4f",gearData->deflect);
-    //-- turn nose wheel ----------------------------------------
-    susp->TurnWheelTo(gearData->kframe);
-    mveh->RazDifBrake();
-  }
-	//--- Create torque with lateral force (only nose wheel)-------
-  gt_.vec.z = (opal::real)(side_force); /// K)      // mass on a tricycle wheel;
-  //--- Very basic lateral bank simulation in steep turns -------
-  gt_.vec.y = gt_.vec.z / (gearData->damR * gearData->maxC * damp_ground_rot); //
-  //-------------------------------------------------------------
-  gt_.duration = static_cast<opal::real> (dT);
-  if (gearData->ster) phyM->addForce (gt_);
-  local_velocity.x = static_cast<opal::real> (0.0f);
-	return;
-}
-*/
-//-----------------------------------------------------------------------
-//* compute the steering forces on the wheel with yaw
 //	1)	We compute the Angular velocity of turning:
 //			angv = f(speed,turn radius)
 //			turn radius is a function of the gear deflection and 
@@ -306,23 +252,22 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 //			turning too much in high speed
 //	4) Animations are performed on 3D model
 //-----------------------------------------------------------------------
-
 void CGearOpal::DirectionForce_Timeslice (float dT)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
   double angr = 0.0f;
-  susp->MoveWheelTo(vWhlVelVec.y,dT);       // Animated 3D model wheel
-	speed				= vWhlVelVec.y;								// linear velocity in forward direction;
-	//--- Process node gear ------------------------------------------
+  susp->MoveWheelTo(vWhlVelVec.y,dT);								// Animated 3D model wheel
+	speed				= vWhlVelVec.y;												// linear velocity in forward direction;
+	//--- Process nose gear ------------------------------------------
   double   angv   = 0;											// Angular velovcity
   if (gearData->ster) {
 		//--- Compute keyframe for 3D model -----------------------------
 		float kfr = 0.5 * (1 + gearData->deflect);
 		gearData->kframe	= kfr;
     //--- Get turning angle from steering ---------------------------
-    angr		= DegToRad (gearData->deflect * gearData->mStr); // JS * gearData->mStr * 5.0f);
+    angr		= DegToRad (gearData->deflect * gearData->mStr);
 		//--- Add steering effect from differential brake ---------------
 		double dif_brk    = mveh->GetDifBrake() * gearData->mgsp->GetDifBraking();
-		double amp				= gearData->mStr * dif_brk / (2.8);  
+		double amp				= gearData->mStr * dif_brk;  
 		angr							= WrapPiPi(angr + DegToRad(amp));
 		//--- process steering wheel ----------------------------------
     double base		= gearData->wheel_base;			// In meter
@@ -337,7 +282,6 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 		//---TRACE("GEAR turn %.4f",gearData->deflect);
     //-- turn nose wheel in 3D model --------------------------------
     susp->TurnWheelTo(gearData->kframe);
-    mveh->RazDifBrake();
 		//---Create banking force ---------------------------------------
 		gt_.vec.x = 0;
 		gt_.vec.z = 0;
@@ -350,6 +294,8 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 	  //-------------------------------------------------------------
 		gt_.duration = static_cast<opal::real> (dT);
 		phyM->addForce (gt_);
+		mveh->RazDifBrake();
+
 	}
 	return;
 }
@@ -365,8 +311,10 @@ void CGearOpal::Probe(CFuiCanva *cnv)
 	cnv->AddText(1,1,"imPW: %.4lf(flbs)",gearData->imPW);
 	cnv->AddText(1,1,"dflect:%.4f",gearData->deflect );
 	cnv->AddText(1,1,"Banking: %.4lf",banking);
-	cnv->AddText(1,1,"Torque: %.4lf",torque);
-	cnv->AddText(1,1,"AngVel: %.4lf",gearData->angv);
+	cnv->AddText(1,1,"velo:   %.6lf",local_velocity.y);
+	cnv->AddText(1,1,"Swing:  %.6lf",gearData->swing);
+	cnv->AddText(1,1,"Torque: %.6lf",mveh->GetDifBrake());
+	cnv->AddText(1,1,"brakF:  %.6lf",gearData->brakF);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -427,36 +375,52 @@ void CGearOpal::BrakeForce(float dT)
 {	opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
 	//--- pedal force -------------------------------------------
 	char  side  = gearData->Side;
-  float btbl  = gearData->btbl;                 // Gear coefficient
-  float pedal = mveh->GetBrakeForce(side) * btbl * 1.2f;
-	//--- compute total brake force -----------------------------
+  float btbl  = gearData->btbl;                 // Speed coefficient
+  float pedal = mveh->GetBrakeForce(side) * btbl;
+	//--- Compute total brake force -----------------------------
 	CSimulatedVehicle *svh = mveh->svh;
-	double ac = svh->GetBrakeAcceleration();			// acceleration
-	double ms = cMass * mveh->GetMassInLbs();			// Mass in pounds
-	double bf = -(ac) * ms;												// foot-pound-sec
-	//--- Is proportional to pedal and repartion among wheels ---
-	bf *= pedal * gearData->repBF;
+	double ac = svh->GetBrakeAcceleration();	// Brake acceleration (m/s²)
+	double ms = mveh->GetMassInKgs();					// Mass supported
+	double bf = -(ac) * ms;										// metre-kg-sec
+	//--- Is proportional to pedal effort and repartition --------
+	bf *= pedal * gearData->repBF * gearData->ampBK;					
 	//--- Check velocity ----------------------------------------
 	double lv  = local_velocity.y;				
 	if (fabs(lv) < 0.01) {lv = 0; bf = 0;}
-	if (lv < 0)	bf = -bf; 
+	if (lv < 0)	bf = -bf;
 	//--- Save force to apply  ----------------------------------
-	gearData->brakF	= (gearData->brak)?(bf):(0);		// Brake force to apply
-	// compute differential force -----------------------------
-	mveh->AddDifBrake(pedal * gearData->sideF);
+	gearData->brakF	= (gearData->brak)?(bf):(0);		// Y Brake force to apply
+	mveh->AddDifBrake(gearData->latK * pedal); // Torque
 	return;
 }
+
 //-------------------------------------------------------------------------
 //* transform the forces back to the inertial frame : in lbs
 //	-Damp vertical force to simulate suspension shock
-//	damR is set to the percentage of shock absortion
+//	 damR is set to the percentage of shock absortion
+//  -Vertical swing is simulating the vertical bouncing when taxiing on 
+//	 ground due to ground irregularity.  Variable 'swing' deliver a damped
+//	 sinusoid value in [-1,+1].  Thus we add a vertical force depending
+//	 on this coefficient and the aircraft mass. Acceleration coefficient
+//	 seems to be ok at 3 feet/ sec².  When more force is applied, the
+//	 aircraft may jerk on ground and loose control.  This is to be verified
+//	 with other aircrafts.  We may have to put this coefficient as a parameter
+//  -Anti skid is used to nullify the lateral force that may cause skidding
+//	 during landing.
 //-------------------------------------------------------------------------
 void CGearOpal::GearL2B_Timeslice (void)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
   /// \to do ? transform the forces back to the body frame
-	//--- compute opposite vertical force -----------------
-  gearData->amor  = (glf.vec.z) * gearData->damR;
-	glf.vec.z	      = -gearData->amor;
+	//--- Compute amortizer opposite vertical force -------
+	double amor			= (glf.vec.z) * gearData->damR;
+	glf.vec.z	      = -amor;
+	//--- Animate shock parts --(key 0 is full extended) --
+	double swing    = gearData->swing;
+	float  kfrm     = float(swing) * 0.5f + 0.5f;
+	susp->AnimateShock(kfrm);
+	//--- Apply vertical swing ----------------------------
+	double ms				= cMass * mveh->GetMassInKgs();			// Mass in Kg
+	glf.vec.z      += (gearData->mgsp->GetBumpForce() * ms * swing);
 	//--- Apply anti skid if request ----------------------
 	if (gearData->sABS)	glf.vec.x = -glf.vec.x;
 	//--- Apply brake -------------------------------------
@@ -468,7 +432,7 @@ void CGearOpal::GearL2B_Timeslice (void)
 	//	set.  However, without the following statement
 	//	the aircraft direction is not good.
 	//	Must be further investigated.  Why setting
-	//	lateral force and torque is not enough?
+	//	lateral force is not enough?
   phyM->setLocalLinearVel (local_velocity); //
 }
 
@@ -579,7 +543,7 @@ void CTailGearOpal::VtMoment_Timeslice (void)
 //============================================================================================
 COpalSuspension::COpalSuspension (CVehicleObject *v, COpalGroundSuspension *mgsp, char *nm, CWeightManager *wgh, char tps)
 : CSuspension(v,mgsp,nm,tps)
-{ 
+{ amort.StartSin(1,5);
 }
 
 //------------------------------------------------------------------------
@@ -623,7 +587,7 @@ void COpalSuspension::Timeslice (float dT)
   // 2) the neW gear location is transformed in the actual body coordinates
   // (the aircraft is not alWays Well levelled in all its axes)
   // gets WPos
-  gear->GearB2L_Timeslice ();
+  //gear->GearB2L_Timeslice ();
   // 3) get the CG AGL
   // 
   // get the gear compression value
@@ -631,18 +595,15 @@ void COpalSuspension::Timeslice (float dT)
   gear_data.onGd = gear->GCompression(gear_data.onGd);
   // 4)
   // compute ground physics only if needed
-  if (IsOnGround ()) { // weight on wheels is verified
-
+  if (IsOnGround ()) 
+	{ // weight on wheels is verified
     // 5) compute gear compression velocity
     //
-      gear->GComprV_Timeslice ();
-
+    gear->GComprV_Timeslice ();
     // 6) compute force and moment from the wheel
     //
     gear->VtForce_Timeslice (dT);
     gear->DirectionForce_Timeslice (dT); 
-
-
     // 8) compute force and moment
     gear->GearL2B_Timeslice ();
 
@@ -661,9 +622,7 @@ void COpalSuspension::Timeslice (float dT)
 COpalGroundSuspension::COpalGroundSuspension(CVehicleObject *v,CWeightManager *wgh)
 :CGroundSuspension(v,wgh)
 //--- Init specific parameters -------------------------------------
-{
-  max_wheel_H = max_wheel_height;
-}
+{ max_wheel_H = max_wheel_height;	}
 //-----------------------------------------------------------------
 //  Destroy this object
 //-----------------------------------------------------------------
@@ -724,10 +683,6 @@ void COpalGroundSuspension::ReadFinished (void)
  return;
 }
 //------------------------------------------------------------------------
-//	Gear is down
-//------------------------------------------------------------------------
-
-//------------------------------------------------------------------------
 //  JS to LC: Removed brake force from wheel definition as it is
 //          only used in Suspension TimeSlice. 
 //-------------------------------------------------------------------------
@@ -751,19 +706,22 @@ void COpalGroundSuspension::Timeslice (float dT)
 		SGearData *gdt	= ssp->GetGearData();
 		gdt->stbl				= fstbl;
 		gdt->btbl				= fbtbl;
-		//--- Process gear down ----------------------------
-    if (mveh->lod->AreGearDown()) 
-		{ /// this is the completely extended gear position
-			max_wheel_height = max_wheel_H;
-      if (ssp->IsSteerWheel ()) mveh->SetRudderDeflection(gdt);
-      ssp->Timeslice (dT);
-      if (ssp->IsOnGround()) nWonG++;
-    }
-		//--- Process Gear retracted -----------------------
-		if (mveh->lod->AreGearRetracted())
-		{ max_wheel_H = max_wheel_height;
-			max_wheel_height = 0.0;
-		}
+		switch (mveh->lod->GetGearState())
+		{	//--- Process gear down position -----------------	
+			case ITEM_KFR0:
+				{	max_wheel_height = max_wheel_H;
+					ssp->Timeslice (dT);
+					if (0 == gdt->onGd) break;
+					nWonG++;
+					gdt->swing = ssp->GetSwing(dT);
+					if (fabs(vt) < 0.01) gdt->swing = 0;
+				}
+			//--- Gears are retracted ------------------------
+			case ITEM_KFR1:
+				{ max_wheel_H = max_wheel_height;
+					max_wheel_height = 0.0;
+				}
+		}	// --- End switch on gear position
   }
 
   /// All the computation below is LH
@@ -803,7 +761,7 @@ void COpalGroundSuspension::Timeslice (float dT)
               SumGearMoments.x, SumGearMoments.y, SumGearMoments.z
              );
             fprintf(fp_debug, " cg(%f %f %f) mg(%f %f %f) mp(%f %f %f)\n mf(%f %f %f) mm(%f %f %f) (mwh%f Mg%f mg%f)\n",
-              globals->pln->svh->GetNewCG_ISU ()->x,  globals->sit->uVeh->svh->GetNewCG_ISU ()->y,  globals->sit->uVeh->svh->GetNewCG_ISU ()->z,
+              mveh->svh->GetNewCG_ISU ()->x,  globals->sit->uVeh->svh->GetNewCG_ISU ()->y,  globals->sit->uVeh->svh->GetNewCG_ISU ()->z,
               main_gear.x, main_gear.y, main_gear.z,
               mass_pos.x, mass_pos.y, mass_pos.z,
               mass_force.x, mass_force.y, mass_force.z,

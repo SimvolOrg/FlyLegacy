@@ -167,9 +167,9 @@ public:
   //------------------------------------------------------------
 	void		ReleaseIndicators();
 	//--- Check camera type --------------------------------------
-	bool IsOf(Tag t) {return (GetCameraType() == t);}
+	bool    IsOf(Tag t) {return (GetCameraType() == t);}
   //------------------------------------------------------------
-	void		SetAbove(SPosition pos);
+	void		SetAbove(SPosition pos, int mr, int cr);
 	void		GoToPosition(SPosition &dst);
 	void		ToggleBox();
   void    OffsetFrom(SPosition &pos,CVector &v);
@@ -730,7 +730,6 @@ public:
   ~CCameraViewsList (void);
 
   // methods
-  void  FreeList (void);
   int   ReadCamerasFile (void);
   inline const int& GetNumItems (void) const {return num_lines;}
   inline const char* GetTag (const int& i) const
@@ -745,8 +744,6 @@ public:
   { if (type) return type[i].val;
     else return 0;
   }
-  const int PosCameraTag (const char *tag);
-
 private:
   int num_lines;
   SCameraType *type;
@@ -773,7 +770,8 @@ public:
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished (void);
-
+	//---------------------------------------------------------------------
+	void			ReadPanelCamera(CVehicleObject *veh,char * fn);
   //----- CCameraManager ------------------------------------------------
   void      BindKeys();
   void      ZeroRate();
@@ -804,7 +802,9 @@ protected:
 	CVehicleObject *mveh;												// Mother vehicle
   CCamera  *aCam;                             // Active camera
   std::map<Tag,CCamera*>   came;              // List of standard cameras
-  Tag       tCam;                             // Tag of current camera
+	Tag				fcam;															// First camera
+	Tag				lcam;															// Last camera 
+	Tag       tCam;                             // Tag of current camera
   /// Current camera parameters
   SPosition tgtPos;
   SVector   tgtOrient;

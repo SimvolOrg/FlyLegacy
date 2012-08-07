@@ -410,7 +410,7 @@ void CAerodynamicModel::DrawAerodelData (const double &lenght)
   //
 #ifdef _DEBUG_SCREEN_LINES
   //DebugScreenAero (NULL/*sf*/, "test");
-  CAeroControl *p = globals->pln->amp->eTrim;
+  CAeroControl *p = mveh->amp->eTrim;
   if (p) {
     char buffer [128] = {0};
     float txt = p->Val ();
@@ -602,8 +602,9 @@ const double CAeroModelAirfoil::GetParasiteDragCoefficient (void)
 //  JS NOTE:  Each chanel is defined by a name in the WNG file. The ruuder appears in 2 chanels
 //            Normal rudder and Front rudder
 //===========================================================================================
-CAeroModelFlap::CAeroModelFlap (CAeroModelWingSection *w)
-{ wing    = w;
+CAeroModelFlap::CAeroModelFlap ( CVehicleObject *veh,CAeroModelWingSection *w)
+{ mveh		= veh;
+	wing    = w;
   aero    = 0;
   invert  = false;
   deflectRadians  = 0;
@@ -695,7 +696,6 @@ void CAeroModelFlap::ReadChannel()
   //TRACE("--Channel %s: defl=%-.5f rad=%-.5f",(char*)channel.c_str(),deflectRadians);
   //----------------------------------------------------
   // Set keyframe of all associated animated parts
-  CVehicleObject *mveh = globals->pln;
   set<string>::iterator i;
   for (i=parts.begin(); i!=parts.end(); i++) {
     mveh->SetPartKeyframe ((char*)i->c_str(), keyframe);
@@ -836,7 +836,7 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
     //VectorOrientLeftToRight (bAng); // 
     return TAG_READ;
   case 'flap':
-    { CAeroModelFlap* flap = new CAeroModelFlap(this);
+    { CAeroModelFlap* flap = new CAeroModelFlap(mveh,this);
       ReadFrom (flap, stream);
       char name[80];
       strncpy (name, flap->GetChannelName(),79);
@@ -845,13 +845,13 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
     }
     return TAG_READ;
   case 'splr':
-    { CAeroModelFlap* splr = new CAeroModelFlap(this);
+    { CAeroModelFlap* splr = new CAeroModelFlap(mveh,this);
       ReadFrom (splr, stream);
       spoilerMap[splr->GetChannelName()] = splr;
     }
     return TAG_READ;
   case 'trim':
-    { CAeroModelFlap* trim = new CAeroModelFlap(this);
+    { CAeroModelFlap* trim = new CAeroModelFlap(mveh,this);
       ReadFrom (trim, stream);
       trimMap[trim->GetChannelName()] = trim;
     }
@@ -1124,7 +1124,7 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
   if (CAerodynamicModel::log) {
     CAerodynamicModel::LogVector(speedVector, "  speedVector");
     CAerodynamicModel::log->Write("    rho = %f, cf_speed = %f, Mach = %f", rho, cf_speed, mach);
-    CAerodynamicModel::log->Write("    aoa = %f d(%f) ori(%f)", aoa, RadToDeg (aoa), RadToDeg ((globals->pln->GetOrientation ()).y));
+    CAerodynamicModel::log->Write("    aoa = %f d(%f) ori(%f)", aoa, RadToDeg (aoa), RadToDeg ((mveh->GetOrientation ()).y));
     CAerodynamicModel::log->Write("    cl = %f, cdi = %f, cdp = %f, cm = %f", cl, cdi, cdp, cm);
   }
 #endif

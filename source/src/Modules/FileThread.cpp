@@ -188,16 +188,17 @@ U_CHAR popSTA[] = {
 void TextureLoad(C_QGT *qgt)
 { CTextureWard *txw = globals->txw;       //tcm->GetTexWard();
   TCacheMGR    *tcm = globals->tcm;
-  qgt->LockState();
+ // qgt->LockState();
   //--------Load Texture in Load Queue ------------------------------------
   CSuperTile *sp = 0;
   for (sp = qgt->PopLoad(); sp != 0; sp = qgt->PopLoad())
-    {	if (sp->NeedALT())  txw->LoadTextures(1,sp->aRes,qgt,sp);
+    {	
+			if (sp->NeedALT())  txw->LoadTextures(1,sp->aRes,qgt,sp);
 			if (sp->NeedLOD())  txw->LoadTextures(0,sp->Reso,qgt,sp);
       qgt->EnterNearQ(sp);
 			sp->RenderINR();
     }
-  qgt->UnLockState();
+ // qgt->UnLockState();
   qgt->PostIO();
   return;          
 }

@@ -534,8 +534,7 @@ CVertex::CVertex()
 //  Destructor
 //-------------------------------------------------------------------------
 CVertex::~CVertex()
-{ int n = (Fixe & VTX_DYNAM)?(1):(0);
-  globals->NbVTX -= n;
+{ globals->NbVTX -= (Fixe & VTX_DYNAM);
 }
 //-------------------------------------------------------------------------
 //  Init the vertex
@@ -566,20 +565,6 @@ CVector  CVertex::RelativeFrom(CVertex &a)
   v.z = GetWZ() - a.GetWZ();
   return v;
 }
-//-------------------------------------------------------------------------
-// Set altitude
-//-------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------
-//  Check if vertex is above
-//-------------------------------------------------------------------------
-bool CVertex::IsAbove(double y)
-{ return (GetRY() >= y);	}
-//-------------------------------------------------------------------------
-//  Check if point is to the left
-//-------------------------------------------------------------------------
-bool CVertex::ToRight(double x)
-{	return (GetRX() >= x);	}
 //-------------------------------------------------------------------------
 //  Check if we are this vertex
 //-------------------------------------------------------------------------
@@ -2384,13 +2369,6 @@ bool C_QGT::GetTileIndices(GroundSpot &gns)
   gns.tz			= int(dtz / dLat) & 31;
   return true;
 }
-//-----------------------------------------------------------------------
-//  Adjust V (X,Y) coordinates relative to SW corner
-//-----------------------------------------------------------------------
-void C_QGT::RelativeToBase(CVector &v)
-{	v.x -= wLon;													// Remove west longitude
-	v.y -= sLat;													// Remove south latitude
-}
 //---------------------------------------------------------------------
 //  Delete the QTR file
 //---------------------------------------------------------------------
@@ -3299,7 +3277,8 @@ int C_QGT::UpdateInnerCircle()
   //  Super Tile is put in the Load texture Queue 
   //  processed by the file thread
   //-----------------------------------------------------------
-  LockState();
+  //LockState();
+	FarsQ.Lock();
   sp = FarsQ.GetFirst();
   while (sp)
     { sp->dEye = tcm->AircraftFeetDistance(sp->mPos);
@@ -3314,7 +3293,8 @@ int C_QGT::UpdateInnerCircle()
       LoadQ.Unlock();
       sp  = nx;
     }
-  UnLockState();
+	FarsQ.Unlock();
+  //UnLockState();
   //-----------------------------------------------------------
   //  Activate the Texture Thread if LoadQ is not empty
   //-----------------------------------------------------------

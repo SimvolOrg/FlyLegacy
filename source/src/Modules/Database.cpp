@@ -126,6 +126,26 @@ Tag RadioIND[] =
 				      NAV_INDEX,			      // 4 ILS
 				      COM_INDEX,	          // 5 Commm radio
 };
+//=============================================================================
+//  Runway Type
+//=============================================================================
+U_CHAR RwyTYP[] = {
+  0,                            // 0 Unknown
+  TC_RWY_PAVED,                            // 1 GROUND_CONCRETE
+  TC_RWY_PAVED,                            // 2 GROUND_ASPHALT
+  TC_RWY_OTHER,                            // 3 GROUND_TURF
+  TC_RWY_OTHER,                            // 4 GROUND_DIRT
+  TC_RWY_OTHER,                            // 5 GROUND_GRAVEL
+  TC_RWY_OTHER,                            // 6 GROUND_METAL
+  TC_RWY_OTHER,                            // 7 GROUND_SAND
+  TC_RWY_OTHER,                            // 8 GROUND_WOOD
+  TC_RWY_OTHER,                            // 9 GROUND_WATER
+  TC_RWY_OTHER,                            // 10 GROUND_MATS
+  TC_RWY_OTHER,                            // 11 GROUND_SNOW
+  TC_RWY_OTHER,                            // 12 GROUND_ICE
+  TC_RWY_OTHER,                            // 13 GROUND_GROOVED
+  TC_RWY_OTHER,                            // 14 GROUND_TREATED
+};
 //======================================================================
 void CleanupTypeDBTranslation()
 {
@@ -1291,7 +1311,6 @@ void CDatabaseRWY::DecodeRecord (U_LONG offset,CmHead *obj)
    //-----Texture count(low)  -------------
   i = *(unsigned long*)(buf+251);
   i = LittleEndian (i);
-  rwy->rtxc = i;
   //-----Additional attributes ------ ------
   rwy->SetAttributes();
   return;
@@ -2156,6 +2175,7 @@ CRunway::CRunway(OTYPE qo,QTYPE qa)
   ilsT    = 0;                  // No ils
   mlite   = RWY_LS_APPRO;
   slite   = 0;
+	nbvt		= 0;
 }
 //-----------------------------------------------------------------
 //  Destroye the runway
@@ -2178,26 +2198,43 @@ void CRunway::EndAttributes(LND_DATA &d,SPosition &p)
 }
 //-----------------------------------------------------------------
 //  Set Additional attributes
+//	NOTE:  Each band is 12 feet width (6 feet white-6 feet space)
+//			For each runway we need 4 * GetNumberBand() as the routine
+//			compute only for half width and there is 2 ends.
+//			Then as each band needs 4 vertices, the total vertices
+//			needed for threshold is 16 * GetNumberBand().
 //-----------------------------------------------------------------
 void CRunway::SetAttributes()
 { lgCode = GetCode();
   wiCode = GetLetter();
   Grnd   = GetGroundIndex();
+	Paved  = RwyTYP[Grnd];
   //---Init landing parameters ---------------------------
 	EndAttributes(ilsD[RWY_HI_END],pshi);
 	//----------------------------
 	EndAttributes(ilsD[RWY_LO_END],pslo);
-	//----------------------------
+	//---Initialize letter index ---------------------------
   pID[RWY_HI_END].LetID  = GetIdentIndex(rhid[2]);
   pID[RWY_LO_END].LetID  = GetIdentIndex(rlid[2]);
 	pID[RWY_HI_END].pos		 = pshi;
 	pID[RWY_LO_END].pos		 = pslo;
-	//----------------------------
-	pID[RWY_HI_END].opos	 = &pID[RWY_LO_END];
-	pID[RWY_LO_END].opos	 = &pID[RWY_HI_END];
+	//--- Initialize number of bands -----------------------
+	U_INT nb = GetNumberBand(12);
+	pID[RWY_HI_END].nbTB = nb;
+	pID[RWY_LO_END].nbTB = nb;
+	nbvt	+= (nb << 4);     // Multiply by 16  for vertices
+	//--- Get vertice count for numbers (left and right) ---
+	pID[RWY_HI_END].LeftN		= SetNumberNBV(rhid[0]);
+	pID[RWY_HI_END].RiteN		= SetNumberNBV(rhid[1]);
+	pID[RWY_LO_END].LeftN		=	SetNumberNBV(rlid[0]);
+	pID[RWY_LO_END].RiteN		=	SetNumberNBV(rlid[1]);
+	SetLetterNBV(pID[RWY_HI_END].LetID);
+	SetLetterNBV(pID[RWY_LO_END].LetID);
   //-------Compute distance reduction factor -------------
   double lr   = FN_RAD_FROM_ARCS(pshi.lat);					//DegToRad (pshi.lat / 3600.0);
   nmFactor    = cos(lr) / 60;													// 1 nm at latitude lr
+	//------------------------------------------------------
+	if (0 == Paved)	nbvt	= 0;
   return;
 }
 //-----------------------------------------------------------------
@@ -2227,14 +2264,12 @@ U_CHAR CRunway::GetIdentIndex(char kl)
 //  Compute number of threshold bands needed
 //  Bands start at 10 feet from the edge and are 12 feet wide
 //---------------------------------------------------------------------------------
-void  CRunway::SetNumberBand(int bw)
-{ int hw = (rwid >> 1);                   // Half size
+U_INT  CRunway::GetNumberBand(int bw)
+{ int hw = (rwid >> 1);                   // Half width
   int nb = int((hw   - 10.0) / bw);
   if (nb < 2) nb = 0;
   if (nb > 8) nb = 8;
-  SetNBT(nb,TC_HI);
-  SetNBT(nb,TC_LO);
-  return;
+  return nb;
 }
 //---------------------------------------------------------------------------------
 //  Set ILS type and parameters

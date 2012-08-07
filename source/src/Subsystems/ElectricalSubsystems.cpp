@@ -412,8 +412,8 @@ void CExteriorLight::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
 
   // Update external light manager with subsystem active state if it has changed
   if (active != initActive) {
-    CVehicleObject *veh = globals->pln;
-    if (veh && veh->elt) veh->elt->SetPowerState (unId, active);
+   
+    if (mveh && mveh->elt) mveh->elt->SetPowerState (unId, active);
   }
 }
 
@@ -768,7 +768,6 @@ CSwitchSet::~CSwitchSet (void)
 int CSwitchSet::Read (SStream *stream, Tag tag)
 {
   SMessage *msg = 0;
-  CVehicleObject *veh = globals->pln;
   switch (tag) {
   case 'smsg':
     { msg = new SMessage;
@@ -790,19 +789,19 @@ int CSwitchSet::Read (SStream *stream, Tag tag)
     return TAG_READ;
 
   case 'LAND':
-    veh->SetLandMSG(unId);
+    mveh->SetLandMSG(unId);
     return  TAG_READ;
 
   case 'TAXI':
-    veh->SetTaxiMSG(unId);
+    mveh->SetTaxiMSG(unId);
     return TAG_READ;
 
   case 'NAVI':
-    veh->SetNaviMSG(unId);
+    mveh->SetNaviMSG(unId);
     return TAG_READ;
 
   case 'STRB':
-    veh->SetStrbMSG(unId);
+    mveh->SetStrbMSG(unId);
     return TAG_READ;
 
   case 'zero': 

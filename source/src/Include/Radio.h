@@ -483,7 +483,6 @@ public:
 	virtual void			ModifiedPlan()	{;}
 	virtual void			TrackWaypoint(CWPoint *wpt,char mode) {;}
 	virtual void			UpdNavigationData(CWPoint *w) {;}
-	virtual CWPoint  *StartingNode()		{return 0;}
 	virtual void			NavIsActive()	{;}
 	//--- Tracking management --------------------------------
 	void	TrackGPSEvent(U_CHAR evn, char prm);

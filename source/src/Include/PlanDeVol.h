@@ -288,7 +288,7 @@ private:
   char            Etar[16];           // Arrival time
 	//---------------------------------------------------------------------
 	float						dDir;			// Direct Direction to waypoint
-	float						rDir;			// Direction to this waypoint from previous
+	float						rDir;			// Segment Direction to this waypoint
 	float						mDis;			// Plane distance in miles
 	float						sDis;			// Summmed distance
 	float           pDis;			// Previous distance
@@ -355,7 +355,7 @@ public:
 	void		EditArrival();
 	float		GetPrevDistance();
 	//-------------------------------------------------------------
-	void		FillWPT(CmHead *obj);
+	void		FillWPT(CmHead *obj,char fp);
 	void		Unassign();
 	//-------------------------------------------------------------
 	void		Save(CStreamFile &sf);
@@ -383,9 +383,12 @@ public:
 	inline void				SetDBwpt(CmHead *obj)	{DBwpt = obj;}
 	inline void				SetUser(Tag u)				{user = u;}
 	inline void       SetRefDirection()			{DBwpt->SetRefDirection(rDir);}
+	inline void				SetElevation(double a){position.alt= a;}
+	inline void				SetAltitude(double a)	{altitude = int(a);}
 	//--- Edited field s ------------------------------------------
 	char*							GetEdAltitude()				{return Alti;}
 	//---Node parameters ------------------------------------------
+	inline char      *GetIdent()						{return Iden;}
 	inline char				GetState()						{return State;}
   inline char*      GetName()             {return Name;}
 	inline float			GetLegDistance()      {return legDis;}

@@ -361,9 +361,10 @@ int CSimulatedVehicle::Read (SStream *stream, Tag tag)
 //  All parameters are read. Finish setup
 //-------------------------------------------------------------------------------
 void CSimulatedVehicle::ReadFinished (void)
-{ //--- Read checklist if any ------------
-	double bfs =  FN_FEET_FROM_MILE(approachspeed)/ 3600;		// Brake speed feet/sec
-	accBrake = (bfs * bfs) / (2 * brakeDist);									
+{ //--- Compute brake parameters ------------
+	double bfs	=  FN_METER_FROM_MILE(approachspeed) / 3600;				// Brake speed meter /sec
+	brakeDist		=  FN_METRE_FROM_FEET(brakeDist);
+	accBrake		= (bfs * bfs) / (2 * brakeDist);									
   return;
 }
 //-------------------------------------------------------------------------------
@@ -385,7 +386,7 @@ void CSimulatedVehicle::Timeslice (float dT)
 // CalcNewCG_ISU RH meters
 void CSimulatedVehicle::CalcNewCG_ISU (void)
 {
-  //newCG_ISU = CofG + *(globals->pln->wgh->wb.GetCGOffset()); // lc 052910 -
+  //newCG_ISU = CofG + *(mveh->wgh->wb.GetCGOffset()); // lc 052910 -
   //newCG_ISU.Times (FN_METRE_FROM_FEET (1.0)); // lc 052910 -
   mveh->wgh->GetVisualCG (newCG_ISU); // lc 052910 +
   newCG_ISU.x = FN_METRE_FROM_FEET (-newCG_ISU.x); // lc 052910 +
@@ -874,6 +875,7 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
   pElvs         = 0;
   pRuds         = 0;
   pFlaps        = 0;
+	pSter         = 0;
   aTrim         = 0;
   eTrim         = 0;
   rTrim         = 0;
@@ -1380,7 +1382,8 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
         break;
       case SUBSYSTEM_STEERING_CONTROL:
         //MEMORY_LEAK_MARKER ("electr71")
-        s = new CSteeringControl;
+        s = new  CSteeringControl;
+				pSter = (CSteeringControl*)s;
         //MEMORY_LEAK_MARKER ("electr71")
         break;
       case SUBSYSTEM_FLAP_CONTROL:
@@ -1751,7 +1754,11 @@ void CElectricalSystem::AddExternal(CSubsystem *sy,SStream *st)
 //  All is read
 //---------------------------------------------------------------------------
 void CElectricalSystem::ReadFinished (void)
-{	}
+{	if (pRuds) pRuds->InitCTLR(pSter);
+	CGroundSuspension *ssp = mveh->whl;
+	if (ssp)	ssp->SetSteerData(pRuds);
+	return;
+}
 //-----------------------------------------------------------------------------
 void CElectricalSystem::Write (SStream *stream)
 {
@@ -1945,7 +1952,7 @@ int CVariableLoadouts::Read (SStream *stream, Tag tag)
   case 'unit':
     {
       // Loadout instance
-      CLoadCell *lu = new CLoadCell;
+      CLoadCell *lu = new CLoadCell(mveh);
       ReadFrom (lu, stream);
       vld_wgh->AddLoad(lu);
     }
@@ -2215,21 +2222,16 @@ void CCockpitManager::GetStats(CFuiCanva *cnv)
 // Cameras Views List
 //===================================================================================
 CCameraViewsList::CCameraViewsList (void)
-{
-  num_lines = 0;
-  type = NULL;
-}
-
+{ num_lines = 0;  type = NULL; }
+//--------------------------------------------------------------------
+//	Destroy it
+//--------------------------------------------------------------------
 CCameraViewsList::~CCameraViewsList (void)
-{
-  FreeList ();
-}
+{ SAFE_FREE (type);   }
 
-void CCameraViewsList::FreeList (void)
-{
-  SAFE_FREE (type);
-}
-
+//--------------------------------------------------------------------
+//	Read camera file is any
+//--------------------------------------------------------------------
 int CCameraViewsList::ReadCamerasFile (void)
 {
   char buffer [512] = {0};
@@ -2278,16 +2280,6 @@ int CCameraViewsList::ReadCamerasFile (void)
   }
   return 0;
 }
-
-const int CCameraViewsList::PosCameraTag (const char *tag)
-{
-  if (NULL == type) return 0;
-  for (int i = 0; i < num_lines; ++i) {
-    if (!strcmp (type[i].camera_tag, tag)) return (type[i].val * (i + 1));
-  }
-  return 0;
-}
-
 
 //===================================================================================
 // CEnginePropeller
@@ -2410,7 +2402,7 @@ int CEngine::Read (SStream *stream, Tag tag)
     return TAG_READ;
   case 'bPos':
     ReadVector(&bPos,stream);
-    bPos = bPos + globals->pln->wgh->svh_cofg;
+    bPos = bPos + mveh->wgh->svh_cofg;
     return TAG_READ;
   case 'mPos':
     ReadVector (&mPos, stream);

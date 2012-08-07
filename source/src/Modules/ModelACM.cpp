@@ -1844,16 +1844,13 @@ void CAcmGears::PushTo(float d)
 //--------------------------------------------------------------------
 void CAcmGears::SetShockTo(float f)
 { float key = fabs(f);
-  //---Set weight indicator ---------------------------------
-  WoW = (f < 0.1)?(1):(0);
   //------Animate the suspension ----------------------------
-  /*
   std::vector<CAcmPart*>::iterator p;
   for (p = shok.begin(); p != shok.end(); p++)
   { CAcmPart *prt = (*p);
     prt->setKeyframe(key);
   }
- */
+ 
   return;
 }
 //==========================================================================

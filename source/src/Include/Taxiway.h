@@ -40,8 +40,14 @@
 #define TAXI_NODE_TAXI			(0x03)						// Taxiway node
 #define TAXI_NODE_PARK			(0x04)						// Parking node
 //----------------------------------------------------------------------
+#define TAXI_NODE_DIR				(0x10)						// Direction 0=hi 1=lo
 #define TAXI_NODE_FIXE			(0x20)						// Node is fixed
 #define TAXI_NODE_AXES			(0x40)						// Node in runway axis
+//----------------------------------------------------------------------
+#define TAXI_HI_TKOF        (TAXI_NODE_TKOF)
+#define TAXI_LO_TKOF				(TAXI_NODE_TKOF + TAXI_NODE_DIR)
+#define TAXI_HI_EXIT				(TAXI_NODE_EXIT)
+#define TAXI_LO_EXIT				(TAXI_NODE_EXIT + TAXI_NODE_DIR)
 //============================================================================
 //  Node structure for runway and taxiways
 //	NOTE:  Sector is defined relative to landing point (see LND_DATA)
@@ -70,7 +76,7 @@ public:
 	 TaxNODE(Tag id,TaxNODE *N);
 	 TaxNODE(Tag id,SPosition *P);
   ~TaxNODE();
-		int			Read (SStream *stream, Tag tag);    // Read method
+		//int			Read (SStream *stream, Tag tag);    // Read method
 	  //----------------------------------------------------------------
 		void		Init(Tag id, SPosition *P);
 		void		SetPosition(SPosition &P);
@@ -80,18 +86,19 @@ public:
 		//-----------------------------------------------------------------
 		bool		LndParking();				// Check for landing parking
 		bool		TkoParking();				// Check for take-off parking
+		void		SetNodeType(U_CHAR dir);
 		//----------------------------------------------------------------
-		void		Save(CStreamFile &sf);
+		//void		Save(CStreamFile &sf);
 		//----------------------------------------------------------------
 		SPosition *AtPosition()						{return &Pos;}
 		SPosition &Position()							{return Pos;}
 		//----------------------------------------------------------------
 		void		SetRWY(char *R)			{strncpy(rwy,R,4);	}
-		void    SetTYP(char T)			{type = T;}
+		void    SetTYP(U_CHAR T)		{type = T;}
 		void		SetREF(LND_DATA *D)	{lndR = D;}
 		//-----------------------------------------------------------------
 		bool		IsNotRWY(char *r)		{return (strncmp(r,rwy,4) != 0);}
-		bool		IsNotTKO()					{return (type != TAXI_NODE_TKOF);}
+		bool		IsNotTKO()					{return ((type & 0x67) != TAXI_NODE_TKOF);}
 		//-----------------------------------------------------------------
 		bool		NoEdge(char t)			{return (nout[t] == 0) && (ninp[t] == 0);}
 		bool		IsPath(char t)			{return (nout[t] == 1);}
@@ -99,18 +106,22 @@ public:
 		bool		NoOutput(char t)		{return (nout[t] == 0);}
 		bool    NoInput(char t)			{return (ninp[t] == 0);}
 		//-----------------------------------------------------------------
+		U_CHAR	GetDirection()			{return (type & TAXI_NODE_DIR);}
 		Tag			GetIdent()					{return idn;}
 		bool		HasIdent(Tag T)			{return (idn != T);}
 		//-----------------------------------------------------------------
 		bool		IsType(char T)			{return (T == type);}
 		bool    NotType(char T)			{return ((T & type) != T);}
 		bool		HasType(char T)			{return ((T & type) == T);}
+		bool    IsLndNode()				  {return ((type & 0x67) == TAXI_NODE_EXIT);}
+		bool		IsTkoNode()					{return ((type & 0x67) == TAXI_NODE_TKOF);}
 		//----------------------------------------------------------------
-		void		IncINP(char t)			{ninp[t]++;}
-		void    IncOUT(char t)			{nout[t]++;}
-		void		DecINP(char t)			{ninp[t]--;}
-		void		DecOUT(char t)			{nout[t]--;}
+		void		IncINP(char t);
+		void    IncOUT(char t);			
+		void		DecINP(char t);			
+		void		DecOUT(char t);			
 		//-----------------------------------------------------------------
+		void		SetDirection(U_CHAR d)	{type |= (d << 4);}
 		void		RazINP()	{ninp[0] = ninp[1] = 0;}
 		void    RazOUT()  {nout[0] = nout[1] = 0;}
 };
@@ -128,12 +139,12 @@ public:
 	 TaxEDGE(U_SHORT n1, U_SHORT n2);
   ~TaxEDGE();
 	 //--------------------------------------------------------------
-	 int			Read (SStream *stream, Tag tag);    // Read method
+	 //int			Read (SStream *stream, Tag tag);    // Read method
 	 bool			ReferTo(Tag tn);
 	 void			SetShortCut(Tag C);
 	 bool			NoCandidate(Tag A);
    //-----------innline ------------------------------------------
-	 void			Save(CStreamFile &sf);
+	 //void			Save(CStreamFile &sf);
 	 //-------------------------------------------------------------
 	 void			StoreShortCut(Tag S)	{scut = S;}
 };

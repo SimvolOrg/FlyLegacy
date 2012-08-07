@@ -44,8 +44,10 @@
 #include <pthread.h>
 #include <map>
 
-#include "FlyLegacy.h"
-#include "Queues.h"
+#include "../Include/FlyLegacy.h"
+#include "../Include/Queues.h"
+#include "../Include/GeoMath.h"
+
 //============================================================================================
 //============================================================================================
 //
@@ -604,8 +606,8 @@ protected:
 	//---------------------------------------------------
 public:
 			CTileCache(OTYPE qo,QTYPE qa);
-			void PutInTile(CmHead *obj);	                // Put object in Tile Queue
-			CmHead *PopObj(QTYPE qx);				            // Pop first object from queue
+			void PutInTile(CmHead *obj);										// Put object in Tile Queue
+			CmHead *PopObj(QTYPE qx);												// Pop first object from queue
 			int  FreeQueue(QTYPE qx);					              // Free a given queue
 			void FreeAllQueues();						                // Free all queues
 			void Trace(char *op,U_INT FrNo,U_INT key);
@@ -1178,16 +1180,20 @@ public:
 //=======================================================================
 struct RwyID {
 		SPosition pos;										// Position
+		//--------------------------------------------------------------
     U_CHAR  Paved;                    // Paved runway
     U_CHAR  LetID;                    // letter ID
+		U_CHAR	LeftN;										// Left number
+		U_CHAR	RiteN;										// Right number
     U_CHAR  nbTB;                     // Number of THreshold bands
+		U_CHAR  nbVT;											// Number of vertices for RID
+		//-------------------------------------------------------------
     SVector lPos;                     // left number position
     SVector rPos;                     // right number position
     SVector cPos;                     // Letter position
     SVector lTRH;                     // Left threshold position
     SVector rTRH;                     // Right threshold position
     double  aRot;                     // Rotation angle
-		RwyID  *opos;											// Opposit end
 };
 //=======================================================================
 //  RUNWAY LIGHT REQUEST
@@ -1265,9 +1271,9 @@ protected:
   char  rlgt;                             // GlideSlope type (low)
   char  rlgc;                             // GlideSlope configuration (low)
   char  rlgl;                             // GlideSlope location (low)
-  U_CHAR rl8l[8];                          // 8 light systems
+  U_CHAR rl8l[8];                         // 8 light systems
   //----------------------------------------------------------------
-  int   rtxc;                             // Texture count
+  U_INT  nbvt;                            // Vertice count for RID
   //------------ Added attributes ----------------------------------
   CRLP       *lpf;                        // Runway light profile
   U_INT       slite;                      // Light switches
@@ -1304,6 +1310,8 @@ public:
   int     GetCode();
   int     GetLetter();
   void    WriteCVS(U_INT No,U_INT gx,U_INT gz,char *sep,CStreamFile &st);
+	//--- VBO for designator -----------------------------------------
+	F3_VERTEX *CollectDesignator(char rend,SVector S,F3_VERTEX *buf);
   //------Light switching ------------------------------------------
   char    ChangeLights(char ls);
 	void		FillHiNODE(TaxNODE *N);
@@ -1316,6 +1324,7 @@ public:
   inline  char       GetIlsIndex()      {return ilsT;}
   inline  LND_DATA  *GetIlsData(char p) {return (ilsD + p);}
   //----------------------------------------------------------------
+	inline U_INT			 GetNBVT()	 {return nbvt;}
   inline  char      *GetHiEnd()  {return rhid; }
   inline  char      *GetLoEnd()  {return rlid; }
   inline float       GetHiDir()  {return rhhd; }
@@ -1362,7 +1371,6 @@ public:
   inline  void       SetCPS(SVector v,int p) {pID[p].cPos = v;}
   inline  void       SetLTH(SVector v,int p) {pID[p].lTRH = v;}
   inline  void       SetRTH(SVector v,int p) {pID[p].rTRH = v;}
-  inline  void       SetNBT(U_CHAR  n,int p) {pID[p].nbTB = n;} 
   inline  void       SetPaved(U_CHAR p)      {Paved = p;}
   //------------Light system management -----------------------------
 	inline  RwyID			*GetEndDEF(char n)				{return pID + n;}
@@ -1390,9 +1398,12 @@ public:
   inline bool        NeedBlend()          {return (Blend == 1);}
   inline bool        HasProfile()         {return (lpf != 0);}
 	//---Setting parameters -------------------------------------------
-  void  SetNumberBand(int bw);
+  U_INT GetNumberBand(int bw);
 	void	SetLETTER(int k,U_CHAR rs);
 	void	SetNUMBER(int k,U_CHAR rs,double nmx,double nmy);
+	//--- Counting ----------------------------------------------------
+  U_CHAR  SetNumberNBV(char N);
+  U_CHAR  SetLetterNBV(char N);
   //---Drawing ------------------------------------------------------
 	void	DrawLetter(char No);
 	void	DrawNumber(char cr);

@@ -292,7 +292,7 @@ CRudderControl::CRudderControl (void)
 	pidK	= 0.0005;
 	pidD	= 0.0;
 	pidI	= 0.0;
-
+	steer = 0;
 }
 //--------------------------------------------------------------------------------
 //  Read PID parameters 
@@ -337,6 +337,12 @@ void CRudderControl::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
   //-----Adjust the value before scaling --------------------------
   if (macrd)  Adjust();
   CAeroControl::TimeSlice(dT,FrNo);								// JSDEV*
+	//--- Set steering wheel deflection into [-1,+1] ----------------
+	if (0 == steer)	return;
+	float dev = UnBias() * 2;
+	if (sCTLR)			sCTLR->Target(dev);
+	steer->deflect = (sCTLR)?(sCTLR->IndnValue()):(UnBias());
+	return;  
 }
 //--------------------------------------------------------------------------------
 //  Adjust the bias value 
@@ -1031,6 +1037,7 @@ void CMixtureControl::PrepareMsg(CVehicleObject *veh)
 	mpol.user.u.datatag = 'data';
 	Send_Message(&mpol);
 	data	= (CEngineData*) mpol.voidData;
+	if (data) SetControl(1);
 	return;
 }
 //-----------------------------------------------------
@@ -2448,13 +2455,14 @@ int COxygen::Read (SStream *stream, Tag tag)
 CSpeedRegulator::CSpeedRegulator()
 {	TypeIs (SUBSYSTEM_SPEED_REGULATOR); 
   hwId  = HW_OTHER;
+	//----------------------------------------------------------------
 	//--- Create the PID controller for speed-------------------------
 	sPID		= new CPIDbox(0,0);
 	sPID->SetCoef(0.3,0,0.05);
 	sPID->SetMini(0);
 	//--- Create the PID controller for rudder -----------------------
-	rPID		= new CPIDbox(0,0);
-	rPID->SetCoef(0.002,0,0.0f);
+	gPID		= new CPIDbox(0,0);
+	gPID->SetCoef(0.002,0,0.0f);
 	steer		= 0;
 	route		= 0;
 	limit		= 4;
@@ -2464,7 +2472,7 @@ CSpeedRegulator::CSpeedRegulator()
   msg.id							= MSG_GETDATA;
   msg.dataType				= TYPE_REAL;
 	msg.user.u.datatag	= 'gets';       // throttle
-  msg.user.u.engine	= 1;
+  msg.user.u.engine	  = 1;
 	state								= 0;						// Inactive
 }
 //--------------------------------------------------------------------------------
@@ -2486,18 +2494,18 @@ void CSpeedRegulator::GetThrottle(int u)
 int CSpeedRegulator::Read (SStream *sf, Tag tag)
 { double pm; 
 	switch (tag) {
-			//--- Rudder PID parameters --------------
-			case 'rdKP':							// Rudder PID KP
+			//--- Steer PID parameters --------------
+			case 'rdKP':							// Steer PID KP
 				ReadDouble(&pm,sf);
-				rPID->SetKP(pm);
+				gPID->SetKP(pm);
 				return TAG_READ;
-			case 'rdKD':							// Rudder PID KD
+			case 'rdKD':							// Steer PID KD
 				ReadDouble(&pm,sf);
-				rPID->SetKD(pm);
+				gPID->SetKD(pm);
 				return TAG_READ;
-			case 'rdKI':							// Rudder pID KI
+			case 'rdKI':							// Steer pID KI
 				ReadDouble(&pm,sf);
-				rPID->SetKI(pm);
+				gPID->SetKI(pm);
 				return TAG_READ;
 			//--- SPEED PID parameters --------------
 			case 'spdK':							// Speed PID KP
@@ -2527,8 +2535,6 @@ int CSpeedRegulator::Read (SStream *sf, Tag tag)
 	}
 	return TAG_IGNORED;
 }
-
-
 //--------------------------------------------------------------------------------
 //	Get throttle adress
 //--------------------------------------------------------------------------------
@@ -2540,7 +2546,7 @@ void CSpeedRegulator::PrepareMsg(CVehicleObject *veh)
 	GetThrottle(2);
 	GetThrottle(3);
 	//--- Get Rudder controller -----------------
-	rudS		=  mveh->amp->GetRudders();
+	sgear = mveh->GetSteeringWheel();
 	//-------------------------------------------
 	CDependent::PrepareMsg(veh);
 	state   = 0;
@@ -2570,14 +2576,14 @@ bool CSpeedRegulator::SetON(U_INT CTRL)
 	return true;
 }
 //--------------------------------------------------------------------------------
-//	Send rudder steering orders 
+//	Send  steering orders 
 //--------------------------------------------------------------------------------
-void CSpeedRegulator::RudderControl(float  dT)
+void CSpeedRegulator::SteerControl(float  dT)
 {	hdg		= mveh->GetHeading();					// Actual Heading
 	ref		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),tgp,&fdist);
 	aErr  = Wrap180(ref - hdg) * 100;		// error in [-180, + 180]
-  cor		= rPID->Update(dT,aErr,0);		// to controller
-	rudS->PidValue(cor);								// To rudder
+  cor		= gPID->Update(dT,aErr,0);		// to controller
+	sgear->Deflect(cor);
 	return;
 }
 //--------------------------------------------------------------------------------
@@ -2613,10 +2619,10 @@ void CSpeedRegulator::TimeSlice(float dT, U_INT FrNo)
 			case 0:
 				return;
 			case 1:
-				RudderControl(dT);
+				SteerControl(dT);
 				return;
 			case 2:
-				RudderControl(dT);
+				SteerControl(dT);
 				RouteControl();
 				return;
 	}
@@ -2639,13 +2645,13 @@ void CSpeedRegulator::SteerTo(SPosition &P)
 {	if (0 == state)			return;
 	tgp   = P;
 	steer = 1;
-	rPID->Init();
+	gPID->Init();
 	return;
 }
 //--------------------------------------------------------------------------------
 //	Follow the taxi route
 //--------------------------------------------------------------------------------
-void CSpeedRegulator::RouteTo(TaxiRoute *R)
+void CSpeedRegulator::RouteTo(NavRoute *R)
 {	SPosition *pos	= R->NextPosition();
 	if (0 == pos)				return;
 	if (0 == state)			return;

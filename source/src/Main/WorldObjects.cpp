@@ -184,11 +184,8 @@ void  CWorldObject::ReadFinished (void)
 	//---- Receive position and orientation from globals -----
   SetObjectPosition(orgp);
   SetObjectOrientation(globals->iang);
-
-  if (!is_ufo_object)
-  { SetPhysicalOrientation (iang);
-    ResetSpeeds ();
-  }
+	SetPhysicalOrientation (iang);
+	ResetSpeeds ();
   return;
 }
 //--------------------------------------------------------------
@@ -383,9 +380,9 @@ void CWorldObject::Print (FILE *f)
 
 //========================================================================
 //    CSimulated Object
-//  user basic simulation methods
-//  like ground attraction
-//  and wheels on ground flag
+//		user basic simulation methods
+//		like ground attraction
+//		and wheels on ground flag
 //========================================================================
 CSimulatedObject::CSimulatedObject (void)
 : CWorldObject()
@@ -399,7 +396,7 @@ CSimulatedObject::CSimulatedObject (void)
   nfo = NULL; lod = NULL;
  *nfoFilename = 0;
  //--- Enter in Dispatcher ----------------------------------------
- globals->Disp.Enter(this, PRIO_PLANE, DISP_EXCONT, 1);
+ //globals->Disp.PutHead(this, PRIO_PLANE);
 }
 
 CSimulatedObject::~CSimulatedObject (void)
@@ -487,7 +484,6 @@ CVehicleObject::CVehicleObject (void)
   whl = NULL;
   vld = NULL;
   pit = NULL;
-  cam = NULL;
   lod = NULL;
   elt = NULL;
   eng = NULL;
@@ -507,9 +503,6 @@ CVehicleObject::CVehicleObject (void)
 		globals->Disp.Lock(PRIO_PLANE);
 	}
   //-------------------------------------------------------
-  is_ufo_object =  false;                // 
-  is_opal_object = false;
-
   int val = HAS_FAKE_ENG; // 0;
   GetIniVar ("PHYSICS", "hasFakeEngine", &val);
   has_fake_engine_thrust = val ? true : false;
@@ -555,7 +548,6 @@ CVehicleObject::~CVehicleObject (void)
   SAFE_DELETE (whl);
   SAFE_DELETE (vld);
   SAFE_DELETE (pit);
-  SAFE_DELETE (cam);
   SAFE_DELETE (lod);
   SAFE_DELETE (elt);
   SAFE_DELETE (eng);
@@ -667,10 +659,7 @@ void CVehicleObject::ReadFinished (void)
   // Read Ground Suspension
   //MEMORY_LEAK_MARKER ("whl")
 
-  if (*nfo->GetWHL()) {
-    if (is_opal_object)  whl = new COpalGroundSuspension (this, wgh);
-    else                 whl = new CGroundSuspension (this, wgh);
-  }
+  if (*nfo->GetWHL())  SetSuspension(wgh);
   //MEMORY_LEAK_MARKER ("whl")
 
   ReadParameters(whl,nfo->GetWHL());
@@ -681,7 +670,8 @@ void CVehicleObject::ReadFinished (void)
 
   // Read Camera Manager
   //MEMORY_LEAK_MARKER ("cam")
-  if (*nfo->GetCAM()) cam  = new CCameraManager (this,nfo->GetCAM());
+  //if (*nfo->GetCAM()) cam  = new CCameraManager (this,nfo->GetCAM());
+	if (*nfo->GetCAM())   globals->ccm->ReadPanelCamera(this,nfo->GetCAM());
   //MEMORY_LEAK_MARKER ("cam")
 
   // Read External Lights
@@ -707,21 +697,21 @@ void CVehicleObject::ReadFinished (void)
   if (*nfo->GetPIT()) pit = new CCockpitManager (this,nfo->GetPIT());
   //--- Read Control Mixer
   if (*nfo->GetMIX()) mix = new CControlMixer (this,nfo->GetMIX());
+	//---Add various parameters ---------------------------------------
+  nEng  = eng->HowMany();
 	//--- Read CheckList ----------------------------------------------
 	ckl = new PlaneCheckList(this);
 	char *tail = svh->GetTailNumber();
 	ckl->OpenList(tail);
   //--  Initialisations (after all the objects creation) ------------
   wgh->Init ();
-  //-- Add drawing position as external feature ---------------------
   if (0 == amp)     return;
+  //--- Add drawing position as external feature ---------------------
   CDrawPosition *upos = new CDrawPosition(this);
   amp->AddExternal(upos,0);
   //-- Add vehicle smoke as external subsystem ----------------------
   CVehicleSmoke *usmk = new CVehicleSmoke(this);
   amp->AddExternal(usmk,0);
-  //---Add various parameters ---------------------------------------
-  nEng  = eng->HowMany();
   return;
 }
 
@@ -809,23 +799,13 @@ void CVehicleObject::DrawInside(CCamera *cam)
 //---------------------------------------------------------------------------
 void CVehicleObject::DrawAeromodelData (void)
 { // Draw all externally visible objects associated with the vehicle
-  if (globals->pln->HasOPT(VEH_DW_AERO)  && wng ) wng->DrawAerodelData (draw_aero);
+  if (HasOPT(VEH_DW_AERO)  && wng ) wng->DrawAerodelData (draw_aero);
 }
 //---------------------------------------------------------------------------
-//  Return camera according to current window
+//  Return actual panel
 //----------------------------------------------------------------------------
-CCameraManager* CVehicleObject::GetCameraManager ()
-{ return cam;
-}
-
 Tag CVehicleObject::GetPanel (void)
-{
-  Tag rc = 0;
-  if (pit) {
-    rc = pit->GetPanel ();
-  }
-  return rc;
-}
+{return (pit)?(pit->GetPanel()):(0);	}
 //----------------------------------------------------------------------
 //  Select the current panel 
 //----------------------------------------------------------------------
@@ -1125,16 +1105,14 @@ void CVehicleObject::OverallExtension(SVector &v)
 	if (mod)	      mod->GetExtension(v);
 	return;
 }
-
 //---------------------------------------------------------------------------------
-//  Init deflection for steering gear
+//  Save data for steering gear
 //---------------------------------------------------------------------------------
-void CVehicleObject::SetRudderDeflection(SGearData *gdt)
+void CVehicleObject::StoreSteeringData (SGearData *gdt)
 {	if (0 == amp)	return;
-	CAeroControl *p = amp->pRuds;
+	CRudderControl *p = amp->pRuds;
 	if (0 == p)		return;
-  gdt->deflect = p->UnBias();
-  gdt->scaled  = 0;
+	p->InitSteer(gdt);
 	return;
 }
 //---------------------------------------------------------------------------------
@@ -1167,7 +1145,7 @@ void  CVehicleObject::GetAircraftWindEffect (void)
   CVector wind_angle (sin (w_angle), 0.0, cos (w_angle));             // LH
   wind_angle.Times (w_spd);
   SVector or_m = {0.0, 0.0, 0.0};                                     // 
-  or_m.y = -globals->pln->GetOrientation ().z; // + is left     // RH to LH
+  or_m.y = -GetOrientation ().z; // + is left													// RH to LH
   matx.Setup (or_m);                                                  // LH
   matx.ParentToChild (w_dir_for_body, wind_angle);                    // LH
   //

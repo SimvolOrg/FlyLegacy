@@ -619,7 +619,11 @@ public:
   //---------Position routines ---------------------------------
   bool        GetTileIndices(SPosition &pos,short &tx, short &tz);
   bool        GetTileIndices(GroundSpot &gns);
-	void				RelativeToBase(CVector &v);
+	//-------------------------------------------------------------
+	void				RelativeToBase(CVector &v)
+		{	v.x -= wLon;													// Remove west longitude
+			v.y -= sLat;													// Remove south latitude
+		}
   //----------Helper -------------------------------------------
   CmQUAD     *GetQuad(U_INT No,U_SHORT rx,U_SHORT rz);
 	CmQUAD		 *GetQuad(U_INT ax,U_INT az);

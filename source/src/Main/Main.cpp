@@ -1017,6 +1017,7 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->csp);
   SAFE_DELETE (globals->cap);
   SAFE_DELETE (globals->snd);
+	SAFE_DELETE (globals->ccm);					// Delete camera manager
 	//---------------------------------------
   pshutdown (&globals->pfs);
 	SAFE_DELETE (globals->clk);
@@ -1145,6 +1146,8 @@ void InitApplication (void)
   //   dependent on INI settings and/or POD filesystem
 	TRACE("Create Key Map");
   globals->kbd = new CKeyMap();
+	TRACE("Create Camera Manager");
+	globals->ccm   = new CCameraManager(0,0);
 	TRACE("Create Slew Manager");
   globals->slw = new CSlewManager();
 	TRACE("Create Import Manager");

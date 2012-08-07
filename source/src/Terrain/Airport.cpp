@@ -97,26 +97,6 @@ SVector RwyBPOS[] = {
 //=============================================================================
 extern TC_RMP_DEF RwyMID[];					// In CRunwayGenerator.cpp
 //=============================================================================
-//  Runway Type
-//=============================================================================
-U_CHAR RwyTYP[] = {
-  0,                            // 0 Unknown
-  TC_RWY_PAVED,                            // 1 GROUND_CONCRETE
-  TC_RWY_PAVED,                            // 2 GROUND_ASPHALT
-  TC_RWY_OTHER,                            // 3 GROUND_TURF
-  TC_RWY_OTHER,                            // 4 GROUND_DIRT
-  TC_RWY_OTHER,                            // 5 GROUND_GRAVEL
-  TC_RWY_OTHER,                            // 6 GROUND_METAL
-  TC_RWY_OTHER,                            // 7 GROUND_SAND
-  TC_RWY_OTHER,                            // 8 GROUND_WOOD
-  TC_RWY_OTHER,                            // 9 GROUND_WATER
-  TC_RWY_OTHER,                            // 10 GROUND_MATS
-  TC_RWY_OTHER,                            // 11 GROUND_SNOW
-  TC_RWY_OTHER,                            // 12 GROUND_ICE
-  TC_RWY_OTHER,                            // 13 GROUND_GROOVED
-  TC_RWY_OTHER,                            // 14 GROUND_TREATED
-};
-//=============================================================================
 //  Beacon color 1
 //=============================================================================
 U_CHAR  LiteBC1[] = {
@@ -275,7 +255,7 @@ GLint *ofsTAB[] = {
 //=============================================================================
 //  Number of primitives for letters
 //=============================================================================
-GLint nbrVBO[]	= {
+GLint nbrPOL[]	= {
 		sizeof(ofsN0) / sizeof(GLint),			// Number 0
 		sizeof(ofsN1) / sizeof(GLint),			// Number 1
 		sizeof(ofsN2) / sizeof(GLint),			// Number 2
@@ -403,7 +383,7 @@ void CTarmac::Draw()
 	glVertexPointer  (3,GL_FLOAT,sizeof(TC_VTAB),OFFSET_VBO(2*sizeof(float)));
 	glTexCoordPointer(2,GL_FLOAT,sizeof(TC_VTAB), 0);
 	for (int k=0; k < nPRM; k++)	glDrawArrays(GL_TRIANGLE_STRIP,ind[k],4);
-	glBindBuffer(GL_ARRAY_BUFFER,0);
+	//glBindBuffer(GL_ARRAY_BUFFER,0);
 	rwy->DrawDesignators(apo);
 	if (blnd)  glDisable(GL_BLEND);
 	return;
@@ -413,7 +393,7 @@ void CTarmac::Draw()
 //  Draw Threshold bands for Hi and Lo ends
 //=========================================================================================
 void CRunway::DrawThreshold(SVector &sl,U_CHAR rs)
-{ SVector ct = {0};
+{ SVector ct = {0};							// Starting position
   //--Draw left part ------------------------------
   GetLTR(ct,rs);                 // Letf part
   glPushMatrix();
@@ -486,7 +466,7 @@ void CRunway::DrawRID(CAptObject *apo,int rs,char *rid)
 //----------------------------------------------------------------------------
 void CRunway::DrawLetter(char No)
 { if (No == 0)    return;
-	int		nbp = nbrVBO[No];
+	int		nbp = nbrPOL[No];
 	GLint *pl = ofsTAB[No];
 	GLint *cn = nbrPM;
 	glMultiDrawArrays(GL_TRIANGLE_STRIP,pl,cn,nbp);
@@ -498,12 +478,38 @@ void CRunway::DrawLetter(char No)
 void CRunway::DrawNumber(char cr)
 { if ((cr < ('0')) || (cr > '9')) return;
   int		No  = cr - '0';
-	int		nbp = nbrVBO[No];
+	int		nbp = nbrPOL[No];
 	GLint *pl = ofsTAB[No];
 	GLint *cn = nbrPM;
 	glMultiDrawArrays(GL_TRIANGLE_STRIP,pl,cn,nbp);
   return;
 }
+//----------------------------------------------------------------------------
+//  Get number of vertices need for the number
+//	Each number is defined by a number of polygons given by table nbrPOL
+//	Each polygon has 4 vertices
+//----------------------------------------------------------------------------
+U_CHAR CRunway::SetNumberNBV(char N)
+{	if ((N < ('0')) || (N > '9')) return 0;
+  int		No  = N - '0';
+	//--- Compute number of polygons needed ---
+	int		nbs = nbrPOL[No];			// Number of polygons
+	nbvt += (nbs << 2);					// Multiplied by 4
+	return U_CHAR(No);
+}
+//----------------------------------------------------------------------------
+//  Get number of vertices need for the letter
+//	Each letter is defined by a number of polygons given by table nbrPOL
+//	Each polygon has 4 vertices
+//----------------------------------------------------------------------------
+U_CHAR CRunway::SetLetterNBV(char N)
+{	if (0 == N) return 0;
+	//--- Compute number of polygons needed ---
+	int		nbs = nbrPOL[N];			// Number of polygons
+	nbvt += (nbs << 2);					// Multiplied by 4
+	return U_CHAR(N);
+}
+
 //----------------------------------------------------------------------------
 //  Draw the runway THRESHOLD BAND
 //----------------------------------------------------------------------------
@@ -565,6 +571,78 @@ void CRunway::SetNUMBER(int k,U_CHAR rs,double nmx,double nmy)
   SetRPS(pos,rs);
   return;
 }
+//----------------------------------------------------------------------------
+//  Collect designator vertices for one runway end (Hi or Lo)
+//	S is the scaling factor for band coordinates
+//----------------------------------------------------------------------------
+F3_VERTEX *CRunway::CollectDesignator(char RE,SVector S,F3_VERTEX *buf)
+{	HTransformer H;
+	int tot = nbvt;								// Total for control
+	if (0 == tot)				return buf;
+	RwyID *rend = GetEndDEF(RE);
+	//--- Collect band vertices -----------------------------
+	U_INT			nbp = rend->nbTB;			// Number of polygons
+	U_INT			ofs	= 0;							// Offset in polygon list
+	int      *tab = 0;							// Depart in polygon
+	U_CHAR    itm;									// Item (number / letter)
+	F3_VERTEX *dst	= buf;
+	//--- Init rotation for runway end ------------------
+	H.SetROT(rend->aRot);
+	H.Scale(S);
+	//--- Collect left part -----------------------------
+	H.Translation(rend->lTRH);			// Translate to Letf part
+	for (U_INT k=0; k< nbp; k++)
+	{	ofs = ofsBD[k];								// Polygon offset in table
+		dst	= H.TransformSRT(4,vboBUF+ofs,dst);
+		nbvt	-= 4;
+	}
+	if (nbvt < 0) gtfo("CRunway::CollectDesignator() PB");
+	//--- Collect right part ----------------------------
+	H.Translation(rend ->rTRH);			//	Translate to Right part
+	for (U_INT k=0; k< nbp; k++)
+	{	ofs = ofsBD[k];								// Polygon offset in table
+		dst	= H.TransformSRT(4,vboBUF+ofs,dst);
+		nbvt	-= 4;
+	}
+	if (nbvt < 0) gtfo("CRunway::CollectDesignator() PB");
+	//--- Collect number and letter for Hi runway  end --
+	H.Scale(scl);										// Scale for designator
+	//--- Collect left number -----------------------------------
+	H.Translation(rend->lPos);			// Translation to left number
+	itm	= rend->LeftN;							// Left number
+	tab	= ofsTAB[itm];							// Offset
+	nbp	= nbrPOL[itm];							// Number of polygons
+	for (U_INT k=0; k< nbp; k++)
+	{	ofs = tab[k];									// Polygon offset in table
+		dst	= H.TransformSRT(4,vboBUF+ofs,dst);
+		nbvt	-= 4;
+	}
+	if (nbvt < 0) gtfo("CRunway::CollectDesignator() PB");
+	//--- Collect right number -----------------------------------
+	H.Translation(rend->rPos);		// Translation to left number
+	itm	= rend->RiteN;						// right number
+	tab	= ofsTAB[itm];						// Offset
+	nbp	= nbrPOL[itm];						// Number of polygons
+	for (U_INT k=0; k< nbp; k++)
+	{	ofs = tab[k];								// Polygon offset in table
+		dst	= H.TransformSRT(4,vboBUF+ofs,dst);
+		nbvt	-= 4;
+	}
+	if (nbvt < 0) gtfo("CRunway::CollectDesignator() PB");
+	//--- Collect letter     -----------------------------------
+	itm	= rend->LetID;						// right number
+	if (0 == itm)					return dst;
+	H.Translation(rend->cPos);		// Translation to left number
+	tab	= ofsTAB[itm];						// Offset
+	nbp	= nbrPOL[itm];						// Number of polygons
+	for (U_INT k=0; k< nbp; k++)
+	{	ofs = tab[k];								// Polygon offset in table
+		dst	= H.TransformSRT(4,vboBUF+ofs,dst);
+		nbvt -= 4;
+	}
+	if (nbvt < 0) gtfo("CRunway::CollectDesignator() PB");
+	return dst;
+}
 
 //=========================================================================================
 //  Destroy Airport Q
@@ -577,7 +655,8 @@ CAptQueue::~CAptQueue()
 //  Build Airport Object
 //=========================================================================================
 CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
-{	apm     = md;
+{	state		= APT_CREATED;
+	apm     = md;
   pApt    = apt;
   Airp    = apt;
 	nmiles  = apt->GetNmiles();
@@ -586,6 +665,7 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 	pVBO	  = 0;
 	eVBO		= 0;
 	cVBO		= 0;
+	rVBO		= 0;
 	//---- Locate QGT ----------------------------------------------
   Org     = Airp->GetPosition();
 	Org.alt	= 0;
@@ -613,6 +693,7 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   sct.x = FN_ARCS_FROM_FEET(xpf);
   sct.y = FN_ARCS_FROM_FEET(1);
 	//--- VBO Management -------------------------------------------
+	nDES	= 0;
 	nGVT	= 0;
 	gBUF	= 0;
 	glGenBuffers(1,&gVBO);
@@ -646,6 +727,7 @@ CAptObject::CAptObject(CAirport *apt)
   txy     = 0;
   tcm     = globals->tcm;
   scale   = tcm->GetScale();
+	
 }
 //----------------------------------------------------------------------------------
 //  Init position
@@ -695,6 +777,7 @@ CAptObject::~CAptObject()
 	if (eVBO)	glDeleteBuffers(1,&eVBO);
 	if (cVBO)	glDeleteBuffers(1,&cVBO);
 	if (gVBO) glDeleteBuffers(1,&gVBO);
+	if (rVBO) glDeleteBuffers(1,&rVBO);
   //--- free tarmac segments ------------------
 	for (U_INT k = 0; k < tmcQ.size(); k++) delete tmcQ[k];
 	tmcQ.clear();
@@ -719,40 +802,60 @@ void CAptObject::AptExtension(GroundSpot &gs)
   return;
 }
 //---------------------------------------------------------------------------------
+//  Build part of airport until everything is OK
+//---------------------------------------------------------------------------------
+bool CAptObject::BuildAll()
+{	switch (state)	{
+			case APT_CREATED:
+				return SetRunway();
+			case APT_HASRUNWAY:
+				return BuildEnd();
+	}
+	return false;
+}
+//---------------------------------------------------------------------------------
 //  For each runway, build a set of segment polygons
 //  NOTE: All pavements use the common ground from airport position
 //        All coordinates are in arcsec, relative to airport origin
 //---------------------------------------------------------------------------------
-void CAptObject::SetRunway()
+bool CAptObject::SetRunway()
 { CAirport *apt = GetAirport();
-  if (!apt->HasRunway())          return;
-  if (!globals->tcm->MeshReady()) return;
-  if (!InitBound())               return;
+  if (!apt->HasRunway())          return false;
+  if (!globals->tcm->MeshReady()) return false;
+  if (!InitBound())               return false;
   apm->SetRunwayProfile(apt);
   CRunway  *rwy = 0;
   //-----Build non paved runway first -----------------
   for (rwy = apt->GetNextRunway(rwy); rwy != 0;rwy = apt->GetNextRunway(rwy))
-  { U_CHAR   type = RwyTYP[rwy->GroundIndex()];
-    rwy->SetPaved(type);
+  { U_CHAR   type = rwy->GetPaved();
     //----Now build runway segments -------------------
     if (type != TC_RWY_OTHER) continue;
 		CRwyGenerator(rwy,this,2);
   }
   //----Build paved runway after ----------------------
   for (rwy = apt->GetNextRunway(rwy); rwy != 0;rwy = apt->GetNextRunway(rwy))
-  { int   type = RwyTYP[rwy->GroundIndex()];
+  { U_CHAR   type = rwy->GetPaved();
     //----Now build runway segments -------------------
     if (type != TC_RWY_PAVED) continue;
 		CRwyGenerator(rwy,this,1);
+		nDES	+= rwy->GetNBVT();				// Total vertices for designators
   }
-  //-----Read the pavement data -----------------------
+  //-----Locate airport ground    ---------------------
+  LocateGround();                   // Locate detail tiles
+	state = APT_HASRUNWAY;
+  return true;
+}
+//---------------------------------------------------------------------------------
+//	Compact runway and locate ground tiles
+//---------------------------------------------------------------------------------
+bool CAptObject::BuildEnd()
+{	//-----Read the pavement data -----------------------
   GetTaxiways();
 	CompactRWY();
-  //-----Locate airport ground    ---------------------
-  LocateGround();                                   // Locate detail tiles
-  return;
+	//CompactDesignator();
+	state = APT_IS_READY;
+	return true;
 }
-
 //---------------------------------------------------------------------------------
 //	Trace runway parameters 
 //---------------------------------------------------------------------------------
@@ -771,7 +874,6 @@ void CAptObject::TraceRWY(CRunway *rwy)
 //    Get elevation for paved vertex
 //  TODO must check for world wrap arround the 0 meridian
 //-------------------------------------------------------------------------------
-
 void CAptObject::ComputeElevation(TC_VTAB *tab)
 { double lon = tab->VT_X + Org.lon;
   double lat = tab->VT_Y + Org.lat;
@@ -782,7 +884,7 @@ void CAptObject::ComputeElevation(TC_VTAB *tab)
 }
 
 //---------------------------------------------------------------------------------
-//  Build one VBO from the Queue
+//  Build one VBO for each queue
 //---------------------------------------------------------------------------------
 void CAptObject::CompactRWY()
 {	U_INT     tot = 0;
@@ -815,6 +917,28 @@ void CAptObject::CompactRWY()
 		delete [] buf;
 	}
   glBindBuffer(GL_ARRAY_BUFFER,0);
+	return;
+}
+//---------------------------------------------------------------------------------
+//  Compact runway designator
+//---------------------------------------------------------------------------------
+void CAptObject::CompactDesignator()
+{	if (0 == nDES)			return;
+	CAirport *apt = GetAirport();
+	F3_VERTEX *buf = new F3_VERTEX[nDES];
+	F3_VERTEX *dst = buf;
+	CRunway   *rwy = 0;
+  //-----Build non paved runway first --------------------------------------
+  for (rwy = apt->GetNextRunway(rwy); rwy != 0;rwy = apt->GetNextRunway(rwy))
+	{	dst	= rwy->CollectDesignator(TC_HI,sct,dst);
+		dst	= rwy->CollectDesignator(TC_LO,sct,dst);
+	}
+	//--- Allocate a VBO -----------------------------------------------------
+	int dim = nDES * sizeof(F3_VERTEX);
+	glGenBuffers(1,&rVBO);
+	glBindBuffer(GL_ARRAY_BUFFER,rVBO);
+	glBufferData(GL_ARRAY_BUFFER,dim,buf,GL_STATIC_DRAW);
+	delete [] buf;
 	return;
 }
 //---------------------------------------------------------------------------------
@@ -1153,6 +1277,21 @@ void CAptObject::DrawVBO(U_INT vbo,U_INT n)
 	glDrawArrays(GL_TRIANGLES,0,n);
 	return;
 }
+//-----------------------------------------------------------------------------------------
+//  Draw designator  
+//-----------------------------------------------------------------------------------------
+void CAptObject::DrawDesignators()
+{	if (0 == rVBO)	return;
+	glDisable(GL_TEXTURE_2D);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER,rVBO);
+	glVertexPointer  (3,GL_FLOAT,0,0);
+	glDrawArrays(GL_TRIANGLE_STRIP,0,nDES);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+//	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glEnable(GL_TEXTURE_2D);
+	return;
+}
 //---------------------------------------------------------------------------------
 //  Draw the Airport  Objects
 //  All coordinates are in arcseconds relative to airport origin
@@ -1199,7 +1338,6 @@ void CAptObject::Draw()
   glTranslated(ofap.x,ofap.y,ofap.z);               // Camera at airport origin
   //-----Draw all pavements -----------------------------------------------
   glFrontFace(GL_CW);
- // glColor4fv(white);
 	ColorGL(COLOR_WHITE);
   glBindTexture(GL_TEXTURE_2D,oTAXI);
 	//if (tr) TRACE("TCM: --Draw pavement %s",Airp->GetName());
@@ -1207,21 +1345,16 @@ void CAptObject::Draw()
 	DrawVBO(pVBO,nPAV);
 	//if (tr) TRACE("TCM: --Leave pavement");
   //-----Draw all edges ---------------------------------------------------
-	if (nmiles < 2)
-  { apm->BindYellow();
-		DrawVBO(eVBO,nEDG);
-  }
+	if (nmiles < 2)  { apm->BindYellow(); DrawVBO(eVBO,nEDG); }
   //-----Draw runways -----------------------------------------------------
-	glBindBuffer(GL_ARRAY_BUFFER,0);
-
 	ColorGL(COLOR_WHITE);
 	std::vector<CTarmac*>::iterator tm;
 	for(tm=tmcQ.begin(); tm!=tmcQ.end(); tm++) (*tm)->Draw();
+	//--- Draw designators---------------------------------------------------
+	//DrawDesignators();
+	glBindBuffer(GL_ARRAY_BUFFER,0);
   //-----Draw Center marks if distance < 2Nm  -----------------------------
-	if (nmiles < 2)
-  { apm->BindYellow();;
-		DrawVBO(cVBO,nCTR);
-  }
+	if (nmiles < 2)  { apm->BindYellow();	DrawVBO(cVBO,nCTR); }
   glDepthMask(true);
   //-----------------------------------------------------------------------
   // Restore states
@@ -1567,7 +1700,11 @@ void CAirportMgr::TimeSlice(float dT)
   clock = ++clock & 0x03;
   if (clock)								return;
 	if (tcm->MeshBusy())			return;
-  //----scan airport queue for Airport leaving the radius ------
+	//----Update runway for current airports in queue -------------
+  for   (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
+  { if (apo->BuildAll())		return;
+  }
+  //----Scan airport queue for Airport leaving the radius ------
   for ( apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
       { apt = apo->GetAirport();
 				float dst = GetRealFlatDistance(apt);
@@ -1593,12 +1730,6 @@ void CAirportMgr::TimeSlice(float dT)
       apo->SetCamera(cam);                              // Current camera
       aptQ.PutEnd(apo);                                 // Enter new Airport in Queue
     }
-  //----Update runway for current airports in queue -------------
-  for   (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
-  { if  (apo->HasRunway())      continue;
-    apo->SetRunway();
-    break;
-  }
   return;
 }
 //----------------------------------------------------------------------------------

@@ -55,7 +55,7 @@ char nodeCOLOR[] = {
 	COLOR_BLACK_OPAQUE,					// 1 Exit 
 	COLOR_BLACK_OPAQUE,					// 2 Take-off
 	COLOR_LIGHT_BLUE,						// 3 Taxiway
-	0,
+	COLOR_YELLOW,								// 4 Parking
 	0,
 	0,
 	0,
@@ -98,17 +98,17 @@ char *circuitNAME[] = {
 //===========================================================================================
 //	Taxiway Route
 //===========================================================================================
-TaxiRoute::TaxiRoute()
+NavRoute::NavRoute()
 {}
 //----------------------------------------------------------------------------
 //	Destroy route
 //----------------------------------------------------------------------------
-TaxiRoute::~TaxiRoute()
+NavRoute::~NavRoute()
 {	Clear();	}
 //----------------------------------------------------------------------------
 //	Clear all resources 
 //----------------------------------------------------------------------------
-void TaxiRoute::Clear()
+void NavRoute::Clear()
 {	rwd	= 0;
 	ind	= 0;
 	nodQ.clear();
@@ -116,7 +116,7 @@ void TaxiRoute::Clear()
 //----------------------------------------------------------------------------
 //	Set Route :  Collect all nodes 
 //----------------------------------------------------------------------------
-void TaxiRoute::SetRoute(TaxiwayMGR *M,char D,LND_DATA *R)
+void NavRoute::SetRoute(TaxiwayMGR *M,char D,LND_DATA *R)
 {	mgr	= M;
 	dir	= D;
 	rwd	= R;
@@ -131,7 +131,7 @@ void TaxiRoute::SetRoute(TaxiwayMGR *M,char D,LND_DATA *R)
 //----------------------------------------------------------------------------
 //	Get next position 
 //----------------------------------------------------------------------------
-SPosition *TaxiRoute::NextPosition()
+SPosition *NavRoute::NextPosition()
 { if (ind >= nodQ.size())		return 0;
 	TaxNODE *N = nodQ[ind++];
 	SPosition *pos = N->AtPosition();
@@ -141,7 +141,7 @@ SPosition *TaxiRoute::NextPosition()
 //----------------------------------------------------------------------------
 //	Check for last leg 
 //----------------------------------------------------------------------------
-bool TaxiRoute::LastLeg()
+bool NavRoute::LastLeg()
 {	return (ind == nodQ.size());
 }
 //===========================================================================================
@@ -156,24 +156,9 @@ TaxiCircuit::~TaxiCircuit()
 	allP.clear();
 }
 //--------------------------------------------------------------------------
-//	Return taxi node color
-//	For Take-off circuit
-//			input edge = 0 => Parking node
-//	For Landing circuit
-//			output edge = 0 => Terminal node
-//--------------------------------------------------------------------------
-char TaxiCircuit::NodeColor(TaxNODE *N)
-{	if (N->NoEdge(dir))	return COLOR_LIGHT_BLUE;
-	bool pt = (dir == 0) && (N->NoInput(dir));
-	if (pt)	return COLOR_YELLOW;
-	bool pl = (dir == 1) && (N->NoOutput(dir));
-	if (pl)	return COLOR_YELLOW;
-	return COLOR_LIGHT_BLUE;
-}
-//--------------------------------------------------------------------------
 //	Add an Edge
 //--------------------------------------------------------------------------
-void TaxiCircuit::AddEdge(TaxEDGE *E)
+void TaxiCircuit::AddArc(TaxEDGE *E)
 {	Tag key = E->idn;
 	std::map<Tag,TaxEDGE*>::iterator re = edgQ.find(key);
 	if (re != edgQ.end())		return;
@@ -189,20 +174,20 @@ void TaxiCircuit::AddEdge(TaxEDGE *E)
 //-------------------------------------------------------------------------------------------
 //	Free one edge
 //-------------------------------------------------------------------------------------------
-void TaxiCircuit::FreeEdge(TaxEDGE *edg)
+void TaxiCircuit::FreeArc(TaxEDGE *edg)
 {	Tag key = edg->idn;
 	Tag org = LEFT_NODE(key);
 	Tag ext = RITE_NODE(key);
 	TaxNODE *n1 = nsup->GetNode(org);
 	if (n1)	 n1->DecOUT(dir);
 	TaxNODE *n2 = nsup->GetNode(ext);
-	if (n2)  n2->DecINP(dir);
+	if (n2)  n2->DecINP(dir); 
 	delete edg;
 }
 //-------------------------------------------------------------------------------------------
 //	Delete all edges refering to node A
 //-------------------------------------------------------------------------------------------
-void TaxiCircuit::DeleteEdge(Tag A)
+void TaxiCircuit::DeleteArc(Tag A)
 {	std::map<Tag,TaxEDGE *>::iterator r0  = edgQ.begin();
 	while (r0 != edgQ.end())
 	{	TaxEDGE *edg = (*r0).second;
@@ -210,7 +195,7 @@ void TaxiCircuit::DeleteEdge(Tag A)
 		Tag ext = RITE_NODE(edg->idn);
 		bool dl = (org == A) || (ext == A);
 		if (!dl)	r0++;
-		else 	{	FreeEdge(edg);		edgQ.erase(r0++);}
+		else 	{	FreeArc(edg);		edgQ.erase(r0++);}
 	}
 	return;
 }
@@ -221,14 +206,14 @@ void TaxiCircuit::DeleteEdge(Tag A, Tag B)
 {	Tag key = (A << 16) | B;
 	std::map<Tag,TaxEDGE*>::iterator r0 = edgQ.find(key);
 	if (r0 == edgQ.end())		return;
-	FreeEdge((*r0).second);
+	FreeArc((*r0).second);
 	edgQ.erase(r0);
 	return;
 }
 //-------------------------------------------------------------------------------------------
 //	return first edge originating from A
 //-------------------------------------------------------------------------------------------
-TaxEDGE *TaxiCircuit::GetEdge(Tag A)
+TaxEDGE *TaxiCircuit::GetArc(Tag A)
 {	std::map<Tag, TaxEDGE*>::iterator r0;
 	for (r0 = edgQ.begin(); r0 != edgQ.end(); r0++)
 	{	TaxEDGE *edg = (*r0).second;
@@ -240,7 +225,7 @@ TaxEDGE *TaxiCircuit::GetEdge(Tag A)
 //-------------------------------------------------------------------------------------------
 //	return edge AB
 //-------------------------------------------------------------------------------------------
-TaxEDGE *TaxiCircuit::GetEdge(Tag A, Tag B)
+TaxEDGE *TaxiCircuit::GetArc(Tag A, Tag B)
 {	Tag key = (A << 16) | B;
 	std::map<Tag,TaxEDGE *>::iterator r0  = edgQ.find(key);
 	return (r0 == edgQ.end())?(0):((*r0).second);
@@ -367,7 +352,7 @@ Tag		TaxiCircuit::GetShortCut(TaxEDGE *E)
 {	TaxNODE *nb = GetExtremityNode(E);
 	Tag      B  = nb->idn;
 	if (nb->EndPath(dir))		return B;				// End of straight path
-	TaxEDGE *e1 = GetEdge(B);								// There must be one edge starting from NB
+	TaxEDGE *e1 = GetArc(B);								// There must be one edge starting from NB
 	if (e1)			return GetShortCut(e1);			// Go forward
 	return 0;
 }
@@ -406,6 +391,7 @@ void TaxiCircuit::ComputeShortCut(TaxNODE *N, char *lab)
 
 	return;
 }
+
 //===========================================================================================
 //	Collect all nodes for test
 //===========================================================================================
@@ -417,14 +403,14 @@ void TaxiCircuit::CollectNodes()
 		switch (dir)	{
 			//--- Take-of circuit ---------------------
 			case 0:
-				if (N->IsType(TAXI_NODE_TKOF))	lstTO.push_back(N);
-				if (N->TkoParking())						lstFR.push_back(N);
-				break;
+				if (N->IsTkoNode())		lstTO.push_back(N);
+				if (N->TkoParking())	lstFR.push_back(N);
+				continue;
 			//--- Landing circuit ---------------------
 			case 1:
-				if (N->IsType(TAXI_NODE_EXIT))	lstFR.push_back(N);
-				if (N->LndParking())						lstTO.push_back(N);
-				break;
+				if (N->IsLndNode())		lstFR.push_back(N);
+				if (N->LndParking())	lstTO.push_back(N);
+				continue;
 		}
 	}								// End of collect
 	return;
@@ -433,9 +419,10 @@ void TaxiCircuit::CollectNodes()
 //	Test circuit
 //----------------------------------------------------------------------
 void TaxiCircuit::Test()
-{	CollectNodes();
+{	char *cn = circuitNAME[dir];
+	CollectNodes();
 	allP.clear();						// Clear all paths
-	TRACE("===== TESTING %s CIRCUIT ======================",circuitNAME[dir]);
+	TRACE("===== TESTING %s CIRCUIT ======================",cn);
 	for (U_INT m=0; m < lstFR.size(); m++)
 	{	TaxNODE *P = lstFR[m];
 		Tag      A = P->idn;
@@ -451,7 +438,7 @@ void TaxiCircuit::Test()
 			allP.push_back(T);
 		}
 	}	
-	TRACE("===== END OF %s CIRCUIT ======================");
+	TRACE("===== END OF %s CIRCUIT ======================",cn);
 	lstFR.clear();
 	lstTO.clear();
 	return;
@@ -459,68 +446,10 @@ void TaxiCircuit::Test()
 //===========================================================================================
 //	Save all edges
 //===========================================================================================
-void TaxiCircuit::Save(Tag dir,Tag pat,CStreamFile &sf)
-{	char edt[64];
-	std::map<Tag,TaxEDGE*>::iterator r0;
-	sf.WriteTag(dir,"---Circuit --------------------");
-	sf.DebObject();
-	for (r0 = edgQ.begin(); r0 != edgQ.end(); r0++)
-	{	(*r0).second->Save(sf);	}
-	sf.EndObject();
-	//--- Now save the paths ------------------------
-	Test();
-	sf.WriteTag(pat,"---PATHs --------------------");
-	sf.DebObject();
-	for (U_INT k=0; k < allP.size(); k++)
-	{	Tag T		= allP[k];
-		Tag t1	= LEFT_NODE(T);
-		Tag t2	= RITE_NODE(T);
-		sf.WriteTag('path',"Node to node path ---------");
-		_snprintf(edt,64,"%05d->%05d",t1,t2);
-	  sf.WriteString(edt);
-	}
-	sf.EndObject();
-	return;
-}
-//-------------------------------------------------------------------------------------------
-//	Read Edge
-//-------------------------------------------------------------------------------------------
-int TaxiCircuit::Read(SStream *sf,Tag tag)
-{	char str[64];
-	int		n1,n2,n3;
-	TaxNODE *node;
-	switch (tag)	{
-		//--- edge declaration -------------------------------
-		case 'edge':
-			{	ReadString(str,32,sf);
-				int nf = sscanf(str,"%u - %u (%u)",&n1,&n2,&n3);
-				if (3 != nf)				return TAG_EXIT;
-				//---  Check if node exists ------------------------
-				node = nsup->GetNode(n1);
-				if (0 == node)			return TAG_READ;
-				node = nsup->GetNode(n2);
-				if (0 == node)			return TAG_READ;
-				TaxEDGE *e0 = new TaxEDGE(U_SHORT(n1),U_SHORT(n2));
-				e0->SetShortCut(n3);
-				AddEdge(e0);
-				return TAG_READ;
-			}
-		//--- Path declaration -------------------------------
-		case 'path':
-			{	ReadString(str,32,sf);
-				int nf = sscanf(str,"%u -> %u",&n1,&n2);
-				if (2 != nf)				return TAG_EXIT;
-				Tag T = (n1 << 16) | n2;
-				allP.push_back(T);
-				return TAG_READ;
-			}
-	}
-	return TAG_EXIT;
-}
 //-------------------------------------------------------------------------------------------
 //	Pack all edges
 //-------------------------------------------------------------------------------------------
-void	TaxiCircuit::PackEdge(PACK_EDGE *s)
+void	TaxiCircuit::PackArc(PACK_EDGE *s)
 {	//--- Compute all paths ---------------------
 	Test();
 	//--- Save edges and paths ------------------
@@ -548,7 +477,7 @@ void	TaxiCircuit::PackEdge(PACK_EDGE *s)
 //-------------------------------------------------------------------------------------------
 //	Unpack edge
 //-------------------------------------------------------------------------------------------
-void TaxiCircuit::UnpackEdge(int nbr, void *ze)
+void TaxiCircuit::UnpackArc(int nbr, void *ze)
 {	U_INT *src = (U_INT*)ze;
 	int		 nbe = nbr / TAG_PER_EDGE; 
 	for (int k=0; k<nbe; k++)
@@ -556,7 +485,7 @@ void TaxiCircuit::UnpackEdge(int nbr, void *ze)
 		Tag S = *src++;
 		TaxEDGE *E = new TaxEDGE(LEFT_NODE(T),RITE_NODE(T));
 		E->StoreShortCut(S);
-		AddEdge(E);
+		AddArc(E);
 	}
 	return;
 }
@@ -576,7 +505,7 @@ void TaxiCircuit::UnpackPath(int nbr, void *zp)
 //===========================================================================================
 //	Get first edge from path
 //===========================================================================================
-TaxEDGE *TaxiCircuit::FirstPathEdge()
+TaxEDGE *TaxiCircuit::FirstPathArc()
 {	edge	= 0;
 	if (path.size() == 0)	return 0;
 	numP	= 1;
@@ -588,12 +517,12 @@ TaxEDGE *TaxiCircuit::FirstPathEdge()
 //-------------------------------------------------------------------------------------------
 //	Get next edge from path
 //-------------------------------------------------------------------------------------------
-TaxEDGE *TaxiCircuit::NextPathEdge()
+TaxEDGE *TaxiCircuit::NextPathArc()
 {	if (path.size() == 0)			return 0;
 	Tag ext = RITE_NODE(edge->idn);
 	//--- continue to branch node -----------
 	if (ext != bran)
-	{	edge	= GetEdge(ext);
+	{	edge	= GetArc(ext);
 		return edge;
 	}
 	//--- change to new branch --------------
@@ -615,6 +544,7 @@ TaxiTracker::TaxiTracker()
 	disk		= gluNewQuadric();
 	gluQuadricDrawStyle(disk,GLU_FILL);
 	globals->Disp.Enter(this, PRIO_ABSOLUTE, DISP_EXSTOP, 1);
+	nsup		= 0;
 }
 //--------------------------------------------------------------------------
 //	Set node supplier
@@ -638,10 +568,10 @@ TaxiTracker::~TaxiTracker()
 //-------------------------------------------------------------------------------------------
 char	TaxiTracker::NodeColor(TaxNODE *N)
 {	int c1	= N->type & 0x07;
-	if (c1 == TAXI_NODE_TAXI) return circuit->NodeColor(N);
 	int c2	= nodeCOLOR[c1];
 	if (c2 != COLOR_BLACK_OPAQUE)	return c2;
-	return direCOLOR[N->lndR->rDir];
+	U_CHAR D = N->GetDirection() >> 4;
+	return direCOLOR[D];
 }
 //-------------------------------------------------------------------------------------------
 //	Compute  shortcut for all branch node
@@ -675,23 +605,22 @@ bool	TaxiTracker::GetThePath(Tag D, Tag F)
 //	Create exit point a 3/5 and 4/5 of each runway
 //-------------------------------------------------------------------------------------------
 void TaxiTracker::CreateRWY(CRunway *rwy)
-{	TaxNODE *hi = nsup->NewNode(TAXI_NODE_TKOF);
+{	TaxNODE *hi = nsup->NewNode(TAXI_HI_TKOF);
 	rwy->FillHiNODE(hi);
-	TaxNODE *lo = nsup->NewNode(TAXI_NODE_TKOF);
+	TaxNODE *lo = nsup->NewNode(TAXI_LO_TKOF);
 	rwy->FillLoNODE(lo);
 	//--- Compute vector director ------------------
-	TaxNODE *node;
 	double rat = 0;
 	rat		= double (3) / 5;
 	SPosition P1	= GetAlignedSpot(hi->Position(),lo->Position(),rat);
-	node = nsup->DupNode(hi,P1,TAXI_NODE_EXIT);
+	nsup->DupNode(hi,P1,TAXI_HI_EXIT);
 	SPosition Q1	= GetAlignedSpot(lo->Position(),hi->Position(),rat);
-	node = nsup->DupNode(lo,Q1,TAXI_NODE_EXIT);
+	nsup->DupNode(lo,Q1,TAXI_LO_EXIT);
 	rat		= double (4) / 5;
 	SPosition P2	= GetAlignedSpot(hi->Position(),lo->Position(),rat);
-	node	= nsup->DupNode(hi,P2,TAXI_NODE_EXIT);
+	nsup->DupNode(hi,P2,TAXI_HI_EXIT);
 	SPosition Q2	= GetAlignedSpot(lo->Position(),hi->Position(),rat);
-	node = nsup->DupNode(lo,Q2,TAXI_NODE_EXIT);
+	nsup->DupNode(lo,Q2,TAXI_LO_EXIT);
 	return;
 }
 //-------------------------------------------------------------------------------------------
@@ -701,8 +630,8 @@ void TaxiTracker::CreateRWY(CRunway *rwy)
 void TaxiTracker::DelNode()
 {	if (0 == selN)											return;
 	if (selN->HasType(TAXI_NODE_FIXE))	return;
-	tko->DeleteEdge(selN->idn);
-	lnd->DeleteEdge(selN->idn);
+	tko->DeleteArc(selN->idn);
+	lnd->DeleteArc(selN->idn);
 	nsup->DeleteNode(selN->idn);
 	selN = 0;
 	return;
@@ -713,13 +642,13 @@ void TaxiTracker::DelNode()
 void TaxiTracker::Attach(Tag A, Tag B)
 {	if (A == B)							return;
 	//--- Check for existence of edge AB ---
-	TaxEDGE *ab  = circuit->GetEdge(A,B);
+	TaxEDGE *ab  = circuit->GetArc(A,B);
 	if	(ab)								return;
 	//--- Create an AB edge ----------------
 	TaxEDGE *edg = new TaxEDGE();
 	Tag  t0   =  (A << 16) | (B & 0x0000FFFF);
 	edg->idn	=  t0;
-	circuit->AddEdge(edg);
+	circuit->AddArc(edg);
 }
 //-------------------------------------------------------------------------------------------
 //	compute node type
@@ -735,13 +664,23 @@ Tag TaxiTracker::InsertNode(Tag A, Tag B)
 {	//--- Ensure A and B are consecutive nodes -----------
 	TaxNODE *na = nsup->GetNode(A);
 	TaxNODE *nb = nsup->GetNode(B);
-	char  T = NodeType(na->type,nb->type);
+	char  T = NodeType(na->type,nb->type); 
 	char *R = (T == TAXI_NODE_EXIT)?(na->rwy):("TXI");
 	//--- Delete edge -------------------------------------
 	SPosition P = GetAlignedSpot(na->Position(),nb->Position(),0.5);
+	T			|= na->GetDirection();
 	TaxNODE *nm = nsup->DupNode(na,P,T);
 	nm->SetRWY(R);
 	return nm->idn;
+}
+//-------------------------------------------------------------------------------------------
+//	Swap runway for this node
+//-------------------------------------------------------------------------------------------
+void TaxiTracker::SwapRunway(Tag N)
+{ selN = nsup->GetNode(N);
+	if (0 == selN)			return;
+	selN->SwapRunway();
+	return;
 }
 //-------------------------------------------------------------------------------------------
 //	Add a blue node
@@ -763,15 +702,6 @@ void TaxiTracker::MoveSelectedNode(SPosition &P)
 {	if (0 == selN)											return;
   if (selN->HasType(TAXI_NODE_FIXE))	return;
 	selN->SetPosition(P);
-	return;
-}
-//-------------------------------------------------------------------------------------------
-//	Swap runway for this node
-//-------------------------------------------------------------------------------------------
-void TaxiTracker::SwapRunway(Tag N)
-{ selN = nsup->GetNode(N);
-	if (0 == selN)			return;
-	selN->SwapRunway();
 	return;
 }
 //-------------------------------------------------------------------------------------------
@@ -858,7 +788,7 @@ void TaxiTracker::DrawNode(TaxNODE *N)
 //	Draw one edge
 //-------------------------------------------------------------------------------------------
 void TaxiTracker::DrawEdges()
-{	std::map<Tag,TaxEDGE*> &edgQ = circuit->GetEdgeList();
+{	std::map<Tag,TaxEDGE*> &edgQ = circuit->GetArcList();
 	std::map<Tag,TaxEDGE*>::iterator r0;
 	ColorGL(COLOR_WHITE);
 	for (r0 = edgQ.begin(); r0 != edgQ.end(); r0++) DrawEdge((*r0).second);
@@ -868,10 +798,10 @@ void TaxiTracker::DrawEdges()
 //-------------------------------------------------------------------------------------------
 void TaxiTracker::DrawPath()
 {	ColorGL(COLOR_RED);
-	TaxEDGE *edg = circuit->FirstPathEdge();
+	TaxEDGE *edg = circuit->FirstPathArc();
 	while (edg)
 	{	DrawEdge(edg);
-		edg = circuit->NextPathEdge();
+		edg = circuit->NextPathArc();
 	}
 	return;
 }
@@ -895,7 +825,8 @@ void TaxiTracker::DrawEdge(TaxEDGE *edg)
 //	Normal draw:
 //-------------------------------------------------------------------------------------------
 void TaxiTracker::Draw()
-{	std::map<Tag,TaxEDGE*>::iterator r1;
+{	if (0 == nsup)		return;
+	std::map<Tag,TaxEDGE*>::iterator r1;
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	DrawMarks();
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -976,7 +907,6 @@ CFuiTaxi::CFuiTaxi(Tag idn, const char *filename)
 	ctx.mode	= 0;
   rcam			= globals->ccm->SetRabbitCamera(ctx,RABBIT_CONTROL);
 	rcam->Prof.Rep(CAM_MAY_MOVE);			// Restrict camera movement
-	rcam->SetRange(30000);
 	Validate();
 	InitAirport();
 	ReadFinished();
@@ -1001,7 +931,7 @@ CFuiTaxi::CFuiTaxi(Tag idn, const char *filename)
 //	Destroy and free resources
 //------------------------------------------------------------------------------
 CFuiTaxi::~CFuiTaxi()
-{	SaveToFile();
+{	SaveData();
 	//--- Restore State ---------------------------------
 	globals->Disp.DrawON (PRIO_TERRAIN);		// Allow Terrain TimeSlice
 	globals->Disp.ExecON (PRIO_TERRAIN);		// Allow Terrain Draww
@@ -1051,7 +981,7 @@ void	CFuiTaxi::Validate()
 	apt	= apo->GetAirport();
 	org	= apo->GetOrigin();
 	NewPosition(org);											// Start at airport center
-	rcam->SetAbove(globals->geop);
+	rcam->SetAbove(globals->geop,30000,5000);
 	//--- Edit title ------------------------------------
 	char edt[128];
 	_snprintf(edt,128,"TAXIWAY EDITOR for %s", apt->GetName());
@@ -1204,7 +1134,7 @@ bool CFuiTaxi::MousePicking(int mx, int my)
 	sy			= my;
 	selT		= 0;
 	RegisterFocus(0);										// Free textedit
-	bool		hit = rcam->PickObject(mx, my);
+	rcam->PickObject(mx, my);
 	trak.SetSelection(selT);
 	return true;		
 }
@@ -1253,7 +1183,7 @@ bool CFuiTaxi::MouseCapture(int mx, int my, EMouseButton bt)
 	MousePicking(mx,my);
   if (MOUSE_BUTTON_RIGHT == bt)		return ActeMenu(mx,my);
 	//--- Check for centering on the clicked spot ------------
-	if (GLUT_ACTIVE_ALT == keym)		return MoveMode(mx,my);
+	if (GLUT_ACTIVE_ALT  == keym)		return MoveMode(mx,my);
 	if (GLUT_ACTIVE_CTRL == keym)   return NodeMode();
 	switch (mode) {
 			//--- Mode picking: already selected ------------
@@ -1292,9 +1222,7 @@ bool	CFuiTaxi::StopClickInside(int mx, int my, EMouseButton but)
 //	Time slice: nothing to do
 //------------------------------------------------------------------------------
 void	CFuiTaxi::TimeSlice()
-{	
-
-}
+{	}
 //------------------------------------------------------------------------------
 //	Set start node 
 //------------------------------------------------------------------------------
@@ -1391,7 +1319,7 @@ void CFuiTaxi::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		//--- center drawing on airport -----------
 		case 'cent':
 			NewPosition(org);
-			rcam->SetAbove(org);
+			rcam->SetAbove(org,30000,globals->geop.alt);
 			return;
 		case 'inps':
 		case 'outs':
@@ -1422,9 +1350,9 @@ void CFuiTaxi::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
 //===========================================================================================
 //	Save to file
 //-------------------------------------------------------------------------------
-void CFuiTaxi::SaveToFile()
+void CFuiTaxi::SaveData()
 {	//nsup->SaveToFile(trak);
-	nsup->SaveToBase(trak);
+	if (nsup)	nsup->SaveToBase(trak);
 	return;
 	
 }
@@ -1500,9 +1428,9 @@ int SqlMGR::AddTaxiEdges(char *key,TaxiwayMGR *txm)
 { char *rq = "INSERT INTO Arcs (aKey,dim1,tkoEdge,dim2,tkoPath,dim3,lndEdge,dim4,lndPath)" 
 						 "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9);*";
 	PACK_EDGE S1;
-	txm->PackEdge(TKO_CIRCUIT,&S1);
+	txm->PackArc(TKO_CIRCUIT,&S1);
 	PACK_EDGE S2;
-	txm->PackEdge(LND_CIRCUIT,&S2);
+	txm->PackArc(LND_CIRCUIT,&S2);
 	//--- Compile request ---------------------------
 	int rep	 = 0;
   sqlite3_stmt *stm = CompileREQ(rq,txyDBE);
@@ -1576,7 +1504,7 @@ int SqlMGR::ReadTaxiEdges(char *key, TaxiwayMGR *txm)
 	if (SQLITE_ROW == sqlite3_step(stm))
   {	dim	= sqlite3_column_int(stm,1);						// Dimension
 		src	= (void*)sqlite3_column_blob (stm,2);		// Tko edges
-		txm->UnpackEdge(TKO_CIRCUIT,dim,src);				// Edge
+		txm->UnpackArc(TKO_CIRCUIT,dim,src);				// Edge
 		//------------------------------------------------------
 		dim	= sqlite3_column_int(stm,3);						// Dimension
 		src	= (void*)sqlite3_column_blob (stm,4);		// Tko edges
@@ -1584,13 +1512,14 @@ int SqlMGR::ReadTaxiEdges(char *key, TaxiwayMGR *txm)
 		//------------------------------------------------------
 		dim	= sqlite3_column_int(stm,5);						// Dimension
 		src	= (void*)sqlite3_column_blob (stm,6);		// Tko edges
-		txm->UnpackEdge(LND_CIRCUIT,dim,src);				// Edge
+		txm->UnpackArc(LND_CIRCUIT,dim,src);				// Edge
 		//------------------------------------------------------
 		dim	= sqlite3_column_int(stm,7);						// Dimension
 		src	= (void*)sqlite3_column_blob (stm,8);		// Tko edges
 		txm->UnpackPath(LND_CIRCUIT,dim, src);			// Path
 
-	}
+	} 
+	sqlite3_finalize(stm);                      // Close statement
 	return 0;
 }
 	

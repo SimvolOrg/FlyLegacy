@@ -28,96 +28,10 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-//========================================================================================
-class CGroundSuspension;
-//========================================================================================
-//  struct used to share data between classes
-//  
-//  all the WHL file data
-//========================================================================================
-struct SGearData {
-	CGroundSuspension  *mgsp;						// Mother suspension for shared data
-	//------------------------------------------------------------------------
-  char onGd;                          // On Ground
-  char shok;                          // Shock number
-  char Side;                          // Side of wheel (left or right)
-	char sABS;													// ABS brake on landing
-	char brak;                         // 0 not brake 1= brake
-	//------------------------------------------------------------------------
-  char susp_name[56];
-  char long_[64];                    ///< -- Longitudinal Crash Part Name --
-  CDamageModel oy_N;                 ///< -- Longitudinal Damage Entry --
-  float stbl;                        ///< -- steering factor from data table
-  float btbl;                        ///< -- braking factor from data table
-  float powL;                        ///< -- Impact Power Limit (ft-lb/sec) (weight * velocity) --
-  double imPW;                       // Impact power in ft-lb/sec
-	double masR;											 // Mass repartition on this wheel
-  double maxC;                       ///< -- max compression --
-  CDamageModel oy_T;                 ///< -- Tire Damage Entry --
-  // ntwt                            ///< -- Normal Tire Wear Rate vs Groundspeed (ktas) --
-  // ltwt                            ///< -- Lateral Tire Wear Rate vs Lateral Groundspeed (ktas) --
-  float boff;                        ///< -- Blowout Friction Factor --
-  int   ster;                        ///< -- steerable wheel --
-  float mStr;                        ///< -- max steer angle (deg) --
-  float drag;                        ///< -- Drag coefficient
-  float tirR;                        ///< -- Tire Radius (ft) --
-  float rimR;                        ///< -- Rim Radius (ft) --
-  float whrd;                         // Wheel radius (ft);
-  CVector bPos;                       //< -- Tire Contact Point (model coodinates) --
-  CVector gPos;                       //  Tire contact point (CG relative)
-  std::vector<std::string> vfx_;      //< -- Visual Effects --
-	//--- Wheel above ground level (feet) ------------------------------------
-	double wagl;
-	///-------Vertical damping for ground contact ----------------------------
-  double damR;                        ///< -- damping ratio --
-	double amor;												// Amortizing force
-	//---- Acceleration ------------------------------------------------------
-	double angv;												// Angular velocity
-  ///-------Brake parameters -----------------------------------------------
-	double	brakF;											// Brake force in (m/sec)
-	double  sideF;											// side factor for pedal
-	double  repBF;											// Brake repartition factor
-  ///----- sterring wheel data ---------------------------------------------
-  float deflect;
-  float scaled;
-  float kframe;
-	///--- wheelBase (inter wheel lenght between axis) ------------------------
-  float wheel_base;
-
-  SGearData (void) {
-    onGd              = 0;          // On ground
-    shok              = 0;          // Number of shocks
-		sABS							= 0;					// No ABS
-    strcpy (susp_name,  "");
-    strcpy (long_,      "");         // -- Longitudinal Crash Part Name --
-    // oy_N'                         // -- Longitudinal Damage Entry --
-    stbl              = 1.0f;        // -- steering factor from data table
-    btbl              = 1.0f;        // -- braking factor from data table
-    powL              = 0.0f;        // -- Impact Power Limit (ft-lb/sec) (weight * velocity) --
-    // oy_T                          // -- Tire Damage Entry --
-    // ntwt                          // -- Normal Tire Wear Rate vs Groundspeed (ktas) --
-    // ltwt                          // -- Lateral Tire Wear Rate vs Lateral Groundspeed (ktas) --
-    boff              = 0.0f;        // -- Blowout Friction Factor --
-    ster              = 0;           // -- steerable wheel --
-    mStr              = 0.0f;        // -- max steer angle (deg) --
-    maxC              = 0.0f;        // -- max compression --
-		masR							= 0.33f;
-    damR              = 0.0f;        // -- damping ratio --
-		amor							= 0;
-    tirR              = 0.0f;        // -- Tire Radius (ft) --
-    rimR              = 0.0f;        // -- Rim Radius (ft) --
-    drag              = 0.0f;
-    // vfx_;                         // -- Visual Effects --
-    // endf;                         //
-    brak              = 0;            // -- has brake
-    vfx_.clear ();
-    deflect           = 0.0f;        // -- direction wheel deflection
-    scaled            = 0.0f;        // -- direction wheel deflection scale
-    kframe            = 0.5f;
-    wheel_base        = 0.0f;        // -- distance from main gear and nose gear (metres)
-		angv							= 0;					 // Angular velocity
-  }
-};
+#include "../Include/FlyLegacy.h"
+#include "../Include/BaseSubsystem.h"
+//================================================================================
+class	CRudderControl;
 //================================================================================
 //
 // Ground Suspension and gears
@@ -221,7 +135,7 @@ public :
   virtual void GearLoc_Timeslice (const SVector*, const SVector&);  
   /*! the Wheel position is transformed according to the ac body in the overall world
    *  therefore the reference should be 'local' : still in ft */
-  virtual void GearB2L_Timeslice (void);
+	virtual void GearB2L_Timeslice (void) {;}
   /*! gear compression value calc in ft : Timesliced */
   virtual char GCompression(char p) {return 0;}
   /*! gear compression velocity : Timesliced */
@@ -284,6 +198,9 @@ protected:
   CVehicleObject   *mveh;                             // Parent vehicle
   CGear            *gear;
   SGearData         gear_data;
+	//----------------------------------------------------------------
+	ValGenerator	amort;									
+	//----------------------------------------------------------------
 public:
   int           reset_crash;                          ///< allows to reset sim
   char          type;                                 // Type of suspension
@@ -325,11 +242,15 @@ public:
   void  GetGearPosition(CVector &mp,double  &rad)    {gear->GetGearPosition(mp,rad);}
   //-------Define ground relation to wheels ------------------------
   void  InitGearJoint(char type,CGroundSuspension *s) {gear->InitJoint(type,s);}
-  void  ResetCrash() {gear_data.shok = 0;}
-  void  ResetForce() {gear->ResetForce();}
+  void  ResetCrash()			{gear_data.shok = 0;}
+  void  ResetForce()			{gear->ResetForce();}
+	void  Deflect(double d) {gear_data.deflect = d;}
   //----------------------------------------------------------------
   char**      GetProbeOptions();
   void        Probe(CFuiCanva *cnv);
+	void				AnimateShock(float a)		{whel->SetShockTo(a);}
+	//----------------------------------------------------------------
+	float				GetSwing(float dT)			{return amort.TimeSlice(dT);}
   //-----Wheel interface -------------------------------------------
   inline void MoveWheelTo(float v,float dT)    {Tire->SetWheelVelocity(v,dT);}
   //-----Gear interface --------------------------------------------
@@ -342,6 +263,7 @@ public:
   inline bool IsOnGround()            {return (0 != gear_data.onGd);}
 	//-- Set ABS anti skid feature ---------------------
 	inline	void SetABS(char p)					{gear_data.sABS	= p;}	
+	inline  void SetAmplifier(double a)	{gear_data.ampBK = a;}
 	//-----------------------------------------------------------------
 	inline SGearData *GetGearData()			{return &gear_data;}
   //-----------------------------------------------------------------
@@ -411,6 +333,7 @@ public:
 	void	SetABS(char p);
   void  ResetCrash();
   void  ResetForce();
+	void	SetSteerData(CRudderControl *rud);
   //-------------------------------------------------------------------------
   /*! Getters - setters */
   const SVector* GetSumGearForces  (void)              {return &SumGearForces;}
@@ -423,6 +346,7 @@ public:
   inline void     GetAllWheels(std::vector<CSuspension *> &whl) { whl = whl_susp;}
   inline CVector *GetMainGearCenter() {return &mainW;}
 	inline double   GetDifBraking()			{return difB;}
+	inline double   GetBumpForce()			{return bump;}
   inline double   GetMainGearRadius() {return  mainR;}
   inline double   GetBodyAGL()        {return  bAGL;}
   inline double   GetPositionAGL()    {return  (bAGL + mainR - 1);}
@@ -431,6 +355,8 @@ public:
   inline char     GetNbWheelOnGround(){return nWonG;}
   inline bool     WheelsAreOnGround() {return (nWonG != 0);}
 	inline bool			AllWheelsOnGround()	{return (nWonG == wheels_num);}
+	//--- Steering interface -----------------------------------------------------------
+	inline CSuspension *GetSteeringWheel()	{return steer;}
   //----------------------------------------------------------------------------------
   ///
   float                      rMas;                         ///< rated mass
@@ -448,9 +374,10 @@ protected:
   CFmtxMap           *mstbl;                                // Steering table
   CFmtxMap           *mbtbl;                                // Brake table
   //------Wheel interface ------------------------------------------------------------
-  float         deflect;                                      // Deflection
-  float         scale;                                        // Scale
+	CSuspension  *steer;																			// Steering wheel
   //----------------------------------------------------------------------------------
+	double				bump;																					// Bump force
+	double        ampB;																					// Brake amplifier
 	double				difB;																					// Differntial brake
   double        wheel_base;                                   // Inter axes distance
   double        bAGL;                                         // Body AGL (in feet)

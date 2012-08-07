@@ -248,17 +248,16 @@ void CSuspension::ReadFinished (void)
 	double coef = (nbw)?( double(1) / nbw):(0);
 	//----Set wheel side -------------------------------------------
   gear_data.Side	= BRAKE_NONE;
-	gear_data.sideF	= 0;
 	gear_data.repBF	= coef;
 	//--- set brake to Left gear ---------------------
   if ((gear_data.bPos.x < 0)  && (gear_data.brak))
 			{	gear_data.Side = (BRAKE_LEFT);
-				gear_data.sideF = +1;
+				gear_data.latK = +1;
 			}
 	//--- Set brake to right gear --------------------
   if ((gear_data.bPos.x > 0)	&& (gear_data.brak))
 			{	gear_data.Side = (BRAKE_RITE);
-				gear_data.sideF = -1;
+				gear_data.latK = -1;
 			}
   //----Compute wheel radius in feet -----------------------------
   gear_data.whrd = gear_data.tirR + gear_data.rimR;
@@ -337,7 +336,7 @@ void CSuspension::Timeslice (float dT)
   // 2) the neW gear location is transformed in the actual body coordinates
   // (the aircraft is not alWays Well levelled in all its axes)
   // gets WPos
-  gear->GearB2L_Timeslice ();
+  //gear->GearB2L_Timeslice ();
   // 3) get the CG AGL
   // 
   // get the gear compression value
@@ -468,6 +467,7 @@ void CGear::GearLoc_Timeslice (const SVector *actualCG, const SVector &mPos)
 //* Find the location of the gear relative to the world coordinates
 //* local frame : WPos in SPosition alt in feet
 //-----------------------------------------------------------------------
+/*
 void CGear::GearB2L_Timeslice (void)
 {
   /// \todo calc Wheel position relative to the body in the world coordinates
@@ -479,10 +479,10 @@ void CGear::GearB2L_Timeslice (void)
   SVector ori     = globals->iang;												///< rad
   /// \todo use matrix instead
   TurnVectorFromFulcrum (vGearLoc2CG, ori, bodyPos);
-  BodyVector2WorldPos   (cgPos, bodyPos, WPos);           ///< WPos = SPosition so alt in feet
+//  BodyVector2WorldPos   (cgPos, bodyPos, WPos);           ///< WPos = SPosition so alt in feet
 }
 
-
+*/
 //-----------------------------------------------------------------------
 ///< force in Newton
 //-----------------------------------------------------------------------
@@ -492,15 +492,6 @@ const SVector& CGear::GetBodyGearForce_ISU  (void)
   vLocalForce_ISU.y = vLocalForce.y * LBS_TO_NEWTON;
   vLocalForce_ISU.z = vLocalForce.z * LBS_TO_NEWTON;
   
-  // fake : remove
-  // Get input data
-  //CAirplane *userVehicle = (CAirplane*)(globals->pln);
-  // aircraft inertial-frame velocity in meters/sc
-  //CVector acc = *(userVehicle->GetInertialVelocityVector());
-  //acc.Times (-1.0 / 3.0);
-  //vForce_ISU.x -= acc.x * acc.x;
-  //vForce_ISU.y -= acc.y * acc.y;
-  //vForce_ISU.z -= acc.z * acc.z;
 
   #ifdef _DEBUG_suspension	
   { FILE *fp_debug;
@@ -560,7 +551,10 @@ CGroundSuspension::CGroundSuspension (CVehicleObject *v,CWeightManager *wgh)
   type    = TRICYCLE;                 // JS Assume standard type
   mstbl   = 0;
   mbtbl   = 0;
-	difB	  = 0;
+	bump		= 28;
+	difB	  = 1;
+	steer		= 0;
+	ampB    = 2;
   //---------------------------------------------------------
 	SumGearForces.Raz();
 	SumGearMoments.Raz();
@@ -615,6 +609,14 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
     ReadFloat (&rMas, stream);
     whm->whl_rmas = rMas;
     return TAG_READ;
+	//--- Bump force ----------------------------------------
+	case 'bump':
+		ReadDouble(&bump,stream);
+		return TAG_READ;
+	//--- Brake amplifier -----------------------------------
+	case	'bamp':
+		ReadDouble(&ampB,stream);
+		return TAG_READ;
 	//--- Differential brake amplifier ---------------------
 	case 'difB':
 		ReadDouble(&difB,stream);
@@ -643,7 +645,6 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
     }
   case 'susp':
     // a suspension object
-    // SkipObject (stream);
     ReadSusp(stream);
     return TAG_READ;
   }
@@ -657,27 +658,26 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
 //  Compute steering gear axe center in Legacy coordinate (Z is up)
 //---------------------------------------------------------------------------------
 void CGroundSuspension::ReadFinished (void)
-{ 
+{ SGearData *gdt = 0;   //GetGearData()
 #ifdef _DEBUG
   DEBUGLOG ("CGroundSuspension::ReadFinished");
 #endif
-  wheels_num = whl_susp.size ();
-	double base = FN_METRE_FROM_FEET(wheel_base);
+  wheels_num	= whl_susp.size ();
   //---Compute wheel parameters --(Z is forward direction)---------
-  CSuspension *str = 0;                   // Steering wheel
   max_gear = 0.0, min_gear = 0.0, mWPos = 0.0;
   double wheel_min_h = -1000.0;
   int nbw = 0;
-  std::vector<CSuspension *>::const_iterator it_whel;
-  for (it_whel = whl_susp.begin (); it_whel != whl_susp.end (); it_whel++) {
-    CSuspension *s = (CSuspension *) *it_whel;
-		s->SetWheelBase(base);
+  std::vector<CSuspension *>::const_iterator rw;
+  for (rw = whl_susp.begin (); rw != whl_susp.end (); rw++) {
+    CSuspension *s = (CSuspension *) *rw;
+		s->SetAmplifier(ampB);
     max_gear = max (s->GetGearPosZ (), max_gear); // max forward
     min_gear = min (s->GetGearPosZ (), min_gear); // min forward
     mWPos    = min (s->GetGearPosY (), mWPos);    // lower point
     wheel_min_h  = max (s->GetGearPosY (), wheel_min_h ); // LH
     //---Compute main gear barycenter ---------------------
-    if (s->IsSteerWheel())   {str = s; continue; }
+    if (s->IsSteerWheel())  {	steer = s; continue; }
+		//--- Main gear ---------------------------------------
     nbw++;
     mainW.x += s->GetGearPosX();
     mainW.z += s->GetGearPosY();
@@ -697,7 +697,7 @@ void CGroundSuspension::ReadFinished (void)
   mainR     *= fac;
   mainW.z   += mainR;
   //--------------------------------------------------------
-  sterR      = str->GetGearRadius();
+  sterR      = steer->GetGearRadius();
   //--------------------------------------------------------
   //  We also compute the bAGL (body above ground level)
   //  bAGL is used to set the aircraft level above a given terrain
@@ -712,8 +712,12 @@ void CGroundSuspension::ReadFinished (void)
 	//	repartition over the gear
   //--------------------------------------------------------
   bAGL  = mainR - mainW.z + 1;
-  //--- Compute Wheel base ---------------------------------
-  wheel_base = max_gear - min_gear;
+  //--- Compute Wheel base -(in meter)  --------------------
+  wheel_base	= max_gear - min_gear;
+	double base = FN_METRE_FROM_FEET(wheel_base);
+	for (rw = whl_susp.begin (); rw != whl_susp.end (); rw++)
+	{ (*rw)->SetWheelBase(base);
+	}
   //--------------------------------------------------------
   if (TRICYCLE == type)
     max_wheel_height =  - mWPos;
@@ -753,6 +757,17 @@ void CGroundSuspension::ReadFinished (void)
 
 }
 //---------------------------------------------------------------------------------
+//	Init steering path
+//---------------------------------------------------------------------------------
+void	CGroundSuspension::SetSteerData(CRudderControl *rud)
+{	if (0 == rud)			return;
+	if (0 == steer)		return;
+	SGearData *gdt = steer->GetGearData();
+	gdt->scaled  = 0;
+	rud->InitSteer(gdt);
+	return;
+}
+//---------------------------------------------------------------------------------
 //  Time Slice all wheels
 //---------------------------------------------------------------------------------
 void CGroundSuspension::Timeslice (float dT)
@@ -766,11 +781,6 @@ void CGroundSuspension::Timeslice (float dT)
   for (it_whel = whl_susp.begin (); it_whel != whl_susp.end (); it_whel++) {
     // is it a steering wheel ?
     CSuspension *ssp = (CSuspension*)(*it_whel);
-		SGearData   *gdt = ssp->GetGearData();
-    if (ssp->IsSteerWheel ()) 	mveh->SetRudderDeflection(gdt);
-    // is it a braking wheel ?
-    /// \todo .../...
-    // ... and finally timeslice
     ssp->Timeslice (dT);
     // sum all gear forces
     const SVector gf  = (*it_whel)->GetBodyForce_ISU  ();

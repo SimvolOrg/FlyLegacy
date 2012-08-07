@@ -1475,22 +1475,6 @@ public:
   inline CFmtxMap*  GetTable()  {return table;}
 };
 
-//=========================================================================
-// CDamageModel
-//
-// Damage model definition corresponding to <dmge> object in PRP or WNG files
-//==========================================================================
-class CDamageModel : public CStreamObject {
-public:
-  // Constructors / destructor
-  CDamageModel (void);
-
-  // CStreamObject methods
-  int   Read (SStream *stream, Tag tag);
-
-protected:
-  float           period;         ///< Repair period (hours)
-};
 //========================================================================
 // Left-hand to right-hand coordinate system conversion utilities
 //

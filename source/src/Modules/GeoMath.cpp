@@ -1315,10 +1315,24 @@ float CRandomizer::TimeSlice(float dT)
   return aval;
 }
 //==============================================================================
-// CValuator:
+// ValGenerator:
 //  Produce a value according to target and time constant
+//	1)-One shot Generator is configured by a call to Conf(char M,float T);
+//			M = INDN_LINEAR or INDN_EXPONENTIAL to indicate which way the current
+//			value is computed into the time interval T.
+//		-Then the valuateur is armed by a call to Set(float TV).  Starting from actual
+//			value whatever it is, the target value TV will then be reached at time T. 
+//		-Intermediate values are retrieve by
+//			float v = Get() or through TimeSLice() call
+//	2)- Generator may be used to produce a damped sinusoidal value according to
+//			formulea x(t) = A * power(e,-t) cos (2PI*t)  where t is time.
+//		- Arming:  StartSin(float A,int T)
+//		- Intermediate values are retrieve by
+//			float v = Get() or through TimeSlice() call
+//			When value reaches near 0, the Generator stay quiet during a random time 
+//			in intervalle T.  Then is it rearmed to fire again
 //==============================================================================
-CValuator::CValuator(char md, float tm)
+ValGenerator::ValGenerator(char md, float tm)
 { Targ  = 0;
   cVal  = 0;
   mode  = md;
@@ -1327,16 +1341,26 @@ CValuator::CValuator(char md, float tm)
 //-------------------------------------------------------------------
 //  Default constructor
 //-------------------------------------------------------------------
-CValuator::CValuator()
+ValGenerator::ValGenerator()
 { Targ  = 0;
   cVal  = 0;
   mode  = INDN_LINEAR;
   timK  = 1;
 }
 //-------------------------------------------------------------------
+//  Start sinusoid movement
+//-------------------------------------------------------------------
+void ValGenerator::StartSin(float a,int R)
+{	Targ	= a;
+	time	= 0;
+	mode	= INDN_SINUSOID;
+	cVal	= a;
+	rand	= 1000 * R;
+}
+//-------------------------------------------------------------------
 //  Time Slice: Compute value
 //-------------------------------------------------------------------
-float CValuator::TimeSlice(float dT)
+float ValGenerator::TimeSlice(float dT)
 { if (INDN_LINEAR == mode)	
   { // Use timK (in seconds) as linear coefficient
 	  //	Do  not overshoot target value
@@ -1350,6 +1374,23 @@ float CValuator::TimeSlice(float dT)
 		cVal += (Targ - cVal) * (1.0f - (float)exp(-dT / timK));
 		return cVal;
   }
+	if (INDN_SINUSOID == mode)
+	{	time += dT;
+		cVal	= Targ * exp(-time) * cos(TWO_PI * time);
+		if (fabs(cVal) > 0.00001F)	return cVal;
+		mode	= INDN_IDLE;
+		U_INT r = RandomNumber(rand);
+		time		= float(r) * 0.001F;
+		return cVal;
+	}
+	if (INDN_IDLE == mode)
+	{	time -= dT;
+		if (time > 0)		return 0;
+		time	= 0;
+		mode	= INDN_SINUSOID;
+		cVal	= Targ;
+		return cVal;
+	}
   return Targ;
 }
 //============================================================================
@@ -1413,10 +1454,21 @@ void ZRotate(GN_VTAB &v, double sn, double cn)
 HTransformer::HTransformer(double c,double s,SVector &t, double e)
 {	cn	= c;							// Cosinus
 	sn	= s;							// Sinus
-	tx  = t.x;
-	ty	= t.y;
-	tz	= t.z;
-	sc	= e;							//Scale
+	T		= A = t;					// Translation
+	ex	= ey = e;					// Scale
+	//--- Init matrix ----------------
+	M0	= +cn;						// L1-C1
+	M1	= +sn;						// L1-C2
+	M2	= -sn;						// L2-C1
+	M3	= +cn;						// L2-C2
+}
+//---------------------------------------------------------------------
+//	Set rotation parameters (a in deg)
+//---------------------------------------------------------------------
+void HTransformer::SetROT(double a)
+{	double R	= DegToRad(a);
+	cn				= cos(R);
+	sn				= sin(R);
 	//--- Init matrix ----------------
 	M0	= +cn;						// L1-C1
 	M1	= +sn;						// L1-C2
@@ -1432,19 +1484,35 @@ void HTransformer::ComputeRT(GN_VTAB &src,GN_VTAB *dst)
 	rx = (src.VT_X * M0) + (src.VT_Y * M2);
 	ry = (src.VT_X * M1) + (src.VT_Y * M3);
 	//--- Translate now -------------------
-	dst->VT_X		= (rx + tx) * sc;
-	dst->VT_Y		= (ry + ty) * sc;
-	dst->VT_Z  += tz;
-	dst->VT_Z  *= sc;
+	dst->VT_X		= (rx + T.x) * ex;
+	dst->VT_Y		= (ry + T.y) * ex;
+	dst->VT_Z  += T.z;
+	dst->VT_Z  *= ex;
 	//-------------------------------------
 	dst->VN_X = dst->VN_Y = dst->VN_Z = float(0.01);
 	return;
 }
 //---------------------------------------------------------------------
-//	Transform vertex (Translate ,scale and rotate)
+//	Transform vertex (Scale, rotate and Translate)
 //---------------------------------------------------------------------
-void HTransformer::TransformTSR(CVector &src,F3_VERTEX *dst)
-{	 
+F3_VERTEX *HTransformer::TransformSRT(U_INT n,F3_VERTEX *src,F3_VERTEX *dst)
+{	while (n--)
+	{	
+		//--- Rotate -------------------------------------
+		rx = (src->VT_X * M0) + (src->VT_Y * M2);
+		ry = (src->VT_X * M1) + (src->VT_Y * M3);
+		//--- Scale in x,y ------------------------------
+		double sx	= rx * ex;
+		double sy	= ry * ey;
+		//------------------------------------------------
+		dst->VT_X = (sx + T.x);
+		dst->VT_Y = (sy + T.y);
+		dst->VT_Z = (T.z);
+
+		src++;
+		dst++;
+	}
+	return dst;
 }
 //==========================================================================
 //  Edit Latitude in deg min sec

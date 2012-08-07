@@ -102,6 +102,43 @@ CDispatcher::CDispatcher()
 	}
 }
 //-------------------------------------------------------------------
+//	Enter executable as head of list
+//-------------------------------------------------------------------
+void CDispatcher::PutHead(CExecutable *ex, char p)
+{	CExecutable *hd = slot[p].obj;
+	slot[p].obj	= ex;
+	ex->SetNext(hd);
+	slot[p].exec	= 1;
+	slot[p].draw	= 1;
+}
+//-------------------------------------------------------------------
+//	Remove object
+//-------------------------------------------------------------------
+void CDispatcher::Remove(CExecutable *ex, char p)
+{	CExecutable *act = 0;
+	CExecutable *prv = 0;
+	CExecutable *nxt = ex->NextExec();
+  for (act = slot[p].obj; act != 0; act = act->NextExec())
+	{ if (act != ex) {prv = act; continue; }
+		if (prv)				prv->SetNext(nxt);
+		else						slot[p].obj = nxt;
+		return;
+	}
+	return;
+}
+//-------------------------------------------------------------------
+//	Enter executable as last of list
+//-------------------------------------------------------------------
+void CDispatcher::PutLast(CExecutable *ex, char p)
+{	CExecutable *pv = slot[p].obj;
+  if (0 == pv)	return Enter(ex,p,1,1);
+	while (pv->HasNext())	pv = pv->NextExec();
+	pv->SetNext(ex);
+	slot[p].exec	= 1;
+	slot[p].draw	= 1;
+}
+
+//-------------------------------------------------------------------
 //	Execute
 //-------------------------------------------------------------------
 void	CDispatcher::TimeSlice(float dT, U_INT frame)
@@ -109,7 +146,9 @@ void	CDispatcher::TimeSlice(float dT, U_INT frame)
 		{	CExecutable *ex = slot[k].obj;
 			if (0 == ex)						continue;
 			if (slot[k].lock)				continue;
-			slot[k].obj->TimeSlice(dT,frame);
+			//--- Execute the list of similar objects ----------
+			while (ex) { ex->TimeSlice(dT,frame); ex = ex->NextExec(); }
+			//slot[k].obj->TimeSlice(dT,frame);
 			if (slot[k].exec == 0)	return;			
 		}
 	return;
@@ -775,8 +814,6 @@ CAirplane* CSituation::GetAnAircraft (void)
     else if (!strcmp (buffer_, "normal")) {
       // Instantiate new CAirplane
       plan = new CAirplane (); // 
-      plan->is_ufo_object  = false;
-      plan->is_opal_object = false;
     } 
     else { // default
       // tmp : use CUFOObject instead of CAirplane

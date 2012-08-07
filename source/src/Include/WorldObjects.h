@@ -49,7 +49,8 @@
 #include "../Include/Robot.h"
 
 #include <vector>
-
+//======================================================================================
+class CSuspension;
 //======================================================================================
 //  Vehicle global state
 //======================================================================================
@@ -99,8 +100,6 @@ protected:
   double    rotM[16];                 // Rotation matrix
   //-----Flag for various aircraft versions ------------------- 
 public:
-  bool      is_ufo_object;
-  bool      is_opal_object;
   bool      has_fake_engine_thrust;
   //----Inline -----------------------------------------------
   bool  HasState(char c)    {return (State == c);}
@@ -146,6 +145,7 @@ public:
   inline    double     GetAltitude()												{return geop.alt;}
   inline    void       SetAltPosition(double a)		          {geop.alt = a;}
   //----------------------------------------------------------------------------
+	virtual void SetSuspension(CWeightManager *w)     {;}
   virtual void SetPhysicalOrientation (SVector &v)  {;}  // used in COpal to slew orientation
   virtual void ResetSpeeds() {}
   virtual void ResetZeroOrientation () {}
@@ -236,7 +236,7 @@ public:
   virtual void				      PrepareMsg(void);							      // JSDEV* Message preparation
 		      void				      TraceMsgPrepa(SMessage *msg);				// JSDEV* Message preparation
           void              DrawAeromodelData();
-  virtual CCameraManager*   GetCameraManager();
+  //virtual CCameraManager*   GetCameraManager();
   virtual CCockpitManager*  GetCockpitManager()      {return pit;}
   virtual Tag               GetPanel();
   virtual void              SetPanel(Tag tag);
@@ -332,7 +332,7 @@ public:
 	void		OverallExtension(SVector &v);			// Get 3D model extension 
   //!-----------------------------------------------------------------------
   //! send steering wheel angle to gear
-	void		SetRudderDeflection (SGearData *gdt);
+	void    StoreSteeringData (SGearData *gdt);
   void    SetPartKeyframe   (char* part, float value);
   void    SetPartTransparent(char* part, bool ok = true);
   //----Set spinner part -------------------------------------------------------------------
@@ -368,7 +368,7 @@ public:
   CGroundSuspension     *whl;
   CVariableLoadouts     *vld;
   CCockpitManager       *pit;
-  CCameraManager        *cam;
+  //CCameraManager        *cam;
   CExternalLightManager *elt;
   CEngineManager        *eng;
   CControlMixer         *mix;
@@ -404,6 +404,7 @@ public:
   inline  CWeightManager        *GetWGH()     {return wgh;}
 	inline  int                    GetEngNb()		{return nEng;}
 	//--- Gear Management -------------------------------------------------------------
+	CSuspension  *GetSteeringWheel()      {return (whl)?(whl->GetSteeringWheel()):(0);}
 	void					SetABS(char p)					{whl->SetABS(p);}
 	float         GetBrakeForce(int p)    {return amp->GetBrakeForce(p);}
   char          GetWheelNum()           {return wNbr++;}
@@ -649,7 +650,7 @@ public:
   CUFOObject                              (void);
 
   // CWorldObject methods
-
+	void	SetSuspension(CWeightManager *w);
   // CSimulatedObject methods
   void Simulate                           (float dT,U_INT FrNo);		///< Overriden 
   void UpdateOrientationState(float dT,U_INT FrNo);		///< Overriden
@@ -658,7 +659,7 @@ public:
   bool show_position;
 };
 
-//
+//========================================================================================
 // The COPAL object represents a OPAL fixed-wing aircraft
 // with <wobj> signature of TYPE_FLY_AIRPLANE
 //
@@ -667,8 +668,7 @@ public:
 //    plan
 //    <bgno>
 //    <endo>
-//
-#ifdef HAVE_OPAL
+//========================================================================================
 class COPALObject : public CAirplane {
 public:
   // Constructors / destructor
@@ -678,6 +678,7 @@ public:
   void ReadFinished               (void);
   void  PlaneShape();
   // CWorldObject methods
+	void	SetSuspension(CWeightManager *w);
   void  SetPhysicalOrientation (SVector &rad_angle);
   //---- Normal management --------------------------------
   void  Simulate(float dT,U_INT FrNo);		            ///< Overriden 
@@ -724,13 +725,12 @@ public:
 	//------------------------------------------------------------
 private:
   CLogFile *log;
-  CValuator tVAL;                                                   ///< Turbulence
+  ValGenerator tVAL;                                                   ///< Turbulence
   float ground_friction;
   double Kb;                                                        ///< clamp rotation
   double bagl;                                                      ///< aircraft AGL
 };
 
-#endif
 
 //
 // The CHelicopter object represents a rotary-wing aircraft

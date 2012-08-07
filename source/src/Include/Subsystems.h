@@ -38,7 +38,7 @@
 #include <vector>
 #include <map>
 //==================================================================================
-
+class CSteeringControl;
 //==============================================================================
 // CAnnouncement
 //==============================================================================
@@ -1404,10 +1404,16 @@ protected:
 //  NOTE: This control is attached to CAeroControl
 //=======================================================================
 class CRudderControl : public CAeroControl {
+protected:
 	//--- ATTRIBUTES ------------------------------------------
 	double	pidK;						// PID Direct coefficient
 	double	pidD;						// PID derived coefficient
 	double	pidI;						// PID integral coefficient
+	//----Raw adjustement --------------------------------
+  CFmtxMap      *macrd;			// Adjustement table
+  float          oADJ;			//Specific Opal adjustement
+	SGearData     *steer;			//  Steering wheel
+  CSteeringControl *sCTLR;	// Controller
 	//----------------------------------------------------------
 public:
   CRudderControl (void);
@@ -1421,12 +1427,11 @@ public:
 	void			ModBias(float v);
   void      TimeSlice (float dT,U_INT FrNo = 0);					
   //---------------------------------------------------------
-  inline void SetOpalCoef(float c)         {oADJ = c;}
+	inline void InitSteer(SGearData *s) {steer = s;}
+	inline void InitCTLR (CSteeringControl *s) {sCTLR = s;}
+  inline void SetOpalCoef(float c)    {oADJ = c;}
   inline void SetBankMap(CFmtxMap *m) {macrd = m;}
 protected:
-  //----Raw adjustement --------------------------------
-  CFmtxMap      *macrd;     // Adjustement table
-  float          oADJ;      //Specific Opal adjustement
 };
 //====================================================================
 //  Flap data structure
@@ -1497,15 +1502,12 @@ protected:
 
 
 
-//===================================================================================
+//======================================================================
 // CSteeringControl
-//
+//======================================================================
 class CSteeringControl : public CDependent {
 public:
   CSteeringControl (void);
-
-  // CStreamObject methods
-
   // CSubsystem methods
   virtual const char* GetClassName (void) { return "CSteeringControl"; }
 

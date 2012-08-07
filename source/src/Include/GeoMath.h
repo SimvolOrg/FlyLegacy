@@ -32,18 +32,30 @@ class HTransformer	{
 	double M1;												// Rotation
 	double M2;												// ROtation
 	double M3;												// Rotation
-	double sc;												// Scale
+	double ex;												// X scale
+	double ey;												// Y scale
 	//-----------------------------------------------------
-	double tx;
-	double ty;
-	double tz;											// Translation vector
+	CVector T;												// Original translation
+	CVector A;												// Translation saved
 	//------------------------------------------------------
 	double rx,ry;										// Rotated tranlation
 	//--METHODS---------------------------------------------
 public:
-	HTransformer(double c, double s, SVector &t, double e = 1);
+	HTransformer()	{;}
+	HTransformer(double c, double s, SVector &t, double ex = 1);
 	void		ComputeRT(GN_VTAB &src,GN_VTAB *dst);
-	void		TransformTSR(CVector &src,F3_VERTEX *dst);
+	//-------------------------------------------------------
+	F3_VERTEX *TransformSRT(U_INT n,F3_VERTEX *src,F3_VERTEX *dst);
+	//-------------------------------------------------------
+	void		SetROT(double a);
+	//-------------------------------------------------------
+	void		Scale(SVector v)			{ex = v.x; ey = v.y;}
+	void		SetS(double a, double b)	{ex = a; ey = b;}
+	void		SetT(CVector &v)			{T = v;}
+	void		PopT()								{T = A;}
+	void		AddT(CVector &v)			{T = T + v;}
+	//-------------------------------------------------------
+	void Translation(CVector t)		{T = t;}
 };
 //=============================================================================
 //  class for Terrain info

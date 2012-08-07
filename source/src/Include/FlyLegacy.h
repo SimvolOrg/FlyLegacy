@@ -222,7 +222,7 @@ const float ADJ_ENGN_THRST = 1.600000f; /// adjustEngineThrust
 const float ADJ_PTCH_COEFF = 10.00000f; /// adjustPitchCoeff
 const float ADJ_PTCH_MINE  = 1.000000f; /// adjustPitchMine
 const float ADJ_ROLL_MINE  = 2.000000f; /// adjustRollMine
-const float ADJ_STRG_CONST = 0.125000f; /// adjustSteeringConst
+const float ADJ_STRG_CONST = 0.500000f; /// adjustSteeringConst
 const float ADJ_BRAK_CONST = 1.000000f; /// adjustBrakingConst
 const float ADJ_DIFF_CONST = 1.000000f; /// adjustDiffBrakingConst
 const float ADJ_SINK_RATE  = 5.000000f; /// adjust crash sink rate
@@ -2900,12 +2900,20 @@ public:
 //	Must supply 2 methodes:  TimeSlice and Draw
 //===================================================================================
 class CExecutable {
-	//--- NO ATTRIBUTES -----------------------------------
+	//--- Attribute is next executable of same type -------
+	CExecutable  *Next;
 	//--- Methods -----------------------------------------
 public:
+	CExecutable() {Next = 0;}
+	//-----------------------------------------------------
+	CExecutable *NextExec()	{return Next;}
+	//-----------------------------------------------------
 	virtual int	  TimeSlice(float dT, U_INT frame)	{return 0;}
 	virtual void	Draw() {;}
 	virtual void  DrawExternal() {;}
+	//------------------------------------------------------
+	void SetNext(CExecutable *n)	{Next = n;}
+	bool HasNext()								{return (Next != 0);}
 };
 //===================================================================================
 //	Vector to Time Slice function
@@ -2966,19 +2974,22 @@ public:
   inline float GetValue() {return aval;}
 };
 //===================================================================================
-//  CValuator:  Flatten a value according to time and target
+//  ValGenerator:  Flatten a value according to time and target
 //===================================================================================
-class CValuator {
+class ValGenerator {
 protected:
   //--- ATTRIBUTE ------------------------------------------
-  char   mode;                            // Mode computing
-  float  Targ;                            // Target value
-  float  cVal;                            // Current value
-  float  timK;                            // Time constant
+  char		mode;															// Mode computing
+  float		Targ;															// Target value
+  float		cVal;															// Current value
+  float		timK;															// Time constant
+	float		time;															// Timer
+	int			rand;															// Random interval									
   //--- METHODS --------------------------------------------
 public:
-  CValuator(char md, float tm);
-  CValuator();
+  ValGenerator(char md, float tm);
+  ValGenerator();
+	void		StartSin(float a,int R);
   float   TimeSlice(float dT);
   //--------------------------------------------------------
   inline void   Conf(char md,float tm) {mode = md; timK = tm;}
@@ -3064,6 +3075,7 @@ protected:
 	U_CHAR				uCount;					  // User count
   U_CHAR        oTyp;             // Object type
   U_CHAR        qAct;             // Index of active queue
+	//----------------------------------------------------------
 	U_INT				NoFrame;				    // Frame stamp
 	//--- User pointer -----------------------------------------
 	void         *uptr;							// User data

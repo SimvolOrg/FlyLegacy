@@ -283,9 +283,9 @@ protected:
   float rSLtemp,rSLdens,rSLpres,rSLsoundspeed; //reciprocals
   float soundspeed;
   //--- Valuators ---------------------------------------
-  CValuator tVAL;                 // Temperature
-  CValuator pVAL;                 // Pressure
-  CValuator dVAL;                 // Density
+  ValGenerator tVAL;                 // Temperature
+  ValGenerator pVAL;                 // Pressure
+  ValGenerator dVAL;                 // Density
   //---Temperatures data --------------------------------
   float tempR;                    // Temp in rankine scale
   float tempF;                    // Temp in Fahrenheit

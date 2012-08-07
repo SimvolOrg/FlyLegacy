@@ -358,7 +358,7 @@ VPilot::VPilot()
 	State = VPL_IS_IDLE;
 	fpln	= 0;
 	Radio	= 0;
-	route = new TaxiRoute();
+	route = new NavRoute();
 }
 //--------------------------------------------------------------
 //	Destroy resource

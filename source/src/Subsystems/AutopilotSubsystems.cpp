@@ -1404,16 +1404,19 @@ void	AutoPilot::ModeTGA()
 			return  LateralHold();
 		//--- Go back to heading mode --------------
 		case AP_TGA_HD1:
+			rALT.Set((cAGL + aTGA), 1);
 			if (Radio->mdis < TGA0)	return LateralHold();
 			stga	= AP_TGA_HD2;
 			return LateralHold();
 		//--- wait for some distance --------------
 		case AP_TGA_HD2:
+			rALT.Set((cAGL + aTGA), 1);
 			//--- Set Direction along the runway ----
 			rHDG	= Wrap360(Radio->hREF - 180);
 			stga  = AP_TGA_HD3;
 			return  LateralHold();
 		case AP_TGA_HD3:
+			rALT.Set((cAGL + aTGA), 1);
 			if (Radio->mdis < TGA1)		return LateralHold();
 			return EnterAPR();
 	}
@@ -1984,6 +1987,7 @@ void AutoPilot::StateDIS(int evn)
 	cALT	= altS->GaugeBusFT01();					// Current altitude
 	rHDG	= cmpS->GaugeBusFT01();					// Current mag heading
 	aSPD  = mveh->GetPreCalculedKIAS();		// Current speed
+  cAGL  = cALT - globals->tcm->GetGroundAltitude();
   EnterINI(); 
   return;
 }
@@ -2163,6 +2167,7 @@ int AutoPilot::EnterTakeOFF(char x, LND_DATA *rwd)
 //-----------------------------------------------------------------------
 bool AutoPilot::EnterGPSMode()
 {	if (0 != xCtl)						return false;
+	if (0 == Radio)						return false;
 	if (cAGL < 500)						return false;
 	if (AP_DISENGD == vStat)	return false;
 	if (AP_VRT_TKO == vStat)	return false;

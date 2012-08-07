@@ -129,11 +129,10 @@ protected:
   double    cMass;                    //  Mass repartition coefficient
   double    Radius;                   // In meters (rim + tire)
   //--------------------------------------------------------------------
+	double		kstr;											// Steering coefficient from PHY
 	double    speed;										// Rolling speed
   double    banking;
   float     bad_pres_resis;
-  double    diffK;										// Differential braking amplifier
-	double    torque;										// For differential brake
   opal::Force      glf;               ///< linear force
   opal::Force      gt_;
   CVector vb[2];        ///< Acceleration in body fram (m/s^2)
@@ -143,7 +142,6 @@ protected:
   opal::Point3r main_pos;
   opal::Vec3r local_velocity,
               body_velocity;
-  float  damp_ground_rot; ///< used to fix roll on ground
 };
 //=================================================================================
 //  Class gear managed under opal-ode
