@@ -259,7 +259,7 @@ bool JoyDEV::HandleHat()
 	if (hat == phat)	return false;
 	//--- Change in hat position -------------------------------
 	hpos		= hat / 100;							// compute angle
-	globals->cam->ActivateView(float(hpos));
+	globals->pln->pit.ActivateView(float(hpos));
 	return true;
 }
 //==============================================================================

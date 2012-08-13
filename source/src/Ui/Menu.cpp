@@ -947,17 +947,15 @@ void debug_dump_electrical_cb (puObject* obj)
   CAirplane *pln = globals->pln;
   if (pln != NULL) {
     if (pln->GetType () == TYPE_FLY_AIRPLANE) 
-		{	CElectricalSystem *amp = pln->amp;
-      if (amp != NULL) 
-			{	FILE *f = fopen ("Debug/electrical.txt", "w");
-        if (f) 
-				{	amp->Print (f);
+		{	FILE *f = fopen ("Debug/electrical.txt", "w");
+      if (f) 
+				{	pln->amp.Print (f);
           fclose (f);
           
-        }
+        
       }
     }
-  }
+	}
 
   DrawNoticeToUser ("Aircraft electrical system dumped to \"electrical.txt\"", 5);
 }

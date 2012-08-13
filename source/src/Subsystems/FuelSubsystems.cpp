@@ -369,7 +369,7 @@ int CFuelCell::Read (SStream *stream, Tag tag)
   case 'bPos':
     // Position relative to model center of gravity
     ReadVector (&bPos, stream);
-    bPos = bPos + mveh->wgh->svh_cofg;
+    bPos = bPos + mveh->wgh.svh_cofg;
     bPos.InvertXY(); // set legacy coordinates 
     rc = TAG_READ;
     break;

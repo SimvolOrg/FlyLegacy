@@ -922,7 +922,7 @@ void CSituation::ClearUserVehicle()
   globals->dang.z = RadToDeg(nul.z);
   globals->jsm->ClearGroupPMT();
   //--- Stop engines --------------------------------------
-  pln->eng->CutAllEngines();
+  pln->eng.CutAllEngines();
   delete pln;
 	pln = 0;
   //----Change to default camera -------------------------

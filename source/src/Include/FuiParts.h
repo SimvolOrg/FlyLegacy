@@ -1027,6 +1027,8 @@ public:
 //==========================================================================================
 class CFuiCkList: public CFuiWindow {
   //------ATTRIBUTES -------------------------------------------------
+	CVehicleObject *mveh;
+	//------------------------------------------------------
   CFuiButton    *uBUT;                  // Uncheck Button
   CFuiButton    *wBUT;                  // Where   Button
   CFuiButton    *dBUT;                  // Done button
@@ -1055,7 +1057,7 @@ class CFuiCkList: public CFuiWindow {
 	CCamera      *cam;										// Current camera
   //------METHODS ----------------------------------------------------
 public:
-  CFuiCkList(Tag idn, const char *filename);
+  CFuiCkList(Tag idn, char *filename);
  ~CFuiCkList();
   //------------------------------------------------------------------
   void  BuildMenu();

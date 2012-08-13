@@ -239,17 +239,18 @@ protected:
   AERO_ADJ              adj;                // Adjust coefficients
 };
 //====================================================================================
-/*!
- * The CAerodynamicModel is a container for the aerodynamic model of an aircraft.
- */
+//
+// The CAerodynamicModel is a container for the aerodynamic model of an aircraft.
+//
 //====================================================================================
 class CAerodynamicModel : public CStreamObject {
 public:
   // Constructors / destructor
-  CAerodynamicModel (CVehicleObject *v, char* wngFilename);
+  CAerodynamicModel ();
  ~CAerodynamicModel (void);
-
-  // CStreamObject methods
+	//--- Init the aerodynamic model -----------------------
+  void	Init(char* wngFilename);
+	// CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished();
   // CAerodynamicModel methods
@@ -288,6 +289,7 @@ protected:
   CVector moment;
 
 public:
+	void		SetVEH(CVehicleObject *v)	{mveh = v;}
   // logging
   static CLogFile* log;
   static void LogVector(const SVector &v, const char* name);
@@ -305,9 +307,9 @@ class CPhysicModelAdj : public CStreamObject
   CVehicleObject *mveh;     // Parent vehicle
   //---METHODS ------------------------------------------
 public:
-   CPhysicModelAdj (CVehicleObject *v,char* wngFilename);
+   CPhysicModelAdj ();
   ~CPhysicModelAdj (void);
-
+	 void Init(char* wngFilename);
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   void  ReadChannel(SStream *st);
@@ -349,6 +351,8 @@ public:
   int   sGer; /// simplified gear system
   //----List of channel adjustment --------------------------
   std::map<std::string,AERO_ADJ*>  aero;
+	//----------------------------------------------------------
+	void SetVEH(CVehicleObject *v)	{mveh = v;}
 };
 //=========================END OF FILE =============================================
 #endif // AERO_MODEL_H_

@@ -820,7 +820,7 @@ void CPistonEngineModel::SetTrueRPM()
   eData->e_vel = vel;
   //---Check for windmill ----------------------------------
   if (fabs(irpm) < FLT_EPSILON) irpm = GetIRPM ();
-  if (fabs(vne)  < FLT_EPSILON) vne  = KtToFps (mveh->svh->GetVNE ());
+  if (fabs(vne)  < FLT_EPSILON) vne  = KtToFps (mveh->svh.GetVNE ());
   // rpm from windmill (basic physics)
   // to develop later if necessary
   //const float vne  = KtToFps (mveh->svh->GetVNE ());         ///< knts

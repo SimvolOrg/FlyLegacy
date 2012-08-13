@@ -77,9 +77,9 @@ CFuiFuel::CFuiFuel(Tag idn, const char* filename)
   cBOX  = 0;
   //---------------------------------------------------
   CVehicleObject *veh  = globals->pln;
-  gas = (veh)?(veh->gas):(0);
+  gas = (veh)?(veh->GetGAS()):(0);
   //---Init title --------------------------------------
-  if (veh)   veh->gas->GetAllCells(fcel);
+  if (veh)   veh->gas.GetAllCells(fcel);
   U_INT type = LIST_HAS_TITLE + LIST_NOHSCROLL;
   gBOX.SetParameters(this,'tank',type);
   //----------------------------------------------------

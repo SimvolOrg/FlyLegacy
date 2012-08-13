@@ -1589,39 +1589,26 @@ void CExternalLight::DrawT1()
 //  Print the light
 //-------------------------------------------------------------------------------
 void CExternalLight::Print (FILE *f)
-{ /*
-  char s[8];
-  TagToString (s, unId);
-  fprintf (f, "Light unique ID : %s\n", s);
-  TagToString (s, type);
-  fprintf (f, "           Type : %s\n", s);
-  fprintf (f, "     Model Part : %s\n", part.c_str());
-  fprintf (f, "         Colour : %d", xCol);
-  fprintf (f, "       Position : %8.5f, %8.5f, %8.5f\n",
-    oPos.x, oPos.y, oPos.z);
-  fprintf (f, "    Orientation : %8.5f, %8.5f, %8.5f\n",
-    polr.x, polr.y, polr.z);
-  fprintf (f, "    Flash Cycle : %8.5f\n", cycle);
-  fprintf (f, "     Duty Cycle : %8.5f\n", duty);
-
-  /// @todo Print external light purpose
-	*/
-}
+{ }
 //=========================================================================================
 //
 // CExternalLightManager: Aircraft light system
 //
 //=========================================================================================
-CExternalLightManager::CExternalLightManager (CVehicleObject *mv, char *fn)
-{ mveh  = mv;
-  xLit  = 0;
-  SStream s(this,"WORLD",fn);
+CExternalLightManager::CExternalLightManager ()
+{ xLit  = 0;
 	//----Get halo texture --------------------------
 	Build2DHalo(32);
 	//--- Set up vector in intersector --------------
 	CVector up(0,0,1);
 	secp.SetNP(up);
 }
+//-----------------------------------------------------------
+//  Read parameters
+//-----------------------------------------------------------
+void CExternalLightManager::Init(char *fn)
+{	SStream s(this,"WORLD",fn);
+	return;		}
 //-----------------------------------------------------------
 //  Retrun aircraft rotation matrix
 //-----------------------------------------------------------

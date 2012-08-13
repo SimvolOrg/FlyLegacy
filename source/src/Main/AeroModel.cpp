@@ -57,37 +57,38 @@ void CAerodynamicModel::LogScalar(const double &d, const char* name) {
 
 //---------------------------------------------------------------
 // JSDEV* CAerodynamicModel
-//	add an optional log entry in log section of ini file
+//	Make it an included subsystem
 //---------------------------------------------------------------
-CAerodynamicModel::CAerodynamicModel (CVehicleObject *v, char* svhFilename)
-{ mveh  = v;        // Save parent vehicle
-  int opt = 0;
+CAerodynamicModel::CAerodynamicModel ()
+{ int opt = 0;
   GetIniVar ("Logs", "logAeroModel", &opt);
   if (opt) log = new CLogFile("logs/Aeromodel.txt", "w");
   if (log) {
     log->Write ("CAerodynamicModel data log\n");
   } else log = NULL;
 
-  // Initialize
+  //--- Initialize --------------------------------------
   dofa.x = dofa.y = dofa.z = 0.0;
   laca =  ADJ_AERO_CENTR; // 0.0f;
   GetIniFloat ("PHYSICS", "adjustAeroCenter", &laca);
   laca = FN_METRE_FROM_FEET (laca); // convert to meter
   cd   = ADJ_TOTL_DRAG; // 1.0f;
   GetIniFloat ("PHYSICS", "adjustTotalDrag", &cd);
-#ifdef _DEBUG
-  DEBUGLOG ("CAerodynamicModel laca=%f cd=%f", laca, cd);
-#endif
   grnd =  false;
   geff =  0.0f;
   gAGL =  0.0f;
   debugOutput = false;
-
   force.Raz();													// JS was: x = force.y = force.z = 0.0;
   moment.Raz();												  // JS wasx = moment.y = moment.z = 0.0;
 
+}
+//----------------------------------------------------------------------
+// Init read parameters
+//----------------------------------------------------------------------
+void	CAerodynamicModel::Init(char* wngFilename)
+{	
   //--- Read from stream file -----------
-  SStream s(this,"WORLD",svhFilename);
+  SStream s(this,"WORLD",wngFilename);
 }
 //----------------------------------------------------------------------
 //  Destroy it
@@ -289,7 +290,7 @@ void CAerodynamicModel::Timeslice(float dT) {
   double soundSpeed = globals->atm->GetSoundSpeed_ISU ();   ///< GetSoundSpeed() * FN_METRE_FROM_FEET;
 
   // Get input data : body frame
-  const SVector *cgPos = static_cast<const SVector *> (mveh->svh->GetNewCG_ISU ()); ///< meters (ISU)
+  const SVector *cgPos = static_cast<const SVector *> (mveh->svh.GetNewCG_ISU ()); ///< meters (ISU)
   SVector cgPos_; cgPos_.x = -cgPos->x; cgPos_.y = cgPos->z; cgPos_.z = cgPos->y; // RH->LH
   SVector cgOffset = VectorDifference(cgPos_, dofa);       // 
   cgOffset.z -= laca; ///< add <+ac+> value to adjust longitudinal aerod.center //  
@@ -410,7 +411,7 @@ void CAerodynamicModel::DrawAerodelData (const double &lenght)
   //
 #ifdef _DEBUG_SCREEN_LINES
   //DebugScreenAero (NULL/*sf*/, "test");
-  CAeroControl *p = mveh->amp->eTrim;
+  CAeroControl *p = mveh->amp.eTrim;
   if (p) {
     char buffer [128] = {0};
     float txt = p->Val ();
@@ -1256,8 +1257,8 @@ const SVector& CAeroModelWingSection::GetMomentVector() const {
 /// CPhysicModelAdj
 ///	
 ///---------------------------------------------------------------
-CPhysicModelAdj::CPhysicModelAdj (CVehicleObject *v,char* phyFilename)
-{ mveh = v;                   // Save Parent Vehicle
+CPhysicModelAdj::CPhysicModelAdj ()
+{
 #ifdef _DEBUG
   DEBUGLOG ("CPhysicModelAdj : constructor");
 #endif
@@ -1293,9 +1294,16 @@ CPhysicModelAdj::CPhysicModelAdj (CVehicleObject *v,char* phyFilename)
   Kegt = 1.0f;           // 1.00f   /// EGT coeff
   Kpmn = 100.0f;         // 100.0f  /// propeller magic number
   Ghgt = 0.0f;           // 0.00f   /// gear adjust const
-  //-- Read from stream file --------------------------------
+	return;
+}
+//----------------------------------------------------------------
+//  Reda the parameters
+//----------------------------------------------------------------
+void CPhysicModelAdj::Init(char *phyFilename)
+{ //-- Read from stream file --------------------------------
   SStream s(this,"WORLD",phyFilename);
-	if (!s.ok) gtfo("PHY file not found %s", s.filename);
+	//--- If no filr, use default -----------------------------
+	return;
 }
 //----------------------------------------------------------------
 //  Destructor

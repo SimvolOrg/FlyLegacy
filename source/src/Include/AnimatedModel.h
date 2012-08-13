@@ -80,9 +80,9 @@ class CAnimatedModel : public CStreamObject {
   //--- METHODS ----------------------------------------
 public:
   // Constructors / Destructor
-  CAnimatedModel (CVehicleObject *v,char* lodFilename,Tag type);
+  CAnimatedModel ();
  ~CAnimatedModel (void);
-
+	void	Init(char* lodFilename,Tag type);
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   int   ReadModel(SStream *st);
@@ -124,16 +124,18 @@ public:
   void    Print (FILE *f);
   //---Helpers -----------------------------------------------
   void    CheckKeys()   {Model->CheckKeys();}
+	//----------------------------------------------------------
+	void		SetVEH(CVehicleObject *v)				{mveh = v;}
   //---MODEL INTERFACE ---------------------------------------
-  inline  void       GetExtension(SVector &v)     {v = extS;}
-  inline  void       GetBodyExtension(SVector &v) {v = extB;}
-  inline  void       GetMiniExtension(SVector &v) {v = minB;}
-  inline  CAcmPart  *GetPart(char *n)         {return Model->GetPart(n);}
-  inline  CModelACM *GetDayModel()            {return Model;}
+  void       GetExtension(SVector &v)     {v = extS;}
+  void       GetBodyExtension(SVector &v) {v = extB;}
+  void       GetMiniExtension(SVector &v) {v = minB;}
+  CAcmPart  *GetPart(char *n)         {return Model->GetPart(n);}
+  CModelACM *GetDayModel()            {return Model;}
   //---inline for landing gear -------------------------------
-  inline  void       SetLandTime(float t)     {aGear.MaxTime(t);}
+  void       SetLandTime(float t)     {aGear.MaxTime(t);}
   //----Inline for flaps --------------------------------------
-  inline  void       AddFlap(CAcmFlap *f)      {aFlap.AddPart(f);}
+  void       AddFlap(CAcmFlap *f)      {aFlap.AddPart(f);}
 };
 
 

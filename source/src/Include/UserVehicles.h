@@ -120,12 +120,12 @@ public:
 // The SVH file contains some key information about the aircraft weight/balance
 //   simulation behaviour and
 //========================================================================================
-
 class CSimulatedVehicle : public CStreamObject { 
 public:
-  CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWeightManager *wgh);
+  CSimulatedVehicle ();
   virtual ~CSimulatedVehicle (void);
-
+	void	Init(char* svhFilename, CWeightManager *wgh);
+	//------------------------------------------------------------
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished (void);
   void  Write (SStream *stream);
@@ -149,6 +149,8 @@ public:
   void      PrintInfo(int bar_cycle);
 	double    GetBrakeAcceleration()	  {return accBrake;}
   //--- return lookup tables ------------------------------------
+	void			SetVEH(CVehicleObject *v) {mveh = v;}
+	//-------------------------------------------------------------
   CFmtxMap       *GetDieh()   {return mdieh;}
   CFmtxMap       *GetPitd()   {return mpitd;}
   CFmtxMap       *GetAcrd()   {return macrd;}
@@ -342,9 +344,9 @@ protected:
   CVehicleObject *mveh;
   //--- METHODS ----------------------------------------------------------
 public:
-  CEngineManager (CVehicleObject *v,char* eltFilename);
+  CEngineManager ();
   virtual ~CEngineManager (void);
-
+	void	Init(char* ngnFilename);
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   
@@ -368,8 +370,9 @@ public:
   const SVector& GetPropellerTorqueISU (void);          ///< returns the global prop torque (LH)
   const float&   GetEnginesPfact (void);                ///< returns P fact in form of X thrust offset (LH)
   //--------------------------------------------------------------------
-  inline void    GetAllEngines(std::vector<CEngine*> &egs) { egs = engn;}
-	inline U_CHAR  GetEngineNbr()		{return (engine_number);}
+	void		SetVEH(CVehicleObject *v)	{mveh = v;}
+  void    GetAllEngines(std::vector<CEngine*> &egs) { egs = engn;}
+	U_CHAR  GetEngineNbr()		{return (engine_number);}
   //--------------------------------------------------------------------
 public:
   std::vector<CEngine*> engn;                           ///< List of engine instances
@@ -414,9 +417,9 @@ class CFuelSystem : public CStreamObject {
   CVehicleObject *mveh;           // Parent vehicle
   //--- METHOS -----------------------------------------------------
 public:
-   CFuelSystem (CVehicleObject *v,char* gasFilename, CEngineManager *engine_manager,  CWeightManager *wgh);
+   CFuelSystem ();
   ~CFuelSystem (void);
-
+	 void	Init(char* gasFilename, CEngineManager *eng,  CWeightManager *wgh);
   //---- CStreamObject methods ------------------------------------
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished (void);
@@ -438,8 +441,9 @@ public:
   //-------------------------------------------------------------------------------
   void      GetAllSystems(std::vector<CFuelSubsystem*> &gass) {gass = fsub;}
   //-------------------------------------------------------------------------------
-  inline U_INT      GetGradIndex()  {return gradX;}
-  inline void       AddTank(CFuelCell *t) {ctank.push_back(t);}
+	void			SetVEH(CVehicleObject *v)	{mveh = v;}
+  U_INT     GetGradIndex()						{return gradX;}
+  void      AddTank(CFuelCell *t)			{ctank.push_back(t);}
   //-------------------------------------------------------------------------------
 public:
   char                          Tr;                 // Trace Indicator
@@ -472,9 +476,9 @@ protected:
 public:
   void FreeDLLSubsystem (void);
 
-   CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngineManager *engine_manager);
-  ~CElectricalSystem (void);
-
+  CElectricalSystem ();
+ ~CElectricalSystem (void);
+	void	Init(char* ampFilename, CEngineManager *engine_manager);
   /// CStreamObject methods
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished (void);
@@ -494,14 +498,15 @@ public:
   //---- return all subsystems -------------------------------------------
   inline float GetBrakeForce(char p) {return (pwb)?(pwb->GetBrakeForce(p)):(0);}
   ///---------------------------------------------------------------------
-	inline VPilot                 *GetVirtualPilot(){return vpil;}
-	inline CFlapControl           *GetFlaps()				{return pFlaps;}
-  inline CAileronControl        *GetAilerons()    {return pAils;}
-  inline CElevatorControl       *GetElevators()   {return pElvs;}
-  inline CRudderControl         *GetRudders()     {return pRuds;}
-	inline CSteeringControl       *GetSteerCTRL()		{return pSter;}
-  inline CElevatorTrimControl   *GetElevatorTrim(){return eTrim;}
-	inline CSpeedRegulator        *GetSpeedRegulator() {return sReg;}
+	void	SetVEH(CVehicleObject *v)						{mveh = v;}
+	VPilot                 *GetVirtualPilot()	{return vpil;}
+	CFlapControl           *GetFlaps()				{return pFlaps;}
+  CAileronControl        *GetAilerons()			{return pAils;}
+  CElevatorControl       *GetElevators()		{return pElvs;}
+  CRudderControl         *GetRudders()			{return pRuds;}
+	CSteeringControl       *GetSteerCTRL()		{return pSter;}
+  CElevatorTrimControl   *GetElevatorTrim()	{return eTrim;}
+	CSpeedRegulator        *GetSpeedRegulator() {return sReg;}
 	//---------------------------------------------------------------------
 	inline  CFPlan                *GetFlightPlan()	{return fpln;}
 	inline	CRobot                *GetRobot()				{return d2r2;}
@@ -546,9 +551,9 @@ class CPitotStaticSystem : public CStreamObject {
 protected:
   CVehicleObject *mveh;           // Parent vehicle
 public:
-  CPitotStaticSystem (CVehicleObject *v,char* pssFilename);
+  CPitotStaticSystem ();
  ~CPitotStaticSystem (void);
-
+	void  Init(char* pssFilename);
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished (void);
   void  Write (SStream *stream);
@@ -559,7 +564,9 @@ public:
 public:
   float                           iceT;   ///< Icing condition duration
   std::vector<CPitotStaticPort*>  ports;  ///< List of CPitotStaticPort*
-  double _total_pressure_node;            ///< 
+  double _total_pressure_node;            ///<
+	//------------------------------------------------------
+	void	SetVEH(CVehicleObject *v)	{mveh = v;}
 };
 
 
@@ -578,14 +585,17 @@ public:
 class CVariableLoadouts : public CStreamObject {
 protected:
   CVehicleObject *mveh;
-public:
-  CVariableLoadouts (CVehicleObject *v,char* vldFilename,  CWeightManager *wgh);
- ~CVariableLoadouts (void);
+  CWeightManager *wgh;
 
+public:
+  CVariableLoadouts ();
+ ~CVariableLoadouts (void);
+	void Init(CWeightManager *wgh,char* vldFilename);
+	//----------------------------------------------------
   int   Read (SStream *stream, Tag tag);
   void  Write (SStream *stream);
-  //----Attributes -------------------------------------
-  CWeightManager *vld_wgh;
+	//----------------------------------------------------
+	void	SetVEH(CVehicleObject *v)	{mveh = v;}
 };
 //---------------------------------------------------------------------------
 // Cockpit Manager
@@ -598,7 +608,7 @@ class CCockpitManager : public CStreamObject {
 protected:
 	CVehicleObject *mveh;                 // Parent vehicle
 	//---------------------------------------------------------
-  std::map<Tag,CPanel*>				ckpt;   // List of cockpit panels indexed by unique tag
+  std::map<Tag,CPanel*>				panl;   // List of cockpit panels indexed by unique tag
 	std::map<Tag,CPanelLight*>	lite;   // List of panel lights
 	std::map<Tag,CgHolder*>			hold;		// List of value holder
   char          active;								// Active when camera is cockpit camera
@@ -608,15 +618,16 @@ protected:
   CCameraCockpit *cam;								// Cockpit camera
   //--- METHODS-----------------------------------------------
 public:
-  CCockpitManager (CVehicleObject *v,char* pitFilename);
- ~CCockpitManager (void);
-
-  // CStreamObject methods
+  CCockpitManager();
+ ~CCockpitManager();
+	void	Init(char* pitFilename);
+  //--- CStreamObject methods --------------------------------
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished ();
-
+	void	ReadPanel(char *fn,Tag id);
   //---- CCockpitManager methods ----------------------------
-  void      SetPanel (Tag tag);
+  void      ActivatePanel (Tag tag);
+	void			ActivateView (float A);
   void      ScreenResize();
   void      TimeSlice (float dT);
   void	    PrepareMsg(CVehicleObject *veh);
@@ -626,21 +637,28 @@ public:
   bool      KbEvent(Tag key);               // keyboard order
   bool      MouseMove  (int x,int y);       // Mouse move
   bool      MouseClick (int bt, int ud, int x, int y);
+	void			ChangePanel(char dir);
+	void			AdjustSeat(CVector &S);
+	void			SetViewPort();
 	//---Light management -------------------------------------
 	CPanelLight *GetLight(Tag id);
 	void			AddLight(SStream *stream);
+	//--- Drawing ---------------------------------------------
+	void			Draw();
   //----Statistics ------------------------------------------
   void      GetStats(CFuiCanva *cnv);
   //----Inline ----------------------------------------------
-  inline CPanel*   GetCurrentPanel()   {return panel;}
-  inline Tag       GetPanel() {return (panel)?(panel->GetId()):(0);}
-  inline void      Activity(char a)    {active = a;}
-  inline void      SetPanel(CPanel *p) {panel = p;}
-  inline const int GetMapCkptSize (void) const {return ckpt.size ();}
-  inline const std::map<Tag,CPanel*>& GetMapCkpt (void) const {return ckpt;}
+	void			SetVEH(CVehicleObject *v)	{mveh = v;}
+  CPanel*   GetCurrentPanel()					{return panel;}
+  Tag       GetPanel() {return (panel)?(panel->GetId()):(0);}
+  void      Activity(char a)					{active = a;}
+  void      SetPanel(CPanel *p)				{panel = p;}
+  int				GetMapCkptSize (void) const {return panl.size ();}
+	//----------------------------------------------------------
+  void			AddPanel(CPanel *p,bool m);
   //---------------------------------------------------------
-	inline void			SetBrightness(float b)	{brit = b;}
-	inline CVehicleObject *GetMVEH()	{return mveh;}
+	void			SetBrightness(float b)	{brit = b;}
+	CVehicleObject *GetMVEH()	{return mveh;}
 };
 
 
@@ -723,11 +741,11 @@ protected:
   //---ATTRIBUTES -----------------------------------------
 protected:
   CVehicleObject *mveh;
-  //---METHODS--------------------------------------------
+  //---METHODS---------------------------------------------
 public:
-  CControlMixer (CVehicleObject *v,char* mixFilename);
- ~CControlMixer (void);
-
+  CControlMixer ();
+ ~CControlMixer ();
+	void Init(char* mixFilename);
   // CStreamObject methods
   virtual int   Read (SStream *stream, Tag tag);
   //virtual void  ReadFinished (void);
@@ -735,12 +753,121 @@ public:
   // CControlMixer methods
   void  AddMixer(CControlMixerChannel *mix, char *name);
   void  Timeslice (float dT,U_INT FrNo);
-
+	//-------------------------------------------------------
+	void	SetVEH(CVehicleObject *v)	{mveh = v;}
+	//-------------------------------------------------------
 public:
   std::set<std::string>                       channel;   ///< Control channel names
   std::map<std::string,CControlMixerChannel*> mixerMap;  ///< Map of mixer channels
 };
+//===========================================================================
+//  External light for aircraft
+//  NOTE:  OpneGL supports 8 lights in standard
+//  For landing and taxing, LIGHT 4-5-6-7 are used
+//===========================================================================
+class CExternalLight : public CStreamObject {
+public:
+  CExternalLight (Tag type, Tag tag,CExternalLightManager *lm);
+  //------ CStreamObject methods -------------
+  int       Read (SStream *stream, Tag tag);
+	void      ReadFinished();
+  //--------------------------------------------------------------
+  inline    char NeedUpdate()  {return (upd) & (powered);}
+  inline    char IsOn()        {return on;}
+  inline    char IsOff()       {return !on;}
+  //------ CExternalLight methods ------------
+  void      SetPowerState (bool power);
+  void      TimeSlice (float dT);
+  void      DrawAsQuad();
+	void			DrawAsSpot();
+	void			LightAttenuation();
+	double		GetTextureLimit();
+	double		GetLightForVector(CVector &v);
+	void			DrawT1();
+  void      Print (FILE *f);
+private:
+  void      StringToColour (const char* s);
+  void      StringToPurpose (const char* s);
+  void      SetQuad(float rd);
+public:
+	//--------------------------------------------------------------
+	inline Tag	GetTag()	{return unId;}
+  //-------Attributes --------------------------------------------
+protected:
+  Tag           type;         // External light type
+  Tag           unId;         // Unique identification tag
+  char          stID[8];			//
+	//---------------------------------------------------------------
+  TC_VTAB       tab[4];       // QUAD Coordinates array
+  std::string   part;         // External model part name reference
+	//----------------------------------------------------------------
+	GLdouble      pMat[16];			// Position matrice
+	//----------------------------------------------------------------
+  U_CHAR        xCol;         // Color index 
+  CVector       oPos;         // Position relative to external model center
+  CVector       polr;         // Orientation (feet,pitch,heading)
+	float					dist;					// Projector distance
+	float					sDir[4];			// Projector direction
+  U_INT         oTex;         // Texture object
+  double       radius;        ///< Halo radius
+  float         cycle;        ///< Flash cycle time in second
+  float         duty;         ///< Flash duty cycle (% of total cycle light is on)
+  float         Time;         ///< Flash cycle elapsed time
+	//--- Spot parameters -----------------------------------------
+	CVector       sPos;					// Source center (relative to aircraft)
+	CVector				aPos;					// Minimum position
+	CVector       bPos;					// Maximum position
+	CVector				aRot;					// Minimum rotated
+	CVector				bRot;					// Maximum rotated
+	double				extd;					// External distance
+	double				ratio;				// Distance to radius ratio
+	//-------------------------------------------------------------
+  EExternalLightPurpose   purp;     ///< Special purpose of light
+  CExternalLightManager  *ltm;      ///< Light manager for this light
+  U_CHAR                  powered;  ///< Whether the light subsystem is powered
+  U_CHAR                  on;       ///< Whether light is currently illuminated
+  U_CHAR                  upd;      ///< Need update if flasher
+  U_CHAR                  spt;      ///< Is a spot light
+};
 
+//===========================================================================
+//  External light manager
+//===========================================================================
+class CExternalLightManager : public CStreamObject {
+public:
+  CExternalLightManager ();
+  virtual ~CExternalLightManager (void);
+	void	Init(char *fn);
+  // CStreamObject methods
+  int   Read (SStream *stream, Tag tag);
+  double		*GetROTM();
+	//---------------------------------------------------
+	void	ReadHalo();
+	void	Build2DHalo(int sid);
+	void	AddNaviLite(CExternalLight *n);
+	void	AddSpotLite(CExternalLight *n);
+  //--- CExternalLightManager methods --------
+	double		DistanceToGround(CVector *v0,CVector *v1);
+  void      SetPowerState (Tag id, bool power);
+  void      Timeslice (float dT);
+	//--- Drawing --------------------------------------
+	void			DrawOmniLights();
+	void			DrawSpotLights();
+  void      Print (FILE *f);
+  //------------------------------------------
+	U_INT		 GetHalo()											{return txo;}
+	CVector  GetIntersection()							{return secp.PR;}
+	void		 SetVEH(CVehicleObject *v)			{mveh	= v;}
+  //------------------------------------------
+private:
+	CIntersector secp;														// Intersector
+	U_INT			txo;																// Texture object
+	float			ems[4];															// Emmisive color
+  CVehicleObject *mveh;                         // Mother vehicle
+  int       xLit;                               // Light index
+  std::map<Tag, CExternalLight*> nLit;					// Nav lights
+	std::map<Tag, CExternalLight*> sLit;					// Spot lights
+};
 
 
 
@@ -801,15 +928,14 @@ protected:
 };
 
 
-/**
- * @brief Encapsulation of vehicle info in .NFO file
- */
-
+//========================================================================
+// @brief Encapsulation of vehicle info in .NFO file
+//========================================================================
 class CVehicleInfo : CStreamObject {
 public:
   // Constructor
-  CVehicleInfo (char* nfoFilename);
-
+  CVehicleInfo ();
+	void	Init(char* nfoFilename);
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
 
@@ -836,9 +962,9 @@ public:
   char* GetPID (void);
   char* GetPHY (void); // PHY file
   //------------------------------------------------------------
-  inline  int       GetVehClass()     {return classification;}
-  inline  char     *GetVehMake()      {return make;}
-  inline  char     *GetVehIcon()      {return iconFilename;}
+  int       GetVehClass()     {return classification;}
+  char     *GetVehMake()      {return make;}
+  char     *GetVehIcon()      {return iconFilename;}
   //------------------------------------------------------------
 protected:
   Tag   type;             ///< Vehicle type

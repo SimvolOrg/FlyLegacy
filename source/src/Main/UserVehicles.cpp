@@ -100,23 +100,18 @@ CWhl::CWhl (void)
 //  CSimulatedVehicle
 //  Read and support SVH file
 //=====================================================================================
-CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWeightManager *wgh)
-{ mveh  = v;                      // Save parent vehicle
-  vsnd  = 0;                      // Sound manager
+CSimulatedVehicle::CSimulatedVehicle ()
+{ vsnd  = 0;                      // Sound manager
   mdieh = 0;
   mpitd = 0;
   macrd = 0;
-  // Get a link to weight_manager
-  // !!! must be before Read from Stream below ...
-  vehi_wgh = wgh;
+	//----------------------------------------------
   mAlt.sender = 'simu';
   mSpd.sender = 'simu';
   mVsi.sender = 'simu';
   mMag.sender = 'simu';
   mRpm.sender = 'simu';
   mMap.sender = 'simu';
-	//--- Read the SVH file -------------------------
-  SStream s(this,"WORLD",svhFilename);
 	//--- Init messages -----------------------------
   mAlt.id = MSG_GETDATA;
   mSpd.id = MSG_GETDATA;
@@ -126,6 +121,15 @@ CSimulatedVehicle::CSimulatedVehicle (CVehicleObject *v, char* svhFilename, CWei
   mMap.id = MSG_GETDATA;
 	//----------------------------------------------
 	elapsed = 0;
+}
+//----------------------------------------------------------------------
+//  Read the file
+//----------------------------------------------------------------------
+void CSimulatedVehicle::Init(char* svhFilename, CWeightManager *wgh)
+{	vehi_wgh = wgh;
+	//--- Read the SVH file -------------------------
+  SStream s(this,"WORLD",svhFilename);
+	return;
 }
 //----------------------------------------------------------------------
 //  Delete this object
@@ -371,9 +375,11 @@ void CSimulatedVehicle::ReadFinished (void)
 void CSimulatedVehicle::Write (SStream *stream)
 {
 }
-
+//-------------------------------------------------------------------------------
+//	Time slice:  Compute CG_ISU and refresh status bar 
+//-------------------------------------------------------------------------------
 void CSimulatedVehicle::Timeslice (float dT)
-{
+{ CalcNewCG_ISU ();							// 
   if (globals->sBar) {
 	    elapsed += dT;
     if (elapsed > globals->status_bar_limit) {
@@ -382,13 +388,11 @@ void CSimulatedVehicle::Timeslice (float dT)
     }
   }
 }
-
-// CalcNewCG_ISU RH meters
+//-------------------------------------------------------------------------------
+//	Time slice:  Compute CG_ISU 
+//-------------------------------------------------------------------------------
 void CSimulatedVehicle::CalcNewCG_ISU (void)
-{
-  //newCG_ISU = CofG + *(mveh->wgh->wb.GetCGOffset()); // lc 052910 -
-  //newCG_ISU.Times (FN_METRE_FROM_FEET (1.0)); // lc 052910 -
-  mveh->wgh->GetVisualCG (newCG_ISU); // lc 052910 +
+{ mveh->wgh.GetVisualCG (newCG_ISU); // lc 052910 +
   newCG_ISU.x = FN_METRE_FROM_FEET (-newCG_ISU.x); // lc 052910 +
   newCG_ISU.y = FN_METRE_FROM_FEET (+newCG_ISU.y); // lc 052910 +
   newCG_ISU.z = FN_METRE_FROM_FEET (+newCG_ISU.z); // lc 052910 +
@@ -448,13 +452,8 @@ void CSimulatedVehicle::PrintInfo (int bar_cycle)
 //===========================================================================
 // CFuelSystem
 //===========================================================================
-CFuelSystem::CFuelSystem (CVehicleObject *v,char* gasFilename, CEngineManager *engine_manager,  CWeightManager *wgh)
-{ 
-  mveh  = v;
-  globals->gas = this;
-  eng_mng = engine_manager;
-  gas_wgh = wgh;
-  cInd    = 0;
+CFuelSystem::CFuelSystem ()
+{ cInd    = 0;
   fuel    = ENGINE_FUELED;
   // Initialize data members
   grad  = AIRPORT_FUEL_100LL;
@@ -463,8 +462,16 @@ CFuelSystem::CFuelSystem (CVehicleObject *v,char* gasFilename, CEngineManager *e
   int t = 0;
   GetIniVar("TRACE","FuelSystem",&t);
   Tr  = char(t);
-  // Populate data members from GAS stream file
+}
+//-----------------------------------------------------------------------
+//  Init the system
+//-----------------------------------------------------------------------
+void	CFuelSystem::Init(char* gasFilename, CEngineManager *eng,  CWeightManager *wgh)
+{	eng_mng = eng;
+  gas_wgh = wgh;
+	// Populate data members from GAS stream file
   SStream s(this,"WORLD",gasFilename);
+	return;
 }
 //-----------------------------------------------------------------------
 //  Destroy the system
@@ -478,7 +485,6 @@ CFuelSystem::~CFuelSystem (void)
   }
   ctank.clear();
   tanks.clear();
-  globals->gas = 0;
 }
 //-----------------------------------------------------------------------
 //  Read parameters
@@ -866,9 +872,9 @@ int CDamageModel::Read (SStream *stream, Tag tag)
 //=========================================================================
 // CElectricalSystem
 //=========================================================================
-CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngineManager *engine_manager)
-{ mveh  = v;              // Save parent vehicle
-  mveh->amp     = this;   // Needed earlier for initialisation (autopilot)
+CElectricalSystem::CElectricalSystem ()
+{ 
+  
   // Initialize control subsystem pointers
 	sReg					= 0;
   pAils         = 0;
@@ -887,21 +893,27 @@ CElectricalSystem::CElectricalSystem (CVehicleObject *v,char* ampFilename, CEngi
 	subs.reserve(100);
 	sext.reserve(8);
 	//--------------------------------------------------------
-  pEngineManager = engine_manager;
-  // Read from AMP file stream-----------------------------
+  
+}
+//-----------------------------------------------------------------------
+//	Init the electrical system
+//-----------------------------------------------------------------------
+void CElectricalSystem::Init(char* ampFilename, CEngineManager *eng)
+{    // Needed earlier for initialisation (autopilot)
+	pEngineManager = eng;
+	// Read from AMP file stream-----------------------------
   SStream s(this,"WORLD",ampFilename);
 	//-- Add Fligth Plan subsystem ----------------------
 	CFPlan	*fp = new CFPlan(mveh,1);
 	subs.push_back (fp);
 	fpln	= fp;
-
   //---Add robot ---------------------------------------
 	d2r2	= new CRobot();							// Check list executer
-	d2r2->SetParent(v);
+	d2r2->SetParent(mveh);
   subs.push_back(d2r2);							// Add to amp list
 	//---Add virtual pilot -------------------------------
 	vpil	= new VPilot();							// Virtual pilot
-	vpil->SetParent(v);
+	vpil->SetParent(mveh);
 	subs.push_back(vpil);							// Add to amp list
 }
 //-----------------------------------------------------------------------
@@ -1755,8 +1767,7 @@ void CElectricalSystem::AddExternal(CSubsystem *sy,SStream *st)
 //---------------------------------------------------------------------------
 void CElectricalSystem::ReadFinished (void)
 {	if (pRuds) pRuds->InitCTLR(pSter);
-	CGroundSuspension *ssp = mveh->whl;
-	if (ssp)	ssp->SetSteerData(pRuds);
+	mveh->whl.SetSteerData(pRuds);
 	return;
 }
 //-----------------------------------------------------------------------------
@@ -1830,14 +1841,19 @@ void CElectricalSystem::Print (FILE *f)
  * CPitotStaticSystem
  */
 //===============================================================================
-CPitotStaticSystem::CPitotStaticSystem (CVehicleObject *v, char* pssFilename)
-{ mveh  = v;                  // Save parent vehicle
-  ports.clear ();
+CPitotStaticSystem::CPitotStaticSystem ()
+{ ports.clear ();
   _total_pressure_node = 0.0;
-
-  SStream s(this,"WORLD",pssFilename);
 }
 //--------------------------------------------------------------------
+//	Read the file
+//--------------------------------------------------------------------
+void CPitotStaticSystem::Init(char* pssFilename)
+{	  SStream s(this,"WORLD",pssFilename);
+		return;		}
+//--------------------------------------------------------------------
+//	Destroy it
+//---------------------------------------------------------------------
 CPitotStaticSystem::~CPitotStaticSystem (void)
 { std::vector<CPitotStaticPort*>::iterator i;
   for (i=ports.begin(); i!=ports.end(); i++) delete *i;
@@ -1926,21 +1942,21 @@ void CPitotStaticSystem::Debug (void)
 //=================================================================================
 // Variable Loadouts
 //=================================================================================
-CVariableLoadouts::CVariableLoadouts (CVehicleObject *v,char* vldFilename,  CWeightManager *wgh)
-{ mveh  = v;              // Save parent vehicle
-  // Get a link to weight_manager
-  // !!! must be before Read from Stream below ...
-  vld_wgh = wgh;
-
-  SStream s(this,"WORLD",vldFilename);
+CVariableLoadouts::CVariableLoadouts ()
+{ }
+//----------------------------------------------------------------------------------
+//  Load the file
+//---------------------------------------------------------------------------------
+void CVariableLoadouts::Init(CWeightManager *wg,char* vldFilename)
+{	wgh = wg;
+	SStream s(this,"WORLD",vldFilename);
+	return;
 }
 //----------------------------------------------------------------------------------
 //  Destroy
 //---------------------------------------------------------------------------------
 CVariableLoadouts::~CVariableLoadouts(void)
-{
-
-}
+{}
 //----------------------------------------------------------------------------------
 //  Read parameters
 //---------------------------------------------------------------------------------
@@ -1954,7 +1970,7 @@ int CVariableLoadouts::Read (SStream *stream, Tag tag)
       // Loadout instance
       CLoadCell *lu = new CLoadCell(mveh);
       ReadFrom (lu, stream);
-      vld_wgh->AddLoad(lu);
+      wgh->AddLoad(lu);
     }
     rc = TAG_READ;
     break;
@@ -1970,37 +1986,40 @@ int CVariableLoadouts::Read (SStream *stream, Tag tag)
 
 
 void CVariableLoadouts::Write (SStream *stream)
-{
-
-}
-//-----------------------------------------------------------------------------
+{}
+//=============================================================================
 // Cockpit Manager
-//-----------------------------------------------------------------------------
-CCockpitManager::CCockpitManager (CVehicleObject *v,char* pitFilename)
-{ mveh = v;             // Save parent vehicle
-  // Initialize data members
+//
+//=============================================================================
+CCockpitManager::CCockpitManager()
+{ // Initialize data members
   panel   = 0;
-  cam     = globals->ccm->GetCockpitCamera();
   globals->pit  = this;
   active  = 0;
 	brit		= 1;
 	//-----  Create the default light ------------
 	CPanelLight *lit	= new CPanelLight(0);
 	lite[0]						= lit;
-  //-----  Read cockpit manager stream ---------
-  SStream s(this,"WORLD",pitFilename);
 }
 //-----------------------------------------------------------------------------
-//	JSDEV* Preapre all panels messages
+//	JSDEV* Prepare all panels messages
 //-----------------------------------------------------------------------------
 void CCockpitManager::PrepareMsg(CVehicleObject *veh)
 {	std::map<Tag,CPanel*>::iterator iter;
-
-	for (iter=ckpt.begin(); iter!=ckpt.end(); iter++) 
+  cam     = globals->ccm->GetCockpitCamera();
+	for (iter=panl.begin(); iter!=panl.end(); iter++) 
 	{	CPanel *pnl = iter->second;
 		pnl->PrepareMsg(veh);
 	}
 	return;	
+}
+//-----------------------------------------------------------------------------
+//  Read parameters 
+//-----------------------------------------------------------------------------
+void CCockpitManager::Init(char* pitFilename)
+{	//-----  Read cockpit manager stream ---------
+  SStream s(this,"WORLD",pitFilename);
+	return;
 }
 //-----------------------------------------------------------------------------
 //  Free all resources 
@@ -2008,8 +2027,8 @@ void CCockpitManager::PrepareMsg(CVehicleObject *veh)
 CCockpitManager::~CCockpitManager (void)
 { //--- delete all panels -----------------
 	std::map<Tag,CPanel*>::iterator i;
-  for (i=ckpt.begin(); i!=ckpt.end(); i++)  delete (*i).second;
-	ckpt.clear();
+  for (i=panl.begin(); i!=panl.end(); i++)  delete (*i).second;
+	panl.clear();
 	//--- delete all lights -----------------
 	std::map<Tag,CPanelLight*>::iterator il;
 	for (il=lite.begin(); il!=lite.end(); il++) delete (*il).second;
@@ -2038,26 +2057,12 @@ int CCockpitManager::Read (SStream *stream, Tag tag)
     return TAG_READ;
 
   case 'ckpt':
-    {
-      // Another panel instance
+    { // Another panel instance
       Tag panelId;
       ReadTag (&panelId, stream);
       char filename[64];
       ReadString (filename, 64, stream);
-
-      // Check for duplicate panel tags
-      std::map<Tag,CPanel*>::iterator i = ckpt.find(panelId);
-      if (i != ckpt.end())  gtfo ("CCockpitManager : Duplicate panel tag : 0x%08X", panelId);
-      // This is a unique panel tag, load it and add to the cockpit panel map
-      //---Skip NONE panel ---------------------------------------------------
-      if (strcmp(filename,"NONE") == 0) return TAG_READ;
-      if (0 == *filename)               return TAG_READ;
-      // .PNL filename must be non-empty
-      //MEMORY_LEAK_MARKER ("CPanel")
-      panel = new CPanel (this,panelId, filename);
-      //MEMORY_LEAK_MARKER ("CPanel")
-      ckpt[panelId] = panel;              // Enter panel
-      
+			ReadPanel(filename,panelId);
     }
     return TAG_READ;
   }
@@ -2066,33 +2071,73 @@ int CCockpitManager::Read (SStream *stream, Tag tag)
     WARNINGLOG ("CCockpitManager::Read : Unrecognized tag <%s>", TagToString(tag));
     return TAG_READ;
 }
+//-----------------------------------------------------------------------------
+//  Read panel parameters
+//-----------------------------------------------------------------------------
+void	CCockpitManager::ReadPanel(char *fn,Tag id)
+{	//--- Check skip option --------------------------------
+	if (strcmp(fn,"NONE") == 0) return;
+	if (0 == *fn)               return;
+	//--- Locate panel -------------------------------------
+	std::map<Tag,CPanel*>::iterator rp = panl.find(id);
+  if (rp == panl.end())  WARNINGLOG ("No Panel with tag '%s'", TagToString(id));
+	CPanel *pan = (*rp).second;
+	pan->Init(fn);
+	return;
+}
 //-------------------------------------------------------------------------
-//  All parameters are read
+//  All parameters are read:  Init panel viewport
 //-------------------------------------------------------------------------
 void CCockpitManager::ReadFinished ()
-{
+{	}
+//-------------------------------------------------------------------------
+//  Add a panel
+//-------------------------------------------------------------------------
+void CCockpitManager::AddPanel(CPanel *pan,bool main)
+{	Tag id = pan->GetID();
+	// Check for duplicate panel tags
+  std::map<Tag,CPanel*>::iterator i = panl.find(id);
+  if (i != panl.end())  gtfo ("CCockpitManager : Duplicate panel tag : 0x%08X", id);
+  // This is a unique panel tag, load it and add to the cockpit panel map
+  //---Skip NONE panel ---------------------------------------------------
+  panl[id] = pan;              // Enter panel
+	if (main)	panel = pan;
+	return;
 }
 //-------------------------------------------------------------------------
 //  Swap between panels
 //-------------------------------------------------------------------------
-void CCockpitManager::SetPanel (Tag tag)
-{  // Deactivate current panel
-  if (0 != panel) panel->Deactivate();
-  // Search for the supplied tag in the panel map
-  std::map<Tag,CPanel*>::iterator i = ckpt.find(tag);
-  panel = (i != ckpt.end())?(i->second):(0);
+void CCockpitManager::ActivatePanel (Tag tag)
+{ // Search for the supplied tag in the panel map
+	if (tag == 'NONE')    return;
+  std::map<Tag,CPanel*>::iterator i = panl.find(tag);
+  panel = (i != panl.end())?(i->second):(0);
   // Activate new panel ----------------------
-  if (0 == panel)  return;
-  panel->Activate();
+  if (0 == panel)				return;
+ // panel->Activate();
   panel->SetViewPort();
   return;
 }
+//------------------------------------------------------------------------
+//  Activate cockpit panel by angle
+//------------------------------------------------------------------------
+void  CCockpitManager::ActivateView (float A)
+{ std::map<Tag,CPanel*>::iterator rp;
+	for (rp = panl.begin(); rp != panl.end(); rp++)
+	{	CPanel *cp = (*rp).second;
+		if (!cp->View(A))		continue;
+		ChangePanel(cp->GetID());
+		return;
+		}
+  return;
+}
+
 //-------------------------------------------------------------------------
 //  return Panel associated to a cockpit tag
 //-------------------------------------------------------------------------
 CPanel *CCockpitManager::GetPanelByTag(Tag id)
-{ std::map<Tag,CPanel*>::iterator it = ckpt.find(id);
-  return (it != ckpt.end())?(it->second):(0);
+{ std::map<Tag,CPanel*>::iterator it = panl.find(id);
+  return (it != panl.end())?(it->second):(0);
 }
 //-------------------------------------------------------------------------
 //  return gauge holder or create one
@@ -2121,6 +2166,14 @@ void CCockpitManager::AddLight(SStream *stream)
 	return;
 }
 //-------------------------------------------------------------------------
+//  Draw current panel
+//-------------------------------------------------------------------------
+void	CCockpitManager::Draw()
+{	if (0 == panel)			return;
+	panel->Draw();
+	return;
+}
+//-------------------------------------------------------------------------
 //  return a light
 //-------------------------------------------------------------------------
 CPanelLight *CCockpitManager::GetLight(Tag id)
@@ -2133,7 +2186,8 @@ CPanelLight *CCockpitManager::GetLight(Tag id)
 //-------------------------------------------------------------------------
 bool CCockpitManager::KbEvent(Tag key)
 { if (globals->noINT)           return true;
-  panel  = cam->GetPanel();
+ // panel  = cam->GetPanel();
+	if (0 == panel)								return true;
   switch (key) {
     //--- Panel scroll up --------------------
     case 'ckup':
@@ -2169,7 +2223,8 @@ bool CCockpitManager::KbEvent(Tag key)
 //-------------------------------------------------------------------------
 bool CCockpitManager::MouseClick(int bt,int ud,int x, int y)
 { if (globals->noINT) return false;
-  panel  = cam->GetPanel();
+	if (0 == panel)			return false;
+  //panel  = cam->GetPanel();
   return panel->MouseClick(bt,ud,x,y);
 }
 //-------------------------------------------------------------------------
@@ -2177,7 +2232,8 @@ bool CCockpitManager::MouseClick(int bt,int ud,int x, int y)
 //-------------------------------------------------------------------------
 bool CCockpitManager::MouseMove(int x,int y)
 { if (globals->noINT) return false;
-  panel  = cam->GetPanel();
+	if (0 == panel)			return false;
+ // panel  = cam->GetPanel();
   return panel->MouseMotion(x,y);
 }
 //-------------------------------------------------------------------------
@@ -2185,7 +2241,7 @@ bool CCockpitManager::MouseMove(int x,int y)
 //-------------------------------------------------------------------------
 void CCockpitManager::ScreenResize()
 { std::map<Tag,CPanel*>::iterator i;
-  for (i = ckpt.begin(); i != ckpt.end(); i++)
+  for (i = panl.begin(); i != panl.end(); i++)
   { CPanel *pan = (*i).second;
     pan->ScreenResize();
   }
@@ -2208,7 +2264,7 @@ void CCockpitManager::GetStats(CFuiCanva *cnv)
   int tg = 0;
   char edt[64];
   // Get total gauges
-  for (iter=ckpt.begin(); iter!=ckpt.end(); iter++) {
+  for (iter=panl.begin(); iter!=panl.end(); iter++) {
     CPanel *pnl = iter->second;
     tg += pnl->TotalGauges();
   }
@@ -2218,6 +2274,29 @@ void CCockpitManager::GetStats(CFuiCanva *cnv)
   cnv->AddText(STATS_NUM,edt,1);
   return;
 }
+//--------------------------------------------------------------------------
+//  Change to left panel
+//--------------------------------------------------------------------------
+void CCockpitManager::ChangePanel(char dir)
+{	if (0 == panel)		return; 
+	Tag tag = panel->NextPanelTag(dir);
+  ActivatePanel (tag);
+	return;
+}
+//--------------------------------------------------------------------------
+//  Adjust seat position
+//--------------------------------------------------------------------------
+void CCockpitManager::AdjustSeat(CVector &S)
+{ if (0 == panel)		return;
+	S.x += panel->GetPitch();
+  S.z += panel->GetHeading();
+	return;
+}
+//--------------------------------------------------------------------------
+//  Set view port to panel
+//--------------------------------------------------------------------------
+void CCockpitManager::SetViewPort()
+{	if (panel) panel->SetViewPort();	}
 //===================================================================================
 // Cameras Views List
 //===================================================================================
@@ -2402,7 +2481,7 @@ int CEngine::Read (SStream *stream, Tag tag)
     return TAG_READ;
   case 'bPos':
     ReadVector(&bPos,stream);
-    bPos = bPos + mveh->wgh->svh_cofg;
+    bPos = bPos + mveh->wgh.svh_cofg;
     return TAG_READ;
   case 'mPos':
     ReadVector (&mPos, stream);
@@ -2975,9 +3054,8 @@ void CEngine::Probe(CFuiCanva *cnv)
 //====================================================================
 // CEngineManager
 //====================================================================
-CEngineManager::CEngineManager (CVehicleObject *v,char* ngnFilename)
-{ mveh = v;         // SAve parent vehicle
-  engn.clear ();
+CEngineManager::CEngineManager ()
+{ engn.clear ();
   engine_number = 0;
 
   eng_total_force.x   = eng_total_force.y   = eng_total_force.z   = 0.0;
@@ -2986,7 +3064,13 @@ CEngineManager::CEngineManager (CVehicleObject *v,char* ngnFilename)
   prop_total_torque.x = prop_total_torque.y = prop_total_torque.z = 0.0;
   thrust_X_offset = 0.0f;
 
-  SStream s(this,"WORLD",ngnFilename);
+  
+}
+//----------------------------------------------------------------------
+//	Read all parameters
+//----------------------------------------------------------------------
+void CEngineManager::Init(char* ngnFilename)
+{	SStream s(this,"WORLD",ngnFilename);
 }
 //----------------------------------------------------------------------
 //	remove all engine definitions
@@ -3398,12 +3482,17 @@ void CControlMixerChannel::Timeslice (float dT,U_INT FrNo)
 //            is used when no coupling exists.
 //            This is not very easy to manage
 //=======================================================================================
-CControlMixer::CControlMixer (CVehicleObject *v,char* mixFilename)
-{ mveh  = v;              // Save vehicle object
-  rPos  = 0.05f;          // Coupled rudder default value 
+CControlMixer::CControlMixer ()
+{ rPos  = 0.05f;          // Coupled rudder default value 
   rNeg  = 0.05f;          // Coupled rudder default value
-  SStream s(this,"WORLD",mixFilename);
+ 
 }
+//---------------------------------------------------------------------
+//  Read parameters
+//---------------------------------------------------------------------
+void CControlMixer::Init(char* mixFilename)
+{	SStream s(this,"WORLD",mixFilename);
+	return;	}
 //---------------------------------------------------------------------
 //  Destroy this object
 //---------------------------------------------------------------------
@@ -3640,12 +3729,11 @@ float CVehicleHistory::GetRudderTrimStep (void)
   return rudrTrimStep;
 }
 
-//
+//========================================================================
 // CVehicleInfo
-//
-CVehicleInfo::CVehicleInfo (char* nfoFilename)
-{
-  // Initialize data members
+//========================================================================
+CVehicleInfo::CVehicleInfo ()
+{ // Initialize data members
  *make = 0;
  *iconFilename = 0;
   classification = 0;
@@ -3670,11 +3758,19 @@ CVehicleInfo::CVehicleInfo (char* nfoFilename)
   *sitFilename = 0;
   *pidFilename = 0;
   *phyFilename = 0; // PHY file
-  // Open stream for NFO file
+}
+//------------------------------------------------------------------------
+// CVehicleInfo Read parameters
+//------------------------------------------------------------------------
+void CVehicleInfo::Init(char *nfoFilename)
+{	// Open stream for NFO file
   SStream s(this,"WORLD",nfoFilename);
 	if (!s.ok) gtfo ("File %s not found", nfoFilename);
+	return;
 }
-
+//------------------------------------------------------------------------
+// CVehicleInfo Read parameters
+//------------------------------------------------------------------------
 int CVehicleInfo::Read (SStream *stream, Tag tag)
 {
   int rc = TAG_IGNORED;

@@ -155,7 +155,7 @@ public:
                                     const float &headingInRads,
                                     const float &distanceInFeet) {}
   virtual double GetLevel()         {return 0;}
-  virtual void  ChangeResolution();
+  virtual void  ChangeViewPort();
 	//--- Rabbit methods -----------------------------------------
 	virtual void	RabbitMoveTo(SPosition *pos)  {;}
 	//--- Picking methods ----------------------------------------
@@ -369,27 +369,18 @@ public:
 
   //---- CCameraCockpit methods -------------------
 	void			CameraReferential();
-	Tag       GetCockpitPanel (void);
   void      SetUpVector(SVector &ori);
-  void      ActivateCockpitPanel(Tag tag);
-	void			ActivateView(float a);
-  void      SetPanel(Tag id,CPanel *p);
-  void      ChangeResolution();
-  void      DrawPanel();
-  void      GetXSRC(TC_4DF &r);
+  void      ChangeViewPort();
 	//-----------------------------------------------
 	void			SetMatrix(SVector ori);
-	//-----------------------------------------------
-	CPanel*   GetPanel();
   //-----------------------------------------------
   inline void     GetOFS(SVector &v)    {v = Ofs;}
   inline SVector &GetSeat()             {return Seat;}
   //-----------------------------------------------
 protected:
 	CVehicleObject							 *mveh;						//  Mother Vehicle
-  std::map<Tag,CCockpitPanel*>  panl;           //  Map unique IDs to cockpit panels
+	CCockpitManager							 *pit;						//  Cockpit manager
   SVector                       Seat;           //  Orientation angles of <seat> tag
-  CCockpitPanel*                ckPanel;        //  Pointer to currently active panel
   CVector                       Ofs;            //  True offset
   double                        Head;           //  Pilot head direction
 	//--- transformation matrix ----------------------

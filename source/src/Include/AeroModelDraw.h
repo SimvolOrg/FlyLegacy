@@ -194,7 +194,7 @@ void DebugSingleVScreenAeroWF (const CVector &ori_,
 void DebugScreenAeroWFNewCG (const double &lenght)
 {
   CVector ori = globals->iang; // RH
-  const CVector *cg = globals->pln->svh->GetNewCG_ISU (); // LH
+  const CVector *cg = globals->pln->svh.GetNewCG_ISU (); // LH
 
   DebugSingleVScreenAeroWF (ori, cg->x * lenght, cg->y * lenght, cg->z * lenght, 0.0f, 225.0f, 0.0f);
 
@@ -292,8 +292,8 @@ void DebugScreenAeroWSDrag (const SVector &pos, const SVector &force)
 
 void DebugScreenAeroWFEnginesForce (const double &lenght = 1.0)
 { CVehicleObject *veh = globals->pln;
-  const SVector *eng_pos = &veh->eng->GetEnginesPosISU (); // LH
-  CVector  eng_fce =  veh->eng->GetForceISU (); // LH
+  const SVector *eng_pos = &veh->eng.GetEnginesPosISU (); // LH
+  CVector  eng_fce =  veh->eng.GetForceISU (); // LH
   eng_fce.Times (0.5);
 
   DebugScreenAeroWSForce (*eng_pos, eng_fce);

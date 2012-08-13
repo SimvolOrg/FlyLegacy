@@ -361,6 +361,7 @@ CLogFile* CAirplane::log = NULL;
 //================================================================================
 CAirplane::CAirplane (void)
 { SetType(TYPE_FLY_AIRPLANE);
+  SetOPT(VEH_IS_FLY);											// Flying object
 	damM.Severity	= 0;
   damM.msg			=   0;
   sound					=   0;
@@ -421,24 +422,19 @@ void CAirplane::ReadFinished (void)
 { globals->pln	= this;
   CVehicleObject::ReadFinished ();
   //---Init rudder parameters ------------------------
-  RudderBankMap(svh->GetAcrd ());
+  RudderBankMap(svh.GetAcrd ());
   // stock main wing incidence
-  main_wing_incid   = wng->GetWingSection ("wing Left w/Aileron")->GetWingIncidenceDeg ();
-  main_wing_aoa_min = wng->GetAirfoil     ("Wing Airfoil")->GetAoAMin ();
-  main_wing_aoa_max = wng->GetAirfoil     ("Wing Airfoil")->GetAoAMax ();
-#ifdef _DEBUG
-  DEBUGLOG ("CAirplane::ReadFinished wing_incidence =%f", main_wing_incid);
-  DEBUGLOG ("                              wing_AoAMin    =%f", main_wing_aoa_min);
-  DEBUGLOG ("                              wing_AoAMax    =%f", main_wing_aoa_max);
-#endif
+  main_wing_incid   = wng.GetWingSection ("wing Left w/Aileron")->GetWingIncidenceDeg ();
+  main_wing_aoa_min = wng.GetAirfoil     ("Wing Airfoil")->GetAoAMin ();
+  main_wing_aoa_max = wng.GetAirfoil     ("Wing Airfoil")->GetAoAMax ();
   //--- Call final initialization ------------------
   PrepareMsg ();
   BindKeys();                             // Map all keys
   //---- Set Initial state -------------------------
   State = VEH_INIT;
   //--- Interconnect trim controls -----------------
-  amp->aTrim->SetMainControl(amp->GetAilerons());
-  amp->rTrim->SetMainControl(amp->GetRudders());
+  amp.aTrim->SetMainControl(amp.GetAilerons());
+  amp.rTrim->SetMainControl(amp.GetRudders());
   return;
 }
 //-----------------------------------------------------------------------------
@@ -571,12 +567,12 @@ void CAirplane::BindKeys()
 void CAirplane::PrepareMsg ()
 {	CSubsystem *sub = NULL;
 	std::vector<CSubsystem*>::iterator it;
-	for (it = amp->subs.begin(); it != amp->subs.end(); it++)
+	for (it = amp.subs.begin(); it != amp.subs.end(); it++)
 	{	sub = *it;
 		sub->PrepareMsg(this);
 	}
 	std::vector<CFuelSubsystem*>::iterator ig;
-	for (ig = gas->fsub.begin(); ig != gas->fsub.end(); ig++)
+	for (ig = gas.fsub.begin(); ig != gas.fsub.end(); ig++)
 	{	sub	= *ig;
 		sub->PrepareMsg(this);
 	}
@@ -591,9 +587,9 @@ bool CAirplane::FindReceiver (SMessage *msg)
   char ctg[8];
   bool fnd = false;
 	if (0 == msg)	return false;
-	if (!fnd) fnd = FindReceiver(msg,amp);
-	if (!fnd) fnd = FindReceiver(msg,gas);
-	if (!fnd) fnd = FindReceiver(msg,eng);
+	if (!fnd) fnd = FindReceiver(msg,&amp);
+	if (!fnd) fnd = FindReceiver(msg,&gas);
+	if (!fnd) fnd = FindReceiver(msg,&eng);
 	if (globals->Trace.Has(TRACE_MSG_PREPA))	TraceMsgPrepa(msg);
 	
 	// Display warning message if message receiver not found
@@ -666,11 +662,10 @@ EMessageResult CAirplane::ReceiveMessage(SMessage *msg)
 //	Send to electrical subsystem
 //--------------------------------------------------------------------------------
 EMessageResult CAirplane::SendMessageToAmpSystems(SMessage *msg)
-{ if (0 == amp)   return MSG_IGNORED;
-  EMessageResult  rc   = MSG_IGNORED;
+{ EMessageResult  rc   = MSG_IGNORED;
   // Electrical systems are valid, send msg to each subs until handler found
   std::vector<CSubsystem*>::iterator i;
-  for (i=amp->subs.begin(); i!=amp->subs.end(); i++)
+  for (i=amp.subs.begin(); i!=amp.subs.end(); i++)
   { CSubsystem *sub = *i;
 	  if (sub->MsgForMe(msg) == false)	continue;		// Just ready for it
     rc = sub->ReceiveMessage (msg);
@@ -683,11 +678,10 @@ EMessageResult CAirplane::SendMessageToAmpSystems(SMessage *msg)
 //	Send to gas subsystems
 //--------------------------------------------------------------------------------
 EMessageResult CAirplane::SendMessageToGasSystems (SMessage *msg)
-{ if (0 == gas)   return MSG_IGNORED;
-  EMessageResult  rc   = MSG_IGNORED;
+{ EMessageResult  rc   = MSG_IGNORED;
   // Fuel systems are valid, send msg to each subs until handler found
   std::vector<CFuelSubsystem*>::iterator i;
-  for (i=gas->fsub.begin(); i!=gas->fsub.end(); i++)
+  for (i=gas.fsub.begin(); i!=gas.fsub.end(); i++)
   { CSubsystem *sub = *i;
 	  if (sub->MsgForMe(msg) == false)	continue;		// Just ready for it
     rc = sub->ReceiveMessage (msg);
@@ -700,13 +694,12 @@ EMessageResult CAirplane::SendMessageToGasSystems (SMessage *msg)
 //	Send to engine subsystems
 //--------------------------------------------------------------------------------
 EMessageResult CAirplane::SendMessageToEngSystems (SMessage *msg)
-{ if (0 == eng)   return MSG_IGNORED;
-  EMessageResult  rc   = MSG_IGNORED;
+{ EMessageResult  rc   = MSG_IGNORED;
   //
   // Engine systems are valid, send msg to each subs until handler found
   //
   std::vector<CEngine *>::iterator i;
-  for (i=eng->engn.begin(); i!=eng->engn.end(); i++)
+  for (i=eng.engn.begin(); i!=eng.engn.end(); i++)
   { CEngine      *egs = (*i);
 	  if (egs->MsgForMe(msg) == false)	continue;		
     rc = egs->ReceiveMessage (msg);
@@ -720,11 +713,10 @@ EMessageResult CAirplane::SendMessageToEngSystems (SMessage *msg)
 //	Send to external subsystems
 //--------------------------------------------------------------------------------
 EMessageResult CAirplane::SendMessageToExternals (SMessage *msg)
-{ if (0 == amp)   return MSG_IGNORED;
-  EMessageResult  rc   = MSG_IGNORED;
+{ EMessageResult  rc   = MSG_IGNORED;
   // Electrical systems are valid, send msg to each subs until handler found
   std::vector<CSubsystem*>::iterator i;
-  for (i=amp->sext.begin(); i!=amp->sext.end(); i++)
+  for (i=amp.sext.begin(); i!=amp.sext.end(); i++)
   { CSubsystem *sub = *i;
 	  if (sub->MsgForMe(msg) == false)	continue;		// Just ready for it
     rc = sub->ReceiveMessage (msg);
@@ -737,7 +729,7 @@ EMessageResult CAirplane::SendMessageToExternals (SMessage *msg)
 //	Return engine subsystems
 //--------------------------------------------------------------------------------
 void CAirplane::GetAllEngines(std::vector<CEngine*> &engs)
-{ engs = eng->engn;
+{ engs = eng.engn;
   return;
 }
 //-------------------------------------------------------------------------------
@@ -779,7 +771,7 @@ void CAirplane::BodyCollision(CVector &p)
 //-----------------------------------------------------------------------------
 int CAirplane::TimeSlice(float dT,U_INT frame)
 { //--------------------------------------------------------
-	pit->TimeSlice(dT);
+	pit.TimeSlice(dT);
 	CJoysticksManager *jsm = globals->jsm;
   switch (State)  {
     //-- At start up wait for terrain to be stable ---------
@@ -796,7 +788,7 @@ int CAirplane::TimeSlice(float dT,U_INT frame)
     case VEH_INOP:
     case VEH_OPER:
       { 
-        int  nbEng = amp->pEngineManager->HowMany();
+        int  nbEng = amp.pEngineManager->HowMany();
         jsm->SendGroupPMT(nbEng);               // Send Prop-mixture and throttle
         Update (dT,frame);
         return 1;
@@ -815,8 +807,7 @@ void CAirplane::ResetCrash(char p)
 	CWorldObject::ResetCrash(p);
   park  = p;
   CutAllEngines();
-  CGroundSuspension *gsp = whl;
-  gsp->ResetCrash();
+  whl.ResetCrash();
   //--- Request to Level aircraft ------------------------
   globals->slw->Level(1);
 }
@@ -843,13 +834,13 @@ void CAirplane::EndLevelling()
 bool CAirplane::CenterControls()
 { globals->slw->Level(0);
   //----Reset all axis -------------------
-  CAeroControl *a = amp->pAils;
+  CAeroControl *a = amp.pAils;
   if (a) a->Zero();
-  CAeroControl *e = amp->pElvs;
+  CAeroControl *e = amp.pElvs;
   if (e) e->Zero();
-  CAeroControl *r = amp->pRuds;
+  CAeroControl *r = amp.pRuds;
   if (r) r->Zero();
-  CAeroControl *t = amp->eTrim;
+  CAeroControl *t = amp.eTrim;
   if (t) t->Zero();
   //------Set level ---------------
   return true;
@@ -857,49 +848,49 @@ bool CAirplane::CenterControls()
 //-----------------------------------------------------------------------------
 void CAirplane::AileronIncr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->pAils;
+  CAeroControl *p = amp.pAils;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->pAils;
+  CAeroControl *p = amp.pAils;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->pAils;
+  CAeroControl *p = amp.pAils;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorIncr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->pElvs;
+  CAeroControl *p = amp.pElvs;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->pElvs;
+  CAeroControl *p = amp.pElvs;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->pElvs;
+  CAeroControl *p = amp.pElvs;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderOpalCoef (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CRudderControl *p = amp->pRuds;
+  CRudderControl *p = amp.pRuds;
   if (p) p->SetOpalCoef (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderBankMap (CFmtxMap *m)
 { // Get pointer to control subsystem in electrical systems
-  CRudderControl *p = amp->pRuds;
+  CRudderControl *p = amp.pRuds;
   if (p) p->SetBankMap(m);
 }
 
@@ -907,172 +898,172 @@ void CAirplane::RudderBankMap (CFmtxMap *m)
 void CAirplane::RudderIncr (void)
 {
   // Get pointer to control subsystem in electrical systems
-  CRudderControl *p = amp->pRuds;
+  CRudderControl *p = amp.pRuds;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CRudderControl *p = amp->pRuds;
+  CRudderControl *p = amp.pRuds;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->pRuds;
+  CAeroControl *p = amp.pRuds;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::GroundBrakes (U_CHAR b) 
 {  // Get pointer to control subsystem in electrical systems
-  CBrakeControl *p = amp->pwb;
+  CBrakeControl *p = amp.pwb;
   if (p) p->HoldBrake(b);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ParkBrake (U_CHAR opt) 
 {  // Get pointer to control subsystem in electrical systems
-  CBrakeControl *p = amp->pwb;
+  CBrakeControl *p = amp.pwb;
   if (p) p->SwapPark(opt);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::GearUpDown (void) // 
 { // Get pointer to control subsystem in electrical systems
-  CGearControl *p = amp->pgr;
+  CGearControl *p = amp.pgr;
   if (p) p->Swap ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::FlapsExtend (void)
 {  // Get pointer to control subsystem in electrical systems
-  CFlapControl *p = amp->pFlaps;
+  CFlapControl *p = amp.pFlaps;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::FlapsRetract (void)
 {  // Get pointer to control subsystem in electrical systems
-  CFlapControl *p = amp->pFlaps;
+  CFlapControl *p = amp.pFlaps;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronTrimIncr (void)
 {  // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->aTrim;
+  CAeroControl *p = amp.aTrim;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronTrimDecr (void)
 {  // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->aTrim;
+  CAeroControl *p = amp.aTrim;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronTrimSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->aTrim;
+  CAeroControl *p = amp.aTrim;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorTrimIncr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->eTrim;
+  CAeroControl *p = amp.eTrim;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorTrimDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->eTrim;
+  CAeroControl *p = amp.eTrim;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorTrimSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->eTrim;
+  CAeroControl *p = amp.eTrim;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderTrimIncr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->rTrim;
+  CAeroControl *p = amp.rTrim;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderTrimDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->rTrim;
+  CAeroControl *p = amp.rTrim;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderBias (float inc)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->pRuds;
+  CAeroControl *p = amp.pRuds;
   if (p) p->ModBias(inc);
 }
 
 //-----------------------------------------------------------------------------
 void CAirplane::RudderTrimSet (float fv)
 {  // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp->rTrim;
+  CAeroControl *p = amp.rTrim;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 float CAirplane::Aileron (void)
 {  float fv = 0.0f;
-  CAeroControl *p = amp->pAils;
+  CAeroControl *p = amp.pAils;
   if (p) fv = p->Val ();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::AileronDeflect (void)
 {  float fv = 0.0f;
-  CAeroControl *p = amp->pAils;
+  CAeroControl *p = amp.pAils;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::Elevator (void)
 {  float fv = 0.0f;
-  CAeroControl *p = amp->pElvs;
+  CAeroControl *p = amp.pElvs;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::ElevatorDeflect (void)
 {  float fv = 0.0f;
-  CAeroControl *p = amp->pElvs;
+  CAeroControl *p = amp.pElvs;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::Rudder (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp->pRuds;
+  CAeroControl *p = amp.pRuds;
   if (p) fv = p->Val();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::RudderDeflect (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp->pRuds;
+  CAeroControl *p = amp.pRuds;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::AileronTrim (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp->aTrim;
+  CAeroControl *p = amp.aTrim;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::ElevatorTrim (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp->eTrim;
+  CAeroControl *p = amp.eTrim;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::RudderTrim (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp->rTrim;
+  CAeroControl *p = amp.rTrim;
   if (p) fv = p->Val( );
   return fv;
 }
@@ -1080,7 +1071,7 @@ float CAirplane::RudderTrim (void)
 //-----------------------------------------------------------------------------
 float CAirplane::Flaps (void)
 { float fv = 0.0f;
-  CFlapControl *p = amp->pFlaps;
+  CFlapControl *p = amp.pFlaps;
  // if (p) fv = p->Val( );
   return fv;
 }
@@ -1106,18 +1097,12 @@ void CAirplane::Print (FILE *f)
 // aircraftPhysics=ufo
 //
 //=========================================================================
-
 CUFOObject::CUFOObject (void)
 { SetType(TYPE_FLY_AIRPLANE);
+  SetOPT(VEH_IS_FLY + VEH_IS_UFO);				// Flying UFO
   int val = 0;
   GetIniVar ("Sim", "showPosition", &val);
   show_position = val ? true : false;
-}
-//-------------------------------------------------------------------
-//	Build suspension
-//-------------------------------------------------------------------
-void CUFOObject::SetSuspension(CWeightManager *w)
-{	whl = new CGroundSuspension (this, w);
 }
 //-------------------------------------------------------------------
 //	Simulate UFO
@@ -1289,12 +1274,6 @@ COPALObject::~COPALObject (void)
   // sdk : remove any left behind dll object
   if (globals->plugins_num) globals->plugins->On_DeleteObjects ();//
 }
-//--------------------------------------------------------------
-//  Build suspension
-//--------------------------------------------------------------
-void COPALObject::SetSuspension(CWeightManager *w)
-{	whl = new COpalGroundSuspension (this, wgh);
-}
 //---------------------------------------------------------------------------------------
 //  All parameters are read
 //---------------------------------------------------------------------------------------
@@ -1307,19 +1286,19 @@ void COPALObject::PlaneShape()
   Plane->setName(planeID);
   //----Compute cog offset --------------------------
   double ftm  = FN_METRE_FROM_FEET(float(1));
-  CVector cog = wgh->svh_cofg;
+  CVector cog = wgh.svh_cofg;
   cog.Times(ftm);
   opal::Vec3r   cms(cog.x, cog.z, cog.y);
   //-----Get body dimensions ------------------------
   CVector dim;
-  lod->GetBodyExtension(dim);
+  lod.GetBodyExtension(dim);
   dim.Times(ftm);
   //-----Compute mid point for extension ------------
   CVector mid = dim;
   mid.Times(0.5);
   //-----Get minimum extension ----------------------
   CVector mex;
-  lod->GetMiniExtension(mex);
+  lod.GetMiniExtension(mex);
   mex.Times(ftm);
   //-----Compute volume translation -----------------
   CVector trs = (mex + mid);
@@ -1380,37 +1359,26 @@ void COPALObject::ReadFinished (void)
 	phyMod					= Plane;
   CAirplane::ReadFinished ();
   PlaneShape();
-  mm.mass = static_cast<opal::real> (wgh->GetTotalMassInKgs () /** 9.81f*/); // 
+  mm.mass = static_cast<opal::real> (wgh.GetTotalMassInKgs () /** 9.81f*/); // 
   dihedral_coeff = ADJ_DHDL_COEFF; /// should be 500.0
   pitch_coeff = ADJ_PTCH_COEFF;    /// should be 10.0
   wind_coeff  = ADJ_WIND_COEFF;
   acrd_coeff  = 1.0f;               /// rudder fudger ; only in PHY file
   gear_drag   = ADJ_GEAR_DRAG;       /// gear drag
   //-----------------------------------------------------------------
-  //  Init default values
-  //-----------------------------------------------------------------
-  GetIniFloat ("PHYSICS", "adjustYawMine"  , &yawMine);
-  GetIniFloat ("PHYSICS", "adjustRollMine" , &rollMine);
-  GetIniFloat ("PHYSICS", "adjustPitchMine", &pitchMine);
-  GetIniFloat ("PHYSICS", "adjustDihedralCoeff", &dihedral_coeff);
-  GetIniFloat ("PHYSICS", "adjustPitchCoeff", &pitch_coeff);
-  GetIniFloat ("PHYSICS", "adjustWindOnAircraft", &wind_coeff);
-  //-----------------------------------------------------------------
-  //  Init from PHY file
+  //  Init from PHY file (either default or from file)
   //------------------------------------------------------------------
-  if (phy) {
-    yawMine					= phy->Ymin;
-    rollMine				= phy->Rmin;
-    pitchMine				= phy->Pmin;
-    dihedral_coeff	= phy->Kdeh;
-    acrd_coeff			= phy->Krud;
-    pitch_coeff			= phy->Kpth;
-    wind_coeff			= phy->Kwnd;
-    gear_drag				= phy->KdrG;
-    //---Init rudder coef ------------------------------------------
-    CAirplane *apln = (CAirplane *)this;
-    apln->RudderOpalCoef(acrd_coeff);
-  }
+  yawMine					= phy.Ymin;
+  rollMine				= phy.Rmin;
+  pitchMine				= phy.Pmin;
+  dihedral_coeff	= phy.Kdeh;
+  acrd_coeff			= phy.Krud;
+	pitch_coeff			= phy.Kpth;
+  wind_coeff			= phy.Kwnd;
+  gear_drag				= phy.KdrG;
+  //---Init rudder coef ------------------------------------------
+  CAirplane *apln = (CAirplane *)this;
+  apln->RudderOpalCoef(acrd_coeff);
   ///----------------------------------------------------------------
   DEBUGLOG ("PHY : dieh=%f pitchK%f acrd=%f", dihedral_coeff, pitch_coeff, acrd_coeff);
   DEBUGLOG ("PHY : pmine%f rmine%f ymine%f", pitchMine, rollMine, yawMine); 
@@ -1418,15 +1386,15 @@ void COPALObject::ReadFinished (void)
   ///-----------------------------------------------------------------
   /// turbulence speed used in UpdateNewPositionState
   if (turbulence_effect) {
-    tVAL.Conf (INDN_LINEAR, svh->wTrbTimK);
-    svh->wTrbSpeed = KtToFps (static_cast <double> (svh->wTrbSpeed));
+    tVAL.Conf (INDN_LINEAR, svh.wTrbTimK);
+    svh.wTrbSpeed = KtToFps (static_cast <double> (svh.wTrbSpeed));
   }
   ///
-  CVector   Cg   = wgh->svh_cofg;
+  CVector   Cg   = wgh.svh_cofg;
   double    cy   = FN_METRE_FROM_FEET(Cg.z);
-  double    ix   = (wgh->svh_mine.x*(1.0f / pitchMine) * LBFT2_TO_KGM2);
-  double    iy   = (wgh->svh_mine.z*(1.0f / rollMine)  * LBFT2_TO_KGM2);
-  double    iz   = (wgh->svh_mine.y*(1.0f / yawMine)   * LBFT2_TO_KGM2);
+  double    ix   = (wgh.svh_mine.x*(1.0f / pitchMine) * LBFT2_TO_KGM2);
+  double    iy   = (wgh.svh_mine.z*(1.0f / rollMine)  * LBFT2_TO_KGM2);
+  double    iz   = (wgh.svh_mine.y*(1.0f / yawMine)   * LBFT2_TO_KGM2);
   mm.center      = opal::Vec3r ( 0, cy, 0 );
   mm.inertia[0]  = opal::real(ix);  // 
   mm.inertia[5]  = opal::real(iy);  // 
@@ -1440,11 +1408,11 @@ void COPALObject::ReadFinished (void)
   DEBUGLOG ("COPALObject::ReadFinished\n  emas = %f\n  gross = %f\n  mine = %f %f %f\n\
   cg = %f %f %f\n  cgos = %f %f %f\n  y%f/r%f/r%f\n  in%f*%f*%f\n\
   ld%f/ad%f",
-                         wgh->GetEmptyMassInLbs (),
-                         wgh->GetTotalMassInLbs (),
-                         wgh->svh_mine.x, wgh->svh_mine.y, wgh->svh_mine.z,
-                         wgh->svh_cofg.x, wgh->svh_cofg.y, wgh->svh_cofg.z,
-                         wgh->wb.GetCGOffset()->x, wgh->wb.GetCGOffset()->y, wgh->wb.GetCGOffset()->z, 
+                         wgh.GetEmptyMassInLbs (),
+                         wgh.GetTotalMassInLbs (),
+                         wgh.svh_mine.x, wgh.svh_mine.y, wgh.svh_mine.z,
+                         wgh.svh_cofg.x, wgh.svh_cofg.y, wgh.svh_cofg.z,
+                         wgh.wb.GetCGOffset()->x, wgh.wb.GetCGOffset()->y, wgh.wb.GetCGOffset()->z, 
                          pitchMine, yawMine, rollMine,
                          mm.inertia[0], mm.inertia[10],mm.inertia[5],
                          linearDamping, angularDamping);
@@ -1535,7 +1503,7 @@ void COPALObject::ResetZeroOrientation (void)
 //------------------------------------------------------------------------------------------
 void COPALObject::PositionAGL()
 { opal::Point3r bpos;
-	double cgz  =  wgh->GetCGHeight();
+	double cgz  =  wgh.GetCGHeight();
   bagl =  geop.alt - globals->tcm->GetGroundAltitude() + cgz;  
   bpos.z      =  FN_METRE_FROM_FEET(bagl);
   Plane->setPosition (bpos);
@@ -1550,7 +1518,7 @@ void COPALObject::RestOnGround()
   ResetSpeeds ();
   Plane->zeroForces ();
   //--- Clear wheels forces ------------------------------
-  whl->ResetForce();
+  whl.ResetForce();
 	SPosition p = globals->geop;
 	p.alt	= grn + GetPositionAGL();
 	SetObjectPosition(p);
@@ -1581,7 +1549,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
 
   // 1) wing & engine forces
   fb.Raz();						// JS: Replace Times(0) because when #NAND or #IND, then fb is not reset
-  if (globals->caging_fixed_wings) fb.Add (wng->GetForce ()); // LH
+  if (globals->caging_fixed_wings) fb.Add (wng.GetForce ()); // LH
   VectorDistanceLeftToRight  (fb); // LH=>RH
 
   // 1b) engine force
@@ -1590,16 +1558,16 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   // with engine position force
   float s_p_d = 0.0f;
 	if (1 == GetEngNb())	
-				engines_pos = eng->GetEnginesPosISU (); // LH
+				engines_pos = eng.GetEnginesPosISU (); // LH
   else  engines_pos.Raz();                // engines_pos = 0
 
   // simulate gear down drag and moment
   // modifying the thrust value and position
   double fake_gear_drag = 1.0;
-  if (lod->AreGearDown() &&  !WheelsAreOnGround())
+  if (lod.AreGearDown() &&  !WheelsAreOnGround())
   { // gear down
     // create a torque with engine position
-    engines_pos.y += FN_METRE_FROM_FEET (whl->GetMaxWheelHeight () * 0.5); // meters
+    engines_pos.y += FN_METRE_FROM_FEET (whl.GetCurWheelHeight () * 0.5); // meters
     /// \todo verify if 2.5% thrust reduction is correct
     fake_gear_drag = static_cast<double> (gear_drag); // thrust reduction
   }
@@ -1609,14 +1577,14 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
               static_cast<opal::real> ( engines_pos.y)); // LH to RH
   
   if (!has_fake_engine_thrust) {
-    s_p_d = (eng->GetForceISU ()).z * fake_gear_drag; //
+    s_p_d = (eng.GetForceISU ()).z * fake_gear_drag; //
     // engine drag from propellers
 		bool tmp = 0;
     if (tmp) { // temporary condition to develop
       ed.pos.x = -ef.pos.x; ed.pos.y = ef.pos.y; ed.pos.z = ef.pos.z;
       // up to now it is assumed that the prop isn't feathered and drag is max
       // if prop is feathered then drag is minored
-      ed.vec.y = static_cast<opal::real> (-eng->GetForceISU ().z * 0.1); // LH->RH
+      ed.vec.y = static_cast<opal::real> (-eng.GetForceISU ().z * 0.1); // LH->RH
     }
   }
   else
@@ -1631,12 +1599,12 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
 
   // 2)  wing, mine & engine moments
   tb.Raz();  // JS: Replace Times(0) because when #NAND or #IND, then tb is not reset
-  if (globals->caging_fixed_wings) tb.Add (wng->GetMoment ());// 
+  if (globals->caging_fixed_wings) tb.Add (wng.GetMoment ());// 
   VectorOrientLeftToRight (tb); // 
 
   // dihedral additional effect SVH <dieh>
   if (0.0 == AileronDeflect () + RudderDeflect ()) {
-    CFmtxMap *mdieh = svh->GetDieh();
+    CFmtxMap *mdieh = svh.GetDieh();
     if (mdieh) 
     { /// SVH <dieh> tag exists
       float dieh_K = dihedral_coeff; // 
@@ -1646,7 +1614,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
 
   // pitch additional effect SVH <pitd>
   if (0.0 == ElevatorDeflect ()) {
-    CFmtxMap * mpitd = svh->GetPitd();
+    CFmtxMap * mpitd = svh.GetPitd();
     if (mpitd) { 
 
       /// SVH <pitd> tag exists
@@ -1664,7 +1632,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
 
   // 2c) multiple engine moment
   if (GetEngNb() > 1) {// dual and more engine
-    SVector eng_m = eng->GetMomentISU ();
+    SVector eng_m = eng.GetMomentISU ();
     VectorOrientLeftToRight (eng_m);
     tb.Add (eng_m);
   }
@@ -1673,15 +1641,15 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   if (WheelsAreOnGround ()) {
    // wheels are on ground
    // simulate ground friction 
-   opal::real thrust_on_ground = ef.vec.y - static_cast<opal::real> (CVehicleObject::GetMassInKgs());
-   ef.vec.y = (thrust_on_ground > (opal::real) 0.0) ? thrust_on_ground : (opal::real) 0.0;
+  // opal::real thrust_on_ground = ef.vec.y - static_cast<opal::real> (CVehicleObject::GetMassInKgs());
+  // ef.vec.y = (thrust_on_ground > (opal::real) 0.0) ? thrust_on_ground : (opal::real) 0.0;
 
-   CVector gear_force = *whl->GetSumGearForces (); // LH m/s
+   CVector gear_force = *whl.GetSumGearForces (); // LH m/s
    VectorDistanceLeftToRight  (gear_force);        // RH 
    fb.Add (gear_force);                            // 
 
    // add gear moment
-   CVector gear_moment = *whl->GetSumGearMoments ();
+   CVector gear_moment = *whl.GetSumGearMoments ();
    VectorOrientLeftToRight (gear_moment); // 
    tb.Subtract (gear_moment);
    // 
@@ -1754,7 +1722,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
 */
   }
 
-  if (globals->caging_fixed_alt) fb.z = static_cast<double> (wgh->GetTotalMassInKgs ()) * GRAVITY_MTS;   // 
+  if (globals->caging_fixed_alt) fb.z = static_cast<double> (wgh.GetTotalMassInKgs ()) * GRAVITY_MTS;   // 
 
   lf.vec = CVectorToVec3r (fb);
   lf.duration = static_cast<opal::real> (dT); 
@@ -1891,7 +1859,7 @@ void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
         //--- Get final values -----------------------------------------------
         double turbR = static_cast <double> (tVAL.TimeSlice (dT));
         //--- Set Target value -----------------------------------------------
-        float tmp_val = turb_vz * svh->wTrbSpeed * svh->wTrbDuration;
+        float tmp_val = turb_vz * svh.wTrbSpeed * svh.wTrbDuration;
         tVAL.Set (tmp_val);
         //
         //TRACE ("K  %f %f %f (%f %f)", turb_vz, tmp_val, turbR, svh->wTrbSpeed, svh->wTrbDuration);

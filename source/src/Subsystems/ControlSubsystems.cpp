@@ -1674,7 +1674,7 @@ int CFlapControl::Read (SStream *stream, Tag tag)
 //----------------------------------------------------------------------
 void CFlapControl::ReadFinished()
 { CAeroControl::ReadFinished();
-  vlod      = mveh->lod;
+  vlod      = &mveh->lod;
   if (vlod) vlod->InitFlap(nPos,aPos,fTim);
   state = 1;
 }

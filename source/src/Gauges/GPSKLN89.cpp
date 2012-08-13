@@ -3937,7 +3937,7 @@ void CK89gps::EditMagDev(float dev,short lin,short col)
 //  Edit fuel qty
 //-----------------------------------------------------------------------------
 void CK89gps::EditFuel()
-{ CFuelSystem     *gas = mveh->gas;
+{ CFuelSystem     *gas = mveh->GetGAS();
   char  edt[16];
   float qty;
   float cap;

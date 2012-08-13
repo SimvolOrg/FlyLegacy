@@ -109,7 +109,7 @@ public:
   // gets moment of inertia in lbs.ft^2
   const SVector* GetMI           (void)             {return &moments_of_inertia;}
   // gets moment of inertia in ISU Kg.m^2
-  const SVector* GetMI_ISU       (void);
+  SVector* GetMI_ISU       (void);
   // sets the moment of inertia in lbs.ft^2
   void           SetMI           (const SVector &v) {moments_of_inertia = v;}
   //-----------------------------------------------------------------------
@@ -143,8 +143,8 @@ class CWeightManager {
   CVehicleObject *mveh;                 // Parent Vehicle
   //----METHODS--------------------------------------------
 public:
-                 CWeightManager          (CVehicleObject *v);
-  virtual       ~CWeightManager          (void);
+                 CWeightManager();
+  virtual       ~CWeightManager(void);
 
 protected:
   //! Constructors/destructor
@@ -186,6 +186,7 @@ public:
   inline SVector  GetTotInertia()         {return (svh_mine + mGAS + mLOD);}
 	//---------------------------------------------------------------------------
 	inline double   GetCGHeight()					  {return svh_cofg.y;}
+	inline void     SetVEH(CVehicleObject *v) {mveh = v;}
   //--------------Attributes --------------------------------------------------
   // members
   std::vector<CLoadCell*>               vld_unit;    ///< List of loadout stations

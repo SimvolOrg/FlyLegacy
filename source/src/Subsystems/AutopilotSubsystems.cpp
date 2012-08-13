@@ -402,7 +402,7 @@ void CPIDbox::Probe(CFuiCanva *cnv)
 //===============================================================================================
 CPIDdecoder::CPIDdecoder(char *fn,AutoPilot *ap)
 { apil	= ap;
-  vpil	= ap->GetMVEH()->amp->GetVirtualPilot();
+  vpil	= ap->GetMVEH()->amp.GetVirtualPilot();
 	SStream s(this,"WORLD",fn);
 }
 
@@ -757,7 +757,7 @@ void AutoPilot::ReadPID(char *fn)
 void AutoPilot::PrepareMsg(CVehicleObject *veh)
 { //-- init PID -------------------------------
   mveh->Register(this);
-  char *fcs = mveh->nfo->GetFCS();
+  char *fcs = mveh->nfo.GetFCS();
   ReadPID(fcs);
   InitPID();
 	//--- Locate altimeter ----------------------
@@ -781,11 +781,11 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
 void AutoPilot::InitPID()
 { if (0 == inUse) return;
   //---Get control surfaces ------------------------------
-	flpS = mveh->amp->GetFlaps();
-  ailS = mveh->amp->GetAilerons();
-  elvS = mveh->amp->GetElevators();
-  rudS = mveh->amp->GetRudders();
-  elvT = mveh->amp->GetElevatorTrim();
+	flpS = mveh->amp.GetFlaps();
+  ailS = mveh->amp.GetAilerons();
+  elvS = mveh->amp.GetElevators();
+  rudS = mveh->amp.GetRudders();
+  elvT = mveh->amp.GetElevatorTrim();
   //---Aircraft paramaters --------------------------------
   wAOI    = mveh->GetWingIncidenceDeg();
   minA    = mveh->GetWingAoAMinRad();
@@ -940,7 +940,7 @@ int AutoPilot::Read (SStream *stream, Tag tag)
 //-----------------------------------------------------------------------------------
 void AutoPilot::ReadFinished()
 { CDependent::ReadFinished();
-  CSimulatedVehicle *svh = mveh->svh;
+  CSimulatedVehicle *svh = &mveh->svh;
   fSPD	= svh->GetApproachSpeed();
 	xRAT  = svh->GetCruiseSpeed() * 0.98;
   return;

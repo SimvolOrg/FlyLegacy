@@ -31,14 +31,13 @@
 #endif // _MSC_VER > 1000
 #include "../Include/Gears.h"
 //===================================================================================================
-class COpalGroundSuspension;
 //====================================================================================
 //  Opal Suspension
 //====================================================================================
 class COpalSuspension : public CSuspension {
 
 public:
-  COpalSuspension (CVehicleObject *v, COpalGroundSuspension *mgsp,char *name, CWeightManager *wgh, char = TRICYCLE);
+  COpalSuspension (CVehicleObject *v, CGroundSuspension *mgsp,char *name, CWeightManager *wgh, char = TRICYCLE);
   virtual ~COpalSuspension   (void);
 
   ///< CStreamObject methods
@@ -51,26 +50,6 @@ public:
   void Debug             (void);
 
 
-};
-//========================================================================================
-//  OPAL Ground suspension
-//========================================================================================
-class COpalGroundSuspension : public CGroundSuspension {
-
-public:
-  COpalGroundSuspension                (CVehicleObject *v,CWeightManager *wghman);
-  virtual ~COpalGroundSuspension       (void);
-
-  /*! CStreamObject methods */
-  int   Read                   (SStream *stream, Tag tag);
-  void  ReadFinished           (void);
-	//--- Gear methods ------------------------------------------------------
-	//-----------------------------------------------------------------------
-  /*! CGroundSuspension generic methods */
-  void  Timeslice              (float dT);
-
-private:
-  double max_wheel_H;
 };
 //=================================================================================
 //  Class gear managed under opal-ode

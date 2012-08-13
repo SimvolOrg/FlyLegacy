@@ -24,7 +24,7 @@
 
 #include "../Include/Globals.h"
 #include "../Include/FlyLegacy.h"
-#include "../Include/Gears.h"
+#include "../Include/OpalGears.h"
 #include "../Include/Fui.h"
 
 using namespace std;
@@ -328,7 +328,7 @@ void CSuspension::Timeslice (float dT)
   // 1) aerodynamic purpose
   // get the gear position relative to the actual CG
   SVector actualCG_;
-  mveh->wgh->GetVisualCG (actualCG_);  ///< RH feet
+  mveh->wgh.GetVisualCG (actualCG_);  ///< RH feet
   SVector actualCG; 
   actualCG.x = -actualCG_.x; actualCG.y = actualCG_.z; actualCG.z = actualCG_.y; // RH->LH
   // gets mPos as the 3D gear position
@@ -538,14 +538,12 @@ const SVector& CGear::GetBodyGearMoment_ISU (void)
 //    1)Wheel index is 0 based.  Interface to grlt (gear light) is 1 based
 //    2) Add subsystem ident for probe purpose
 //================================================================================
-CGroundSuspension::CGroundSuspension (CVehicleObject *v,CWeightManager *wgh)
+CGroundSuspension::CGroundSuspension ()
 { SetIdent('susp');                   // suspension manager
   hwId    = HW_UNKNOWN;               // No type
-  mveh    = v;                        // Save parent object
   wInd    = 0;                        // Wheel index
   // Get a link to weight_manager
   // !!! must be before Read from Stream below ...
-  whm     = wgh;
   wheels_num = 0;
   rMas    = 0.0f;
   type    = TRICYCLE;                 // JS Assume standard type
@@ -561,44 +559,29 @@ CGroundSuspension::CGroundSuspension (CVehicleObject *v,CWeightManager *wgh)
   //---------------------------------------------------------
   mainW.Raz();
   mainR  = 0;
-  max_wheel_height = 0.0;
+  max_wheel_H = 0.0;
   max_gear = min_gear = mWPos = 0.0;
+}
+//------------------------------------------------------------------------------
+// Read parameters
+//------------------------------------------------------------------------------
+void CGroundSuspension::Init(CWeightManager *wgh, char *fn)
+{	whm     = wgh;
+  SStream s(this,"WORLD",fn);
+	return;
 }
 //------------------------------------------------------------------------------
 // destroy this
 //------------------------------------------------------------------------------
 CGroundSuspension::~CGroundSuspension (void)
-{ 
-  SAFE_DELETE (mstbl);
+{ SAFE_DELETE (mstbl);
   SAFE_DELETE (mbtbl);
 	for (U_INT k=0; k < whl_susp.size(); k++) delete whl_susp[k];
 	whl_susp.clear();
 	for (U_INT k=0; k < whl_bump.size(); k++) delete whl_bump[k];
 	whl_bump.clear();
 }
-//------------------------------------------------------------------------------
-// Read all parameters
-//------------------------------------------------------------------------------
-void CGroundSuspension::ReadSusp(SStream *st)
-{   char susp_[64], susp_type[8], susp_name[56];
-    ReadString (susp_, 64, st);
-    if (sscanf (susp_, "%s %s", susp_type, susp_name) != 2) return;
-    if (!strcmp (susp_type, "whel"))
-    {   CSuspension *susp = new CSuspension (mveh, this,susp_name, type); // global default
-        ReadFrom (susp, st);
-        whl_susp.push_back (susp);
-        return;
-    }
-    if (!strcmp (susp_type, "bmpr"))
-    {   CWhl *bump = new CBumper     (susp_name, whm, type);
-        ReadFrom (bump, st);
-        whl_bump.push_back (bump);
-        return;
-      } 
-    WARNINGLOG ("CGroundSuspension::Read : bad susp type");
-    return;
 
-}
 //------------------------------------------------------------------------------
 // Read all parameters
 //------------------------------------------------------------------------------
@@ -653,15 +636,38 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
   WARNINGLOG ("CGroundSuspension::Read : Unrecognized tag <%s>", TagToString(tag));
   return TAG_IGNORED;
 }
+//------------------------------------------------------------------------------
+// Read all parameters
+//------------------------------------------------------------------------------
+void CGroundSuspension::ReadSusp(SStream *st)
+{   char susp_[64], susp_type[8], susp_name[56];
+		CSuspension *ssp = 0;
+    ReadString (susp_, 64, st);
+    if (sscanf (susp_, "%s %s", susp_type, susp_name) != 2) return;
+    if (!strcmp (susp_type, "whel"))
+    {   if (mveh->GetOPT(VEH_IS_UFO)) ssp = new CSuspension    (mveh,this,susp_name, type);					// UFO type
+				else													ssp = new COpalSuspension(mveh,this,susp_name, whm, type); // PHY type										
+        ReadFrom (ssp, st);
+        whl_susp.push_back (ssp);
+        return;
+    }
+    if (!strcmp (susp_type, "bmpr"))
+    {   CWhl *bump = new CBumper     (susp_name, whm, type);
+        ReadFrom (bump, st);
+        whl_bump.push_back (bump);
+        return;
+      } 
+    WARNINGLOG ("CGroundSuspension::Read : bad susp type");
+    return;
+
+}
+
 //---------------------------------------------------------------------------------
 //  Compute main gear axe barycenter
 //  Compute steering gear axe center in Legacy coordinate (Z is up)
 //---------------------------------------------------------------------------------
 void CGroundSuspension::ReadFinished (void)
 { SGearData *gdt = 0;   //GetGearData()
-#ifdef _DEBUG
-  DEBUGLOG ("CGroundSuspension::ReadFinished");
-#endif
   wheels_num	= whl_susp.size ();
   //---Compute wheel parameters --(Z is forward direction)---------
   max_gear = 0.0, min_gear = 0.0, mWPos = 0.0;
@@ -716,16 +722,18 @@ void CGroundSuspension::ReadFinished (void)
   wheel_base	= max_gear - min_gear;
 	double base = FN_METRE_FROM_FEET(wheel_base);
 	for (rw = whl_susp.begin (); rw != whl_susp.end (); rw++)
-	{ (*rw)->SetWheelBase(base);
+	{ CSuspension *ssp = (CSuspension *)(*rw);
+		ssp->SetWheelBase(base);
+		ssp->InitGearJoint (type,this);
 	}
   //--------------------------------------------------------
   if (TRICYCLE == type)
-    max_wheel_height =  - mWPos;
+    max_wheel_H =  - mWPos;
   else
   if (TAIL_DRAGGER == type)
-    max_wheel_height =  - (mWPos - wheel_min_h);
+    max_wheel_H =  - (mWPos - wheel_min_h);
   else
-    max_wheel_height =  - mWPos;
+    max_wheel_H =  - mWPos;
 	//------------------------------------------------------------------------
 	//JS note: This table is used to modulate the Brake force versus 
 	//        ground speed.  Brake force  must decrease with speed
@@ -771,7 +779,72 @@ void	CGroundSuspension::SetSteerData(CRudderControl *rud)
 //  Time Slice all wheels
 //---------------------------------------------------------------------------------
 void CGroundSuspension::Timeslice (float dT)
-{ nWonG = 0;      // No wheels on ground
+{
+  /// very important ! be sure to compute only during
+  /// engine & aerodynamics cycle
+  if (!globals->simulation) return;
+  nWonG   = 0;      // No wheels on ground
+	SumGearMoments.Raz();
+  //--- Compute velocity in Miles per Hours ---------
+  double vt = (mveh->GetBodyVelocityVector ())->z;
+  double velocity = NMILE_PER_METRE_SEC(vt);
+  float fstbl = mstbl->Lookup (velocity); // 1.0f;
+  float fbtbl = mbtbl->Lookup (velocity); // 1.0f;
+
+  std::vector<CSuspension *>::const_iterator rw;
+  for (rw = whl_susp.begin (); rw != whl_susp.end (); rw++) {
+    // is it a steering wheel ?
+    CSuspension *ssp = (*rw);			//(CSuspension*)(*rw);
+		SGearData *gdt	= ssp->GetGearData();
+		gdt->stbl				= fstbl;
+		gdt->btbl				= fbtbl;
+		switch (mveh->lod.GetGearState())
+		{	//--- Process gear down position -----------------	
+			case ITEM_KFR0:
+				{	cur_wheel_H = max_wheel_H;
+					ssp->Timeslice (dT);
+					if (0 == gdt->onGd) break;
+					nWonG++;
+					gdt->swing = ssp->GetSwing(dT);
+					if (fabs(vt) < 0.01) gdt->swing = 0;
+				}
+			//--- Gears are retracted ------------------------
+			case ITEM_KFR1:
+				{ cur_wheel_H = 0.0;
+				}
+		}	// --- End switch on gear position
+  }
+
+  /// All the computation below is LH
+  // verify if this test is useful 
+  //
+  // add mass moment related to main gear
+  // JS NOTE:  The main_pos is in fact the distance between the Cg and the steering
+  //  wheel.   
+  //  On a tricyle, the steering is in positive direction while on a Tail Dragger
+  //  the steering is in negative direction.
+  //  So I made the following modifications
+  //  The steering distance (in meters) is computed in the 
+  //  CGroundSuspension::InitJoint() when wheels positions are computed
+  //  This vector is stored into mainVM and the massCF is the coeeficent
+  //  that modulate the mass supported by the wheel.  
+  //  Also, the mass_force is modified so that the force applied is in the
+  //  vertical direction (Z) and is negative.
+  //
+
+  { 
+    CVector mass_moment;
+    CVector mass_force (0, 0, -mveh->GetMassInKgs() * GRAVITY_MTS * massCF);   //, 0.0);
+    CVector mass_pos, main_gear;
+    VectorCrossProduct (mass_moment, mainVM, mass_force);
+    /// add gear moment to the CG moment
+    SumGearMoments = VectorSum (SumGearMoments, mass_moment);
+  }
+}
+//====DELETE =================================================
+	/*
+{ 
+	nWonG = 0;      // No wheels on ground
 	SumGearForces.Raz();
 	SumGearMoments.Raz();
 
@@ -796,6 +869,7 @@ void CGroundSuspension::Timeslice (float dT)
     if (ssp->IsOnGround())  nWonG++;
   }
 }
+*/
 //---------------------------------------------------------------------------------
 //  Reset crash
 //---------------------------------------------------------------------------------

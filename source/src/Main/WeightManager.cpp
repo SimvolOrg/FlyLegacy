@@ -63,7 +63,7 @@ int CLoadCell::Read (SStream *stream, Tag tag)
   case 'bPos':
     // Offset from default center of gravity
     ReadVector (&bPos, stream);
-    bPos = bPos + mveh->wgh->svh_cofg;
+    bPos = bPos + mveh->wgh.svh_cofg;
     bPos.InvertXY();         
     rc = TAG_READ;
     break;
@@ -134,7 +134,7 @@ const SVector* CWeightBalance::GetCGOffset_ISU (void)
   return &CGOffset_ISU;
 }
 
-const SVector* CWeightBalance::GetMI_ISU (void) 
+SVector* CWeightBalance::GetMI_ISU (void) 
 {
   moments_of_inertia_ISU.x = moments_of_inertia.x * LBFT2_TO_KGM2; // 
   moments_of_inertia_ISU.y = moments_of_inertia.y * LBFT2_TO_KGM2; // 
@@ -152,9 +152,8 @@ const SVector* CWeightBalance::GetMI_ISU (void)
 //==============================================================================
 // CWeightManager
 //==============================================================================
-CWeightManager::CWeightManager (CVehicleObject *v)
-{ mveh  = v;        // Save parent vehicle
-  CVector vnul      (0,0,0);
+CWeightManager::CWeightManager ()
+{ CVector vnul      (0,0,0);
   svh_emas          = 0.0f;
   whl_rmas          = 0.0f;
   svh_mine          = vnul;
@@ -285,7 +284,6 @@ void CWeightManager::Debug (void)
                                              wbGas.GetCGOffset ()->x,
                                              wbGas.GetCGOffset ()->y,
                                              wbGas.GetCGOffset ()->z);
-//        Calc ();
         fprintf(fp_debug, " CG = %f %f %f\n",wb.GetCGOffset ()->x,
                                              wb.GetCGOffset ()->y,
                                              wb.GetCGOffset ()->z     );

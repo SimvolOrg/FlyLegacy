@@ -1537,7 +1537,7 @@ void CFPlan::WarnGPS()
 //-----------------------------------------------------------------
 void CFPlan::InitPlan()
 {	//--- Get values for this aircraft -------------
-	CSimulatedVehicle     *svh = mveh->svh;
+	CSimulatedVehicle     *svh = &mveh->svh;
 	nmlSPD	=  svh->GetCruiseSpeed();
 	aprSPD  =  svh->GetApproachSpeed();
 	mALT	  =  int(svh->GetCeiling());

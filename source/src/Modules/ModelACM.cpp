@@ -1923,9 +1923,8 @@ int CAcmTire::MovePart(float tkf,char dir,float dT,float time)
 //==========================================================================
 //  CAcmFlap supports the animated flaps 
 //==========================================================================
-CAcmFlap::CAcmFlap(CVehicleObject *v)
-{ if (0 == v)  gtfo("No Vehicle for Part Group");
-  vlod = v->lod;
+CAcmFlap::CAcmFlap(CVehicleObject *mveh)
+{ vlod = &mveh->lod;
   vlod->AddFlap(this);
 }
 //----------------------------------------------------------------

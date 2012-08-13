@@ -352,45 +352,46 @@ void CSimDebugWings::Draw (void)
   dCD_wing->SetPosition     (posWx + a + 10, posWy + b + 108);
   dCM_wing->SetPosition     (posWx + a + 10, posWy + b + 123);
   dPitch_wing->SetPosition  (posWx + a + 10, posWy + b + 138);
+	//--------------------------------------------------------------
+	CAeroModelWingSection *wpart = veh->wng.GetWingSection (wing_part);
+ 
+  char buffer [128] = {0};
+  double cl = (wpart)->GetCL ();
+  sprintf (buffer,       " cl = %06.2f", cl);
+  cl_wing->SetText      (buffer);
+  double cdi = (wpart)->GetCDI ();
+  sprintf (buffer,       "cdi = %06.2f", cdi);
+  cd_wing->SetText      (buffer);
+  sprintf (buffer,       " cm = %06.2f", (wpart)->GetCM ());
+  cm_wing->SetText      (buffer);
+  if (cdi) sprintf (buffer,       "L/D = %06.2f", cl / cdi);
+  else     sprintf (buffer,       "L/D = error");
+  LD_wing->SetText      (buffer);
+  sprintf (buffer,       "aoa = %06.2f", (wpart)->GetAoA () * RAD2DEG);
+  aoa_wing->SetText     (buffer);
+  CVector tmp_ = (wpart)->GetSpeedVector ();
+  sprintf (buffer,       "SVx = %06.2f", tmp_.x);
+  damage_wing->SetText  (buffer);
+  sprintf (buffer,       "SVy = %06.2f", tmp_.y);
+  dCL_wing->SetText     (buffer);
+  sprintf (buffer,       "SVz = %06.2f", tmp_.z * 3.6 / (double) KM_PER_NM);
+  dCD_wing->SetText     (buffer);
+  sprintf (buffer,       "ASL = %06.0f", (globals->geop.alt));
+  dCM_wing->SetText     (buffer);
+  sprintf (buffer,       "pch = %06.0f", 0.0);
+  dPitch_wing->SetText  (buffer);
 
-  if (veh->wng) {
-    char buffer [128] = {0};
-    double cl = (veh->wng->GetWingSection (wing_part))->GetCL ();
-    sprintf (buffer,       " cl = %06.2f", cl);
-    cl_wing->SetText      (buffer);
-    double cdi = (veh->wng->GetWingSection (wing_part))->GetCDI ();
-    sprintf (buffer,       "cdi = %06.2f", cdi);
-    cd_wing->SetText      (buffer);
-    sprintf (buffer,       " cm = %06.2f", (veh->wng->GetWingSection (wing_part))->GetCM ());
-    cm_wing->SetText      (buffer);
-    if (cdi) sprintf (buffer,       "L/D = %06.2f", cl / cdi);
-    else     sprintf (buffer,       "L/D = error");
-    LD_wing->SetText      (buffer);
-    sprintf (buffer,       "aoa = %06.2f", (veh->wng->GetWingSection (wing_part))->GetAoA () * RAD2DEG);
-    aoa_wing->SetText     (buffer);
-    CVector tmp_ = (veh->wng->GetWingSection (wing_part))->GetSpeedVector ();
-    sprintf (buffer,       "SVx = %06.2f", tmp_.x);
-    damage_wing->SetText  (buffer);
-    sprintf (buffer,       "SVy = %06.2f", tmp_.y);
-    dCL_wing->SetText     (buffer);
-    sprintf (buffer,       "SVz = %06.2f", tmp_.z * 3.6 / (double) KM_PER_NM);
-    dCD_wing->SetText     (buffer);
-    sprintf (buffer,       "ASL = %06.0f", (globals->geop.alt));
-    dCM_wing->SetText     (buffer);
-    sprintf (buffer,       "pch = %06.0f", 0.0);
-    dPitch_wing->SetText  (buffer);
-
-    cl_wing->Draw      ();
-    cd_wing->Draw      ();
-    cm_wing->Draw      ();
-    LD_wing->Draw      ();
-    aoa_wing->Draw     ();
-    damage_wing->Draw  ();
-    dCL_wing->Draw     ();
-    dCD_wing->Draw     ();
-    dCM_wing->Draw     ();
-    dPitch_wing->Draw  ();
-  }
+  cl_wing->Draw      ();
+  cd_wing->Draw      ();
+  cm_wing->Draw      ();
+  LD_wing->Draw      ();
+  aoa_wing->Draw     ();
+  damage_wing->Draw  ();
+  dCL_wing->Draw     ();
+  dCD_wing->Draw     ();
+  dCM_wing->Draw     ();
+  dPitch_wing->Draw  ();
+  
 }
 
 int CSimDebugWings::Init (CFuiComponent *cmp)

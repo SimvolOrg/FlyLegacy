@@ -407,16 +407,10 @@ int CExteriorLight::Read (SStream *stream, Tag tag)
 void CExteriorLight::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
 {
   bool initActive = active;
-
   CDependent::TimeSlice (dT,FrNo);								// JSDEV*
-
   // Update external light manager with subsystem active state if it has changed
-  if (active != initActive) {
-   
-    if (mveh && mveh->elt) mveh->elt->SetPowerState (unId, active);
-  }
+  if (active != initActive) mveh->elt.SetPowerState (unId, active);
 }
-
 //=============================================================================
 // CVoltmeter
 //=============================================================================

@@ -1148,7 +1148,7 @@ double CPropellerTRIModel::Calculate(double PowerAvailable)
 
   // adjust thrust according to Aoa only in air
   //*/
-  if (0 == mveh->whl->GetNbWheelOnGround ()) {
+  if (0 == mveh->whl.GetNbWheelOnGround ()) {
   // Rotation Interference Factor (rift)
   // and Axial Interference Factor
   // Axial Interference = pirt * rift
@@ -1243,7 +1243,7 @@ double CPropellerTRIModel::Calculate(double PowerAvailable)
         lift, drag, rift, pirt,
         Thrust, Torque, thrust_displ, pFac, RPM,
         FpsToKt (Vel),
-        mveh->whl->GetNbWheelOnGround (),
+        mveh->whl.GetNbWheelOnGround (),
         mode);
       //DrawNoticeToUser (debug, 1);
       }

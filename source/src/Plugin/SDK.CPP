@@ -1783,7 +1783,7 @@ int	APIGetObjectTotalWeight(SFlyObjectRef *object, float *weight)
    CVehicleObject *vo = static_cast<CVehicleObject *> (object->objectPtr);
    if (vo) {
      // note that GetTotalMassInLbs actually returns a weight in lbs
-     *weight = vo->wgh->GetTotalMassInLbs ();
+     *weight = vo->wgh.GetTotalMassInLbs ();
      return 0;
    }
    return 1;
@@ -1907,9 +1907,9 @@ int	APIAreWheelsOnGround(SFlyObjectRef *object, int *wheelsOnGround)
   if (object->objectPtr) {
     CVehicleObject *vo = static_cast<CVehicleObject *> (object->objectPtr);
     if (vo) {
-      int w_num = vo->whl->GetNumberOfWheels ();                  ///< number of body's wheels
+      int w_num = vo->whl.GetNumberOfWheels ();                  ///< number of body's wheels
       if (w_num == 0) {return 1;}                                 ///< no wheels at all !
-      int num   = vo->whl->GetNbWheelOnGround ();                 ///< number of wheels on ground
+      int num   = vo->whl.GetNbWheelOnGround ();                 ///< number of wheels on ground
       //
       if   (num   == 0)     {*wheelsOnGround = 0; return 0;}      ///< no wheels on ground
       else {

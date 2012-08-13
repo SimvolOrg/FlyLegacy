@@ -31,6 +31,7 @@
  */
 #include "../Include/Globals.h"
 #include "../Include/Cameras.h"
+#include "../Include/Panels.h"
 #include "../Include/Utility.h"
 #include "../Include/Ui.h"
 #include "../Include/Fui.h"
@@ -598,7 +599,7 @@ void CCamera::SetAbove(SPosition pos,int mr, int cr)
 //------------------------------------------------------------------------
 //  Screen is resized
 //-------------------------------------------------------------------------
-void CCamera::ChangeResolution()
+void CCamera::ChangeViewPort()
 { int  wd  = globals->cScreen->Width;
   int  ht  = globals->cScreen->Height;
   glViewport(0,0,wd,ht);    
@@ -1110,164 +1111,6 @@ typedef enum {
   PANEL_UP      = 2,
   PANEL_DOWN    = 3
 } EPanelScrollDirection;
-//==========================================================================================
-// This class represents a single instance of a cockpit panel within a cockpit
-//   camera definition.  Members include the unique ID tag of the panel,
-//   the orientation of the eye position when that panel is active, and
-//   a list of which panel ID tags are situated to the left, right, up and down
-//   from the panel.
-//
-// Example:
-//
-//    <panl> ---- panel ----
-//    <bgno> ---- begin ----
-//      <id__> ---- id ----
-//      frnt
-//      <main> ---- default ----
-//      <hdg_> ---- heading ----
-//      0.0
-//      <ptch> ---- pitch ----
-//      7.4
-//      <pnls> ---- panels (L,R,U,D) ----
-//      uplt
-//      uprt
-//      NONE
-//      floo
-//    <endo> ---- end ----
-//  JS NOTE: Each panel has 2 vectors defining the Up position and the LookAt position (forward)
-//
-//==========================================================================================
-class CCockpitPanel : public CStreamObject {
-public:
-  CCockpitPanel (CCameraCockpit *c);
-  //--- CStreamObject methods -----------------------------------------
-  int   Read (SStream *stream, Tag tag);
-  void  ReadFinished();
-  void  SetPanel(CPanel *p);
-	bool  View(float a);
-	//--------------------------------------------------------------------
-  inline CPanel  *GetPanel()          {return panel;}
-  inline void     GetXSRC(TC_4DF &r){r.x1 = xscr_x; r.y1 = xscr_y;}
-  //--------------------------------------------------------------------
-public:
-  Tag     id;         // Panel ID, as specified in a PNL file
-	char    idn[8];			// Tag for debug
-  CPanel *panel;      // Panel 
-  bool    main;       // Is this the main (default) panel?
-	float   angL;				// Left limit
-  float   hdg;        // Viewpoint heading (y-axis rotation)
-	float   angR;			// Right limit
-  float   pit;        // Viewpoint pitch (x-axis rotation)
-  Tag     pnls[4];    // Links to IDs of other panels in cockpit
-  float   xscr_x;     // Exterior scroll factor
-  float   xscr_y;
-  int     umdl;       ///< Use exterior model
-  //---Camera cockpit-------------------------------------
-  CCameraCockpit *cam;
-  //---Matrix for local head orientation ----------------------------
-  sgMat4  rotH;       // head rotation matrix
-};
-//============================================================================================
-//	Camera used for cockpit display
-//============================================================================================
-CCockpitPanel::CCockpitPanel (CCameraCockpit *c) :
-  id (0),
-  main (false),
-  hdg (0.0f),
-  pit (0.0f)
-{ panel   = 0;
-  cam     = c;
-  pnls[0] = pnls[1] = pnls[2] = pnls[3] = StringToTag ("NONE");
-  xscr_x = xscr_y = 0;
-  umdl = 0;
-}
-//----------------------------------------------------------------------
-//  Read all parameters
-//-----------------------------------------------------------------------
-int CCockpitPanel::Read (SStream *stream, Tag tag)
-{ float pm;
-  int rc = TAG_IGNORED;
-
-  switch (tag) {
-  case 'id__':
-    ReadTag (&id, stream);
-		TagToString(idn,id);
-    return TAG_READ;
-
-  case 'main':
-    main = true;
-    rc = TAG_READ;
-    break;
-  //--JS set positive direction for heading ---------------------
-  case 'hdg_':
-    ReadFloat (&hdg, stream);
-		angL= Wrap360(hdg - 45);
-		angR= Wrap360(hdg + 45);
-    hdg = (360 - hdg);
-    rc = TAG_READ;
-    break;
-
-  case 'ptch':
-    ReadFloat (&pit, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'pnls':
-    // Read four panel ID tags corresponding to the panels to the L, R, U and D
-    ReadTag (&pnls[0], stream);
-    ReadTag (&pnls[1], stream);
-    ReadTag (&pnls[2], stream);
-    ReadTag (&pnls[3], stream);
-    rc = TAG_READ;
-    break;
-
-  case 'ofst':
-    ReadFloat (&pm, stream);
-    ReadFloat (&pm, stream);
-    ReadFloat (&pm, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'xscr':
-    ReadFloat (&xscr_x, stream);
-    ReadFloat (&xscr_y, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'umdl':
-    ReadInt (&umdl, stream);
-    rc = TAG_READ;
-    break;
-  }
-
-  if (rc == TAG_IGNORED) {
-    WARNINGLOG ("CCockpitPanel::Read : Unknown tag %s", TagToString(tag));
-  }
-
-  return rc;
-}
-//----------------------------------------------------------------------
-//  All parameter are read
-//-----------------------------------------------------------------------
-void CCockpitPanel::ReadFinished()
-{ // Compute Head rotation according to pitch and heading
-
-  return;
-}
-//----------------------------------------------------------------------
-//  Set panel and panel attribute
-//-----------------------------------------------------------------------
-void CCockpitPanel::SetPanel(CPanel *p)
-{	panel = p;
-	return;
-}
-//----------------------------------------------------------------------
-//  Check if panel view the requested direction
-//-----------------------------------------------------------------------
-bool CCockpitPanel::View(float A)
-{	float M = 360 - hdg;
-	return InCircularRange(A,M,float(22.5));
-}
 //=====================================================================================
 // Cockpit (vehicle interior) camera
 //=====================================================================================
@@ -1279,8 +1122,6 @@ CCameraCockpit::CCameraCockpit (CVehicleObject *mv)
 	Seat.x = Seat.y = Seat.z = 0;
 	intcm		= 1;						// Change to internal camera
 	extcm		= 0;
-  //--- Initialize active panel to none ----------
-  ckPanel = 0;
   //--- Link to cameras -------------------------
   cIden = CAMERA_COCKPIT;
   cNext = CAMERA_SPOT;
@@ -1292,16 +1133,13 @@ CCameraCockpit::CCameraCockpit (CVehicleObject *mv)
   Head  = 0;
   //---------------------------------------------
   nearP = 5;
+	pit		= &mveh->pit;			// Cockpit manager
 }
 //--------------------------------------------------------------------------
 //  Free camera 
 //--------------------------------------------------------------------------
 CCameraCockpit::~CCameraCockpit (void)
-{  // Delete panels
-  std::map<Tag,CCockpitPanel*>::iterator ra;
-  for (ra=panl.begin(); ra!=panl.end(); ra++) delete ra->second;
-  panl.clear();
-}
+{  }
 //--------------------------------------------------------------------------
 //  Read camera parameters
 //--------------------------------------------------------------------------
@@ -1321,12 +1159,16 @@ int CCameraCockpit::Read (SStream *stream, Tag tag)
     return TAG_READ;
 
   case 'panl':
-    { //MEMORY_LEAK_MARKER ("cock_panel");
+    { CamDecoder(stream,mveh);
+			
+			/*
+			//MEMORY_LEAK_MARKER ("cock_panel");
       CCockpitPanel *cock_panel = new CCockpitPanel(this);
       //MEMORY_LEAK_MARKER ("cock_panel");
       ReadFrom (cock_panel, stream);
       Tag tag   = cock_panel->id;
       panl[tag] = cock_panel;
+			*/
     }
     return TAG_READ;
   }
@@ -1337,21 +1179,7 @@ int CCameraCockpit::Read (SStream *stream, Tag tag)
 //  All parameters are read
 //--------------------------------------------------------------------------
 void CCameraCockpit::ReadFinished (void)
-{ // Set the default panel ID to the first with the <main> tag present
-  std::map<Tag,CCockpitPanel*>::iterator iter;
-  for (iter=panl.begin(); iter!=panl.end(); iter++) {
-    CCockpitPanel *p = iter->second;
-    if (p->main) {
-      if (ckPanel == NULL) {
-        // This is the first <main> panel...assign it as the default
-        ckPanel = p;
-      } else {
-        // There should be only one <main> panel, generate a warning
-        WARNINGLOG ("CCameraCockpit : Multiple <main> panels");
-      }
-    }
-  }
-}
+{ }
 //----------------------------------------------------------------------
 //  Cockpit camera uses its position translated by the Forward vector
 //	as target
@@ -1373,8 +1201,7 @@ void CCameraCockpit::UpdateCamera (SPosition wpos, SVector ori ,float dT)
 {	tgtPos = wpos;
 	//----- Adjust orientation by fixed seat orientation ----
   CVector ors = Seat;
-	ors.x += ckPanel->pit;
-  ors.z += ckPanel->hdg;
+	pit->AdjustSeat(ors);
   //--Adjust for pilot Head ----------------------
   ors.x += Head;
 	//--- Rotate all -------------------------------
@@ -1409,114 +1236,30 @@ void CCameraCockpit::GetLookatPoint (SVector &v)
 //------------------------------------------------------------------------
 //  Internal camera is activated
 //-------------------------------------------------------------------------
-void CCameraCockpit::ChangeResolution()
-{ CPanel *panel = ckPanel->GetPanel();
-  if (0 == panel) return;
-  panel->SetViewPort();
+void CCameraCockpit::ChangeViewPort()
+{ pit->SetViewPort();
   return;
-}
-//------------------------------------------------------------------------
-//  Return Panel
-//-------------------------------------------------------------------------
-CPanel*	CCameraCockpit::GetPanel()
-{	return ckPanel->GetPanel();	}
-//------------------------------------------------------------------------
-//  Draw panel
-//-------------------------------------------------------------------------
-void CCameraCockpit::DrawPanel()
-{ CPanel *panel = ckPanel->GetPanel();
-	if (panel) panel->Draw(this);
-  return;
-}
-//------------------------------------------------------------------------
-//  Activate cockpit panel by tag
-//------------------------------------------------------------------------
-void  CCameraCockpit::ActivateCockpitPanel (Tag tag)
-{ if (tag == 'NONE')    return;
-  std::map<Tag,CCockpitPanel*>::iterator it = panl.find(tag);
-  CCockpitPanel *cp = it->second;
-  CPanel        *pn = cp->GetPanel();
-	ckPanel = cp;
-  if (pn)   pn->SetViewPort();
-	cp->SetPanel(pn);
-  return;
-}
-//------------------------------------------------------------------------
-//  Activate cockpit panel by angle
-//------------------------------------------------------------------------
-void  CCameraCockpit::ActivateView (float A)
-{ std::map<Tag,CCockpitPanel*>::iterator rp;
-	for (rp = panl.begin(); rp != panl.end(); rp++)
-	{	CCockpitPanel *cp = rp->second;
-		if (!cp->View(A))		continue;
-		CPanel        *pn = cp->GetPanel();
-		if (0 == pn)				continue;
-		ckPanel = cp;
-		pn->SetViewPort();
-		cp->SetPanel(pn);
-		return;
-		}
-  return;
-}
-//------------------------------------------------------------------------
-//  Set panel pointer
-//------------------------------------------------------------------------
-void CCameraCockpit::SetPanel(Tag id,CPanel *p)
-{ std::map<Tag,CCockpitPanel*>::iterator it = panl.find(id);
-  if (it == panl.end()) return;
-  CCockpitPanel *cpn = (*it).second;
-  cpn->SetPanel(p);
-  return;
-}
-//------------------------------------------------------------------------
-//  return current cockpit panel 
-//------------------------------------------------------------------------
-Tag  CCameraCockpit::GetCockpitPanel (void)
-{ return (ckPanel)?(ckPanel->id):(0);
-}
-//------------------------------------------------------------------------
-//  return current cockpit panel 
-//------------------------------------------------------------------------
-void CCameraCockpit::GetXSRC(TC_4DF &r)
-{ if (0 == ckPanel) return;
-  ckPanel->GetXSRC(r);
 }
 //------------------------------------------------------------------------
 // Pan Left - switch panels to the one to the left
 //------------------------------------------------------------------------
 void CCameraCockpit::PanLeft (void)
-{ if (ckPanel) {
-    Tag tag = ckPanel->pnls[PANEL_LEFT];
-    ActivateCockpitPanel (tag);
-  }
-}
+{ pit->ChangePanel(PANEL_LEFT);	}
 //------------------------------------------------------------------------
 // Pan Right - switch panels to the one to the right
 //------------------------------------------------------------------------
 void CCameraCockpit::PanRight (void)
-{ if (ckPanel) {
-    Tag tag = ckPanel->pnls[PANEL_RIGHT];
-    ActivateCockpitPanel (tag);
-  }
-}
+{	pit->ChangePanel(PANEL_RIGHT);	}
 //------------------------------------------------------------------------
 // Pan Up
 //------------------------------------------------------------------------
 void CCameraCockpit::PanUp (void)
-{ if (ckPanel) {
-    Tag tag = ckPanel->pnls[PANEL_UP];
-    ActivateCockpitPanel (tag);
-  }
-}
+{ pit->ChangePanel(PANEL_UP);	}
 //------------------------------------------------------------------------
 // Pan Down
 //------------------------------------------------------------------------
 void CCameraCockpit::PanDown (void)
-{ if (ckPanel) {
-    Tag tag = ckPanel->pnls[PANEL_DOWN];
-    ActivateCockpitPanel (tag);
-  }
-}
+{ pit->ChangePanel(PANEL_DOWN);	}
 //------------------------------------------------------------------------
 // User preset positions
 //------------------------------------------------------------------------
@@ -2884,7 +2627,6 @@ int CCameraManager::Read (SStream *stream, Tag tag)
           CCameraCockpit *cock = new CCameraCockpit(mveh);
           ReadFrom (cock, stream);
           came[CAMERA_COCKPIT] = cock;
-          // If a cockpit camera is defined, make it the default
           tCam = CAMERA_COCKPIT;
 					return TAG_READ;
         }
@@ -3072,7 +2814,7 @@ CCamera *CCameraManager::SelectCamera (Tag id)
 	globals->noEXT += aCam->GetINTMOD();
 	globals->noINT += aCam->GetEXTMOD();
   //---Change resolution ------------------
-  aCam->ChangeResolution();
+  aCam->ChangeViewPort();
 	globals->cam = aCam;
   return aCam;
 }

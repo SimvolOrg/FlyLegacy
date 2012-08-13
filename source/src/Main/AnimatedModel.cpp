@@ -34,10 +34,8 @@ using namespace std;
 // CAnimatedModel
 //  This object manages the 3D models and all complexe animation (gear, flap, etc)
 //======================================================================================
-CAnimatedModel::CAnimatedModel (CVehicleObject *v,char* lodFilename,Tag t)
-{ mveh          = v;        // Save parent vehicle
-  Type          = t;        // Vehicle type
-  //----Model parameters ------------------------------
+CAnimatedModel::CAnimatedModel ()
+{ //----Model parameters ------------------------------
 	mName					= 0;				// Model name
   mDefn         = 0;        // Current definition
   Model         = 0;        // Model ACM
@@ -57,10 +55,16 @@ CAnimatedModel::CAnimatedModel (CVehicleObject *v,char* lodFilename,Tag t)
   sGear         = 0;              // gear sound 
   //-------Init spinners -------------------------------
   for (int k=0; k<ENGINE_MAX; k++) aSpin[k] = 0;
-  //-------Read the parameters -------------------------
-  SStream s(this,"WORLD",lodFilename) ;
 }
-
+//----------------------------------------------------------------------
+//  Read parameters
+//----------------------------------------------------------------------
+void	CAnimatedModel::Init(char *lodFilename,Tag t)
+{	Type = t;
+	//-------Read the parameters -------------------------
+  SStream s(this,"WORLD",lodFilename) ;
+	return;
+}
 //----------------------------------------------------------------------
 //  Free resources
 //----------------------------------------------------------------------

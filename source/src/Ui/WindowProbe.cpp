@@ -159,9 +159,7 @@ CFuiProbe::~CFuiProbe()
 //------------------------------------------------------------------------
 void CFuiProbe::GetAmpSubsystems()
 { std::vector<CSubsystem*>amps;         // List of electrical subsystems
-  CElectricalSystem *amp = veh->amp;
-  if (0 == amp)         return;
-  amp->GetAllSystems(amps);
+  veh->amp.GetAllSystems(amps);
   std::vector<CSubsystem*>::iterator si;
   for (si = amps.begin(); si != amps.end(); si++) AddSubsystem(*si);
   amps.clear();
@@ -171,7 +169,7 @@ void CFuiProbe::GetAmpSubsystems()
 //------------------------------------------------------------------------
 void CFuiProbe::GetGasSubsystems()
 { std::vector<CFuelSubsystem*>gass;     // List of gas subsystems
-  CFuelSystem *gas = globals->gas;
+  CFuelSystem *gas = veh->GetGAS();
   if (0 == gas)         return;
   gas->GetAllSystems(gass);
   std::vector<CFuelSubsystem*>::iterator si;
@@ -196,8 +194,7 @@ void CFuiProbe::GetPidSubsystems()
 //------------------------------------------------------------------------
 void CFuiProbe::GetEngSubsystems()
 { std::vector<CEngine *>engs;           // List of engines
-  CEngineManager  *egm  = veh->eng;
-  egm->GetAllEngines(engs);
+  veh->eng.GetAllEngines(engs);
   std::vector<CEngine*>::iterator si;
   for (si = engs.begin(); si != engs.end(); si++)
   { CEngine   *eng = (*si);
@@ -215,8 +212,7 @@ void CFuiProbe::GetEngSubsystems()
 //------------------------------------------------------------------------
 void CFuiProbe::GetWhlSubsystems()
 { std::vector<CSuspension*>whls;              // List of wheels
-  CGroundSuspension *ssp = veh->whl;
-  ssp->GetAllWheels(whls);
+  veh->whl.GetAllWheels(whls);
   std::vector<CSuspension*>::iterator wh;
   for (wh = whls.begin(); wh != whls.end(); wh++) AddSubsystem(*wh);
   whls.clear();

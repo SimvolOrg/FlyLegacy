@@ -1769,8 +1769,6 @@ void CPluginMain::FreeDLLWindows (void)
 CDLLSimulatedObject::CDLLSimulatedObject (void)
 : CSimulatedObject ()
 { SetType(TYPE_FLY_SIMULATEDOBJECT);
-  nfo = NULL;
-  lod = NULL;
   draw_flag = false;
   sim_objects_active = false;
  *nfoFilename = 0;
@@ -1780,8 +1778,6 @@ CDLLSimulatedObject::CDLLSimulatedObject (void)
 //------------------------------------------------------------------------
 CDLLSimulatedObject::~CDLLSimulatedObject (void)
 {*nfoFilename = 0;
-  SAFE_DELETE (nfo);
-  SAFE_DELETE (lod);
 }
 //------------------------------------------------------------------ 
 //    Set Orientation
@@ -1827,17 +1823,15 @@ void CDLLSimulatedObject::DrawExternal (void)
   glMatrixMode (GL_MODELVIEW);
   glPushMatrix ();
   // Draw all externally visible objects associated with this object
-  if (lod) {
-    //if (globals->pln) { // 
-    //if (globals->sit->sdk_flyobject_list.fo_list.size () > 1) {
+  //if (globals->pln) { // 
+  //if (globals->sit->sdk_flyobject_list.fo_list.size () > 1) {
     if (sim_objects_active) {
       if (draw_flag) {
         draw_flag    = false;
         globals->pln = (CAirplane*)this;
-        lod->Draw (BODY_TRANSFORM);       // 1 = simulated DLL object
+        globals->pln->lod.Draw (BODY_TRANSFORM);       // 1 = simulated DLL object
         globals->plugins->dVeh = NULL;
-      }
-    }
+			}
   }
   glMatrixMode (GL_MODELVIEW);
   glPopMatrix ();

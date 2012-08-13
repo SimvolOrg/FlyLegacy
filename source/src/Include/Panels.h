@@ -87,7 +87,31 @@ protected:
   float         bn;
 	float					col[4];					// Emissive color
 };
-
+//================================================================================
+//	CAM decoder for the .CAM file
+//================================================================================
+class CamDecoder: public CStreamObject {
+protected:
+	//--- ATTRIBUTES -----------------------------------------
+	CVehicleObject  *mveh;
+	CCockpitManager *pit;
+	//--- Panel attributes -----------------------------------
+	Tag     id;         // Panel ID, as specified in a PNL file
+	char    idn[8];			// Tag for debug
+  bool    main;       // Is this the main (default) panel?
+	float   angL;				// Left limit
+  float   hdg;        // Viewpoint heading (y-axis rotation)
+	float   angR;				// Right limit
+  float   pch;       // Viewpoint pitch (x-axis rotation)
+  Tag     pnls[4];    // Links to IDs of other panels in cockpit
+  int     umdl;       ///< Use exterior model
+	//--- METHODS --------------------------------------------
+public:
+	CamDecoder(SStream *stf,CVehicleObject *veh);
+	//----------------------------------------------------------
+	int		Read(SStream *stf, Tag tag);
+	void	ReadFinished();
+};
 
 //===============================================================================
 // CPanel represents an instance of either a static or interactive panel
@@ -96,14 +120,52 @@ protected:
 //        limits crossing
 //================================================================================
 class CRadioGauge;
+//==========================================================================================
+// This class represents a single instance of a cockpit panel within a cockpit
+//   camera definition.  Members include the unique ID tag of the panel,
+//   the orientation of the eye position when that panel is active, and
+//   a list of which panel ID tags are situated to the left, right, up and down
+//   from the panel.
+//
+// Example:
+//
+//    <panl> ---- panel ----
+//    <bgno> ---- begin ----
+//      <id__> ---- id ----
+//      frnt
+//      <main> ---- default ----
+//      <hdg_> ---- heading ----
+//      0.0
+//      <ptch> ---- pitch ----
+//      7.4
+//      <pnls> ---- panels (L,R,U,D) ----
+//      uplt
+//      uprt
+//      NONE
+//      floo
+//    <endo> ---- end ----
+//  JS NOTE: Each panel has 2 vectors defining the Up position and the LookAt position (forward)
+//
+//==========================================================================================
+//================================================================================
+//	Panel descriptor
 //================================================================================
 class CPanel : public CStreamObject {
+	friend class CamDecoder;
   //-------Panel Attributes -----------------------------------------------
 protected:
   Tag         id;
   char        filename[64];
+	//--- Pointers -----------------------------------------------------------
   CCockpitManager *pit;
 	CVehicleObject  *mveh;
+	//--- Cameara parameters ------------------------------------------------
+	float   angL;				// Left limit
+  float   hdg;        // Viewpoint heading (y-axis rotation)
+	float   angR;				// Right limit
+  float   pch;        // Viewpoint pitch (x-axis rotation)
+  Tag     pnls[4];    // Links to IDs of other panels in cockpit
+  int     umdl;       ///< Use exterior model
   //--- Interactive panel data members ------------------------------------
   int     x_3Dxy, y_3Dxy;
   int     x_3Dsz, y_3Dsz;
@@ -164,9 +226,10 @@ protected:
 public:
   std::vector<CDLLGauge*>    dll_gauge; // vector of dl gauges
 	//--- METHODS -----------------------------------------------------------
-  CPanel (CCockpitManager *p,Tag id, const char* filename);
+  CPanel (CCockpitManager *p,Tag id, char* filename);
+	CPanel (Tag t,CVehicleObject *v);
  ~CPanel (void);
-
+  void	Init(char* filename);
   int   Read (SStream *stream, Tag tag);
 	void	AssignLite(Tag t);
   void  LoadTexture(char *fn);
@@ -185,11 +248,12 @@ public:
   //----- CPanel methods--------------------------------------------------------
   bool  ParametersOK();
   Tag   GetId (void);
-  void  Draw (CCameraCockpit *cam);
+  void  Draw ();
   void  Activate (void);
   void  Deactivate (void);
   void  SetViewPort();
   void  ScreenResize();
+	bool	View(float A);
   //-----------------------------------------------------------------------------
 	void	SetPanelQuad(TC_VTAB *pan);
   void  SetCacheLEF(TC_VTAB *dst);
@@ -230,16 +294,20 @@ public:
 	//-----------------------------------------------------------------------------
 	inline		TC_VTAB  *GetDynVBO()					{return pBUF;}
   //-----------------------------------------------------------------------------
-	inline	  CPanelLight* GetLight()				{return plite;}
-	inline  char*			GetName()							{return filename;}
-  inline  void      GetOFS(TC_4DF &d)			{d.x0 = xOffset, d.y0 = yOffset;}
-  inline  int       GetXOffset()					{return xOffset;}
-  inline  int       GetYOffset()					{return yOffset;}
-  inline  int       GetPanelHT()					{return y_3Dsz;}
-  inline  Tag       GetID()								{return id;}
-  inline  int       TotalGauges()					{return gage.size();}
-	inline  CVehicleObject *GetMVEH()				{return mveh;}
-	inline  void      MouseScreen(int &x, int &y) {x = hit.sx, y = hit.sy;}
+	float     GetPitch()						{return  pch;}
+	float			GetHeading()					{return hdg;}
+	//-----------------------------------------------------------------------------
+	Tag				NextPanelTag(char d)	{return pnls[d];}
+	CPanelLight* GetLight()				  {return plite;}
+	char*			GetName()							{return filename;}
+  void      GetOFS(TC_4DF &d)			{d.x0 = xOffset, d.y0 = yOffset;}
+  int       GetXOffset()					{return xOffset;}
+  int       GetYOffset()					{return yOffset;}
+  int       GetPanelHT()					{return y_3Dsz;}
+  Tag       GetID()								{return id;}
+  int       TotalGauges()					{return gage.size();}
+	CVehicleObject *GetMVEH()				{return mveh;}
+	void      MouseScreen(int &x, int &y) {x = hit.sx, y = hit.sy;}
 };
 
 //==================END OF FILE ================================================================

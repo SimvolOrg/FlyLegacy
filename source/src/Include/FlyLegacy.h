@@ -370,6 +370,7 @@ enum EFlyObjectType
   TYPE_FLY_VEHICLE        = 'vehi',
   TYPE_FLY_GROUNDVEHICLE  = 'gveh',
   TYPE_FLY_AIRPLANE       = 'plan',
+	TYPE_FLY_UFO						= '_ufo',
   TYPE_FLY_HELICOPTER     = 'heli'
 };
 enum EBitmapType
@@ -1873,6 +1874,24 @@ typedef struct {
     char full;
 } sScreenParams;
 //-----------------------------------------------------------------
+//  AIRCRAFT OPTION
+//-----------------------------------------------------------------
+typedef enum {
+  VEH_AP_DISC   = 0x0001,           // Autopilot autodisconnect
+  VEH_AP_LAND   = 0x0002,           // Autopilot autoland
+  VEH_AP_OPTN   = 0x0003,           // Both option
+  VEH_PN_HELP   = 0x0004,           // Panel Help
+  VEH_DW_SMOK   = 0x0010,           // Draw vehicle smoke
+  VEH_DW_SHAD   = 0x0020,           // Draw vehicle shadow
+  VEH_DW_VPOS   = 0x0040,           // Draw vehicle position
+  VEH_DW_AERO   = 0x0080,           // Draw vehicle aero vectors
+  VEH_D_CRASH   = 0x0100,           // Crash detector
+	//-------------------------------------------------------------
+	VEH_IS_FLY		= 0x1000,						// Flying object
+  VEH_IS_UFO		= 0x2000,						// UFO Kind
+} VEH_OPTION;
+
+//-----------------------------------------------------------------
 //  IMAGE structure
 //-------------------------------------------------------------------------------
 typedef struct {
@@ -2198,6 +2217,18 @@ class CFuiProbe;
 //----TOOLS -----------------------------------------------------
 class CExport;
 class CImport;
+//===========================================================================
+// External Lights
+//===========================================================================
+typedef enum {
+  EXTERNAL_LIGHT_NONE     = 0,
+  EXTERNAL_LIGHT_TAXI     = 1,
+  EXTERNAL_LIGHT_LAND     = 2,
+  EXTERNAL_LIGHT_STROBE   = 3,
+  EXTERNAL_LIGHT_NAV      = 4,
+  EXTERNAL_LIGHT_BEACON   = 5
+} EExternalLightPurpose;
+
 //=============================================================================
 //  OSM Layer
 //=============================================================================

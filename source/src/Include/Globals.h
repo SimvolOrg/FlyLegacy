@@ -142,20 +142,6 @@ typedef struct {
   SFont     ftradi9;
 } SFonts;
 //-----------------------------------------------------------------
-//  AIRCRAFT OPTION
-//-----------------------------------------------------------------
-typedef enum {
-  VEH_AP_DISC   = 0x0001,           // Autopilot autodisconnect
-  VEH_AP_LAND   = 0x0002,           // Autopilot autoland
-  VEH_AP_OPTN   = 0x0003,           // Both option
-  VEH_PN_HELP   = 0x0004,           // Panel Help
-  VEH_DW_SMOK   = 0x0010,           // Draw vehicle smoke
-  VEH_DW_SHAD   = 0x0020,           // Draw vehicle shadow
-  VEH_DW_VPOS   = 0x0040,           // Draw vehicle position
-  VEH_DW_AERO   = 0x0080,           // Draw vehicle aero vectors
-  VEH_D_CRASH   = 0x0100,           // Crash detector 
-} VEH_OPTION;
-//-----------------------------------------------------------------
 //  Scenery  OPTIONs
 //-----------------------------------------------------------------
 typedef enum {

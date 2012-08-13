@@ -318,14 +318,13 @@ private:
 //===============================================================================================
 class CGroundSuspension: public CSubsystem {           // : public CWhl {
 public:
-  CGroundSuspension()              {mveh = 0;}
-  CGroundSuspension                (CVehicleObject *v, CWeightManager *wghman);
+  CGroundSuspension();
   virtual ~CGroundSuspension       (void);
 
   /*! CStreamObject methods */
   virtual int   Read(SStream *stream, Tag tag);
   virtual void  ReadFinished(void);
-
+	void	Init(CWeightManager *wghman, char *fn);
   /*! CGroundSuspension generic methods */
   virtual void  Timeslice          (float dT);
   //-------------------------------------------------------------------
@@ -340,23 +339,25 @@ public:
   const SVector* GetSumGearMoments (void)              {return &SumGearMoments;}
   int             GetNumberOfWheels(void)              {return wheels_num;} //< body wheels num 
   /*! Set steering direction value */
-  const double&  GetMaxWheelHeight (void)              {return max_wheel_height;}
+  const double&  GetCurWheelHeight (void)              {return cur_wheel_H;}
   const double&  GetMainGearHeight (void)              {return mWPos;}
   //----------------------------------------------------------------------------------
-  inline void     GetAllWheels(std::vector<CSuspension *> &whl) { whl = whl_susp;}
-  inline CVector *GetMainGearCenter() {return &mainW;}
-	inline double   GetDifBraking()			{return difB;}
-	inline double   GetBumpForce()			{return bump;}
-  inline double   GetMainGearRadius() {return  mainR;}
-  inline double   GetBodyAGL()        {return  bAGL;}
-  inline double   GetPositionAGL()    {return  (bAGL + mainR - 1);}
-  inline double   GetSterGearRadius() {return  sterR;}
-  inline void     StoreGearVM(CVector &v, double mc) {mainVM = v; massCF = mc;}
-  inline char     GetNbWheelOnGround(){return nWonG;}
-  inline bool     WheelsAreOnGround() {return (nWonG != 0);}
-	inline bool			AllWheelsOnGround()	{return (nWonG == wheels_num);}
+	void	SetVEH(CVehicleObject *v)	{mveh = v;}
+	//-------------------------------------------------------------------------
+  void     GetAllWheels(std::vector<CSuspension *> &whl) { whl = whl_susp;}
+  CVector *GetMainGearCenter() {return &mainW;}
+	double   GetDifBraking()			{return difB;}
+	double   GetBumpForce()			{return bump;}
+  double   GetMainGearRadius() {return  mainR;}
+  double   GetBodyAGL()        {return  bAGL;}
+  double   GetPositionAGL()    {return  (bAGL + mainR - 1);}
+  double   GetSterGearRadius() {return  sterR;}
+  void     StoreGearVM(CVector &v, double mc) {mainVM = v; massCF = mc;}
+  char     GetNbWheelOnGround(){return nWonG;}
+  bool     WheelsAreOnGround() {return (nWonG != 0);}
+	bool			AllWheelsOnGround()	{return (nWonG == wheels_num);}
 	//--- Steering interface -----------------------------------------------------------
-	inline CSuspension *GetSteeringWheel()	{return steer;}
+	CSuspension *GetSteeringWheel()	{return steer;}
   //----------------------------------------------------------------------------------
   ///
   float                      rMas;                         ///< rated mass
@@ -375,6 +376,8 @@ protected:
   CFmtxMap           *mbtbl;                                // Brake table
   //------Wheel interface ------------------------------------------------------------
 	CSuspension  *steer;																			// Steering wheel
+  double max_wheel_H;																				//
+	double cur_wheel_H;																				//  Current wheel height
   //----------------------------------------------------------------------------------
 	double				bump;																					// Bump force
 	double        ampB;																					// Brake amplifier
@@ -387,7 +390,6 @@ protected:
   char          nWonG;                                        // Number wheels on ground
   //-----------------------------------------------------------------------------------
   int           wheels_num;                                   ///< body wheels num
-  double        max_wheel_height;
   //------Main position depending of the tail type to compute moment -----------------
   CVector        mainVM;                                  // Main vector moment
   double         massCF;                                  // Mass coefficient

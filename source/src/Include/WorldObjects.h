@@ -107,14 +107,14 @@ public:
   void  SetState(char c)    {State = c;}
   char  GetState()          {return State;}
 	//--- Options ----------------------------------------------
-  inline	U_INT GetOPT(U_INT p)			{return vehOpt.Get(p);}		// Return property
-  inline	void  RepOPT(U_INT p)     {vehOpt.Rep(p);}          // Replace property
-  inline	void  SetOPT(U_INT p)     {vehOpt.Set(p);}          // Set property
-  inline  void  RazOPT(U_INT p)     {vehOpt.Raz(p);}					// Clear property
-	inline  void  ToggleOPT(U_INT p)  {vehOpt.Toggle(p);}       // Swap property
+  U_INT GetOPT(U_INT p)			{return vehOpt.Get(p);}		// Return property
+  void  RepOPT(U_INT p)     {vehOpt.Rep(p);}          // Replace property
+  void  SetOPT(U_INT p)     {vehOpt.Set(p);}          // Set property
+  void  RazOPT(U_INT p)     {vehOpt.Raz(p);}					// Clear property
+	void  ToggleOPT(U_INT p)  {vehOpt.Toggle(p);}       // Swap property
   //-------------------------------------------------------------
-  inline	char  HasOPT(U_INT p)     {return vehOpt.Has(p);}
-  inline  char  NotOPT(U_INT p)     {return vehOpt.Not(p);}
+  char  HasOPT(U_INT p)     {return vehOpt.Has(p);}
+  char  NotOPT(U_INT p)     {return vehOpt.Not(p);}
 	//----METHODS ----------------------------------------------
 public:
   CWorldObject (void);
@@ -135,17 +135,16 @@ public:
   inline  Tag   GetType (void) { return type; }
   inline  Tag*  GetTypePointer (void) { return &type; }
   //------------------------------------------------------
-  inline bool   IsAirplane()  {return (type == TYPE_FLY_AIRPLANE);}
+  char    IsFyingObj()  {return HasOPT(VEH_IS_FLY);}
   //------inline  CWorldObject methods ---------------------------------------
-	inline    void      *GetPhyModel()												{return phyMod;}
-  inline    SPosition  GetOriginalPosition()								{return orgp;}  
-  inline    SPosition *GetAdPosition()											{return &geop;}           
-  inline    SPosition  GetPosition()												{return geop;}
-	inline		double		 GetHeading()													{return -dang.z;}	
-  inline    double     GetAltitude()												{return geop.alt;}
-  inline    void       SetAltPosition(double a)		          {geop.alt = a;}
+	void      *GetPhyModel()												{return phyMod;}
+  SPosition  GetOriginalPosition()								{return orgp;}  
+  SPosition *GetAdPosition()											{return &geop;}           
+  SPosition  GetPosition()												{return geop;}
+	double		 GetHeading()													{return -dang.z;}	
+  double     GetAltitude()												{return geop.alt;}
+  void       SetAltPosition(double a)		          {geop.alt = a;}
   //----------------------------------------------------------------------------
-	virtual void SetSuspension(CWeightManager *w)     {;}
   virtual void SetPhysicalOrientation (SVector &v)  {;}  // used in COpal to slew orientation
   virtual void ResetSpeeds() {}
   virtual void ResetZeroOrientation () {}
@@ -155,9 +154,9 @@ public:
   void      SetObjectPosition(SPosition pos);
   void      SetAltitude(double alt);
   //------------------------------------------------------------------------------
-  inline  void    Rotate()    {glMultMatrixd(rotM);}
-  inline  double *GetROTM()   {return rotM;}
-  inline  void    RotateVector(CVector &V,SVector &R) {V.MultMatGL(rotM,R);}  // Rotate V into R
+  void    Rotate()    {glMultMatrixd(rotM);}
+  double *GetROTM()   {return rotM;}
+  void    RotateVector(CVector &V,SVector &R) {V.MultMatGL(rotM,R);}  // Rotate V into R
   //------------------------------------------------------------------------------
   void      AddOrientationInDegres(SVector &v);
   SVector   GetOrientation(void)  {return iang;}    // In RH coordinate system (radian)
@@ -186,8 +185,6 @@ class CSimulatedObject : public CWorldObject, public CExecutable {
   //---ATTRIBUTES ----------------------------------------------
 public:
   char                  nfoFilename[64];
-  CVehicleInfo          *nfo;
-  CAnimatedModel        *lod;
   //---METHODS ------------------------------------------------
 public:
   // Constructors / destructor
@@ -201,7 +198,6 @@ public:
   //---------- Simulation ---------------------------------------
   virtual int  Timeslice(float dT,U_INT FrNo) {return 0;}       ///< Real-time timeslice processing
   // Drawing 
-  virtual void  DrawExternal();
 	virtual void  RestOnGround()   {;}
   //-------- Methods ------------------------------------------
   ETerrainType GetTerrainType (void);           ///< get terrain type under object
@@ -235,61 +231,45 @@ public:
   virtual bool              FindReceiver(SMessage *msg){return false;}; // JSDEV* Message preparation
   virtual void				      PrepareMsg(void);							      // JSDEV* Message preparation
 		      void				      TraceMsgPrepa(SMessage *msg);				// JSDEV* Message preparation
-          void              DrawAeromodelData();
-  //virtual CCameraManager*   GetCameraManager();
-  virtual CCockpitManager*  GetCockpitManager()      {return pit;}
-  virtual Tag               GetPanel();
-  virtual void              SetPanel(Tag tag);
   virtual void              Print                    (FILE *f);
   virtual int               TimeSlice(float dT,U_INT frame) {return 0;}
   virtual void              Update(float dT,U_INT FrNo);		        // JSDEV*
+	//--- Return data ---------------------------------------------------
   //! Returns altitude above ground in feet
-	float                     GetUserAGL()	{return 0;}
-  //! Returns vehicle mass (kg)
-  virtual double            GetMassInKgs();
-	virtual double						GetMassInLbs();
-  //! Returns vehicle mass moments of inertia (kg m^2)
-  virtual const SVector*    GetMassMomentOfInertia   ();
+	float                     GetUserAGL()				{return 0;}
   //! Returns vehicle moments of inertia (kg m^2)
-  virtual const SVector*    GetMomentOfInertia       ();
-  //! Returns object CG position in object coordinates (m)
-  virtual const SVector*    GetCG                    ();
+	SVector*    GetMomentOfInertia()				{return (&tb);}
   //! Returns velocity vector in inertial frame (m/s)
-  virtual const CVector*    GetInertialVelocityVector        (void);
+	CVector*    GetInertialVelocityVector() {return &(vi[cur]); }// m/s LH;
   //! Returns velocity vector in body frame (m/s)
-  virtual const CVector*    GetBodyVelocityVector    (void);
+	CVector*    GetBodyVelocityVector()			{return &(vb[cur]);}
   //! Returns acceleration vector in inertial frame (m/s)
-  virtual const CVector*    GetInertialAccelerationVector    (void);
+	CVector*    GetInertialAccelerationVector() {return &(ai[0]);}
   //! Returns acceleration vector in body frame (m/s)
-  virtual const CVector*    GetBodyAccelerationVector(void);
-  //! Returns velocity relative to ground in object coordinates (m/s)
-  virtual double GetGroundspeed();
+	CVector*    GetBodyAccelerationVector() {return &(ab[0]);}
   //! Returns airspeed vector in object coordinates (m/s)
-  virtual const CVector*    GetAirspeed              (void);
+  CVector*    GetAirspeed();
   //! Returns airspeed with body orientation reference
-  virtual const CVector*    GetRelativeBodyAirspeed  (void);
+  CVector*    GetRelativeBodyAirspeed();
   //! Returns indicated airspeed in feet / sec
-  virtual void GetIAS                 (double &spd); // IAS in ft/s
+  void GetIAS(double &spd); // IAS in ft/s
   //! Returns indicated airspeed in knts
-  virtual void GetKIAS                (double &spd); // KIAS
+  void GetKIAS(double &spd); // KIAS
   //! Returns true airspeed in feet / sec
-  virtual void GetTAS                 (double &spd); // TAS in ft/s
+  void GetTAS(double &spd); // TAS in ft/s
   //! Returns indicated airspeed in knts
-  virtual const double& GetPreCalculedKIAS (void) {return kias;} //
+  double& GetPreCalculedKIAS () {return kias;} //
   //! Returns object angular velocity in object coordinates (rad/s)
-  virtual const CVector*    GetBodyAngularVelocityVector (void);
+	CVector*    GetBodyAngularVelocityVector () {return &(wb[cur]);}
   //!  Returns object angular acceleration in object coordinate (rad/s²)
-  virtual const CVector*		GetBodyAngularAccelerationVector(void);
+	CVector*		GetBodyAngularAccelerationVector() {return &(dwb[cur]);}
   //! Returns object angular velocity in world coordinates (rad/s)
-  virtual const CVector*    GetInertialAngularVelocityVector (void);
-  //!  Returns object angular acceleration in world coordinate (rad/s²)
-  virtual const CVector*		GetInertialAngularAccelerationVector(void);
+	CVector*    GetInertialAngularVelocityVector () {return &(wi[cur]);}
   //  Return body AGL (Body above ground level -----------------------------
-  virtual double            GetBodyAGL()  {return 0;}
+  double      GetBodyAGL()  {return 0;}
   //!  Returns wind effect on aircraft
-  virtual void              GetAircraftWindEffect (void);
+  void        GetAircraftWindEffect (void);
   //  Set plane above ground -----------------------------------------------
-  virtual void              PositionAGL() {;}
   virtual double            GetPositionAGL() {return 0;}
   //  Set plane resting ----------------------------------------------------
   virtual void              RestOnGround()  {;}
@@ -302,7 +282,9 @@ public:
   void  DrawInside(CCamera *cam);
 	void  DrawOutsideLights();
   void  DrawExternalFeatures();
-  //-------Keyboard messages ------------------------------------------------
+	//--- Engine interface ----------------------------------------------------
+  bool					AllEngineOn()				{return (engR == eng.GetEngineNbr());}
+	//-------Keyboard messages ------------------------------------------------
   virtual void  SetNaviMSG(Tag t) {}
   virtual void  SetTaxiMSG(Tag t) {}
   virtual void  SetLandMSG(Tag t) {}
@@ -311,32 +293,33 @@ public:
   void  StoreNFO(char *nfo);
   void  ReadParameters(CStreamObject *obj,char *fn);
   //---Radio interface ------------------------------------------------------
-	inline  void  RegisterRadioBUS(BUS_RADIO *b)	{busR = b;}
-	inline  void  RegisterGPSR(GPSRadio *r)				{GPSR = r;}
-	inline  void	RegisterRAD(CRadio *r){mRAD = r;}
-  inline  void  RegisterNAV(Tag r)    {rTAG[NAV_INDEX] = r;}      //{rNAV = r;}
-  inline  void  RegisterCOM(Tag r)    {rTAG[COM_INDEX] = r;}      //rCOM = r;}
-  inline  void  RegisterADF(Tag r)    {rTAG[ADF_INDEX] = r;}      //rADF = r;}
-  inline  Tag   GetNAV()              {return  rTAG[NAV_INDEX];}  //rNAV;}
-  inline  Tag   GetCOM()              {return  rTAG[COM_INDEX];}  //rCOM;}
-  inline  Tag   GetADF()              {return  rTAG[ADF_INDEX];}  //rADF;}
-  inline  Tag   GetRadio(int k)       {return  rTAG[k];}
+	void  RegisterRadioBUS(BUS_RADIO *b)	{busR = b;}
+	void  RegisterGPSR(GPSRadio *r)				{GPSR = r;}
+	void	RegisterRAD(CRadio *r){mRAD = r;}
+  void  RegisterNAV(Tag r)    {rTAG[NAV_INDEX] = r;}      //{rNAV = r;}
+  void  RegisterCOM(Tag r)    {rTAG[COM_INDEX] = r;}      //rCOM = r;}
+  void  RegisterADF(Tag r)    {rTAG[ADF_INDEX] = r;}      //rADF = r;}
+  Tag   GetNAV()              {return  rTAG[NAV_INDEX];}  //rNAV;}
+  Tag   GetCOM()              {return  rTAG[COM_INDEX];}  //rCOM;}
+  Tag   GetADF()              {return  rTAG[ADF_INDEX];}  //rADF;}
+  Tag   GetRadio(int k)       {return  rTAG[k];}
 	//--- Component pointers ------------------------------------------------
-	inline  BUS_RADIO *GetRadioBUS()		{return busR;}	// Radio BUS
-	inline  GPSRadio  *GetGPS()					{return GPSR;}	// GPS radio 
-	inline  CRadio		*GetMRAD()				{return mRAD;}	// Master radio
-  //------------------------------------------------------------------------
+	BUS_RADIO *GetRadioBUS()		{return busR;}	// Radio BUS
+	GPSRadio  *GetGPS()					{return GPSR;}	// GPS radio 
+	CRadio		*GetMRAD()				{return mRAD;}	// Master radio
+  //--- Wing interface ----------------------------------------------------
   //! send wing deflection to aeromodel
-  void    SetWingChannel(CAeroControlChannel *aero);
+	void    SetWingChannel(CAeroControlChannel *aero)			{wng.SetWingChannel(aero);}
+	void    DrawAeromodelData();
 	//--- Model interface ---------------------------------------------------------------------
 	void		OverallExtension(SVector &v);			// Get 3D model extension 
   //!-----------------------------------------------------------------------
   //! send steering wheel angle to gear
 	void    StoreSteeringData (SGearData *gdt);
-  void    SetPartKeyframe   (char* part, float value);
-  void    SetPartTransparent(char* part, bool ok = true);
+	void    SetPartKeyframe   (char* part, float key)			{lod.SetPartKeyframe (part, key);}
+	void    SetPartTransparent(char* part, bool ok = true){lod.SetPartTransparent (part, ok);}
   //----Set spinner part -------------------------------------------------------------------
-  CAcmSpin     *SetSpinner(char e,char *pn) {return (lod)?(lod->AddSpinner(e,pn)):(0);}     // Set spinner part
+  CAcmSpin     *SetSpinner(char e,char *pn) {return lod.AddSpinner(e,pn);}     // Set spinner part
   //--------------Aero model management --------------------------------------------------
   const double&             GetWingIncidenceDeg     (void) {return main_wing_incid;}
   const float&              GetWingAoAMinRad        (void) {return main_wing_aoa_min;}
@@ -356,24 +339,26 @@ public:
   //-------------------------------------------------------------------------------------
 public:
   // wind angle relative to the wind direction in LH m/s
-
+	//--- Susbsystems included (to avoid existence tests) ---------------------------------
+  CVehicleInfo          nfo;
+  CPhysicModelAdj       phy; // PHY file
+	CAnimatedModel        lod;
+	CElectricalSystem			amp;
+  CFuelSystem           gas;
+	CWeightManager        wgh;
+  CSimulatedVehicle     svh;
+	CAerodynamicModel     wng;
+  CEngineManager        eng;
+  CControlMixer         mix;
+  CCockpitManager       pit;
+  CPitotStaticSystem    pss;
+  CGroundSuspension     whl;
+  CVariableLoadouts     vld;
+  CExternalLightManager elt;
   // Vehicle specifications, subsystems, etc.
   char                  upd;                  // Update instrument while in slew
-  CSimulatedVehicle     *svh;
-  CElectricalSystem     *amp;
-  CAerodynamicModel     *wng;
-  CPhysicModelAdj       *phy; // PHY file 
-  CFuelSystem           *gas;
-  CPitotStaticSystem    *pss;
-  CGroundSuspension     *whl;
-  CVariableLoadouts     *vld;
-  CCockpitManager       *pit;
-  //CCameraManager        *cam;
-  CExternalLightManager *elt;
-  CEngineManager        *eng;
-  CControlMixer         *mix;
   CSlopeWindData        *swd;
-  CWeightManager        *wgh;
+ 
   CVehicleHistory       *hst;
 	PlaneCheckList        *ckl;
 	//-----------------------------------------------------------------------------
@@ -389,45 +374,47 @@ public:
   //-----Sound object collection ------------------------------------------------
   std::map<Tag,CSoundOBJ*> sounds;            // Sound objects related to vehicle
 	//====== METHODS ==============================================================
-  inline void  AddSound(CSoundOBJ *so) {sounds[so->GetTag()];}
+  void  AddSound(CSoundOBJ *so) {sounds[so->GetTag()];}
   //-----Mouse events -----------------------------------------------------------
-  inline bool   MouseMove (int x,int y) { return (pit)? (pit->MouseMove(x,y)):(false);}
-  inline bool   MouseClick(EMouseButton b,int u,int x,int y)  { return (pit)? (pit->MouseClick(b,u,x,y)):(false);}
+  bool   MouseMove (int x,int y) { return pit.MouseMove(x,y);}
+  bool   MouseClick(EMouseButton b,int u,int x,int y)  { return pit.MouseClick(b,u,x,y);}
   //-----------------------------------------------------------------------------
-  inline CNullSubsystem*    GetNullSubsystem(void)  { return &nSub; }
-  inline char              *GetNFOname()            { return nfoFilename;}
-  inline void               GetVisualCG(SVector &v) {if (wgh) wgh->GetVisualCG(v);}
-  //-----Engine management ---------------------------------------------------------
-	inline bool		AllEngineOn()						{return (engR == eng->GetEngineNbr());}
+  CNullSubsystem*    GetNullSubsystem(void)  { return &nSub; }
+  char              *GetNFOname()            { return nfoFilename;}
   //---------------------------------------------------------------------------------
-  inline  CAnimatedModel        *GetLOD()     {return lod;}
-  inline  CWeightManager        *GetWGH()     {return wgh;}
-	inline  int                    GetEngNb()		{return nEng;}
+  CAnimatedModel   *GetLOD()    {return &lod;}
+	int               GetEngNb()	{return nEng;}
 	//--- Gear Management -------------------------------------------------------------
-	CSuspension  *GetSteeringWheel()      {return (whl)?(whl->GetSteeringWheel()):(0);}
-	void					SetABS(char p)					{whl->SetABS(p);}
-	float         GetBrakeForce(int p)    {return amp->GetBrakeForce(p);}
+	CSuspension  *GetSteeringWheel()      {return whl.GetSteeringWheel();}
+	void					SetABS(char p)					{whl.SetABS(p);}
+	float         GetBrakeForce(int p)    {return amp.GetBrakeForce(p);}
   char          GetWheelNum()           {return wNbr++;}
-  bool          WheelsAreOnGround()     {return whl->WheelsAreOnGround();}
-  char          NbWheelsOnGround()      {return whl->GetNbWheelOnGround();}  
-	bool					AllWheelsOnGround()			{return whl->AllWheelsOnGround();}
+  bool          WheelsAreOnGround()     {return whl.WheelsAreOnGround();}
+  char          NbWheelsOnGround()      {return whl.GetNbWheelOnGround();}  
+	bool					AllWheelsOnGround()			{return whl.AllWheelsOnGround();}
 	//--- Brake interface -------------------------------------------------------------
 	double				GetDifBrake()						{return brkDIF;}
 	void					RazDifBrake()						{brkDIF  = 0;}
 	void					AddDifBrake(double b)		{brkDIF += b;}
-  //--- Fuel Management -------------------------------------------------------------
-  inline void   GetFuelCell(std::vector<CFuelCell*> &vf)  {if (wgh) wgh->GetFuelCell(vf);}
-  inline void   GetLoadCell(std::vector<CLoadCell*> &vl)  {if (wgh) wgh->GetLoadCell(vl);}
-  inline float  GetDryWeight()                            {return (wgh)?(wgh->GetDryWeight()):(0);}
-  inline float  GetGasWeight()                            {return (wgh)?(wgh->GetGasWeight()):(0);}
-  inline float  GetLodWeight()                            {return (wgh)?(wgh->GetLodWeight()):(0);}
+  //--- Fuel and weight Management --------------------------------------------------
+	CWeightManager  *GetWGH()							{return &wgh;}
+	void      GetVisualCG(SVector &v) {wgh.GetVisualCG(v);}
+  void			GetFuelCell(std::vector<CFuelCell*> &vf)  {wgh.GetFuelCell(vf);}
+  void			GetLoadCell(std::vector<CLoadCell*> &vl)  {wgh.GetLoadCell(vl);}
+  float			GetDryWeight()                            {return wgh.GetDryWeight();}
+  float			GetGasWeight()                            {return wgh.GetGasWeight();}
+  float			GetLodWeight()                            {return wgh.GetLodWeight();}
+	double		GetMassInKgs()							{return (double(wgh.GetTotalMassInKgs()));}
+	double		GetMassInLbs()							{return (double(wgh.GetTotalMassInLbs()));}
+	SVector*	GetMassMomentOfInertia()		{return (wgh.wb.GetMI_ISU());}
   //--- Acces to systems ------------------------------------------------------------------
-	inline  void							Register(AutoPilot *p){aPIL = p;}
-	inline  AutoPilot        *GetAutoPilot()	{return  aPIL;}
-	inline  CRobot           *GetRobot()			{return amp->GetRobot(); }
-	inline  CFPlan           *GetFlightPlan() {return amp->GetFlightPlan();}
-  inline  char             *GetPID()        {return (nfo)?(nfo->GetPID()):(0);}
-	inline  CPhysicModelAdj  *GetPHY()				{return phy;}
+	void							Register(AutoPilot *p){aPIL = p;}
+	AutoPilot        *GetAutoPilot()	{return  aPIL;}
+	CRobot           *GetRobot()			{return amp.GetRobot(); }
+	CFPlan           *GetFlightPlan() {return amp.GetFlightPlan();}
+  char             *GetPID()        {return nfo.GetPID();}
+	CPhysicModelAdj  *GetPHY()				{return &phy;}
+	CFuelSystem      *GetGAS()				{return &gas;}
 	//-----------------------------------------------------------------------------------------
 protected:
 	//--- Engine parameters --------------------------------------------------------
@@ -551,18 +538,19 @@ public:
   EMessageResult    SendMessageToEngSystems(SMessage *msg);
   EMessageResult    SendMessageToExternals (SMessage *msg);
   //----Init keyboard messages --------------------------------------------------
-  inline void       SetNaviMSG(Tag t) {Navi.group = t;}
-  inline void       SetLandMSG(Tag t) {Land.group = t;}
-  inline void       SetTaxiMSG(Tag t) {Taxi.group = t;}
-  inline void       SetStrbMSG(Tag t) {Strb.group = t;}
-  //-----------------------------------------------------------------------------
+  void       SetNaviMSG(Tag t) {Navi.group = t;}
+  void       SetLandMSG(Tag t) {Land.group = t;}
+  void       SetTaxiMSG(Tag t) {Taxi.group = t;}
+  void       SetStrbMSG(Tag t) {Strb.group = t;}
+  //--- Engine interface --------------------------------------------------------
   void              GetAllEngines(std::vector<CEngine*> &engs);
-  void              CutAllEngines()     {eng->CutAllEngines();}
-  void              EnginesIdle()       {eng->EnginesIdle();}
-	void							HereWeCrash()       {eng->AbortEngines();}
+  void              CutAllEngines()     {eng.CutAllEngines();}
+  void              EnginesIdle()       {eng.EnginesIdle();}
+	void							HereWeCrash()       {eng.AbortEngines();}
+	//-----------------------------------------------------------------------------
   SPosition         SetOnGround();
-  double            GetBodyAGL()      {return whl->GetBodyAGL();}
-  double            GetPositionAGL()  {return whl->GetPositionAGL();}
+  double            GetBodyAGL()      {return whl.GetBodyAGL();}
+  double            GetPositionAGL()  {return whl.GetPositionAGL();}
   void              BodyCollision(CVector &p);
   //----Update the vehicle ------------------------------------------------------
   int               TimeSlice(float dT,U_INT frame);
@@ -622,12 +610,12 @@ public:
 	//--------------------------------------------------------------------------
 	void				 GroundAt(double alt);
 	//--- ACCES TO SUBSYSTEMS --------------------------------------------------
-	inline    void				 StartVirtualPilot()	{amp->vpil->Start();}
-	inline    VPilot      *VirtualPilot()				{return amp->vpil;}
+	inline    void				 StartVirtualPilot()	{amp.vpil->Start();}
+	inline    VPilot      *VirtualPilot()				{return amp.vpil;}
   //------Message interface --------------------------------------------------
   inline    void         SendNaviMsg()  {Send_Message(&Navi);}
   inline    void         SendApilMsg()  {Send_Message(&Apil);}
-  inline    int          GetEngNb()     {return amp->pEngineManager->HowMany();}
+  inline    int          GetEngNb()     {return amp.pEngineManager->HowMany();}
   //---------------------------------------------------------------------------
   float        Flaps               (void);      ///< Get flaps position
 };
@@ -647,12 +635,9 @@ public:
 class CUFOObject : public CAirplane {
 public:
   // Constructors / destructor
-  CUFOObject                              (void);
-
-  // CWorldObject methods
-	void	SetSuspension(CWeightManager *w);
+  CUFOObject();
   // CSimulatedObject methods
-  void Simulate                           (float dT,U_INT FrNo);		///< Overriden 
+  void Simulate(float dT,U_INT FrNo);		///< Overriden 
   void UpdateOrientationState(float dT,U_INT FrNo);		///< Overriden
   int	 UpdateNewPositionState(float dT,float spd);
   static    CLogFile *log;
@@ -678,7 +663,6 @@ public:
   void ReadFinished               (void);
   void  PlaneShape();
   // CWorldObject methods
-	void	SetSuspension(CWeightManager *w);
   void  SetPhysicalOrientation (SVector &rad_angle);
   //---- Normal management --------------------------------
   void  Simulate(float dT,U_INT FrNo);		            ///< Overriden 

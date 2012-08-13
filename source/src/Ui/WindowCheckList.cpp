@@ -41,10 +41,12 @@ void UnMarkCheckList(CSlot *slot)
 //=====================================================================================
 //   WINDOW for AIRCRAFT CHECK LIST
 //=====================================================================================
-CFuiCkList::CFuiCkList(Tag idn, const char *filename)
+CFuiCkList::CFuiCkList(Tag idn, char *filename)
 :CFuiWindow(idn,filename,0,0,0)
 { char err[128];
   sprintf(err,"Incorrect TEMPLATE file: %",filename);
+	//---------------------------------------------------------
+	mveh				= globals->pln;
   //---------------------------------------------------------
   nSEL        = -1;
   mPOP.aText  = 0;
@@ -140,8 +142,7 @@ bool CFuiCkList::Verify()
 	U_INT np	= val & D2R2_NEED_PANL;
 	if (np && !panl)										return false;
   //--- Activate the panel -----------------------
-  CCameraCockpit* cap = (CCameraCockpit*)cam;
-  cap->ActivateCockpitPanel(a.pnt);
+	mveh->pit.ActivatePanel (a.pnt);
   if (a.actn == D2R2_SHOW_FOCUS_PANEL)return true;
 		//--- Check for gauge needed -------------------
 	U_INT ng	= val & D2R2_NEED_GAGE;

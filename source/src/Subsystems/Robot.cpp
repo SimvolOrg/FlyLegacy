@@ -372,7 +372,7 @@ void  VPilot::PrepareMsg(CVehicleObject *veh)
 {	apm		= globals->apm;
 	pln		= (CAirplane*)veh;
 	apil	= pln->GetAutoPilot();
-	sreg	= pln->amp->GetSpeedRegulator();
+	sreg	= pln->amp.GetSpeedRegulator();
 	return;
 }
 //--------------------------------------------------------------

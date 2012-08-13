@@ -1340,7 +1340,7 @@ void StreamWarn(char *pn, char *fn)
 //==================================================================================
 SStream::SStream(CStreamObject *O,char *fn)
 {	ok = false;
-	if (OpenRStream (fn,*this)) 
+  if (*fn && OpenRStream (fn,*this)) 
 	{	ReadFrom (O,this);
 	  CStreamFile* sf = (CStreamFile*)stream;
 		sf->Close ();
@@ -1355,7 +1355,7 @@ SStream::SStream(CStreamObject *O,char *fn)
 //==================================================================================
 SStream::SStream(CStreamObject *O,char *pn, char *fn)
 {	ok	= false;
-	if (OpenRStream (pn,fn,*this)) 
+	if (*fn && OpenRStream (pn,fn,*this)) 
   {	ReadFrom (O,this);
 		CStreamFile* sf = (CStreamFile*)stream;
 		sf->Close ();

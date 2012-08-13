@@ -108,23 +108,120 @@ void CPanelLight::Update (float b)
 	col[0] = col[1] = col[2] = lum;
   return;
 }
+//============================================================================================
+//	Panel used for cockpit display
+//============================================================================================
+CamDecoder::CamDecoder(SStream *stf,CVehicleObject *veh)
+{	mveh	= veh;
+	pit		= &veh->pit;
+	main	= false;
+	hdg   = pch = 0;
+	pnls[0] = pnls[1] = pnls[2] = pnls[3] = StringToTag ("NONE");
+	ReadFrom(this,stf);
+}
+//----------------------------------------------------------------------
+//  Read all parameters
+//-----------------------------------------------------------------------
+int CamDecoder::Read (SStream *stream, Tag tag)
+{ float pm;
+  int rc = TAG_IGNORED;
+
+  switch (tag) {
+  case 'id__':
+    ReadTag (&id, stream);
+		TagToString(idn,id);
+    return TAG_READ;
+
+  case 'main':
+    main = true;
+    return TAG_READ;
+  //--JS set positive direction for heading ---------------------
+  case 'hdg_':
+    ReadFloat (&hdg, stream);
+		angL= Wrap360(hdg - 45);
+		angR= Wrap360(hdg + 45);
+    hdg = (360 - hdg);
+    return TAG_READ;
+
+  case 'ptch':
+    ReadFloat (&pch, stream);
+    return TAG_READ;
+
+  case 'pnls':
+    // Read four panel ID tags corresponding to the panels to the L, R, U and D
+    ReadTag (&pnls[0], stream);
+    ReadTag (&pnls[1], stream);
+    ReadTag (&pnls[2], stream);
+    ReadTag (&pnls[3], stream);
+    return TAG_READ;
+
+  case 'ofst':
+    ReadFloat (&pm, stream);
+    ReadFloat (&pm, stream);
+    ReadFloat (&pm, stream);
+    return TAG_READ;
+
+
+  case 'umdl':
+    ReadInt (&umdl, stream);
+    return TAG_READ;
+  }
+
+  WARNINGLOG ("CCockpitPanel::Read : Unknown tag %s", TagToString(tag));
+  return TAG_IGNORED;
+}
+//----------------------------------------------------------------------
+//  All parameters are read.  Allocate a new panel
+//-----------------------------------------------------------------------
+void CamDecoder::ReadFinished()
+{	CPanel *pan = new CPanel(id,mveh);
+	pan->angL		= this->angL;
+	pan->hdg		= this->hdg;
+	pan->angR		= this->angR;
+	pan->pch		= this->pch;
+	pan->umdl		= this->umdl;
+	for (int k=0; k<4; k++) pan->pnls[k] = this->pnls[k];
+	pit->AddPanel(pan,main);
+	return;
+}
+//============================================================================================
+//	Panel used for cockpit display
+//============================================================================================
 //================================================================================
 // CPanel
 //  Create the panel
 //	The panel is assigned the default light with id = 0
 //	
 //=================================================================================
-CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
+//	Constructor 1
+//=================================================================================
+CPanel::CPanel (CCockpitManager *pm,Tag id, char* fn)
 { this->id  = id;
-	pit				= pn;						// Panel manager
-	mveh			= pn->GetMVEH();
-  strncpy (this->filename, filename,63);
+	pit				= pm;						// Panel manager
+	mveh			= pm->GetMVEH();
+	Init(fn);
+}
+//=================================================================================
+//	Constructor 2
+//=================================================================================
+CPanel::CPanel (Tag t,CVehicleObject *v)
+{ this->id	= t;
+	mveh			= v;
+	pit				= &mveh->pit;
+	*filename = 0;
+}
+//-------------------------------------------------------------------------
+//	Init panel parameters
+//-------------------------------------------------------------------------
+void CPanel::Init(char *fn)
+{ pit			= &mveh->pit;
+	strncpy (filename, fn,63);
   txOBJ   = 0;
   ngOBJ   = 0;
 	trn1		= 1;
 	skip		= 0;
 	//--- Assign a default light --------------------
-	dlite		= pn->GetLight(0);
+	dlite		= pit->GetLight(0);
 	plite		= dlite;
 	brit[3] = 1;
   //--- initialize dll_gauge ----------------------
@@ -169,8 +266,8 @@ CPanel::CPanel (CCockpitManager *pn,Tag id, const char* filename)
 
 	SStream(this,"DATA",(char*)filename);
   // -----Add a pointer to camera entry --------------
-  CCameraCockpit *cam = (CCameraCockpit *)globals->ccm->GetCamera('cock');
-  cam->SetPanel(id,this);
+  //CCameraCockpit *cam = (CCameraCockpit *)globals->ccm->GetCamera('cock');
+  //cam->SetPanel(id,this);
 }
 //==============================================================================
 //  Destroy the panel
@@ -1079,7 +1176,8 @@ void CPanel::ReadFinished (void)
 //  Compute panel viewport after change in size
 //---------------------------------------------------------------------------------
 void CPanel::SetViewPort()
-{ int   swd  = globals->cScreen->Width;
+{ if (0 == *filename)			return;
+	int   swd  = globals->cScreen->Width;
   int   sht  = globals->cScreen->Height;
   xMrg   = float((swd - x_3Dsz) >> 1);      // X margin
   yMrg   = float((sht - y_3Dsz) >> 1);      // Y margin
@@ -1336,6 +1434,13 @@ void CPanel::Activate (void)
 //---------------------------------------------------------------------------------
 void CPanel::Deactivate (void)
 {   return;
+}
+//----------------------------------------------------------------------
+//  Check if panel view the requested direction
+//-----------------------------------------------------------------------
+bool CPanel::View(float A)
+{	float M = 360 - hdg;
+	return InCircularRange(A,M,float(22.5));
 }
 //---------------------------------------------------------------------------------
 //  Move verticaly
@@ -1602,7 +1707,7 @@ void CPanel::DrawCaTour()
 //===========================================================================
 // Draw the panel, including all contained gauges
 //===========================================================================
-void CPanel::Draw (CCameraCockpit *cam)
+void CPanel::Draw ()
 { //--- Creep the panel if any flags are set
   if (xDep) MoveHZ();
   if (yDep) MoveVT();

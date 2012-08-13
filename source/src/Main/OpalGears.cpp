@@ -89,7 +89,7 @@ void  CGearOpal::GetGearPosition(CVector &mp,double  &rad)
 //---------------------------------------------------------------------------------
 void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
-	CVector cog = mveh->wgh->svh_cofg;
+	CVector cog = mveh->wgh.svh_cofg;
   //--- Compute wheel coordinates relative to CG -----------
   double gx = gearData->bPos.x - cog.x;
   double gy = gearData->bPos.z - cog.z;
@@ -170,7 +170,7 @@ char CGearOpal::GCompression(char pp)
   if (wagl > 0.5)   return 0;
   //----Compute impact power in pound per feet per sec ------------
 	double vert = vWhlVelVec.z;									// Meter per second
-  double mass = mveh->wgh->GetTotalMassInLbs();
+  double mass = mveh->wgh.GetTotalMassInLbs();
 	if (fabs(vert) < 0.1)		vert = 0; 
   mass       *= FN_FEET_FROM_METER(vert);
   gearData->imPW = mass;                      // Impact on wheel
@@ -378,7 +378,7 @@ void CGearOpal::BrakeForce(float dT)
   float btbl  = gearData->btbl;                 // Speed coefficient
   float pedal = mveh->GetBrakeForce(side) * btbl;
 	//--- Compute total brake force -----------------------------
-	CSimulatedVehicle *svh = mveh->svh;
+	CSimulatedVehicle *svh = &mveh->svh;
 	double ac = svh->GetBrakeAcceleration();	// Brake acceleration (m/s²)
 	double ms = mveh->GetMassInKgs();					// Mass supported
 	double bf = -(ac) * ms;										// metre-kg-sec
@@ -541,7 +541,7 @@ void CTailGearOpal::VtMoment_Timeslice (void)
  * COpalSuspension
  */
 //============================================================================================
-COpalSuspension::COpalSuspension (CVehicleObject *v, COpalGroundSuspension *mgsp, char *nm, CWeightManager *wgh, char tps)
+COpalSuspension::COpalSuspension (CVehicleObject *v, CGroundSuspension *mgsp, char *nm, CWeightManager *wgh, char tps)
 : CSuspension(v,mgsp,nm,tps)
 { amort.StartSin(1,5);
 }
@@ -579,7 +579,7 @@ void COpalSuspension::Timeslice (float dT)
   // get the gear position relative to the actual CG
   //SVector *actualCG = wgm->wb.GetCGOffset ();  ///< LH feet // removed for it sets 0,0,0
   SVector actualCG_;
-  mveh->wgh->GetVisualCG (actualCG_);  ///< RH feet
+  mveh->wgh.GetVisualCG (actualCG_);  ///< RH feet
   SVector actualCG; 
   actualCG.x = -actualCG_.x; actualCG.y = actualCG_.z; actualCG.z = actualCG_.y; // RH->LH
   // gets mPos as the 3D gear position
@@ -612,166 +612,5 @@ void COpalSuspension::Timeslice (float dT)
     gear->ResetValues ();
   }
 }
-//====================================================================================
-/*!
- * COpalGroundSuspension
- * Based upon OPAL-ODE library
- * see copyright
- */
-//=====================================================================================
-COpalGroundSuspension::COpalGroundSuspension(CVehicleObject *v,CWeightManager *wgh)
-:CGroundSuspension(v,wgh)
-//--- Init specific parameters -------------------------------------
-{ max_wheel_H = max_wheel_height;	}
-//-----------------------------------------------------------------
-//  Destroy this object
-//-----------------------------------------------------------------
-COpalGroundSuspension::~COpalGroundSuspension (void)
-{ }
-//-----------------------------------------------------------------
-//  Read All Tags
-//-----------------------------------------------------------------
-int COpalGroundSuspension::Read (SStream *stream, Tag tag)
-{ 
-  int rc = TAG_IGNORED;
 
-  switch (tag) {
-  case 'susp':
-    // a suspension object
-    char susp_[64], susp_type[8], susp_name[56];
-    ReadString (susp_, 64, stream);
-    if (sscanf (susp_, "%s %s", susp_type, susp_name) == 2) {
-      if (!strcmp (susp_type, "whel")) {
-        //////////////////////////////////////////////////
-        CSuspension *susp = new COpalSuspension (mveh,this,susp_name, whm, type); //  default
-        //////////////////////////////////////////////////
-        ReadFrom (susp, stream);
-        whl_susp.push_back (susp);
-        return TAG_READ;
-      }
-      if (!strcmp (susp_type, "bmpr")) {
-        CWhl *bump = new CBumper     (susp_name, whm, type);
-        ReadFrom (bump, stream);
-        whl_bump.push_back (bump);
-        return TAG_READ;
-      } 
-      WARNINGLOG ("COpalGroundSuspension::Read : bad susp type");
-      return TAG_READ;
-		}
-	}
-  return CGroundSuspension::Read(stream,tag);
-}
-//------------------------------------------------------------------------
-//  All parameters are read.  Finalize
-//-------------------------------------------------------------------------
-void COpalGroundSuspension::ReadFinished (void)
-{ 
-#ifdef _DEBUG
-  DEBUGLOG ("COpalGroundSuspension::ReadFinished");
-#endif
-  CGroundSuspension::ReadFinished ();
-	
-  double base = FN_METRE_FROM_FEET(wheel_base);
-  std::vector<CSuspension *>::const_iterator it_whel; 
-  for (it_whel = whl_susp.begin (); it_whel != whl_susp.end (); it_whel++) {
-    CSuspension *ssp = (CSuspension *)(*it_whel);
-    ssp->SetWheelBase(base);
-    ssp->InitGearJoint (type,this);
-
-  }
-	
- return;
-}
-//------------------------------------------------------------------------
-//  JS to LC: Removed brake force from wheel definition as it is
-//          only used in Suspension TimeSlice. 
-//-------------------------------------------------------------------------
-void COpalGroundSuspension::Timeslice (float dT)
-{
-  /// very important ! be sure to compute only during
-  /// engine & aerodynamics cycle
-  if (!globals->simulation) return;
-  nWonG   = 0;      // No wheels on ground
-	SumGearMoments.Raz();
-  //--- Compute velocity in Miles per Hours ---------
-  double vt = (mveh->GetBodyVelocityVector ())->z;
-  double velocity = NMILE_PER_METRE_SEC(vt);
-  float fstbl = mstbl->Lookup (velocity); // 1.0f;
-  float fbtbl = mbtbl->Lookup (velocity); // 1.0f;
-
-  std::vector<CSuspension *>::const_iterator rw;
-  for (rw = whl_susp.begin (); rw != whl_susp.end (); rw++) {
-    // is it a steering wheel ?
-    CSuspension *ssp = (*rw);			//(CSuspension*)(*rw);
-		SGearData *gdt	= ssp->GetGearData();
-		gdt->stbl				= fstbl;
-		gdt->btbl				= fbtbl;
-		switch (mveh->lod->GetGearState())
-		{	//--- Process gear down position -----------------	
-			case ITEM_KFR0:
-				{	max_wheel_height = max_wheel_H;
-					ssp->Timeslice (dT);
-					if (0 == gdt->onGd) break;
-					nWonG++;
-					gdt->swing = ssp->GetSwing(dT);
-					if (fabs(vt) < 0.01) gdt->swing = 0;
-				}
-			//--- Gears are retracted ------------------------
-			case ITEM_KFR1:
-				{ max_wheel_H = max_wheel_height;
-					max_wheel_height = 0.0;
-				}
-		}	// --- End switch on gear position
-  }
-
-  /// All the computation below is LH
-  // verify if this test is useful 
-  //
-  // add mass moment related to main gear
-  // JS NOTE:  The main_pos is in fact the distance between the Cg and the steering
-  //  wheel.   
-  //  On a tricyle, the steering is in positive direction while on a Tail Dragger
-  //  the steering is in negative direction.
-  //  So I made the following modifications
-  //  The steering distance (in meters) is computed in the 
-  //  CGroundSuspension::InitJoint() when wheels positions are computed
-  //  This vector is stored into mainVM and the massCF is the coeeficent
-  //  that modulate the mass supported by the wheel.  
-  //  Also, the mass_force is modified so that the force applied is in the
-  //  vertical direction (Z) and is negative.
-  //
-
-  { 
-    CVector mass_moment;
-    CVector mass_force (0, 0, -mveh->GetMassInKgs() * GRAVITY_MTS * massCF);   //, 0.0);
-    CVector mass_pos, main_gear;
-    //  main_gear.Set (0.0, FN_METRE_FROM_FEET (-max_wheel_height), FN_METRE_FROM_FEET (max_gear));
-    //  mass_pos = *mveh->svh->GetNewCG_ISU () - main_gear;
-    //  VectorCrossProduct (mass_moment, mass_pos, mass_force);
-    VectorCrossProduct (mass_moment, mainVM, mass_force);
-    /// add gear moment to the CG moment
-    SumGearMoments = VectorSum (SumGearMoments, mass_moment);
-    #ifdef _DEBUG_suspension	
-    {   FILE *fp_debug;
-      if((fp_debug = fopen("__DDEBUG_suspension.txt", "a")) != NULL)
-      {
-            fprintf(fp_debug, "---------------------------------------------------------\n");
-            fprintf(fp_debug, "COpalGroundSuspension::Timeslice SumF(%f %f %f) SumM(%f %f %f)\n",
-              SumGearForces.x,  SumGearForces.y,  SumGearForces.z,
-              SumGearMoments.x, SumGearMoments.y, SumGearMoments.z
-             );
-            fprintf(fp_debug, " cg(%f %f %f) mg(%f %f %f) mp(%f %f %f)\n mf(%f %f %f) mm(%f %f %f) (mwh%f Mg%f mg%f)\n",
-              mveh->svh->GetNewCG_ISU ()->x,  globals->sit->uVeh->svh->GetNewCG_ISU ()->y,  globals->sit->uVeh->svh->GetNewCG_ISU ()->z,
-              main_gear.x, main_gear.y, main_gear.z,
-              mass_pos.x, mass_pos.y, mass_pos.z,
-              mass_force.x, mass_force.y, mass_force.z,
-              mass_moment.x, mass_moment.y, mass_moment.z,
-              max_wheel_height, max_gear, min_gear
-             );
-            fprintf(fp_debug, "---------------------------------------------------------\n");
-            fclose(fp_debug); 
-    }    }
-    #endif
-  }
-}
 //=======END of FILE =================================================================

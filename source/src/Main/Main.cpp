@@ -1670,7 +1670,6 @@ int main (int argc, char **argv)
   globals->pln  = 0;
   globals->ccm  = 0;                          // Camera manager 
   globals->pit  = 0;                          // Cockpit manager
-  globals->gas  = 0;                          // Fuel system
   globals->pan  = 0;                          // Active pannel
   globals->wfl  = 0;                          // Fuel loadout
   globals->wld  = 0;                          // Load window

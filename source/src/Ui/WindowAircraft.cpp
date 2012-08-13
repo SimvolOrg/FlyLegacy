@@ -160,7 +160,7 @@ void  CWinPlane::ScanAllNFO()
 { CVehicleObject *veh = globals->pln;
   cPlane  = "";
   if (veh)
-  { CVehicleInfo   *inf = veh->nfo;
+  { CVehicleInfo   *inf = &veh->nfo;
     cPlane  = inf->GetVehMake();
     airInfo.SetClass(inf->GetVehClass());
     airInfo.SetMake (inf->GetVehMake());
