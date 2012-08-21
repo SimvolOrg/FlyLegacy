@@ -649,7 +649,7 @@ int CArtParser::IndxRGBA(U_CHAR alf)
              pix |= (col->rgbGreen <<  8);
              pix |= (col->rgbBlue  << 16);
              if (pix) pix |= af1;
-             else     pix |= af2;
+             else  	  pix |= af2;
             *dst++ = pix;
         }
       }

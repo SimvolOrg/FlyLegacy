@@ -65,7 +65,7 @@ CFuiCkList::CFuiCkList(Tag idn, char *filename)
   U_INT type = LIST_DONT_FREE + LIST_NOHSCROLL + LIST_USE_MARKS;
   iBOX.SetParameters(this,'list',type);
 	//--- Get related objects to work together -----------------
-  LST = (globals->pln)?(globals->pln->ckl):(0);
+  LST = (globals->pln)?(&globals->pln->ckl):(0);
 	if (LST)
 	{ if (LST->HasChapter())  BuildMenu();
 		//---Register for closing ----------------------------------
@@ -169,7 +169,7 @@ void CFuiCkList::LocateGage()
 void CFuiCkList::Execute()
 { if (!Verify())				return;
   if (0  == actn)       return;
-  LST->Execute(slot->Action());
+  LST->Execute(&slot->Action());
   return;
 }
 //-------------------------------------------------------------------------

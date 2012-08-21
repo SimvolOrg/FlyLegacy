@@ -73,7 +73,9 @@ public:
   short   tz;                         // Vertical detail tile index [0-31]
   short   vx;                         // Vertex X key
   short   vz;                         // Vertex Z key
-  //----Terrain ready ------------------------------------------
+	//------------------------------------------------------------
+	CSuperTile *sup;
+	//---Terrain ready ------------------------------------------
   char    Rdy;                        // Terrain ready
   char    Type;                       // Terrain type
   CmQUAD *Quad;                       // Terrain quad
@@ -82,13 +84,18 @@ public:
   double  lon;                        // longitude
   double  lat;                        // Lattitude
   double  alt;                        // Altitude
+	double  agl;												// Altitude AGL
 	double  rdf;				// Reduction factor for feet conversion
-  //-------------------------------------------------------------
+	//-------------------------------------------------------------
   GroundSpot();
   GroundSpot(double x,double y);
   //-------------------------------------------------------------
 	void		FeetCoordinatesTo(CVertex *vtx,CVector &v);
-  //-------------------------------------------------------------
+	//-------------------------------------------------------------
+	CSuperTile   *GetSuperTile();
+	char		UpdateAGL(SPosition &p,double rdf);
+	void		GetGroundAt(SPosition &pos);
+	//-------------------------------------------------------------
   void    SetQGT(C_QGT *qgt);
   bool    ValidQGT();
   char    GetTerrain();
@@ -96,16 +103,16 @@ public:
 	bool    InvalideQuad();
 	bool    Valid();
   //------------------------------------------------------------
-	inline void		Edit(char *txt) {sprintf(txt,"QGT(%03d-%03d) TILE(%02d-%02d) GROUND=%4d feet",
+	void		Edit(char *txt) {sprintf(txt,"QGT(%03d-%03d) TILE(%02d-%02d) GROUND=%4d feet",
 		qx,qz,tx,tz,int(alt));}
-	inline void	  ClampLon()	{if (lon > TC_FULL_WRD_ARCS) lon = 0;}
-  inline U_INT  xQGT()            {return qx;}
-  inline U_INT  zQGT()            {return qz;}
-  inline short  xDet()            {return tx;}
-  inline short  zDet()            {return tz;}
-  inline void   Reset()           {pgt = qgt; qgt = 0;}
-  inline void   PopQGT()          {if (0 == qgt)  qgt = pgt;}
-  inline bool   HasQGT()          {return (0 != qgt);}
+	void	  ClampLon()	{if (lon > TC_FULL_WRD_ARCS) lon = 0;}
+  U_INT  xQGT()            {return qx;}
+  U_INT  zQGT()            {return qz;}
+  short  xDet()            {return tx;}
+  short  zDet()            {return tz;}
+  void   Reset()           {pgt = qgt; qgt = 0;}
+  void   PopQGT()          {if (0 == qgt)  qgt = pgt;}
+  bool   HasQGT()          {return (0 != qgt);}
 	//-------------------------------------------------------------
 };
 

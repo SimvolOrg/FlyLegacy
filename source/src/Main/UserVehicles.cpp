@@ -483,7 +483,6 @@ CFuelSystem::~CFuelSystem (void)
     CFuelSubsystem *f = *i;
     delete f;
   }
-  ctank.clear();
   tanks.clear();
 }
 //-----------------------------------------------------------------------
@@ -748,18 +747,14 @@ float CFuelSystem::BurnFuelFor(float dT,CEngine *eng,char &ok)
   CFuelTap *tap = eng->GetTapItem();
   //---Check for contributing tanks -------------
   if (rqf < FUEL_EMPTY_QTY)             return 0;
-  ctank.reserve(16);
+	tkx	= 0;
   if (Tr) TRACE("Burn Fuel cycle. Request=%.4f gal",rqt);
   tap->GetContributingTanks(this,rqt);
-  if (0 == ctank.size())
-      {ok = 0;  return 0;}
+	if (0 == tkx) {ok = 0; return 0;}
   if (Tr) TRACE("OK for fuel");
   //---- Remove burned fuel from tanks ----------
-  float bnf = rqt / ctank.size();
-  std::vector<CFuelCell*>::iterator ft;
-  for (ft = ctank.begin(); ft != ctank.end(); ft++) (*ft)->BurnFuel(bnf);
-  //---- Clear contributing list ----------------
-  ctank.clear();
+	float bnf = rqt / tkx;
+	for (U_INT k=0; k<tkx; k++) rtank[k]->BurnFuel(bnf);
   return rqf;
 }
 //-----------------------------------------------------------------------
@@ -790,17 +785,14 @@ void CFuelSystem::RefillCell(float dT,CFuelCell *tk)
   float rq2 = tk->GetXXRate() * dT;
   float rqt = min(rq1,rq2);
   //-- Build a list of candidate for refilling this cell ----
-  ctank.reserve(16);
+	tkx = 0;
   tk->GetRefillingTanks(this,tk,rqt);
   //-- Check for refuelling ---------------------------------
-  U_INT nt = ctank.size();
-  if (0 == nt)                return;
+	if (0 == tkx)								return;
   //--- Refuel from candidates ------------------------------
   tk->AddFuel(rqt);
-  float  rqf = rqt / nt;
-  std::vector<CFuelCell*>::iterator it;
-  for (it = ctank.begin(); it != ctank.end(); it++) (*it)->GiveFuelTo(tk, rqf);
-  ctank.clear();
+	float rqf = rqt / tkx;
+	for (U_INT k=0; k<tkx; k++) rtank[k++]->GiveFuelTo(tk,rqf);
   return;
 }
 //-----------------------------------------------------------------------
@@ -2006,7 +1998,6 @@ CCockpitManager::CCockpitManager()
 //-----------------------------------------------------------------------------
 void CCockpitManager::PrepareMsg(CVehicleObject *veh)
 {	std::map<Tag,CPanel*>::iterator iter;
-  cam     = globals->ccm->GetCockpitCamera();
 	for (iter=panl.begin(); iter!=panl.end(); iter++) 
 	{	CPanel *pnl = iter->second;
 		pnl->PrepareMsg(veh);
@@ -2186,7 +2177,6 @@ CPanelLight *CCockpitManager::GetLight(Tag id)
 //-------------------------------------------------------------------------
 bool CCockpitManager::KbEvent(Tag key)
 { if (globals->noINT)           return true;
- // panel  = cam->GetPanel();
 	if (0 == panel)								return true;
   switch (key) {
     //--- Panel scroll up --------------------
@@ -2205,7 +2195,7 @@ bool CCockpitManager::KbEvent(Tag key)
     case 'ckri':
       panel->ScrollRT();
       return true;
-    //---- Panel to home --(ignore) ------------
+    //---- Panel to home -----------------------
     case 'ckhm':
       return true;
     //---- Panel page up --(ignore) ------------
@@ -2224,7 +2214,6 @@ bool CCockpitManager::KbEvent(Tag key)
 bool CCockpitManager::MouseClick(int bt,int ud,int x, int y)
 { if (globals->noINT) return false;
 	if (0 == panel)			return false;
-  //panel  = cam->GetPanel();
   return panel->MouseClick(bt,ud,x,y);
 }
 //-------------------------------------------------------------------------
@@ -2233,7 +2222,6 @@ bool CCockpitManager::MouseClick(int bt,int ud,int x, int y)
 bool CCockpitManager::MouseMove(int x,int y)
 { if (globals->noINT) return false;
 	if (0 == panel)			return false;
- // panel  = cam->GetPanel();
   return panel->MouseMotion(x,y);
 }
 //-------------------------------------------------------------------------

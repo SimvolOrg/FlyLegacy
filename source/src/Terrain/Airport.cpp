@@ -1478,8 +1478,8 @@ void CAptObject::DrawGround()
 	glTranslated(ofap.x, ofap.y, ofap.z);			// Camera to airport
 	//--- Activate ground VBO ------------------------------
 	glBindBuffer(GL_ARRAY_BUFFER,gVBO);
-  glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),0);
-	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2*sizeof(double)));
+  glTexCoordPointer(2,UNIT_GTAB,sizeof(TC_GTAB),0);
+	glVertexPointer  (3,UNIT_GTAB,sizeof(TC_GTAB),OFFSET_VBO(2*sizeof(UNIT_GTAB)));
 	//-------------------------------------------------------
 	std::vector<CGroundTile*>::iterator it;
 	for (it = grnd.begin();it != grnd.end(); it++)

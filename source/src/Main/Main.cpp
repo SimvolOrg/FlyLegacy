@@ -591,7 +591,8 @@ char *ReadTheFile(FILE *f, char *buf)
 //				aircraft display and other features.
 //============================================================================
 void InitialProfile()
-{ globals->noTER = 0;
+{ 
+	globals->noTER = 0;
 	globals->noAPT = 0;
 	globals->noOBJ = 0;
 	globals->noOSM = 0;

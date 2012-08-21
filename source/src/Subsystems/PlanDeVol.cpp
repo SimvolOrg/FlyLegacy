@@ -371,12 +371,10 @@ void CheckChapter::GenerateLines(SStream *st)
 //  AIRCRAFT CHECK LIST
 //  AUTOSTART will engage the whole procedure to start engine
 //=====================================================================================
-PlaneCheckList::PlaneCheckList(CVehicleObject *v)
+PlaneCheckList::PlaneCheckList()
 { hwId = HW_OTHER;
   unId = 'chkl';
-	mveh = v;
   cWIN = 0;
-	d2r2 = mveh->GetRobot();
 }
 //-------------------------------------------------------------------------
 PlaneCheckList::~PlaneCheckList()
@@ -386,13 +384,14 @@ PlaneCheckList::~PlaneCheckList()
 	vCHAP.clear();
 }
 //-------------------------------------------------------------------------
-//  Decode Check list
+//  Init Check list
 //-------------------------------------------------------------------------
-void PlaneCheckList::OpenList(char *tail)
-{ char name[PATH_MAX];
+void PlaneCheckList::Init(CVehicleObject *v,char *tail)
+{ mveh	= v;
+	d2r2	= mveh->GetRobot();
+	char name[PATH_MAX];
   int d = PATH_MAX - 1;
   _snprintf(name,d,"WORLD/VEH_%s.LCK",tail);
-  if (!pexists(&globals->pfs,name)) return;
   SStream s(this,name);
   return;
 }
@@ -453,8 +452,8 @@ void PlaneCheckList::RegisterWindow(CFuiCkList *w)
 //-------------------------------------------------------------------------
 //  Execute one statemnt
 //-------------------------------------------------------------------------
-bool PlaneCheckList::Execute(D2R2_ACTION &a)
-{	return (d2r2)?(d2r2->Execute(a)):(false);}
+bool PlaneCheckList::Execute(void *s)
+{	return (d2r2)?(d2r2->Execute(s)):(false);}
 //--------------------------------------------------------------------------
 //  Fill the box with lines from chapter No
 //--------------------------------------------------------------------------

@@ -147,8 +147,7 @@ void	CDispatcher::TimeSlice(float dT, U_INT frame)
 			if (0 == ex)						continue;
 			if (slot[k].lock)				continue;
 			//--- Execute the list of similar objects ----------
-			while (ex) { ex->TimeSlice(dT,frame); ex = ex->NextExec(); }
-			//slot[k].obj->TimeSlice(dT,frame);
+			slot[k].obj->TimeSlice(dT,frame);
 			if (slot[k].exec == 0)	return;			
 		}
 	return;
@@ -663,6 +662,7 @@ void CSituation::OpenSitFile()
 //-------------------------------------------------------------------------
 void CSituation::ReloadAircraft()
 {	ClearUserVehicle();
+	globals->ccm->NoCamera();
 	InitialProfile();
 	OpenSitFile();
 	return;

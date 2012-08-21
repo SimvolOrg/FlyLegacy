@@ -637,7 +637,7 @@ AutoPilot::AutoPilot (void)
 	gain		= 2.5;
 	//--- TGA parameters -----------------------------------
 	TGA0		= 2.5;						// 2.5 miles for Leg0
-	TGA1		= 5.0;						// 6.0 miles for Leg1
+	TGA1		= 4.0;						// 6.0 miles for Leg1
 	//---Flap parameters -----------------------------------
 	tkoFP		= 0;
 	tkoFA		= -100;
@@ -688,11 +688,6 @@ AutoPilot::AutoPilot (void)
   for (int k=0; k<PID_MAX; k++) pidL[k] = 0;
 	//-------------------------------------------------------
 	
-  //-------------------------------------------------------
-  mTRN.sender = unId;
-  mTRN.group  = 'turn';             // Turn coordinator
-  mTRN.user.u.datatag = 'itrn';     // Rate turn 
-  mTRN.id     = MSG_GETDATA;        // Read Data
   //-------------------------------------------------------
   mALT.group  = 'alti';               // altimeter
   mALT.sender = unId;
@@ -771,7 +766,7 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
 	//--- Get Speed regulator -------------------
 	Send_Message(&mREG);
 	sreg	= (CSpeedRegulator*)mREG.voidData;
-	//--- rnd of init ---------------------------
+	//--- end of init ---------------------------
 
   return;
 }
@@ -786,8 +781,8 @@ void AutoPilot::InitPID()
   elvS = mveh->amp.GetElevators();
   rudS = mveh->amp.GetRudders();
   elvT = mveh->amp.GetElevatorTrim();
+	brak = mveh->amp.GetBrakeControl();
   //---Aircraft paramaters --------------------------------
-  wAOI    = mveh->GetWingIncidenceDeg();
   minA    = mveh->GetWingAoAMinRad();
   maxA    = mveh->GetWingAoAMaxRad();
   minA    = RadToDeg(minA) * 0.5f;
@@ -1393,6 +1388,10 @@ void AutoPilot::ModeLT2()
 //-----------------------------------------------------------------------
 void	AutoPilot::ModeTGA()
 {	double amin = aMIS + 100;
+	double agrn = globals->tcm->GetGroundAltitude();
+	double mref = RoundAltitude(agrn + aTGA);
+	rALT.Set(mref,1);
+	//TRACE("LEG=%d cAGL=%.2lf rALT.tval=%.2lf rALT.cval=%.2lf",stga,cAGL,rALT.Tvl(),rALT.Get());
 	switch (stga)	{
 		//--- climb to (aMISS + 100) AGL -----------
 		case AP_TGA_UP5:
@@ -1404,22 +1403,28 @@ void	AutoPilot::ModeTGA()
 			return  LateralHold();
 		//--- Go back to heading mode --------------
 		case AP_TGA_HD1:
-			rALT.Set((cAGL + aTGA), 1);
 			if (Radio->mdis < TGA0)	return LateralHold();
 			stga	= AP_TGA_HD2;
 			return LateralHold();
 		//--- wait for some distance --------------
 		case AP_TGA_HD2:
-			rALT.Set((cAGL + aTGA), 1);
 			//--- Set Direction along the runway ----
 			rHDG	= Wrap360(Radio->hREF - 180);
 			stga  = AP_TGA_HD3;
 			return  LateralHold();
 		case AP_TGA_HD3:
-			rALT.Set((cAGL + aTGA), 1);
 			if (Radio->mdis < TGA1)		return LateralHold();
 			return EnterAPR();
 	}
+	return;
+}
+//-----------------------------------------------------------------------
+//	Brake until half stop speed is reached
+//-----------------------------------------------------------------------
+void AutoPilot::Brake()
+{	if (0 == brak)		return;
+	if (aSPD < dSPD)	return;
+	brak->HoldBrake(BRAKE_BOTH);
 	return;
 }
 //-----------------------------------------------------------------------
@@ -1445,6 +1450,7 @@ void AutoPilot::ModeGND()
 			return;
 		//--- in final disengage below cut speed--
 		case AP_VRT_FIN:
+			Brake();
 			if (aSPD > dSPD)							return;
 			Disengage(1);
 			return;
@@ -1952,8 +1958,6 @@ void AutoPilot::SetLandingMode()
 void AutoPilot::DecALT()
 { if (aprm)   return;
 	rALT.Dec(100, 500);	
-//  if (rALT <= 500) rALT = 600;
-//  rALT  -= 100;
   StateChanged(AP_STATE_ACH);
   return;
 }
@@ -2179,6 +2183,7 @@ bool AutoPilot::EnterGPSMode()
 //-----------------------------------------------------------------------
 double AutoPilot::SelectSpeed()
 {	double more = cRAT * 1.01;
+  double less = cRAT * 0.98;
 	switch (vStat)	{
 	  //--- ground  final --------------------------
 		case AP_VRT_FLR:
@@ -2186,10 +2191,11 @@ double AutoPilot::SelectSpeed()
 			return 0;
 		//--- Tracking glide in final ----------------
 		case AP_VRT_GST:
-			if (cAGL <= aCUT)	return    0;
-			if (eVRT >   0.4)	return more;
-			if (sect == 0)		return xRAT;
-			if (cAGL <  aFSP)	return fSPD;
+			if (sect == 0)			return xRAT;
+			if (cAGL <= aCUT)		return    0;
+			if (eVRT >   1.0)		return more;
+			if (eVRT <  -1.0)		return less;
+			if (cAGL <  aFSP)		return fSPD;
 			return  xRAT;
 		//--- take-off -------------------------------
 		case AP_VRT_TKO:

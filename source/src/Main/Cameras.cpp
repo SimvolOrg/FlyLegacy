@@ -1115,7 +1115,7 @@ typedef enum {
 // Cockpit (vehicle interior) camera
 //=====================================================================================
 CCameraCockpit::CCameraCockpit (CVehicleObject *mv)
-{ mveh	 = mv;
+{ //mveh	 = mv;
 	Prof.Set(CAM_MAY_ZOOM);
 	Rate	 = 2;						// Default rotation rate
 	//-----------------------------------------------
@@ -1133,7 +1133,15 @@ CCameraCockpit::CCameraCockpit (CVehicleObject *mv)
   Head  = 0;
   //---------------------------------------------
   nearP = 5;
+	
+}
+//--------------------------------------------------------------------------
+//  Init parameters 
+//--------------------------------------------------------------------------
+void CCameraCockpit::Init(CVehicleObject *mv)
+{	mveh = mv;
 	pit		= &mveh->pit;			// Cockpit manager
+	return;
 }
 //--------------------------------------------------------------------------
 //  Free camera 
@@ -1159,17 +1167,7 @@ int CCameraCockpit::Read (SStream *stream, Tag tag)
     return TAG_READ;
 
   case 'panl':
-    { CamDecoder(stream,mveh);
-			
-			/*
-			//MEMORY_LEAK_MARKER ("cock_panel");
-      CCockpitPanel *cock_panel = new CCockpitPanel(this);
-      //MEMORY_LEAK_MARKER ("cock_panel");
-      ReadFrom (cock_panel, stream);
-      Tag tag   = cock_panel->id;
-      panl[tag] = cock_panel;
-			*/
-    }
+    { CamDecoder(stream,mveh);		  }
     return TAG_READ;
   }
   WARNINGLOG ("CCockpitPanel::Read : Unknown tag %s", TagToString(tag));
@@ -2581,12 +2579,14 @@ void CCameraManager::BindKeys()
 CCameraManager::CCameraManager (CVehicleObject *veh,char* fn)
 { // Default camera is external spot, unless overridden in a Read() call
 	mveh		= veh;
-  tCam    = CAMERA_SPOT;
   aCam    = 0;
   globals->ccm = this;
 	//--- Bind keys -----------------------------------------------
 	BindKeys();
 	fcam	 = 0;
+	//--- Create caera cockpit ------------------------------------
+	CCameraCockpit *cock = new CCameraCockpit(mveh);
+  came[CAMERA_COCKPIT] = cock;
   //--- Add other cameras ---------------------------------------
   int nb = cam_list.ReadCamerasFile (); /// reads DATA\CAMERAS.TXT
   if (nb)      ExplicitCameras(nb);
@@ -2621,18 +2621,16 @@ int CCameraManager::Read (SStream *stream, Tag tag)
       Tag type;
       ReadTag (&type, stream);
       switch (type) {
-      case CAMERA_COCKPIT:
-        // Cockpit camera
-        {
-          CCameraCockpit *cock = new CCameraCockpit(mveh);
+      case 'cock':
+        // Cockpit panels
+        { CCameraCockpit *cock = GetCockpitCamera();
+					cock->Init(mveh);
           ReadFrom (cock, stream);
-          came[CAMERA_COCKPIT] = cock;
-          tCam = CAMERA_COCKPIT;
 					return TAG_READ;
         }
 
       default:
-        WARNINGLOG ("CCameraManager::Read : Unknown camera type %s", TagToString(tag));
+        WARNINGLOG ("CCameraManager::Read : Unknown tag %s", TagToString(tag));
 				return TAG_IGNORED;
 			}
 		}
@@ -2646,7 +2644,9 @@ int CCameraManager::Read (SStream *stream, Tag tag)
 //  Assign default cameras
 //-------------------------------------------------------------------------
 void CCameraManager::DefaultCameras()
-{ CCameraSpot *spot = new CCameraSpot;
+{ 
+	//----------------------------------------
+	CCameraSpot *spot = new CCameraSpot;
   came[CAMERA_SPOT] = spot;
 	fcam							= CAMERA_SPOT;
 	//----------------------------------------
@@ -2655,17 +2655,17 @@ void CCameraManager::DefaultCameras()
 	//-----------------------------------------
 	CCameraFlyby *cfly = new CCameraFlyby;
   came[CAMERA_FLYBY]  = cfly;
-
-  CCameraTower *ctwr  = new CCameraTower;
+	//-----------------------------------------
+	CCameraTower *ctwr  = new CCameraTower;
   came[CAMERA_TOWER]  = ctwr;
-
+	//-----------------------------------------
   CCameraOverhead *over = new CCameraOverhead;
   came[CAMERA_OVERHEAD] = over;
-
+	//-----------------------------------------
   CCameraOrbit *orbit = new CCameraOrbit;
   came[CAMERA_ORBIT]  = orbit;
 	lcam								= CAMERA_ORBIT;
-
+	//-----------------------------------------
   return;
 }
 //-------------------------------------------------------------------------
@@ -2753,15 +2753,14 @@ void CCameraManager::ExplicitCameras(int nb)
 //  All parameters are read
 //-------------------------------------------------------------------------
 void CCameraManager::ReadFinished (void)
-{ //--- Insert camera cockpit if detected -----------
-	if (CAMERA_COCKPIT != tCam)   return;
-  CCamera *ck = GetCamera(CAMERA_COCKPIT);
+{ //--- Insert camera cockpit --------
+	CCamera *ck = GetCamera(CAMERA_COCKPIT);
 	CCamera *c0 = GetCamera(fcam);
 	CCamera *cn = GetCamera(lcam);
-  //--- Link forward ----------------
+  //--- Link forward -----------------
   cn->SetNext(CAMERA_COCKPIT);
 	ck->SetNext(fcam);
-	//--- Back link -------------------
+	//--- Back link --------------------
   c0->SetPrev(CAMERA_COCKPIT);
   ck->SetPrev(lcam);
 	SelectCamera (CAMERA_COCKPIT);
@@ -2800,12 +2799,11 @@ void CCameraManager::UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT)
 //---------------------------------------------------------------
 CCamera *CCameraManager::SelectCamera (Tag id)
 { //-- Search camera list for the given tag --------
-	if (0 == id)					return aCam;
-  std::map<Tag,CCamera*>::iterator ic = came.find(id);
-  if (ic == came.end()) return aCam;
+	std::map<Tag,CCamera*>::iterator ic = came.find(id);
 	//--- Relaxe drawing indicators ---------
 	if (aCam)	globals->noEXT -= aCam->GetINTMOD();
 	if (aCam) globals->noINT -= aCam->GetEXTMOD();
+  if (ic == came.end()) return aCam;
 	//--- Change to new camera -------------
   aCam = (*ic).second;
   Internal = aCam->GetINTMOD();

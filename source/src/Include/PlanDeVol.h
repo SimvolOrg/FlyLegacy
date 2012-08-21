@@ -225,36 +225,7 @@ public:
   char *GetName()               {return name;}
   int   GetSize()               {return 32;}
 };
-//===================================================================
-//  CheckList Subsystem
-//===================================================================
-class PlaneCheckList: public CSubsystem {
-  //---ATTRIBUTES ----------------------------------------------
-protected:
-	//--- Registered window --------------------------------------
-  CFuiCkList *cWIN;
-	//---  Autorobot ---------------------------------------------
-  CRobot *d2r2;																	// Robot location
-  std::vector<CheckChapter*>   vCHAP;						// Table of Chapters
-  //---METHODS--------------------------------------------------
-public:
-  PlaneCheckList(CVehicleObject *v);
- ~PlaneCheckList();
-	//------------------------------------------------------------
-	
-  void    OpenList(char *tail);
-  int     Read(SStream *st,Tag tag);
-  char  **GetChapters();
-  void    GetLines(CListBox &box,U_INT ch);
-  void    Close();
-	void    RegisterWindow(CFuiCkList *w);
-	bool    Execute(D2R2_ACTION &a);
-  //------------------------------------------------------------
-  EMessageResult ReceiveMessage (SMessage *msg);
-  //------------------------------------------------------------
-  inline  bool HasChapter()		{return (vCHAP.size() != 0);}
-	//------------------------------------------------------------
-};
+
 //===========================================================================
 //  CWPoint defines a node in the current flight plan
 //	NOTE:		The position is the waypoint position with flying altitude

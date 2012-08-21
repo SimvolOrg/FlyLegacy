@@ -1109,6 +1109,46 @@ void GroundSpot::FeetCoordinatesTo(CVertex *vtx,CVector &v)
 	v.z				= w.z - alt;
 	return;
 }
+//-------------------------------------------------------------------------
+//  Return relative TILE indices
+//-------------------------------------------------------------------------
+CSuperTile *GroundSpot::GetSuperTile()
+{ return (qgt)?(qgt->GetSuperTile(tx,tz)):(0);
+}
+//-------------------------------------------------------------------------
+//  Update Altitude above ground
+//-------------------------------------------------------------------------
+char GroundSpot::UpdateAGL(SPosition &P,double R)
+{	lon		= P.lon;
+  lat		= P.lat;
+  alt		= 0;
+	rdf		= R;
+  char	T    = GetTerrain();
+	//--- Update AGL and ground plane ---------------------
+	agl		=		P.alt - alt;
+	return T;
+}
+//-------------------------------------------------------------------------
+//  Get Ground info at position
+//-------------------------------------------------------------------------
+void GroundSpot::GetGroundAt(SPosition &pos)
+{	if (0 == qgt) qgt =  globals->tcm->GetQGT(pos);
+  if (0 == qgt)         return;
+  if (qgt->NoQuad())    return;
+  qgt->GetTileIndices(pos,tx,tz);
+  //----Access the Super Tile ----------------
+  sup     = qgt->GetSuperTile(tx,tz);
+  //----Compute location elevation -----------
+  U_INT No    = FN_DET_FROM_XZ(tx,tz);           
+  CmQUAD *dt  = qgt->GetQUAD(No);
+  CVector  p(pos.lon,pos.lat,0);
+	qgt->RelativeToBase(p);
+  CmQUAD *qd  = dt->Locate2D(p,qgt);
+  //----Locate the triangle where p reside ------------
+  qd->PointHeight(p,gNM);
+  alt     = p.z;
+	return;
+}
 //=========================================================================================
 //  return rounded value as integer
 //=========================================================================================

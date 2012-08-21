@@ -100,6 +100,7 @@ SMessage *Procedure::IntMessage(char *txt)
 	//--- Build a message ---------------------
 	SMessage *msg = new SMessage();
 	msg->id				= MSG_SETDATA;
+	msg->dataType = TYPE_INT;
   msg->group		= StringToTag(ds);
 	msg->user.u.datatag = StringToTag(fn);
 	msg->intData	= p1;
@@ -126,6 +127,7 @@ SMessage *Procedure::FltMessage(char *txt)
 	//--- Build a message ---------------------
 	SMessage *msg = new SMessage();
 	msg->id				= MSG_SETDATA;
+	msg->dataType = TYPE_REAL;
   msg->group		= StringToTag(ds);
 	msg->user.u.datatag = StringToTag(fn);
 	msg->realData = p1;
@@ -193,8 +195,9 @@ EMessageResult CRobot::ReceiveMessage (SMessage *msg)
 //    -rep:         Repeat count
 //    -tim:         Delay between repetition (in 0.1 sec units)
 //---------------------------------------------------------------
-bool CRobot::Execute(D2R2_ACTION &a)
-{ if (ROBOT_STOP != step)  return false;
+bool CRobot::Execute(void *s)
+{ D2R2_ACTION &a = *(D2R2_ACTION*)s;
+	if (ROBOT_STOP != step)  return false;
 	up		= a.user;
   timer = 3;
   actn  = a.actn;
@@ -503,6 +506,8 @@ void VPilot::Start()
 	ok	= fpln->HasLandingRunway();
 	if (!ok)							return Error(4);
 	fpln->Protect();
+	//--- Navigation lights on ----------------
+	pln->SendNaviMsg();
 	//--- Position on runway ------------------
 	apo				= apm->GetNearestAPT();
 	char *rid = fpln->GetDepartingRWY();
@@ -564,6 +569,7 @@ void VPilot::CheckPreFlight()
 void VPilot::StartTakeOff()
 {	State = VPL_TAKE_OFF;
 	alrm	= 0;
+	flap	= 1;
   apil->Engage();
 	int er = apil->EnterTakeOFF(1,rend);
 	if (!er)	return;
@@ -588,7 +594,7 @@ void VPilot::ModeTKO()
 //--------------------------------------------------------------
 void VPilot::ModeCLM()
 {	if (apil->IsDisengaged())	  return HandleBack();
-	if (apil->BellowAGL(600))	return;
+	if (apil->BellowAGL(600))		return;
 	//--- Drive toward next waypoint -----------
 	ChangeWaypoint();
 	return;
@@ -654,8 +660,18 @@ void VPilot::ChangeWaypoint()
 //--------------------------------------------------------------
 //	Tracking Waypoint
 //--------------------------------------------------------------
+void VPilot::RetractFlap()
+{	if (apil->BellowAGL(1000))	return;
+	mveh->amp.GetFlaps()->SetPosition(0);
+	flap	= 0;
+	return;
+}
+//--------------------------------------------------------------
+//	Tracking Waypoint
+//--------------------------------------------------------------
 void VPilot::ModeTracking()
-{	if (apil->IsDisengaged())	return HandleBack();
+{	if (flap)		RetractFlap();
+	if (apil->IsDisengaged())	return HandleBack();
 	if (wayP->IsActive())	    return wayP->CorrectDrift(Radio,mveh);		//Refresh();
 	ChangeWaypoint();
 	return;

@@ -274,23 +274,25 @@ void CPanel::Init(char *fn)
 //==============================================================================
 CPanel::~CPanel (void)
 { // Delete gauges
-  std::vector<CGauge*>::iterator it;
-  for (it=dgag.begin(); it!=dgag.end(); it++)  delete (*it);
-	for (it=sgag.begin(); it!=sgag.end(); it++)  delete (*it);
-  //--- Clear all vectors ----------------------------------------
-  dgag.clear();
-  gage.clear();
-	sgag.clear();
-  //---Remove texture objets -------------------------------------
-  glDeleteTextures(1,&txOBJ);
-  glDeleteTextures(1,&ngOBJ);
-	glDeleteBuffers (1,&gVBO);
-	glDeleteBuffers (1,&pVBO);
-	if (gBUF)		delete [] gBUF;
-	if (pBUF)		delete [] pBUF;
-	//-------------------------------------------------------------
-	for (U_INT k=0; k< dll_gauge.size(); k++) delete dll_gauge[k];
-	dll_gauge.clear ();
+	if (*filename)
+	{ std::vector<CGauge*>::iterator it;
+		for (it=dgag.begin(); it!=dgag.end(); it++)  delete (*it);
+		for (it=sgag.begin(); it!=sgag.end(); it++)  delete (*it);
+		//--- Clear all vectors ----------------------------------------
+		dgag.clear();
+		gage.clear();
+		sgag.clear();
+		//---Remove texture objets -------------------------------------
+		glDeleteTextures(1,&txOBJ);
+		glDeleteTextures(1,&ngOBJ);
+		glDeleteBuffers (1,&gVBO);
+		glDeleteBuffers (1,&pVBO);
+		if (gBUF)		delete [] gBUF;
+		if (pBUF)		delete [] pBUF;
+		//-------------------------------------------------------------
+		for (U_INT k=0; k< dll_gauge.size(); k++) delete dll_gauge[k];
+		dll_gauge.clear ();
+	}
 }
 
 //-----------------------------------------------------------

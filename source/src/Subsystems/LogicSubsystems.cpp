@@ -244,8 +244,9 @@ bool CSubsystem::MsgForMe (SMessage *msg)
   //  respond to  message , just uncomment
   //  the following lines and change id
   //-------------------------------------------------------
-  //Tag idn = 'sREG';                     // Change subsystem name here
-  //if ((type == idn) && (msg->group == idn))           
+  //Tag idn = 'Thr1';                     // Change subsystem name here
+	//if (type == 'THRO')
+  // if ((type == idn) && (msg->group == idn))           
   // int a = 0;                          // Put a break point here
   //-------------------------------------------------------
 	bool idByType   = (msg->user.u.datatag == '$TYP');

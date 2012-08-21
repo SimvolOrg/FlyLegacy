@@ -47,8 +47,6 @@ CFuelSubsystem::CFuelSubsystem (void)
   gals  = 0.0;
   Fsrc  = 0;
   int _val = 0;
-  GetIniVar ("Sim", "forceFuel", &_val);
-  force_fuel = _val ? true : false;
   int t = 0;
   GetIniVar("TRACE","FuelSystem",&t);
   Tr = char(t);
@@ -65,14 +63,11 @@ CFuelSubsystem::~CFuelSubsystem (void)
 //---------------------------------------------------------------------
 int CFuelSubsystem::Read (SStream *stream, Tag tag)
 {
-  int rc = TAG_IGNORED;
-
   switch (tag) {
   case 'name':
     // UI descriptive name
     ReadString (name, 64, stream);
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
 
   case 'pipe':
     // Fuel dependency tag
@@ -81,19 +76,12 @@ int CFuelSubsystem::Read (SStream *stream, Tag tag)
       ReadTag (&t, stream);
       //-- Enter tag with empty pointer ----
       piped[t] = 0;                       // JSDEV
-
+			return TAG_READ;
     }
-    rc = TAG_READ;
-    break;
   }
 
   // If tag has not been processed, pass it to the parent
-  if (rc != TAG_READ) {
-    // See if the tag can be processed by the parent class type
-    rc = CDependent::Read (stream, tag);
-  }
-
-  return rc;
+  return CDependent::Read (stream, tag);
 }
 //----------------------------------------------------------------------------
 //	JSDEV* Prepare pipe messages
@@ -128,7 +116,7 @@ void CFuelSubsystem::LinkCell(CFuelSystem *fsys)
   for (fp = piped.begin(); fp != piped.end(); fp++)
   { Tag id = (*fp).first;
     CFuelSubsystem * rs = fsys->GetSubsystem(id);
-    piped[id] = rs;
+    (*fp).second = rs;						//piped[id] = rs;
     if (rs) TraceLink(rs);
   }
   return;
@@ -192,7 +180,8 @@ void CFuelSubsystem::GetContributingTanks(CFuelSystem *fsys,float rqt)
     //----This is a tank -----------------------------------
     CFuelCell *fc = (CFuelCell*)fs;
     if (!fc->HasFuelFor(rqt))             continue;
-    fsys->AddTank(fc);
+		U_INT mtk =fsys->AddOpenTank(fc);
+		if (mtk > 15)	gtfo("Max of 16 tanks exceeded");
     if (Tr) TraceT1(fc,rqt);
   }
   return;
@@ -227,7 +216,7 @@ void CFuelSubsystem::GetRefillingTanks(CFuelSystem *fsys,CFuelCell *tk,float rqf
     CFuelCell *fc = (CFuelCell*)fs;
     //--- Check for candidacy -------------------------------
     if (!fc->CanFill(tk,rqf))             continue;
-    fsys->AddTank(fc);
+    fsys->AddOpenTank(fc);
     if (Tr)  TraceT2(fc,tk,rqf);
   }
   return;
@@ -515,14 +504,14 @@ void CFuelCell::BurnFuel(float bnf)
 }
 //--------------------------------------------------------------------
 //  Check if this cell can fill the indicated cell
-//  NOTE: TD => This cell is canditae to give the rqt fuel QTY
+//  NOTE: TD => Candidate to give the rqt fuel QTY
 //        TR => Cell tk which is requesting fuel
 //        To be selected TD must have enough fuel satifying
-//        Q(TD) >= L(TR) + rqt.  This is to ensure equilibrum
+//        Qty(TD) >= Lim(TR) + rqt.  This is to ensure equilibrum
 //        between TD and TR
-//        L(TR) depends on the type of TR.  For a collector L(TR) = 0
+//        Lim(TR) depends on the type of TR.  For a collector Lim(TR) = 0
 //        Thus TD is selected if it has a fuel qty > rqt.
-//        For a normal cell L(TR) = Q(TR).  
+//        For a normal cell Lim(TR) = Qty(TR).  
 //        Thus TD is selected if it has more fuel than TR
 //--------------------------------------------------------------------
 bool CFuelCell::CanFill(CFuelCell *tk,float rqt)

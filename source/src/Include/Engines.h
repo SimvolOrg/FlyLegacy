@@ -553,7 +553,7 @@ protected:
 	SMessage	msg;								// Message for throttle up to 4 engines
 	//-----------------------------------------------------------------
 	NavRoute *route;							// Taxiway route
-	CThrottleControl *thro[4];		// Throttle subsystems
+	CSubsystem *thro[4];					// Throttle subsystems
 	CSuspension    *sgear;				// Steering gear
 	CPIDbox        *sPID;					// PID controller for speed
 	CPIDbox				 *gPID;					// PID controller for gear

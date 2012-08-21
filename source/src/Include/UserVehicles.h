@@ -443,7 +443,7 @@ public:
   //-------------------------------------------------------------------------------
 	void			SetVEH(CVehicleObject *v)	{mveh = v;}
   U_INT     GetGradIndex()						{return gradX;}
-  void      AddTank(CFuelCell *t)			{ctank.push_back(t);}
+	U_INT			AddOpenTank(CFuelCell *t) {rtank[tkx++] = t; return tkx;}
   //-------------------------------------------------------------------------------
 public:
   char                          Tr;                 // Trace Indicator
@@ -454,7 +454,9 @@ public:
   std::vector<CFuelSubsystem*>  fsub;               // List of CFuelSubsystem* objects
   std::vector<CFuelCell*>       tanks;              // List of tanks (do not delete from this list)
   //-----List of contributing fuel tank -------------------------------------------
-  std::vector<CFuelCell *>      ctank;              // Contributing tank
+	CFuelCell                    *rtank[16];					// Contributing tank
+	U_INT													tkx;								// Index in rtank
+	//-------------------------------------------------------------------------------
 protected:
   CEngineManager       *eng_mng;                    // Link to the CEngine
   CWeightManager       *gas_wgh;
@@ -615,7 +617,6 @@ protected:
   //---- Pointer to current CPanel --------------------------
 	float         brit;									// Panel britnes
   CPanel*       panel;
-  CCameraCockpit *cam;								// Cockpit camera
   //--- METHODS-----------------------------------------------
 public:
   CCockpitManager();

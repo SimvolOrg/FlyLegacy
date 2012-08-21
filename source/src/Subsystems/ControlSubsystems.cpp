@@ -407,12 +407,15 @@ void CEngineControl::Monitor(Tag tag)
 //  For mono engine default unit is always 1
 //-------------------------------------------------------------------------
 bool CEngineControl::MsgForMe (SMessage *msg)
-{ bool matchGroup = (msg->group == unId);
+{ bool idByType   = (msg->user.u.datatag == '$TYP');
+  bool matchGroup = (idByType)?(msg->group == type):(msg->group == unId);
+	//bool matchGroup = (msg->group == unId);
+ // bool matchType  = (msg->user.u.hw == type);
   bool engnNull   = (msg->user.u.engine == 0);
   bool engnMatch  = (msg->user.u.engine == eNum);
   bool unitNull   = (msg->user.u.unit   == 0);
   bool unitMatch  = (msg->user.u.unit   == uNum);
-  return (matchGroup && (engnNull || engnMatch) && (unitNull || unitMatch));
+  return (matchGroup) && (engnNull || engnMatch) && (unitNull || unitMatch);
 }
 //-------------------------------------------------------------------------
 //  Receive a message
@@ -420,6 +423,10 @@ bool CEngineControl::MsgForMe (SMessage *msg)
 EMessageResult CEngineControl::ReceiveMessage (SMessage *msg)
 { switch (msg->id) {
       case MSG_GETDATA:
+				if (msg->user.u.datatag == 'byTY')
+				{	msg->voidData = this;
+					return MSG_PROCESSED;
+				}
         return CDependent::ReceiveMessage(msg);
       // --- Set state from outside (gauge, etc) ----
       case MSG_SETDATA:
@@ -1841,7 +1848,7 @@ void CBrakeControl::PressBrake(char pos)
 { Incr((pos & BRAKE_LEFT), rate);
   Incr((pos & BRAKE_RITE), rate);
   Hold = 0;
-	bKey =Hold;
+	bKey = Hold;
   return;
 }
 //------------------------------------------------------------------
@@ -2467,12 +2474,12 @@ CSpeedRegulator::CSpeedRegulator()
 	route		= 0;
 	limit		= 4;
 	//--- Init gaz message -------------------------------------------
-	msg.group						= SUBSYSTEM_THROTTLE_CONTROL;
+	msg.group						= 'THRO';				// Not by group
   msg.sender					= SUBSYSTEM_SPEED_REGULATOR;
   msg.id							= MSG_GETDATA;
   msg.dataType				= TYPE_REAL;
-	msg.user.u.datatag	= 'gets';       // throttle
-  msg.user.u.engine	  = 1;
+	msg.user.u.datatag	= '$TYP';       // match by type
+	msg.user.u.hw				= 0;
 	state								= 0;						// Inactive
 }
 //--------------------------------------------------------------------------------
@@ -2485,7 +2492,7 @@ void CSpeedRegulator::GetThrottle(int u)
   msg.receiver = 0;
 	msg.user.u.engine	= u + 1;
 	Send_Message(&msg);
-	thro[u]	= (CThrottleControl*)msg.voidData;
+	thro[u]	= (CSubsystem*)msg.voidData;
 	jsm			= globals->jsm;
 }
 //-----------------------------------------------------
@@ -2610,10 +2617,10 @@ void CSpeedRegulator::TimeSlice(float dT, U_INT FrNo)
 	cor		= (aSPD - speed);
 	val		= sPID->Update(dT,cor,0);
 	//--- Send to all controllers ------------
-	if (thro[0]) thro[0]->Target(val);
-	if (thro[1]) thro[1]->Target(val);
-	if (thro[2]) thro[2]->Target(val);
-	if (thro[3]) thro[3]->Target(val);
+	thro[0]->Target(float(val));
+	thro[1]->Target(float(val));
+	thro[2]->Target(float(val));
+	thro[3]->Target(float(val));
 	//--- Steering mode ----------------------
 	switch (steer)	{
 			case 0:

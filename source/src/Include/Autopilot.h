@@ -235,12 +235,13 @@ protected:
   CAeroControl *rudS;                       // Rudder surface
   CAeroControl *elvT;                       // Elevator trim
 	//--------------------------------------------------------------------
+	CBrakeControl *brak;											// Brake control
+	//--------------------------------------------------------------------
 	CSpeedRegulator  *sreg;										// Speed Regulator
   //---Tracking control ------------------------------------------------
   double     Turn;                          // Turn adjust coef
 	double     gain;													// gain factor
   //---Angle of attack -------------------------------------------------
-  double     wAOI;                          // Wing Angle of incidence (°)
   double     minA;                          // Minimuùm AOA
   double     maxA;                          // Maximum  AOA
   //---Limits -----------------------------------------------------------
@@ -326,7 +327,6 @@ protected:
   CPIDQ       pidQ;                         // List of components
   CPIDbox    *pidL[PID_MAX];                // Stack of PID
   //-------------------------------------------------------------------
-  SMessage    mTRN;           // Turn Coordinator
   SMessage    mHDG;           // Permanent heading
   SMessage    mBUG;           // bug tracking message
   SMessage    mNAV;           // NAV gauge message
@@ -397,6 +397,7 @@ public:
 	void						LandingOption();
   bool            AbortLanding(char k);
 	void						Rotate();
+	void						Brake();
   //-------TRANSITION ROUTINE -----------------------------------------
   void            EnterINI();
   void            EnterROL();
@@ -462,6 +463,7 @@ public:
   inline char Flash()   {return flsh;}
 	//--- Virtual pilot interface ---------------------------------------
 	inline bool			BellowAGL(double a)	{return (cAGL < a);}
+	inline bool     AboveAGL(double a)  {return (cAGL > a);}
 	inline bool			IsDisengaged()		  {return (lStat == AP_DISENGD);}
   inline bool			IsEngaged()					{return (lStat != AP_DISENGD);}
 	inline bool			ModeGround()				{return (vStat == AP_VRT_FIN);}

@@ -142,7 +142,7 @@ class CRobot : public CSubsystem {
 public:
   CRobot();
   //--------------------------------------------------
-  bool  Execute(D2R2_ACTION &a);
+  bool  Execute(void *a);
   void  TimeSlice(float dT, U_INT FrNo);
   U_CHAR	Action();
 	U_CHAR	Check();
@@ -203,6 +203,7 @@ protected:
 	char							 sRol;			// Rolling state
 	char							 alrm;			// Alarm set
 	U_CHAR						 msgNo;
+	U_CHAR						 flap;
 	//--- Procedures --------------------------------------
 	Procedure          Pstrt;			// Start procedure
 	Procedure					 Pstop;			// Stop procedure
@@ -252,6 +253,7 @@ public:
 	void	GroundSpeed();
 	//--- State routines ----------------------------------
 	void	Start();
+	void	RetractFlap();
 	void	HandleBack();
 	void	GroundBraking();
 	//--- Mode routines -----------------------------------

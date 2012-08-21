@@ -92,10 +92,11 @@ protected:
   //----Aircraft parameters ---------------------------------
   //  NOTE: Those fields should be dupplicated in globals
   //---------------------------------------------------------
-  SPosition orgp;   // Original position (start-up)
-  SPosition geop;   // Position (lat/lon/alt) of the object
-  CVector   iang;   // Inertial angular orientation
-  CVector   dang;   // Same as above in degre
+  SPosition		orgp;   // Original position (start-up)
+  SPosition		geop;   // Position (lat/lon/alt) of the object
+  CVector			iang;   // Inertial angular orientation
+  CVector			dang;   // Same as above in degre
+	GroundSpot  Spot;   // Aircraft spot
   //--- Global rotation matrix --------------------------------
   double    rotM[16];                 // Rotation matrix
   //-----Flag for various aircraft versions ------------------- 
@@ -317,7 +318,6 @@ public:
   //! send steering wheel angle to gear
 	void    StoreSteeringData (SGearData *gdt);
 	void    SetPartKeyframe   (char* part, float key)			{lod.SetPartKeyframe (part, key);}
-	void    SetPartTransparent(char* part, bool ok = true){lod.SetPartTransparent (part, ok);}
   //----Set spinner part -------------------------------------------------------------------
   CAcmSpin     *SetSpinner(char e,char *pn) {return lod.AddSpinner(e,pn);}     // Set spinner part
   //--------------Aero model management --------------------------------------------------
@@ -355,12 +355,12 @@ public:
   CGroundSuspension     whl;
   CVariableLoadouts     vld;
   CExternalLightManager elt;
+	PlaneCheckList        ckl;
   // Vehicle specifications, subsystems, etc.
   char                  upd;                  // Update instrument while in slew
   CSlopeWindData        *swd;
  
   CVehicleHistory       *hst;
-	PlaneCheckList        *ckl;
 	//-----------------------------------------------------------------------------
   CNullSubsystem		    nSub;						//  Null subsystem to receive message without identified receiver
   //-----Radio interface --------------------------------------------------------

@@ -1304,8 +1304,8 @@ void CmQUAD::DrawIND()
 { int  *count = iBUF + qDim;
 	TC_GTAB *vt	= msp->GetVertexTable();
 	//--- For final quad, draw the detail tile ---------------
-	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),&vt[0].GT_X);
-	glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB), vt);
+	glVertexPointer  (3,UNIT_GTAB,sizeof(TC_GTAB),&vt[0].GT_X);
+	glTexCoordPointer(2,UNIT_GTAB,sizeof(TC_GTAB), vt);
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
   //---- Draw contour if Terra Browser is active -----------
   if (globals->aPROF.Not(PROF_DR_DET))	return;
@@ -1652,8 +1652,8 @@ void CSuperTile::AllocateVertices(char opt)
 //-----------------------------------------------------------------------------
 void CSuperTile::BindVBO()
 {	glBindBuffer(GL_ARRAY_BUFFER,aVBO);
-	glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),OFFSET_VBO(2 * sizeof(double)) );
-	glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),0);
+	glVertexPointer  (3,UNIT_GTAB,sizeof(TC_GTAB),OFFSET_VBO(2 * sizeof(UNIT_GTAB)) );
+	glTexCoordPointer(2,UNIT_GTAB,sizeof(TC_GTAB),0);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -3196,10 +3196,7 @@ void C_QGT::Reallocate(CmQUAD *qd)
 //  Put SuperTile ouside to force Texture reloading
 //-------------------------------------------------------------------------
 int C_QGT::PutOutside()
-{ int tx,tz;
-  tcm->GetTileIndices(tx,tz);
-  CTextureDef *txn = GetTexDescriptor(tx,tz);
-  CSuperTile   *sup = GetSuperTile(tx,tz);
+{ CSuperTile *sup   = tcm->GetSpotSuperTile();
   NearQ.Lock();
   CSuperTile   *sp  = NearQ.GetFirst();
   NearQ.Unlock();
@@ -4080,14 +4077,6 @@ void TCacheMGR::GetAbsoluteIndices(U_INT &ax,U_INT &az)
   return;
 }
 //-------------------------------------------------------------------------
-//  Return relative TILE indices
-//-------------------------------------------------------------------------
-void TCacheMGR::GetTileIndices(int &tx,int &tz)
-{ tx  = Spot.xDet();
-  tz  = Spot.zDet();
-  return;
-}
-//-------------------------------------------------------------------------
 //  Time slice.  Update the terrain cache
 //-------------------------------------------------------------------------
 int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
@@ -4113,7 +4102,8 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   pthread_cond_signal(&thCond);    // Signal file THREAD
   //-----Update QGT formation --------------------------------------------
   char nqgt = (nKEY == rKEY)?(0):(RefreshCache());
-  UpdateAGL(aPos);
+  Terrain   = Spot.UpdateAGL(aPos,rFactor);
+  gplan[3]	=  float(Spot.agl);			// Ground plane OK
 	//---Update Tracker ----------------------------------------------------
 	globals->etrk.TimeSlice(dT);
 	//--- Update action ----------------------------------------------------
@@ -4312,30 +4302,30 @@ float TCacheMGR::AircraftFeetDistance(SPosition &pos)
 //  sup is the Supertile
 //  alt is the ground altitude at location
 //-----------------------------------------------------------------------
-void TCacheMGR::GetTerrainInfo(TC_GRND_INFO &inf,SPosition &pos)
-{ C_QGT *qgt  = inf.qgt;
+void TCacheMGR::GetGroundAt(GroundSpot &gns,SPosition &pos)
+{ C_QGT *qgt  = gns.qgt;
   if (0 == qgt) qgt =  GetQGT(pos);
   if (0 == qgt)         return;
   if (qgt->NoQuad())    return;
-  qgt->GetTileIndices(pos,inf.tx,inf.tz);
+  qgt->GetTileIndices(pos,gns.tx,gns.tz);
   //----Access the Super Tile ----------------
-  inf.qgt     = qgt;
-  inf.sup     = qgt->GetSuperTile(inf.tx,inf.tz);
+  gns.qgt     = qgt;
+  gns.sup     = qgt->GetSuperTile(gns.tx,gns.tz);
   //----Compute location elevation -----------
-  U_INT No    = FN_DET_FROM_XZ(inf.tx,inf.tz);           
+  U_INT No    = FN_DET_FROM_XZ(gns.tx,gns.tz);           
   CmQUAD *dt  = qgt->GetQUAD(No);
   CVector  p(pos.lon,pos.lat,0);
 	qgt->RelativeToBase(p);
   CmQUAD *qd  = dt->Locate2D(p,qgt);
   //----Locate the triangle where p reside ------------
   qd->PointHeight(p,gNM);
-  inf.alt     = p.z;
+  gns.alt     = p.z;
   return;
 }
 //-----------------------------------------------------------------------
 //  get Ground Altitude at requested position
-//  The position must contains the absolute longitude and latitude in arcsec
-//  (not the band longitude).
+//  The GroundSpot position must contains the absolute longitude
+//	and latitude in arcsec
 //-----------------------------------------------------------------------
 double TCacheMGR::GetGroundAt(GroundSpot &gns)
 { IndicesInQGT (gns);
@@ -4345,7 +4335,6 @@ double TCacheMGR::GetGroundAt(GroundSpot &gns)
   qgt->GetTileIndices(gns);
   U_INT No		= FN_DET_FROM_XZ(gns.tx,gns.tz);       
   CmQUAD *dt  = qgt->GetQUAD(No);
- 
   CVector  p(gns.lon,gns.lat,dt->CenterElevation());
 	qgt->RelativeToBase(p);
   gns.Quad    = dt->Locate2D(p,qgt);
@@ -4353,31 +4342,6 @@ double TCacheMGR::GetGroundAt(GroundSpot &gns)
   gns.Quad->PointHeight(p,gNM);
   gns.alt     = p.z;
   return gns.alt;
-}
-//-----------------------------------------------------------------------
-//  Update Ground altitude at aircraft position
-//  -Locate the Detail Tile
-//  -Locate the Quad
-//-----------------------------------------------------------------------
-void TCacheMGR::UpdateAGL(SPosition &pos)
-{ Spot.lon  = pos.lon;
-  Spot.lat  = pos.lat;
-  Spot.alt  = 0;
-	Spot.rdf  = rFactor;
-  Terrain   = Spot.GetTerrain();
-	//--- Update AGL and ground plane ---------------------
-	fAGL			=		pos.alt - Spot.alt;
-  gplan[3]	=  float(fAGL);			// Ground plane OK
-	return;
-}
-//-----------------------------------------------------------------------------
-//	return plane spot at ground altitude
-//-----------------------------------------------------------------------------
-void TCacheMGR::GetPlaneSpot(SPosition &p)
-{	p.lon	= Spot.lon;
-	p.lat = Spot.lat;
-	p.alt = Spot.alt;
-	return;
 }
 //-----------------------------------------------------------------------------
 // Name: BuildShadowMatrix ()

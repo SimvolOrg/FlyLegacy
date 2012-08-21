@@ -757,7 +757,6 @@ class TCacheMGR: public CExecutable {
   //--------Aircraft position ------------------------------------
   SPosition   aPos;                         // Aircraft position
   GroundSpot  Spot;                         // Aircraft spot
-	double      fAGL;													// Altitude AGL (in feet)
   CVector     geow;                         // Coordinates in feet
   U_SHORT     xKey;                         // QGT X number
   U_SHORT     zKey;                         // QGT Z number
@@ -880,12 +879,10 @@ public:
 	void				SetShadowMatrix( float mat[16],float lp[4]);
 	char        GetThreadNumber()		{return tnbr++;}
   //----------Terrain management -------------------------------
-  void        GetTerrainInfo(TC_GRND_INFO &inf, SPosition &pos);
   double      GetGroundAt(GroundSpot &gns);
-  void        UpdateAGL(SPosition &pos);
+	void  			GetGroundAt(GroundSpot &gns,SPosition &pos);
 	void				UpdateGroundPlane();
 	GroundSpot *GetSpot()		{return &Spot;}
-	void				GetPlaneSpot(SPosition &p);
 	bool				SPotReady()	{return Spot.Valid();}
 	bool				TerrainStable(char opt);
 	//----------TIME management ----------------------------------
@@ -926,70 +923,71 @@ public:
   //---------STEP ROUTINES --------------------------------------
   void        CreateQGT(U_SHORT cx, U_SHORT cz);      // STEP 0
   //---------Inline ---------------------------------------------
-	inline void	ProbeBB(CFuiCanva *c,int n) {;}
-  inline CTextureWard *GetTexWard() {return txw;}
-  inline void   InActQ(C_QGT *qgt)  {ActQ.PutLast(qgt);}
+	void	ProbeBB(CFuiCanva *c,int n) {;}
+  CTextureWard *GetTexWard() {return txw;}
+  void   InActQ(C_QGT *qgt)  {ActQ.PutLast(qgt);}
   //-------------------------------------------------------------
-	inline void IncDSP()							{DrSUP++;}
-	inline void IncRDY(short n)				{qRDY += n;}
-  inline bool MeshReady()           {return (qRDY == 0);}
-	inline bool MeshBusy()						{return (qRDY != 0);}
-  inline bool TelePorting()         {return (Tele == 1);}
+	void IncDSP()							{DrSUP++;}
+	void IncRDY(short n)			{qRDY += n;}
+  bool MeshReady()          {return (qRDY == 0);}
+	bool MeshBusy()						{return (qRDY != 0);}
+  bool TelePorting()        {return (Tele == 1);}
   //---------Time of day management -----------------------------
-  inline bool   IsDay()             {return (cTod == 'D');}
-  inline bool   IsNight()           {return (cTod == 'N');}
-  inline bool   IsSun()             {return (sInd == 'S');}
-  inline bool   IsDawn()            {return (lumn > 0.10);}
-  inline float  Elapse()            {return eTime;}
-  inline float  GetLuminosity()     {return lumn;}
-  inline CVector *SunPosition()     {return &sunP;}
-	inline bool    RunThread()				{return (stop == 0);}	
+  bool   IsDay()            {return (cTod == 'D');}
+  bool   IsNight()          {return (cTod == 'N');}
+  bool   IsSun()            {return (sInd == 'S');}
+  bool   IsDawn()           {return (lumn > 0.10);}
+  float  Elapse()           {return eTime;}
+  float  GetLuminosity()    {return lumn;}
+  CVector *SunPosition()    {return &sunP;}
+	bool    RunThread()				{return (stop == 0);}	
   //--------Return scale parameters ------------------------------
-  inline SVector *GetScale()        {return &scale;}
+  SVector *GetScale()       {return &scale;}
   //--------Terrain Parameters -----------------------------------
-	inline int      Locate3DO(C_QGT *q)	{return objMGR->LocateObjects(q);}
-	inline bool     Teleporting()       {return (Tele != 0);}
-  inline double   GetHorizon()        {return hLine;}
-  inline float    GetMagnecticNorth() {return magDV;}
-  inline float    GetGroundAltitude() {return Spot.alt;}
-	inline double		GetFeetAGL()				{return fAGL;}
-  inline void     GetGroundNormal(CVector &v) {v = Spot.gNM;}
-  inline U_CHAR   GetGroundType()     {return Spot.Type;}
-  inline double   GetInflation()      {return xFactor;}
-  inline double   GetReduction()      {return rFactor;}
-  inline TRANS2D  GetTranslation()    {return aTran;}
-	inline float*   GetGroundPlane()		{return gplan;}
-	inline U_CHAR		GetTRNoption()			{return strn;}
+	CSuperTile *GetSpotSuperTile()	{return Spot.GetSuperTile();}
+	//--------------------------------------------------------------
+	int      Locate3DO(C_QGT *q)	{return objMGR->LocateObjects(q);}
+	bool     Teleporting()				{return (Tele != 0);}
+  double   GetHorizon()					{return hLine;}
+  float    GetMagnecticNorth()	{return magDV;}
+  float    GetGroundAltitude()	{return Spot.alt;}
+	double	 GetFeetAGL()					{return Spot.agl;}
+  U_CHAR   GetGroundType()			{return Spot.Type;}
+  double   GetInflation()				{return xFactor;}
+  double   GetReduction()				{return rFactor;}
+  TRANS2D  GetTranslation()			{return aTran;}
+	float*   GetGroundPlane()			{return gplan;}
+	U_CHAR	 GetTRNoption()			  {return strn;}
+	void     GetGroundNormal(CVector &v) {v = Spot.gNM;}
   //--------Aircraft Parameters -----------------------------------
-	inline bool     QGTplane(C_QGT *q)	{return Spot.qgt == q;}
-  inline SPosition  *PlaneArcsPos()      {return &globals->geop;}
-  inline CVector    *PlaneFeetPos()      {return &geow;}
-  inline double      GetPlaneAltitude()  {return globals->geop.alt;}
-  inline double      GetPlaneLongitude() {return globals->geop.lon;}
-  inline double      GetPlaneLatitude()  {return globals->geop.lat;}
-  inline double      GetPlaneAGL()       {return aPos.alt - Spot.alt;}
-  inline C_QGT      *GetPlaneQGT()       {return Spot.qgt;}
-  inline CmQUAD     *GetPlaneQuad()      {return Spot.Quad;}
-  inline bool        PlaneQuad(CmQUAD *q){return (q == Spot.Quad);}
+	bool     QGTplane(C_QGT *q)	{return Spot.qgt == q;}
+  SPosition  *PlaneArcsPos()      {return &globals->geop;}
+  CVector    *PlaneFeetPos()      {return &geow;}
+  double      GetPlaneAltitude()  {return globals->geop.alt;}
+  double      GetPlaneLongitude() {return globals->geop.lon;}
+  double      GetPlaneLatitude()  {return globals->geop.lat;}
+  double      GetPlaneAGL()       {return aPos.alt - Spot.alt;}
+  C_QGT      *GetPlaneQGT()       {return Spot.qgt;}
+  CmQUAD     *GetPlaneQuad()      {return Spot.Quad;}
+  bool        PlaneQuad(CmQUAD *q){return (q == Spot.Quad);}
   //--------------------------------------------------------------
-  inline bool   HiResPermited()     {return (HiRes!= 0);}
-  inline char   GetTrace()          {return (tr)?(1):(0);}
-  inline char   GetDebug()          {return (td)?(1):(0);}
-	inline char   GetFactEV()					{return FactEV;}
-  inline float  Time()              {return dTime;}
+  bool   HiResPermited()     {return (HiRes!= 0);}
+  char   GetTrace()          {return (tr)?(1):(0);}
+  char   GetDebug()          {return (td)?(1):(0);}
+	char   GetFactEV()				 {return FactEV;}
+  float  Time()              {return dTime;}
   //--------Drawing parameters -----------------------------------
-  inline float  GetMedDist()        {return medRAD;}
-  inline float  GetHigDist()        {return higRAD;}
-  inline float *GetFogColor()       {return fogC;}
-  inline float *GetFarColor()       {return fogC;}
-  inline U_CHAR GetLastEVindex()    {return LastEV;}
-  inline float *GetNightEmission()  {return NitColor;}
-  inline float *GetDeftEmission()   {return EmsColor;}
+  float  GetMedDist()        {return medRAD;}
+  float  GetHigDist()        {return higRAD;}
+  float *GetFogColor()       {return fogC;}
+  float *GetFarColor()       {return fogC;}
+  U_CHAR GetLastEVindex()    {return LastEV;}
+  float *GetNightEmission()  {return NitColor;}
+  float *GetDeftEmission()   {return EmsColor;}
   //---------------------------------------------------------------
-  inline CListBox *GetTerraBox()    {return terBOX;}
+  CListBox *GetTerraBox()    {return terBOX;}
   //---------Aircraft position ------------------------------------
   void        GetAbsoluteIndices(U_INT &ax,U_INT &az);
-  void        GetTileIndices(int &tx,int &tz);
   void        Probe(CFuiCanva *cnv);
   void        EditGround(char *txt);
   void        RelativeFeetTo(SPosition &pos,SVector &v);
@@ -1034,10 +1032,10 @@ public:
   void        GetSunPosition (void);
   void        BuildShadowMap (void);
   void        SetPPM(double rat,short wd,short ht);
-  inline double GetXPPM()   {return ppM.x;}
-  inline double GetYPPM()   {return ppM.y;}
-  inline short  GetVmapWD() {return sDIM.x;}
-  inline short  GetVmapHT() {return sDIM.y;}
+  double GetXPPM()   {return ppM.x;}
+  double GetYPPM()   {return ppM.y;}
+  short  GetVmapWD() {return sDIM.x;}
+  short  GetVmapHT() {return sDIM.y;}
   //----------File access --------------------------------------
   CTerraFile *GetTerraFile(){return tFIL;}
   int         StartIO(C_QGT *qgt, U_CHAR ns);
@@ -1049,8 +1047,8 @@ public:
   int         RequestELV(C_QGT *qgt);
   C_QGT      *PopFileREQ()      {return FilQ.Pop();}
     //----------Thread parameters --------------------------------
-  inline void ThreadRuns()      {thRUN = 1;}
-  inline void ThreadStop()      {thRUN = 0;}
+  void ThreadRuns()      {thRUN = 1;}
+  void ThreadStop()      {thRUN = 0;}
 	//------------------------------------------------------------
   C_QGT      *PopLoadTEX()						{return LodQ.Pop();}
   pthread_cond_t  *GetTHcond()			  {return &thCond;}

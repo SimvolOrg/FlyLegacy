@@ -245,6 +245,9 @@ class CVertex {
   double	rx;
 	double  ry;
 	double  wdz;
+	//float rx;
+	//float ry;
+	//float wdz;
   //------------Methods ---------------------------------
 public:
   CVertex(U_INT xk, U_INT zk);

@@ -406,7 +406,6 @@ public:
   void  Draw (char mode);
   void  Print (FILE *f);
   void  SetPartKeyframe    (char* partname, float frame);
-  void  SetPartTransparent (char* partname, bool ok);
   void  SaveExtension(char *name,GN_VTAB &tab);
   void  GetExtension(SVector &v);
   void  GetMiniExtension(SVector &v)  {v = minB;}

@@ -2397,6 +2397,7 @@ struct TC_SCREEN {
 //	UNIT SIZE
 //=============================================================================
 #define UNIT_OPENGL GL_DOUBLE
+#define UNIT_GTAB   (GL_FLOAT)
 //=============================================================================
 //  VERTEX TABLE
 //=============================================================================
@@ -2456,11 +2457,18 @@ struct TC_VTAB {
 //  VERTEX TABLE for ground description
 //=============================================================================
 struct TC_GTAB {
-  double GT_S;                                     // S coordinate
-  double GT_T;                                     // T coordinate
-  double GT_X;                                     // X corrdinate
-  double GT_Y;                                     // Y coordinate
-  double GT_Z;                                     // Z coordinate
+  //double GT_S;                                     // S coordinate
+  //double GT_T;                                     // T coordinate
+  //double GT_X;                                     // X corrdinate
+  //double GT_Y;                                     // Y coordinate
+  //double GT_Z;                                     // Z coordinate
+	  
+	float GT_S;                                     // S coordinate
+  float GT_T;                                     // T coordinate
+  float GT_X;                                     // X corrdinate
+  float GT_Y;                                     // Y coordinate
+  float GT_Z;                                     // Z coordinate
+
   //----Copy from another table -------------------------
   void  TC_GTAB::Dupplicate(TC_GTAB *s, int n)
   { TC_GTAB *dst = this;

@@ -94,7 +94,6 @@ public:
   //--- CAnimatedModel methods -------------------------------
   void  Reset();                   // Reset to keyframe
   void  SetPartKeyframe    (char *partname, float frame);
-  void  SetPartTransparent (char *partname, bool ok);
   //---Manage rotating wheels --------------------------------
   void  AddTire(CAcmTire *w);
   //---Manage landing gear -----------------------------------

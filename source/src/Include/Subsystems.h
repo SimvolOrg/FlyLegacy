@@ -2349,7 +2349,6 @@ public:
   std::map<Tag,CFuelSubsystem*> piped;            // Piped subsystems
   //-----ATTRIBUTES ---------------------------------------------------
 public:
-  bool                          force_fuel;
   char                          Fsrc;             // Tank indicator
   char                          Tr;               // Trace request
 };

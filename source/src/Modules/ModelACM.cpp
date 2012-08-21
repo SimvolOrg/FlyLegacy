@@ -379,8 +379,6 @@ double CAcmPart::GetRadius()
 //-------------------------------------------------------------------------------------
 void CAcmPart::setName (const char *s)
 { strncpy (name, s,63);
-  if (strstr(name,"glasse") == 0) return; 
-  Trans = 1;
   return;
 }
 //-------------------------------------------------------------------------------------
@@ -719,7 +717,7 @@ void CAcmPart::DrawShadow (char mode)
 void CAcmPart::Draw (char mode)
 { // Apply current part transformation. The order in which the orientation angles
   //   are applied is important!!  Order should be heading, pitch, bank.
-  glMatrixMode (GL_MODELVIEW);
+  //glMatrixMode (GL_MODELVIEW);
   glPushMatrix ();
   //-----Render the part ------------------------------------------
   switch (Type) {
@@ -780,7 +778,7 @@ void CAcmPart::Draw (char mode)
   }
   //-------- Restore previous state ---------------------------
   glPopMatrix ();
-  glMatrixMode (GL_MODELVIEW);
+  //glMatrixMode (GL_MODELVIEW);
   return;
 }
 //-------------------------------------------------------------------------
@@ -1372,16 +1370,6 @@ CAcmPart *CModelACM::GetPart(char *name)
   return (i != partMap.end())?(i->second):(0);
 }
 //-----------------------------------------------------------------------------
-//  Set transparency  indicator
-//-----------------------------------------------------------------------------
-void CModelACM::SetPartTransparent (char* partname, bool ok)
-{ // 
-  std::map<string,CAcmPart*>::iterator i = partMap.find(partname);
-  if (i != partMap.end()) {
-    CAcmPart *part = i->second;
-  }
-}
-//-----------------------------------------------------------------------------
 //  Check all keys
 //-----------------------------------------------------------------------------
 void CModelACM::CheckKeys()
@@ -1466,6 +1454,7 @@ void CModelACM::Draw (char mode)
 	//------------------------------------------------------------------------
   glEnableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glMatrixMode (GL_MODELVIEW);
   topParent->Draw (mode);
   glPopAttrib ();
   glPopClientAttrib ();

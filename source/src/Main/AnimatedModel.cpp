@@ -510,12 +510,6 @@ void  CAnimatedModel::DrawSpinner(CCameraCockpit *cam, TC_4DF &d)
 void CAnimatedModel::SetPartKeyframe (char *partname, float frame)
 { Model->SetPartKeyframe (partname, frame);
 }
-//---------------------------------------------------------------------
-//  Set Transparency to each part
-//---------------------------------------------------------------------
-void CAnimatedModel::SetPartTransparent (char *partname, bool ok)
-{ Model->SetPartTransparent (partname, ok);
-}
 //----------------------------------------------------------------------
 //  Time slice the current model
 //----------------------------------------------------------------------

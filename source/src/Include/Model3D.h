@@ -92,15 +92,6 @@ struct M3D_PART_INFO {
 //            several references to the same SMF or BIN part. For instance a lamp post model
 //            may be used about 100 hundred times in the same scenery.
 //=============================================================================
-//  Ground INFO
-//=============================================================================
-struct TC_GRND_INFO {
-  C_QGT       *qgt;               // Quarter global Tile
-  short         tx;               // Tile X component
-  short         tz;               // Tile Z component
-  CSuperTile   *sup;               // Super Tile
-  double       alt;
-};
 //=============================================================================
 //  Picture QUAD
 //  provide a square associaated to a bitmap for drawing
@@ -415,7 +406,7 @@ protected:
   C3Dworld   *wd3D;                   // Parent system
   CObjPtr     pmOB;                   // User pointer 
   C3DLight   *Lite;                   // Associated light
-  TC_GRND_INFO inf;                   // Object ground info
+	GroundSpot  spot;
   //----------------------------------------------------------
   Tag         kind;                   // Object category
   U_INT       flag;                   // FLAG
@@ -522,7 +513,7 @@ public:
   inline void       SetPM1(int p)         {count = p;}
   inline void       SetPM2(int p)         {}
   //------------------------------------------------------------
-  inline bool       NoSup()               {return (inf.sup == 0);}
+  inline bool       NoSup()               {return (spot.sup == 0);}
   inline bool       HasLight()            {return (Lite != 0);}
   inline bool       NoZB()                {return (nozb != 0);}
   inline bool       NoZU()                {return (nozu != 0);}
@@ -540,7 +531,7 @@ public:
   inline double     GetYRotation()        {return oAng.y;}
 	inline U_INT			GetUsers()						{return User;}
 	//-------------------------------------------------------------
-  inline C_QGT     *GetQGT()    {return inf.qgt;}
+  inline C_QGT     *GetQGT()    {return spot.qgt;}
   //-------------------------------------------------------------
 	inline void				SetType(U_INT t)			{type		= t;}
   inline void       SetDistance(float d)  {pDis = d;}
@@ -553,10 +544,8 @@ public:
 	//--------------------------------------------------------------
 	inline void SnapTo()	{snap  = (flag & TC_SNAP_GROUND);}
   //--------------------------------------------------------------
-  inline void						Copy(TC_GRND_INFO &t) {inf = t;}
-  inline TC_GRND_INFO  *GetINFO()         {return &inf;}
   inline SPosition			GetPosition()     {return oPos;}
-	inline CSuperTile    *GetSuperTile()		{return inf.sup;}
+	inline CSuperTile    *GetSuperTile()		{return spot.sup;}
   //--------------------------------------------------------------
 };
 //=============================================================================

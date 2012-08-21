@@ -1469,7 +1469,6 @@ void CExternalLight::DrawAsQuad()
   GLfloat *color = (GLfloat *)&ColorTAB[xCol];
   glMaterialfv (GL_FRONT, GL_EMISSION, color);
 	glMaterialfv (GL_FRONT, GL_DIFFUSE,  color);
-  glColor3fv(color);
   glInterleavedArrays(GL_T2F_V3F,0,tab);
   glDrawArrays(GL_QUADS,0,4);
   //---------------------------------------------------

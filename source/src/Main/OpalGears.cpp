@@ -304,17 +304,17 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 //  Display gear parameters
 //-------------------------------------------------------------------------
 void CGearOpal::Probe(CFuiCanva *cnv)
-{ cnv->AddText(1,1,"OnGr: %d",gearData->onGd);
-	cnv->AddText(1,1,"sABS: %d",gearData->sABS);
-	cnv->AddText(1,1,"wagl: %.4lf(ft)",gearData->wagl);
-	cnv->AddText(1,1,"powL: %.4f",gearData->powL);
-	cnv->AddText(1,1,"imPW: %.4lf(flbs)",gearData->imPW);
-	cnv->AddText(1,1,"dflect:%.4f",gearData->deflect );
-	cnv->AddText(1,1,"Banking: %.4lf",banking);
+{ cnv->AddText(1,1,"OnGr-ABS: %d,%d",gearData->onGd,gearData->sABS);
+	cnv->AddText(1,1,"wagl: %.6lf(ft)",gearData->wagl);
+	cnv->AddText(1,1,"powL: %.6f",gearData->powL);
+	cnv->AddText(1,1,"imPW: %.6lf(flbs)",gearData->imPW);
+	cnv->AddText(1,1,"Banking: %.6lf",banking);
 	cnv->AddText(1,1,"velo:   %.6lf",local_velocity.y);
 	cnv->AddText(1,1,"Swing:  %.6lf",gearData->swing);
 	cnv->AddText(1,1,"Torque: %.6lf",mveh->GetDifBrake());
-	cnv->AddText(1,1,"brakF:  %.6lf",gearData->brakF);
+	cnv->AddText(1,1,"brakF:  %.6lf", gearData->brakF);
+	cnv->AddText(1,1,"turn kf: %.6lf",gearData->kframe);
+	cnv->AddText(1,1,"amor kf: %.6lf",gearData->sframe);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -412,12 +412,13 @@ void CGearOpal::GearL2B_Timeslice (void)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
   /// \to do ? transform the forces back to the body frame
 	//--- Compute amortizer opposite vertical force -------
-	double amor			= (glf.vec.z) * gearData->damR;
-	glf.vec.z	      = -amor;
+	double amor				= (glf.vec.z) * gearData->damR;
+	glf.vec.z					= -amor;
 	//--- Animate shock parts --(key 0 is full extended) --
-	double swing    = gearData->swing;
-	float  kfrm     = float(swing) * 0.5f + 0.5f;
+	double swing			= gearData->swing;
+	float  kfrm				= float(swing) * 0.5f + 0.5f;
 	susp->AnimateShock(kfrm);
+	gearData->sframe	= kfrm;
 	//--- Apply vertical swing ----------------------------
 	double ms				= cMass * mveh->GetMassInKgs();			// Mass in Kg
 	glf.vec.z      += (gearData->mgsp->GetBumpForce() * ms * swing);

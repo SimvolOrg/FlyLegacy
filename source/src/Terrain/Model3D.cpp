@@ -747,9 +747,9 @@ bool C3Dfile::MarkHold(CWobj *obj)
   char *kid = obj->GetHold();
   if (strcmp(hid,kid))  return false;
   //----- This is a shared object --------
-   hld->Add(obj);          // Add to holder list
-  obj->oPos = hld->oPos;  // Set geo position
-  obj->inf  = hld->inf;   // Set terrain info from hld
+   hld->Add(obj);						// Add to holder list
+  obj->oPos = hld->oPos;		// Set geo position
+  obj->spot = hld->spot;		// Set terrain info from hld
 
   //----- Set position to lights ---------
   C3DLight *lit = obj->Lite;
@@ -1115,16 +1115,15 @@ CWobj::CWobj(Tag k)                   // : CmHead(SHR,WOB)
   modL[MODEL_NIT] = 0;
   oAng.x = oAng.y = oAng.z = 0;
   Lite      = 0;
-  inf.qgt   = 0;
-  inf.sup   = 0;
+  spot.qgt  = 0;
+  spot.sup  = 0;
   globals->NbOBJ++;
 }
 //---------------------------------------------------------------------
 //  Free resources
 //---------------------------------------------------------------------
 CWobj::~CWobj()
-{ C_QGT *qt = inf.qgt;
-  FreeLites();
+{ FreeLites();
   if (desc) delete [] desc;
   if (name) delete [] name;
   if (fnam) delete [] fnam;
@@ -1315,10 +1314,10 @@ void CWobj::SetFileName(char *fn)
 //  All Parameters are read.  Complete object 
 //-----------------------------------------------------------------------
 bool CWobj::Localize(C_QGT *qgt)
-{ inf.qgt  = qgt;
-  inf.alt  = 0;
-  globals->tcm->GetTerrainInfo(inf,oPos);
-  oPos.alt = inf.alt;
+{ spot.qgt			= qgt;
+  spot.alt			= 0;
+	spot.GetGroundAt(oPos);
+  oPos.alt			= spot.alt;
   C3DLight *lit = Lite;
   //---Process all lights locations ------------------
   while (lit) 
@@ -1326,7 +1325,7 @@ bool CWobj::Localize(C_QGT *qgt)
     lit = (C3DLight*)lit->GetNext();
   }
   //--- If no valid position, delete object ---------
-  if (inf.sup)   return true;
+  if (spot.sup)   return true;
   WARNINGLOG("CWobj: geop not in QGT");
   delete this;
   return false;
@@ -1479,7 +1478,7 @@ void CWobj::Relocate(C3Dmodel *mod)
 { if (!mod->IsOK())			return;
 	snap				= 0;
 	double cor  = oPos.alt;
-  oPos.alt    = inf.alt;
+  oPos.alt    = spot.alt;
   oPos.alt   -= mod->GetGround();
   if (0 == Lite)        return;
   //--Relocate all lights ----------------------
@@ -1561,7 +1560,7 @@ void CWobj::SetOrientation(SVector &V)
 //  Refresh the squared Distance (dis²)
 //------------------------------------------------------------------------
 float CWobj::RefreshDistance()
-{ float dis = inf.sup->GetTrueDistance();
+{ float dis = spot.sup->GetTrueDistance();
   pDis      = dis * dis;
   return dis;
 }
@@ -1573,8 +1572,9 @@ void CWobj::UpdateWith(CNavaid *nav)
   pDis  = nav->GetPDIS();
   oPos  = nav->GetPosition();
   pmOB  = nav;
-  inf.qgt = 0;
-  globals->tcm->GetTerrainInfo(inf, oPos);
+	spot.qgt	= 0;
+	spot.GetGroundAt(oPos);
+
   //----Compute light position ------------------
   Lite->SetOffset(vorOFS);
   Lite->SetLocation(oPos);
@@ -1585,8 +1585,8 @@ void CWobj::UpdateWith(CNavaid *nav)
 //  Update VOR State
 //------------------------------------------------------------------------
 void CWobj::EndOfQGT(C_QGT *qt)
-{ if (inf.qgt != qt) return;
-  inf.qgt = 0;
+{ if (spot.qgt != qt) return;
+  spot.qgt = 0;
   return;
 } 
 //------------------------------------------------------------------------
@@ -1810,9 +1810,9 @@ CWvor::CWvor(Tag kd): CWobj(kd)
 //  Release VOR
 //---------------------------------------------------------------------------
 void CWvor::ReleaseOBJ()
-{ pmOB    = 0;               // release any Navaid
-  inf.qgt = 0;
-  inf.sup = 0;
+{ pmOB			= 0;               // release any Navaid
+  spot.qgt	= 0;
+  spot.sup	= 0;
   return;
 }
 //============================================================================

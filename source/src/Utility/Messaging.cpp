@@ -101,6 +101,7 @@ EMessageResult Send_Message (SMessage *msg)
   //if (msg->receiver)    return rc;
   //--- Warning has not been generated for this message yet--
   msg->receiver	= veh->GetNullSubsystem();			// Set Null Sub as receiver
+	msg->voidData = msg->receiver;
   //---Ignore when group is null -----------------------------------
   if (0 == msg->group)    return rc;
 	char sendr_id[8];

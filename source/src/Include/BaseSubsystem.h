@@ -22,7 +22,6 @@
 //================================================================================================
 #include "../Include/Queues.h"
 #include "../Include/3DMath.h"
-
 //================================================================================================
 
 #ifndef BASE_SUBSYSTEM_H
@@ -32,6 +31,7 @@ class CSoundBUF;
 class CFuiPlot;
 class CRobot;
 class CAeroControl;
+class CheckChapter;
 //==================================================================================
 #define DEP_MAIN_STATE (0x01)
 #define DEP_AUXI_STATE (0x02)
@@ -641,6 +641,8 @@ public:
 	//---------------------------------------------------------------------------
 	virtual float GaugeBusFT01()				{return 0;}				// Float p1
 	virtual float GaugeBusFT02()				{return 0;}				// Float p2
+	//---------------------------------------------------------------------------
+	virtual void	Target(float v)		{indnTarget = v;}
   //---------------------------------------------------------------------------
   void  TraceTimeSlice(U_INT FrNo);					        // JSDEV*	Trace activation
   void  SetIdent(Tag id);
@@ -663,7 +665,6 @@ public:
 	inline CVehicleObject *GetMVEH() {return mveh;}
 	//----Probe management ----------------------------------------------------
   inline void   SetOption(char p) {popt = p;}
-	inline void		Target(float v)		{indnTarget = v;}
 protected:
   //-------------Attributes --------------------------------------------------
   // Frame counter indicates if subsystem is up to date for current cycle
@@ -807,7 +808,7 @@ public:
   virtual void  Probe(CFuiCanva *cnv,Tag tag = 0);              // probe with source
   virtual void  Probe(CFuiCanva *cnv)     {Probe(cnv,0);}
   virtual void  TimeSlice  (float dT,U_INT FrNo);					      // New TimeSlice
-  //------ CSubsystem methods ----------------------------------------------------------------
+	//------ CSubsystem methods ----------------------------------------------------------------
   virtual const char* GetClassName (void) { return "CDependent"; }
   virtual EMessageResult  ReceiveMessage (SMessage *msg);
   virtual void            Print (FILE *f);
@@ -1050,7 +1051,9 @@ struct SGearData {
   ///----- sterring wheel data ---------------------------------------------
   float deflect;
   float scaled;
-  float kframe;
+  float kframe;												// Directional keyframe
+	//------------------------------------------------------------------------
+	float sframe;												// Shock absorber kframe
 	///--- wheelBase (inter wheel lenght between axis in meters) -------------
   float wheel_base;
 
@@ -1090,6 +1093,37 @@ struct SGearData {
 		swing							= 0;
 		xDist							= 0;
   }
+};
+
+//===================================================================
+//  CheckList Subsystem
+//===================================================================
+class PlaneCheckList: public CSubsystem {
+  //---ATTRIBUTES ----------------------------------------------
+protected:
+	//--- Registered window --------------------------------------
+  CFuiCkList *cWIN;
+	//---  Autorobot ---------------------------------------------
+  CRobot *d2r2;																	// Robot location
+  std::vector<CheckChapter*>   vCHAP;						// Table of Chapters
+  //---METHODS--------------------------------------------------
+public:
+  PlaneCheckList();
+ ~PlaneCheckList();
+	//------------------------------------------------------------
+	
+  void    Init(CVehicleObject *v,char *tail);
+  int     Read(SStream *st,Tag tag);
+  char  **GetChapters();
+  void    GetLines(CListBox &box,U_INT ch);
+  void    Close();
+	void    RegisterWindow(CFuiCkList *w);
+	bool    Execute(void *a);
+  //------------------------------------------------------------
+  EMessageResult ReceiveMessage (SMessage *msg);
+  //------------------------------------------------------------
+  inline  bool HasChapter()		{return (vCHAP.size() != 0);}
+	//------------------------------------------------------------
 };
 
 //======================= END OF FILE ==============================================================

@@ -475,7 +475,6 @@ CVehicleObject::CVehicleObject (void)
   //---- Initialize user vehicle subclasses ----------------
   swd = NULL;
   hst = NULL;
-	ckl	= NULL;
 	//-------------------------------------------------------
   globals->rdb = new CFuiRadioBand;
   //----Check for No AIrcraft in Sim section --------------
@@ -512,9 +511,6 @@ void CVehicleObject::StoreNFO(char *nfo)
 //------------------------------------------------------------------------
 CVehicleObject::~CVehicleObject (void)
 {
-#ifdef _DEBUG
-  DEBUGLOG ("CVehicleObject::~CVehicleObject dll=%d", globals->plugins_num);
-#endif
 	//---Close any open window related to aircraft ------------
   if (globals->wfl) globals->wfl->Close();      // Fuel load
   if (globals->wld) globals->wld->Close();      // Load weight
@@ -525,7 +521,6 @@ CVehicleObject::~CVehicleObject (void)
  *nfoFilename = 0;
   SAFE_DELETE (swd);
   SAFE_DELETE (hst);
-	SAFE_DELETE (ckl);
   //---Clear sound objects ----------------------------------
   sounds.clear();
   //---JS: Clean globals area -------------------------------
@@ -653,9 +648,7 @@ void CVehicleObject::ReadFinished (void)
 	//---Add various parameters ---------------------------------------
   nEng  = eng.HowMany();
 	//--- Read CheckList ----------------------------------------------
-	ckl = new PlaneCheckList(this);
-	char *tail = svh.GetTailNumber();
-	ckl->OpenList(tail);
+	ckl.Init(this,svh.GetTailNumber());
   //--  Initialisations (after all the objects creation) ------------
   wgh.Init ();
   //--- Add drawing position as external feature ---------------------
@@ -695,7 +688,7 @@ void CVehicleObject::TraceMsgPrepa (SMessage *msg)
 //----------------------------------------------------------------------------
 void CVehicleObject::PrepareMsg (void)
 {	pit.PrepareMsg(this);				// Prepare panel gauges
-  if (ckl)  ckl->PrepareMsg(this);				// Check list messages
+  ckl.PrepareMsg(this);				// Check list messages
 	return;	
 }
 //----------------------------------------------------------------------------
@@ -706,7 +699,7 @@ void CVehicleObject::PrepareMsg (void)
 void CVehicleObject::DrawExternal(void)
 {	GetFlightPlan()->DrawOn3DW();
 	if (globals->noEXT)                       return;
-	elt.DrawSpotLights();
+	//elt.DrawSpotLights();
   //// Draw all externally visible objects associated with the vehicle
   lod.Draw (BODY_TRANSFORM);
   return;
@@ -716,6 +709,7 @@ void CVehicleObject::DrawExternal(void)
 //----------------------------------------------------------------------------
 void CVehicleObject::DrawOutsideLights()
 {	elt.DrawOmniLights();
+	elt.DrawSpotLights();
 	return;
 }
 //----------------------------------------------------------------------------
@@ -780,9 +774,12 @@ void CVehicleObject::Update (float dT,U_INT FrNo)
 //
 //-----------------------------------------------------------------------
 void CVehicleObject::Simulate (float dT,U_INT FrNo)
-{
-  //! first off : we timeslice each separate feature that is part
-  //! of the vehicle
+{	// Compute altitude above ground --------------
+	Spot.lon  = geop.lon;
+  Spot.lat  = geop.lat;
+  Spot.alt  = 0;
+  // Timeslice each separate feature that is part
+  // of the vehicle
 
   // Timeslice electrical subsystems
   amp.Timeslice (dT,FrNo);

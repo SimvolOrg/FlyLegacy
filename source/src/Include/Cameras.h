@@ -338,34 +338,35 @@ public:
   virtual ~CCameraCockpit (void);
 
   // CStreamObject methods
-  virtual int     Read (SStream *stream, Tag tag);
-  virtual void    ReadFinished (void);
+  int     Read (SStream *stream, Tag tag);
+  void    ReadFinished (void);
+	void		Init(CVehicleObject *mv);
 
   // CCamera methods
-  virtual void  UpdateCamera (SPosition targetPosition, SVector targetOrientation,float dT);
-  virtual void  GetLookatPoint (SVector &v);
-  virtual Tag   GetCameraType (void) { return CAMERA_COCKPIT; }
-  virtual void  GetCameraName (char* name, int maxLength)
+  void  UpdateCamera (SPosition targetPosition, SVector targetOrientation,float dT);
+  void  GetLookatPoint (SVector &v);
+  Tag   GetCameraType (void) { return CAMERA_COCKPIT; }
+  void  GetCameraName (char* name, int maxLength)
   {
     strncpy (name, "Cockpit Camera", maxLength);
   }
 
-  virtual void  PanLeft (void);
-  virtual void  PanRight (void);
-  virtual void  PanUp (void);
-  virtual void  PanDown (void);
+  void  PanLeft (void);
+  void  PanRight (void);
+  void  PanUp (void);
+  void  PanDown (void);
 	//-----------------------------------------------
-  virtual void  User1 (void);
-  virtual void  User2 (void);
-  virtual void  User3 (void);
-  virtual void  User4 (void);
+  void  User1 (void);
+  void  User2 (void);
+  void  User3 (void);
+  void  User4 (void);
 	//-----------------------------------------------
-  virtual void  DefineUser1 (void);
-  virtual void  DefineUser2 (void);
-  virtual void  DefineUser3 (void);
-  virtual void  DefineUser4 (void);
-  virtual void  HeadPitchUp (void);
-  virtual void  HeadPitchDown (void);
+  void  DefineUser1 (void);
+  void  DefineUser2 (void);
+  void  DefineUser3 (void);
+  void  DefineUser4 (void);
+  void  HeadPitchUp (void);
+  void  HeadPitchDown (void);
 
   //---- CCameraCockpit methods -------------------
 	void			CameraReferential();
@@ -374,8 +375,8 @@ public:
 	//-----------------------------------------------
 	void			SetMatrix(SVector ori);
   //-----------------------------------------------
-  inline void     GetOFS(SVector &v)    {v = Ofs;}
-  inline SVector &GetSeat()             {return Seat;}
+	void      GetOFS(SVector &v)    {v = Ofs;}
+  SVector  &GetSeat()             {return Seat;}
   //-----------------------------------------------
 protected:
 	CVehicleObject							 *mveh;						//  Mother Vehicle
@@ -425,16 +426,16 @@ public:
   CCameraObserver (void);
 
   // CCamera methods
-  virtual void  UpdateCamera (SPosition tgtPosition, SVector tgtOrient,float dT);
-  virtual Tag   GetCameraType (void) { return CAMERA_OBSERVER; }
-  virtual void  GetCameraName (char* name, int maxLength)
+  void  UpdateCamera (SPosition tgtPosition, SVector tgtOrient,float dT);
+  Tag   GetCameraType (void) { return CAMERA_OBSERVER; }
+  void  GetCameraName (char* name, int maxLength)
   {
     strncpy (name, "Observer Camera", maxLength);
   }
-  virtual void  PanLeft (void);
-  virtual void  PanRight (void);
-  virtual void  PanUp (void);
-  virtual void  PanDown (void);
+  void  PanLeft (void);
+  void  PanRight (void);
+  void  PanUp (void);
+  void  PanDown (void);
   //-----------------------------------------------------------------
   void  SetCameraPosition  (const float &pitchInRads,
                             const float &headingInRads,
@@ -476,16 +477,16 @@ public:
   // Constructors/Destructors
   CCameraTower (void);
   //---  CCamera methods --------------------------------------------------
-  virtual Tag   GetCameraType (void) { return CAMERA_TOWER; }
+  Tag   GetCameraType (void) { return CAMERA_TOWER; }
 	//-----------------------------------------------------------------------
-  virtual void  GetCameraName (char* name, int maxLength)
+  void  GetCameraName (char* name, int maxLength)
   {
     strncpy (name, "Tower Camera", maxLength);
   }
 	//----------------------------------------------------------------------
 	CVector		ComputeOffset(SPosition tgt);
-  virtual void  ZoomRatioIn (void);
-  virtual void  ZoomRatioOut (void);
+  void  ZoomRatioIn (void);
+  void  ZoomRatioOut (void);
   void			UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
 	void			UpdatePosition(float Dt);
 	void			ComputeAngle(CVector &v);
@@ -521,9 +522,9 @@ public:
   // Constructors/Destructors
   CCameraOverhead (void);
 
-  virtual void  UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
-  virtual Tag   GetCameraType (void) { return CAMERA_OVERHEAD;}
-  virtual void  GetCameraName (char* name, int maxLength)
+  void  UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
+  Tag   GetCameraType (void) { return CAMERA_OVERHEAD;}
+  void  GetCameraName (char* name, int maxLength)
   {
     strncpy (name, "Overhead Camera", maxLength);
   }
@@ -541,9 +542,9 @@ public:
   // Constructors/Destructors
   CCameraOrbit (void);
 
-  virtual void  UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
-  virtual Tag   GetCameraType (void) { return CAMERA_ORBIT; }
-  virtual void  GetCameraName (char* name, int maxLength)
+  void  UpdateCamera (SPosition tgtPos, SVector tgtOrient,float dT);
+  Tag   GetCameraType (void) { return CAMERA_ORBIT; }
+  void  GetCameraName (char* name, int maxLength)
   {
     strncpy (name, "Orbit Camera", maxLength);
   }
@@ -786,7 +787,8 @@ public:
   //----------------------------------------------------------------------------
   void      Print (FILE *f);
   //----------------------------------------------------------------------------
-  inline    CCamera*  GetActiveCamera ()     {return aCam;}
+  CCamera*  GetActiveCamera ()     {return aCam;}
+	void			NoCamera() 						 {aCam = 0;}
   //----------------------------------------------------------------------------
 protected:
   ///----------Attributes ------------------------------------------------------
