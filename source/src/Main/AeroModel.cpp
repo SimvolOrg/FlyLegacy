@@ -66,7 +66,6 @@ CAerodynamicModel::CAerodynamicModel ()
   if (log) {
     log->Write ("CAerodynamicModel data log\n");
   } else log = NULL;
-
   //--- Initialize --------------------------------------
 	sreg		= 0;
 	rudder	= 0;

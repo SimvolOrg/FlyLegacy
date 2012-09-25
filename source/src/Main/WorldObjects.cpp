@@ -665,7 +665,6 @@ void CVehicleObject::ReadFinished (void)
   pit.Init(nfo.GetPIT());
   //--- Read Control Mixer
   mix.Init(nfo.GetMIX());
-	
 	//---Add various parameters ---------------------------------------
   nEng  = eng.HowMany();
 	//--- Read CheckList ----------------------------------------------
@@ -682,6 +681,10 @@ void CVehicleObject::ReadFinished (void)
 		CVehicleSmoke *usmk = new CVehicleSmoke(this);
 		amp.AddExternal(usmk,0);							
 	}
+	//--- Temporary gear connexion ------------------------------------
+	int	pm	= 1;
+	GetIniVar("Sim","GearConnected",&pm);
+	GearConnector(pm);
   return;
 }
 
