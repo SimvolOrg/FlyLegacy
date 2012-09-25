@@ -327,12 +327,14 @@ public:
 	void	Init(CWeightManager *wghman, char *fn);
   /*! CGroundSuspension generic methods */
   virtual void  Timeslice          (float dT);
-  //-------------------------------------------------------------------
+  //-------------------------------------------------------------------------
+	void	BuildGears();
   void  ReadSusp(SStream *st);
 	void	SetABS(char p);
   void  ResetCrash();
   void  ResetForce();
 	void	SetSteerData(CRudderControl *rud);
+	void  DisconnectGear(CRudderControl *rud);
   //-------------------------------------------------------------------------
   /*! Getters - setters */
   const SVector* GetSumGearForces  (void)              {return &SumGearForces;}
@@ -349,8 +351,8 @@ public:
 	double   GetDifBraking()			{return difB;}
 	double   GetBumpForce()			{return bump;}
   double   GetMainGearRadius() {return  mainR;}
-  double   GetBodyAGL()        {return  bAGL;}
-  double   GetPositionAGL()    {return  (bAGL + mainR - 1);}
+  double   GetMinimumBodyAGL() {return  mAGL;}
+  double   GetPositionAGL()    {return  (mAGL + mainR - 1);}
   double   GetSterGearRadius() {return  sterR;}
   void     StoreGearVM(CVector &v, double mc) {mainVM = v; massCF = mc;}
   char     GetNbWheelOnGround(){return nWonG;}
@@ -383,7 +385,7 @@ protected:
 	double        ampB;																					// Brake amplifier
 	double				difB;																					// Differntial brake
   double        wheel_base;                                   // Inter axes distance
-  double        bAGL;                                         // Body AGL (in feet)
+  double        mAGL;                                         // minimum Body AGL (in feet)
   double        mainR;                                        // Main average radius
   CVector       mainW;                                        // Main gear barycenter
   double        sterR;                                        // Steering wheel radius

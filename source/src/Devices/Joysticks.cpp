@@ -87,12 +87,7 @@ JoyDEV::JoyDEV(int n)
 	msk	= 0;
 	for (int k=0; k!=32; k++) mBut[k] = 0;
 	//--------------------------------------------
-	axeData[JOY_AXE_X] = 0;
-	axeData[JOY_AXE_Y] = 0;
-	axeData[JOY_AXE_Z] = 0;
-	axeData[JOY_AXE_R] = 0;
-	axeData[JOY_AXE_U] = 0;
-	axeData[JOY_AXE_V] = 0;
+	Reset();
 	//--- Get joystick capability ----------------
 	joyGetDevCaps(n, &jCap, sizeof(jCap));
 	nax			= jCap.wNumAxes;
@@ -113,6 +108,19 @@ JoyDEV::JoyDEV(int n)
 	axeIncr[5]	= (dtv != 0)?(JOY_RNG_VAL / dtv):(0);	// V inc
 	//--------------------------------------------
 	use		  = 1;
+}
+//----------------------------------------------------------------
+//	Reset values 
+//----------------------------------------------------------------
+void JoyDEV::Reset()
+{	//--------------------------------------------
+	axeData[JOY_AXE_X] = 0;
+	axeData[JOY_AXE_Y] = 0;
+	axeData[JOY_AXE_Z] = 0;
+	axeData[JOY_AXE_R] = 0;
+	axeData[JOY_AXE_U] = 0;
+	axeData[JOY_AXE_V] = 0;
+	return;
 }
 //----------------------------------------------------------------
 //	Free resources 
@@ -251,16 +259,17 @@ void JoyDEV::Refresh()
 //---------------------------------------------------------------------------------
 //  Process hat
 //---------------------------------------------------------------------------------
-bool JoyDEV::HandleHat()
+void JoyDEV::HandleHat()
 {	short val = hat;
-	if (-1 == val)		return false;
-	if ( 0 == nht)		return false;
-	if ( 0 == uht)		return false;
-	if (hat == phat)	return false;
+	if (-1 == val)		return;
+	if ( 0 == nht)		return;
+	if ( 0 == uht)		return;
+	if (hat == phat)	return;
 	//--- Change in hat position -------------------------------
 	hpos		= hat / 100;							// compute angle
+	if (globals->cam->NoHatSupport())	return;
 	globals->pln->pit.ActivateView(float(hpos));
-	return true;
+	return;
 }
 //==============================================================================
 //  CREATE AN AXE DESCRIPTOR
@@ -473,6 +482,7 @@ CJoysticksManager::CJoysticksManager()
 	uht		= 0;
 	busy	= 0;
 	jFunCB = 0;
+	mveh	= 0;
 	Init();
 }
 //-------------------------------------------------------------------------
@@ -705,18 +715,6 @@ CJoysticksManager::~CJoysticksManager()
 	}
 }
 //-------------------------------------------------------------------------
-//	Connect all axis
-//-------------------------------------------------------------------------
-void CJoysticksManager::JoyConnectAll()
-{	axeCNX = JS_SURF_ALL + JS_TRIM_ALL + JS_GROUPBIT + JS_OTHR_BIT;
-	return;	}
-//-------------------------------------------------------------------------
-//	Disconnect requested axis
-//-------------------------------------------------------------------------
-void CJoysticksManager::JoyDisconnect(U_INT m)
-{	axeCNX &= (-1 - m);								// Remove bit from connector mask
-	return;	}
-//-------------------------------------------------------------------------
 //	Reconnect requested axis
 //-------------------------------------------------------------------------
 void CJoysticksManager::Reconnect(U_INT m)
@@ -728,17 +726,6 @@ void CJoysticksManager::Reconnect(U_INT m)
 CSimAxe * CJoysticksManager::GetAxe(Tag tag)
 { std::map<Tag,CSimAxe *>::iterator it = mapAxe.find(tag);
   return (it == mapAxe.end())?(0):((*it).second);
-}
-//--------------------------------------------------------------------------------
-//  Remap a control to a destination
-//--------------------------------------------------------------------------------
-void CJoysticksManager::MapTo(Tag gen, Tag usr)
-{ std::map<Tag,CSimAxe *>::iterator it = mapAxe.find(gen);
-  if (it == mapAxe.end())  return;
-  CSimAxe *axe = (*it).second;
-  axe->msg.group    = usr;
-  axe->msg.receiver = 0;
-  return;
 }
 //--------------------------------------------------------------------------------
 //  Return user tag from generic name
@@ -850,6 +837,15 @@ void CJoysticksManager::Update()
 	return;
 }
 //------------------------------------------------------------------------
+//  Reset all values
+//------------------------------------------------------------------------
+void CJoysticksManager::Register(CObject *obj)
+{	mveh	= obj;
+	for (U_INT k=0; k<devQ.size(); k++)	devQ[k]->Reset();
+	axeCNX = JS_SURF_ALL + JS_TRIM_ALL + JS_GROUPBIT + JS_OTHR_BIT;
+	return;
+}
+//------------------------------------------------------------------------
 //  Move detector
 //------------------------------------------------------------------------
 void CJoysticksManager::DetectMove(JoyDEV *J)
@@ -932,14 +928,6 @@ JoyDEV *CJoysticksManager::Find(char * name)
   
   return 0;
 }
-//-------------------------------------------------------------------------------
-//  Poll Axe value:  Used by all control surface to get raw value of control
-//-------------------------------------------------------------------------------
-void CJoysticksManager::Poll(EAllAxes tag, float &v)
-{	CSimAxe *pa = GetAxe(tag);
-  if (pa && pa->IsConnected(axeCNX))	v = pa->Value(nZON);
-	return;
-}
 
 //--------------------------------------------------------------------------------
 //  Check For Axe
@@ -986,16 +974,68 @@ void CJoysticksManager::CheckControl(Tag tag)
 	globals->fui->DrawNoticeToUser("Joystick recovers controls",5);
 	return;
 }
-
+//================================================================================
+//	Following commands are dedicated to the registered aircraft
+//================================================================================
+//--------------------------------------------------------------------------------
+//	Set number of engines
+//--------------------------------------------------------------------------------
+void CJoysticksManager::SetNbEngines(CObject *obj,char nb)
+{	if (obj != mveh)					return;
+	engNB	= nb;
+	return;
+}
+//--------------------------------------------------------------------------------
+//  Remap a control to a destination (used when changing aircraft)
+//	The controller (ctl) message is remapped to the new destination dst
+//	NOTE:  Only the registered aircraft is accepted.  Other animated aircraft
+//				 dont have joystick control
+//--------------------------------------------------------------------------------
+void CJoysticksManager::MapTo(CObject *obj,Tag ctl, Tag dst)
+{ if (obj != mveh)					return;
+	std::map<Tag,CSimAxe *>::iterator it = mapAxe.find(ctl);
+  if (it == mapAxe.end())		return;
+  CSimAxe *axe = (*it).second;
+  axe->msg.group    = dst;
+  axe->msg.receiver = 0;
+  return;
+}
+//-------------------------------------------------------------------------
+//	Aircraft request to Connect all axis
+//-------------------------------------------------------------------------
+void CJoysticksManager::JoyConnectAll(CObject *obj)
+{	if (obj != mveh)	return;			// Ignore
+	axeCNX = JS_SURF_ALL + JS_TRIM_ALL + JS_GROUPBIT + JS_OTHR_BIT;
+	return;	}
+//-------------------------------------------------------------------------
+//	Aircarft request to Disconnect axis m
+//-------------------------------------------------------------------------
+void CJoysticksManager::JoyDisconnect(CObject *obj,U_INT m)
+{	if (obj != mveh)	return;
+	axeCNX &= (-1 - m);								// Remove bit from connector mask
+	return;	}
+//-------------------------------------------------------------------------------
+//  Poll Axe value:  Used by all control surface to get raw value of control
+//	NOTE:  Only the registered aircraft is accepted. Other animated aircraft
+//				dont have joystick control
+//-------------------------------------------------------------------------------
+void CJoysticksManager::Poll(CObject *obj,EAllAxes tag, float &v)
+{	if (obj != mveh)		return;
+	CSimAxe *pa = GetAxe(tag);
+  if (pa && pa->IsConnected(axeCNX))	v = pa->Value(nZON);
+	return;
+}
 //--------------------------------------------------------------------------------
 //  Send messages related to PMT group (Prop-Mixture-Throttle)
 //	This function is called from the aircraft TimeSlice() routine
 //	to get the joystick values for above controls
 //  Any  control in above groups that have an axe assigned to them
 //  receive a message with the corresponding axe value.
+//	NOTE: This command is accepted only from the registered aircraft
 //--------------------------------------------------------------------------------
-void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
-{ Update();										// Refresh values
+void CJoysticksManager::SendGroupPMT(CObject *obj,U_CHAR nbu)
+{ if (obj != mveh)				return;
+	Update();										// Refresh values
 	if (GasDisconnected())	return CheckControl('thr1');
 	CSimAxe * axe = 0;
   for (int k=JOY_FIRST_PMT; k!=JOY_AXIS_NUMBER; k++)
@@ -1008,7 +1048,7 @@ void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
     if (msg->user.u.engine > nbu) continue;
     msg->realData = axe->Value(nZON);			//AxeVal(axe);
     msg->user.u.datatag = axe->cmd;
-    Send_Message(msg);
+    globals->pln->ReceiveMessage(msg);
   }
   return;
 }
@@ -1020,27 +1060,28 @@ void CJoysticksManager::SendGroupPMT(U_CHAR nbu)
 //  increase or decrease all controls in the group in one command
 //  NOTE:  We use the same message receiver as in the SendGroupPMT because the 
 //         same controls are adressed (i;e Throttle or Mixture or Prop pitch)
+//				
 //--------------------------------------------------------------------------------
-void CJoysticksManager::SendGroup(U_INT ng,Tag cmd,U_CHAR nbu)
-{ if (GasDisconnected())					return;
-	CSimAxe *axe	= 0;
+void CJoysticksManager::SendGroup(U_INT ng,Tag cmd)
+{ CSimAxe *axe	= 0;
   U_INT    grp	= AxesList[ng].group;             // Name of the group
 	cmde					= cmd;														// Store command
   for (int k=ng; k!=JOY_AXIS_NUMBER; k++)
   { axe = AxesList + k;
-    if (0 == (axe->group & grp))  return;         // End of group
+    if (0 == (axe->group & grp))						return;         // End of group
     SMessage *msg = &axe->msg;
-    if (msg->user.u.engine > nbu) return;         // End of group
+    if (msg->user.u.engine > U_INT(engNB))	return;         // End of group
     msg->user.u.datatag = cmd;
-    Send_Message(msg);
+    globals->pln->ReceiveMessage(msg);
   }
   return;
 }
 //--------------------------------------------------------------------------------
 //  clear all plane messages related to PMT group (Prop-Mixture-Throttle)
 //--------------------------------------------------------------------------------
-void CJoysticksManager::ClearGroupPMT()
-{ CSimAxe * axe = 0;
+void CJoysticksManager::ClearGroupPMT(CObject *obj)
+{ if (obj != mveh)				return;	// Ignore
+	CSimAxe * axe = 0;
   for (int k=JOY_FIRST_PMT; k!=JOY_AXIS_NUMBER; k++)
   { axe = AxesList + k;
     if (0 == (axe->group & JOY_GROUP_PMT))  return;

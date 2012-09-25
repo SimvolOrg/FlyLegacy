@@ -963,13 +963,10 @@ public:
 	bool     QGTplane(C_QGT *q)	{return Spot.qgt == q;}
   SPosition  *PlaneArcsPos()      {return &globals->geop;}
   CVector    *PlaneFeetPos()      {return &geow;}
-  double      GetPlaneAltitude()  {return globals->geop.alt;}
-  double      GetPlaneLongitude() {return globals->geop.lon;}
-  double      GetPlaneLatitude()  {return globals->geop.lat;}
-  double      GetPlaneAGL()       {return aPos.alt - Spot.alt;}
-  C_QGT      *GetPlaneQGT()       {return Spot.qgt;}
-  CmQUAD     *GetPlaneQuad()      {return Spot.Quad;}
-  bool        PlaneQuad(CmQUAD *q){return (q == Spot.Quad);}
+  double      GetCenterLongitude(){return globals->geop.lon;}
+  double      GetCenterLatitude() {return globals->geop.lat;}
+  C_QGT      *GetCenterQGT()      {return Spot.qgt;}
+  bool        CenterQuad(CmQUAD *q)	{return (q == Spot.Quad);}
   //--------------------------------------------------------------
   bool   HiResPermited()     {return (HiRes!= 0);}
   char   GetTrace()          {return (tr)?(1):(0);}

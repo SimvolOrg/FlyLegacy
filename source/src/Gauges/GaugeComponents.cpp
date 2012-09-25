@@ -577,6 +577,203 @@ void C_Cover::Draw()
 	glDrawArrays(GL_TRIANGLE_STRIP,vOfs,4);
   return;
 }
+//==========================================================================
+//
+//  CKnob class with shared surface
+//
+//==========================================================================
+C_Knob::C_Knob()
+{ Init(0);
+}
+//---------------------------------------------------------------------
+//  Constructor for knob with owned surface
+//---------------------------------------------------------------------
+C_Knob::C_Knob(CGauge *mg)
+{ Init(mg);
+}
+//---------------------------------------------------------------------
+//  Init knob area
+//---------------------------------------------------------------------
+void C_Knob::Init(CGauge *g)
+{ mgg       = g;
+  CType     = PN_DEGRE;
+  CState    = 2; 
+  help[0]   = 0;
+  vRot      = 0;
+  fixe      = 0;
+	vOfs			= 0;
+  //--- Assign mother gauge dimension --------
+  x1 = x2 = y1 = y2 = 0;
+  cTag    = 0;
+  Change  = 0;
+	return;
+}
+//---------------------------------------------------------------------
+//  Free the resources
+//---------------------------------------------------------------------
+C_Knob::~C_Knob()
+{ 
+}
+//---------------------------------------------------------------------
+//  SetMother Gauge
+//---------------------------------------------------------------------
+void C_Knob::SetGauge(CGauge *mg)
+{	mgg		= mg;	
+	return;
+}
+//---------------------------------------------------------------------
+//  Read the knob position
+//---------------------------------------------------------------------
+void  C_Knob::ReadPOSN(SStream *str)
+{ if (0 == mgg) gtfo("Knob: need mother gauge");
+  char txt[128];
+  ReadString(txt,128,str);
+  int px,py;
+  int wx,hy;
+  int nf = sscanf(txt,"%d , %d , %d , %d",&px,&py,&wx,&hy);
+  if (4 != nf) gtfo("Invalide <posn>");
+  x1  = short(px);
+  y1  = short(py);
+  wd  = short(wx);
+  ht  = short(hy);
+  InitQuad();
+  return;
+}
+//---------------------------------------------------------------------
+//  Read the projector
+//---------------------------------------------------------------------
+void C_Knob::ReadPROJ(SStream *str)
+{ if (0 == mgg) gtfo("Knob: need mother gauge");
+  mgg->DecodePROJ(str,quad,1);
+  //--- compute top left corner ------------------
+  x1  = GetLefPos(quad);
+  y1  = GetTopPos(quad);
+  wd  = GetWIDTH(quad);
+  ht  = GetHEIGHT(quad);
+  x2  = x1 + wd;
+  y2  = y1 + ht;
+	vOfs	= mgg->FixRoom(4);
+  rotn.SetVTAB(quad);
+	rotn.SetVBO(vOfs);
+  return;
+}
+//---------------------------------------------------------------------
+//  Read parameters (Read from)
+//---------------------------------------------------------------------
+int C_Knob::Read(SStream *stream, Tag tag)
+{ switch (tag) {
+    case 'fixe':
+        fixe = 1;
+        return TAG_READ;
+    case 'file':
+		case 'bmap':
+        rotn.GetTexture(stream);
+        return TAG_READ;
+
+    case 'rect':
+    case 'size':
+      { ReadSIZE(stream,&x1,&y1,&wd,&ht);
+        InitQuad();
+        return TAG_READ;  }
+
+    case 'posn':
+        ReadPOSN(stream);
+        return TAG_READ;
+
+    case 'proj':
+        ReadPROJ(stream);
+        return TAG_READ;
+
+    case 'curs':
+      { char cart[64] = {0};
+        ReadString (cart, 64, stream);
+	      if (cart[0] == 0)	TAG_READ;
+        cTag = globals->cum->BindCursor (cart);
+        return TAG_READ;  }
+    case 'help':
+      { ReadString (help, 64, stream);
+        return TAG_READ;  }
+  }
+  return TAG_IGNORED;
+}
+//---------------------------------------------------------------------
+//  All parameters are read
+//---------------------------------------------------------------------
+void C_Knob::ReadFinished(void)
+{	rotn.ReadFinished();
+	return;
+}
+//---------------------------------------------------------------------
+//  Init quad from mother gauge
+//---------------------------------------------------------------------
+void C_Knob::InitQuad()
+{ if (0 == mgg) gtfo("Knob: need mother gauge");
+	if (vOfs)			return;
+  //--- Compute rectangle ---------------------------
+  x2  = x1 + wd;
+  y2  = y1 + ht;
+  //--- Init quad -----------------------------------
+  int sx = mgg->GetXPos() + x1;       // x position in panel
+  int sy = mgg->GetYPos() + y1;       // y position in panel
+  mgg->BuildQuad(quad,sx,sy,wd,ht);    // Init knob quad
+	vOfs	 = mgg->FixRoom(4);
+  rotn.SetVTAB(quad);
+  rotn.SetVBO(vOfs);
+  return;
+}
+//---------------------------------------------------------------------
+//  Collect VBO data
+//---------------------------------------------------------------------
+void C_Knob::CollectVBO(TC_VTAB *vtb)
+{	return rotn.CollectVBO(vtb);	}
+//-----------------------------------------------------------------------
+//  Arm floating value rotation
+//-----------------------------------------------------------------------
+EClickResult C_Knob::ArmRotation(float adj,int x,int y,int btn)
+{ if (!mgg)        return MOUSE_TRACKING_OFF;
+  bool hit = ((x >= x1) && (x <= x2) && (y >= y1) && (y <= y2));
+  if (!hit)        return MOUSE_TRACKING_OFF;
+  CState	= 1;								  // Active state
+	maxTM	  = 0.5f;								// Slow rate
+	Timer	  = maxTM;							// Fisrt tick
+	Incr	  = 0;
+  if (btn & MOUSE_BUTTON_LEFT )	{Incr	= -adj; iRot = -4;}
+  if (btn & MOUSE_BUTTON_RIGHT)	{Incr	= +adj; iRot = +4;}
+  Change  = 0;
+	return MOUSE_TRACKING_ON;
+}
+//-----------------------------------------------------------------------
+//  Check for a change
+//-----------------------------------------------------------------------
+bool C_Knob::HasChanged()
+{ if (CState == 2) {CState = 0; return true; }    // First time
+  if (CState == 0)				      return false;		  // No change
+  float dT	= globals->dST;
+	Timer	+= dT;
+	if (Timer < maxTM)				    return false;			// No change yet
+  Timer	 = 0;
+	if (maxTM > 0.05)	maxTM -= 0.05f;						    // Accelerate
+  Change  = Incr;
+  vRot    = Wrap360(vRot + iRot);
+  return true;
+}
+//-----------------------------------------------------------------------
+// Redraw rotating Knob at current frame
+//-----------------------------------------------------------------------
+void C_Knob::Draw()
+{	if (!fixe)  rotn.Draw(vRot);
+  else        rotn.DrawFixe();
+  return;
+}
+//--------------------------------------------------------------
+//  Check if the mouse is in the area
+//--------------------------------------------------------------
+ECursorResult C_Knob::MouseMoved (int x, int y)
+{ // Check that the position is within click area bounds
+  if (!mgg) return CURSOR_NOT_CHANGED; 
+  if (IsHit (x, y)) return  globals->cum->SetCursor(cTag);
+  return CURSOR_NOT_CHANGED;
+}
 //===========================================================================
 // CNeedleGauge
 //  This gauge has only one needle
@@ -837,7 +1034,7 @@ void CNeedle::DrawNeedle(float deg)
 //----------------------------------------------------------------------
 void CNeedle::Draw (void)
 { //--- get value from message ------------------
-  Send_Message(&mesg);
+  Send_Message(&mesg,mgg->GetMVEH());
   switch (mesg.dataType) {
   case TYPE_INT:
     value = float(mesg.intData);
@@ -855,203 +1052,7 @@ void CNeedle::Draw (void)
   rotn.Draw (deg);
   return;
 }
-//==========================================================================
-//
-//  CKnob class with shared surface
-//
-//==========================================================================
-C_Knob::C_Knob()
-{ Init(0);
-}
-//---------------------------------------------------------------------
-//  Constructor for knob with owned surface
-//---------------------------------------------------------------------
-C_Knob::C_Knob(CGauge *mg)
-{ Init(mg);
-}
-//---------------------------------------------------------------------
-//  Init knob area
-//---------------------------------------------------------------------
-void C_Knob::Init(CGauge *g)
-{ mgg       = g;
-  CType     = PN_DEGRE;
-  CState    = 2; 
-  help[0]   = 0;
-  vRot      = 0;
-  fixe      = 0;
-	vOfs			= 0;
-  //--- Assign mother gauge dimension --------
-  x1 = x2 = y1 = y2 = 0;
-  cTag    = 0;
-  Change  = 0;
-	return;
-}
-//---------------------------------------------------------------------
-//  Free the resources
-//---------------------------------------------------------------------
-C_Knob::~C_Knob()
-{ 
-}
-//---------------------------------------------------------------------
-//  SetMother Gauge
-//---------------------------------------------------------------------
-void C_Knob::SetGauge(CGauge *mg)
-{	mgg		= mg;	
-	return;
-}
-//---------------------------------------------------------------------
-//  Read the knob position
-//---------------------------------------------------------------------
-void  C_Knob::ReadPOSN(SStream *str)
-{ if (0 == mgg) gtfo("Knob: need mother gauge");
-  char txt[128];
-  ReadString(txt,128,str);
-  int px,py;
-  int wx,hy;
-  int nf = sscanf(txt,"%d , %d , %d , %d",&px,&py,&wx,&hy);
-  if (4 != nf) gtfo("Invalide <posn>");
-  x1  = short(px);
-  y1  = short(py);
-  wd  = short(wx);
-  ht  = short(hy);
-  InitQuad();
-  return;
-}
-//---------------------------------------------------------------------
-//  Read the projector
-//---------------------------------------------------------------------
-void C_Knob::ReadPROJ(SStream *str)
-{ if (0 == mgg) gtfo("Knob: need mother gauge");
-  mgg->DecodePROJ(str,quad,1);
-  //--- compute top left corner ------------------
-  x1  = GetLefPos(quad);
-  y1  = GetTopPos(quad);
-  wd  = GetWIDTH(quad);
-  ht  = GetHEIGHT(quad);
-  x2  = x1 + wd;
-  y2  = y1 + ht;
-	vOfs	= mgg->FixRoom(4);
-  rotn.SetVTAB(quad);
-	rotn.SetVBO(vOfs);
-  return;
-}
-//---------------------------------------------------------------------
-//  Read parameters (Read from)
-//---------------------------------------------------------------------
-int C_Knob::Read(SStream *stream, Tag tag)
-{ switch (tag) {
-    case 'fixe':
-        fixe = 1;
-        return TAG_READ;
-    case 'file':
-		case 'bmap':
-        rotn.GetTexture(stream);
-        return TAG_READ;
 
-    case 'rect':
-    case 'size':
-      { ReadSIZE(stream,&x1,&y1,&wd,&ht);
-        InitQuad();
-        return TAG_READ;  }
-
-    case 'posn':
-        ReadPOSN(stream);
-        return TAG_READ;
-
-    case 'proj':
-        ReadPROJ(stream);
-        return TAG_READ;
-
-    case 'curs':
-      { char cart[64] = {0};
-        ReadString (cart, 64, stream);
-	      if (cart[0] == 0)	TAG_READ;
-        cTag = globals->cum->BindCursor (cart);
-        return TAG_READ;  }
-    case 'help':
-      { ReadString (help, 64, stream);
-        return TAG_READ;  }
-  }
-  return TAG_IGNORED;
-}
-//---------------------------------------------------------------------
-//  All parameters are read
-//---------------------------------------------------------------------
-void C_Knob::ReadFinished(void)
-{	rotn.ReadFinished();
-	return;
-}
-//---------------------------------------------------------------------
-//  Init quad from mother gauge
-//---------------------------------------------------------------------
-void C_Knob::InitQuad()
-{ if (0 == mgg) gtfo("Knob: need mother gauge");
-	if (vOfs)			return;
-  //--- Compute rectangle ---------------------------
-  x2  = x1 + wd;
-  y2  = y1 + ht;
-  //--- Init quad -----------------------------------
-  int sx = mgg->GetXPos() + x1;       // x position in panel
-  int sy = mgg->GetYPos() + y1;       // y position in panel
-  mgg->BuildQuad(quad,sx,sy,wd,ht);    // Init knob quad
-	vOfs	 = mgg->FixRoom(4);
-  rotn.SetVTAB(quad);
-  rotn.SetVBO(vOfs);
-  return;
-}
-//---------------------------------------------------------------------
-//  Collect VBO data
-//---------------------------------------------------------------------
-void C_Knob::CollectVBO(TC_VTAB *vtb)
-{	return rotn.CollectVBO(vtb);	}
-//-----------------------------------------------------------------------
-//  Arm floating value rotation
-//-----------------------------------------------------------------------
-EClickResult C_Knob::ArmRotation(float adj,int x,int y,int btn)
-{ if (!mgg)        return MOUSE_TRACKING_OFF;
-  bool hit = ((x >= x1) && (x <= x2) && (y >= y1) && (y <= y2));
-  if (!hit)        return MOUSE_TRACKING_OFF;
-  CState	= 1;								  // Active state
-	maxTM	  = 0.5f;								// Slow rate
-	Timer	  = maxTM;							// Fisrt tick
-	Incr	  = 0;
-  if (btn & MOUSE_BUTTON_LEFT )	{Incr	= -adj; iRot = -4;}
-  if (btn & MOUSE_BUTTON_RIGHT)	{Incr	= +adj; iRot = +4;}
-  Change  = 0;
-	return MOUSE_TRACKING_ON;
-}
-//-----------------------------------------------------------------------
-//  Check for a change
-//-----------------------------------------------------------------------
-bool C_Knob::HasChanged()
-{ if (CState == 2) {CState = 0; return true; }    // First time
-  if (CState == 0)				      return false;		  // No change
-  float dT	= globals->dST;
-	Timer	+= dT;
-	if (Timer < maxTM)				    return false;			// No change yet
-  Timer	 = 0;
-	if (maxTM > 0.05)	maxTM -= 0.05f;						    // Accelerate
-  Change  = Incr;
-  vRot    = Wrap360(vRot + iRot);
-  return true;
-}
-//-----------------------------------------------------------------------
-// Redraw rotating Knob at current frame
-//-----------------------------------------------------------------------
-void C_Knob::Draw()
-{	if (!fixe)  rotn.Draw(vRot);
-  else        rotn.DrawFixe();
-  return;
-}
-//--------------------------------------------------------------
-//  Check if the mouse is in the area
-//--------------------------------------------------------------
-ECursorResult C_Knob::MouseMoved (int x, int y)
-{ // Check that the position is within click area bounds
-  if (!mgg) return CURSOR_NOT_CHANGED; 
-  if (IsHit (x, y)) return  globals->cum->SetCursor(cTag);
-  return CURSOR_NOT_CHANGED;
-}
 //=======================================================================
 // Textured gauge
 //=======================================================================

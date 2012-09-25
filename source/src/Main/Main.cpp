@@ -68,7 +68,9 @@
 #include "../Include/Triangulator.h"
 #include "../Include/OSMobjects.h"
 #include "../Include/FuiOption.h"
+#include "../Include/Collisions.h"
 #include "../Include/Cameras.h"
+
 #include "../Plugin/Plugin.h"
 //----Windows particular -------------------------
 #include <math.h>
@@ -448,6 +450,19 @@ bool OSMnotUsed(char type)
 {	if (type >= OSM_MAX)	return true;
 	return (osmTYPE[type].Use == 0);
 }
+//================================================================================
+//	Check if OSM allowed
+//================================================================================
+void CheckPerformances(float fps)
+{	int lim = 0;
+		GetIniVar("Performances", "OSMAutoRegulation",&lim);
+	if (lim == 0)			return;
+	if (fps > lim)		return;
+	//--- Inihibit forest ---------------------------------
+	osmTYPE[OSM_FOREST].Use = 0;
+	globals->tcm->FlushOSM();
+	return;
+}
 //=============================================================================================
 #ifdef _WIN32
 //
@@ -629,7 +644,7 @@ void InitialProfile()
   GetIniVar("Sim", "NoAircraft", &np);
   if (np)	globals->noEXT = 1;									// No external aircraft
 	if (np)	globals->noINT = 1;									// No internal aircraft
-	if (np) globals->Disp.Lock(PRIO_PLANE);
+	if (np) globals->Disp.Lock(PRIO_UPLANE);
   //----Check for meteo rendition  -----------------------
   int nm = 0;
   GetIniVar("Sim","NoMeteo",&nm);
@@ -654,7 +669,7 @@ void SpecialProfile(Tag set,U_INT p)
 	if (p & PROF_NO_MET)	globals->noMET += dta;
 	//--- Check for NO plane at all -----------
 	if (p & PROF_NO_PLN)  
-	{	globals->Disp.Modlock(PRIO_PLANE,dta);
+	{	globals->Disp.Modlock(PRIO_UPLANE,dta);
 		globals->noINT += dta;
 		globals->noEXT += dta;
 		}
@@ -784,6 +799,35 @@ void AspectRatio (int w, int h, int &num, int &denom)
   denom = h / gcd;
 }
 //======================================================================================
+//	Create a physical ground for simulation
+//	NOTE:  Ground is set at world origin as aircraft is also set at world origin, but at
+//				 some altitude Z over the ground.
+//======================================================================================
+opal::Solid *CreateGround()
+{	//----Create ground --a big square below plane body -----------
+  opal::BoxShapeData boxData;
+  boxData.contactGroup				= 1;
+  boxData.material.hardness   = opal::real(0.95f);    // was 1.0 
+  boxData.material.bounciness = opal::real(0.0f);
+  boxData.material.density    = 1;
+  boxData.setUserData(0,SHAPE_GROUND);
+  float ground_friction       = ADJ_GRND_FRCTN;                    // was 0.25f;
+  GetIniFloat ("PHYSICS", "adjustGroundFriction", &ground_friction);
+  boxData.material.friction   = static_cast<opal::real> (ground_friction);
+  DEBUGLOG ("ground_friction=%f", ground_friction);
+	
+  boxData.dimensions.set (opal::real(100000.0),
+                          opal::real(100000.0),
+                          opal::real(0.01)     ); // 0m up to AGL
+
+  opal::Solid *ground = globals->opal_sim->createSolid();
+  ground->setName("Ground");
+  ground->addShape(boxData);
+  ground->setStatic(true);
+	ground->isMoving();
+	return ground;
+}
+//======================================================================================
 //  Initialize global variables that are not dependent upon files in the POD Filesystem.
 //
 //  Code in this function may be dependent on INI settings, but not on any contents of the
@@ -901,83 +945,29 @@ void InitGlobalsNoPodFilesystem (char *root)
 	//--- Create OPAL simulation ----------------------------
   globals->opal_sim = opal::createSimulator ();
   globals->opal_sim->setMaxContacts(2);
+	globals->Ground   = CreateGround();
   opal::Vec3r g (0.0f, 0.0f, -(GRAVITY_MTS));
   globals->opal_sim->setGravity (g);
   float step_size = ADJ_STEP_SIZE;          // 0.04f;
   GetIniFloat ("PHYSICS", "adjustStepSize", &step_size);
   globals->opal_sim->setStepSize (step_size); // was 0.02
   DEBUGLOG ("InitGlobalsNoPod step_size=%f", step_size);
-  globals->simulation = false;
-   char buffer_ [128] = {0};
-   GetIniString ("PHYSICS", "aircraftPhysics", buffer_, 128);
-   if (!strcmp (buffer_, "ufo")) globals->simulation = true;
-   globals->sBar = 0;
-   globals->status_bar_limit = 0.5f;
-   GetIniFloat ("Sim", "statusBarDeltaSec", &globals->status_bar_limit);
-   globals->fps_limiter = true;
-   char buff_ [8] = {0};
-   GetIniString ("Sim", "fpsLimiter", buff_, 8);
-   if (!strcmp (buff_, "false")) globals->fps_limiter = false;
-
-   //--- CAGING -----------------------------
-   globals->caging_fixed_sped = false;
-   globals->caging_fixed_sped_fval = 0.0f;
-   globals->caging_fixed_moi = false;    
-   globals->caging_fixed_pitch = false;
-   globals->caging_fixed_pitch_dval = 0.0;
-   globals->caging_fixed_roll = false;
-   globals->caging_fixed_roll_dval = 0.0;
-   globals->caging_fixed_yaw = false;
-   globals->caging_fixed_yaw_dval = 0.0;
-   globals->caging_fixed_alt = false;
-   globals->caging_fixed_wings = true;
-   if (IsSectionHere ("CAGING")) {
-      int tmp_val = 0;
-      float tmp_fval = 0.0f; 
-      GetIniVar ("CAGING", "fixedSpeed", &tmp_val);
-      globals->caging_fixed_sped = (tmp_val != 0);
-      if (globals->caging_fixed_sped)
-        GetIniFloat ("CAGING", "fixedSpeedVal", &globals->caging_fixed_sped_fval);
-      //
-      GetIniVar ("CAGING", "fixedMOI", &tmp_val);
-      globals->caging_fixed_moi = (tmp_val != 0);
-      //
-      GetIniVar ("CAGING", "fixedAlt", &tmp_val);
-      globals->caging_fixed_alt = (tmp_val != 0);
-      //
-      GetIniVar ("CAGING", "disconnectWings", &tmp_val);
-      globals->caging_fixed_wings = (!tmp_val);
-      //
-      GetIniVar ("CAGING", "fixedPitch", &tmp_val);
-      globals->caging_fixed_pitch = (tmp_val != 0);
-      if (globals->caging_fixed_pitch) {
-        GetIniFloat ("CAGING", "fixedPitchVal", &tmp_fval);
-        globals->caging_fixed_pitch_dval = static_cast<double> (tmp_fval);
-      }
-      //
-      GetIniVar ("CAGING", "fixedRoll", &tmp_val);
-      globals->caging_fixed_roll = (tmp_val != 0);
-      if (globals->caging_fixed_roll) {
-        GetIniFloat ("CAGING", "fixedRollVal", &tmp_fval);
-        globals->caging_fixed_roll_dval = static_cast<double> (tmp_fval);
-      }
-      //
-      GetIniVar ("CAGING", "fixedYaw", &tmp_val);
-      globals->caging_fixed_yaw = (tmp_val != 0);
-      if (globals->caging_fixed_yaw) {
-        GetIniFloat ("CAGING", "fixedYawVal", &tmp_fval);
-        globals->caging_fixed_yaw_dval = static_cast<double> (tmp_fval);
-      }
-    }
-
-		//--- Set initial position and orientation -----------------
-    globals->iang.x = 0.0; 
-    globals->iang.y = 0.0; 
-    globals->iang.z = 0.0; 
-    globals->dang.x = 0.0; 
-    globals->dang.y = 0.0; 
-    globals->dang.z = 0.0;
-		return; 
+  char buffer_ [128] = {0};
+  globals->sBar = 0;
+  globals->status_bar_limit = 0.5f;
+  GetIniFloat ("Sim", "statusBarDeltaSec", &globals->status_bar_limit);
+  globals->fps_limiter = true;
+  char buff_ [8] = {0};
+  GetIniString ("Sim", "fpsLimiter", buff_, 8);
+  if (!strcmp (buff_, "false")) globals->fps_limiter = false;
+	//--- Set initial position and orientation -----------------
+  globals->iang.x = 0.0; 
+  globals->iang.y = 0.0; 
+  globals->iang.z = 0.0; 
+  globals->dang.x = 0.0; 
+  globals->dang.y = 0.0; 
+  globals->dang.z = 0.0;
+	return; 
 }
 //======================================================================================
 //  Cleanup settings in the Global data structure
@@ -1019,6 +1009,8 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->cap);
   SAFE_DELETE (globals->snd);
 	SAFE_DELETE (globals->ccm);					// Delete camera manager
+	//----------------------------------------
+	globals->opal_sim->destroy();
 	//---------------------------------------
   pshutdown (&globals->pfs);
 	SAFE_DELETE (globals->clk);
@@ -1131,7 +1123,8 @@ void Draw2D (SSurface *surf)
 //  Primary entry point for application initialization
 //======================================================================================
 void InitApplication (void)
-{ TRACE("Init PROFILES");
+{ globals->TimLim = (float(1) / 18);				// Time limit for simulation
+	TRACE("Init PROFILES");
 	InitialProfile();
 	globals->Frame	= 0;
 	globals->aMax		= 1.0E+5;
@@ -1177,6 +1170,8 @@ void InitApplication (void)
 	TRACE("START CLOUD SYSTEM");
   globals->cld = new CCloudSystem();
   globals->wtm->Init();
+	//-----------------------------------------------------
+	globals->rdb.Init();
 	//--- Check menu items --------------------------------
 	CheckTuningMenu();
 }
@@ -1299,6 +1294,8 @@ int RedrawSimulation ()
       tFrames = 0.0f;
       nFrames = 0;
   }
+	//--- Check performance OSM ---------------------------
+	if (Frame == 600)	CheckPerformances(frameRate);
   //------------Update global clock ---------------------
   Frame++;
 	globals->Frame = Frame;
@@ -1590,7 +1587,6 @@ int main (int argc, char **argv)
 	globals->logScene		= new CLogFile ("logs/Scenery.log", "w");
 	globals->logStreet	= new CLogFile ("logs/OpenStreet.log","w");
 	//----------------------------------------------------------------------
-	globals->mdule = "Main";
 	globals->stop	 = 0;
   //----------- Init global databank -------------------------------------
   globals->tmzTAB = tmzTAB;
@@ -1617,7 +1613,6 @@ int main (int argc, char **argv)
   globals->csp      = new CCameraSpot();
   globals->cam      = globals->csp;
   globals->ccm      = 0;
-  globals->bTyp     = 0;                      // Blue print type
   //---Time of Day ---------------------------------------------------
   globals->tod      = 0;
   //---Chart map -----------------------------------------------------
@@ -1670,12 +1665,9 @@ int main (int argc, char **argv)
   //---Aircraft objects -----------------------------------------------
   globals->pln  = 0;
   globals->ccm  = 0;                          // Camera manager 
-  globals->pit  = 0;                          // Cockpit manager
-  globals->pan  = 0;                          // Active pannel
   globals->wfl  = 0;                          // Fuel loadout
   globals->wld  = 0;                          // Load window
   globals->wpb  = 0;                          // Window probe
-  globals->rdb  = 0;                          // Radio band
   //-------------------------------------------------------------------
   globals->wObj = 0;                          // Current object
   TRACE("Globals INITIALIZED");

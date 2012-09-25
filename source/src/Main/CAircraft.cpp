@@ -52,9 +52,6 @@
  *   [PHYSICS]
  * aircraftPhysics=aero-opal
  * gearPhysics=opal
- * initialSpeedx=0.000000
- * initialSpeedy=0.000000
- * initialSpeedz=40.000000
  *
  * aircraftPhysics can be "aero-opal" "ufo" "normal" "total-opal" (default is 'ufo')
  * initialSpeedz is forward
@@ -77,10 +74,14 @@
 #include "../Include/Weather.h" 
 #include "../Include/3dMath.h"
 #include "../Include/Collisions.h"
+#include "../Include/PlanDeVol.h"
 #include "../Plugin/Plugin.h"
 #include <vector>								      // JSDEV* for STL
 
 using namespace std;
+//---------------------------------------------------------------------------------------
+extern	CNullSubsystem nsub;
+extern	opal::Solid *CreateGround();
 //==========================================================================================
 extern DAMAGE_MSG damMSG[];
 //==========================================================================================
@@ -247,49 +248,44 @@ bool aKeyANLT(int kid,int key, int mod)
 //--- Toggle autopilot --------------------------
 bool aKeyAPEN(int kid,int key, int mod)
 { globals->pln->SendApilMsg();
-  return true;
-}
+  return true;	}
+//--- Toggle virtual pilot ---------------------
+bool aKeyVPIL(int kid,int key, int mod)
+{ globals->pln->ToggleVPIL();
+	return true;	}
 //--- prop picth increase ----------------------
 bool aKeyAPPI(int kid,int key, int mod)
-{ int ne = globals->pln->GetEngNb();
-  globals->jsm->SendGroup(JOY_GROUP_PROP,'incr',ne);
+{ globals->jsm->SendGroup(JOY_GROUP_PROP,'incr');
   return true;
 }
 //---Prop pitch decrease ----------------------
 bool aKeyAPPD(int kid,int key, int mod)
-{ int ne = globals->pln->GetEngNb();
-  globals->jsm->SendGroup(JOY_GROUP_PROP,'decr',ne);
+{ globals->jsm->SendGroup(JOY_GROUP_PROP,'decr');
   return true;
 }
 //---Mixture increase ---------------------------------------
 bool aKeyAIMX(int kid,int key, int mod)
-{ int ne = globals->pln->GetEngNb();
-  globals->jsm->SendGroup(JOY_GROUP_MIXT,'incr',ne);
+{ globals->jsm->SendGroup(JOY_GROUP_MIXT,'incr');
   return true; }
 //---Mixture decrease ---------------------------------------
 bool aKeyADMX(int kid,int key, int mod)
-{ int ne = globals->pln->GetEngNb();
-  globals->jsm->SendGroup(JOY_GROUP_MIXT,'decr',ne);
+{ globals->jsm->SendGroup(JOY_GROUP_MIXT,'decr');
   return true; }
 //---Mixture full rich --------------------------------------
 bool aKeyAMFR(int kid,int key, int mod)
-{	int ne = globals->pln->GetEngNb();
-  globals->jsm->SendGroup(JOY_GROUP_MIXT,'amfr',ne);
+{	globals->jsm->SendGroup(JOY_GROUP_MIXT,'amfr');
   return true; }
 //---Mixture full lean --------------------------------------
 bool aKeyAMFL(int kid,int key, int mod)
-{	int ne = globals->pln->GetEngNb();
-  globals->jsm->SendGroup(JOY_GROUP_MIXT,'amfl',ne);
+{	globals->jsm->SendGroup(JOY_GROUP_MIXT,'amfl');
   return true; }
 //---Throttle up --------------------------------------------
 bool aKeyTRUP(int kid,int key, int mod)
-{	int ne = globals->pln->GetEngNb();
-	globals->jsm->SendGroup(JOY_GROUP_THRO,'incr',ne);
+{	globals->jsm->SendGroup(JOY_GROUP_THRO,'incr');
   return true; }
 //---Throttle Down --------------------------------------------
 bool aKeyTRDN(int kid,int key, int mod)
-{	int ne = globals->pln->GetEngNb();
-	globals->jsm->SendGroup(JOY_GROUP_THRO,'decr',ne);
+{	globals->jsm->SendGroup(JOY_GROUP_THRO,'decr');
   return true; }
 
 //---Autopilot Takeoff---------------------------------------
@@ -352,16 +348,14 @@ bool aKeyTPID(int kid,int code,int mod)
 
 //================================================================================
 // CAirplane
-//
-CLogFile* CAirplane::log = NULL;
+//================================================================================
 //
 // [PHYSICS]
 // aircraftPhysics=normal
 //  JSDEV*:  Implement keyboard message (NAVI etc)
 //================================================================================
 CAirplane::CAirplane (void)
-{ SetType(TYPE_FLY_AIRPLANE);
-  SetOPT(VEH_IS_FLY);											// Flying object
+{ SetOPT(VEH_IS_FLY);											// Flying object
 	damM.Severity	= 0;
   damM.msg			=   0;
   sound					=   0;
@@ -398,51 +392,53 @@ CAirplane::CAirplane (void)
   Apil.id         = MSG_SETDATA;
   Apil.group      = 'AXIS';
   Apil.user.u.datatag = 'apOn';
-	//--- Enter in dispatcher ----------------------------------------
-  //---TODO other Keyboard messages --------------------------------
-  int opt = 0;
-  GetIniVar ("Logs", "logAirplaneObject", &opt);
-  if (opt) {
-    log = new CLogFile ("logs/AirplaneObject.txt", "w");
-    if (log) log->Write ("CAirplane data log\n");
-  } else log = NULL;
 }
 //-----------------------------------------------------------------------------
 //	JSDEV* Delete this object
 //-----------------------------------------------------------------------------
 CAirplane::~CAirplane (void)
-{ globals->pln = 0;
+{ if (IsUserPlan())	globals->pln = 0;
   globals->kbd->UnbindGroup('plne');
-  SAFE_DELETE (log);
 }
 //-----------------------------------------------------------------------------
 //	JSDEV* All parameters are read
 //-----------------------------------------------------------------------------
 void CAirplane::ReadFinished (void)
-{ globals->pln	= this;
+{
   CVehicleObject::ReadFinished ();
-  //---Init rudder parameters ------------------------
+	SetName(nfoFilename);
+  //--- Init rudder parameters ---------------------------------
   RudderBankMap(svh.GetAcrd ());
-  // stock main wing incidence
+  //--- Store main wing incidence ------------------------------
   main_wing_incid   = wng.GetWingSection ("wing Left w/Aileron")->GetWingIncidenceDeg ();
   main_wing_aoa_min = wng.GetAirfoil     ("Wing Airfoil")->GetAoAMin ();
   main_wing_aoa_max = wng.GetAirfoil     ("Wing Airfoil")->GetAoAMax ();
   //--- Call final initialization ------------------
-  PrepareMsg ();
   BindKeys();                             // Map all keys
   //---- Set Initial state -------------------------
   State = VEH_INIT;
   //--- Interconnect trim controls -----------------
-  amp.aTrim->SetMainControl(amp.GetAilerons());
-  amp.rTrim->SetMainControl(amp.GetRudders());
+	amp.aTrim->SetMainControl(amp.GetAilerons());
+	amp.rTrim->SetMainControl(amp.GetRudders());
+	//--- Load optionnal flight plan -----------------
+	LoadFPLAN(fplname);
   return;
+}
+//-----------------------------------------------------------------------------
+// Load flight plan if needed
+//-----------------------------------------------------------------------------
+void CAirplane::LoadFPLAN(char *fn)
+{	if (0 == *fn)		return;
+	CFPlan *fpln = GetFlightPlan();
+
+	fpln->AssignPlan(fn);
+	return;
 }
 //-----------------------------------------------------------------------------
 //  Register all planes keys
 //-----------------------------------------------------------------------------
 void CAirplane::BindKeys()
 { CKeyMap *km = globals->kbd;
-	globals->jsm->JoyConnectAll();
   km->BindGroup('plne',KeyAirGroup);
   //---Control surfaces ----------------------------------------------------
   km->Bind('adel',aKeyADEL,KEY_REPEAT);
@@ -471,6 +467,7 @@ void CAirplane::BindKeys()
   km->Bind('agtg',aKeyAGTG,KEY_SET_ON);           // Gear Up/Down);
   km->Bind('anlt',aKeyANLT,KEY_SET_ON);           // Lights NAVI (Navigation)
   km->Bind('apen',aKeyAPEN,KEY_SET_ON);           // Autopilot engage/disengage
+	km->Bind('vpil',aKeyVPIL,KEY_SET_ON);						// Virtual pilot toggle
   //--Engine control ---------------------------------------------------
   km->Bind('appi',aKeyAPPI,KEY_REPEAT);           // Prop picth increase
   km->Bind('appd',aKeyAPPD,KEY_REPEAT);           // Prop picth decrease
@@ -496,66 +493,6 @@ void CAirplane::BindKeys()
   km->Bind('shad',aKeySHAD,KEY_SET_ON);           // Draw shadow
   //---------------------------------------------------------------------
   km->Bind('tpid',aKeyTPID,KEY_SET_ON);           // Tune PID
-
-  /*
-  'amfl' Mixture Full Lean
-  'amfr' Mixture Full Rich
-  'admx' Mixture Down
-  'amix' Mixture Power|Economy
-  'appl' Prop Pitch Low
-  'apph' Prop Pitch High
-  'amit' Throttle Off
-  'amat' Throttle Full
-  'adth' Throttle Down
-  'aith' Throttle Up
-  'adt2' Throttle Down (Alt.)
-  'ait2' Throttle Up (Alt.)
-  'arev' Reverse Thrust (On/Off)
-  'beta' Beta Thrust (On/Off)
-  'affu' Flaps (Full Up)
-  'afrt' Flaps (Retract)
-  'afex' Flaps (Extend)
-  'affd' Flaps (Full Down)
-  'actn' Coordinated Turn
-  'abrk' Brakes (groundbrake)
-  'pbrk' Brakes (Parking)
-  'lbrk' Brakes (Left)
-  'rbrk' Brakes (Right)
-  'aabk' Brakes (Air)
-  'aabm' Brakes (Air,Max)
-  'aeng' Engine On/Off
-  'aenf' Engine Focus (next)
-  'aefp' Engine Focus (prev)
-  'agtg' Gear Up/Down
-  'agfd' Gear Down (Forced)
-  'aspl' Extend/Retract Spoilers
-  'aasp' Arm auto-spoilers
-  'acht' Carburetor Heat On/Off
-  'apht' Pitot Heat On/Off
-  'alnd' Auto Land
-  'aipa' Co-Pilot Abort
-  'aprm' Engine Primer
-  'acfg' Toggle Hi Lift Device
-  'amag' Magneto switch
-  'aifr' IFR Hood On/Off
-  'apen' Autopilot Enable
-  'aphg' Autopilot Hdg Hold
-  'apal' Autopilot Alt Hold
-  'apSy' Autopilot Sync
-  'anlt' Lights (Navigation)
-  'allt' Lights (Landing/Taxi)
-  'acpl' Lights (Panel)
-  'aadf' Select ADF
-  'acom' Select COM radio
-  'adme' Select DME
-  'anav' Select NAV radio
-  'atns' Select Transponder
-  'aobs' Select OBS
-  'rad1' Select Radio 1
-  'rad2' Select Radio 2
-  'rad3' Select Radio 3
-  'rad4' Select Radio 4
-*/
 
   return;
 }
@@ -594,11 +531,11 @@ bool CAirplane::FindReceiver (SMessage *msg)
 	
 	// Display warning message if message receiver not found
   if (fnd)	return true;
-	msg->receiver = GetNullSubsystem();
+	msg->receiver = &nsub;
   TagToString (cid, msg->sender);
   TagToString (cgr, msg->group);
   TagToString (ctg, msg->user.u.datatag);
-  WARNINGLOG ("FindReceiver:(NO RECEIVER) sender=%s  destination=%s  dtag=%s",cid,cgr, ctg);
+  WARNINGLOG ("FindReceiver:(NO RECEIVER) sender=%s  dest=%s  dtag=%s",cid,cgr, ctg);
 	msg->group    = 'Null';
   return false;
 }
@@ -733,18 +670,6 @@ void CAirplane::GetAllEngines(std::vector<CEngine*> &engs)
   return;
 }
 //-------------------------------------------------------------------------------
-//  Initial state
-//	Place aircraft at the good altitude
-//--------------------------------------------------------------------------------
-SPosition CAirplane::SetOnGround()
-{ if (globals->tcm->MeshBusy())  return orgp;
-  SPosition pos = orgp;
-  pos.alt   = globals->tcm->GetGroundAltitude() + GetBodyAGL();
-  SetObjectPosition(pos);
-  State = VEH_OPER;
-  return pos;
-}
-//-------------------------------------------------------------------------------
 //  Collision detected 
 //--------------------------------------------------------------------------------
 void CAirplane::BodyCollision(CVector &p)
@@ -754,8 +679,19 @@ void CAirplane::BodyCollision(CVector &p)
 	//--- Trace location -----------------------------
 	int gnd = globals->tcm->GetGroundAltitude();
 	int alt = globals->geop.alt;
-	TRACE("CRASH: alti: %05d ground: %05d",alt,gnd);
+	
+	//--- Trace physical -----------------------------
+	opal::Solid *phyM = (opal::Solid*)GetPhyModel();
+	opal::Point3r pos = phyM->getPosition();
+	TRACE("CRASH: alti: %05d ground: %05d phyAlt: %.0lf",alt,gnd,pos.z);
   return;
+}
+//-------------------------------------------------------------------------------
+//  Toggle virtual pilot ON/OFF 
+//--------------------------------------------------------------------------------
+void CAirplane::ToggleVPIL()
+{	VPilot *vpil = amp.GetVirtualPilot();
+	vpil->ToggleState();
 }
 //-----------------------------------------------------------------------------
 //  Process according to vehicle state
@@ -776,9 +712,8 @@ int CAirplane::TimeSlice(float dT,U_INT frame)
   switch (State)  {
     //-- At start up wait for terrain to be stable ---------
     case VEH_INIT:
-      { SPosition pos = SetOnGround();
-        SetObjectPosition(pos);
-        return 1;
+      { RestOnGround();
+	      return 1;
       }
     //--- Aircraft is crashing ----------------------------
     case VEH_CRSH:
@@ -787,9 +722,8 @@ int CAirplane::TimeSlice(float dT,U_INT frame)
     //--- Aircraft is operational or damaged----------------
     case VEH_INOP:
     case VEH_OPER:
-      { 
-        int  nbEng = amp.pEngineManager->HowMany();
-        jsm->SendGroupPMT(nbEng);               // Send Prop-mixture and throttle
+      { int  nbEng = amp.pEngineManager->HowMany();
+        jsm->SendGroupPMT(this,nbEng);               // Send Prop-mixture and throttle
         Update (dT,frame);
         return 1;
       }
@@ -822,9 +756,8 @@ void CAirplane::EndLevelling()
   damM.Severity		= 0;
 	damM.msg				= 0;
   globals->fui->RazCrash();
-  State = VEH_OPER;
-  RestOnGround();
-	CenterControls();
+  //State = VEH_OPER;
+//  RestOnGround();
   return;
 }
 
@@ -1075,14 +1008,6 @@ float CAirplane::Flaps (void)
  // if (p) fv = p->Val( );
   return fv;
 }
-//-----------------------------------------------------------------------------
-//	Check plane above ground
-//-----------------------------------------------------------------------------
-void CAirplane::GroundAt(double alt)
-{	if (geop.alt > alt)			return;
-	SetAltitude(alt);
-	return;
-}
 
 void CAirplane::Print (FILE *f)
 {
@@ -1097,12 +1022,14 @@ void CAirplane::Print (FILE *f)
 // aircraftPhysics=ufo
 //
 //=========================================================================
-CUFOObject::CUFOObject (void)
-{ SetType(TYPE_FLY_AIRPLANE);
+CUFOObject::CUFOObject (Tag typ)
+{ SetType(typ);
   SetOPT(VEH_IS_FLY + VEH_IS_UFO);				// Flying UFO
   int val = 0;
   GetIniVar ("Sim", "showPosition", &val);
   show_position = val ? true : false;
+	//--- Register as user vehicle -----------------------------------
+	InitUserVehicle();
 }
 //-------------------------------------------------------------------
 //	Simulate UFO
@@ -1131,7 +1058,7 @@ void CUFOObject::UpdateOrientationState (float dT, U_INT FrNo)
 
  SetObjectOrientation (tmp_iang);
  float coef  = 0;
- globals->jsm->Poll(JS_THROTTLE_1,coef);
+ globals->jsm->Poll(this,JS_THROTTLE_1,coef);
  float speed = 100.0f * coef * 5;
  float spd = (speed * FEET_PER_NM) / 3600.0;
 
@@ -1211,49 +1138,29 @@ CVector Vec3rToCVector (const opal::Vec3r &v)
 // [PHYSICS]
 // aircraftPhysics=opal
 //
-opal::Point3r COPALObject::tmp_pos;
 //=========================================================================
 /// COPALObject
 //=========================================================================
-COPALObject::COPALObject (void)
-{ SetType(TYPE_FLY_AIRPLANE);
+COPALObject::COPALObject (Tag typ)
+{ //--- Set type -----------------------------------------------
+	SetType(typ);
   log							= NULL;
   Kb							= 0.0;
   bagl            = 0.0;
-  Ground					= 0;
   Plane						= 0;
   wind_effect			= 0; //
   wind_pos        = 0.0;
-  GetIniVar ("PHYSICS", "windEffect", &wind_effect);
-  DEBUGLOG ("windEffect = %d", wind_effect);
-  turbulence_effect = 0;
-  GetIniVar ("PHYSICS", "turbulenceEffect", &turbulence_effect);
-  DEBUGLOG ("turbulenceEffect = %d", turbulence_effect);
-  if (turbulence_effect) globals->evnOpt.Set(EVN_RAND_TURBULENCE);
-  //--------------------------------------------------------------------------
+	turbulence_effect	= 0;
+	group						= 2;
+  //------------------------------------------------------------
 	yawMine		= ADJ_YAW_MINE;
 	rollMine	= ADJ_ROLL_MINE;
   pitchMine = ADJ_PTCH_MINE;
 	angularDamping = ADJ_ANGL_DAMPG;
 	linearDamping  = ADJ_LINR_DAMPG;
-  //--------------------------------------------------------------------------
-  int sit = INITIAL_SPEED; // 1;
-  GetIniVar ("PHYSICS", "globalInitialSpeed", &sit);
-  DEBUGLOG ("globalInitialSpeed = %d", sit);
-  if (sit) {
-    float initialSpeedx = INIT_SPD_X, initialSpeedy = INIT_SPD_Y, initialSpeedz = INIT_SPD_Z;
-    GetIniFloat ("PHYSICS", "initialSpeedx", &initialSpeedx);
-    GetIniFloat ("PHYSICS", "initialSpeedy", &initialSpeedy);
-    GetIniFloat ("PHYSICS", "initialSpeedz", &initialSpeedz);
-    DEBUGLOG ("globalInitialSpeed (ft) x=%f y=%f z=%f", initialSpeedx, initialSpeedy, initialSpeedz);
-  }
-  // randomisation used in UpdateNewPositionState
+  //--- randomisation used in UpdateNewPositionState -----------
   int rdn = (globals->clk->GetMinute() << 8) +  globals->clk->GetSecond();
   srand(rdn);
-	//-----------------------------------------------------------------
-	//  Enter in dispatcher
-	//------------------------------------------------------------------
-	globals->Disp.PutHead(this, PRIO_PLANE);
 
 }
 //---------------------------------------------------------------------------------------
@@ -1261,13 +1168,12 @@ COPALObject::COPALObject (void)
 //---------------------------------------------------------------------------------------
 COPALObject::~COPALObject (void)
 { //--- Remove from dispatcher ---------------------------
-	globals->Disp.Remove(this, PRIO_PLANE);
+	if (IsUserPlan())
+		{	globals->jsm->Register(0);
+			globals->Disp.Remove(PRIO_UPLANE);
+		}
 	//--- Destroy opal objects -----------------------------
-  if (globals->opal_sim) {
-    if (Ground) globals->opal_sim->destroySolid(Ground);
-    if (Plane)  globals->opal_sim->destroySolid(Plane);
-  }
-  Ground = 0;
+  if (Plane)  globals->opal_sim->destroySolid(Plane);
   Plane  = 0;
   //-----------------------------------------------------
   SAFE_DELETE (log);
@@ -1278,12 +1184,12 @@ COPALObject::~COPALObject (void)
 //  All parameters are read
 //---------------------------------------------------------------------------------------
 void COPALObject::PlaneShape()
-{ //
-  // JS: shape of aircraft:  A box is created to avoid aircraft penetrating the ground
-  //  The box size is made with the body dimension
-  //===============================================================================
+{ //-------------------------------------------------
   TRACE("COPALObject::PlaneShape");
+  Plane           = globals->opal_sim->createSolid();
   Plane->setName(planeID);
+	Plane->setUserData(this);
+	phyMod					= Plane;
   //----Compute cog offset --------------------------
   double ftm  = FN_METRE_FROM_FEET(float(1));
   CVector cog = wgh.svh_cofg;
@@ -1304,14 +1210,14 @@ void COPALObject::PlaneShape()
   CVector trs = (mex + mid);
   //-------------------------------------------------
   opal::BoxShapeData plData;
-  plData.contactGroup = 1;
-  plData.material.hardness   = static_cast<opal::real> (0.9f); // was 1.0 
-  plData.material.bounciness = static_cast<opal::real> (0.0f);
-  plData.material.friction   = static_cast<opal::real> (1.0f); // was 0.0 
+  plData.contactGroup = group;
+  plData.material.hardness   = opal::real(0.9f); // was 1.0 
+  plData.material.bounciness = opal::real(0.0f);
+  plData.material.friction   = opal::real(1.0f); // was 0.0 
   plData.dimensions.x = dim.x;
   plData.dimensions.y = dim.y;
   plData.dimensions.z = dim.z;
-  plData.material.density = static_cast<opal::real> (1.0f);  //
+  plData.material.density = opal::real(1.0f);  //
   plData.setUserData(0,SHAPE_BODY);
   //----Set crash detection ---------------------------------------------------
   //  The crash box middle point is set at the CG.y in the longitudinal direction
@@ -1320,27 +1226,8 @@ void COPALObject::PlaneShape()
   plData.offset.translate(0,trs.y,(dim.z * 0.75));
   Plane->addShape (plData);
   Plane->setCollisionEventHandler(CrashHandler);
-  //----Create ground --a square of 40 * 40 meters below plane body -----------
-  opal::BoxShapeData boxData;
-  boxData.contactGroup = 2;
-  boxData.material.hardness   = static_cast<opal::real> (0.95f);    // was 1.0 
-  boxData.material.bounciness = static_cast<opal::real> (0.0f);
-  boxData.material.density    = 1;
-  boxData.setUserData(0,SHAPE_GROUND);
-  ground_friction             = ADJ_GRND_FRCTN;                    // was 0.25f;
-  GetIniFloat ("PHYSICS", "adjustGroundFriction", &ground_friction);
-  boxData.material.friction   = static_cast<opal::real> (ground_friction);
-  DEBUGLOG ("ground_friction=%f", ground_friction);
-  boxData.dimensions.set (opal::real(40.0),
-                          opal::real(40.0),
-                          opal::real(0.01)     ); // 0m up to AGL
-
-  Ground = globals->opal_sim->createSolid();
-  Ground->setName(groundID);
-  Ground->addShape(boxData);
-  Ground->setStatic(true);
   // Setup the contact groups.
-  globals->opal_sim->setupContactGroups(1, 2, true);
+  globals->opal_sim->setupContactGroups(1, group, true);
   //----------- forces ------------------------------------------------------
   lf.type = opal::LOCAL_FORCE;//
   ef.type = opal::LOCAL_FORCE_AT_LOCAL_POS; // 
@@ -1348,6 +1235,8 @@ void COPALObject::PlaneShape()
   tf.type = opal::LOCAL_TORQUE; // 
   wm.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
   yf.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
+	//--- Build gears ----------------------------------------------------------
+	whl.BuildGears();
   return;
 }
 //---------------------------------------------------------------------------------------
@@ -1355,16 +1244,23 @@ void COPALObject::PlaneShape()
 //---------------------------------------------------------------------------------------
 void COPALObject::ReadFinished (void)
 { //MEMORY_LEAK_MARKER ("readfnopa")
-  Plane           = globals->opal_sim->createSolid();
-	phyMod					= Plane;
-  CAirplane::ReadFinished ();
-  PlaneShape();
+	//--- Must register to joystick to process mapping order -----
+	if (IsUserPlan())	globals->jsm->Register(this);			
+	//---Must finish to get PHY parameters -----------------------
+	CAirplane::ReadFinished ();
+	//--- Register as user vehicle -------------------------------
+	InitUserVehicle();
+	if (!IsUserPlan())	group = 3;
+	PlaneShape();
+	//--- Set minimum agl ---------------------------------------------
+	magl	= whl.GetMinimumBodyAGL();
+	//------------------------------------------------------------
+	//  Enter in dispatcher
+	//------------------------------------------------------------
+	globals->sit->AddPlane(this);
+  PrepareMsg ();		// MARK TTEST
+	//-----------------------------------------------------------------
   mm.mass = static_cast<opal::real> (wgh.GetTotalMassInKgs () /** 9.81f*/); // 
-  dihedral_coeff = ADJ_DHDL_COEFF; /// should be 500.0
-  pitch_coeff = ADJ_PTCH_COEFF;    /// should be 10.0
-  wind_coeff  = ADJ_WIND_COEFF;
-  acrd_coeff  = 1.0f;               /// rudder fudger ; only in PHY file
-  gear_drag   = ADJ_GEAR_DRAG;       /// gear drag
   //-----------------------------------------------------------------
   //  Init from PHY file (either default or from file)
   //------------------------------------------------------------------
@@ -1377,8 +1273,7 @@ void COPALObject::ReadFinished (void)
   wind_coeff			= phy.Kwnd;
   gear_drag				= phy.KdrG;
   //---Init rudder coef ------------------------------------------
-  CAirplane *apln = (CAirplane *)this;
-  apln->RudderOpalCoef(acrd_coeff);
+	RudderOpalCoef(acrd_coeff);
   ///----------------------------------------------------------------
   DEBUGLOG ("PHY : dieh=%f pitchK%f acrd=%f", dihedral_coeff, pitch_coeff, acrd_coeff);
   DEBUGLOG ("PHY : pmine%f rmine%f ymine%f", pitchMine, rollMine, yawMine); 
@@ -1399,6 +1294,7 @@ void COPALObject::ReadFinished (void)
   mm.inertia[0]  = opal::real(ix);  // 
   mm.inertia[5]  = opal::real(iy);  // 
   mm.inertia[10] = opal::real(iz);
+	
   Plane->setMass (mm, mm.inertia); // 
   GetIniFloat ("PHYSICS", "adjustLinearDamping",  &linearDamping);
   GetIniFloat ("PHYSICS", "adjustAngularDamping", &angularDamping);
@@ -1416,8 +1312,13 @@ void COPALObject::ReadFinished (void)
                          pitchMine, yawMine, rollMine,
                          mm.inertia[0], mm.inertia[10],mm.inertia[5],
                          linearDamping, angularDamping);
-
+	
   //MEMORY_LEAK_MARKER ("readfnopa")
+	//---- Ensure position and orientation ---------------------------
+  SetObjectPosition(orgp);
+  SetObjectOrientation(globals->iang);
+	SetPhysicalOrientation (iang);
+	ResetSpeeds ();
 
 }
 //------------------------------------------------------------------
@@ -1460,7 +1361,7 @@ void COPALObject::ResetCrash (char p)
   Plane->zeroForces ();
   //------------------------------------------------------
 	globals->fui->RazCrash();
-	globals->sit->ReloadAircraft();
+	globals->sit->Reload();
   return;
 }
 //--------------------------------------------------------------------------
@@ -1497,40 +1398,23 @@ void COPALObject::ResetZeroOrientation (void)
   SetObjectOrientation (reset_ori);
 }
 //------------------------------------------------------------------------------------------
-//  We must compute the CoG above ground level
-//  When wheel are on ground we must have
-//  ground = geop.alt - globals->tcm->GetGroundAltitude() + main_gear_contact_point
+//  TRACE FORCES
 //------------------------------------------------------------------------------------------
-void COPALObject::PositionAGL()
-{ opal::Point3r bpos;
-	double cgz  =  wgh.GetCGHeight();
-  bagl =  geop.alt - globals->tcm->GetGroundAltitude() + cgz;  
-  bpos.z      =  FN_METRE_FROM_FEET(bagl);
-  Plane->setPosition (bpos);
-  return;
-}
-//------------------------------------------------------------------------------------------
-//  Set plane on ground
-//------------------------------------------------------------------------------------------
-void COPALObject::RestOnGround()
-{ double    grn = globals->tcm->GetGroundAltitude();
-  //--- Zero Forces and Moments --------------------------
-  ResetSpeeds ();
-  Plane->zeroForces ();
-  //--- Clear wheels forces ------------------------------
-  whl.ResetForce();
-	SPosition p = globals->geop;
-	p.alt	= grn + GetPositionAGL();
-	SetObjectPosition(p);
-  PositionAGL();
-  return;
+void COPALObject::TraceForces()
+{	TRACE("---------FORCES ------------------------------");
+	TRACE("Add WM: x=%.6lf y=%.6lf z=%.6lf",wm.vec.x,wm.vec.y,wm.vec.z);
+	TRACE("Add LF: x=%.6lf y=%.6lf z=%.6lf",lf.vec.x,lf.vec.y,lf.vec.z);
+	TRACE("Add EF: x=%.6lf y=%.6lf z=%.6lf",ef.vec.x,ef.vec.y,ef.vec.z);
+	TRACE("Add TF: x=%.6lf y=%.6lf z=%.6lf",tf.vec.x,tf.vec.y,tf.vec.z);
+	TRACE("Add YF: x=%.6lf y=%.6lf z=%.6lf",yf.vec.x,yf.vec.y,yf.vec.z);
+
 }
 //------------------------------------------------------------------------------------------
 //  SIMULATE
 //------------------------------------------------------------------------------------------
 void COPALObject::Simulate (float dT,U_INT FrNo) 
-{ if (dT > 0.1f) return; // fix to avoid aerodynamics errors when fps are low (related to fps limiter)
-  /// Call parent class simulation timeslice
+{ /// Call parent class simulation timeslice
+	if (dT > globals->TimLim) return; // fix to avoid aerodynamics errors when fps are low (related to fps limiter)
   CVehicleObject::Simulate (dT, FrNo);
   //---Aircraft orientation ------------------------------------------------------
   SVector or_s = GetOrientation (); // RH
@@ -1540,16 +1424,13 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   ed.vec.set (static_cast<opal::real> (0.0), static_cast<opal::real> (0.0), static_cast<opal::real> (0.0));
   wm.vec.set (static_cast<opal::real> (0.0), static_cast<opal::real> (0.0), static_cast<opal::real> (0.0));
   yf.vec.set (static_cast<opal::real> (0.0), static_cast<opal::real> (0.0), static_cast<opal::real> (0.0));
-  PositionAGL();
-  //SVector cgoffset = *(wgh->wb.GetCGOffset_ISU());					 // LH 
-  //VectorDistanceLeftToRight  (cgoffset);										// LH=>RH 
-  //const opal::Vec3r vcgoffset = CVectorToVec3r (cgoffset);	// 
+	//-------------------------------------------------------------------------------
   mm.mass = CVehicleObject::GetMassInKgs ();									//
   Plane->setMass (mm, mm.inertia);														// 
 
   // 1) wing & engine forces
   fb.Raz();						// JS: Replace Times(0) because when #NAND or #IND, then fb is not reset
-  if (globals->caging_fixed_wings) fb.Add (wng.GetForce ()); // LH
+  if (caging_fixed_wings) fb.Add (wng.GetForce ()); // LH
   VectorDistanceLeftToRight  (fb); // LH=>RH
 
   // 1b) engine force
@@ -1589,7 +1470,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   }
   else
 	{	float coef = 0;
-		globals->jsm->Poll(JS_THROTTLE_1,coef);
+		globals->jsm->Poll(this,JS_THROTTLE_1,coef);
     s_p_d = coef * CVehicleObject::GetMassInKgs () * 20.0;
 	}
 
@@ -1599,7 +1480,7 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
 
   // 2)  wing, mine & engine moments
   tb.Raz();  // JS: Replace Times(0) because when #NAND or #IND, then tb is not reset
-  if (globals->caging_fixed_wings) tb.Add (wng.GetMoment ());// 
+  if (caging_fixed_wings) tb.Add (wng.GetMoment ());// 
   VectorOrientLeftToRight (tb); // 
 
   // dihedral additional effect SVH <dieh>
@@ -1658,19 +1539,6 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
     if (wind_effect) {
       double w_K = wind_coeff;// magic number
       if (WheelsAreOnGround ())  w_K *= 0.5; // was 1.0
-      //// w_spd in metres/sec
-      //double v1      = globals->wtm->GetWindMPS();
-      //double w_spd   = v1 * dT * w_K; // ==>m/s==> dist
-      //double w_angle = DegToRad (static_cast<double>(globals->wtm->WindRoseDirection ()));
-      //double w_alti  = globals->atm->GetPressureInHG();
-      //CRotationMatrixHPB matx;                                            // LH
-      //CVector wind_angle (sin (w_angle), 0.0, cos (w_angle));             // LH
-      //wind_angle.Times (w_spd);
-      //SVector or_m = {0.0, 0.0, 0.0};                                     // LH
-      //or_m.y = -or_s.z; // + is right                                     // RH to LH
-      //matx.Setup (or_m);                                                  // LH
-      //CVector w_dir_for_body;                                             // LH
-      //matx.ParentToChild (w_dir_for_body, wind_angle);                    // LH
 
       const CVector w_dir_for_body_ = w_dir_for_body;
       wm.vec.set (  static_cast<opal::real> (-w_dir_for_body_.x * dT * w_K),// LF to RH
@@ -1684,65 +1552,38 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
                     static_cast<opal::real> (0.0)
                  );
       wm.duration = static_cast<opal::real> (dT);
+			Plane->addForce (wm); 
+			
     }
-/*
-    if (turbulence_effect && !WheelsAreOnGround ()) {
-      //float wTbbCeiling = svh->wTrbCeiling; // 5000.0f;
-      double t_alt = GetAltitude ();
-      if (t_alt < svh->wTrbCeiling) {
-        //float wTrbSpeed = svh->wTrbSpeed; // 2.0f;
-        //float wTrbDuration = svh->wTrbDuration; // 2.0f;
-        //float wTrbTimK = svh->wTrbTimK; // 2.0f;
-//        turb_timer += dT;
-//        if (turb_timer > svh->wTrbDuration) {
-//          turb_timer -= svh->wTrbDuration;
-     		  int rdn = (globals->clk->GetMinute() << 8) +  globals->clk->GetSecond();
-          srand(rdn);
-          double TrbSpeed = static_cast <double> (METRES_SEC_PER_KNOT (svh->wTrbSpeed));
-          //turb_v.x = static_cast <double> ((rand () % 200 - 100));
-          //turb_v.y = static_cast <double> ((rand () % 200 - 100));
-          turb_v. x = turb_v.y = 0.0;
-          turb_v.z = static_cast <double> ((rand () % 200 - 100));
-          //TRACE ("t %f %f %f", turb_v.x, turb_v.y, turb_v.z);
-          double tf = wind_coeff * svh->wTrbDuration * TrbSpeed / 100.0;
-          turb_v.Times (tf);
-
-          yf.vec.set (  static_cast<opal::real> (0.0),// 
-                        static_cast<opal::real> (0.0),// 
-                        static_cast<opal::real> (turb_v.z) //
-                     );
-          //yf.pos.set (  static_cast<opal::real> (0.0),
-          //              static_cast<opal::real> (wind_pos),
-          //              static_cast<opal::real> (0.0)
-          //           );
-          yf.duration = static_cast<opal::real> (dT);
-//        }
-      }
-    }
-*/
   }
 
-  if (globals->caging_fixed_alt) fb.z = static_cast<double> (wgh.GetTotalMassInKgs ()) * GRAVITY_MTS;   // 
+  if (caging_fixed_alt) fb.z = double(wgh.GetTotalMassInKgs ()) * GRAVITY_MTS;   // 
 
   lf.vec = CVectorToVec3r (fb);
   lf.duration = static_cast<opal::real> (dT); 
-  if (globals->caging_fixed_roll)   tb.y = globals->caging_fixed_roll_dval;
+  if (caging_fixed_roll)   tb.y = caging_fixed_roll_dval;
 
   tf.vec = CVectorToVec3r (tb);
   tf.duration = static_cast<opal::real> (dT);//
-
-  Plane->addForce (lf); // 
-  Plane->addForce (ef); // 
-  Plane->addForce (tf); // 
-  if (wind_effect) Plane->addForce (wm); 
-  if (globals->caging_fixed_sped) {
+  Plane->addForce (lf); //
+	Plane->addForce (ef); //
+  Plane->addForce (tf); //
+  if (caging_fixed_sped) {
     opal::Vec3r fixed_vel = Plane->getLocalLinearVel ();  // RH  
-    fixed_vel.y = FN_METRE_FROM_FEET(KtToFps (globals->caging_fixed_sped_fval));  
+    fixed_vel.y = FN_METRE_FROM_FEET(KtToFps (caging_fixed_sped_fval));  
     Plane->setLocalLinearVel (fixed_vel);  
   }
   if (turbulence_effect) Plane->addForce (yf);
-  globals->simulation = globals->opal_sim->simulate (static_cast<opal::real> (dT));
-  //! current state becomes previous state
+	//--- Call simulation step ---------------------------------------------
+  //globals->opal_sim->simulate (dT);
+	//UpdateData(dT);
+	return;
+}
+//------------------------------------------------------------------------------
+//	Update all data after the simulation step
+//------------------------------------------------------------------------------
+void COPALObject::UpdateData(float dT)
+{//! current state becomes previous state
   prv = cur;
   cur = (cur + 1) & 1;
 
@@ -1750,68 +1591,161 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
 //   set linear and angular velocities both local
 //  and global in LH
 //  JS: Add a test and reset when geting a NAND on velocity
-  if (globals->simulation) { 
-    opal::Vec3r local_vel1 = Plane->getLocalLinearVel ();  ///< RH
-    while (_isnan(local_vel1.z))
-    { ResetSpeeds();          // JS gtfo("Physical engine HS");                // JS
-      local_vel1 = Plane->getLocalLinearVel ();
-    }
-    vb[cur] = Vec3rToCVector (local_vel1);
-    VectorDistanceLeftToRight  (vb[cur]); //                        ///< LH
-    local_vel1 = Plane->getGlobalLinearVel ();             ///< RH
-    vi[cur] = Vec3rToCVector (local_vel1);
-    VectorDistanceLeftToRight  (vi[cur]); //                        ///< LH
-    // attention : OPAL is deg/sec
-    opal::Vec3r local_vel2 = Plane->getLocalAngularVel (); ///< RH
-    wb[cur] = Vec3rToCVector (local_vel2);
-    VectorOrientLeftToRight (wb[cur]); //                           ///< LH
-    wb[cur].Times (ONE_DEGRE_RADIAN);											// JS Change ot constant DegToRad (1.0)); // 
+	//--- Compute local linear velocity ------------------------------------
+  opal::Vec3r local_vel1 = Plane->getLocalLinearVel ();  ///< RH
+  while (_isnan(local_vel1.z))
+  { ResetSpeeds();          // JS gtfo("Physical engine HS");                // JS
+    local_vel1 = Plane->getLocalLinearVel ();
+  }
+  vb[cur] = Vec3rToCVector (local_vel1);
+  VectorDistanceLeftToRight  (vb[cur]); //                        ///< LH
+	//--- Compute global velocity -----------------------------------------
+  glv = Plane->getGlobalLinearVel ();															///< RH
+  vi[cur] = Vec3rToCVector (glv);
+  VectorDistanceLeftToRight  (vi[cur]); //                        ///< LH
+  // attention : OPAL is deg/sec
+  opal::Vec3r local_vel2 = Plane->getLocalAngularVel (); ///< RH
+  wb[cur] = Vec3rToCVector (local_vel2);
+  VectorOrientLeftToRight (wb[cur]); //                           ///< LH
+  wb[cur].Times (ONE_DEGRE_RADIAN);											// JS Change ot constant DegToRad (1.0)); // 
     //
-    local_vel2 = Plane->getGlobalAngularVel ();            ///< RH
-    wi[cur] = Vec3rToCVector (local_vel2);
-    VectorOrientLeftToRight (wi[cur]); //                           ///< LH
-    wi[cur].Times (ONE_DEGRE_RADIAN); // 
+  local_vel2 = Plane->getGlobalAngularVel ();            ///< RH
+  wi[cur] = Vec3rToCVector (local_vel2);
+  VectorOrientLeftToRight (wi[cur]); //                           ///< LH
+  wi[cur].Times (ONE_DEGRE_RADIAN); // 
 
-   /*!
-    *   set linear and angular acceleration both local
-    *   and global in LH and m.sec² anr rad.sec²
-    */
-    ab[cur].Copy  (vb[cur]); ab[cur].Subtract  (vb[prv]); ab[cur].Times  (1.0 / dT);
-    ai[cur].Copy  (vi[cur]); ai[cur].Subtract  (vi[prv]); ai[cur].Times  (1.0 / dT);
-    dwb[cur].Copy (wb[cur]); dwb[cur].Subtract (wb[prv]); dwb[cur].Times (1.0 / dT);
-    dwi[cur].Copy (wi[cur]); dwi[cur].Subtract (wi[prv]); dwi[cur].Times (1.0 / dT);
-  } 
   //
-  UpdateOrientationState(dT, FrNo);
-  UpdateNewPositionState(dT, FrNo);
+  //   set linear and angular acceleration both local
+  //   and global in LH and m.sec² anr rad.sec²
+  //
+  ab[cur].Copy  (vb[cur]); ab[cur].Subtract  (vb[prv]); ab[cur].Times  (1.0 / dT);
+  ai[cur].Copy  (vi[cur]); ai[cur].Subtract  (vi[prv]); ai[cur].Times  (1.0 / dT);
+  dwb[cur].Copy (wb[cur]); dwb[cur].Subtract (wb[prv]); dwb[cur].Times (1.0 / dT);
+  dwi[cur].Copy (wi[cur]); dwi[cur].Subtract (wi[prv]); dwi[cur].Times (1.0 / dT);
+  //--- ------------------------------------------------------------------------
+  UpdateOrientationState(dT, 0);
+  UpdateNewPositionState(dT, 0);
 }
-
-/*
-http://www.aerojockey.com/papers/meng/node19.html
-Euler angles have two disadvantages. First, the Euler angle equations
-contain many trigonometric functions. Trigonometric functions are very
-slow compared to basic arithmetic operations such as addition and multiplication.
-For computational efficiency, it is almost always better to choose a method
-using only simple arithmetic operations. 
-The more important disadvantage is the numerical singularity appearing in
-equations when Theta is +/- 90°, that is, when the airplane's nose points
-straight up or down. While not a problem in normal, level flight, the singularity
-can present numerical problems when the airplane performs maneuvers such as loops. 
-Replacing the three Euler angles with four quarternions alleviates both difficulties.
-Because only three parameters define any possible rotation, the quarternions need
-a constraint so that there are only three independent variables. This constraint is : 
-  e02+e12+e22+e32=1 
-One nice feature of quarternions is that numerical integration of their time
-derivatives tends not to destroy the constraint. Thus, a flight simulator only needs
-to normalize the quarternions occasionally. With high enough numerical precision,
-it may not ever have to normalize them. 
-
-http://www.libqglviewer.com/refManual/classqglviewer_1_1Quaternion.html
-You can apply the Quaternion q rotation to the OpenGL matrices using: 
-glMultMatrixd(q.matrix());
-equivalent to glRotate(q.angle()*180.0/M_PI, q.axis().x, q.axis().y, q.axis().z);
-
-*/
+//------------------------------------------------------------------------------
+//  Set aircraft position
+//------------------------------------------------------------------------------
+void COPALObject::SetObjectPosition (SPosition pos)
+{ // Clamp altitude to 100K
+  double altClamp = globals->aMax;;
+  if (pos.alt > altClamp) pos.alt = altClamp;
+  // Clamp latitude to globe tile maximum latitude
+  double latClamp = LastLatitude();
+  if (pos.lat > +latClamp)  pos.lat = +latClamp;
+  if (pos.lat < -latClamp)  pos.lat = -latClamp;
+  if (_isnan(pos.lat))  return;
+  geop          = pos;
+	//--- Compute position AGL for physical model ------
+	opal::Point3r bpos(rpos.x,rpos.y,0);
+	double cgz  =  wgh.GetCGHeight();
+  bagl =  geop.alt - GetGroundAltitude() + cgz;  
+  bpos.z      =  bagl;
+	bpos       *=	FN_METRE_FROM_FEET(1);
+  Plane->setPosition (bpos);
+	//TRACE("SetObjectPosition z=%.4lf", bpos.z);
+	//--------------------------------------------------
+  if (!IsFyingObj())    return;
+  //----Save position at global level ----------------
+  if (IsUserPlan())	globals->geop = pos;
+  return;
+}
+//--------------------------------------------------------------
+//  Set aircraft altitude
+//--------------------------------------------------------------
+void COPALObject::ChangeAltitude(double alt)
+{ // Clamp altitude to 100K
+  double altClamp = 1.0E+5;
+  if (alt > altClamp) alt = altClamp;
+  geop.alt          = alt;
+  if (!IsFyingObj())    return;
+  //----Save position at global level ----------------
+  if (IsUserPlan())	globals->geop.alt = alt;
+  return;
+}
+//------------------------------------------------------------------------------------------
+//  We must compute the CoG above ground level
+//  When wheel are on ground we must have
+//  ground = geop.alt - globals->tcm->GetGroundAltitude() + main_gear_contact_point
+//------------------------------------------------------------------------------------------
+void COPALObject::PositionAGL()
+{ opal::Point3r bpos(rpos.x,rpos.y,0);
+	double cgz  =  wgh.GetCGHeight();
+  bagl =  geop.alt - GetGroundAltitude() + cgz;  
+  bpos.z      =  bagl;
+	bpos       *=	FN_METRE_FROM_FEET(1);
+  Plane->setPosition (bpos);
+	//TRACE("PositionAGL z=%.4lf", bpos.z);
+  return;
+}
+//------------------------------------------------------------------------------------------
+//  Set plane on ground
+//------------------------------------------------------------------------------------------
+void COPALObject::RestOnGround()
+{ double    grn = globals->tcm->GetGroundAltitude();
+  //--- Zero Forces and Moments --------------------------
+  ResetSpeeds ();
+  Plane->zeroForces ();
+  //--- Clear wheels forces ------------------------------
+  whl.ResetForce();
+	SPosition p = geop;
+	//--- Init spot ----------------------------------------
+	Spot.lat	= geop.lat;
+	Spot.lon  = geop.lon;
+	Spot.agl	= geop.alt - globals->tcm->GetGroundAt(Spot);
+	//-------------------------------------------------------
+	p.alt	= grn + GetMinimumBodyAGL();
+	SetObjectPosition(p);
+	bool ok = globals->tcm->TerrainStable(1); 
+	if (!ok)		return;
+	//-------------------------------------------------------
+	State = VEH_OPER;
+  return;
+}
+//------------------------------------------------------------------------------------------
+//  Compute plane distance to center in feet 
+//	NOTE:  This function is dedicated to animated aircraft only. 
+//				 As the user aircraft is always in world origin (0,0,alt) to set other aircraft
+//				 we must put them in a relative position to the user aircraft
+//------------------------------------------------------------------------------------------
+void COPALObject::SetRelativePosition()
+{	CVector p0 = FeetComponents(globals->geop,geop,globals->rdf);
+  CVector p1 = p0;
+	p1.Times(FN_METRE_FROM_FEET(1));
+	rpos	= p0;
+	Plane->setPosition (p1.x,p1.y,p1.z);
+	//TRACE("SetRelativePosition z=%.4lf", p1.z);
+	//if (!IsUserPlan()) TRACE("SetP: x=%.6lf y=%.6lf z=%.6lf",p1.x,p1.y,p1.z);
+	return;
+}
+//=================================================================================
+//	http://www.aerojockey.com/papers/meng/node19.html
+//	Euler angles have two disadvantages. First, the Euler angle equations
+//	contain many trigonometric functions. Trigonometric functions are very
+//	slow compared to basic arithmetic operations such as addition and multiplication.
+//	For computational efficiency, it is almost always better to choose a method
+//	using only simple arithmetic operations. 
+//	The more important disadvantage is the numerical singularity appearing in
+//	equations when Theta is +/- 90°, that is, when the airplane's nose points
+//	straight up or down. While not a problem in normal, level flight, the singularity
+//	can present numerical problems when the airplane performs maneuvers such as loops. 
+//	Replacing the three Euler angles with four quarternions alleviates both difficulties.
+//	Because only three parameters define any possible rotation, the quarternions need
+//	a constraint so that there are only three independent variables. This constraint is : 
+//  e02+e12+e22+e32=1 
+//	One nice feature of quarternions is that numerical integration of their time
+//	derivatives tends not to destroy the constraint. Thus, a flight simulator only needs
+//	to normalize the quarternions occasionally. With high enough numerical precision,
+//	t may not ever have to normalize them. 
+//
+//	http://www.libqglviewer.com/refManual/classqglviewer_1_1Quaternion.html
+//	You can apply the Quaternion q rotation to the OpenGL matrices using: 
+//	glMultMatrixd(q.matrix());
+//	equivalent to glRotate(q.angle()*180.0/M_PI, q.axis().x, q.axis().y, q.axis().z);
+//=====================================================================================
 void COPALObject::UpdateOrientationState (float dT, U_INT FrNo) 
 { if (globals->slw->IsEnabled())  return;
   CVector orientation;
@@ -1824,13 +1758,13 @@ void COPALObject::UpdateOrientationState (float dT, U_INT FrNo)
   opal::Matrix44r mtx;
   mtx.makeRotation (angle, ori2.z, ori2.x, ori2.y); // HPB
   opal::Vec3r tmp = mtx.getEulerXYZ ();
-  orientation.x = static_cast<double> (DegToRad (tmp.y));      // RH
-  orientation.y = static_cast<double> (DegToRad (tmp.z - Kb)); // RH
-  orientation.z = static_cast<double> (DegToRad (tmp.x));      // RH
+  orientation.x = static_cast<double> (DegToRad (tmp.y));				// RH
+  orientation.y = static_cast<double> (DegToRad (tmp.z));				// RH
+  orientation.z = static_cast<double> (DegToRad (tmp.x));				// RH
 
-  if (globals->caging_fixed_pitch) {
+  if (caging_fixed_pitch) {
     opal::Matrix44r transform;
-    transform.rotate (globals->caging_fixed_pitch_dval, 1.0, 0.0, 0.0);//
+    transform.rotate (caging_fixed_pitch_dval, 1.0, 0.0, 0.0);//
     Plane->setTransform (transform);
   }
   SetObjectOrientation (orientation); // RH
@@ -1838,16 +1772,22 @@ void COPALObject::UpdateOrientationState (float dT, U_INT FrNo)
 }
 //---------------------------------------------------------------------------
 //  Set new position according to speed
+//	NOTE:  During aircraft implementation bad values may occurs from the
+//				opal engine, producing incoherent position.  The TestMode option
+//				prevents position to be updated, while all others values are 
+//				computed
 //---------------------------------------------------------------------------
 void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
 { if (globals->slw->IsEnabled())  return;
-  opal::Vec3r ov;
+  //opal::Vec3r ov;
   CVector dist;
-  ov      = Plane->getGlobalLinearVel (); // RH
-  spd     = Vec3rToCVector (ov); 
+  //ov      = Plane->getGlobalLinearVel (); // RH
+  //spd     = Vec3rToCVector (ov); 
+	spd     = Vec3rToCVector (glv);
   dist.x  = MetresToFeet (spd.x) * dT;
   dist.y  = MetresToFeet (spd.y) * dT;
   dist.z  = MetresToFeet (spd.z) * dT;
+	//if (IsUserPlan())TRACE("GVEL: x=%.6lf y=%.6lf z=%.6lf",dist.x,dist.y,dist.z);
   SPosition pos_from  = GetPosition ();
   /// turbulences
   if (turbulence_effect) {
@@ -1870,7 +1810,10 @@ void COPALObject::UpdateNewPositionState (float dT, U_INT FrNo)
   //
   ifpos   = dist;
   SPosition pos_to = AddToPositionInFeet (pos_from, dist, globals->exf); // 
+	//--- Test option avoid bad position during aircraft implementation ------
+	if (HasOPT(VEH_OP_TEST))	return;
   SetObjectPosition (pos_to);
+	return;
 }
 //---------------------------------------------------------------------------
 //  Slew move

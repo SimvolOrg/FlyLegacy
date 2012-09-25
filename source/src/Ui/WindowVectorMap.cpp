@@ -1778,12 +1778,12 @@ int CFuiVectorMap::ClickRadLIST(int k)
   int   rx    = RadioLST.tab[No].kind;
   float frq   = RadioLST.tab[No].freq;
   //---Get master radio --------------
-  mesg.group   = veh->GetRadio(rx);
+  mesg.group   = globals->rdb.GetRadio(rx);
   //----Tune radio or com ----------------
   mesg.receiver       = 0;
   mesg.realData       = frq;
   mesg.user.u.datatag = 'tune';
-  Send_Message(&mesg);
+  veh->ReceiveMessage(&mesg);
   return 1;
 }
 //-------------------------------------------------------------------------
@@ -1940,21 +1940,21 @@ void CFuiNavDetail::TuneRadioNav()
   switch (type) {
     case VOR:
       {
-      Tag radio = veh->GetNAV();
+      Tag radio = globals->rdb.GetNAV();
       if (0 == radio)     return;
       mesg.user.u.datatag = 'navA';
       mesg.group          = radio;
-      Send_Message(&mesg);
+      veh->ReceiveMessage(&mesg);
       return;
       }
 
     case NDB:
       {
-      Tag adf = veh->GetADF();
+      Tag adf = globals->rdb.GetADF();
       if (0 == adf)       return;
       mesg.user.u.datatag = 'adfA';
       mesg.group          = adf;
-      Send_Message(&mesg);
+      veh->ReceiveMessage(&mesg);
       return;
       }
 }
@@ -2278,28 +2278,27 @@ void CFuiAptDetail::Draw()
 bool CFuiAptDetail::TuneRadioCom()
 { CComLine *slot  = (CComLine*)comBOX.GetSelectedSlot();
   if (0 == slot)      return true;
-  CVehicleObject *veh = globals->pln;
-  if (0 == veh)       return false;
   Tag radio = 0; 
   Tag tag   = 0;
   mesg.user.u.hw      = HW_RADIO;
   //---Check for a COM radio -------------
   if (0 == tag)
   { tag = slot->IsaILS();
-    radio = veh->GetNAV();
+    radio = globals->rdb.GetNAV();
   }
   if (0 == tag)
   { tag = slot->IsaCOM();
-    radio = veh->GetCOM();
+    radio = globals->rdb.GetCOM();
   }
   if (0 == radio)     return true;
   if (0 == tag)       return true;
   //----Tune radio or com ----------------
+	CVehicleObject *veh = globals->pln;
   mesg.group          = radio;
   mesg.receiver       = 0;
   mesg.realData       = slot->GetFreq();
   mesg.user.u.datatag = tag;
-  Send_Message(&mesg);
+  if (veh) veh->ReceiveMessage(&mesg);
   return true;
 }
 //-------------------------------------------------------------------------

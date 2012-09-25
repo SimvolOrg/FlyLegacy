@@ -37,7 +37,7 @@
 #include "../Include/WeightManager.h"	 
 #include <vector>
 #include <map>
-//==================================================================================
+//==============================================================================
 class CSteeringControl;
 //==============================================================================
 // CAnnouncement
@@ -499,10 +499,9 @@ public:
   // CSubsystem methods
   const char* GetClassName (void) { return "CSwitchSet"; }
 	//--- Gauge BUS --------------------------------------------
-	inline int			GaugeBusIN03()  {return Indx;}
+	inline int			GaugeBusIN03()  {return indx;}
   //--- Attributes -------------------------------------------
 protected:
-  int     Indx;                      // Current position
   std::vector<SMessage >    smsg;   // Switch messages
   std::vector<SMessage *>   msgs;   // List of messages
   bool    sync;         ///< Sync all switches
@@ -1427,11 +1426,11 @@ public:
 	void			ModBias(float v);
   void      TimeSlice (float dT,U_INT FrNo = 0);					
   //---------------------------------------------------------
-	inline void InitSteer(SGearData *s) {steer = s;}
-	inline void InitCTLR (CSteeringControl *s) {sCTLR = s;}
-  inline void SetOpalCoef(float c)    {oADJ = c;}
-  inline void SetBankMap(CFmtxMap *m) {macrd = m;}
-protected:
+	void InitSteer(SGearData *s) {steer = s;}
+	void InitCTLR (CSteeringControl *s) {sCTLR = s;}
+  void SetOpalCoef(float c)    {oADJ = c;}
+  void SetBankMap(CFmtxMap *m) {macrd = m;}
+	char GearConnexion()				 {return (steer)?(1):(0);}
 };
 //====================================================================
 //  Flap data structure
@@ -1587,6 +1586,7 @@ public:
   void    ReleaseBrakes();
   void    SwapPark(U_CHAR opt);
 	void		Probe(CFuiCanva *cnv);
+	void		Set(float p);
   //--------------------------------------------------------------------
   inline void   HoldBrake(char p)     {Hold = p;}
 	inline float  GetBrakeForce(char p) {return Force[p];}
@@ -2330,6 +2330,7 @@ public:
   void    TraceT2(CFuelCell *fc, CFuelCell *tk,  float frq);
   void    GetRefillingTanks(CFuelSystem *fsys,CFuelCell *cel,float rqf);
   void    Poll();
+	int		  ReadRef(char op,SStream *stf);
   //-------------------------------------------------------------------
   inline const char*            GetName (void) const {return name;}
   //-------------------------------------------------------------------
@@ -2342,13 +2343,12 @@ public:
 public:
   float                         f_gph;            ///< Fuel flow through tap (gallons per hour)
   float                         gals;             ///< Fuel quantity in gallons
-
-//protected:
   char                          name[64];         ///< UI readable name
   //-------------------------------------------------------------------
   std::map<Tag,CFuelSubsystem*> piped;            // Piped subsystems
   //-----ATTRIBUTES ---------------------------------------------------
 public:
+	int														refer;						// Reference value
   char                          Fsrc;             // Tank indicator
   char                          Tr;               // Trace request
 };

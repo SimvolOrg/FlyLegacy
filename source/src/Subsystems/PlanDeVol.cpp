@@ -378,7 +378,8 @@ PlaneCheckList::PlaneCheckList()
 }
 //-------------------------------------------------------------------------
 PlaneCheckList::~PlaneCheckList()
-{	//--- Clear chapters -------------------------
+{	TRACE("Destroy ckl");
+	//--- Clear chapters -------------------------
 	U_INT end	= vCHAP.size();
 	for (U_INT k=0; k < end;k++)	delete vCHAP[k];
 	vCHAP.clear();
@@ -2009,7 +2010,7 @@ void CFPlan::DrawOn3DW()
 	CWPoint *prv  = 0;
 	CWPoint *head = (CWPoint*)wPoints.HeadPrimary();
 	CWPoint *node = 0;
-	SPosition org = globals->geop;						// Origin of node
+	SPosition org = mveh->GetPosition();			// Origin of node
   glPushAttrib(GL_ALL_ATTRIB_BITS);
 	double    rdf = GetReductionFactor(org.lat);
 	glDisable(GL_LIGHTING);

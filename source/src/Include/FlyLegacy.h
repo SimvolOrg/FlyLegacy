@@ -366,10 +366,11 @@ enum EFlyObjectType
   TYPE_FLY_UNKNOWN        = 0,
   TYPE_FLY_WORLDOBJECT    = 'wobj',
   TYPE_FLY_MODELOBJECT    = 'mobj',
-  TYPE_FLY_SIMULATEDOBJECT  = 'sobj',
+  TYPE_FLY_SIMULATEDOBJECT= 'sobj',
   TYPE_FLY_VEHICLE        = 'vehi',
   TYPE_FLY_GROUNDVEHICLE  = 'gveh',
-  TYPE_FLY_AIRPLANE       = 'plan',
+  TYPE_USER_AIRCRAFT      = 'plan',
+	TYPE_ANIM_AIRCRAFT		  = 'apln',
 	TYPE_FLY_UFO						= '_ufo',
   TYPE_FLY_HELICOPTER     = 'heli'
 };
@@ -387,7 +388,8 @@ enum EStreamTagResult
 {
   TAG_IGNORED = 0,
   TAG_READ = 1,
-  TAG_EXIT = 2
+  TAG_EXIT = 2,
+	TAG_STOP = 3
 };
 
 enum EClickResult
@@ -1361,8 +1363,7 @@ typedef struct SMessage
   char              dst[8];         // string destination
   float             volts;
   union 
-  {
-    char    charData;
+  { char    charData;
     char   *charPtrData;
     int     intData;
     int    *intPtrData;
@@ -1390,6 +1391,8 @@ typedef struct SMessage
   SMessage()
   { memset(this,0,sizeof(SMessage)); 
 		mem = 'SMSG'; }
+	//--- Tarce message -----------------------------
+	void	Trace();
 } SMessage;
 //==============================================================================
 typedef struct SSurface
@@ -1885,7 +1888,9 @@ typedef enum {
   VEH_DW_SHAD   = 0x0020,           // Draw vehicle shadow
   VEH_DW_VPOS   = 0x0040,           // Draw vehicle position
   VEH_DW_AERO   = 0x0080,           // Draw vehicle aero vectors
+	//-------------------------------------------------------------
   VEH_D_CRASH   = 0x0100,           // Crash detector
+	VEH_OP_TEST   = 0x0800,						// Test mode
 	//-------------------------------------------------------------
 	VEH_IS_FLY		= 0x1000,						// Flying object
   VEH_IS_UFO		= 0x2000,						// UFO Kind
@@ -1962,13 +1967,23 @@ typedef struct {
                     ADF_INDEX = 3,
   };
 //==============================================================================
+class CNullSubsystem;
+//==============================================================================
 //
 // CObject is the most basic object type and is the root ancestor of all
 //   object classes
+//	Send message is implemented at this level for intra messaging in the
+//	aircraft
 //==============================================================================
+class CVehicleObject;
+//------------------------------------------------------------------------------
 class CObject {
+protected:
 public:
-
+	CObject();
+	EMessageResult CObject::Send_Message (SMessage *msg, CObject *obj);
+	//-------------------------------------------------------------------------
+	 virtual EMessageResult    ReceiveMessage(SMessage *msg) {return MSG_IGNORED;}
 protected:
 };
 
@@ -2971,11 +2986,12 @@ typedef void (CExecutable::*ExeDR)(void);
 #define PRIO_DBCACHE		(3)
 #define PRIO_SLEWMGR		(4)
 #define PRIO_ATMOSPHERE	(5)
-#define PRIO_PLANE			(6)
-#define PRIO_SIMVH			(7)
-#define PRIO_SDK				(8)
-#define PRIO_DLL				(9)
-#define PRIO_OTHERS			(10)
+#define PRIO_UPLANE			(6)
+#define PRIO_APLANE			(7)
+#define PRIO_SIMVH			(8)
+#define PRIO_SDK				(9)
+#define PRIO_DLL				(10)
+#define PRIO_OTHERS			(11)
 #define PRIO_MAX				(16)
 //==============================================================================
 //  RANDOM GENERATOR (SYSTEM DEPENDENT)

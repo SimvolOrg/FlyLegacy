@@ -194,6 +194,115 @@ typedef enum {
   TRACE_WHEEL     = (0x0080),       // Wheel animation
 
 } ETrace;
+//===========================================================================================
+//  Class CFuiRadioBand to display radio communication
+//  NOTE: This class is instanciated in global situation, but the Draw method is called
+//  in the context of CFuiManager as it is visible in every view
+//===========================================================================================
+class CFuiRadioBand {
+  //---------------Internal state --------------------------------------------------------
+  enum  BANDST    { RB_STOP   = 0,                          // Inactive
+                    RB_INIT   = 1,                          // Start emiting
+                    RB_DSP1   = 2,                          // Display part 1
+                    RB_DSP2   = 3,                          // Display part 2
+                    RB_DEND   = 4,                          // Display end
+                    RB_STBY   = 5,                          // Stand by
+  };
+  //---------------Entries for ATIS radio ----------------example ------------------------
+  enum  COM_ATIS  { AT_IDEN   = 0,                          // KSFO
+                    AT_TXT1   = 1,                          // Arrival info
+                    AT_TIDN   = 2,                          // Romeo
+                    AT_TIMH   = 3,                          // 13H00
+                    AT_HIDN   = 4,                          // ZULU
+                    AT_TXT2   = 5,                          // Automated weather observations. Wind
+                    AT_WIND   = 6,                          // calm
+                    AT_TXT3   = 7,                          // Visibility
+                    AT_MVIS   = 8,                          // 50 
+                    AT_TXT4   = 9,                          // miles. Temperature is
+                    AT_TEMP   = 10,                         // 24
+                    AT_TXT5   = 11,                         // degrees. Dewpoint is
+                    AT_DEWP   = 12,                         // 20
+                    AT_TXT6   = 13,                         // degres. Altimeter is 
+                    AT_ALTI   = 14,                         // 29.92
+                    AT_SMAL   = 15,                         //---Item number for small airports ---
+                    //-----For control centers -----------------------------------
+                    AT_TXT7   = 15,                         // Notice to airmem...
+                    AT_CLDY   = 16,                         // 118.20 (clearance delivery)
+                    AT_TXT8   = 17,                         // Advise on initial contact you have information 
+                    AT_IDNT   = 18,                         // Romeo
+                    AT_FULL   = 19,                         // Array dimension
+  };
+  //--------------Attribute ------------------------------------------------------
+	CVehicleObject *mveh;									// User vehicle
+	//------------------------------------------------------------------------------
+	TXT_LIST  sTxt;                                           // Text description
+  SFont    *font;                                           // Fonte
+  CFont    *fnts;                                           // Real font
+  SSurface *surf;                                           // Surface
+  short     wd;                                             // wide
+  short     ht;                                             // Height
+  short     wCar;                                           // Character wide
+  short     NbCar;                                          // Number of characters
+  U_INT     back;                                           // Back color
+  U_INT     black;
+  BANDST    state;                                          // Active inactive state
+  //---------For time Management -------------------------------------------------
+  float     timTM;                                          // Minute timer
+  SDateTime	lTime;                                          // Local time
+  U_CHAR    tInfo;                                          // Time info edited
+  U_CHAR    nInfo;                                          // timer info 
+  //---------Editied fields ------------------------------------------------------
+  char      eFrq[8];                                        // Clearance frequency
+  char      hour[8];                                        // Time edited
+  char      eVis[4];                                        // Visibility in nm
+  char      eTmp[4];                                        // Temperature in deg
+  //---------For editing radio band ----------------------------------------------
+  short     xScr;                                           // Screen index
+  short     cPos;                                           // new char position
+  short     nCar;                                           // Number of characters to screen
+  short     sEnd;                                           // screen right starting position
+  short     sDeb;                                           // screen left limit
+  //---------For tuned radio comm -------------------------------------------------
+  CObjPtr   rCOM;                                           // Current radio com
+	//--- Radio stack --------------------------------------------------------------
+  Tag       rTAG[4];					// Radio TAG: NAV-COM-ADF
+	//-----------------------ATHIS text --------------------------------------------
+  char    *atis[AT_FULL];
+  //-------------Method ----------------------------------------------------------
+public:
+   CFuiRadioBand();
+  ~CFuiRadioBand();
+	void	Init();
+  //-----------------------Edit --------------------------------------------------
+  void  SetATIStext();
+  //------------------------Size parameters --------------------------------------
+  void  Resize();
+  //------------------------Drawing method ---------------------------------------
+  void  Draw();
+  //-----------------------Time slice --------------------------------------------
+  void      TimeSlice(float dT);
+  void      UpdateInfo();
+  void      UpdateTime();
+  bool      TuneTo(CVehicleObject *veh,CCOM *com);
+  bool      ModeATIS(CCOM *com);
+  COM_ATIS  EditATISdata(CAirport *apt);
+	//--- Radio interface ----------------------------------------------------------
+	void	Register(CVehicleObject *mv);	
+	//------------------------------------------------------------------------------
+  void  RegisterNAV(CVehicleObject *veh,Tag r);
+  void  RegisterCOM(CVehicleObject *veh,Tag r);
+  void  RegisterADF(CVehicleObject *veh,Tag r);
+	//--- Return radio by tag ------------------------------------------------------	
+  Tag   GetNAV()              {return  rTAG[NAV_INDEX];}  //rNAV;}
+  Tag   GetCOM()              {return  rTAG[COM_INDEX];}  //rCOM;}
+  Tag   GetADF()              {return  rTAG[ADF_INDEX];}  //rADF;}
+  Tag   GetRadio(int k)       {return  rTAG[k];}
+	//------------------------------------------------------------------------------
+	
+  //------------------------------------------------------------------------------
+	void	Stop()											{state = RB_STOP;}
+};
+
 //==============================================================================
 // Time zone variables
 //==============================================================================
@@ -239,9 +348,8 @@ CDispatcher::CDispatcher();
 		{	slot[p].obj	= 0;
 		}
 	//-----------------------------------------------------
-	void PutHead(CExecutable *ex, char p);
-	void PutLast(CExecutable *ex, char p);
-	void Remove (CExecutable *ex, char p);
+	void Store(CExecutable *ex, char p);
+	void Remove (char p);
   //-----------------------------------------------------
 	void Lock  (char p)						{slot[p].lock++;}
 	void Unlock(char p)						{slot[p].lock--;}
@@ -266,7 +374,6 @@ CDispatcher::CDispatcher();
 typedef struct {
 	//--- Frame number ------------------------------------------------
 	U_INT			Frame;
-	char     *mdule;											// Current module
 	BBM				mBox;												// Master black box
 	//--- Dispatcher --------------------------------------------------
 	CDispatcher Disp;
@@ -313,7 +420,6 @@ typedef struct {
   EAppState appState;
   //--- Cockpit panel parameters --------------------------------------
   int         panelScrollStep, panelCreepStep;
-  CPanel     *panel;                   /// Current panel in building for gauge
   //---- POD filesystems for scenery and all other files -------------
   PFS               pfs;
 	//--- Utility counters ---------------------------------------------
@@ -333,7 +439,6 @@ typedef struct {
   float             dRT;                // Real time delta from last frame
   float             dST;                // Simu time delta from last Frame
   //---------Interface with master radio -----------------------------
-  BUS_RADIO        *Radio;              // Radio block
   CILS             *cILS;								// Current ILS
 	//--- OSM interface ------------------------------------------------
 	U_INT							xobj;								// Last binded texture
@@ -343,7 +448,6 @@ typedef struct {
   CCameraSpot           *csp;           // spot camera
   CCamera               *cam;           // Current camera
   char                inside;           //  True when inside view
-  char                  bTyp;           // Drawing type for Aircraft blue print
 	//-------- Situation file ------------------------------------------
 	char                  sitFilename[PATH_MAX];  /// Filename of .SIT file to load
   //-------- Various global objects ----------------------------------
@@ -376,13 +480,11 @@ typedef struct {
 	CSceneryDBM						*scn;						// Scenery set
   //-------Aircraft items --------------------------------------------
   CCameraManager        *ccm;           /// Current camera manager
-  CPanel                *pan;           /// Active panel
-  CFuelSystem           *gas;           /// Fuel system
-  CCockpitManager       *pit;           /// Cockpit manager
   CFuiFuel              *wfl;           /// Fuel window
   CFuiLoad              *wld;           /// Load window
-  CFuiRadioBand         *rdb;           // Radio band
   CFuiProbe             *wpb;           // Window probe
+	//--- Included items -----------------------------------------------
+  CFuiRadioBand          rdb;           // Radio band
   //--- QGT indices fro aircraft actual position ---------------------
   U_INT             qgtX;               // X index
   U_INT             qgtZ;               // Z index
@@ -464,22 +566,15 @@ typedef struct {
   bool      dxt3Supported;      ///< Compressed texture format DXT3 supported
   bool      dxt5Supported;      ///< Compressed texture format DXT5 supported
 	//--- OPAL simulation --------------------------------------------
+	float			TimLim;								// Time limit for simulation
+  opal::Solid *Ground;                                              // Ground solid
   opal::Simulator *opal_sim;
-  bool  simulation;
   bool  fps_limiter;
   char  sBar;
   float status_bar_limit;
 
   /// PHY file used
 
-  /// AERODYMANICS CAGING
-  bool  caging_fixed_sped;  float  caging_fixed_sped_fval;
-  bool  caging_fixed_moi;    
-  bool  caging_fixed_pitch; double caging_fixed_pitch_dval;
-  bool  caging_fixed_roll;  double caging_fixed_roll_dval;
-  bool  caging_fixed_yaw;   double caging_fixed_yaw_dval;
-  bool  caging_fixed_alt;
-  bool  caging_fixed_wings;
 
 } SGlobals;
 

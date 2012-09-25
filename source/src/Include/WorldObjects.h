@@ -49,6 +49,8 @@
 #include "../Include/Robot.h"
 
 #include <vector>
+//=======================================================================================
+#define TIME_LIMIT  (float (1) / 25)				// In fractional second
 //======================================================================================
 class CSuspension;
 //======================================================================================
@@ -76,8 +78,8 @@ typedef enum {
 class CWorldObject : public CStreamObject {
 protected:
 	//------ Type of vehicle ----------------------------
-  char    stype[8];
-  Tag     type; 
+  char  stype[8];
+  Tag   type; 
 	//--- Dammage management ----------------------------
   U_INT       sound;										// Crash sound
   DAMAGE_MSG  damM;
@@ -85,7 +87,7 @@ protected:
 	//--- physical model --------------------------------------
 	void   *phyMod;
   //----Global state ----------------------------------------
-  char    State;
+  char    State;								// Globals state
 	float		Time;									// State timer
 	//---------------------------------------------------------
 	COption       vehOpt;         // Vehicle options
@@ -97,23 +99,30 @@ protected:
   CVector			iang;   // Inertial angular orientation
   CVector			dang;   // Same as above in degre
 	GroundSpot  Spot;   // Aircraft spot
-  //--- Global rotation matrix --------------------------------
+	CVector			rpos;		// Relative position for animated aircraft
+  double			bagl;   ///< aircraft AGL
+	double			magl;		// Minimum above ground in feet
+	//--- Global rotation matrix --------------------------------
   double    rotM[16];                 // Rotation matrix
   //-----Flag for various aircraft versions ------------------- 
 public:
-  bool      has_fake_engine_thrust;
+  bool  has_fake_engine_thrust;
   //----Inline -----------------------------------------------
+	char	IsUserPlan()				{return (type == 'plan')?(1):(0);}
   bool  HasState(char c)    {return (State == c);}
   bool  NotState(char c)    {return (State != c);}
   void  SetState(char c)    {State = c;}
   char  GetState()          {return State;}
+	void	SetGeop(SPosition &P)	{geop = P;}
 	//--- Options ----------------------------------------------
   U_INT GetOPT(U_INT p)			{return vehOpt.Get(p);}		// Return property
   void  RepOPT(U_INT p)     {vehOpt.Rep(p);}          // Replace property
   void  SetOPT(U_INT p)     {vehOpt.Set(p);}          // Set property
   void  RazOPT(U_INT p)     {vehOpt.Raz(p);}					// Clear property
 	void  ToggleOPT(U_INT p)  {vehOpt.Toggle(p);}       // Swap property
-  //-------------------------------------------------------------
+	void	StoreOrgPosition(SPosition p)		{orgp = p;}
+	
+	//-------------------------------------------------------------
   char  HasOPT(U_INT p)     {return vehOpt.Has(p);}
   char  NotOPT(U_INT p)     {return vehOpt.Not(p);}
 	//----METHODS ----------------------------------------------
@@ -138,22 +147,25 @@ public:
   //------------------------------------------------------
   char    IsFyingObj()  {return HasOPT(VEH_IS_FLY);}
   //------inline  CWorldObject methods ---------------------------------------
+	bool       NotThisPlane(void *p)								{return (phyMod != p);}
 	void      *GetPhyModel()												{return phyMod;}
   SPosition  GetOriginalPosition()								{return orgp;}  
   SPosition *GetAdPosition()											{return &geop;}           
   SPosition  GetPosition()												{return geop;}
-	double		 GetHeading()													{return -dang.z;}	
-  double     GetAltitude()												{return geop.alt;}
-  void       SetAltPosition(double a)		          {geop.alt = a;}
-  //----------------------------------------------------------------------------
+	double		 GetHeading()													{return -dang.z;}
+	double     GetPitch()														{return  dang.x;}
+	double		 GetBanking()													{return  dang.y;}
+	double     GetAltitude()												{return geop.alt;}
+	double		 GetAltitudeAGL()											{return Spot.agl;}
+	double		 GetGroundAltitude()									{return Spot.alt;}
+  //--- Physical management depending on the physical engine (opal) -----------
   virtual void SetPhysicalOrientation (SVector &v)  {;}  // used in COpal to slew orientation
   virtual void ResetSpeeds() {}
   virtual void ResetZeroOrientation () {}
+	virtual void SetObjectPosition(SPosition pos) {geop = pos;}
+	virtual void ChangeAltitude(double a)					{geop.alt = a;}
   //-----------------------------------------------------------------------------
-	void			SetType(Tag t);
   void      SetObjectOrientation(SVector v);
-  void      SetObjectPosition(SPosition pos);
-  void      SetAltitude(double alt);
   //------------------------------------------------------------------------------
   void    Rotate()    {glMultMatrixd(rotM);}
   double *GetROTM()   {return rotM;}
@@ -167,8 +179,8 @@ public:
   void		  SetLDtoRROrientation  (SVector *vec);
   double    GetRRtoLDPitch ()     {return  -dang.x;}
   double    GetRRtoLDBank()       {return  -dang.y;}
-  double    GetBank()             {return  -iang.y;}
   //-------------------------------------------------------------------------------
+	void			SetType(Tag t);
 };
 //====================================================================================
 // The CSimulatedObject object has some behaviour tied to the real-time simulation.
@@ -186,6 +198,13 @@ class CSimulatedObject : public CWorldObject, public CExecutable {
   //---ATTRIBUTES ----------------------------------------------
 public:
   char                  nfoFilename[64];
+	char									fplname[64];
+	//----AERODYMANICS CAGING ---------------------------------------------------
+  bool  caging_fixed_sped;  float  caging_fixed_sped_fval;
+  bool  caging_fixed_pitch; double caging_fixed_pitch_dval;
+  bool  caging_fixed_roll;  double caging_fixed_roll_dval;
+  bool  caging_fixed_alt;
+  bool  caging_fixed_wings;
   //---METHODS ------------------------------------------------
 public:
   // Constructors / destructor
@@ -198,10 +217,8 @@ public:
 
   //---------- Simulation ---------------------------------------
   virtual int  Timeslice(float dT,U_INT FrNo) {return 0;}       ///< Real-time timeslice processing
-  // Drawing 
+  //--- Drawing  -------------------------------------------------
 	virtual void  RestOnGround()   {;}
-  //-------- Methods ------------------------------------------
-  ETerrainType GetTerrainType (void);           ///< get terrain type under object
   //------------------------------------------------------------
 
 };
@@ -235,6 +252,12 @@ public:
   virtual void              Print                    (FILE *f);
   virtual int               TimeSlice(float dT,U_INT frame) {return 0;}
   virtual void              Update(float dT,U_INT FrNo);		        // JSDEV*
+	virtual void							UpdateData(float dT);
+	//-------------------------------------------------------------------
+	//--- Specific to user vehicle --------------------------------------
+	void				InitUserVehicle();
+	//---------------------------------------------------------------------------------
+	void				InitState();
 	//--- Return data ---------------------------------------------------
   //! Returns altitude above ground in feet
 	float                     GetUserAGL()				{return 0;}
@@ -267,19 +290,23 @@ public:
   //! Returns object angular velocity in world coordinates (rad/s)
 	CVector*    GetInertialAngularVelocityVector () {return &(wi[cur]);}
   //  Return body AGL (Body above ground level -----------------------------
-  double      GetBodyAGL()  {return 0;}
+  double      GetBodyAGL()				{return bagl;}
+	double			GetMinimumBodyAGL()	{return magl;}
   //!  Returns wind effect on aircraft
   void        GetAircraftWindEffect (void);
   //  Set plane above ground -----------------------------------------------
   virtual double            GetPositionAGL() {return 0;}
   //  Set plane resting ----------------------------------------------------
   virtual void              RestOnGround()  {;}
+	//--- Animated plane position---------------------------------------------
+	virtual void							SetRelativePosition()  {;}
   //---Crash management ----------------------------------------------------
   virtual void              BodyCollision(CVector &p) {;}
   //------------------------------------------------------------------------
   virtual void              GetAllEngines(std::vector<CEngine*> &engs) {}
 	//--- Vehicle drawing -----------------------------------------------------
   void  DrawExternal();
+	void	DrawAnimated();
   void  DrawInside(CCamera *cam);
 	void  DrawOutsideLights();
   void  DrawExternalFeatures();
@@ -297,13 +324,6 @@ public:
 	void  RegisterRadioBUS(BUS_RADIO *b)	{busR = b;}
 	void  RegisterGPSR(GPSRadio *r)				{GPSR = r;}
 	void	RegisterRAD(CRadio *r){mRAD = r;}
-  void  RegisterNAV(Tag r)    {rTAG[NAV_INDEX] = r;}      //{rNAV = r;}
-  void  RegisterCOM(Tag r)    {rTAG[COM_INDEX] = r;}      //rCOM = r;}
-  void  RegisterADF(Tag r)    {rTAG[ADF_INDEX] = r;}      //rADF = r;}
-  Tag   GetNAV()              {return  rTAG[NAV_INDEX];}  //rNAV;}
-  Tag   GetCOM()              {return  rTAG[COM_INDEX];}  //rCOM;}
-  Tag   GetADF()              {return  rTAG[ADF_INDEX];}  //rADF;}
-  Tag   GetRadio(int k)       {return  rTAG[k];}
 	//--- Component pointers ------------------------------------------------
 	BUS_RADIO *GetRadioBUS()		{return busR;}	// Radio BUS
 	GPSRadio  *GetGPS()					{return GPSR;}	// GPS radio 
@@ -316,7 +336,6 @@ public:
 	void		OverallExtension(SVector &v);			// Get 3D model extension 
   //!-----------------------------------------------------------------------
   //! send steering wheel angle to gear
-	void    StoreSteeringData (SGearData *gdt);
 	void    SetPartKeyframe   (char* part, float key)			{lod.SetPartKeyframe (part, key);}
   //----Set spinner part -------------------------------------------------------------------
   CAcmSpin     *SetSpinner(char e,char *pn) {return lod.AddSpinner(e,pn);}     // Set spinner part
@@ -359,12 +378,9 @@ public:
   // Vehicle specifications, subsystems, etc.
   char                  upd;                  // Update instrument while in slew
   CSlopeWindData        *swd;
- 
+  CLogFile							*log;
   CVehicleHistory       *hst;
-	//-----------------------------------------------------------------------------
-  CNullSubsystem		    nSub;						//  Null subsystem to receive message without identified receiver
   //-----Radio interface --------------------------------------------------------
-  Tag                   rTAG[4];					// Radio TAG: NAV-COM-ADF
 	BUS_RADIO						 *busR;							// Radio BUS
  	AutoPilot						 *aPIL;							// Autopilot 
 	GPSRadio             *GPSR;							// GPS
@@ -374,24 +390,27 @@ public:
   //-----Sound object collection ------------------------------------------------
   std::map<Tag,CSoundOBJ*> sounds;            // Sound objects related to vehicle
 	//====== METHODS ==============================================================
-  void  AddSound(CSoundOBJ *so) {sounds[so->GetTag()];}
+  void   AddSound(CSoundOBJ *so) {sounds[so->GetTag()];}
   //-----Mouse events -----------------------------------------------------------
   bool   MouseMove (int x,int y) { return pit.MouseMove(x,y);}
   bool   MouseClick(EMouseButton b,int u,int x,int y)  { return pit.MouseClick(b,u,x,y);}
   //-----------------------------------------------------------------------------
-  CNullSubsystem*    GetNullSubsystem(void)  { return &nSub; }
   char              *GetNFOname()            { return nfoFilename;}
   //---------------------------------------------------------------------------------
   CAnimatedModel   *GetLOD()    {return &lod;}
 	int               GetEngNb()	{return nEng;}
 	//--- Gear Management -------------------------------------------------------------
-	CSuspension  *GetSteeringWheel()      {return whl.GetSteeringWheel();}
+	CSuspension   *GetSteeringWheel()     {return whl.GetSteeringWheel();}
+	CBrakeControl *GetBrakeControl()			{return amp.GetBrakeControl();}
 	void					SetABS(char p)					{whl.SetABS(p);}
 	float         GetBrakeForce(int p)    {return amp.GetBrakeForce(p);}
   char          GetWheelNum()           {return wNbr++;}
   bool          WheelsAreOnGround()     {return whl.WheelsAreOnGround();}
   char          NbWheelsOnGround()      {return whl.GetNbWheelOnGround();}  
 	bool					AllWheelsOnGround()			{return whl.AllWheelsOnGround();}
+	void					GearConnector(char g)		{amp.GearConnector(g);}
+	char					GearConnexion()					{return amp.GearConnexion();}
+	void					SpeedRegulation(char s) {wng.SpeedRegulation(s);}
 	//--- Brake interface -------------------------------------------------------------
 	double				GetDifBrake()						{return brkDIF;}
 	void					RazDifBrake()						{brkDIF  = 0;}
@@ -415,6 +434,8 @@ public:
   char             *GetPID()        {return nfo.GetPID();}
 	CPhysicModelAdj  *GetPHY()				{return &phy;}
 	CFuelSystem      *GetGAS()				{return &gas;}
+	CCockpitManager  *GetPIT()				{return &pit;}
+	CSpeedRegulator  *GetSREG()				{return amp.sReg;}
 	//-----------------------------------------------------------------------------------------
 protected:
 	//--- Engine parameters --------------------------------------------------------
@@ -487,7 +508,7 @@ protected:
 };
 //========================================================================================
 // The CAirplane object represents a fixed-wing aircraft
-//   with <wobj> signature of TYPE_FLY_AIRPLANE
+//   with <wobj> signature of TYPE_USER_AIRCRAFT
 //
 // Stream file declaration:
 //    <wobj>
@@ -497,16 +518,16 @@ protected:
 //=========================================================================================
 class CAirplane : public CVehicleObject {
 protected:
+	//--- Object identity -------------------------------
+	char  name[64];
 	//-------Message to aircraft -----------------------------------------------
   SMessage  Navi;                     // Navigation light message
   SMessage  Land;                     // Landing light message
   SMessage  Taxi;                     // Taxi light message
   SMessage  Strb;                     // Strobe message
   SMessage  Apil;                     // autopilot
-	//--- Control systems ------------------------------------------------------
   //-----------Park option ----------------------------------------------------
   char         park;
-  static       CLogFile *log;
 	//--- METHODS ---------------------------------------------------------------
 public:
   // Constructors / destructor
@@ -548,15 +569,15 @@ public:
   void              EnginesIdle()       {eng.EnginesIdle();}
 	void							HereWeCrash()       {eng.AbortEngines();}
 	//-----------------------------------------------------------------------------
-  SPosition         SetOnGround();
-  double            GetBodyAGL()      {return whl.GetBodyAGL();}
   double            GetPositionAGL()  {return whl.GetPositionAGL();}
   void              BodyCollision(CVector &p);
-  //----Update the vehicle ------------------------------------------------------
+	//----Update the vehicle ------------------------------------------------------
   int               TimeSlice(float dT,U_INT frame);
   //-----------------------------------------------------------------------------
   void              BindKeys();
-  //-----------------------------------------------------------------------------
+	void							LoadFPLAN(char *fn);
+	void							ToggleVPIL();
+	//-----------------------------------------------------------------------------
   // CAirplane methods
   /// The control surface methods AileronIncr etc. cause the appropriate
   ///   control surface to be deflected "up" or "down" (as defined for that
@@ -607,22 +628,20 @@ public:
   float        AileronTrim         (void);      ///< Get aileron trim position
   float        ElevatorTrim        (void);      ///< Get elevator trim position
   float        RudderTrim          (void);      ///< Get rudder trim position
-	//--------------------------------------------------------------------------
-	void				 GroundAt(double alt);
 	//--- ACCES TO SUBSYSTEMS --------------------------------------------------
-	inline    void				 StartVirtualPilot()	{amp.vpil->Start();}
-	inline    VPilot      *VirtualPilot()				{return amp.vpil;}
+	VPilot      *VirtualPilot()				{return amp.vpil;}
   //------Message interface --------------------------------------------------
-  inline    void         SendNaviMsg()  {Send_Message(&Navi);}
-  inline    void         SendApilMsg()  {Send_Message(&Apil);}
-  inline    int          GetEngNb()     {return amp.pEngineManager->HowMany();}
+  void         SendNaviMsg()  {ReceiveMessage(&Navi);}
+  void         SendApilMsg()  {ReceiveMessage(&Apil);}
+  int          GetEngNb()     {return amp.pEngineManager->HowMany();}
+	void			   SetName(char *n)	{strncpy(name,n,64);}
   //---------------------------------------------------------------------------
   float        Flaps               (void);      ///< Get flaps position
 };
 
 //=========================================================================================
 // The CUFO object represents a simplified fixed-wing aircraft
-// with <wobj> signature of TYPE_FLY_AIRPLANE
+// with <wobj> signature of TYPE_USER_AIRCRAFT
 // :: no real physics and moving like an UFO with joystick ant thrust
 // NB : used temporary to buzz around the scenes without the slew feature
 //
@@ -635,7 +654,7 @@ public:
 class CUFOObject : public CAirplane {
 public:
   // Constructors / destructor
-  CUFOObject();
+  CUFOObject(Tag typ);
   // CSimulatedObject methods
   void Simulate(float dT,U_INT FrNo);		///< Overriden 
   void UpdateOrientationState(float dT,U_INT FrNo);		///< Overriden
@@ -646,7 +665,7 @@ public:
 
 //========================================================================================
 // The COPAL object represents a OPAL fixed-wing aircraft
-// with <wobj> signature of TYPE_FLY_AIRPLANE
+// with <wobj> signature of TYPE_USER_AIRCRAFT
 //
 // Stream file declaration:
 //    <wobj>
@@ -657,19 +676,25 @@ public:
 class COPALObject : public CAirplane {
 public:
   // Constructors / destructor
-  COPALObject                             (void);
-  virtual ~COPALObject                    (void);
+  COPALObject(Tag typ);
+  virtual ~COPALObject();
 
-  void ReadFinished               (void);
+  void  ReadFinished               (void);
   void  PlaneShape();
   // CWorldObject methods
   void  SetPhysicalOrientation (SVector &rad_angle);
-  //---- Normal management --------------------------------
-  void  Simulate(float dT,U_INT FrNo);		            ///< Overriden 
+  //---- Normal management ---------------------------------
+	void	TraceForces();
+  void  Simulate(float dT,U_INT FrNo);		            ///< Overriden
+	void	UpdateData(float dT);
   void  PositionAGL();           
   void  UpdateOrientationState(float dT,U_INT FrNo); ///< Overriden
   void  UpdateNewPositionState (float dT, U_INT FrNo);
   void  RestOnGround();
+  void  SetObjectPosition(SPosition pos);
+	void	ChangeAltitude(double a);
+	//--- For animated aircraft only --------------------------
+	void	SetRelativePosition();
   //---------------------------------------------------------
   void Print(FILE *f);
   //---- Crash Management -----------------------------------
@@ -681,23 +706,25 @@ public:
 	//----------------------------------------------------------
 	void SetWindPos(double p);	
   //----------------------------------------------------------
-  // class members
-  opal::Solid *Ground;                                              // Ground solid
-  opal::Solid *Plane;                                               // Aircraft solid
-  opal::Force lf;                                                   ///< linear force
-  opal::Force ef;                                                   ///< engine linear force
-  opal::Force ed;                                                   ///< engine linear drag
-  opal::Force tf;                                                   ///< torque
-  opal::Force glf;                                                  ///< gear linear force
-  opal::Force gtf;                                                  ///< gear torque
-  opal::Vec3r av;                                                   ///< angular velocity
-  opal::Mass mm;                                                    ///< total mass
-  opal::Force mf;                                                   ///< mass linear force
-  static opal::Point3r tmp_pos;                                     ///< temporary position
-  CVector spd;                                                      ///< speed
-  opal::Force wlf [3];                                              ///< tricycle gear
-  opal::Force wm;                                                   ///< wind induced moment
-  opal::Force yf;                                                   ///< turbulence force
+  // OPAL parameters
+	//----------------------------------------------------------
+  opal::Solid *Plane;     // Aircraft solid
+	opal::Solid *Ground;    // Aircraft ground
+  opal::Force lf;         ///< linear force
+  opal::Force ef;         ///< engine linear force
+  opal::Force ed;         ///< engine linear drag
+  opal::Force tf;         ///< torque
+  opal::Force glf;        ///< gear linear force
+  opal::Force gtf;        ///< gear torque
+  opal::Vec3r av;         ///< angular velocity
+  opal::Mass mm;          ///< total mass
+  opal::Force mf;         ///< mass linear force
+  opal::Force wlf [3];    ///< tricycle gear
+  opal::Force wm;         ///< wind induced moment
+  opal::Force yf;         ///< turbulence force
+	opal::Vec3r glv;				// Global linear velocity
+	CVector spd;            ///< speed
+	int	group;
 	//------------------------------------------------------------
 	float yawMine;
 	float rollMine;
@@ -710,9 +737,7 @@ public:
 private:
   CLogFile *log;
   ValGenerator tVAL;                                                   ///< Turbulence
-  float ground_friction;
   double Kb;                                                        ///< clamp rotation
-  double bagl;                                                      ///< aircraft AGL
 };
 
 

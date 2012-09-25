@@ -149,14 +149,14 @@ public:
 	void	GetJoystickName(int index, char *key, char *buf);
 	void	Refresh();
 	void	StoreAxe(char No,DWORD raw);
-	bool	HandleHat();
+	void	HandleHat();
 	//-------------------------------------------------------------------------
 	bool	HatUnmoved();
 	bool	NotNamed(char *n)   {return (strcmp(dName,n) != 0);}
 	void	SaveVal();
 	void	RemoveButton(CSimButton *btn);
 	void  StoreButton(int n,CSimButton *b);	
-
+	void	Reset();
   //-------------------------------------------------------------------------
 	inline char   *getDevName()				  {	return dName;}
 	inline void		 SwapMask()						{	msk = but;}
@@ -317,25 +317,30 @@ public:
   void            EndMark(int nx);
   void            NeutralMark(int nx,U_CHAR type);
 	//--------------------------------------------------------------------
-  void            Update();
+	void						Register(CObject *v);
+	void            Update();
 	void						DetectMove(JoyDEV * p);
 	void            CheckControl(Tag tag);
 	//--------------------------------------------------------------------
-	void						JoyConnectAll();
-	void						JoyDisconnect(U_INT m);
 	void						Reconnect(U_INT m);
 	//--------------------------------------------------------------------
   float           Neutral(float f, int nx);
   float           AxeVal(CSimAxe *pa);
 	float           RawVal(CSimAxe *pa);
 	bool						StartDetection(JoyDetectCB *F, Tag W);
-	//----Read values ------------------------------------------------------
-	void						Poll(EAllAxes a,float &v);
+	//--- AIRCRAFT INTERFACE -----------------------------------------------
+	void						SetNbEngines(CObject *obj,char n);
+  void            MapTo(CObject *obj,Tag gen, Tag usr);
+	void						JoyConnectAll(CObject *obj);
+	void						JoyDisconnect(CObject *obj,U_INT m);
+	void						Poll(CObject *obj,EAllAxes a,float &v);
+  void            SendGroupPMT(CObject *obj,U_CHAR nbu);
+  void            SendGroup(U_INT gr,Tag cmd);
+  void            ClearGroupPMT(CObject *obj);
 	//----------------------------------------------------------------------
 	JoyDEV         *Find(char *name);
 	JoyDEV         *GetJoystickNo(U_INT No);
   //------Remap a message to given tag -------------------------------------
-  void            MapTo(Tag gen, Tag usr);
   Tag             TagFrom(Tag gen);
   //------------------------------------------------------------------------
   CSimAxe *Axe(Tag tag)  {return GetAxe(tag);}
@@ -358,9 +363,6 @@ public:
   void            ReleaseAxe(CSimAxe *axn);
   void            SetInvert(EAllAxes tag,int p);
   int             GetInvert(EAllAxes tag);
-  void            SendGroupPMT(U_CHAR nbu);
-  void            SendGroup(U_INT gr,Tag cmd,U_CHAR nbu);
-  void            ClearGroupPMT();
   //------------------------------------------------------------------------
 	void						SaveOneButton   (CStreamFile &sf,CSimButton *sbt);
 	void            SaveButtonConfig(CStreamFile &sf,JoyDEV *jsd);
@@ -370,21 +372,23 @@ public:
   float           GetAttenuation(EAllAxes cmd);
   void            SetAttenuation(EAllAxes cmd,float atn);
   //------------------------------------------------------------------------
-  inline float    GetNulleArea()				{return nValue;}
-	inline void  		Modifier()						{modify = 1;}
-	inline char			GasDisconnected()		  {return (axeCNX & JS_THRO_BIT)?(0):(1);}
+  float			GetNulleArea()				{return nValue;}
+	void  		Modifier()						{modify = 1;}
+	char			GasDisconnected()		  {return (axeCNX & JS_THRO_BIT)?(0):(1);}
   //------------------------------------------------------------------------
 protected:
 	void					EnumSDL();
 	void          HandleButton(JoyDEV * jdv);
   //----ATTRIBUTES ----------------------------------------------------------
 private:
+	CObject *mveh;						// current aircraft
 	//-------------------------------------------------------------------------
 	U_INT		axeCNX;					// Connected axis
 	//-------------------------------------------------------------------------
 	char    modify;
   char		busy;		// Library used 0 = PU 1 = SDL
 	char		nDev;		// Number of devices
+	char    engNB;	// Number of engines
 	//--- HAT control -------------------------------------
 	char    uht;										// Hat used
 	char		jsh;										// Hat joystick

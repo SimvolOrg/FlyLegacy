@@ -164,8 +164,7 @@ static void msg_debug_send_cb (puObject* obj)
     ;
   }
   msg.receiver = 0;
-  Send_Message (&msg);
-
+	globals->pln->ReceiveMessage(&msg);
   // Synchronize fields with updated message contents
   msg_debug_sync ();
 }

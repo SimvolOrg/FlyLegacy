@@ -129,7 +129,9 @@ bool CFuiCkList::Verify()
   D2R2_ACTION &a	=  slot->Action();
 	U_INT     val		=  slot->GetVLID();
   //---Locate the panel -----------------------
-	panl  = globals->pit->GetPanelByTag(a.pnt);
+	//--------------------------------------------------
+  CCockpitManager *pit	= mveh->GetPIT();
+	panl  = pit->GetPanelByTag(a.pnt);
 	gage	= (panl)?(panl->GetGauge(a.ggt)):(0);
 	a.panl	= panl;
 	a.gage	= gage;

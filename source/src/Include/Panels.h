@@ -62,26 +62,25 @@ typedef struct {
 //==============================================================================
 //    Panel light
 //===============================================================================
-class CPanelLight : public CStreamObject {
+class CPanelLight : public CSubsystem {
 public:
-  CPanelLight (void);
-	CPanelLight(Tag t);
+  CPanelLight (CVehicleObject *veh);
+	CPanelLight(Tag t,CVehicleObject *veh);
  ~CPanelLight (void);
 
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
 
   // CPanelLight methods
-  Tag           GetId (void) { return id; }
   void          PrepareMsg (void);
   void          Update (float b);
   //-------------------------------------------------------------
-  inline void   SetBrightness(float b)  {bn =  b;}
-  inline float  GetBrightness ()        { return bn; }
-	inline void   Alight()  {glMaterialfv(GL_FRONT,GL_EMISSION,col);}
+  void   SetBrightness(float b)  {bn =  b;}
+  float  GetBrightness ()        { return bn; }
+	void   Alight()  {glMaterialfv(GL_FRONT,GL_EMISSION,col);}
+	void	 SetMVEH(CVehicleObject *veh)		{mveh = veh;}
   //-------------------------------------------------------------
 protected:
-  Tag           id;
   bool          ambientOverride;
   SMessage      msg;
   float         bn;
@@ -156,6 +155,7 @@ class CPanel : public CStreamObject {
 protected:
   Tag         id;
   char        filename[64];
+	char        idst[8];
 	//--- Pointers -----------------------------------------------------------
   CCockpitManager *pit;
 	CVehicleObject  *mveh;
@@ -281,9 +281,12 @@ public:
 	//------------------------------------------------------------------------------
   CGauge*				GetGauge(Tag id);
 	CPanelLight*	GetLight(Tag id);
+	//-----------------------------------------------------------------------------
+	CCockpitManager *GetPIT()				{return pit;}
   //-----------------------------------------------------------------------------
-  inline void ClearFocus()        {gFocus = 0; ca = 0;}
-  inline int  GetHeight()         {return y_isiz;}
+  void ClearFocus()					{gFocus = 0; ca = 0;}
+  int  GetHeight()					{return y_isiz;}
+	bool NoPanel()						{return (*filename == 0);}
   //----Scroll methods ----------------------------------------------------------
   void      ScrollUP (void);
   void      ScrollDN (void);
@@ -297,6 +300,7 @@ public:
 	float     GetPitch()						{return  pch;}
 	float			GetHeading()					{return hdg;}
 	//-----------------------------------------------------------------------------
+	bool			HasIdent(Tag t)				{return (id == t);}
 	Tag				NextPanelTag(char d)	{return pnls[d];}
 	CPanelLight* GetLight()				  {return plite;}
 	char*			GetName()							{return filename;}

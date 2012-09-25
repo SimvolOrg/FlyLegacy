@@ -265,7 +265,7 @@ CAileronControl::CAileronControl (void)
 //  Integrate pilot move and autopilot ?
 //---------------------------------------------------------------------------------
 void CAileronControl::TimeSlice (float dT,U_INT FrNo)			
-{ globals->jsm->Poll(JS_AILERON, data.raw);
+{ globals->jsm->Poll(mveh,JS_AILERON, data.raw);
   CAeroControl::TimeSlice(dT,FrNo);								
 }
 //===========================================================================
@@ -278,7 +278,7 @@ CElevatorControl::CElevatorControl (void)
 //  Set value from joystick
 //---------------------------------------------------------------------------------
 void CElevatorControl::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
-{ globals->jsm->Poll(JS_ELEVATOR,data.raw);
+{ globals->jsm->Poll(mveh,JS_ELEVATOR,data.raw);
   CAeroControl::TimeSlice(dT,FrNo);								
 }
 //================================================================================
@@ -333,7 +333,7 @@ void CRudderControl::Adjust()
 //            Rudder deflection versus banking
 //---------------------------------------------------------------------------------
 void CRudderControl::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
-{ globals->jsm->Poll(JS_RUDDER,data.raw);
+{ globals->jsm->Poll(mveh,JS_RUDDER,data.raw);
   //-----Adjust the value before scaling --------------------------
   if (macrd)  Adjust();
   CAeroControl::TimeSlice(dT,FrNo);								// JSDEV*
@@ -407,10 +407,11 @@ void CEngineControl::Monitor(Tag tag)
 //  For mono engine default unit is always 1
 //-------------------------------------------------------------------------
 bool CEngineControl::MsgForMe (SMessage *msg)
-{ bool idByType   = (msg->user.u.datatag == '$TYP');
+{ //bool me = (msg->group == 'neto') && (unId == 'neto');
+	//if (me) 
+	//int a = 0;
+	bool idByType   = (msg->user.u.datatag == '$TYP');
   bool matchGroup = (idByType)?(msg->group == type):(msg->group == unId);
-	//bool matchGroup = (msg->group == unId);
- // bool matchType  = (msg->user.u.hw == type);
   bool engnNull   = (msg->user.u.engine == 0);
   bool engnMatch  = (msg->user.u.engine == eNum);
   bool unitNull   = (msg->user.u.unit   == 0);
@@ -550,7 +551,7 @@ EMessageResult CPrimeControl::ReceiveMessage (SMessage *msg)
 CRotaryIgnitionSwitch::CRotaryIgnitionSwitch (void)
 { TypeIs (SUBSYSTEM_ROTARY_IGNITION_SWITCH);
   hwId = HW_SWITCH;
-  rot_pos = MAGNETO_SWITCH_OFF;
+	indx = MAGNETO_SWITCH_OFF;
   sAmp = 1;
 }
 //-------------------------------------------------------------------------
@@ -586,7 +587,7 @@ void CRotaryIgnitionSwitch::ReadFinished()
 //  Propagate to the engine with correct magneto setting
 //-------------------------------------------------------------------------
 EMessageResult CRotaryIgnitionSwitch::ReceiveMessage (SMessage *msg)
-{   int pos = rot_pos;
+{   //int pos = rot_pos;
     int msk = (active)?(ENGINE_STR_ALL):(0);
     switch (msg->id) {
         case MSG_GETDATA:
@@ -595,18 +596,18 @@ EMessageResult CRotaryIgnitionSwitch::ReceiveMessage (SMessage *msg)
 							msg->voidData = this;
 							return MSG_PROCESSED;
 						case 'indx':
-							{	if (msg->dataType == TYPE_INT)  msg->intData  = int (pos);
-								if (msg->dataType == TYPE_REAL) msg->realData = double(pos);
+							{	if (msg->dataType == TYPE_INT)  msg->intData  = indx;
+								if (msg->dataType == TYPE_REAL) msg->realData = double(indx);
 								return MSG_PROCESSED;
 							}
 					} 
       //----Message from gauge ------------------------------
         case MSG_SETDATA:
-          { rot_pos = (EMagnetoSwitch) msg->intData;
-            engm.intData = rignTAB[rot_pos] & msk;
-            Send_Message(&engm);
-            return MSG_PROCESSED;
-          }
+					indx = (EMagnetoSwitch) msg->index;
+          engm.intData = rignTAB[indx] & msk;
+          Send_Message(&engm);
+          return MSG_PROCESSED;
+          
     }
   //----Ignore the message ---------------------------------
   return MSG_IGNORED;
@@ -618,12 +619,12 @@ EMessageResult CRotaryIgnitionSwitch::ReceiveMessage (SMessage *msg)
 //-------------------------------------------------------------------------
 void CRotaryIgnitionSwitch::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
 { CEngineControl::TimeSlice(dT,FrNo);  
-	if (rot_pos != MAGNETO_SWITCH_START)	return;
+	if (indx != MAGNETO_SWITCH_START)			return;
   meng.intData = ENGINE_STR_ALL;        
   Send_Message(&meng);
 	if (meng.intData != 1)								return;
-	rot_pos = MAGNETO_SWITCH_BOTH;
-  engm.intData = rignTAB[rot_pos];
+	indx = MAGNETO_SWITCH_BOTH;
+	engm.intData = rignTAB[indx];
   Send_Message(&engm);
   return;
 }
@@ -632,7 +633,7 @@ void CRotaryIgnitionSwitch::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
 //------------------------------------------------------------------------
 void CRotaryIgnitionSwitch::Probe(CFuiCanva *cnv)
 {	CDependent::Probe(cnv,0);
-	cnv->AddText(1,1,"Position:%d",rot_pos);
+	cnv->AddText(1,1,"Position:%d",indx);
 	return;
 }
 //==============================================================================
@@ -663,6 +664,16 @@ void CMagnetoControl::ReadFinished()
 }
 //-------------------------------------------------------------------------
 //  Process Message
+//  Set messages is propagated to the corresponding engine
+//-------------------------------------------------------------------------
+void CMagnetoControl::ChangeState(int s)
+{	state = (s == 1);
+  engm.intData = mask[state];
+  Send_Message(&engm);
+	return;
+}
+//-------------------------------------------------------------------------
+//  Process Message
 //  Set messages are propagated to the corresponding engine
 //-------------------------------------------------------------------------
 EMessageResult CMagnetoControl::ReceiveMessage (SMessage *msg)
@@ -671,16 +682,18 @@ EMessageResult CMagnetoControl::ReceiveMessage (SMessage *msg)
       case MSG_GETDATA:
         switch (msg->user.u.datatag) {
         case 'st8t':
-            msg->intData = state;
-            msg->user.u.unit = uNum;
+            msg->intData			= state;
+            msg->user.u.unit	= uNum;
             return MSG_PROCESSED;
         }
   
       case MSG_SETDATA:
         switch (msg->user.u.datatag) {
           //-- Set State --(send to engine)----------
+					case 'indx':
           case 'st8t':
-              state = (msg->intData == 1);
+              state = msg->intData & 0x01;
+							indx	= msg->index;
               engm.intData = mask[state];
               Send_Message(&engm);
               return MSG_PROCESSED;
@@ -847,7 +860,7 @@ void CThrottleControl::ReadFinished()
 { CEngineControl::ReadFinished();
   //--- Map to joystick -----------------------
   Tag jt = JS_THROTTLE_0 + eNum;
-  globals->jsm->MapTo(jt,unId);
+  globals->jsm->MapTo(mveh,jt,unId);
   //--- Init engine message -------------------
   engm.dataType   = TYPE_REAL;
   engm.user.u.datatag = 'thro';     // Starter
@@ -1028,7 +1041,7 @@ int CMixtureControl::Read (SStream *stream, Tag tag)
 void CMixtureControl::ReadFinished()
 { CEngineControl::ReadFinished();
   Tag jt = JS_MIXTURE_0 + eNum;
-  globals->jsm->MapTo(jt,unId);
+  globals->jsm->MapTo(mveh,jt,unId);
   //--- Init engine message -------------------
   engm.dataType   = TYPE_REAL;
   engm.user.u.datatag = 'mixt';     // Starter
@@ -1148,7 +1161,7 @@ int CPropellerControl::Read (SStream *stream, Tag tag)
 void CPropellerControl::ReadFinished()
 { CEngineControl::ReadFinished();
   Tag jt = JS_PROP_0 + eNum;
-  globals->jsm->MapTo(jt,unId);
+  globals->jsm->MapTo(mveh,jt,unId);
   //--- Init engine message -------------------
   engm.dataType   = TYPE_REAL;
   engm.user.u.datatag = 'blad';     // blade tag
@@ -1925,13 +1938,21 @@ EMessageResult CBrakeControl::ReceiveMessage (SMessage *msg)
     return CDependent::ReceiveMessage (msg);
 }
 //----------------------------------------------------------------------
+//  Set force directly to brake
+//----------------------------------------------------------------------
+void CBrakeControl::Set(float P)
+{	Brake[BRAKE_LEFT] = P;
+	Brake[BRAKE_RITE] = P;
+	return;
+}
+//----------------------------------------------------------------------
 //  Time slice the brakes
 //----------------------------------------------------------------------
 void  CBrakeControl::TimeSlice (float dT,U_INT FrNo)		// 
 { CDependent::TimeSlice (dT, FrNo);
 	//--- poll any connected axis ----------------------
-	globals->jsm->Poll(JS_LEFT_TOE,Brake[BRAKE_LEFT]);
-	globals->jsm->Poll(JS_RITE_TOE,Brake[BRAKE_RITE]);
+	globals->jsm->Poll(mveh,JS_LEFT_TOE,Brake[BRAKE_LEFT]);
+	globals->jsm->Poll(mveh,JS_RITE_TOE,Brake[BRAKE_RITE]);
 	//--- Poll keyboard brake keys --------------------
 	br_timer += dT;
 //TRACE("BRAKE TIME SLICE	HOLD= %d", Hold);  
@@ -1943,6 +1964,8 @@ void  CBrakeControl::TimeSlice (float dT,U_INT FrNo)		//
 	//--- Set force on each brake ------------------------
 	Force[BRAKE_LEFT] = (Park)?(1):(Brake[BRAKE_LEFT]);
 	Force[BRAKE_RITE] = (Park)?(1):(Brake[BRAKE_RITE]);
+	//----------------------------------------------------
+	if (Park) globals->fui->DrawNoticeToUser("Parking Brake",1);
   return;
 }
 //----------------------------------------------------------------------
@@ -1977,14 +2000,14 @@ void CElevatorTrimControl::TimeSlice (float dT,U_INT FrNo)
 { CAeroControl::TimeSlice(dT,FrNo);								// JSDEV*
   timer -= dT;
 	if (timer < 0)	{timer += dT; ok ^= 1;}
-	globals->jsm->Poll(JS_TRIM,data.raw);
+	globals->jsm->Poll(mveh,JS_TRIM,data.raw);
 	return;
 }
 //-----------------------------------------------------------------------
 //	All parameters are read, remap joystick
 //-----------------------------------------------------------------------
 void	CElevatorTrimControl::ReadFinished()
-{	globals->jsm->MapTo(JS_TRIM,unId);
+{	globals->jsm->MapTo(mveh,JS_TRIM,unId);
 }
 //-----------------------------------------------------------------------
 //	Slow down increment
@@ -2482,6 +2505,13 @@ CSpeedRegulator::CSpeedRegulator()
 	msg.user.u.hw				= 0;
 	state								= 0;						// Inactive
 }
+//-----------------------------------------------------
+//  Destroy it
+//------------------------------------------------------
+CSpeedRegulator::~CSpeedRegulator()
+{	if (sPID)	delete sPID;
+	if (gPID)	delete gPID;
+}
 //--------------------------------------------------------------------------------
 //	Get throttle adress
 //	NOTE: When  throttle for engine does not exist, messages are redirected
@@ -2565,7 +2595,8 @@ void CSpeedRegulator::PrepareMsg(CVehicleObject *veh)
 void CSpeedRegulator::SetOFF()
 {	state = 0;
 	steer = 0;
-	jsm->JoyConnectAll();
+	jsm->JoyConnectAll(mveh);
+	mveh->SpeedRegulation(0);
 }
 //--------------------------------------------------------------------------------
 //	Connect the regulator
@@ -2576,7 +2607,7 @@ void CSpeedRegulator::SetOFF()
 //--------------------------------------------------------------------------------
 bool CSpeedRegulator::SetON(U_INT CTRL)
 {	//--- Disconnect surface control and engine controls -------
-  globals->jsm->JoyDisconnect(CTRL + JS_GROUPBIT);
+  globals->jsm->JoyDisconnect(mveh,CTRL + JS_GROUPBIT);
 	speed	=  mveh->GetPreCalculedKIAS();
 	state	= 1;
 	steer = 0;
@@ -2616,11 +2647,12 @@ void CSpeedRegulator::TimeSlice(float dT, U_INT FrNo)
 	aSPD	= mveh->GetPreCalculedKIAS();
 	cor		= (aSPD - speed);
 	val		= sPID->Update(dT,cor,0);
+	float D = float(val);
 	//--- Send to all controllers ------------
-	thro[0]->Target(float(val));
-	thro[1]->Target(float(val));
-	thro[2]->Target(float(val));
-	thro[3]->Target(float(val));
+	thro[0]->Target(D);
+	thro[1]->Target(D);
+	thro[2]->Target(D);
+	thro[3]->Target(D);
 	//--- Steering mode ----------------------
 	switch (steer)	{
 			case 0:
@@ -2650,6 +2682,7 @@ double CSpeedRegulator::TaxiSpeed()
 //--------------------------------------------------------------------------------
 void CSpeedRegulator::SteerTo(SPosition &P)
 {	if (0 == state)			return;
+	mveh->SpeedRegulation(0);
 	tgp   = P;
 	steer = 1;
 	gPID->Init();
@@ -2662,6 +2695,7 @@ void CSpeedRegulator::RouteTo(NavRoute *R)
 {	SPosition *pos	= R->NextPosition();
 	if (0 == pos)				return;
 	if (0 == state)			return;
+	mveh->SpeedRegulation(1);
 	route	= R;
 	steer	= 2;
 	tgp		= *pos;
@@ -2671,7 +2705,8 @@ void CSpeedRegulator::RouteTo(NavRoute *R)
 //	Steer OFF
 //--------------------------------------------------------------------------------
 void CSpeedRegulator::SteerOFF()
-{	steer = 0;
+{	sgear->Deflect(0);
+	steer = 0;
 }
 //--------------------------------------------------------------------
 //  Edit regulator data
@@ -2683,7 +2718,5 @@ void CSpeedRegulator::Probe(CFuiCanva *cnv)
 	cnv->AddText(1,1,"ERR=%.6lf",aErr);
 	cnv->AddText(1,1,"COR=%.6lf",cor);
 	cnv->AddText(1,1,"Speed %.6f",speed);
-	
 }
-
 //=============================END OF FILE ===================================================================

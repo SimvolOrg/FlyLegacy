@@ -186,7 +186,7 @@ void InitGlobeTileTable ()
 //-----------------------------------------------------------------------------
 //  JS:  Find the global tile number by dichotomy
 //-----------------------------------------------------------------------------
-static int GetVerticalGlobeTileNumber(float lat)
+int GetVerticalGlobeTileNumber(float lat)
 { int num   = 64;                         // Start in middle
   int inc   = 32;                         // First inc
   // Convert latitude absolute value to degrees

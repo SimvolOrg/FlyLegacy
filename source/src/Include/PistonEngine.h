@@ -84,7 +84,7 @@ protected:
   double calorific_value_fuel; ///< W/Kg (approximate)
   double Cp_air;               ///< J/KgK
   double Cp_fuel;              ///< J/KgK
-  double ENGINE_THRUST_COEFF;  ///< used to adjust the overall computation
+  double EngTCoef;						///< used to adjust the overall computation
 
   //
   // Configuration

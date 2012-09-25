@@ -207,6 +207,7 @@ public:
 	CGauge(CPanel *mp); 
   virtual ~CGauge (void);
 	void	Init();
+  void  SetPanel(CPanel *p);
 	//----------------------------------------------------------
   // CStreamObject methods
 	virtual int		Read (SStream *stream, Tag tag);
@@ -265,32 +266,32 @@ public:
 	//--------------------------------------------------------------
 	virtual U_CHAR      State()								{return 0;}
   //--------------------------------------------------------------
-  inline  void        Disarm()              {arm = 0;}
-  inline  bool        HasIdent(Tag id)      {return (id == unId);}
-  inline  bool        HasMask()             {return (mask != 0);}
-  inline  bool        LfHit(int x,int y)    {return (x < cx);}
-  inline  bool        UpHit(int x,int y)    {return (y < cy);}
+  void        Disarm()              {arm = 0;}
+  bool        HasIdent(Tag id)      {return (id == unId);}
+  bool        HasMask()             {return (mask != 0);}
+  bool        LfHit(int x,int y)    {return (x < cx);}
+  bool        UpHit(int x,int y)    {return (y < cy);}
+
   //-------------------------------------------------------------
-  inline  Tag         Cursor()              {return cursTag;}
-  inline  char*       hlpTex()              {return help;}
+  Tag         Cursor()              {return cursTag;}
+  char*       hlpTex()              {return help;}
   //-------------------------------------------------------------
-  inline  char        IsTextured()          {return Prop.Has(ROT_TEXTURE);}
-	inline  bool				IsHit(short x,short y,HIT_GAUGE &sh) 
+  char        IsTextured()          {return Prop.Has(ROT_TEXTURE);}
+	bool				IsHit(short x,short y,HIT_GAUGE &sh) 
 	{return (this->*vHit)(x,y,sh);}
   //--------------------------------------------------------------
-	inline  int					GetXPos()							{return tour[NW_PIX].x;}
-	inline  int					GetYPos()							{return tour[NW_PIX].y;}
-  inline  short       GetDisXOrg()          {return xOrg;}
-  inline  short       GetDisYOrg()          {return yOrg;}
-  inline  TC_VTAB    *GetVTAB()             {return quad;}
-  inline  TC_VTAB    *GetPROJ()             {return quad;}
-  inline  TC_VTAB    *GetCADR()             {return quad;}
-  inline  CPanel     *GetPanel()            {return panel;}
-	inline  U_SHORT		  ofsVBO()							{return vOfs;}
+	int					GetXPos()							{return tour[NW_PIX].x;}
+	int					GetYPos()							{return tour[NW_PIX].y;}
+  short       GetDisXOrg()          {return xOrg;}
+  short       GetDisYOrg()          {return yOrg;}
+  TC_VTAB    *GetVTAB()             {return quad;}
+  TC_VTAB    *GetPROJ()             {return quad;}
+  TC_VTAB    *GetCADR()             {return quad;}
+  CPanel     *GetPanel()            {return panel;}
+	U_SHORT		  ofsVBO()							{return vOfs;}
   //--------------------------------------------------------------
-  inline  void        SetPanel(CPanel *p)   {panel = p;}
-  inline  char       *GetUniqueID(void)     {return unid_s;}
-  inline  Tag         GetID()               {return unId;}
+  char       *GetUniqueID(void)     {return unid_s;}
+  Tag         GetID()               {return unId;}
   //--------------------------------------------------------------
   bool                SetLight();
   //-----------mouse functions -----------------------------------
@@ -313,6 +314,7 @@ public:
   int     ActionFromTag(Tag tag);
   void    ClearDisplay();
 	U_SHORT	FixRoom(U_SHORT n);
+	CVehicleObject *GetMVEH()	{return mveh;}
 	//---------------------------------------------------------------
 	bool		RectHit(short x,short y,HIT_GAUGE &sh);
 	bool		TourHit(short x,short y,HIT_GAUGE &hg);
@@ -353,7 +355,8 @@ protected:
   CFmtxMap     *gmap;       // Mapping table
   CPanelLight  *plit;       // Panel light
   CMaskImage   *mask;       // Light mask
-  float         amlit;      // ambient light 
+  float         amlit;      // ambient light
+	EClickResult	cret;				// Click return
   //-----------------------------------------------------------
   Tag       cursTag;    // Unique tag for custom cursor
   char      help[64];   // help data
@@ -364,12 +367,16 @@ protected:
   //-----Help buffer from FuiManager --------------------------
   char     *hbuf;       // Buffer for help (from fui manager help window)
   //-----------------------------------------------------------
+	CVehicleObject *mveh;	// Mother vehicle
   CPanel   *panel;      // Mother panel
   SSurface *surf;       // Drawing surface for the gauge
   float     value;      // Gauge functional value
-  float     vReal;      // Gauge real value
   //-------Sound buffer stack --------------------------------
-  CSoundBUF *sbuf[2];    // Sound buffer  
+  CSoundBUF *sbuf[2];    // Sound buffer
+	//--- Public real value ------------------------------------
+public:
+  float     vReal;      // Gauge real value
+
 };
 
 //================================================================================

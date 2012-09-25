@@ -315,7 +315,6 @@ CCamera::CCamera (void)
 	//--------------------------------------------------
   rmin  = globals->camRange;
   rmax  = 5000;
-  dmin  = globals->nearP + 10;
 	//--------------------------------------------------
 	trak	  = 0;		// No tracker
 	twin		= 0;		// No window
@@ -349,7 +348,7 @@ CCamera::CCamera (void)
   orient.x = orient.y = orient.z = 0;
   nearP    = globals->nearP;
 	farP		 = globals->afarP;
-  SetMinAGL();
+  
   // Define a clamp value just less than 90 degrees
   clamp = DegToRad (89.99999f);
 }
@@ -368,6 +367,7 @@ void CCamera::SetCameraParameters(double fv,double rt)
 	fov   = fv;
 	//--- Compute tangent of near section ---------
 	tgf   = tan(DegToRad(fv * 0.5));
+	SetMinAGL();
 	return;
 }
 //-------------------------------------------------------------------------
@@ -587,8 +587,7 @@ void CCamera::SetAbove(SPosition pos,int mr, int cr)
   Up.y  = 1;
   Up.z  = 0;
   //----FOV is 40°----------------------------------
-  fov = 40.0f;
-	tgf = tan(DegToRad(fov * 0.5));
+	SetCameraParameters(40,ratio);
 	//--- Range parameters ---------------------------
 	rmax = mr;
 	SetRange(cr);
@@ -609,26 +608,19 @@ void CCamera::ChangeViewPort()
 // Compute minimum above ground level
 //-------------------------------------------------------------------------
 void CCamera::SetMinAGL()
-{ double rad  = DegToRad(double(fov) * 0.5);
-  minAGL      = dmin * tan(rad);
-  return;
+{ double p		= tgf * nearP;
+	double B		= atan2(p,(range - nearP));
+	minAGL			= range * sin(B);
 }
-//-------------------------------------------------------------------------
-//  Update camera height
-//  -offset are in feet from aircraft posiiton
-//-------------------------------------------------------------------------
-bool CCamera::GoodHeight (double aphi)
-{ double rh =   range * sin (aphi);       // Relative height in feet
-  double gh =   globals->geop.alt + rh;   // Absolute elevation
-  return (gh >  minAGL);
-}
+
 //-------------------------------------------------------------------------
 //  Adjust camera range if permitted
 //-------------------------------------------------------------------------
 void CCamera::RangeAdjust(double lg)
 { double nr = lg * 0.75;           // New range
-  if (nr < dmin )   return;
-  range = nr;
+  if (nr < rmin )   return;
+	range	= nr;
+	SetMinAGL();
   return;
 }
 
@@ -649,7 +641,7 @@ void CCamera::ZoomRatioIn (void)
 { if (Prof.Not(CAM_MAY_ZOOM))	return;
 	char txt[256];
   fov -= 0.25f;
-  if (fov < 25.0f) fov = 25.0f;
+  if (fov < 15.0f) fov = 15.0f;
   int fv = int(fov);
   SetMinAGL();
   _snprintf(txt,255,"FOV: %02d °",fv);
@@ -780,6 +772,7 @@ double CCamera::SetRange(double nr)
   if (nr < rmin)  nr = rmin;
   range = nr;
   double dr = rmax - rmin;
+	SetMinAGL();
   return (nr / dr);
 }
 //-------------------------------------------------------------------------
@@ -797,6 +790,7 @@ void CCamera::Reset()
 { range   = globals->camRange;      // xx feet initial
   fov = globals->fovX;
   Rotate(0);
+	SetMinAGL();
   return;
 }
 //-------------------------------------------------------------------------
@@ -829,8 +823,7 @@ void CCamera::StartShoot(float dT)
   gluLookAt (offset.x, offset.y, offset.z,
              tgp.x, tgp.y, tgp.z,
              Up.x,   Up.y,  Up.z);
-  // Initialize aspect ratio and FOV
-  //======================================================================
+  //---  Start picking mode ---------------------------------------------
   glMatrixMode (GL_PROJECTION);
   glLoadIdentity ();
 	StartPicking();
@@ -1001,10 +994,11 @@ void CCamera::RockArround (SPosition tpos, SVector tori,float dT)
 //  -offset are in feet from aircraft position
 //-------------------------------------------------------------------------
 void CCamera::UpdateCameraPosition(SPosition &wpos)
-{	camPos			= AddToPositionInFeet(wpos,offset,globals->exf);
-	double	alt = globals->tcm->GetGroundAltitude() + minAGL;
+{	camPos				= AddToPositionInFeet(wpos,offset,globals->exf);
+	double	lim		= globals->tcm->GetGroundAltitude() + minAGL;				//minAGL;
   //---Update phi if camera is too low -------------------------
-  if (camPos.alt < alt)  phi += DegToRad(0.25f);
+  if (camPos.alt < lim)		phi += DegToRad(0.25f);
+	return;
 }
 //-------------------------------------------------------------------------
 // Pan Left - rotate clockwise
@@ -1028,7 +1022,7 @@ void CCamera::RoundUp (void)
 //-------------------------------------------------------------------------
 void CCamera::RoundDown (void)
 { double ang = phi - DegToRad (double(0.25));
-  if (GoodHeight(ang)) phi = ang;
+	phi = ang;
   return;
 }
 //----------------------------------------------------------------------
@@ -1082,17 +1076,7 @@ void CCamera::SetTracker(Tracker *t, CFuiWindow *w )
 	twin	= w;}
 //------------------------------------------------------------------------
 void CCamera::Print (FILE *f)
-{/*
-  fprintf (f, "CCamera : \n");
-  fprintf (f, "  Horizontal FOV:   %f deg\n", fov);
-  fprintf (f, "  Pitch (deg)   :   %f\n", RadToDeg(orient.x));
-  fprintf (f, "  Bank (deg)    :   %f\n", RadToDeg(orient.y));
-  fprintf (f, "  Heading (deg) :   %f\n", RadToDeg(orient.z));
-  fprintf (f, "  Range         :   %f (%f/%f)\n", range, rmin, rmax);
-  fprintf (f, "  Frustum :\n");
-  for (int i=0; i<6; i++) {
-  }
-	*/
+{
 }
 
 /*==================================================================================
@@ -1140,7 +1124,7 @@ CCameraCockpit::CCameraCockpit (CVehicleObject *mv)
 //--------------------------------------------------------------------------
 void CCameraCockpit::Init(CVehicleObject *mv)
 {	mveh = mv;
-	pit		= &mveh->pit;			// Cockpit manager
+	if (mveh->IsUserPlan())	pit		= &mveh->pit;			// Cockpit manager
 	return;
 }
 //--------------------------------------------------------------------------
@@ -1167,7 +1151,7 @@ int CCameraCockpit::Read (SStream *stream, Tag tag)
     return TAG_READ;
 
   case 'panl':
-    { CamDecoder(stream,mveh);		  }
+    { if (mveh->IsUserPlan())	CamDecoder(stream,mveh);		  }
     return TAG_READ;
   }
   WARNINGLOG ("CCockpitPanel::Read : Unknown tag %s", TagToString(tag));
@@ -1429,6 +1413,7 @@ void  CCameraSpot::SetCameraPosition (const float &pitchInRads, const float &hea
 { theta = -headingInRads;
   phi   =  pitchInRads;
   range =  distanceInFeet;
+	SetMinAGL();
 }
 //-------------------------------------------------------------------------
 // Pixel move
@@ -1500,7 +1485,7 @@ void CCameraObserver::PanUp (void)
 //-------------------------------------------------------------------------------
 void CCameraObserver::PanDown (void)
 { double ang = phi - DegToRad (0.25f);
-  if (GoodHeight(ang)) phi = ang;
+	phi = ang;
   return;	}
 //-------------------------------------------------------------------------------
 //  Set camera position
@@ -1510,6 +1495,7 @@ void  CCameraObserver::SetCameraPosition (const float &pitchInRads, const float 
   theta = -headingInRads;
   phi   = -pitchInRads;
   range = distanceInFeet;
+	SetMinAGL();
 }
 //===================================================================================
 // Flyby Camera
@@ -1875,8 +1861,8 @@ void CCameraOrbit::Rotate(double deg)
 //
 //-----------------------------------------------------------------------
 void CCameraOrbit::PanDown (void)
-{ double ang = phi - ONE_DEGRE_RADIAN;
-  if (GoodHeight(ang))  phi = ang;
+{ double ang = phi - DegToRad (double(0.25));
+  phi = ang;
   return;
 }
 //==============================================================================
@@ -1898,8 +1884,7 @@ CCameraRunway::CCameraRunway (void)
   Up.y  = 1;
   Up.z  = 0;
   //----FOV is 40°----------------------------------
-  fov = 40.0f;
-	tgf = tan(DegToRad(fov * 0.5));
+	SetCameraParameters(40,ratio);
 }
 //-------------------------------------------------------------------------------
 //  Update camera position relative to 0rigin
@@ -2607,14 +2592,31 @@ CCameraManager::~CCameraManager (void)
 //  Read cockpit camera panels 
 //-----------------------------------------------------------------
 void CCameraManager::ReadPanelCamera(CVehicleObject *veh,char * fn)
-{	mveh	= veh;  
-	SStream s(this, "WORLD",fn);
+{	mveh	= veh;
+	if (mveh->IsUserPlan())	SStream s(this, "WORLD",fn);
+}
+//-----------------------------------------------------------------
+//  Set minimum range for camera
+//-----------------------------------------------------------------
+void	CCameraManager::SetMinimumRange(double m)
+{	std::map<Tag,CCamera*>::iterator i;
+	for (i=came.begin(); i!=came.end(); i++)
+	{	CCamera *cam = (*i).second;
+		cam->MinRange(m);
+		
+	}
+	return;
 }
 //-----------------------------------------------------------------
 //  Read parameters
 //-----------------------------------------------------------------
 int CCameraManager::Read (SStream *stream, Tag tag)
-{ switch (tag) {
+{ double pm;
+	switch (tag) {
+	case 'mdis':
+			ReadDouble(&pm, stream);
+			SetMinimumRange(pm);
+			return TAG_READ;
   case 'came':
     // Camera definition
     {
@@ -2898,8 +2900,9 @@ void CCameraManager::KbEvent(Tag id)
 //  Key for Cockpit manager
 //-------------------------------------------------------------------------
 bool CCameraManager::KeyCameraCockpitEvent(int id)
-{ CCockpitManager *pit = globals->pit;
-  if (pit)  pit->KbEvent(id);
+{ CVehicleObject  *veh = globals->pln;
+	CCockpitManager *pit = (veh)?(veh->GetPIT()):(0);
+	if (pit)  pit->KbEvent(id);
   return true;
 }
 //---------------------------------------------------------------

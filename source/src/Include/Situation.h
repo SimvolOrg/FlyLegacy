@@ -115,7 +115,7 @@ protected:
   float   lRate;    // Lateral motion
   float   aRate;    // Altitude rate in feet/sec
 	//--- Aircraft ---------------------------------------------------
-  CVehicleObject *veh;
+  CAirplane *mveh;
 };
 //==========================================================================================
 //	SItuation States
@@ -125,6 +125,26 @@ protected:
 #define SIT_TELEP02			(2)
 #define SIT_TELEP03			(3)
 //==========================================================================================
+//  Animated aircrafts:  
+//==========================================================================================
+class CAnimatedPlane: public CExecutable {
+protected:
+	//--- Attributes ------------------------------
+	std::vector<CAirplane*> plnQ;				
+public:
+	//--- Methods ---------------------------------
+	CAnimatedPlane();
+  virtual ~CAnimatedPlane();
+	//----------------------------------------------
+	void  AddPlane(CAirplane* p);
+	void	Clear();
+	void	BackToSimulation(char grn);
+	//----------------------------------------------
+	int	 TimeSlice(float dT,U_INT frame);
+	//----------------------------------------------
+	void  DrawExternal();
+};
+//==========================================================================================
 //  Global situation
 //==========================================================================================
 class CSituation : public CStreamObject {
@@ -133,6 +153,8 @@ protected:
 	U_INT						State;						// Current state
 	U_INT           FrameNo;					// Current frame
   float           dTime;            // Delta time
+	//--- Animated planes -------------------------------
+	CAnimatedPlane	planes;						// List of animated planes				
 	//--- Teleport control ------------------------------
 	double          ang;
 	int 						wait;							// Wait timer
@@ -152,7 +174,7 @@ public:
   //----- CSituation methods---------------------------
   void              OpenSitFile        (void);
   void              AdjustCameras      (void);
-	void							ReloadAircraft();
+	void							Reload();
   CAirplane        *GetAnAircraft      ();
   CSimulatedObject *GetASimulated      ();
   void              SetAircraftFrom    (char *nfo);
@@ -180,6 +202,9 @@ public:
   //----------------------------------------------------
 	void							EnterTeleport(SPosition *P, SVector *O);
 	void							ShortTeleport(SPosition *P, SVector *O);
+	//-------------------------------------------------------
+	void							AddPlane(CAirplane *p); 
+	void							BackToSimulation(char g) {planes.BackToSimulation(g);}
 };
 
 //=================================END OF FILE ==============================================

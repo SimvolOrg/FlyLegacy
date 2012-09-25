@@ -108,7 +108,6 @@ protected:
   double    cMass;                    //  Mass repartition coefficient
   double    Radius;                   // In meters (rim + tire)
   //--------------------------------------------------------------------
-	double		kstr;											// Steering coefficient from PHY
 	double    speed;										// Rolling speed
   double    banking;
   float     bad_pres_resis;

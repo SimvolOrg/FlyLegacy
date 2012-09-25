@@ -348,7 +348,8 @@ typedef enum {
   MONITOR_EQ,
   MONITOR_NE,
   MONITOR_XEED,
-  MONITOR_BETW
+  MONITOR_BETW,
+	MONITOR_AS,
 } EMonitorMode;
 //------------------------------------------------------------------------------
 // How to compute monitored values in CGenericMonitor
@@ -613,7 +614,9 @@ public:
   //----- JSDEV* Message preparation -----------------------------------------------------------
   virtual	void  PrepareMsg(CVehicleObject *veh) {return; }	// Prepare all messages
 			    bool  IsReceiver(SMessage *msg);						      // Is this the receiver
- //--------------------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------
+	EMessageResult Send_Message (SMessage *msg);
+	//--------------------------------------------------------------------------------------------
   virtual EMessageResult  ReceiveMessage (SMessage *msg);
   virtual void  SetGroup (int group) { gNum = group; }
   virtual	void  TimeSlice (float dT,U_INT FrNo);				    // JSDEV*   new TimeSlice
@@ -858,6 +861,7 @@ public:
   bool			    dflact;			// Initial aggregate (Or => 0, AND => 1)
   bool          active;			// Activity state (true=active, false=inactive)
   char          state;			// State controller value
+	char					oper;				// Operator
   //---indicators --------------------------------------------
   char          splay;      // Sound is playing
   char          nDPND;      // Number of dependents
@@ -1013,7 +1017,6 @@ struct SGearData {
   char susp_name[56];
   char long_[64];                    ///< -- Longitudinal Crash Part Name --
   CDamageModel oy_N;                 ///< -- Longitudinal Damage Entry --
-	float kstr;												 //	Steering coefficient form PHY
   float stbl;                        ///< -- steering factor from data table
   float btbl;                        ///< -- braking factor from data table
   float powL;                        ///< -- Impact Power Limit (ft-lb/sec) (weight * velocity) --
@@ -1064,7 +1067,6 @@ struct SGearData {
     strcpy (susp_name,  "");
     strcpy (long_,      "");         // -- Longitudinal Crash Part Name --
     // oy_N'                         // -- Longitudinal Damage Entry --
-		kstr							= 1;					 // Steering coefficient form PHY
     stbl              = 1.0f;        // -- steering factor from data table
     btbl              = 1.0f;        // -- braking factor from data table
     powL              = 0.0f;        // -- Impact Power Limit (ft-lb/sec) (weight * velocity) --

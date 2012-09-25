@@ -110,7 +110,8 @@ public:
   virtual void    StopShoot();
   virtual void    GetLookatPoint (SVector &v);
   virtual Tag     GetCameraType (void) { return CAMERA_INVALID; }
-  // Camera FOV manipulation methods.
+  //--- Camera manipulation methods------------------------------------
+	virtual void  MinRange(double m)	{rmin = m; range =m;}
   virtual void  ZoomRatioIn (void);
   virtual void  ZoomRatioOut (void);
   virtual void  RangeIn (void);
@@ -146,6 +147,7 @@ public:
 	//-------Camera Manual Handling -------------------------------------
 	virtual bool	NotManual()			{return true;}
 	virtual bool	ToggleMode()		{return false;}	// Toggle mode
+	virtual bool  NoHatSupport()	{return true;}
 	//------------------------------------------------------------
 	virtual void  ActivateView (float A) {}
   virtual void  HeadPitchUp (void) {}
@@ -182,13 +184,15 @@ public:
   void    Save(CAMERA_CTX &ctx);
   void    Restore(CAMERA_CTX &ctx);
   void    SetMinAGL();
-  bool    GoodHeight (double aphi);
-  double  SetRange(double d);
+	void		NoseUp();
+	void		NoseDown();
+	double  SetRange(double d);
   void    SetZoom(float z);
   void    RangeAdjust(double lg);
   void    ShowRange();
 	void		RockArround (SPosition tpos, SVector tori,float dT);
 	void		UpdateCameraPosition(SPosition &wpos);
+	//------------------------------------------------------------
 	//--- Set perspective parameters -----------------------------
 	void    SetCameraParameters(double fov, double ratio);
 	void		SetReferential(SPosition &tg);
@@ -247,7 +251,6 @@ protected:
 	char			extcm;			// Type of camera (1= outside
 	//--------Camera parameters ----------------------------------
   double    range;      // Range
-  double    dmin;       // Minimum distance
   double    rmin, rmax; // Min/max range
   double    clamp;      // Vertical rotation angle clamp
   double    minAGL;     // Minimum above ground levl
@@ -276,6 +279,8 @@ protected:
   double    nearP;      // Near plan
 	double    ffac;				// Flare factor
 	double		fpp;				// Feet per pixel
+	double		hpan;				// Height of near plan
+	double    mphi;				// Minimum phi
   //----Locking ------------------------------------------------
 	char			pick;				// Picking indicator
 	char      move;				// move indicator
@@ -350,7 +355,9 @@ public:
   {
     strncpy (name, "Cockpit Camera", maxLength);
   }
-
+	//-----------------------------------------------
+	void	MinRange(double m)	{;}		// Ignore 
+	//-----------------------------------------------
   void  PanLeft (void);
   void  PanRight (void);
   void  PanUp (void);
@@ -377,6 +384,7 @@ public:
   //-----------------------------------------------
 	void      GetOFS(SVector &v)    {v = Ofs;}
   SVector  &GetSeat()             {return Seat;}
+	bool			NoHatSupport()	{return false;}
   //-----------------------------------------------
 protected:
 	CVehicleObject							 *mveh;						//  Mother Vehicle
@@ -483,6 +491,8 @@ public:
   {
     strncpy (name, "Tower Camera", maxLength);
   }
+	//----------------------------------------------------------------------
+	void	MinRange(double m)	{;}			// Ignore
 	//----------------------------------------------------------------------
 	CVector		ComputeOffset(SPosition tgt);
   void  ZoomRatioIn (void);
@@ -779,6 +789,7 @@ public:
   CCamera  *GetCamera(Tag id);
   CCameraCockpit *GetCockpitCamera();
 	void			RestoreCamera(CAMERA_CTX &ctx);
+	void			SetMinimumRange(double m);
 	//----------------------------------------------------------------------------
 	CRabbitCamera *SetRabbitCamera(CAMERA_CTX &ctx,U_CHAR opt);
   //----------------------------------------------------------------------------

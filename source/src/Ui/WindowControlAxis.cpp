@@ -100,11 +100,14 @@ void  WhenHatMove(JoyDEV *jsd, Tag id)
 CFuiAxis::CFuiAxis(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,0,0,0)
 { char err[128];
+	U_INT	black  = MakeRGBA(0,0,0,255);
   sprintf(err,"Incorrect TEMPLATE file: %s",filename);
-  all = 1;
-  jsd = 0;
-	jsp	= 0;
-  jsm = globals->jsm;
+  all		= 1;
+  jsd		= 0;
+	jsp		= 0;
+  jsm		= globals->jsm;
+	mveh	= globals->pln;
+	gear	= mveh->GearConnexion();
   //---Locate components -----------------------------
   asgWIN    = (CFuiButton*)   GetComponent('defa');
   if (0 == asgWIN )  gtfo(err);
@@ -129,6 +132,8 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
 	//--- Group box tune -------------------------------
 	grpFOR		= (CFuiGroupBox*) GetComponent('tune');
   if (0 == grpFOR)   gtfo(err);
+	grpFOR->SetColour(black);
+	grpFOR->SetText("FORCE");
 	minFOR    = (CFuiButton*)   GetComponent('opr-');
   if (0 == minFOR )  gtfo(err);
 	plsFOR    = (CFuiButton*)   GetComponent('opr+');
@@ -145,6 +150,11 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
   if (0 == grpHAT)   gtfo(err);
 	chkHAT    = (CFuiCheckbox*)grpHAT->GetComponent('useH');
 	if (0 == chkHAT)   gtfo(err);
+	//--- Gear connector -------------------------------
+	strBOX		= (CFuiCheckbox*)GetComponent('gear');
+	if (0 == strBOX )  gtfo(err);
+	//strBOX->SetColour(black);
+	strBOX->SetState(gear);
 	//--------------------------------------------------
   axeBOX.SetParameters(this,'list',0,0);
 	butBOX.SetParameters(this,'butL',0,0);
@@ -364,7 +374,14 @@ void CFuiAxis::ButtonClick(JoyDEV *jsn, int nbut)
 {	if (jsp != jsn)	ButtonList(jsn->getDevName());
 	butBOX.GoToItem(nbut);
 }
-
+//--------------------------------------------------------------------------
+//  Swap gear connection
+//--------------------------------------------------------------------------
+void CFuiAxis::SwapGear()
+{	gear ^= 1;
+	mveh->GearConnector(gear);
+	return;
+}
 //--------------------------------------------------------------------------
 //  Draw the window 
 //--------------------------------------------------------------------------
@@ -436,6 +453,10 @@ void  CFuiAxis::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 			//--- Change Hat usage --------------------------
 			case 'useH':
 				jsm->UseHat(jsp,char(itm));
+				return;
+			//--- Chnge gear connecion ----------------------
+			case 'gear':
+				SwapGear();
 				return;
   }
   return ;

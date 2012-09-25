@@ -79,6 +79,8 @@ public:
   void  CopyFrom(SStream *s);
   void  CopyFrom(CGauge *mg,C1NeedleGauge &src);
 	void	SetPanel(CPanel *mp);
+	//---------------------------------------------
+	void	SetMVEH(CVehicleObject *v)	{mveh = v;}
   //---------------------------------------------
   ECursorResult MouseMoved (int x, int y);
   //---------------------------------------------
@@ -350,9 +352,9 @@ public:
 	virtual void					DrawAmbient();
   virtual ECursorResult MouseMoved (int x, int y);
   virtual EClickResult  MouseClick (int x, int y, int buttons);
+	virtual EClickResult	StopClick();
   //-----------------------------------------------------
 protected:
-  void  DoState(int snd);
   void  DecState ();
   void  IncState ();
   void  ChangeState();

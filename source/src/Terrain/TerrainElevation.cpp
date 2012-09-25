@@ -1663,8 +1663,8 @@ void CoastLine::CoastVertexDistance(short px,short py,SVector &sw)
 { short  end = TC_END_PIX_DET;
   double vx = sw.x + ((px * dLon) / TC_MAX_PIX_DET);
   double vy = sw.y + ((py * dLat) / TC_MAX_PIX_DET);
-  double ax = LongitudeDifference(vx,tcm->GetPlaneLongitude()) / 60;
-  double ay = (vy - tcm->GetPlaneLatitude()) / 60;
+  double ax = LongitudeDifference(vx,tcm->GetCenterLongitude()) / 60;
+  double ay = (vy - tcm->GetCenterLatitude()) / 60;
   short  wd = tcm->GetVmapWD();
   short  ht = tcm->GetVmapHT();
   pPix      = cPix;

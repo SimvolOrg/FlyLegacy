@@ -49,7 +49,7 @@ CFuelSubsystem::CFuelSubsystem (void)
   int _val = 0;
   int t = 0;
   GetIniVar("TRACE","FuelSystem",&t);
-  Tr = char(t);
+  Tr	= char(t);
 }
 //---------------------------------------------------------------------
 //  Destructor
@@ -57,6 +57,14 @@ CFuelSubsystem::CFuelSubsystem (void)
 CFuelSubsystem::~CFuelSubsystem (void)
 { //---Clear linked cells ---------------------------
   piped.clear();
+}
+//---------------------------------------------------------------------
+//  Read parameters
+//---------------------------------------------------------------------
+int	CFuelSubsystem::ReadRef(char op,SStream *stf)
+{	oper = op;
+	ReadInt(&refer,stf);
+	return TAG_READ;
 }
 //---------------------------------------------------------------------
 //  Read parameters
@@ -78,6 +86,30 @@ int CFuelSubsystem::Read (SStream *stream, Tag tag)
       piped[t] = 0;                       // JSDEV
 			return TAG_READ;
     }
+		//--- State condition ----------------------------
+	case '.LT.':
+	  // Monitor for less than the comparison value
+	  return ReadRef(MONITOR_LT,stream);
+
+  case '.GT.':
+    // Monitor for greater than the comparison value
+    return ReadRef(MONITOR_GT,stream);
+
+  case '.GE.':
+    // Monitor for greater than or equal to the comparison value
+    return ReadRef(MONITOR_GE,stream);
+
+  case '.LE.':
+    // Monitor for less than or equal to the comparison value
+    return ReadRef(MONITOR_LE,stream);
+
+  case '.EQ.':
+	  // Monitor for equal
+	  return ReadRef(MONITOR_EQ,stream);
+
+  case '.NE.':
+	  // Monitor for not equal
+	  return ReadRef(MONITOR_NE,stream);
   }
 
   // If tag has not been processed, pass it to the parent
@@ -102,10 +134,34 @@ void CFuelSubsystem::TraceLink(CFuelSubsystem *fs)
 }
 //----------------------------------------------------------------------------
 //	Poll the dependent for update
+//	The state is computed according to the operator (if any)
 //----------------------------------------------------------------------------
 void CFuelSubsystem::Poll()
 { Send_Message(&mpol);
-  state = mpol.intData;
+	int val = mpol.index;
+	switch(oper)	{
+	case MONITOR_AS:
+		state = val;
+		return;
+	case MONITOR_LT:
+		state = (val < refer);
+		return;
+	case MONITOR_GT:
+		state = (val > refer);
+		return;
+	case MONITOR_GE:
+		state = (val >= refer);
+		return;
+	case MONITOR_LE:
+		state = (val <= refer);
+		return;
+	case MONITOR_EQ:
+		state = (val == refer);
+		return;
+	case MONITOR_NE:
+		state = (val != refer);
+		return;
+	}
   return;
 }
 //----------------------------------------------------------------------------

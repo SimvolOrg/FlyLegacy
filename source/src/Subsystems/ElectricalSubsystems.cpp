@@ -742,7 +742,7 @@ EMessageResult CLightSettingState::ReceiveMessage (SMessage *msg)
 CSwitchSet::CSwitchSet (void)
 { TypeIs (SUBSYSTEM_SWITCH_SET);
   hwId = HW_SWITCH;
-  Indx = 0;
+  indx = 0;
   sync = false;
   zBase     = 1;
   onState   = 1;
@@ -775,7 +775,7 @@ int CSwitchSet::Read (SStream *stream, Tag tag)
     return TAG_READ;
   //---Default position --------------
   case 'dflt':
-    ReadInt(&Indx,stream);
+    ReadInt(&indx,stream);
     return TAG_READ;
 
   case 'sync':
@@ -821,7 +821,7 @@ int CSwitchSet::Read (SStream *stream, Tag tag)
 void CSwitchSet::ReadFinished()
 { CDependent::ReadFinished();
   state = 0;
-  Indx -= zBase;
+  indx -= zBase;
   return;
 }
 //----------------------------------------------------------------------------
@@ -850,8 +850,8 @@ void CSwitchSet::ChangePosition(int inx)
 { //--- check position -----------------------
   int pos = inx - zBase;                    // Corrected position
   if (pos <  0)                 return;     // Ignore
-  if (pos == Indx)              return;     // Same position
-  Indx    = pos;
+  if (pos == indx)              return;     // Same position
+  indx    = pos;
   //--- Update state according to index ---------
   active  = (pos != 0);
   state   = active;
@@ -903,7 +903,7 @@ EMessageResult CSwitchSet::ReceiveMessage (SMessage *msg)
 void CSwitchSet::Probe(CFuiCanva *cnv)
 { CDependent::Probe(cnv,0);
   char edt[16];
-  _snprintf(edt,16,"Indx= %d",Indx);
+  _snprintf(edt,16,"Indx= %d",indx);
   cnv->AddText( 1,edt,1);
   return;
 }

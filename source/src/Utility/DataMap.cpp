@@ -125,13 +125,13 @@ float CSlotPolynomial::Lookup (float x)
     cx *= x;
   }
 
-/*
-  for (i=1; i<n; i++) {if (c[i] != 0) {y += c[i] * x; }
-    x *= x;     // JS: this is a bug because x = x^2 then x^4 then x^16, etc
-                // While it should be y = a + bx + cx^2 + dx^3...etc;
+//--- JS Rewrite this ---------------------------------------
+//  for (i=1; i<n; i++) {if (c[i] != 0) {y += c[i] * x; }
+//    x *= x;     // This is a bug because x = x^2 then x^4 then x^16, etc
+                  // While it should be y = a + bx + cx^2 + dx^3...etc;
                 
-  }
-  */
+//  }
+
   return y;
 }
 //==============================================================================
@@ -700,10 +700,9 @@ float CFmt3Map::Lookup(float x)
     // Iterate to next element in the map
     i++;
     }
-      // tmp : no interpolation
+  // tmp : no interpolation
   i--;
   float y = (*i).poly.Lookup (x);
-
   return y;
 }
 //================END OF FILE ====================================================

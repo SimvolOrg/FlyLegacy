@@ -695,8 +695,7 @@ void CFuiManager::Draw ()
 	//------------------------------------------------------
 	if (notex)	notex->DrawIt();
   //--- Draw Radio communications ------------------------
-  CFuiRadioBand *rdb = globals->rdb;
-  if (rdb)  rdb->Draw();
+  globals->rdb.Draw();
   ////------------------------------------------------------
   ExitDrawing();
   return;
@@ -766,8 +765,12 @@ void CFuiManager::PilotToUser()
 /// Display Help for gauge
 //------------------------------------------------------------------------------
 void CFuiManager::DrawHelp (float time,int x, int y)
-{ CPanel* pan = globals->pit->GetCurrentPanel();
-  if (0 == pan) return;
+{ //--------------------------------------------------
+	CVehicleObject *veh		= globals->pln;
+  CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
+	if (0 == pit)		return;
+	CPanel* pan =		pit->GetCurrentPanel();
+  if (0 == pan)		return;
 	help->DrawTheText();
   int     sh  = globals->cScreen->Height;
   int     ph  = pan->GetHeight();

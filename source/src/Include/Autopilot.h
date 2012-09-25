@@ -272,6 +272,7 @@ protected:
 	//--- Autothrottle parameters -----------------------------------------
 	double     cRAT;							// Current rate to maintain
 	double     xRAT;							// Cruise rate
+	double     sAPR;							// Approach speed
 	double		 fSPD;							// Final approach speed
 	double		 aCUT;							// Altitude to cut throttle
 	double		 aFSP;							// Altitude for final speed
@@ -332,7 +333,6 @@ protected:
   SMessage    mNAV;           // NAV gauge message
   SMessage    mALT;           // Altitude message
   SMessage    mVSI;           // VSI message
-	SMessage    mREG;						// Speed regulator
   //---METHODS---------------------------------------------------------
 public:
   AutoPilot (void);
@@ -393,6 +393,8 @@ public:
   int             PowerLost();
   void            Disengage(char op);
 	double					SelectSpeed();
+	void						MoreSpeed();
+	void						LessSpeed();
 	bool						MissLanding();
 	void						LandingOption();
   bool            AbortLanding(char k);

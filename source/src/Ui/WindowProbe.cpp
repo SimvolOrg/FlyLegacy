@@ -39,6 +39,7 @@
 char *prob_OP1[] = {"Base",0};
 char *prob_OP2[] = {"Base",0};
 //---------------------------------------------------------------------------------------
+extern	CNullSubsystem nsub;
 //=======================================================================================
 //  CFuiProb:  Display susbsystem property
 //=======================================================================================
@@ -135,8 +136,8 @@ void CFuiProbe::Init()
   //-----Init Popup ----------------------------------------
   pob1.pop->CreatePage(&pob1.men,pob1.lst);
   pob2.pop->CreatePage(&pob2.men,pob2.lst);
-  pob1.sub = veh->GetNullSubsystem();
-  pob2.sub = veh->GetNullSubsystem();
+  pob1.sub = &nsub;
+  pob2.sub = &nsub;
   ViewOption(pob1,0);
   ViewOption(pob2,0);
   return;
@@ -415,11 +416,13 @@ CFuiStat::CFuiStat(Tag idn, const char *filename)
 	AddChild('info',info,"",FUI_TRANSPARENT,wit);
   //--------Display subsystems ------------------------------
   CFuiWindow::ReadFinished();
+	//--------------------------------------------------
+	CVehicleObject *veh		= globals->pln;
+  pit	= (veh)?(veh->GetPIT()):(0);
   tcm = globals->tcm;
   txw = globals->txw;
   m3d = globals->m3d;
   dbc = globals->dbc;
-  pit = globals->pit;
 }
 //---------------------------------------------------------------
 //  Destructor

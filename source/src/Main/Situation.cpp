@@ -31,7 +31,7 @@
  */
 
 /*!
-      In CSituation::Read I changed the TYPE_FLY_AIRPLANE case
+      In CSituation::Read I changed the TYPE_USER_AIRCRAFT case
       from CAirplane to CUFOObject new object for developping purposes.
       We'd revert it when aerodynamics and 3d rendering will be settled
  */
@@ -62,27 +62,6 @@
 #include "../Plugin/Plugin.h"
 using namespace std;
 //=====================================================================================
-//    GLOBAL function to get the day model 
-//=====================================================================================
-//--------------------------------------------------------------------------------
-//  Return model to draw
-//--------------------------------------------------------------------------------
-CModelACM *GetDayModelACM()
-{ CVehicleObject   *veh = globals->pln;
-  if (0 == veh)     return 0;
-  CAnimatedModel *lod = veh->GetLOD();
-  if (0 == lod)     return 0;
-  return lod->GetDayModel();
-}
-//--------------------------------------------------------------------------------
-//  Return model spatial extension (in feet)
-//--------------------------------------------------------------------------------
-void GetExtensionACM(SVector &v)
-{ CModelACM  *mod = GetDayModelACM();
-  if (mod)  mod->GetExtension(v);
-  return;
-}
-//=====================================================================================
 //    GLOBAL CLEANUP
 //=====================================================================================
 void GlobalsClean (void)
@@ -104,40 +83,19 @@ CDispatcher::CDispatcher()
 //-------------------------------------------------------------------
 //	Enter executable as head of list
 //-------------------------------------------------------------------
-void CDispatcher::PutHead(CExecutable *ex, char p)
-{	CExecutable *hd = slot[p].obj;
-	slot[p].obj	= ex;
-	ex->SetNext(hd);
+void CDispatcher::Store(CExecutable *ex, char p)
+{	slot[p].obj	= ex;
 	slot[p].exec	= 1;
 	slot[p].draw	= 1;
 }
 //-------------------------------------------------------------------
 //	Remove object
 //-------------------------------------------------------------------
-void CDispatcher::Remove(CExecutable *ex, char p)
-{	CExecutable *act = 0;
-	CExecutable *prv = 0;
-	CExecutable *nxt = ex->NextExec();
-  for (act = slot[p].obj; act != 0; act = act->NextExec())
-	{ if (act != ex) {prv = act; continue; }
-		if (prv)				prv->SetNext(nxt);
-		else						slot[p].obj = nxt;
-		return;
-	}
+void CDispatcher::Remove(char p)
+{	slot[p].obj		= 0;
+	slot[p].draw	= 0;
 	return;
 }
-//-------------------------------------------------------------------
-//	Enter executable as last of list
-//-------------------------------------------------------------------
-void CDispatcher::PutLast(CExecutable *ex, char p)
-{	CExecutable *pv = slot[p].obj;
-  if (0 == pv)	return Enter(ex,p,1,1);
-	while (pv->HasNext())	pv = pv->NextExec();
-	pv->SetNext(ex);
-	slot[p].exec	= 1;
-	slot[p].draw	= 1;
-}
-
 //-------------------------------------------------------------------
 //	Execute
 //-------------------------------------------------------------------
@@ -148,6 +106,7 @@ void	CDispatcher::TimeSlice(float dT, U_INT frame)
 			if (slot[k].lock)				continue;
 			//--- Execute the list of similar objects ----------
 			slot[k].obj->TimeSlice(dT,frame);
+			//--- Check if last execution ----------------------
 			if (slot[k].exec == 0)	return;			
 		}
 	return;
@@ -166,10 +125,11 @@ void	CDispatcher::Draw(char p)
 //	Draw external start from PLANE priority up to SDK included
 //-------------------------------------------------------------------
 void CDispatcher::DrawExternal()
-{	for (int k=PRIO_PLANE; k<= PRIO_OTHERS; k++)
+{	for (int k=PRIO_UPLANE; k<= PRIO_OTHERS; k++)
 		{	CExecutable *ex = slot[k].obj;
 			if (0 == ex)							continue;
 			if (slot[k].draw == 0)		continue;
+			if (slot[k].exec == 0)		return;
 			slot[k].obj->DrawExternal();			
 		}
 	return;
@@ -336,7 +296,7 @@ bool sKeySSTP(int id, int code, int mod)
 // CSlewManager manages the user vehicle position when it is in slew mode
 //=====================================================================================
 CSlewManager::CSlewManager (void)
-{ veh   = 0;
+{ mveh   = 0;
   aRate = 0.0f;
   fRate = lRate = 0.0f;
   mode  = SLEW_STOP;
@@ -387,8 +347,8 @@ void CSlewManager::Disable (void)
 //------------------------------------------------------------------------
 bool CSlewManager::Swap()
 { if (mode == SLEW_RCAM)	return ZeroRate(); 
-	veh = globals->pln;
-  if (0 == veh)						return true;
+	mveh = globals->pln;
+  if (0 == mveh)					return true;
   switch (mode) {
     //--- Inactive => Moving ---
     case SLEW_STOP:
@@ -417,13 +377,20 @@ void CSlewManager::SetSlew()
 }
 //------------------------------------------------------------------------
 //  Start slew mode
+//	NOTE:	while moving in slew mode, opal simulation is suspended
+//				for all aircrafts.
+//				When normal mode is resumed, the position must be set before
+//				next simulation step, otherwise, opal generates a collision(!!!)
+//				at this next step.
 //------------------------------------------------------------------------
 void CSlewManager::StartSlew()
-{ grnd = veh->WheelsAreOnGround();
+{ grnd = mveh->WheelsAreOnGround();
   mode = SLEW_MOVE;
   ZeroRate();
-  vopt = globals->pln->GetOPT(VEH_D_CRASH);
-  globals->pln->RazOPT(VEH_D_CRASH);
+  vopt = mveh->GetOPT(VEH_D_CRASH);
+  mveh->RazOPT(VEH_D_CRASH);
+	globals->Disp.ExecOFF(PRIO_ATMOSPHERE);
+	//TRACE("STart slew at geop.alt=%.4lf",globals->geop.alt);
   return;
 }
 //------------------------------------------------------------------------
@@ -444,15 +411,18 @@ void CSlewManager::StartMode(CAMERA_CTX *ctx)
 void CSlewManager::StopSlew()
 {	ZeroRate();
 	if (globals->aPROF.Has(PROF_EDITOR))	return;
-  veh = globals->pln;
-  if (0 == veh)													return;
+  mveh = globals->pln;
+  if (0 == mveh)												return;
   //---------------------------------------------
-	SVector ori = veh->GetOrientation();
-	veh->SetObjectOrientation(ori);
-	veh->SetPhysicalOrientation(ori);
-	if (grnd)	veh->RestOnGround();
-  globals->pln->SetOPT(vopt);
+	SVector ori = mveh->GetOrientation();
+	mveh->SetObjectOrientation(ori);
+	mveh->SetPhysicalOrientation(ori);
+  mveh->SetOPT(vopt);
   mode = SLEW_STOP;
+	//TRACE("STOP slew at geop.alt=%.4lf",globals->geop.alt);
+	//mveh->SetObjectPosition(globals->geop);
+	mveh->SetGeop(globals->geop);
+	globals->sit->BackToSimulation(grnd);
   return;
 }
 //------------------------------------------------------------------------
@@ -475,13 +445,13 @@ bool CSlewManager::Reset()
 //  Check that we are above ground anyway
 //------------------------------------------------------------------------
 void CSlewManager::SetAltitude(SPosition *p)
-{ double grd = globals->tcm->GetGroundAltitude();
+{ double grn = globals->tcm->GetGroundAltitude();
   double alt = p->alt;
-  double agl = veh->GetPositionAGL();
+  double agl = mveh->GetMinimumBodyAGL();
 	//--- Check if bottom is above ground ----------
-  if ((alt - agl) > grd) return;
+  if ((alt - agl) > grn) return;
   //---Must follow ground even when lower ------
-	p->alt = grd + agl; 
+	p->alt = grn + agl; 
 	grnd = 1;
   return;
 }
@@ -499,7 +469,7 @@ void CSlewManager::NormalMove(float dT)
   pos.lon -= ((sin(dir.z) * fRate) + (sin(dir.z + HALF_PI) * lRate)) * dT;
   pos.lon = WrapLongitude (pos.lon);
   SetAltitude(&pos);
-  veh->SetObjectPosition (pos);
+  mveh->SetObjectPosition (pos);
   return;
 }
 //------------------------------------------------------------------------
@@ -526,8 +496,8 @@ void CSlewManager::RabbitMove(float dT)
 //  Update aircraft position
 //------------------------------------------------------------------------
 int CSlewManager::TimeSlice(float dT,U_INT f)
-{	veh = globals->pln;
-	if (0 == veh)		return 0;
+{	mveh = globals->pln;
+	if (0 == mveh)		return 0;
   switch (mode) {
     case SLEW_STOP:
         break;
@@ -544,7 +514,7 @@ int CSlewManager::TimeSlice(float dT,U_INT f)
 				break;
     //---Aircraft is leveling --------------------------
     case SLEW_LEVL:
-        SetLevel(veh);
+        SetLevel(mveh);
 				break;
   }
 	return (globals->tcm->Teleporting())?(0):(1);
@@ -555,7 +525,6 @@ int CSlewManager::TimeSlice(float dT,U_INT f)
 void CSlewManager::SetLevel(CVehicleObject *user)
 { int level = 0;
   CAirplane *pln = globals->pln;
-  if (0 == pln)   return;
   //-----Adjust pitch ---------------------------------
   CVector ori = globals->iang;
   float dx = abs(0 - ori.x);
@@ -573,8 +542,10 @@ void CSlewManager::SetLevel(CVehicleObject *user)
   if (2 != level)   return;
   //-------------------------------------------------
   if (call)  pln->EndLevelling();
+	//else       pln->SetObjectPosition(pos);
   mode   = pmde;          // Restore previous mode
   //-------------------------------------------------
+	globals->sit->BackToSimulation(call);
   return;
 }
 //------------------------------------------------------------------------
@@ -583,6 +554,7 @@ void CSlewManager::SetLevel(CVehicleObject *user)
 //------------------------------------------------------------------------
 void CSlewManager::Level(char opt)
 { if (SLEW_LEVL == mode)    return; // Already set
+	globals->Disp.ExecOFF(PRIO_ATMOSPHERE);
   call  = opt;                      // Save option
   pmde  = mode;                     // Previous mode
   mode  = SLEW_LEVL;                // New mode
@@ -653,15 +625,17 @@ CSituation::CSituation()
 //  Open situation file
 //-------------------------------------------------------------------------
 void CSituation::OpenSitFile()
-{ SStream s(this,globals->sitFilename);
+{ globals->Disp.ExecOFF(PRIO_ATMOSPHERE);
+	SStream s(this,globals->sitFilename);
 	if (!s.ok)	gtfo ("file %s not found", s.filename);
   return;
 }
 //-------------------------------------------------------------------------
 //  Reload situation
 //-------------------------------------------------------------------------
-void CSituation::ReloadAircraft()
+void CSituation::Reload()
 {	ClearUserVehicle();
+	planes.Clear();
 	globals->ccm->NoCamera();
 	InitialProfile();
 	OpenSitFile();
@@ -727,56 +701,68 @@ int CSituation::Read (SStream *stream, Tag tag)
       ReadString (s, 80, stream);
       Tag type = StringToTag (s);
       switch (type) {
-
+				//--- Simulated object -------------------------------------------
         case TYPE_FLY_SIMULATEDOBJECT:
           { TRACE(".. Type is FLY_SIMULATEDOBJECT");
+						if (globals->pln)	gtfo("More than 1 user aircraft in sit file");
             CSimulatedObject *sobj = GetASimulated();
             sVeh = sobj;
             //---Continue reading on behalf of the CVehicleObject --------
             ReadFrom (sobj, stream);
             return TAG_READ;
           }
-        case TYPE_FLY_AIRPLANE:
-          { TRACE(".. Type is FLY_AIRPLANE");
+				//--- User aircraft with a cockpit --------------------------------
+        case TYPE_USER_AIRCRAFT:
+          { TRACE(".. Type is TYPE_USER_AIRCRAFT");
             // sdk: prepare plugin dlls = DLLInstantiate
             if (globals->plugins_num) globals->plugins->On_Instantiate (0,0,NULL);
             // 122809
             CAirplane *plan = GetAnAircraft();
 						sVeh     = plan;
-            //---Continue reading on behalf of the CVehicleObject --------
-            ReadFrom (plan, stream);
             TRACE("FLY_AIRPLANE all read");
+					  ReadFrom (plan, stream);
             return TAG_READ;
           }
+				//--- Aircraft for AI system -------------------------------------
+				
+				case TYPE_ANIM_AIRCRAFT:
+					{	TRACE(".. Type is TYPE_ANIM_AIRCRAFT");
+						CAirplane *plan = new COPALObject (TYPE_ANIM_AIRCRAFT);
+						ReadFrom (plan, stream);
+						return TAG_READ;
+					}
+			
+				//--- Helicopter -------------------------------------------------
         case TYPE_FLY_HELICOPTER:
           { // Instantiate new CHelicopterObject
             TRACE(".. Type is FLY_HELICOPTER");
             CHelicopterObject *heli = new CHelicopterObject ();
             ReadFrom (heli, stream);
             return TAG_READ;
-         }
-       
+					}
+				
+				default: break;
       }
-      rc = TAG_READ;
-    }
-    break;
-
-  default:
-    WARNINGLOG ("CSituation::Read : Unknown tag <%s>", TagToString(tag));
-  }
-
-  return rc;
+		}
+  default:	break;
+    
+	}
+	WARNINGLOG ("CSituation::Read : Unknown tag <%s>", TagToString(tag));
+	ReadFinished();
+  return TAG_EXIT;
 }
 //---------------------------------------------------------------------------------
 //  Set a new plane with the NFO file
-//  NOTE: user entry must be free
+//  NOTE: 
 //    Some cameras are distance adjusted according to aircraft dimensions
 //---------------------------------------------------------------------------------
 void CSituation::SetAircraftFrom(char *nfo)
 { if (globals->pln)             return;
+	SPosition	pos =	globals->geop;		// Preserve actual position
   //---Set aircraft from nfo ---------------------
   CVehicleObject *veh  = GetAnAircraft();
-  veh->StoreNFO(nfo);
+	veh->StoreOrgPosition(pos);
+	veh->StoreNFO(nfo);
   veh->ReadFinished();
   AdjustCameras();
   return;
@@ -794,54 +780,37 @@ CSimulatedObject* CSituation::GetASimulated (void)
 //---------------------------------------------------------------------------------
 CAirplane* CSituation::GetAnAircraft (void)
 { CAirplane *plan = NULL;
-  char buffer_ [128] = {"ufo"};
+  char buf[128] = {""};
 
-  if (IsSectionHere ("PHYSICS")) {
-    GetIniString ("PHYSICS", "aircraftPhysics", buffer_, 128);
-
-    if (!strcmp (buffer_, "ufo")) {
-      // tmp : use CUFOObject instead of CAirplane
-      // for simplified aerodynamics and 3d rendering
-      plan = (CUFOObject *) new CUFOObject (); // 
-    } 
-    else if (!strcmp (buffer_, "aero-opal")) {
-      // tmp : use COPALObject instead of CAirplane
-      //MEMORY_LEAK_MARKER ("OPALObject start")
-      TRACE("Generate COPALObject");
-      plan = new COPALObject (); // 
-      //MEMORY_LEAK_MARKER ("OPALObject end")
-    } 
-    else if (!strcmp (buffer_, "normal")) {
-      // Instantiate new CAirplane
-      plan = new CAirplane (); // 
-    } 
-    else { // default
-      // tmp : use CUFOObject instead of CAirplane
-      strcpy (buffer_, "\0");
-      TRACE("Generate CUFOObject");
-      plan = (CUFOObject *) new CUFOObject (); // 
-    }
-  }
-  else { // default
-     // tmp : use CUFOObject instead of CAirplane
-     strcpy (buffer_, "\0");
-     plan = (CUFOObject *) new CUFOObject (); // 
-  }
+  GetIniString ("PHYSICS", "aircraftPhysics", buf, 128);
+	//--- Get UFO aircraft --------------------------
+  if (0 == strcmp (buf, "ufo")) 
+	{ TRACE("Generate CUFOObject");
+    plan = new CUFOObject(TYPE_USER_AIRCRAFT); //
+		return plan;
+  } 
+		//--- Get normal aircraft ------------------------
+  TRACE("Generate COPALObject");
+  plan =  new COPALObject(TYPE_USER_AIRCRAFT); //
+	//---Continue reading on behalf of the CVehicleObject --------
   return plan;
 }
 //---------------------------------------------------------------------------------
 //  All parameters are read
 //---------------------------------------------------------------------------------
 void CSituation::ReadFinished (void)
-{ 
-  // Initialize magnetic model date to the start date of the situation
+{ // Initialize magnetic model date to the start date of the situation
   SDateTime dt = globals->tim->GetLocalDateTime ();
   CMagneticModel::Instance().Init (dt.date);
-  AdjustCameras();
   // sdk:save a pointer to 'user' as the first item in the sdk SFlyObjectRef list
   //if (uVeh) sdk_flyobject_list.InsertUserInFirstPosition (uVeh);
   TRACE("CSituation::ReadFinished");
-	globals->tcm->CheckTeleport();
+	//--- Load aircraft at position ----------------------
+	CAirplane *pln = globals->pln;
+	if (0 == pln)	gtfo("No User Aircraft in sit file");
+	SPosition *pos = pln->GetAdPosition();
+	CVector    ori = pln->GetOrientation();
+	ShortTeleport(pos, &ori);
 }
 //---------------------------------------------------------------------------
 // The Prepare method is called after loading of the situation, but
@@ -866,8 +835,19 @@ void CSituation::Prepare (void)
 
   // sdk: prepare plugin dlls = DLLInstantiate //
   globals->plugins->On_Link_DLLSystems (0,0,NULL);// 
-	//--- Call for dispatcher declaration ----------------
+	//--- Set initial state -------------------------
   
+	return; 
+}
+//---------------------------------------------------------------------------------
+//  Add an aircraft
+//	Enter in dispatcher
+//---------------------------------------------------------------------------------
+void CSituation::AddPlane(CAirplane *p)
+{	//--- Animated aircraft -----------------------------------------
+	if (!p->IsUserPlan())	return	planes.AddPlane(p);
+	globals->Disp.Store(p, PRIO_UPLANE);
+	globals->pln	= p;
 }
 //---------------------------------------------------------------------------------
 //  Write file
@@ -920,7 +900,7 @@ void CSituation::ClearUserVehicle()
   globals->dang.x = RadToDeg(nul.x);
   globals->dang.y = RadToDeg(nul.y);
   globals->dang.z = RadToDeg(nul.z);
-  globals->jsm->ClearGroupPMT();
+  globals->jsm->ClearGroupPMT(pln);
   //--- Stop engines --------------------------------------
   pln->eng.CutAllEngines();
   delete pln;
@@ -995,9 +975,12 @@ void CSituation::DrawNormal()
   // Check for an OpenGL error
   // CHECK_OPENGL_ERROR
 }
+
 //----------------------------------------------------------------------------
 // Enter in teleport mode
 //	for a given position P at orientation O
+//	NOTE: During teleport, opal simulation is suspended until destination
+//				Terrain is stable enough to support the aircraft.
 //----------------------------------------------------------------------------
 void CSituation::EnterTeleport(SPosition *P, SVector *O)
 {	contx.prof	= PROF_TELEPORT;
@@ -1009,9 +992,11 @@ void CSituation::EnterTeleport(SPosition *P, SVector *O)
 	P->alt			= 0;
 	globals->geop	= *P;			// Target position
 	TRACE("TELEPORT to lon=%lf lat=%lf alt=%lf",P->lon,P->lat,P->alt);
+	//-- TODO: InitState (cut engine, gear down, etc) ----
+	
+	globals->pln->InitState();
 	//--- prevent aircraft time slice and drawing ---
-	globals->Disp.ExecLOK(PRIO_PLANE);
-	globals->Disp.DrawOFF(PRIO_PLANE);
+	globals->Disp.ExecOFF(PRIO_ATMOSPHERE);
 	//--- Set camera to look up sky -----------------
 	rcam->SetAngle(30,20);
 	rcam->SetRange(200);
@@ -1034,8 +1019,6 @@ void CSituation::TeleportS1()
 	bool ok = globals->tcm->TerrainStable(1);
 	if (!ok)			return DrawNormal();
 	//-- OK terrain ready at destination --------------
-	globals->Disp.ExecULK(PRIO_PLANE);		// Allow time slice
-	globals->Disp.DrawON (PRIO_PLANE);		// Allow drawing
 	globals->fui->ResetFont();
 	//--- Restore vehicle position ----
 	State = SIT_NORMAL;
@@ -1043,7 +1026,7 @@ void CSituation::TeleportS1()
 	SPosition P = globals->geop;
 	TRACE("STABLE at lon=%lf lat=%lf alt=%lf",P.lon,P.lat,P.alt);
 	rcam			= 0;
-	if (sVeh) sVeh->RestOnGround();
+	planes.BackToSimulation(1);
 	DrawNormal();
 	return;
 }
@@ -1061,15 +1044,91 @@ void CSituation::ShortTeleport(SPosition *P, SVector *O)
 // Teleport Step 01:  Wait for some time slice. Set camera to look down
 //----------------------------------------------------------------------------
 void CSituation::TeleportS2()
-{	bool ok = globals->tcm->TerrainStable(1);
+{	globals->Disp.ExecOFF(PRIO_ATMOSPHERE);
+	bool ok = globals->tcm->TerrainStable(1);
 	if (!ok)					return	DrawNormal();
 	State = SIT_NORMAL;
 	if (0 == sVeh)		return	DrawNormal();
-  sVeh->SetObjectPosition(contx.pos);
+	//--- Place aircraft on ground --------------
+
+	sVeh->SetObjectPosition(contx.pos);
 	sVeh->SetObjectOrientation(contx.ori);
 	sVeh->SetPhysicalOrientation(contx.ori);
-	sVeh->RestOnGround();
+	planes.BackToSimulation(1);
 	return DrawNormal();
+}
+//=====================================================================================
+//   Animated planes
+//=====================================================================================
+CAnimatedPlane::CAnimatedPlane()
+{	globals->Disp.Store(this,PRIO_APLANE);
+}
+//---------------------------------------------------------------------
+//	Destroy it
+//---------------------------------------------------------------------
+CAnimatedPlane::~CAnimatedPlane()
+{	Clear();
+}
+//---------------------------------------------------------------------
+//	Delete all planes
+//---------------------------------------------------------------------
+void CAnimatedPlane::Clear()
+{	for (U_INT k=0; k<plnQ.size(); k++)	delete plnQ[k];
+	plnQ.clear();
+}
+//---------------------------------------------------------------------
+//	Add a plane
+//---------------------------------------------------------------------
+void	CAnimatedPlane::AddPlane(CAirplane *p)
+{	plnQ.push_back(p);
+	return;
+}
+//---------------------------------------------------------------------
+//	TimeSlice
+//	NOTE:  TimeSLice is prohibited from execution when 
+//		-SlewManager is ON
+//		-Teleport (short or long) is ON
+//---------------------------------------------------------------------
+int CAnimatedPlane::TimeSlice(float dT,U_INT frame)
+{	for (U_INT k=0; k< plnQ.size(); k++)
+	{	CAirplane *pln = plnQ[k];
+		pln->SetRelativePosition();
+		pln->TimeSlice(dT,frame);
+	}
+	if (dT > globals->TimLim)				return	1; // fix to avoid aerodynamics errors when fps are low (related to fps limiter)
+	//--- Call the physical simulation step ------
+	bool ok = globals->opal_sim->simulate (dT);
+	//--- Update all data ------------------------
+	globals->pln->UpdateData(dT);
+	for (U_INT k=0; k<plnQ.size(); k++) plnQ[k]->UpdateData(dT);
+	
+	return 1;
+}
+//---------------------------------------------------------------------
+//	Draw external
+//---------------------------------------------------------------------
+void CAnimatedPlane::DrawExternal()
+{	for (U_INT k=0; k< plnQ.size(); k++)
+	{	CAirplane *p = plnQ[k];
+		//--- Translate to aircraft position -----------
+		p->DrawAnimated();
+	}
+}
+//---------------------------------------------------------------------
+//	Back to simulation after any slew, teleport, etc
+//---------------------------------------------------------------------
+void CAnimatedPlane::BackToSimulation(char grn)
+{	CAirplane *pln = globals->pln;
+	SPosition  pos = pln->GetPosition();
+	if (grn)	pln->RestOnGround();
+	else      pln->SetObjectPosition(pos);
+	//--- Set position for other aircraft -----
+	for (U_INT k=0; k<plnQ.size(); k++)
+	{	plnQ[k]->SetRelativePosition();
+	}
+	//--- Activate the aircraft dispatcher ----
+	globals->Disp.ExecON(PRIO_ATMOSPHERE);
+	return;
 }
 //============================================================================================
 //  Methods for structure TXT_LIST

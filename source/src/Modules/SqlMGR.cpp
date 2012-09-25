@@ -326,7 +326,7 @@ void SqlOBJ::ImportConfiguration(char *fn)
 {	globals->fui->ExportMessage(fn);
 	globals->noEXT	= 7;
 	globals->noINT	= 7;
-	globals->Disp.Lock(PRIO_PLANE);
+	globals->Disp.Lock(PRIO_UPLANE);
 	globals->noAPT  = 7;
 	globals->noOBJ  = 7;
 	globals->noOSM	= 7;
@@ -437,6 +437,18 @@ int SqlOBJ::ReadVersion(SQL_DB &db)
 	return 0;
 }
 //==============================================================================
+// Set Page size
+//==============================================================================
+void SqlOBJ::SetPageSize(int dim,SQL_DB &db)
+{ char req[1024];
+	_snprintf(req,1023,"PRAGMA page_size = %d;*",dim);
+  sqlite3_stmt *stm = CompileREQ(req,db);
+	bool ok = (SQLITE_DONE == sqlite3_step(stm));
+	sqlite3_finalize(stm);                      // Close statement
+	return;
+}
+
+//==============================================================================
 //  ELEVATION DATABASE
 //==============================================================================
 void SqlOBJ::DecodeREG(sqlite3_stmt *stm,REGION_REC &reg)
@@ -454,7 +466,7 @@ void SqlOBJ::DecodeREG(sqlite3_stmt *stm,REGION_REC &reg)
 	{ reg.val &= 0x7FFFFFFF;
 		return;
 	}
-	//--- Raed matrix value ------------------------
+	//--- Read matrix value ------------------------
   ReadElevation(reg);
   return;
 }

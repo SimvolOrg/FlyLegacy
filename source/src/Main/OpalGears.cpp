@@ -40,9 +40,7 @@ CGearOpal::CGearOpal (CVehicleObject *v,CSuspension *s) : CGear (v,s)
   GetIniVar ("PHYSICS", "enableCrashDetect", &crash);
   U_INT prop = (crash)?(VEH_D_CRASH):(0);
   mveh->SetOPT(prop);
-	kstr			= 0.5;
 	CPhysicModelAdj *phy = mveh->GetPHY();
-  if (phy)	kstr = phy->Kstr;
   bad_pres_resis = 0.0f;
   banking  = 0; 
   glf.type = opal::LOCAL_FORCE_AT_LOCAL_POS;
@@ -88,7 +86,8 @@ void  CGearOpal::GetGearPosition(CVector &mp,double  &rad)
 //	bpos			Is the wheel center relative to aircraft origin (in feet)
 //---------------------------------------------------------------------------------
 void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
-{ opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
+{ //if (!mveh->IsUserPlan())		return;
+	opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
 	CVector cog = mveh->wgh.svh_cofg;
   //--- Compute wheel coordinates relative to CG -----------
   double gx = gearData->bPos.x - cog.x;
@@ -116,7 +115,7 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
   //  JS:  We place the sphere at the wheel axis
   //  all dimensions are in meters
   //--------------------------------------------------------
-  box.contactGroup	= 1;
+  box.contactGroup	= 2;
   box.radius  = wradius;
 	box.offset.makeTranslation(tx,ty,axeAGL);
   box.material.hardness   = opal::real(0.9f);
@@ -196,6 +195,7 @@ void CGearOpal::Repair()
 //-----------------------------------------------------------------------
 void CGearOpal::GComprV_Timeslice (void)
 {	opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
+	if (0 == phyM)		return;
   //! current state becomes previous state
   prv = cur;
   cur = (cur + 1) & 1;
@@ -254,6 +254,7 @@ void CGearOpal::VtForce_Timeslice (float dT)
 //-----------------------------------------------------------------------
 void CGearOpal::DirectionForce_Timeslice (float dT)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
+	if (0 == phyM)		return;
   double angr = 0.0f;
   susp->MoveWheelTo(vWhlVelVec.y,dT);								// Animated 3D model wheel
 	speed				= vWhlVelVec.y;												// linear velocity in forward direction;
@@ -372,8 +373,7 @@ void CGearOpal::ProbeBrake(CFuiCanva *cnv)
 //	presure and is applied with turn rate to make aircraft turns
 //---------------------------------------------------------------
 void CGearOpal::BrakeForce(float dT)
-{	opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
-	//--- pedal force -------------------------------------------
+{	//--- pedal force -------------------------------------------
 	char  side  = gearData->Side;
   float btbl  = gearData->btbl;                 // Speed coefficient
   float pedal = mveh->GetBrakeForce(side) * btbl;
@@ -410,6 +410,7 @@ void CGearOpal::BrakeForce(float dT)
 //-------------------------------------------------------------------------
 void CGearOpal::GearL2B_Timeslice (void)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
+	if (0 == phyM)	return;
   /// \to do ? transform the forces back to the body frame
 	//--- Compute amortizer opposite vertical force -------
 	double amor				= (glf.vec.z) * gearData->damR;

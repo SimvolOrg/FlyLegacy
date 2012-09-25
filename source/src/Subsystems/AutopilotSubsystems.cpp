@@ -701,11 +701,6 @@ AutoPilot::AutoPilot (void)
   mVSI.id = MSG_GETDATA;              // Get data
   mVSI.dataType = TYPE_REAL;          // Double format
   //-------------------------------------------------------
-	mREG.group	= SUBSYSTEM_SPEED_REGULATOR;	// Speed regulator
-	mREG.id		 = MSG_GETDATA;
-	mREG.user.u.datatag = '$TYP';
-	//-------------------------------------------------------
-  //-------------------------------------------------------
   double d3 = 3.0;
   double r3 = DegToRad(d3);           // 3° in radian
   sin3      = sin(r3);                // sine(3°)
@@ -764,8 +759,7 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
 	cmpS = (CSubsystem*)mHDG.receiver;
 	if (0 == cmpS)	inUse = 0;
 	//--- Get Speed regulator -------------------
-	Send_Message(&mREG);
-	sreg	= (CSpeedRegulator*)mREG.voidData;
+	sreg = mveh->GetSREG();
 	//--- end of init ---------------------------
 
   return;
@@ -814,7 +808,7 @@ double AutoPilot::RoundValue(double v,double p)
 //  Compute Aircraft Angle of slope
 //------------------------------------------------------------------------------------
 double AutoPilot::GetAOS()
-{ double p = globals->dang.x;
+{ double p = mveh->GetPitch();					
   return -RoundValue(p,100);
 }
 //------------------------------------------------------------------------------------
@@ -1159,7 +1153,7 @@ void AutoPilot::TimeSlice(float dT,U_INT FrNo)
 	sect	= (Radio->flag == VOR_SECTOR_TO)?(1):(0);
 	wgrd  = mveh->WheelsAreOnGround();
 	cALT	= altS->GaugeBusFT01();					// Current altitude
-  cAGL  = cALT - globals->tcm->GetGroundAltitude();
+	cAGL	= mveh->GetAltitudeAGL();
 	aSPD	= mveh->GetPreCalculedKIAS();		// Current speed
 	aHDG	= cmpS->GaugeBusFT01();					// Current mag heading
 	//--- Update both modes -----------------------------------
@@ -1218,7 +1212,7 @@ void AutoPilot::SpeedHold()
 //  Maintain the target heading rHDG
 //-----------------------------------------------------------------------
 void AutoPilot::LateralHold()
-{ float turn    = globals->dang.y;                  // Actual banking (deg)
+{ float turn    = mveh->GetBanking();								// Actual banking (deg)
   CPIDbox *hbox = pidL[PID_HDG];                    // Heading controller
   CPIDbox *bbox = pidL[PID_BNK];                    // Banking controller
   double   err  = Norme180(aHDG - rHDG);						// Error in [-180,+180]
@@ -1388,7 +1382,7 @@ void AutoPilot::ModeLT2()
 //-----------------------------------------------------------------------
 void	AutoPilot::ModeTGA()
 {	double amin = aMIS + 100;
-	double agrn = globals->tcm->GetGroundAltitude();
+	double agrn = mveh->GetGroundAltitude();			//globals->tcm->GetGroundAltitude();
 	double mref = RoundAltitude(agrn + aTGA);
 	rALT.Set(mref,1);
 	//TRACE("LEG=%d cAGL=%.2lf rALT.tval=%.2lf rALT.cval=%.2lf",stga,cAGL,rALT.Tvl(),rALT.Get());
@@ -1437,7 +1431,7 @@ void AutoPilot::ModeGND()
 {	//--- Steer to target --------------------------
 	sreg->SteerTo(rend->refP);					// Steer to direction
 	SPosition &S	= rend->lndP;					// runway origin
-	rend->sect		= GetSectorNumber(S,globals->geop);
+	rend->sect		= GetSectorNumber(S,*mveh->GetAdPosition());
 	//TRACE("rHDG=%.5f DIR=%.5f hERR=%.5f val=%.5f",rHDG,gHDG,hERR,val);
 	//---- hold level ---------------------------
 	ModeROL();
@@ -1465,7 +1459,8 @@ void AutoPilot::Rotate()
 {	alta  = 1;                        // ALT armed
   StateChanged(AP_STATE_AAA);       // State is changed
 	//--- Set reference altitude ------------------------
-	rALT.Set(RoundAltitude(aTGT + globals->tcm->GetGroundAltitude()),0.5);
+	//rALT.Set(RoundAltitude(aTGT + globals->tcm->GetGroundAltitude()),0.5);
+	rALT.Set(RoundAltitude(aTGT + mveh->GetGroundAltitude()),0.5);
 	StateChanged(AP_STATE_ACH);				// Altitude changed
 	//--- Enter altitude Hold ---------------------------
 	StateChanged(AP_STATE_ALT);       // Warn Panel
@@ -1569,7 +1564,8 @@ bool AutoPilot::AbortLanding(char r)
   Alarm();
   EnterALT();
   EnterROL();
-	rALT.Set(RoundAltitude(globals->tcm->GetGroundAltitude() + aTGA),0.5);
+	//rALT.Set(RoundAltitude(globals->tcm->GetGroundAltitude() + aTGA),0.5);
+	rALT.Set(RoundAltitude(mveh->GetGroundAltitude() + aTGA),0.5);
 	StateChanged(AP_STATE_ALT);
 	lStat	= AP_LAT_TGA;
 	stga	= AP_TGA_UP5;
@@ -1991,7 +1987,6 @@ void AutoPilot::StateDIS(int evn)
 	cALT	= altS->GaugeBusFT01();					// Current altitude
 	rHDG	= cmpS->GaugeBusFT01();					// Current mag heading
 	aSPD  = mveh->GetPreCalculedKIAS();		// Current speed
-  cAGL  = cALT - globals->tcm->GetGroundAltitude();
   EnterINI(); 
   return;
 }
@@ -2179,11 +2174,31 @@ bool AutoPilot::EnterGPSMode()
 	return true;
 }
 //-----------------------------------------------------------------------
+//	Get More speed
+//-----------------------------------------------------------------------
+void AutoPilot::MoreSpeed()
+{	double more = cRAT *1.01;
+	double lim  = (cAGL <  aFSP)?(fSPD):(xRAT);
+	lim *= 1.5;
+	sAPR = (more > lim)?(lim):(more);
+}
+//-----------------------------------------------------------------------
+//	Get More speed
+//-----------------------------------------------------------------------
+void AutoPilot::LessSpeed()
+{	double less = cRAT * 0.99;
+	double lim  = (cAGL <  aFSP)?(fSPD):(xRAT);
+	lim *= 0.80;
+	sAPR = (less < lim)?(lim):(less);
+}
+
+//-----------------------------------------------------------------------
 //	Select  Speed to hold
 //-----------------------------------------------------------------------
 double AutoPilot::SelectSpeed()
 {	double more = cRAT * 1.01;
-  double less = cRAT * 0.98;
+  double less = cRAT * 0.99;
+	
 	switch (vStat)	{
 	  //--- ground  final --------------------------
 		case AP_VRT_FLR:
@@ -2193,13 +2208,13 @@ double AutoPilot::SelectSpeed()
 		case AP_VRT_GST:
 			if (sect == 0)			return xRAT;
 			if (cAGL <= aCUT)		return    0;
-			if (eVRT >   1.0)		return more;
-			if (eVRT <  -1.0)		return less;
+			if (eVRT >   0.8)		return more;
+			if (eVRT <  -0.8)		return less;
 			if (cAGL <  aFSP)		return fSPD;
 			return  xRAT;
 		//--- take-off -------------------------------
 		case AP_VRT_TKO:
-			return (cRAT)?(more):(30);
+			return (cRAT>=20)?(1000):(20);
 		//--- climbing -------------------------------
 		case AP_VRT_VSP:
 			if (rVSP > 0)			return 1000;

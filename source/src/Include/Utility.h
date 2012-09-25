@@ -1522,7 +1522,7 @@ void BodyVector2WorldPos (const SPosition &cgPos, const SVector &body, SPosition
 //==============================================================================
 // Global utilities
 //==============================================================================
-EMessageResult Send_Message (SMessage *msg);         // Messaging.cpp
+EMessageResult GlobalSendMessage (SMessage *msg);         // Messaging.cpp
 //==============================================================================
 //  Supply srandard routines
 //==============================================================================

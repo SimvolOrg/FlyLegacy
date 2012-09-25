@@ -166,7 +166,8 @@ CWeightManager::CWeightManager ()
 //  Destructor
 //-----------------------------------------------------------------------
 CWeightManager::~CWeightManager (void)
-{ std::vector<CLoadCell*>::iterator vl;
+{ TRACE("Destroy wgh");
+	std::vector<CLoadCell*>::iterator vl;
   for (vl=vld_unit.begin(); vl!=vld_unit.end(); vl++) delete (*vl);
   vld_unit.clear();
 }

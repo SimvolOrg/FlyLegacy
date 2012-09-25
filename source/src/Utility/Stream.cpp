@@ -871,17 +871,18 @@ void  ReadFrom(CStreamObject *object, SStream *stream)
       object->Read (stream, tag);
       continue;
     }
-    // Normal tag, pass it to the object and keep going
-    if (TAG_EXIT == object->Read (stream, tag)) return;
-
-
-    // After the first tag has been read, we are no longer expecting an
-    //   opening <bgno>
-    //  JS: Not always true.  openingBgno = false;
+    // Normal tag, pass it to the object
+		//--- Check result -----------------------
+		Tag ret = object->Read (stream, tag);
+		if (ret == TAG_EXIT)		return;
+		if (ret == TAG_STOP)		break;
+    // Process next statement ----------------
+    
   }
 
   // Finally call CStreamObject::ReadFinished
   object->ReadFinished();
+	return;
 }
 
 
@@ -897,7 +898,7 @@ void  ReadFrom(CStreamObject *object, SStream *stream)
 //
 void  SkipObject(SStream *stream)
 {
-  // Advance to <bgno> tag
+  //-- skip every thing to next bgno tag -------------------------------------
   char s[256];
   Tag tag;
   while ((tag = snexttag (s, 256, stream)) != 'bgno') {}
@@ -910,7 +911,6 @@ void  SkipObject(SStream *stream)
   bool keepGoing = true;
   while (keepGoing) {
     tag = snexttag (s, 256, stream);
-    // == 'endo') && (nestCount == 0))) {
     if (tag == 'bgno') {
       // This is the start of a nested sub-object, so increment nestCount
       nestCount++;
@@ -1267,7 +1267,7 @@ void  ReadMessage (SMessage *msg, SStream *stream)
         double type_float  = 0.0;
 
         if (sscanf (s, "INT,%d", &type_int) == 1) {
-           msg->dataType = TYPE_INT;
+          msg->dataType = TYPE_INT;
           msg->intData  = type_int;
         } else if (sscanf (s, "INT,%d", &type_int) == -1) {       // no actual int value
           msg->dataType = TYPE_INT;
@@ -1298,7 +1298,19 @@ void  ReadMessage (SMessage *msg, SStream *stream)
     }
   }
 }
-
+//===================================================================
+// Trace message
+//===================================================================
+void SMessage::Trace()
+	{	char T[8];
+		char S[8];
+		char Y[8];
+		TagToString(S,sender);
+		TagToString(T,user.u.datatag);
+		TagToString(Y,dataType);
+		char R = (receiver)?(1):(0);
+		TRACE("MESSAGE R=%d from %s To %s tag=%s type=%s INT=%d REAL=%.4f",R,S,dst,T,Y,intData,realData);
+	}
 //===================================================================
 // ReadTag - Read a four-character datatag value from the stream
 //===================================================================
@@ -1332,7 +1344,7 @@ int  ReadInvertedTag(Tag *tag, SStream*stream)
 //	SStream constructor
 //==================================================================================
 void StreamWarn(char *pn, char *fn)
-{	WARNINGLOG("Can't open %s/%s",pn,fn);
+{	TRACE("Can't open %s/%s",pn,fn);
 	return;
 }
 //==================================================================================

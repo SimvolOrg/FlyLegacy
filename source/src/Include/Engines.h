@@ -455,8 +455,6 @@ public:
   EMessageResult  ReceiveMessage (SMessage *msg);
   void            TimeSlice (float dT,U_INT FrNo);			// JSDEV*
 	void						Probe(CFuiCanva *cnv);
-	//---Published values on Gauge BUS ------------------------------
-	inline	int		  GaugeBusIN03()		{return rot_pos;}
 	//---------------------------------------------------------------
 protected:
   SMessage      meng;   // Engine state
@@ -476,6 +474,7 @@ public:
   // CSubsystem methods
   const char* GetClassName (void) { return "CMagnetoControl"; }
   EMessageResult  ReceiveMessage (SMessage *msg);
+	void				ChangeState(int s);
   //---- Attributes ---------------------------------------------
 protected:
   int       mask[2];            // Mask value
@@ -533,6 +532,7 @@ public:
 //===============================================================================
 class CRudderControl;
 class NavRoute;
+class CBrakeControl;
 //===============================================================================
 // Class SpeedRegulator to control Throttle
 //===============================================================================
@@ -548,7 +548,7 @@ protected:
 	double		ref;								// Reference
 	double		aErr;								// angular Error
 	double    cor;								// Correction to rudder
-	double		val;								// Value
+	double		val;								// Speed Value
 	//-----------------------------------------------------------------
 	SMessage	msg;								// Message for throttle up to 4 engines
 	//-----------------------------------------------------------------
@@ -567,7 +567,8 @@ protected:
 	char       rfu1;							// Reserved
 	//-----------------------------------------------------------------
 public:
-	CSpeedRegulator::CSpeedRegulator();
+	CSpeedRegulator();
+	~CSpeedRegulator();
 	void  PrepareMsg(CVehicleObject *veh);
 	int   Read (SStream *stream, Tag tag);
 	void	GetThrottle(int u);

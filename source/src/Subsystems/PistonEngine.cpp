@@ -94,7 +94,6 @@ void CPistonTRI1::eCalculate(float dT)
   /// These values are sent by the TimeSlice function
   RPM = p_prop->GetERPM();
   // 
- // doEngineRefresh();                      // OK !
   doMAP();                                // OK !
   doAirFlow();                            // OK !
   doFuelFlow();                           // OK !
@@ -111,7 +110,7 @@ void CPistonTRI1::eCalculate(float dT)
 	doEngineRefresh();
   double pwr      = p_prop->GetPowerRequired ()      /* * hptoftlbssec*/;
   eData->e_PWR    = HP_TO_FTLBS(eData->e_HP) - (pwr);
-  eData->e_Thrust = p_prop->Calculate(eData->e_PWR) * ENGINE_THRUST_COEFF;
+  eData->e_Thrust = p_prop->Calculate(eData->e_PWR) * EngTCoef;
   eData->e_Torque = p_prop->GetTorque (); 
   eData->e_Pfac   = p_prop->GetThrustXDispl ();
   return;
@@ -221,6 +220,7 @@ void CPistonTRI1::doFuelFlow(void)
 double CPistonTRI1::GetEnginePower(void)
 { double HP = eData->e_hpaf - eData->e_fttb;
   Percentage_Power = HP * 100.0 / MaxHP;
+	if (HP < 0) HP = 0;			// Avoid negative power
   return HP;
 }
 //-------------------------------------------------------------------------
@@ -379,17 +379,10 @@ CPiston::CPiston (CVehicleObject *v, CPropellerModel *prop)
   GetIniVar ("PHYSICS", "engineStarted", &eng_auto_strt);
 
   //
-  ENGINE_THRUST_COEFF = 1.0;
+  EngTCoef = 1.0;
 	CPhysicModelAdj *phy = mveh->GetPHY();
-  if (!phy) { /// PHY file
-    float tmp_eng_thrust_coeff = ADJ_ENGN_THRST; // 1.6f;
-    GetIniFloat ("PHYSICS", "adjustEngineThrust", &tmp_eng_thrust_coeff);
-    if (tmp_eng_thrust_coeff) ENGINE_THRUST_COEFF = double(tmp_eng_thrust_coeff);
-    DEBUGLOG ("CPiston::CPiston thrust_coeff=%f", ENGINE_THRUST_COEFF);
-  } else {
-    ENGINE_THRUST_COEFF = double(phy->Ktst);
-    DEBUGLOG ("CPiston::CPiston PHY : thrust_coeff=%f", ENGINE_THRUST_COEFF);
-  }
+  EngTCoef = double(phy->Ktst);
+  DEBUGLOG ("CPiston::CPiston PHY : thrust_coeff=%f", EngTCoef);
 }
 //--------------------------------------------------------------------------------
 //  Destroy object

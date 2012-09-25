@@ -154,8 +154,10 @@ int CHawkClockGauge::Read (SStream *stream, Tag tag)
 //  All parameters are read
 //-----------------------------------------------------------------------------
 void CHawkClockGauge::ReadFinished (void)
-{ CGauge::ReadFinished ();
-	hold	= globals->pit->GetHolder(unId);
+{ //--------------------------------------------------
+  CCockpitManager *pit	= panel->GetPIT();
+	CGauge::ReadFinished ();
+	hold	= pit->GetHolder(unId);
 	SaveValue();
   return;
 }
@@ -185,7 +187,7 @@ void CHawkClockGauge::IntgFromDoat(U_INT tag)
 {	mesg.id				  = MSG_GETDATA;
 	mesg.user.u.datatag	= tag;
 	mesg.intData		= 0;
-	Send_Message(&mesg);
+	Send_Message(&mesg,mveh);
 	char *nbr = (char*)mesg.voidData;
   if (nbr) strncpy(edNb,nbr,4);
 	if (edNb[1] ==  '0') edNb[1] = ' ';
@@ -249,25 +251,25 @@ void CHawkClockGauge::Draw (void)
     case 0:
         mesg.id				      = MSG_GETDATA;
         mesg.user.u.datatag	= 'uTim';
-        Send_Message(&mesg);
+        Send_Message(&mesg,mveh);
         und[0].Draw(surf,col);
         break;
     case 1:
         mesg.id				      = MSG_GETDATA;
         mesg.user.u.datatag	= 'lTim';
-        Send_Message(&mesg);
+        Send_Message(&mesg,mveh);
         und[1].Draw(surf,col);
         break;
     case 2:
         mesg.id				      = MSG_GETDATA;
         mesg.user.u.datatag	= 'fTim';
-        Send_Message(&mesg);				      // Get flight timer value
+        Send_Message(&mesg,mveh);				      // Get flight timer value
         und[2].Draw(surf,col);
         break;
     case 3:
         mesg.id				      = MSG_GETDATA;
         mesg.user.u.datatag	= 'eTim';
-        Send_Message(&mesg);			      // Get elapse Time
+        Send_Message(&mesg,mveh);			      // Get elapse Time
         und[3].Draw(surf,col);
         break;
 
@@ -337,7 +339,7 @@ EClickResult CHawkClockGauge::MouseClick (int mouseX, int mouseY, int buttons)
   if (bcon.IsHit (mouseX, mouseY)) 
   { mesg.id				= MSG_SETDATA;
 		mesg.user.u.datatag	= 'eTrz';			// Toggle elapse timer
-		Send_Message(&mesg);						    // Call Doat to toggle
+		Send_Message(&mesg,mveh);					// Call Doat to toggle
 		SaveValue();
     return rc;
   }

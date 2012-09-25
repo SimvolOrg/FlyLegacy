@@ -87,8 +87,8 @@ bool VHuse = false;                               // Mouse used by Vehicle
 // GLUT mouse button event callback
 //=====================================================================================
 void mouse2 ( int button, int updown, int x, int y )
-{
-  globals->cScreen = &globals->sScreen;
+{ CVehicleObject *veh = globals->pln;
+  globals->cScreen		= &globals->sScreen;
   bool used = false;
 
   // Send mouse click events to FUI for processing
@@ -134,7 +134,7 @@ void mouse2 ( int button, int updown, int x, int y )
     puMouse (button, updown, x, y);
 
     // Send mouse motion to cokpit manager for gauge interaction
-    CCockpitManager *pit = globals->pit;
+    CCockpitManager *pit = (veh)?(veh->GetPIT()):(0);
     if (pit) pit->MouseClick (button, updown, x, y);
   }
 
@@ -277,14 +277,18 @@ void reshape2 ( int w, int h ) // secondary view
 //  Windows is rescaled 
 //=====================================================================================
 void reshape ( int w, int h )
-{ glViewport ( 0, 0, w, h ) ;
+{ CVehicleObject *veh		= globals->pln;
+  CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
+	CFuiManager     *fui  = globals->fui;
+	//--------------------------------------------------
+	glViewport ( 0, 0, w, h ) ;
   globals->mScreen.Width  = w;
   globals->mScreen.Height = h;
   globals->aspect = double(w) / h;
   switch (globals->appState)  {
     case APP_SIMULATION:
-      if (globals->pit) globals->pit->ScreenResize();
-      if (globals->fui) globals->fui->ScreenResize();
+      if (pit)	pit->ScreenResize();
+      if (fui)	fui->ScreenResize();
       return;
     default:
       return;
@@ -297,10 +301,11 @@ void reshape ( int w, int h )
 // GLUT mouse motion event
 //=====================================================================================
 void motion2 ( int x, int y )
-{ globals->cScreen = &globals->sScreen;
-
+{ CVehicleObject *veh		= globals->pln;
+  CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
+	//--------------------------------------------------
+	globals->cScreen = &globals->sScreen;
   // Send mouse motion to cockpit manager for panel scrolling
-  CCockpitManager *pit = globals->pit;
   if (pit) pit->MouseMove (x, y);
 
   // Send mouse motion to cursor manager
@@ -315,6 +320,10 @@ void motion2 ( int x, int y )
 void motion ( int x, int y )
 { CCursorManager *cum = globals->cum;
 	if (0 == cum)		return;
+	//--------------------------------------------------
+	CVehicleObject *veh		= globals->pln;
+  CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
+	//--------------------------------------------------
   cum->SetCursor(Cursor);
   globals->cScreen = &globals->mScreen;
   // Send mouse motion data to FUI
@@ -322,9 +331,7 @@ void motion ( int x, int y )
   if (!used) {
     // Send mouse motion data to PUI for potential processing
     puMouse (x, y);
-
     // Send mouse motion to veh interior panel
-    CCockpitManager *pit = globals->pit;
     if (pit)  used = pit->MouseMove(x,y);
   }
   // Send mouse motion to cursor manager
@@ -339,9 +346,10 @@ void motion ( int x, int y )
 void passive_motion2 ( int x, int y )
 { bool used = false;
   globals->cScreen = &globals->sScreen;
-
+	//--------------------------------------------------
+	CVehicleObject *veh		= globals->pln;
+  CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
   // Send mouse motion for cockpit manager for panel scrolling
-  CCockpitManager *pit = globals->pit;
   if (pit)  used = pit->MouseMove(x,y);
 
   // Send mouse motion to cursor manager
@@ -356,6 +364,10 @@ void passive_motion2 ( int x, int y )
 void passive_motion ( int x, int y )
 { CCursorManager *cum = globals->cum;
 	if (0 == cum)		return;
+	//--------------------------------------------------
+	CVehicleObject *veh		= globals->pln;
+  CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
+	//--------------------------------------------------
   cum->SetCursor(Cursor);
   globals->cScreen = &globals->mScreen;
 
@@ -365,9 +377,7 @@ void passive_motion ( int x, int y )
   if (!used)  used = globals->fui->MouseMove (x, y);
   //-- Not used.  Try panel ----------------
   if (!used)
-  {CCockpitManager *pit = globals->pit;
-    if (pit)        pit->MouseMove(x,y);
-  }
+  { if (pit)        pit->MouseMove(x,y); }
   // Send mouse motion to cursor manager
   cum->MouseMotion (x, y);
   // Force screen redraw
@@ -517,7 +527,7 @@ void redraw2 ()
 //===========================================================================
 bool CheckForTest()
 { int tst = 0;
-  GetIniVar ("Sim", "TestMode", &tst);
+  GetIniVar ("Sim", "TestBed", &tst);
   if (0 == tst) return false;
   //---- Create the test bed ------------------------
   globals->tsb = new CTestBed();

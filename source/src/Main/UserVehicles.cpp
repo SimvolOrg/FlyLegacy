@@ -136,6 +136,7 @@ void CSimulatedVehicle::Init(char* svhFilename, CWeightManager *wgh)
 //----------------------------------------------------------------------
 CSimulatedVehicle::~CSimulatedVehicle (void)
 { //----Delete resources -----------
+	TRACE("Destroy svh");
   SAFE_DELETE (vsnd);
   SAFE_DELETE (mdieh);
   SAFE_DELETE (mpitd);
@@ -377,16 +378,21 @@ void CSimulatedVehicle::Write (SStream *stream)
 }
 //-------------------------------------------------------------------------------
 //	Time slice:  Compute CG_ISU and refresh status bar 
+//	NOTE:  This is reported now in CVehicleObject to gain one call
 //-------------------------------------------------------------------------------
 void CSimulatedVehicle::Timeslice (float dT)
-{ CalcNewCG_ISU ();							// 
-  if (globals->sBar) {
+{ 
+	CalcNewCG_ISU ();							//
+	//if (!IsUserPlan())	return;
+  if (globals->sBar && mveh->IsUserPlan()) {
 	    elapsed += dT;
-    if (elapsed > globals->status_bar_limit) {
-      elapsed = elapsed - globals->status_bar_limit;
-      PrintInfo (globals->sBar); // 1 => aircraft data  2 => angle & position
-    }
+			if (elapsed > globals->status_bar_limit) {
+				elapsed = elapsed - globals->status_bar_limit;
+				PrintInfo (globals->sBar); // 1 => aircraft data  2 => angle & position
+			}
   }
+	
+	return;
 }
 //-------------------------------------------------------------------------------
 //	Time slice:  Compute CG_ISU 
@@ -408,18 +414,18 @@ void CSimulatedVehicle::PrintInfo (int bar_cycle)
     float rpm = 0.0f;
  
     //mAlt.user.u.datatag = 'alti';
-    Send_Message (&mAlt);
+    Send_Message (&mAlt,mveh);
     altitude      = float(mAlt.realData);
     //mSpd.user.u.datatag = 'sped'; // 
-    Send_Message (&mSpd);
+    Send_Message (&mSpd,mveh);
     speed         =  float(mSpd.realData);
     //mVsi.user.u.datatag = 'vsi_';
-    Send_Message (&mVsi);
+    Send_Message (&mVsi,mveh);
     vert_speed    = float(mVsi.realData);
     //mMag.user.u.datatag = 'yaw_';
-    Send_Message (&mMag);
+    Send_Message (&mMag,mveh);
     magn_compass  = float(mMag.realData);
-    Send_Message (&mRpm);
+    Send_Message (&mRpm,mveh);
     rpm           = float(mRpm.realData);
 
     char buff [256] = {0};
@@ -478,6 +484,7 @@ void	CFuelSystem::Init(char* gasFilename, CEngineManager *eng,  CWeightManager *
 //-----------------------------------------------------------------------
 CFuelSystem::~CFuelSystem (void)
 { // delete fsub objects
+	TRACE("Destroy gas");
   std::vector<CFuelSubsystem*>::iterator i;
   for (i = fsub.begin(); i != fsub.end(); i++) {
     CFuelSubsystem *f = *i;
@@ -816,7 +823,7 @@ void CFuelSystem::Timeslice (float dT,U_INT FrNo)				// JSDEV*
 { UpdateComponents(dT,FrNo);
   FeedEngines(dT);
   RefillTanks(dT);
-  if (globals->wfl) globals->wfl->Refresh();
+  if (globals->wfl) globals->wfl->Refresh();				// $MARK
 }
 //-----------------------------------------------------------------------
 //  Stop fuel system when witching aircraft 
@@ -865,9 +872,7 @@ int CDamageModel::Read (SStream *stream, Tag tag)
 // CElectricalSystem
 //=========================================================================
 CElectricalSystem::CElectricalSystem ()
-{ 
-  
-  // Initialize control subsystem pointers
+{ // Initialize control subsystem pointers
 	sReg					= 0;
   pAils         = 0;
   pElvs         = 0;
@@ -895,10 +900,9 @@ void CElectricalSystem::Init(char* ampFilename, CEngineManager *eng)
 	pEngineManager = eng;
 	// Read from AMP file stream-----------------------------
   SStream s(this,"WORLD",ampFilename);
-	//-- Add Fligth Plan subsystem ----------------------
-	CFPlan	*fp = new CFPlan(mveh,1);
-	subs.push_back (fp);
-	fpln	= fp;
+	//-- Add Fligth --------------------------------------
+	fpln = new CFPlan(mveh,1);
+	subs.push_back (fpln);
   //---Add robot ---------------------------------------
 	d2r2	= new CRobot();							// Check list executer
 	d2r2->SetParent(mveh);
@@ -910,7 +914,8 @@ void CElectricalSystem::Init(char* ampFilename, CEngineManager *eng)
 }
 //-----------------------------------------------------------------------
 CElectricalSystem::~CElectricalSystem (void)
-{ //--delete all amp subsystems -------------
+{ TRACE("Destroy amp");
+	//--delete all amp subsystems -------------
   std::vector<CSubsystem*>::iterator i;
   for (i=subs.begin(); i!=subs.end(); i++) delete (*i);
 	subs.clear();
@@ -945,15 +950,15 @@ void CElectricalSystem::FreeDLLSubsystem (void)
 int CElectricalSystem::Read (SStream *stream, Tag tag)
 { int tr = globals->Trace.Has(TRACE_SUBSYSTEM);
   int rc = TAG_IGNORED;
-
+	CSubsystem *s = 0;
+	char tag_string[64];
+	Tag type;
+	//--------------------------------------
   switch (tag) {
   case 'subs':
-    {
-      char tag_string[64];
-      ReadString (tag_string, 64, stream);
-      Tag type = StringToTag (tag_string);
+    { ReadString (tag_string, 64, stream);
+      type = StringToTag (tag_string);
 
-      CSubsystem *s = NULL;
 
       switch (type) {
 
@@ -1703,22 +1708,19 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
          return TAG_READ;
          //MEMORY_LEAK_MARKER ("smoke_sys");
 
-      default:
-        { // Not identified: Create a DLL gauge
-          char s[8];
-          TagToString (s, type);
+      case 'sdll':
+        { //Create a DLL gauge
+          char id[8];
+          TagToString (id, type);
           MEMORY_LEAK_MARKER ("dllsub")
           CDLLSubsystem *ds = new CDLLSubsystem; 
           MEMORY_LEAK_MARKER ("dllsub")
           ds->SetSignature (static_cast <const long> (type));
           ReadFrom (ds, stream);
           sdll.push_back (ds);
-#ifdef _DEBUG
-            TRACE ("DLL SUBSYSTEM <%s>", s);
-#endif
-            return TAG_READ;
+					return TAG_READ;
         }
-      } // switch(type)
+      } 
       //----------------------------------------------------------------------
       // If a subsystem was instantiated, then load it and add it to the list
       //  NOTE: All subsystems that are to be queued to amp must come here
@@ -1729,6 +1731,7 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
         subs.push_back (s);
         TagToString(lastID,s->GetUnId());
         TagToString(lastHW,s->GetType());
+				if (tr) TRACE("Subsystem %s Type %s Read ok",lastID,lastHW);
         return TAG_READ;
       }
 
@@ -1741,7 +1744,9 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
     // Tag was not processed by this object, it is unrecognized
     CStreamFile* sf = (CStreamFile*)stream->stream;
     int line = sf->GetLine();
-    gtfo ("AMP: subsystem <%s> unknown near line %d. Last OK is %s-%s", TagToString(tag),line,lastHW,lastID);
+    TRACE ("AMP: Skip subsystem <%s> near line %d. Last OK is %s-%s", tag_string,line,lastHW,lastID);
+		SkipObject(stream);
+		return TAG_READ;
   }
   return rc;
 }
@@ -1759,6 +1764,15 @@ void CElectricalSystem::AddExternal(CSubsystem *sy,SStream *st)
 //---------------------------------------------------------------------------
 void CElectricalSystem::ReadFinished (void)
 {	if (pRuds) pRuds->InitCTLR(pSter);
+	mveh->whl.SetSteerData(pRuds);
+	return;
+}
+//---------------------------------------------------------------------------
+//  Gear data connector
+//---------------------------------------------------------------------------
+void CElectricalSystem::GearConnector(char opt)
+{	if (0 == opt)	return mveh->whl.DisconnectGear(pRuds);
+	if (pRuds) pRuds->InitCTLR(pSter);
 	mveh->whl.SetSteerData(pRuds);
 	return;
 }
@@ -1907,21 +1921,6 @@ void CPitotStaticSystem::Timeslice (float dT)
     _total_pressure_node += (*i)->ComputePitotPort (rho, pr, v); // LH
   }
 
-//
-//#ifdef _DEBUG	
-//{	FILE *fp_debug;
-//	if(!(fp_debug = fopen("__DDEBUG_.txt", "a")) == NULL)
-//	{
-//    double vit = 0.0, vv = 0.0;
-//    globals->sit->user->GetIAS (vit);
-//    vv = FpsToKt (static_cast<float> (MetresToFeet (vit)));
-//    fprintf(fp_debug, "CPitotStaticSystem::Timeslice %d %f\n",
-//      ports.size (),
-//      _total_pressure_node,
-//      vv);
-//		fclose(fp_debug); 
-//}	}
-//#endif
 }
 
 void CPitotStaticSystem::Debug (void)
@@ -1948,7 +1947,7 @@ void CVariableLoadouts::Init(CWeightManager *wg,char* vldFilename)
 //  Destroy
 //---------------------------------------------------------------------------------
 CVariableLoadouts::~CVariableLoadouts(void)
-{}
+{TRACE("Destroy vld");}
 //----------------------------------------------------------------------------------
 //  Read parameters
 //---------------------------------------------------------------------------------
@@ -1986,18 +1985,19 @@ void CVariableLoadouts::Write (SStream *stream)
 CCockpitManager::CCockpitManager()
 { // Initialize data members
   panel   = 0;
-  globals->pit  = this;
   active  = 0;
 	brit		= 1;
-	//-----  Create the default light ------------
 	CPanelLight *lit	= new CPanelLight(0);
-	lite[0]						= lit;
+	lite[0]	= lit;
+	lit0		= lit;
 }
 //-----------------------------------------------------------------------------
 //	JSDEV* Prepare all panels messages
 //-----------------------------------------------------------------------------
 void CCockpitManager::PrepareMsg(CVehicleObject *veh)
-{	std::map<Tag,CPanel*>::iterator iter;
+{	//-----  Init the default light ------------
+	lit0->SetMVEH(veh);
+	std::map<Tag,CPanel*>::iterator iter;
 	for (iter=panl.begin(); iter!=panl.end(); iter++) 
 	{	CPanel *pnl = iter->second;
 		pnl->PrepareMsg(veh);
@@ -2016,7 +2016,8 @@ void CCockpitManager::Init(char* pitFilename)
 //  Free all resources 
 //-----------------------------------------------------------------------------
 CCockpitManager::~CCockpitManager (void)
-{ //--- delete all panels -----------------
+{ TRACE("Destroy pit");
+	//--- delete all panels -----------------
 	std::map<Tag,CPanel*>::iterator i;
   for (i=panl.begin(); i!=panl.end(); i++)  delete (*i).second;
 	panl.clear();
@@ -2028,9 +2029,6 @@ CCockpitManager::~CCockpitManager (void)
 	std::map<Tag,CgHolder*>::iterator it;
 	for (it=hold.begin(); it!=hold.end(); it++)	delete (*it).second;
 	hold.clear();
-	//---------------------------------------
-  globals->pit  = 0;
-  globals->pan  = 0;
 }
 //-----------------------------------------------------------------------------
 //  Read parameters
@@ -2071,7 +2069,7 @@ void	CCockpitManager::ReadPanel(char *fn,Tag id)
 	if (0 == *fn)               return;
 	//--- Locate panel -------------------------------------
 	std::map<Tag,CPanel*>::iterator rp = panl.find(id);
-  if (rp == panl.end())  WARNINGLOG ("No Panel with tag '%s'", TagToString(id));
+  if (rp == panl.end())				return; 
 	CPanel *pan = (*rp).second;
 	pan->Init(fn);
 	return;
@@ -2100,12 +2098,12 @@ void CCockpitManager::AddPanel(CPanel *pan,bool main)
 //-------------------------------------------------------------------------
 void CCockpitManager::ActivatePanel (Tag tag)
 { // Search for the supplied tag in the panel map
-	if (tag == 'NONE')    return;
-  std::map<Tag,CPanel*>::iterator i = panl.find(tag);
-  panel = (i != panl.end())?(i->second):(0);
+	std::map<Tag,CPanel*>::iterator i = panl.find(tag);
+  CPanel *cp = (i != panl.end())?(i->second):(0);
   // Activate new panel ----------------------
-  if (0 == panel)				return;
- // panel->Activate();
+  if (0 == cp)					return;
+	if (cp->NoPanel())		return;
+	panel	= cp;
   panel->SetViewPort();
   return;
 }
@@ -2116,13 +2114,15 @@ void  CCockpitManager::ActivateView (float A)
 { std::map<Tag,CPanel*>::iterator rp;
 	for (rp = panl.begin(); rp != panl.end(); rp++)
 	{	CPanel *cp = (*rp).second;
+		if (cp->NoPanel())	continue;
 		if (!cp->View(A))		continue;
-		ChangePanel(cp->GetID());
+		//--- activate this panel ------------------
+		panel	= cp;
+		panel->SetViewPort();
 		return;
 		}
   return;
 }
-
 //-------------------------------------------------------------------------
 //  return Panel associated to a cockpit tag
 //-------------------------------------------------------------------------
@@ -2146,9 +2146,9 @@ CgHolder *CCockpitManager::GetHolder(Tag id)
 //-------------------------------------------------------------------------
 void CCockpitManager::AddLight(SStream *stream)
 {	char txt[64];
-	CPanelLight *lit = new CPanelLight;
+	CPanelLight *lit = new CPanelLight(mveh);
   ReadFrom (lit, stream);
-  Tag idn = lit->GetId();
+  Tag idn = lit->GetUnId();
 	TagToString(txt,idn);								// For debug
 	//--- Check if  light exists ------------------------
 	if (GetLight(idn))			
@@ -3064,7 +3064,8 @@ void CEngineManager::Init(char* ngnFilename)
 //	remove all engine definitions
 //----------------------------------------------------------------------
 CEngineManager::~CEngineManager (void)
-{ for (ie=engn.begin(); ie!=engn.end(); ie++)		delete *ie;
+{ TRACE("Destroy eng");
+	for (ie=engn.begin(); ie!=engn.end(); ie++)		delete *ie;
 }
 //----------------------------------------------------------------------
 //	Read  engine parameters
@@ -3298,6 +3299,9 @@ CAeroControlChannel::CAeroControlChannel (char *name)
   radians = 0;
   keyframe = 0.5;
 }
+//---------------------------------------------------------------------------
+//  Read all parameters
+//---------------------------------------------------------------------------
 
 int CAeroControlChannel::Read (SStream *stream, Tag tag)
 {
@@ -3340,7 +3344,7 @@ float CAeroControlChannel::Value (float value)
 //          2) Values are just stored into the controlChannel
 //          3) A Wing object extracts channel values directly when time sliced
 //===========================================================================
-CControlMixerChannel::CControlMixerChannel (CVehicleObject *v)
+CChanelMixer::CChanelMixer (CVehicleObject *v)
 { mveh   = v;     // Save mother vehicle
   group  = 0;
   invert = false;
@@ -3349,7 +3353,7 @@ CControlMixerChannel::CControlMixerChannel (CVehicleObject *v)
 //----------------------------------------------------------------
 //  Destroy this object
 //---------------------------------------------------------------
-CControlMixerChannel::~CControlMixerChannel (void)
+CChanelMixer::~CChanelMixer (void)
 { std::vector<CAeroControlChannel*>::iterator i;
   for (i=aerochannel.begin(); i!=aerochannel.end(); i++)   delete (*i);
 	aerochannel.clear();
@@ -3357,7 +3361,7 @@ CControlMixerChannel::~CControlMixerChannel (void)
 //----------------------------------------------------------------
 //  Set Name
 //---------------------------------------------------------------
-void CControlMixerChannel::SetName(char *n)
+void CChanelMixer::SetName(char *n)
 { strncpy(name,n,15);
   name[15] = 0;
   return;
@@ -3365,7 +3369,7 @@ void CControlMixerChannel::SetName(char *n)
 //----------------------------------------------------------------
 //  Read control mixer parameters
 //---------------------------------------------------------------
-int CControlMixerChannel::Read (SStream *stream, Tag tag)
+int CChanelMixer::Read (SStream *stream, Tag tag)
 {
   int rc = TAG_IGNORED;
 
@@ -3399,7 +3403,7 @@ int CControlMixerChannel::Read (SStream *stream, Tag tag)
 
   if (rc != TAG_READ) {
     // Tag was not processed by this object, it is unrecognized
-    WARNINGLOG ("CControlMixerChannel::Read : Unrecognized tag <%s>", TagToString(tag));
+    WARNINGLOG ("CChanelMixer::Read : Unrecognized tag <%s>", TagToString(tag));
   }
 
   return rc;
@@ -3407,7 +3411,7 @@ int CControlMixerChannel::Read (SStream *stream, Tag tag)
 //----------------------------------------------------------------
 //  Get rudder mixer channel
 //---------------------------------------------------------------
-CAeroControlChannel *CControlMixerChannel::GetRudder()
+CAeroControlChannel *CChanelMixer::GetRudder()
 { std::vector<CAeroControlChannel*>::iterator i;
   for (i=aerochannel.begin(); i!=aerochannel.end(); i++) {
     CAeroControlChannel *chn = (*i);
@@ -3419,7 +3423,7 @@ CAeroControlChannel *CControlMixerChannel::GetRudder()
 //----------------------------------------------------------------
 //  Link Mixer channel to Wing section
 //---------------------------------------------------------------
-void CControlMixerChannel::LinktoWing()
+void CChanelMixer::LinktoWing()
 {std::vector<CAeroControlChannel*>::iterator i;
  for (i=aerochannel.begin(); i!=aerochannel.end(); i++) {
     CAeroControlChannel *aero = (*i);
@@ -3432,11 +3436,11 @@ void CControlMixerChannel::LinktoWing()
 //  coefficent.
 //  Control mixers poll associated control to get the deflection value
 //==================================================================================
-void CControlMixerChannel::Timeslice (float dT,U_INT FrNo)
+void CChanelMixer::Timeslice (float dT,U_INT FrNo)
 { 
   // Poll control subsystem for all values
   msg.user.u.datatag = 'data';
-  Send_Message (&msg);
+  Send_Message (&msg,mveh);
   //TRACE("MIXER GET MSG from %s",TagToString(msg.group));
   MIXER_DATA *data = (MIXER_DATA*)msg.voidData;
   if (0 == data)        return;
@@ -3485,15 +3489,15 @@ void CControlMixer::Init(char* mixFilename)
 //  Destroy this object
 //---------------------------------------------------------------------
 CControlMixer::~CControlMixer (void)
-{ std::map<string,CControlMixerChannel*>::iterator i;
+{ TRACE("Destroy mix");
+	std::map<string,CChanelMixer*>::iterator i;
   for (i=mixerMap.begin(); i!=mixerMap.end(); i++)  delete i->second;
   mixerMap.clear();
-	channel.clear();
 }
 //--------------------------------------------------------------------
 //  Add one mixer
 //--------------------------------------------------------------------
-void CControlMixer::AddMixer(CControlMixerChannel *mix, char *name)
+void CControlMixer::AddMixer(CChanelMixer *mix, char *name)
 { //--- Eliminate coupled rudder case for aileron
   if ((strcmp(name,"AILERON") == 0) && (mix->NumberItem() == 3)) 
   { CAeroControlChannel *rud = mix->GetRudder();
@@ -3503,7 +3507,7 @@ void CControlMixer::AddMixer(CControlMixerChannel *mix, char *name)
     return;
   }
   //---Only one mixer per axis is kept ---------------------------
-  std::map<string,CControlMixerChannel*>::const_iterator i = mixerMap.find(name);
+  std::map<string,CChanelMixer*>::const_iterator i = mixerMap.find(name);
   if (i != mixerMap.end()) {delete mix;  return;}
   mixerMap[name] = mix;
   mix->LinktoWing();
@@ -3518,10 +3522,9 @@ int CControlMixer::Read (SStream *stream, Tag tag)
 
   switch (tag) {
   case 'chnl':
-    {
+    {	//--- Bypass channel name (not used) -----
       char name[80];
       ReadString (name, 80, stream);
-      channel.insert (name);
     }
     rc = TAG_READ;
     break;
@@ -3529,7 +3532,7 @@ int CControlMixer::Read (SStream *stream, Tag tag)
     {
       char name[80];
       ReadString (name, 80, stream);
-      CControlMixerChannel* mixer = new CControlMixerChannel(mveh);
+      CChanelMixer* mixer = new CChanelMixer(mveh);
       mixer->SetName(name);
       ReadFrom (mixer, stream);
       AddMixer(mixer,name);
@@ -3555,7 +3558,7 @@ int CControlMixer::Read (SStream *stream, Tag tag)
 void CControlMixer::Timeslice (float dT,U_INT FrNo)
 { //-------------------------------------------------
   // Timeslice each of the defined channels
-  std::map<string,CControlMixerChannel*>::iterator i;
+  std::map<string,CChanelMixer*>::iterator i;
   for (i=mixerMap.begin(); i!=mixerMap.end(); i++) i->second->Timeslice (dT,FrNo);
   return;
 }

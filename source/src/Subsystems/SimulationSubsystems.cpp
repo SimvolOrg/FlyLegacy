@@ -770,6 +770,7 @@ CPropellerModel::CPropellerModel (void)
   minRPM = 0.0;
   thrust_displ = 0.0f;
   is_fixed_speed_prop = false;
+	pdmge = 0;
 }
 
 CPropellerModel::~CPropellerModel (void)
@@ -1069,16 +1070,14 @@ double CPropellerTRIModel::GetPowerRequired(void)
 	double minR		= eData->e_minRv;				// Minimum Reev
 	double maxR		= eData->e_maxRv;				// Maximum Reev
 	double bladP	= eData->e_blad;				// Blad Picth
-  double Vel  = MetresToFeet ((mveh->GetRelativeBodyAirspeed ())->z); //GetAirspeed ())->z /*m/s LH*/);
-  //double Vel  = MetresToFeet ((mveh->GetAirspeed ())->z /*m/s LH*/);
+  //double Vel  = MetresToFeet ((mveh->GetRelativeBodyAirspeed ())->z); //GetAirspeed ())->z /*m/s LH*/);
+  double Vel  = MetresToFeet ((mveh->GetAirspeed ())->z /*m/s LH*/);
 
   // calculate AAR rift and pirt
   // here a potential bug with RPS :: 
   double AAR = (RPS != 0)?(Vel / (diam * RPS)):(0); // Advance ratio angle
   if (mrift) rift = mrift->Lookup (float(AAR));
   if (mpirt) pirt = mpirt->Lookup (float(AAR));
-
-
   // had to use a magic number to stay close to Fly!II
   double magic_number = DegToRad (1.5);
 	//-- JS: Avoid Float error when blad_speed is zero --------
@@ -1101,7 +1100,7 @@ double CPropellerTRIModel::GetPowerRequired(void)
     }
   }
 
-  // calculate blade AoA
+  //--- Calculate blade AoA
   blade_AoA = DegToRad (Pitch) - Advance;
   if (mlift) lift = mlift->Lookup (float(blade_AoA));// 
   if (mdrag) drag = mdrag->Lookup (float(blade_AoA));// 
@@ -1111,9 +1110,10 @@ double CPropellerTRIModel::GetPowerRequired(void)
   // Remembering that Torque * omega = Power, we can derive the torque on the
   // propeller and its acceleration to give a new RPM. The current RPM will be
   // used to calculate thrust.
-  double ENG_spin = +1.0; // ? when -1.0
-  PowerRequired = Torque * RPS * static_cast<double> (TWO_PI) * ENG_spin;          
-  // 
+  PowerRequired = Torque * RPS * static_cast<double> (TWO_PI);
+
+  //--- JS: Sometime the PowerRequired is negative. Is that allowed? 
+	if (PowerRequired < 0) 	PowerRequired = 0;			//JS TRY this
   return PowerRequired; //0.0;
 }
 
@@ -1133,7 +1133,6 @@ double CPropellerTRIModel::GetPowerRequired(void)
 //===============================================================================
 double CPropellerTRIModel::Calculate(double PowerAvailable)
 {
-  if (!globals->simulation) return Thrust; // 
   PwrAva = PowerAvailable;
   double omega = 0.0;
   const SVector *v = mveh->GetRelativeBodyAirspeed (); //GetAirspeed();                   ///< m/s LH
@@ -1190,7 +1189,7 @@ double CPropellerTRIModel::Calculate(double PowerAvailable)
     #endif*/
     lift = _lift;
     drag = _drag;
-  }
+	}
 
   //*/
   //--------------------------------------------------
@@ -1254,8 +1253,8 @@ double CPropellerTRIModel::Calculate(double PowerAvailable)
   // arbitrary point.
   if (RPM < 5.0)  RPM = 0;
   eRPM  = float(RPM);
-//	if  ((eRPM > DBL_MAX) ||  (eRPM < -DBL_MAX))
-//	int a = 0;
+if  (Thrust < 0)											// ENGINE MARK
+int a = 0;
   return Thrust; // return thrust in pounds
 }
 

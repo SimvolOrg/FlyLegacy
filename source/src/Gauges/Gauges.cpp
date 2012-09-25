@@ -48,6 +48,8 @@
 #endif
 //////////////////////////////////////////////////////////////////////
 void ReadUserTag(SMessage *msg,SStream *st);
+//---------------------------------------------------------------------------------------
+extern	CNullSubsystem nsub;
 //=========================================================================
 //  This is a standard QUAD (SW-SE-NE-NW)
 //=========================================================================
@@ -706,12 +708,12 @@ void CVariator::Init()
 //---------------------------------------------------------------------
 void CVariator::SendValue(float inc)
 { msg.id		    = MSG_GETDATA;
-  Send_Message(&msg);
+  dst->ReceiveMessage(&msg);
   float val     = msg.realData + inc;
   if (val < vmin) val = vmin;
   msg.realData  = val;
   msg.id		    = MSG_SETDATA;
-  Send_Message(&msg);
+  dst->ReceiveMessage(&msg);
   return;
 }
 //---------------------------------------------------------------------
@@ -1054,6 +1056,8 @@ void CGauge::Init()
   sync = 0;
 	subS = 0; 
   surf = 0;
+	//--- message --------------------------------
+	mesg.dataType = TYPE_REAL;
   //--- Sound parameters -----------------------
   sbuf[0] = 0;
   sbuf[1] = 0;
@@ -1080,6 +1084,7 @@ void CGauge::PrepareMsg(CVehicleObject *veh)
 	//---- Find subsystem --------------------------
   veh->FindReceiver(&mesg);
 	subS	= (CSubsystem*)mesg.receiver;
+	if (subS->IsTag('Null'))		WARNINGLOG("GAUGE %s.  No receiver for Message", unid_s);
 	return;
 }
 //-------------------------------------------------------------------
@@ -1095,6 +1100,14 @@ CGauge::~CGauge (void)
   gmap  = 0;
   if (sbuf[0]) sbuf[0]->Release();
   if (sbuf[1]) sbuf[1]->Release();
+}
+//-------------------------------------------------------------------
+//	Send a message to vehicle
+//-------------------------------------------------------------------
+void CGauge::SetPanel (CPanel *p)
+{ panel	= p;
+	mveh	= p->GetMVEH();
+	return;
 }
 //-----------------------------------------------------------
 //  Set Quad coordinates from NW corner
@@ -1191,6 +1204,7 @@ void  CGauge::CopyFrom(CGauge &g)
   strncpy(dfmt,g.dfmt,64);
   sync    = g.sync;
 	subS		= g.subS;
+	mveh		= g.mveh;
 	return;
 }
 //---------------------------------------------------------------------
@@ -1537,55 +1551,18 @@ int CGauge::Read (SStream *stream, Tag tag)
   case 'sfx2':
     GetSoundTag(GAUGE_OFF_POS,stream);
     return TAG_READ;
-
+	case 'unit':
+	case 'dtag':
+	case 'usr1':
   case 'user':
     // DEPRECATED // ex: oilP gauge in main flyhawk PNL
-    {
-      char user [64] = {0};
-      char tmp_2[32] = {0};
-      int  unit = 1;  
-      ReadString (user, 64, stream);
-      /// \todo  Parse user string into SMessage field update
-      if (user[0] == 0) return TAG_READ;
-      if (sscanf        (user, "HARDWARE,%s", tmp_2) == 1) {
-            if (!strcmp (tmp_2, "GAUGE"))
-            { mesg.user.u.hw = HW_GAUGE;
-              return TAG_READ;
-            }
-            if (!strcmp (tmp_2, "SWITCH"))
-            { mesg.user.u.hw = HW_SWITCH;
-              return TAG_READ;
-            }
-          }
-      if (sscanf (user, "ENGINE,%d", &unit) == 1)
-          { mesg.user.u.engine = unit;     //user_engine; // should be tmp_val
-            return TAG_READ;
-          }
-      if (sscanf (user, "UNIT,%d", &unit) == 1)
-          { mesg.user.u.unit = unit;
-            return TAG_READ;
-          }
-            ; // ...to be continued
- 
-      return TAG_READ;
+    { WARNINGLOG("Remove tag %s from gauge %s and use <mesg> instead",TagToString(tag), unid_s);
+      
+	    return TAG_EXIT;
     }
 
-  case 'usr1':
-    {
-      // DEPRECATED used in FLYHWK01.PNL 'shet' Elevator Trim wheel but in <mesg>
-      ReadUInt (&mesg.user.u.datatag, stream);
-      return TAG_READ;
-    }
 
-  case 'unit':
-    // DEPRECATED
-    ReadUInt (&mesg.user.u.unit, stream);
-    return TAG_READ;
 
-  case 'dtag':
-    // DEPRECATED
-    ReadUInt (&mesg.user.u.datatag, stream);
-    return TAG_READ;
   }
 
   // If this code is reached, the tag was not processed
@@ -1597,7 +1574,7 @@ int CGauge::Read (SStream *stream, Tag tag)
 //    Read finished
 //------------------------------------------------------------------------
 void CGauge::ReadFinished (void)
-{ subS = panel->GetMVEH()->GetNullSubsystem();
+{ subS = &nsub;
 	// Compute center ------------------------------- 
   if (0 == cx)  cx = (w >> 1); 
   if (0 == cy)  cy = (h >> 1); 
@@ -1625,8 +1602,13 @@ CGauge *CGauge::LocateGauge(SStream *s)
   Tag gag = 0;
   ReadTag(&pan,s);
   ReadTag(&gag,s);
-  //---Locate panel and gage --------------
-  CPanel *panl = globals->pit->GetPanelByTag(pan);
+  //---Locate panel and gages ------------------------
+	//--------------------------------------------------
+	CVehicleObject *veh		= globals->pln;
+  CCockpitManager *pit	= mveh->GetPIT();
+	if (0 == pit)				return 0;
+	//-------------------------------------------------- 
+  CPanel *panl = pit->GetPanelByTag(pan);
   if (0 == panl)    gtfo("Cant locate panel to copy");
   CGauge *g    = panl->GetGauge(gag);
   if (0 == g)       
@@ -1777,7 +1759,7 @@ void CGauge::Translate(float v)
 //-----------------------------------------------------------------------
 void CGauge::Update (void)
 { // Send the 'mesg' message to the supplier subsystem
-  Send_Message (&mesg); //
+  Send_Message (&mesg,mveh); //
 
   // All gauge values resolve to floating point values
   value = 0;
@@ -2419,7 +2401,7 @@ EClickResult CAltimeterGauge::StopClick()
 //-----------------------------------------------------------------------
 void CAltimeterGauge::Draw(void)
 {	// Get altitude value
-	Send_Message(&mesg);
+	Send_Message(&mesg,mveh);
 	float alt = mesg.realData;
   float f3  = alt * (float(36)/10000);
   alt       = fmod(alt,10000);
@@ -2437,7 +2419,7 @@ void CAltimeterGauge::Draw(void)
   { alkn.Redraw();
     kmsg.user.u.datatag = 'knob';
     kmsg.realData	      = alkn.GetChange();
-    Send_Message (&kmsg);
+    Send_Message (&kmsg,mveh);
     baro = float(kmsg.intData) * 0.01;
     DisplayHelp();
   }
@@ -2577,7 +2559,7 @@ int CRollingAltimeterGauge::DnThousand(float hd)
 //-------------------------------------------------------------------
 void CRollingAltimeterGauge::Draw()
 { //----Get altitude from subsystem -------------------------
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   float alt = mesg.realData;
   int   f1  = int(alt / 10000) + 1;
   alt       = fmod(alt,10000);
@@ -2595,7 +2577,7 @@ void CRollingAltimeterGauge::Draw()
   //-----Draw pressure in koll window ------------------------
   kmsg.id = MSG_GETDATA;
   kmsg.user.u.datatag = 'baro';
-  Send_Message(&kmsg);
+  Send_Message(&kmsg,mveh);
   U_INT pr  = (U_INT)kmsg.intData;
   d4        =   pr & 0xFF;
   d3        =  (pr >>  8) & 0xFF;
@@ -2620,7 +2602,7 @@ void CRollingAltimeterGauge::Draw()
   { kmsg.realData	      = aknb.GetChange();
     kmsg.user.u.datatag = 'knob';
     kmsg.id             = MSG_SETDATA;
-    Send_Message (&kmsg);
+    Send_Message (&kmsg,mveh);
     aknb.Redraw();
   }
   //-----Draw overlay ---------------------------------
@@ -2787,13 +2769,13 @@ void CHorizonGauge::Draw(void)
 {	EraseSurfaceRGBA(surf,0);
   under.Draw(surf);
 	// Get Pitch value
-	Send_Message (&pich);
+	Send_Message (&pich,mveh);
   float pichD = pich.realData;
 	// Get Roll value
-  Send_Message (&roll);
+  Send_Message (&roll,mveh);
   int   rollD = roll.intData;
   mesg.id      = MSG_GETDATA;
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   hdeg  = mesg.intData;
 	// Draw foot
   int  yp	= Bfoot.GetY() - (int)(pichD * pixd);
@@ -2814,7 +2796,7 @@ void CHorizonGauge::Draw(void)
   { hknob.Redraw();
     mesg.id      = MSG_SETDATA;
     mesg.intData = hknob.GetChange();
-    Send_Message(&mesg);
+    Send_Message(&mesg,mveh);
   }
 	overl.Draw(surf);
 	//--- Render -------------------------------------
@@ -2883,7 +2865,7 @@ void CHorizontalBallGauge::Update (void)
 {
   // Send the 'mesg' message to the supplier subsystem
   mesg.id = MSG_GETDATA;
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
 
   // we already know 'alti' is a float
   value = (float)mesg.realData;
@@ -2983,7 +2965,7 @@ void CVerticalSpeedGauge::Draw (void)
 { // Draw vertical speed needle
   CNeedleGauge::Draw ();
   // Get vertical speed bug value
-  Send_Message (&vmsg);
+  Send_Message (&vmsg,mveh);
   vsbg.Draw(surf);
   return;
 }
@@ -3082,7 +3064,7 @@ void CDirectionalGyroGauge::Draw (void)
 { EraseSurfaceRGBA(surf,0);
   under.Draw(surf);
 	// Draw parent needle
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   hdg = int(mesg.realData);
   bug = mesg.user.u.unit;
 	DrawNDL(surf,hdg);
@@ -3090,7 +3072,7 @@ void CDirectionalGyroGauge::Draw (void)
   if (gykn.HasChanged())
 	{	mgyr.id       = MSG_SETDATA;
     mgyr.realData = gykn.GetChange();
-		Send_Message(&mgyr);
+		Send_Message(&mgyr,mveh);
     gykn.Redraw();
     DisplayHDG();
 	}
@@ -3100,7 +3082,7 @@ void CDirectionalGyroGauge::Draw (void)
   { pikn.Redraw();
     mbug.id       = MSG_SETDATA;
     mbug.realData = pikn.GetChange();
-    Send_Message(&mbug);
+    Send_Message(&mbug,mveh);
     bug           =  mbug.intData;
     dir           =  mbug.user.u.unit;
     DisplayBUG();
@@ -3587,11 +3569,11 @@ void CBasicADFGauge::Draw (void)
 {	// Get navaid pointer from ADF radio
 	mesg.id = MSG_GETDATA;
 	mesg.user.u.datatag = 'navd';
-	Send_Message (&mesg);
+	Send_Message (&mesg,mveh);
 	navd = (float)mesg.realData;
   //-----Get compass ----------------------------------------
   mesg.user.u.datatag = 'comp';
-	Send_Message (&mesg);
+	Send_Message (&mesg,mveh);
   cpas = mesg.intData;
 	//------draw compass ---------------------------------
   EraseSurfaceRGBA(surf,0);
@@ -3605,7 +3587,7 @@ void CBasicADFGauge::Draw (void)
     mesg.id             = MSG_SETDATA;
     mesg.user.u.datatag = 'comp';
     mesg.realData       = aknb.GetChange();
-    Send_Message(&mesg);
+    Send_Message(&mesg,mveh);
     DisplayCMP();
   }
 	overl.Draw(surf);
@@ -3991,14 +3973,14 @@ void CTurnCoordinatorGauge::Draw(void)
 	mesg.id = MSG_GETDATA;
 	mesg.dataType = TYPE_REAL;
 	mesg.user.u.datatag = pcon;
-	Send_Message (&mesg);
+	Send_Message (&mesg,mveh);
 	float heading = (float)mesg.realData;
 
   // Get ball value
 	mesg.id = MSG_GETDATA;
 	mesg.dataType = TYPE_REAL;
 	mesg.user.u.datatag = bcon;
-	Send_Message (&mesg);
+	Send_Message (&mesg,mveh);
 	float acc = (float)mesg.realData;
  
 	// Draw plane: nFrame is for the [-2,+2] interval
@@ -4020,10 +4002,11 @@ void CTurnCoordinatorGauge::Draw(void)
 //=================================================================
 CHSIGauge::CHSIGauge (CPanel *mp)
 : CBitmapGauge(mp)
-{ navs     = 0;
-  rang_min = 0;
-  rang_max = 360;
-  radi_tag = 0;
+{ navs			= 0;
+	adir			= 0;
+  rang_min	= 0;
+  rang_max	= 360;
+  radi_tag	= 0;
   radi_unit = 0;
   gsdf = 0;
   radio.flag = VOR_SECTOR_OF;
@@ -4190,7 +4173,7 @@ void CHSIGauge::Draw()
   obsm.voidData = &radio;
   obsm.user.u.datatag = 'rfsh';
   obsm.id       = MSG_GETDATA;
-  Send_Message(&obsm);
+  Send_Message(&obsm,mveh);
   float ang     = DegToRad(float(radio.xOBS));
   int ILS       = (radio.ntyp == SIGNAL_ILS);
   odir          = radio.xOBS;
@@ -4203,7 +4186,7 @@ void CHSIGauge::Draw()
   int   px      = int (dev * cos(ang)) + adev.GetX();
   int   py      = int (dev * sin(ang)) + adev.GetY();
 	//-----Draw compass ---------------------------------------
-  Send_Message(&mesg);                       // Querry the GYRO
+  Send_Message(&mesg,mveh);                       // Querry the GYRO
   comp = int(mesg.realData);
   acmp.Draw(surf,comp);
   //-----Draw the Course Needle ------------------------------
@@ -4221,7 +4204,7 @@ void CHSIGauge::Draw()
     obsm.user.u.datatag = 'knob';
     obsm.id             = MSG_SETDATA;
     obsm.realData	      = obkn.GetChange();
-    Send_Message (&obsm);
+    Send_Message (&obsm,mveh);
     DisplayOBS(odir);
   }
   //---- Draw Autopilot knob --------------------------------
@@ -4231,7 +4214,7 @@ void CHSIGauge::Draw()
     mbug.realData = apkb.GetChange();
     DisplayAPB(adir);
   }
-  Send_Message(&mbug);
+  Send_Message(&mbug,mveh);
   adir  = mbug.intData;
   //---- Redraw pilot bug ----------------------------------
   apbg.Draw(surf,adir);
@@ -4337,7 +4320,7 @@ void CFlyhawkELTGauge::ChangeState(U_CHAR npo)
   mesg.id       = MSG_SETDATA;
   mesg.intData  = pos;
   mesg.user.u.datatag = 'swit';
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   lit = mesg.intData;
 }
 //-------------------------------------------------------------------------
@@ -4454,7 +4437,7 @@ void CHobbsMeterGauge::ReadFinished (void)
 void CHobbsMeterGauge::Draw (void)
 {
   ///  get the hobbs value here
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   //
   n_hobbs_value     = int(mesg.realData);
   hobbs_value_1     = int(n_hobbs_value / 1000); // 4
@@ -4630,14 +4613,14 @@ void CNavigationGauge::ReadFinished ()
 //  Get radio block 
 //-------------------------------------------------------------------
 void CNavigationGauge::GetRadio()
-{ Send_Message(&mrad);
+{ Send_Message(&mrad,mveh);
   radio     = (BUS_RADIO*)mrad.voidData;
   if (0 == radio)   return;
   //--- Set radio block in nav gauge if OBS is specified ----
   if (0 == obs)     return;
   mnav.group    = obs;
   mnav.voidData = radio;
-  Send_Message(&mnav);       // Set radio interface
+  Send_Message(&mnav,mveh);       // Set radio interface
   return;
 }
 //-------------------------------------------------------------------
@@ -4733,7 +4716,7 @@ void CNavigationGauge::Draw (void)
   if (obkn.HasChanged())	
   {   obkn.Redraw(); 
       mobs.realData = obkn.GetChange();             
-	    Send_Message(&mobs);
+	    Send_Message(&mobs,mveh);
       DisplayHelp();
   }
 	//--- Render ---------------------------------------------
@@ -5038,15 +5021,15 @@ void CBKAudioKMA26Gauge::PrepareMsg(CVehicleObject *veh)
 void CBKAudioKMA26Gauge::Draw()
 { //---Draw outter marker -----------------
   mesg.user.u.datatag = 'outr';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
  // ca[KMA_CA_OUTM].Draw(surf,mesg.intData);
   ca[KMA_CA_OUTM].Draw(mesg.intData);
   mesg.user.u.datatag = 'midl';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
 //  ca[KMA_CA_MIDL].Draw(surf,mesg.intData);
   ca[KMA_CA_MIDL].Draw(mesg.intData);
   mesg.user.u.datatag = 'innr';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
 //  ca[KMA_CA_INNR].Draw(surf,mesg.intData);
   ca[KMA_CA_INNR].Draw(mesg.intData);
   return;
@@ -5154,7 +5137,7 @@ void CGenericNavRadioGauge::GetRadio()
   mesg.user.u.unit    = radi_unit;
   mesg.user.u.hw      = HW_RADIO;
   mesg.user.u.datatag = 'gets';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   RAD = (CNavRadio*) mesg.voidData;
   return;
 }
@@ -5274,7 +5257,7 @@ void CGenericComRadioGauge::GetRadio()
   mesg.user.u.unit    = radi_unit;
   mesg.user.u.hw      = HW_RADIO;
   mesg.user.u.datatag = 'gets';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   RAD = (CComRadio*) mesg.voidData;
   return;
 }
@@ -5428,7 +5411,7 @@ void CGenericTransponderGauge::GetRadio()
   mesg.user.u.unit    = radi_unit;
   mesg.user.u.hw      = HW_RADIO;
   mesg.user.u.datatag = 'gets';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   RAD                 = (CTransponderRadio*) mesg.voidData;
   return;
 }
@@ -5660,7 +5643,7 @@ void CGenericADFRadioGauge::ReadFinished()
 void CGenericADFRadioGauge::GetRADIO()
 { //----Get ADF RADIO ----------------------------
   mesg.user.u.datatag = 'gets';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   RAD = (CKR87radio*) mesg.voidData;
   //----Set power if no power button -------------
   if (0 == bPOW)  RAD->SetAutopower();
@@ -5932,7 +5915,7 @@ void CAnnunciator::ReadFinished()
 //  Draw annunciator
 //--------------------------------------------------------------------
 void CAnnunciator::Draw()
-{ Send_Message(&mesg);
+{ Send_Message(&mesg,mveh);
   int fr = (mesg.intData)?(1):(0);
   under.Draw(surf,fr);
   return;
@@ -5986,7 +5969,7 @@ return;	}
 void CFlyhawkAnnunciator::PollBlock(BlocANN *blc)
 {	int old	= blc->blnk;								            // previous state
 	int	nvs	= old;
-	if (blc->amsg.group)	Send_Message(&blc->amsg);	// Poll component
+	if (blc->amsg.group)	Send_Message(&blc->amsg,mveh);	// Poll component
 	nvs	= blc->amsg.intData;							          // New state
 	blc->blnk	= nvs;
 	if (old == nvs)				return;					          // No change
@@ -6141,11 +6124,11 @@ void CFlyhawkAnnunciatorTest::UpdateComponent(char old,char now)
   globals->snd->Play(sbuf[GAUGE_ON__POS]);
 	//---reset previous component -----------------
 	msg->intData	= 0;
-	Send_Message(msg);
+	Send_Message(msg,mveh);
 	//---set the new component --------------------
 	msg	= &msgT[now];
 	msg->intData	= 1;
-	Send_Message(msg);
+	Send_Message(msg,mveh);
 	return;
 }
 //------------------------------------------------------------
@@ -6296,25 +6279,25 @@ EClickResult CFlyhawkFuelSelectorGauge::MouseClick (int x, int y, int buttons)
     switch_frames = 0;
 	// Set fuel tank
   Lmsg.intData = 1;
-	Send_Message (&Lmsg);
+	Send_Message (&Lmsg,mveh);
   Rmsg.intData = 0;
-	Send_Message (&Rmsg);
+	Send_Message (&Rmsg,mveh);
   }
   else if (both.IsHit(x, y)) {
   switch_frames = swit.GetHiFrame() >> 1;
 	// Set fuel tank
   Lmsg.intData = 1;
-	Send_Message (&Lmsg);
+	Send_Message (&Lmsg,mveh);
   Rmsg.intData = 1;
-	Send_Message (&Rmsg);
+	Send_Message (&Rmsg,mveh);
   }
   else if (righ.IsHit(x, y)) {
   switch_frames = swit.GetHiFrame();
 	// Set fuel tank
   Lmsg.intData = 0;
-	Send_Message (&Lmsg);
+	Send_Message (&Lmsg,mveh);
   Rmsg.intData = 1;
-	Send_Message (&Rmsg);
+	Send_Message (&Rmsg,mveh);
   }
 
   return rc;
@@ -6408,14 +6391,14 @@ EClickResult CFlyhawkElevatorTrimGauge::MouseClick (int x, int y, int buttons)
   if (down.IsHit(x, y)) {
     mesg.id = MSG_SETDATA;
     mesg.user.u.datatag = 'decr';
-    Send_Message (&mesg);
+    Send_Message (&mesg,mveh);
     deflect = float(mesg.realData);
     return MOUSE_TRACKING_ON;
   }
   if (up.IsHit(x, y)) {
     mesg.id = MSG_SETDATA;
     mesg.user.u.datatag = 'incr';
-    Send_Message (&mesg);
+    Send_Message (&mesg,mveh);
     deflect = float(mesg.realData);
 
     return MOUSE_TRACKING_ON;
@@ -6440,7 +6423,7 @@ void CFlyhawkElevatorTrimGauge::Draw(void)
   CBitmapGauge::Draw();
   mesg.id = MSG_GETDATA;
   mesg.user.u.datatag = 'rawv';
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   deflect = float(mesg.realData);
   int wf = Round(wRatio * deflect) + mWheel;
   wheel.Draw(surf,wf);
@@ -6894,26 +6877,26 @@ EClickResult CNavajoFuelSelectorGauge::MouseClick (int mouseX, int mouseY, int b
   if (obca.IsHit (mouseX, mouseY)) {
     cIndx = 0;
     obms.intData	= 1;
-    Send_Message (&obms);
+    Send_Message (&obms,mveh);
     ibms.intData	= 0;
-    Send_Message (&ibms);
+    Send_Message (&ibms,mveh);
     return MOUSE_TRACKING_OFF;
   }
 
   if (ofca.IsHit (mouseX, mouseY)) {
       cIndx = 1; 
       obms.intData	= 0;
-      Send_Message (&obms);
+      Send_Message (&obms,mveh);
       ibms.intData	= 0;
-      Send_Message (&ibms);
+      Send_Message (&ibms,mveh);
       return MOUSE_TRACKING_OFF;
   }
   if (ibca.IsHit (mouseX, mouseY)) {
         cIndx = 2; 
         obms.intData	= 0;
-        Send_Message (&obms);
+        Send_Message (&obms,mveh);
         ibms.intData	= 1;
-        Send_Message (&ibms);
+        Send_Message (&ibms,mveh);
         return MOUSE_TRACKING_OFF;
       }
 
@@ -8606,7 +8589,7 @@ void CMomentaryHotSpotGauge::ReadFinished (void)
 //  Mouse click ??  Send message
 //-----------------------------------------------------------------------
 EClickResult CMomentaryHotSpotGauge::MouseClick (int x, int y, int buttons)
-{ Send_Message(&mesg);
+{ Send_Message(&mesg,mveh);
   return MOUSE_TRACKING_OFF;
 }
 //=============================================================================
@@ -8677,7 +8660,7 @@ void CSimpleSwitch::PrepareMsg(CVehicleObject *veh)
 {	CGauge::PrepareMsg (veh);
   //---Init the subsystem with current position ------
   mesg.intData	= stat[cIndx];
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
 }
 //---------------------------------------------------------------------
 //    Read gauge tags
@@ -8800,7 +8783,7 @@ void CSimpleSwitch::IncState (void)
     mesg.intData	= stat[cIndx];
     if (sstr) DisplayHelp(sstr[cIndx]);
     //---- Send message  ---------------
-    Send_Message (&mesg); 
+    Send_Message (&mesg,mveh); 
   }
   return;
 }
@@ -8818,7 +8801,7 @@ void CSimpleSwitch::DecState (void)
     mesg.intData	= stat[cIndx];
     if (sstr) DisplayHelp(sstr[cIndx]);
     //---- Send message ---------------
-    Send_Message (&mesg); 
+    Send_Message (&mesg,mveh); 
   }
   return;
 }
@@ -8962,10 +8945,10 @@ void CSimpleInOutStateSwitch::ReadFinished (void)
 void  CSimpleInOutStateSwitch::PrepareMsg(CVehicleObject *veh)
 { Tag tag = mesg.user.u.datatag;
   mesg.intData  = vin[stat];
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   if (0 == sync)      return;
   mesg.user.u.datatag = 'gets';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
 	subS	= (CSubsystem*) mesg.voidData;
   mesg.user.u.datatag = tag;
   return;
@@ -8978,7 +8961,7 @@ void CSimpleInOutStateSwitch::DrawChange()
   EraseSurfaceRGBA(surf,0);
   stsw.Draw(surf, 0, 0, stat);
   mesg.intData  = vin[stat];
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   return;
 }
 //-----------------------------------------------------------------------------
@@ -8987,7 +8970,7 @@ void CSimpleInOutStateSwitch::DrawChange()
 void CSimpleInOutStateSwitch::CheckHold()
 { //---Check state if acknoledged ------------
   mesg.id = MSG_GETDATA;
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   mesg.id = MSG_SETDATA;
   int old = stat;
   stat    = mesg.intData;
@@ -9103,10 +9086,10 @@ void  CBasicBatterySwitch::ReadFinished()
 void CBasicBatterySwitch::Draw (void)
 {
   // Get battery and alternator states
-  Send_Message (&mbat);
+  Send_Message (&mbat,mveh);
   sBat      = mbat.intData & 0x01;
 
-  Send_Message (&malt);
+  Send_Message (&malt,mveh);
   sAlt      = malt.intData & 0x01;
 
   // Calculate frame number:
@@ -9222,7 +9205,7 @@ EClickResult CBasicMagnetoSwitch::MouseClick (int mouseX, int mouseY, int button
   mesg.id       = MSG_SETDATA;
   mesg.dataType = TYPE_INT;
   mesg.intData  = pos;
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   return rc;
 }
 //-------------------------------------------------------------------------------
@@ -9245,7 +9228,7 @@ EClickResult CBasicMagnetoSwitch::StopClick()
   mesg.id = MSG_SETDATA;
   mesg.dataType = TYPE_INT;
   mesg.intData  = cIndx;
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   return MOUSE_TRACKING_OFF;
 }
 
@@ -9578,7 +9561,7 @@ void CDualSwitch::IncState (void)
       globals->snd->Play(sbuf[GAUGE_ON__POS]);
       // Send message
       usrr.intData	= 1;
-      Send_Message (&usrr);
+      Send_Message (&usrr,mveh);
       return;
     }
     case 0:
@@ -9588,7 +9571,7 @@ void CDualSwitch::IncState (void)
       globals->snd->Play(sbuf[GAUGE_OFF_POS]);
       // Send message
       usrl.intData	= 0;
-      Send_Message (&usrl);
+      Send_Message (&usrl,mveh);
       return;
     }
     case 2:
@@ -9596,7 +9579,7 @@ void CDualSwitch::IncState (void)
       oIndx = 2;
       // Send message
       usrr.intData	= 1;
-      Send_Message (&usrr);
+      Send_Message (&usrr,mveh);
       return;
     }
   }
@@ -9618,7 +9601,7 @@ void CDualSwitch::DecState (void)
       globals->snd->Play(sbuf[GAUGE_ON__POS]);
       // Send message
       usrl.intData	= 1;
-      Send_Message (&usrl);
+      Send_Message (&usrl,mveh);
       return;
     } 
     case 2:
@@ -9628,7 +9611,7 @@ void CDualSwitch::DecState (void)
       globals->snd->Play(sbuf[GAUGE_OFF_POS]);
       // Send message
       usrr.intData	= 0;
-      Send_Message (&usrr);
+      Send_Message (&usrr,mveh);
       return;
     }
     case 0:
@@ -9636,7 +9619,7 @@ void CDualSwitch::DecState (void)
       oIndx = 0;
       // Send message
       usrl.intData	= 1;
-      Send_Message (&usrl);
+      Send_Message (&usrl,mveh);
       return;
     } 
   }
@@ -9869,7 +9852,7 @@ void CPushPullKnobGauge::LookUpValue(float val)
 //         the control
 //---------------------------------------------------------------------
 void CPushPullKnobGauge::Draw (void)
-{ Send_Message(&polm);
+{ Send_Message(&polm,mveh);
   float val = polm.realData;
   LookUpValue(val);
   EraseSurfaceRGBA(surf,0);
@@ -9883,7 +9866,7 @@ void CPushPullKnobGauge::IncValue (void)
     if (cVal >= nVal) cVal = nVal - 1;
     //---- Send message ----------------------
     mesg.realData = Area[cVal].valu;
-    Send_Message (&mesg);
+    Send_Message (&mesg,mveh);
     return;
 }
 
@@ -9895,7 +9878,7 @@ void CPushPullKnobGauge::DecValue (void)
     if (cVal < 0) cVal = 0;
     //---- Send message ---------------------
     mesg.realData = Area[cVal].valu;
-    Send_Message (&mesg);
+    Send_Message (&mesg,mveh);
     return;
 }
 //---------------------------------------------------------------------
@@ -10060,8 +10043,11 @@ CDualKnobGauge::CDualKnobGauge (CPanel *mp)
 //	Prepare messages
 //-----------------------------------------------------------------------
 void CDualKnobGauge::PrepareMsg(CVehicleObject *veh)
-{	ivar.msg.id		  = MSG_SETDATA;
+{	mveh						= panel->GetMVEH();
+	ivar.SetDestination(mveh);
+	ivar.msg.id		  = MSG_SETDATA;
 	veh->FindReceiver(&ivar.msg);
+	ovar.SetDestination(mveh);
 	ovar.msg.id		  = MSG_SETDATA;
 	veh->FindReceiver(&ovar.msg);
 	CGauge::PrepareMsg(veh);
@@ -10250,7 +10236,11 @@ int CTurnKnobGauge::Read (SStream *stream, Tag tag)
 //-----------------------------------------------------------------------------
 //  All parameters are read
 //-----------------------------------------------------------------------------
-
+void CTurnKnobGauge::ReadFinished()
+{ CGauge::ReadFinished();
+	CObject *dst = panel->GetMVEH();
+	var.SetDestination(dst);
+}
 //-------------------------------------------------------------------------------
 //  Mouse click:  Keep focus until stop
 //-------------------------------------------------------------------------------
@@ -10475,7 +10465,7 @@ float CIndicatorGauge::NormValue(float val)
 //-----------------------------------------------------------
 void CIndicatorGauge::Draw()
 { EraseSurfaceRGBA(surf,0);
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   //---Draw According to value ---------------
   float val = NormValue(mesg.realData);
   int   frm = int(val * frpv);

@@ -481,13 +481,14 @@ public:
   CElectricalSystem ();
  ~CElectricalSystem (void);
 	void	Init(char* ampFilename, CEngineManager *engine_manager);
-  /// CStreamObject methods
+  ///----- CStreamObject methods ------------------------------
   int   Read (SStream *stream, Tag tag);
   void  ReadFinished (void);
   void  Write (SStream *stream);
   void  AddExternal(CSubsystem *sy,SStream *st);
   void  DrawExternal();
-  /// CElectricalSystem methods
+  ///---  CElectricalSystem methods ---------------------------
+	void	GearConnector(char opt);
   CSubsystem* GetFirstSubsystemType (Tag type);
   void		  Timeslice(float dT,U_INT FrNo);					// JSDEV* new implementation
   void      Print (FILE *f);
@@ -510,8 +511,9 @@ public:
   CElevatorTrimControl   *GetElevatorTrim()	{return eTrim;}
 	CSpeedRegulator        *GetSpeedRegulator() {return sReg;}
 	//---------------------------------------------------------------------
-	inline  CFPlan                *GetFlightPlan()	{return fpln;}
-	inline	CRobot                *GetRobot()				{return d2r2;}
+	CFPlan			*GetFlightPlan()	{return fpln;}
+	CRobot      *GetRobot()				{return d2r2;}
+	char				 GearConnexion()	{return (pRuds)?(pRuds->GearConnexion()):(0);}
   //---------------------------------------------------------------------
 public:
   char     lastID[8];        // Last id   successfully read
@@ -617,6 +619,7 @@ protected:
   //---- Pointer to current CPanel --------------------------
 	float         brit;									// Panel britnes
   CPanel*       panel;
+	CPanelLight  *lit0;									// Default light
   //--- METHODS-----------------------------------------------
 public:
   CCockpitManager();
@@ -702,14 +705,14 @@ protected:
 //===========================================================================
 //  Control mixer channel
 //===========================================================================
-class CControlMixerChannel : public CStreamObject {
+class CChanelMixer : public CStreamObject {
   //----ATTRIBUTES ------------------------------------
 protected:
   CVehicleObject *mveh;
   //----METHODS----------------------------------------
 public:
-  CControlMixerChannel (CVehicleObject *v);
- ~CControlMixerChannel (void);
+  CChanelMixer (CVehicleObject *v);
+ ~CChanelMixer (void);
 
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
@@ -719,7 +722,7 @@ public:
   void  LinktoWing();
   void  SetName(char *n);
   //------------------------------------------------------------
-  inline int NumberItem()   {return aerochannel.size();}
+  int NumberItem()   {return aerochannel.size();}
   //------------------------------------------------------------
 public:
   char        name[16];
@@ -752,14 +755,14 @@ public:
   //virtual void  ReadFinished (void);
 
   // CControlMixer methods
-  void  AddMixer(CControlMixerChannel *mix, char *name);
+  void  AddMixer(CChanelMixer *mix, char *name);
   void  Timeslice (float dT,U_INT FrNo);
 	//-------------------------------------------------------
 	void	SetVEH(CVehicleObject *v)	{mveh = v;}
 	//-------------------------------------------------------
 public:
-  std::set<std::string>                       channel;   ///< Control channel names
-  std::map<std::string,CControlMixerChannel*> mixerMap;  ///< Map of mixer channels
+  //std::set<std::string>                       channel;   ///< Control channel names
+  std::map<std::string,CChanelMixer*> mixerMap;  ///< Map of mixer channels
 };
 //===========================================================================
 //  External light for aircraft

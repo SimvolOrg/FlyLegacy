@@ -246,6 +246,7 @@ int CSuspension::Read (SStream *stream, Tag tag)
 void CSuspension::ReadFinished (void)
 { int nbw			= mveh->GetWheelBrake();
 	double coef = (nbw)?( double(1) / nbw):(0);
+	CGroundSuspension *gssp = gear_data.mgsp;
 	//----Set wheel side -------------------------------------------
   gear_data.Side	= BRAKE_NONE;
 	gear_data.repBF	= coef;
@@ -315,9 +316,9 @@ char CSuspension::GearShock(char pw)
   gear_data.shok += pw;
   GearDamaged(gear_data.shok);
   //--- Set aircraft above ground -------------------
-  double bagl = mveh->GetBodyAGL();
+  double bagl = mveh->GetMinimumBodyAGL();
   double alti = globals->tcm->GetGroundAltitude() + bagl;
-  mveh->SetAltitude(alti);
+  mveh->ChangeAltitude(alti);
   return 1;
 }
 //-----------------------------------------------------------------
@@ -574,7 +575,8 @@ void CGroundSuspension::Init(CWeightManager *wgh, char *fn)
 // destroy this
 //------------------------------------------------------------------------------
 CGroundSuspension::~CGroundSuspension (void)
-{ SAFE_DELETE (mstbl);
+{ TRACE("Destroy whl");
+	SAFE_DELETE (mstbl);
   SAFE_DELETE (mbtbl);
 	for (U_INT k=0; k < whl_susp.size(); k++) delete whl_susp[k];
 	whl_susp.clear();
@@ -649,6 +651,7 @@ void CGroundSuspension::ReadSusp(SStream *st)
 				else													ssp = new COpalSuspension(mveh,this,susp_name, whm, type); // PHY type										
         ReadFrom (ssp, st);
         whl_susp.push_back (ssp);
+				if (ssp->IsSteerWheel()) steer = ssp;
         return;
     }
     if (!strcmp (susp_type, "bmpr"))
@@ -666,7 +669,9 @@ void CGroundSuspension::ReadSusp(SStream *st)
 //  Compute main gear axe barycenter
 //  Compute steering gear axe center in Legacy coordinate (Z is up)
 //---------------------------------------------------------------------------------
-void CGroundSuspension::ReadFinished (void)
+void CGroundSuspension::ReadFinished (void) {;}
+
+void CGroundSuspension::BuildGears (void)
 { SGearData *gdt = 0;   //GetGearData()
   wheels_num	= whl_susp.size ();
   //---Compute wheel parameters --(Z is forward direction)---------
@@ -705,9 +710,9 @@ void CGroundSuspension::ReadFinished (void)
   //--------------------------------------------------------
   sterR      = steer->GetGearRadius();
   //--------------------------------------------------------
-  //  We also compute the bAGL (body above ground level)
-  //  bAGL is used to set the aircraft level above a given terrain
-  //  bAGL is what that must be added to ground to set 
+  //  We also compute the mAGL (body above ground level)
+  //  mAGL is used to set the aircraft level above a given terrain
+  //  mAGL is what that must be added to ground to set 
   //  the aircraft correctly on ground 
 	//	One foot is added for rounding up
 	//	(relative to aircraft visual model)
@@ -717,7 +722,7 @@ void CGroundSuspension::ReadFinished (void)
 	//	(all wheels accounted). It is used to compute mass
 	//	repartition over the gear
   //--------------------------------------------------------
-  bAGL  = mainR - mainW.z + 1;
+  mAGL  = mainR - mainW.z + 1;
   //--- Compute Wheel base -(in meter)  --------------------
   wheel_base	= max_gear - min_gear;
 	double base = FN_METRE_FROM_FEET(wheel_base);
@@ -776,13 +781,23 @@ void	CGroundSuspension::SetSteerData(CRudderControl *rud)
 	return;
 }
 //---------------------------------------------------------------------------------
+//	Disconnect steering from rudder
+//---------------------------------------------------------------------------------
+void CGroundSuspension::DisconnectGear(CRudderControl *rud)
+{	if (0 == rud)			return;
+	if (0 == steer)		return;
+	SGearData *gdt	= steer->GetGearData();
+	gdt->deflect		= 0;
+	rud->InitSteer(0);
+	return;
+}
+//---------------------------------------------------------------------------------
 //  Time Slice all wheels
 //---------------------------------------------------------------------------------
 void CGroundSuspension::Timeslice (float dT)
 {
   /// very important ! be sure to compute only during
   /// engine & aerodynamics cycle
-  if (!globals->simulation) return;
   nWonG   = 0;      // No wheels on ground
 	SumGearMoments.Raz();
   //--- Compute velocity in Miles per Hours ---------
@@ -808,9 +823,11 @@ void CGroundSuspension::Timeslice (float dT)
 					gdt->swing = ssp->GetSwing(dT);
 					if (fabs(vt) < 0.01) gdt->swing = 0;
 				}
+				break;
 			//--- Gears are retracted ------------------------
 			case ITEM_KFR1:
 				{ cur_wheel_H = 0.0;
+					break;
 				}
 		}	// --- End switch on gear position
   }

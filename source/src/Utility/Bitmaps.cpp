@@ -1529,7 +1529,7 @@ void CBitmap::FreeBitmap( )
 //===============================================================================
 void  CBitmap::DrawBitmap (SSurface *sf, int x, int y, int fr)
 { CBaseBitmap *bm = (CBaseBitmap*)m_bm.bitmap;
-  bm->DrawBitmap(sf,x,y,fr);
+  if (bm)	bm->DrawBitmap(sf,x,y,fr);
   return;
 }
 //===============================================================================

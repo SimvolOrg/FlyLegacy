@@ -37,41 +37,44 @@ class CFuiAxis: public CFuiWindow
   U_SHORT            vehNo;                 // current vehicle
   CFuiPopupMenu     *vehPOP;                // Vehicle popup
   FL_MENU            vehMEN;                // Vehicle menu
-  //------ LABEL For errors ---------------------------------
+  //--- LABEL For errors ---------------------------------
   CFuiButton         *asgWIN;               // Default
   CFuiLabel          *labWIN;               // Label windows
   CFuiCheckbox       *chkWIN;               // Full checkbox
-	//------ Group box for axe --------------------------------
+	//--- Group box for axe --------------------------------
   CFuiGroupBox			 *gp1AXE;								// Group box 1
 	CFuiLabel          *devAXE;               // Label  device
 	CFuiLabel          *labAXE;               // Label  axe
 	CFuiSlider         *valAXE;								// slider value 
 	CFuiCheckbox			 *invAXE;								// Invert box
-	//------ Group Box tune -----------------------------------
+	//--- Group Box tune -----------------------------------
   CFuiGroupBox			 *grpFOR;								// Group box force
 	CFuiButton         *minFOR;               // minus button
 	CFuiButton         *plsFOR;               // plus button
-	//------ Neutral area -------------------------------------
+	//--- Neutral area -------------------------------------
 	CFuiLabel          *labNEU;               // Label  neutral
 	CFuiSlider         *valNEU;								// slider value 
-	//-------Button control -----------------------------------
+	//--- Button control -----------------------------------
 	CFuiPopupMenu     *devPOP;                // Vehicle popup
 	FL_MENU            devMEN;                // Vehicle menu
 	CListBox           butBOX;								// Button list
 	CFuiGroupBox		  *grpHAT;								// Hat group
 	CFuiCheckbox      *chkHAT;                // Hat checkbox
+	//--- Gear connector -----------------------------------
+	CFuiCheckbox      *strBOX;								// Connector
+	CVehicleObject    *mveh;
   //-------Detected axe -------------------------------------
   int                axeNo;                 // Selected axe
  // SJoyDEF           *jsd;                   // Joystick descriptor
 	JoyDEV						*jsd;										// Selected device
   //-------AXE LIST -----------------------------------------
+	U_CHAR              gear;									// Gear state
   U_CHAR              all;                  // All option
   U_CHAR              rfu;									// Modify indicator
   CListBox            axeBOX;               // List of axes
 	//--- Current selected -----------------------------------
 	CSimAxe						 *axe;									// Current axe
   //----Current selected joystick --------------------------
-	//SJoyDEF						 *jsp;									// Selected
 	JoyDEV						*jsp;										// Device selected
 	//--------------------------------------------------------
   static char *vehMENU[];
@@ -95,6 +98,7 @@ public:
 	void			ButtonList(char *name);
 	void			ButtonClick(JoyDEV *jsd, int nbut);
 	void			HatControl();
+	void			SwapGear();
 	//-------DRAWING -----------------------------------------
 	void			ShowNeutral();
 	void			ShowForce();

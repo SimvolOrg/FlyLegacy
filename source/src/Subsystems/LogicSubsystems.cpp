@@ -37,6 +37,55 @@ using namespace std;
 char *GenrMOD[] = 
   //-0-----1------2------3------4-----5--------6---------7-----
   {"LT",  "GT",  "LE",  "EQ",  "NE", "GE",  "XEED",   "BETW" };
+//=================================================================================
+CNullSubsystem nsub;
+//=================================================================================
+//  Object root
+//=================================================================================
+CObject::CObject()
+{	}
+//=================================================================================
+//  Send message to another subsystem
+//	NOTE:  Send Message is implemented at root object level and not at global level
+//				This is to support more than one aircraft.
+//				Most of message are sent inside the same object (CAirplane)
+//=================================================================================
+EMessageResult CObject::Send_Message (SMessage *msg, CObject *obj)
+{	msg->result	      = MSG_IGNORED;
+	EMessageResult rc = MSG_IGNORED;
+  //---When message contains a receiver, use it for direct contact ---
+  //---------------------------------------------------------------
+  //  To trap those messages here with the 2 following lines
+  //  Those messages are in the WARNINGLOG file
+  //---------------------------------------------------------------
+  //  if (msg->group == 'vsi_')             // Change group here
+  //  int a = 0;                            // Put a break point here
+  //---------------------------------------------------------------
+	if (msg->receiver) 
+	{// Send the message to the known recipient
+		CSubsystem *subs  = (CSubsystem *)msg->receiver;
+		return subs->ReceiveMessage (msg);
+	}
+	//--- Send message to vehicle -----------------------------------
+	if (0 == obj)		return rc;
+	rc = obj->ReceiveMessage(msg);
+  TagToString(msg->dst,msg->group);
+	if (msg->receiver)    return rc;
+  //--- Warning has not been generated for this message yet--
+  msg->receiver	= &nsub;									//mveh->GetNullSubsystem();			// Set Null Sub as receiver
+	msg->voidData = &nsub;									//msg->receiver;
+  //---Ignore when group is null -----------------------------------
+  if (0 == msg->group)    return rc;
+	char sendr_id[8];
+	char group_id[8];
+	char dtag__id[8];
+	TagToString (sendr_id, msg->sender);
+	TagToString (group_id, msg->group);
+	TagToString (dtag__id, msg->user.u.datatag);
+	WARNINGLOG ("Send_Message:(NO RECEIVER)  sender=%s destination=%s dtag=%s",sendr_id,group_id,dtag__id);
+  return rc;
+}
+
 //=========================================================================================
 // CSubsystem
 //=========================================================================================
@@ -63,6 +112,7 @@ CSubsystem::CSubsystem (void)
 CSubsystem::~CSubsystem (void)
 { globals->psys = 0;
   if (sound) sound->Release();
+	TRACE("Destroy subsystem %s",unId_string);
 }
 //-------------------------------------------------------------------------
 //  Change identity
@@ -89,12 +139,13 @@ int CSubsystem::Read (SStream *stream, Tag tag)
 { char fWAV[64];
   int rc = TAG_IGNORED;
   U_INT  pm;
+	Tag ID;
   switch (tag) {
   case 'uniD':
   case 'unId':
     // Unique ID
-    ReadTag (&unId, stream);
-    TagToString (unId_string, unId);
+    ReadTag (&ID, stream);
+		SetIdent(ID);
     return TAG_READ;
 
   case 'timK':
@@ -228,9 +279,15 @@ void CSubsystem::TypeIs (Tag t)
 
   // Initialize unique subsystem ID to subsystem type // 
   // This should be overridden with a <unid> tag in the subsystem definition
-  unId = type;
-  TagToString (unId_string, unId);
+	SetIdent(type);
 }
+//---------------------------------------------------------------------------------
+//  Send message to another subsystem
+//---------------------------------------------------------------------------------
+EMessageResult CSubsystem::Send_Message (SMessage *msg)
+{		return CObject::Send_Message(msg,mveh);
+}
+
 //---------------------------------------------------------------------
 //	JSDEV* This is now a virtual function called from
 //	Send_Message only when there is yet no receiver in message
@@ -244,9 +301,9 @@ bool CSubsystem::MsgForMe (SMessage *msg)
   //  respond to  message , just uncomment
   //  the following lines and change id
   //-------------------------------------------------------
-  //Tag idn = 'Thr1';                     // Change subsystem name here
-	//if (type == 'THRO')
-  // if ((type == idn) && (msg->group == idn))           
+  //Tag idn = 'Bld1';                     // Change subsystem name here
+	//if (unId == 'sREG')
+	//  if ((unId == idn) && (msg->group == idn))           
   // int a = 0;                          // Put a break point here
   //-------------------------------------------------------
 	bool idByType   = (msg->user.u.datatag == '$TYP');
@@ -263,9 +320,10 @@ bool CSubsystem::MsgForMe (SMessage *msg)
 //---------------------------------------------------------------------
 bool CSubsystem::IsReceiver(SMessage *msg)
 {	//--- for debugging only ---------------------
-	//if (unId == 'mfSS')
-	//	int a = 0;
+	//bool ok = (unId == 'LqTy') && (msg->group == unId);
+	//if (ok)	TRACE("RECEIVER Dest=%s, datatag=%s",msg->dst,TagToString(msg->user.u.datatag));
 	if (!MsgForMe(msg))	return false;
+	//if (ok) TRACE("Message for me %s",unId_string);
   msg->receiver	= this;
 	return true;
 }
@@ -545,8 +603,9 @@ CDependent::CDependent (void)
   // Initialize real-time electrical states
   eNum        = 1;
   //---------------------------------
-  rise = 1.0f;
-  fall = 0.0f;
+  rise	= 1.0f;
+  fall	= 0.0f;
+	oper	= MONITOR_AS;
 }
 //-------------------------------------------------------------------
 //  Free all messages

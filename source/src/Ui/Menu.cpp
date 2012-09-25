@@ -265,7 +265,7 @@ void vehicle_cg_cb (puObject* obj)
 //----------------------------------------------------------------------
 void vehicle_vpilot_cb (puObject* obj)
 { if (!globals->pln)	return;
-	globals->pln->StartVirtualPilot(); }
+	globals->pln->ToggleVPIL(); }
 //----------------------------------------------------------------------
 //  Vehicle dammage report
 //----------------------------------------------------------------------
@@ -946,7 +946,7 @@ void debug_dump_electrical_cb (puObject* obj)
 {
   CAirplane *pln = globals->pln;
   if (pln != NULL) {
-    if (pln->GetType () == TYPE_FLY_AIRPLANE) 
+    if (pln->GetType () == TYPE_USER_AIRCRAFT) 
 		{	FILE *f = fopen ("Debug/electrical.txt", "w");
       if (f) 
 				{	pln->amp.Print (f);

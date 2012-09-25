@@ -134,16 +134,17 @@ void CAnimatedModel::BuildModel()
 { // Model specification -----------------
   Top = 0;
   Dpn = 0;
-  //--------------------------------------
-  if ('plan' == Type)
+	//---------------------------------------
+	if (Type != 'sobj')
 	{Top = PART_BODY;
    Dpn = PART_CHILD;
 	}
-	//--------------------------------------
-  if ('sobj'== Type)
+		//--------------------------------------
+	else 
 	{ Top = PART_SOBJ;
     Dpn = PART_CHILD; 
   }
+
 	//----Decode the format of 3D model ----
 	strupper(mName);
 	char *dot = strrchr(mName,'.');

@@ -223,11 +223,13 @@ void CK155radio::ReadFinished()
 { busRD.rnum = uNum;
 	//--- Radio unit 1 is a master radio holding the Radio BUS
   if (1 == uNum)
-	{	mveh->RegisterNAV(unId);
-		mveh->RegisterCOM(unId);
-		mveh->RegisterRadioBUS(&busRD);
+	{	mveh->RegisterRadioBUS(&busRD);
 		mveh->RegisterRAD(this);
 	}
+	//--- Register global radios ----------------------
+	globals->rdb.RegisterNAV(mveh,unId);
+	globals->rdb.RegisterCOM(mveh,unId);
+	//-------------------------------------------------
   CRadio::ReadFinished();
   return;
 }
@@ -891,7 +893,7 @@ int CK155radio::PowerOFF()
 { sPower      = 0;
   busRD.actv  = 0;
 	FreeRadios(1);
-  if (1 == uNum)  globals->rdb->TuneTo(0);
+  if (1 == uNum)  globals->rdb.TuneTo(mveh,0);
   return 0;
 }
 //-----------------------------------------------------------------------
@@ -947,7 +949,7 @@ void CK155radio::Update(float dT,U_INT FrNo,char exs)
   gTimer += dT;
 	if (gTimer > 1.0)	{gTimer -= 1.0; Dispatcher(K55EV_TOPSC);}// Beat second
 	//--- Process Radio 1 specific tasks -----------------------------------
-	if (1 == uNum)    globals->rdb->TuneTo(COM);
+	if (1 == uNum)    globals->rdb.TuneTo(mveh,COM);
 	//--- Refresh comm radio -----------------------------------------------
   COM = globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh com
 	//----When external source, refresh only COM ---------------------------
@@ -1263,7 +1265,7 @@ int CKR87radio::K87enterPOF()
 { rState  = K87_POW_OF;
   sPower  = 0;
   InhibitFields(adfTAB,KR87_SIZE_FD);
-  mveh->RegisterADF(0);
+  globals->rdb.RegisterADF(mveh,0);
   if (NDB) NDB->DecUser();
   NDB = 0;
   indnTarget  = 0;
@@ -1289,7 +1291,7 @@ int CKR87radio::K87statePOF(U_INT evn)
 //  Enter frequency state
 //------------------------------------------------------------------------
 int CKR87radio::K87enterFRQ()
-{ mveh->RegisterADF(unId);                              // Register ADF
+{ globals->rdb.RegisterADF(mveh,unId);                  // Register ADF
   EditActFRQ();                                         // Edit Active freq
   EditSbyFRQ();                                         // Edit Standby freq
   RazField(adfTAB,KR87_FRQL_FD);                        // Set FRQ mode

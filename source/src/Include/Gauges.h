@@ -347,6 +347,7 @@ class CVariator {
 public:
   SMessage msg;                             // Message to send
 protected:
+	CObject *dst;															// Message destination
   U_CHAR state;                             // Internal state
   float Tmax;                               // TIC value
   float Time;                               // Timer
@@ -361,9 +362,10 @@ public:
   bool  HasChanged();                       // Check change
   void  SendValue(float inc);               // send value to system
   //----------------------------------------------------------
-  inline void     Disarm()          {state = 0;}
-  inline void     SetTime(float t)  {Tmax = t;}
-  inline void     SetVMIN(float m)  {vmin = m;}
+	void	SetDestination(CObject *d)	{dst = d;}
+  void  Disarm()          {state = 0;}
+  void  SetTime(float t)  {Tmax = t;}
+  void  SetVMIN(float m)  {vmin = m;}
 };
 //=================================================================================
 // CGaugeKnob
@@ -3244,7 +3246,7 @@ public:
 
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
-
+	void	ReadFinished();
   // CGauge methods
   virtual const char* GetClassName (void) { return "CTurnKnobGauge"; }
   //------------------------------------------------------------------

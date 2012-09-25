@@ -185,7 +185,7 @@ void CK155gauge::CollectVBO(TC_VTAB *vtb)
 void CK155gauge::GetK155()
 { //----Get K155 status ----------------------------
   mesg.user.u.datatag = 'gets';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   RAD = (CK155radio*) mesg.voidData;
   if (0 == RAD) return;
   //----Define CDI parameters ------------------------------
@@ -509,7 +509,7 @@ void CKR87gauge::ReadFinished()
 void CKR87gauge::GetKR87()
 { //----Get KR87status ----------------------------
   mesg.user.u.datatag = 'gets';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   RAD = (CKR87radio*) mesg.voidData;
   return;
 }
@@ -736,7 +736,7 @@ void CKT76gauge::ReadFinished()
 void CKT76gauge::GetRadio()
 { //----Get KT76 status ----------------------------
   mesg.user.u.datatag = 'gets';
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   RAD = (CKT76radio*) mesg.voidData;
   return;
 }
@@ -1498,7 +1498,7 @@ void CBKAP140Gauge::Get140Panel()
   msgp.sender = unId;
   msgp.group  = 'K140';
   msgp.user.u.datatag = 'gets';
-  Send_Message(&msgp);
+  Send_Message(&msgp,mveh);
   PAN = (CKAP140Panel*) msgp.voidData;
   return;
 }

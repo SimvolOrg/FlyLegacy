@@ -144,7 +144,7 @@ void	APISendMessage(SMessage *msg)
   //TagToString (buf1, msg->group);
   //TagToString (buf2, msg->id);
   //TagToString (buf3, msg->user.u.datatag);
-  Send_Message (msg);
+  globals->pln->ReceiveMessage(msg);
   //TRACE ("APISendMessage %f %s %s %s", msg->realData, buf1, buf2, buf3);
 }
 
@@ -814,66 +814,67 @@ int	APIHasJoystickAxis(EJoystickAxis axis)
 
 float	APIGetJoystickAxis(EJoystickAxis axis)
 { float v = 0;
+  CVehicleObject *veh = globals->pln;
   //--APIGetJoystickAxis
   switch (axis) {
   case X_AXIS_INDEX :
-		globals->jsm->Poll(JS_ELEVATOR,v);
+		globals->jsm->Poll(veh,JS_ELEVATOR,v);
 		return v;
   case Y_AXIS_INDEX :
-		globals->jsm->Poll(JS_AILERON,v);
+		globals->jsm->Poll(veh,JS_AILERON,v);
 		return v;
   case RUDDER_AXIS_INDEX :
-		globals->jsm->Poll(JS_RUDDER,v);
+		globals->jsm->Poll(veh,JS_RUDDER,v);
 		return v;
   case TRIM_AXIS_INDEX :
-		globals->jsm->Poll(JS_TRIM,v);
+		globals->jsm->Poll(veh,JS_TRIM,v);
 		return v;
   case RBRAKE_AXIS_INDEX :
-		globals->jsm->Poll(JS_RITE_TOE,v);
+		globals->jsm->Poll(veh,JS_RITE_TOE,v);
 		return v;
   case LBRAKE_AXIS_INDEX :
-		globals->jsm->Poll(JS_LEFT_TOE,v);
+		globals->jsm->Poll(veh,JS_LEFT_TOE,v);
 		return v;
 //  case THROTTLE_AXIS_INDEX :
   case THROTTLE1_AXIS_INDEX :
-		globals->jsm->Poll(JS_THROTTLE_1,v);
+		globals->jsm->Poll(veh,JS_THROTTLE_1,v);
 		return v;
   case THROTTLE2_AXIS_INDEX :
-		globals->jsm->Poll(JS_THROTTLE_2,v);
+		globals->jsm->Poll(veh,JS_THROTTLE_2,v);
 		return v;
 
   case THROTTLE3_AXIS_INDEX :
-		globals->jsm->Poll(JS_THROTTLE_3,v);
+		globals->jsm->Poll(veh,JS_THROTTLE_3,v);
 		return v;
   case THROTTLE4_AXIS_INDEX :
-		globals->jsm->Poll(JS_THROTTLE_4,v);
+		globals->jsm->Poll(veh,JS_THROTTLE_4,v);
 		return v;
 //  case MIXTURE_AXIS_INDEX :
   case MIXTURE1_AXIS_INDEX :
-		globals->jsm->Poll(JS_MIXTURE_1,v);
+		globals->jsm->Poll(veh,JS_MIXTURE_1,v);
 		return v;
 
   case MIXTURE2_AXIS_INDEX :
-		globals->jsm->Poll(JS_MIXTURE_2,v);
+		globals->jsm->Poll(veh,JS_MIXTURE_2,v);
 		return v;
   case MIXTURE3_AXIS_INDEX :
-		globals->jsm->Poll(JS_MIXTURE_3,v);
+		globals->jsm->Poll(veh,JS_MIXTURE_3,v);
 		return v;
   case MIXTURE4_AXIS_INDEX :
-		globals->jsm->Poll(JS_MIXTURE_4,v);
+		globals->jsm->Poll(veh,JS_MIXTURE_4,v);
 		return v;
 //  case PROP_AXIS_INDEX :
   case PROP1_AXIS_INDEX :
-		globals->jsm->Poll(JS_PROP_1,v);
+		globals->jsm->Poll(veh,JS_PROP_1,v);
 		return v;
   case PROP2_AXIS_INDEX :
-		globals->jsm->Poll(JS_PROP_2,v);
+		globals->jsm->Poll(veh,JS_PROP_2,v);
 		return v;
   case PROP3_AXIS_INDEX :
-		globals->jsm->Poll(JS_PROP_3,v);
+		globals->jsm->Poll(veh,JS_PROP_3,v);
 		return v;
   case PROP4_AXIS_INDEX :
-		globals->jsm->Poll(JS_PROP_4,v);
+		globals->jsm->Poll(veh,JS_PROP_4,v);
 		return v;
   }
 
@@ -1301,7 +1302,7 @@ int	APIIsValidObject(SFlyObjectRef *object)
         case  TYPE_FLY_SIMULATEDOBJECT :
         case  TYPE_FLY_VEHICLE :
         case  TYPE_FLY_GROUNDVEHICLE :
-        case  TYPE_FLY_AIRPLANE :
+        case  TYPE_USER_AIRCRAFT :
         case  TYPE_FLY_HELICOPTER :
           return 0;
         default :
@@ -1914,7 +1915,7 @@ int	APIAreWheelsOnGround(SFlyObjectRef *object, int *wheelsOnGround)
       if   (num   == 0)     {*wheelsOnGround = 0; return 0;}      ///< no wheels on ground
       else {
         /// \todo wheels in water : link with ground type
-        if (vo->GetTerrainType () == TERRAIN_WATER_OCEAN) {       ///< wheels in water
+        if (globals->tcm->GetGroundType() == TERRAIN_WATER_OCEAN) {       ///< wheels in water
                              *wheelsOnGround = 4; return 0;
         } else {                                                  ///< wheels on ground :
           if (num   == 1)   {*wheelsOnGround = 3; return 0;}      ///< one wheel on ground
@@ -1934,7 +1935,7 @@ int	APIGetGroundTypeUnderObject(SFlyObjectRef *object, int *groundType)
   if (object->objectPtr) {
     CVehicleObject *vo = static_cast<CVehicleObject *> (object->objectPtr);
     if (vo) {
-      ETerrainType terrain_type = vo->GetTerrainType ();
+      U_CHAR terrain_type = globals->tcm->GetGroundType();
       switch (terrain_type) {
         case TERRAIN_WATER_OCEAN:
           *groundType = static_cast<int> (1);

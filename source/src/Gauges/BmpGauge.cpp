@@ -299,7 +299,7 @@ void	C_NavigationGauge::CollectVBO(TC_VTAB *vtb)
 //  Get radio block 
 //-------------------------------------------------------------------
 void C_NavigationGauge::GetRadio()
-{ Send_Message(&mrad);
+{ Send_Message(&mrad,mveh);
   radio     = (BUS_RADIO*)mrad.voidData;
   return;
 }
@@ -383,7 +383,7 @@ void C_NavigationGauge::Draw (void)
 	//----- Draw OBS knob if rotated ---------------------------------------
    if (knob.HasChanged())	
   { mobs.realData = knob.GetChange();             
-	  Send_Message(&mobs);
+	  Send_Message(&mobs,mveh);
     ShowOBS();
   }
   knob.Draw(); 
@@ -558,11 +558,11 @@ void C_BasicADFGauge::Draw (void)
 { // Get navaid pointer from ADF radio
 	mesg.id = MSG_GETDATA;
 	mesg.user.u.datatag = 'navd';
-	Send_Message (&mesg);
+	Send_Message (&mesg,mveh);
 	navd = (float)mesg.realData;
   //-----Get compass --------------------------------
   mesg.user.u.datatag = 'comp';
-	Send_Message (&mesg);
+	Send_Message (&mesg,mveh);
   cpas = mesg.intData;
 	//------draw compass ------------------------------
   comp.DrawNeedle(float(-cpas));
@@ -572,7 +572,7 @@ void C_BasicADFGauge::Draw (void)
   { mesg.id             = MSG_SETDATA;
     mesg.user.u.datatag = 'comp';
     mesg.realData       = knob.GetChange();
-    Send_Message(&mesg);
+    Send_Message(&mesg,mveh);
     ShowDIR();
   }
   knob.Draw();
@@ -729,7 +729,7 @@ void C_DirectionalGyroGauge::Draw (void)
   if (knob.HasChanged())
 	{	mgyr.id       = MSG_SETDATA;
     mgyr.realData = knob.GetChange();
-		Send_Message(&mgyr);
+		Send_Message(&mgyr,mveh);
     DisplayHDG();
 	}
   knob.Draw();
@@ -739,7 +739,7 @@ void C_DirectionalGyroGauge::Draw (void)
   if (apkb.HasChanged()) 
   { mbug.id       = MSG_SETDATA;
     mbug.realData = apkb.GetChange();
-    Send_Message(&mbug);
+    Send_Message(&mbug,mveh);
     bug           =  mbug.intData;
     dir           =  mbug.user.u.unit;
     DisplayBUG();
@@ -963,7 +963,7 @@ void C_AltimeterGauge::Draw(void)
   if (alkn.HasChanged())
   { kmsg.user.u.datatag = 'knob';
     kmsg.realData	      = alkn.GetChange();
-    Send_Message (&kmsg);
+    Send_Message (&kmsg,mveh);
     baro = float(kmsg.intData) * 0.01;
     DisplayHelp();
   }
@@ -1319,7 +1319,7 @@ void C_HorizonGauge::Draw(void)
   Birim.DrawNeedle(rollD);
   //--- Mire level ----------------
   mesg.id      = MSG_GETDATA;
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
   float  levl  = mesg.intData;
   Bmire.DrawNeedle(0,levl);
   Borim.DrawNeedle(0);
@@ -1327,7 +1327,7 @@ void C_HorizonGauge::Draw(void)
   if (knob.HasChanged())
   { mesg.id      = MSG_SETDATA;
     mesg.intData = knob.GetChange();
-    Send_Message(&mesg);
+    Send_Message(&mesg,mveh);
   }
   //---- Finally draw the knob --------------------
   knob.Draw();
@@ -1376,6 +1376,10 @@ void C_PushPullKnobGauge::PrepareMsg(CVehicleObject *veh)
   lnk1.sender = unId;
 	veh->FindReceiver(&lnk1);
 	CGauge::PrepareMsg(veh);
+	//---- Initial position ----------------------
+  mesg.realData		= Area[cVal].valu;
+	mesg.intData		= mesg.realData;
+  Send_Message (&mesg,mveh);
 	return;
 }
 //-----------------------------------------------------------
@@ -1419,6 +1423,10 @@ int C_PushPullKnobGauge::Read (SStream *stream, Tag tag)
     //--- Obsolete tag -------------------------
     case 'poll':
       return TAG_READ;
+		//--- Initial position ---------------------
+		case 'ipos':
+			ReadInt(&cVal,stream);
+			return TAG_READ;
   }
   return CGauge::Read (stream, tag);
 }
@@ -1444,7 +1452,6 @@ void C_PushPullKnobGauge::CreateArea(SStream *s)
     ReadString ( Area[k].help, 64, s);
     Area[k].fram = k;
    }
-  cVal  = 0;
   return;
 }
 //---------------------------------------------------------------------
@@ -1520,8 +1527,10 @@ void C_PushPullKnobGauge::LookUpValue(float val)
 //         the control
 //---------------------------------------------------------------------
 void C_PushPullKnobGauge::DrawAmbient()
-{	Send_Message(&polm);
-  float val = polm.realData;
+{	Send_Message(&polm,mveh);
+	float	val;
+	if (polm.user.u.datatag == 'indx')	val = polm.index;
+	else																val	= polm.realData;
   LookUpValue(val);
   bmap.Draw(Area[cVal].fram);
 	return;
@@ -1533,8 +1542,9 @@ void C_PushPullKnobGauge::IncValue (void)
 {   cVal ++;
     if (cVal >= nVal) cVal = nVal - 1;
     //---- Send message ----------------------
-    mesg.realData = Area[cVal].valu;
-    Send_Message (&mesg);
+    mesg.realData		= Area[cVal].valu;
+		mesg.intData		= mesg.realData;
+    Send_Message (&mesg,mveh);
     return;
 }
 //---------------------------------------------------------------------
@@ -1545,7 +1555,7 @@ void C_PushPullKnobGauge::DecValue (void)
     if (cVal < 0) cVal = 0;
     //---- Send message ---------------------
     mesg.realData = Area[cVal].valu;
-    Send_Message (&mesg);
+    Send_Message (&mesg,mveh);
     return;
 }
 //---------------------------------------------------------------------
@@ -1601,6 +1611,7 @@ C_SimpleSwitch::C_SimpleSwitch (CPanel *mp)
   cIndx      = 0;
   mmnt       = false;
   mntO       = false;
+	cret			 = MOUSE_TRACKING_OFF;
 }
 //-----------------------------------------------------------------------
 //  Free all resources
@@ -1622,7 +1633,7 @@ void C_SimpleSwitch::PrepareMsg(CVehicleObject *veh)
 {	CGauge::PrepareMsg (veh);
   //---Init the subsystem with current position ------
   mesg.intData	= stat[cIndx];
-  Send_Message(&mesg);
+  Send_Message(&mesg,mveh);
 	subS = (CSubsystem*)mesg.receiver;
 	return;
 }
@@ -1655,7 +1666,7 @@ int C_SimpleSwitch::Read (SStream *stream, Tag tag)
       stat = new int[stat_n];
       for (int i=0; i<stat_n; i++) ReadInt (&stat[i], stream);
       return TAG_READ;
-    //--- State lables -------------------------------------
+    //--- State Tables -------------------------------------
     case 'sstr':
       ReadInt (&sstr_n, stream);
       if (sstr_n > 16) gtfo ("CSimpleSwitch : <sstr> maximum 16 states exceeded");
@@ -1677,6 +1688,7 @@ int C_SimpleSwitch::Read (SStream *stream, Tag tag)
     //--- Momentary switch ----------------------------------
     case 'mmnt':
       mmnt = true;
+			cret = MOUSE_TRACKING_ON;
       return TAG_READ;
     //---- ??? ----------------------------------------------
     case 'mntO':
@@ -1727,19 +1739,6 @@ void C_SimpleSwitch::DrawAmbient()
 //-----------------------------------------------------------------------
 // Increment switch state
 //------------------------------------------------------------------------
-void C_SimpleSwitch::DoState(int snd)
-{ //---- Play sound effect -----------
-  globals->snd->Play(sbuf[snd]);
-  //---- Send index value  -------------
-  mesg.intData	= stat[cIndx];
-  if (sstr) DisplayHelp(sstr[cIndx]);
-  //---- Send message  ---------------
-  Send_Message (&mesg); 
-  return;
-}
-//-----------------------------------------------------------------------
-// Increment switch state
-//------------------------------------------------------------------------
 void C_SimpleSwitch::IncState (void)
 {
   // Check upper bound and increment index
@@ -1755,7 +1754,6 @@ void C_SimpleSwitch::IncState (void)
   }
   return;
 }
-
 //----------------------------------------------------------------------
 // Decrement switch state
 //----------------------------------------------------------------------
@@ -1778,8 +1776,9 @@ void C_SimpleSwitch::DecState (void)
 //----------------------------------------------------------------------
 void C_SimpleSwitch::ChangeState()
 { //--- advise subsystem --------------
-	mesg.index = cIndx;
-	Send_Message (&mesg); 
+	mesg.index		= cIndx;
+	mesg.intData	= (cIndx != 0);
+	Send_Message (&mesg,mveh); 
 	return;
 }
 //----------------------------------------------------------------------
@@ -1791,6 +1790,7 @@ ECursorResult C_SimpleSwitch::MouseMoved (int mouseX, int mouseY)
   case 0:
   //------- Default, vertical orientation -------
   case 1:
+	case 3:
     // Upper half of gauge increments the state
     if (mouseY < cy) return globals->cum->SetCursor (csru_tag);
     // Bottom half of the gauge decrements the state
@@ -1816,14 +1816,33 @@ EClickResult C_SimpleSwitch::MouseClick (int mouseX, int mouseY, int buttons)
   case 1:
     // Default, vertical orientation
     (mouseY < cy)?(IncState ()):(DecState ());
-    return MOUSE_TRACKING_OFF;
+    return cret;
 
   case 2:
     // Horizontal orientation
     (mouseX < cx)?(DecState ()):(IncState ());
-    return MOUSE_TRACKING_OFF;
+    return cret;
+	case 3:
+    // Inverted vertical orientation 
+    (mouseY < cy)?(DecState ()):(IncState ());
+    return cret;
   }
-  return MOUSE_TRACKING_ON;
+  return cret;
+}
+//---------------------------------------------------------------
+//  Mouse Stop Click:  Called only if <mmnt> is defined
+//--------------------------------------------------------------
+EClickResult  C_SimpleSwitch::StopClick ()
+{	//--- Check if last index -------------------------
+	if (cIndx < (stat_n - 1))	return MOUSE_TRACKING_OFF;
+	//--- Back to previous state ----------------------
+	cIndx--;
+  //---- Play sound effect ----------
+  globals->snd->Play(sbuf[GAUGE_OFF_POS]);
+  //---- Send index value- ----------
+  mesg.intData	= stat[cIndx];
+	ChangeState();
+	return MOUSE_TRACKING_OFF;
 }
 //======================================================================
 // CHobbsMeterGauge
@@ -1899,7 +1918,7 @@ void C_HobbsMeterGauge::ReadFinished()
 //-------------------------------------------------------------
 void C_HobbsMeterGauge::Draw()
 { //  get the hobbs value here
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   float hobv = mesg.realData;
   int d0  = int(hobv * 0.001);
   int tp  = d0 * 1000; 
@@ -2011,13 +2030,10 @@ EClickResult C_BasicMagnetoSwitch::MouseClick (int mouseX, int mouseY, int butto
   }
 
   // Set position to start if last frame is reached ----
-  int pos = cIndx;
   if (cIndx == swit.GetHiFrame()) 
       { rc  = MOUSE_TRACKING_ON;
-        pos = MAGNETO_SWITCH_START;
+        cIndx = MAGNETO_SWITCH_START;
       }
-  // Update magneto subsystem
-  mesg.intData  = pos;
   ChangeState();
   return rc;
 }
@@ -2032,10 +2048,7 @@ EClickResult C_BasicMagnetoSwitch::StopClick()
   cIndx -= 1;
   globals->snd->Play(sbuf[GAUGE_OFF_POS]);
   // Update magneto subsystem
-  mesg.id = MSG_SETDATA;
-  mesg.dataType = TYPE_INT;
-  mesg.intData  = cIndx;
-  Send_Message (&mesg);
+	ChangeState();
   return MOUSE_TRACKING_OFF;
 }
 //================================================================================
@@ -2141,10 +2154,10 @@ EClickResult C_BasicBatterySwitch::MouseClick (int mouseX, int mouseY, int butto
   if (mod) globals->snd->Play(sbuf[mod]);
 	//--- Update alternator state -------------------------
   malt.intData  = int(sAlt);
-  Send_Message (&malt);
+  Send_Message (&malt,mveh);
 	// Update battery and alternator subsystems
   mbat.intData  = int(sBat);
-  Send_Message (&mbat);
+  Send_Message (&mbat,mveh);
   return rc;
 }
 
@@ -2424,11 +2437,11 @@ void C_FlyhawkAnnunciatorTest::UpdateComponent(char old,char now)
   globals->snd->Play(sbuf[GAUGE_ON__POS]);
 	//---reset previous component -----------------
 	msg->intData	= 0;
-	Send_Message(msg);
+	Send_Message(msg,mveh);
 	//---set the new component --------------------
 	msg	= &msgT[now];
 	msg->intData	= 1;
-	Send_Message(msg);
+	Send_Message(msg,mveh);
 	return;
 }
 //------------------------------------------------------------
@@ -2573,14 +2586,14 @@ EClickResult CElevatorTrimGauge::MouseClick (int x, int y, int bt)
   if (down.IsHit(x, y)) {
     mesg.id = MSG_SETDATA;
     mesg.user.u.datatag = 'decr';
-    Send_Message (&mesg);
+    Send_Message (&mesg,mveh);
     ArmRepeat(0.1f,x,y,bt);
     return MOUSE_TRACKING_ON;
   }
   if (caup.IsHit(x, y)) {
     mesg.id = MSG_SETDATA;
     mesg.user.u.datatag = 'incr';
-    Send_Message (&mesg);
+    Send_Message (&mesg,mveh);
     ArmRepeat(0.1f,x,y,bt);
     return MOUSE_TRACKING_ON;
   }
@@ -2600,7 +2613,7 @@ void CElevatorTrimGauge::DrawAmbient(void)
 { // Draw Gauge 
   mesg.id = MSG_GETDATA;
   mesg.user.u.datatag = 'rawv';
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   float df = float(mesg.realData);
   int   wf = Round(wRatio * (df + 1));
   int   nf = wf % wheel.NbFrames();
@@ -2679,7 +2692,7 @@ void CBasicCompassGauge::CollectVBO(TC_VTAB *vtb)
 //-----------------------------------------------------------------
 void CBasicCompassGauge::Draw(void)
 {	//--- Get heading value ---------------------
-	Send_Message (&mesg);
+	Send_Message (&mesg,mveh);
   cdir = int (mesg.realData);    //mesg.user.u.unit;
 	//--- Draw Gauge ----------------------------
 	int dev = int(rDeg * mesg.user.u.unit);
@@ -2809,7 +2822,7 @@ void  C_SimpleInOutStateSwitch::PrepareMsg(CVehicleObject *veh)
 { mesg.id       = MSG_SETDATA;
   mesg.dataType = TYPE_INT;
   mesg.intData  = vin[gpos];
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
 	subS = (CSubsystem*)mesg.receiver;
 	CGauge::PrepareMsg(veh);
   return;
@@ -2862,7 +2875,7 @@ EClickResult C_SimpleInOutStateSwitch::MouseClick (int mouseX, int mouseY, int b
 { //--- Update subsystem state ----------------
   gpos ^= 1;
   mesg.intData  = vin[gpos];
-  Send_Message (&mesg);
+  Send_Message (&mesg,mveh);
   //---- Play sound effect --------------------
   globals->snd->Play(sbuf[gpos]);
   //--- Arm timer for momentary contact -------
@@ -2927,6 +2940,7 @@ int CGenericSwitch::Read(SStream *st, Tag tag)
   { //  Valid message ---
     SMessage *msg = new SMessage;
     ReadMessage(msg,st);
+		msg->id		= MSG_SETDATA;
     vmsg[nms] = msg;
     return TAG_READ;
   }
@@ -2990,7 +3004,8 @@ void CGenericSwitch::Execute(BASE_ACT *ba)
     if (itm != vmsg.end())
     { SMessage *msg = (*itm).second;
       msg->realData = ba->Value;
-      Send_Message(msg);
+			msg->intData	= ba->Value;
+      Send_Message(msg,mveh);
     }
   }
   return;
@@ -3082,7 +3097,7 @@ EClickResult CRepeatPushPull::StopClick()
 C1NeedleGauge::C1NeedleGauge(CPanel *mp)
 : CTexturedGauge(mp)
 { Prop.Set(NO_SURFACE);
-  mgg = 0;
+  mgg = this;
   nedl.SetGauge(this);
 }
 //--------------------------------------------------------------------
@@ -3124,6 +3139,7 @@ int C1NeedleGauge::Read (SStream *stream, Tag tag)
 //---------------------------------------------------------------------
 void C1NeedleGauge::ReadFinished()
 { CTexturedGauge::ReadFinished();
+	mesg.id = MSG_GETDATA;
 }
 //--------------------------------------------------------------------
 //  Assign panel
@@ -3196,11 +3212,13 @@ ECursorResult C1NeedleGauge::MouseMoved (int x, int y)
 //============================================================================
 C2NeedleGauge::C2NeedleGauge(CPanel *mp)
 : CTexturedGauge(mp)
-{ type	= 0;
+{ CCockpitManager *pit	= mp->GetPIT();
+	//--------------------------------------------------
+	type	= 0;
 	ndl1.SetPanel(mp);
 	ndl2.SetPanel(mp);
 	//--- Allocate holder --------------
-	hold	= globals->pit->GetHolder(unId);
+	hold	= pit->GetHolder(unId);
 }
 //------------------------------------------------------------------
 //  Read all parameters
@@ -3211,12 +3229,14 @@ int C2NeedleGauge::Read(SStream *stream,Tag tag)
   case 'ndl1':
     ndl1.SetMother(this);          // Mother gauge
     ndl1.SetPanel(panel);
+		ndl1.SetMVEH(mveh);
     ReadFrom(&ndl1,stream);
     return TAG_READ;
   //--- second needle definition -------
   case  'ndl2':
     ndl2.SetMother(this);
     ndl2.SetPanel(panel);
+		ndl2.SetMVEH(mveh);
     ReadFrom(&ndl2,stream);
     return TAG_READ;
   //--- knob1 -------------------------
@@ -3287,7 +3307,7 @@ void C2NeedleGauge::CollectVBO(TC_VTAB *vtb)
 //  Draw the gauge
 //------------------------------------------------------------------
 void C2NeedleGauge::Draw()
-{ under.Draw();
+{	under.Draw();
   mrk1.Draw();
   ndl1.Draw();
   mrk2.Draw();
@@ -3298,7 +3318,8 @@ void C2NeedleGauge::Draw()
 //  Draw in the ambient light
 //------------------------------------------------------------------
 void C2NeedleGauge::DrawAmbient()
-{ return overl.Draw(); }
+{ 
+	return overl.Draw(); }
 //------------------------------------------------------------------
 //  Mouse click over the gauge
 //------------------------------------------------------------------
@@ -3418,7 +3439,7 @@ void C_BasicCompassGauge::CollectVBO(TC_VTAB *vtb)
 //-----------------------------------------------------------------
 void C_BasicCompassGauge::DrawDynamic(void)
 {	//--- Get heading value ---------------------
-	Send_Message (&mesg);
+	Send_Message (&mesg,mveh);
   float X   = mesg.user.u.unit;
   cdir      = mesg.realData;
 	//--- Compute texture coordinates -----------

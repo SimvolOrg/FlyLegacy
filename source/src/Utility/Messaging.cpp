@@ -42,6 +42,8 @@
 
 using namespace std;
 //--------------------------------------------------------------------------
+extern	CNullSubsystem nsub;
+//--------------------------------------------------------------------------
 //	Build observer list
 //  Use this for trap purpose 
 //--------------------------------------------------------------------------
@@ -65,7 +67,7 @@ inline void	SendMsgToObservers(SMessage *msg)
 //      message, either it responds with a value or the default value
 //      is left inchanged
 //----------------------------------------------------------------------------
-EMessageResult Send_Message (SMessage *msg)
+EMessageResult GlobalSendMessage (SMessage *msg)
 { // Assume message has no handler by default
 	msg->result	      = MSG_IGNORED;
 	EMessageResult rc = MSG_IGNORED;
@@ -96,11 +98,8 @@ EMessageResult Send_Message (SMessage *msg)
   if (veh)	rc = veh->ReceiveMessage(msg);
   TagToString(msg->dst,msg->group);
 	if (msg->receiver)    return rc;
-  //--- Send message to the CheckList -----------------------------
-  //rc = user->ckl->ReceiveMessage(msg);
-  //if (msg->receiver)    return rc;
   //--- Warning has not been generated for this message yet--
-  msg->receiver	= veh->GetNullSubsystem();			// Set Null Sub as receiver
+  msg->receiver	= &nsub;			// Set Null Sub as receiver
 	msg->voidData = msg->receiver;
   //---Ignore when group is null -----------------------------------
   if (0 == msg->group)    return rc;

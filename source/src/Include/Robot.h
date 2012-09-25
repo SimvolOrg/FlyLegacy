@@ -170,7 +170,7 @@ public:
 	SMessage *IntMessage(char *txt);
 	SMessage *FltMessage(char *txt);
 	//--------------------------------------------------
-	bool			Execute(U_INT No);
+	bool			Execute(U_INT No,CObject *dst);
 
 };
 //=================================================================
@@ -191,6 +191,7 @@ public:
 #define VPL_STOPPED		  (12)
 #define VPL_FIXEPOINT		(13)
 #define VPL_EMERGENCY		(14)
+#define VPL_WILL_EXIT		(15)
 //=================================================================
 //  Virtual Pilot to pilot the aircraft
 //  
@@ -240,6 +241,7 @@ public:
 	void	StepProcedure(float dT);
 	void	StartProcedure(Procedure *P,char nxt,char *fmt);
 	//--- Action routines ---------------------------------
+	void	ToggleState();
 	void	StartOnSpot();
 	void	GoToTakeOff();
 	void	StandFixe();
@@ -253,6 +255,7 @@ public:
 	void	GroundSpeed();
 	//--- State routines ----------------------------------
 	void	Start();
+	void	Stop();
 	void	RetractFlap();
 	void	HandleBack();
 	void	GroundBraking();

@@ -46,9 +46,6 @@ using namespace std;
    VectorDistanceLeftToRight  (vect);
  }
 
-//////////////////////////////// locals ///////////////////////////////
-static float vspd_counter = 0.0f;
-
 //////////////////////////////////////////////////////////////////////////////////
 //
 // CPitotStaticSubsystem
@@ -208,7 +205,7 @@ EMessageResult CAltimeter::ReceiveMessage (SMessage *msg)
 //-----------------------------------------------------------------------
 void CAltimeter::TimeSlice (float dT,U_INT FrNo)				// JSDEV*
 { // Get ground altitude below aircraft
-  SPosition pos = mveh->GetPosition();									//globals->geop;
+  SPosition pos = mveh->GetPosition();									
   radarAlt      = globals->tcm->GetGroundAltitude();
   hPres         = globals->atm->GetPressureSLinHG();
   kollVariation	= (kollValue - hPres) * KOLLMAN_CTE;
@@ -287,7 +284,7 @@ EMessageResult CVerticalSpeedIndicator::ReceiveMessage (SMessage *msg)
 //  1 is 100 feet up per minute.
 //------------------------------------------------------------------------------
 void CVerticalSpeedIndicator::TimeSlice (float dT,U_INT FrNo)
-{ double alt = mveh->GetAltitude();			//globals->geop.alt;
+{ double alt = mveh->GetAltitude();			
   // compute vertical speed over time (1 minute)
   vfs         = (alt - old) / dT;
   indnTarget  = float(vfs * 60.0);

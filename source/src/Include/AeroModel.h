@@ -144,7 +144,7 @@ public:
   const SVector& GetDragVector() const;
   const SVector& GetMomentVector() const;
 
-  /// Getters
+  ///--- Getters -------------------------------------------------
   const double&  GetAoA              (void) const {return aoa;}
   const double&  GetCL               (void) const {return cl;}
   const double&  GetCDI              (void) const {return cdi;}
@@ -152,7 +152,8 @@ public:
   const CVector& GetSpeedVector      (void) const {return speedVector;}
   const double&  GetWingIncidenceDeg (void) const {return bAng.x;}
   //--------------------------------------------------------------------
-  inline void   AddFlap(char *name)  {mflap->AddFlap(name);}
+  void  AddFlap(char *name)  {mflap->AddFlap(name);}
+	bool	IsRudder()	{return (strcmp(name.c_str(),"wing Tail w/rudder") == 0);}
   //--------------------------------------------------------------------
 protected:
   //--------------------------------------------------------------------
@@ -270,6 +271,7 @@ public:
   SVector &GetMoment();
 
 protected:
+	//---------------------------------------------------------------------
   CVehicleObject *mveh;   // Parent vehicle
   CVector   dofa;         ///< Vector distance from empty CG to aerodynamic datum (ft)
   float     laca;         ///< longitudinal aerodynamic center adjust
@@ -280,20 +282,26 @@ protected:
   float     cd;           ///< Total form drag adjust
   float     ac;           ///< Longitudinal aerodynamic centre adjust
   bool      debugOutput;  ///< Enable real-time debug output
-
+	//---------------------------------------------------------------------
+	CAeroModelWingSection *rudder;				// Rudder section
+	//---------------------------------------------------------------------
+	char			sreg;					// Ground speed regulator on/off
+	//---------------------------------------------------------------------
   std::map<std::string,CAeroModelAirfoil*>      airfoilMap; ///< Map of airfoil data
   std::map<std::string,CAeroModelWingSection*>  wingMap;    ///< Map of wing sections
-
+	//---------------------------------------------------------------------
   // aerodynamic state data
   CVector force;
   CVector moment;
-
+	//---------------------------------------------------------------------
 public:
 	void		SetVEH(CVehicleObject *v)	{mveh = v;}
   // logging
   static CLogFile* log;
   static void LogVector(const SVector &v, const char* name);
   static void LogScalar(const double &d, const char* name);
+	//---------------------------------------------------------------------
+	void		SpeedRegulation(char s)	{sreg = s;}
 };
 //=====================================================================================
 // The PHY file contains the physics adjustments for the aircraft
@@ -327,28 +335,17 @@ public:
         Kpth, /// pitch coeff
         Pmin, /// pitch mine
         Rmin, /// roll mine
-        Kstr, /// steering const
-        Kbrk, /// braking const
-        Kdff, /// braking differential const
         Wlft, /// unused
         Ymin, /// yaw mine
-        aldK, /// jsAileronDragCoeff=1.000000
-        alfK, /// jsAileronForceCoeff=4.750000
-        rdfK, /// jsRudderForceCoeff=6.840000
         Kixx, /// propeller inertia
         KgrR, /// propeller gear ratio
-        KrlR, /// ground banking damp const
         Kwnd, /// wind coeff on aircraft
         KfcP, /// P factor fudge factor
-        Ksnk, /// crash sink rate
-        Kcpr, /// crash compression lenght
-        Kpow, /// crash WHL <powL>
         mixC, /// mixture const
         Kegt, /// EGT coeff
         Ghgt, /// gear adjust const
         KdrG, /// drag from gear
         Kpmn; /// propeller magic number
-  int   sGer; /// simplified gear system
   //----List of channel adjustment --------------------------
   std::map<std::string,AERO_ADJ*>  aero;
 	//----------------------------------------------------------

@@ -532,6 +532,7 @@ public:
   void          Warn1(SQL_DB &db);
 	void					Warn2(SQL_DB &db,int rep);
 	int						ReadVersion(SQL_DB &db);
+	void					SetPageSize(int dim,SQL_DB &db);
 	void					ImportConfiguration(char *fn);
 	//-----------------------------------------------------------------
   sqlite3_stmt *CompileREQ(char *req,SQL_DB &db);

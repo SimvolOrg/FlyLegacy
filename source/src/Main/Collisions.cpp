@@ -33,24 +33,23 @@ CrashDetector::CrashDetector()
 //  Process one event
 //-----------------------------------------------------------------
 void CrashDetector::handleCollisionEvent(const opal::CollisionEvent& e )
-{
-  opal::Solid *pln  = e.thisSolid;
+{ opal::Solid *pln  = e.thisSolid;
   opal::Solid *oth  = e.otherSolid;
   opal::Point3r pnt = e.pos;
-  CVehicleObject *veh = globals->pln;
+  CAirplane *veh = (CAirplane*)pln->getUserData();				//globals->pln;
+	if (!veh->IsUserPlan())		return;
+	//--- User vehicle crashes -----------------------
   CVector p(-pnt.x, -pnt.y, -pnt.z);
   switch (e.uType)  {
       case SHAPE_BODY:
-        {
-        U_INT fr = globals->sit->GetFrameNo();
-        TRACE("%06d: BODY CONTACT x=%.4f y=%.4f z=%.4f",fr,p.x,p.y,p.z);
+        {	U_INT fr = globals->sit->GetFrameNo();
+					TRACE("=============>%06d: BODY CONTACT x=%.4f y=%.4f z=%.4f",fr,p.x,p.y,p.z);
         }
         veh->BodyCollision(p);
         break;
       //-- Gear ignore collision -----------------
       case SHAPE_GEAR:
-        { //CGear *gr = (CGear*)e.uData;
-          return;
+        { return;
         }
   }
   return;

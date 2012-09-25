@@ -1293,7 +1293,7 @@ U_INT CmQUAD::WorldTileKey()
 	}
   //---- Draw contour if Terra Browser is active -----------
   if (globals->aPROF.Not(PROF_DR_DET))	return;
-  if (!globals->tcm->PlaneQuad(this))		return;
+  if (!globals->tcm->CenterQuad(this))		return;
   return Contour();
 }
 */
@@ -1308,8 +1308,8 @@ void CmQUAD::DrawIND()
 	glTexCoordPointer(2,UNIT_GTAB,sizeof(TC_GTAB), vt);
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
   //---- Draw contour if Terra Browser is active -----------
-  if (globals->aPROF.Not(PROF_DR_DET))	return;
-  if (!globals->tcm->PlaneQuad(this))		return;
+  if (globals->aPROF.Not(PROF_DR_DET))		return;
+  if (!globals->tcm->CenterQuad(this))		return;
   return Contour();
 }
 //-------------------------------------------------------------------------
@@ -1321,7 +1321,7 @@ void CmQUAD::DrawVBO()
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
   //---- Draw contour if Terra Browser is active -----------
   if (globals->aPROF.Not(PROF_DR_DET))	return;
-  if (!globals->tcm->PlaneQuad(this))		return;
+  if (!globals->tcm->CenterQuad(this))	return;
   return Contour();
 }
 //-------------------------------------------------------------------------

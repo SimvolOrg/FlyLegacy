@@ -1864,7 +1864,7 @@ int CK89gps::EditNAVpage02()
   switch (OpPos) {
     //----------Format 0: Edit coordinates -------------------------------
     case 0:
-      { SPosition pos = mveh->GetPosition();			//globals->geop;
+      { SPosition pos = mveh->GetPosition();			
         EditLatitude (pos.lat,K89_LINE2,K89_CLN10);
         EditLongitude(pos.lon,K89_LINE3,K89_CLN10);
         break;
@@ -4167,7 +4167,7 @@ void  CK89gps::TimeSlice (float dT,U_INT FrNo)
   if (0 == powr)   {PowerCUT(); return;}
   //-----Update flasher -----------------------------------
   mskFS = K89FLASH[globals->clk->GetON()];
-  aPos  = mveh->GetPosition();					//globals->geop;
+  aPos  = mveh->GetPosition();					
   //-----Refresh active waypoint --------------------------
   if (aState >= K89_APTP1)
   { UpdNavigationData(actWP);
@@ -4445,7 +4445,7 @@ void GPSRadio::SetTrack()
 	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wTRK->GetAltitude());
-	if (wTRK->IsFirst()) alt = globals->geop.alt;
+	if (wTRK->IsFirst()) alt = mveh->GetPosition().alt;
 	APL->SetWPTmode(alt);
 	return;
 }

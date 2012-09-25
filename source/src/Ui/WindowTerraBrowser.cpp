@@ -209,7 +209,7 @@ int CFuiTBROS::ChangeTile(int gnd)
   TERRA("   QGT(%03d-%03d) DET(%02d-%02d) Type was %03d  Changed for %03d",
         qx,tx,qz,tz,gnd,int(tp));
   //---Refresh texture load --------------------------
-  C_QGT     *qgt = globals->tcm->GetPlaneQGT();
+  C_QGT     *qgt = globals->tcm->GetCenterQGT();
   if (qgt)   qgt->PutOutside();
   return 1;
 }
@@ -233,7 +233,7 @@ int  CFuiTBROS::RestoreTile(int gnd)
   U_INT az;
   globals->tcm->GetAbsoluteIndices(ax,az);
   if ((ax != sx) || (az != sz)) return 0;
-  C_QGT     *qgt = globals->tcm->GetPlaneQGT();
+  C_QGT     *qgt = globals->tcm->GetCenterQGT();
   if (qgt)   qgt->PutOutside();
   return 1;
 }

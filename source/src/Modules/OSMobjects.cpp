@@ -32,6 +32,7 @@
 //===============================================================================
 char *ScriptCreateOSM[] = {
 	//--- Create QGT table ---------------------------------
+	"PRAGMA page_size = 4096;*",
 	"CREATE TABLE QGT ( key INTEGER UNIQUE);*",
 	"CREATE INDEX skey ON QGT(key)",
 	//--- Create object table ------------------------------

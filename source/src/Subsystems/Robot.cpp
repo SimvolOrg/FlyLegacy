@@ -47,6 +47,7 @@ char *vpilotSTATE[] = {
 	"-Parked",					// VPL_PARKED			(12)
 	"-Fixe Point",			// VPL_FIXEPOINT	(13)
 	"-Emergency stop",	// VPL_EMERGENCY	(14)
+	"-VPilot exit",			// VPL_WILL_EXIT	(15)
 };
 //=========================================================================
 //	PROCEDURE
@@ -103,7 +104,8 @@ SMessage *Procedure::IntMessage(char *txt)
 	msg->dataType = TYPE_INT;
   msg->group		= StringToTag(ds);
 	msg->user.u.datatag = StringToTag(fn);
-	msg->intData	= p1;
+	if (msg->user.u.datatag == 'indx')	msg->index		= p1;
+	else																msg->intData	= p1;
 	strncpy(msg->dst,ds,5);
 	//--- check for hardware id ---------------	
 	txt += nk;
@@ -143,13 +145,13 @@ SMessage *Procedure::FltMessage(char *txt)
 //-------------------------------------------------------------------------
 //	Execute action number
 //-------------------------------------------------------------------------
-bool Procedure::Execute(U_INT No)
+bool Procedure::Execute(U_INT No, CObject *dst)
 {	if (0  == msgQ.size())		return false;
 	if (No >= msgQ.size())		return false;
 	EMessageResult rs = MSG_IGNORED;
 	//------------------------------------------------------
 	SMessage *msg = msgQ[No];
-	rs  = Send_Message(msg);
+	rs  = dst->ReceiveMessage(msg);
 	return (MSG_PROCESSED == rs);
 }
 //=========================================================================
@@ -210,7 +212,9 @@ bool CRobot::Execute(void *s)
 	val		= a.vtst;
 	cond	= a.cond;
 	//--- Locate panel and gauges --------------
-	panl  = globals->pit->GetPanelByTag(a.pnt);
+	//--------------------------------------------------
+  CCockpitManager *pit	= mveh->GetPIT();
+	panl  = pit->GetPanelByTag(a.pnt);
 	gage	= (panl)?(panl->GetGauge(a.ggt)):(0);
   step  = Check();
   return true;
@@ -393,7 +397,7 @@ void VPilot::Error(int No)
 void VPilot::Warn(int No)
 {	if (0 == alrm)	globals->fui->DialogError(vpMSG[No],"VIRTUAL PILOT");
 	alrm = 1;
-	if (!pln->AllWheelsOnGround())	return;
+	if (!pln->AllWheelsOnGround() || (0 == No))	return;
 	GroundBraking();
 	return;
 }
@@ -457,7 +461,7 @@ void VPilot::StepProcedure(float dT)
 	_snprintf(edt,128,fmt,msgNo + 1);
 	globals->fui->PilotToUser();
 	//------------------------------------------------------
-	if (Pexec->Execute(msgNo++))						return;
+	if (Pexec->Execute(msgNo++,mveh))				return;
 	State = nStat;
 	T01		= 6;
 	return;
@@ -467,19 +471,21 @@ void VPilot::StepProcedure(float dT)
 //--------------------------------------------------------------
 bool VPilot::GetRadio()
 {	//----Radio message ------------------------
-  mrad.sender         = unId;
-  mrad.dataType       = TYPE_VOID;
-  mrad.user.u.hw      = HW_RADIO;
-  mrad.id             = MSG_GETDATA;
-  mrad.group          = mveh->GetRadio(1);
-  mrad.user.u.unit    = 1;
-  mrad.user.u.datatag = 'gets';
-	Send_Message(&mrad);
-  Radio     = (CRadio*)mrad.voidData;
+	Radio     = mveh->GetMRAD();
 	if (0 == Radio)				return false;
 	Radio->PowerON();
 	return (0 != Radio->GetPowerState());
  }
+//--------------------------------------------------------------
+//	Toggle state
+//	NOTE: When virtaul pilot is disengaged, nothing is done on 
+//	aircraft state so user got immediate control in whatever
+//	condition the plane is
+//--------------------------------------------------------------
+void VPilot::ToggleState()
+{	if (State == VPL_IS_IDLE)	Start();
+	else											Stop();
+}
 //--------------------------------------------------------------
 //	Request to start the virtual pilot
 //--------------------------------------------------------------
@@ -745,7 +751,7 @@ void VPilot::GroundSpeed()
 	if (!route->LastLeg())				return;
 	if (dist > 50)								return;
 	sreg->SetSpeed(4);
-	if (sreg->ActualSpeed() < 4)	return;
+	if (sreg->ActualSpeed() < 8)	return;
 	pln->GroundBrakes (BRAKE_BOTH);
 	return;
 }
@@ -769,11 +775,21 @@ void VPilot::ModeTaxi()
 //--------------------------------------------------------------
 void VPilot::ModeInPark()
 {	pln->ParkBrake(1);
-	StartProcedure(&Pstop,VPL_IS_IDLE,"Stop step %02d");
-	sreg->SetOFF();
-	globals->aPROF.Raz(PROF_ACBUSY);
+	StartProcedure(&Pstop,VPL_WILL_EXIT,"Stop step %02d");
 	return;
 }	
+//--------------------------------------------------------------
+//	STOP virtual pilot
+//--------------------------------------------------------------
+void VPilot::Stop()
+{ fpln->StopPlan();
+	if (sreg)	sreg->SetOFF();
+	State = VPL_IS_IDLE;
+	globals->aPROF.Raz(PROF_ACBUSY);
+	pln->ParkBrake(1);
+	Error(0);
+	return;
+}
 //--------------------------------------------------------------
 //	Time slice
 //--------------------------------------------------------------
@@ -835,6 +851,10 @@ void VPilot::TimeSlice (float dT,U_INT frm)
 		//--- Must stop on ground----------
 		case VPL_EMERGENCY:
 			GroundBraking();
+			return;
+		//--- Will exit from virtual pilot -
+		case VPL_WILL_EXIT:
+			Stop();
 			return;
 	}
 	return;

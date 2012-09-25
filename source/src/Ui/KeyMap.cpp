@@ -63,6 +63,7 @@ void BuildKeyString()
   keyString['8'] =                     "8" ;
   keyString['9'] =                     "9" ;
   keyString['0'] =                     "0" ;
+	keyString[KB_KEY_PLUS]	=                 "+" ;
   keyString[KB_KEY_MINUS] =                 "-" ;
   keyString[KB_KEY_EQUALS] =                "=" ;
   keyString[KB_KEY_BACK] =                  "Backspace" ;
@@ -422,8 +423,8 @@ int CKeyDefinition::Read (SStream *stream, Tag tag)
     ReadTag (&kyid, stream);
 		TagToString(tex,kyid);
 		strncpy(skey,tex,6);
-if (strcmp(skey,"anlt") == 0)
-int a = 0;
+//if (strcmp(skey,"abrk") == 0)
+//int a = 0;
     return TAG_READ;
 
   case 'name':

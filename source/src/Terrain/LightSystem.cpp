@@ -1482,6 +1482,7 @@ void CExternalLight::DrawAsQuad()
 //-------------------------------------------------------------------
 void	CExternalLight::DrawAsSpot()
 { if (!on)			return;
+
 	//-----------------------------------------------------
 	float prj[16];										// Projection matrix
 	double *rot		= ltm->GetROTM();
@@ -1685,7 +1686,8 @@ void	CExternalLightManager::Build2DHalo(int sid)
 //  Free all lights
 //-------------------------------------------------------------------------------
 CExternalLightManager::~CExternalLightManager (void)
-{ // Delete all allocated external light objects
+{ TRACE("Destroy elt");
+	// Delete all allocated external light objects
 	glDeleteTextures(1,&txo);
   std::map<Tag,CExternalLight*>::iterator i;
   for (i=nLit.begin(); i!=nLit.end(); i++) delete (i->second);
@@ -1787,24 +1789,31 @@ void CExternalLightManager::DrawOmniLights()
 void CExternalLightManager::DrawSpotLights()
 {	std::map<Tag,CExternalLight*>::iterator i;
   glGetMaterialfv(GL_FRONT,GL_EMISSION,ems);		// save emissive color
-  //----- Set GL state ---------------------------------------
+	//-------------------------------------------------------------
+	glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDepthMask(false);
+  glEnable (GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER,0);
+
+	//-------------------------------------------------------------
   glPushAttrib (GL_ALL_ATTRIB_BITS);
   glDisable(GL_DEPTH_TEST);
-	glDepthMask(false);
 	glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D,txo);
   glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	glShadeModel(GL_SMOOTH);
   //----- Draw individual lights--------------------------------
-  glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
 	glDisable(GL_LIGHTING);
-	//glDisable(GL_COLOR_MATERIAL);
   //--- Draw each ligth ----------------------------------------
   for (i=sLit.begin(); i!=sLit.end(); i++) {i->second->DrawAsSpot(); }
   //--- Restore GL state ---------------------------------------
 	glMaterialfv (GL_FRONT, GL_EMISSION, ems);
   glPopClientAttrib();
   glPopAttrib ();
+	glDepthMask(true);
 }
 //-------------------------------------------------------------------------------
 //  Return line distance for the RAY that starts at v0,passes

@@ -103,16 +103,16 @@ using namespace std;
 //======================================================================================
 CWorldObject::CWorldObject (void)
 { SetType(TYPE_FLY_WORLDOBJECT);
-  geop		= orgp = globals->geop;
-  iang		= globals->iang;
-  dang		= globals->dang;
   damM.Severity		= 0;
 	damM.msg				= 0;
 	phyMod	= 0;
 	//--- Default options -------------------
 	SetOPT(VEH_AP_LAND);
-  SetOPT(VEH_D_CRASH);
   SetOPT(VEH_PN_HELP);
+	//--- Option from INI file --------------
+	int pm = 0;
+	GetIniVar("Sim","TestMode",&pm);
+	if (pm)	SetOPT(VEH_OP_TEST);
 
 }
 //-------------------------------------------------------------------
@@ -135,7 +135,7 @@ int   CWorldObject::Read (SStream *stream, Tag tag)
   case 'type':
     // Object type
     ReadTag (&type, stream);
-    break;
+    return TAG_READ;
 
   case 'geop':
     SPosition(pos);
@@ -155,19 +155,15 @@ int   CWorldObject::Read (SStream *stream, Tag tag)
       angu.y = -tmp;
       angu.x = WrapPiPi (-angu.x);
       SetObjectOrientation(angu);
-      rc = TAG_READ;
+      return TAG_READ;
     }
-    break;
-
   default:
     // This is the end of the line...if the tag is not recognized then
     // generate a warning
-    WARNINGLOG ("CWorldObject::Read : Unrecognized tag <%s> in %s",
+    gtfo ("CWorldObject::Read : Unrecognized tag <%s> in %s",
       TagToString(tag), stream->filename);
   }
-  //MEMORY_LEAK_MARKER ("readworld")
-
-  return rc;
+  return TAG_IGNORED;
 }
 //-------------------------------------------------------------------------
 //  All parameters are read
@@ -181,42 +177,6 @@ void  CWorldObject::ReadFinished (void)
 	int qz = 0;
 	int nf = sscanf(txt," QGT ( %03d , %03d )",&qx, &qz);
 	if (nf == 2)	GetQgtMidPoint(qx,qz,orgp);
-	//---- Receive position and orientation from globals -----
-  SetObjectPosition(orgp);
-  SetObjectOrientation(globals->iang);
-	SetPhysicalOrientation (iang);
-	ResetSpeeds ();
-  return;
-}
-//--------------------------------------------------------------
-//  Set aircraft position
-//--------------------------------------------------------------
-void CWorldObject::SetObjectPosition (SPosition pos)
-{ // Clamp altitude to 100K
-  double altClamp = globals->aMax;;
-  if (pos.alt > altClamp) pos.alt = altClamp;
-  // Clamp latitude to globe tile maximum latitude
-  double latClamp = LastLatitude();
-  if (pos.lat > +latClamp)  pos.lat = +latClamp;
-  if (pos.lat < -latClamp)  pos.lat = -latClamp;
-  if (_isnan(pos.lat))  return;
-  geop          = pos;
-  if (!IsFyingObj())    return;
-  //----Save position at global level ----------------
-  globals->geop = pos;
-  return;
-}
-//--------------------------------------------------------------
-//  Set aircraft altitude
-//--------------------------------------------------------------
-void CWorldObject::SetAltitude(double alt)
-{ // Clamp altitude to 100K
-  double altClamp = 1.0E+5;
-  if (alt > altClamp) alt = altClamp;
-  geop.alt          = alt;
-  if (!IsFyingObj())    return;
-  //----Save position at global level ----------------
-  globals->geop.alt = alt;
   return;
 }
 //------------------------------------------------------------
@@ -243,8 +203,10 @@ void CWorldObject::SetObjectOrientation(SVector v)
   dang.y = RadToDeg(iang.y);
   dang.z = RadToDeg(iang.z);
   //----Save position at global level ----------------
-  globals->iang = iang;
-  globals->dang = dang;
+	if (IsUserPlan())
+	{	globals->iang = iang;
+		globals->dang = dang;
+	}
   //--- Load openGL rotation matrix -----------------
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
@@ -260,7 +222,7 @@ void CWorldObject::SetObjectOrientation(SVector v)
 //------------------------------------------------------------
 //	Add rotation vector in degres
 //  Update physical model too
-//	Function dedicated to Slew manager
+//	Function dedicated to Slew manager and user aircraft
 //------------------------------------------------------------
 void CWorldObject::AddOrientationInDegres(SVector &v)
 { if (globals->aPROF.Has(PROF_EDITOR))	return;
@@ -302,8 +264,11 @@ void	CWorldObject::SetLDtoRROrientation (SVector *vec)
   dang.x  = -vec->x;
   dang.y  = -vec->y;
   dang.z  = -vec->z;
-  globals->iang = iang;
-  globals->dang = dang;
+	//-----------------------------------
+	if (IsUserPlan())
+	{	globals->iang = iang;
+		globals->dang = dang;
+	}
 	return;
 }
 //----------------------------------------------------------------------------
@@ -386,39 +351,41 @@ void CWorldObject::Print (FILE *f)
 //========================================================================
 CSimulatedObject::CSimulatedObject (void)
 : CWorldObject()
-{
-  type = TYPE_FLY_SIMULATEDOBJECT;
-  // init position in slew mode ?
-  int i = 0;
-  GetIniVar ("Sim", "initInSlewMode", &i);
-  globals->slw->StateAs(i);
+{ type = TYPE_FLY_SIMULATEDOBJECT;
  *nfoFilename = 0;
- //--- Enter in Dispatcher ----------------------------------------
- //globals->Disp.PutHead(this, PRIO_PLANE);
+ *fplname     = 0;
+  caging_fixed_sped		= false;
+  caging_fixed_pitch	= false;
+  caging_fixed_roll		= false;
+  caging_fixed_alt		= false;
+  caging_fixed_wings	= false;
 }
-
+//-----------------------------------------------------------------
+//	Destructor 
+//-----------------------------------------------------------------
 CSimulatedObject::~CSimulatedObject (void)
 { *nfoFilename = 0;
 }
-//------------------------------------------------------------
-//  Return terrain type
-//------------------------------------------------------------
-ETerrainType CSimulatedObject::GetTerrainType (void)
-{ return (ETerrainType)globals->tcm->GetGroundType();
-}
-
+//-----------------------------------------------------------------
+//	Read parameters 
+//-----------------------------------------------------------------
 int CSimulatedObject::Read (SStream *stream, Tag tag)
 { switch (tag) {
     case '_NFO':
       // Read filename of vehicle information (NFO) file
       ReadString (nfoFilename, sizeof (nfoFilename), stream);
       return TAG_READ;
+		case 'fpln':
+			ReadString(fplname,sizeof(fplname),stream);
+			return TAG_READ;
   }
 
     // Allow parent class to process the tag
   return CWorldObject::Read (stream, tag);
 }
-
+//-----------------------------------------------------------------
+//	All parameters are read
+//-----------------------------------------------------------------
 void  CSimulatedObject::ReadFinished (void)
 {
   if (0 == *nfoFilename)  gtfo("NO NFO file, so no Aircraft");
@@ -429,27 +396,15 @@ void  CSimulatedObject::ReadFinished (void)
 }
 //==================================================================================
 // CVehicleObject
-//
-//static float CVehicleObject_timer = 0.0f;
+//	NOTE:  Type must be set by lower derived class
 //===================================================================================
 CVehicleObject::CVehicleObject (void)
 : CSimulatedObject ()
-{ int pnl = 0;
-  SetType(TYPE_FLY_VEHICLE);
-  GetIniVar ("Sim", "UpdateInSlewMode", &pnl);
-  upd  = pnl;
+{ upd  =  0;
   cur   = 0;
   prv   = 1;
   nEng  = 0;
 	engR	= 0;
-  //----Init aero model drawing ---------------------------
-  draw_aero = 8;
-  GetIniFloat ("Graphics", "drawAeromodel", &draw_aero);
-  //---Radio interface -------------------------------------
-  rTAG[0]         = 0;
-  rTAG[NAV_INDEX] = 0;
-  rTAG[COM_INDEX] = 0;
-  rTAG[ADF_INDEX] = 0;
 	//--- Clear Radio components ----------------------------
 	GPSR	= 0;
 	busR	= 0;
@@ -470,32 +425,99 @@ CVehicleObject::CVehicleObject (void)
 	whl.SetVEH(this);
 	vld.SetVEH(this);
 	elt.SetVEH(this);
+	
   //--------------------------------------------------------
   wNbr  = wBrk = 0;
   //---- Initialize user vehicle subclasses ----------------
-  swd = NULL;
-  hst = NULL;
-	//-------------------------------------------------------
-  globals->rdb = new CFuiRadioBand;
-  //----Check for No AIrcraft in Sim section --------------
-  int  nop = 0;
-  GetIniVar("Sim", "NoAircraft", &nop);
-  if (nop)
-	{	globals->noEXT++;									// No external aircraft
-		globals->noINT++;									// No internal aircraft
-		globals->Disp.Lock(PRIO_PLANE);
-	}
-  //-------------------------------------------------------
-  int val = HAS_FAKE_ENG; // 0;
-  GetIniVar ("PHYSICS", "hasFakeEngine", &val);
-  has_fake_engine_thrust = val ? true : false;
-  DEBUGLOG ("hasFakeEngine = %d", val);
+  swd		= 0;
+  hst		= 0;
+  log		= 0;
 	//-------------------------------------------------------
 	RazDifBrake();
   main_wing_incid = 0.0;                ///< stocking the main wing incidence value DEG
   main_wing_aoa_min = 0.0f;             ///< stocking AoA min RAD
   main_wing_aoa_max = 0.0f;             ///< stocking AoA max RAD
   kias = 0.0;
+}
+//------------------------------------------------------------------------
+//  Initialisation specific to user vehicle
+//------------------------------------------------------------------------
+void CVehicleObject::InitUserVehicle()
+{	if (!IsUserPlan())	return;
+	//--- This is a user plane ---------------------------------
+  SetOPT(VEH_D_CRASH);
+	globals->jsm->SetNbEngines(this,nEng);
+	//--- Create a log file if needed --------------------------
+	int	prm = 0;
+  GetIniVar ("Logs", "logAirplaneObject", &prm);
+  if (prm) {
+    log = new CLogFile ("logs/AirplaneObject.txt", "w");
+    if (log) log->Write ("CAirplane data log\n");
+  }
+	//--- Check for update in slew mode ------------------------
+	prm = 0;
+	GetIniVar ("Sim", "UpdateInSlewMode", &prm);
+  upd  = prm;
+	//----Init aero model drawing ---------------------------
+  draw_aero = 8;
+  GetIniFloat ("Graphics", "drawAeromodel", &draw_aero);
+	//--- Check for no aircraft --------------------------------
+	int  nop = 0;
+  GetIniVar("Sim", "NoAircraft", &nop);
+  if (nop)
+	{	globals->noEXT++;									// No external aircraft
+		globals->noINT++;									// No internal aircraft
+		globals->Disp.Lock(PRIO_UPLANE);
+	}
+	//--- Check for fake engines -------------------------------
+  int val = HAS_FAKE_ENG; // 0;
+  GetIniVar ("PHYSICS", "hasFakeEngine", &val);
+  has_fake_engine_thrust = val ? true : false;
+	//--- init position in slew mode ---------------------------
+  prm = 0;
+  GetIniVar ("Sim", "initInSlewMode", &prm);
+  globals->slw->StateAs(prm);
+	//--- Init wind effect -------------------------------------
+	GetIniVar ("PHYSICS", "windEffect", &wind_effect);
+  prm = 0;
+  GetIniVar ("PHYSICS", "turbulenceEffect", &prm);
+  if (prm) globals->evnOpt.Set(EVN_RAND_TURBULENCE);
+	//--- CAGING ----------------------------------
+  int   tmp_val		= 0;
+  float tmp_fval	= 0.0f; 
+  GetIniVar ("CAGING", "fixedSpeed", &tmp_val);
+  caging_fixed_sped = (tmp_val != 0);
+	caging_fixed_sped_fval = 0;
+  GetIniFloat ("CAGING", "fixedSpeedVal", &caging_fixed_sped_fval);
+  //--- fixed Altitude -------------------------
+  GetIniVar ("CAGING", "fixedAlt", &tmp_val);
+  caging_fixed_alt = (tmp_val != 0);
+  //--- disconnected wing ----------------------
+  GetIniVar ("CAGING", "disconnectWings", &tmp_val);
+  caging_fixed_wings = (!tmp_val);
+  //--- fixed pitch ----------------------------
+  GetIniVar  ("CAGING", "fixedPitch", &tmp_val);
+  caging_fixed_pitch = (tmp_val != 0);
+	caging_fixed_pitch_dval = 0;
+  GetIniFloat("CAGING", "fixedPitchVal", &tmp_fval);
+  caging_fixed_pitch_dval =  double(tmp_fval);
+	//--- fixed roll -----------------------------
+  GetIniVar ("CAGING", "fixedRoll", &tmp_val);
+  caging_fixed_roll = (tmp_val != 0);
+	caging_fixed_roll_dval = 0;
+  GetIniFloat ("CAGING", "fixedRollVal", &tmp_fval);
+  caging_fixed_roll_dval = double(tmp_fval);
+	return;
+}
+//------------------------------------------------------------------------
+//  Back to Initial state
+//------------------------------------------------------------------------
+void CVehicleObject::InitState()
+{	State = VEH_INIT;
+	eng.CutAllEngines();
+	amp.vpil->Stop();
+	amp.fpln->StopPlan();
+	return;
 }
 //------------------------------------------------------------------------
 //  Store NFO file name
@@ -514,17 +536,16 @@ CVehicleObject::~CVehicleObject (void)
 	//---Close any open window related to aircraft ------------
   if (globals->wfl) globals->wfl->Close();      // Fuel load
   if (globals->wld) globals->wld->Close();      // Load weight
-  if (globals->rdb) globals->rdb->Close();      // radio band
   if (globals->wpb) globals->wpb->Close();      // Window probe
-  globals->inside        =  0;
+	if (IsUserPlan())	globals->rdb.Register(0);
+  if (IsUserPlan()) globals->inside   =  0;
 	//-----------------------------------------------------------
  *nfoFilename = 0;
+	SAFE_DELETE(log);
   SAFE_DELETE (swd);
   SAFE_DELETE (hst);
   //---Clear sound objects ----------------------------------
   sounds.clear();
-  //---JS: Clean globals area -------------------------------
-  globals->simulation    = false;
 }
 //------------------------------------------------------------------------
 //	Read all parameters
@@ -578,7 +599,7 @@ void CVehicleObject::ReadFinished (void)
   // Call ReadFinished() method of parent
   CWorldObject::ReadFinished ();
   //MEMORY_LEAK_MARKER ("readfnvehi")
-
+	if(IsUserPlan())	globals->rdb.Register(this);
   // If NFO file was specified, instantiate vehicle info member
   // JS: No NFO => no aircratf. Just stop
   if (0 == *nfoFilename)  gtfo("NO NFO file, so no Aircraft");
@@ -639,7 +660,7 @@ void CVehicleObject::ReadFinished (void)
   // Read Fuel System
   gas.Init(nfo.GetGAS(), &eng, &wgh);
   //---Read Electrical Subystems. ------------------------------- 
-  amp.Init(nfo.GetAMP(), &eng);
+  amp.Init(nfo.GetAMP(), &eng);				// MARK TEST
   //--- Read Cockpit Manager -----------------------------------
   pit.Init(nfo.GetPIT());
   //--- Read Control Mixer
@@ -652,11 +673,15 @@ void CVehicleObject::ReadFinished (void)
   //--  Initialisations (after all the objects creation) ------------
   wgh.Init ();
   //--- Add drawing position as external feature ---------------------
-  CDrawPosition *upos = new CDrawPosition(this);
-  amp.AddExternal(upos,0);
+	if (IsUserPlan())	{											// MARK TEST
+		CDrawPosition *upos = new CDrawPosition(this);
+		amp.AddExternal(upos,0);						
+	}
   //-- Add vehicle smoke as external subsystem ----------------------
-  CVehicleSmoke *usmk = new CVehicleSmoke(this);
-  amp.AddExternal(usmk,0);
+	if (IsUserPlan())	{											// MARK TTEST
+		CVehicleSmoke *usmk = new CVehicleSmoke(this);
+		amp.AddExternal(usmk,0);							
+	}
   return;
 }
 
@@ -692,24 +717,34 @@ void CVehicleObject::PrepareMsg (void)
 	return;	
 }
 //----------------------------------------------------------------------------
-//  Draw external vehicle only if
+//  Draw as user external vehicle only if
 //  -Camera is external
 //  -Profile allows aircraft
 //----------------------------------------------------------------------------
 void CVehicleObject::DrawExternal(void)
-{	GetFlightPlan()->DrawOn3DW();
+{	elt.DrawSpotLights();					// Always draw projectors
 	if (globals->noEXT)                       return;
-	//elt.DrawSpotLights();
   //// Draw all externally visible objects associated with the vehicle
   lod.Draw (BODY_TRANSFORM);
   return;
+}
+//----------------------------------------------------------------------------
+//  Draw as animated aircraft
+//----------------------------------------------------------------------------
+void CVehicleObject::DrawAnimated()
+{	if (globals->noEXT)                       return;
+	glPushMatrix();
+	glTranslated(rpos.x,rpos.y,rpos.z);
+	lod.Draw (BODY_TRANSFORM);
+	glPopMatrix();
+	return;
 }
 //----------------------------------------------------------------------------
 //  Draw outside lights (spot and emitting lights)
 //----------------------------------------------------------------------------
 void CVehicleObject::DrawOutsideLights()
 {	elt.DrawOmniLights();
-	elt.DrawSpotLights();
+	//elt.DrawSpotLights();
 	return;
 }
 //----------------------------------------------------------------------------
@@ -729,7 +764,6 @@ void CVehicleObject::DrawExternalFeatures()
 //----------------------------------------------------------------------------
 void CVehicleObject::DrawInside(CCamera *cam)
 { if (globals->noINT)           return;
-  CAnimatedModel *lod = GetLOD();
 	pit.Draw();
   return;
 }
@@ -751,10 +785,13 @@ void CVehicleObject::Print (FILE *f)
 //  Timeslice all features of vehicle
 //------------------------------------------------------------------------
 void CVehicleObject::Update (float dT,U_INT FrNo) 
-{ //if (globals->ttr > 1) TRACE("CAnimatedModel::TimeSlice");
+{ //--- First update AGL from terrain ------------------------------
+	Spot.lat	= geop.lat;
+	Spot.lon  = geop.lon;
+	Spot.agl	= geop.alt - globals->tcm->GetGroundAt(Spot);
+	//----------------------------------------------------------------
   lod.TimeSlice(dT);               // Animate parts
-  //if (globals->ttr > 1) TRACE("CFuiRadioBand::TimeSlice");
-  globals->rdb->TimeSlice(dT);
+  globals->rdb.TimeSlice(dT);
 
   // JS to LC:  A parameter in the [Sim] section of FlyLegacy.ini decides if the aircraft 
   // and systems are
@@ -770,17 +807,18 @@ void CVehicleObject::Update (float dT,U_INT FrNo)
   //! should be called every 0.025
   Simulate(dT,FrNo);     ///< actually calls CAirplane::Simulate or any other typed vehicle 
 }
+//----------------------------------------------------------------------
+// After simulation update
+//----------------------------------------------------------------------
+void CVehicleObject::UpdateData(float dT)
+{;}
 //-----------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------
 void CVehicleObject::Simulate (float dT,U_INT FrNo)
 {	// Compute altitude above ground --------------
-	Spot.lon  = geop.lon;
-  Spot.lat  = geop.lat;
-  Spot.alt  = 0;
   // Timeslice each separate feature that is part
   // of the vehicle
-
   // Timeslice electrical subsystems
   amp.Timeslice (dT,FrNo);
   // Timeslice gas subsystems
@@ -799,7 +837,6 @@ void CVehicleObject::Simulate (float dT,U_INT FrNo)
   wng.Timeslice (dT);
   pss.Timeslice (dT);
   // update WOW for wheels before Simulate (dT)
-  //--- update CG position ------------------
   //--- Timeslice svh stuff : 
   svh.Timeslice (dT);
   // timeslice wind effect on aircraft
@@ -890,15 +927,6 @@ void CVehicleObject::OverallExtension(SVector &v)
   if (0 == lod)     return;
   CModelACM      *mod = lod->GetDayModel();
 	if (mod)	      mod->GetExtension(v);
-	return;
-}
-//---------------------------------------------------------------------------------
-//  Save data for steering gear
-//---------------------------------------------------------------------------------
-void CVehicleObject::StoreSteeringData (SGearData *gdt)
-{	CRudderControl *p = amp.pRuds;
-	if (0 == p)		return;
-	p->InitSteer(gdt);
 	return;
 }
 //---------------------------------------------------------------------------------

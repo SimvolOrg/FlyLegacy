@@ -366,7 +366,7 @@ void CRadio::ModeEXT(CmHead *src,LND_DATA *ils)
 	{	SRC->DecUser();
 		EXT.SetSource(src,ils,0);
 		SRC	= &EXT;
-		if ((uNum == 1)	&& (ils))	globals->cILS	= ils->ils;
+		if ((uNum == 1)	&& (ils) && mveh->IsUserPlan())	globals->cILS	= ils->ils;
 	}
 	Synchronize();
 	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);
@@ -909,15 +909,15 @@ void CComRadio::PowerStatus()
     SetField(comTAB,RADIO_FD_ACOM_FP,".%02u",ActCom.fract / 10);
     SetField(comTAB,RADIO_FD_SCOM_WP,"%03u", SbyCom.whole);
     SetField(comTAB,RADIO_FD_SCOM_FP,".%02u",SbyCom.fract / 10);
-    if (1 == uNum)  mveh->RegisterCOM(unId);
+    if (1 == uNum)  globals->rdb.RegisterCOM(mveh,unId);
     return;
   }
   //---- Check for power off ---------------
   if ((1 == cState) && (0 == active))
   { cState = 0;
     if (COM)  COM->DecUser();
-    if (1 == uNum)  mveh->RegisterCOM(0);
-    globals->rdb->TuneTo(0);
+    if (1 == uNum)  globals->rdb.RegisterCOM(mveh,0);
+    globals->rdb.TuneTo(mveh,0);
     COM = 0;
     return;
   }
@@ -970,7 +970,7 @@ void  CComRadio::Update(float dT,U_INT FrNo,char exs)
   if (0 == cState)  return;
   //----Refresh com stations ---------------------------------------
   COM	= globals->dbc->GetTunedCOM(COM,FrNo,ActCom.freq);     // Refresh COM
-  globals->rdb->TuneTo(COM);
+  globals->rdb.TuneTo(mveh,COM);
   return;
 }
 

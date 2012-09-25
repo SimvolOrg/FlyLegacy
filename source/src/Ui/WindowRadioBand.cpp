@@ -35,8 +35,13 @@
 //  Class CFuiRadioBand to display radio communication
 //============================================================================================
 CFuiRadioBand::CFuiRadioBand()
-{ globals->rdb = this;
-  surf  = 0;
+{
+}
+//---------------------------------------------------------------------------------
+//  Init radio band
+//---------------------------------------------------------------------------------
+void CFuiRadioBand::Init()
+{	surf  = 0;
   font    = &(globals->fonts.ftmono14);
   fnts    = (CFont*)font->font;
   ht      = (short)(fnts->TextHeight ("H"));
@@ -56,9 +61,48 @@ CFuiRadioBand::CFuiRadioBand()
   eVis[0]   = 0;
   eTmp[0]   = 0;
   eFrq[0]   = 0;
+	//---Radio interface -------------------------------------
+  Register(0);
   //----------Init all stations ------------------------------------------
   SetATIStext();
+	return;
 }
+//---------------------------------------------------------------------------------
+//  Register user vehicle
+//---------------------------------------------------------------------------------
+void CFuiRadioBand::Register(CVehicleObject *mv)
+{	mveh = mv;
+	if (mv)	return;
+	//--- Stop any activity ------------------------
+	state = RB_STOP;
+	rTAG[0]         = 0;
+  rTAG[NAV_INDEX] = 0;
+  rTAG[COM_INDEX] = 0;
+  rTAG[ADF_INDEX] = 0;
+	return;
+}
+//---------------------------------------------------------------------------------
+//  Register a NAV radio
+//---------------------------------------------------------------------------------
+void CFuiRadioBand::RegisterNAV(CVehicleObject *veh,Tag r)    
+{	if (mveh == veh)	rTAG[NAV_INDEX] = r;
+	return;
+}     
+//---------------------------------------------------------------------------------
+//  Register a COM radio
+//---------------------------------------------------------------------------------
+void CFuiRadioBand::RegisterCOM(CVehicleObject *veh,Tag r)    
+{	if (mveh == veh)	rTAG[COM_INDEX] = r;
+	return;
+}     
+//---------------------------------------------------------------------------------
+//  Register a ADF radio
+//---------------------------------------------------------------------------------
+void CFuiRadioBand::RegisterADF(CVehicleObject *veh,Tag r)    
+{	if (mveh == veh)	rTAG[ADF_INDEX] = r;
+	return;
+}     
+
 //---------------------------------------------------------------------------------
 //  Set ATIS text
 //---------------------------------------------------------------------------------
@@ -211,11 +255,12 @@ void  CFuiRadioBand::TimeSlice(float dT)
 //  Tune to a comm radio
 //  -Free the previous com if any by assigning the smart pointer
 //-----------------------------------------------------------------------------------
-bool CFuiRadioBand::TuneTo(CCOM *com)
-{ if (com == rCOM.Pointer())          return false;
+bool CFuiRadioBand::TuneTo(CVehicleObject *veh,CCOM *com)
+{ if (mveh != veh)							return false;	
+	if (com == rCOM.Pointer())    return false;
   rCOM  = com;                                // NOTE: Let this assignation even if com = 0
   state = RB_STOP;
-  if  (0 == com)                      return false;
+  if  (0 == com)                return false;
   if (com->IsATI()) return ModeATIS(com);
   rCOM  = 0;
   return false;

@@ -104,7 +104,7 @@ EMessageResult CDrawPosition::ReceiveMessage (SMessage *msg)
 void CDrawPosition::Draw (void)
 { if (Reset())              return;
   if (globals->noEXT)				return;
-  SPosition upos = mveh->GetPosition();		//globals->geop;
+  SPosition upos = mveh->GetPosition();		
   if (0 == version) {
     timer += globals->tim->GetDeltaSimTime ();
     if (timer > delay) {

@@ -48,8 +48,9 @@ using namespace std;
 //=============================================================================
 // CPanelLight
 //=============================================================================
-CPanelLight::CPanelLight (void)
-{ id = 0;
+CPanelLight::CPanelLight (CVehicleObject *veh)
+{ unId	= 0;
+	mveh	= veh;
   ambientOverride = false;
   bn = 0;
 	col[0] = col[1] = col[2] = col[3] = 1;
@@ -57,8 +58,9 @@ CPanelLight::CPanelLight (void)
 //------------------------------------------------------------------
 //	Build Light with ident
 //------------------------------------------------------------------
-CPanelLight::CPanelLight (Tag t)
-{ id = t;
+CPanelLight::CPanelLight (Tag t,CVehicleObject *veh)
+{ unId	= t;
+	mveh	= veh;
   ambientOverride = false;
   bn = 0;
 }
@@ -72,7 +74,7 @@ int CPanelLight::Read (SStream *stream, Tag tag)
   switch (tag) {
   case 'id__':
     // Light unique identifier
-    ReadTag (&id, stream);
+    ReadTag (&unId, stream);
     return TAG_READ;
 
   case 'ambi':
@@ -95,8 +97,7 @@ int CPanelLight::Read (SStream *stream, Tag tag)
 //  Prepare the message
 //----------------------------------------------------------------------
 void CPanelLight::PrepareMsg (void)
-{ 
-  Send_Message (&msg);
+{  Send_Message (&msg);
 }
 //----------------------------------------------------------------------
 //  Panel light:  Update with panel brightness
@@ -214,7 +215,8 @@ CPanel::CPanel (Tag t,CVehicleObject *v)
 //	Init panel parameters
 //-------------------------------------------------------------------------
 void CPanel::Init(char *fn)
-{ pit			= &mveh->pit;
+{ TagToString(idst,id);
+	pit			= &mveh->pit;
 	strncpy (filename, fn,63);
   txOBJ   = 0;
   ngOBJ   = 0;
@@ -265,9 +267,8 @@ void CPanel::Init(char *fn)
   //   otherwise it is static
 
 	SStream(this,"DATA",(char*)filename);
-  // -----Add a pointer to camera entry --------------
-  //CCameraCockpit *cam = (CCameraCockpit *)globals->ccm->GetCamera('cock');
-  //cam->SetPanel(id,this);
+  // -----Trace panel read --------------
+  TRACE("---------------Panel READ: %s -------",filename);
 }
 //==============================================================================
 //  Destroy the panel
@@ -335,8 +336,10 @@ int CPanel::AuxilliaryGauge(CGauge *g,SStream *s)
 //  Read a Gauge
 //-----------------------------------------------------------------------
 int CPanel::ReadGauge(SStream *stream, Tag tag)
-    { Tag type;
+    { Tag		type;
+			char	id[8];
       ReadTag (&type, stream);
+			TagToString(id,type);
       switch (type) {
       case GAUGE_BASE:
         // This is the unique tag of the abstract gauge base.  There should
@@ -843,11 +846,8 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_ROCKER_SWITCH:
         { CRockerSwitch *g = new CRockerSwitch(this);
           return ProcessGauge(g,stream); }
-      //case 'S__G':
-      //  { CDLLGauge *g = new CDLLGauge;
-      //    return ProcessGauge(g,stream); }
 
-      default:
+      case 'gDLL':
         { // try for DLL gauges
           char s[8];
           TagToString (s, type);
@@ -861,21 +861,28 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
           TagToString (buff, this->id);
           TRACE ("DLL GAUGE (panel) %s <%s>", buff, s);
 #endif
-          break;
+          return TAG_READ;
           // early version before 21-12-09
           //WARNINGLOG ("CPanel : Skipping gauge type <%s>", s);
           //SkipObject (stream);
           //rc = TAG_READ;
         }
       }
+			// Tag was not processed by this object, it is unrecognized
+			CStreamFile* sf = (CStreamFile*)stream->stream;
+    
+			TRACE ("GAUGE: Skip gauge %s ", id);
+			SkipObject(stream);
       return TAG_READ;
-      }
+}
 //-----------------------------------------------------------------------
 //  Read panel parameters
 //-----------------------------------------------------------------------
 int CPanel::ReadNewGauge(SStream *str, Tag tag)
-{ Tag type;
+{			Tag type;
+			char id[8];
       ReadTag (&type, str);
+			TagToString(id,type);
       switch (type) {
         case GAUGE_GRIP:
             { CGripGauge *g = new CGripGauge(this);
@@ -1018,8 +1025,12 @@ int CPanel::ReadNewGauge(SStream *str, Tag tag)
           return ProcessGauge(g,str); }
 
       }
-			gtfo("Unknown gauge: %s",TagToString(type));
-      return TAG_IGNORED;
+						// Tag was not processed by this object, it is unrecognized
+			CStreamFile* sf = (CStreamFile*)str->stream;
+    
+			TRACE ("GAUGE: Skip gauge %s ", id);
+			SkipObject(str);
+      return TAG_READ;
 }
 //-----------------------------------------------------------------------
 //  Assign a light to panel
@@ -1141,6 +1152,9 @@ int CPanel::Read (SStream *stream, Tag tag)
     case 'skey':
       ReadTag(&cmde,stream);
       return TAG_READ;
+		//--- Skip all following gauge (for panel implementation)--
+		case 'stop':
+			return TAG_STOP;
     }
 
 
@@ -1769,6 +1783,7 @@ void CPanel::Draw ()
   //-------Set common parameters -------------------------------------
 	glBindTexture(GL_TEXTURE_2D,ngOBJ);
 	if (1 == trn1) TRACE("=========== PANEL %s ===============",filename);
+	
   for (iter=dgag.begin(); iter!=dgag.end(); iter++)
   { CGauge* g = (*iter);
     //---Render gauge with gauge light --------------
@@ -1780,6 +1795,7 @@ void CPanel::Draw ()
 		if (0 == trn1)	continue;
 		TRACE("..Gauge %s",g->GetUniqueID());
   }
+	
 	trn1 = 0;
 	glBindBuffer(GL_ARRAY_BUFFER,0);
   //-- SDK:Draw DLL Gauge -------------------------------------------

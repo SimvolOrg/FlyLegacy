@@ -126,7 +126,7 @@ extern "C" {
 		TYPE_FLY_SIMULATEDOBJECT	= 'sobj',
 		TYPE_FLY_VEHICLE		= 'vehi',
 		TYPE_FLY_GROUNDVEHICLE		= 'gveh',
-		TYPE_FLY_AIRPLANE		= 'plan',
+		TYPE_USER_AIRCRAFT		= 'plan',
 		TYPE_FLY_HELICOPTER		= 'heli'
 	};
 

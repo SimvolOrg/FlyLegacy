@@ -59,7 +59,6 @@ char *viewBTN[] = {
   "Top view",
 };
 //==================================================================================
-extern CModelACM *GetDayModelACM();
 //==================================================================================
 //  THIS WINDOW WILL DISPLAY THE CENTER OF GRAVITY
 //==================================================================================
@@ -72,13 +71,7 @@ CFuiWinCG::CFuiWinCG(Tag idn, const char* filename)
   bk.B  = 0.749f;
   bk.A  = 1;
   //----Get model dimension --------------------------
-  oDim = GetObjectDim();
-  //--- Create the camera ----------------------------
-  oCam   = new CCameraObject();
-  oCam->SetFBO(WINCG_WID,WINCG_WID);
-  oCam->MoveMouseIs(0);
-  oCam->TopOffsetFor(oDim * 0.5);
-  oCam->SetColor(bk);
+  oDim	= 100;
   //--- Init the canva -------------------------------
   oWIN  = new CFuiCanva (2,2,WINCG_WID,WINCG_WID,this);
   AddChild('owin',oWIN);
@@ -103,9 +96,18 @@ CFuiWinCG::CFuiWinCG(Tag idn, const char* filename)
   CFuiWindow::ReadFinished();
   SetWinTitle(DRAWING_COFG);
   veh = globals->pln;
-  if (0 == veh)   Close();
-  veh->GetFuelCell(fcel);
-  veh->GetLoadCell(lcel);
+  if (veh) 
+		{	veh->GetFuelCell(fcel);
+			veh->GetLoadCell(lcel);
+			oDim = GetObjectDim();
+	}
+	else Close();
+	//--- Create the camera ----------------------------
+  oCam   = new CCameraObject();
+  oCam->SetFBO(WINCG_WID,WINCG_WID);
+  oCam->MoveMouseIs(0);
+  oCam->TopOffsetFor(oDim * 0.5);
+  oCam->SetColor(bk);
 
 }
 //---------------------------------------------------------------------------------
@@ -120,7 +122,9 @@ CFuiWinCG::~CFuiWinCG()
 //  Get object dimension
 //---------------------------------------------------------------------------------
 double CFuiWinCG::GetObjectDim()
-{ acm  = GetDayModelACM();
+{ CAnimatedModel *lod = veh->GetLOD();
+  if (0 == lod)     return 0;
+  acm		= lod->GetDayModel();
   if (0   == acm)   return 0;
   //------Compute pixel ratio -------------
   CVector ext;
@@ -155,7 +159,6 @@ void CFuiWinCG::Draw()
 }
 //--------------------------------------------------------------------------------
 //  Draw model By Camera
-//  -Drawing depend on the requested Type defined at globals->bTyp
 //--------------------------------------------------------------------------------
 void CFuiWinCG::DrawByCamera(CCamera *cam)
 { std::vector<CFuelCell*>::iterator vc;

@@ -1558,8 +1558,8 @@ void CGizmo::EndCros()
 void CGizmo::PreFuel()
 { PreDraw();
   glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
-  //glColor4f(0,0,1,1);
-	ColorGL(COLOR_PURE_BLUE);
+  glColor4f(0,0,1,1);
+	//ColorGL(COLOR_PURE_BLUE);
   return;
 }
 //--------------------------------------------------------------------
