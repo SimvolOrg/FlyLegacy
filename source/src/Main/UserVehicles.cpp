@@ -901,7 +901,7 @@ void CElectricalSystem::Init(char* ampFilename, CEngineManager *eng)
 	// Read from AMP file stream-----------------------------
   SStream s(this,"WORLD",ampFilename);
 	//-- Add Fligth --------------------------------------
-	fpln = new CFPlan(mveh,1);
+	fpln = new CFPlan(mveh,FPL_FOR_REAL);
 	subs.push_back (fpln);
   //---Add robot ---------------------------------------
 	d2r2	= new CRobot();							// Check list executer

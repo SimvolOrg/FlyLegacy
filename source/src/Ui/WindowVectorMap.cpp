@@ -922,7 +922,9 @@ void CFuiVectorMap::IlsPixel(int No,int x,int y)
 //  Build ILS arrows coordinates
 //---------------------------------------------------------------------------------
 void CFuiVectorMap::UpdateILS()
-{ aILS  = globals->cILS;
+{ LND_DATA	*lnd	= globals->lnd;
+	if (0 == lnd)			return;
+	aILS  = lnd->ils;
   if (0 == aILS)    return;
   //----Compute ILS originin pixel  ---------------
   GetScreenCoordinates(aILS,oILS.x,oILS.y);
@@ -1402,11 +1404,20 @@ int CFuiVectorMap::ClickDocLIST(short itm)
 //  Click over a document
 //---------------------------------------------------------------------------------
 int CFuiVectorMap::ClickDocMENU(short itm)
-{ dStat = VWIN_MAP;
-  delete [] DocInfo.rgba;
-  DocInfo.rgba = 0;
-  ClosePopMenu();
-  return 1;
+{ char opt = *smen.aText[itm];
+	switch(opt)	{
+	case '1':
+		DocInfo.x0 = 0;
+		DocInfo.y0 = 0;
+		return 1;
+	case '2':
+		dStat = VWIN_MAP;
+		delete [] DocInfo.rgba;
+		DocInfo.rgba = 0;
+		ClosePopMenu();
+		return 1;
+	}
+  
 }
 //----------------------------------------------------------------------------------
 //  Open a floating menu over a document
@@ -1414,8 +1425,9 @@ int CFuiVectorMap::ClickDocMENU(short itm)
 bool CFuiVectorMap::OpenPopDOC(int mx,int my)
 { smen.Ident = 'edoc';
 	smen.aText = cMENU;
-  smen.aText[0] = "CLOSE DOCUMENT";
-  smen.aText[1] = 0;
+	smen.aText[0] = "1-CENTER";
+  smen.aText[1] = "2-CLOSE DOCUMENT";
+  smen.aText[2] = 0;
 	return OpenPopup(mx,my,&smen);
 }
 //----------------------------------------------------------------------------------
@@ -1679,7 +1691,9 @@ void CFuiVectorMap::DrawTaxiNodes()
 //  Open a floating menu for APT, NAV or NDB
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::OpenPopOBJ(int mx,int my)
-{ smen.aText  = cMENU;
+{ xOrg	= mx;
+	yOrg	= my;
+	smen.aText  = cMENU;
   //--- Save teleport position ---------
   CmHead *obj = Focus.Pointer();
   wpos        = obj->GetPosition();
@@ -2168,14 +2182,14 @@ void CFuiAptDetail::DrawProfile()
 { if (0 == vers)		return;
   CRwyLine *slot = (CRwyLine*)rwyBOX.GetSelectedSlot();
 	if (0 == slot)		return;
-  CRunway  *rwy  = Apt->FindRunway(slot->GetHiEndID());
-  if (0 == rwy)     return;
+	sRwy	=		Apt->FindRunway(slot->GetHiEndID());
+  if (0 == sRwy)     return;
 	int opt = 0;
-  CRLP     *lpf  = rwy->GetRLP();
+  CRLP     *lpf  = sRwy->GetRLP();
   int       ctr  = lpf->GetCenterLM();
   int       edg  = lpf->GetEdgeLM();
   //---Save current runway ---------------------------
-  cRwy = rwy;
+  cRwy = sRwy;
   cRpf = lpf;
   //---Set Hi end options ----------------------------
   hiED->SetText(slot->GetHiEndID());
@@ -2436,5 +2450,13 @@ void CFuiAptDetail::AddDBrecord(void *rec,DBCODE code)
   }
   return;
 }
-
+//----------------------------------------------------------------------------------
+//  Show landing data
+//----------------------------------------------------------------------------------
+void CFuiAptDetail::ShowLandingData(char s)
+{	CAptObject *apo = Apt->GetAPO();
+	if (0 == apo)			return;
+	//--- Airport is in cache ----------------------------
+	
+}
 //==============END of FILE ====================================================

@@ -410,12 +410,12 @@ void CPiston::doEngineRefresh(void)
   switch (state) {
     //---Engine is just running -----------
     case ENGINE_CRANKING:
-        RPM = 20;
+        RPM = 1;
         p_prop->SetRPM (RPM);
         return;
 
     case ENGINE_CATCHING:
-        RPM = 200;
+        RPM = 10;
 				eData->s_rpm = 190;
         p_prop->SetRPM (RPM);                     
         return;
@@ -433,7 +433,7 @@ void CPiston::doEngineRefresh(void)
         return;
 
     case ENGINE_STOPPING:
-        RPM = 200;
+        RPM = 10;
 				eData->s_rpm = 180;
         p_prop->SetRPM (RPM);                    
         return;

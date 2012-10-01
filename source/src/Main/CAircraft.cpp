@@ -756,8 +756,6 @@ void CAirplane::EndLevelling()
   damM.Severity		= 0;
 	damM.msg				= 0;
   globals->fui->RazCrash();
-  //State = VEH_OPER;
-//  RestOnGround();
   return;
 }
 

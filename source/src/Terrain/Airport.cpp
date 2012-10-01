@@ -1592,17 +1592,21 @@ void CAptObject::DrawCenter()
 //---------------------------------------------------------------------------------
 void CAptObject::DrawILS()
 { float col[4] = {1,0,0,0.2f};
-  CILS *ils = globals->cILS;
-  if (0 == ils)             return;
-  if (!ils->SameAPT(Airp))  return;
+  LND_DATA *lnd = globals->lnd;
+ // CILS *ils = globals->cILS;
+  //if (0 == ils)             return;
+	if (0 == lnd)							return;
+  //if (!ils->SameAPT(Airp))  return;
   //--- Draw a  sphere at Landing point ---------
   SVector v1 = {0,0,0};
-  SPosition *land = ils->GetLandingPoint();
+  //SPosition *land = ils->GetLandingPoint();
+	SPosition *land = &lnd->lndP;
   Offset(*land,v1);
   SVector v2 = {0,0,0};
-  SPosition *farp = ils->GetFarPoint();
+  //SPosition *farp = ils->GetFarPoint();
+	SPosition *farp = &lnd->farP;
   Offset(*farp,v2);
-  SVector *s = globals->tcm->GetScale();
+  //SVector *s = globals->tcm->GetScale();
   glPushMatrix();
   glPushAttrib(GL_ALL_ATTRIB_BITS);
   glShadeModel(GL_FLAT);

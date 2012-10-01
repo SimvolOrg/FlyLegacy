@@ -33,6 +33,10 @@ class CFPlan;
 #define FPL_EDITABLE  (1)
 #define FPL_PROTECTED (0)
 //===============================================================================
+#define FPL_FOR_REAL (1)
+#define FPL_FOR_LIST (2)
+#define FPL_FOR_DEMO (3)
+//===============================================================================
 #define FPL_STA_NUL	(0)										// Empty state
 #define FPL_STA_OPR (1)										// Operational
 //---Waypoint states --------------------------------------------------
@@ -259,7 +263,7 @@ private:
   char            Etar[16];           // Arrival time
 	//---------------------------------------------------------------------
 	float						dDir;			// Direct Direction to waypoint
-	float						rDir;			// Segment Direction to this waypoint
+	float						sDir;			// Segment Direction to this waypoint
 	float						mDis;			// Plane distance in miles
 	float						sDis;			// Summmed distance
 	float           pDis;			// Previous distance
@@ -353,7 +357,7 @@ public:
 	inline void       SetDist(char *di)			{strncpy(Dist,di,10); Dist[9]	 = 0;}
 	inline void				SetDBwpt(CmHead *obj)	{DBwpt = obj;}
 	inline void				SetUser(Tag u)				{user = u;}
-	inline void       SetRefDirection()			{DBwpt->SetRefDirection(rDir);}
+	inline void       SetRefDirection()			{DBwpt->SetRefDirection(sDir);}
 	inline void				SetElevation(double a){position.alt= a;}
 	inline void				SetAltitude(double a)	{altitude = int(a);}
 	//--- Edited field s ------------------------------------------
@@ -375,10 +379,9 @@ public:
 	inline SPosition* GetGeoP()							{return &position;}
 	inline Tag				GetUser()							{return user;}
 	inline float			GetFrequency()				{return DBwpt->GetFrequency();}
-	inline float			GetDTK()							{return rDir;}	
+	inline float			GetDTK()							{return sDir;}	
 	inline float			GetCAP()							{return dDir;}
 	inline double     GetMagDeviation()			{return DBwpt->GetMagDev();}
-	inline double			GetDirection()				{return rDir;}
 	inline CWPoint   *GetOrgWPT()						{return (CWPoint*)DBwpt->GetUPTR();}
 	//--------------------------------------------------------------
 	inline void				SetLast()							{last = 1;}
@@ -410,8 +413,6 @@ class CFPlan : public CSubsystem {
 private:
 	CVehicleObject *mveh;												// Mother vehicle
 	CFuiFlightLog  *win;												// Handling window
-	//--- Rabbit -----------------------------------------------------
-	GLUquadricObj *sphere;
 	//----------Serial used by GPS to detect flight plan change ---
   U_INT           serial;
   //----------Logical state --------------------------------------
@@ -478,6 +479,7 @@ public:
 	//---------------------------------------------------------------
 	bool	SwapEditMode();
 	bool  CannotEdit();
+	bool	NotThisAirport(char *idn);
 	//---------------------------------------------------------------
 	float TurningPoint();
 	//--- External interface -------------------------------------

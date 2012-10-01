@@ -142,7 +142,7 @@ public:
   //----------------------------------------------------
 	void		AddArc(TaxEDGE *E);
 	void		DeleteArc(Tag A);
-	void		DeleteEdge(Tag A, Tag B);
+	int 		DeleteEdge(Tag A, Tag B);
 	void		FreeArc(TaxEDGE *edg);
 	//----------------------------------------------------
 	Tag				GetShortCut(TaxEDGE *E);
@@ -252,9 +252,9 @@ public:
   //int				Read(SStream *sf,Tag tag);
 	void			NodeSupplier(TaxiwayMGR *M);
 	//-----------------------------------------------------
-	void			Attach(Tag A, Tag B);
+	int 			Attach(Tag A, Tag B);
 	void			DelNode();
-	void			MoveSelectedNode(SPosition &P);
+	int				MoveSelectedNode(SPosition &P);
 	void			NodeProp(Tag N);
 	//--- Path management ---------------------------------
 	bool			GetThePath(Tag D, Tag F); 
@@ -286,7 +286,7 @@ public:
 	//---inline operators ---------------------------------
 	void			SetCursor(SPosition *P)	{lpos = P;}
 	void			NodeNumber(Tag N) {_snprintf(bf1,32,"N:%04u",N);}
-	void			DeleteEdge(Tag A,Tag B)	{circuit->DeleteEdge(A,B);}
+	int 			DeleteEdge(Tag A,Tag B)	{return circuit->DeleteEdge(A,B);}
 	void			EditMode(char m)	{edtm = m;}
 	void			Test()	{circuit->Test();}
 	//-----------------------------------------------------------
@@ -316,7 +316,7 @@ class CFuiTaxi: public CFuiWindow
 	//-- Buffer --------------------------------------------
 	char        buf[32];
 	//-- Taxiways Management -------------------------------
-	TaxiwayMGR *nsup;							// Node supplier
+	TaxiwayMGR *taxm;							// Node supplier
 	CAptObject *apo;							// Airport to edit
 	CAirport   *apt;							// Description
 	SPosition		org;							// Airport origin
@@ -328,6 +328,7 @@ class CFuiTaxi: public CFuiWindow
 	char        path;							// Path mode
 	char        mode;							// Mouse mode
 	char        inps;							// input state
+	char				modf;							// Modif indicator
 	//---Original context -----------------------------------------
   CAMERA_CTX       ctx;         // Original camera and situation
 	//--- Rabbit camera -----------------------------------------

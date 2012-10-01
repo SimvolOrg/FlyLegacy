@@ -4456,7 +4456,7 @@ void GPSRadio::SetTrack()
 //--------------------------------------------------------------
 float GPSRadio::SelectDirection()
 {	float dis = wTRK->GetLegDistance();
-  float seg = wTRK->GetDirection();
+  float seg = wTRK->GetDTK();
 	float dev = RAD->GetDeviation();
 	float rdv = fabs(dev);
 	if ((dis > 12) || (rdv < 5))	return seg;

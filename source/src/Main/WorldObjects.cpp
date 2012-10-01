@@ -110,9 +110,9 @@ CWorldObject::CWorldObject (void)
 	SetOPT(VEH_AP_LAND);
   SetOPT(VEH_PN_HELP);
 	//--- Option from INI file --------------
-	int pm = 0;
-	GetIniVar("Sim","TestMode",&pm);
-	if (pm)	SetOPT(VEH_OP_TEST);
+	char pm[8];
+	GetIniString("Sim","Mode",pm,8);
+	if (strcmp(pm,"Test") == 0)	SetOPT(VEH_OP_TEST);
 
 }
 //-------------------------------------------------------------------
@@ -515,7 +515,7 @@ void CVehicleObject::InitUserVehicle()
 void CVehicleObject::InitState()
 {	State = VEH_INIT;
 	eng.CutAllEngines();
-	amp.vpil->Stop();
+	amp.vpil->Stop(1);
 	amp.fpln->StopPlan();
 	return;
 }

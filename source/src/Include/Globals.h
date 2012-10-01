@@ -439,7 +439,7 @@ typedef struct {
   float             dRT;                // Real time delta from last frame
   float             dST;                // Simu time delta from last Frame
   //---------Interface with master radio -----------------------------
-  CILS             *cILS;								// Current ILS
+  LND_DATA         *lnd;								// Landing data
 	//--- OSM interface ------------------------------------------------
 	U_INT							xobj;								// Last binded texture
 	OSM_Object       *osmS;								// Selected object

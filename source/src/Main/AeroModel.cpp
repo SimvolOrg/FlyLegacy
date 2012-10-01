@@ -548,7 +548,9 @@ const char* CAeroModelAirfoil::GetAirfoilName (void)
   return name.c_str();
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////
+//============================================================================================
+//	Return the lift coefficient
+//============================================================================================
 #ifdef _DEBUG
 const double CAeroModelAirfoil::GetLiftCoefficient(double aoa, double mach, const char *name)
 #else
@@ -562,6 +564,9 @@ const double CAeroModelAirfoil::GetLiftCoefficient(double aoa, double mach)
   if (mliftMach) cl *= mliftMach->Lookup(float(mach));
   return cl;
 }
+//============================================================================================
+//	Return the Drag coefficient
+//============================================================================================
 
 // Luc's comment : I separated induced drag and parasite drag.
 //	GetDragCoefficient() is replaced with GetInducedDragCoefficient() which just returns the induced drag.
@@ -583,6 +588,9 @@ const double CAeroModelAirfoil::GetInducedDragCoefficient(double aoa, double mac
 
   return cdi;
 }
+//============================================================================================
+//	Return the moment coefficient
+//============================================================================================
 
 const double CAeroModelAirfoil::GetMomentCoefficient(double aoa, double mach)
 {

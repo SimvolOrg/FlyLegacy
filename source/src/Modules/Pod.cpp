@@ -238,6 +238,18 @@ void	ApplyToFiles(char *pat, FileCB cbFN, void *upm)
 	return;
 }
 //=====================================================================================
+//	Remove file extension in dst buffer
+//  return 0:  No extension found
+//	return 1:  Extension found and removed
+//=====================================================================================
+int  RemoveExtension(char *dst, char *fn)
+{	strncpy(dst,fn,(PATH_MAX-1));
+	char *end = strrchr(dst,'.');
+	if (0 == end)						return 0;
+ *end  = 0;						// Remove extension
+  return 1;
+}
+//=====================================================================================
 //	Get the scenry pod file
 ///=====================================================================================
 char *GetSceneryPOD(char *pn)

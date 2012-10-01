@@ -35,7 +35,6 @@
 //==================================================================================
 int FlightPlanCB(char *fn,void *upm)
 {	CFuiListPlan *win = (	CFuiListPlan *)upm;
-  WARNINGLOG("FP add:%s",fn);
 	return win->AddToList(fn);
 }
 //==================================================================================
@@ -94,13 +93,10 @@ void CFuiListPlan::FillPlans()
 //  Add a plan to the list
 //-------------------------------------------------------------------------
 int CFuiListPlan::AddToList(char *fn)
-{ CFPlan  fpn(globals->pln,0);
-  char txt[PATH_MAX];
-	strncpy(txt,fn,(PATH_MAX-1));
-	char *end = strrchr(txt,'.');
-	if (0 == end)						return 1;
- *end  = 0;						// Remove extension
-	if (!fpn.AssignPlan(txt)) return 1;
+{ char txt[PATH_MAX];
+	CFPlan  fpn(globals->pln,FPL_FOR_LIST);
+  if (0 == RemoveExtension(txt,fn))	return 1;
+	if (!fpn.AssignPlan(txt))					return 1;
 	//--- Add a line to selection box ----------
 	CFpnLine *slot = new CFpnLine;
 	slot->SetFile(txt);

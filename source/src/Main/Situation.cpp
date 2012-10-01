@@ -469,7 +469,8 @@ void CSlewManager::NormalMove(float dT)
   pos.lon -= ((sin(dir.z) * fRate) + (sin(dir.z + HALF_PI) * lRate)) * dT;
   pos.lon = WrapLongitude (pos.lon);
   SetAltitude(&pos);
-  mveh->SetObjectPosition (pos);
+  //mveh->SetObjectPosition (pos);
+	globals->sit->planes.UpdatePosition(pos);
   return;
 }
 //------------------------------------------------------------------------
@@ -542,7 +543,6 @@ void CSlewManager::SetLevel(CVehicleObject *user)
   if (2 != level)   return;
   //-------------------------------------------------
   if (call)  pln->EndLevelling();
-	//else       pln->SetObjectPosition(pos);
   mode   = pmde;          // Restore previous mode
   //-------------------------------------------------
 	globals->sit->BackToSimulation(call);
@@ -1113,6 +1113,17 @@ void CAnimatedPlane::DrawExternal()
 		//--- Translate to aircraft position -----------
 		p->DrawAnimated();
 	}
+}
+//---------------------------------------------------------------------
+//	Update plane position
+//---------------------------------------------------------------------
+void CAnimatedPlane::UpdatePosition(SPosition pos)
+{	CAirplane *pln = globals->pln;
+	pln->SetObjectPosition(pos);
+	//--- Set position for other aircraft -----
+	for (U_INT k=0; k<plnQ.size(); k++)
+	{	plnQ[k]->SetRelativePosition();	}
+	return;
 }
 //---------------------------------------------------------------------
 //	Back to simulation after any slew, teleport, etc

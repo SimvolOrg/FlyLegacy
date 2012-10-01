@@ -202,13 +202,13 @@ void TaxiCircuit::DeleteArc(Tag A)
 //-------------------------------------------------------------------------------------------
 //	Delete specifi edge AB if it exists
 //-------------------------------------------------------------------------------------------
-void TaxiCircuit::DeleteEdge(Tag A, Tag B)
+int TaxiCircuit::DeleteEdge(Tag A, Tag B)
 {	Tag key = (A << 16) | B;
 	std::map<Tag,TaxEDGE*>::iterator r0 = edgQ.find(key);
-	if (r0 == edgQ.end())		return;
+	if (r0 == edgQ.end())		return 0;
 	FreeArc((*r0).second);
 	edgQ.erase(r0);
-	return;
+	return 1;
 }
 //-------------------------------------------------------------------------------------------
 //	return first edge originating from A
@@ -639,16 +639,17 @@ void TaxiTracker::DelNode()
 //-------------------------------------------------------------------------------------------
 //	Add a edge between A and B
 //-------------------------------------------------------------------------------------------
-void TaxiTracker::Attach(Tag A, Tag B)
-{	if (A == B)							return;
+int TaxiTracker::Attach(Tag A, Tag B)
+{	if (A == B)							return 0;
 	//--- Check for existence of edge AB ---
 	TaxEDGE *ab  = circuit->GetArc(A,B);
-	if	(ab)								return;
+	if	(ab)								return 0;
 	//--- Create an AB edge ----------------
 	TaxEDGE *edg = new TaxEDGE();
 	Tag  t0   =  (A << 16) | (B & 0x0000FFFF);
 	edg->idn	=  t0;
 	circuit->AddArc(edg);
+	return 1;
 }
 //-------------------------------------------------------------------------------------------
 //	compute node type
@@ -693,16 +694,17 @@ Tag TaxiTracker::AddBrNode(Tag A, SPosition &P)
 	node->SetPosition(P);
 	node->SetRWY("TXI");
 	Attach(selN->idn,node->idn);
+	SetSelection(node->idn);
 	return node->idn;
 }
 //-------------------------------------------------------------------------------------------
 //	Selected node receive a new position
 //-------------------------------------------------------------------------------------------
-void TaxiTracker::MoveSelectedNode(SPosition &P)
-{	if (0 == selN)											return;
-  if (selN->HasType(TAXI_NODE_FIXE))	return;
+int TaxiTracker::MoveSelectedNode(SPosition &P)
+{	if (0 == selN)											return 0;
+  if (selN->HasType(TAXI_NODE_FIXE))	return 0;
 	selN->SetPosition(P);
-	return;
+	return 1;
 }
 //-------------------------------------------------------------------------------------------
 //	Edit property in menu
@@ -859,6 +861,7 @@ CFuiTaxi::CFuiTaxi(Tag idn, const char *filename)
 	:CFuiWindow(idn,filename,300,200,0)
 {	//--- Initial modes -------------------------------------
 	mode	= TAXI_MODE_PICKING;
+	modf	= 0;
 	inps	= 1;
 	path	= 1;
 	dTag	= eTag = 0;
@@ -1105,7 +1108,7 @@ bool CFuiTaxi::MoveNode(int mx, int my)
 {	int mod = glutGetModifiers();
 	if (GLUT_ACTIVE_CTRL != mod)		{PickMode(0); return true;}
 	//--- Move the node ---------------------------------
-	trak.MoveSelectedNode(cpos);
+	modf |= trak.MoveSelectedNode(cpos);
 	return true;
 }
 //------------------------------------------------------------------------------
@@ -1143,9 +1146,9 @@ bool CFuiTaxi::MousePicking(int mx, int my)
 //------------------------------------------------------------------------------
 void CFuiTaxi::AddBlueNode()
 {	Tag idn = trak.AddBrNode(nodA,cpos);
-	trak.SetSelection(idn);
 	selT	= idn;
 	nodA	= idn;
+	if (idn) modf	|= 1;
 }
 //------------------------------------------------------------------------------
 //	Insert an exit node
@@ -1153,13 +1156,14 @@ void CFuiTaxi::AddBlueNode()
 void CFuiTaxi::InsertNode()
 { Tag idn = trak.InsertNode(nodA,selT);
 	PickMode(idn);								// Back to pick mode
+	modf	= 1;
 	return;
 }
 //------------------------------------------------------------------------------
 //	Delete a specific node
 //------------------------------------------------------------------------------
 void	CFuiTaxi::DeleteEdge()
-{	trak.DeleteEdge(nodA,selT);
+{	modf |= trak.DeleteEdge(nodA,selT);
 	PickMode(0);
 	return;
 }
@@ -1168,7 +1172,7 @@ void	CFuiTaxi::DeleteEdge()
 //------------------------------------------------------------------------------
 void CFuiTaxi::AttachNodes()
 {	if (0 == selT)	return PickMode(0);
-	trak.Attach(nodA,selT);
+	modf |= trak.Attach(nodA,selT);
 	nodA	= selT;
 	trak.SetSelection(selT);
 	return;
@@ -1274,6 +1278,7 @@ int CFuiTaxi::ClickActeMENU(short itm)
 			//--- Delete a node -----------------
 			case '3':
 				trak.DelNode();
+				modf	= 1;
 				break;
 			//---  Link to other ----------------
 			case '4':
@@ -1283,6 +1288,7 @@ int CFuiTaxi::ClickActeMENU(short itm)
 			case '5':
 				trak.SwapRunway(selT);
 				PickMode(0);
+				modf	= 1;
 				break;
 			//--- Delete Edge ------------------
 			case '6':
@@ -1352,7 +1358,8 @@ void CFuiTaxi::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
 //-------------------------------------------------------------------------------
 void CFuiTaxi::SaveData()
 {	//nsup->SaveToFile(trak);
-	if (nsup)	nsup->SaveToBase(trak);
+	if (0 == modf)		return;
+	if (taxm)	taxm->SaveToBase(trak);
 	return;
 	
 }
@@ -1361,11 +1368,11 @@ void CFuiTaxi::SaveData()
 //===========================================================================================
 bool CFuiTaxi::GetTaxiMGR()
 {	if (0 == apo)		{Close(); return true;}
-	nsup	= apo->GetTaxiMGR();
-	if (0 == nsup)	{Close(); return true;}
-	trak.NodeSupplier(nsup);
+	taxm	= apo->GetTaxiMGR();
+	if (0 == taxm)	{Close(); return true;}
+	trak.NodeSupplier(taxm);
 	trak.ComputeAllShortCut();
-	return nsup->NotEmpty();
+	return taxm->NotEmpty();
 }	
 //===========================================================================================
 //	SQL STATEMENTS RELATED TO TAXIWAYS

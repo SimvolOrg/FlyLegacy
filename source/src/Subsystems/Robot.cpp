@@ -27,6 +27,14 @@
 #include "../Include/joysticks.h"
 #include "../Include/WinTaxiway.h"
 using namespace std;
+//==================================================================================
+//	Global function to add a flightplan
+//==================================================================================
+int FPLfilesCB(char *fn,void *upm)
+{	VPilot *vpl = (VPilot *)upm;
+	return vpl->OpenFPL(fn);
+}
+
 //=========================================================================
 //  Virtual pilot state
 // NOTE : when text starts with '*', the throttle control must be checked
@@ -47,7 +55,8 @@ char *vpilotSTATE[] = {
 	"-Parked",					// VPL_PARKED			(12)
 	"-Fixe Point",			// VPL_FIXEPOINT	(13)
 	"-Emergency stop",	// VPL_EMERGENCY	(14)
-	"-VPilot exit",			// VPL_WILL_EXIT	(15)
+	"-VPilot Terminate",// VPL_TERMINATE	(15)
+	"-Waiting time",		// VPL_WAITING    (16)
 };
 //=========================================================================
 //	PROCEDURE
@@ -365,7 +374,9 @@ VPilot::VPilot()
 	State = VPL_IS_IDLE;
 	fpln	= 0;
 	Radio	= 0;
+	rdmp	= 0;
 	route = new NavRoute();
+
 }
 //--------------------------------------------------------------
 //	Destroy resource
@@ -380,6 +391,7 @@ void  VPilot::PrepareMsg(CVehicleObject *veh)
 	pln		= (CAirplane*)veh;
 	apil	= pln->GetAutoPilot();
 	sreg	= pln->amp.GetSpeedRegulator();
+	fpln	= pln->GetFlightPlan();
 	return;
 }
 //--------------------------------------------------------------
@@ -399,6 +411,37 @@ void VPilot::Warn(int No)
 	alrm = 1;
 	if (!pln->AllWheelsOnGround() || (0 == No))	return;
 	GroundBraking();
+	return;
+}
+//--------------------------------------------------------------
+//	Open a flight plan and add to airport list
+//--------------------------------------------------------------
+int VPilot::OpenFPL(char *fn)
+{ char txt[PATH_MAX];
+	CFPlan  fpn(globals->pln,FPL_FOR_DEMO);
+	if (0 == RemoveExtension(txt,fn))	return 1;
+	if (!fpn.AssignPlan(txt))					return 1;
+	//--- Check if this is our airport ---------------
+	char *idn = globals->apm->NearestIdent();
+	if (fpn.NotThisAirport(idn))			return 1;
+	//--- Keep name ----------------------------------
+	fplQ.push_back(fn);
+	return 1;
+}
+//--------------------------------------------------------------
+//	Get a random flight plan
+//--------------------------------------------------------------
+void VPilot::GetanyFlightPlan()
+{	char  pn[MAX_PATH];
+	ApplyToFiles("FlightPlan/*.FPL",FPLfilesCB,this);
+	//--- Load a random flight plan -------------------
+	int nb = fplQ.size();
+	int np = RandomNumber(nb);
+	char *fn = (char*)fplQ[np].c_str();
+	RemoveExtension(pn,fn);
+	fpln->AssignPlan(pn);
+	fplQ.clear();
+	rdmp	= 1;
 	return;
 }
 //--------------------------------------------------------------
@@ -484,18 +527,19 @@ bool VPilot::GetRadio()
 //--------------------------------------------------------------
 void VPilot::ToggleState()
 {	if (State == VPL_IS_IDLE)	Start();
-	else											Stop();
+	else											Stop(0);
 }
 //--------------------------------------------------------------
 //	Request to start the virtual pilot
 //--------------------------------------------------------------
 void VPilot::Start()
-{	//--- Check if aircraft busy --------------
+{	//-----------------------------------------
+	
+	if (fpln->IsEmpty()) GetanyFlightPlan();
+	//--- Check if aircraft busy --------------
 	if (globals->aPROF.Has(PROF_ACBUSY))	return;
 	globals->aPROF.Set(PROF_ACBUSY);
 	if (0 == sreg)				return Error(6);
-	//-----------------------------------------
-	fpln		= pln->GetFlightPlan();
 	//-----------------------------------------
   if (State != VPL_IS_IDLE)	return HandleBack();
 	//--- Check if on ground ------------------
@@ -632,7 +676,7 @@ void VPilot::EnterFinal()
 //--------------------------------------------------------------
 float VPilot::SetDirection()
 {	float dis = wayP->GetLegDistance();
-  float seg = wayP->GetDirection();
+  float seg = wayP->GetDTK();
 	float dev = Radio->GetDeviation();
 	float rdv = fabs(dev);
 	if ((dis > 12) || (rdv < 5))	return seg;
@@ -704,7 +748,7 @@ void VPilot::ModeLanding()
 //--------------------------------------------------------------
 //	Parking number is temporarily fixed
 //--------------------------------------------------------------
-void VPilot::ModeExit()
+void VPilot::ModeGoHome()
 {	char *edt = globals->fui->PilotNote();
 	if (apil->IsDisengaged())				return HandleBack();
   double spd = apil->GetSpeed();
@@ -775,19 +819,45 @@ void VPilot::ModeTaxi()
 //--------------------------------------------------------------
 void VPilot::ModeInPark()
 {	pln->ParkBrake(1);
-	StartProcedure(&Pstop,VPL_WILL_EXIT,"Stop step %02d");
+	StartProcedure(&Pstop,VPL_TERMINATE,"Stop step %02d");
+	return;
+}
+//--------------------------------------------------------------
+//	Waiting for next round
+//--------------------------------------------------------------
+void VPilot::ModeWait()
+{	if (T01 > 0)		return;
+	State = VPL_IS_IDLE;
+	Start();
+}
+//--------------------------------------------------------------
+//	Terminate procedure
+//	Check for Demo mode to restart
+//--------------------------------------------------------------
+void VPilot::Terminate()
+{	char pm[8];
+  char dm;
+	GetIniString("Sim","Mode",pm,8);
+	if (strncmp(pm,"Demo",4) == 0) dm = 1;
+	Stop(dm);
+	if (0 == dm)  return;
+	//--- Restart a new round in 1 minute ---------------
+	T01	= 60;
+	State = VPL_WAITING;
 	return;
 }	
 //--------------------------------------------------------------
 //	STOP virtual pilot
+//	d = 1  if demo mode
 //--------------------------------------------------------------
-void VPilot::Stop()
+void VPilot::Stop(char d)
 { fpln->StopPlan();
+	if (rdmp)	fpln->AssignPlan("");
 	if (sreg)	sreg->SetOFF();
 	State = VPL_IS_IDLE;
 	globals->aPROF.Raz(PROF_ACBUSY);
 	pln->ParkBrake(1);
-	Error(0);
+	if (0 == d) Error(0);
 	return;
 }
 //--------------------------------------------------------------
@@ -830,7 +900,7 @@ void VPilot::TimeSlice (float dT,U_INT frm)
 			return;
 		//--- TouchDown -------------------
 		case VPL_HASLAND:
-			ModeExit();
+			ModeGoHome();
 			return;
 		//--- Go to parking ----------------
 		case VPL_GETPARK:
@@ -852,9 +922,13 @@ void VPilot::TimeSlice (float dT,U_INT frm)
 		case VPL_EMERGENCY:
 			GroundBraking();
 			return;
+		//--- Wait for next round ----------
+		case VPL_WAITING:
+			ModeWait();
+			return;
 		//--- Will exit from virtual pilot -
-		case VPL_WILL_EXIT:
-			Stop();
+		case VPL_TERMINATE:
+			Terminate();
 			return;
 	}
 	return;

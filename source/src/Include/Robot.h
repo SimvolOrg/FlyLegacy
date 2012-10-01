@@ -191,7 +191,8 @@ public:
 #define VPL_STOPPED		  (12)
 #define VPL_FIXEPOINT		(13)
 #define VPL_EMERGENCY		(14)
-#define VPL_WILL_EXIT		(15)
+#define VPL_TERMINATE		(15)
+#define VPL_WAITING			(16)
 //=================================================================
 //  Virtual Pilot to pilot the aircraft
 //  
@@ -205,6 +206,7 @@ protected:
 	char							 alrm;			// Alarm set
 	U_CHAR						 msgNo;
 	U_CHAR						 flap;
+	U_CHAR						 rdmp;			// Random flight plans
 	//--- Procedures --------------------------------------
 	Procedure          Pstrt;			// Start procedure
 	Procedure					 Pstop;			// Stop procedure
@@ -229,12 +231,16 @@ protected:
 	TaxiwayMGR        *taxiM;			// Taxyway manager
 	//--- Radio messages ----------------------------------
 	SMessage           mrad;			// Radio message
+	//--- List of flight plans ----------------------------
+	std::vector<std::string> fplQ;
 	//-----------------------------------------------------
 public:
 	VPilot();
  ~VPilot();
   void  PrepareMsg(CVehicleObject *veh);
 	bool	GetRadio();
+	int		OpenFPL(char *fn);
+	void	GetanyFlightPlan();
 	//-----------------------------------------------------
 	void	Error(int No);
 	void	Warn(int No);
@@ -251,11 +257,12 @@ public:
 	void	ChangeWaypoint();
 	float SetDirection();
 	void	StartTaxiing(char nxt);
+	void	GoParking();
+	void	Terminate();
+	void	Stop(char d);
 	//-----------------------------------------------------
 	void	GroundSpeed();
-	//--- State routines ----------------------------------
 	void	Start();
-	void	Stop();
 	void	RetractFlap();
 	void	HandleBack();
 	void	GroundBraking();
@@ -264,11 +271,11 @@ public:
 	void	ModeCLM();
 	void	ModeTracking();
 	void	ModeLanding();
-	void	ModeExit();
-	void	GoParking();
+	void	ModeGoHome();
 	void	ModeTaxi();
 	void	ModeInPark();
-	//--- Externnal call -----------------------------------
+	void	ModeWait();
+	//--- External call -----------------------------------
 	void	PutOnRunway(CAirport *apt,char *rwid);
 	void	Engage();
 	//------------------------------------------------------

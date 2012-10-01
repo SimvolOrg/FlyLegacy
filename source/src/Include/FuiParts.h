@@ -766,6 +766,8 @@ protected:
   SPosition oRWY;                         // Origin for position (first runway);
   int         mx;                         // Point of view
   int         my;                         // (dito)
+	//--- Selected runway -----------------------------------------------
+	CRunway  *sRwy;													// Selected runway
 	//-------------------------------------------------------------------
   CFuiCanva	     *grh;										// Graph windows
 	CFuiPopupMenu	*ptko;										// List of runways for take off
@@ -867,6 +869,7 @@ public:
   void    LockAll();
   void    UnlockAll();
   void    ChangeProfile(CFuiPopupMenu &pop,int No);
+	void		ShowLandingData(char side);
   //----inline methods ---------------------------------------------
   inline  void     SetWayPointNo(U_SHORT No) {wptNo  = No;}
   inline  U_SHORT  GetWayPointNo()           {return wptNo;}

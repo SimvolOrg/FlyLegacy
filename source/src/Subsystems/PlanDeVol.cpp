@@ -510,7 +510,7 @@ void CWPoint::Build(Tag t)
   altitude  = 0;
   DBwpt     = 0;
   legDis    = 0;
-	rDir			= 0;
+	sDir			= 0;
 	dDir			= 0;
 	sDis			= 0;
 	mDis			= 0;
@@ -555,9 +555,9 @@ void CWPoint::ClearDate (SDateTime &sd)
 //	Correct any drift due to long legs
 //--------------------------------------------------------------
 void CWPoint::CorrectDrift(CRadio *R, CVehicleObject *V)
-{	float dev = R->GetDeviation();
-	float adv = fabs(dev);
-	bool  dto = ((adv > 5) || IsDirect());
+{	float rdev = R->GetDeviation();					// Relative deviation
+	float adev = fabs(rdev);								// Absolute deviation
+	bool  dto = ((adev > 5) || IsDirect());
 	//--- check if Direct to is active ----------
 	if (!dto)	return; 
   float dir = GoDirect(V);
@@ -569,19 +569,19 @@ void CWPoint::CorrectDrift(CRadio *R, CVehicleObject *V)
 //-----------------------------------------------------------
 //	Change Mode
 //	Compute direct path to waypoint except if landing point
-//	For landing, the reference direction rDir has been
+//	When landing, the segment direction sDir has been
 //	set to the runway direction
 //-----------------------------------------------------------
 float CWPoint::GoDirect(CVehicleObject *veh)
-{	if (IsLanding())	return rDir;
+{	if (IsLanding())	return sDir;
 	SetDirectMode();
 	SVector v = {0,0,0};
   CmHead *obj	= DBwpt.Pointer();
-	if (0 == obj)	return rDir;
+	if (0 == obj)	return sDir;
 	v	= GreatCirclePolar(veh->GetAdPosition(), obj->ObjPosition());
 	double mdev = obj->GetMagDev();
-	double ndir = Wrap360((float)v.h - mdev);
-	return ndir;
+	sDir = Wrap360((float)v.h - mdev);
+	return sDir;
 }
 //----------------------------------------------------------------------
 //	Select best altitude depending on distance from previous node
@@ -607,7 +607,7 @@ void CWPoint::SetPosition(SPosition p)
 //	Set Direction
 //-----------------------------------------------------------
 void CWPoint::SetReferenceDIR(double d)
-{	rDir = d;
+{	sDir = d;
 	_snprintf(Dirt,4,"%03d",int(d));
 	Dirt[3] = 0;
 	return;
@@ -766,7 +766,7 @@ LND_DATA *CWPoint::GetLandingData()
 	CAptObject  *apo = apt->GetAPO();				
 	LND_DATA    *lnd = apo->GetRunwayData(dbKey,lndRWY);
 	if (0 == lnd)			return 0;
-	rDir = lnd->lnDIR;
+	sDir = lnd->lnDIR;
 	return lnd;
 }
 //--------------------------------------------------------------------
@@ -1142,7 +1142,7 @@ void CWPoint::UpdateRange(CVehicleObject *veh)
 	mDis		= (float)v.r * MILE_PER_FOOT;
   dfeet		=  v.r;
 	//--- Check for a direct to waypoint --------------
-	if (0 == nSeq)	rDir = dDir;
+	if (0 == nSeq)	sDir = dDir;
 	//--- Update total distance -----------------------
 	int as = fplan->GetActSequence();
 	if (nSeq <  as)		sDis = 0;
@@ -1228,9 +1228,6 @@ CFPlan::CFPlan(CVehicleObject *m,char rp)
 	ClearPlan();
 	serial = 0;
 	win		 = 0;
- //--- Generate a sphere for rabbit ------------------------------
-	if (realp)	sphere = gluNewQuadric();
-	if (realp)  gluQuadricNormals(sphere,GLU_SMOOTH);
 	//------------------------------------------------
 	mALT		= 5000;
 	cALT		= 4500;
@@ -1246,7 +1243,6 @@ CFPlan::CFPlan(CVehicleObject *m,char rp)
 //-----------------------------------------------------------------
 CFPlan::~CFPlan()
 {	wPoints.EmptyIt();
-  gluDeleteQuadric(sphere);
 }
 
 //-----------------------------------------------------------------
@@ -1290,6 +1286,7 @@ void CFPlan::ClearPlan()
 	edMOD			= FPL_EDITABLE;
   return;
 }
+
 //-------------------------------------------------------------------------
 //	Assign a new flight plan from file name
 //-------------------------------------------------------------------------
@@ -1305,7 +1302,7 @@ bool CFPlan::AssignPlan(char *fn)
 	SStream s(this,name);
 	if (s.ok) strncpy(Name,fn,64);
 	//--- Advise GPS of changed plan ----------
-	if (realp) WarnGPS();				 
+	if (realp == FPL_FOR_REAL) WarnGPS();				 
 	return true;
 }
 //-----------------------------------------------------------------
@@ -1344,7 +1341,7 @@ int CFPlan::Read (SStream *stream, Tag tag)
 		if (format != 'FM01') return TAG_EXIT;
     ReadString(Desc,128,stream);
     Desc[127] = 0;
-    return (0 == realp)?(TAG_EXIT):(TAG_READ);
+    return (FPL_FOR_LIST == realp)?(TAG_EXIT):(TAG_READ);
   case 'vers':
     ReadInt((int*)(&Version),stream);
     return TAG_READ;
@@ -1354,7 +1351,7 @@ int CFPlan::Read (SStream *stream, Tag tag)
 	//--- Waypoint description ---------------
   case 'wpnt':
     // Read flight plan waypoint sub-object
-    { if (0 == realp) return TAG_EXIT;
+    { if (FPL_FOR_LIST == realp) return TAG_EXIT;
       Tag tp;
       ReadTag (&tp, stream);
 			CWPoint *wp     = new CWPoint(this,tp);
@@ -1363,7 +1360,7 @@ int CFPlan::Read (SStream *stream, Tag tag)
 			wp->Edit();
 			//---Add a new slot ------------------
 			AddNode(wp); 
-			return TAG_READ;
+			return (FPL_FOR_DEMO == realp)?(TAG_EXIT):(TAG_READ);
 		}
 
   default:
@@ -1380,6 +1377,15 @@ void CFPlan::ReadFinished()
 {	Reorder(0);
 	sWPT	= (CWPoint*)wPoints.HeadPrimary();
 	edMOD = (NbWPT)?(FPL_PROTECTED):(FPL_EDITABLE);
+}
+//-----------------------------------------------------------------
+// Check if first node is the requested airport identity
+//-----------------------------------------------------------------
+bool CFPlan::NotThisAirport(char *idn)
+{ CWPoint *node = HeadNode();
+	if (0 == node)					return false;
+	if (node->SameAPT(idn))	return false;
+	return true;
 }
 //-----------------------------------------------------------------
 //	Check if flight plan may be edited
@@ -1997,7 +2003,7 @@ void CFPlan::DrawNode()
   glEnable(GL_DEPTH_TEST);
   glDisable(GL_BLEND);
   glFrontFace(GL_CCW);
-  gluSphere(sphere,50,32,32);
+  //gluSphere(sphere,50,32,32);
   glPopAttrib();
 	return;
 }
@@ -2023,7 +2029,7 @@ void CFPlan::DrawOn3DW()
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 		glFrontFace(GL_CCW);
-		gluSphere(sphere,50,32,32);
+		//gluSphere(sphere,50,32,32);
 		glPopMatrix();
 		//--- Draw line between nodes --------------------
 		CVector fr;

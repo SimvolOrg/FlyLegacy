@@ -1636,7 +1636,7 @@ int main (int argc, char **argv)
   globals->texDB = 0;
   globals->objDB = 0;
   //---Master radio interface ----------------------------------------
-  globals->cILS  =  0;
+  globals->lnd  =  0;
   //---Object pointer ------------------------------------------------
   globals->tim  = new CTimeManager();         // Time manager
   globals->clk  = new CClock();               // Global clock

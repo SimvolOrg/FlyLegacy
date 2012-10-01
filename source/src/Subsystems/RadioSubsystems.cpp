@@ -353,20 +353,20 @@ void CRadio::SelectSource()
 //  Enter/leave external mode:  ROBOT/GPS interface
 //	Synchronize radio with type of source
 //--------------------------------------------------------------------------
-void CRadio::ModeEXT(CmHead *src,LND_DATA *ils)
+void CRadio::ModeEXT(CmHead *src,LND_DATA *lnd)
 {	//--- Back to normal mode. Synchro radio with nav ------
 	if (0 == src)	
 	{	EXT.Stop();
-		globals->cILS	= 0;
+		globals->lnd	= 0;
 	  if (0 == sPower)		return;
 		SelectSource();
 	}
 	//--- Update external bus ---------------------------
 	else
 	{	SRC->DecUser();
-		EXT.SetSource(src,ils,0);
+		EXT.SetSource(src,lnd,0);
 		SRC	= &EXT;
-		if ((uNum == 1)	&& (ils) && mveh->IsUserPlan())	globals->cILS	= ils->ils;
+		if ((uNum == 1)	&& (lnd) && mveh->IsUserPlan())	globals->lnd	= lnd;
 	}
 	Synchronize();
 	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);

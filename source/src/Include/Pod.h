@@ -209,6 +209,7 @@ public:
 //================================================================================================
 typedef int (*FileCB)(char *fn,void *upm);
 void	ApplyToFiles(char *pat, FileCB cb, void *upm);
+int		RemoveExtension(char *dst, char *fn);
 //================================================================================================
 //	Function prototype for file processing in a POD file
 //================================================================================================

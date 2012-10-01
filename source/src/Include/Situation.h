@@ -139,6 +139,7 @@ public:
 	void  AddPlane(CAirplane* p);
 	void	Clear();
 	void	BackToSimulation(char grn);
+	void	UpdatePosition(SPosition pos);
 	//----------------------------------------------
 	int	 TimeSlice(float dT,U_INT frame);
 	//----------------------------------------------
@@ -148,6 +149,7 @@ public:
 //  Global situation
 //==========================================================================================
 class CSituation : public CStreamObject {
+friend class CSlewManager;
 	//-----------------------------------------------------------
 protected:
 	U_INT						State;						// Current state
