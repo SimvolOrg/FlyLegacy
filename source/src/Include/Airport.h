@@ -232,6 +232,8 @@ class CAptObject : public CqItem, public CDrawByCamera {
   SPosition       apos;                               // Aircraft position
   SVector         cpos;                               // Camera position
 	float						nmiles;															// Distance in miles
+	//--- Landing align waypoint ---------------------------------------------
+	CWPT						linWP;															// Used for alignment
 	//--- Taxiway Manager  ---------------------------------------------------
 	TaxiwayMGR		*taxiMGR;														// Taxiway manager
   //------------------------------------------------------------------------
@@ -297,8 +299,9 @@ class CAptObject : public CqItem, public CDrawByCamera {
   char      lreq;                             // Light request
   //----------------------------------------------------------------------
   double ground;   // Common ground elevation
-  //-----For test- -------------------------------------------------------
-  GLUquadricObj *sphere;
+  //-----Landing management- ---------------------------------------------
+  LND_DATA *lnDW;															// Runway to draw
+	LND_DATA *lnRWY;														// Landing runway
   //--------------Methods ------------------------------------------------
 public:
     CAptObject(CAirportMgr *m, CAirport *apt);
@@ -342,64 +345,68 @@ public:
    void  ChangeLights(char ls);     // Switch lights ON/OFF
    void  UpdateLights(float dT);    // Update light state
 	 //----------------------------------------------------------------------
-	 LND_DATA *GetRunwayData(char * key, char *rwid);
+	 void		BuildLandingLane(LND_DATA *lnd);
 	 //----------------------------------------------------------------------
 	 void	 ClearTaxiways();
 	 void	 LoadTaxiways();
 	//--- Runway VBO used by Tarmac -----------------------------------------
-	inline U_INT				GetRVBO()							{return rVBO;}
+	U_INT				GetRVBO()							{return rVBO;}
 	//-----Identifier ------------------------------------------------------
-  inline bool      SameApt(CAirport *a)     {return (a == Airp);}
+  bool      SameApt(CAirport *a)     {return (a == Airp);}
 	//--- Total triangles --------------------------------------------------
-	inline void			AddPAV(U_INT n)						{nPAV += n;}
-	inline void			AddEDG(U_INT n)						{nEDG += n;}
-	inline void			AddCTR(U_INT n)						{nCTR += n;}
+	void			AddPAV(U_INT n)						{nPAV += n;}
+	void			AddEDG(U_INT n)						{nEDG += n;}
+	void			AddCTR(U_INT n)						{nCTR += n;}
 	//--- taxiways interface -----------------------------------------------
 	TaxiwayMGR      *GetTaxiMGR()							{return taxiMGR;}
   //----------------------------------------------------------------------
-  inline bool      IsVisible()                {return (visible != 0);}
-  inline bool      NotVisible()               {return (visible == 0);}
-	inline void			 SetMiles(float m)					{nmiles = m;}
-  inline void      GetSLT(SVector &v)         {v = scl;}
-  inline void      GetSTH(SVector &v)         {v = sct;}
-  inline void      SetCamera(CCamera *c)      {cam = c;}
-  inline void      SetAircraft(SPosition p)   {apos = p;}
+  bool      IsVisible()									{return (visible != 0);}
+  bool      NotVisible()								{return (visible == 0);}
+	void			SetMiles(float m)						{nmiles = m;}
+  void      GetSLT(SVector &v)					{v = scl;}
+  void      GetSTH(SVector &v)					{v = sct;}
+  void      SetCamera(CCamera *c)				{cam = c;}
+  void      SetAircraft(SPosition p)		{apos = p;}
   //----------------------------------------------------------------------
-  inline void      LightPlease()              {lreq ^= 1;}
+  void      LightPlease()              {lreq ^= 1;}
   //----------------------------------------------------------------------
-  inline double    GetGround()                {return ground;}
-  inline double    GetRDF()                   {return rdf;}
-  inline double    GetXPF()                   {return xpf;}
-  inline SPosition GetOrigin()                {return Org;}
-	inline float		 GetNmiles()								{return nmiles;}
+  double    GetGround()                {return ground;}
+  double    GetRDF()                   {return rdf;}
+  double    GetXPF()                   {return xpf;}
+  SPosition GetOrigin()                {return Org;}
+	float		  GetNmiles()								 {return nmiles;}
+	LND_DATA *GetLandingDraw()					 {return lnDW;}
+	LND_DATA *GetLandingData()					 {return lnRWY;} 
 	//---------------------------------------------------------------------
-  inline void      SetScale(float sc)         {grid = sc;}
-  inline void      SetXGrid(int nx)           {gx = nx;}
-  inline void      SetZGrid(int nz)           {gz = nz;}
-  inline void      SetLLC(SPosition p)        {llc = p;}
+  void      SetScale(float sc)         {grid = sc;}
+  void      SetXGrid(int nx)           {gx = nx;}
+  void      SetZGrid(int nz)           {gz = nz;}
+  void      SetLLC(SPosition p)        {llc = p;}
+	void			SetDatatoDraw(LND_DATA *d) {lnDW = d;}
   //----------------------------------------------------------------------
-  inline char     *GetAptName()						{return Airp->GetAptName();}
-	inline char     *GetAptKey()						{return Airp->GetKey();}
+  char     *GetAptName()						{return Airp->GetAptName();}
+	char     *GetAptKey()							{return Airp->GetKey();}
   //----------------------------------------------------------------------
-  inline CAirport *GetAirport()               {return Airp;}
-  inline void      AddPavement(CPaveQ &q) {pavQ.Append(q);}
-  inline void      AddEdge(CPaveQ &q)     {edgQ.Append(q);}
-  inline void      AddCenter(CPaveQ &q)   {cntQ.Append(q);}
+  CAirport *GetAirport()               {return Airp;}
+  void      AddPavement(CPaveQ &q) {pavQ.Append(q);}
+  void      AddEdge(CPaveQ &q)     {edgQ.Append(q);}
+  void      AddCenter(CPaveQ &q)   {cntQ.Append(q);}
   //----------------------------------------------------------------------
-  inline void      OneTaxiLight(CBaseLITE *l)   {taxS.AddLight(l);}
+  void      OneTaxiLight(CBaseLITE *l)   {taxS.AddLight(l);}
   //--------Light Queues -------------------------------------------------
-  inline void      AddGreenLight(CBaseLITE *l)  {taxS.AddGreenLight(l);}
-  inline void      AddBlueLight (CBaseLITE *l)  {taxS.AddBlueLight (l);}
+  void      AddGreenLight(CBaseLITE *l)  {taxS.AddGreenLight(l);}
+  void      AddBlueLight (CBaseLITE *l)  {taxS.AddBlueLight (l);}
   //------Pavement queues ------------------------------------------------
-  inline CPaveQ   *GetPavQ()    {return &pavQ;}
-  inline CPaveQ   *GetEdgQ()    {return &edgQ;}
-  inline CPaveQ   *GetCntQ()    {return &cntQ;}
-  inline CLiteQ   *GetLitQ()    {return  taxS.GetLitQ();}
+  CPaveQ   *GetPavQ()    {return &pavQ;}
+  CPaveQ   *GetEdgQ()    {return &edgQ;}
+  CPaveQ   *GetCntQ()    {return &cntQ;}
+  CLiteQ   *GetLitQ()    {return  taxS.GetLitQ();}
   //----------------------------------------------------------------------
-	inline bool NoRunway()	{return (tmcQ.size() == 0);}
-	inline bool HasRunway()	{return (tmcQ.size() != 0);}
+	bool NoRunway()	  {return (tmcQ.size() == 0);}
+	bool HasRunway()	{return (tmcQ.size() != 0);}
+	bool HasDILS()		{return (lnDW != 0);}
   //----------------------------------------------------------------------
-  inline char *GetKey()        {return (Airp)?(Airp->GetKey()):(0);}
+  char *GetKey()        {return (Airp)?(Airp->GetKey()):(0);}
   //--------DRAW Airport --------------------------------------------------
   void    Draw();
 	void		DrawGround();
@@ -441,7 +448,6 @@ class CAirportMgr {
   //-----Attributes ------------------------------------------------
   U_CHAR          nProf;                      // Profile Stack index
   U_CHAR          clock;                      // Refresh clock
-  char            dILS;                       // Drawing ILS indicator
 	//--- Letter and band VBO -----------------------------------------
 	U_INT						xOBJ;												// yellow texture
 	U_INT						bVBO;												// Band & letter VBO buffer
@@ -485,18 +491,17 @@ public:
   void			Draw(SPosition pos);                  // Draw airports
   void			DrawLights();                         // Draw airport lights
   //-----------------------------------------------------------------
-	inline  void	BindYellow()  {glBindTexture(GL_TEXTURE_2D,xOBJ);}
+	void	BindYellow()  {glBindTexture(GL_TEXTURE_2D,xOBJ);}
 	//-----------------------------------------------------------------
-  inline void         SetCamera(CCamera *c)   {cam = c;}
-  inline CCamera     *GetCamera()             {return cam;}
-  inline double       GetPaveFactor()         {return PavArc;}
-  inline CPicQUAD    *GetIcon()               {return avion;}
-	inline void					SwapILSdraw()						{dILS ^= 1;}
-	inline float				LightSize()							{return lSiz;}
+  void         SetCamera(CCamera *c)		{cam = c;}
+  CCamera     *GetCamera()							{return cam;}
+  double       GetPaveFactor()					{return PavArc;}
+  CPicQUAD    *GetIcon()								{return avion;}
+	float				LightSize()								{return lSiz;}
 	//-----------------------------------------------------------------
-	inline CAptObject  *GetNearestAPT()					{return nApt;}
+	CAptObject  *GetNearestAPT()						{return nApt;}
+	bool			   NotNearest(CAptObject *a)	{return nApt != a;}
 	//------------------------------------------------------------------
-	
 };
 
 //============================END OF FILE =================================================

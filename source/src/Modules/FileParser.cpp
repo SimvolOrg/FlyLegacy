@@ -722,7 +722,7 @@ int CSMFparser::ReadPart(PODFILE *p,char *fn)
   int f1,f2,f3;
 	txd.azp   = 0x00;								//Tsp;
 	txd.Dir   = FOLDER_ART;
-	tREF			= globals->txw->GetM3DPodTexture(txd);
+	tREF			= globals->txw->Get3DTexture(txd);			//GetM3DPodTexture(txd);
 	part->SetTREF(tREF);
   int np = 0;                             // Part number
   for (int n=0; n < nbfaces; n++)
@@ -1072,7 +1072,6 @@ void CBINparser::AddToModel(C3DPart *prt)
 {	prt->SetTexture(Tsp,txname);
 	prt->AllocateIND();
 	partQ.PutLast(prt);
-  nFace += Tof;
   return;
 }
 
@@ -2089,7 +2088,7 @@ C3DPart *COBJparser::BuildMATPart(char dir)
 	txd.apx = 0xFF;
 	txd.azp = 0x00;
 	strncpy(txd.name,mat->name,64);
-	CShared3DTex *ref	= globals->txw->GetM3DPodTexture(txd);
+	CShared3DTex *ref	= globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
 	prt->SetTREF(ref);
 	return prt;
 }

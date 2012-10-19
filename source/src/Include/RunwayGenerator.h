@@ -80,6 +80,7 @@ class CRwyGenerator
 	double		d2;
 	double		d3;
 	double		d4;
+	double    dm;
 	//--- Designator parameters ----------------------------------------
 	U_INT			nbbv;																// Number of vertice band
 	//------------------------------------------------------------------

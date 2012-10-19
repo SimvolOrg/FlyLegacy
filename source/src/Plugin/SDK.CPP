@@ -1725,7 +1725,7 @@ int	APIGetObjectAGL(SFlyObjectRef *object, float *agl)
   //--APIGetObjectAGL
   if (object->objectPtr) {
     CVehicleObject *vo = static_cast<CVehicleObject *> (object->objectPtr);
-    if (vo) {*agl = vo->GetUserAGL (); return 0;}
+    if (vo) {*agl = vo->GetBodyAGL (); return 0;}
     return 1;
   }
   return 1;
@@ -1736,7 +1736,7 @@ int	APIGetObjectMSL(SFlyObjectRef *object, float *msl)
   //--APIGetObjectMSL
   if (object->objectPtr) {
     CVehicleObject *vo = static_cast<CVehicleObject *> (object->objectPtr);
-    if (vo) {*msl = vo->GetUserAGL () + globals->tcm->GetGroundAltitude(); return 0;}
+    if (vo) {*msl = vo->GetBodyAGL () + globals->tcm->GetGroundAltitude(); return 0;}
     return 1;
   }
   return 1;

@@ -252,8 +252,9 @@ CFuiVectorMap::CFuiVectorMap( Tag windowId, const char* winFilename)
   Focus = 0;
   //----- Initialize vector map status -------------------
   vmapOrient.p = vmapOrient.h = vmapOrient.r = 0;
-  RoseZm    = 1.0f;;
-  Scale(globals->vmapZoom);
+  RoseZm    = 1.0f;
+	pZom			= globals->vmapZoom;
+  Scale(pZom);
   //---Init all colors -----------------------------------
   green   = 0;
   grlim   = (8 * 255);
@@ -402,7 +403,9 @@ void  CFuiVectorMap::LoadOthBitmap(char *bmp,VM_BMP no)
 }
 //------------------------------------------------------------
 CFuiVectorMap::~CFuiVectorMap (void)
-{ //---Clear the cache screen table at exit ----------------       
+{ //--- Update position ------------------------------------
+	WriteConfig();
+  //---Clear the cache screen table at exit ----------------       
   ResetScreenTable();
   if (mPop)  delete mPop;
   //----waypoints --------------------
@@ -705,41 +708,37 @@ void  CFuiVectorMap::DrawAPT(void)
 //  Distance from aircraft (center of window) to origin (org) and extremity (ext)
 //  is stored in temporary objects (fpOrg and fpExt) to draw the line between waypoints
 //---------------------------------------------------------------------------------------------
-void CFuiVectorMap::DrawRoute(VMnode &org,VMnode &ext)
-{ //----Compute distance to aircraft for both extremities --------
-	CmHead *no	= org.GetOBJ();
-	CmHead *nx  = ext.GetOBJ();
-	float d1		= dbc->GetFlatDistance(no);
-  float d2		= dbc->GetFlatDistance(nx);
-
+void CFuiVectorMap::DrawRoute(VMroute &rte)
+{	//----Compute distance to aircraft for both extremities ----
+	CmHead *org	= rte.GetORG();
+	CmHead *ext = rte.GetEXT();
+	float d1		= dbc->GetFlatDistance(org);
+  float d2		= dbc->GetFlatDistance(ext);
+	//--- Check out of screen ----------------------------------
   if ((d1 > MaxNM) && (d2 > MaxNM)) return;
-  //----One node visible -----------------------------------------
+	//----One node visible -------------------------------------
   int x1,y1;
-	GetScreenCoordinates(no,x1,y1);
+	GetScreenCoordinates(org,x1,y1);
   int x2,y2;
-	GetScreenCoordinates(nx,x2,y2);
+	GetScreenCoordinates(ext,x2,y2);
   DrawFastLine(surface,x1, y1, x2, y2, white);
-	//--- Check if extremity is a waypoint from flight plan --------
-	if (nx->GetActiveQ() != WPT)	return;
-	//--------------------------------------------------------------
-	ext.SetNodeDistance();
-	DrawWayPoint((CWPT *)nx);
-  return;
+	//--- Draw the node ----------------------------------------
+	if (ext->GetActiveQ() == WPT)	DrawWayPoint(ext);
 }
 //---------------------------------------------------------------------------------------------
 //  Draw a waypoint from flight plan
 //---------------------------------------------------------------------------------------------
-void CFuiVectorMap::DrawWayPoint(CWPT *wpt)
+void CFuiVectorMap::DrawWayPoint(CmHead *nod)
 { CBitmap *bmp  = OthBMAP[WPTBLK];
   int     xbm   = OthSIZE[WPTBLK].w2;
   int     ybm   = OthSIZE[WPTBLK].h2;
   int xIcon; 
   int yIcon;
-  int ylab		= GetScreenCoordinates (wpt, xIcon, yIcon,ybm);
-  short fnt   = (Focus == wpt)?(1):(0);
+  int ylab		= GetScreenCoordinates (nod, xIcon, yIcon,ybm);
+  short fnt   = (Focus == nod)?(1):(0);
   bmp->DrawBitmap (surface,(xIcon - xbm), (yIcon - ybm), 0);
-  if (option.Has(VM_DLAB)) DrawLabel(fnt,xIcon,ylab,wpt);
-  EnterScreenTable(wpt,(xIcon + x),(yIcon + y));
+  if (option.Has(VM_DLAB)) DrawLabel(fnt,xIcon,ylab,nod);
+  if (nod->MayMove()) EnterScreenTable(nod,(xIcon + x),(yIcon + y));
 	return;
 }
 //---------------------------------------------------------------------------------------------
@@ -1101,9 +1100,9 @@ void CFuiVectorMap::NotifyMenuEvent(Tag idm, Tag itm)
 //  Mouse move over the Popup menu
 //---------------------------------------------------------------------------------
 bool CFuiVectorMap::MoveOverPOP(int mx, int my)
-{ if (Focus.IsNull())		return true;
+{ if (Focus.IsNull())				return true;
 	EditPopDistance(mx,my);
-  if (Focus->Isa(WPT))	return true;
+  if (Focus->Isa(WPT))			return true;
   mPop->Refresh(1);
   return true;
 }
@@ -1325,18 +1324,6 @@ bool CFuiVectorMap::EditPopAPT(CmHead *obj)
   smen.aText[itm] = 0;
   return true;
 }
-//----------------------------------------------------------------------------------
-//  Open Popup menu
-//----------------------------------------------------------------------------------
-/* bool CFuiVectorMap::OpenPOP(int mx,int my)
-{ mPop = new CFuiPage(mx,my,&smen,this);
-	xOrg  = mx;
-  yOrg  = my;
-  mPop->SetState(1);
-  RegisterFocus(mPop);
-	return true;
-}
-*/
 //==================================================================================
 //	DOCUMENT List 
 //==================================================================================
@@ -1417,7 +1404,7 @@ int CFuiVectorMap::ClickDocMENU(short itm)
 		ClosePopMenu();
 		return 1;
 	}
-  
+  return 1;
 }
 //----------------------------------------------------------------------------------
 //  Open a floating menu over a document
@@ -1640,6 +1627,7 @@ int CFuiVectorMap::ClickWptMENU(short itm)
 //----------------------------------------------------------------------------------
 bool CFuiVectorMap::ClickWptOBJ(int mx,int my,EMouseButton button)
 {	if (button == MOUSE_BUTTON_RIGHT)	return OpenWptINFO(mx,my);
+	if (!Focus->MayMove())						return true;
 	dStat = VWIN_WPT;
 	//--- prepare to move the waypoint ----------------------
 	DocInfo.state = VMAP_WPT_DRAG;
@@ -1675,13 +1663,30 @@ bool CFuiVectorMap::OpenWptINFO(int mx, int my)
 	return OpenPopup(mx,my,&smen);
 }
 //=================================================================================
-//  Draw taxiway Nodes
+// Save configuration
+//	This file is read by main at startup time
 //=================================================================================
-//---------------------------------------------------------------------------------
-//	Draw the taxiway nodes
-//---------------------------------------------------------------------------------
-void CFuiVectorMap::DrawTaxiNodes()
-{
+void CFuiVectorMap::WriteConfig()
+{ char txt[128];
+  CStreamFile   sf;
+  char     *fn = "System/vmap.cfg";
+	//--- Update vmap parameters -------------------------------
+	globals->vmapPos.x = this->x;
+	globals->vmapPos.y = this->y;
+	globals->vmapTrns  = black;
+  //---Open a stream file -----------------------------------
+  sf.OpenWrite(fn);
+	//--- Write file header -------------------------------------
+  sf.WriteString("//=== Vector map configuration =============================");
+	sf.WriteTag('vmps'," -- Screen position-dim");
+	sprintf(txt,"%03d, %03d, %03d, %03d",this->x,this->y,this->w, this->h);
+	sf.WriteString(txt);
+	//--- Write options ----------------------------------------
+	sf.WriteTag('vmop'," -- Menu zoom transparency ------");
+	sprintf(txt,"%X, %.4f, %X",option,Zoom,black);
+	sf.WriteString(txt);
+	sf.WriteTag('endm',"=== this file may be deleted for default parameters ===");
+	sf.Close(); 
 }
 
 //==================================================================================
@@ -2001,6 +2006,7 @@ CFuiAptDetail::CFuiAptDetail(Tag idn,const char *filename,int lim)
   type  = 0;
   lpBox = 0;
   vers  = 0;                              // Runway version
+	draw	= 0;															// Drawing end
   //----------------------------------------------------------
   char  *abt = "Incorrect FUI Airport detail file";
   //--------------Find components  ---------------------------
@@ -2175,15 +2181,13 @@ void CFuiAptDetail::UnlockAll()
   loTZ->Unlock();
   return;
 }
+
 //----------------------------------------------------------------------
 //  Draw Light profile of selected runway
 //----------------------------------------------------------------------
 void CFuiAptDetail::DrawProfile()
 { if (0 == vers)		return;
-  CRwyLine *slot = (CRwyLine*)rwyBOX.GetSelectedSlot();
-	if (0 == slot)		return;
-	sRwy	=		Apt->FindRunway(slot->GetHiEndID());
-  if (0 == sRwy)     return;
+  if (0 == sRwy)		return;
 	int opt = 0;
   CRLP     *lpf  = sRwy->GetRLP();
   int       ctr  = lpf->GetCenterLM();
@@ -2192,8 +2196,8 @@ void CFuiAptDetail::DrawProfile()
   cRwy = sRwy;
   cRpf = lpf;
   //---Set Hi end options ----------------------------
-  hiED->SetText(slot->GetHiEndID());
-  loED->SetText(slot->GetLoEndID());
+  hiED->SetText(Slot->GetHiEndID());
+  loED->SetText(Slot->GetLoEndID());
   opt  = lpf->GetHiAPRL();
   hiAP->Select(opt);
   opt  = lpf->GetHiTBAR();
@@ -2268,6 +2272,7 @@ void CFuiAptDetail::Terminate()
   rwyBOX.Display();
   ComputeScale();
   ScaleAllRWY();
+	SelectRWY(Apt);
   DrawRunways();
 	DrawProfile();
   //-------Free the object -----------------------------------------
@@ -2316,6 +2321,23 @@ bool CFuiAptDetail::TuneRadioCom()
   return true;
 }
 //-------------------------------------------------------------------------
+//  Set drawing mark for the selected runway
+//-------------------------------------------------------------------------
+void CFuiAptDetail::SetDrawingMark()
+{	CAptObject *apo = Apt->GetAPO();
+	if (0 == apo)			return;
+	apo->SetDatatoDraw(0);
+	//-----Update state ---------------------
+	draw++;
+	if (draw == 3)	draw = 0;
+	//---------------------------------------
+	LND_DATA *lnd = 0;
+	if (0 == draw)		return;
+	if (1 == draw)		lnd = sRwy->GetIlsData(RWY_HI_END);
+	if (2 == draw)		lnd = sRwy->GetIlsData(RWY_LO_END);
+	apo->SetDatatoDraw(lnd);
+}
+//-------------------------------------------------------------------------
 //  Event notification
 //-------------------------------------------------------------------------
 void  CFuiAptDetail::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
@@ -2326,6 +2348,7 @@ void  CFuiAptDetail::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 
   case 'runs':
     rwyBOX.VScrollHandler((U_INT)itm,evn);
+		SelectRWY(Apt);
     DrawRunways();
 		DrawProfile();
     return;
@@ -2343,6 +2366,9 @@ void  CFuiAptDetail::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
     SystemHandler(evn);
     return;
 
+	case 'land':
+		SetDrawingMark();
+		return;
   }
   return;
 }

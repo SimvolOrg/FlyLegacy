@@ -179,20 +179,30 @@ CWeatherManager::CWeatherManager(void)
 	globals->Disp.Enter(this, PRIO_WEATHER, DISP_EXCONT, 0);
 }
 //-----------------------------------------------------------------------
+//  Get a layer from ini file 
+//-----------------------------------------------------------------------
+void CWeatherManager::AddDefaultLayer(char No)
+{	char key[16];
+	_snprintf(key,16,"Layer%d",No);
+	char str[64];
+	GetIniString("WIND",key,str,64);
+	float	a;			// Altitude
+	float d;			// Direction
+	float s;			// Speed
+	int nf = sscanf(str,"%f ft, %f deg , %f Kts",&a,&d,&s);
+	if (nf != 3)		return;
+	C3valSlot slot(a,d,s,0);
+	windMAP.Enter(slot);
+	return;
+} 
+//-----------------------------------------------------------------------
 //  Get user wind layer (to be writen on file) 
 //-----------------------------------------------------------------------
 void CWeatherManager::GetDefaultWinds()
-{ C3valSlot slot0( 5000,235,5,0);
-  C3valSlot slot1(10000,260,20,0);
-  C3valSlot slot2(20000,270,30,0);
-  C3valSlot slot3(30000,250,40,0);
-  C3valSlot slot4(40000,262,50,0);
-  //-------------------------------------------
-  windMAP.Enter(slot0);
-  windMAP.Enter(slot1);
-  windMAP.Enter(slot2);
-  windMAP.Enter(slot3);
-  windMAP.Enter(slot4);
+{ //--------------------------------------------
+	C3valSlot slot(0,0,0,0);
+	windMAP.Enter(slot);
+	for (int k=1; k != 6; k++)	AddDefaultLayer(k);
   //-------------------------------------------
   windTITLE.FixeIt();
   windBOX.AddSlot(&windTITLE);
@@ -274,6 +284,10 @@ void CWeatherManager::Init (void)
   GetIniVar("TRACE","Meteo",&opt);
   tr  = (U_CHAR)opt;
   SetDefault();
+	//--- Check for no wind ---------------------------------------
+	nw	= 0;
+	nw	|= HasIniKey("TRACE","AeroForce")? (1):(0);
+	nw  |= HasIniKey("TRACE","AeroMoment")?(1):(0);
   //-------------------------------------------------------------
   srand ((unsigned) clock ());
 }
@@ -450,7 +464,8 @@ float CWeatherManager::GetWindMPS()
 //
 //------------------------------------------------------------------------------
 void CWeatherManager::UpdateWind(float dT)
-{  //----Update actual speed for aerodynamic -----------------------------
+{ if (nw)			return;						// No wind from configuration
+	//----Update actual speed for aerodynamic -----------------------------
   windDIR = wDIR.TimeSlice(dT);                         // meteo direction
   windKTS = wSPD.TimeSlice(dT);
   windDIR = Wrap360(windDIR);

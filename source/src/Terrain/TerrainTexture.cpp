@@ -1204,15 +1204,16 @@ int CArtParser::GetFileType(char *name)
 //--------------------------------------------------------------------
 //  Return a  texture  
 //--------------------------------------------------------------------
-GLubyte *CArtParser::GetAnyTexture(TEXT_INFO &xdf)
-{ int type = GetFileType(xdf.path);
+GLubyte *CArtParser::GetAnyTexture(TEXT_INFO &inf)
+{ int type = GetFileType(inf.path);
   FREE_IMAGE_FORMAT fff = FileFFM[type];
   SetOption(FileOPT[type]);
-  LoadFFF(xdf.path,xdf.azp,fff);
+  LoadFFF(inf.path,inf.azp,fff);
   GLubyte *rgba = (GLubyte*)rgb;
-  xdf.ht        = htr;
-  xdf.wd        = wid;
-  xdf.mADR      = rgba;
+  inf.ht        = htr;
+  inf.wd        = wid;
+	inf.dim				= dim;
+  inf.mADR      = rgba;
   rgb           = 0;
   return rgba;
 }
@@ -1644,25 +1645,12 @@ void CTextureWard::GetAnyTexture(TEXT_INFO *inf)
 //	NOTE: Even if the real texture cant be read, the reference is kept to avoid
 //				to check everywhere else if it exists.
 //=============================================================================
-CShared3DTex *CTextureWard::AddSHX(CShared3DTex *shx ,char type)
-{	TEXT_INFO *inf = shx->GetDescription();
-	char			*dot;
-	switch (type)	{
-			//--- POD TEXTURE ----------------------------
-			case SHX_POD:
-					dot = strrchr(inf->path,'.');
-					if (0 == dot)							break;
-					if (strcmp(dot,".RAW") == 0)  Get3DRAW(inf);
-					else                          GetAnyTexture(inf);
-					break;
-			case SHX_SQL:
-			//--- SQL TEXTURE -----------------------------
-					globals->sql->GetM3DTexture(inf);
-					break;
-	}
+CShared3DTex *CTextureWard::AddSHX(CShared3DTex *shx ,TEXT_INFO &txd)
+{	char *key = shx->GetPath();
+	shx->GetDimension(txd);
 	//--- Insert the shared texture into the map ------
 	pthread_mutex_lock (&t3dMux);
-	t3dMAP[inf->path]  = shx;
+	t3dMAP[key]  = shx;
   pthread_mutex_unlock (&t3dMux);
 	return shx;
 }
@@ -1674,6 +1662,7 @@ CShared3DTex *CTextureWard::AddSHX(CShared3DTex *shx ,char type)
 //	Allocated a shared object for this texture name
 //	Return the shared objet as a reference to this texture
 //-----------------------------------------------------------------------------
+/*
 CShared3DTex *CTextureWard::GetM3DPodTexture(TEXT_INFO &txd)
 { char *dir = directoryTAB[txd.Dir];
 	_snprintf(txd.path,FNAM_MAX,"%s/%s",dir,txd.name);
@@ -1682,15 +1671,14 @@ CShared3DTex *CTextureWard::GetM3DPodTexture(TEXT_INFO &txd)
   if   (ref)  return ref;
   //---Add a new shared texture --------------------------
   CShared3DTex *shx = new CShared3DTex(txd);
-	AddSHX(shx ,SHX_POD);
-	//--- Update caller with texture parameters ------------
-	shx->GetDimension(txd);
-  return shx;
+	return AddSHX(shx ,txd);
 }
+*/
 //-----------------------------------------------------------------------------
 //  Get A 3D model Texture
 //  from SQL database.  This function runs in SQL thread
 //-----------------------------------------------------------------------------
+/*
 CShared3DTex *CTextureWard::GetM3DSqlTexture(TEXT_INFO &txd)
 { //-- Make a key with ART directory ---------------------
 	char *dir = directoryTAB[txd.Dir];
@@ -1703,6 +1691,37 @@ CShared3DTex *CTextureWard::GetM3DSqlTexture(TEXT_INFO &txd)
 	AddSHX(shx ,SHX_SQL);
 	shx->GetDimension(txd);
   return shx;
+}
+*/
+//-----------------------------------------------------------------------------
+//  Get A 3D model Texture
+//  Search in the following order
+//	In texture cache
+//	In SQL database
+//	In Pod file
+//	NOTE: Even if the real texture cant be read, the reference is kept to avoid
+//				to further search.
+//-----------------------------------------------------------------------------
+CShared3DTex *CTextureWard::Get3DTexture(TEXT_INFO &txd)
+{	if (0 == *txd.name)	return 0;
+	//-- Make a key with ART directory ---------------------
+	char *dir = directoryTAB[txd.Dir];
+	_snprintf(txd.path,FNAM_MAX,"%s/%s",dir,txd.name);
+	//--- Search in cache first -----------------------------
+	CShared3DTex *ref = RefTo3DTexture(txd);
+  if   (ref)  	return ref;
+	//--- Create a new entry --------------------------------
+	 CShared3DTex *shx = new CShared3DTex(txd);
+	//--- Search texture in sql database if used ------------
+	TEXT_INFO *inf = shx->GetDescription();
+	if (globals->m3dDB) globals->sql->GetM3DTexture(inf);
+	if (shx->HasData())  return AddSHX(shx,txd);
+	//--- Search texture in POD files -----------------------
+	char *dot = strrchr(inf->path,'.');
+	if (0 == dot)				 return AddSHX(shx,txd);
+	if (strcmp(dot,".RAW") == 0)  Get3DRAW(inf);
+	else                          GetAnyTexture(inf);
+	return AddSHX(shx,txd);
 }
 //-----------------------------------------------------------------------------
 //	Return texture parameters 
@@ -1755,14 +1774,15 @@ void CTextureWard::Get3DTIF(TEXT_INFO *txd)
 //-----------------------------------------------------------------------------
 //  Return a RAW-ACT Texture for 3D object
 //-----------------------------------------------------------------------------
-void CTextureWard::Get3DRAW(TEXT_INFO *txd)
+void CTextureWard::Get3DRAW(TEXT_INFO *inf)
 { CArtParser img(0);
   //----PATH is ART --------------------------------
-  char *dot = strstr(txd->path,".") + 1;
+  char *dot = strstr(inf->path,".") + 1;
   *dot = 0;
   img.DontAbort();
-  txd->mADR = img.GetModTexture(*txd);
-  txd->bpp  = 4;
+  inf->mADR = img.GetModTexture(*inf);
+	//--- note that wd, ht and dim are already set ---
+  inf->bpp  = 4;
   strcpy(dot,"RAW");                             // Reset name
   return;
 }

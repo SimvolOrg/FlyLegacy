@@ -1302,6 +1302,7 @@ public:
 //=====================================================================
 struct MIXER_DATA {
   char  chn[8];         // Chanel
+	CAeroControl *ctrl;		// Corresponding controller
   float raw;            // Raw control value in range [0,1] or [-1,+1]
   float step;           // Step size
   float bend;           // Exponential value
@@ -1312,7 +1313,7 @@ struct MIXER_DATA {
   float minClamp;       // Minimum value of the control subsystem
   float maxClamp;       // Maximum value of the control subsystem
   float ampli;          // Amplitude
-
+	MIXER_DATA::MIXER_DATA() {ctrl = 0;}
 };
 //=======================================================================
 // CAeroControl

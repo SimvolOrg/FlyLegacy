@@ -248,7 +248,7 @@ void CmvalMap::Enter(C3valSlot &e)
   return;
 }
 //----------------------------------------------------------------------
-// Load table from TUPPLE2 set.
+// Load table from TUPPLE3 set.
 //  Last entry must have x=y= -1;
 //  Not used until now
 //---------------------------------------------------------------------
@@ -279,6 +279,7 @@ void CmvalMap::Fill(TUPPLE3 &in,C3valSlot &s)
 void CmvalMap::Lookup(TUPPLE3 &in)
 { in.out1 = 0;
   in.out2 = 0;
+	in.out3 = 0;
   float x = in.inp;
   if (tab.empty())  return;
   // Get references to first and last elements
@@ -512,8 +513,8 @@ void CFmt1Map::DecodeFMT1(SStream *s)
 				else
 				if (sscanf (pm, "%f,%f", &e.x, &e.y) == 2) Enter(e);
 				else
-				// Generate warning
-				gtfo ("CFmt1Map: Invalid <fmt1> data %s in %s", s, s->filename);
+				if (strncmp(pm,"<fmt1>",6) != 0)				// Stop processing
+					gtfo ("CFmt1Map: Invalid <fmt1> data %s in %s", s, s->filename);
 			}
       ReadString (pm, 256, s);
     }

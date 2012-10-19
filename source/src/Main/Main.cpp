@@ -675,6 +675,54 @@ void SpecialProfile(Tag set,U_INT p)
 		}
 	return;
 }
+//======================================================================================
+//  Read VectorMap config file
+//======================================================================================
+class VMAP : public CStreamObject 
+{	public:
+	VMAP();
+	int	Read(SStream * st, Tag tag);
+};
+//=====================================================================================
+//	Read VMAP configuration file
+//=====================================================================================
+VMAP::VMAP()
+{	SStream s(this,"System/vmap.cfg");
+}
+//=====================================================================================
+//	Decode configuration file
+//=====================================================================================
+int VMAP::Read(SStream * st, Tag tag)
+{	int nf;
+	U_INT p1,p3;
+	float	p2;
+	TC_SPOINT p,d;
+  char txt[128];
+	switch (tag)	{
+		//--- Window position ----------------
+		case 'vmps':
+			ReadString(txt,128,st);
+			nf = sscanf(txt,"%d , %d , %d , %d",&p.x,&p.y,&d.x,&d.y);
+			if (4 != nf)	return TAG_EXIT;
+			//--- Init position -----------------------------------
+			globals->vmapPos	= p;
+			globals->vmapScrn = d;
+			return TAG_READ;
+		//--- Window options ------------------
+		case 'vmop':
+			ReadString(txt,128,st);
+			nf	= sscanf(txt,"%X , %f , %X",&p1,&p2,&p3);
+			if (3 != nf)	return TAG_EXIT;
+			//--- Init options -------------------
+			globals->vmpOpt.Rep(p1);
+			globals->vmapZoom = p2;
+			globals->vmapTrns = p3;
+			return TAG_READ;
+		case 'endm':
+			return TAG_EXIT;
+	}
+	return TAG_EXIT;
+}
 //========================================================================================
 //  Generic initialization of the graphics engine.
 //
@@ -845,7 +893,8 @@ void InitGlobalsNoPodFilesystem (char *root)
   globals->dBug       = 0;
   globals->logDebug   = new CLogFile ("Logs/Debug.log", "w");
   globals->logWarning = new CLogFile ("Logs/Warning.log", "w");
-
+	globals->logAeros   = new CLogFile ("Logs/AeroData.log","w");
+	globals->logWings   = new CLogFile ("Logs/WingData.log","w");
   //
   // Screen resolution/colour depth
   //
@@ -910,7 +959,7 @@ void InitGlobalsNoPodFilesystem (char *root)
   globals->sScreen.bMouseOn = false;
 
   globals->cScreen = &globals->mScreen;
-  //----vector map zoom parameters -------------------
+  //----vector map parameters -------------------
   U_INT dop = VM_DROS | VM_FROS | VM_DLAB | VM_DAPT | VM_DVOR | VM_DILS | VM_DCST;
   U_INT vop = VM_APTI | VM_VORI | VM_VORF | VM_NDBI;
   globals->vmpOpt.Set(dop);
@@ -919,6 +968,8 @@ void InitGlobalsNoPodFilesystem (char *root)
   globals->vmapTrns   = MakeRGBA (0,0,0,128); // Transparency
   globals->vmapScrn.x = 800;
   globals->vmapScrn.y = 600;
+	globals->vmapPos.x  = 200;
+	globals->vmapPos.y	= 200;
   //--------------------------------------------------
   //
   // Panel scrolling parameters
@@ -967,6 +1018,7 @@ void InitGlobalsNoPodFilesystem (char *root)
   globals->dang.x = 0.0; 
   globals->dang.y = 0.0; 
   globals->dang.z = 0.0;
+	//--------------------------------------------------------
 	return; 
 }
 //======================================================================================
@@ -992,7 +1044,6 @@ void CleanupGlobals (void)
 	TRACE("Delete TerrainCache");
 	TCacheMGR *tcm = globals->tcm;
   SAFE_DELETE (globals->tcm);         // Delete terrain before DBcache
-
 	TRACE("Delete SCeneryDBM");
 	SAFE_DELETE (globals->scn);
 	TRACE("Delete DatabaseCache");
@@ -1003,6 +1054,8 @@ void CleanupGlobals (void)
   SAFE_DELETE (globals->atm);         // Delete atmosphere, 
 	TRACE("Delete SQLManager");
   SAFE_DELETE (globals->sqm);         // Delete SQL manager
+	TRACE("Delete joystick MGR");
+	SAFE_DELETE (globals->jsm);
   globals->nBitmap->ChangeType();
   SAFE_DELETE (globals->nBitmap);
   SAFE_DELETE (globals->csp);
@@ -1016,6 +1069,8 @@ void CleanupGlobals (void)
 	SAFE_DELETE (globals->clk);
 	SAFE_DELETE (globals->tim);
 	//----------------------------------------
+	SAFE_DELETE (globals->logAeros);
+	SAFE_DELETE (globals->logWings);
   SAFE_DELETE (globals->logWarning);
   SAFE_DELETE (globals->logTerra);
 	SAFE_DELETE (globals->logScene);
@@ -1044,14 +1099,6 @@ _CrtMemState memoryState;
  */
 void ShutdownAll (void)
 { 
-
-#ifdef _WIN32
-  // Restore saved gamma ramp
-  // if (!SetDeviceGammaRamp (hdc, savedGammaRamp))  WARNINGLOG ("Failed to set Win32 gamma ramp");
-#endif // _WIN32
-	  // Save and clean up INI settings database
-//	TRACE("Save ini file");
-//  SaveIniSettings ();
   UnloadIniSettings ();
 	//--------------------------------------------
 	TRACE("Delete CursorManager");
@@ -1130,40 +1177,63 @@ void InitApplication (void)
 	globals->aMax		= 1.0E+5;
   globals->magDEV = 0;
   globals->NbVTX  = 0;
+char * m01 = Dupplicate("*** AUDIO DEB ***",32);
 	TRACE("Create Audio Manager");
   globals->snd = new CAudioManager();
+
+char * m02 = Dupplicate("*** SQLMGR DEB ***",32);
 	TRACE("Create SQL Manager");
   globals->sqm = new SqlMGR();
+
+char * m03 = Dupplicate("*** DBcache DEB ***",32);
 	TRACE("Create Database Manager");
   globals->dbc = new CDbCacheMgr();
   // Initialize various subsystems.  These initialization functions may be
   //   dependent on INI settings and/or POD filesystem
+char * m04 = Dupplicate("*** KEYMAP DEB ***",32);
 	TRACE("Create Key Map");
   globals->kbd = new CKeyMap();
+
+char * m05 = Dupplicate("*** CAMERA DEB ***",32);
 	TRACE("Create Camera Manager");
 	globals->ccm   = new CCameraManager(0,0);
+
+char * m06 = Dupplicate("*** SLEW DEB ***",32);
 	TRACE("Create Slew Manager");
   globals->slw = new CSlewManager();
+
+char * m07 = Dupplicate("*** IMPORT DEB ***",32);
 	TRACE("Create Import Manager");
 	globals->exm = new CExport();
+
   //---Latitude tables for Globe tiles and QGTs --------
+char * m08 = Dupplicate("*** GLOBE DEB ***",32);
 	TRACE("Init Globe Tile Table");
   InitGlobeTileTable ();
   //-- Initialize singletons----------------------------
   CTextureManager::Instance().Init ();
 	TRACE("Init Database Manager");
+
   CDatabaseManager::Instance().Init();
   //----Initialize sky and weather ----------------------
   CSkyManager::Instance().Init();
+
+char * m11 = Dupplicate("*** ATMOSPHERE DEB ***",32);
 	TRACE("Create Atmosphere Manager");
   globals->atm = new CAtmosphereModelJSBSim();
+
+char * m12 = Dupplicate("*** WEATHER DEB ***",32);
 	TRACE("Create Weather Manager");
   globals->wtm = new CWeatherManager();
 	TRACE("Create Fui Manager");
+
+Dupplicate("*** FUI MGR DEB ***",32);
   globals->fui->Init();
+Dupplicate("*** SCENARY DEB ***",32);
 	TRACE("START SCENERY MGR");
 	globals->scn = new CSceneryDBM();
   //------Start terrain ---------------------------------
+Dupplicate("*** TCACHE DEB ***",32);
 	TRACE("Start TERRAIN CACHE");
   globals->tcm = new TCacheMGR();
 	//-----------------------------------------------------
@@ -1186,7 +1256,7 @@ void InitApplication (void)
 //=======================================================================================
 void InitSimulation (void)
 { TRACE("===OBJECT DIMENSION (bytes) ==============");
-	TraceObjectSize();
+	//TraceObjectSize();
   TRACE("Start InitSimulation");
   //---- Set default area to Marseilles airport --------------------
   SPosition area = {18802.79, 156335.87, 78};
@@ -1200,6 +1270,7 @@ void InitSimulation (void)
   //------Load situation -------------------------------------------
   globals->sit = new CSituation ();
   TRACE("End of InitSimulation");
+Dupplicate("***END INITSIM ***",32);
   //----Set some options ------------------------------------------
   return;
 }
@@ -1485,6 +1556,8 @@ void ExitApplication (void)
 //==================================================================================
 static pthread_mutex_t	mutexWarn, 
 												mutexTrace,
+												mutexOSM,
+												mutexAeros,
 												mutexScene,
 												mutexDebug, 
 												mutexGtfo;  // JSDEV* add trace
@@ -1557,7 +1630,9 @@ int main (int argc, char **argv)
   pthread_mutex_init (&mutexWarn,  NULL);
   pthread_mutex_init (&mutexDebug, NULL);
   pthread_mutex_init (&mutexGtfo,  NULL);
+	pthread_mutex_init (&mutexOSM ,  NULL);
   pthread_mutex_init (&mutexTrace, NULL);		  // JSDEV* add trace
+	pthread_mutex_init (&mutexAeros, NULL);		  // JSDEV* add trace
 	pthread_mutex_init (&mutexScene, NULL);
 	//--- Create trace file now -----------------------------------------
   globals->logTrace	= new CLogFile ("logs/Trace.log", "w");
@@ -1673,23 +1748,21 @@ int main (int argc, char **argv)
   TRACE("Globals INITIALIZED");
   //-------------------------------------------------------------------
 	//--- Loose memory marker 1 -----------------------
-	char *mk0 = new char[20];
-	strcpy(mk0,"*START INIT*");
+Dupplicate("*** GLOBAL DEB ***",32);
   //--------------------------------------------------------------------
   // Initialize globals variables
   //-------------------------------------------------------------------
   InitGlobalsNoPodFilesystem ((char*)flyRootFolder);
   TRACE("InitGlobalsNoPodFilesystem OK");
-	//--- Loose memory marker 1 -----------------------
-	char *mk1 = new char[20];
-	strcpy(mk1,"*END INIT*");
-
   globals->appState = APP_SPLASH_SCREEN;
+Dupplicate("****FUI MGR ****",32);
   globals->fui = new CFuiManager();
   TRACE("CFuiManager CREATED");
   // Initialize graphics engine and window manager
+Dupplicate("****FUI INI ****",32);
   InitWindowManager (argc, argv);
   TRACE("InitWindowManager OK");
+Dupplicate("****GRAFIC ****",32);
   InitGraphics ();
   TRACE("InitGraphics OK");
   //---------------------------------------------------------------------------
@@ -1697,6 +1770,8 @@ int main (int argc, char **argv)
   //   filesystem is stored in the global variable struct, so this must
   //   be called after globals have been instantiated.
   //---------------------------------------------------------------------------
+Dupplicate("****POD INI ****",32);
+
   pinit (&globals->pfs, "logs/systempod.log");		// JSDEV* add file name
   //----ADD POD FROM FLYII FOLDERS -------------------------------------------
   PFS *pfs = &globals->pfs;
@@ -1735,6 +1810,7 @@ int main (int argc, char **argv)
   padddiskfolder (pfs, flyRootFolder, "WORLD");
 	TRACE("Mounting Disk file in /SOUND");
   padddiskfolder (pfs, flyRootFolder, "SOUND");
+Dupplicate("****POD END ****",32);
 
   // Initialize subsystems so that mouse and keyboard callbacks can be handled
  
@@ -1748,8 +1824,9 @@ int main (int argc, char **argv)
   else
     //! plugins_num is used as a plugin flag along the code
     globals->plugins_num = 0; 
-		
-	//--- Open Master menu ----------------------------------------------
+	//--- Open VMAP configuration -------------------------------
+	VMAP();	
+	//--- Open Master menu --------------------------------------
 	TRACE("Open Master MENU");
 	OpenMasterMenu();
   //--- Initialize fonts and cursor manager -------------------
@@ -1899,6 +1976,31 @@ TRACE::TRACE(const char *fmt,...)
 	pthread_mutex_unlock (&mutexTrace);
 }
 //-------------------------------------------------------------------------
+//	JSDEV* Implement AERO log
+//-------------------------------------------------------------------------
+AERO::AERO(const char *fmt,...)
+{	pthread_mutex_lock (&mutexAeros);
+	if (globals->logAeros != NULL) {
+		va_list argp;
+		va_start(argp, fmt);
+		globals->logAeros->Write (fmt, argp);
+		va_end(argp);	}
+	pthread_mutex_unlock (&mutexAeros);
+}
+//-------------------------------------------------------------------------
+//	JSDEV* Implement WING log
+//-------------------------------------------------------------------------
+WING::WING(const char *fmt,...)
+{	pthread_mutex_lock (&mutexAeros);
+	if (globals->logWings != NULL) {
+		va_list argp;
+		va_start(argp, fmt);
+		globals->logWings->Write (fmt, argp);
+		va_end(argp);	}
+	pthread_mutex_unlock (&mutexAeros);
+}
+
+//-------------------------------------------------------------------------
 //	JSDEV* Implement Scenery log
 //-------------------------------------------------------------------------
 SCENE::SCENE(const char *fmt,...)
@@ -1928,13 +2030,13 @@ TERRA::TERRA(const char *fmt,...)
 //	JSDEV* Implement OpenStreet log
 //-------------------------------------------------------------------------
 STREETLOG::STREETLOG(const char *fmt,...)
-{	pthread_mutex_lock (&mutexTrace);
+{	pthread_mutex_lock (&mutexOSM);
 	if (globals->logStreet != 0) {
    	va_list argp;
 		va_start(argp, fmt);
 		globals->logStreet->Write (fmt, argp);
 		va_end(argp);	}
-	pthread_mutex_unlock (&mutexTrace);
+	pthread_mutex_unlock (&mutexOSM);
 }
 
 //---------------------------------------------------------------------

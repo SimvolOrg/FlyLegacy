@@ -162,6 +162,9 @@ void			AddToPosition(SPosition &pos,SVector &v);
 SPosition AddToPositionInFeet(SPosition &pos,SVector &v, double exf);
 SPosition AddToPositionInFeet(SPosition &pos,SVector &v);
 double		DistancePositionInFeet(SPosition &from, SPosition &to);
+double		GetFlatDistance(SPosition *To,double rdf);
+double		GetFlatDistanceInMiles(CmHead *obj);
+//------------------------------------------------------------------------------
 void			GetRRtoLDOrientation(SVector &ld);
 double		GetLatitudeArcs(U_INT tz);
 double		GetLatitudeDelta(U_INT tz);

@@ -49,6 +49,7 @@ class CExtSource: public CmHead {
 protected:
 	//-------------------------------------------------
 	CVehicleObject *mveh;										// Mother vehicle
+	CmHead   *tsrc;													// True source
 	//--- ATTRIBUTE -----------------------------------
 	char			active;												// Active indicator
 	U_CHAR    signal;												// Signal type
@@ -63,6 +64,7 @@ protected:
 	SPosition spos;                         // position lat long alti
 	float     smag;                         // Magnetic dev
   float	    radial;                       // Aircraft radial in °
+	float			tradial;											// true radiale
 	float	    nmiles;                       // Distance to VOR/NDB
   float			dsfeet;                       // Distance in feet
 	float			vdev;													// Vertical deviation
@@ -72,28 +74,29 @@ public:
 	CExtSource(): CmHead(ANY,OTH,"ExtS") {active = 0;}
 	void			DecUser()	{;}
 	//--------------------------------------------------
-	void			SetSource(CmHead *src,LND_DATA *ils,U_INT frm);
-	void			Refresh(U_INT frm);
+	void			SetSource(CmHead *src,LND_DATA *ils);
+	void			RefreshStation(U_INT frm);
 	//--------------------------------------------------
-	inline  void			SetVEH(CVehicleObject *v) {mveh = v;} 
+	void			SetVEH(CVehicleObject *v) {mveh = v;} 
 	//---------------------------------------------------
-	inline	void			Stop()				{	active = 0;}
-	inline	U_CHAR		SignalType()	{ return signal;}
+	void			Stop()				{	active = 0;}
+	U_CHAR		SignalType()	{ return signal;}
+	void			SetPosition(SPosition *P);
 	//--------------------------------------------------
-	inline	void			SetRefDirection(float d) {refD = d;}
-	inline	void			SetPosition(SPosition *p)	{spos = *p;}
-	inline	LND_DATA  *GetLandSpot()		{return ilsD;}
+	void			SetRefDirection(float d) {refD = d;}
+	LND_DATA  *GetLandSpot()		{return ilsD;}
 	//--------------------------------------------------
-	inline  float			GetFeetDistance()	{ return dsfeet;}
-	inline	float     GetNmiles()				{ return nmiles; }
-	inline  float     GetMagDev()				{ return smag; }
-	inline  float			GetRadial()				{ return radial;}
-	inline  double    GetRefDirection()	{ return refD;}
-	inline  double    Sensibility()     { return 10;}
-	inline  float			GetVrtDeviation()	{ return vdev;}
-	inline  float     GetMagDirection()	{ return (radial - smag);}
+	float			GetFeetDistance()	{ return dsfeet;}
+	float     GetNmiles()				{ return nmiles; }
+	float     GetMagDev()				{ return smag; }
+	float			GetRadial()				{ return radial;}
+	float			GetTrueRadial()		{ return tradial;}
+	double    GetRefDirection()	{ return refD;}
+	double    Sensibility()     { return 10;}
+	float			GetVrtDeviation()	{ return vdev;}
 	//--------------------------------------------------
-	inline  bool			IsActive()		{ return (active != 0);}
+	bool			IsActive()		{ return (active != 0);}
+	bool			NeqSource(CmHead *s)	{return (tsrc != s);}
 };
 //=====================================================================
 // *
@@ -189,13 +192,18 @@ public:
   virtual	int			Dispatcher(U_INT evn) {return 1;}
 	virtual int			PowerON()             {sPower = 1; return 1;}
 	virtual void		Update(float dT, U_INT fr, char exs) {;}
-	virtual void    SelectSource(); 	
+	virtual void    SelectSource(); 
+	virtual float		Frequency()  {return 0;}
   //----------------------------------------------------------
   bool  MsgForMe (SMessage *msg);
   void  TimeSlice (float dT,U_INT FrNo);
 	void	Synchronize();
   void  Probe(CFuiCanva *cnv);
-  virtual float Frequency()  {return 0;}
+	void	DirectMode();
+	//-------------------------------------------------------------
+	void	WayPointMoved(CmHead *wpt,SPosition *P);
+	void	SetDirectMode();
+	void	CorrectDrift();
 	//--- Enter /leave waypoint mode ---------------------------
 	void	ModeEXT(CmHead *src,LND_DATA *ils = 0);	// Enter/leave external mode
 	void	ChangeRefDirection(float d);
@@ -227,17 +235,19 @@ public:
   //-------------------------------------------------------------
   void  StoreFreq(short(wp),short(fp),CHFREQ &fq);
   //-------------------------------------------------------------
-	inline U_CHAR GetPowerState()		{return sPower;}
-  inline U_CHAR GetNavState()     {return nState;}
-  inline U_CHAR GetComState()     {return cState;}
-  inline U_CHAR GetFlashMask()    {return mskFS;}
-  inline void   SetDirection(int d)   {mDir = d;}
-  inline int    GetDirection()        {return mDir;}
-	inline float  GetMilesTo()			{return busRD.mdis;}
+	U_CHAR GetPowerState()			{return sPower;}
+  U_CHAR GetNavState()				{return nState;}
+  U_CHAR GetComState()				{return cState;}
+  U_CHAR GetFlashMask()				{return mskFS;}
+  void   SetDirection(int d)  {mDir = d;}
+  int    GetDirection()       {return mDir;}
+	float  GetMilesTo()					{return busRD.mdis;}
 	//-------------------------------------------------------------
-	inline double GetDeviation()		{return busRD.hDEV;}
+	void   SetTrackMode()				{busRD.mode = RADIO_MODE_TRACK;}
 	//-------------------------------------------------------------
-	inline BUS_RADIO *GetBUS()			{return &busRD;}
+	double GetDeviation()				{return busRD.hDEV;}
+	//-------------------------------------------------------------
+	BUS_RADIO *GetBUS()					{return &busRD;}
   //-------------------------------------------------------------
   // CStreamObject methods
   virtual int       Read (SStream *stream, Tag tag);
@@ -495,7 +505,7 @@ public:
 	//--------------------------------------------------------
 	void	PowerON();
 	void	EnterTRK();
-	void	SetTrack();
+	void	TrackNewWPT();
 	void	EnterAPR();
 	void	EnterSBY();
 	//--------------------------------------------------------

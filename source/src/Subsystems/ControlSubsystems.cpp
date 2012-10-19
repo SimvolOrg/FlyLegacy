@@ -57,6 +57,7 @@ U_INT rignTAB[] = {
 CAeroControl::CAeroControl (void)
 { TypeIs (SUBSYSTEM_AERO_CONTROL);
   hwId = HW_SWITCH;
+	data.ctrl = this;
   data.scal = 1.0f;
   data.step = 0.01f;
   data.bend = 0.0f;
@@ -250,6 +251,7 @@ void CAeroControl::Probe(CFuiCanva *cnv)
 //-----------------------------------------------------------------------
 void CAeroControl::TimeSlice (float dT,U_INT FrNo)				// JSDEV*
 { CDependent::TimeSlice (dT,FrNo);								        // JSDEV*
+	data.deflect  = indn;
   indnTarget = Clamp(data.raw + vPID + Bias);
   return;
 }
@@ -287,7 +289,7 @@ void CElevatorControl::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
 CRudderControl::CRudderControl (void)
 {
   TypeIs (SUBSYSTEM_RUDDER_CONTROL);
-  oADJ  = 1;
+  oADJ  = 0;
   macrd = 0;
 	pidK	= 0.0005;
 	pidD	= 0.0;
@@ -2607,7 +2609,7 @@ void CSpeedRegulator::SetOFF()
 //--------------------------------------------------------------------------------
 bool CSpeedRegulator::SetON(U_INT CTRL)
 {	//--- Disconnect surface control and engine controls -------
-  globals->jsm->JoyDisconnect(mveh,CTRL + JS_GROUPBIT);
+  globals->jsm->JoyDisconnect(mveh,JS_AUTO_BIT);
 	speed	=  mveh->GetPreCalculedKIAS();
 	state	= 1;
 	steer = 0;
@@ -2617,10 +2619,10 @@ bool CSpeedRegulator::SetON(U_INT CTRL)
 //	Send  steering orders 
 //--------------------------------------------------------------------------------
 void CSpeedRegulator::SteerControl(float  dT)
-{	hdg		= mveh->GetHeading();					// Actual Heading
-	ref		= GetAngleFromGeoPosition(*mveh->GetAdPosition(),tgp,&fdist);
-	aErr  = Wrap180(ref - hdg) * 100;		// error in [-180, + 180]
-  cor		= gPID->Update(dT,aErr,0);		// to controller
+{	hdg		= mveh->GetHeading();						// Actual Heading
+	tHDG	= GetAngleFromGeoPosition(*mveh->GetAdPosition(),tgp,&fdist);
+	aErr  = Wrap180(tHDG - hdg) * 100;		// error in [-180, + 180]
+  cor		= gPID->Update(dT,aErr,0);			// to controller
 	sgear->Deflect(cor);
 	return;
 }
@@ -2713,10 +2715,12 @@ void CSpeedRegulator::SteerOFF()
 //--------------------------------------------------------------------
 void CSpeedRegulator::Probe(CFuiCanva *cnv)
 { cnv->AddText(1,1,"STEER=%d",steer);
-	cnv->AddText(1,1,"HDG=%.6lf",hdg);
-  cnv->AddText(1,1,"REF=%.6lf",ref);
-	cnv->AddText(1,1,"ERR=%.6lf",aErr);
-	cnv->AddText(1,1,"COR=%.6lf",cor);
-	cnv->AddText(1,1,"Speed %.6f",speed);
+	if (0 == state)		return;
+  cnv->AddText(1,1,"t-HDG=%.6lf",tHDG);
+	cnv->AddText(1,1,"a-HDG=%.6lf",hdg);
+	cnv->AddText(1,1,"h-ERR=%.6lf",aErr);
+	cnv->AddText(1,1,"T-SPD %.2f",speed);
+	cnv->AddText(1,1,"A-SPD %.2f",aSPD);
+	cnv->AddText(1,1,"s-ERR %.6lf",cor);
 }
 //=============================END OF FILE ===================================================================

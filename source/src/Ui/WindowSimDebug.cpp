@@ -353,7 +353,7 @@ void CSimDebugWings::Draw (void)
   dCM_wing->SetPosition     (posWx + a + 10, posWy + b + 123);
   dPitch_wing->SetPosition  (posWx + a + 10, posWy + b + 138);
 	//--------------------------------------------------------------
-	CAeroModelWingSection *wpart = veh->wng.GetWingSection (wing_part);
+	CAeroWingSection *wpart = veh->wng.GetWingSection (wing_part);
  
   char buffer [128] = {0};
   double cl = (wpart)->GetCL ();

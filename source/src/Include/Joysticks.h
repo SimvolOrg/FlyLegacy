@@ -70,12 +70,16 @@ enum JoyConnector {
 		JS_THRO_BIT = 0x0040,								// THROTTLE lever
 		JS_MIXT_BIT = 0x0080,								// MIXT lever
 		JS_PROP_BIT = 0x0100,								// Propellor control
-		JS_OTHR_BIT = 0x8000,								// Other axis
+		JS_BRAK_BIT = 0x0200,								// brake axis
+		JS_HELI_BIT = 0x1000,								// Helico bcontrol
+		JS_VEHI_BIT	= 0x2000,								// Ground vehicle
 		//-----------------------------------------------------------
-		JS_SURF_APL = (JS_AILR_BIT + JS_ELVR_BIT + JS_AILT_BIT + JS_ELVT_BIT),
-		JS_SURF_ALL = (JS_AILR_BIT + JS_ELVR_BIT + JS_RUDR_BIT),
-		JS_TRIM_ALL = (JS_AILT_BIT + JS_ELVT_BIT + JS_RUDT_BIT),
-		JS_GROUPBIT = (JS_THRO_BIT + JS_MIXT_BIT + JS_PROP_BIT),
+		JS_SURF_APL = (JS_AILR_BIT | JS_ELVR_BIT),
+		JS_SURF_ALL = (JS_AILR_BIT | JS_ELVR_BIT | JS_RUDR_BIT),
+		JS_TRIM_ALL = (JS_AILT_BIT | JS_ELVT_BIT | JS_RUDT_BIT),
+		JS_GROUPBIT = (JS_THRO_BIT | JS_MIXT_BIT | JS_PROP_BIT),
+		//-----------------------------------------------------------
+		JS_AUTO_BIT = (JS_SURF_APL | JS_TRIM_ALL | JS_GROUPBIT | JS_BRAK_BIT),
 };
 //=====================================================================================
 //  Neutral definition

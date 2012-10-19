@@ -709,10 +709,9 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   GetIniVar ("TRACE", "Airport", &op);
   tr			= op;
 	if (tr) TRACE("===AIRPORT CONSTRUCTION: %s",apt->GetName());
-	//--- Generate a sphere for test ------------------------------
-	sphere = gluNewQuadric();
-	//--- Load Taxiway circuits -----------------------------------
-	taxiMGR = 0;
+	//--- Clear parameters  ---------------------------------------
+	taxiMGR = 0;									// Taxi manager
+	lnDW		= 0;									// landing to draw
 }
 //----------------------------------------------------------------------------------
 //  Constructor for export only
@@ -787,7 +786,6 @@ CAptObject::~CAptObject()
 	delete taxiMGR;
 	//-------------------------------------------
   UnmarkGround();
-	gluDeleteQuadric(sphere);
 }
 //---------------------------------------------------------------------------------
 //  Compute airport extension in term of Detail Tiles
@@ -1192,17 +1190,18 @@ void CAptObject::UpdateLights(float dT)
   lrwy    = lrwy->GetNext();
   return;
 }
+//=================================================================================
+//	AIRPORT Landing management
+//=================================================================================
+//Build line up waypoint
 //-----------------------------------------------------------------------
-//	Return runway data
-//-----------------------------------------------------------------------
-LND_DATA *CAptObject::GetRunwayData(char * key, char *rwid)
-{	char *idn			= Airp->GetKey();
-	if (strcmp(idn,key) != 0)		return 0;
-	//--- Locate runway end ----------------
-	CRunway  *rwy = Airp->FindRunway(rwid);
-	if (0 == rwy)								return 0;
-	LND_DATA *ils = rwy->GetLandDirection(rwid);
-	return ils;
+void	CAptObject::BuildLandingLane(LND_DATA *lnd)
+{	char *id = "land";
+	linWP.SetNOD(0);
+	linWP.SetParameters('fixe',id,Airp->GetName(),&lnd->fwdP);
+	linWP.SetRefDirection(lnd->orie);
+	lnRWY = lnd;
+	return;
 }
 
 //-----------------------------------------------------------------------
@@ -1580,7 +1579,7 @@ void CAptObject::DrawCenter()
   glDisable(GL_BLEND);
   glFrontFace(GL_CCW);
   glScaled((1/v->x),(1/v->y),1);
-  gluSphere(sphere,100,32,32);
+//  gluSphere(sphere,100,32,32);
   glPopAttrib();
   glPopMatrix();
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -1592,21 +1591,17 @@ void CAptObject::DrawCenter()
 //---------------------------------------------------------------------------------
 void CAptObject::DrawILS()
 { float col[4] = {1,0,0,0.2f};
-  LND_DATA *lnd = globals->lnd;
- // CILS *ils = globals->cILS;
-  //if (0 == ils)             return;
-	if (0 == lnd)							return;
-  //if (!ils->SameAPT(Airp))  return;
+  LND_DATA *lnd = lnDW;
+	if (0 == lnd)								return;
+	//if (apm->NotNearest(this))	return;
   //--- Draw a  sphere at Landing point ---------
   SVector v1 = {0,0,0};
   //SPosition *land = ils->GetLandingPoint();
 	SPosition *land = &lnd->lndP;
   Offset(*land,v1);
   SVector v2 = {0,0,0};
-  //SPosition *farp = ils->GetFarPoint();
-	SPosition *farp = &lnd->farP;
+	SPosition *farp = &lnd->fwdP;
   Offset(*farp,v2);
-  //SVector *s = globals->tcm->GetScale();
   glPushMatrix();
   glPushAttrib(GL_ALL_ATTRIB_BITS);
   glShadeModel(GL_FLAT);
@@ -1675,9 +1670,6 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
 	nApt				= 0;
 	endp				= 0;
   //-----For test. ------------------------------------------------
-  int op = 0;
-  GetIniVar("TRACE","DrawILS",&op);
-  dILS   = op;
 }
 //=========================================================================================
 //  Destroy airports
@@ -1832,7 +1824,7 @@ void CAirportMgr::DrawLights()
   CAptObject *apo = 0;
   glEnable(GL_TEXTURE_2D);
   for (apo = aptQ.GetFirst(); apo != 0; apo = aptQ.GetNext(apo))
-  { if (dILS) apo->DrawILS();
+  { if (apo->HasDILS())	apo->DrawILS();
     if (apo->NotVisible())  continue;
     apo->DrawLights(cam);
   }

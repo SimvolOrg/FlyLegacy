@@ -30,9 +30,9 @@ char *taxiMENU[] = {
 	0,
 	"----------------",
 	"1) Insert a node",
-	"2) Add edge-node",
+	"2) Link/add nodes",
 	"3) Delete node",
-	"4) Attach node",
+	"4) Attach 2 nodes",
 	"5) Swap runway",
 	"6) Delete edge",
 	"7) Start node",
@@ -60,6 +60,21 @@ char nodeCOLOR[] = {
 	0,
 	0,
 	0,
+};
+//============================================================================
+//	Node type matrix
+//============================================================================
+char taxiNODE[]	= {
+	//--- From RUNWAY LIMIT ------------------------------
+	0,0,0,0,0,
+	//-From EXIT--1:EXIT---------2:TKOF---------3:TAXI---------4:PARK -----------
+	0,					  TAXI_NODE_EXIT,TAXI_NODE_EXIT,TAXI_NODE_TAXI,TAXI_NODE_TAXI,
+	//-From TKOF--1:EXIT---------2:TKOF---------3:TAXI---------4:PARK -----------
+	0,            TAXI_NODE_EXIT,TAXI_NODE_EXIT,TAXI_NODE_TAXI,TAXI_NODE_TAXI,
+	//-From TAXI--1:EXIT---------2:TKOF---------3:TAXI---------4:PARK -----------
+	0,						TAXI_NODE_TAXI,TAXI_NODE_TAXI,TAXI_NODE_TAXI,TAXI_NODE_TAXI,
+	//-From PARK--1:EXIT---------2:TKOF---------3:TAXI---------4:PARK -----------
+	0,						TAXI_NODE_TAXI,TAXI_NODE_TAXI,TAXI_NODE_TAXI,TAXI_NODE_TAXI,
 };
 //============================================================================
 //	Color versus direction
@@ -194,8 +209,9 @@ void TaxiCircuit::DeleteArc(Tag A)
 		Tag org = LEFT_NODE(edg->idn);
 		Tag ext = RITE_NODE(edg->idn);
 		bool dl = (org == A) || (ext == A);
-		if (!dl)	r0++;
-		else 	{	FreeArc(edg);		edgQ.erase(r0++);}
+		if (!dl)	{r0++; continue;}
+		FreeArc(edg);		
+		edgQ.erase(r0++);
 	}
 	return;
 }
@@ -286,7 +302,7 @@ void	TaxiCircuit::GetTarget(TaxNODE *D, Tag F)
 //-------------------------------------------------------------------------------------------
 //	Search path from Node D to node F
 //-------------------------------------------------------------------------------------------
-bool TaxiCircuit::SearchThePath(Tag D, Tag F)
+int TaxiCircuit::SearchThePath(Tag D, Tag F)
 {	work.clear();
 	path.clear();
 	deep	= 0;
@@ -294,7 +310,7 @@ bool TaxiCircuit::SearchThePath(Tag D, Tag F)
 	//--- For debug only ------------------------------------------
 	//TRACE("==========START SEARCH from %04u to %04u ===========",D,F);
 	GetTarget(N,F);
-	return (path.size() != 0);
+	return path.size();
 }
 //-------------------------------------------------------------------------------------------
 //	Search a random ending slot starting from N
@@ -430,10 +446,10 @@ void TaxiCircuit::Test()
 		for (U_INT n=0; n < lstTO.size(); n++)
 		{	TaxNODE *Q = lstTO[n];
 			Tag      B = Q->idn;
-			bool ok = SearchThePath(A,B);
-			char *rs = (ok)?("OK"):("No path");
+			int nn = SearchThePath(A,B);
+			char *rs = (nn != 0)?("OK"):("No path");
 			TRACE("N%04u to N%04u : %s",A,B,rs);
-			if (!ok)	continue;
+			if (0 == nn)	continue;
 			Tag T = (A << 16) | B;
 			allP.push_back(T);
 		}
@@ -598,7 +614,7 @@ void TaxiTracker::ComputeAllShortCut()
 bool	TaxiTracker::GetThePath(Tag D, Tag F)
 {	//TRACE("====COMPUTE SHORTCUTS ==========================");
 	ComputeAllShortCut();
-	return circuit->SearchThePath(D,F);
+	return (circuit->SearchThePath(D,F) != 0);
 }
 //-------------------------------------------------------------------------------------------
 //	Create a pair of nodes for runway
@@ -654,25 +670,43 @@ int TaxiTracker::Attach(Tag A, Tag B)
 //-------------------------------------------------------------------------------------------
 //	compute node type
 //-------------------------------------------------------------------------------------------
-char TaxiTracker::NodeType(char t1,char t2)
-{	char ta = t1 & t2 & TAXI_NODE_AXES;
-	return (ta)?(TAXI_NODE_EXIT):(TAXI_NODE_TAXI);
+char TaxiTracker::TaxiNodeType(char t1,char t2)
+{	if (0 == t1)		return 0;
+	if (0 == t2)		return 0;
+	int indx = (t1 & 0x07) * 5;
+	indx += (t2 & 0x07);
+	if (indx >= 25)	return 0;
+	return taxiNODE[indx];
+//	char ta = t1 & t2 & TAXI_NODE_AXES;
+//	return (ta)?(TAXI_NODE_EXIT):(TAXI_NODE_TAXI);
 }
 //-------------------------------------------------------------------------------------------
 //	Insert a node between to nodes.  Node type is A
 //-------------------------------------------------------------------------------------------
 Tag TaxiTracker::InsertNode(Tag A, Tag B)
-{	//--- Ensure A and B are consecutive nodes -----------
+{	//--- Ensure A and B are consecutive nodes ------------
 	TaxNODE *na = nsup->GetNode(A);
 	TaxNODE *nb = nsup->GetNode(B);
-	char  T = NodeType(na->type,nb->type); 
+	//--- Check node A for an edge to B -------------------
+	TaxEDGE *edge = circuit->GetArc(A,B);
+	if (0 == edge)		return 0;
+	//--- Create a new node -------------------------------
+	char  T = TaxiNodeType(na->type,nb->type); 
+	if (0 == T)				return 0;
 	char *R = (T == TAXI_NODE_EXIT)?(na->rwy):("TXI");
 	//--- Delete edge -------------------------------------
 	SPosition P = GetAlignedSpot(na->Position(),nb->Position(),0.5);
 	T			|= na->GetDirection();
 	TaxNODE *nm = nsup->DupNode(na,P,T);
 	nm->SetRWY(R);
-	return nm->idn;
+	Tag   C = nm->idn;
+	//-- Remove edge and relink with new node -------------
+	if (edge)
+	{	circuit->DeleteEdge(A,B);
+		Attach(A,C);
+		Attach(C,B);
+	}
+	return C;
 }
 //-------------------------------------------------------------------------------------------
 //	Swap runway for this node
@@ -684,25 +718,28 @@ void TaxiTracker::SwapRunway(Tag N)
 	return;
 }
 //-------------------------------------------------------------------------------------------
-//	Add a blue node
+//	Add a node and add one edge
 //-------------------------------------------------------------------------------------------
-Tag TaxiTracker::AddBrNode(Tag A, SPosition &P)
-{	if (0 == A)	return 0;
-	selN	= nsup->GetNode(A);
+Tag TaxiTracker::AddOneNode(Tag A, Tag B,SPosition &P)
+{	TaxNODE *nodB;	
+	if (0 == A)	return 0;
+	TaxNODE *nodA	= nsup->GetNode(A);
+	//--- Check for a clicked node ------------------
+	if (B)	nodB = nsup->GetNode(B);
 	//--- Create a new node -------------------------
-	TaxNODE *node = nsup->NewNode(TAXI_NODE_TAXI);
-	node->SetPosition(P);
-	node->SetRWY("TXI");
-	Attach(selN->idn,node->idn);
-	SetSelection(node->idn);
-	return node->idn;
+	else		nodB = nsup->NewNode(TAXI_NODE_TAXI);
+	if (0 == B)	nodB->SetPosition(P);
+	nodB->SetRWY("TXI");
+	Attach(nodA->idn,nodB->idn);
+	SetSelection(nodB->idn);
+	return nodB->idn;
 }
 //-------------------------------------------------------------------------------------------
 //	Selected node receive a new position
 //-------------------------------------------------------------------------------------------
 int TaxiTracker::MoveSelectedNode(SPosition &P)
 {	if (0 == selN)											return 0;
-  if (selN->HasType(TAXI_NODE_FIXE))	return 0;
+  //if (selN->HasType(TAXI_NODE_FIXE))	return 0;
 	selN->SetPosition(P);
 	return 1;
 }
@@ -1144,11 +1181,12 @@ bool CFuiTaxi::MousePicking(int mx, int my)
 //------------------------------------------------------------------------------
 //	Add a branch node
 //------------------------------------------------------------------------------
-void CFuiTaxi::AddBlueNode()
-{	Tag idn = trak.AddBrNode(nodA,cpos);
+void CFuiTaxi::AddEdgeNode()
+{	Tag idn = trak.AddOneNode(nodA,selT,cpos);
 	selT	= idn;
 	nodA	= idn;
 	if (idn) modf	|= 1;
+	return;
 }
 //------------------------------------------------------------------------------
 //	Insert an exit node
@@ -1195,7 +1233,7 @@ bool CFuiTaxi::MouseCapture(int mx, int my, EMouseButton bt)
 				return true;
 			//--- Create a branch node ---------------------
 			case TAXI_MODE_BRANCH:
-				AddBlueNode();
+				AddEdgeNode();
 				return true;
 			//--- Create a new exit node -------------------
 			case TAXI_MODE_INSERT:
@@ -1252,7 +1290,8 @@ void CFuiTaxi::SetEndNode(Tag T)
 //	Open the floating menu 
 //------------------------------------------------------------------------------
 bool CFuiTaxi::ActeMenu(int mx,int my)
-{	if (path)		return true ;
+{	if (path)				return true;
+  if (0 == selT)	return true;
   PickMode(selT);
 	trak.NodeProp(selT);
 	menu.Ident	= 'acte';

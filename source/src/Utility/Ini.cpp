@@ -292,8 +292,16 @@ bool CIniSection::GetKey(char *key)
 { CIniSetting *set = FindSetting(key);
 	if (0 == set)	return false;
 	const char *val = set->GetValue();
-	return (strcmp(val, "*empty*") == 0);
+	return (strcmp(val, "*empty*") != 0);
 }
+//---------------------------------------------------------------------
+//	Check a keyword
+//---------------------------------------------------------------------
+bool CIniSection::HasKey(char *key)
+{ CIniSetting *set = FindSetting(key);
+	return (set != 0);
+}
+
 //---------------------------------------------------------------------
 // Save contents of the section to file
 //---------------------------------------------------------------------
@@ -441,7 +449,7 @@ static bool ParseKeyValue (char* s, char* key, char* value)
     strcpy (value, p+1);
 		return true;
   }
-	//--- Just check for the parameter name
+	//--- Just check for one key -----
 	int len = strlen(s);
 	if (len)
 	{	strncpy(key,s,len);
@@ -451,7 +459,15 @@ static bool ParseKeyValue (char* s, char* key, char* value)
 	}
   return false;
 }
-
+//-------------------------------------------------------------------------------------------
+//	Check for empty line
+//-------------------------------------------------------------------------------------------
+bool CIniFile::EmptyLine(char *s)
+{	if ((strncmp (s, "\n", 1) == 0)) return true;
+	if (*s == '§')									 return true;
+	if (strncmp(s,"//",2) == 0)			 return true;
+	return false;
+}
 //-------------------------------------------------------------------------------------------
 // Load (or re-load) the INI settings from disk file.  All existing settings are cleared.
 //
@@ -480,15 +496,15 @@ int CIniFile::Load (const char* iniFilename)
    *s = '§';
 		fgets (s, PATH_MAX, f);
 		s[FNAM_MAX] = 0;
-		// ignore empty lines
-	  if ((strncmp (s, "\n", 1) == 0))		continue;
-		if (*s == '§')											continue;
+		//--- ignore empty lines --------------------------
+		if (EmptyLine(s))						continue;
+		//--- Process staement ----------------------------
     // First check for a new section header : [Section]
-    if (ParseSection (s, sect))			fgets (s, PATH_MAX, f);
+    if (ParseSection (s, sect))			      continue;	//fgets (s, PATH_MAX, f);
     // New section header found
     // No new section header found, parse for key/value pair
 		
-    if (!ParseKeyValue (s, key, value)) continue;
+    if (!ParseKeyValue (s, key, value))		continue;
     //  Store the string anyway
     Set (sect, key, value);
     // Parse the value to determine whether it is numeric (int/float)
@@ -629,6 +645,15 @@ bool CIniFile::GetKey(char *section, char *key)
 	 if (0 == sect)		return false;
 	 return sect->GetKey(key);
 }
+//---------------------------------------------------------------------
+//	Check for a keyword
+//--------------------------------------------------------------------
+bool CIniFile::HasKey(char *section, char *key)
+{	 CIniSection* sect = FindSection (section);
+	 if (0 == sect)		return false;
+	 return sect->HasKey(key);
+}
+
 //-------------------------------------------------------------------
 // Remove a setting from the INI file
 //-------------------------------------------------------------------
@@ -721,6 +746,12 @@ const char *GetIniValue(const char *section, const char *key)
 //----------------------------------------------------------------------
 bool  GetIniKey(char *section, char *key)
 {	return ini->GetKey(section,key);	}
+//----------------------------------------------------------------------
+//	Check for key declaration
+//----------------------------------------------------------------------
+bool  HasIniKey(char *section, char *key)
+{	return ini->HasKey(section,key);	}
+
 //======================================================================
 
 void  SetIniVar(const char *section, const char *varname, int value)

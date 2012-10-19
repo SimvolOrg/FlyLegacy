@@ -254,6 +254,8 @@ protected:
   double     vMIS;              // Vertical miss error
 	double     rAGL;							// AGL reference
 	double	   dSPD;							// Disengage speed
+	double     vrlb;							// Vertical glide lower bound
+	double		 vrub;							// Vertical glide upper bound
 	//--- GO ARROUND ------------------------------------------------------
 	double			TGA0;							// Distance for LEG 1
 	double			TGA1;							// Distance for LEG 2
@@ -279,38 +281,36 @@ protected:
 	double     vROT;							// Rotate speed
 	double		 aTGT;							// Target altitude
   //--- LEG2 mode control values --------------------------------------
-  double     tCoef;                         // Turn coefficient
-  double     dREF;                          // Distance to Reference
+  double     tRAD;                         // Turning radius
   double     sin3;                          // Sine(3°)
   double     glide;                         // Catching glide angle
 	double     rDIS;													// Remaining distance
 	//--- Lateral control values ----------------------------------------
+	double		 vDTA;													// Distnce Turning Anticipation
   double     rHDG;                          // Target Heading
   double     aHDG;                          // Actual heading (yaw)
 	double     gHDG;													// ground heading
   double     xHDG;                          // cross heading
 	double     xCOR;													// 45° correction
-	double     xAPW;													// Cross angle of attaq
+	double     xAPW;													// Cross angle of approach
 	double     nHDG;													// Next heading
   double     hERR;                          // Lateral error
-  double     vTIM0;                         // Time for ARC AB
-  double     vTIM1;                         // Time for P to D
   double     vHRZ;                          // Horizontal speed
+	//--- Landing parameters --------------------------------------------
+	CFmt1Map   linTB;													// Alignment table
   //----Vertical mode control values ----------------------------------
   double     Vref;                          // VSP Reference
   double     eVRT;                          // Vertical error (glide)
   double     vAMP;                          // Vertical amplifier
   double     eVSP;                          // VSP error 
   double     rVSP;                          // Reference VSP
-	VLinear     rALT;													// Reference altitude	
+	VLinear    rALT;													// Reference altitude	
   //---Current parameters -------------------------------------------
 	double      cFAC;												  // Current factor
   double      cALT;                         // Current altitude
   double      cAGL;                         // Current AGL
   double      afps;                         // Aircraft feet per second
 	double      aSPD;													// Current speed KTS
-  //-------------------------------------------------------------------
-  double     vTime;                         // VSP timer
   //--------------------------------------------------------------------
   float      gTime;                         // ground timer
   CAirplane *plane;                   // Plane to control
@@ -349,7 +349,7 @@ public:
 	//-------------------------------------------------------------------
   void            TimeSlice(float dT,U_INT FrNo);
 	//-------------------------------------------------------------------
-	void		DisplayGroundDeviation(double p1);
+	void						DisplayGroundDeviation(double p1);
   //-------------------------------------------------------------------
   void            Probe(CFuiCanva *cnv);
   void            ReadPID(char *fn);
@@ -358,21 +358,26 @@ public:
   void            GetAllSubsystems(std::vector<CPIDbox*> &pid);
   void            GetAllPID(CFuiPID *win);
   void            InitPID();
+	void						DecodeVROT(SStream *st);
+	void						DecodeTHRO(SStream *st);
+	void						DecodeLMIS(SStream *st);
+	void						DecodeLAND(SStream *st);
+	void						DecodeFLAP(SStream *st);
+	//-------------------------------------------------------------------
+	void						InitLINE(SStream *st);
   int             BadSignal(char s);
   void            VSPerror();
   void            ALTalertSWP();
   void            ALTalertSET();
   bool            CheckAlert();
   //-------Options ----------------------------------------------------
-	inline void SetTHRO(int f, int c)				{aFSP   = f; aCUT	= c;}
+	inline void	SetVDTA(double d)						{vDTA		= d;}
   inline void SetVREF(double v)           {Vref		= v;}
-  inline void SetTrak(double t,double a)  {Turn		= t; gain = a;}
   inline void SetGLDopt(double g)         {glide	= g;}
   inline void SetDISopt(double a)         {aLND		= a;}
 	inline void SetAPRW(double a)						{xAPW   = a;}
 	void				SetLndFLP(char p,double a)	{lndFP = p; lndFA = a;}
 	void				SetTkoFLP(char p,double a)  {tkoFP = p; tkoFA = a;}
-	void				SetTKOopt(double s, double a);
   void        SetFLRopt(double a, double b,double d);
   void        SetAMIS(double a,double b);
 	//--- External interface --------------------------------------------
@@ -387,7 +392,7 @@ public:
   double          GetAOS();
   void            LateralMode();
   void            VerticalMode();
-  void            CatchVSP();
+  double          CatchVSP();
 	float						GetVSPCoef();
   //-------------------------------------------------------------------
   int             PowerLost();
@@ -543,12 +548,6 @@ public:
   CPIDdecoder(char *fn,AutoPilot *ap);
  ~CPIDdecoder();
   int     Read(SStream *st,Tag tag);
-  void    DecodeLanding(SStream *st);
-	void		DecodeTRAK(char *txt);
-	void		DecodeTHRO(char *txt);
-	void		DecodeVROT(char *txt);
-	void		DecodeFlap(char *txt);
-	void		DecodeAMIS(char *txt);
 };
 
 //====================================================================================

@@ -132,12 +132,13 @@ public:
   //---METHODS -------------------------------------------------
   CEngineData(CEngine *m);
   //------------------------------------------------------------
-  inline bool EngRunning()  {return (e_state == ENGINE_RUNNING);}
-  inline bool EngStopped()  {return (e_state == ENGINE_STOPPED);}
-  inline bool EngCranking() {return (e_state == ENGINE_CRANKING);}
-  inline bool EngWindmill() {return (e_state == ENGINE_WINDMILL);}
-  inline bool EngFueled()   {return (startKit & ENGINE_FUELED) != 0;}
-  inline bool EngPowered()  {return (powered != 0);}
+  bool EngRunning()		{return (e_state == ENGINE_RUNNING);}
+  bool EngStopped()		{return (e_state == ENGINE_STOPPED);}
+  bool EngCranking()	{return (e_state == ENGINE_CRANKING);}
+  bool EngWindmill()	{return (e_state == ENGINE_WINDMILL);}
+  bool EngFueled()		{return (startKit & ENGINE_FUELED) != 0;}
+  bool EngPowered()		{return (powered != 0);}
+	bool EngActivity()	{return (e_state != ENGINE_STOPPED);}
   //----For ests subsystem -------------------------------------
 public:
   inline char   EngState()  {return e_state;}
@@ -545,7 +546,7 @@ protected:
 	double		aSPD;								// Actual speed
 	double		speed;							// Target speed
 	double		hdg;								// Heading
-	double		ref;								// Reference
+	double		tHDG;								// Reference
 	double		aErr;								// angular Error
 	double    cor;								// Correction to rudder
 	double		val;								// Speed Value

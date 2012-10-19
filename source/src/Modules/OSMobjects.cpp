@@ -448,7 +448,7 @@ void OSM_Object::AssignBase()
 	txd.azp   = 0x00;
 	strcpy(txd.name,"Base.jpg");
 	//TRACE("GROUP LOAD TEXTURE %s",ntex);
-	CShared3DTex *ref	= globals->txw->GetM3DPodTexture(txd);
+	CShared3DTex *ref	= globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
 	part->Reserve(ref);
 	return;
 }
@@ -728,7 +728,7 @@ void OSM_Object::BuildLightRow(double ht)
 	TEXT_INFO txd;
 	strncpy(txd.name,"GLOBE.PNG",FNAM_MAX);
 	txd.Dir = FOLDER_OSM_TEXT;
-	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
+	CShared3DTex *ref = globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
 	part->SetTREF(ref);
 	//--- Init all vertices ----------------
 	GN_VTAB *dst = part->GetGTAB();
@@ -754,7 +754,7 @@ C3DPart *OSM_Object::LocatePart(char d,char *txn)
 	TEXT_INFO txd;
 	strncpy(txd.name,txn,FNAM_MAX);
 	txd.Dir = d;
-	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
+	CShared3DTex *ref = globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
 	prt->SetTREF(ref);
 	//--- Insert this part ahead ----------------
 	prt->SetNext(part);
@@ -1074,6 +1074,8 @@ void SqlOBJ::GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj)
     { U_INT key = sqlite3_column_int(stm,0);
       if (fun)  fun(key,obj);			// Callback with key
     }
+	//-----Close request ---------------------------------------------------
+  sqlite3_finalize(stm);
 	return;
 }
 //--------------------------------------------------------------------

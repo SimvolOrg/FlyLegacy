@@ -1344,6 +1344,7 @@ protected:
   //---Only methods ------------------------------------------
 public:
   CFmtxMap::CFmtxMap() {type = 'ZR', users = 0;}
+	CFmtxMap::~CFmtxMap() {;}
   virtual float Lookup(float x) {return x;}
   virtual void  Add(float x,float y)  {}
   //-----------------------------------------------------------
@@ -1471,6 +1472,7 @@ protected:
 public:
   // Constructors
   CDataSearch(SStream *s);
+	CDataSearch()	{table = 0;}
   //----------------------------------------------------------
   inline CFmtxMap*  GetTable()  {return table;}
 };

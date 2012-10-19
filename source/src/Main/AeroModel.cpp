@@ -54,11 +54,19 @@ void CAerodynamicModel::LogVector(const SVector &v, const char* name) {
 void CAerodynamicModel::LogScalar(const double &d, const char* name) {
   if (log)	log->Write("  %s = %f", name, d);
 }
-
-//---------------------------------------------------------------
+//=========================================================================
+//	Trace identity
+//=========================================================================
+char *aeroNAME[]	= {
+	"",
+	"Aero Force",
+	"Aero Moment",
+	"",
+	};
+//=========================================================================
 // JSDEV* CAerodynamicModel
 //	Make it an included subsystem
-//---------------------------------------------------------------
+//=========================================================================
 CAerodynamicModel::CAerodynamicModel ()
 { int opt = 0;
   GetIniVar ("Logs", "logAeroModel", &opt);
@@ -66,6 +74,12 @@ CAerodynamicModel::CAerodynamicModel ()
   if (log) {
     log->Write ("CAerodynamicModel data log\n");
   } else log = NULL;
+	//--- Get Trace option --------------------------------
+	if (0 == opt)	opt = HasIniKey("TRACE","AeroForce")? (1):(0);
+	if (0 == opt) opt = HasIniKey("TRACE","AeroMoment")?(2):(0);
+	T	= opt;
+	if (T) AERO("TRACE %s format is (time, X, Y, Z - AGL)",aeroNAME[T]);
+	*wnam = 0;
   //--- Initialize --------------------------------------
 	sreg		= 0;
 	rudder	= 0;
@@ -81,7 +95,7 @@ CAerodynamicModel::CAerodynamicModel ()
   debugOutput = false;
   force.Raz();													// JS was: x = force.y = force.z = 0.0;
   moment.Raz();												  // JS wasx = moment.y = moment.z = 0.0;
-
+	Time	= 0;
 }
 //----------------------------------------------------------------------
 // Init read parameters
@@ -97,11 +111,11 @@ void	CAerodynamicModel::Init(char* wngFilename)
 CAerodynamicModel::~CAerodynamicModel (void)
 { TRACE("Destroy wng");
 	// Delete all members of airfoil and wing maps
-  std::map<string,CAeroModelAirfoil*>::iterator ra;
+  std::map<string,CAeroAirfoil*>::iterator ra;
   for (ra=airfoilMap.begin(); ra!=airfoilMap.end(); ra++) delete ra->second;
 	airfoilMap.clear();
 	//---------------------------------------------------------------
-  std::map<string,CAeroModelWingSection*>::iterator rw;
+  std::map<string,CAeroWingSection*>::iterator rw;
   for (rw=wingMap.begin(); rw!=wingMap.end(); rw++) delete rw->second;
 	wingMap.clear();
 	//---------------------------------------------------------------
@@ -155,7 +169,7 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
     return TAG_READ;
   case 'foil':
     // Airfoil
-    { CAeroModelAirfoil *foil = new CAeroModelAirfoil;
+    { CAeroAirfoil *foil = new CAeroAirfoil(this);
       ReadFrom (foil, stream);
       string name = foil->GetAirfoilName ();
       airfoilMap[name] = foil;
@@ -165,7 +179,7 @@ int CAerodynamicModel::Read (SStream *stream, Tag tag)
     // Wing section
     { char name[80];
       ReadString (name, 80, stream);
-      CAeroModelWingSection *wing = new CAeroModelWingSection(mveh,name);
+      CAeroWingSection *wing = new CAeroWingSection(mveh,name);
       ReadFrom (wing, stream);
       wingMap[name] = wing;
     }
@@ -192,7 +206,7 @@ void CAerodynamicModel::ReadFinished()
 //----------------------------------------------------------------------------
 void CAerodynamicModel::SetWingChannel(CAeroControlChannel *aero)
 { // Apply to each wing section
-  std::map<string,CAeroModelWingSection*>::iterator i;
+  std::map<string,CAeroWingSection*>::iterator i;
   for (i=wingMap.begin(); i!=wingMap.end(); i++) {
     i->second->SetWingChannel (aero);
   }
@@ -201,16 +215,16 @@ void CAerodynamicModel::SetWingChannel(CAeroControlChannel *aero)
 //----------------------------------------------------------------------------
 // Get a wingsection by name
 //----------------------------------------------------------------------------
-CAeroModelWingSection* CAerodynamicModel::GetWingSection(const std::string &name) {
-  std::map<string,CAeroModelWingSection*>::iterator pos = wingMap.find(name);
+CAeroWingSection* CAerodynamicModel::GetWingSection(const std::string &name) {
+  std::map<string,CAeroWingSection*>::iterator pos = wingMap.find(name);
   if (pos != wingMap.end()) return pos->second;
   else return 0;
 }
 //----------------------------------------------------------------------------
 // Get an airfoil by name
 //----------------------------------------------------------------------------
-CAeroModelAirfoil* CAerodynamicModel::GetAirfoil(const std::string &name) {
-  std::map<string,CAeroModelAirfoil*>::iterator pos = airfoilMap.find(name);
+CAeroAirfoil* CAerodynamicModel::GetAirfoil(char *name) {
+  std::map<string,CAeroAirfoil*>::iterator pos = airfoilMap.find(name);
   if (pos != airfoilMap.end()) return pos->second;
   else return 0;
 }
@@ -223,15 +237,15 @@ void CAerodynamicModel::Setup() {
 	
   // Luc's comment : Adding parasite drag support
   // set up the Airfoils
-  std::map<string,CAeroModelAirfoil*>::iterator iterFoil;
+  std::map<string,CAeroAirfoil*>::iterator iterFoil;
   for (iterFoil=airfoilMap.begin(); iterFoil!=airfoilMap.end(); iterFoil++) {
-    ((CAeroModelAirfoil*)iterFoil->second)->Setup(this);
+    ((CAeroAirfoil*)iterFoil->second)->Setup(this);
   }
 
   //--- Set up the WingSections
-  std::map<string,CAeroModelWingSection*>::iterator iterWing;
+  std::map<string,CAeroWingSection*>::iterator iterWing;
   for (iterWing=wingMap.begin(); iterWing!=wingMap.end(); iterWing++) {
-    CAeroModelWingSection* ws = iterWing->second;
+    CAeroWingSection* ws = iterWing->second;
 		if (ws->IsRudder())		rudder = ws;
     if (grnd) {
       // global ground effect enabled, override wingsection settings
@@ -256,13 +270,12 @@ static void VectorPrint(FILE* f, SVector &v, char* label) {
 //---------------------------------------------------------------------------------
 void CAerodynamicModel::Timeslice(float dT) {
   //---read control surfaces -------------------------------
-  std::map<string,CAeroModelWingSection*>::iterator iter;
+	Time	+= dT;
+  std::map<string,CAeroWingSection*>::iterator iter;
   for (iter=wingMap.begin(); iter!=wingMap.end(); iter++) {
-    CAeroModelWingSection* ws = iter->second;
+    CAeroWingSection* ws = iter->second;
     ws->GetChannelValues();
   }
-  //---------------------------------------------------------------------
-  //if (log)	log->Write("Start CAerodynamicModel::Timeslice(%f)", dT);
 	//---------------------------------------------------------------------
   // Get input data : inertial frame
   const SVector *v = mveh->GetAirspeed();                  ///< m/s
@@ -279,7 +292,7 @@ void CAerodynamicModel::Timeslice(float dT) {
 	//		For now, I work towards getting ComputeForces() independant of the unit system.
 	//		It will compute forces as per the unit matching the unti of rho*relV*relV*area as made available.
 	// Luc's comment : Modifying ComputeForces()
-  double hAgl = FN_METRE_FROM_FEET (double(mveh->GetUserAGL())); ///< meters;
+  double hAgl = FN_METRE_FROM_FEET (double(mveh->GetBodyAGL())); ///< meters;
   // value rho 1.16->1.34 at 1 atm
   double rho = globals->atm->GetDensityKgM3 ();             ///< GetDensitySlugsFt3() * 515.317882;
   // value soundspeed : In SI Units with dry air at 20 °C (68 °F), the speed of sound is 343 m/s.
@@ -287,11 +300,11 @@ void CAerodynamicModel::Timeslice(float dT) {
   double soundSpeed = globals->atm->GetSoundSpeed_ISU ();   ///< GetSoundSpeed() * FN_METRE_FROM_FEET;
 
   // Get input data : body frame
-  const SVector *cgPos = static_cast<const SVector *> (mveh->svh.GetNewCG_ISU ()); ///< meters (ISU)
-  SVector cgPos_; cgPos_.x = -cgPos->x; cgPos_.y = cgPos->z; cgPos_.z = cgPos->y; // RH->LH
-  SVector cgOffset = VectorDifference(cgPos_, dofa);       // 
-  cgOffset.z -= laca; ///< add <+ac+> value to adjust longitudinal aerod.center //  
-
+  SVector *cgPos = mveh->svh.GetNewCG_ISU (); //static_cast<SVector *> (mveh->svh.GetNewCG_ISU ()); ///< meters (ISU)
+  SVector  cgPos_; cgPos_.x = -cgPos->x; cgPos_.y = cgPos->z; cgPos_.z = cgPos->y; // RH->LH
+  SVector  cgOffset = VectorDifference(cgPos_, dofa);       // 
+  cgOffset.z -= laca; ///< add <+ac+> value to adjust longitudinal aerod.center // 
+	//--------------------------------------------------------------------------------------------------------
 #ifdef _DEBUG
   if (log) {
   LogVector (*v                                                        , "  v                            ");
@@ -319,13 +332,12 @@ void CAerodynamicModel::Timeslice(float dT) {
   moment.Raz();											// JS Replace VectorScale(moment, 0.0);
 	//------------------------------------------------------------------------
   // compute, and add up forces and moments from the WingSections
-	//	NOTE JS:  Curiously, the rudder adds ground speed when hight coefficient is used
-	//						So when the ground speed regulator is in use, I avoid the force
-	//						generated by the rudder.  When I understand better why, I may 
-	//						suppress this glut
+	//	NOTE JS:  Curiously, the rudder is included in this section.  It seems that the
+	//						rudder action is from parasite drag?
+	//						 
 	//-------------------------------------------------------------------------
   for (iter=wingMap.begin(); iter!=wingMap.end(); iter++) {
-    CAeroModelWingSection* ws = iter->second;
+    CAeroWingSection* ws = iter->second;
 		if (sreg && (ws == rudder))		continue;
     // bPos : body frame
     SVector bPos = VectorDifference(ws->bPos, cgOffset);                 ///< pos relative to actual cg meters
@@ -379,22 +391,20 @@ void CAerodynamicModel::Timeslice(float dT) {
     //      It would not cause the element to turn if it were not attached to the aeroplane.
     // Luc's comment : Need to check the cross product operand order : (elmF x bPos) or (bPos x elmF)) ?
     VectorCrossProduct(elmM, bPos, elmF);							      ///< moment of element aerodynamic force
-    elmM = VectorSum(elmM, ws->GetMomentVector()); 					///< add "internal" moment 
+    elmM   = VectorSum(elmM, ws->GetMomentVector()); 					///< add "internal" moment 
     moment = VectorSum(moment, elmM);
 #ifdef _DEBUG
     LogVector(relV,   "  relV  ");
     LogVector(bPos,   "  bPos  ");
     LogVector(force,  "  Force ");
     LogVector(moment, "  Moment");
+		if (log) log->Write("-----Time slice end------------------------------------------------------\n");
 #endif
   }
-
-#ifdef _DEBUG
-  if (log) {
-    log->Write("Return CAerodynamicModel::Timeslice()");
-    log->Write("----------------------------------------------------------------------------------\n");
-  }
-#endif
+//---Trace if requested ---------------------------------------------------------------
+if (1 == T) AERO(  "%.6f     %.4lf %.4lf %.4lf    %.2lf", Time,force.x, force.y,  force.z, hAgl); 
+if (2 == T) AERO(  "%.6f     %.4lf %.4lf %.4lf    %.2lf", Time,moment.x,moment.y,moment.z, hAgl);
+//-------------------------------------------------------------------------------------
 }
 
 
@@ -432,9 +442,9 @@ void CAerodynamicModel::DrawAerodelData (const double &lenght)
   DebugScreenAeroWFEnginesForce ();
   //DebugScreenAeroWFWingsMoment (GetMoment());
 
-  std::map<string,CAeroModelWingSection*>::iterator iter;
+  std::map<string,CAeroWingSection*>::iterator iter;
   for (iter=wingMap.begin(); iter!=wingMap.end(); iter++) {
-    CAeroModelWingSection* ws = iter->second;
+    CAeroWingSection* ws = iter->second;
 
     DebugScreenAeroWSForce (ws->bPos, ws->GetLiftVector()); // 
     //DebugScreenAeroWSForce (ws->bPos, ws->GetMomentVector());
@@ -443,11 +453,11 @@ void CAerodynamicModel::DrawAerodelData (const double &lenght)
 }
 
 //================================================================================
-// CAeroModelAirfoil
+// CAeroAirfoil
 //================================================================================
-CAeroModelAirfoil::CAeroModelAirfoil (void)
-{
-  // Luc's comment : Adding parasite drag support
+CAeroAirfoil::CAeroAirfoil (CAerodynamicModel *a)
+{	 aero	= a;
+  // Luc's comment : Adding parasite drag support ---
   stallAlphaMin = stallAlphaMax = parasiteDrag = 0.0f;
   //---Init table lookup ----------------------------
   mlift       = 0;					// Assign null Map
@@ -459,8 +469,9 @@ CAeroModelAirfoil::CAeroModelAirfoil (void)
 }
 //--------------------------------------------------------------------------------
 //  Destroy all associated resources (table lookup, etc)
-CAeroModelAirfoil::~CAeroModelAirfoil (void)
-{ SAFE_DELETE (mlift);
+CAeroAirfoil::~CAeroAirfoil (void)
+{ SAFE_DELETE (name);
+	SAFE_DELETE (mlift);
   SAFE_DELETE (mdrag);
   SAFE_DELETE (mmoment);
   SAFE_DELETE (mliftMach);
@@ -468,14 +479,18 @@ CAeroModelAirfoil::~CAeroModelAirfoil (void)
   SAFE_DELETE (mmomentMach);
 }
 
-int CAeroModelAirfoil::Read (SStream *stream, Tag tag)
+int CAeroAirfoil::Read (SStream *stream, Tag tag)
 {
   switch (tag) {
   case 'name':
     { // Airfoil name, used to reference the data from Wing Sections
       char s[80];
       ReadString (s, 80, stream);
-      name = s;
+      name = Dupplicate(s,64);				//name = s;
+			//--- Check for trace entry -----------------------
+			char t[80];
+			GetIniString("TRACE","Foil",t,80);
+			T	= (strcmp(name,t)==0)?(1):(0);
     }
     return TAG_READ;
   case 'samn':
@@ -527,14 +542,14 @@ int CAeroModelAirfoil::Read (SStream *stream, Tag tag)
   }
 
    // Tag was not processed by this object, it is unrecognized
-  WARNINGLOG ("CAeroModelAirfoil::Read : Unrecognized tag <%s>", TagToString(tag));
+  WARNINGLOG ("CAeroAirfoil::Read : Unrecognized tag <%s>", TagToString(tag));
   return TAG_IGNORED;
 }
 
 // Luc's comment : Adding parasite drag support
 // Do as much of the calculations as possible before the simulation begins
-void CAeroModelAirfoil::Setup(CAerodynamicModel *wng) {
-  if (CAerodynamicModel::log)	CAerodynamicModel::log->Write("  Start Airfoil::Setup(%s)", name.c_str());
+void CAeroAirfoil::Setup(CAerodynamicModel *wng) {
+  if (CAerodynamicModel::log)	CAerodynamicModel::log->Write("  Start Airfoil::Setup(%s)", name);
 
   // set the parasite drag coefficient
   // Parasite drag = drag for the aoa that produces 0 lift
@@ -543,19 +558,10 @@ void CAeroModelAirfoil::Setup(CAerodynamicModel *wng) {
   if (mdrag) parasiteDrag = mdrag->Lookup(0.0f);
 }
 
-const char* CAeroModelAirfoil::GetAirfoilName (void)
-{
-  return name.c_str();
-}
-
-//============================================================================================
+//--------------------------------------------------------------------------------------------
 //	Return the lift coefficient
-//============================================================================================
-#ifdef _DEBUG
-const double CAeroModelAirfoil::GetLiftCoefficient(double aoa, double mach, const char *name)
-#else
-const double CAeroModelAirfoil::GetLiftCoefficient(double aoa, double mach)
-#endif
+//--------------------------------------------------------------------------------------------
+const double CAeroAirfoil::GetLiftCoefficient(double aoa, double mach)
 {
   double cl;
   if (mlift)  cl = mlift->Lookup(float(aoa));
@@ -564,14 +570,14 @@ const double CAeroModelAirfoil::GetLiftCoefficient(double aoa, double mach)
   if (mliftMach) cl *= mliftMach->Lookup(float(mach));
   return cl;
 }
-//============================================================================================
+//--------------------------------------------------------------------------------------------
 //	Return the Drag coefficient
-//============================================================================================
+//---------------------------------------------------------------------------------------------
 
 // Luc's comment : I separated induced drag and parasite drag.
 //	GetDragCoefficient() is replaced with GetInducedDragCoefficient() which just returns the induced drag.
 //	A separate function GetParasiteDragCoefficient() returns the parasite drag.
-const double CAeroModelAirfoil::GetInducedDragCoefficient(double aoa, double mach)
+const double CAeroAirfoil::GetInducedDragCoefficient(double aoa, double mach)
 {
   double cdi;
   if (mdrag) cdi = mdrag->Lookup(float(aoa)) - parasiteDrag;
@@ -588,11 +594,11 @@ const double CAeroModelAirfoil::GetInducedDragCoefficient(double aoa, double mac
 
   return cdi;
 }
-//============================================================================================
+//---------------------------------------------------------------------------------------------
 //	Return the moment coefficient
-//============================================================================================
+//---------------------------------------------------------------------------------------------
 
-const double CAeroModelAirfoil::GetMomentCoefficient(double aoa, double mach)
+const double CAeroAirfoil::GetMomentCoefficient(double aoa, double mach)
 {
   double cm = 0;
   if (mmoment) cm = mmoment->Lookup(float(aoa));
@@ -601,22 +607,21 @@ const double CAeroModelAirfoil::GetMomentCoefficient(double aoa, double mach)
 }
 
 // Luc's comment : Adding parasite drag support
-const double CAeroModelAirfoil::GetParasiteDragCoefficient (void)
+const double CAeroAirfoil::GetParasiteDragCoefficient (void)
 {
   return parasiteDrag;
 }
-/////////////////////////////////////////////////////////////////////////////////////////////
 
 //===========================================================================================
 //
-// CAeroModelFlap
+// CAeroMovingPart
 //  JS NOTE:  Each chanel is defined by a name in the WNG file. The ruuder appears in 2 chanels
 //            Normal rudder and Front rudder
 //===========================================================================================
-CAeroModelFlap::CAeroModelFlap ( CVehicleObject *veh,CAeroModelWingSection *w)
+CAeroMovingPart::CAeroMovingPart ( CVehicleObject *veh,CAeroWingSection *w)
 { mveh		= veh;
 	wing    = w;
-  aero    = 0;
+  chan    = 0;
   invert  = false;
   deflectRadians  = 0;
   adj.kd  = 1;
@@ -632,7 +637,7 @@ CAeroModelFlap::CAeroModelFlap ( CVehicleObject *veh,CAeroModelWingSection *w)
 //---------------------------------------------------------------------------
 //  Destroy resources
 //---------------------------------------------------------------------------
-CAeroModelFlap::~CAeroModelFlap()
+CAeroMovingPart::~CAeroMovingPart()
 { 
   SAFE_DELETE(mlift);
   SAFE_DELETE(mdrag);
@@ -642,7 +647,7 @@ CAeroModelFlap::~CAeroModelFlap()
 //---------------------------------------------------------------------------
 //  Read all parameters
 //---------------------------------------------------------------------------
-int CAeroModelFlap::Read (SStream *stream, Tag tag)
+int CAeroMovingPart::Read (SStream *stream, Tag tag)
 { char s[80];
 
   switch (tag) {
@@ -684,14 +689,14 @@ int CAeroModelFlap::Read (SStream *stream, Tag tag)
   }
 
     // Tag was not processed by this object, it is unrecognized
-  WARNINGLOG ("CAeroModelFlap::Read : Unrecognized tag <%s>", TagToString(tag));
+  WARNINGLOG ("CAeroMovingPart::Read : Unrecognized tag <%s>", TagToString(tag));
 
   return TAG_IGNORED;
 }
 //--------------------------------------------------------------------------
 //  Return channel name
 //--------------------------------------------------------------------------
-const char* CAeroModelFlap::GetChannelName (void)
+const char* CAeroMovingPart::GetChannelName (void)
 {
   return channel.c_str();
 }
@@ -699,10 +704,10 @@ const char* CAeroModelFlap::GetChannelName (void)
 //--------------------------------------------------------------------------
 //  Read Channel values
 //--------------------------------------------------------------------------
-void CAeroModelFlap::ReadChannel()
-{ if (0 == aero)  return;
-  float keyframe  = aero->GetKeyframe();
-  deflectRadians  = aero->GetRadians();
+void CAeroMovingPart::ReadChannel()
+{ if (0 == chan)  return;
+  float keyframe  = chan->GetKeyframe();
+  deflectRadians  = chan->GetRadians();
   if (invert)     keyframe = float(1) - keyframe;
   //TRACE("--Channel %s: defl=%-.5f rad=%-.5f",(char*)channel.c_str(),deflectRadians);
   //----------------------------------------------------
@@ -718,7 +723,7 @@ void CAeroModelFlap::ReadChannel()
 //
 // @returns float Lift coefficient
 //---------------------------------------------------------------------------
-float CAeroModelFlap::GetLiftInc() {
+float CAeroMovingPart::GetLiftInc() {
   return (mlift)?(adj.kf * mlift->Lookup(deflectRadians)):(0);
 }
 //--------------------------------------------------------------------------
@@ -726,7 +731,7 @@ float CAeroModelFlap::GetLiftInc() {
 //
 // @returns float Drag coefficient
 //--------------------------------------------------------------------------
-float CAeroModelFlap::GetDragInc() {
+float CAeroMovingPart::GetDragInc() {
   return (mdrag)?(adj.kd * mdrag->Lookup(deflectRadians)):(0);
 }
 //--------------------------------------------------------------------------
@@ -734,21 +739,22 @@ float CAeroModelFlap::GetDragInc() {
 //
 // @returns float Moment coefficient
 //--------------------------------------------------------------------------
-float CAeroModelFlap::GetMomentInc() {
+float CAeroMovingPart::GetMomentInc() {
   return (mmoment)?(adj.km * mmoment->Lookup(deflectRadians)):(0);
 }
 //--------------------------------------------------------------------------
 
-void CAeroModelFlap::Print3D () {
+void CAeroMovingPart::Print3D () {
 }
 
 //=================================================================================
-// CAeroModelWingSection
+// CAeroWingSection
 //=================================================================================
-CAeroModelWingSection::CAeroModelWingSection (CVehicleObject *v,char* name)
+CAeroWingSection::CAeroWingSection (CVehicleObject *v,char* name)
 { mveh       = v;
   mflap      = new CAcmFlap(v);
-  this->name = name;
+  this->name = Dupplicate(name,64);
+	foil			 = 0;
   area = span = 0.0f;
   bPos.x = bPos.y = bPos.z = 0.0f;
   bAng.x = bAng.y = bAng.z = 0.0f;
@@ -768,17 +774,25 @@ CAeroModelWingSection::CAeroModelWingSection (CVehicleObject *v,char* name)
   col_ = double(phy->Klft);
   cod_ = double(phy->Kdrg);
   com_ = double(phy->Kmmt);
-  DEBUGLOG ("CAeroModelWingSection PHY : %s\n\
-  col=%f cod=%f com=%f (%p)",
-   name, col_, cod_, com_, phy);
-  
+ // DEBUGLOG ("CAeroWingSection PHY : %s\n\  col=%f cod=%f com=%f (%p)",
+ //  name, col_, cod_, com_, phy);
+  T = AERO_LNONE;
+	//--- Check for trace level ---------------------------
+	char l[32];
+	GetIniString("TRACE","AeroLevel",l,32);
+	if (strncmp(l,"WINGS",5)==0) T = AERO_LWING;
+	if (strncmp(l,"FLAPS",5)==0) T = AERO_LFLAP;
+	if (strncmp(l,"TRIMS",5)==0) T = AERO_LTRIM;
+	if (strncmp(l,"SPOIL",5)==0) T = AERO_LSPLR;
+	if (strncmp(l,"TOTAL",5)==0) T = AERO_LVALL;
+	//-----------------------------------------------------
 }
 //------------------------------------------------------------------------
 //  Destroy this object
 //------------------------------------------------------------------------
-CAeroModelWingSection::~CAeroModelWingSection (void)
+CAeroWingSection::~CAeroWingSection (void)
 { SAFE_DELETE (mflap);
-  std::map<string,CAeroModelFlap*>::iterator i;
+  std::map<string,CAeroMovingPart*>::iterator i;
   for (i=flapMap.begin(); i!=flapMap.end(); i++)	delete i->second;
 	flapMap.clear();
 	//----------------------------------------------------
@@ -790,12 +804,13 @@ CAeroModelWingSection::~CAeroModelWingSection (void)
 	//---------------------------------------------------
   SAFE_DELETE (damage);
   SAFE_DELETE (mflpS);
-
+	SAFE_DELETE (foil);
+	SAFE_DELETE (name);
 }
 //------------------------------------------------------------------------
 //  Read parameters
 //------------------------------------------------------------------------
-int CAeroModelWingSection::Read (SStream *stream, Tag tag)
+int CAeroWingSection::Read (SStream *stream, Tag tag)
 {
   int rc = TAG_IGNORED;
 
@@ -805,7 +820,7 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
     {
       char s[80];
       ReadString (s, 80, stream);
-      foil = s;
+      foil = Dupplicate(s,80);
     }
     return TAG_READ;
   case 'span':
@@ -834,7 +849,7 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
     //VectorOrientLeftToRight (bAng); // 
     return TAG_READ;
   case 'flap':
-    { CAeroModelFlap* flap = new CAeroModelFlap(mveh,this);
+    { CAeroMovingPart* flap = new CAeroMovingPart(mveh,this);
       ReadFrom (flap, stream);
       char name[80];
       strncpy (name, flap->GetChannelName(),79);
@@ -843,13 +858,13 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
     }
     return TAG_READ;
   case 'splr':
-    { CAeroModelFlap* splr = new CAeroModelFlap(mveh,this);
+    { CAeroMovingPart* splr = new CAeroMovingPart(mveh,this);
       ReadFrom (splr, stream);
       spoilerMap[splr->GetChannelName()] = splr;
     }
     return TAG_READ;
   case 'trim':
-    { CAeroModelFlap* trim = new CAeroModelFlap(mveh,this);
+    { CAeroMovingPart* trim = new CAeroMovingPart(mveh,this);
       ReadFrom (trim, stream);
       trimMap[trim->GetChannelName()] = trim;
     }
@@ -871,7 +886,7 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
       int ge_ = GRND_EFFECT; // 1;
       GetIniVar ("PHYSICS", "groundEffect", &ge_);
       if (ge_) grnd = true;
-      DEBUGLOG ("groundEffect %s= %d", name.c_str (), ge_);
+      DEBUGLOG ("groundEffect %s= %d", name, ge_);
     }
     return TAG_READ;
   case 'geff':
@@ -881,7 +896,7 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
       float geff_K = 1.0f;
       GetIniFloat ("PHYSICS", "groundEffectAdjust", &geff_K);
       geff *= geff_K;
-      DEBUGLOG ("groundEffectAdjust %s= %f", name.c_str (), geff_K);
+      DEBUGLOG ("groundEffectAdjust %s= %f", name, geff_K);
     }
     return TAG_READ;
   case 'gAGL':
@@ -933,13 +948,13 @@ int CAeroModelWingSection::Read (SStream *stream, Tag tag)
   }
 
   // Tag was not processed by this object, it is unrecognized
-  WARNINGLOG ("CAeroModelWingSection::Read : Unrecognized tag <%s>", TagToString(tag));
+  WARNINGLOG ("CAeroWingSection::Read : Unrecognized tag <%s>", TagToString(tag));
   return TAG_IGNORED;
 }
 //---------------------------------------------------------------------
 //	Return PHY coefficients
 //---------------------------------------------------------------------
-void CAeroModelWingSection::PhyCoef(char *name,AERO_ADJ &itm)
+void CAeroWingSection::PhyCoef(char *name,AERO_ADJ &itm)
 {	CPhysicModelAdj  *phy = mveh->GetPHY();
 	if (phy)  phy->GetCoef(name,itm);
 	return;
@@ -947,46 +962,46 @@ void CAeroModelWingSection::PhyCoef(char *name,AERO_ADJ &itm)
 //---------------------------------------------------------------------------------
 //  Store a channel pointer into each wing section that uses this channel
 //---------------------------------------------------------------------------------
-void CAeroModelWingSection::SetWingChannel(CAeroControlChannel *aero)
-{ std::map<string,CAeroModelFlap*>::iterator i;
+void CAeroWingSection::SetWingChannel(CAeroControlChannel *chn)
+{ std::map<string,CAeroMovingPart*>::iterator i;
  //----Flap parts -----------------------------------------
   for (i=flapMap.begin(); i!=flapMap.end(); i++) 
-  { CAeroModelFlap *flp = i->second;
+  { CAeroMovingPart *flp = i->second;
     char *name = (char*)i->first.c_str();
-    if (aero->SameName(name)) flp->Store(aero);
+    if (chn->SameName(name)) flp->Store(chn);
   }
  //--- Trim parts -----------------------------------------
   for (i=trimMap.begin(); i!=trimMap.end(); i++) 
-  { CAeroModelFlap *flp = i->second;
+  { CAeroMovingPart *flp = i->second;
     char *name = (char*)i->first.c_str();
-    if (aero->SameName(name)) flp->Store(aero);
+    if (chn->SameName(name)) flp->Store(chn);
   }
   //--- Spoiler parts -------------------------------------
   for (i=spoilerMap.begin(); i!=spoilerMap.end(); i++) 
-  { CAeroModelFlap *flp = i->second;
+  { CAeroMovingPart *flp = i->second;
     char *name = (char*)i->first.c_str();
-    if (aero->SameName(name)) flp->Store(aero);
+    if (chn->SameName(name)) flp->Store(chn);
   }
   return;
 }
 //---------------------------------------------------------------------------------
 //  Read channel for all control surface
 //---------------------------------------------------------------------------------
-void CAeroModelWingSection::GetChannelValues()
-{ std::map<string,CAeroModelFlap*>::iterator i;
+void CAeroWingSection::GetChannelValues()
+{ std::map<string,CAeroMovingPart*>::iterator i;
   //----Flap parts -----------------------------------------
   for (i=flapMap.begin(); i!=flapMap.end(); i++) 
-  { CAeroModelFlap *flp = i->second;
+  { CAeroMovingPart *flp = i->second;
     flp->ReadChannel();
   }
   //--- Trim parts -----------------------------------------
   for (i=trimMap.begin(); i!=trimMap.end(); i++) 
-  { CAeroModelFlap *flp = i->second;
+  { CAeroMovingPart *flp = i->second;
     flp->ReadChannel();
   }
   //--- Spoiler parts -------------------------------------
   for (i=spoilerMap.begin(); i!=spoilerMap.end(); i++) 
-  { CAeroModelFlap *flp = i->second;
+  { CAeroMovingPart *flp = i->second;
     flp->ReadChannel();
   }
   return;
@@ -994,11 +1009,12 @@ void CAeroModelWingSection::GetChannelValues()
 //---------------------------------------------------------------------------------
 // Do as much of the calculations as possible before the simulation begins
 //---------------------------------------------------------------------------------
-void CAeroModelWingSection::Setup(CAerodynamicModel *wng) {
-  if (CAerodynamicModel::log)	CAerodynamicModel::log->Write("  Start WingSection::Setup(%s)", name.c_str());
+void CAeroWingSection::Setup(CAerodynamicModel *wng) {
+  aero	= wng;
+  if (CAerodynamicModel::log)	CAerodynamicModel::log->Write("  Start WingSection::Setup(%s)", name);
 
   // global ground effect override
-  // Luc's comment : This paragraph does NOTlook right. We are not in the scope of CAeroModelAirfoil class, therefore global ground effect boolean is not accessible.
+  // Luc's comment : This paragraph does NOTlook right. We are not in the scope of CAeroAirfoil class, therefore global ground effect boolean is not accessible.
   // Further, this attempts to duplicate the code in lines 219 - 224
   if (grnd) {
     this->grnd = true;
@@ -1010,6 +1026,7 @@ void CAeroModelWingSection::Setup(CAerodynamicModel *wng) {
     bAng.z = +90.0; // 
   }
   airfoil = wng->GetAirfoil(foil);
+	if (0 == airfoil->GetTrace())	T= AERO_LNONE;
   chord = area / span;
   // Luc's comment : Need to verify the Euler angle decomposition. I think it is different in LH or RH.
   // Further, here the angle transform order MUST be dihedral, sweep, incidence
@@ -1028,16 +1045,16 @@ void CAeroModelWingSection::Setup(CAerodynamicModel *wng) {
 	CAerodynamicModel::LogVector(bPos, "  bPos");
 	CAerodynamicModel::LogVector(bAng, "  bAng");
 	// Logging the rotation matrix "bAngMatrix"
-    SVector refVector;   // ref coordinate vector in child referential
-    SVector checkVector; // transformed vector
+  SVector refVector;   // ref coordinate vector in child referential
+  SVector checkVector; // transformed vector
 	refVector.x = 1; refVector.y = 0; refVector.z = 0;
-    bAngMatrix_bhp.ChildToParent(checkVector, refVector);
+  bAngMatrix_bhp.ChildToParent(checkVector, refVector);
 	CAerodynamicModel::LogVector(checkVector, "  bAngMatrix<m00,m01,m02>");
 	refVector.x = 0; refVector.y = 1; refVector.z = 0;
-    bAngMatrix_bhp.ChildToParent(checkVector, refVector);
+  bAngMatrix_bhp.ChildToParent(checkVector, refVector);
 	CAerodynamicModel::LogVector(checkVector, "  bAngMatrix<m10,m11,m12>");
 	refVector.x = 0; refVector.y = 0; refVector.z = 1;
-    bAngMatrix_bhp.ChildToParent(checkVector, refVector);
+  bAngMatrix_bhp.ChildToParent(checkVector, refVector);
 	CAerodynamicModel::LogVector(checkVector, "  bAngMatrix<m20,m21,m22>");
 	CAerodynamicModel::log->Write("  End WingSection::Setup()");
   }
@@ -1047,10 +1064,11 @@ void CAeroModelWingSection::Setup(CAerodynamicModel *wng) {
 // Luc's comment : Modifying ComputeForces()
 // compute the forces on this WingSection as if it were an isolated flying wing
 //----------------------------------------------------------------------------------------
-void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundSpeed, double hAgl) {
+void CAeroWingSection::ComputeForces(SVector &v_, double rho, double soundSpeed, double hAgl) {
+	float time = aero->GetTime();
 #ifdef _DEBUG
   if (CAerodynamicModel::log)	{
-    CAerodynamicModel::log->Write("  Start CAeroModelWingSection::ComputeForces(%s)", name.c_str());
+    CAerodynamicModel::log->Write("  Start CAeroWingSection::ComputeForces(%s)", name);
     CAerodynamicModel::LogVector(v_, "  speedVector");
   }
 #endif
@@ -1064,18 +1082,18 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
   // CVector speedVector; ///< v transformed to local coordinates ///< class member
   // Luc's comment : See comment above. Need to customize the rotation matrix setup via Euler angles.
   //---------------------------------------------------------------------------------------------------
-  bAngMatrix_bhp.ParentToChild(speedVector, v_); // 
+  bAngMatrix_bhp.ParentToChild(speedVector, v_);																		// Local coordinate
 
   double ad_Speed2 = speedVector.y * speedVector.y + speedVector.z * speedVector.z;	///< This is the aerodynamic speed squared
   																					                                        ///< This formula is true for both RH and LH referentials
   																					                                        ///< since they both have forward and up being y and z or z and y
-  double ad_speed = sqrt (ad_Speed2);
-  double speed2 = ad_Speed2 + speedVector.x * speedVector.x;							          ///< This is the total local speed squared, used for computing parasite drag.
-  double cf_speed = sqrt (speed2);
-  double mach = ad_speed / soundSpeed;
-  double q = 0.5 * rho * ad_Speed2;
-  double qS = q * area;
-  double qSc = qS * chord;
+  double ad_speed		= sqrt (ad_Speed2);
+  double speed2			= ad_Speed2 + speedVector.x * speedVector.x;///< This is the total local speed squared, used for computing parasite drag.
+  double cf_speed		= sqrt (speed2);
+  double mach				= ad_speed / soundSpeed;
+  double q		= 0.5 * rho * ad_Speed2;
+  double qS		= q * area;
+  double qSc	= qS * chord;
 
 
   // get angle of attack, and "sideslip/sweep" angle
@@ -1085,13 +1103,10 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
   double col = col_;// 
   double cod = cod_;// 
   double com = com_;
-  if (speedVector.z < 0.0) { 
-	       col = -0.6;
-	       cod =  0.6;
-	       com = -0.6;
-  }
-  double sa = (ad_speed != 0)?(-speedVector.y / ad_speed):(0);						// sin(aoa);
-  double ca = (ad_speed != 0)?( speedVector.z / ad_speed):(1);						//cos(aoa);
+  if (speedVector.z < 0.0) {   col = cod = com = -0.6; }
+	//--- compute AOA components from Y-Z relative speed 
+  double sa = (ad_speed != 0)?(-speedVector.y / ad_speed):(0);						//	 sin(aoa);
+  double ca = (ad_speed != 0)?( speedVector.z / ad_speed):(1);						//	cos(aoa);
   // Luc's comment : Below is the RH version of the computation above
   //  double aoa = atan2(-speedVector.z, fabs (speedVector.y)); // 
   //  double co = (speedVector.y >= 0.0) ? 1.0 : -0.6;
@@ -1107,11 +1122,7 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
   //	This referential is based on the local WingSection referential, but with a rotation
   //	in the wing section chord plane such that coordinate z (z in LH, but y in RH) is parallel
   //	with the relative wind component for the chord plane.
-#ifdef _DEBUG
-  cl = airfoil->GetLiftCoefficient(aoa, mach, name.c_str());
-#else
-  cl = airfoil->GetLiftCoefficient(aoa, mach);
-#endif
+  cl  = airfoil->GetLiftCoefficient(aoa, mach);
   cdi = airfoil->GetInducedDragCoefficient(aoa, mach); ///< class member
   // Luc's comment : Need to check the sign of cm. I understans that a positive cm means a pitch down cm, which is LH convention.
   cm = airfoil->GetMomentCoefficient(aoa, mach); ///< class member
@@ -1126,49 +1137,51 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
     CAerodynamicModel::log->Write("    cl = %f, cdi = %f, cdp = %f, cm = %f", cl, cdi, cdp, cm);
   }
 #endif
-
-  // control surface effects.
-  std::map<string,CAeroModelFlap*>::iterator iter;
+	//--- Trace if requested ------------------------------------------------------------
+	if (AERO_LWING == T)	WING("WINGS foils:%-32s %.6f %.4lf %.4lf %.4lf %.4lf",name,time,aoa,cl,cdi,cm);
+  //--- control surface effects from flap surface s------------------------------------
+  std::map<string,CAeroMovingPart*>::iterator iter;
   for (iter=flapMap.begin(); iter!=flapMap.end(); iter++) {
-    CAeroModelFlap *flap = iter->second;
+    CAeroMovingPart *flap = iter->second;
     cl  += flap->GetLiftInc();// lbs_to_newton = magic number to confirm or investigate
     cdi += flap->GetDragInc();
     /// \todo try to guess how <hnge> works ...
     cm  += flap->GetMomentInc() - (flap->GetLiftInc() * hinge);
 #ifdef _DEBUG
-	if (CAerodynamicModel::log)	{
+	if (CAerodynamicModel::log)	
       CAerodynamicModel::log->Write("    flap cl = %.2f, flap cdi = %.2f, flap cm = %.2f hnge = %.2f",
         flap->GetLiftInc(), flap->GetDragInc(), flap->GetMomentInc(), hinge);
-	}
+
 #endif
   }
-
-  // Repeat for trimMap
+	if (AERO_LFLAP == T)	WING("FLAPS foils:%-32s %.6f %.4lf %.4lf %.4lf %.4lf",name, time,aoa,cl,cdi,cm);
+	//--- trim contribution ------------------------------------------------------------------
   for (iter=trimMap.begin(); iter!=trimMap.end(); iter++) {
-    CAeroModelFlap *trim = iter->second;
+    CAeroMovingPart *trim = iter->second;
     cl  -= trim->GetLiftInc();
     cdi += trim->GetDragInc();
     cm  += trim->GetMomentInc();
 #ifdef _DEBUG
-	if (CAerodynamicModel::log)	{
+	if (CAerodynamicModel::log)	
       CAerodynamicModel::log->Write("    trim cl = %.2f, trim cdi = %.2f, trim cm = %.2f", trim->GetLiftInc(), trim->GetDragInc(), trim->GetMomentInc());
-	}
+
 #endif
   }
-
-  // Repeat for spoilerMap
+	if (AERO_LTRIM == T)	WING("TRIMS %-32s %.6f %.4lf %.4lf %.4lf %.4lf",name, aero->GetTime(),aoa,cl,cdi,cm);
+	//--- Spoiler contribution ---------------------------------------------------------------
   for (iter=spoilerMap.begin(); iter!=spoilerMap.end(); iter++) {
-    CAeroModelFlap *spoiler = iter->second;
+    CAeroMovingPart *spoiler = iter->second;
     cl  += spoiler->GetLiftInc();
     cdi += spoiler->GetDragInc();
     cm  += spoiler->GetMomentInc();
 #ifdef _DEBUG
-	if (CAerodynamicModel::log)	{
+	if (CAerodynamicModel::log)	
       CAerodynamicModel::log->Write("    spoiler cl = %.2f, spoiler cdi = %.2f, spoiler cm = %.2f", spoiler->GetLiftInc(), spoiler->GetDragInc(), spoiler->GetMomentInc());
-	}
+
 #endif
   }
-
+	if (AERO_LSPLR == T)	WING("SPOIL %-32s %.6f %.4lf %.4lf %.4lf %.4lf",name, aero->GetTime(),aoa,cl,cdi,cm);
+	//-----------------------------------------------------------------------------------------
   // ground effect
   if (grnd && (hAgl < gAGL)) {
   	// Luc's comment : This formula is WRONG!!!
@@ -1176,7 +1189,7 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
   	//		Need to cross-check thoroughly, but I suspect that simply '*=' needds to be replaced with '+='
   	//		Making temporary replacement until verification complete.
 //    cl *= (1.0 - hAgl/gAGL) * geff;
-    cl += (1.0 - hAgl/static_cast<double> (gAGL)) * static_cast<double> (geff);
+    cl += (1.0 - hAgl/double(gAGL)) * double(geff);
    	if (CAerodynamicModel::log)	{
       CAerodynamicModel::log->Write("    cl = %f, g = %f, geff = %f H = %f, Gh = %f",
         cl,
@@ -1201,7 +1214,7 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
   double inducedDrag = qS * cdi;
   double parasiteDrag = 0.5 * rho * speed2 * area * cdp;
   double pitchMoment = qSc * cm;
-
+	if (AERO_LVALL == T)	WING("TOTAL %.6f   Aoa=%.4lf L=%.4lf D=%.4lf M=%.4lf",aero->GetTime(),aoa,lift,inducedDrag,pitchMoment);
   // Force vectors in WingSection coordinates
   // Luc's comment : This paragraph is LH (an RH version is commented below)
   SVector relLiftVector = { 0.0, lift * ca, lift * sa };
@@ -1233,20 +1246,20 @@ void CAeroModelWingSection::ComputeForces(SVector &v_, double rho, double soundS
     CAerodynamicModel::LogVector  (liftVector,      "  lift");
     CAerodynamicModel::LogVector  (dragVector,      "  drag");
     CAerodynamicModel::LogVector  (momentVector,    "  moment");
-    CAerodynamicModel::log->Write (                 "  End CAeroModelWingSection::ComputeForces()");
+    CAerodynamicModel::log->Write (                 "  End CAeroWingSection::ComputeForces()");
   }
 #endif
 }
 
-const SVector& CAeroModelWingSection::GetLiftVector() const {
+const SVector& CAeroWingSection::GetLiftVector() const {
   return liftVector;
 }
 
-const SVector& CAeroModelWingSection::GetDragVector() const {
+const SVector& CAeroWingSection::GetDragVector() const {
   return dragVector;
 }
 
-const SVector& CAeroModelWingSection::GetMomentVector() const {
+const SVector& CAeroWingSection::GetMomentVector() const {
   return momentVector;
 }
 
@@ -1283,7 +1296,7 @@ CPhysicModelAdj::CPhysicModelAdj ()
 	return;
 }
 //----------------------------------------------------------------
-//  Reda the parameters
+//  Read the parameters
 //----------------------------------------------------------------
 void CPhysicModelAdj::Init(char *phyFilename)
 { //-- Read from stream file --------------------------------

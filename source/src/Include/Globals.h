@@ -506,6 +506,8 @@ typedef struct {
   CLogFile          *logTerra;
 	CLogFile					*logScene;
 	CLogFile          *logStreet;
+	CLogFile					*logAeros;
+	CLogFile				  *logWings;
   //-------- Internal counters for tests -----------------------------
   U_INT              cnt1;
   U_INT              cnt2;
@@ -548,6 +550,7 @@ typedef struct {
   float         vmapZoom;   // Vector map zoom
   U_INT         vmapTrns;   // Transparency
   TC_SPOINT     vmapScrn;   // vmap screen
+	TC_SPOINT			vmapPos;		// screen position
   //-------------Global databank addresses ---------------------------
   STIME_ZONE *tmzTAB;           // Time zones
   char      **comTAB;           // Com type

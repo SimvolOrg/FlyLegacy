@@ -150,6 +150,7 @@ protected:
   //-----Demux --------------------------------------------------
   U_CHAR          demux;
   U_CHAR          tr;                       // Trace option
+	U_CHAR					nw;												// No wind option
   //-----DECODING AREA ------------------------------------------
   CAirport       *Apt;                      // Airport involved
   METAR_INFO      Info;
@@ -198,6 +199,8 @@ public:
   int   SelectArea();
   void  ChangeMetar(CMeteoArea *m);
   void  ChangeCloud(char nl);
+	//---------------------------------------------------------------
+	void	AddDefaultLayer(char n);
   //---------------------------------------------------------------
   void  UpdateArea(float dT);
   void  UpdateWind(float dT);
@@ -212,22 +215,22 @@ public:
   //--------------------------------------------------------------
   float  GetWindMPS();          // Wind speed in metre per second
   //------WIND MANAGEMENT ----------------------------------------
-  inline double     GetWindXcomposite()           {return windXSP;}
-  inline double     GetWindYcomposite()           {return windYSP;} 
+  double     GetWindXcomposite()           {return windXSP;}
+  double     GetWindYcomposite()           {return windYSP;} 
   //---Return default values ------------------------------------
-  inline float    GetMetarRadius()              {return Radius;}
+  float    GetMetarRadius()              {return Radius;}
   //---Get WIND PARAMETERS --------------------------------------
-  inline float    WindFrom()                    {return windDIR;}
-  inline float    WindRoseDirection()           {return windROS;}
-  inline float    WindDirection()               {return windTDR;}
-  inline float    WindSpeed()                   {return windKTS;}
+  float    WindFrom()                    {return windDIR;}
+  float    WindRoseDirection()           {return windROS;}
+  float    WindDirection()               {return windTDR;}
+  float    WindSpeed()                   {return windKTS;}
   //---Get Barometer --------------------------------------------
   //-------------------------------------------------------------
-  inline float    GetCloudCeil()      {return cArea->GetCeil();}
-  inline int      GetCloudLayer()     {return cArea->GetLayer();}
+  float    GetCloudCeil()      {return cArea->GetCeil();}
+  int      GetCloudLayer()     {return cArea->GetLayer();}
   //-------------------------------------------------------------
-  inline void     SetCeil(float h)    {cArea->SetCeil(h);}
-	inline float		GetTurbulence(float dT)	{return wTRB.TimeSlice(dT);}
+  void     SetCeil(float h)    {cArea->SetCeil(h);}
+	float		GetTurbulence(float dT)	{return wTRB.TimeSlice(dT);}
 };
 
 #endif // WEATHER_H_

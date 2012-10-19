@@ -260,7 +260,6 @@ public:
 	void				InitState();
 	//--- Return data ---------------------------------------------------
   //! Returns altitude above ground in feet
-	float                     GetUserAGL()				{return 0;}
   //! Returns vehicle moments of inertia (kg m^2)
 	SVector*    GetMomentOfInertia()				{return (&tb);}
   //! Returns velocity vector in inertial frame (m/s)
@@ -275,12 +274,11 @@ public:
   CVector*    GetAirspeed();
   //! Returns airspeed with body orientation reference
   CVector*    GetRelativeBodyAirspeed();
-  //! Returns indicated airspeed in feet / sec
-  void GetIAS(double &spd); // IAS in ft/s
   //! Returns indicated airspeed in knts
-  void GetKIAS(double &spd); // KIAS
+  void ComputeAirspeed(); // KIAS
   //! Returns true airspeed in feet / sec
   void GetTAS(double &spd); // TAS in ft/s
+	double			GetTAS()					{return ktas;}
   //! Returns indicated airspeed in knts
   double& GetPreCalculedKIAS () {return kias;} //
   //! Returns object angular velocity in object coordinates (rad/s)
@@ -439,8 +437,10 @@ public:
 	//-----------------------------------------------------------------------------------------
 protected:
 	//--- Engine parameters --------------------------------------------------------
-  char   nEng;															// Engine number
+  U_CHAR nEng;															// Engine number
 	U_CHAR engR;															// Number of running engines
+	U_CHAR rfu1;															// Number of idle engines
+	U_CHAR rfu2;															// Futur use
 	//--- Aero parameters ----------------------------------------------------------
   float  dihedral_coeff;										///< dihedral coeff SVH <dieh>
   float  acrd_coeff;												///< acrd coeff in SVH file
@@ -461,10 +461,11 @@ protected:
 public:
 	inline  void	IncWheelBrake()										{wBrk++;}
 	inline  int   GetWheelBrake()										{return wBrk;}
-	//---Engine internal interface -------------------------------------------------
-	inline  void RazEngR()										{engR	= 0;}
-	inline  void IncEngR()										{engR++;}
-	inline  void DecEngR()										{engR--;}
+	//---Engine interface ----------------------------------------------------------
+	bool AllEngStopped()							{return eng.AllEngStopped();}
+	void RazEngR()										{engR	= 0;}
+	void IncEngR()										{engR++;}
+	void DecEngR()										{engR--;}
 protected:
   //--- PLOT parameter table -----------------------------------------------------
   PLOT_PM   plotPM[16];                    // Plot parameters table
@@ -503,8 +504,8 @@ protected:
   double    main_wing_incid;               ///< stocking the main wing incidence value DEG
   float     main_wing_aoa_min;             ///< stocking AoA min RAD
   float     main_wing_aoa_max;             ///< stocking AoA max RAD
-
-  double    kias;
+	double		ktas;														// True airspeed
+  double    kias;														// Indicated airspeed
 };
 //========================================================================================
 // The CAirplane object represents a fixed-wing aircraft
@@ -566,7 +567,6 @@ public:
   //--- Engine interface --------------------------------------------------------
   void              GetAllEngines(std::vector<CEngine*> &engs);
   void              CutAllEngines()     {eng.CutAllEngines();}
-  void              EnginesIdle()       {eng.EnginesIdle();}
 	void							HereWeCrash()       {eng.AbortEngines();}
 	//-----------------------------------------------------------------------------
   double            GetPositionAGL()  {return whl.GetPositionAGL();}

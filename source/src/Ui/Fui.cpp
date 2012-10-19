@@ -6246,8 +6246,16 @@ void CFuiRwyEXT::ScaleAllRWY()
 //      the window canva.
 //
 //----------------------------------------------------------------------------------
-//	Return text to draw
+//	Get selected runway from the runway description list
 //----------------------------------------------------------------------------------
+void CFuiRwyEXT::SelectRWY(CAirport *apt)
+{	nSLT = rwyBOX.GetSelectedNo();
+  Slot = (CRwyLine*)rwyBOX.GetSelectedSlot();
+	if (0 == Slot)		return;
+	sRwy	=		apt->FindRunway(Slot->GetHiEndID());
+	return;
+	}
+
 //----------------------------------------------------------------------------------
 //  Draw all runway
 //----------------------------------------------------------------------------------
@@ -6321,11 +6329,9 @@ void CFuiRwyEXT::InitRunwayEnds()
   while (slot)
   { char *hi	= slot->GetHiEndID();
 		cMENU[k]	= hi;
-		pMENU[k]	= slot;
 		k++;
 		char *lo  = slot->GetLoEndID();
 		cMENU[k]	= lo;
-		pMENU[k]	= slot;
 		k++;
 		slot  = (CRwyLine*)rwyBOX.GetSlot(No++);
   }

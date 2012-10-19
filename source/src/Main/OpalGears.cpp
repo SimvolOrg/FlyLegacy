@@ -69,9 +69,6 @@ void  CGearOpal::GetGearPosition(CVector &mp,double  &rad)
   rad   = Radius;
   return;
 }
-//---------------------------------------------------------------------------------
-//  Return torque due to differential braking
-//---------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------
 //  Compute wheel shape and contact point relative to COG
@@ -279,7 +276,7 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 		//--- Simulate banking on turn ---------------------------------
     double turn_rate  = speed * tan (angr) * base;      
     double lat_acc    = speed * turn_rate;
-    banking						= lat_acc * mveh->GetMassInKgs() * 0.25;
+    banking						= lat_acc * mveh->GetMassInKgs() * gearData->mgsp->GetBankCoef();
 		//---TRACE("GEAR turn %.4f",gearData->deflect);
     //-- turn nose wheel in 3D model --------------------------------
     susp->TurnWheelTo(gearData->kframe);

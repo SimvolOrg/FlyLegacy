@@ -1099,7 +1099,7 @@ void  CModelACM::LoadFrom(char* acmFilename)
 		txd.apx  = 0xFF;
 		txd.azp  = transparent;
 		txd.Dir  = FOLDER_ART;
-    tRef = globals->txw->GetM3DPodTexture(txd);
+    tRef = globals->txw->Get3DTexture(txd);		//GetM3DPodTexture(txd);
     U_INT obj = globals->txw->Get3DObject(tRef);
     part->SetTexREF(tRef,obj);
     //-------------------------------------------------------------------

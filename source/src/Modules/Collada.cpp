@@ -1399,7 +1399,7 @@ void ColladaParser::SetMaterial(CAcmPart *part,char *kmat)
   strncpy(txd.name,nim->tname,FNAM_MAX);
 	txd.apx = 0xFF;
 	txd.azp = 0x00;
-  void *ref = globals->txw->GetM3DPodTexture(txd);
+  void *ref = globals->txw->Get3DTexture(txd);			//GetM3DPodTexture(txd);
   U_INT obj = globals->txw->Get3DObject(ref);
   part->SetTexREF(ref,obj);
   return;

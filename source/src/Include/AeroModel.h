@@ -40,9 +40,9 @@
 //=====================================================================================
 class CAeroControlChannel;
 class CAerodynamicModel;
-class CAeroModelWingSection;
+class CAeroWingSection;
 class CAcmFlap;
-class CAeroModelFlap;
+class CAeroMovingPart;
 //=====================================================================================
 //  Structure for coefficients
 //=====================================================================================
@@ -59,14 +59,14 @@ struct AERO_ADJ {
 //
 //=====================================================================================
 /*!
- * The CAeroModelAirfoil class represent an airfoil (cross-) section.
+ * The CAeroAirfoil class represent an airfoil (cross-) section.
  * It contains the aerodynamic properties of the section.
  */
-class CAeroModelAirfoil : public CStreamObject
+class CAeroAirfoil : public CStreamObject
 {
 public:
-  CAeroModelAirfoil (void);
-  ~CAeroModelAirfoil (void);
+   CAeroAirfoil (CAerodynamicModel *a);
+  ~CAeroAirfoil (void);
 
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
@@ -75,13 +75,9 @@ public:
   // Initialize the Airfoil for aerodynamic calculations
   void Setup(CAerodynamicModel *wng);
 
-  // CAeroModelAirfoil methods
-  const char*     GetAirfoilName (void);
-#ifdef _DEBUG
-  const double    GetLiftCoefficient(double aoa, double mach, const char *name = NULL);
-#else
+  // CAeroAirfoil methods
+  const char*     GetAirfoilName () {return name;};
   const double    GetLiftCoefficient(double aoa, double mach);
-#endif
   const double    GetInducedDragCoefficient(double aoa, double mach);
   const double    GetMomentCoefficient(double aoa, double mach);
   // Luc's comment : Adding dragParasite support
@@ -89,9 +85,13 @@ public:
 
   const float&    GetAoAMin (void) {return stallAlphaMin;}
   const float&    GetAoAMax (void) {return stallAlphaMax;}
-
+	//---------------------------------------------------------
+	char						GetTrace()			{return T;}
+	//---------------------------------------------------------
 protected:
-  std::string     name;           ///< Airfoil name
+	char						T;							// Trace indicator
+	CAerodynamicModel *aero;
+  char						*name;           ///< Airfoil name
   float           stallAlphaMin;  ///< Minimum stall AOA (radians)
   float           stallAlphaMax;  ///< Maximum stall AOA (radians)
   // Note on mdrag :(For now this is induced drag + parasite drag. 
@@ -106,23 +106,30 @@ protected:
   float           parasiteDrag;   ///< Parasite drag coefficient needs to be stored separately
 };
 
-
-
 //==================================================================================
-/*!
- * A CAeroModelWingSection objects represents a part of an aerodynamic surface,
- * ie. it is a part of a wing or tail.
- */
+//	TRACE LEVEL
+//==================================================================================
+#define AERO_LNONE (0)
+#define AERO_LWING (1)
+#define AERO_LFLAP (2)
+#define AERO_LTRIM (3)
+#define AERO_LSPLR (4)
+#define AERO_LVALL (5)
+//==================================================================================
+//
+// A CAeroWingSection objects represents a part of an aerodynamic surface,
+// ie. it is a part of a wing or tail.
+//
 // JS NOTE:  A CAcmFlap object is added to support the flap animation when
 //          the wing has such feature (a Flap object)
 //================================================================================
-class CAeroModelWingSection : public CStreamObject {
+class CAeroWingSection : public CStreamObject {
   friend class CAerodynamicModel;
 
 public:
   // Constructors / destructor
-  CAeroModelWingSection (CVehicleObject *v,char* name);
- ~CAeroModelWingSection (void);
+  CAeroWingSection (CVehicleObject *v,char* name);
+ ~CAeroWingSection (void);
 
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
@@ -152,15 +159,16 @@ public:
   const CVector& GetSpeedVector      (void) const {return speedVector;}
   const double&  GetWingIncidenceDeg (void) const {return bAng.x;}
   //--------------------------------------------------------------------
-  void  AddFlap(char *name)  {mflap->AddFlap(name);}
-	bool	IsRudder()	{return (strcmp(name.c_str(),"wing Tail w/rudder") == 0);}
+  void  AddFlap(char *name)		{mflap->AddFlap(name);}
+	bool	IsRudder()	{return (strcmp(name,"wing Tail w/rudder") == 0);}
+	
   //--------------------------------------------------------------------
 protected:
   //--------------------------------------------------------------------
   CVehicleObject           *mveh;             // Mother Vehicle
   CAcmFlap                 *mflap;            // Flap moving parts
-  std::string               name;             ///< WingSection name
-  std::string               foil;             ///< Airfoil name
+  char                     *name;             ///< WingSection name
+  char                     *foil;             ///< Airfoil name
   float                     area;             ///< Wing area (sq. m.)
   float                     span;             ///< Wing span (m.)
   CVector                   bPos;             ///< Aerodynamic center
@@ -185,14 +193,16 @@ protected:
   double                    com_;             ///<
   CVector                   speedVector;      ///< 
   CFmtxMap                 *mflpS;            // Flap speed
- // CDataMap                 *flpS;             ///< flap speed table
+	//----------------------------------------------------------------------------
+  char											T;								// Trace level
   //----------------------------------------------------------------------------
-  std::map<std::string,CAeroModelFlap*> flapMap;    ///< Flap data
-  std::map<std::string,CAeroModelFlap*> spoilerMap; ///< Spoiler data
-  std::map<std::string,CAeroModelFlap*> trimMap;    ///< Trim data
+  std::map<std::string,CAeroMovingPart*> flapMap;    ///< Flap data
+  std::map<std::string,CAeroMovingPart*> spoilerMap; ///< Spoiler data
+  std::map<std::string,CAeroMovingPart*> trimMap;    ///< Trim data
   //------------------------------------------------------------------------------
   // aerodynamic calculation data
-  CAeroModelAirfoil*  airfoil;        ///< Airfoil object, direct ptr to avoid map lookup
+	CAerodynamicModel  *aero;
+  CAeroAirfoil*  airfoil;        ///< Airfoil object, direct ptr to avoid map lookup
   double              chord;          ///< Average chord in meters
   CRotationMatrixBHP  bAngMatrix_bhp; ///< Wingsection orientation in matrix form
   CRotationMatrixHPB  bAngMatrix_hpb; ///< Wingsection orientation in matrix form
@@ -202,20 +212,20 @@ protected:
 };
 //===================================================================================
 //
-// A CAeroModelFlap object represents a trailing edge flap, a trimmer or
+// A CAeroMovingPart object represents a trailing edge flap, a trimmer or
 // a spoiler attached to a WingSection
 //
 //===================================================================================
-class CAeroModelFlap : public CStreamObject
+class CAeroMovingPart : public CStreamObject
 {
 public:
   // Constructor
-  CAeroModelFlap ( CVehicleObject *veh,CAeroModelWingSection *w);
- ~CAeroModelFlap();
+  CAeroMovingPart ( CVehicleObject *veh,CAeroWingSection *w);
+ ~CAeroMovingPart();
   // CStreamObject methods
   int   Read (SStream *stream, Tag tag);
 
-  // CAeroModelFlap methods
+  // CAeroMovingPart methods
   const char* GetChannelName (void);
   float       GetLiftInc (void);            ///< Return lift coeff increment
   float       GetDragInc (void);            ///< Return drag coeff increment
@@ -223,13 +233,13 @@ public:
   void        Print3D (void);
   void        ReadChannel();
   //---------------------------------------------------------------------------
-  inline void Store(CAeroControlChannel *p)		{aero = p;}
+  void				Store(CAeroControlChannel *p)		{chan = p;}
   //---------------------------------------------------------------------------
 protected:
 	CVehicleObject       *mveh;								// Mother vehicle
-  char                      type;           // Type of surface (F,S,T)
-  CAeroModelWingSection    *wing;           // Mother wing
-  CAeroControlChannel *aero;           // Corresponding channel
+  char                    type;							// Type of surface (F,S,T)
+  CAeroWingSection  *wing;							// Mother wing
+  CAeroControlChannel  *chan;								// Corresponding channel
   std::string           channel;            ///< Aero model channel name
   std::set<std::string> parts;              ///< Set of external model part names
   CFmtxMap             *mlift;              // Lift coef = f(deflec)
@@ -265,8 +275,8 @@ public:
   void DrawAerodelData (const double &lenght);
   inline void SetLogPointer (CLogFile *log_) {log = log_;}
   // lookup functons for airfoils and wingsections
-  CAeroModelAirfoil* GetAirfoil(const std::string &name);
-  CAeroModelWingSection* GetWingSection(const std::string &name);
+  CAeroAirfoil* GetAirfoil(char *n);
+  CAeroWingSection* GetWingSection(const std::string &name);
   SVector &GetForce();
   SVector &GetMoment();
 
@@ -283,25 +293,29 @@ protected:
   float     ac;           ///< Longitudinal aerodynamic centre adjust
   bool      debugOutput;  ///< Enable real-time debug output
 	//---------------------------------------------------------------------
-	CAeroModelWingSection *rudder;				// Rudder section
+	CAeroWingSection *rudder;				// Rudder section
 	//---------------------------------------------------------------------
 	char			sreg;					// Ground speed regulator on/off
+	char			T;						// Trace indicator
+	char      wnam[64];			// Traced wing
 	//---------------------------------------------------------------------
-  std::map<std::string,CAeroModelAirfoil*>      airfoilMap; ///< Map of airfoil data
-  std::map<std::string,CAeroModelWingSection*>  wingMap;    ///< Map of wing sections
+  std::map<std::string,CAeroAirfoil*>      airfoilMap; ///< Map of airfoil data
+  std::map<std::string,CAeroWingSection*>  wingMap;    ///< Map of wing sections
 	//---------------------------------------------------------------------
   // aerodynamic state data
   CVector force;
   CVector moment;
+	float	  Time;
 	//---------------------------------------------------------------------
 public:
 	void		SetVEH(CVehicleObject *v)	{mveh = v;}
-  // logging
+  //--- logging ---------------------------------------------------------
   static CLogFile* log;
   static void LogVector(const SVector &v, const char* name);
   static void LogScalar(const double &d, const char* name);
 	//---------------------------------------------------------------------
 	void		SpeedRegulation(char s)	{sreg = s;}
+	float		GetTime()								{return Time;}
 };
 //=====================================================================================
 // The PHY file contains the physics adjustments for the aircraft

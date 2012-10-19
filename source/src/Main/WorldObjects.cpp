@@ -73,7 +73,7 @@
 #include "../Include/FuiPlane.h"
 #include "../Include/Joysticks.h"     //  for CUFOObject 
 #include "../Include/MagneticModel.h" // iang correction from .SIT file ln 161
-#include "../Include/Atmosphere.h"    // CVehicleObject::GetIAS (double &spd)
+#include "../Include/Atmosphere.h"    
 #include "../Include/Weather.h" 
 #include "../Include/3dMath.h"
 #include "../Include/PlanDeVol.h"
@@ -437,7 +437,8 @@ CVehicleObject::CVehicleObject (void)
   main_wing_incid = 0.0;                ///< stocking the main wing incidence value DEG
   main_wing_aoa_min = 0.0f;             ///< stocking AoA min RAD
   main_wing_aoa_max = 0.0f;             ///< stocking AoA max RAD
-  kias = 0.0;
+  kias	= 0;
+	ktas	= 0;
 }
 //------------------------------------------------------------------------
 //  Initialisation specific to user vehicle
@@ -603,65 +604,35 @@ void CVehicleObject::ReadFinished (void)
   // If NFO file was specified, instantiate vehicle info member
   // JS: No NFO => no aircratf. Just stop
   if (0 == *nfoFilename)  gtfo("NO NFO file, so no Aircraft");
-  //MEMORY_LEAK_MARKER ("nfo")
+	//--- Process NFO file ----------------
   nfo.Init(nfoFilename);
-  //MEMORY_LEAK_MARKER ("nfo")
-	// Read Camera Manager
-  //MEMORY_LEAK_MARKER ("cam")
-  //if (*nfo.GetCAM()) cam  = new CCameraManager (this,nfo.GetCAM());
+	//---- Read panel Cameras -------------
 	globals->ccm->ReadPanelCamera(this,nfo.GetCAM());
-  //MEMORY_LEAK_MARKER ("cam")
-
-  // Read Level of Detail models.  Must be loaded first
-  //MEMORY_LEAK_MARKER ("lod")
+  //--- Read Level of Detail models.  Must be loaded first
   lod.Init(nfo.GetLOD(),type);
-  //MEMORY_LEAK_MARKER ("lod")
-  //MEMORY_LEAK_MARKER ("phy")
+	//--- Read PHY file -------------------
   phy.Init(nfo.GetPHY());
-  //MEMORY_LEAK_MARKER ("phy")
-  // Instantiate all user vehicle subcomponents defined in NFO file
-  // Read Simulated Vehicle
-  //MEMORY_LEAK_MARKER ("svh")
+	//--- process SVH ---------------------
   svh.Init(nfo.GetSVH(), &wgh);
-  //MEMORY_LEAK_MARKER ("svh")
-
-  // Read Aerodynamic Model
-  //MEMORY_LEAK_MARKER ("wng")
+  //--- Read Aerodynamic Model ----------
 	wng.Init(nfo.GetWNG());
-  //MEMORY_LEAK_MARKER ("wng")
-
-  // Read Pitot/Static Systems
-  //MEMORY_LEAK_MARKER ("pss")
+  //--- Read Pitot/Static Systems -------
   pss.Init(nfo.GetPSS());
-  //MEMORY_LEAK_MARKER ("pss")
-
-  // Read Ground Suspension
-  //MEMORY_LEAK_MARKER ("whl")
+  //--- Read Ground Suspension  ---------
 	whl.Init(&wgh,nfo.GetWHL());
-  //MEMORY_LEAK_MARKER ("whl")
-  // Read Variable Loadouts
-  //MEMORY_LEAK_MARKER ("vld")
+  //--- Read Variable Loadouts
   vld.Init(&wgh,nfo.GetVLD());
-  //MEMORY_LEAK_MARKER ("vld")
-
-	  // Read External Lights
-  //MEMORY_LEAK_MARKER ("elt")
+	//--- Read External Lights
   elt.Init(nfo.GetELT());
-  //MEMORY_LEAK_MARKER ("elt")
-
-  // Read Engine Manager
-  //MEMORY_LEAK_MARKER ("eng")
+  //--- Read Engine Manager
   eng.Init(nfo.GetENG());
-  //MEMORY_LEAK_MARKER ("eng")
-
   /// \todo Why are AMP and GAS files dependent upon ENG?  Particularly
   //        for the case of gliders, an AMP may exist without an ENG
-
-  // Read Fuel System
+  //--- Read Fuel System ------
   gas.Init(nfo.GetGAS(), &eng, &wgh);
-  //---Read Electrical Subystems. ------------------------------- 
-  amp.Init(nfo.GetAMP(), &eng);				// MARK TEST
-  //--- Read Cockpit Manager -----------------------------------
+  //---Read Electrical Subystems. --------
+  amp.Init(nfo.GetAMP(), &eng);				
+  //--- Read Cockpit Manager -------------
   pit.Init(nfo.GetPIT());
   //--- Read Control Mixer
   mix.Init(nfo.GetMIX());
@@ -717,6 +688,7 @@ void CVehicleObject::TraceMsgPrepa (SMessage *msg)
 void CVehicleObject::PrepareMsg (void)
 {	pit.PrepareMsg(this);				// Prepare panel gauges
   ckl.PrepareMsg(this);				// Check list messages
+	mix.PrepareMixers();				// Init all mixers chn with controller pointer
 	return;	
 }
 //----------------------------------------------------------------------------
@@ -803,7 +775,7 @@ void CVehicleObject::Update (float dT,U_INT FrNo)
   //
   if (globals->slw->IsEnabled ())   if (upd == 0) return;
   // precalculate kias once, allowing minor CPU waste in multicalling
-  GetKIAS (kias);
+  ComputeAirspeed();
 
   //! Needs a framerate of at least 40 to work properly
   //! and the timeslice must be equal size that is Simulate()
@@ -883,31 +855,11 @@ void CVehicleObject::GetTAS (double &spd) // TAS in forward ft/s
 	return;
 }
 //--------------------------------------------------------------------
-// Compute indicated airspeed
+// Compute airspeed
 //--------------------------------------------------------------------
-void CVehicleObject::GetIAS (double &spd) // IAS in forward ft/s
-{ /// returns indicated airspeed in ft/sec
-  spd = 0.0;
-  double pt = pss._total_pressure_node;                                  // INHG_TO_PSF;
-  double p  = globals->atm->GetPressureSlugsFtSec (); // INHG_TO_PSF;
-  double r  = globals->atm->GetDensitySlugsFt3 ();    //
-  double q  = ( pt - p );  // dynamic pressure
-  // Now, reverse the equation (normalize dynamic pressure to
-  // avoid "nan" results from sqrt)
-  if ( q < 0.0 ) { q = 0.0; }
-  // Publish the indicated airspeed
-  spd = sqrt ((2.0 * q) / r);
-  // correction for alt KTAS==>KIAS
-  spd *= 1.0 / (1.0 + (GetPosition ().alt * 2e-5));
-	return;
-}
-//--------------------------------------------------------------------
-// Compute indicated airspeed
-//--------------------------------------------------------------------
-void CVehicleObject::GetKIAS (double &spd) // KIAS in knts
+void CVehicleObject::ComputeAirspeed () // KIAS in knts
 {
   /// returns indicated airspeed in knts
-  spd = 0.0;
   double pt = pss._total_pressure_node;                                  // INHG_TO_PSF;
   double p  = globals->atm->GetPressureSlugsFtSec (); // INHG_TO_PSF;
   double r  = globals->atm->GetDensitySlugsFt3 ();    //
@@ -915,11 +867,12 @@ void CVehicleObject::GetKIAS (double &spd) // KIAS in knts
   // Now, reverse the equation (normalize dynamic pressure to
   // avoid "nan" results from sqrt)
   if ( q < 0.0 ) { q = 0.0; }
-  // Publish the indicated airspeed
-  spd = sqrt ((2.0 * q) / r);
-  // correction for alt KTAS==>KIAS
-  spd *= 1.0 / (1.0 + (GetPosition ().alt * 2e-5));
-  spd = FpsToKt (spd);
+  // Publish the true airspeed
+  double spd = sqrt ((2.0 * q) / r);
+	spd        = FpsToKt (spd);					// In knot
+	ktas			 = spd;										// True airspeed
+  // correction for alt KTAS==>KIAS		
+  kias			 = spd / (1.0 + (geop.alt * 2e-5));
 	return;
 }
 //---------------------------------------------------------------------------------

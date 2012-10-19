@@ -262,7 +262,6 @@ public:
   CEngineModel        *GetEngineModel()       {return ngnModel;}
   //---ENGINE Actions -------------------------------------------
   int       AbortEngine(char r);
-  int       EngineIdle();
   int       StopEngine(char r);
   int       RefreshState();
   int       CrankEngine();
@@ -291,11 +290,12 @@ public:
   int       AddToPlotMenu(char **menu, PLOT_PM *pm, int k);
   bool      PlotParameters(PLOT_PP *pp,Tag id, Tag type);
 	//-------------------------------------------------------------
-	inline void					   Reset()	{ngnModel->Reset();}
+	void			Reset()	{ngnModel->Reset();}
   //-------------------------------------------------------------
-  inline CFuelTap       *GetTapItem()     {return Tap;}
+  CFuelTap *GetTapItem()			{return Tap;}
   //-------------------------------------------------------------
-  inline bool            EngRunning()     {return eData->EngRunning();}
+  bool      EngRunning()			{return eData->EngRunning();}
+	bool			Activity()				{return eData->EngActivity();}
   //-------------------------------------------------------------
   inline double          GetThrustInNewton () {return (eData->e_Thrust * LBS_TO_NEWTON);}
   inline double          GetTorqueInNM     () {return (eData->e_Torque * LBFFT_TO_NM);}
@@ -357,8 +357,8 @@ public:
   /*! */
   void          Timeslice (float dT,U_INT FrNo);
   void          CutAllEngines();
-  void          EnginesIdle();
   void          AbortEngines();
+	bool					AllEngStopped();
   //---- PLotting interface -----------------------------------------------
   int           AddToPlotMenu(char **menu, PLOT_PM *pm, int k);
   void          PlotParameters(PLOT_PP *pp,Tag id, Tag type);
@@ -674,28 +674,30 @@ public:
   CAeroControlChannel (char * name);
 
   // CStreamObject methods
-  virtual int   Read (SStream *stream, Tag tag);
+  int   Read (SStream *stream, Tag tag);
 
   // CAeroControlChannel methods
   float         Value (float value);
   //------------------------------------------------------------------
-  inline bool SameName(char *n)   {return (0 == strncmp(chn,n,31));}
-  inline void SetDeflect(float f) {deflect = f;}
-  inline void SetScaled (float f) {scaled  = f; radians = DegToRad(f);}
-  inline void SetKeyframe(float f){keyframe = f;}
+  bool SameName(char *n)				{return (0 == strncmp(chn,n,31));}
+  void SetDeflect(float f)			{deflect = f;}
+  void SetScaled (float f)			{scaled  = f; radians = DegToRad(f);}
+  void SetKeyframe(float f)			{keyframe = f;}
+	void SetCTRL(CAeroControl *c)	{ctrl = c;}
   //------------------------------------------------------------------
-  inline float GetRadians()         {return radians;}
-  inline float GetKeyframe()        {return keyframe;}
+  float GetRadians()         {return radians;}
+  float GetKeyframe()        {return keyframe;}
   //------------------------------------------------------------------
-  inline float GetPos()             {return pos;}
-  inline float GetNeg()             {return neg;}
+  float GetPos()             {return pos;}
+  float GetNeg()             {return neg;}
   //------------------------------------------------------------------
-  inline char *GetName()            {return chn;}
+  char *GetName()            {return chn;}
   //----ATTRIBUTES ---------------------------------------------------
 protected:
-  char    chn[32];  // Channel name
-  float   pos;      ///< Positive mixer percentage
-  float   neg;      ///< Negative mixer percentage
+  char    chn[32];			// Channel name
+	CAeroControl *ctrl;		// Controller
+  float   pos;					///< Positive mixer percentage
+  float   neg;					///< Negative mixer percentage
   //------Mixer values -----------------------------------------------
   float   deflect;    // Raw values  (in [-1,+1]
   float   scaled;     // Scaled value in  degre
@@ -709,15 +711,17 @@ class CChanelMixer : public CStreamObject {
   //----ATTRIBUTES ------------------------------------
 protected:
   CVehicleObject *mveh;
+	MIXER_DATA     *data;
   //----METHODS----------------------------------------
 public:
   CChanelMixer (CVehicleObject *v);
  ~CChanelMixer (void);
-
-  // CStreamObject methods
+  
+  //---  CStreamObject methods ---------------
   int   Read (SStream *stream, Tag tag);
   CAeroControlChannel *GetRudder();
-  // CControlMixer methods
+	void  PrepareMsg();
+  //--- CChanelMixer methods -----------------
   void  Timeslice (float dT,U_INT FrNo);
   void  LinktoWing();
   void  SetName(char *n);
@@ -749,11 +753,11 @@ protected:
 public:
   CControlMixer ();
  ~CControlMixer ();
-	void Init(char* mixFilename);
+	void	Init(char* mixFilename);
   // CStreamObject methods
-  virtual int   Read (SStream *stream, Tag tag);
-  //virtual void  ReadFinished (void);
-
+  int   Read (SStream *stream, Tag tag);
+  //-------------------------------------------------------
+	void	PrepareMixers();
   // CControlMixer methods
   void  AddMixer(CChanelMixer *mix, char *name);
   void  Timeslice (float dT,U_INT FrNo);

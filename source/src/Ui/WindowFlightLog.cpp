@@ -448,7 +448,7 @@ void	CFuiFlightLog::AddDBrecord(void *rec,DBCODE cd)
 				StoreExtremities(rwy->GetDXL(),rwy->GetDYL());
 				return;
 			}
-		//--- Record is an ILS for previous runway ------
+		//--- Record is an ILS frequency for previous runway ------
 		case COM_BY_AIRPORT:
 			{	CComLine *com = (CComLine *)rec;
 				if (line)	line->SetILS(com);

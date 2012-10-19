@@ -31,7 +31,6 @@
 #include "../Include/ScenerySet.h"
 #include "../Include/Fui.h"
 #include "../Include/Pod.h"
-
 using namespace std;
 struct SQL_DB;
 //==========================================================================
@@ -207,8 +206,8 @@ void CSceneryDBM::LookForPOD(char *path)
 			  else			ProcessPOD(path,fn);				}
     }
   }
-    ulCloseDir(dirp);
-		return;
+  ulCloseDir(dirp);
+	return;
 }
 
 //--------------------------------------------------------------
@@ -372,7 +371,7 @@ void CSceneryDBM::Register (C_QGT *qgt)
 		pak->MountPODs(this);
 	}
 	//--- Load OSM databases ------------------------------
-	LoadBasesOSM(qgt);
+	if (globals->noOSM == 0)	LoadBasesOSM(qgt);
 	return;
 }
 //------------------------------------------------------------------------------

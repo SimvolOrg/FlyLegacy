@@ -1988,7 +1988,6 @@ protected:
 	//--- One texture object fro all components --------------------------------
 	U_INT														xOBJ;
 	//--------------------------------------------------------------------------
-  std::map<Tag,CFuiWindow*>       winHide;
   std::map<Tag,CFuiWindow*>       winMap;
   std::map<Tag,CFuiTheme*>        themeMap;
   std::vector<CFuiWindow*>        winList;        // Drawing priority
@@ -2070,6 +2069,8 @@ public:
   void    SetCrash()          {notec->SetActive();}
 	void		CaptureMouse(CFuiWindow *w)	{wCap	= w;}
 	void		CaptureRelease()						{wCap = 0;}
+	//--------------------------------------------------------------------------
+	bool		ToolNotAllowed();
   //--------------------------------------------------------------------------
   CFuiTextPopup *GetCrashNote() {return notec;}
   //--------------------------------------------------------------------------

@@ -51,23 +51,30 @@ class CFPlan;
 #define WPT_MODE_FPLAN  (0)       // Normal mode
 #define WPT_MODE_DIRECT (1)       // Direct To
 //============================================================================
+#define DRAW_LEG_NUL				(0)
+#define DRAW_LEG_STD				(1)					// Draw a standard line
+#define DRAW_LEG_FIN				(2)					// Draw final leg
+//============================================================================
 //  Vector Map Node
 //============================================================================
-class VMnode 
+class VMroute 
 {
   //----ATTRIBUTES-----------------------------------------------
-	CWPoint   *wpt;
+	CWPoint   *wpt;									// Origine Waypoint
+	CmHead    *obj;									// Database Waypoint
+	SPosition *pos;									// Object position
   //-------------------------------------------------------------
+	CmHead    *end;									// Ending node
+	CmHead    *org;									// Head origin
+	CmHead    *ext;									// Extremity
 public:
-	VMnode() {wpt = 0;}
+	VMroute() {wpt = 0;}
 	//-------------------------------------------------------------
-	SPosition *ObjPosition();
-	void       SetObject(CmHead *x);
-	CmHead    *GetOBJ();
-	void			 SetNodeDistance();
+	int				 ComputeLeg(CWPoint *A,CWPoint *B);
+	void			 LastLeg();
 	//-------------------------------------------------------------
-	inline void	SetNode(CWPoint *w)		{wpt = w;}
-
+	CmHead *GetORG()						{return org;}
+	CmHead *GetEXT()						{return ext;} 
 };
 //==================================================================================
 // Detail of current FLIGHT PLAN
@@ -241,7 +248,7 @@ private:
   //------------------Attributes --------------------------------------------
   U_SHORT                   nSeq;					// Sequence number 
   Tag                       type;         // Waypoint type
-	Tag												user;					// Waypoint usage
+	Tag												kind;					// Waypoint usage
   SPosition                 position;     // Geographic position
   int												altitude;     // Expected altitude at waypoint
   char                      dbKey[10];    // Database key value
@@ -306,7 +313,7 @@ public:
 	void    SetPosition(SPosition p);
   void		SetReferenceDIR(double d);
 	float		GoDirect(CVehicleObject *v);
-	void		CorrectDrift(CRadio *R, CVehicleObject *V);
+	void		CorrectDrift(CRadio *R);
 	//--- Position Management ----------------------------------
 	bool		CannotChange();
 	bool		HorizontalMove(SPosition *pos);
@@ -356,7 +363,7 @@ public:
 	inline void				SetAlti(char *al)			{strncpy(Alti,al,12); Alti[11] = 0;}
 	inline void       SetDist(char *di)			{strncpy(Dist,di,10); Dist[9]	 = 0;}
 	inline void				SetDBwpt(CmHead *obj)	{DBwpt = obj;}
-	inline void				SetUser(Tag u)				{user = u;}
+	inline void				SetKind(Tag u)				{kind = u;}
 	inline void       SetRefDirection()			{DBwpt->SetRefDirection(sDir);}
 	inline void				SetElevation(double a){position.alt= a;}
 	inline void				SetAltitude(double a)	{altitude = int(a);}
@@ -377,7 +384,7 @@ public:
 	inline char*      GetTkoRwy()						{return tkoRWY;}
 	inline char*      GetLndRwy()						{return lndRWY;}
 	inline SPosition* GetGeoP()							{return &position;}
-	inline Tag				GetUser()							{return user;}
+	inline Tag				GetKind()							{return kind;}
 	inline float			GetFrequency()				{return DBwpt->GetFrequency();}
 	inline float			GetDTK()							{return sDir;}	
 	inline float			GetCAP()							{return dDir;}
@@ -386,7 +393,6 @@ public:
 	//--------------------------------------------------------------
 	inline void				SetLast()							{last = 1;}
 	inline void				SetLandingMode()			{mode = WPT_MOD_LND;}
-	inline void				SetDirectMode()				{mode = WPT_MOD_DIR;}
 	inline void				SetLegMode()					{mode = WPT_MOD_LEG;}
 	inline void				SetMaxDistance()			{mDis = 50000;}
 	//--------------------------------------------------------------
@@ -402,7 +408,7 @@ public:
 	inline bool				NotFromFPL()	{return GetDBobject()->NoUPTR();}
 	inline bool				IsFromFPL()		{return GetDBobject()->HasUPTR();}
 	inline bool       IsLanding()		{return (mode == WPT_MOD_LND);}
-	inline char				IsDirect() 		{return (mode == WPT_MOD_DIR);}
+	inline bool				NoLanding()		{return (mode != WPT_MOD_LND);}
 	//-----------------------------------------------------------------------
 	};
 //===========================================================================
@@ -433,6 +439,7 @@ private:
   U_INT           Version;                    // Version
 	U_INT						NbWPT;											// Total waypoints
 	//---Flight plan management ------------------------------------
+	CRadio				 *RAD;												// Main radio
 	GPSRadio       *GPS;												// Radio GPS if any
 	CWPoint        *aWPT;												// Active waypoint
 	CWPoint        *uWPT;												// Updated waypoint
@@ -449,8 +456,7 @@ private:
 	int 						mALT;												// max Ceiling
 	int							cALT;												// Current ceil
 	//----------Route parameters ----------------------------------
-  VMnode       rOrg;                       // Origin
-  VMnode       rExt;                       // Destination
+	VMroute				route;											// fp routes
 	//--- LIST OF WAYPOINTS -----------------------------------------
 	CFlpLine        head;												// Title
   CListBox        wPoints;                    // List of way points
@@ -472,8 +478,8 @@ public:
 	void	WarnGPS();
 	int 	ModifyCeil(int inc);
 	void	UpdateAllNodes();
-	void	UpdateDirectNode(U_INT fr);
-	void	UpdateActiveNode(U_INT fr);
+	void	UpdateDirectNode();
+	void	UpdateActiveNode();
 	void	ActivateNode(CWPoint *wpt);
 	void	RestoreNode();
 	//---------------------------------------------------------------
@@ -536,48 +542,48 @@ public:
 	bool	Exist(int No);
 	//---------------------------------------------------------------
 	void	DrawOnMap(CFuiVectorMap *win);
-	void	DrawNode();
-	void	DrawOn3DW();
 	//---Interface to window FlightLog ------------------------------
 	void	Register(CFuiFlightLog *w);
 	//---------------------------------------------------------------
-	inline char				GetEdMode()				{return  edMOD;}							
-	inline CFuiFlightLog *GetWinPlan()	{return win;}
-	inline int        GetActSequence()	{return (aWPT)?(aWPT->GetSequence()):(0);}
-	inline CListBox	 *GetFBOX()         {	return &wPoints;}
-	inline void				Modify(char m)		{	modify |= m;}
-	inline char		   *GetFileName()			{	return Name;}
-	inline char		   *GetDescription()	{	return Desc;}
-	inline void				IncWPT()					{	NbWPT++;}
-	inline void				DecWPT()					{	NbWPT--;}
+	char				GetEdMode()				{return  edMOD;}							
+	CFuiFlightLog *GetWinPlan()	{return win;}
+	int        GetActSequence()	{return (aWPT)?(aWPT->GetSequence()):(0);}
+	CListBox	 *GetFBOX()         {	return &wPoints;}
+	void				Modify(char m)		{	modify |= m;}
+	char		   *GetFileName()			{	return Name;}
+	char		   *GetDescription()	{	return Desc;}
+	void				IncWPT()					{	NbWPT++;}
+	void				DecWPT()					{	NbWPT--;}
 	//--- Virtual pilot interface -----------------------------------
-	inline CWPoint   *GetActiveNode()		{return aWPT;}
+	CWPoint   *GetActiveNode()		{return aWPT;}
 	//--- Aircraft parameters ---------------------------------------
-	inline float			crsSpeed()				{return nmlSPD;}
-	inline float			aprSpeed()				{return aprSPD;}
-	inline int        maxCEIL()					{return mALT;}
-	inline int				actCEIL()					{return cALT;}
-	inline float			GetInDIS()				{return insDIS;}
+	float			crsSpeed()				{return nmlSPD;}
+	float			aprSpeed()				{return aprSPD;}
+	int       maxCEIL()					{return mALT;}
+	int				actCEIL()					{return cALT;}
+	float			GetInDIS()				{return insDIS;}
+	//--- Radio interface -------------------------------------------
+	void			SetRadio(CRadio *r)	{RAD = r;}
 	//---------------------------------------------------------------
-	inline void				Unprotect()				{edMOD = FPL_EDITABLE;}
-	inline void				Protect()					{edMOD = FPL_PROTECTED;}
-	inline bool				IsProtected()			{return (edMOD == FPL_PROTECTED);}
+	void			Unprotect()				{edMOD = FPL_EDITABLE;}
+	void			Protect()					{edMOD = FPL_PROTECTED;}
+	bool			IsProtected()			{return (edMOD == FPL_PROTECTED);}
 	//---------------------------------------------------------------
-	inline bool       IsUsed()					{return (State != FPL_STA_NUL);}
-	inline bool				IsEmpty()					{return (0 == NbWPT);}
-	inline bool       IsNotLast(U_INT s){return (s != NbWPT);}
-	inline bool       IsLast(U_INT s)		{return (s == NbWPT);}
-	inline bool				Inactive()				{return (State == FPL_STA_NUL);}
+	bool      IsUsed()					{return (State != FPL_STA_NUL);}
+	bool			IsEmpty()					{return (0 == NbWPT);}
+	bool      IsNotLast(U_INT s){return (s != NbWPT);}
+	bool      IsLast(U_INT s)		{return (s == NbWPT);}
+	bool			Inactive()				{return (State == FPL_STA_NUL);}
 	//--------------------------------------------------------------
-	inline int				Size()						{return NbWPT;}
+	int				Size()						{return NbWPT;}
 	//--------------------------------------------------------------
-	inline void				Refresh()					{if (win)	win->Refresh();}
-	inline CSlot     *Next(CSlot *s)		{return wPoints.NextPrimary(s);}
-	inline CSlot     *Prev(CSlot *s)		{return wPoints.PrevPrimary(s);}
+	void			Refresh()					{if (win)	win->Refresh();}
+	CSlot    *Next(CSlot *s)		{return wPoints.NextPrimary(s);}
+	CSlot    *Prev(CSlot *s)		{return wPoints.PrevPrimary(s);}
 	//---------------------------------------------------------------
-	inline CWPoint   *GetNearest()			{return nWPT;}
-	inline CWPoint   *HeadNode()				{return (CWPoint*)wPoints.HeadPrimary();}
-	inline CWPoint   *LastNode()				{return (CWPoint*)wPoints.LastPrimary();}
+	CWPoint   *GetNearest()			{return nWPT;}
+	CWPoint   *HeadNode()				{return (CWPoint*)wPoints.HeadPrimary();}
+	CWPoint   *LastNode()				{return (CWPoint*)wPoints.LastPrimary();}
 	//----------------------------------------------------------------
 };
 //=======================END OF FILE ======================================================================

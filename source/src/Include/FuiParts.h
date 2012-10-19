@@ -767,7 +767,9 @@ protected:
   int         mx;                         // Point of view
   int         my;                         // (dito)
 	//--- Selected runway -----------------------------------------------
+	int				nSLT;													// Slot number
 	CRunway  *sRwy;													// Selected runway
+	CRwyLine *Slot;													// Selected slot
 	//-------------------------------------------------------------------
   CFuiCanva	     *grh;										// Graph windows
 	CFuiPopupMenu	*ptko;										// List of runways for take off
@@ -797,6 +799,7 @@ public:
 	void	ScaleAllRWY();
 	int   GetRWYspan();
 	void	DrawRunways();
+	void	SelectRWY(CAirport *apt);
 	//--- Runway end points --------------------------------------------
 	void	InitRunwayEnds();
 };
@@ -807,7 +810,8 @@ public:
 class CFuiAptDetail: public CFuiRwyEXT, public CFuiWindow
 { //--------------Attributes --------------------------------------
 protected:
-  U_CHAR    vers;                         // version 
+  U_CHAR    vers;                         // version
+	U_CHAR    draw;													// Draw indicator 
   CObjPtr   Po;                           // Object smart pointer
   CAirport *Apt;                          // Airport description
   U_SHORT   type;                         // Type APT
@@ -877,6 +881,7 @@ public:
   void  NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
   void  NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn);
   bool  TuneRadioCom();
+	void	SetDrawingMark();
   //------------Database Management ------------------------------
   void  AddDBrecord(void *rec,DBCODE code);
   //--------------------------------------------------------------

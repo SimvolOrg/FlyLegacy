@@ -1344,11 +1344,11 @@ int  ReadInvertedTag(Tag *tag, SStream*stream)
 //	SStream constructor
 //==================================================================================
 void StreamWarn(char *pn, char *fn)
-{	TRACE("Can't open %s/%s",pn,fn);
+{	WARNINGLOG("Can't open %s/%s",pn,fn);
 	return;
 }
 //==================================================================================
-//	SStream constructor
+//	SStream constructor for read
 //==================================================================================
 SStream::SStream(CStreamObject *O,char *fn)
 {	ok = false;

@@ -787,11 +787,6 @@ CPropellerModel::~CPropellerModel (void)
 //---------------------------------------------------------------------------
 void CPropellerModel::Reset()
 { lift = 0.0f, drag = 0.0f, pirt = 0.0f, rift = 0.0f, dmge = 0.0f;
-  mlift = 0;
-  mdrag = 0;
-  mpirt = 0;
-  mrift = 0;
-  mfacP = 0;
   pdmge = NULL;
 	return;
 }
@@ -1099,7 +1094,9 @@ double CPropellerTRIModel::GetPowerRequired(void)
       Pitch = ((mxbd - mnbd) * bladP) + mnbd;   
     }
   }
-
+	//--- Temporary ---------------------------------------
+	if (0 == mlift)	
+		gtfo("mlift");
   //--- Calculate blade AoA
   blade_AoA = DegToRad (Pitch) - Advance;
   if (mlift) lift = mlift->Lookup (float(blade_AoA));// 

@@ -2769,15 +2769,6 @@ int  CEngine::StopEngine(char r)
   return 1;
 }
 //---------------------------------------------------------------------
-//  Engine idle
-//---------------------------------------------------------------------
-int CEngine::EngineIdle()
-{ eData->e_thro = 0.1f;
-  sound->SetEnginePitch(eData->Pitch());
-  ngnModel->Idle();
-  return 1;
-}
-//---------------------------------------------------------------------
 //  Stop engine
 //  FOR now just stop engine
 //  Next when sound is correctly handled we will do a nice
@@ -3143,17 +3134,15 @@ void CEngineManager::CutAllEngines()
   return;
 }
 //----------------------------------------------------------------------
-//  All engines idels
+//  Check if all engine stopped
 //----------------------------------------------------------------------
-void CEngineManager::EnginesIdle()
-{ std::vector<CEngine*>::iterator eg;
-  for (eg = engn.begin(); eg != engn.end(); eg++)
-  { CEngine *eng = (*eg);
-    eng->EngineIdle();
-  }
-  return;
+bool CEngineManager::AllEngStopped()
+{	std::vector<CEngine*>::iterator eg;	
+	bool ok = true;
+	for (eg = engn.begin(); eg != engn.end(); eg++)
+	{	if ((*eg)->Activity())	ok = false;	}
+	return ok;
 }
-
 //----------------------------------------------------------------------
 //  Abort All engines
 //----------------------------------------------------------------------
@@ -3298,6 +3287,7 @@ CAeroControlChannel::CAeroControlChannel (char *name)
   scaled  = 0;
   radians = 0;
   keyframe = 0.5;
+	ctrl		= 0;
 }
 //---------------------------------------------------------------------------
 //  Read all parameters
@@ -3349,6 +3339,7 @@ CChanelMixer::CChanelMixer (CVehicleObject *v)
   group  = 0;
   invert = false;
   msg.id = MSG_GETDATA;
+	data	 = 0;
 }
 //----------------------------------------------------------------
 //  Destroy this object
@@ -3371,23 +3362,18 @@ void CChanelMixer::SetName(char *n)
 //---------------------------------------------------------------
 int CChanelMixer::Read (SStream *stream, Tag tag)
 {
-  int rc = TAG_IGNORED;
-
   switch (tag) {
   case 'gnum':
     ReadInt (&group, stream);
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'nvrt':
     invert = true;
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'mesg':
     ReadMessage (&msg, stream);
     msg.sender = 'mixr';
     msg.id = MSG_GETDATA;
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   case 'chan':
     {
       char name[80];
@@ -3397,16 +3383,11 @@ int CChanelMixer::Read (SStream *stream, Tag tag)
       ReadFrom (aero, stream);
       aerochannel.push_back(aero);
     }
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
   }
-
-  if (rc != TAG_READ) {
-    // Tag was not processed by this object, it is unrecognized
-    WARNINGLOG ("CChanelMixer::Read : Unrecognized tag <%s>", TagToString(tag));
-  }
-
-  return rc;
+  // Tag was not processed by this object, it is unrecognized
+  WARNINGLOG ("CChanelMixer::Read : Unrecognized tag <%s>", TagToString(tag));
+  return TAG_IGNORED;
 }
 //----------------------------------------------------------------
 //  Get rudder mixer channel
@@ -3431,19 +3412,28 @@ void CChanelMixer::LinktoWing()
  }
  return;
 }
-//==================================================================================
+//----------------------------------------------------------------
+//  Get a pointer to controller data
+//---------------------------------------------------------------
+void CChanelMixer::PrepareMsg()
+{	// Poll control subsystem for all values
+  msg.user.u.datatag = 'data';
+  Send_Message (&msg,mveh);
+	data = (MIXER_DATA*)msg.voidData;
+	if (0 == data)	return;
+	//--- Set Controller in AeroControlChannels
+	 std::vector<CAeroControlChannel*>::iterator m;
+  for (m=aerochannel.begin(); m!=aerochannel.end(); m++)
+	{	(*m)->SetCTRL(data->ctrl);	}
+	return;
+}
+//---------------------------------------------------------------------------------
 //  What the mixer does is just to modulate the values (raw and scaled) by a damping
 //  coefficent.
 //  Control mixers poll associated control to get the deflection value
-//==================================================================================
+//---------------------------------------------------------------------------------
 void CChanelMixer::Timeslice (float dT,U_INT FrNo)
-{ 
-  // Poll control subsystem for all values
-  msg.user.u.datatag = 'data';
-  Send_Message (&msg,mveh);
-  //TRACE("MIXER GET MSG from %s",TagToString(msg.group));
-  MIXER_DATA *data = (MIXER_DATA*)msg.voidData;
-  if (0 == data)        return;
+{ if (0 == data)        return;
   float dClamp  =  data->ampli;
   float dOffset = -data->minClamp * 0.5f;
 
@@ -3513,6 +3503,15 @@ void CControlMixer::AddMixer(CChanelMixer *mix, char *name)
   mix->LinktoWing();
   return;
 }
+//--------------------------------------------------------------------
+// Prepare mixer channel
+//--------------------------------------------------------------------
+void CControlMixer::PrepareMixers()
+{	std::map<string,CChanelMixer*>::iterator m;
+	for (m = mixerMap.begin(); m != mixerMap.end(); m++)
+	{	(*m).second->PrepareMsg();	}
+	return;
+	}
 //--------------------------------------------------------------------
 //  Read parameters
 //--------------------------------------------------------------------

@@ -975,12 +975,34 @@ float GetFlatDistance(SPosition *To)
 {   SPosition pos = globals->geop;															// Aircraft position  
 		double	disLat	= (To->lat - pos.lat) / 60.0;								// Lattitude Distance in nm
     double	difLon	= LongitudeDifference(To->lon,pos.lon);			// Longitude difference in arcsec
-		double   lr			= FN_RAD_FROM_ARCS(pos.lat);								// Latitude in radian
+		double  lr			= FN_RAD_FROM_ARCS(pos.lat);								// Latitude in radian
 		double  factor	= cos(lr) / 60;															// 1 nm at latitude lr
     double	disLon	= factor * difLon;													// Reduce x component
 		double	sq			= ((disLon * disLon) + (disLat * disLat));  // squarred distance
 		return   SquareRootFloat(sq);
 }
+//-----------------------------------------------------------------------------
+//  Compute flat distance in nautical miles from aircraft 
+//  position (pos) to destination position(to). Store distance in obj
+//  1 N mile => 1 minute of arc
+//  Vertical and horizontal distances are stored as integer and scaled by a 
+//  factor 128 for better precision in drawing the vactor map.
+//  The short int allows for a +/-256 miles capacity with this factor
+//	NOTE: rdf is the reduction factor to use for longitude component
+//-----------------------------------------------------------------------------
+double GetFlatDistanceInMiles(CmHead *obj)
+{   SPosition *F = &globals->geop;
+	  SPosition *T =  obj->ObjPosition();
+    double disLat = (T->lat - F->lat) / 60.0;									// Lattitude Distance in nm
+    double difLon = LongitudeDifference(T->lon,F->lon);				// Longitude difference in arcsec
+		double  lr			= FN_RAD_FROM_ARCS(F->lat);								// Latitude in radian
+		double  rdf			= cos(lr) / 60;														// 1 nm at latitude lr
+    double disLon   = rdf * difLon;														// Compute x component
+    obj->SetDistLon(short(disLon * 128));                     // Store longitude component scaled by 128
+    obj->SetDistLat(short(disLat * 128));                     // Store latitude  component scaled by 128
+    return ((disLon * disLon) + (disLat * disLat));           // Return squarred distance
+}
+
 //-----------------------------------------------------------------------------
 //	Return the maximum longitude in degre
 //-----------------------------------------------------------------------------

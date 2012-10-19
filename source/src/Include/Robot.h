@@ -225,7 +225,7 @@ protected:
 	CFPlan						*fpln;			// Flight plan to execute
 	AutoPilot         *apil;			// Auto pilote
 	CSpeedRegulator   *sreg;			// Speed regulator
-	CRadio					  *Radio;			// Radio n°1
+	CRadio					  *RAD;				// Radio n°1
 	CAptObject				*apo;				// Current airport
 	CAirportMgr       *apm;				// Airport manager
 	TaxiwayMGR        *taxiM;			// Taxyway manager

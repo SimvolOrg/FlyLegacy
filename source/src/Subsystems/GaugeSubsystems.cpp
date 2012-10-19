@@ -358,7 +358,7 @@ EMessageResult CAirspeedIndicator::ReceiveMessage (SMessage *msg)
 //  Time slice the airspeed in KIAS
 //--------------------------------------------------------------------------------
 void CAirspeedIndicator::TimeSlice (float dT,U_INT FrNo)	// JSDEV*	
-{ double ias = mveh->GetPreCalculedKIAS (); // GetKIAS (ias);
+{ double ias = mveh->GetPreCalculedKIAS ();						//
   indnTarget = ias;
   /// ----------------------------------
   CPitotStaticSubsystem::TimeSlice (dT,FrNo);							// JSDEV*

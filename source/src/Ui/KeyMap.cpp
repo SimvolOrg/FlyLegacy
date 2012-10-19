@@ -40,13 +40,15 @@
 #include "../Include/FuiKeyMap.h"
 #include "../Include/joysticks.h"
 using namespace std;
-//===========================================================================
+//==================================================================================
 extern bool GroupUnbind(CKeyDefinition *kdf,int code);
 
 //==================================================================================
 //  Table to edit keyboard entries
 //==================================================================================
 std::map<U_INT,std::string> keyString;
+std::map<std::string,U_INT> namedKeys;
+//===================================================================================
 void BuildKeyString()
 {
 //static SKeyCodeFormatEntry keyCodeFormatTable[] =
@@ -202,7 +204,6 @@ void BuildKeyString()
 //===========================================================================
 //	String to Key Map
 //===========================================================================
-std::map<std::string,U_INT> namedKeys;
 void MapNamedKeys()
 {	namedKeys["none"]							= 0;
 	namedKeys["Ctrl"]							= (KB_MODIFIER_CTRL << 16);
@@ -648,6 +649,8 @@ CKeyMap::~CKeyMap (void)
   for (i=kset.begin(); i!=kset.end(); i++) delete i->second;
   kset.clear();
   oset.clear();
+	namedKeys.clear();
+	keyString.clear();
 }
 //-------------------------------------------------------------------------
 //  Check keyset name

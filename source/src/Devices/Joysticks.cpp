@@ -495,7 +495,6 @@ void CJoysticksManager::PreInit()
   SetNulleArea(0.50,0);
   //----------------------------------------------
   AxeMoved.iAxe		= -1;
-//  AxeMoved.pJoy  = 0;
 	AxeMoved.jdev		= 0;
   //--------Assign plane axe name ----------------
   InitAxe( 0,JOY_TYPE_PLAN, JS_AILR_BIT,"Aileron  (Bank)",		'ailr'			, 0, true); 
@@ -503,8 +502,8 @@ void CJoysticksManager::PreInit()
   InitAxe( 2,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)",		'rudr'      , 0, true,  1);
   InitAxe( 3,JOY_TYPE_PLAN, JS_ELVT_BIT,"Elevator Trim",			'trim'      , 0, true);
 	//---Group toes -------------------------------------------------------------------
-  InitAxe( 4,JOY_TYPE_PLAN, JS_OTHR_BIT,"Right Toe-brake",		'rtoe'			, 0, false);
-  InitAxe( 5,JOY_TYPE_PLAN, JS_OTHR_BIT,"Left  Toe-brake",		'ltoe'			, 0, false);
+  InitAxe( 4,JOY_TYPE_PLAN, JS_BRAK_BIT,"Right Toe-brake",		'rtoe'			, 0, false);
+  InitAxe( 5,JOY_TYPE_PLAN, JS_BRAK_BIT,"Left  Toe-brake",		'ltoe'			, 0, false);
 	//---Group throttle ---------------------------------------------------------------
   InitAxe( 6,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",					'thr1'  , JOY_THROTTLE, false,1);
   InitAxe( 7,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 2",					'thr2'  , JOY_THROTTLE, false,1);
@@ -526,16 +525,16 @@ void CJoysticksManager::PreInit()
   NeutralMark(2,JOY_NEUTRAL_STICK);
   EndMark(17);
   //----Init helicopter axis ----------------------------------------
-  InitAxe(18,JOY_TYPE_HELI, JS_OTHR_BIT,"Roll Cyclic",  JS_ROLL_CYCLIC,  0, false);
-  InitAxe(19,JOY_TYPE_HELI, JS_OTHR_BIT,"Pitch Cyclic", JS_PITCH_CYCLIC, 0, false);
-  InitAxe(20,JOY_TYPE_HELI, JS_OTHR_BIT,"Tail Rotor",   JS_TAIL_ROTOR,   0, false);
-  InitAxe(21,JOY_TYPE_HELI, JS_OTHR_BIT,"Trim",         JS_PITCHTRIM,    0, false);
-  InitAxe(22,JOY_TYPE_HELI, JS_OTHR_BIT,"Collective",   JS_COLLECTIVE,   0, true);
-  InitAxe(23,JOY_TYPE_HELI, JS_OTHR_BIT,"Throttle",     JS_THROTTLE,     0, true);
+  InitAxe(18,JOY_TYPE_HELI, JS_HELI_BIT,"Roll Cyclic",  JS_ROLL_CYCLIC,  0, false);
+  InitAxe(19,JOY_TYPE_HELI, JS_HELI_BIT,"Pitch Cyclic", JS_PITCH_CYCLIC, 0, false);
+  InitAxe(20,JOY_TYPE_HELI, JS_HELI_BIT,"Tail Rotor",   JS_TAIL_ROTOR,   0, false);
+  InitAxe(21,JOY_TYPE_HELI, JS_HELI_BIT,"Trim",         JS_PITCHTRIM,    0, false);
+  InitAxe(22,JOY_TYPE_HELI, JS_HELI_BIT,"Collective",   JS_COLLECTIVE,   0, true);
+  InitAxe(23,JOY_TYPE_HELI, JS_HELI_BIT,"Throttle",     JS_THROTTLE,     0, true);
   EndMark(23);
   //------------------------------------------------------------------
-  InitAxe(24,JOY_TYPE_GVEH, JS_OTHR_BIT,"Throttle",     JS_GAS,        0, true);
-  InitAxe(25,JOY_TYPE_GVEH, JS_OTHR_BIT,"STEER",        JS_STEER ,     0, true);
+  InitAxe(24,JOY_TYPE_GVEH, JS_VEHI_BIT,"Throttle",     JS_GAS,        0, true);
+  InitAxe(25,JOY_TYPE_GVEH, JS_VEHI_BIT,"STEER",        JS_STEER ,     0, true);
   //------------------------------------------------------------------
   EndMark(25);
 	//------------------------------------------------------------------
@@ -702,9 +701,7 @@ void CJoysticksManager::NeutralMark(int nx,U_CHAR type)
 //  Free all resources
 //---------------------------------------------------------------------------------
 CJoysticksManager::~CJoysticksManager()
-{ std::map<Tag,CSimAxe *>::iterator it;
-	for (it = mapAxe.begin(); it != mapAxe.end(); it++) delete (*it).second;
-  mapAxe.clear();
+{ mapAxe.clear();
 	//--- Clear device list ----------------------
 	for (U_INT k=0; k<devQ.size(); k++)	delete devQ[k];
 	devQ.clear();
@@ -713,6 +710,7 @@ CJoysticksManager::~CJoysticksManager()
 	{	CSimButton *btn = butQ[k];
 		if (btn)	delete btn;
 	}
+	butQ.clear();
 }
 //-------------------------------------------------------------------------
 //	Reconnect requested axis
@@ -838,11 +836,12 @@ void CJoysticksManager::Update()
 }
 //------------------------------------------------------------------------
 //  Reset all values
+//	TODO: Mettre valeur en object
 //------------------------------------------------------------------------
 void CJoysticksManager::Register(CObject *obj)
 {	mveh	= obj;
 	for (U_INT k=0; k<devQ.size(); k++)	devQ[k]->Reset();
-	axeCNX = JS_SURF_ALL + JS_TRIM_ALL + JS_GROUPBIT + JS_OTHR_BIT;
+	axeCNX = JS_AUTO_BIT + JS_RUDR_BIT;
 	return;
 }
 //------------------------------------------------------------------------
@@ -1005,7 +1004,7 @@ void CJoysticksManager::MapTo(CObject *obj,Tag ctl, Tag dst)
 //-------------------------------------------------------------------------
 void CJoysticksManager::JoyConnectAll(CObject *obj)
 {	if (obj != mveh)	return;			// Ignore
-	axeCNX = JS_SURF_ALL + JS_TRIM_ALL + JS_GROUPBIT + JS_OTHR_BIT;
+	axeCNX = JS_AUTO_BIT + JS_RUDR_BIT;
 	return;	}
 //-------------------------------------------------------------------------
 //	Aircarft request to Disconnect axis m

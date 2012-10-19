@@ -79,7 +79,7 @@ void CFuiManager::Init (void)
   std::map<Tag,string> themename;
   
   // Load themes
-  const char* masterFilename = "UI/THEMES/Default.SCH";
+  char* masterFilename = "UI/THEMES/Default.SCH";
   PODFILE *p = popen (&globals->pfs, masterFilename);
   if (p != NULL) {
     // Begin parsing lines
@@ -154,7 +154,6 @@ void CFuiManager::Init (void)
   notec->RedBack();
   notec->SetText(" *** AIRCRAFT DAMAGED ***");
   notec->SetPosition (600, 40);
-  //---------------------------------------------------
 	//---------------------------------------------------
   tClick  = 0;
   //--- Assign one texture object ---------------
@@ -181,12 +180,11 @@ void CFuiManager::Cleanup (void)
   map <Tag,CFuiWindow*>::iterator windowIter;
   for (windowIter=winMap.begin(); windowIter!=winMap.end(); windowIter++) {
     CFuiWindow *window = windowIter->second;
-
     window->Close();
     delete window;
   }
   winMap.clear();
-  
+  winList.clear();
   // Delete themes
   std::map<Tag,CFuiTheme*>::iterator i;
   for (i=themeMap.begin(); i!=themeMap.end(); i++) {
@@ -226,7 +224,14 @@ Tag CFuiManager::GetaTag(U_INT *x, U_INT *y)
 	 *y = yPos;
    return idn;
 }
-
+//---------------------------------------------------------------------------------
+//	Check if tool allowed
+//---------------------------------------------------------------------------------
+bool	CFuiManager::ToolNotAllowed()
+{	bool ok = globals->pln->AllEngStopped();
+  if (!ok)	return true;
+	return (globals->aPROF.Has(PROF_TOOL) != 0);
+}
 ///==========================================================================================
 /// Create a new window based on a .WIN template file.  This is the primary means
 ///   for the application to open a new FUI window.
@@ -259,8 +264,11 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
     //----VECTOR MAP ---------------------------------------------
     case FUI_WINDOW_VECTOR_MAP:
+		{	TC_SPOINT pos = globals->vmapPos;
       window  = new CFuiVectorMap (windowId, "UI/TEMPLATES/VectorMap.WIN");
+			window->MoveTo(pos.x,pos.y);
       break;
+		}
     //----NAVIGATION DETAIL --------------------------------------
     case FUI_WINDOW_DETAILS_NAVAID:
       windowId  = GenTag();
@@ -326,21 +334,33 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       break;
 		//---Terra editor -------------------------------------------
     case FUI_WINDOW_TEDITOR:
-			if (globals->aPROF.Has(PROF_TOOL))	return 0;
+			if (ToolNotAllowed())		return 0;
       window  = new CFuiTED(windowId,"UI/TEMPLATES/TERRAEDITOR.WIN");
       window->MoveTo(580,50);
       break;
 		//---City editor-----------------------------------------
     case FUI_WINDOW_CITY_EDIT:
-			if (globals->aPROF.Has(PROF_TOOL))	return 0;
+			if (ToolNotAllowed())		return 0;
       window  = new CFuiSketch(windowId,"UI/TEMPLATES/CITY_EDITOR.WIN");
       window->MoveTo(1036,100);
       break;
 		//---Taxiway editor-----------------------------------------
     case FUI_WINDOW_TAXIWAY:
-			if (globals->aPROF.Has(PROF_TOOL))	return 0;
+			if (ToolNotAllowed())		return 0;
       window  = new CFuiTaxi(windowId,"UI/TEMPLATES/TAXY_EDITOR.WIN");
       window->MoveTo(900,100);
+      break;
+    //---- TERRA BROWSER --------------------------------------
+    case FUI_WINDOW_TBROS:
+      if (ToolNotAllowed())		return 0;
+      window  = new CFuiTBROS (windowId, "UI/TEMPLATES/TBROS.WIN");
+      window->MoveTo(20,100);
+      break;
+    //---- MODEL BROWSER --------------------------------------
+    case FUI_WINDOW_MBROS:
+      if (ToolNotAllowed())		return 0;
+      window  = new CFuiMBROS (windowId, "UI/TEMPLATES/MBROS.WIN");
+      window->MoveTo(20,200);
       break;
     //---SUBSYSTEM PROBE-----------------------------------------
     case FUI_WINDOW_PROBE:
@@ -384,18 +404,6 @@ CFuiWindow* CFuiManager::CreateFuiWindow (Tag windowId, int opt)
       windowId  = GenTag();
       window    = new CFuiStrip(windowId,"Ui/TEMPLATES/WINSTRIP.WIN");
       window->MoveTo(xPos,yPos);
-      break;
-    //---- TERRA BROWSER --------------------------------------
-    case FUI_WINDOW_TBROS:
-      if (globals->aPROF.Has(PROF_TOOL))	return 0;
-      window  = new CFuiTBROS (windowId, "UI/TEMPLATES/TBROS.WIN");
-      window->MoveTo(20,100);
-      break;
-    //---- MODEL BROWSER --------------------------------------
-    case FUI_WINDOW_MBROS:
-      if (globals->aPROF.Has(PROF_TOOL))	return 0;
-      window  = new CFuiMBROS (windowId, "UI/TEMPLATES/MBROS.WIN");
-      window->MoveTo(20,200);
       break;
     //---SIM DEBUG = CAGING   ---------------------------------
     case FUI_WINDOW_CAGING:

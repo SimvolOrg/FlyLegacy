@@ -552,6 +552,7 @@ CGroundSuspension::CGroundSuspension ()
   mbtbl   = 0;
 	bump		= 28;
 	difB	  = 1;
+	banK		= 0.25;
 	steer		= 0;
 	ampB    = 2;
   //---------------------------------------------------------
@@ -605,6 +606,10 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
 	//--- Differential brake amplifier ---------------------
 	case 'difB':
 		ReadDouble(&difB,stream);
+		return TAG_READ;
+	//--- Bank amplifier ---------------------
+	case 'banK':
+		ReadDouble(&banK,stream);
 		return TAG_READ;
   //---JS decode suspension type -------------------------
   case 'type':

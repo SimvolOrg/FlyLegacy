@@ -2118,6 +2118,7 @@ protected:
 void LoadIniSettings (void);
 void UnloadIniSettings (void);
 void SaveIniSettings (void);
+bool HasIniKey(char *section,char *key);
 bool GetIniKey(char *section,char *key);
 void GetIniVar (const char *section, const char *varname, int *value);
 void GetIniFloat (const char *section, const char *varname, float *value);
@@ -3095,18 +3096,22 @@ struct LND_DATA {
 		LND_DATA  *opp;														// Opposite 
     SPosition  lndP;                          // Landing point (on tarmac)
     SPosition  refP;                          // reference point
-    SPosition  farP;                          // Far point for drawing
+    SPosition  fwdP;                          // Forward point
+		SPosition  midP;													// Mid point
+		SPosition  tkoP;													// Take off point
+		//-----------------------------------------------------------
+		double     orie;													// Runway true orientation
+		//-----------------------------------------------------------
     float      disF;                          // Distance in feet
     float      errG;                          // Glide error (in tan unit)
     float      gTan;                          // Tan of glide slope
     float      altT;                          // altitude above threshold
-		//--- Direction (0 == hi, 1 == low) ------------
-		char			 rDir;													// Runway direction
+		//--- End (0 == hi, 1 == low) ------------
+		char			 rEnd;													// Runway end
 		char			 rfu1;													// Reserved
 		U_SHORT    sect;													// Runway sector
 		//--- LAnding direction ------------------------
-		float      lnDIR;												  // Landing  mag dev
-		float      tkDIR;													// Take OFF mag dev
+		float      lnDIR;												  // Landing  with mag dev
 		//--- Runway ident -----------------------------
 		char       ridn[4];												// Runway end identifier
     //--- Airport definition -----------------------
@@ -3157,24 +3162,26 @@ public:
 	virtual int	       GetType()	      {return 0; }// Object type
   virtual float      GetMagDev()      {return 0; }
   virtual float      GetRadial()      {return 0; }
+	virtual float			 GetTrueRadial()	{return 0;} 
   virtual float      GetNmiles()      {return 0; }
   virtual float      GetElevation()   {return 0;}
   virtual U_INT      GetRecNo()       {return 0;}
 	virtual double     GetRefDirection(){return 0;}
-	virtual float			 GetMagDirection(){return 0;}
 	virtual float      GetVrtDeviation(){return 0;}
 	virtual double		 Sensibility()		{return 0;}
 	virtual U_CHAR		 SignalType()     {return SIGNAL_OFF;}
 	virtual float			 GetFeetDistance(){return 0;}
 	virtual float			 GetGlide()       {return 0;}
+	virtual char			 GetTrackMode()		{return 'T';}
 	//------------------------------------------------------------
-  virtual void       Refresh(U_INT FrNo) {return;}
+	virtual bool			 MayMove()				{return false;}
+	//------------------------------------------------------------
+  virtual void       RefreshStation(U_INT FrNo) {return;}
   virtual float      GetLatitude()    {return 0;}
   virtual float      GetLongitude()   {return 0;}
   virtual float      GetFrequency()   {return 0;}
   virtual SPosition  GetPosition();
   virtual SPosition *ObjPosition()    {return 0;}
-	virtual SPosition *GetFarPoint()    {return 0;}
 	//------------------------------------------------------------
 	virtual LND_DATA  *GetLandSpot()		{return 0;}
 	//------------------------------------------------------------
@@ -3596,11 +3603,20 @@ class TXT_LIST {
 //=============================================================================
 //  Radio Interface
 //=============================================================================
+#define RADIO_MODE_TRACK	('T')
+#define RADIO_MODE_DIRECT ('D')
+//=============================================================================
+//  Radio Interface
+//=============================================================================
 //-----------COMPUTED VALUE FOR EXTERNAL GAUGES -----------------------
 struct BUS_RADIO {U_CHAR    rnum;       // Radio num
                   U_CHAR    actv;       // Activity
                   U_CHAR    flag;       // Flag type
                   U_CHAR    ntyp;       // Nav Type
+									//----------------------------------------
+									U_CHAR    mode;				// Radio mode
+									U_CHAR    rfu1;				// Future use
+									//----------------------------------------
                   short     xOBS;       // External OBS
                   double    hREF;       // Lateral reference
                   double    radi;       // ILS/VOR radial
@@ -3718,6 +3734,26 @@ private:
 	char msg[1024];
 public:
 	TRACE(const char *fmt = NULL, ...);
+};
+//-------------------------------------------------------------------------
+//	JSDEV* AERO log.   This log serve to trace aero data
+//
+//--------------------------------------------------------------------------
+class AERO {
+private:
+	char msg[1024];
+public:
+	AERO(const char *fmt = NULL, ...);
+};
+//-------------------------------------------------------------------------
+//	JSDEV* WING log.   This log serve to trace wing data
+//
+//--------------------------------------------------------------------------
+class WING {
+private:
+	char msg[1024];
+public:
+	WING(const char *fmt = NULL, ...);
 };
 //-------------------------------------------------------------------------
 //	JSDEV* Scenery log.   This log serve to trace scenery process

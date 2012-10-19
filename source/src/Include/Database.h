@@ -859,7 +859,7 @@ public:
 	CCOM(OTYPE qo,QTYPE qa);
   void  Trace(char *op,U_INT FrNo,U_INT key);
   CCOM *IsThisComOK(float hz);
-  void  Refresh(U_INT FrNo);
+  void  RefreshStation(U_INT FrNo);
   bool  IsSelected(float hz);
   bool  IsInRange(void);
   void  WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &st);
@@ -910,6 +910,7 @@ protected:
   float  pDis;                          // Plane distance (squared)
   //----Additional attributes for various purposes -------------
 	float xobs;														// OBS direction
+	float tradial;												// True radial								
 	float	radial;                         // Aircraft radial in °
 	float	nmiles;                         // Distance to VOR/NDB
   float dsfeet;                         // Distance in feet
@@ -922,6 +923,7 @@ public:
 	inline  char*     GetKey(void)      {return nkey; }
 	inline double     GetRefDirection()	{return xobs;}
   inline float      GetRadial()	      {return radial;}
+	inline float      GetTrueRadial()		{return tradial;}
 	inline float      GetNmiles()	      {return nmiles;}
   inline char*      GetIdent()        {return naid; }
   inline char*      GetName()         {return name;}
@@ -939,7 +941,6 @@ public:
   inline SPosition  GetPosition()     {return pos; }
   inline SPosition *ObjPosition()     {return &pos;}
   inline float      GetMagDev()       {return mDev; }
-	inline float			GetMagDirection()	{return (radial - mDev);}
   inline int        GetIndexType()    {return int(xType);}
   inline bool       IsTuned()         {return (vdzRad < dsfeet);}
   inline bool       IsNDB()           {return (0 != (type & NAVAID_TYPE_NDB));}
@@ -958,7 +959,7 @@ public:
 	inline	U_CHAR		SignalType()				{return SIGNAL_VOR;}
   //------------------------------------------------------
 	CmHead   *Select(U_INT frame,float freq);
-	void	    Refresh(U_INT FrNo);							// Update navaid
+	void	    RefreshStation(U_INT FrNo);							// Update navaid
   void      WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &sf);
   //-------------------------------------------------------
 protected:
@@ -979,7 +980,7 @@ class CWPT : public CmHead {
 protected:
   U_INT     recNo;                        // Record number
   char      widn[5];                      // ident = first char from name
-	Tag       user;													// User TAG
+	Tag       kind;													// User TAG
   //--------From database file -----------------------------------
   char      wkey[10];                     // Unique key
   char      wnam[26];                     // Wpt name
@@ -997,6 +998,7 @@ protected:
   char      wnav[10];                     // NAV key
   //--------Additional data  --------------------------------------
   float	    radial;                       // Aircraft radial in °
+	float			tradial;											// True radial
 	float	    nmiles;                       // Distance to VOR/NDB
   float			dsfeet;                       // Distance in feet
 	float     rDir;													// Reference direction
@@ -1005,53 +1007,58 @@ protected:
   void  SetAttributes();
 public:
   CWPT(OTYPE qo,QTYPE qa);           // Constructor
-	void			Init(char *idn,SPosition *pos);
+	CWPT();
+	void			Clear(Tag k);
+	void			SetParameters(Tag K,char *idn,char *nam,SPosition *P);
   void			SetPosition(SPosition p);
   void      WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &st);
   //--------Virtual functions ---------------------------
-  inline float      GetRadial()	      {return radial;}
-	inline float      GetNmiles()	      {return nmiles;}
-  inline char*      GetIdent()        {return widn; }
-  inline char*      GetName()         {return wnam;}
-  //--------Generic functions ----------------------------
-	inline Tag				GetUser()					{return user;}
-  inline int        GetType()		      {return wtyp; }
-  inline char*      GetKey()          {return wkey;}
-  inline char*      GetCountry()      {return wcty;}
-  inline char*      GetState()        {return wsta;}
-  inline SPosition  GetPosition()     {return wpos;}
-  inline SPosition *ObjPosition()     {return &wpos;}
-  inline float      GetMagDev()       {return wmag; }
-	inline float			GetMagDirection()	{return (radial - wmag);}
-  inline float      GetLatitude()     {return wpos.lat;}
-  inline float      GetLongitude()    {return wpos.lon;}
-  inline float      GetElevation()    {return wpos.alt;}
-	inline float      GetDistance()			{return wdis;}
-	inline CWPoint   *GetNode()					{return node;}
+  float     GetRadial()	      {return radial;}
+	float			GetTrueRadial()		{return tradial;}
+	float     GetNmiles()	      {return nmiles;}
+  char*     GetIdent()				{return widn; }
+	char*     GetName()					{return wnam;}
 	//------------------------------------------------------
-	inline	U_CHAR		SignalType()			{return SIGNAL_WPT;}
-	inline  double		GetRefDirection() {return rDir;}
-	inline  float     GetFeetDistance() {return dsfeet;}
-	inline  void      SetRefDirection(float d)	{rDir = d;}
+	bool			MayMove()					{return (kind != 'fixe');}
+	//------------------------------------------------------
+	U_CHAR		SignalType()			{return SIGNAL_WPT;}
+	double		GetRefDirection() {return rDir;}
+	float     GetFeetDistance() {return dsfeet;}
+	//------------------------------------------------------
+  void			RefreshStation(U_INT FrNo);
+  void			Trace(char *op,U_INT FrNo,U_INT key);
+  //--------Generic functions ----------------------------
+	Tag				GetKind()					{return kind;}
+  int       GetType()		      {return wtyp; }
+  char*     GetKey()          {return wkey;}
+  char*     GetCountry()      {return wcty;}
+  char*     GetState()        {return wsta;}
+  SPosition GetPosition()     {return wpos;}
+  SPosition *ObjPosition()     {return &wpos;}
+  float      GetMagDev()       {return wmag; }
+  float      GetLatitude()     {return wpos.lat;}
+  float      GetLongitude()    {return wpos.lon;}
+  float      GetElevation()    {return wpos.alt;}
+	float      GetDistance()			{return wdis;}
+	CWPoint   *GetNode()					{return node;}
+	//------------------------------------------------------
+	void      SetRefDirection(double d) {rDir = d;}
   //------------------------------------------------------
-	inline void				SetNOD(CWPoint *w){node = w;}
-  inline void       SetKey(char *k)   {strncpy(wkey,k,10);}
-  inline void       SetIDN(char *k)   {strncpy(widn,k, 5);}
-  inline void       SetNAM(char *n)   {strncpy(wnam,n,26);}
-  inline void       SetCTY(char *c)   {strncpy(wcty,c, 3);}
-  inline void       SetSTA(char *s)   {strncpy(wsta,s, 3);}
-  inline void       SetLOC(int n)     {wloc = char(n);}
-  inline void       SetTYP(int n)     {wtyp = short(n);}
-  inline void       SetUSE(int n)     {wuse = short(n);}
-  inline void       SetMGD(float f)   {wmag = f;}
-  inline void       SetBRG(float f)   {wbrg = f;}
-	inline void       SetDIS(float d)		{wdis = d;}
+	void			SetNOD(CWPoint *w){node = w;}
+  void      SetKey(char *k)   {strncpy(wkey,k,10);}
+  void      SetIDN(char *k)   {strncpy(widn,k, 5);}
+  void      SetNAM(char *n)   {strncpy(wnam,n,26);}
+  void      SetCTY(char *c)   {strncpy(wcty,c, 3);}
+  void      SetSTA(char *s)   {strncpy(wsta,s, 3);}
+  void      SetLOC(int n)     {wloc = char(n);}
+  void      SetTYP(int n)     {wtyp = short(n);}
+  void      SetUSE(int n)     {wuse = short(n);}
+  void      SetMGD(float f)   {wmag = f;}
+  void      SetBRG(float f)   {wbrg = f;}
+	void      SetDIS(float d)		{wdis = d;}
   //------------------------------------------------------
-  inline  void      SetRecNo(U_INT No)  { recNo = No;}
-  inline  U_INT     GetRecNo()          { return recNo;}
-  //------------------------------------------------------
-  void    Refresh(U_INT FrNo);
-  void		Trace(char *op,U_INT FrNo,U_INT key);
+  void      SetRecNo(U_INT No)  { recNo = No;}
+  U_INT     GetRecNo()          { return recNo;}
 };
 //========================================================================
 //  BEACON MARKERS
@@ -1116,6 +1123,7 @@ protected:
   CAirport  *apt;                         // Associated airpot
   float   ilsVEC;                         // ILS vector
   float	  radial;                         // Aircraf position
+	float		tradial;												// True radial
 	float	  nmiles;                         // Distance to ILS
   //------------ILS data -------------------------------------------
   LND_DATA *ilsD;                         // Pointer to runway ILS data
@@ -1130,13 +1138,12 @@ public:
   CILS(OTYPE qo,QTYPE qa);
   void		Trace(char *op,U_INT FrNo,U_INT key);
 	//-----------------------------------------------------------------
-	void	  Refresh(U_INT FrNo);							// Update ILS
+	void	  RefreshStation(U_INT FrNo);							// Update ILS
 	CmHead *Select(U_INT frame,float freq);
 	//-----------------------------------------------------------------
 	CILS*	  IsThisILSOK(float freq);          // Check for tuning
 	bool		IsSelected(float freq);
   void    WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &st);
-  void    SetGlidePRM();
   //-----Parameters --------------------------------------------------
   void    SetIlsParameters(CRunway *run,LND_DATA *dt,float dir);
   //-----BEACON MANAGEMENT -------------------------------------------
@@ -1150,10 +1157,10 @@ public:
   inline  char* GetName()             {return name;}
   inline  char *GetRWID()             {return irwy;}
   inline  float GetRadial()           {return radial; }
+	inline	float GetTrueRadial()				{return tradial;}
   inline  float GetIlsVector()        {return ilsVEC;}
   inline  float GetNmiles(void)       {return nmiles; }
   inline  float GetMagDev(void)       {return mDev; }
-	inline  float GetMagDirection()			{return (radial - mDev);}
   inline  float GetFrequency(void)    {return freq; }
   inline  float GetRange()            {return rang;}
   inline  void  LinkAPT(CAirport *ap) {apt = ap;}
@@ -1166,7 +1173,6 @@ public:
   inline  bool  SameAPT(CAirport *a)    {return (apt == a);}
   inline  SPosition *GetLandingPoint()  {return &ilsD->lndP;}
   inline  SPosition *ObjPosition()      {return &pos;}
-  inline  SPosition *GetFarPoint()      {return &ilsD->farP;}
   inline  float GetFeetDistance()       {return ilsD->disF;}
   inline  float GetGlide(void)          {return ilsD->errG;}
 	inline  float GetVrtDeviation()				{return ilsD->errG;}
@@ -1204,6 +1210,10 @@ struct RwyID {
 #define RWY_LS_BARS     (0x00000008)  // All bars
 #define RWY_LS_APPRO    (0x00000010)  // Approach lights 
 #define RWY_LS_ENDLT    (0x00000020)  // Everything alighted
+//=======================================================================
+#define TC_COT_3DEG double(19.081136687728)           // cotangent 3°
+#define RWY_FWD_POINT	(18200)													// FEET
+#define RWY_MID_POINT	(9100)													// Feet
 //=======================================================================
 //  RUNWAY 
 //=======================================================================
@@ -1295,7 +1305,7 @@ protected:
   //------------ Public methods ------------------------------------
 protected:
   void    SetAttributes();
-	void		EndAttributes(LND_DATA &d,SPosition &p);
+	void		EndAttributes(LND_DATA &d,SPosition &p,SPosition &q,int lg);
 public:
   CRunway(OTYPE qo,QTYPE qa);
  ~CRunway();
@@ -1493,6 +1503,7 @@ protected:
   float cfrq;                             // Clearance frequency
 	//-------------------------------------------------------------------------------
   float radial;                           // Radial to airport
+	float tradial;													// true radiale
   float nmiles;                           // Distance in mile
   float dsfeet;                           // Distance in feet
   float pDis;                             // Squared distance
@@ -1508,7 +1519,7 @@ public:
  ~CAirport();
   void		    Trace(char *op,U_INT FrNo,U_INT key);
   int         SetMapType(void);
-  void        Refresh(U_INT FrNo);
+  void        RefreshStation(U_INT FrNo);
   short       GetFuelGrad();
   char       *GetAptName();
   void        RebuildLights(CRunway *rwy);
@@ -1521,6 +1532,7 @@ public:
   inline float      GetLatitude(void) {return apos.lat;}
   inline float      GetLongitude(void){return apos.lon;}
   inline float      GetRadial()       {return radial;}
+	inline float			GetTrueRadial()		{return tradial;}
   inline float      GetNmiles()       {return nmiles;}
   inline  int       GetMapNo(void)    {return MapTp;}
   inline SPosition  GetPosition(void) {return apos; }
@@ -1534,7 +1546,6 @@ public:
   inline  char*     GetEtat()         {return asta;}
   inline  void      RazInEDIT(void)   {Prop &=(-1 - TC_EDIT_BOX);}
   inline  float     GetMagDev(void)   {return amag; }
-	inline  float     GetMagDirection()	{return (radial - amag);}
   inline  float     GetElevation()    {return apos.alt;}
   inline  char      GetOwner()        {return aown;}
   inline  float     GetClearanceFreq(){return cfrq;}
@@ -1576,6 +1587,7 @@ public:
   void        AddRunway(CRunway *rwy);          // Add one runway
   CRunway    *FindRunway(char *idn);            // Find runway by end ident
 	LND_DATA   *FindRunwayLND(char *idn);					// Landing data by ident
+
   //-----------------------------------------------------------------
   inline double     GetAltitude()      {return apos.alt;}
   inline char *     GetIdentity()      {return (*afaa)?(afaa):(aica);}

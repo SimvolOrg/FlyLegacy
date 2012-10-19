@@ -347,16 +347,17 @@ public:
 	void	SetVEH(CVehicleObject *v)	{mveh = v;}
 	//-------------------------------------------------------------------------
   void     GetAllWheels(std::vector<CSuspension *> &whl) { whl = whl_susp;}
-  CVector *GetMainGearCenter() {return &mainW;}
+  CVector *GetMainGearCenter()	{return &mainW;}
 	double   GetDifBraking()			{return difB;}
-	double   GetBumpForce()			{return bump;}
-  double   GetMainGearRadius() {return  mainR;}
-  double   GetMinimumBodyAGL() {return  mAGL;}
-  double   GetPositionAGL()    {return  (mAGL + mainR - 1);}
-  double   GetSterGearRadius() {return  sterR;}
+	double	 GetBankCoef()				{return banK;}
+	double   GetBumpForce()				{return bump;}
+  double   GetMainGearRadius()	{return  mainR;}
+  double   GetMinimumBodyAGL()	{return  mAGL;}
+  double   GetPositionAGL()			{return  (mAGL + mainR - 1);}
+  double   GetSterGearRadius()	{return  sterR;}
   void     StoreGearVM(CVector &v, double mc) {mainVM = v; massCF = mc;}
-  char     GetNbWheelOnGround(){return nWonG;}
-  bool     WheelsAreOnGround() {return (nWonG != 0);}
+  char     GetNbWheelOnGround()	{return nWonG;}
+  bool     WheelsAreOnGround()	{return (nWonG != 0);}
 	bool			AllWheelsOnGround()	{return (nWonG == wheels_num);}
 	//--- Steering interface -----------------------------------------------------------
 	CSuspension *GetSteeringWheel()	{return steer;}
@@ -384,6 +385,7 @@ protected:
 	double				bump;																					// Bump force
 	double        ampB;																					// Brake amplifier
 	double				difB;																					// Differntial brake
+	double        banK;																					// Banking coefficient
   double        wheel_base;                                   // Inter axes distance
   double        mAGL;                                         // minimum Body AGL (in feet)
   double        mainR;                                        // Main average radius

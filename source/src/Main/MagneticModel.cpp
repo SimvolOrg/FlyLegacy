@@ -152,10 +152,8 @@ void CMagneticModel::ReadCoefficients (void)
 //   of the situation
 //
 void CMagneticModel::Init (double year)
-{
-  // Read Gauss coefficients
+{ // Read Gauss coefficients
   ReadCoefficients ();
-
   modelDate = year;
   double dYear = modelDate - epoch;
 

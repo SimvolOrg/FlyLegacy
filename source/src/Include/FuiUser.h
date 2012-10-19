@@ -52,7 +52,7 @@
 //===================================================================================
 class CCameraRunway;
 class CPIDbox;
-class VMnode;
+class VMroute;
 //===================================================================================
 // Forward declare all class types
 //===================================================================================
@@ -291,7 +291,7 @@ protected:
 	bool				ClickWptOBJ(int mx,int my,EMouseButton button);
 	bool				OpenWptINFO(int mx,int my);
 	//--- Taxiways management ------------------------------------------
-	void				DrawTaxiNodes();
+	void				WriteConfig();
   //--- Various items ------------------------------------------------
   void        Teleport();
   void        OpenMetar(CmHead *obj);
@@ -306,8 +306,8 @@ protected:
   void        NotifyResize(short dx,short dy);
   //----------Interface to flight plan ---------------------------------
 public:
-  void        DrawRoute(VMnode &org,VMnode &ext);
-	void				DrawWayPoint(CWPT *wpt);
+	void				DrawRoute(VMroute &rte);
+	void				DrawWayPoint(CmHead *wpt);
   //--------------------Attributes -------------------------------------
 protected:
   SVector     vmapOrient;                   ///< User vehicle orientation

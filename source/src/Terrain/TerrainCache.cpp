@@ -1932,7 +1932,7 @@ int CSuperTile::Draw3D(U_CHAR tod)
     nbo++;
   }
 	//--- Draw the OSM object ----------------------------------
-	if (globals->noOSM || (osmp == 0))	return nbo;
+	if (osmp == 0)	return nbo;
 	//--- Environment for buildings ----------------------------
 	glColorMaterial (GL_FRONT, GL_DIFFUSE);
 	glFrontFace(GL_CCW);
@@ -1945,10 +1945,8 @@ int CSuperTile::Draw3D(U_CHAR tod)
 	C3DPart *prt;
 	for (prt = osmQ[OSM_LAYER_BLDG].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsOSM();
 	//--- DRAW OSM FOREST LAYER ------------------------------
-	//DebDrawOSMforest();
 	DebDrawOSMtrees();
 	for (prt = osmQ[OSM_LAYER_DBLE].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsOSM();
-	//EndDrawOSM();
 	glDisable(GL_ALPHA_TEST);
 	glPolygonMode(GL_FRONT,GL_FILL);
 	glEnable(GL_CULL_FACE);
@@ -2712,7 +2710,7 @@ void C_QGT::ExtendOSMPart(char No,char dir, char *ntx, char L, int nv, GN_VTAB  
 	txd.azp = 0x00;
 	txd.Dir = dir;
 	strncpy(txd.name,ntx,FNAM_MAX);
-	CShared3DTex *ref = globals->txw->GetM3DPodTexture(txd);
+	CShared3DTex *ref = globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
 	sup->MakeOSMPart(ref,L,nv,S);
 	globals->txw->Free3DTexture(ref);
 	return;
@@ -4083,6 +4081,7 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
 { eTime     = dT;
   dTime    += dT;
   aPos      = globals->geop;                            // Update aircraft position
+
   //---Update QGT position at global level --------------------------------
   IndicesInQGT (aPos, globals->qgtX, globals->qgtZ);
   nKEY      = QGTKEY(globals->qgtX, globals->qgtZ);

@@ -1016,8 +1016,8 @@ CWPT *SqlMGR::DecodeWPT(sqlite3_stmt *stm,OTYPE obt)
   wpt->wpos.lon  = sqlite3_column_double (stm,CLN_WPT_WLON);
   wpt->wpos.alt  = sqlite3_column_int    (stm,CLN_WPT_WALT);
   //-------------------------------------------------------
-  float f = float( sqlite3_column_double(stm,CLN_WPT_WMAG));
-  wpt->SetMGD(f);
+  //float f = float( sqlite3_column_double(stm,CLN_WPT_WMAG));
+  //wpt->SetMGD(f);
   //----NOTE: Fields after are not decoded for now --------
   //------------------------------------------------------------------------
   //  Normalize name of waypoint. Eliminate ( and )
@@ -1580,7 +1580,7 @@ sqlite3_stmt *SqlMGR::CompileMatchGPS(CGPSrequest *rqg,char *tab)
     strcat(req,Arg);
   }
   strcat(req,";*");
-  return CompileREQ(query,genDBE);
+  return CompileREQ(req,genDBE);
 }
 
 //-----------------------------------------------------------------------
@@ -1655,7 +1655,7 @@ void SqlMGR::GetOBJbyIdent(CGPSrequest *rgq, char *tab, Tag type)
 //  ACCESS FOR FLIGHT PLAN
 //=======================================================================
 //-----------------------------------------------------------------------
-//  Get any object by its unic key
+//  Get any object by its unique key
 //-----------------------------------------------------------------------
 void SqlMGR::GetFlightPlanWPT(CWPoint* wpt)
 { char req[1024];
@@ -1665,7 +1665,7 @@ void SqlMGR::GetFlightPlanWPT(CWPoint* wpt)
   _snprintf(req,1024,"SELECT * FROM %s WHERE ukey = '%s';*",tab,key);
   sqlite3_stmt *stm = CompileREQ(req,genDBE);
   if (SQLITE_ROW == sqlite3_step(stm))
-  {   switch(wpt->GetUser())
+  {   switch(wpt->GetKind())
       {   case 'airp':
             obj = DecodeAPT(stm,SHR);
             break;
@@ -3095,8 +3095,9 @@ int SqlTHREAD::GetM3DTexture(TEXT_INFO *inf)
     char *dst = tex;
     for (int k=0; k<dim; k++) *dst++ = *src++;
     inf->mADR = (GLubyte*)tex;
-    inf->wd   =        sqlite3_column_int (stm,CLN_NTX_WID);
-    inf->ht   =        sqlite3_column_int (stm,CLN_NTX_HTR);
+    inf->wd   =  sqlite3_column_int (stm,CLN_NTX_WID);
+    inf->ht   =  sqlite3_column_int (stm,CLN_NTX_HTR);
+		inf->dim	=  dim;
   }
   //---Free statement --------------------------------------------------
   sqlite3_finalize(stm);

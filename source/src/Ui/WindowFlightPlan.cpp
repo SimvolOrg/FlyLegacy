@@ -110,9 +110,7 @@ int CFuiListPlan::AddToList(char *fn)
 void CFuiListPlan::SelectPlan()
 { char fn[MAX_PATH];
   CFpnLine *lin = (CFpnLine *)allBOX.GetSelectedSlot();
-  strncpy(fn,lin->GetFile(),MAX_PATH);
-  char *end = strrchr(fn,'.');
-  if (end) *end = 0;
+	RemoveExtension(fn,lin->GetFile());
 	if (!fpln->AssignPlan(fn))			return Close();
   //---Open or refresh detail -------------------------
   CFuiFlightLog *win = globals->dbc->GetLOGwindow();

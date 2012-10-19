@@ -546,7 +546,7 @@ void CK89gps::EditAPTdata()
   strncpy(Ident,apt->GetFaica(),K89_IDSIZ);
   Ident[K89_IDSIZ]  = 0;
   StoreText(Ident,K89_LINE1,K89_CLN18);
-  apt->Refresh(FrameNo);
+  apt->RefreshStation(FrameNo);
   float rad = apt->GetRadial();
   EditRadial(edt,rad,K89_FLAG_TO);
   StoreText(edt,K89_LINE2,K89_CLN17);
@@ -1879,7 +1879,7 @@ int CK89gps::EditNAVpage02()
         const char *ref = (vor)?(vor->GetIdent()):("None");
         _snprintf(edt,16,"Ref : % 4s",ref);
         StoreText(edt,K89_LINE2,K89_CLN07);
-        if (vor)  vor->Refresh(FrameNo);
+        if (vor)  vor->RefreshStation(FrameNo);
         OpFlag = (vor)?(K89_FLAG_TO):(K89_FLAG_NONE);
         EditBearing(cap,K89_LINE3,K89_CLN07);
         EditDistance(edt,dis);
@@ -3807,7 +3807,7 @@ void CK89gps::RefreshActiveWPT()
 void CK89gps::RefreshVNAVpoint()
   { if (vnaWPT.IsNull())  return;
     if (-1 == vnaWNO)
-    { vnaWPT->Refresh(FrameNo);
+    { vnaWPT->RefreshStation(FrameNo);
       vnaDIS  = vnaWPT->GetNmiles();
     }
     else    vnaDIS = 0;			
@@ -3867,7 +3867,7 @@ void CK89gps::EditRadial(char *dst,float rad,U_CHAR flag)
 int CK89gps::EditCAPandDIS(CmHead *obj)
 { char edt[16];
   //-------Edit Bearing ----------------------------------------
-  obj->Refresh(FrameNo);
+  obj->RefreshStation(FrameNo);
   EditRadial(edt,obj->GetRadial(),OpFlag);
   StoreText(edt,K89_LINE3,K89_CLN07);
   //------Edit Distance ----------------------------------------
@@ -4248,7 +4248,7 @@ void GPSRadio::EnterTRK()
 	navON	= 1;
 	gpsTK	= GPSR_TRAK;
 	//---Get first waypoint to track ----------------
-	SetTrack();
+	TrackNewWPT();
 	return;
 }
 
@@ -4433,13 +4433,13 @@ void GPSRadio::PowerON()
 //  Get next Waypoint
 //	Set RADIO BUS to EXTERNAL SOURCE
 //----------------------------------------------------------------------------------
-void GPSRadio::SetTrack()
+void GPSRadio::TrackNewWPT()
 { float rad = 0;
 	wTRK	= FPL->GetActiveNode();
 	if (0 == wTRK)						return;
 	if (FPL->IsOnFinal())			return EnterAPR();
 	//--- Set Waypoint On External Source ------------------
-	float   dir = SelectDirection();
+	float   dir = wTRK->GetDTK();											
 	CmHead *obj = wTRK->GetDBobject();
   RAD->ModeEXT(obj);								// Set EXT mode
 	RAD->ChangeRefDirection(dir);
@@ -4448,20 +4448,6 @@ void GPSRadio::SetTrack()
 	if (wTRK->IsFirst()) alt = mveh->GetPosition().alt;
 	APL->SetWPTmode(alt);
 	return;
-}
-//--------------------------------------------------------------
-//	Compute direction
-//	If leg distance is under 12 miles, head direct to station
-//  or if deviation is too much
-//--------------------------------------------------------------
-float GPSRadio::SelectDirection()
-{	float dis = wTRK->GetLegDistance();
-  float seg = wTRK->GetDTK();
-	float dev = RAD->GetDeviation();
-	float rdv = fabs(dev);
-	if ((dis > 12) || (rdv < 5))	return seg;
-	//--- Compute direct-to direction to waypoint -----
-  return wTRK->GoDirect(mveh);
 }
 //--------------------------------------------------------------
 //	Go back to standby mode
@@ -4512,8 +4498,8 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 		case GPSR_TRAK:
 			if (APL->IsDisengaged())	EnterSBY();
 			if (0 == wTRK)						return;
-			if (wTRK->IsActive())	    return wTRK->CorrectDrift(RAD,mveh);		//Refresh();
-			SetTrack();
+			if (wTRK->IsActive())	    return RAD->CorrectDrift();		//wTRK->CorrectDrift(RAD);
+			TrackNewWPT();
 			return;
 		//--- Just watch the auto pilot ------------
 		case GPSR_LAND:

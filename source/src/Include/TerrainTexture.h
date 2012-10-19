@@ -147,6 +147,8 @@ public:
  bool		SameTexture(char dir, char *txn);
  char  *TextureData(char &dir);
  //----------------------------------------------------------
+ inline bool					 HasData()							{return (0 != x3d.mADR);}
+ inline bool					 NoData()								{return (0 == x3d.mADR);}
  inline void					 SetOK()								{State = SHX_ISOK;}
  inline TEXT_INFO     *GetInfo()              {return &x3d;}
  inline TEXT_INFO     *GetDescription()				{return & x3d;}
@@ -395,9 +397,10 @@ public:
 	//------------------------------------------------------------
 	CShared3DTex   *RefTo3DTexture (TEXT_INFO &txd);
 	//------------------------------------------------------------
-	CShared3DTex   *AddSHX(CShared3DTex *shx ,char type);
+	CShared3DTex   *AddSHX(CShared3DTex *shx ,TEXT_INFO &inf);
 	CShared3DTex	 *GetM3DPodTexture(TEXT_INFO &txd);
 	CShared3DTex	 *GetM3DSqlTexture(TEXT_INFO &txd);
+	CShared3DTex   *Get3DTexture(TEXT_INFO &txd);
 	//------------------------------------------------------------
   void    Get3DTIF(TEXT_INFO *inf);
   void    Get3DRAW(TEXT_INFO *inf);

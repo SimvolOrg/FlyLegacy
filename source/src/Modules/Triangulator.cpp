@@ -2053,7 +2053,7 @@ void D2_Group::LoadTexture()
 	txd.apx   = 0xFF;
 	txd.azp   = 0x00;
 	//TRACE("GROUP LOAD TEXTURE %s",ntex);
-	tREF	= globals->txw->GetM3DPodTexture(txd);
+	tREF	= globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
 	//--- Fill default roof parameters ---------------------
 	tRoof.DefaultParameters(txd);
 	return;

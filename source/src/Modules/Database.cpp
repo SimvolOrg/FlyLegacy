@@ -1460,12 +1460,12 @@ CCOM *CCOM::IsThisComOK(float hz)
 //    DZR:      Verticale dead zone radius in feet = ALTI*TG(7°)  in feet
 //	NOTE todo see if GreatCirclePolar can return nmiles in place of feet
 //-----------------------------------------------------------------
-void	CCOM::Refresh(U_INT FrNo)
+void	CCOM::RefreshStation(U_INT FrNo)
 {	if (NeedUpdate(FrNo) == false)	return;
 	//----compute COM relative position -------------
-      SVector	v	       = GreatCirclePolar(&globals->geop, &pos);
-	    nmiles           = (float)v.r * MILE_PER_FOOT;
-	    return;
+  SVector	v	       = GreatCirclePolar(&globals->geop, &pos);
+	nmiles           = (float)v.r * MILE_PER_FOOT;
+	return;
 }
 //-----------------------------------------------------------------
 //	Check for freq and range match
@@ -1489,12 +1489,25 @@ bool CCOM::IsInRange(void)
 //==========================================================================
 CWPT::CWPT(OTYPE qo,QTYPE qa)
 :CmHead(qo,qa,"wpt*")
-{	radial	= 0;
-	nmiles	= 0;
-	wmag		= 0;
-	dsfeet	= 0;
-	user		= 'dbwp';								// Database waypoint
+{	Clear('dbwp');
 }
+//-----------------------------------------------------------------
+//  Constructor for lining waypoint
+//-----------------------------------------------------------------
+CWPT::CWPT()
+:CmHead(ANY,WPT,"wpt*")
+{	Clear('fixe');
+}
+//-----------------------------------------------------------------
+//  Set Initial values 
+//-----------------------------------------------------------------
+void CWPT::Clear(Tag k)
+{	kind		= k;								// waypoint usage
+	radial	= 0;
+	nmiles	= 0;
+	dsfeet	= 0;
+	return;
+	}
 //-----------------------------------------------------------------
 //  Set additional attributes
 //-----------------------------------------------------------------
@@ -1508,10 +1521,11 @@ void CWPT::SetAttributes()
 //    radial:   Relative from aircraft position
 //    nmiles:   Distance to station
 //-----------------------------------------------------------------
-void	CWPT::Refresh(U_INT FrNo)
+void	CWPT::RefreshStation(U_INT FrNo)
 {	if (NeedUpdate(FrNo) == false)	return;
 	//----compute WPT relative position -------------
   SVector	v	      = GreatCirclePolar(&globals->geop, &wpos);
+	tradial = float(v.h);
   radial  = Wrap360((float)v.h - wmag);
 	nmiles  = (float)v.r * MILE_PER_FOOT;
   dsfeet  =  v.r;
@@ -1520,19 +1534,18 @@ void	CWPT::Refresh(U_INT FrNo)
 //-----------------------------------------------------------------
 //  Set as flight plan waypoint
 //-----------------------------------------------------------------
-void	CWPT::Init(char *idn,SPosition *pos)
-{	user		= 'uswp';								// User Waypoint
+void	CWPT::SetParameters(Tag K,char *idn,char *nm, SPosition *P)
+{	kind		= K;									//'uswp';								// User Waypoint
+	SetPosition( *P);
+	wmag		= globals->magDEV;
 	wkey[0]	= 0;
 	wcty[0]	= 0;
 	wsta[0]	= 0;
 	strncpy(widn,idn,5);
+	strncpy(wnam,nm,26);
 	widn[4]	= 0;
 	wloc		= 0;
-	wpos		= *pos;
 	wtyp		= 2;
-	//--- Set reduction factor --------------
-	double lr   = FN_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
-  nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
 	return;
 }
 //-----------------------------------------------------------------
@@ -1541,8 +1554,8 @@ void	CWPT::Init(char *idn,SPosition *pos)
 void CWPT::SetPosition(SPosition p)
 {	wpos = p;
 	//--- Set reduction factor --------------
-	double lr   = FN_RAD_FROM_ARCS(wpos.lat);					//DegToRad (wpos.lat / 3600.0);  
-  nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
+	double lr = FN_RAD_FROM_ARCS(wpos.lat);					//	DegToRad (wpos.lat / 3600.0);  
+  nmFactor	= cos(lr) / 60;                       // 1 nm at latitude lr
 	return;
 }
 //-----------------------------------------------------------------------
@@ -1611,10 +1624,11 @@ void CNavaid::SetNavIndex()
 //    DZR:      Verticale dead zone radius in feet = ALTI*TG(7°)  in feet
 //	NOTE todo see if GreatCirclePolar can return nmiles in place of feet
 //-----------------------------------------------------------------
-void	CNavaid::Refresh(U_INT FrNo)
+void	CNavaid::RefreshStation(U_INT FrNo)
 {	if (NeedUpdate(FrNo) == false)	return;
 	//----compute Navaid relative position -------------
   SVector	v	      = GreatCirclePolar(&globals->geop, &pos);
+	tradial = float(v.h);
   radial  = Wrap360((float)v.h - mDev);
 	nmiles  = (float)v.r * MILE_PER_FOOT;
   vdzRad  =  globals->geop.alt * TANGENT_7DEG;
@@ -1626,7 +1640,7 @@ void	CNavaid::Refresh(U_INT FrNo)
 //-----------------------------------------------------------------
 CmHead *CNavaid::Select(U_INT frame,float freq)
 {	CmHead *nav = IsThisNavOK(freq);
-	if (nav)  Refresh(frame);
+	if (nav)  RefreshStation(frame);
   else      nav = globals->dbc->FindVOR(frame,freq);
 	return nav;				                       
 }
@@ -1751,6 +1765,7 @@ CRunway *CAirport::FindRunway(char *rend)
   rwyQ.Unlock();
   return rwy;
 }
+
 //-----------------------------------------------------------------
 //	Find  a runway by end identifier
 //-----------------------------------------------------------------
@@ -1909,10 +1924,11 @@ int  CAirport::SetMapType(void)
 //    nmiles:   Distance to station
 //	NOTE todo see if GreatCirclePolar can return nmiles in place of feet
 //-----------------------------------------------------------------
-void CAirport::Refresh(U_INT FrNo)
+void CAirport::RefreshStation(U_INT FrNo)
 {	//----compute airport relative position -------------
   if (NeedUpdate(FrNo) == false)	return;
   SVector	v	      = GreatCirclePolar(&globals->geop, &apos);
+	tradial = float(v.h);
   radial  = Wrap360((float)v.h - amag);
 	nmiles  = (float)v.r * MILE_PER_FOOT;
 	return;
@@ -2004,40 +2020,6 @@ void  CILS::SetAttributes()
   return;
 }
 //------------------------------------------------------------------------
-//  Init glide parameters
-//  Marker are set such that
-//  -Outter marker is detected at altitude 1200 feet
-//  -Medium marker is detected at altitude  300 feet
-//   Height / distance = tan(slope); thus distance = H / tan(slope);
-//------------------------------------------------------------------------
-void CILS::SetGlidePRM()
-{ if (0 == gsan)  gsan = 3;     // Default 3°
-  double slope  = DegToRad(gsan);
-  double glTan  = tan(slope);
-  ilsD->gTan    = glTan;
-  //---Compute OUTR marker parameters ---------------------------------
-  double bmo    = DegToRad(45.0);
-  double tgo    = tan(bmo);
-  outM.hmax     = 3000;
-  outM.hght     = 1200;
-  outM.dist     = 1200 / glTan;
-  outM.tang     = tgo;
-  //---Compute MIDL marker parameters ---------------------------------
-  double bmm    = DegToRad(51.0);
-  double tgm    = tan(bmm);
-  medM.hmax     = 1000;
-  medM.hght     =  300;
-  medM.dist     =  300 / glTan;
-  medM.tang     =  tgm;
-  //---Compute INNR marker parameters ---------------------------------
-  double bin    = DegToRad(70.0);
-  double tgi    = tan(bin);
-  inrM.hmax     = 200;
-  inrM.hght     = 100;
-  inrM.dist     =  20 / glTan;
-  inrM.tang     =  tgi;
-}
-//------------------------------------------------------------------------
 //  Check if the given location is inside the marker
 //  SPosition cis defined like this
 //  pos.lon = lateral (horizontal) deviation
@@ -2065,6 +2047,12 @@ char CILS::InMARK(SVector &pos, B_MARK &b,CBeaconMark &m)
 //------------------------------------------------------------------------
 //  Initialize ILS with runway parameters
 //------------------------------------------------------------------------
+//  Init glide parameters
+//  Marker are set such that
+//  -Outter marker is detected at altitude 1200 feet
+//  -Medium marker is detected at altitude  300 feet
+//   Height / distance = tan(slope); thus distance = H / tan(slope);
+//------------------------------------------------------------------------
 void CILS::SetIlsParameters(CRunway *rwy,LND_DATA *dt, float dir)
 { this->rwy   = rwy;
   float mdir  = Wrap360(dir - mDev);				// Magnetic direction
@@ -2072,7 +2060,34 @@ void CILS::SetIlsParameters(CRunway *rwy,LND_DATA *dt, float dir)
   ilsD        = dt;
   ilsD->ils   = this;
 	ilsD->lnDIR = mdir;
-  return SetGlidePRM();
+	//ilsD->lnDIR = dir;
+	//--- Compute glide slope parameters -----------------------
+  if (0 == gsan)  gsan = 3;     // Default 3°
+  double slope  = DegToRad(gsan);
+  double glTan  = tan(slope);
+  ilsD->gTan    = glTan;
+  //---Compute OUTR marker parameters ---------------------------------
+  double bmo    = DegToRad(45.0);
+  double tgo    = tan(bmo);
+  outM.hmax     = 3000;
+  outM.hght     = 1200;
+  outM.dist     = 1200 / glTan;
+  outM.tang     = tgo;
+  //---Compute MIDL marker parameters ---------------------------------
+  double bmm    = DegToRad(51.0);
+  double tgm    = tan(bmm);
+  medM.hmax     = 1000;
+  medM.hght     =  300;
+  medM.dist     =  300 / glTan;
+  medM.tang     =  tgm;
+  //---Compute INNR marker parameters ---------------------------------
+  double bin    = DegToRad(70.0);
+  double tgi    = tan(bin);
+  inrM.hmax     = 200;
+  inrM.hght     = 100;
+  inrM.dist     =  20 / glTan;
+  inrM.tang     =  tgi;
+	return;
 }
 //-----------------------------------------------------------------
 //	Check if this ILS can be reselected again
@@ -2132,13 +2147,14 @@ bool CILS::IsSelected(float hz)
 //					 Thus , when choosing which ILS is nearest to the aircraft
 //					 the test should be inverted. (See AIRPORT for ILS construction)
 //---------------------------------------------------------------------------
-void	CILS::Refresh(U_INT FrNo)
+void	CILS::RefreshStation(U_INT FrNo)
 {	if (NeedUpdate(FrNo) == false)	return;
 	//----Compute aircraft position to ILS glide slope -------
   SPosition  *ref = &ilsD->refP;
   SVector	v	      = GreatCirclePolar(&globals->geop,ref);
-  radial = Wrap360((float)v.h - mDev);
-	nmiles = float(v.r) * MILE_PER_FOOT;
+	tradial = float(v.h);
+  radial	= Wrap360((float)v.h - mDev);
+	nmiles	= float(v.r) * MILE_PER_FOOT;
   double dsf = v.r;             // feet distance
   ilsD->disF = dsf;							// 
   //----compute glide slope variation in tan unit --------
@@ -2151,7 +2167,7 @@ void	CILS::Refresh(U_INT FrNo)
 //-----------------------------------------------------------------
 CmHead *CILS::Select(U_INT frame,float freq)
 {	CmHead *ils = IsThisILSOK(freq);
-	if (ils)  Refresh(frame);
+	if (ils)  RefreshStation(frame);
   else      ils = globals->dbc->FindILS(frame,freq);
 	return ils;				                       
 }
@@ -2186,7 +2202,7 @@ CRunway::~CRunway()
 //-----------------------------------------------------------------
 //  Init end
 //-----------------------------------------------------------------
-void CRunway::EndAttributes(LND_DATA &d,SPosition &p)
+void CRunway::EndAttributes(LND_DATA &d,SPosition &p,SPosition &q,int lg)
 {  //---Init landing parameters ---------------------------
   double alti = rwyATHR[lgCode];
 	d.rwy	  = this;
@@ -2194,6 +2210,14 @@ void CRunway::EndAttributes(LND_DATA &d,SPosition &p)
   d.lndP  = p;
   d.altT  = alti;
 	d.gTan  = float(TANGENT_3DEG);
+	//--- Compute true orientation --------------------------
+	SVector	v	= GreatCirclePolar(&p, &q);
+  d.orie		= Wrap360(v.h);
+	//--- Compute forward point -----------------------------
+	double R  = 1 + double(RWY_FWD_POINT) / lg;
+	d.fwdP    = GetAlignedSpot(q,p,R);
+	R	*= 0.5;
+	d.midP    = GetAlignedSpot(q,p,R);
 	return;
 }
 //-----------------------------------------------------------------
@@ -2210,9 +2234,9 @@ void CRunway::SetAttributes()
   Grnd   = GetGroundIndex();
 	Paved  = RwyTYP[Grnd];
   //---Init landing parameters ---------------------------
-	EndAttributes(ilsD[RWY_HI_END],pshi);
+	EndAttributes(ilsD[RWY_HI_END],pshi,pslo,rlen);
 	//----------------------------
-	EndAttributes(ilsD[RWY_LO_END],pslo);
+	EndAttributes(ilsD[RWY_LO_END],pslo,pshi,rlen);
 	//---Initialize letter index ---------------------------
   pID[RWY_HI_END].LetID  = GetIdentIndex(rhid[2]);
   pID[RWY_LO_END].LetID  = GetIdentIndex(rlid[2]);
@@ -2277,12 +2301,14 @@ U_INT  CRunway::GetNumberBand(int bw)
 void CRunway::InitILS(CILS *ils)
 { if (ils->SameEND(rhid)) 
   { ilsT |= ILS_HI_END;
-    ils->SetIlsParameters(this,ilsD+RWY_HI_END,rhhd);
+    ils->SetIlsParameters(this,ilsD+RWY_HI_END,rhhd);		// True heading
+		//ils->SetIlsParameters(this,ilsD+RWY_HI_END,rhmh);	// Magnetic headidng
     return;
   }
   if (ils->SameEND(rlid))
   { ilsT |= ILS_LO_END;
-    ils->SetIlsParameters(this,ilsD+RWY_LO_END,rlhd);
+    ils->SetIlsParameters(this,ilsD+RWY_LO_END,rlhd);		// true headin
+		//ils->SetIlsParameters(this,ilsD+RWY_LO_END,rlmh);	// Magnetic heading
     return;
   }
   return;
@@ -2349,7 +2375,8 @@ char CRunway::ChangeLights(char ls)
 void CRunway::FillHiNODE(TaxNODE *node)
 {	node->SetRWY(rhid);
 	node->SetREF(ilsD + 0);
-	node->SetPosition(ilsD[RWY_HI_END].lndP);
+	//node->SetPosition(ilsD[RWY_HI_END].lndP);
+	node->SetPosition(ilsD[RWY_HI_END].tkoP);
 	return;
 }
 //---------------------------------------------------------------------------------
@@ -2358,7 +2385,8 @@ void CRunway::FillHiNODE(TaxNODE *node)
 void CRunway::FillLoNODE(TaxNODE *node)
 {	node->SetRWY(rlid);
 	node->SetREF(ilsD + 1);
-	node->SetPosition(ilsD[RWY_LO_END].lndP);
+	//node->SetPosition(ilsD[RWY_LO_END].lndP);
+	node->SetPosition(ilsD[RWY_LO_END].tkoP);
 	return;
 }
 
@@ -3338,8 +3366,7 @@ void CDbCacheMgr::IlsFromSQL(CTileCache *tc)
 { ClQueue   *hd = tc->qHead[APT];
   CAirport *apt = 0;
   for (apt = (CAirport *)hd->GetFirst(); apt != 0; apt = (CAirport *)apt->NextInQ2())
-  { globals->sqm->GetIlsForAirport(apt,OBJtoCache,tc);
-  }
+  { globals->sqm->GetIlsForAirport(apt,OBJtoCache,tc);  }
   return;
 }
 
@@ -3525,7 +3552,7 @@ CWPT* CDbCacheMgr::GetWaypointByKey(char *key)
 //------------------------------------------------------------------------
 void CDbCacheMgr::GetFlightPlanWPT(CWPoint* wpt)
 { CmHead* obj = 0;
-  switch(wpt->GetUser())  {
+  switch(wpt->GetKind())  {
   case  'airp':
     obj = GetAirportByName(wpt->GetName());
     wpt->SetDBwpt(obj);
@@ -3581,7 +3608,7 @@ U_LONG CDbCacheMgr::GetDBcountryNBrecords()
 //-------------------------------------------------------------------------
 CNavaid *CDbCacheMgr::GetTunedNAV(CNavaid *pn,U_INT FrNo,float freq)
 {	CNavaid *nav = (pn)?(pn->IsThisNavOK(freq)):(0);
-  if (nav)  nav->Refresh(FrNo);
+  if (nav)  nav->RefreshStation(FrNo);
   else      nav = FindVOR(FrNo,freq);
 	return nav;				                        // refresh same nav
 }
@@ -3595,7 +3622,7 @@ CNavaid *CDbCacheMgr::FindVOR(U_INT FrNo,float freq)
   hd->Lock();
 	for (nav = (CNavaid*)hd->GetFirst(); nav != 0; nav = (CNavaid*)nav->NextInQ1())
 	{	if (!nav->IsSelected(freq))	continue;	
-    nav->Refresh(FrNo);
+    nav->RefreshStation(FrNo);
     if (nav->IsInRange()) break;
   }
   if (nav)  nav->IncUser();
@@ -3668,7 +3695,7 @@ void  CDbCacheMgr::ReleaseVOR(CNavaid* vor)
 //=========================================================================
 CILS *CDbCacheMgr::GetTunedILS(CILS *pi,U_INT FrNo,float freq)
 {	CILS *ils = (pi)?(pi->IsThisILSOK(freq)):(0);
-  if (ils)  ils->Refresh(FrNo);
+  if (ils)  ils->RefreshStation(FrNo);
   else      ils = FindILS(FrNo,freq);
 	return ils;				// refresh same ils
 }
@@ -3703,7 +3730,7 @@ CILS *CDbCacheMgr::FindILS(U_INT FrNo,float freq)
 	for (ils1 = (CILS*)hd->GetFirst(); ils1 != 0; ils1 = (CILS*)ils1->NextInQ1())
 	{	if (!ils1->IsSelected(freq))	continue;	
 	  if (!ils1->ilsD)							continue;
-    ils1->Refresh(FrNo);
+    ils1->RefreshStation(FrNo);
     if (ils1->IsInRange() == 0)   continue;
     ils2  = BestILS(ils1,ils2);
   }
@@ -3718,7 +3745,7 @@ CILS *CDbCacheMgr::FindILS(U_INT FrNo,float freq)
 //=========================================================================
 CNavaid *CDbCacheMgr::GetTunedNDB(CNavaid *pn,U_INT FrNo,float freq)
 {	CNavaid *ndb = (pn)?(pn->IsThisNDBOK(freq)):(0);
-  if (ndb)  ndb->Refresh(FrNo);
+  if (ndb)  ndb->RefreshStation(FrNo);
   else      ndb = FindNDB(FrNo,freq);
 	return ndb;				                                // refresh same NDB
 }
@@ -3732,7 +3759,7 @@ CNavaid *CDbCacheMgr::FindNDB(U_INT FrNo,float freq)
   hd->Lock();
 	for (ndb = (CNavaid*)hd->GetFirst(); ndb != 0; ndb = (CNavaid*)ndb->NextInQ1())
 	{	if (ndb->IsSelected(freq) == false)	  continue;
-    ndb->Refresh(FrNo);
+    ndb->RefreshStation(FrNo);
     if (ndb->IsInRange())   break;
   }
   if (ndb) ndb->IncUser();
@@ -3798,7 +3825,7 @@ void  CDbCacheMgr::ReleaseNDB(CNavaid* ndb)
 //-------------------------------------------------------------------------
 CCOM *CDbCacheMgr::GetTunedCOM(CCOM *pn,U_INT FrNo,float freq)
 {	CCOM *com = (pn)?(pn->IsThisComOK(freq)):(0);
-  if (com)  com->Refresh(FrNo);
+  if (com)  com->RefreshStation(FrNo);
   else      com = FindCOM(FrNo,freq);
 	return com;				                        
 }
@@ -3812,7 +3839,7 @@ CCOM *CDbCacheMgr::FindCOM(U_INT FrNo,float freq)
   hd->Lock();
 	for (com = (CCOM*)hd->GetFirst(); com != 0; com = (CCOM*)com->NextInQ1())
 	{	if (com->IsSelected(freq) == false)	continue;	
-    com->Refresh(FrNo);
+    com->RefreshStation(FrNo);
     if (!com->IsInRange()) continue;
     com->IncUser();
     break;

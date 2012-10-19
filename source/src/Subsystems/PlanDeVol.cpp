@@ -501,7 +501,7 @@ void CWPoint::Build(Tag t)
 { //--- Init node part ------------------------------
 	nSeq      = 0;
   type      = t;
-	user			= t;
+	kind			= t;
   fplan     = 0;
 	mode			= WPT_MOD_LEG;
 	activ			= 0;
@@ -553,36 +553,18 @@ void CWPoint::ClearDate (SDateTime &sd)
 //--------------------------------------------------------------
 //	Refresh direction to waypoint if needed
 //	Correct any drift due to long legs
+//	Set direct mode if leg 
 //--------------------------------------------------------------
-void CWPoint::CorrectDrift(CRadio *R, CVehicleObject *V)
+void CWPoint::CorrectDrift(CRadio *R)
 {	float rdev = R->GetDeviation();					// Relative deviation
 	float adev = fabs(rdev);								// Absolute deviation
-	bool  dto = ((adev > 5) || IsDirect());
-	//--- check if Direct to is active ----------
-	if (!dto)	return; 
-  float dir = GoDirect(V);
-	R->ChangePosition(&position);
-	R->ChangeRefDirection(dir);
+	if ((mDis > 12) || (adev < 5))	return;
+	//--- check if landing ----------
+	if (IsLanding())								return;
+	R->SetDirectMode();
 	return;
 }
 
-//-----------------------------------------------------------
-//	Change Mode
-//	Compute direct path to waypoint except if landing point
-//	When landing, the segment direction sDir has been
-//	set to the runway direction
-//-----------------------------------------------------------
-float CWPoint::GoDirect(CVehicleObject *veh)
-{	if (IsLanding())	return sDir;
-	SetDirectMode();
-	SVector v = {0,0,0};
-  CmHead *obj	= DBwpt.Pointer();
-	if (0 == obj)	return sDir;
-	v	= GreatCirclePolar(veh->GetAdPosition(), obj->ObjPosition());
-	double mdev = obj->GetMagDev();
-	sDir = Wrap360((float)v.h - mdev);
-	return sDir;
-}
 //----------------------------------------------------------------------
 //	Select best altitude depending on distance from previous node
 //	a0 is the previous node altitude
@@ -665,8 +647,8 @@ int CWPoint::Read (SStream *stream, Tag tag)
 	switch (tag) {
 	case 'type':
   case 'user':
-    ReadTag (&user, stream);
-		TagToString(userT,user);
+    ReadTag (&kind, stream);
+		TagToString(userT,kind);
     return TAG_READ;
 
   case 'name':
@@ -741,9 +723,9 @@ char *CWPoint::GetIdentity()
 //  Return SQL Table
 //--------------------------------------------------------------------
 char *CWPoint::GetSQLtab()
-{	if (user == 'airp')	return "APT";
-	if (user == 'snav') return "NAV";
-	if (user == 'dbwp')	return "WPT";
+{	if (kind == 'airp')	return "APT";
+	if (kind == 'snav') return "NAV";
+	if (kind == 'dbwp')	return "WPT";
 	return "NUT";
 }
 //--------------------------------------------------------------------
@@ -762,15 +744,15 @@ LND_DATA *CWPoint::GetLandingData()
 	//--- Locate airport in cache ----------
   CAirport *apt = globals->dbc->FindAPTbyKey(dbKey);
 	if (0 == apt)			return 0;
-	//--- Locate nearest airport ----------------
-	CAptObject  *apo = apt->GetAPO();				
-	LND_DATA    *lnd = apo->GetRunwayData(dbKey,lndRWY);
+	//--- Locate landing runway ----------------
+	LND_DATA    *lnd = apt->FindRunwayLND(lndRWY);		
 	if (0 == lnd)			return 0;
-	sDir = lnd->lnDIR;
+	sDir	= lnd->lnDIR;
 	return lnd;
 }
+
 //--------------------------------------------------------------------
-//  Set Landing configuration
+//  Set Landing configuration from external source (robot or GPS)
 //--------------------------------------------------------------------
 bool CWPoint::EnterLanding(CRadio *rad)
 { LND_DATA *lnd = GetLandingData();
@@ -857,9 +839,7 @@ void CWPoint::NodeEnd()
 //-----------------------------------------------------------------
 void CWPoint::PopulateUser()
 {	CWPT *wpt = new CWPT(ANY,WPT);
-  wpt->Init(Iden,&position);
-	wpt->SetMGD(globals->magDEV);		
-	wpt->SetNAM(Name);
+  wpt->SetParameters('uswp',Iden,Name,&position);
 	wpt->SetKey("NONE");
 	wpt->SetDIS(0);
 	wpt->SetNOD(this);
@@ -870,7 +850,7 @@ void CWPoint::PopulateUser()
 // Get record from database if needed
 //-----------------------------------------------------------------
 void CWPoint::Populate()
-{	if ('uswp' == user)	PopulateUser();
+{	if ('uswp' == kind)	PopulateUser();
 	else
 	{	globals->dbc->PopulateNode(this);
 		char   *idn = GetIdentity();
@@ -1029,6 +1009,10 @@ void CWPoint::SetLegDistance(float d)
 {	legDis	= d;
   _snprintf(Dist,9,"%.1f",d);
 	Dist[9]	= 0;
+	CmHead *obj = GetDBobject();
+  if (obj->IsNot(WPT))	return;
+	CWPT   *nod = (CWPT*) obj;
+	nod->SetDIS(d);
 	return;
 }
 //----------------------------------------------------------------------
@@ -1170,7 +1154,7 @@ void CWPoint::Save(CStreamFile &sf)
   sf.WritePosition(GetDBobject()->ObjPosition());
   sf.WriteTag('dbky', "---------Database key --------");
   sf.WriteString(dbKey);
-	TagToString(txt,user);
+	TagToString(txt,kind);
   sf.WriteTag('user', "---------Waypoint usage-------");
   sf.WriteString(txt);
   sf.WriteTag('altd', "---Altitude (feet) at WPT-----");
@@ -1211,6 +1195,7 @@ CFPlan::CFPlan(CVehicleObject *m,char rp)
   serial	= 0;
 	State		= FPL_STA_NUL;
 	modify	= 0;
+	RAD			= 0;
 	GPS 		= mveh->GetGPS(); 
 	dWPT.SetFlightPlan(this);
 	realp   = rp;
@@ -1451,7 +1436,7 @@ void CFPlan::GenWptName(char *edt)
 }
 //-----------------------------------------------------------------
 // Create a user waypoint
-//	NOTE:  We use the local magnetic deviation for the waypoint
+//	NOTE:  We use the global magnetic deviation for the waypoint
 //-----------------------------------------------------------------
 CWPT *CFPlan::CreateUserWPT(SPosition *p)
 {	char  edt[8];
@@ -1459,9 +1444,7 @@ CWPT *CFPlan::CreateUserWPT(SPosition *p)
   GenWptName(edt);
 	_snprintf(nam,26,"User %s",edt);
 	CWPT *wpt = new CWPT(ANY,WPT);
-	wpt->Init(edt,p);
-	wpt->SetMGD(globals->magDEV);		
-	wpt->SetNAM(nam);
+	wpt->SetParameters('uswp',edt,nam,p);
 	wpt->SetKey("NONE");
 	return wpt;
 }
@@ -1486,7 +1469,7 @@ CWPoint *CFPlan::CreateNAVwaypoint(CNavaid *nav)
 //-------------------------------------------------------------------------
 CWPoint *CFPlan::CreateWPTwaypoint(CWPT		*pnt)
 {	CWPoint	*wpt = new CWPoint(this,'wayp');
-	wpt->SetUser('uswp');
+	wpt->SetKind('uswp');
 	pnt->SetNOD(wpt);
   wpt->FillWPT(pnt,1);
   return wpt;
@@ -1635,6 +1618,8 @@ int CFPlan::ModifyCeil(int inc)
 //-----------------------------------------------------------------
 // Assign a direct to waypoint (from GPS)
 // Set expected altitude from original waypoint
+//	When the waypoint is from flight plan, the obj has a pointer
+//	to the original CWPoint descriptor
 //-----------------------------------------------------------------
 void CFPlan::AssignDirect(CmHead *obj)
 {	CWPoint *wpt = (CWPoint*)obj->GetUPTR();
@@ -1714,7 +1699,7 @@ void	CFPlan::TimeSlice(float dT, U_INT frm)
 {	char ret = 0;
 	char nw  = mveh->NbWheelsOnGround();
   //--- Update non FP direct TO waypoint ------
-	UpdateDirectNode(frm);
+	UpdateDirectNode();
 	//--- Update one node at a time ---------
 	UpdateAllNodes();
 	//--- Update according to current state -----
@@ -1726,23 +1711,24 @@ void	CFPlan::TimeSlice(float dT, U_INT frm)
 		//--- Flight plan operational -------------
 		case FPL_STA_OPR:
 			//--- Now update active waypoint --------
-			UpdateActiveNode(frm);
+			UpdateActiveNode();
 			return;
 	}
 }
 //-----------------------------------------------------------------
 //	Update Direct node (this is for GPS)
 //-----------------------------------------------------------------
-void CFPlan::UpdateDirectNode(U_INT frm)
+void CFPlan::UpdateDirectNode()
 {	if (aWPT != &dWPT)			return;
 	if (aWPT->IsFromFPL())	return;
-	UpdateActiveNode(frm);
+	//--- Waypoint not from FlightPlan ------------
+	UpdateActiveNode();
 	return;
 }
 //-----------------------------------------------------------------
-//	Update Active node
+//	Update Active node. Change waypoint if needed
 //-----------------------------------------------------------------
-void CFPlan::UpdateActiveNode(U_INT frm)
+void CFPlan::UpdateActiveNode()
 {	aWPT->UpdateRange(mveh);
 	//---------------------------------------
 	if (0 == aWPT->UpdateState())			return;
@@ -1832,7 +1818,7 @@ void CFPlan::MovedWaypoint(CWPoint *wpt)
 	SetDistance(prv,wpt);
 	CWPoint *nxt  = (CWPoint*)wPoints.NextPrimary(wpt);
 	SetDistance(wpt,nxt);
-	wpt->SetDirectMode();
+	if (RAD)	RAD->WayPointMoved(wpt->GetDBobject(),wpt->GetGeoP());
 	Modify(1);
 	//----------------------------------
 	if (win)	win->Refresh();
@@ -1975,77 +1961,25 @@ bool CFPlan::NotFor3D()
 //  Called from vector map to draw the route
 //--------------------------------------------------------------------
 void CFPlan::DrawOnMap(CFuiVectorMap *vmp)
-{ CWPoint *org = 0;
-  CWPoint *ext = 0;
-	float		 dis = 0;
-	int dim			 = wPoints.GetSize();
-  for (int k=1; k<dim; k++)
-  { org = (CWPoint *)wPoints.GetSlot(k);
+{	CWPoint *org;
+	CWPoint *ext;
+  int dim	= wPoints.GetSize();
+	for (int k=1; k < dim; k++)
+	{	org = (CWPoint *)wPoints.GetSlot(k);
 		ext = (CWPoint *)wPoints.NextPrimary(org);
-		//----Init route origin ------------------
-		rOrg.SetNode(org);
-    if (0 == ext) break;
-		rExt.SetNode(ext);
-    vmp->DrawRoute(rOrg,rExt);
-		rExt.SetNode(0);
-  }
-  return;
-}
-//------------------------------------------------------------------------
-//  Draw Rabbit at aircraft position
-//------------------------------------------------------------------------
-void CFPlan::DrawNode()
-{	bool ok = (globals->aPROF.Has(PROF_DRAWRB)) != 0;
-	if (!ok)					return;
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
-	
-  glShadeModel(GL_SMOOTH);
-  glEnable(GL_DEPTH_TEST);
-  glDisable(GL_BLEND);
-  glFrontFace(GL_CCW);
-  //gluSphere(sphere,50,32,32);
-  glPopAttrib();
-	return;
-}
-//------------------------------------------------------------------------
-//  Draw fplan in 3D
-//------------------------------------------------------------------------
-void CFPlan::DrawOn3DW()
-{ bool ok = (globals->aPROF.Has(PROF_DRAWRB)) != 0;
-	if (!ok)					return;
-	CWPoint *prv  = 0;
-	CWPoint *head = (CWPoint*)wPoints.HeadPrimary();
-	CWPoint *node = 0;
-	SPosition org = mveh->GetPosition();			// Origin of node
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
-	double    rdf = GetReductionFactor(org.lat);
-	glDisable(GL_LIGHTING);
-	for (node = head; node!=0; node = (CWPoint *)wPoints.NextPrimary(node))
-	{	CVector to;
-		to.FeetTranslation(rdf,org,*node->GetGeoP());
-		glPushMatrix();
-		glTranslated(to.x,to.y,to.z);
-		glShadeModel(GL_SMOOTH);
-		glEnable(GL_DEPTH_TEST);
-		glDisable(GL_BLEND);
-		glFrontFace(GL_CCW);
-		//gluSphere(sphere,50,32,32);
-		glPopMatrix();
-		//--- Draw line between nodes --------------------
-		CVector fr;
-		if (prv)
-		{	fr.FeetTranslation(rdf,org,*prv->GetGeoP());
-			glBegin(GL_LINES);
-		//	glColor4f(1,0,0,1);
-			ColorGL(COLOR_RED);
-			glVertex3dv(&fr.x);
-			glVertex3dv(&to.x);
-			glEnd();
-		}
-		//--- Save previous node -------------------------
-		prv	= node;
+		switch (route.ComputeLeg(org,ext))
+		{	case DRAW_LEG_NUL:
+					return;
+			case DRAW_LEG_STD:
+					vmp->DrawRoute(route);
+					continue;
+			case DRAW_LEG_FIN:
+					vmp->DrawRoute(route);
+					route.LastLeg();
+					vmp->DrawRoute(route);
+					continue;
+		}	// End of switch
 	}
-  glPopAttrib();
 	return;
 }
 //-----------------------------------------------------------------
@@ -2126,27 +2060,27 @@ void CFPlan::Save()
   return;
 } 
 //=======================================================================
-//  Fill parameters to compute distance
+//  Route to draw a flight plan
 //=======================================================================
 //-------------------------------------------------------------
-//	return position
+//	Set Parameters 
 //-------------------------------------------------------------
-SPosition *VMnode::ObjPosition()
-{	return wpt->GetGeoP();}
+int VMroute::ComputeLeg(CWPoint *A,CWPoint *B)
+{	if (0 == B)		return DRAW_LEG_NUL;
+	//--- Check if B is the final airport with landing runway ---
+	end	= B->GetDBobject();
+	org	= A->GetDBobject();
+	ext	= 0;										
+	//--- B is a landing runway ----------------------------
+	if (ext)			return DRAW_LEG_FIN;
+	ext	= end;
+	return DRAW_LEG_STD;
+}
 //-------------------------------------------------------------
-//	return database object
+//	Set Last Leg 
 //-------------------------------------------------------------
-CmHead *VMnode::GetOBJ()
-{	return wpt->GetDBobject();	}
-//-------------------------------------------------------------
-//	Set Node distance  
-//-------------------------------------------------------------
-void VMnode::SetNodeDistance()
-{	CmHead *obj = wpt->GetDBobject();
-  if (obj->IsNot(WPT))	return;
-	float d = wpt->GetLegDistance();
-	CWPT   *nod = (CWPT*) obj;
-	nod->SetDIS(d);
-	return;
+void VMroute::LastLeg()
+{	org	= ext;
+	ext	= end;
 }
 //=================END OF FILE ==================================================

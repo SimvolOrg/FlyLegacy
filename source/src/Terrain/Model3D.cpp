@@ -499,10 +499,9 @@ int C3DMgr::LocateObjects(C_QGT *qgt)
 	//--- Search in SQL database----------------------
 	if (sql)	nbo = globals->sqm->ReadWOBJ(qgt);
 	if (tr && nbo) TraceLoad(nbo,"Database",qgt);
-	if (nbo)			 return nbo;
 	//--- Load pod -----------------------------------
 	C3Dfile    scf(qgt,0);
-	return     LoadFromPod(scf);
+	return LoadFromPod(scf);
 }
 //--------------------------------------------------------------------
 //  Locate the nearest VOR in this QGT
@@ -1893,7 +1892,7 @@ C3DPart::C3DPart(char dir, char *txn,int lq, int nbv, int nbx)
 	txd.Dir = FOLDER_ART;
 	txd.azp = 0x00;
 	txd.apx = 0xFF;
-	tRef		= GetReference(txd);
+	tRef		= globals->txw->Get3DTexture(txd);			//GetReference(txd);
 	if (nbv) AllocateW3dVTX(nbv);
 	if (nbx) AllocateXList (nbx);
 	total = 0;
@@ -1918,7 +1917,7 @@ C3DPart::C3DPart(char dir, char *txn,int lq,int nbx)
 	txd.Dir = FOLDER_ART;
 	txd.azp = 0xFF;
 	txd.apx = 0xFF;
-	tRef		= GetReference(txd);
+	tRef		= globals->txw->Get3DTexture(txd);	//GetReference(txd);
 	AllocateOsmGVT(nbx);
 	total = 0;
 	strcpy(idn,"PART");
@@ -1927,11 +1926,17 @@ C3DPart::C3DPart(char dir, char *txn,int lq,int nbx)
 //----------------------------------------------------------------------
 //	Get texture reference
 //----------------------------------------------------------------------
+/*
 CShared3DTex *C3DPart::GetReference(TEXT_INFO &txd)
-{	if (globals->m3dDB) return globals->txw->GetM3DSqlTexture(txd);
-	else								return globals->txw->GetM3DPodTexture(txd);
+{	if (0 == *txd.name)	return 0;
+	//--- search a texture in SQL or in POD -----------------------
+	CShared3DTex *shx = 0;
+	if (globals->m3dDB) shx = globals->txw->GetM3DSqlTexture(txd);
+	if (0 == shx)				shx = globals->txw->GetM3DPodTexture(txd);
+	if (shx)						return shx;
+	//--- Create a new entry for this texture 
 }
-
+*/
 //----------------------------------------------------------------------
 //  Free Texture
 //----------------------------------------------------------------------
@@ -1960,7 +1965,7 @@ void C3DPart::SetTexture(U_CHAR t, char *txn)
 	txd.azp = t;
 	txd.apx = 0xFF;
 	if (tRef) globals->txw->Free3DTexture(tRef);
-	tRef		= GetReference(txd);
+	tRef		= globals->txw->Get3DTexture(txd);	//GetReference(txd);
 	return;
 }
 //----------------------------------------------------------------------
@@ -2207,7 +2212,7 @@ void C3DPart::SetAllTexName(char dir,char *txn)
 	txd.apx = 0xFF;
 	txd.azp = 0;
 	strncpy(txd.name,txn,FNAM_MAX);
-	tRef	= globals->txw->GetM3DPodTexture(txd);
+	tRef	= globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
   return;
 }
 //----------------------------------------------------------------------

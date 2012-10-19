@@ -115,6 +115,7 @@ protected:
 	char										deep;		// deep search
 	//----------------------------------------------------
 	TaxiwayMGR						 *nsup;		// Node supplier
+	//--- Stack for undo operations ----------------------
 	//----------------------------------------------------
 public:
 	TaxiCircuit(TaxiwayMGR *H, char t)	{nsup = H; dir = t;}
@@ -122,13 +123,12 @@ public:
 	//-----------------------------------------------------
 	//int			 Read(SStream *sf,Tag tag);
 	//----------------------------------------------------
-	//----------------------------------------------------
   TaxEDGE *GetArc(Tag A);
 	TaxEDGE *GetArc(Tag A, Tag B);
 	//--- Search a path -----------------------------------
 	void		 GetTarget(TaxNODE *D, Tag F);
 	void     StoreToPath(Tag F);
-	bool		 SearchThePath(Tag D, Tag F);
+	int 		 SearchThePath(Tag D, Tag F);
 	bool     CutBack(Tag T);
 	//----------------------------------------------------
 	TaxEDGE *FirstPathArc();
@@ -261,14 +261,14 @@ public:
 	//-----------------------------------------------------
 	char			NodeColor(TaxNODE *N);
 	//-----------------------------------------------------
-	char			NodeType(char t1,char t2);
+	char			TaxiNodeType(char t1,char t2);
 	void			SwapRunway(Tag N);
 	//-----------------------------------------------------
 	void			ComputeAllShortCut();
 	//-----------------------------------------------------
 	void			CreateRWY(CRunway *rwy);
 	Tag			  InsertNode(Tag A,Tag B);
-	Tag				AddBrNode(Tag A, SPosition &P);
+	Tag				AddOneNode(Tag A, Tag B, SPosition &P);
 	//-----------------------------------------------------
 	void			SetSelection(Tag id);
 	Tag				GetSelected();
@@ -364,7 +364,7 @@ public:
 	//------------------------------------------------------------
 	void  InsertNode();
 	void	AttachNodes();
-	void	AddBlueNode();
+	void	AddEdgeNode();
 	void	DeleteEdge();
 	//------------------------------------------------------------
 	void	SetStartNode(Tag T);

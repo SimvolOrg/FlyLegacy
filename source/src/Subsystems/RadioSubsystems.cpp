@@ -27,7 +27,7 @@
 #include "../Include/Database.h"
 #include "../Include/Fui.h"
 #include "../Include/FuiUser.h"
-
+#include "../Include/PlanDeVol.h"
 using namespace std;
 //===================================================================================
 //		Flag
@@ -48,9 +48,14 @@ CmHead *CNulSource::Select(U_INT frame,float freq)
 }
 //===================================================================================
 // CExtSource:   An externnal radio source used to drive the radio
+//	External source is either
+//	-A user waypoint on the flight plan
+//	-A Runway ending point for landing
+//	All other sources (NAV/NDB/ILS) are internal to the radio
 //===================================================================================
-void CExtSource::SetSource(CmHead *src,LND_DATA *ils,U_INT frm)
-{	active	= 1;
+void CExtSource::SetSource(CmHead *src,LND_DATA *ils)
+{	tsrc		= src;
+	active	= 1;
 	strncpy(sidn,src->GetIdent(),5);			// store ident
 	strncpy(snam,src->GetName(),64);			// Store name
 	spos		= src->GetPosition();					// Geo position
@@ -65,17 +70,18 @@ void CExtSource::SetSource(CmHead *src,LND_DATA *ils,U_INT frm)
 	double lr   = FN_RAD_FROM_ARCS(spos.lat);					//DegToRad  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
 	//--- Refresh distance and direction -----------------------
-	Refresh(frm);
+	RefreshStation(0);
 	return;
 }
 //--------------------------------------------------------------------------
 //	Refresh distance and direction to aircraft
 //--------------------------------------------------------------------------
-void CExtSource::Refresh(U_INT fram)
+void CExtSource::RefreshStation(U_INT fram)
 {	//----compute WPT relative position -------------
 	SPosition *acp  = mveh->GetAdPosition();
-	SPosition *ref  = (ilsD)?(&ilsD->refP):(&spos);
+	SPosition *ref  = &spos;
   SVector	v	      = GreatCirclePolar(acp, ref);
+	tradial = float(v.h);
   radial  = Wrap360((float)v.h - smag);
 	nmiles  = (float)v.r * MILE_PER_FOOT;
   dsfeet  =  v.r;
@@ -88,17 +94,22 @@ void CExtSource::Refresh(U_INT fram)
 	return;
 }
 //--------------------------------------------------------------------------
-//	Refresh distance and direction to aircraft
+//	Set Landing position (only for runway in final)
 //--------------------------------------------------------------------------
-
+void CExtSource::SetPosition(SPosition *P)
+{	spos = *P;
+	RefreshStation(0);
+	return;
+}
 //===================================================================================
 // CRadio
-//	NOTE:  CRadio hold the Radio BUS n°1 
+//	NOTE:  CRadio hold the Radio BUS (busRD)
 //===================================================================================
 CRadio::CRadio (void)
 { TypeIs (SUBSYSTEM_RADIO);
   hwId    = HW_RADIO;
-  sinc    = 0;
+  sinc    = 0;										// Dial Precision
+	mode		= RADIO_MODE_TRACK;
   test    = false;
   nState  = 0;
   cState  = 0;
@@ -164,13 +175,12 @@ void  CRadio::StoreFreq(short(wp),short(fp),CHFREQ &freq)
 //--------------------------------------------------------------------
 void CRadio::Probe(CFuiCanva *cnv)
 { char edt[256];
-  sprintf_s(edt,63,"Active:     %d",active);
+  sprintf_s(edt,63,"Active:%d-mode:%c",active,busRD.mode);
   cnv->AddText(1,edt,1);
   sprintf_s(edt,63,"Freq:%d=>   %03u.%02u",busRD.rnum,
                                       ActCom.whole,
                                       ActCom.fract);
   cnv->AddText(1,edt,1);
-
   cnv->AddText( 1,1,"xOBS %03d",busRD.xOBS);
   cnv->AddText( 1,1,"hREF %.5f",busRD.hREF);
   cnv->AddText( 1,1,"RADI %.5f",busRD.radi);
@@ -340,9 +350,11 @@ void CRadio::FreeRadios(char opt)
 //--------------------------------------------------------------------------
 void CRadio::SelectSource()
 {	//--- Source is external ---------------------------
-	if (EXT.IsActive())		return EXT.Refresh(Frame);
+	if (EXT.IsActive())		return EXT.RefreshStation(Frame);
 	//--- Source is a VOR or ILS or NULL ---------------
 	SRC = SRC->Select(Frame,ActNav.freq);     // Refresh NAV
+	//--- Whatever is selected it is in TRACK mode -----
+	busRD.mode = RADIO_MODE_TRACK;
 	//--- Set null source ------------------------------
 	if (SRC)							return;
 	SRC	= &nulS;
@@ -363,14 +375,27 @@ void CRadio::ModeEXT(CmHead *src,LND_DATA *lnd)
 	}
 	//--- Update external bus ---------------------------
 	else
-	{	SRC->DecUser();
-		EXT.SetSource(src,lnd,0);
+	{	mveh->GetFlightPlan()->SetRadio(this);
+		busRD.mode = RADIO_MODE_TRACK;
+		SRC->DecUser();
+		EXT.SetSource(src,lnd);
 		SRC	= &EXT;
 		if ((uNum == 1)	&& (lnd) && mveh->IsUserPlan())	globals->lnd	= lnd;
 	}
 	Synchronize();
 	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);
 	return;
+}
+//--------------------------------------------------------------------------
+//  A waypoint was moved. If this is the current source
+//	set direct mode to this waypoint
+//--------------------------------------------------------------------------
+void	CRadio::WayPointMoved(CmHead *wpt,SPosition *P)
+{	if (SRC != &EXT)				return;
+	if (EXT.NeqSource(wpt))	return;
+	EXT.SetPosition(P);
+	SetDirectMode();
+	return;	
 }
 //--------------------------------------------------------------------------
 //  Change OBS from external
@@ -414,10 +439,30 @@ void CRadio::TimeSlice (float dT,U_INT FrNo)
 	return;
 }
 //------------------------------------------------------------------
+//  Mode direct:  The reference direction is the target radial
+//	where aircraft is positionned. So the system is constantly
+//	heading to the target without following a specified direction
+//------------------------------------------------------------------
+void CRadio::SetDirectMode()
+{	busRD.mode = RADIO_MODE_DIRECT;
+	DirectMode();
+	return;
+}
+//------------------------------------------------------------------
+//	In direct mode, the reference direction change each time to the
+//	real direction to correct any drift
+//------------------------------------------------------------------
+void	CRadio::DirectMode()
+{	double dir = busRD.radi;
+	SRC->SetRefDirection(dir);
+	busRD.SetOBS(dir);
+}
+//------------------------------------------------------------------
 //  Resynchronize radio
 //------------------------------------------------------------------
 void	CRadio::Synchronize()
-{ float   rad = 0;
+{	float   rad = 0;
+	if (RADIO_MODE_DIRECT == busRD.mode) DirectMode();
 	busRD.rSRC  = SRC;
 	SRC->SetNavOBS(busRD.xOBS);
 	rad = SRC->GetRadial(); 
@@ -434,6 +479,18 @@ void	CRadio::Synchronize()
   //---Compute angle between reference and aircraft heading --
   busRD.aDir = mveh->GetMagneticDirection();
   busRD.iAng = Wrap360(busRD.hREF - busRD.aDir);
+	return;
+}
+//--------------------------------------------------------------
+//	Refresh direction to waypoint if needed
+//	Correct any drift due to long legs
+//	Set direct mode if leg 
+//--------------------------------------------------------------
+void CRadio::CorrectDrift()
+{	float adev = fabs(busRD.hDEV);				// Absolute deviation
+	if ((busRD.mdis > 12) || (adev < 5))	return;
+	//--- Check if landing ----------
+	SetDirectMode();
 	return;
 }
 //--------------------------------------------------------------

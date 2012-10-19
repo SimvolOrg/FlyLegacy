@@ -373,10 +373,9 @@ VPilot::VPilot()
 { SetIdent('-VP-');
 	State = VPL_IS_IDLE;
 	fpln	= 0;
-	Radio	= 0;
+	RAD		= 0;
 	rdmp	= 0;
 	route = new NavRoute();
-
 }
 //--------------------------------------------------------------
 //	Destroy resource
@@ -409,8 +408,6 @@ void VPilot::Error(int No)
 void VPilot::Warn(int No)
 {	if (0 == alrm)	globals->fui->DialogError(vpMSG[No],"VIRTUAL PILOT");
 	alrm = 1;
-	if (!pln->AllWheelsOnGround() || (0 == No))	return;
-	GroundBraking();
 	return;
 }
 //--------------------------------------------------------------
@@ -476,7 +473,7 @@ void VPilot::GroundBraking()
 //--------------------------------------------------------------
 void VPilot::HandleBack()
 {	apil->ReleaseControl();
-	if (Radio)	Radio->ModeEXT(0);
+	if (RAD)	RAD->ModeEXT(0);
 	Error(0);
 	fpln->StopPlan();
 	return;
@@ -514,10 +511,10 @@ void VPilot::StepProcedure(float dT)
 //--------------------------------------------------------------
 bool VPilot::GetRadio()
 {	//----Radio message ------------------------
-	Radio     = mveh->GetMRAD();
-	if (0 == Radio)				return false;
-	Radio->PowerON();
-	return (0 != Radio->GetPowerState());
+	RAD     = mveh->GetMRAD();
+	if (0 == RAD)				return false;
+	RAD->PowerON();
+	return (0 != RAD->GetPowerState());
  }
 //--------------------------------------------------------------
 //	Toggle state
@@ -534,7 +531,6 @@ void VPilot::ToggleState()
 //--------------------------------------------------------------
 void VPilot::Start()
 {	//-----------------------------------------
-	
 	if (fpln->IsEmpty()) GetanyFlightPlan();
 	//--- Check if aircraft busy --------------
 	if (globals->aPROF.Has(PROF_ACBUSY))	return;
@@ -659,7 +655,7 @@ void VPilot::EnterFinal()
 { //TRACE("VPL: Enter Final: %s",wayP->GetName());
 	char *edt = globals->fui->PilotNote();
 	//--- Configure Landing mode --------------------------
-	if (!wayP->EnterLanding(Radio))	return HandleBack();
+	if (!wayP->EnterLanding(RAD))	return HandleBack();
 	apil->SetLandingMode();
 	State = VPL_LANDING;
 	rend	= apil->GetRunwayData();
@@ -674,6 +670,7 @@ void VPilot::EnterFinal()
 //	If leg distance is under 12 miles, head direct to station
 //
 //--------------------------------------------------------------
+/*
 float VPilot::SetDirection()
 {	float dis = wayP->GetLegDistance();
   float seg = wayP->GetDTK();
@@ -683,6 +680,7 @@ float VPilot::SetDirection()
 	//--- Compute direct-to direction to waypoint -----
   return wayP->GoDirect(mveh);
 }
+*/
 //--------------------------------------------------------------
 //	Change to next Waypoint
 //--------------------------------------------------------------
@@ -693,14 +691,14 @@ void VPilot::ChangeWaypoint()
 	if (wayP->IsFirst())			return;  // wait next
 	if (fpln->IsOnFinal())		return EnterFinal();
 	//--- Advise user -------------------------------------
-	float dir = SetDirection();
+	float dir = wayP->GetDTK();												//SetDirection();
 	_snprintf(edt,128,"Heading %03d to %s",int(dir),wayP->GetName());
 	globals->fui->PilotToUser();
 	//--- Set Waypoint on external source -----------------
 	CmHead *obj = wayP->GetDBobject();
-	Radio->ModeEXT(obj);
+	RAD->ModeEXT(obj);
 	//--- Set Reference direction --------------------------
-	Radio->ChangeRefDirection(dir);
+	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wayP->GetAltitude());
 	apil->SetWPTmode(alt);
@@ -722,7 +720,7 @@ void VPilot::RetractFlap()
 void VPilot::ModeTracking()
 {	if (flap)		RetractFlap();
 	if (apil->IsDisengaged())	return HandleBack();
-	if (wayP->IsActive())	    return wayP->CorrectDrift(Radio,mveh);		//Refresh();
+	if (wayP->IsActive())	    return RAD->CorrectDrift();	//wayP->CorrectDrift(Radio);		//Refresh();
 	ChangeWaypoint();
 	return;
 }
@@ -771,7 +769,7 @@ void VPilot::ModeGoHome()
 void VPilot::GoParking()
 {	//--- Disengage autopilot ------------------
 	apil->Disengage(1);
-	Radio->ModeEXT(0);
+	RAD->ModeEXT(0);
 	//--- Taxi to parking ----------------------
 	StartTaxiing(VPL_STOPPED);
 	return;

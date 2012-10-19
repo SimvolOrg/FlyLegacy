@@ -1053,9 +1053,7 @@ bool glutSpecialToFlyLegacyKey (int glutkey, U_INT *flykey)
 // This function must be called prior to any keyboard events being handled
 //=============================================================================
 void CKeyMap::Init(void)
-{
-//  char *kfn = "SYSTEM/FLYLEGACYKEY.txt";
-	char *kfn = "SYSTEM/KEYMAP.txt";
+{	char *kfn = "SYSTEM/KEYMAP.txt";
   //---Try for the standard file --------------------
   if (pexists (&globals->pfs, kfn)) 
   {  OpenKey(kfn);

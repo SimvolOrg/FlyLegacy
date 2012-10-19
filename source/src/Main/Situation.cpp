@@ -792,7 +792,6 @@ CAirplane* CSituation::GetAnAircraft (void)
 		//--- Get normal aircraft ------------------------
   TRACE("Generate COPALObject");
   plan =  new COPALObject(TYPE_USER_AIRCRAFT); //
-	//---Continue reading on behalf of the CVehicleObject --------
   return plan;
 }
 //---------------------------------------------------------------------------------
@@ -870,7 +869,18 @@ void CSituation::WriteFile()
 	sf.WriteTag('iang',"--- Inertial Angular Position ---");
 	sf.WriteOrientation(globals->iang);
 	sf.WriteComment("--NOTE that Y=-Z and Z = Y in the  sit file ---");
+	//--- Save current flight plan ----------------------
+	CFPlan *fpln = pln->GetFlightPlan();
+	if (!fpln->IsEmpty())
+	{ sf.WriteTag('fpln',"--- Flight plan (optional)---");
+		char *fn = fpln->GetFileName();
+		char  nm[MAX_PATH];
+		RemoveExtension(nm,fn);
+		sf.WriteString(nm);
+	}
+	//---------------------------------------------------
 	sf.EndObject();						// End plane Object
+	//--- Write end object -----------------------------
   sf.EndObject();
   sf.Close();
 }

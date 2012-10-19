@@ -70,7 +70,7 @@
 #include "../Include/FuiPlane.h"
 #include "../Include/Joysticks.h"     //  for CUFOObject 
 #include "../Include/MagneticModel.h" // iang correction from .SIT file ln 161
-#include "../Include/Atmosphere.h"    // CVehicleObject::GetIAS (double &spd)
+#include "../Include/Atmosphere.h"    
 #include "../Include/Weather.h" 
 #include "../Include/3dMath.h"
 #include "../Include/Collisions.h"
@@ -1271,7 +1271,7 @@ void COPALObject::ReadFinished (void)
   wind_coeff			= phy.Kwnd;
   gear_drag				= phy.KdrG;
   //---Init rudder coef ------------------------------------------
-	RudderOpalCoef(acrd_coeff);
+	//RudderOpalCoef(acrd_coeff);
   ///----------------------------------------------------------------
   DEBUGLOG ("PHY : dieh=%f pitchK%f acrd=%f", dihedral_coeff, pitch_coeff, acrd_coeff);
   DEBUGLOG ("PHY : pmine%f rmine%f ymine%f", pitchMine, rollMine, yawMine); 

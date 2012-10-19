@@ -49,6 +49,13 @@
 #define TAXI_HI_EXIT				(TAXI_NODE_EXIT)
 #define TAXI_LO_EXIT				(TAXI_NODE_EXIT + TAXI_NODE_DIR)
 //============================================================================
+//	Structure to undo operation
+//============================================================================
+struct TAXI_OP {
+	Tag			oper;							// Node operand
+	U_INT		iden;							// Node ident
+};
+//============================================================================
 //  Node structure for runway and taxiways
 //	NOTE:  Sector is defined relative to landing point (see LND_DATA)
 //				From this point, every 100 feet counts one sector.

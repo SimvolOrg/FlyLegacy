@@ -413,92 +413,20 @@ CPIDdecoder::~CPIDdecoder()
 { 
 }
 //------------------------------------------------------------------------------------
-//  Decode throttle control
-//------------------------------------------------------------------------------------
-void CPIDdecoder::DecodeAMIS(char *txt)
-{ float pm1;
-  float pm2;
-	int nf = sscanf(txt,"check %f ft , to %f ft",&pm1, &pm2);
-	if (nf == 2) apil->SetAMIS(pm1,pm2);
-	return;
-}
-//------------------------------------------------------------------------------------
-//  Decode Landing option
-//------------------------------------------------------------------------------------
-void CPIDdecoder::DecodeLanding(SStream *st)
-{ float pm1;
-  float pm2;
-	float pm3;
-  int nf;
-  char str[128];
-  ReadString(str,100,st);
-  nf = sscanf(str," disengage , %f ft", &pm1);
-  if (1 == nf)    return apil->SetDISopt(pm1);
-  nf = sscanf(str," flare , %f ft, %f deg, %f kts",&pm1,&pm2,&pm3);
-  if (3 == nf)    return apil->SetFLRopt(pm1,pm2,pm3);
-  return;
-}
-//------------------------------------------------------------------------------------
-//  Decode Turn parameters
-//------------------------------------------------------------------------------------
-void CPIDdecoder::DecodeTRAK(char *txt)
-{ float pm1;
-  float pm2;
-	int nf = sscanf(txt,"L1 = %f , L2 = %f",&pm1, &pm2);
-	if (2 != nf)	return;
-	apil->SetTrak(pm1,pm2);
-	return;
-}
-//------------------------------------------------------------------------------------
-//  Decode throttle control
-//------------------------------------------------------------------------------------
-void CPIDdecoder::DecodeTHRO(char *txt)
-{ int pm1;
-  int pm2;
-	int nf = sscanf(txt,"Final at %d ft , Cut at %d ft",&pm1, &pm2);
-	if (nf == 2) apil->SetTHRO(pm1,pm2);
-	return;
-}
-//------------------------------------------------------------------------------------
-//  Decode Rotation speed
-//------------------------------------------------------------------------------------
-void CPIDdecoder::DecodeVROT(char *txt)
-{	float pm1;
-	float pm2;
-  int nf = sscanf(txt,"%f kts , %f ft",&pm1,&pm2);
-	if (nf == 2)	apil->SetTKOopt(pm1,pm2);
-	return;
-}
-//------------------------------------------------------------------------------------
-//  Decode Flaps parameters
-//------------------------------------------------------------------------------------
-void CPIDdecoder::DecodeFlap(char *txt)
-{	int		pm1,pm3;
-	float pm2,pm4;
-	int nf = sscanf(txt,"tko ( %d , %f ft ) , lnd ( %d , %f ft)", &pm1,&pm2,&pm3,&pm4);
-	if (nf != 4)	return;
-	apil->SetTkoFLP(pm1,pm2);
-	apil->SetLndFLP(pm3,pm4);
-	return;
-}
-//------------------------------------------------------------------------------------
 //  Read list of PID components
 //------------------------------------------------------------------------------------
 int CPIDdecoder::Read(SStream *st,Tag tag)
-{ char txt[128];
-	CPIDbox *pbx = 0;
+{ CPIDbox *pbx = 0;
   double   prm = 0;
   float    fnb = 10;
   switch (tag)  {
 		//--- Rotation speed for take-off ------------------------
 		case 'Vrot':
-			ReadString(txt,128,st);
-			DecodeVROT(txt);
+			apil->DecodeVROT(st);
 			return TAG_READ;
 		//--- Cut off altitude -----------------------------------
 		case 'THRO':
-			ReadString(txt,128,st);
-			DecodeTHRO(txt);
+			apil->DecodeTHRO(st);
 			return TAG_READ;
 		//--- Angle of approach to runway -----------------------
 		case 'aprw':
@@ -507,26 +435,24 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 			return TAG_READ;
 		//---Disengage altitude ---------------------------------
 		case 'land':
-			DecodeLanding(st);
+			apil->DecodeLAND(st);
 			return TAG_READ;
 		//--- Flaps parameters ----------------------------------
 		case 'flap':
-			ReadString(txt,128,st);
-			DecodeFlap(txt);
+			apil->DecodeFLAP(st);
 			return TAG_READ;
 		//---MISS LANDING PARAMETERS ---------------
 		case 'miss':
-			ReadString(txt,128,st);
-			DecodeAMIS(txt);
+			apil->DecodeLMIS(st);
 			return TAG_READ;
 		//---Heading coefficient --------------------------------
 		case 'bias':              // Head adjust
 			ReadDouble(&prm,st);
 			return TAG_READ;
 		//---Turn anticipation ----------------------------------
-		case 'trak':
-			ReadString(txt,128,st);
-			DecodeTRAK(txt);
+		case 'vDTA':
+			ReadDouble(&prm,st);
+			apil->SetVDTA(prm);
 			return TAG_READ;
 		//----Glide catching angle ------------------------------
 		case 'catg':
@@ -586,6 +512,11 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 			ReadFrom(pbx,st);
 			apil->AddPID(pbx);
 			return TAG_READ;
+		//--- Line table -----------------------------
+		case 'line':
+    { apil->InitLINE(st);
+      return TAG_READ;
+    }
 		//--- Auto start list ------------------------
 		case 'strt':
 			return	vpil->StrtProcedure(st);
@@ -651,9 +582,6 @@ AutoPilot::AutoPilot (void)
 	aHDG		= 0;
   rHDG    = 0;
   hERR    = 0;
-  dREF    = 0;
-  vTIM0   = 0;
-  vTIM1   = 0;
   vHRZ    = 0;
   Vref    = 0;            // Default Vertical Trim reference
 	//------------------------------------------------------
@@ -669,7 +597,8 @@ AutoPilot::AutoPilot (void)
   eVRT    = 0;
   rALT.Set(400,1);
   rVSP    = 0;
-  vTime   = 0;
+	vrub		= +0.1;
+	vrlb    = -0.1;
   //---Options and controls ------------------------------
   uvsp    = 0;
   aprm    = 0;
@@ -704,7 +633,6 @@ AutoPilot::AutoPilot (void)
   double d3 = 3.0;
   double r3 = DegToRad(d3);           // 3° in radian
   sin3      = sin(r3);                // sine(3°)
-  tCoef     = double(2) / (60 * PI);  // Turning coefficient
   //-------------------------------------------------------
   plane = 0;
   //---Set Time K ------------------------------------------
@@ -760,6 +688,8 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
 	if (0 == cmpS)	inUse = 0;
 	//--- Get Speed regulator -------------------
 	sreg = mveh->GetSREG();
+	//--- Get radio bus -------------------------
+	Radio = mveh->GetRadioBUS();
 	//--- end of init ---------------------------
 
   return;
@@ -796,6 +726,87 @@ void AutoPilot::InitPID()
   pidL[PID_VSP]->SetMaxi(maxA);
   pidL[PID_VSP]->SetMini(minA);
   return;
+}
+//------------------------------------------------------------------------------------
+//  Decode miss landing
+//------------------------------------------------------------------------------------
+void AutoPilot::DecodeLMIS(SStream *st)
+{ char txt[128];
+	double pm1;
+  double pm2;
+	ReadString(txt,128,st);
+	int nf = sscanf(txt,"Check %lf ft , TGO %lf ft",&pm1, &pm2);
+	if (nf != 2)		return;
+	SetAMIS(pm1,pm2);
+	return;
+}
+//------------------------------------------------------------------------------------
+//  Decode Rotation speed
+//------------------------------------------------------------------------------------
+void AutoPilot::DecodeVROT(SStream *st)
+{	char txt[128];	
+	double pm1;
+	double pm2;
+	ReadString(txt,128,st);
+  int nf = sscanf(txt,"%lf kts , %lf ft",&pm1,&pm2);
+	if (nf != 2)	return;
+	vROT		= pm1;
+	aTGT		= pm2;
+	return;
+}
+
+//------------------------------------------------------------------------------------
+//  Decode throttle control
+//------------------------------------------------------------------------------------
+void AutoPilot::DecodeTHRO(SStream *st)
+{ char txt[128];
+	double pm1,pm2;
+	double pm3,pm4;
+	ReadString(txt,128,st);
+	int nf = sscanf(txt,"Final %lf ft , Cut %lf ft , More %lf , Less %lf",&pm1, &pm2, &pm3, &pm4);
+	if (nf != 4)	return;
+	aFSP	= pm1;
+	aCUT	= pm2;
+	vrlb  = pm3;
+	vrub  = pm4;
+	return;
+}
+//------------------------------------------------------------------------------------
+//  Decode Landing option
+//------------------------------------------------------------------------------------
+void AutoPilot::DecodeLAND(SStream *st)
+{ double pm1;
+  double pm2;
+	double pm3;
+  int nf;
+  char str[128];
+  ReadString(str,100,st);
+  nf = sscanf(str," disengage , %lf ft", &pm1);
+  if (1 == nf)    {aLND = pm1; return; }
+  nf = sscanf(str," Flare , %lf ft, %lf deg, %lf kts",&pm1,&pm2,&pm3);
+  if (3 == nf)     SetFLRopt(pm1,pm2,pm3);
+  return;
+}
+//------------------------------------------------------------------------------------
+//  Decode Flaps parameters
+//------------------------------------------------------------------------------------
+void AutoPilot::DecodeFLAP(SStream *st)
+{	char txt[128];
+	int		 pm1,pm3;
+	double pm2,pm4;
+	ReadString(txt,128,st);
+	int nf = sscanf(txt,"tko ( %d , %lf ft ) , lnd ( %d , %lf ft)", &pm1,&pm2,&pm3,&pm4);
+	if (nf != 4)	return;
+	SetTkoFLP(pm1,pm2);
+	SetLndFLP(pm3,pm4);
+	return;
+}
+
+//------------------------------------------------------------------------------------
+//  Fill alignment table
+//------------------------------------------------------------------------------------
+void AutoPilot::InitLINE(SStream *st)
+{	 linTB.DecodeFMT1(st);
 }
 //------------------------------------------------------------------------------------
 //  Round value
@@ -901,10 +912,6 @@ int AutoPilot::Read (SStream *stream, Tag tag)
   case 'nav1':
     // NAV radio message
     ReadMessage (&mNAV, stream);
-    mNAV.sender         = unId;
-    mNAV.voidData       = &Radio;
-    mNAV.user.u.datatag = 'gets';
-    mNAV.id = MSG_GETDATA;
     return TAG_READ;
 	//--- Throttle control --------------------
 	case 'thro':
@@ -969,14 +976,6 @@ void AutoPilot::SetFLRopt(double a, double s, double d)
 	sTAN		= tan(r);
   land    = LAND_FLARE;
   return;
-}
-//-----------------------------------------------------------------------
-//	Set Take off parameters
-//-----------------------------------------------------------------------
-void AutoPilot::SetTKOopt(double s, double a)
-{	vROT		= s;
-	aTGT		= a;
-	return;
 }
 //-----------------------------------------------------------------------
 //  Set miss landing option
@@ -1143,8 +1142,7 @@ void AutoPilot::VerticalMode()
 void AutoPilot::TimeSlice(float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
 	rALT.Upd(dT);															// Update reference altitude
-  if (0 == Radio)   Send_Message(&mNAV);    // Get Navigation info
-  Radio = (BUS_RADIO*)mNAV.voidData;
+	if (0 == Radio)												return;
   if (0 == active) {PowerLost();        return;}                        
   if (globals->dbc->NotSynch(FrameNo))  return;
   dTime = dT;
@@ -1303,18 +1301,11 @@ void	AutoPilot::ModeLT0()
 //--------------------------------------------------------------------------------
 void AutoPilot::ModeLT1()
 { if (BadSignal(signal))		return EnterROL();
-  //----Compute distance to reference direction -------------------------
+  //----Compute distance to desired track/runway direction ----------
   double rd   = DegToRad(Radio->rDEV);
-  dREF        = fabs(Radio->mdis * sin(rd));    // Distance to R (nm)
-  //---Compute time in sec for ARC AB -----------------------------------
-  vTIM0       = fabs(Radio->iAng / 3) * Turn;   // Time to turn to direction
-  //---Compute velocity X component   --in miles per sec ----------------
-	double dev  = Norme180(aHDG - Radio->hREF);
-  double aAB  = DegToRad(dev);
-  vHRZ        = fabs((aSPD / 3600) * sin(aAB));     // Velocity X component (miles/sec)
-  vTIM1       = (vHRZ > FLT_EPSILON)?(dREF / vHRZ):(SEC_IN_DAY);
-	if (trace)		TRACE("T0=%.4f T1=%.4f hRF=%.4f rHDG=%.4f aHDG=%.4f",vTIM0,vTIM1,Radio->hREF,rHDG,aHDG);
-  if (vTIM1 > vTIM0) return CrossDirection();
+  rDIS        = Radio->mdis * sin(rd);    // Distance to R (nm)
+	//--- Remaining distance to ils plane ----------------------------------
+	if (fabs(rDIS) > vDTA)	return CrossDirection();
   //----Enter second leg ------------------------------------------------
   if (trace)	TRACE("Enter LT2");
   lStat = AP_LAT_LT2;
@@ -1333,21 +1324,29 @@ void AutoPilot::CrossDirection()
 }
 //-----------------------------------------------------------------------
 //	Adjust correction factor according to different types of legs
+//	Red azone is a cone of 20° around the ils line
+//	When landing in red zone, the heading correction is boosted to allow
+//	more sensibility
+//	era is error in horizontal plan between actual radial and target one.
+//	cFAC	is a correction factor for heading
 //-----------------------------------------------------------------------
 double AutoPilot::AdjustHDG()
-{ //-- Approach=> 45° toward ILS--------
-	double bias = 0;
+{ //-- Approach=> 45° toward ILS---------------------
 	double era  = fabs(Radio->hDEV);
 	redz				= (era < 20)?(1):(0);			// Red sector
 	cFAC				= 0;
+	//--- Remaining distance to runway axis -----------
+	double rd   = DegToRad(Radio->rDEV);
+  rDIS        = Radio->mdis * sin(rd);    // Distance to R (nm)
 	//--- Approach leg and not in red sector ----------
 	if (!redz &&  aprm)		return xCOR;
 	//--- Other tracking mode --------------
-	if (era > 20)		era  = 20;
-	cFAC	=  (21  - era) * gain;
-	if (era < 0.4)	cFAC = 18;
-  cFAC  =  (cFAC * Radio->hDEV) + bias;
+	double coef  = linTB.Lookup(era);
+  cFAC  =  (coef * Radio->hDEV);
+	if (!aprm)	cFAC *= 0.4;
 	double dir  = Wrap360(Radio->radi - cFAC);     // New direction;
+	//if (aprm) TRACE("L2-%.4lf:hDEV=%.4lf rDIS=%.4lf coef=%.4lf cFAC=%.4lf aHDG=%.4lf dir=%.4lf",
+	//							Radio->hREF,Radio->hDEV,rDIS,coef,cFAC,aHDG,dir);  
 	return dir;
 }
 //-----------------------------------------------------------------------
@@ -1459,7 +1458,6 @@ void AutoPilot::Rotate()
 {	alta  = 1;                        // ALT armed
   StateChanged(AP_STATE_AAA);       // State is changed
 	//--- Set reference altitude ------------------------
-	//rALT.Set(RoundAltitude(aTGT + globals->tcm->GetGroundAltitude()),0.5);
 	rALT.Set(RoundAltitude(aTGT + mveh->GetGroundAltitude()),0.5);
 	StateChanged(AP_STATE_ACH);				// Altitude changed
 	//--- Enter altitude Hold ---------------------------
@@ -1469,6 +1467,7 @@ void AutoPilot::Rotate()
 	ailS->Neutral();									// Reset ailerons
   pidL[PID_ALT]->Init();            // init PID
   pidL[PID_AOA]->Init();            // init PID
+	elvT->PidValue(0.5);							// Boost up								
 	EnterROL();
 	sreg->SteerOFF();									// Stop steering
 	return;
@@ -1633,7 +1632,7 @@ void AutoPilot::ModeHDG()
 //  In disengage mode, we maintain the VSP controller in standby
 //-----------------------------------------------------------------------
 void AutoPilot::ModeDIS()
-{ CatchVSP();
+{ rVSP = CatchVSP();
   VSPerror();
   pidL[PID_VSP]->Update(dTime,eVSP,0);
 	rALT.Set(RoundAltitude(cALT),1);		// Current altitude As reference
@@ -1764,8 +1763,7 @@ void AutoPilot::OnlyHDG()
 //
 //-----------------------------------------------------------------------
 void AutoPilot::GetCrossHeading()
-{ vTIM1 = SEC_IN_DAY;		// Decision timer at max value
-	//--- normal approach ------------------------
+{ //--- normal approach ------------------------
   if ((aprm) && (sect))
 	{	lStat = AP_LAT_LT1;
 	  double cor	= (Radio->rDEV > 0)?(+xAPW):(-xAPW);
@@ -1850,16 +1848,16 @@ void AutoPilot::EnterAPR()
 //-----------------------------------------------------------------------
 //  Catch vertical speed and normalize to multiple of 100 feet 
 //-----------------------------------------------------------------------
-void AutoPilot::CatchVSP()
-{ if (0 == uvsp) return;
+double AutoPilot::CatchVSP()
+{ if (0 == uvsp) return 0;
   Send_Message(&mVSI);											// Get actual VSI
   int    vsi = int(mVSI.realData / 100);    // integer part
   double rst = fmod(mVSI.realData,100 );    // fract part
   double rnd = (rst > 50)?(100):(0);
-  rVSP       = (double(vsi) * 100) + rnd;
-  if (rVSP < -2000) rVSP = -2000;
-  if (rVSP > +2000) rVSP = +2000;
-  return;
+  double rvs = (double(vsi) * 100) + rnd;
+  if (rvs < -2000) rvs = -2000;
+  if (rvs > +2000) rvs = +2000;
+  return rvs;
 }
 //-----------------------------------------------------------------------
 //  Enter vertical speed
@@ -1873,7 +1871,7 @@ void AutoPilot::EnterVSP()
   pidL[PID_VSP]->Init();
   pidL[PID_AOA]->Init();
   elvT->Neutral();
-  CatchVSP();                   // Get VSI
+  rVSP	= CatchVSP();           // Get VSI
   vStat = AP_VRT_VSP;           // VSP holder
   StateChanged(AP_STATE_VSP);   // state change
   return;
@@ -1983,7 +1981,6 @@ void AutoPilot::DecVSP()
 void AutoPilot::StateDIS(int evn)
 { //--- Process only autopilot engage ------------------
   if (AP_EVN_ENG != evn)  return;
-  vTime		= 0;
 	cALT	= altS->GaugeBusFT01();					// Current altitude
 	rHDG	= cmpS->GaugeBusFT01();					// Current mag heading
 	aSPD  = mveh->GetPreCalculedKIAS();		// Current speed
@@ -2197,19 +2194,20 @@ void AutoPilot::LessSpeed()
 //-----------------------------------------------------------------------
 double AutoPilot::SelectSpeed()
 {	double more = cRAT * 1.01;
-  double less = cRAT * 0.99;
+  double evrt = -eVRT;
 	
 	switch (vStat)	{
 	  //--- ground  final --------------------------
 		case AP_VRT_FLR:
+			return 0;
 		case AP_VRT_FIN:
 			return 0;
 		//--- Tracking glide in final ----------------
 		case AP_VRT_GST:
 			if (sect == 0)			return xRAT;
-			if (cAGL <= aCUT)		return    0;
-			if (eVRT >   0.8)		return more;
-			if (eVRT <  -0.8)		return less;
+			if (cAGL <= aCUT)		return fSPD;
+			if (evrt >  vrub)		return fSPD;
+			if (evrt <  vrlb)		return more;			// Was 0.8
 			if (cAGL <  aFSP)		return fSPD;
 			return  xRAT;
 		//--- take-off -------------------------------
@@ -2221,7 +2219,10 @@ double AutoPilot::SelectSpeed()
 			return xRAT;
 		//--- Altitude mode --------------------------
 		case AP_VRT_ALT:
-			if (eVRT > 100)	  return 1000;
+			if (eVRT > 100)	  return 1000;			// Going up
+			//-- when going down, set limit to VSI -----
+			//double vsi = CatchVSP();
+			//if (vsi < -800)		return more;			
 			return xRAT;
 	}
 
@@ -2232,7 +2233,8 @@ double AutoPilot::SelectSpeed()
 //  External Request to enter lateral NAV mode
 //-----------------------------------------------------------------------
 void AutoPilot::SetWPTmode(double alt)
-{	EnterALT();
+{	elvT->PidValue(0);					// Inhibit boost
+	EnterALT();
 	EnterNAV();
 	ChangeALT(alt);
 	return;
@@ -2289,8 +2291,7 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 	cnv->AddText( 1,1,"rHDG: %.5f",rHDG);
   cnv->AddText( 1,1,"aHDG: %.5f",aHDG);
   cnv->AddText( 1,1,"hERR: %.5f",hERR);
-  cnv->AddText( 1,"vTIMs"); cnv->AddText( 8,1,"%.00f-%.00f s",vTIM0,vTIM1);
-	cnv->AddText( 1,1,"eVRT: %.1f",eVRT);
+	cnv->AddText( 1,1,"eVRT: %.4f",eVRT);
 	cnv->AddText( 1,1,"rDIS: %.5f",rDIS);
   if (Radio)
   { cnv->AddText( 1,1,"hREF %.5f",Radio->hREF);
@@ -2299,16 +2300,12 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   }
 	if ((lStat == AP_LAT_LT0) || (lStat == AP_LAT_LT1)) 
   { cnv->AddText( 1,1,"vHRZ %.5f",vHRZ);
-    cnv->AddText( 1,1,"dREF %.2f",dREF);
   }
 	if (lStat == AP_LAT_LT2)
 	{	cnv->AddText( 1,1,"cFAC %.5f",cFAC);
 	}
 	if ((aprm)|| (vStat == AP_VRT_ALT))
 	{	cnv->AddText( 1,1,"rALT %.0f",rALT.Get());
-	}
-	if (vStat == AP_VRT_GST)
-	{	cnv->AddText( 1,1,"vAMP %.0f,",vAMP);
 	}
   if (vStat == AP_VRT_VSP)
   { cnv->AddText( 1,1,"eVSP %.5f",eVSP);

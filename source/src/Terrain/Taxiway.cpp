@@ -609,7 +609,7 @@ TaxiwayMGR::TaxiwayMGR(CAptObject *apo)
 	apt	= apo->GetAirport();
 	txx[TKO_CIRCUIT]	= new TaxiCircuit(this,0);
 	txx[LND_CIRCUIT]	= new TaxiCircuit(this,1);
-	Seq				= 0;
+	Seq				= 1;
 	LoadAirport();
 }
 //------------------------------------------------------------------
@@ -631,6 +631,7 @@ void TaxiwayMGR::LoadAirport()
 	if (0 == globals->txyDB)		return;
 	globals->sqm->ReadTaxiNodes(key,this);
 	globals->sqm->ReadTaxiEdges(key,this);
+	return;
 }
 //-------------------------------------------------------------------------------------------
 //	Enter Node from database 
@@ -642,7 +643,7 @@ void TaxiwayMGR::EnterNode(TaxNODE *N)
 	if (N->HasType(TAXI_NODE_AXES))	N->lndR = apt->FindRunwayLND(N->rwy);
 	if (idn >= Seq)	Seq = idn + 1;
 	if (N->HasType(TAXI_NODE_AXES))	rwyQ.push_back(N);
-	if (N->HasType(TAXI_NODE_AXES)) D = N->lndR->rDir;
+	if (N->HasType(TAXI_NODE_AXES)) D = N->lndR->rEnd;
 	N->SetDirection(D);
 	return;
 }
@@ -670,7 +671,7 @@ void	TaxiwayMGR::SetExitPath(LND_DATA *rwd,NavRoute *txr)
 		Tag E = txx[dir]->RandomEnd(R);
 		N1		= GetNode(E);
 		//--- Compute path to parking ------------
-		bool ok = txx[dir]->SearchThePath(N0->idn,E);
+		txx[dir]->SearchThePath(N0->idn,E);
 		E0  = txx[dir]->FirstPathArc();
 		txr->SetRoute(this,dir,rwd);
 		return;
@@ -707,8 +708,8 @@ void TaxiwayMGR::GetTkofPath(char *rid, NavRoute *txr)
 		N0 = GetNode(D);			// Starting node
 		N1 = R;								// Ending node
 		//--- Compute path to runway -----------
-		bool ok = txx[dir]->SearchThePath(N0->idn,R->idn);
-		if (!ok)									return;
+		int nn = txx[dir]->SearchThePath(N0->idn,R->idn);
+		if (0 == nn)							return;
 		//--- Bypass first node as we are on it --
 		E0  = txx[dir]->FirstPathArc();
 		N0	= NextCircuitNode(dir);
