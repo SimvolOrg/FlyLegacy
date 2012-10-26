@@ -300,7 +300,7 @@ void CAerodynamicModel::Timeslice(float dT) {
   double soundSpeed = globals->atm->GetSoundSpeed_ISU ();   ///< GetSoundSpeed() * FN_METRE_FROM_FEET;
 
   // Get input data : body frame
-  SVector *cgPos = mveh->svh.GetNewCG_ISU (); //static_cast<SVector *> (mveh->svh.GetNewCG_ISU ()); ///< meters (ISU)
+  SVector *cgPos = mveh->wgh.GetNewCG_ISU (); 
   SVector  cgPos_; cgPos_.x = -cgPos->x; cgPos_.y = cgPos->z; cgPos_.z = cgPos->y; // RH->LH
   SVector  cgOffset = VectorDifference(cgPos_, dofa);       // 
   cgOffset.z -= laca; ///< add <+ac+> value to adjust longitudinal aerod.center // 
@@ -486,7 +486,7 @@ int CAeroAirfoil::Read (SStream *stream, Tag tag)
     { // Airfoil name, used to reference the data from Wing Sections
       char s[80];
       ReadString (s, 80, stream);
-      name = Dupplicate(s,64);				//name = s;
+      name = DupplicateString(s,64);				//name = s;
 			//--- Check for trace entry -----------------------
 			char t[80];
 			GetIniString("TRACE","Foil",t,80);
@@ -753,7 +753,7 @@ void CAeroMovingPart::Print3D () {
 CAeroWingSection::CAeroWingSection (CVehicleObject *v,char* name)
 { mveh       = v;
   mflap      = new CAcmFlap(v);
-  this->name = Dupplicate(name,64);
+  this->name = DupplicateString(name,64);
 	foil			 = 0;
   area = span = 0.0f;
   bPos.x = bPos.y = bPos.z = 0.0f;
@@ -820,7 +820,7 @@ int CAeroWingSection::Read (SStream *stream, Tag tag)
     {
       char s[80];
       ReadString (s, 80, stream);
-      foil = Dupplicate(s,80);
+      foil = DupplicateString(s,80);
     }
     return TAG_READ;
   case 'span':

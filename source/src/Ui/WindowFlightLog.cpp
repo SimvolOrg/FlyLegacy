@@ -143,7 +143,7 @@ CFuiFlightLog::~CFuiFlightLog()
 { fpln->Register(0);
   globals->dbc->RegisterLOGwindow(0);
 	//---- Marker 2 -------------------------------------
-	char *ds = Dupplicate("*END FlightLog*",32);
+	char *ds = DupplicateString("*END FlightLog*",32);
 }
 //--------------------------------------------------------------------------
 //  Set the Mode

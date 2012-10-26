@@ -207,11 +207,11 @@ protected:
 	U_CHAR						 msgNo;
 	U_CHAR						 flap;
 	U_CHAR						 rdmp;			// Random flight plans
+	char							*note;			// Note to pilot
 	//--- Procedures --------------------------------------
 	Procedure          Pstrt;			// Start procedure
 	Procedure					 Pstop;			// Stop procedure
 	Procedure         *Pexec;			// Procedure to execute
-	char              *fmt;				// Message from pilot 
 	//--- Taxing parameters -------------------------------
 	NavRoute					*route;			// Ground route
 	double						 dist;			// Distance to node
@@ -242,10 +242,11 @@ public:
 	int		OpenFPL(char *fn);
 	void	GetanyFlightPlan();
 	//-----------------------------------------------------
+	void	Advise(int No);
 	void	Error(int No);
 	void	Warn(int No);
 	void	StepProcedure(float dT);
-	void	StartProcedure(Procedure *P,char nxt,char *fmt);
+	void	StartProcedure(Procedure *P,char nxt);
 	//--- Action routines ---------------------------------
 	void	ToggleState();
 	void	StartOnSpot();

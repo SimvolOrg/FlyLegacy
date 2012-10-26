@@ -1237,7 +1237,7 @@ int CAirportMgr::SetRunwayProfile(CAirport *apt)
   CRLParser prs(this,apt->GetAptName());      // Read user profiles
   CRunway  *rwy = 0;
   for (rwy = apt->GetNextRunway(rwy); rwy != 0;rwy = apt->GetNextRunway(rwy))
-	{ if (rwy->HasProfile())  {CRLP *old = rwy->GetRLP(); delete old;} //return 0;
+	{ if (rwy->HasProfile())  continue;					//return 0;
     //---Build the runway default profile -----------------------
     CRLP    *lpf = new CRLP(rwy);             // Build runway light profile
     //----Locate Hi and Lo user profile -------------------------

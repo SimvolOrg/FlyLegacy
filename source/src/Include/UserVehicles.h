@@ -131,7 +131,7 @@ public:
   void  Write (SStream *stream);
 
   // CSimulatedVehicle methods
-  void  Timeslice (float dT);
+  //void  Timeslice (float dT);
 
   // functions member
   char*     GetManufacturer    (void) {return make;}
@@ -145,8 +145,7 @@ public:
   void      GetSpeedAndCeiling (float *sp,float *al) {*sp = maxcruisespeed;*al = ceiling;}
   CVector*  GetNewCG_ISU()						{return &newCG_ISU;}
   SVector*  GetBaseCG()								{return &CofG;}
-  void      CalcNewCG_ISU();
-  void      PrintInfo(int bar_cycle);
+  //void      PrintInfo(int bar_cycle);
 	double    GetBrakeAcceleration()	  {return accBrake;}
   //--- return lookup tables ------------------------------------
 	void			SetVEH(CVehicleObject *v) {mveh = v;}
@@ -193,13 +192,6 @@ protected:
 
   Tag       sfxdTag;
   char      sfxdFilename[64];
-
-  SMessage    mAlt;
-  SMessage    mSpd;
-  SMessage    mVsi;
-  SMessage    mMag;
-  SMessage    mRpm;
-  SMessage    mMap;
 
   float       elapsed;
 
@@ -644,6 +636,7 @@ public:
 	void			ChangePanel(char dir);
 	void			AdjustSeat(CVector &S);
 	void			SetViewPort();
+	void			HomePanel();
 	//---Light management -------------------------------------
 	CPanelLight *GetLight(Tag id);
 	void			AddLight(SStream *stream);

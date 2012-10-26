@@ -40,7 +40,7 @@ int FPLfilesCB(char *fn,void *upm)
 // NOTE : when text starts with '*', the throttle control must be checked
 //=========================================================================
 char *vpilotSTATE[] = {
-	"-Idle",						// VPL_IS_IDLE		(0)
+	"-Idle",						// Msg(0)
 	"-Procedure",				// VPL_PROCEDURE	(1)
 	"-Go TakeOff",			// VPL_GOTAKEOFF  (2)
 	"-Pre-flight",			// VPL_PREFLIGHT	(3)
@@ -59,11 +59,26 @@ char *vpilotSTATE[] = {
 	"-Waiting time",		// VPL_WAITING    (16)
 };
 //=========================================================================
+//  Virtual pilot message
+// 
+//=========================================================================
+char *vpilotMSG[] = {
+	"Checking and Starting engine",						// Msg	(0)
+	"Taxi to runway",													// Msg	(1)
+	"Ready for take-off",											// Msg  (2)
+	"Take off",																// Msg	(3)
+	"Climbing to 1500 feet AGL",							// Msg	(4)
+	"Engaging Flight Plan",										// Msg	(5)
+	"Change to next waypoint",								// Msg	(6)
+	"Park and stop",													// Msg	(7)
+	"Taxi to parking ",												// Msg  (8)
+};
+
+//=========================================================================
 //	PROCEDURE
 //=========================================================================
 Procedure::Procedure()
-{
-}
+{}
 //---------------------------------------------------------------
 //	Destroy object
 //---------------------------------------------------------------
@@ -383,6 +398,14 @@ VPilot::VPilot()
 VPilot::~VPilot()
 {	delete route;	}
 //--------------------------------------------------------------
+//	Advise User 
+//--------------------------------------------------------------
+void	VPilot::Advise(int No)
+{	strncpy(note,vpilotMSG[No],128);
+	globals->fui->PilotToUser();
+	return;
+}
+//--------------------------------------------------------------
 //	Init items
 //--------------------------------------------------------------
 void  VPilot::PrepareMsg(CVehicleObject *veh)
@@ -391,6 +414,7 @@ void  VPilot::PrepareMsg(CVehicleObject *veh)
 	apil	= pln->GetAutoPilot();
 	sreg	= pln->amp.GetSpeedRegulator();
 	fpln	= pln->GetFlightPlan();
+	note	= globals->fui->PilotNote();
 	return;
 }
 //--------------------------------------------------------------
@@ -481,10 +505,9 @@ void VPilot::HandleBack()
 //--------------------------------------------------------------
 //	Start procedure 
 //--------------------------------------------------------------
-void VPilot::StartProcedure(Procedure *P,char nxt, char *edm)
+void VPilot::StartProcedure(Procedure *P,char nxt)
 {	nStat = nxt;
 	Pexec	= P;
-	fmt		= edm;
 	State = VPL_PROCEDURE;
 	msgNo	= 0;
 	T01	 = 2;
@@ -496,10 +519,6 @@ void VPilot::StartProcedure(Procedure *P,char nxt, char *edm)
 void VPilot::StepProcedure(float dT)
 {	if (T01 > 0)														return;
 	T01	 = 1;
-	//------------------------------------------------------
-	char *edt = globals->fui->PilotNote();
-	_snprintf(edt,128,fmt,msgNo + 1);
-	globals->fui->PilotToUser();
 	//------------------------------------------------------
 	if (Pexec->Execute(msgNo++,mveh))				return;
 	State = nStat;
@@ -563,7 +582,8 @@ void VPilot::Start()
 	rend			= apm->SetOnRunway(0,rid);
 	if (0 == rend)				return Error(7);
 	//--- try to start the plane -------------
-	StartProcedure(&Pstrt,VPL_FIXEPOINT,"Start step %02d");
+	Advise(0);
+	StartProcedure(&Pstrt,VPL_FIXEPOINT);
 	return;
 }
 //--------------------------------------------------------------
@@ -572,7 +592,8 @@ void VPilot::Start()
 void VPilot::StartOnSpot()
 {	//--- try to start the plane -------------
 	rend	= route->GetRunwayData();
-	StartProcedure(&Pstrt,VPL_GOTAKEOFF,"Start step %02d");
+	Advise(0);													// Starting aircarft
+	StartProcedure(&Pstrt,VPL_GOTAKEOFF);
 	return;
 }
 //--------------------------------------------------------------
@@ -580,6 +601,7 @@ void VPilot::StartOnSpot()
 //--------------------------------------------------------------
 void VPilot::GoToTakeOff()
 {	if (T01 > 0)		return;
+	Advise(1);													// Taxi to runway
 	StartTaxiing(VPL_FIXEPOINT);
 	return;
 }
@@ -587,7 +609,8 @@ void VPilot::GoToTakeOff()
 //	STAND BY
 //--------------------------------------------------------------
 void VPilot::StandFixe()
-{	pln->GroundBrakes (BRAKE_BOTH);
+{	Advise(2);												// Stand fix
+	pln->GroundBrakes (BRAKE_BOTH);
 	if (T01 > 0)					return;
 	T01		= 2;
 	State = VPL_PREFLIGHT;
@@ -613,7 +636,8 @@ void VPilot::CheckPreFlight()
 //	Take off Action
 //--------------------------------------------------------------
 void VPilot::StartTakeOff()
-{	State = VPL_TAKE_OFF;
+{	Advise(3);									// Take off
+	State = VPL_TAKE_OFF;
 	alrm	= 0;
 	flap	= 1;
   apil->Engage();
@@ -631,6 +655,7 @@ void VPilot::ModeTKO()
 	if (apil->BellowAGL(200))		return;
 	if (!fpln->StartPlan(0))		return;
 	//--- Climb to 1500 -----------
+	Advise(4);									// Climb to 1500
 	State = VPL_CLIMBING;
 	return;
 }
@@ -642,6 +667,7 @@ void VPilot::ModeCLM()
 {	if (apil->IsDisengaged())	  return HandleBack();
 	if (apil->BellowAGL(600))		return;
 	//--- Drive toward next waypoint -----------
+	Advise(5);									// Engage fligh plan
 	ChangeWaypoint();
 	return;
 }
@@ -653,7 +679,6 @@ void VPilot::ModeCLM()
 //--------------------------------------------------------------
 void VPilot::EnterFinal()
 { //TRACE("VPL: Enter Final: %s",wayP->GetName());
-	char *edt = globals->fui->PilotNote();
 	//--- Configure Landing mode --------------------------
 	if (!wayP->EnterLanding(RAD))	return HandleBack();
 	apil->SetLandingMode();
@@ -661,26 +686,10 @@ void VPilot::EnterFinal()
 	rend	= apil->GetRunwayData();
 	taxiM	= 0;
 	//--- Advise user --------------------------------------
-	_snprintf(edt,128,"Entering final for %s",wayP->GetName());
+	_snprintf(note,128,"Enter landing leg to %s",wayP->GetName());
 	globals->fui->PilotToUser();
 	return;
 }
-//--------------------------------------------------------------
-//	Compute direction
-//	If leg distance is under 12 miles, head direct to station
-//
-//--------------------------------------------------------------
-/*
-float VPilot::SetDirection()
-{	float dis = wayP->GetLegDistance();
-  float seg = wayP->GetDTK();
-	float dev = Radio->GetDeviation();
-	float rdv = fabs(dev);
-	if ((dis > 12) || (rdv < 5))	return seg;
-	//--- Compute direct-to direction to waypoint -----
-  return wayP->GoDirect(mveh);
-}
-*/
 //--------------------------------------------------------------
 //	Change to next Waypoint
 //--------------------------------------------------------------
@@ -692,8 +701,6 @@ void VPilot::ChangeWaypoint()
 	if (fpln->IsOnFinal())		return EnterFinal();
 	//--- Advise user -------------------------------------
 	float dir = wayP->GetDTK();												//SetDirection();
-	_snprintf(edt,128,"Heading %03d to %s",int(dir),wayP->GetName());
-	globals->fui->PilotToUser();
 	//--- Set Waypoint on external source -----------------
 	CmHead *obj = wayP->GetDBobject();
 	RAD->ModeEXT(obj);
@@ -703,6 +710,9 @@ void VPilot::ChangeWaypoint()
 	double alt = double(wayP->GetAltitude());
 	apil->SetWPTmode(alt);
 	State = VPL_TRACKING;
+	//------------------------------------------------------
+	_snprintf(note,128,"Route to waypoint %s",wayP->GetName());
+	globals->fui->PilotToUser();
 	return;
 }
 //--------------------------------------------------------------
@@ -720,7 +730,9 @@ void VPilot::RetractFlap()
 void VPilot::ModeTracking()
 {	if (flap)		RetractFlap();
 	if (apil->IsDisengaged())	return HandleBack();
-	if (wayP->IsActive())	    return RAD->CorrectDrift();	//wayP->CorrectDrift(Radio);		//Refresh();
+	if (wayP->IsActive())	    return RAD->CorrectDrift();	
+	//--- Change to next waypoint ---------------------
+	
 	ChangeWaypoint();
 	return;
 }
@@ -747,8 +759,7 @@ void VPilot::ModeLanding()
 //	Parking number is temporarily fixed
 //--------------------------------------------------------------
 void VPilot::ModeGoHome()
-{	char *edt = globals->fui->PilotNote();
-	if (apil->IsDisengaged())				return HandleBack();
+{	if (apil->IsDisengaged())				return HandleBack();
   double spd = apil->GetSpeed();
 	if (spd > 40)										return;
 	//--- Below 30 mph request exit point -------------
@@ -757,8 +768,7 @@ void VPilot::ModeGoHome()
 	if (route->NoRoute())						return;
 	State = VPL_GETPARK;
 	//--- Warn user ---------------------------------------
-	_snprintf(edt,128,"Taxiing to Parking");
-	globals->fui->PilotToUser();
+	Advise(8);
 	return;
 }
 //--------------------------------------------------------------
@@ -782,7 +792,7 @@ void VPilot::StartTaxiing(char nxt)
 	State	= VPL_TAXIING;
 	//--- Initialize speed regulator ----------------------
 	sreg->SetON(0);
-	sreg->RouteTo(route);
+	sreg->TaxiTo(route);
 	return;
 }
 //--------------------------------------------------------------
@@ -817,7 +827,8 @@ void VPilot::ModeTaxi()
 //--------------------------------------------------------------
 void VPilot::ModeInPark()
 {	pln->ParkBrake(1);
-	StartProcedure(&Pstop,VPL_TERMINATE,"Stop step %02d");
+	Advise(7);
+	StartProcedure(&Pstop,VPL_TERMINATE);
 	return;
 }
 //--------------------------------------------------------------

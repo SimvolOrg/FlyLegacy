@@ -153,7 +153,6 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
 	//--- Gear connector -------------------------------
 	strBOX		= (CFuiCheckbox*)GetComponent('gear');
 	if (0 == strBOX )  gtfo(err);
-	//strBOX->SetColour(black);
 	strBOX->SetState(gear);
 	//--------------------------------------------------
   axeBOX.SetParameters(this,'list',0,0);
@@ -173,7 +172,7 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
 	if (jsm->IsBusy()) Close();
 	else	jsm->StartDetection(WhenJoyMove,windowId);
 	//---- Marker 1 -----------------------------------
-	char *ds = Dupplicate("***DEB WinAXE",16);
+	char *ds = DupplicateString("***DEB WinAXE",16);
 
 }
 //---------------------------------------------------------------------------
@@ -183,7 +182,7 @@ CFuiAxis::~CFuiAxis()
 { jsm->SaveConfiguration();
 	jsm->SetFree();
 	//---- Marker 2 -----------------------------------
-	char *ds = Dupplicate("***END WinAXE",16);
+	char *ds = DupplicateString("***END WinAXE",16);
 }
 //---------------------------------------------------------------------------
 //  Select vehicle type

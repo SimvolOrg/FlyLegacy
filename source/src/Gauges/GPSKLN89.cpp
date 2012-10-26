@@ -1700,11 +1700,11 @@ int CK89gps::EditNAVpage01()
 		//--- option TO -------------------
     case 0:
         OpFlag = K89_FLAG_TO;
-        return EditBearing(actRAD,K89_LINE3,K89_CLN07);
+        return EditBearing(magRAD,K89_LINE3,K89_CLN07);
 		//--- option FROM -----------------
     case 1:
         OpFlag = K89_FLAG_FROM;
-        return EditBearing(actRAD,K89_LINE3,K89_CLN07);
+        return EditBearing(magRAD,K89_LINE3,K89_CLN07);
 		//--- option VNAV -----------------
     case 2:
         return EditVNAVstatus(K89_LINE3,  K89_CLN07);
@@ -1721,7 +1721,7 @@ int CK89gps::EditWPTNone()
   cdiDEV  = 0;
   EditNAVP01L02();
   EditTrack();
-  EditBearing(actRAD,K89_LINE3,K89_CLN07);
+  EditBearing(magRAD,K89_LINE3,K89_CLN07);
   EditLegETE(edt,-1,Speed);
   StoreText(edt,K89_LINE3,K89_CLN17);
   return 1;
@@ -3762,7 +3762,7 @@ int CK89gps::EditTimeZone(char *edt,float lon)
 //------------------------------------------------------------------
 void CK89gps::ModeLEG()
 { StoreText("Leg",K89_LINE2,K89_CLN03);
-  wOBS  = actRTE;
+  wOBS  = actDTK;										// true desired track
   return;
 }
 //------------------------------------------------------------------
@@ -3954,8 +3954,9 @@ void CK89gps::EditFuel()
 //-----------------------------------------------------------------------------
 void CK89gps::EditTrack()
 { char edt[16];
-  int     dtk = Round(wOBS);        // Desired track
-  int     atk = Round(aCAP);        // Actual bearing
+	float   mtk = Wrap360(wOBS - globals->magDEV);
+  int     dtk = Round(mtk);         // Desired track
+  int     atk = Round(aCAP);        // Actual heading
   if (cdiST == K89_FLAG_NONE)  strncpy(edt,"___°",16);
   else                        _snprintf(edt,16,"%03u°",dtk);
   StoreText(edt,K89_LINE2,K89_CLN10);
@@ -4243,7 +4244,7 @@ void GPSRadio::EnterTRK()
 	//--- Stop current plan and start new one ------
 	FPL->StopPlan();
  	if (!FPL->StartPlan(wp))			return;
-	APL->	SetGasControl(1);
+	APL->SetGasControl(1);
 	//--- Set Tracking mode -------------------------
 	navON	= 1;
 	gpsTK	= GPSR_TRAK;
@@ -4293,9 +4294,10 @@ void CK89gps::TrackWaypoint(CWPoint *wpt,char mode)
 void CK89gps::UpdNavigationData(CWPoint *wpt)
 { Speed			= mveh->GetPreCalculedKIAS();
 	aCAP			= mveh->GetMagneticDirection();
-	actRTE		= (wpt)?(wpt->GetDTK()):(0);  
-	actRAD		= (wpt)?(wpt->GetCAP()):(0);
+	actDTK		= (wpt)?(wpt->GetTrueDTK()):(0);  
+	actRAD		= (wpt)?(wpt->GetTrueRAD()):(0);
 	actDIS		= (wpt)?(wpt->GetPlnDistance()):(-1);
+	magRAD		= Wrap360(actRAD - globals->magDEV);
   return;
 }
 //------------------------------------------------------------------

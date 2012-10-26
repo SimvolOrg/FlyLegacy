@@ -492,6 +492,9 @@ int C3DMgr::LoadFromPod(C3Dfile &scf)
 //  Locate all models files that are related to this QGT
 //  Objects are loaded from the SQL database OBJ.db
 //	Then collected from loaded POD
+//	NOTE: A specific object cannot be loaded twice (once from database)
+//				and once from POD) because POD already in registered in the 
+//				OBJ database are not mounted at startup time.
 //--------------------------------------------------------------------
 int C3DMgr::LocateObjects(C_QGT *qgt)
 { int nbo = 0;
@@ -803,7 +806,7 @@ int C3Dfile::Read(SStream *st,Tag tag)
 //===================================================================================
 C3Dmodel::C3Dmodel(char *fn, char t)
 { state       = M3D_INIT;                      // 0= unloaded
-  fname       = Dupplicate(fn,128);
+  fname       = DupplicateString(fn,128);
 	mdtr				= t;
   User        = 0;
   aBot        = 0;
@@ -907,35 +910,6 @@ void C3Dmodel::AddLodPart(C3DPart *prt,int lod)
   rLOD[lod] = lod;
   return;
 }
-//-------------------------------------------------------------------------------
-//  allocate a new part with all parameters set
-//-------------------------------------------------------------------------------
-C3DPart *C3Dmodel::GetNewPart (char dir,char *txn, int lod, int nbv, int nbx)
-{	C3DPart *prt = new C3DPart(dir,txn,lod,nbv,nbx);
-  prt->W3DRendering();
-	//--- Add part to lod level ----------------------
-	pLOD[lod].PutLast(prt); 
-  rLOD[lod] = lod;            // Activate lod level
-	return prt;
-}
-
-//-------------------------------------------------------------------------------
-//  Add part into model from SQL database
-//-------------------------------------------------------------------------------
-C3DPart *C3Dmodel::GetPartFor(char dir,char *txn, int lod, int nbv, int nbx)
-{	C3DPart *prt =  pLOD[lod].GetLast();
-	if (0 == prt)								return GetNewPart(dir,txn,lod,nbv,nbx);
-	//--- Check if same texture ----------------------------
-	bool sm = prt->SameTexture(dir,txn);
-	if (!sm)										return GetNewPart(dir,txn,lod,nbv,nbx);
-	//--- check if part is big enough ----------------------
-	U_INT nbp = prt->GetNBVTX();
-	if (nbp > globals->pakCAP)	return GetNewPart(dir,txn,lod,nbv,nbx);
-	//--- Extend actual part -------------------------------
-	prt->ExtendTNV(nbv,nbx);
-	return prt;
-}
-
 //-------------------------------------------------------------------------------
 //  Return part geometry to polygon reduction
 //-------------------------------------------------------------------------------
@@ -1306,7 +1280,7 @@ int CWobj::Read(SStream *st,Tag tag)
 //  Set the file name 
 //-----------------------------------------------------------------------
 void CWobj::SetFileName(char *fn)
-{ fnam = Dupplicate(fn,128);
+{ fnam = DupplicateString(fn,128);
   return;
 } 
 //-----------------------------------------------------------------------
@@ -1537,14 +1511,14 @@ void CWobj::SetNitRef(char *fn)
 //  Set Object name
 //------------------------------------------------------------------------
 void CWobj::SetObjName(char *nm)
-{ name = Dupplicate(nm,128);
+{ name = DupplicateString(nm,128);
   return;
 }
 //------------------------------------------------------------------------
 //  Set Object description
 //------------------------------------------------------------------------
 void CWobj::SetObjDesc(char *nm)
-{ desc = Dupplicate(nm,128);
+{ desc = DupplicateString(nm,128);
   return;
 }
 //------------------------------------------------------------------------
@@ -1956,7 +1930,7 @@ void C3DPart::W3DRendering()
 {	Rend  = &C3DPart::DrawAsW3D;
 }
 //----------------------------------------------------------------------
-//  Allocate etxure
+//  Allocate texture
 //----------------------------------------------------------------------
 void C3DPart::SetTexture(U_CHAR t, char *txn)
 {	TEXT_INFO txd;	
@@ -2138,15 +2112,19 @@ void C3DPart::ExtendGTB(int nbv)
 //----------------------------------------------------------------------
 //	Copy all vertices from SQL
 //----------------------------------------------------------------------
-void C3DPart::SQLstrip(int nbx,F3_VERTEX *V,F3_VERTEX *N,F2_COORD *T,int *Xd)
+void C3DPart::SQLstrip(int nbx,F3_VERTEX *V,F3_VERTEX *N,F2_COORD *T,int *Xd,EXT_3D &E)
 {	GN_VTAB *dst = gTAB + vloc;
 	int     *inx = Xd;
 	for (int k=0; k < nbx; k++)
-	{	int x = *inx++;
-		dst->DupVTX(V+x);
-		dst->DupVNX(N+x);
-		dst->DupTVX(T+x);
-		dst++;
+	{	//--- Copy vertex source --------------
+		int x = *inx++;
+		F3_VERTEX *src = V+x;		// Vertex source
+		E.SaveMIN(*src);				// Save model minimum extension
+		E.SaveMAX(*src);				// Save model maximum extension
+		dst->DupVTX(src);				// Store vertex in part
+		dst->DupVNX(N+x);				// Store normal in part
+		dst->DupTVX(T+x);				// Store texture coord
+		dst++;									// Next destination place
 	}
 	//--- Update vertice relocator --------
 	vloc	+= nbx;

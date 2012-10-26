@@ -904,8 +904,9 @@ protected:
 	char              pMod;								// Previous mode
   //---Active waypoint parameters --------------------------------
   CmHead           *actWPT;             // Active waypoint
-  float             actRTE;             // Active waypoint route
-  float             actRAD;             // Active waypoint bearing
+  float             actDTK;             // Active waypoint desired Track
+  float             actRAD;             // Active waypoint true radial
+	float							magRAD;							// Magnetic radial
 	float							actDIS;							// Active distance
 	float							insDIS;							// Inside distance
 	char             *prvIDN;							// Previous identity

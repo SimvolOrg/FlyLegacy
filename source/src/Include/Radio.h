@@ -76,6 +76,7 @@ public:
 	//--------------------------------------------------
 	void			SetSource(CmHead *src,LND_DATA *ils);
 	void			RefreshStation(U_INT frm);
+	void			SetRefDirection(float d);
 	//--------------------------------------------------
 	void			SetVEH(CVehicleObject *v) {mveh = v;} 
 	//---------------------------------------------------
@@ -83,7 +84,7 @@ public:
 	U_CHAR		SignalType()	{ return signal;}
 	void			SetPosition(SPosition *P);
 	//--------------------------------------------------
-	void			SetRefDirection(float d) {refD = d;}
+	
 	LND_DATA  *GetLandSpot()		{return ilsD;}
 	//--------------------------------------------------
 	float			GetFeetDistance()	{ return dsfeet;}
@@ -140,6 +141,7 @@ protected:
 	U_INT				Frame;
   U_CHAR      sPower;                           // Power state
   BUS_RADIO   busRD;                            // Radio BUS
+	double			magDV;														// Magnetic Deviation
   //------------COM part ---------------------------------------
   U_CHAR      cState;                           // COM state
   RADIO_FLD   comTAB[K155_DCOM_SZ];             // Control field

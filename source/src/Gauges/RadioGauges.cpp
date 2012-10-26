@@ -248,7 +248,6 @@ void CK155gauge::DrawCDI()
   xnd   += (cdiND - xOrg);
   rFont->SetTransparent();
   rFont->DrawChar(surf,xnd,ynd,'|',amber);
-  rFont->SetOpaque();
   return;
 }
 //------------------------------------------------------------------
@@ -981,10 +980,6 @@ void CK89gauge::ReadFinished()
   IniPF( 7);      // NAV in VNAV page 01
   IniPF( 8);      // WPT option CAL page 1
   IniPF( 9);      // WPT option CAL page 2
-  //-----------Init nav message ------------------------------
-  nMsg.id       = MSG_GETDATA;
-  nMsg.sender   = unId;
-  nMsg.user.u.datatag = 'obs_';
 	//--- Compute CDI width ------------------------------------
 	short pix = 11 * wCar;
 	Ampli			= pix >> 1;						// Half width
@@ -1107,6 +1102,7 @@ void CK89gauge::DrawAllDisplay()
       x0 += rFont->DrawChar(surf,x0,y0,(char)(car),col);
     }
   }
+  rFont->SetTransparent();
   return;
 }
 //-----------------------------------------------------------------------------
@@ -1135,6 +1131,7 @@ void CK89gauge::DrawLSPDisplay()
     }
     org += fac;
   }
+  rFont->SetTransparent();
   return;
 }
 //-----------------------------------------------------------------------------
@@ -1163,6 +1160,7 @@ void CK89gauge::DrawRSPDisplay()
     }
     org += fac;
   }
+  rFont->SetTransparent();
   return;
 }
 //-----------------------------------------------------------------------------

@@ -405,6 +405,8 @@ CVehicleObject::CVehicleObject (void)
   prv   = 1;
   nEng  = 0;
 	engR	= 0;
+	//--- Clear subsystems ----------------------------------
+	sVSI	= 0;
 	//--- Clear Radio components ----------------------------
 	GPSR	= 0;
 	busR	= 0;
@@ -811,9 +813,6 @@ void CVehicleObject::Simulate (float dT,U_INT FrNo)
   // Timeslice wings effects and pitot action // 
   wng.Timeslice (dT);
   pss.Timeslice (dT);
-  // update WOW for wheels before Simulate (dT)
-  //--- Timeslice svh stuff : 
-  svh.Timeslice (dT);
   // timeslice wind effect on aircraft
   if (wind_effect) GetAircraftWindEffect ();
   return;

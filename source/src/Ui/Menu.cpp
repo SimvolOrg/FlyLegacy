@@ -164,8 +164,8 @@ char *options_legends[] =
   /*"--------------------",*/
   "OSM tuning",
   "--------------------",
-  "Define Axes Parameters",
-  "Keys & Buttons...",
+  "Joystick",
+  "Keyboard & Buttons..",
   /*"--------------------",*/
   /*"Date & Time...",*/
   /*"Audio...",*/
@@ -580,7 +580,7 @@ puCallback Import_cb[] =
 };
 //--- Associated keyword in ini file ------------
 char *keySQL[] = {
-	"*",									// Check for pod
+	"ExpUPD",							// Check for pod
 	"*",									// Separator
 	"ExpTRN",							// Export sceneries
 	"ExpOBJ",							// Export object
@@ -1248,17 +1248,17 @@ void OpenUserMenu (void)
   menu->add_submenu (gmVeh,					vehicle_legends, vehicle_cb);
   menu->add_submenu (gmMeteo,				weather_legends, weather_cb);
   menu->add_submenu (gmWindow,			windows_legends, windows_cb);
+	menu->add_submenu (gmImport,	Import_legends, Import_cb);
 
   // Only add debugging menus if [UI] setting debugMenus is true (=1)
   int i = 0;
   GetIniVar ("UI", "debugMenus", &i);
   if (i == 1) {
-		menu->add_submenu (gmImport,	Import_legends, Import_cb);
     menu->add_submenu (gmDebugDB, debugdb_legends, debugdb_cb);
     menu->add_submenu (gmDebug,		debug_legends, debug_cb);
-    menu->add_submenu (gmTune,		tune_legends, tune_cb);
 		CheckImportMenu();
   }
+  menu->add_submenu (gmTune,		tune_legends, tune_cb);
   menu->add_submenu ("Help", help_legends, help_cb);
 
   //----Change colors ----------------------------------------------------

@@ -1194,7 +1194,8 @@ protected:
 // Implemented in Utility/Bitmaps.cpp
 //=========================================================================================
 SSurface*     CreateSurface(int width, int height);
-SSurface*     FreeSurface(SSurface *surface);
+SSurface*     FreeSurface(SSurface *sf);
+void					UpdateSurface(SSurface *sf,int w, int h);
 void          EraseSurfaceRGB (SSurface *surface, U_INT rgb);
 void          EraseSurfaceRGBA(SSurface *surface, U_INT rgba);
 void          EraseSurfaceRGBA(SSurface *surface, U_INT rgba,int mrg);
@@ -1243,6 +1244,10 @@ void  FreeFont (SFont *font);
 void  FreeMonoFont(SFont *font);
 void  FreeVariFont(SFont *font);
 void  DrawTextList(SSurface *sf,int x0, int y0,TXT_LIST *sT,U_SHORT Nb);
+//==============================================================================
+//String manipulation
+//==============================================================================
+extern char *DupplicateString(char *s, int lgm);
 //==============================================================================
 // Data map for a polynomial relationship up to 9th order
 //==============================================================================

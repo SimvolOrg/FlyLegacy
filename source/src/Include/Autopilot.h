@@ -113,8 +113,9 @@ protected:
 #define AP_LAT_LT0  3						// LATERAL LEG 0
 #define AP_LAT_LT1  4           // LATERAL LEG 1
 #define AP_LAT_LT2  5           // LATERAL LEG 2
-#define AP_LAT_GND  6						// Ground steering
-#define AP_LAT_TGA  7						// GO ARROUND
+#define AP_LAT_LND  6						// Landing
+#define AP_LAT_GND  7						// Ground steering
+#define AP_LAT_TGA  8						// GO ARROUND
 //====================================================================================
 //  AUTOPILOT VERTICAL STATES
 //====================================================================================
@@ -215,10 +216,11 @@ protected:
 	char       Powr;                          // Power indicator
   char       uvsp;                          // use VSP
   char       aprm;                          // Approach mode
-  char       ugaz;                          // Use autothrottle
 	char       wgrd;													// Wheel on ground
 	char			 redz;													// Red zone in lateral mode
 	char       sect;													// current VOR/ILS Sector 
+	//--- Throttle control ----------------------------------------------
+	U_INT      ugaz;                          // Use autothrottle
   //-----------Lights--------------------------------------------------
   char       alta;                          // Altitude armed
   char       flsh;                          // Flash
@@ -252,7 +254,6 @@ protected:
 	double     cMIS;							// Lateral missing coeff/ per feet AGL
   double     hMIS;              // Lateral miss error
   double     vMIS;              // Vertical miss error
-	double     rAGL;							// AGL reference
 	double	   dSPD;							// Disengage speed
 	double     vrlb;							// Vertical glide lower bound
 	double		 vrub;							// Vertical glide upper bound
@@ -309,7 +310,6 @@ protected:
 	double      cFAC;												  // Current factor
   double      cALT;                         // Current altitude
   double      cAGL;                         // Current AGL
-  double      afps;                         // Aircraft feet per second
 	double      aSPD;													// Current speed KTS
   //--------------------------------------------------------------------
   float      gTime;                         // ground timer
@@ -363,6 +363,7 @@ public:
 	void						DecodeLMIS(SStream *st);
 	void						DecodeLAND(SStream *st);
 	void						DecodeFLAP(SStream *st);
+	void						DecodeASPD(SStream *st);
 	//-------------------------------------------------------------------
 	void						InitLINE(SStream *st);
   int             BadSignal(char s);
@@ -439,6 +440,7 @@ public:
 	void						ModeLT0();
   void            ModeLT1();
   void            ModeLT2();
+	void						ModeLND();
 	void						ModeTGA();
   void            ModeROL();
   void            ModeHDG();
@@ -460,7 +462,7 @@ public:
 	void						StateGND(int evn);
   void            NewEvent(int evn);
 	void						SwapGasControl();
-	char						SetGasControl(char s);
+	void						SetGasControl(U_INT m);
   //-------------------------------------------------------------------
   inline char     armALT()  {return alta;}
   //-------------------------------------------------------------------
@@ -533,7 +535,7 @@ public:
   inline    char LatARM() {return (fldTAB[K140_FD_HD2].data == 0)?(0):(1);}
   inline    char VrtARM() {return (fldTAB[K140_FD_VT2].data == 0)?(0):(1);}
   inline    char Blink()  {return flsh;}
-	inline    char GasST()	{return ugaz;}
+	inline    char GasST()	{return (ugaz)?(1):(0);}
 };
 //=========================================================================================
 //  CLASS CPIDdecoder

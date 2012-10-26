@@ -2338,7 +2338,7 @@ struct VECTOR_DIR {
 #define TEXDIR_OSM_MD		(1)
 #define TEXDIR_OSM_TX		(2)
 //============================================================================
-extern char *Dupplicate(char *s, int lgm);
+extern char *DupplicateString(char *s, int lgm);
 //============================================================================
 //  Structure texture name for 3D Part
 //============================================================================
@@ -2353,7 +2353,7 @@ struct TEXT_NAME {
 	void	SetTexture(char d, char *n) 
 	{ dir = d;
 		if (name)	delete [] name;
-		name = Dupplicate(n,128);
+		name = DupplicateString(n,128);
 	}
 	//-----------------------------------------------------------
 	char	GetDirectory()	{return dir;}
@@ -2514,7 +2514,6 @@ struct F2_VERTEX {
   float VT_X;
   float VT_Y;
 };
-
 //=============================================================================
 //  3D POINT DEFINITION
 //=============================================================================
@@ -2523,6 +2522,8 @@ struct F3_VERTEX {
   float VT_Y;
   float VT_Z;
 	//-------------------------------------------------
+	void F3_VERTEX::Clear()
+	{	VT_X = VT_Y = VT_Z = 0;	}
 };
 //=============================================================================
 //  2D TEXTURE COORDINATES
@@ -2992,7 +2993,8 @@ typedef void (CExecutable::*ExeDR)(void);
 #define PRIO_SIMVH			(8)
 #define PRIO_SDK				(9)
 #define PRIO_DLL				(10)
-#define PRIO_OTHERS			(11)
+#define PRIO_EXTERNAL		(11)
+#define PRIO_OTHERS			(12)
 #define PRIO_MAX				(16)
 //==============================================================================
 //  RANDOM GENERATOR (SYSTEM DEPENDENT)
@@ -3185,7 +3187,7 @@ public:
 	//------------------------------------------------------------
 	virtual LND_DATA  *GetLandSpot()		{return 0;}
 	//------------------------------------------------------------
-	virtual void			 SetNavOBS(float d)   {;}
+	virtual void			 SetMagneticOBS(float d)   {;}
 	virtual void       SetRefDirection(float d)	{;}
 	virtual void			 SetNmiles(float m) {;}
 	virtual void			 SetFeet(float f)   {;}
@@ -3630,12 +3632,6 @@ struct BUS_RADIO {U_CHAR    rnum;       // Radio num
                   double    iAng;       // Intercept angle plane to OBS/ILS
                   double    sens;       // Horizontal sensibility
                   CmHead   *rSRC;       // Radio Source
-	//--- Set OBS ----------------------------------------------
-	void BUS_RADIO::SetOBS(short dir)
-	{ xOBS = dir;
-		rSRC->SetNavOBS(dir);
-		return;
-	}
 	//----------------------------------------------------------
 } ;
 //=============================================================

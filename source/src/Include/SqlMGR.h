@@ -739,7 +739,7 @@ public:
   //--3DMODEL --------------------------------------------------------
   bool  CheckM3DModel(char *name);
   int   GetM3DTexture(TEXT_INFO *inf);
-  int   DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl);
+  int   DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl, EXT_3D &x);
   int   GetM3Dmodel(C3Dmodel *modl);
   //---Generic texture -----------------------------------------------
   GLubyte *GetGenTexture(TEXT_INFO &txd);

@@ -246,6 +246,7 @@ int CVerticalSpeedIndicator::Read (SStream *stream, Tag tag)
 void CVerticalSpeedIndicator::ReadFinished()
 { timK = 2;
   indnMode  = INDN_LINEAR;
+	mveh->RegisterVSI(this);
 }
 //------------------------------------------------------------------------------
 //  Receive the message

@@ -550,21 +550,6 @@ void CWPoint::ClearDate (SDateTime &sd)
   sd.time.second  = 0;
   return;
 }
-//--------------------------------------------------------------
-//	Refresh direction to waypoint if needed
-//	Correct any drift due to long legs
-//	Set direct mode if leg 
-//--------------------------------------------------------------
-void CWPoint::CorrectDrift(CRadio *R)
-{	float rdev = R->GetDeviation();					// Relative deviation
-	float adev = fabs(rdev);								// Absolute deviation
-	if ((mDis > 12) || (adev < 5))	return;
-	//--- check if landing ----------
-	if (IsLanding())								return;
-	R->SetDirectMode();
-	return;
-}
-
 //----------------------------------------------------------------------
 //	Select best altitude depending on distance from previous node
 //	a0 is the previous node altitude
@@ -747,7 +732,7 @@ LND_DATA *CWPoint::GetLandingData()
 	//--- Locate landing runway ----------------
 	LND_DATA    *lnd = apt->FindRunwayLND(lndRWY);		
 	if (0 == lnd)			return 0;
-	sDir	= lnd->lnDIR;
+	sDir	= lnd->orie;
 	return lnd;
 }
 
@@ -1122,7 +1107,8 @@ return 0;
 void CWPoint::UpdateRange(CVehicleObject *veh)
 {	//--- Compute distance from aircraft --------------
 	SVector	v	= GreatCirclePolar(veh->GetAdPosition(), &position);
-  dDir		= Wrap360((float)v.h - magdv);		// Direct direction
+  //dDir		= Wrap360((float)v.h - magdv);		// Direct direction
+	dDir		= float(v.h);
 	mDis		= (float)v.r * MILE_PER_FOOT;
   dfeet		=  v.r;
 	//--- Check for a direct to waypoint --------------
@@ -1134,7 +1120,11 @@ void CWPoint::UpdateRange(CVehicleObject *veh)
 	if (nSeq >  as)		sDis = GetPrevDistance() + legDis;
 	return;
 }
-
+//-----------------------------------------------------------------
+//	Get true Desired Track
+//-----------------------------------------------------------------
+float CWPoint::GetTrueDTK()
+{	return	sDir;	}										
 //------------------------------------------------------------
 //  Save this waypoint
 //------------------------------------------------------------
@@ -1418,10 +1408,8 @@ void CFPlan::SetDistance(CWPoint *p0, CWPoint *p1)
 	//--- Distance from previous -----------------
 	p1->SetLegDistance(d);
 	p1->SetSumDistance(p0);
-	//--- direction to p1 ----------------------
-	double mdev = p1->GetMagDeviation();
-	double rdir = Wrap360((float)v.h - mdev);
-	p1->SetReferenceDIR(rdir);
+	//--- True direction to p1 ----------------------			// *MARKDEV
+	p1->SetReferenceDIR(float(v.h));
 	return;
 }
 //----------------------------------------------------------------------

@@ -99,7 +99,7 @@ extern char  SwapOSMuse(U_INT t);
 //	Basic editor profile
 //	no view, no meteo, use a rabbit camera, draw tile tour,no flight plan
 //-------------------------------------------------------------------------
-#define PROF_NO_PLANE   (PROF_NO_INT+PROF_NO_EXT+PROF_ACBUSY)
+#define PROF_NO_PLANE   (PROF_NO_INT+PROF_NO_EXT+PROF_ACBUSY+PROF_NO_PLN)
 #define PROF_TOOL       (PROF_EDITOR | PROF_ACBUSY)
 //=======================================================================================
 //  Color index
@@ -350,6 +350,7 @@ CDispatcher::CDispatcher();
 	//-----------------------------------------------------
 	void Store(CExecutable *ex, char p);
 	void Remove (char p);
+	void Destroy(char p);	
   //-----------------------------------------------------
 	void Lock  (char p)						{slot[p].lock++;}
 	void Unlock(char p)						{slot[p].lock--;}
@@ -360,11 +361,11 @@ CDispatcher::CDispatcher();
 	void ExecLOK(char p)					{slot[p].lock++;}
 	void ExecULK(char p)					{slot[p].lock--;}
 	void ExecOFF (char p)					{slot[p].exec = 0;}
+	void ExecSET(char p,char m)		{slot[p].exec = m;}
 	//---- Time slice -------------------------------------
 	void	TimeSlice(float dT,U_INT frame);
 	void	Draw(char p);
 	void  DrawExternal();
-	//-----------------------------------------------------
 };
 //==============================================================================
 // Global variables
@@ -574,7 +575,7 @@ typedef struct {
   opal::Simulator *opal_sim;
   bool  fps_limiter;
   char  sBar;
-  float status_bar_limit;
+  float bar_timer;
 
   /// PHY file used
 

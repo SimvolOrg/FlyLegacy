@@ -313,7 +313,6 @@ public:
 	void    SetPosition(SPosition p);
   void		SetReferenceDIR(double d);
 	float		GoDirect(CVehicleObject *v);
-	void		CorrectDrift(CRadio *R);
 	//--- Position Management ----------------------------------
 	bool		CannotChange();
 	bool		HorizontalMove(SPosition *pos);
@@ -349,6 +348,8 @@ public:
 	void		SetSumDistance(CWPoint *p0);
 	//--- CSlot management ----------------------------------------
 	void    Print(CFuiList *w,U_CHAR ln); 
+	//-------------------------------------------------------------
+	float		GetTrueDTK();
 	//-------------------------------------------------------------
 	inline U_SHORT    GetSequence()       {return nSeq;}
 	//--- NODE ----------------------------------------------------
@@ -387,7 +388,7 @@ public:
 	inline Tag				GetKind()							{return kind;}
 	inline float			GetFrequency()				{return DBwpt->GetFrequency();}
 	inline float			GetDTK()							{return sDir;}	
-	inline float			GetCAP()							{return dDir;}
+	inline float			GetTrueRAD()					{return dDir;}
 	inline double     GetMagDeviation()			{return DBwpt->GetMagDev();}
 	inline CWPoint   *GetOrgWPT()						{return (CWPoint*)DBwpt->GetUPTR();}
 	//--------------------------------------------------------------

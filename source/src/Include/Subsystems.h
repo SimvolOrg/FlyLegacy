@@ -132,8 +132,6 @@ public:
   EMessageResult  ReceiveMessage (SMessage *msg);
   void			PrepareMsg(CVehicleObject *veh);					// JSDEV* Prepare Messages
   void			TimeSlice(float dT, U_INT FrNo);					// JSDEV*
-	//--- Published values on gauge BUS ---------------------------------
-	float			GaugeBusFT01()				{return indn;}					// computed value
 	//--- ATTRIBUTES ----------------------------------------------------
 protected:
   std::vector<SMessage*>	mVal;		///< Messages to get value for comparison
@@ -352,8 +350,6 @@ public:
   const char* GetClassName (void) { return "CAmmeter"; }
   //-------------------------------------------------------------------
   EMessageResult CAmmeter::ReceiveMessage (SMessage *msg);
-	//--- published values on gauge bus ---------------------------------
-	float GaugeBusFT01()				{return indn;}	// AMP/H
   //----ATTRIBUTES ----------------------------------------------------
 protected:
   bool        chrg;         // Charge meter
@@ -565,7 +561,6 @@ protected:
   float   radarAlt;             // Radar altitude
   float   hPres;                // presure in inHg
 	//--- Published values ---------------------------------------
-	float	  GaugeBusFT01()					{return indn;}		// altitude
 	float		GaugeBusFT02()					{return radarAlt;}
   //-----Kolman digits -----------------------------------------
   U_CHAR d1;
@@ -609,8 +604,6 @@ public:
   const char* GetClassName (void) { return "CAirspeedIndicator"; }
   EMessageResult  ReceiveMessage (SMessage *msg);
   void            TimeSlice (float dT,U_INT FrNo = 0);		// JSDEV*
-	//--- Published values --------------------------------------------
-	float		GaugeBusFT01()		{return indn;}	// Airspeed
   //----ATTRIBUTES---------------------------------------------------
 protected:
   float   maxOperatingMach;       ///< Max operating Mach number
@@ -633,7 +626,6 @@ public:
   void                TimeSlice (float dT,U_INT FrNo = 0);			// JSDEV*
   void                Probe(CFuiCanva *cnv);
 	//--------------------------------------------------------------------
-	float		GaugeBusFT01()	{return indn;}
 	float   GaugeBusFT02()	{return rateD;}
   //---Attributes ------------------------------------------------------
 protected:
@@ -1292,8 +1284,6 @@ public:
   // CSubsystem methods
   const char*     GetClassName (void) { return "CVacuumIndicator"; }
   EMessageResult  ReceiveMessage (SMessage *msg);
-	//--- Publish values on gauge bus -------------------
-	float GaugeBusFT01()			{return indn;}	// suction Pressure
 };
 
 

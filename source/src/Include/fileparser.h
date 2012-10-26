@@ -175,6 +175,7 @@ public:
 	void	SaveExtension(TC_VTAB &vt);
 	void	SaveExtension(GN_VTAB &vt);
 	int   GetStatement(char *s);
+	int		NoTexture();
 	//------------------------------------------------------
 	int		LoadModel(C3Dmodel *mod);
 	//------------------------------------------------------

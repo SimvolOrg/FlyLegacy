@@ -862,7 +862,7 @@ void CThrottleControl::ReadFinished()
 { CEngineControl::ReadFinished();
   //--- Map to joystick -----------------------
   Tag jt = JS_THROTTLE_0 + eNum;
-  globals->jsm->MapTo(mveh,jt,unId);
+  globals->jsm->MapTo(mveh,jt,unId,this);
   //--- Init engine message -------------------
   engm.dataType   = TYPE_REAL;
   engm.user.u.datatag = 'thro';     // Starter
@@ -1043,7 +1043,7 @@ int CMixtureControl::Read (SStream *stream, Tag tag)
 void CMixtureControl::ReadFinished()
 { CEngineControl::ReadFinished();
   Tag jt = JS_MIXTURE_0 + eNum;
-  globals->jsm->MapTo(mveh,jt,unId);
+  globals->jsm->MapTo(mveh,jt,unId,this);
   //--- Init engine message -------------------
   engm.dataType   = TYPE_REAL;
   engm.user.u.datatag = 'mixt';     // Starter
@@ -1163,7 +1163,7 @@ int CPropellerControl::Read (SStream *stream, Tag tag)
 void CPropellerControl::ReadFinished()
 { CEngineControl::ReadFinished();
   Tag jt = JS_PROP_0 + eNum;
-  globals->jsm->MapTo(mveh,jt,unId);
+  globals->jsm->MapTo(mveh,jt,unId,this);
   //--- Init engine message -------------------
   engm.dataType   = TYPE_REAL;
   engm.user.u.datatag = 'blad';     // blade tag
@@ -2009,7 +2009,7 @@ void CElevatorTrimControl::TimeSlice (float dT,U_INT FrNo)
 //	All parameters are read, remap joystick
 //-----------------------------------------------------------------------
 void	CElevatorTrimControl::ReadFinished()
-{	globals->jsm->MapTo(mveh,JS_TRIM,unId);
+{	globals->jsm->MapTo(mveh,JS_TRIM,unId,this);
 }
 //-----------------------------------------------------------------------
 //	Slow down increment
@@ -2533,6 +2533,10 @@ void CSpeedRegulator::GetThrottle(int u)
 int CSpeedRegulator::Read (SStream *sf, Tag tag)
 { double pm; 
 	switch (tag) {
+			//--- Inside distance to node -----------
+			case 'insd':
+				ReadDouble(&limit,sf);
+				return TAG_READ;
 			//--- Steer PID parameters --------------
 			case 'rdKP':							// Steer PID KP
 				ReadDouble(&pm,sf);
@@ -2609,7 +2613,7 @@ void CSpeedRegulator::SetOFF()
 //--------------------------------------------------------------------------------
 bool CSpeedRegulator::SetON(U_INT CTRL)
 {	//--- Disconnect surface control and engine controls -------
-  globals->jsm->JoyDisconnect(mveh,JS_AUTO_BIT);
+  globals->jsm->JoyDisconnect(mveh,(JS_AUTO_BIT | CTRL));
 	speed	=  mveh->GetPreCalculedKIAS();
 	state	= 1;
 	steer = 0;
@@ -2627,11 +2631,16 @@ void CSpeedRegulator::SteerControl(float  dT)
 	return;
 }
 //--------------------------------------------------------------------------------
-//	Route control 
+//	Route control
+//	Check if we are moving toward or from the target position 
 //--------------------------------------------------------------------------------
 void CSpeedRegulator::RouteControl()
-{	if (fdist > 4)			return;
+{	bool towd = (fdist < pdist) && (fdist > limit);
+	pdist			= fdist;
+	if (towd)		return;
+	//--- Change to next waypoint --------
 	SPosition *pos = route->NextPosition();
+	pdist			= 100000;
 	if (pos)	{tgp  = *pos; return; }
 	steer = 0;
 	return;
@@ -2693,11 +2702,12 @@ void CSpeedRegulator::SteerTo(SPosition &P)
 //--------------------------------------------------------------------------------
 //	Follow the taxi route
 //--------------------------------------------------------------------------------
-void CSpeedRegulator::RouteTo(NavRoute *R)
+void CSpeedRegulator::TaxiTo(NavRoute *R)
 {	SPosition *pos	= R->NextPosition();
 	if (0 == pos)				return;
 	if (0 == state)			return;
 	mveh->SpeedRegulation(1);
+	pdist	= 100000;
 	route	= R;
 	steer	= 2;
 	tgp		= *pos;

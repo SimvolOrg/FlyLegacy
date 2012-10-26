@@ -169,11 +169,8 @@ public:
   virtual const SVector& GetBodyGearForce_ISU  (void);    
   /*! moment in Kg.m */
   virtual const SVector& GetBodyGearMoment_ISU (void);
-#ifdef HAVE_OPAL
   /*! launch init joint */
   virtual void InitJoint(char type,CGroundSuspension *s) {;}
-//  opal::JointData *gjointData;
-#endif
   //------ Probe functions ----------------------------------------
 	virtual void    Probe(CFuiCanva *cnv) {;}
   virtual void    ProbeBrake(CFuiCanva *cnv) {;}
@@ -350,6 +347,7 @@ public:
   CVector *GetMainGearCenter()	{return &mainW;}
 	double   GetDifBraking()			{return difB;}
 	double	 GetBankCoef()				{return banK;}
+	double   GetFriction()				{return fric;}
 	double   GetBumpForce()				{return bump;}
   double   GetMainGearRadius()	{return  mainR;}
   double   GetMinimumBodyAGL()	{return  mAGL;}
@@ -386,6 +384,7 @@ protected:
 	double        ampB;																					// Brake amplifier
 	double				difB;																					// Differntial brake
 	double        banK;																					// Banking coefficient
+	double				fric;																					// Friction coefficient
   double        wheel_base;                                   // Inter axes distance
   double        mAGL;                                         // minimum Body AGL (in feet)
   double        mainR;                                        // Main average radius

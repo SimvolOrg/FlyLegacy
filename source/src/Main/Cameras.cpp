@@ -55,39 +55,9 @@ bool KeyCamGroup(CKeyDefinition *kdf, int code)
 //  Global functions for Camera manager 'cmra'
 //==========================================================================
 //--------------------------------------------------------------------------
-//  Camera cockpit 'cock'
+//  Camera change to id
 //--------------------------------------------------------------------------
-bool cKeyCOCK(int id, int code, int mod)
-{ globals->ccm->KbEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  Camera spot 'spot'
-//--------------------------------------------------------------------------
-bool cKeySPOT(int id, int code, int mod)
-{ globals->ccm->KbEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  Camera observer 'obsr'
-//--------------------------------------------------------------------------
-bool cKeyOBSR(int id, int code, int mod)
-{ globals->ccm->KbEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  Camera overhead 'over'
-//--------------------------------------------------------------------------
-bool cKeyOVER(int id, int code, int mod)
-{ globals->ccm->KbEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  Camera fly by 'flyb'
-//--------------------------------------------------------------------------
-bool cKeyFLYB(int id, int code, int mod)
-{ globals->ccm->KbEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  Camera tower 'towr'
-//--------------------------------------------------------------------------
-bool cKeyTOWR(int id, int code, int mod)
+bool cKeyCHGE(int id, int code, int mod)
 { globals->ccm->KbEvent(id);
   return true; }
 //--------------------------------------------------------------------------
@@ -252,45 +222,9 @@ bool cKeyCD08(int id, int code, int mod)
 { 
   return true; }
 //--------------------------------------------------------------------------
-//  CAmera manager: Cockpit up 'ckup'
+//  CAmera manager: Change cockpit viewCockpit 
 //--------------------------------------------------------------------------
-bool cKeyCKUP(int id, int code, int mod)
-{ globals->ccm->KeyCameraCockpitEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  CAmera manager: Cockpit down 'ckdn'
-//--------------------------------------------------------------------------
-bool cKeyCKDN(int id, int code, int mod)
-{ globals->ccm->KeyCameraCockpitEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  CAmera manager: Cockpit left 'cklf'
-//--------------------------------------------------------------------------
-bool cKeyCKLF(int id, int code, int mod)
-{ globals->ccm->KeyCameraCockpitEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  CAmera manager: Cockpit right 'ckri'
-//--------------------------------------------------------------------------
-bool cKeyCKRI(int id, int code, int mod)
-{ globals->ccm->KeyCameraCockpitEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  CAmera manager: Cockpit home 'ckhm'
-//--------------------------------------------------------------------------
-bool cKeyCKHM(int id, int code, int mod)
-{ globals->ccm->KeyCameraCockpitEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  CAmera manager: Cockpit pan up 'ckpu'
-//--------------------------------------------------------------------------
-bool cKeyCKPU(int id, int code, int mod)
-{ globals->ccm->KeyCameraCockpitEvent(id);
-  return true; }
-//--------------------------------------------------------------------------
-//  CAmera manager: Cockpit pan down 'ckpd'
-//--------------------------------------------------------------------------
-bool cKeyCKPD(int id, int code, int mod)
+bool cKeyCPIT(int id, int code, int mod)
 { globals->ccm->KeyCameraCockpitEvent(id);
   return true; }
 //===================================================================================
@@ -2512,12 +2446,12 @@ void CCameraManager::BindKeys()
 { CKeyMap *km = globals->kbd;
   km->BindGroup('cmra',KeyCamGroup);
   //---------------------------------------
-  km->Bind ('cock', cKeyCOCK,KEY_SET_ON);
-  km->Bind ('spot', cKeySPOT,KEY_SET_ON);
-  km->Bind ('obsr', cKeyOBSR,KEY_SET_ON);
-  km->Bind ('over', cKeyOVER,KEY_SET_ON);
-  km->Bind ('flyb', cKeyFLYB,KEY_SET_ON);
-  km->Bind ('towr', cKeyTOWR,KEY_SET_ON);
+  km->Bind ('cock', cKeyCHGE,KEY_SET_ON);
+  km->Bind ('spot', cKeyCHGE,KEY_SET_ON);
+  km->Bind ('obsr', cKeyCHGE,KEY_SET_ON);
+  km->Bind ('over', cKeyCHGE,KEY_SET_ON);
+  km->Bind ('flyb', cKeyCHGE,KEY_SET_ON);
+  km->Bind ('towr', cKeyCHGE,KEY_SET_ON);
   //---------------------------------------
   km->Bind('czri',cKeyCZRI,KEY_SET_ON);
   km->Bind('czro',cKeyCZRO,KEY_SET_ON);
@@ -2549,13 +2483,13 @@ void CCameraManager::BindKeys()
   km->Bind('cd07',cKeyCD07,KEY_SET_ON);
   km->Bind('cd08',cKeyCD08,KEY_SET_ON);
   //---------------------------------------
-  km->Bind ('ckup', cKeyCKUP,KEY_SET_ON);
-  km->Bind ('ckdn', cKeyCKDN,KEY_SET_ON);
-  km->Bind ('cklf', cKeyCKLF,KEY_SET_ON);
-  km->Bind ('ckri', cKeyCKRI,KEY_SET_ON);
-  km->Bind ('ckhm', cKeyCKHM,KEY_SET_ON);
-  km->Bind ('ckpu', cKeyCKPU,KEY_SET_ON);
-  km->Bind ('ckpd', cKeyCKPD,KEY_SET_ON);
+  km->Bind ('ckup', cKeyCPIT,KEY_SET_ON);
+  km->Bind ('ckdn', cKeyCPIT,KEY_SET_ON);
+  km->Bind ('cklf', cKeyCPIT,KEY_SET_ON);
+  km->Bind ('ckri', cKeyCPIT,KEY_SET_ON);
+  km->Bind ('ckhm', cKeyCPIT,KEY_SET_ON);
+  km->Bind ('ckpu', cKeyCPIT,KEY_SET_ON);
+  km->Bind ('ckpd', cKeyCPIT,KEY_SET_ON);
   return;
 }
 //===================================================================================
@@ -2569,7 +2503,7 @@ CCameraManager::CCameraManager (CVehicleObject *veh,char* fn)
 	//--- Bind keys -----------------------------------------------
 	BindKeys();
 	fcam	 = 0;
-	//--- Create caera cockpit ------------------------------------
+	//--- Create camera cockpit -----------------------------------
 	CCameraCockpit *cock = new CCameraCockpit(mveh);
   came[CAMERA_COCKPIT] = cock;
   //--- Add other cameras ---------------------------------------
@@ -2890,10 +2824,13 @@ void CCameraManager::NextCamera (void)
 }
 
 //---------------------------------------------------------------
-//  Keyboard command
+//  Keyboard command: Select a camera by Id
 //---------------------------------------------------------------
 void CCameraManager::KbEvent(Tag id)
 { SelectCamera (id);
+	if ('cock' != id)			return;
+	//--- Select front panel ----------------
+	KeyCameraCockpitEvent('ckhm');
   return;
 }
 //-------------------------------------------------------------------------

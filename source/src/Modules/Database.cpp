@@ -1577,6 +1577,7 @@ CNavaid::CNavaid(OTYPE qo,QTYPE qa)
   dsfeet  = 0;
   vdzRad  = 0;
   xType   = 0;
+	rDir		= 0;
 }
 //-----------------------------------------------------------------
 //  Set additional attributes 
@@ -1643,6 +1644,22 @@ CmHead *CNavaid::Select(U_INT frame,float freq)
 	if (nav)  RefreshStation(frame);
   else      nav = globals->dbc->FindVOR(frame,freq);
 	return nav;				                       
+}
+//-----------------------------------------------------------------
+//	Set magnetic OBS (d is a true radial)
+//-----------------------------------------------------------------
+void CNavaid::SetMagneticOBS(float d)
+{	xobs	= d;
+	rDir	= Wrap360(d + globals->magDEV);
+	return;
+}
+//-----------------------------------------------------------------
+//	Change reference direction and compute magnetic OBS
+//-----------------------------------------------------------------
+void CNavaid::SetRefDirection(float d)
+{	rDir	= d;
+	xobs	= Wrap360(d - globals->magDEV);
+	return;
 }
 //-----------------------------------------------------------------
 //	Check for freq and range match
@@ -2053,14 +2070,13 @@ char CILS::InMARK(SVector &pos, B_MARK &b,CBeaconMark &m)
 //  -Medium marker is detected at altitude  300 feet
 //   Height / distance = tan(slope); thus distance = H / tan(slope);
 //------------------------------------------------------------------------
-void CILS::SetIlsParameters(CRunway *rwy,LND_DATA *dt, float dir)
+void CILS::SetIlsParameters(CRunway *rwy,LND_DATA *lnd, float dir)
 { this->rwy   = rwy;
-  float mdir  = Wrap360(dir - mDev);				// Magnetic direction
-  ilsVEC      = Wrap360(dir + 180);					// Runway vector
-  ilsD        = dt;
+  ilsD        = lnd;
+  float orie  = lnd->orie;
+  ilsVEC      = Wrap360(orie + 180);					// Runway vector
   ilsD->ils   = this;
-	ilsD->lnDIR = mdir;
-	//ilsD->lnDIR = dir;
+	ilsD->lnDIR = orie;
 	//--- Compute glide slope parameters -----------------------
   if (0 == gsan)  gsan = 3;     // Default 3°
   double slope  = DegToRad(gsan);
@@ -2301,14 +2317,14 @@ U_INT  CRunway::GetNumberBand(int bw)
 void CRunway::InitILS(CILS *ils)
 { if (ils->SameEND(rhid)) 
   { ilsT |= ILS_HI_END;
-    ils->SetIlsParameters(this,ilsD+RWY_HI_END,rhhd);		// True heading
-		//ils->SetIlsParameters(this,ilsD+RWY_HI_END,rhmh);	// Magnetic headidng
+    //ils->SetIlsParameters(this,ilsD+RWY_HI_END,rhhd);		// True heading
+		ils->SetIlsParameters(this,ilsD+RWY_HI_END,rhmh);	// Magnetic headidng
     return;
   }
   if (ils->SameEND(rlid))
   { ilsT |= ILS_LO_END;
-    ils->SetIlsParameters(this,ilsD+RWY_LO_END,rlhd);		// true headin
-		//ils->SetIlsParameters(this,ilsD+RWY_LO_END,rlmh);	// Magnetic heading
+    //ils->SetIlsParameters(this,ilsD+RWY_LO_END,rlhd);		// true headin
+		ils->SetIlsParameters(this,ilsD+RWY_LO_END,rlmh);	// Magnetic heading
     return;
   }
   return;

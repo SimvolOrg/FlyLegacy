@@ -263,6 +263,7 @@ void CFuiKLN89::DrawAllDisplay()
       x0 += mono20->DrawChar(surface,x0,y0,(char)(car),col);
     }
   }
+	mono20->SetTransparent();
   return;
 }
 //----------------------------------------------------------------------------
@@ -311,6 +312,7 @@ void CFuiKLN89::DrawLSPDisplay()
     }
     org += fac;
   }
+	mono20->SetTransparent();
   return;
 }
 //-----------------------------------------------------------------------------
@@ -339,6 +341,7 @@ void CFuiKLN89::DrawRSPDisplay()
     }
     org += fac;
   }
+	mono20->SetTransparent();
   return;
 }
 //-----------------------------------------------------------------------------

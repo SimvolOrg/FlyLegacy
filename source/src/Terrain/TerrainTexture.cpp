@@ -1638,6 +1638,7 @@ GLuint CTextureWard::GetTaxiTexture()
 //------------------------------------------------------------------------------
 void CTextureWard::GetAnyTexture(TEXT_INFO *inf)
 {	CArtParser img(TC_HIGHTR);
+	img.DontAbort();
   img.GetAnyTexture(*inf);
 }
 //=============================================================================

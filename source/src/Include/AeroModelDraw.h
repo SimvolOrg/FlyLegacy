@@ -194,7 +194,7 @@ void DebugSingleVScreenAeroWF (const CVector &ori_,
 void DebugScreenAeroWFNewCG (const double &lenght)
 {
   CVector ori = globals->iang; // RH
-  const CVector *cg = globals->pln->svh.GetNewCG_ISU (); // LH
+  const CVector *cg = globals->pln->wgh.GetNewCG_ISU (); // LH
 
   DebugSingleVScreenAeroWF (ori, cg->x * lenght, cg->y * lenght, cg->z * lenght, 0.0f, 225.0f, 0.0f);
 
@@ -310,7 +310,7 @@ void DebugScreenAeroWFEnginesForce (const double &lenght = 1.0)
 /*
 void DebugScreenAeroWFWingsMoment (const SVector &val, const double &lenght = 1.0)
 {
-  const CVector *cg = globals->sit->user->svh->GetNewCG_ISU (); // LH
+  const CVector *cg = globals->sit->user->wgh->GetNewCG_ISU (); // LH
 
   DebugScreenAeroWSForce (*cg, val);
 

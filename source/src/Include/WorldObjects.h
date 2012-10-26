@@ -258,7 +258,7 @@ public:
 	void				InitUserVehicle();
 	//---------------------------------------------------------------------------------
 	void				InitState();
-	//--- Return data ---------------------------------------------------
+	//--- Return aircraft data ------------------------------------------
   //! Returns altitude above ground in feet
   //! Returns vehicle moments of inertia (kg m^2)
 	SVector*    GetMomentOfInertia()				{return (&tb);}
@@ -279,8 +279,9 @@ public:
   //! Returns true airspeed in feet / sec
   void GetTAS(double &spd); // TAS in ft/s
 	double			GetTAS()					{return ktas;}
+	double			GetIAS()					{return kias;}
   //! Returns indicated airspeed in knts
-  double& GetPreCalculedKIAS () {return kias;} //
+  double&			GetPreCalculedKIAS () {return kias;} //
   //! Returns object angular velocity in object coordinates (rad/s)
 	CVector*    GetBodyAngularVelocityVector () {return &(wb[cur]);}
   //!  Returns object angular acceleration in object coordinate (rad/s²)
@@ -321,7 +322,8 @@ public:
   //---Radio interface ------------------------------------------------------
 	void  RegisterRadioBUS(BUS_RADIO *b)	{busR = b;}
 	void  RegisterGPSR(GPSRadio *r)				{GPSR = r;}
-	void	RegisterRAD(CRadio *r){mRAD = r;}
+	void	RegisterRAD(CRadio *r)					{mRAD = r;}
+	void	RegisterVSI(CSubsystem *s)			{sVSI	= s;}
 	//--- Component pointers ------------------------------------------------
 	BUS_RADIO *GetRadioBUS()		{return busR;}	// Radio BUS
 	GPSRadio  *GetGPS()					{return GPSR;}	// GPS radio 
@@ -378,6 +380,8 @@ public:
   CSlopeWindData        *swd;
   CLogFile							*log;
   CVehicleHistory       *hst;
+	//--- subsystems --------------------------------------------------------------
+	CSubsystem						*sVSI;
   //-----Radio interface --------------------------------------------------------
 	BUS_RADIO						 *busR;							// Radio BUS
  	AutoPilot						 *aPIL;							// Autopilot 
@@ -434,6 +438,7 @@ public:
 	CFuelSystem      *GetGAS()				{return &gas;}
 	CCockpitManager  *GetPIT()				{return &pit;}
 	CSpeedRegulator  *GetSREG()				{return amp.sReg;}
+	CSubsystem       *GetSVSI()				{return sVSI;}
 	//-----------------------------------------------------------------------------------------
 protected:
 	//--- Engine parameters --------------------------------------------------------

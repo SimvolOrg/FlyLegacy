@@ -64,6 +64,7 @@ void FreeBitmap(SBitmap *bm)
 //
 //  NOTE BY JS:  Add the invert field to accelerate dot computation used everywhere
 //               Add nbpix to accelerate erase used also everywhere
+//=====================================================================================
 SSurface* CreateSurface(int w, int h)
 { if ((w > 0) && (h > 0)) {
     //MEMORY_LEAK_MARKER ("rc_surf")
@@ -83,6 +84,16 @@ SSurface* CreateSurface(int w, int h)
 //  WARNINGLOG ("CreateSurface : Invalid dimensions %d x %d", width, height);
   gtfo ("CreateSurface : Invalid dimensions %d x %d", w, h);
   return 0;
+}
+//---------------------------------------------------------------------------
+// Update surface dimension without reallocation
+//---------------------------------------------------------------------------
+void UpdateSurface(SSurface *sf,int wd, int ht)
+{	sf->xSize = wd;
+  sf->ySize = ht;
+  sf->invert  = (ht - 1) * wd;
+  sf->nPixel    = (wd * ht);
+	return;
 }
 //---------------------------------------------------------------------------
 //  Free surface

@@ -433,47 +433,6 @@ void CSkyManager::PreDraw (void)
 // Dump the contents of the CSkyManager class to a file for debugging
 //
 void CSkyManager::Print (FILE *f)
-{ /*
-  //
-  // Sky dome shading parameter sets
-  //
-  domeimage->Print (f);
-
-  //
-  // Ephemeris data for the sun moon and planes
-  //
-  fprintf (f, "Ephemeris Data:\n");
-
-  double mjd = globals->tim->GetModifiedJulianDate ();
-  fprintf (f, "MJD      : %f\n", mjd);
-
-  SDateTime dt = globals->tim->GetUTCDateTime ();
-  fprintf (f, "UTC Date : %04d/%02d/%02d \n", dt.date.year + 1900, dt.date.month, dt.date.day);
-  fprintf (f, "UTC Time : %02d:%02d:%02d.%03d\n",
-    dt.time.hour, dt.time.minute, dt.time.second, dt.time.msecs);
-
-  fprintf (f, "                  RA               Dec\n");
-  char radec[64];
-  FormatRADec (sol->GetRightAscension(), sol->GetDeclination(), radec);
-  fprintf (f, "Sun:      %s\n", radec);
-
-  FormatRADec (moon->GetRightAscension(), moon->GetDeclination(), radec);
-  fprintf (f, "Moon:     %s\n", radec);
-
-  FormatRADec (mercury->GetRightAscension(), mercury->GetDeclination(), radec);
-  fprintf (f, "Mercury:  %s\n", radec);
-
-  FormatRADec (venus->GetRightAscension(), venus->GetDeclination(), radec);
-  fprintf (f, "Venus:    %s\n", radec);
-
-  FormatRADec (mars->GetRightAscension(), mars->GetDeclination(), radec);
-  fprintf (f, "Mars:     %s\n", radec);
-
-  FormatRADec (jupiter->GetRightAscension(), jupiter->GetDeclination(), radec);
-  fprintf (f, "Jupiter:  %s\n", radec);
-
-  FormatRADec (saturn->GetRightAscension(), saturn->GetDeclination(), radec);
-  fprintf (f, "Saturn:   %8s\n", radec);
-	*/
+{ 
 }
 //==================== END OF FILE ======================================================================

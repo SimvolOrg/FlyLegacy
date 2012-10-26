@@ -213,7 +213,7 @@ CFuiSketch::~CFuiSketch()
   if (sqlp)	globals->sqm->CloseOSMbase(sqlp);
 	sqlp = 0;
 	//---- Marker 2 -------------------------------------
-	char *ds = Dupplicate("*END CityEDIT*",32);
+	char *ds = DupplicateString("*END CityEDIT*",32);
 	ses.EditCNT();
 	STREETLOG("END CITY EDITOR");
 	globals->ccm->RestoreCamera(ctx);
@@ -258,7 +258,7 @@ void CFuiSketch::FileSelected(FILE_SEARCH *fpm)
 			_snprintf(fnam,FNAM_MAX,"%s/%s",spath,sname);
 			break;
 		case CITY_FILE_MOD:
-			repPM.obj = Dupplicate(fpm->sfil,FNAM_MAX);
+			repPM.obj = DupplicateString(fpm->sfil,FNAM_MAX);
 			State = SKETCH_ROBJ;
 			break;
 		case CITY_FILE_DBA:
@@ -388,7 +388,7 @@ bool CFuiSketch::ParseReplace(char *txt)
 	if (nf != 2)  return false;
 	repPM.otype	= confp.otype;
 	repPM.dir		= GetOSMfolder(confp.otype);
-	repPM.obj		= Dupplicate(objn,FNAM_MAX);
+	repPM.obj		= DupplicateString(objn,FNAM_MAX);
 	return true;
 }
 //-------------------------------------------------------------------
@@ -1526,7 +1526,7 @@ bool D2_Session::GetReplacement(OSM_MDEF &rpm)
 	{	if (k-- > 0)	continue;
 		OSM_MDEF *rpp = (*rp).second;	
 		rpm.dir  = rpp->dir;
-		rpm.obj  =  Dupplicate(rpp->obj,FNAM_MAX);
+		rpm.obj  =  DupplicateString(rpp->obj,FNAM_MAX);
 		return true;
 	}
 	return false;

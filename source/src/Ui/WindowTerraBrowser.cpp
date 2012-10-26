@@ -31,8 +31,8 @@ extern char *HexTAB;
 //=================================================================================
 //  Window profile
 //=================================================================================
-#define TBROS_PROF (PROF_NO_PLN + PROF_NO_MET + PROF_DR_DET + PROF_EDITOR)
-#define MBROS_PROF (PROF_NO_PLN + PROF_NO_MET + PROF_DR_DET + PROF_EDITOR)
+#define TBROS_PROF (PROF_NO_PLANE + PROF_NO_MET + PROF_DR_DET + PROF_EDITOR)
+#define MBROS_PROF (PROF_NO_PLANE + PROF_NO_MET + PROF_DR_DET + PROF_EDITOR)
 //=================================================================================
 //  Button text
 //=================================================================================
@@ -446,8 +446,7 @@ void CFuiMBROS::Teleport()
   pos.alt += (wObj->GetZExtend() + 20) * 0.5;
   //----Set Camera parameters  -----------------
   double ex = wObj->GetYExtend() * 12;
-  //sCam->SetRange(ex);
-	sCam->MoveTo(10,ex);
+  sCam->SetRange(ex);
   sCam->SetAngle(15,30);
   globals->m3d->ReleaseVOR();
   globals->geop = pos;
@@ -481,7 +480,7 @@ void CFuiMBROS::Draw()
 void CFuiMBROS::DrawByCamera(CCamera *cam)
 { if (0 == Mod) return;
   Mod->PreDraw(cam);
-  Mod->Draw(BODY_NOMOVE);                   
+  Mod->Draw(0);                   
   Mod->EndDraw(cam);
   return;
 }

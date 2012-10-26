@@ -461,9 +461,10 @@ void CRwyGenerator::SetLandingPRM(LND_DATA *ils,float ld,float td)
 	//--- TRACE ---------------------------------------------
 	
 	char L = (ils->ils)?('*'):(' ');
-	TRACE("APT=%s rwy=%s %c head=%.2f orie=%.2f mag=%.2f",
+	TRACE("APT=%s rwy=%s %c QFU=%.2f orie=%.2f mag=%.2f",
 								apo->GetAirport()->GetIdent(),
-								ils->ridn, L, ld,
+								ils->ridn, L, 
+								ld,										// QFU
 								ils->orie,
 								globals->magDEV);
 								

@@ -466,8 +466,9 @@ int CSimButton::Read(SStream * stream, Tag tag)
 //        have a diffrent name assigned by the user in the AMP file
 //  Each control has a generic name such as 'thr1' or 'bld1' that stores the user
 //  tag provided in the file.
-//  Funtion MapTo(gen,us) remaps the generic commande to the user provided name
-//          so when polled, the proper subsystem will receive the joystick value.
+//  Funtion MapTo(gen,subs) remaps the generic commande  to the calling subsystem
+//			thus joystick is linked correctly to the proper aircraft control
+//			when changing aircraft
 //  Conversaly the manager can return the user name given the generic one.
 //  Function TagFrom(gen) return the user tag (if any) associated to the generic 
 //        Name
@@ -990,13 +991,13 @@ void CJoysticksManager::SetNbEngines(CObject *obj,char nb)
 //	NOTE:  Only the registered aircraft is accepted.  Other animated aircraft
 //				 dont have joystick control
 //--------------------------------------------------------------------------------
-void CJoysticksManager::MapTo(CObject *obj,Tag ctl, Tag dst)
+void CJoysticksManager::MapTo(CObject *obj,Tag ctl, Tag dst,CSubsystem *sys)
 { if (obj != mveh)					return;
 	std::map<Tag,CSimAxe *>::iterator it = mapAxe.find(ctl);
   if (it == mapAxe.end())		return;
   CSimAxe *axe = (*it).second;
   axe->msg.group    = dst;
-  axe->msg.receiver = 0;
+  axe->msg.receiver = sys;
   return;
 }
 //-------------------------------------------------------------------------
@@ -1007,7 +1008,7 @@ void CJoysticksManager::JoyConnectAll(CObject *obj)
 	axeCNX = JS_AUTO_BIT + JS_RUDR_BIT;
 	return;	}
 //-------------------------------------------------------------------------
-//	Aircarft request to Disconnect axis m
+//	Aircraftt request to Disconnect axis m
 //-------------------------------------------------------------------------
 void CJoysticksManager::JoyDisconnect(CObject *obj,U_INT m)
 {	if (obj != mveh)	return;
@@ -1047,7 +1048,8 @@ void CJoysticksManager::SendGroupPMT(CObject *obj,U_CHAR nbu)
     if (msg->user.u.engine > nbu) continue;
     msg->realData = axe->Value(nZON);			//AxeVal(axe);
     msg->user.u.datatag = axe->cmd;
-    globals->pln->ReceiveMessage(msg);
+    CSubsystem *sys = (CSubsystem *) msg->receiver;
+		if (sys) sys->ReceiveMessage(msg);
   }
   return;
 }
@@ -1071,7 +1073,8 @@ void CJoysticksManager::SendGroup(U_INT ng,Tag cmd)
     SMessage *msg = &axe->msg;
     if (msg->user.u.engine > U_INT(engNB))	return;         // End of group
     msg->user.u.datatag = cmd;
-    globals->pln->ReceiveMessage(msg);
+    CSubsystem *sys = (CSubsystem *) msg->receiver;
+		if (sys) sys->ReceiveMessage(msg);
   }
   return;
 }

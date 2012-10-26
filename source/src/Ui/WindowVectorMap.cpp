@@ -991,7 +991,14 @@ void CFuiVectorMap::ZoomPlus()
 	Scale(Zoom);
   return;
 }
-
+//---------------------------------------------------------------------------------
+//  Event notification: Close the window
+//---------------------------------------------------------------------------------
+void CFuiVectorMap::CloseMe()
+{	Close();
+	if (VWIN_RWY == dStat) Scale(pZom) ;
+	return;
+}
 //---------------------------------------------------------------------------------
 //  Event notification
 //---------------------------------------------------------------------------------
@@ -1029,7 +1036,7 @@ void  CFuiVectorMap::NotifyChildEvent(Tag idw,Tag itm,EFuiEvents evn)
 		fpln->GoToPrevNode();
 		return;
   case 'sysb':
-    if (EVENT_CLOSEWINDOW == evn) { Close();    return;}
+    if (EVENT_CLOSEWINDOW == evn) { CloseMe();    return;}
     if (EVENT_ZOOM        == evn) { (WINDOW_SIZE_MAXI == vStat)?NormSize():MaxiSize(); return;}
     if (EVENT_MINIMIZE    == evn) { (WINDOW_SIZE_MINI == vStat)?NormSize():MiniSize(); return;}
     return;
@@ -1557,11 +1564,11 @@ bool CFuiVectorMap::MoveRWY(int mx,int my)
 int CFuiVectorMap::ClickRwyMENU(short itm)
 { char ch = *smen.aText[itm];
 	if (itm == 0)			return 1;
+	Scale(pZom);
   if (ch	== '*')		return StartonRWY(itm);
 	dStat = VWIN_MAP;
   ClosePopMenu();
 	//--- Reset zoom factor -------------------
-	Scale(pZom);
   return 1;
 }
 //---------------------------------------------------------------------------------

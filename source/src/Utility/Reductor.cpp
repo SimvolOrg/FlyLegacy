@@ -235,7 +235,7 @@ void CrVertex::ChangeBack(CrVertex *vv, CrVertex *vu)
   return;
 }
 //----------------------------------------------------------------------
-//  Refresh coast for all vertex surrounding vv
+//  Refresh cost for all vertex surrounding vv
 //----------------------------------------------------------------------
 void CrVertex::RefreshCost()
 { ComputeEdgeCostAtVertex();

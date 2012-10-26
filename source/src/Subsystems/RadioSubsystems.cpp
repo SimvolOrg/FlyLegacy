@@ -52,6 +52,8 @@ CmHead *CNulSource::Select(U_INT frame,float freq)
 //	-A user waypoint on the flight plan
 //	-A Runway ending point for landing
 //	All other sources (NAV/NDB/ILS) are internal to the radio
+//	For landing (ils not null) , we must calculate deviation using true radial 
+//	and true runway orientation. 
 //===================================================================================
 void CExtSource::SetSource(CmHead *src,LND_DATA *ils)
 {	tsrc		= src;
@@ -59,14 +61,18 @@ void CExtSource::SetSource(CmHead *src,LND_DATA *ils)
 	strncpy(sidn,src->GetIdent(),5);			// store ident
 	strncpy(snam,src->GetName(),64);			// Store name
 	spos		= src->GetPosition();					// Geo position
-	smag		= src->GetMagDev();						// Magnetic deviation
+	smag		= src->GetMagDev();						// Magnetic deviation  *MARKDEV
 	signal  = (ils)?(SIGNAL_ILS):(SIGNAL_VOR);	// Station type
 	//--- Any ILS to set --------------------------------------
 	ilsD		= ils;
 	vdev		= 0;
-	refD    = (ils)?(ils->lnDIR):(0);
-	if (ils)	spos = ils->refP;
-	//--- compute feet factor at given latitude ---------------
+	refD    = 0;													//(ils)?(ils->lnDIR):(0);
+	//--- Set landing parameters ------------------------------
+	if (ils)	
+	{	spos		= ils->refP;
+		refD		= ils->orie;
+	}
+	//--- Compute feet factor at given latitude ---------------
 	double lr   = FN_RAD_FROM_ARCS(spos.lat);					//DegToRad  
   nmFactor = cos(lr) / 60;                          // 1 nm at latitude lr
 	//--- Refresh distance and direction -----------------------
@@ -82,7 +88,7 @@ void CExtSource::RefreshStation(U_INT fram)
 	SPosition *ref  = &spos;
   SVector	v	      = GreatCirclePolar(acp, ref);
 	tradial = float(v.h);
-  radial  = Wrap360((float)v.h - smag);
+  radial  = Wrap360((float)v.h - smag);			
 	nmiles  = (float)v.r * MILE_PER_FOOT;
   dsfeet  =  v.r;
 	//--- Compute vertical deviation ----------------
@@ -91,6 +97,13 @@ void CExtSource::RefreshStation(U_INT fram)
 	double vH		= dsfeet * ilsD->gTan;
 	vdev  = (acp->alt - vH - alr) / dsfeet;
 	ilsD->errG  = vdev;			  
+	return;
+}
+//--------------------------------------------------------------------------
+//	Set Reference direction (direct mode)
+//--------------------------------------------------------------------------
+void	CExtSource::SetRefDirection(float d) 
+{	refD = d;
 	return;
 }
 //--------------------------------------------------------------------------
@@ -405,7 +418,8 @@ int CRadio::IncXOBS(short inc)
   obs += inc;
   if (  0 > obs) obs  = 359;
   if (359 < obs) obs  = 0;
-	busRD.SetOBS(obs);
+	busRD.xOBS = obs;
+	busRD.rSRC->SetMagneticOBS(obs);
   return obs;
 }
 //--------------------------------------------------------------------------
@@ -418,10 +432,12 @@ void CRadio::ChangePosition(SPosition *p)
 }
 //--------------------------------------------------------------------------
 //  Change Reference direction from external
+//	Reference direction is true direction.
+//	Must compute a magnetic direction for OBS
 //--------------------------------------------------------------------------
 void CRadio::ChangeRefDirection(float d)
 {	SRC->SetRefDirection(d);
-	busRD.SetOBS(d);
+	busRD.xOBS = Wrap360(d - magDV);
 	Synchronize();
 //	TRACE("RADIO: Ref dir=%.2f",Radio.hREF);
 }
@@ -433,6 +449,7 @@ void CRadio::ChangeRefDirection(float d)
 void CRadio::TimeSlice (float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
 	Frame				= FrNo;
+	magDV				= globals->magDEV;
 	//--- Call derived radios -----------------------
 	Update(dT,FrNo,0);
 	Synchronize();
@@ -455,18 +472,18 @@ void CRadio::SetDirectMode()
 void	CRadio::DirectMode()
 {	double dir = busRD.radi;
 	SRC->SetRefDirection(dir);
-	busRD.SetOBS(dir);
+	//--- Update magnetic OBS -------------------------
+	busRD.xOBS = Wrap360(dir - magDV);
+	return;
 }
 //------------------------------------------------------------------
 //  Resynchronize radio
 //------------------------------------------------------------------
 void	CRadio::Synchronize()
-{	float   rad = 0;
-	if (RADIO_MODE_DIRECT == busRD.mode) DirectMode();
+{	if (RADIO_MODE_DIRECT == busRD.mode) DirectMode();
 	busRD.rSRC  = SRC;
-	SRC->SetNavOBS(busRD.xOBS);
-	rad = SRC->GetRadial(); 
-	busRD.radi = rad;
+	SRC->SetMagneticOBS(busRD.xOBS);
+	busRD.radi = SRC->GetTrueRadial();
   busRD.ntyp = SRC->SignalType();							
   busRD.mdis = SRC->GetNmiles();
   busRD.mdev = SRC->GetMagDev();
@@ -475,7 +492,7 @@ void	CRadio::Synchronize()
   busRD.fdis = SRC->GetFeetDistance();
   busRD.sens = SRC->Sensibility();						//10;
 	busRD.rDEV = Wrap180(busRD.radi - busRD.hREF);
-  busRD.hDEV = ComputeDeviation(busRD.hREF,rad,&busRD.flag,1);    //sPower);
+  busRD.hDEV = ComputeDeviation(busRD.hREF,busRD.radi,&busRD.flag,1);    //sPower);
   //---Compute angle between reference and aircraft heading --
   busRD.aDir = mveh->GetMagneticDirection();
   busRD.iAng = Wrap360(busRD.hREF - busRD.aDir);

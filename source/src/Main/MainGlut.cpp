@@ -565,7 +565,7 @@ void redraw ()
     InitApplication();
     Cursor = globals->cum->CrsrArrow();
     globals->appState = APP_GENERATE_SITUATION;
-		Dupplicate("***START SCREEN ***",32);
+		DupplicateString("***START SCREEN ***",32);
     break;
 
   case APP_GENERATE_SITUATION:
@@ -587,14 +587,14 @@ void redraw ()
   case APP_LOAD_SITUATION:
     // Load situation
 		{
-		Dupplicate("***INIT SIMULATION ***",32);
+		DupplicateString("***INIT SIMULATION ***",32);
     InitSimulation ();
     globals->appState = APP_PREPARE;
     break;
 		}
   case APP_PREPARE:
 	{ // Prepare situation for simulation
-		Dupplicate("***PREP SIMULATION ***",32);
+		DupplicateString("***PREP SIMULATION ***",32);
     globals->sit->Prepare ();
     globals->appState = APP_SIMULATION;
 		globals->init = 1;
@@ -618,7 +618,7 @@ void redraw ()
 	*/
   case APP_EXIT_SCREEN:
     // Display exit screen
-		Dupplicate("***EXIT SIMULATION ***",32);
+		DupplicateString("***EXIT SIMULATION ***",32);
     ExitScreen ();
     break;
 

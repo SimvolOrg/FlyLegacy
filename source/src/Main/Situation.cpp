@@ -97,6 +97,17 @@ void CDispatcher::Remove(char p)
 	return;
 }
 //-------------------------------------------------------------------
+//	Destroy executable
+//-------------------------------------------------------------------
+void CDispatcher::Destroy(char p)
+{	CExecutable *ex = slot[p].obj;
+	if (ex) delete ex;
+	slot[p].obj		= 0;
+	slot[p].draw	= 0;
+	return;
+}
+
+//-------------------------------------------------------------------
 //	Execute
 //-------------------------------------------------------------------
 void	CDispatcher::TimeSlice(float dT, U_INT frame)

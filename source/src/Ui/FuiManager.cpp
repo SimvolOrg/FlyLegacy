@@ -765,7 +765,7 @@ void CFuiManager::DrawNoticeToUser (char *text, float time)
 //	Display pilot message
 //------------------------------------------------------------------------------
 void CFuiManager::PilotToUser()
-{ notep->SetActive(5);
+{ notep->SetActive(10);
 	notep->DrawTheText();
 	return;
 }

@@ -977,7 +977,7 @@ CFuiTaxi::~CFuiTaxi()
 	globals->Disp.ExecON (PRIO_TERRAIN);		// Allow Terrain Draww
 	globals->Disp.ExecULK(PRIO_WEATHER);
 	//---- Marker 2 -------------------------------------
-	char *ds = Dupplicate("*END taxiEDIT*",32);
+	char *ds = DupplicateString("*END taxiEDIT*",32);
 	globals->ccm->RestoreCamera(ctx);
 }
 //------------------------------------------------------------------------------

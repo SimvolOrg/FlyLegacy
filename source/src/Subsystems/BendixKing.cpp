@@ -593,7 +593,8 @@ int CK155radio::SetFlag()
 //--------------------------------------------------------------------------
 int CK155radio::SetILS()
 { float dir = SRC->GetRefDirection();
-  cdiDEV    = ComputeDeviation(dir,SRC->GetRadial(),&cdiST,sPower);
+  float tdr = Wrap360(dir + globals->magDEV);
+  cdiDEV    = ComputeDeviation(tdr,SRC->GetTrueRadial(),&cdiST,sPower);
   SetField(navTAB,K155_FOBS_DG,"%s","LOC");
   SetFlag();
   return 1;
@@ -605,7 +606,8 @@ int CK155radio::SetCDI(short inc)
 { CDI += inc;
   if (  0 > CDI) CDI -= inc;
   if (359 < CDI) CDI -= inc;
-  cdiDEV  = ComputeDeviation(CDI,SRC->GetRadial(),&cdiST,sPower);
+	float tdr = Wrap360(CDI + globals->magDEV);
+  cdiDEV  = ComputeDeviation(tdr,SRC->GetTrueRadial(),&cdiST,sPower);
   SetField(navTAB,K155_FOBS_DG,"%03u",CDI);
   SetFlag();
   return 1;

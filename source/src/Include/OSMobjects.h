@@ -201,7 +201,7 @@ struct OSM_MDEF {
 	//-------------------------------------------------------
 	void Copy(OSM_MDEF &R)
 	{	Clear(); 
-		obj = Dupplicate(R.obj, FNAM_MAX);
+		obj = DupplicateString(R.obj, FNAM_MAX);
 		dir = R.dir;
 		otype = R.otype;
 		sinA  = R.sinA;

@@ -297,7 +297,7 @@ OSM_MDEF *GetOSMreplacement(char *T, char *V, char *obj)
 	OSM_MDEF *rep = new OSM_MDEF();
 	rep->otype	= otype;
 	rep->dir		= GetOSMfolder(otype);
-	rep->obj		= Dupplicate(obj,FNAM_MAX);
+	rep->obj		= DupplicateString(obj,FNAM_MAX);
 	return rep;
 }
 //==========================================================================
@@ -317,8 +317,8 @@ OSM_Object::OSM_Object(CBuilder *B,OSM_CONFP *CF, D2_Style *sty)
 	orien       = 0;
 	style				= 0;
 	tag	= val		= 0;
-	if (CF->tag)	tag = Dupplicate(CF->tag,64);
-	if (CF->val)	val = Dupplicate(CF->val,64);
+	if (CF->tag)	tag = DupplicateString(CF->tag,64);
+	if (CF->val)	val = DupplicateString(CF->val,64);
 	if (sty)	ForceStyle(sty);
 }
 //-----------------------------------------------------------------

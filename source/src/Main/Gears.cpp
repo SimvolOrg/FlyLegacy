@@ -534,10 +534,11 @@ const SVector& CGear::GetBodyGearMoment_ISU (void)
 // CGroundSuspension
 // Based upon JSBSim code
 // see copyright below
-///
+///	GroundSuspension manage all wheels and suspension.
 //  JS NOTES:  
 //    1)Wheel index is 0 based.  Interface to grlt (gear light) is 1 based
 //    2) Add subsystem ident for probe purpose
+//
 //================================================================================
 CGroundSuspension::CGroundSuspension ()
 { SetIdent('susp');                   // suspension manager
@@ -553,6 +554,7 @@ CGroundSuspension::CGroundSuspension ()
 	bump		= 28;
 	difB	  = 1;
 	banK		= 0.25;
+	fric		= 0.05;
 	steer		= 0;
 	ampB    = 2;
   //---------------------------------------------------------
@@ -607,9 +609,13 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
 	case 'difB':
 		ReadDouble(&difB,stream);
 		return TAG_READ;
-	//--- Bank amplifier ---------------------
+	//--- Bank amplifier ---------------------------
 	case 'banK':
 		ReadDouble(&banK,stream);
+		return TAG_READ;
+	//--- Friction coefficient ---------------------
+	case 'fric':
+		ReadDouble(&fric,stream);
 		return TAG_READ;
   //---JS decode suspension type -------------------------
   case 'type':

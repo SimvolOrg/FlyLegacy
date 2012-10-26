@@ -191,7 +191,6 @@ class CK89gauge: public CRadioGauge {  //CBitmapGauge {
   CK89gauge        *oGage;              // Original gauge
   //-------RADIO control ------------------------------------------------
   Tag               radi;               // Radio Tag
-  SMessage          nMsg;               // Nav message
   //-------CLICK PARAMETERS  ---------------------------------------------
   CGaugeClickArea   ca[K89_DIM];        // All click area
   static  ClkFN     HndTAB[4];          // vector to Handler

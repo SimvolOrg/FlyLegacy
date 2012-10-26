@@ -626,10 +626,16 @@ public:
 	virtual void	SetActive(char a)	{;}
 	virtual void	SetState (char s)	{;}
 	//--- GAUGE BUS -------------------------------------------------------------
-	//	Subsystem must implement the virtual function returning the requested
-	//	value
-	//	INxx must return integer value
-	//	FTyy must return a float value
+	//	The GAUGE BUS is for gauge.  A Subsystem update its own value and
+	//		when the gauge has a pointer to the subsystem, it can retrieve the value
+	//		much faster than through the messaging system
+	//---------------------------------------------------------------------------
+	//	Each bus is dedicated to one value . For instance GaugeBusFT01() retrieve 
+	//	the indn value of the subsystem.
+	//	Subsystem must implement the virtual function returning specific
+	//	value when the value is not the standard one.
+	//	BUS of the name INxx must return integer value
+	//	BUS of the name FTyy must return a float value
 	//---------------------------------------------------------------------------
 	virtual int   GaugeBusINNO(char no)	{return 0;}				// Get data bus number no
 	virtual int   GaugeBusIN01()				{return 0;}				// State
@@ -642,7 +648,7 @@ public:
 	virtual int   GaugeBusIN07()				{return 0;}				// Specific to system
 	virtual int   GaugeBusIN08()				{return 0;}				// Specific to system
 	//---------------------------------------------------------------------------
-	virtual float GaugeBusFT01()				{return 0;}				// Float p1
+	virtual float GaugeBusFT01()				{return indn;}		// Float p1 (indn)
 	virtual float GaugeBusFT02()				{return 0;}				// Float p2
 	//---------------------------------------------------------------------------
 	virtual void	Target(float v)		{indnTarget = v;}

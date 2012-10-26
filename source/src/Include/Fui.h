@@ -1771,6 +1771,7 @@ class CFuiTextPopup : public CFuiComponent
 public:
   // Constructors / destructor
   CFuiTextPopup();
+	void  ReadFinished();
   // CFuiComponent methods
   void  SetText (char *text);
   void  Draw();

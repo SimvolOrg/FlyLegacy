@@ -125,6 +125,33 @@ private:
 public:
 	inline void Raz() {x = y = z = 0;}
 };
+//=============================================================================
+//  3D Extension COORDINATES
+//=============================================================================
+struct EXT_3D {
+	F3_VERTEX vmin;
+	F3_VERTEX vmax;
+	//---------------------------------------------
+	EXT_3D::EXT_3D() {vmin.Clear(); vmax.Clear();}
+	//--- Save min value --------------------------
+	inline void SaveMIN(F3_VERTEX &S)
+	{	if (S.VT_X < vmin.VT_X)	 vmin.VT_X = S.VT_X;
+		if (S.VT_Y < vmin.VT_Y)	 vmin.VT_Y = S.VT_Y;
+		if (S.VT_Z < vmin.VT_Z)	 vmin.VT_Z = S.VT_Z;
+	}
+	//--- Save maximum value ----------------------
+	inline void SaveMAX(F3_VERTEX &S)
+	{	if (S.VT_X > vmax.VT_X)	 vmax.VT_X = S.VT_X;
+		if (S.VT_Y > vmax.VT_Y)	 vmax.VT_Y = S.VT_Y;
+		if (S.VT_Z > vmax.VT_Z)	 vmax.VT_Z = S.VT_Z;
+	}
+	//--- Save extension ---------------------------
+	inline void SaveEXT(CVector &V)
+	{	V.x = vmax.VT_X - vmin.VT_X;
+		V.y = vmax.VT_Y - vmin.VT_Y;
+		V.z = vmax.VT_Z - vmin.VT_Z;
+	}
+};
 //========================================================================================
 //	Class HVector:   Homogeneous vector for projection
 //========================================================================================

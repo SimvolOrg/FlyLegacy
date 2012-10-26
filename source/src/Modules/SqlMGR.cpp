@@ -38,6 +38,8 @@
 #include "../Include/Airport.h"
 #include "../Include/LightSystem.h"
 #include "../Include/PlanDeVol.h"
+#include "../Include/3dMath.h"
+
 #include <io.h>
 //==================================================================================
 //  Database request to compile
@@ -2630,7 +2632,6 @@ bool  SqlMGR::SearchPODinOBJ(char *pn)
 	char req[1024];
   _snprintf(req,1024,"SELECT file FROM FNM where file LIKE '%%%s%%';*",pn);
 	sqlite3_stmt *stm = CompileREQ(req,objDBE);
-//	while (SQLITE_ROW == sqlite3_step(stm)) nb++; 
 	nb = (SQLITE_ROW == sqlite3_step(stm))?(1):(0);
 	sqlite3_finalize(stm);
 	return (nb != 0);
@@ -3056,7 +3057,7 @@ bool SqlTHREAD::CheckM3DModel(char *name)
 //  Decode 3DPart
 //  NOTE: Type is ignored for now
 //---------------------------------------------------------------------------------
-int SqlTHREAD::DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl)
+int SqlTHREAD::DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl,EXT_3D &E)
 { int   tsp =        sqlite3_column_int (stm,CLN_MOD_TSP);
   char *txn = (char*)sqlite3_column_text(stm,CLN_MOD_TXN);
   int   nbv =        sqlite3_column_int (stm,CLN_MOD_NVT);
@@ -3073,7 +3074,7 @@ int SqlTHREAD::DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl)
   F3_VERTEX *N = (F3_VERTEX*)sqlite3_column_blob (stm,CLN_MOD_NTB);
   F2_COORD  *T = (F2_COORD*)sqlite3_column_blob (stm,CLN_MOD_TTB);
   int       *X = (int*)sqlite3_column_blob (stm,CLN_MOD_ITB);
-  prt->SQLstrip(nbx,V,N,T,X);
+  prt->SQLstrip(nbx,V,N,T,X,E);
   //----return number of faces -------------------------------
   int nbf = (nbx / 3);
   return nbf;
@@ -3104,21 +3105,22 @@ int SqlTHREAD::GetM3DTexture(TEXT_INFO *inf)
   return 0;
 }
 //---------------------------------------------------------------------------------
-//  Decode Model
+//  Decode a 3D Model
 //---------------------------------------------------------------------------------
 int SqlTHREAD::GetM3Dmodel(C3Dmodel *modl)
 { char *fn = modl->GetFileName();
   char req[1024];
   int   nf = 0;                           // Number of faces
+	EXT_3D ext;															// Model extension
   _snprintf(req,1024,"SELECT * FROM mod WHERE name='%s';*",fn);
   sqlite3_stmt *stm = CompileREQ(req,modDBE);
-  while (SQLITE_ROW == sqlite3_step(stm)) nf += DecodeM3DdayPart(stm,modl);
+  while (SQLITE_ROW == sqlite3_step(stm)) nf += DecodeM3DdayPart(stm,modl,ext);
   if (nf)	modl->SetState(M3D_LOADED);
+	modl->SetExtend(ext);
   //---Free statement --------------------------------------------------
   sqlite3_finalize(stm);
   return nf;
 }
-
 //===================================================================================
 //  Decode a Generic terrain Texture
 //===================================================================================

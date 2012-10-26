@@ -910,6 +910,7 @@ protected:
   float  pDis;                          // Plane distance (squared)
   //----Additional attributes for various purposes -------------
 	float xobs;														// OBS direction
+	float	rDir;														// Reference direction
 	float tradial;												// True radial								
 	float	radial;                         // Aircraft radial in °
 	float	nmiles;                         // Distance to VOR/NDB
@@ -921,7 +922,7 @@ public:
 	CNavaid(OTYPE qo,QTYPE qa);
   //------Virtual functions ----------------------------
 	inline  char*     GetKey(void)      {return nkey; }
-	inline double     GetRefDirection()	{return xobs;}
+	inline double     GetRefDirection()	{return rDir;}
   inline float      GetRadial()	      {return radial;}
 	inline float      GetTrueRadial()		{return tradial;}
 	inline float      GetNmiles()	      {return nmiles;}
@@ -948,8 +949,6 @@ public:
   inline bool       IsInRange()       {return (rang >= nmiles);	}
   inline bool		    IsNotInRange()    {return !(IsInRange());	}
   //-------------------------------------------------------
-	inline  void      SetNavOBS(float d)  {xobs	  = d;}
-	inline  void      SetRefDirection(float d)	{xobs = d;}
   inline  void      SetRecNo(U_INT No)  {recNo  = No;}
   inline  void      SetPDIS(float d)    {pDis   = d;}
   inline  U_INT     GetRecNo()          {return recNo;}
@@ -957,7 +956,9 @@ public:
   inline  float     GetFeetDistance()   {return dsfeet;}
 	inline  double	  Sensibility()				{return 10;}
 	inline	U_CHAR		SignalType()				{return SIGNAL_VOR;}
-  //------------------------------------------------------
+  //-------------------------------------------------------
+	void      SetRefDirection(float d);
+	void      SetMagneticOBS(float d);
 	CmHead   *Select(U_INT frame,float freq);
 	void	    RefreshStation(U_INT FrNo);							// Update navaid
   void      WriteCVS(U_INT gx,U_INT gz,char *sep,CStreamFile &sf);
@@ -1152,8 +1153,7 @@ public:
   inline  char InMIDL(SVector &p,CBeaconMark &r)  {return InMARK(p,medM,r);}
   inline  char InINNR(SVector &p,CBeaconMark &r)  {return InMARK(p,inrM,r);}
   //------------------------------------------------------------------
-	inline  double GetRefDirection()		{return ilsD->lnDIR;}		
-	inline  float GetRwyDirection()			{return ilsD->lnDIR;}		
+	inline  double GetRefDirection()		{return ilsD->orie;}		
   inline  char* GetName()             {return name;}
   inline  char *GetRWID()             {return irwy;}
   inline  float GetRadial()           {return radial; }

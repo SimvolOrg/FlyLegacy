@@ -31,6 +31,7 @@
 #include "../Include/Subsystems.h"
 #include "../Include/3Dmath.h"
 #include "../Include/Globals.h"
+#include "../Include/fui.h"
 #include <math.h>
 #include <string>
 
@@ -161,6 +162,7 @@ CWeightManager::CWeightManager ()
   wDRY              = 0.0;
   wGAS              = 0.0;
   wLOD              = 0.0;
+	time							= 0;
 }
 //-----------------------------------------------------------------------
 //  Destructor
@@ -179,6 +181,11 @@ void CWeightManager::Timeslice (float dT)
   vCG.y =  svh_cofg.z;
   vCG.z =  svh_cofg.y;
   ComputeVisualCG(vCG);
+	bool	bar = globals->sBar && mveh->IsUserPlan();
+	if (!bar)		return;
+	time -= dT;
+	if (time < 0)	PrintInfo(0);
+	return;
 }
 //-----------------------------------------------------------------------
 // Compute initial values
@@ -234,6 +241,12 @@ void CWeightManager::ComputeVisualCG(CVector &cg)
   LoadCGcontribution(cg,tm);
   double dn = (tm > DBL_EPSILON)?(1 / tm):(1);
   cg.Times(dn);
+	//--- Compute CG in ISU units --------------------
+	newCG_ISU.x = FN_METRE_FROM_FEET (-cg.x); // lc 052910 +
+  newCG_ISU.y = FN_METRE_FROM_FEET (+cg.y); // lc 052910 +
+  newCG_ISU.z = FN_METRE_FROM_FEET (+cg.z); // lc 052910 +
+	//-------------------------------------------------
+	//TRACE("WM cg.x=%.4lf cg.y=%.4lf cg.z=%.4lf",newCG_ISU.x,newCG_ISU.y,newCG_ISU.z);
   return;
 }
 //-----------------------------------------------------------------------
@@ -258,6 +271,26 @@ void  CWeightManager::GetFuelCell(std::vector<CFuelCell*> &vf)
 //-----------------------------------------------------------------------
 void  CWeightManager::GetLoadCell(std::vector<CLoadCell*> &vl)
 { vl = vld_unit;}
+//-----------------------------------------------------------------------
+//	Print status bar
+//-----------------------------------------------------------------------
+void CWeightManager::PrintInfo (int bar_cycle)
+{	CSubsystem *VSI = mveh->GetSVSI();
+	time				= globals->bar_timer;
+	double dT		= globals->dST;
+	double alt	= mveh->GetAltitude();
+	double agl  = mveh->GetAltitudeAGL();
+	double spd	= mveh->GetIAS();
+	double vsi	= (VSI)?(VSI->GaugeBusFT01()):(0);
+	double cap	= mveh->GetMagneticDirection();
+	vsi					= GetRounded(vsi);
+	int fps			= (dT > 0.00001)?(double(1) / dT): 0;
+  _snprintf (buf,255, "Alt= %-5.0lf  AGL= %-5.0lf Speed= %-2.0lf  VSI= %-5.0lf CAP= %-3.0lf  FPS= %03d",
+						alt, agl, spd, vsi, cap, fps);
+	globals->fui->DrawNoticeToUser (buf, 1);
+	return;
+	  
+}
 //-----------------------------------------------------------------------
 void CWeightManager::Debug (void)
 {

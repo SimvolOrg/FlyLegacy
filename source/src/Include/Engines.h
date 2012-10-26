@@ -543,6 +543,7 @@ protected:
 	//----------------------------------------------------------------
 	double    limit;							// Near distance to reach position
 	double    fdist;							// Feet Distance to position
+	double    pdist;							// Previous distance
 	double		aSPD;								// Actual speed
 	double		speed;							// Target speed
 	double		hdg;								// Heading
@@ -574,7 +575,7 @@ public:
 	int   Read (SStream *stream, Tag tag);
 	void	GetThrottle(int u);
 	//-----------------------------------------------------------------
-	void	RouteTo(NavRoute *R);
+	void	TaxiTo(NavRoute *R);
 	void	SteerTo(SPosition &P);
 	void	SteerOFF();
 	void	SetOFF();
@@ -712,8 +713,6 @@ public:
   // CSubsystem methods
   const char*		  GetClassName (void) { return "COilTemperature"; }
   EMessageResult	ReceiveMessage (SMessage *msg);
-	//--- Published values on Gauge BUS -----------------------------
-	float	GaugeBusFT01()						{return indn;}
   //---------------------------------------------------------------- 
 protected:
 };
@@ -730,8 +729,7 @@ public:
   //--- CSubsystem methods ------------------------------------
   const char*		GetClassName (void) { return "COilPressure"; }
   EMessageResult	ReceiveMessage (SMessage *msg);		// JSDEV*
-  //--- Published values on Gauge BUS -------------------------
-	float GaugeBusFT01()			{return indn;}		// Pressure;
+	//--- data -------------------------------------------------
 protected:
 	float	lowP;						// Low pressure threshold
 	bool	plow;						// Low indicator
@@ -779,8 +777,6 @@ public:
   // CSubsystem methods
   const char*		GetClassName (void) { return "CExhaustGasTemperature"; }
   EMessageResult	ReceiveMessage (SMessage *msg);
-	//--- Published values on gauge BUS ----------------------------------
-	float	GaugeBusFT01()			{return indn;}		// Temperature
   //--- ATTRIBUTES ----------------------------------------------------- 
 protected:
   U_CHAR conv;                 // how to display values, whether F° or C°

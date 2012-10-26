@@ -85,8 +85,8 @@ void CSceneryPOD::Remove()
 	return;
 }
 //=================================================================================
-// CSceneryDBM
-//
+// CSceneryDBM  Scenery Data  base Manager
+//	Manage all scenery Packs
 //=================================================================================
 CSceneryDBM::CSceneryDBM()
 {	globals->scn	= this;	
@@ -182,7 +182,8 @@ void CSceneryDBM::Cleanup (void)
 }
 
 //--------------------------------------------------------------
-// Search for POD in this directory 
+// Search for POD in this directory
+//	Locate each POD and process it 
 //--------------------------------------------------------------
 void CSceneryDBM::LookForPOD(char *path)
 {	int sh = 0;
@@ -242,7 +243,12 @@ void CSceneryDBM::SendPOD(char *pn)
 	return;
 }
 //--------------------------------------------------------------
-// Process this POD file 
+// Process this POD file
+//	When POD file exists in database OBJ, it is not mounted
+//	Otherwise, we look into each file in the POD
+//		-File that have 2D data (DATA/.../xxx.Snn)	are mounted
+//			as a 2D scenery pack
+//		-Other files are mounted as a 3D object scenery pack
 //--------------------------------------------------------------
 void CSceneryDBM::ProcessPOD(char *path,char *fn)
 {	char *scn = "SCENERY/";
@@ -319,6 +325,8 @@ int CSceneryDBM::SceneryForGBT(PFSPODFILE *p,int gx,int gz)
 }
 //-----------------------------------------------------------------
 //	Load the scenery from path
+//	Search all pods file located in scenery directory and all
+//			subdirectories.
 //-----------------------------------------------------------------
 void CSceneryDBM::LoadInFolderTree (const char *path)
 {
@@ -421,7 +429,8 @@ void CSceneryDBM::Deregister (U_INT key)
 //=================================================================================
 // CSceneryDBM
 //	Special mounting for shared scenery
-//	check if pod file already in Database
+//	Check if pod file already in Database OBJ. 
+//	POD already in data base are not mounted
 //=================================================================================
 void CSceneryDBM::MountSharedPod(char * path,char *fn)
 {	char *scn = "SCENERY/";

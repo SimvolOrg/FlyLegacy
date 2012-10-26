@@ -105,7 +105,7 @@ CFuiKeyMap::CFuiKeyMap(Tag idn, const char *filename)
 					globals->kbd->StartKeyDetect(WhenKeyHit,windowId);
 				}
 	//---- Marker 1 -----------------------------------
-	char *ds = Dupplicate("***DEB WinKey",16);
+	char *ds = DupplicateString("***DEB WinKey",16);
 }
 //--------------------------------------------------------------------------
 //  Free resources
@@ -118,7 +118,7 @@ CFuiKeyMap::CFuiKeyMap(Tag idn, const char *filename)
    if (iden) delete [] iden;
    if (dfk)  delete dfk;
 	 //---- Marker 2 -----------------------------------
-	 char *ds = Dupplicate("***End WinKey",16);
+	 char *ds = DupplicateString("***End WinKey",16);
 
  }
  //-------------------------------------------------------------------------

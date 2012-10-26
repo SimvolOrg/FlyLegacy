@@ -85,6 +85,7 @@ void  CGearOpal::GetGearPosition(CVector &mp,double  &rad)
 void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
 { //if (!mveh->IsUserPlan())		return;
 	opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
+	opal::real   fric = gearData->mgsp->GetFriction();
 	CVector cog = mveh->wgh.svh_cofg;
   //--- Compute wheel coordinates relative to CG -----------
   double gx = gearData->bPos.x - cog.x;
@@ -117,7 +118,7 @@ void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
 	box.offset.makeTranslation(tx,ty,axeAGL);
   box.material.hardness   = opal::real(0.9f);
   box.material.bounciness = opal::real(0.0f);
-  box.material.friction   = opal::real(0.004f);
+  box.material.friction   = fric;
   box.setUserData(this,SHAPE_GEAR);
   phyM->addShape (box);
   //----Set position of force application ----------------

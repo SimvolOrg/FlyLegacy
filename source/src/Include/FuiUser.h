@@ -201,6 +201,7 @@ public:
    CFuiVectorMap (Tag windowId, const char* winFilename);
   ~CFuiVectorMap (void);
   void    InitMenu();
+	void		CloseMe();
   //-------------Event notification -------------------------------------
   void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
   void    NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn);

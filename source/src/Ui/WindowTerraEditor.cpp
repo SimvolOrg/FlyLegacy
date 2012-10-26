@@ -31,7 +31,7 @@
 //=================================================================================
 //  Window profile
 //=================================================================================
-#define TED_PROF (PROF_NO_PLN+PROF_NO_MET+PROF_DR_DET+PROF_TRACKE+PROF_NO_TEL+PROF_EDITOR)
+#define TED_PROF (PROF_NO_PLANE+PROF_NO_MET+PROF_DR_DET+PROF_TRACKE+PROF_NO_TEL+PROF_EDITOR)
 //========================================================================================
 //  Window for terrain editor
 //========================================================================================

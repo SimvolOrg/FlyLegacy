@@ -70,7 +70,7 @@
 #include "../Include/FuiOption.h"
 #include "../Include/Collisions.h"
 #include "../Include/Cameras.h"
-
+#include "../Include/External.h"
 #include "../Plugin/Plugin.h"
 //----Windows particular -------------------------
 #include <math.h>
@@ -564,7 +564,7 @@ void TraceObjectSize()
 //=====================================================================================
 //	Helper: String dupplication 
 //=====================================================================================
-char *Dupplicate(char *s, int lgm)
+char *DupplicateString(char *s, int lgm)
 {	int lgr = strlen(s) + 1;
 	if (lgr > lgm)	lgr = lgm;
 	char *d = new char[lgr];
@@ -572,6 +572,7 @@ char *Dupplicate(char *s, int lgm)
 	d[lgr-1] = 0;
 	return d;
 }
+
 //==================================================================
 //	Read a file:  
 //	Read a line and trim space, tabulation, line feed, etc
@@ -659,6 +660,7 @@ void InitialProfile()
 void SpecialProfile(Tag set,U_INT p)
 { int	dta		= (set)?(+1):(-1);
 	U_INT pf	= (set)?(p):(0);
+	int exe   = (set)?(0):(1);
 	globals->aPROF.Rep(pf);
 	if (p & PROF_NO_TER)	globals->noTER += dta;
 	if (p & PROF_NO_APT)	globals->noAPT += dta;
@@ -669,7 +671,8 @@ void SpecialProfile(Tag set,U_INT p)
 	if (p & PROF_NO_MET)	globals->noMET += dta;
 	//--- Check for NO plane at all -----------
 	if (p & PROF_NO_PLN)  
-	{	globals->Disp.Modlock(PRIO_UPLANE,dta);
+	{ //--- NO dispatching after ATMOSPHERE -----
+		globals->Disp.ExecSET(PRIO_SLEWMGR,exe);
 		globals->noINT += dta;
 		globals->noEXT += dta;
 		}
@@ -1005,8 +1008,8 @@ void InitGlobalsNoPodFilesystem (char *root)
   DEBUGLOG ("InitGlobalsNoPod step_size=%f", step_size);
   char buffer_ [128] = {0};
   globals->sBar = 0;
-  globals->status_bar_limit = 0.5f;
-  GetIniFloat ("Sim", "statusBarDeltaSec", &globals->status_bar_limit);
+  globals->bar_timer = 0.5f;
+  GetIniFloat ("Sim", "statusBarDeltaSec", &globals->bar_timer);
   globals->fps_limiter = true;
   char buff_ [8] = {0};
   GetIniString ("Sim", "fpsLimiter", buff_, 8);
@@ -1120,6 +1123,7 @@ void ShutdownAll (void)
   // sdk: clean-up dll plugins : call DLLKill ()
 	TRACE("Kill plugins");
   if (globals->plugins_num) globals->plugins->On_KillPlugins ();
+	globals->Disp.Destroy(PRIO_EXTERNAL);
 	//---------------------------------------------
   // Clean up global variables
 	TRACE("Clean Globals");
@@ -1177,37 +1181,37 @@ void InitApplication (void)
 	globals->aMax		= 1.0E+5;
   globals->magDEV = 0;
   globals->NbVTX  = 0;
-char * m01 = Dupplicate("*** AUDIO DEB ***",32);
+DupplicateString("*** AUDIO DEB ***",32);
 	TRACE("Create Audio Manager");
   globals->snd = new CAudioManager();
 
-char * m02 = Dupplicate("*** SQLMGR DEB ***",32);
+DupplicateString("*** SQLMGR DEB ***",32);
 	TRACE("Create SQL Manager");
   globals->sqm = new SqlMGR();
 
-char * m03 = Dupplicate("*** DBcache DEB ***",32);
+DupplicateString("*** DBcache DEB ***",32);
 	TRACE("Create Database Manager");
   globals->dbc = new CDbCacheMgr();
   // Initialize various subsystems.  These initialization functions may be
   //   dependent on INI settings and/or POD filesystem
-char * m04 = Dupplicate("*** KEYMAP DEB ***",32);
+DupplicateString("*** KEYMAP DEB ***",32);
 	TRACE("Create Key Map");
   globals->kbd = new CKeyMap();
 
-char * m05 = Dupplicate("*** CAMERA DEB ***",32);
+DupplicateString("*** CAMERA DEB ***",32);
 	TRACE("Create Camera Manager");
 	globals->ccm   = new CCameraManager(0,0);
 
-char * m06 = Dupplicate("*** SLEW DEB ***",32);
+DupplicateString("*** SLEW DEB ***",32);
 	TRACE("Create Slew Manager");
   globals->slw = new CSlewManager();
 
-char * m07 = Dupplicate("*** IMPORT DEB ***",32);
+DupplicateString("*** IMPORT DEB ***",32);
 	TRACE("Create Import Manager");
 	globals->exm = new CExport();
 
   //---Latitude tables for Globe tiles and QGTs --------
-char * m08 = Dupplicate("*** GLOBE DEB ***",32);
+DupplicateString("*** GLOBE DEB ***",32);
 	TRACE("Init Globe Tile Table");
   InitGlobeTileTable ();
   //-- Initialize singletons----------------------------
@@ -1218,22 +1222,22 @@ char * m08 = Dupplicate("*** GLOBE DEB ***",32);
   //----Initialize sky and weather ----------------------
   CSkyManager::Instance().Init();
 
-char * m11 = Dupplicate("*** ATMOSPHERE DEB ***",32);
+DupplicateString("*** ATMOSPHERE DEB ***",32);
 	TRACE("Create Atmosphere Manager");
   globals->atm = new CAtmosphereModelJSBSim();
 
-char * m12 = Dupplicate("*** WEATHER DEB ***",32);
+DupplicateString("*** WEATHER DEB ***",32);
 	TRACE("Create Weather Manager");
   globals->wtm = new CWeatherManager();
 	TRACE("Create Fui Manager");
 
-Dupplicate("*** FUI MGR DEB ***",32);
+DupplicateString("*** FUI MGR DEB ***",32);
   globals->fui->Init();
-Dupplicate("*** SCENARY DEB ***",32);
+DupplicateString("*** SCENARY DEB ***",32);
 	TRACE("START SCENERY MGR");
 	globals->scn = new CSceneryDBM();
   //------Start terrain ---------------------------------
-Dupplicate("*** TCACHE DEB ***",32);
+DupplicateString("*** TCACHE DEB ***",32);
 	TRACE("Start TERRAIN CACHE");
   globals->tcm = new TCacheMGR();
 	//-----------------------------------------------------
@@ -1245,7 +1249,6 @@ Dupplicate("*** TCACHE DEB ***",32);
 	//--- Check menu items --------------------------------
 	CheckTuningMenu();
 }
-
 //======================================================================================
 //  Initialization of the realtime simulation engine.
 //
@@ -1266,11 +1269,16 @@ void InitSimulation (void)
   CVector   orid (0,0,180);
   globals->dang  = orid;
 	//----Joystick ---------------------------------------------------
-	globals->jsm	 = new CJoysticksManager();
+	globals->jsm		= new CJoysticksManager();
   //------Load situation -------------------------------------------
-  globals->sit = new CSituation ();
+  globals->sit		= new CSituation ();
+	//--- Load external plugs ----------------------------------------
+	int p0 = 0;
+	GetIniVar("Sim","NavigationPlug",&p0);
+	if (p0)	CNavPlug *nav = new CNavPlug();		
+	//----------------------------------------------------------------
   TRACE("End of InitSimulation");
-Dupplicate("***END INITSIM ***",32);
+DupplicateString("***END INITSIM ***",32);
   //----Set some options ------------------------------------------
   return;
 }
@@ -1413,11 +1421,12 @@ void InitSplashScreen (void)
   tSplash->LoadFromDisk ("Splash1.JPG", 0, 0, 0);
 }
 
-/**
- *  Redraw splash screen
- *
- *  This function is called by the window manager redraw() callback while the application is initializing.
- */
+///=========================================================================
+//  Redraw splash screen
+//
+//  This function is called by the window manager redraw() 
+//	callback while the application is initializing.
+///=========================================================================
 void RedrawSplashScreen (void)
 {
   int vp[4]; 
@@ -1459,23 +1468,23 @@ void RedrawSplashScreen (void)
   return;
 }
 
-/**
- *  Cleanup exit screen.
- *
- *  Free resources used to display the application exit screen.
- */
+///=========================================================================
+//  Cleanup exit screen.
+//
+//  Free resources used to display the application exit screen.
+///=========================================================================
 void CleanupSplashScreen (void)
 {
 	SAFE_DELETE(tSplash);
 }
 
-/**
- *  Initialize exit screen
- *
- *  When realtime simulation ends and the application exits, it displays
- *  a static exit screen while cleaning up.  This function initializes
- *  the exit image and renders it to a drawing surface.
- */
+///=========================================================================
+//  Initialize exit screen
+//
+//  When realtime simulation ends and the application exits, it displays
+//  a static exit screen while cleaning up.  This function initializes
+//  the exit image and renders it to a drawing surface.
+//===========================================================================
 static CTexture *tExit = NULL;
 
 void InitExitScreen (void)
@@ -1485,11 +1494,12 @@ void InitExitScreen (void)
   tExit->LoadFromDisk ("Legacy_off_2.jpg", 0, 0, 0);
 }
 
-/**
- *  Redraw exit screen.
- *
- *  This function is called by the window manager redraw() callback while the application is exiting.
- */
+///=========================================================================
+//  Redraw exit screen.
+//
+//  This function is called by the window manager redraw() 
+//	callback while the application is exiting.
+///=========================================================================
 void RedrawExitScreen (void)
 { int vp[4]; 
   int wd = tExit->GetWD();
@@ -1653,7 +1663,7 @@ int main (int argc, char **argv)
   }
 
   //---Put find root foldeer here to open log file in final directory
-	const char *flyRootFolder = ".";
+	char *flyRootFolder = ".";
   //=========Init the global structure==================================
   strncpy(globals->FlyRoot,flyRootFolder,FNAM_MAX);			// Root folder
   InitTraces();
@@ -1748,21 +1758,21 @@ int main (int argc, char **argv)
   TRACE("Globals INITIALIZED");
   //-------------------------------------------------------------------
 	//--- Loose memory marker 1 -----------------------
-Dupplicate("*** GLOBAL DEB ***",32);
+DupplicateString("*** GLOBAL DEB ***",32);
   //--------------------------------------------------------------------
   // Initialize globals variables
   //-------------------------------------------------------------------
   InitGlobalsNoPodFilesystem ((char*)flyRootFolder);
   TRACE("InitGlobalsNoPodFilesystem OK");
   globals->appState = APP_SPLASH_SCREEN;
-Dupplicate("****FUI MGR ****",32);
+DupplicateString("****FUI MGR ****",32);
   globals->fui = new CFuiManager();
   TRACE("CFuiManager CREATED");
   // Initialize graphics engine and window manager
-Dupplicate("****FUI INI ****",32);
+DupplicateString("****FUI INI ****",32);
   InitWindowManager (argc, argv);
   TRACE("InitWindowManager OK");
-Dupplicate("****GRAFIC ****",32);
+DupplicateString("****GRAFIC ****",32);
   InitGraphics ();
   TRACE("InitGraphics OK");
   //---------------------------------------------------------------------------
@@ -1770,7 +1780,7 @@ Dupplicate("****GRAFIC ****",32);
   //   filesystem is stored in the global variable struct, so this must
   //   be called after globals have been instantiated.
   //---------------------------------------------------------------------------
-Dupplicate("****POD INI ****",32);
+DupplicateString("****POD INI ****",32);
 
   pinit (&globals->pfs, "logs/systempod.log");		// JSDEV* add file name
   //----ADD POD FROM FLYII FOLDERS -------------------------------------------
@@ -1810,7 +1820,7 @@ Dupplicate("****POD INI ****",32);
   padddiskfolder (pfs, flyRootFolder, "WORLD");
 	TRACE("Mounting Disk file in /SOUND");
   padddiskfolder (pfs, flyRootFolder, "SOUND");
-Dupplicate("****POD END ****",32);
+DupplicateString("****POD END ****",32);
 
   // Initialize subsystems so that mouse and keyboard callbacks can be handled
  

@@ -334,7 +334,7 @@ public:
 	bool						StartDetection(JoyDetectCB *F, Tag W);
 	//--- AIRCRAFT INTERFACE -----------------------------------------------
 	void						SetNbEngines(CObject *obj,char n);
-  void            MapTo(CObject *obj,Tag gen, Tag usr);
+  void            MapTo(CObject *obj,Tag gen, Tag usr, CSubsystem *sys);
 	void						JoyConnectAll(CObject *obj);
 	void						JoyDisconnect(CObject *obj,U_INT m);
 	void						Poll(CObject *obj,EAllAxes a,float &v);

@@ -169,15 +169,6 @@ void CMoonImage::Reposition (sgVec3 p, double theta, double lst, double lat,
   sgPreMultMat4 (T, ECLIPTIC);
   sgPreMultMat4 (T, SPIN);
 
-/*
-  char debug[256];
-  double jd = CTimeManager::Instance().GetJulianDate();
-  SDateTime dt = CTimeManager::Instance().GetLocalDateTime ();
-  sprintf (debug, "JD=%f D=%d/%d/%d T=%d:%d RA=%f Dec=%f", jd,
-    dt.date.year, dt.date.month, dt.date.day, dt.time.hour, dt.time.minute,
-    RadToDeg(ra), RadToDeg(dec));
-  DrawNoticeToUser (debug, 1);
-*/
 }
 
 void CMoonImage::Draw (void)

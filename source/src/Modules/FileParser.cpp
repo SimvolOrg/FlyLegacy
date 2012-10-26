@@ -183,7 +183,7 @@ int  CParser::LoadModel(C3Dmodel *mod)
 //---------------------------------------------------------------------
 int CParser::StopParse(PODFILE *p,char *msg)
 { char *fn = (p)?(p->filename):("");
-  WARNINGLOG("File Parsed %s error: %s", fn,msg);
+  SCENE("*** File Parsed %s error: %s", fn,msg);
   if (part)  delete part;
   part  = 0;
 	partQ.Clear();
@@ -723,7 +723,11 @@ int CSMFparser::ReadPart(PODFILE *p,char *fn)
 	txd.azp   = 0x00;								//Tsp;
 	txd.Dir   = FOLDER_ART;
 	tREF			= globals->txw->Get3DTexture(txd);			//GetM3DPodTexture(txd);
+	//--- TODO: Decuser  dletee part etc
+	char * err = "No texture";
+	if (0 == tREF)				return StopParse(p,err);
 	part->SetTREF(tREF);
+	if (tREF->NoData())		return StopParse(p,err);			
   int np = 0;                             // Part number
   for (int n=0; n < nbfaces; n++)
   { pgets (s, 256, p);
@@ -780,7 +784,6 @@ CBINparser::CBINparser(char t)
   Res   = MODEL_HI;
   xOBJ  = 0;
   nVTX  = 0;
-	strcpy(txname,"");
 }
 //---------------------------------------------------------------------
 //  Free all resources
@@ -1006,7 +1009,7 @@ int CBINparser::ReadTFaces(PODFILE *p)
 
   //-----Build the faces -(invert Y and Z normals) ------
   for (int k=0;k < Nbv; k++)
-  {  if (3 != pread (buf, sizeof(int),3, p)) return StopParse(p,err);
+  { if (3 != pread (buf, sizeof(int),3, p)) return StopParse(p,err);
     int vx  = *(int*)(buf);									// Index in Vertice
     int sv  = *(int*)(buf + SIZE_INT1);			
     int tv  = *(int*)(buf + SIZE_INT2);	
@@ -1046,7 +1049,7 @@ int CBINparser::ReadQFaces(PODFILE *p)
     int tv  = *(int*)(buf + SIZE_INT2);
 		ctex.VT_S = GetSValue(sv);
 		ctex.VT_T = GetTValue(tv);
-    if (vx >= hdr.nvert)                    return StopParse(p,err);
+    if (vx >= hdr.nvert)										return StopParse(p,err);
 		//--- save faces parameters -----------------------------
     vref[k]       = nVTX[vx];
     nref[k]				= norm;
@@ -1894,7 +1897,7 @@ OBJ_MATERIAL *COBJparser::GetMaterial(char *mn)
 	}
 	//--- Create a new entry ----------------------
 	M	= new OBJ_MATERIAL();
-	M->name	= Dupplicate(mn,64);
+	M->name	= DupplicateString(mn,64);
 	matQ.push_back(M);
 	return M;
 }

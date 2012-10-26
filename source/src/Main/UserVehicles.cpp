@@ -106,20 +106,6 @@ CSimulatedVehicle::CSimulatedVehicle ()
   mpitd = 0;
   macrd = 0;
 	//----------------------------------------------
-  mAlt.sender = 'simu';
-  mSpd.sender = 'simu';
-  mVsi.sender = 'simu';
-  mMag.sender = 'simu';
-  mRpm.sender = 'simu';
-  mMap.sender = 'simu';
-	//--- Init messages -----------------------------
-  mAlt.id = MSG_GETDATA;
-  mSpd.id = MSG_GETDATA;
-  mVsi.id = MSG_GETDATA;
-  mMag.id = MSG_GETDATA;
-  mRpm.id = MSG_GETDATA;
-  mMap.id = MSG_GETDATA;
-	//----------------------------------------------
 	elapsed = 0;
 }
 //----------------------------------------------------------------------
@@ -148,7 +134,7 @@ CSimulatedVehicle::~CSimulatedVehicle (void)
 int CSimulatedVehicle::Read (SStream *stream, Tag tag)
 {
   int rc = TAG_IGNORED;
-
+	SMessage msg;
   switch (tag) {
   case 'type':
     // Object type
@@ -320,35 +306,34 @@ int CSimulatedVehicle::Read (SStream *stream, Tag tag)
     break;
   case 'mAlt':
     // Status bar display : Altitude message
-    ReadMessage (&mAlt, stream);
-    rc = TAG_READ;
-    break;
+    ReadMessage (&msg, stream);
+    return TAG_READ;
   case 'mSpd':
     // Status bar display : Airspeed message
-    ReadMessage (&mSpd, stream);
+    ReadMessage (&msg, stream);
     rc = TAG_READ;
     break;
   case 'mVsi':
     // Status bar display : Vertical speed message
-    ReadMessage (&mVsi, stream);
+    ReadMessage (&msg, stream);
     rc = TAG_READ;
     break;
   case 'mMag':
     // Status bar display : Magnetic compass heading message
-    ReadMessage (&mMag, stream);
+    ReadMessage (&msg, stream);
     //user_message.push_back (mMag);
     rc = TAG_READ;
     break;
   case 'mRpm':
     // Status bar display : Engine RPM
-    ReadMessage (&mRpm, stream);
+    ReadMessage (&msg, stream);
     //user_message.push_back (mRpm);
     rc = TAG_READ;
     break;
  case 'mUse':
  case 'mMap':
     // Status bar display : Engine RPM
-    ReadMessage (&mMap, stream);
+    ReadMessage (&msg, stream);
     //user_message.push_back (mMap);
     rc = TAG_READ;
     break;
@@ -376,85 +361,6 @@ void CSimulatedVehicle::ReadFinished (void)
 void CSimulatedVehicle::Write (SStream *stream)
 {
 }
-//-------------------------------------------------------------------------------
-//	Time slice:  Compute CG_ISU and refresh status bar 
-//	NOTE:  This is reported now in CVehicleObject to gain one call
-//-------------------------------------------------------------------------------
-void CSimulatedVehicle::Timeslice (float dT)
-{ 
-	CalcNewCG_ISU ();							//
-	//if (!IsUserPlan())	return;
-  if (globals->sBar && mveh->IsUserPlan()) {
-	    elapsed += dT;
-			if (elapsed > globals->status_bar_limit) {
-				elapsed = elapsed - globals->status_bar_limit;
-				PrintInfo (globals->sBar); // 1 => aircraft data  2 => angle & position
-			}
-  }
-	
-	return;
-}
-//-------------------------------------------------------------------------------
-//	Time slice:  Compute CG_ISU 
-//-------------------------------------------------------------------------------
-void CSimulatedVehicle::CalcNewCG_ISU (void)
-{ mveh->wgh.GetVisualCG (newCG_ISU); // lc 052910 +
-  newCG_ISU.x = FN_METRE_FROM_FEET (-newCG_ISU.x); // lc 052910 +
-  newCG_ISU.y = FN_METRE_FROM_FEET (+newCG_ISU.y); // lc 052910 +
-  newCG_ISU.z = FN_METRE_FROM_FEET (+newCG_ISU.z); // lc 052910 +
-}
-
-void CSimulatedVehicle::PrintInfo (int bar_cycle)
-{
-	  if (1 == bar_cycle) {
-    float altitude = 0.0f;
-    float speed = 0.0f;
-    float vert_speed = 0.0f;
-    float magn_compass = 0.0f;
-    float rpm = 0.0f;
- 
-    //mAlt.user.u.datatag = 'alti';
-    Send_Message (&mAlt,mveh);
-    altitude      = float(mAlt.realData);
-    //mSpd.user.u.datatag = 'sped'; // 
-    Send_Message (&mSpd,mveh);
-    speed         =  float(mSpd.realData);
-    //mVsi.user.u.datatag = 'vsi_';
-    Send_Message (&mVsi,mveh);
-    vert_speed    = float(mVsi.realData);
-    //mMag.user.u.datatag = 'yaw_';
-    Send_Message (&mMag,mveh);
-    magn_compass  = float(mMag.realData);
-    Send_Message (&mRpm,mveh);
-    rpm           = float(mRpm.realData);
-
-    char buff [256] = {0};
-    int fps = 0;
-    if (globals->dST) fps = (1 / globals->dST) + 1;
-    _snprintf (buff,255, "Alt = %-5.0f\t\t  Speed = %-4.0f\t\t Vsi = %-5.0f\t\t Yaw = %-3.0f\t\t Rpm = %-5.0f\t\t fps = %03d",
-      altitude, speed, vert_speed, magn_compass, rpm, fps);
-		buff[255] = 0;
-    DrawNoticeToUser (buff, 1.0f);
-  }
-  //
-  else 
-  if (2 == bar_cycle) {
-    SPosition pos_to    = mveh->GetPosition();				
-    SVector orientation = globals->iang; 
-    char buff [128] = {'\0'};
-    char edt1 [128] = {'\0'};
-    char edt2 [128] = {'\0'};
-    EditLon2DMS(pos_to.lon, edt1);
-    EditLat2DMS(pos_to.lat, edt2);
-    _snprintf (buff,255, "@1 %.2f %.2f %.2f [%s] [%s] alt=%.0f\n",
-             RadToDeg (orientation.x), RadToDeg (orientation.y), RadToDeg (orientation.z),
-             edt1, edt2, pos_to.alt
-             );
-		buff[127] = 0;
-    DrawNoticeToUser (buff, 1);
-  }
-}
-
 //===========================================================================
 // CFuelSystem
 //===========================================================================
@@ -2197,6 +2103,7 @@ bool CCockpitManager::KbEvent(Tag key)
       return true;
     //---- Panel to home -----------------------
     case 'ckhm':
+			ActivatePanel('frnt');
       return true;
     //---- Panel page up --(ignore) ------------
     case 'ckpu':

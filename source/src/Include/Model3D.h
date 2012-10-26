@@ -184,7 +184,7 @@ public:
 	void		ExtendOSM(int nbv,GN_VTAB *src);
 	void		AllocateIND();
 	void		ExtendGTB(int nbv);
-	void		SQLstrip(int nbx,F3_VERTEX *V,F3_VERTEX *N,F2_COORD *T,int *X);
+	void		SQLstrip(int nbx,F3_VERTEX *V,F3_VERTEX *N,F2_COORD *T,int *X,EXT_3D &E);
 	//-------------------------------------------------------------
 	void		SetTexture(U_CHAR t, char *txn);
 	//-------------------------------------------------------------
@@ -350,6 +350,7 @@ public:
 	inline bool   InError()					{return (state != M3D_LOADED);}
 	inline bool   IsEmpty()					{return (state == M3D_EMPTY);}
   //----------------------------------------------------------------------
+	inline void     SetExtend(EXT_3D &E)					{E.SaveEXT(exts);}
   inline void     SetExtend(CVector l,CVector u)  {exts = u; exts.Subtract(l);}
   inline double   GetXExtend()     {return exts.x;}
   inline double   GetYExtend()     {return exts.y;}

@@ -4837,6 +4837,18 @@ CFuiTextPopup::CFuiTextPopup()
   red         = MakeRGB (255,   0,   0);
   back        = mediumgrey;
   actv        = false;
+	//--- Create a surface for maximum size --------------
+	int wp			= 24;
+	int	hp			=  8;
+	w			= wp + (fnts->TextWidth("W") * 256);
+	h			= hp + fnts->TextHeight("H");
+	surface			= CreateSurface(w,h);
+}
+//-------------------------------------------------------------------------------
+//  Not used
+//-------------------------------------------------------------------------------
+void CFuiTextPopup::ReadFinished()
+{
 }
 //-------------------------------------------------------------------------------
 //  Change font
@@ -4852,14 +4864,15 @@ void CFuiTextPopup::ChangeFont(SFont *f)
 void CFuiTextPopup::DrawTheText()
 { // Create surface for current text
 	text[255] = 0;
-	if (surface)	FreeSurface(surface);
+	//if (surface)	FreeSurface(surface);
   int xSpace = 12;
   int ySpace =  4;
   w = fnts->TextWidth  (this->text) + (2 * xSpace);
-  h = fnts->TextHeight (this->text) + (2 * ySpace);
-  surface = CreateSurface (w, h);
-  surface->xScreen = x;
-  surface->yScreen = y;
+  //h = fnts->TextHeight (this->text) + (2 * ySpace);
+  //surface = CreateSurface (w, h);
+  //surface->xScreen = x;
+  //surface->yScreen = y;
+	UpdateSurface(surface,w,h);
   EraseSurfaceRGBA (surface, back);
   // Draw borders
   DrawRect (surface, 2, 2, w-1, h-1, lightgrey);

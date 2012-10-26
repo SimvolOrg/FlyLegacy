@@ -159,9 +159,9 @@ public:
   void          GetFuelCell(std::vector<CFuelCell*> &vf);
   void          GetLoadCell(std::vector<CLoadCell*> &vl);
   //------CWeightManager methods --------------------------
-  virtual void   Timeslice               (float dT);
-  void           Init                    (void);
-
+  void					Timeslice(float dT);
+  void          Init(void);
+	//-------------------------------------------------------
   // getters
   // =======
   //! gets instantaneous mass
@@ -180,6 +180,7 @@ public:
   inline float  GetDryWeight()            {return float(wDRY);}
   inline float  GetGasWeight()            {return float(wGAS);}
   inline float  GetLodWeight()            {return float(wLOD);} 
+	inline CVector* GetNewCG_ISU()					{return &newCG_ISU;}
   //------------Inertia vector ------------------------------------------------
   inline SVector  GetGazInertia()         {return mGAS;}
   inline SVector  GetLodInertia()         {return mLOD;}
@@ -196,9 +197,15 @@ public:
   CVector                               svh_cofg;
   float                                 whl_rmas;
   CWeightBalance                        wb;
+	//--- Status BAR ----------------------------------------
+	char		buf[256];
+	void		PrintInfo (int bar_cycle);
+	float		time;
   //----------------------------------------------------------------------------
   CVector vCG;                            // visual CG vector
   CVector oCG;                            // Offset CG
+	//--- Visual CG in International System Unit ---------------------------------
+	CVector   newCG_ISU;
   //----Masses in LBS ----------------------------------------------------------
   double   wDRY;                          // Dry  weight (emas)
   double   wGAS;                          // Fuel weight
