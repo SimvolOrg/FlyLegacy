@@ -110,6 +110,9 @@ public:
 	void		Affect(SPosition &p);
 	void		ArcsToFeetUnit();
 	//--------------------------------------------------------------------
+	void operator= (F3_VERTEX &v)	{x = v.VT_X; y = v.VT_Y; z= v.VT_Z;}
+	void operator= (TC_VTAB   &v)	{x = v.VT_X; y = v.VT_Y; z= v.VT_Z;}
+	void operator= (GN_VTAB   &v)	{x = v.VT_X; y = v.VT_Y; z= v.VT_Z;}
   CVector& operator= (const CVector &aCopy) {Copy(aCopy); return *this;}
 	//----VERTEX OPERATIONS ----------------------------------------------
 	void		Set(C3_VTAB &t);

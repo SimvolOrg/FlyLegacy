@@ -284,7 +284,10 @@ void ProcessModels(TCacheMGR *tcm, SqlTHREAD *sql)
 	C_QGT    *qgt		= 0;
 	char *dir = "MODELS";
   for (C3Dmodel *mod = m3d->ModelToLoad(); (mod != 0); mod = m3d->ModelToLoad())
-      { //char *mn = mod->GetFileName();
+      { //--- To debug a specific file ------------------
+				//char *mn = mod->GetFileName();
+				//if (strncmp(mn,"LFPLHANG10",10) == 0)
+				//int a = 0;									// Break point here
 				//TRACE("TCM: -- Time: %04.2f ---------------THREAD MODELS",tcm->Time());
 				//TRACE("Model: Load %s",mn);
         if (!sql->SQLmod())						{mod->LoadPart(dir); mod->DecUser(); continue;}
@@ -297,6 +300,7 @@ void ProcessModels(TCacheMGR *tcm, SqlTHREAD *sql)
       }
 	return;
 }
+
 //=================================================================================
 //  THREAD FOR OSM Layers
 //=================================================================================

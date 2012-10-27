@@ -1966,7 +1966,7 @@ int CSuperTile::Draw3D(U_CHAR tod)
 void CSuperTile::GetLine(CListBox *box)
 { CWobj     *obj = 0;
   float dmile = FN_MILE_FROM_FEET(dEye);
-	if (dmile > 2) return;
+	if (dmile > 5) return;
   woQ.Lock();
   for (obj = woQ.GetFirst(); obj!=0; obj = woQ.GetNext(obj))
   { CObjLine *lin = new CObjLine(obj);

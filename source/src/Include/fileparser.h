@@ -157,6 +157,7 @@ protected:
 	char			type;										// Type of file
 	U_CHAR     Tsp;										// Transparent mode
 	U_CHAR     Dir;										// Directory
+	char       ext;										// Extension init
 	//--- Texture description ------------------------------
 	TEXT_INFO  txd;
 	//----Model extension ----------------------------------

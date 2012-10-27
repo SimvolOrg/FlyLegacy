@@ -4868,10 +4868,7 @@ void CFuiTextPopup::DrawTheText()
   int xSpace = 12;
   int ySpace =  4;
   w = fnts->TextWidth  (this->text) + (2 * xSpace);
-  //h = fnts->TextHeight (this->text) + (2 * ySpace);
-  //surface = CreateSurface (w, h);
-  //surface->xScreen = x;
-  //surface->yScreen = y;
+  h = fnts->TextHeight (this->text) + (2 * ySpace);
 	UpdateSurface(surface,w,h);
   EraseSurfaceRGBA (surface, back);
   // Draw borders

@@ -961,9 +961,11 @@ void CExport::WriteTheModel()
   char *name = slh+1;
   //---Write texture in database ----------------
   Mod->GetParts(this,pif);
-  //if (mRed) Polys->ModelStandard(minp);     // Reduce model
+	//--- write level 0 ---------------------------
+	Export3DMlodQ(name,0);
+	//--- Reduce polygons -------------------------
+  if (mRed) Polys->ModelStandard(minp);     // Reduce model
   //--- Write Part in database ------------------
-  Export3DMlodQ(name,0);
   Export3DMlodQ(name,1);
   Export3DMlodQ(name,2);
   Export3DMlodQ(name,3);

@@ -332,8 +332,8 @@ public:
 	bool    AreYou(char *s) {	return (strcmp(s,fname) == 0);}
   //---------------------------------------------------------------------
   inline bool  NeedLoad()         {return (0 == state);}
-  inline void  SaveTop(float t)   {if (t > aTop)  aTop = t;}
-  inline void  SaveBot(float t)   {if (t < aBot)  aBot = t;}
+  inline void  SaveTop(float t)   {aTop = t;}
+  inline void  SaveBot(float t)   {aBot = t;}
   //---------------------------------------------------------------------
   inline U_INT  GetRDIR()         {return rDIR;}
   inline char  *GetFileName()     {return fname;}

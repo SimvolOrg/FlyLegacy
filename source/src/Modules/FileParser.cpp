@@ -116,12 +116,14 @@ CParser::CParser(char t)
 	vmin.x	= vmin.y = vmin.z = 0;
   vmax		= vmin;
  *txname  = 0;
+  ext			= 0;
 }
 //----------------------------------------------------------------------
 //  Save Model extension
 //----------------------------------------------------------------------
 void CParser::SaveExtension(F3_VERTEX &vt)
-{ if (vt.VT_X < vmin.x)  vmin.x = vt.VT_X;
+{ if (0 == ext)	{vmin = vt; vmax = vt; ext = 1; return;}
+  if (vt.VT_X < vmin.x)  vmin.x = vt.VT_X;
   if (vt.VT_X > vmax.x)  vmax.x = vt.VT_X;
   if (vt.VT_Y < vmin.y)  vmin.y = vt.VT_Y;
   if (vt.VT_Y > vmax.y)  vmax.y = vt.VT_Y;
@@ -133,7 +135,8 @@ void CParser::SaveExtension(F3_VERTEX &vt)
 //  Save Model extension
 //----------------------------------------------------------------------
 void CParser::SaveExtension(TC_VTAB &v)
-{	if (v.VT_X < vmin.x)  vmin.x = v.VT_X;
+{	if (0 == ext)	{vmin = v; vmax = v; ext = 1 ;return;}
+	if (v.VT_X < vmin.x)  vmin.x = v.VT_X;
   if (v.VT_X > vmax.x)  vmax.x = v.VT_X;
   if (v.VT_Y < vmin.y)  vmin.y = v.VT_Y;
   if (v.VT_Y > vmax.y)  vmax.y = v.VT_Y;
@@ -145,7 +148,8 @@ void CParser::SaveExtension(TC_VTAB &v)
 //  Save Model extension
 //----------------------------------------------------------------------
 void CParser::SaveExtension(GN_VTAB &v)
-{	if (v.VT_X < vmin.x)  vmin.x = v.VT_X;
+{	if (0 == ext)	{vmin = v; vmax = v; ext = 1; return;}
+	if (v.VT_X < vmin.x)  vmin.x = v.VT_X;
   if (v.VT_X > vmax.x)  vmax.x = v.VT_X;
   if (v.VT_Y < vmin.y)  vmin.y = v.VT_Y;
   if (v.VT_Y > vmax.y)  vmax.y = v.VT_Y;
@@ -624,6 +628,10 @@ int CSMFparser::Decode(char *fn,char t)
 	type				= t;
   float pix   = 0;
   fname       = fn;
+	//----- For debugging a specific file -------------------------------------
+	//if (strncmp(fn,"MODELS/LFPLHANG10",17) == 0)		// MARK
+	//int a = 0;
+
   PODFILE *p = popen (&globals->pfs,fn);
 	pod					= p;
   if (0 == p)																			return StopParse(0, "No FILE ");
@@ -631,7 +639,7 @@ int CSMFparser::Decode(char *fn,char t)
   //--- Object type, this should be "C3DModel"
   pgets (s, 256, p);
   if (strncmp (s, "C3DModel",8) != 0)							return StopParse(p,"TYPE");
-  //--- Skip Version (ignored)
+  //--- get Version ------------------------
   pgets (s, 256, p);
   sscanf(s,"%d",&version);
   //--- Part count ------------------------
@@ -674,6 +682,7 @@ int CSMFparser::ReadPart(PODFILE *p,char *fn)
   pgets (s, 256, p);
   nf = sscanf (s, "%d,%d,%d,%d", &nVerts, &nFrames, &nbfaces, &dummy);
   if (4 != nf)                  return StopParse(p,"VTX");
+	if (0 == nbfaces)							return StopParse(p,"No faces");
   nFace += nbfaces;
   //--- Skip optional v1 flag ---------------------
   pgets (s, 256, p);

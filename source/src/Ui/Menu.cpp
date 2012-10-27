@@ -1256,8 +1256,8 @@ void OpenUserMenu (void)
   if (i == 1) {
     menu->add_submenu (gmDebugDB, debugdb_legends, debugdb_cb);
     menu->add_submenu (gmDebug,		debug_legends, debug_cb);
-		CheckImportMenu();
   }
+	CheckImportMenu();
   menu->add_submenu (gmTune,		tune_legends, tune_cb);
   menu->add_submenu ("Help", help_legends, help_cb);
 
