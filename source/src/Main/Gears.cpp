@@ -555,6 +555,7 @@ CGroundSuspension::CGroundSuspension ()
 	difB	  = 1;
 	banK		= 0.25;
 	fric		= 0.05;
+	trad		= 1;
 	steer		= 0;
 	ampB    = 2;
   //---------------------------------------------------------
@@ -616,6 +617,10 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
 	//--- Friction coefficient ---------------------
 	case 'fric':
 		ReadDouble(&fric,stream);
+		return TAG_READ;
+	//--- Turn radius coefficient -----------------------
+	case 'trad':
+		ReadDouble(&trad,stream);
 		return TAG_READ;
   //---JS decode suspension type -------------------------
   case 'type':

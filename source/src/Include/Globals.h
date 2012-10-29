@@ -102,6 +102,11 @@ extern char  SwapOSMuse(U_INT t);
 #define PROF_NO_PLANE   (PROF_NO_INT+PROF_NO_EXT+PROF_ACBUSY+PROF_NO_PLN)
 #define PROF_TOOL       (PROF_EDITOR | PROF_ACBUSY)
 //=======================================================================================
+//	Directory number
+//=======================================================================================
+#define GLOBAL_EVN_INITLOAD	(1)
+#define GLOBAL_EVN_TELEPORT	(2)
+//=======================================================================================
 //  Color index
 //=======================================================================================
 #define COLOR_BLACK_TRANS				(0)					// Black tranparent

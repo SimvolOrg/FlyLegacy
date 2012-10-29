@@ -232,6 +232,18 @@ bool	CFuiManager::ToolNotAllowed()
   if (!ok)	return true;
 	return (globals->aPROF.Has(PROF_TOOL) != 0);
 }
+//---------------------------------------------------------------------------------
+//  Close all windows
+//---------------------------------------------------------------------------------
+void CFuiManager::CloseAllWindows()
+{	map <Tag,CFuiWindow*>::iterator rp;
+  for (rp=winMap.begin(); rp!=winMap.end(); rp++) {
+    CFuiWindow *window = rp->second;
+    window->Close();
+    delete window;
+  }
+	return;
+}
 ///==========================================================================================
 /// Create a new window based on a .WIN template file.  This is the primary means
 ///   for the application to open a new FUI window.

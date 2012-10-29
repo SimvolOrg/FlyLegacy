@@ -405,6 +405,7 @@ CVehicleObject::CVehicleObject (void)
   prv   = 1;
   nEng  = 0;
 	engR	= 0;
+	sreg	= 0;
 	//--- Clear subsystems ----------------------------------
 	sVSI	= 0;
 	//--- Clear Radio components ----------------------------

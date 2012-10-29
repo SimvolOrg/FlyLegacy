@@ -81,7 +81,6 @@ CAerodynamicModel::CAerodynamicModel ()
 	if (T) AERO("TRACE %s format is (time, X, Y, Z - AGL)",aeroNAME[T]);
 	*wnam = 0;
   //--- Initialize --------------------------------------
-	sreg		= 0;
 	rudder	= 0;
   dofa.x	= dofa.y = dofa.z = 0.0;
   laca		=  ADJ_AERO_CENTR; // 0.0f;
@@ -338,7 +337,7 @@ void CAerodynamicModel::Timeslice(float dT) {
 	//-------------------------------------------------------------------------
   for (iter=wingMap.begin(); iter!=wingMap.end(); iter++) {
     CAeroWingSection* ws = iter->second;
-		if (sreg && (ws == rudder))		continue;
+		if (mveh->UnderRegulation() && (ws == rudder))		continue;
     // bPos : body frame
     SVector bPos = VectorDifference(ws->bPos, cgOffset);                 ///< pos relative to actual cg meters
 #ifdef _DEBUG

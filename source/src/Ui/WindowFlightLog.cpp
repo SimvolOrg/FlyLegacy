@@ -584,7 +584,6 @@ void  CFuiFlightLog::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
 		return ModifCeil(+100);
 
 }
-
   return;
 }
 //----------------------------------------------------------------------------------

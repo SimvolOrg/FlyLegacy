@@ -227,9 +227,7 @@ void CPistonJSBSim::doBoostControl(void)
  */
 
 void CPistonJSBSim::doMAP(void)
-{ double T = eData->e_thro;
-
-}
+{ }
 
 /*!
  * Calculate the power produced by the engine.

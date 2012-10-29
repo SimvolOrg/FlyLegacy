@@ -2492,9 +2492,10 @@ CSpeedRegulator::CSpeedRegulator()
 	sPID		= new CPIDbox(0,0);
 	sPID->SetCoef(0.3,0,0.05);
 	sPID->SetMini(0);
+	sPID->SetMaxi(1);
 	//--- Create the PID controller for rudder -----------------------
 	gPID		= new CPIDbox(0,0);
-	gPID->SetCoef(0.002,0,0.0f);
+	gPID->SetCoef(0.004,0,0.0f);
 	steer		= 0;
 	route		= 0;
 	limit		= 4;

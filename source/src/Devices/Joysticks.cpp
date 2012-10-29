@@ -60,12 +60,12 @@ int TypeTAB[] = {
 //  1 as it is    values in [-1,+1] remapped to [-1 +1]
 //==============================================================================
 //---Norme coef 1 --------------------------------
-float CSimAxe::aCOEF[] = {
+float CSimAxe::bCOEF[] = {
    0.5,
    0,
 };
 //--Norme coef 2 --------------------------------
-float CSimAxe::bCOEF[] = {
+float CSimAxe::aCOEF[] = {
    0.5,
    1,
 };
@@ -381,7 +381,7 @@ void CSimAxe::Assignment(char *edt,int s)
 float CSimAxe::Value(JOY_NULL_AREA *nz)
 { float f = jdev->axeData[iAxe] * inv;
 	//----Normalize value ------------------------------------------
-	f  = aCOEF[pos] + (bCOEF[pos] * f);
+	f  = bCOEF[pos] + (aCOEF[pos] * f);
 	int	nx = neutral;
 	if (nx && (f > nz[nx].lo) && (f < nz[nx].hi)) f = nz[nx].md;
   return f * attn;
@@ -1094,21 +1094,6 @@ void CJoysticksManager::ClearGroupPMT(CObject *obj)
   return;
 }
 
-//--------------------------------------------------------------------------------
-//  Get the attenuation coefficient
-//--------------------------------------------------------------------------------
-float CJoysticksManager::GetAttenuation(EAllAxes cmd)
-{ CSimAxe *axe = GetAxe(cmd);
-  return (axe)?(axe->attn):(0);
-}
-//--------------------------------------------------------------------------------
-//  Set the attenuation coefficient
-//--------------------------------------------------------------------------------
-void CJoysticksManager::SetAttenuation(EAllAxes cmd,float atn)
-{ CSimAxe *axe = GetAxe(cmd);
-  if (axe) axe->attn = atn;
-  return;
-}
 //--------------------------------------------------------------------------------
 //  Check for neutral area
 //--------------------------------------------------------------------------------

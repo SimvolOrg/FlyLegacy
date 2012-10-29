@@ -62,7 +62,7 @@ Tag CPIDbox::PidIDENT[] = {
   'vsih',
   'aoa_',
   'rudr',
-	'thro',
+	'spid',
 };
 //===============================================================================================
 //  Autopilot edit table
@@ -426,7 +426,7 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 			apil->DecodeVROT(st);
 			return TAG_READ;
 		//--- Cut off altitude -----------------------------------
-		case 'THRO':
+		case 'cgas':
 			apil->DecodeTHRO(st);
 			return TAG_READ;
 		//--- Angle of approach to runway -----------------------
@@ -505,6 +505,13 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 			ReadFrom(pbx,st);
 			apil->AddPID(pbx);
 			return TAG_READ;
+		//---glide speed hold controller -----------------------
+		case 'spid':
+			pbx = new CPIDbox(PID_SPD,apil);
+			ReadFrom(pbx,st);
+			apil->AddPID(pbx);
+			return TAG_READ;
+
 		//---Angle of attack controller -----------------------
 		case 'aoa_':
 			pbx = new CPIDbox(PID_AOA,apil);
@@ -593,8 +600,7 @@ AutoPilot::AutoPilot (void)
 	aTGT		= 2500;					// Target altitude at take off
 	vROT		= 0;						// Rotation speed at TKO
 	xRAT		= 0;						// Cruise rate
-	aFSP    = 2000;					// Altitude to enter final speed		
-	fSPD		= 0;						// Final speed
+	fSPD		= 0;
 	cRAT		= 0;						// Crrent speed 
 	aCUT		= 0;						// Altitude for cut throttle
 	xAPW		= 45;						// Angle of Approach to runway
@@ -602,8 +608,6 @@ AutoPilot::AutoPilot (void)
   eVRT    = 0;
   rALT.Set(400,1);
   rVSP    = 0;
-	vrub		= +0.1;
-	vrlb    = -0.1;
   //---Options and controls ------------------------------
   uvsp    = 0;
   aprm    = 0;
@@ -696,8 +700,12 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
 	//--- Get radio bus -------------------------
 	Radio = mveh->GetRadioBUS();
 	CSimulatedVehicle *svh = &mveh->svh;
-  fSPD	= svh->GetApproachSpeed();
 	xRAT  = svh->GetCruiseSpeed() * 0.98;
+	//--- Set speed limit -----------------------
+	if (0 == fSPD)	fSPD = svh->GetApproachSpeed();
+	CPIDbox *box = pidL[PID_SPD];
+	if (box) box->SetMaxi(svh->GetCruiseSpeed());
+	if (box) box->SetMini(fSPD);
 	//--- end of init ---------------------------
   return;
 }
@@ -766,16 +774,7 @@ void AutoPilot::DecodeVROT(SStream *st)
 //  Decode throttle control
 //------------------------------------------------------------------------------------
 void AutoPilot::DecodeTHRO(SStream *st)
-{ char txt[128];
-	double pm1,pm2;
-	double pm3,pm4;
-	ReadString(txt,128,st);
-	int nf = sscanf(txt,"Final %lf ft , Cut %lf ft , More %lf , Less %lf",&pm1, &pm2, &pm3, &pm4);
-	if (nf != 4)	return;
-	aFSP	= pm1;
-	aCUT	= pm2;
-	vrlb  = pm3;
-	vrub  = pm4;
+{ ReadDouble(&aCUT,st);
 	return;
 }
 //------------------------------------------------------------------------------------
@@ -2128,18 +2127,6 @@ void AutoPilot::NewEvent(int evn)
 			return StateGND(evn);
 		default:
 			return StateLAT(evn);
-/*
-		case AP_LAT_LT0:
-			return StateLAT(evn);
-    case AP_LAT_LT1:
-      return StateLAT(evn);
-    case AP_LAT_LT2:
-      return StateLAT(evn);
-		case AP_LAT_LND:
-			return StateLAT(evn);
-		case AP_LAT_TGA:
-			return StateLAT(evn);
-			*/
   }
   return;
 }
@@ -2206,32 +2193,13 @@ bool AutoPilot::EnterGPSMode()
 	if (0 == sreg)						return false;
 	return true;
 }
-//-----------------------------------------------------------------------
-//	Get More speed
-//-----------------------------------------------------------------------
-void AutoPilot::MoreSpeed()
-{	double more = cRAT *1.01;
-	double lim  = (cAGL <  aFSP)?(fSPD):(xRAT);
-	lim *= 1.5;
-	sAPR = (more > lim)?(lim):(more);
-}
-//-----------------------------------------------------------------------
-//	Get More speed
-//-----------------------------------------------------------------------
-void AutoPilot::LessSpeed()
-{	double less = cRAT * 0.99;
-	double lim  = (cAGL <  aFSP)?(fSPD):(xRAT);
-	lim *= 0.80;
-	sAPR = (less < lim)?(lim):(less);
-}
 
 //-----------------------------------------------------------------------
 //	Select  Speed to hold
+//	In glide mode, use the spid controller to adjust speed 
 //-----------------------------------------------------------------------
 double AutoPilot::SelectSpeed()
-{	double more = cRAT * 1.01;
-  double evrt = -eVRT;
-	
+{	CPIDbox *sbox = pidL[PID_SPD];
 	switch (vStat)	{
 	  //--- ground  final --------------------------
 		case AP_VRT_FLR:
@@ -2240,14 +2208,13 @@ double AutoPilot::SelectSpeed()
 			return 0;
 		//--- Tracking glide in final ----------------
 		case AP_VRT_GST:
-			if (sect == 0)			return xRAT;
+		{	if (sect == 0)			return xRAT;
 			if (cAGL <= aCUT)		return fSPD;
-//			if (evrt >  vrub)		return fSPD;
-			if (evrt <  -2)			return more;
-			if (aSPD >  vrub)		return fSPD;
-			if (evrt <  vrlb)		return more;			// Was 0.8
-			if (cAGL <  aFSP)		return fSPD;
-			return  xRAT;
+			xAGL		= Radio->gDEV * Radio->fdis;
+			double err	= (xAGL - cAGL);
+			if (0 == sbox)			return 75.5;
+			return sbox->Update(dTime,err,0);		// Input to SPD controller
+		}
 		//--- take-off -------------------------------
 		case AP_VRT_TKO:
 			return (cRAT>=20)?(1000):(20);
@@ -2258,9 +2225,6 @@ double AutoPilot::SelectSpeed()
 		//--- Altitude mode --------------------------
 		case AP_VRT_ALT:
 			if (eVRT > 100)	  return 1000;			// Going up
-			//-- when going down, set limit to VSI -----
-			//double vsi = CatchVSP();
-			//if (vsi < -800)		return more;			
 			return xRAT;
 	}
 
@@ -2351,6 +2315,7 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 	}
 	if (lStat == AP_LAT_LND)
 	{	cnv->AddText( 1,1,"cFAC %.5f",cFAC);
+		cnv->AddText( 1,1,"xAGL %.5f",xAGL);
 	}
 	if ((aprm)|| (vStat == AP_VRT_ALT))
 	{	cnv->AddText( 1,1,"rALT %.0f",rALT.Get());

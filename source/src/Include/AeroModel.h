@@ -295,7 +295,6 @@ protected:
 	//---------------------------------------------------------------------
 	CAeroWingSection *rudder;				// Rudder section
 	//---------------------------------------------------------------------
-	char			sreg;					// Ground speed regulator on/off
 	char			T;						// Trace indicator
 	char      wnam[64];			// Traced wing
 	//---------------------------------------------------------------------
@@ -314,7 +313,6 @@ public:
   static void LogVector(const SVector &v, const char* name);
   static void LogScalar(const double &d, const char* name);
 	//---------------------------------------------------------------------
-	void		SpeedRegulation(char s)	{sreg = s;}
 	float		GetTime()								{return Time;}
 };
 //=====================================================================================

@@ -1518,15 +1518,16 @@ void CSuperTile::TraceEnd()
 }
 //-------------------------------------------------------------------------
 // Seach a part with same reference as the given one
+//	Must lock the Queue beacuse it may work for SQlThread as well
 //-------------------------------------------------------------------------
 void CSuperTile::MakeOSMPart(CShared3DTex *ref, char L, int nv, GN_VTAB *S)
 {	C3DPart *prt = 0;
+	osmQ[L].Lock();
 	for (prt = osmQ[L].GetFirst(); (prt != 0); prt = prt->Next())
 	{	if (!prt->SameREF(ref))			continue;
 		U_INT nbv = prt->GetNBVTX();
 		if (nbv > globals->pakCAP)	break;
 		//--- Extend this part -------------------------
-		osmQ[L].Lock();
 		prt->ExtendOSM(nv,S);
 		osmQ[L].UnLock();
 		return;
@@ -1535,7 +1536,7 @@ void CSuperTile::MakeOSMPart(CShared3DTex *ref, char L, int nv, GN_VTAB *S)
 	prt	= new C3DPart();
 	prt->Reserve(ref); 
 	//--- Add a new part -----------------------------
-	osmQ[L].Lock();
+	//osmQ[L].Lock();
 	prt->ExtendOSM(nv,S);
 	osmQ[L].PutHead(prt);
 	osmQ[L].UnLock();
@@ -3553,7 +3554,7 @@ TCacheMGR::TCacheMGR()
   if (wire) globals->noMET++;
   if (wire) globals->noAWT++;
 	//------------------------------------------------------
-	
+	ArmActivity(GLOBAL_EVN_INITLOAD);
   //------Magnetic refresh indicator ---------------------
   magRF   = 1;
   //------Init horizon parameters ------------------------
@@ -3824,6 +3825,35 @@ void TCacheMGR::Teleport(SPosition *P, SVector *O)
   globals->m3d->ReleaseVOR();
   Terrain       = 0;
   return;
+}
+//-----------------------------------------------------------------------------
+//  Arm activity
+//-----------------------------------------------------------------------------
+void TCacheMGR::ArmActivity(char evn)
+{	ldevn			= evn;
+	activity	= 1;
+	aframe		= 250;
+}
+//-----------------------------------------------------------------------------
+//  Check activity
+//-----------------------------------------------------------------------------
+bool TCacheMGR::StillLoading(char evn)
+{	if (evn != ldevn)		return false;
+	//--- If still loading, rearm timer ----------
+	if (activity)
+	{	activity	= 0;
+		aframe		= 250;
+		return true;
+	}
+	//--- Decrease timer --------------------------
+	aframe--;
+	if (aframe > 0)	return true;
+	//---- considere end of activity --------------
+	ldevn	= 0;
+	globals->zero = 1;
+	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
+	CleanupSplashScreen ();
+	return false;
 }
 //-------------------------------------------------------------------------
 //  Clear OSM objects from currenrt QGT
@@ -4107,7 +4137,7 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
 	globals->etrk.TimeSlice(dT);
 	//--- Update action ----------------------------------------------------
   if (nqgt)							return 1;												// Have QGT created
-  if (OneAction())      return 1;
+  if (OneAction())      {activity = 1; return 1; }
   //-----No cache refresh.  Update magnetic deviation --------------------
   if (magRF) globals->mag->GetElements (aPos,magDV, magFD);
 	globals->magDEV = magDV;
@@ -4819,22 +4849,6 @@ U_INT TCacheMGR::GetQTRindex(U_INT cx,U_INT cz)
   U_INT qtr_z = 31 - (cz >> 4);                       // Divide and invert
   U_INT indx  = (qtr_z << 5) + qtr_x;                 // Final index
   return indx;
-}
-//---------------------------------------------------------------------
-//  Init:  Execute all actions at start-up to build initilial mesh
-//         Load Textures for Near Super Tiles
-//  NOTE: This routine runs at init time and may be interrupted by
-//        the file THREAD. Be carefull
-//---------------------------------------------------------------------
-int TCacheMGR::InitMesh()
-{// Init = 1;                                           // Lock the door
-  while (OneAction()) continue;                       // Execute all
-  //-----------TRACE THE OVERALL STATISTICS -------------------------------------
-  if (!tr)  return 0;
-  TRACE("TCM: -- Time: %04.2f---- END INIT Actual mesh QGT=%03d QTR=%d COAST=%d Vertex=%06d ---------",
-          dTime,qgtMAP.size(),NbQTR,NbSEA,globals->NbVTX);
-
-  return 0;
 }
 //---------------------------------------------------------------------
 //  Last Action

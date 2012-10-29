@@ -102,7 +102,7 @@ protected:
 #define PID_VSP 5                 // VSP HOLD
 #define PID_AOA 6                 // AOA PID
 #define PID_RUD 7                 // Rudder PID
-#define PID_GAS 8									// THROTTLE PID
+#define PID_SPD 8									// SPEED PID
 #define PID_MAX 9                 // Number of PID
 //====================================================================================
 //  AUTOPILOT LATERAL STATES
@@ -255,8 +255,6 @@ protected:
   double     hMIS;              // Lateral miss error
   double     vMIS;              // Vertical miss error
 	double	   dSPD;							// Disengage speed
-	double     vrlb;							// Vertical glide lower bound
-	double		 vrub;							// Vertical glide upper bound
 	//--- GO ARROUND ------------------------------------------------------
 	double			TGA0;							// Distance for LEG 1
 	double			TGA1;							// Distance for LEG 2
@@ -278,7 +276,6 @@ protected:
 	double     sAPR;							// Approach speed
 	double		 fSPD;							// Final approach speed
 	double		 aCUT;							// Altitude to cut throttle
-	double		 aFSP;							// Altitude for final speed
 	double     vROT;							// Rotate speed
 	double		 aTGT;							// Target altitude
   //--- LEG2 mode control values --------------------------------------
@@ -311,6 +308,7 @@ protected:
   double      cALT;                         // Current altitude
   double      cAGL;                         // Current AGL
 	double      aSPD;													// Current speed KTS
+	double			xAGL;													// Expected AGL
   //--------------------------------------------------------------------
   float      gTime;                         // ground timer
   CAirplane *plane;                   // Plane to control
@@ -399,8 +397,6 @@ public:
   int             PowerLost();
   void            Disengage(char op);
 	double					SelectSpeed();
-	void						MoreSpeed();
-	void						LessSpeed();
 	bool						MissLanding();
 	void						LandingOption();
   bool            AbortLanding(char k);

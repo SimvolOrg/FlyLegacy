@@ -503,7 +503,6 @@ public:
 	bool	AtDepAirport();
 	bool	IsOnFinal();
 	bool	NotFor3D();
-	//void	SaveNearest(CWPoint *w);
 	char *PreviousIdent(CWPoint *wpt);
 	//--- Direct mode management ------------------------------------
 	void	AssignDirect(CmHead *obj);				// From GPS

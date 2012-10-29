@@ -1028,6 +1028,7 @@ void CSituation::EnterTeleport(SPosition *P, SVector *O)
 	char txt[128];
 	_snprintf(txt,127,"%05d Removing scenery files. PLEASE WAIT",wait++);
 	DrawNoticeToUser(txt,4);
+	globals->tcm->ArmActivity(GLOBAL_EVN_TELEPORT);
 	return;
 }
 //----------------------------------------------------------------------------
@@ -1037,11 +1038,12 @@ void CSituation::TeleportS1()
 {	char txt[128];
 	_snprintf(txt,127,"%05d Teleporting to destination. PLEASE WAIT",wait++);
 	DrawNoticeToUser(txt,4);
-	bool ok = globals->tcm->TerrainStable(1);
-	if (!ok)			return DrawNormal();
+	//bool ok = globals->tcm->TerrainStable(1);
+	//if (!ok)			return DrawNormal();
+	if (globals->tcm->StillLoading(GLOBAL_EVN_TELEPORT))	return DrawNormal();
 	//-- OK terrain ready at destination --------------
 	globals->fui->ResetFont();
-	//--- Restore vehicle position ----
+	//--- Restore vehicle position --------------------
 	State = SIT_NORMAL;
   globals->ccm->RestoreCamera(contx);
 	SPosition P = globals->geop;

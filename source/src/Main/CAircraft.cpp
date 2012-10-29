@@ -323,6 +323,7 @@ bool aKeyOUCH(int kid,int code,int mod)
 //--- Damage reset ----------------------------------------
 bool aKeyRSET(int kid,int code,int mod)
 { CAirplane *pln = globals->pln;
+	globals->fui->CloseAllWindows();
 	if (pln)	pln->ResetCrash(1);
   return true; }
 //--- Aero vector  ----------------------------------------
@@ -434,6 +435,24 @@ void CAirplane::LoadFPLAN(char *fn)
 	fpln->AssignPlan(fn);
 	return;
 }
+//-----------------------------------------------------------------------------
+// Go to next waypoint
+//-----------------------------------------------------------------------------
+void CAirplane::NextWaypoint()
+{	CFPlan *fpn = GetFlightPlan();
+	if (fpn->Inactive())		return;
+	if (fpn->IsOnFinal())		return;
+
+	CWPoint   *wpt	= fpn->GetActiveNode();
+	SPosition *pos	= wpt->GetGeoP();
+	double     dir  = wpt->GetDTK();
+	SVector    ori  = globals->iang;
+	ori.z					  = DegToRad(dir);
+	//SetPhysicalOrientation (ori);
+	//SetObjectOrientation(ori); 
+	SetObjectPosition(*pos);
+}
+
 //-----------------------------------------------------------------------------
 //  Register all planes keys
 //-----------------------------------------------------------------------------

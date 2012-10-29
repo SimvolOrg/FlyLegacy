@@ -29,7 +29,6 @@
 #endif // _MSC_VER > 1000
 
 #include "../Include/FlyLegacy.h"
-#include <SDL.h>
 #include <list>
 #include <bitset>
 #include <mmsystem.h>
@@ -373,8 +372,6 @@ public:
   void            SaveAxisConfig(CStreamFile &sf);
   void            SaveConfiguration();
   void            SetNulleArea(float n,char m); 
-  float           GetAttenuation(EAllAxes cmd);
-  void            SetAttenuation(EAllAxes cmd,float atn);
   //------------------------------------------------------------------------
   float			GetNulleArea()				{return nValue;}
 	void  		Modifier()						{modify = 1;}

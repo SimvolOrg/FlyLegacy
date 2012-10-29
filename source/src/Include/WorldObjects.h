@@ -412,7 +412,8 @@ public:
 	bool					AllWheelsOnGround()			{return whl.AllWheelsOnGround();}
 	void					GearConnector(char g)		{amp.GearConnector(g);}
 	char					GearConnexion()					{return amp.GearConnexion();}
-	void					SpeedRegulation(char s) {wng.SpeedRegulation(s);}
+	void					SpeedRegulation(char s)	{sreg = s;}
+	char          UnderRegulation()				{return sreg;}
 	//--- Brake interface -------------------------------------------------------------
 	double				GetDifBrake()						{return brkDIF;}
 	void					RazDifBrake()						{brkDIF  = 0;}
@@ -444,7 +445,7 @@ protected:
 	//--- Engine parameters --------------------------------------------------------
   U_CHAR nEng;															// Engine number
 	U_CHAR engR;															// Number of running engines
-	U_CHAR rfu1;															// Number of idle engines
+	U_CHAR sreg;															// speed regulator on/off
 	U_CHAR rfu2;															// Futur use
 	//--- Aero parameters ----------------------------------------------------------
   float  dihedral_coeff;										///< dihedral coeff SVH <dieh>
@@ -581,6 +582,7 @@ public:
   //-----------------------------------------------------------------------------
   void              BindKeys();
 	void							LoadFPLAN(char *fn);
+	void							NextWaypoint();
 	void							ToggleVPIL();
 	//-----------------------------------------------------------------------------
   // CAirplane methods

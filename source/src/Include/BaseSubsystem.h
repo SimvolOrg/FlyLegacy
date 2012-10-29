@@ -967,8 +967,8 @@ public:
 	inline void SetKI(double k)			{Ki = k;}
 	inline void	SetKD(double k)			{Kd = k;}
   //-------------------------------------------------------
-  inline void SetMaxi(double m)   {if (m < vmax) vmax = m;}
-  inline void SetMini(double m)   {if (m > vmin) vmin = m;}
+  inline void SetMaxi(double m)   {vmax = m;}
+  inline void SetMini(double m)   {vmin = m;}
 };
 //=========================================================================================
 //  CLASS CPIDQ

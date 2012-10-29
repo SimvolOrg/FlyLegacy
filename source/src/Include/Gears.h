@@ -353,6 +353,7 @@ public:
   double   GetMinimumBodyAGL()	{return  mAGL;}
   double   GetPositionAGL()			{return  (mAGL + mainR - 1);}
   double   GetSterGearRadius()	{return  sterR;}
+	double   GetTurnCoefficient()	{return trad;}
   void     StoreGearVM(CVector &v, double mc) {mainVM = v; massCF = mc;}
   char     GetNbWheelOnGround()	{return nWonG;}
   bool     WheelsAreOnGround()	{return (nWonG != 0);}
@@ -385,6 +386,7 @@ protected:
 	double				difB;																					// Differntial brake
 	double        banK;																					// Banking coefficient
 	double				fric;																					// Friction coefficient
+	double				trad;																					// Turn radius
   double        wheel_base;                                   // Inter axes distance
   double        mAGL;                                         // minimum Body AGL (in feet)
   double        mainR;                                        // Main average radius

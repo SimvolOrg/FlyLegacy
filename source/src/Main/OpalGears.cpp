@@ -268,10 +268,12 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 		double dif_brk    = mveh->GetDifBrake() * gearData->mgsp->GetDifBraking();
 		double amp				= gearData->mStr * dif_brk;  
 		angr							= WrapPiPi(angr + DegToRad(amp));
-		//--- process steering wheel ----------------------------------
+		//--- process steering wheel -----------------------------------
+		char   reg    = mveh->UnderRegulation();
     double base		= gearData->wheel_base;			// In meter
-		double sind		= sin(angr);			// Sinus
-		double rturn	= (fabs(sind) < 0.0001)?(0):(base / sind); // Turn radius
+		double sind		= sin(angr); 			// Sinus
+		double trad   = (reg)?(1):(gearData->mgsp->GetTurnCoefficient());
+		double rturn	= (fabs(sind) < 0.0001)?(0):((base / sind) * trad); // Turn radius
 		angv		= (rturn == 0)?(0):(speed / rturn);
 		angv		= RadToDeg(angv) * gearData->stbl;
 		//--- Simulate banking on turn ---------------------------------
@@ -279,9 +281,9 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
     double lat_acc    = speed * turn_rate;
     banking						= lat_acc * mveh->GetMassInKgs() * gearData->mgsp->GetBankCoef();
 		//---TRACE("GEAR turn %.4f",gearData->deflect);
-    //-- turn nose wheel in 3D model --------------------------------
+    //-- turn nose wheel in 3D model -------------------------------
     susp->TurnWheelTo(gearData->kframe);
-		//---Create banking force ---------------------------------------
+		//---Create banking force --------------------------------------
 		gt_.vec.x = 0;
 		gt_.vec.z = 0;
 		gt_.vec.y = banking;
@@ -290,7 +292,7 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 		vec.z = angv;
 		phyM->setLocalAngularVel(vec);
 		local_velocity.x = static_cast<opal::real> (0.0f);
-	  //-------------------------------------------------------------
+	  //--------------------------------------------------------------
 		gt_.duration = static_cast<opal::real> (dT);
 		phyM->addForce (gt_);
 		mveh->RazDifBrake();

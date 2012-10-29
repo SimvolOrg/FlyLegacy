@@ -850,8 +850,10 @@ class TCacheMGR: public CExecutable {
 	char						t2OK;
   //---------TRN File name -------------------------------------
   char        trnName[64];                  // TRN file name
-  //---------CULLING  --------------------------------------
-  C_QGT       *vqt;                         // QGT in test
+	//--- Activity management ------------------------------------
+	U_CHAR				ldevn;
+	U_CHAR				activity;
+	short					aframe;
 	//---------Methods -------------------------------------------
 public:
   TCacheMGR();
@@ -878,6 +880,8 @@ public:
   float       AircraftFeetDistance(SPosition &pos);
 	void				SetShadowMatrix( float mat[16],float lp[4]);
 	char        GetThreadNumber()		{return tnbr++;}
+	void				ArmActivity(char evn);
+	bool				StillLoading(char evn);
   //----------Terrain management -------------------------------
   double      GetGroundAt(GroundSpot &gns);
 	void  			GetGroundAt(GroundSpot &gns,SPosition &pos);
@@ -915,7 +919,6 @@ public:
   CVertex    *GetQgtCorner(C_QGT *qgt,QGT_DIR *tab,U_SHORT cn);
   int         FreeTheQGT(C_QGT *qt);
 	int					EndOfQGT(C_QGT *qgt);
-  int         InitMesh();                             // Initial mesh
   int         OneAction();                            // One Action per QGT
   int         RefreshCache();
   int         UpdateQGTs(float dT);

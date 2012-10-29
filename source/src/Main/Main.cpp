@@ -388,6 +388,10 @@ float colorTABLE[] = {
 	float(0.84),float(0.35),0,1,							// 8 Amber
 };
 //================================================================================
+//	globals activity frame count
+//================================================================================
+int	globalsINIT = 200;
+//================================================================================
 //  Lookup the ICAO Spelling Alphabet word (ALPHA, BRAVO, etc.) for the supplied character.
 //
 //  \param  car
@@ -891,13 +895,14 @@ void InitGlobalsNoPodFilesystem (char *root)
 	globals->NbPOL	= 0;										// Total polygons
 	globals->NbCLN  = 0;										// Coast lines
 	globals->NbBMP	= 0;										// Number of bitmap
-  //----  Allocate NULL bitmap
+  //----  Allocate NULL bitmap and logs --------------------
   globals->nBitmap		= new CBitmap;
   globals->dBug       = 0;
   globals->logDebug   = new CLogFile ("Logs/Debug.log", "w");
   globals->logWarning = new CLogFile ("Logs/Warning.log", "w");
 	globals->logAeros   = new CLogFile ("Logs/AeroData.log","w");
 	globals->logWings   = new CLogFile ("Logs/WingData.log","w");
+	//---------------------------------------------------------
   //
   // Screen resolution/colour depth
   //
@@ -1319,17 +1324,6 @@ U_INT Frame = 0xFFFFFFFF;
 float tmp_timerS = 0.0f,
       tmp_timerR = 0.0f;
 //===========================================================================
-//	Wait for terrain to be ready
-//===========================================================================
-int WaitTerrain()
-{ if (!globals->tcm->TerrainStable(1))	return APP_SIMULATION;
-	globals->init = 0;
-	globals->zero = 1;
-	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
-	CleanupSplashScreen ();
-	return APP_SIMULATION;
-}
-//===========================================================================
 //	Rdraw the simulation
 //===========================================================================
 int RedrawSimulation ()
@@ -1393,7 +1387,7 @@ int RedrawSimulation ()
 ////#endif
 
   globals->sit->Timeslice (dSimT,Frame);
-	if (globals->init)		return WaitTerrain();
+	if (globals->tcm->StillLoading(GLOBAL_EVN_INITLOAD))		return APP_SIMULATION;
   // The global CSituation object contains all informations about the current
   //   simulation state, user vehicle, camera mode, etc.
   globals->sit->Draw ();

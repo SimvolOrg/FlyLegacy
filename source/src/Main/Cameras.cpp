@@ -157,10 +157,11 @@ bool cKeyCS01(int id, int code, int mod)
 { globals->cam->User1();
   return true; }
 //--------------------------------------------------------------------------
-//  User 2 'cs02'
+//  User 2 'cs02':  Next flight plan waypoint
 //--------------------------------------------------------------------------
 bool cKeyCS02(int id, int code, int mod)
-{ globals->cam->User2();
+{ CAirplane *pln = globals->pln;
+	if (pln)	 pln->NextWaypoint();
   return true; }
 //--------------------------------------------------------------------------
 //  User 3 'cs03'
