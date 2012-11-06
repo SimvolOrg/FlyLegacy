@@ -38,13 +38,7 @@
 //#include <plib/ul.h>
 
 // Check that exactly one precision timer method is defined
-#if defined(PRECISION_TIMER_PLIB) && defined(PRECISION_TIMER_WIN32)
-#error Main/TimeManager.cpp : Multiple precision timer methods defined!!
-#endif
 
-#if !(defined(PRECISION_TIMER_PLIB) || defined(PRECISION_TIMER_WIN32))
-#error Main/TimeManager.cpp : No precision timer method defined!!
-#endif
 
 //======================================================================
 //  Precision Time Manager
@@ -139,19 +133,11 @@ protected:
   //   elapsed time to derive the current simulation date/time
   SDateTime epoch;
 
-#ifdef PRECISION_TIMER_WIN32
   // CTimeManager uses the Win32 functions QueryPerformanceFrequency
   //   and QueryPerformanceCounter as its high-resolution counters on
   //   the Windows platform
   float     freq;         // Counter frequency
   LARGE_INTEGER count, prev_count;    // Counter values
-#endif
-
-#ifdef PRECISION_TIMER_PLIB
-  // Use platform-independent PLIB utility timer
-  ulClock *clock;
-#endif
-
 };
 
 

@@ -286,7 +286,7 @@ void ProcessModels(TCacheMGR *tcm, SqlTHREAD *sql)
   for (C3Dmodel *mod = m3d->ModelToLoad(); (mod != 0); mod = m3d->ModelToLoad())
       { //--- To debug a specific file ------------------
 				//char *mn = mod->GetFileName();
-				//if (strncmp(mn,"LFPLHANG10",10) == 0)
+				//if (strncmp(mn,"PA28LM",6) == 0)
 				//int a = 0;									// Break point here
 				//TRACE("TCM: -- Time: %04.2f ---------------THREAD MODELS",tcm->Time());
 				//TRACE("Model: Load %s",mn);

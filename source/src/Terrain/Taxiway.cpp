@@ -655,7 +655,9 @@ TaxNODE *TaxiwayMGR::GetNode(Tag T)
 	return (rp == nodQ.end())?(0):((*rp).second);
 }
 //-------------------------------------------------------------------------------------------
-//	Search node for runway rwid, that start in a sector greater than No
+//	Search an exit node node for the runway rwid,
+//	Each exit node is associated with a sector (distance from the ruway start point)
+//	We sarch an exit node with a sector greter than the current sector 
 //-------------------------------------------------------------------------------------------
 void	TaxiwayMGR::SetExitPath(LND_DATA *rwd,NavRoute *txr)
 {	char dir = LND_CIRCUIT;
@@ -666,6 +668,7 @@ void	TaxiwayMGR::SetExitPath(LND_DATA *rwd,NavRoute *txr)
 	{	TaxNODE *R = rwyQ[k];
 		if (R->IsNotRWY(rid))				continue;
 		if (R->sector <= rwd->sect)	continue;
+		if (R->IsNotExit())					continue;
 		//--- Found exit node from runway --------
 		N0		= R;
 		Tag E = txx[dir]->RandomEnd(R);

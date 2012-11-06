@@ -1992,7 +1992,7 @@ void CCockpitManager::AddPanel(CPanel *pan,bool main)
 {	Tag id = pan->GetID();
 	// Check for duplicate panel tags
   std::map<Tag,CPanel*>::iterator i = panl.find(id);
-  if (i != panl.end())  gtfo ("CCockpitManager : Duplicate panel tag : 0x%08X", id);
+  if (i != panl.end())  gtfo ("CCockpitManager : Dupplicate panel tag : 0x%08X", id);
   // This is a unique panel tag, load it and add to the cockpit panel map
   //---Skip NONE panel ---------------------------------------------------
   panl[id] = pan;              // Enter panel

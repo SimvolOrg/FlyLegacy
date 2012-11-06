@@ -403,11 +403,6 @@ void CrTriangle::EditMark(char *txt)
 //----------------------------------------------------------------------
 void  CrTriangle::Renorme()
 { norm = *vertex[0]->GetNorme();
-/*
-  norm.Add(*vertex[1]->GetNorme());
-  norm.Add(*vertex[2]->GetNorme());
-  norm.Times(double(1)/3);
-  */
   return;
 }
 //----------------------------------------------------------------------
@@ -463,13 +458,14 @@ void CrTriangle::RestoreVertex(CrVertex *vv,CrVertex *vu)
 //=======================================================================================
 //  Create a begining or end part
 //-----------------------------------------------------------------------
-CrPart::CrPart(int id,int type,void *rf)
+CrPart::CrPart(int id,int type,M3D_PART_INFO *rf)
 { Id      = id;
-  ntex    = 0;
-  ref     = rf;
+  txp     = rf;
+	texn		= DupplicateString(rf->ntex,64);
   if (type == PS_PART_BEG)
   { SetBegMark();
-    xOBJ  = globals->txw->Get3DObject(ref);
+		CShared3DTex *tref = (CShared3DTex*)txp->ref;
+    xOBJ  = globals->txw->Get3DObject(tref);
   }
   else  
   { SetEndMark();
@@ -478,6 +474,11 @@ CrPart::CrPart(int id,int type,void *rf)
   return;
 }
 //---------------------------------------------------------------------
+//  Return texture name
+//--------------------------------------------------------------------
+char	*CrPart::GetTexName()
+{	return texn;}
+//---------------------------------------------------------------------
 //  Save info of interest
 //--------------------------------------------------------------------
 void CrPart::StoreInfo(M3D_PART_INFO &inf)
@@ -485,9 +486,7 @@ void CrPart::StoreInfo(M3D_PART_INFO &inf)
   NbVT    = inf.NbVT;
   NbIN    = inf.NbIN;
   tsp     = inf.tsp;                // Save transparency
-  ntex    = new char[lg+1];         // Allocate string
-  strncpy(ntex,inf.ntex,lg);        // Copy it
-  ntex[lg] = 0;
+	txp			= &inf;
   return;
 }
 //---------------------------------------------------------------------
@@ -631,7 +630,7 @@ void CPolyShop::Remove(CrVertex *vu)
 void  CPolyShop::OnePart(M3D_PART_INFO &inf)
 { NbrPR++;
   //---- Add begin part -------------------
-  CrPart *p1 = new CrPart(NbrTR,PS_PART_BEG,inf.ref);
+  CrPart *p1 = new CrPart(NbrTR,PS_PART_BEG,&inf);
   p1->StoreInfo(inf);
   Faces[NbrTR++] = p1;
   //---- Add all vertices -----------------------
@@ -671,7 +670,7 @@ void  CPolyShop::OnePart(M3D_PART_INFO &inf)
     NbrTR++;
   }
   //---- Add close part -------------------
-  CrPart *p2 = new CrPart(NbrTR,PS_PART_END,0);
+  CrPart *p2 = new CrPart(NbrTR,PS_PART_END,&inf);
   Faces[NbrTR++] = p2;
   //-------------------------------------------
   Base  = NbrVX;
@@ -861,7 +860,7 @@ bool CPolyShop::OpenPart(CrTriangle *tr)
   Part  = new C3DPart();
 	Part->AllocateW3dVTX(pnNVT);
   Part->SetTSP(phd->GetTSP());
-  Part->SetAllTexName(FOLDER_ART,phd->GetTXN());
+  Part->SetAllTexName(FOLDER_ART,phd->GetTexName());
   Part->AllocateXList(pnNIN);
   vaTAB = Part->GetVLIST();
   vnTAB = Part->GetNLIST();

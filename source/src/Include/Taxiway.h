@@ -106,6 +106,7 @@ public:
 		//-----------------------------------------------------------------
 		bool		IsNotRWY(char *r)		{return (strncmp(r,rwy,4) != 0);}
 		bool		IsNotTKO()					{return ((type & 0x67) != TAXI_NODE_TKOF);}
+		bool		IsNotExit()					{return ((type & 0x67) != TAXI_NODE_EXIT);}
 		//-----------------------------------------------------------------
 		bool		NoEdge(char t)			{return (nout[t] == 0) && (ninp[t] == 0);}
 		bool		IsPath(char t)			{return (nout[t] == 1);}

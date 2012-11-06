@@ -71,6 +71,7 @@ public:
   //-----------------------------------------------------
 	void	AddPod(CSceneryPOD *pod)	{apod.push_back(pod);}
 	void	AddOSM(char *n)						{aosm.push_back(n);}
+	bool	AllreadyIN(char *pn);
 	//-----------------------------------------------------
 	void	MountPODs (CSceneryDBM *dbm);
 	void	RemovePODs(CSceneryDBM *dbm);
@@ -124,6 +125,7 @@ protected:
   void    LoadInFolderTree (const char *path);
 	void		Warn01(char *fn);
 	void		SendPOD(char *pn);
+	bool		AllreadyIN(U_INT key,char *pn);
 	//------------------------------------------------------------------------
 	int     CheckDatabase(char *pn);
 	void		LookForPOD(char *path);

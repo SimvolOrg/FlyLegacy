@@ -358,17 +358,11 @@ void CSkyManager::PreDraw (void)
   domeimage->Repaint (solTheta, solPhi);
 
   // Update appearance and position of Sol
-//  solimage->Repaint (solTheta);
-//  solimage->Reposition (p, lst, lat,
-//                      sol->GetRightAscension(), sol->GetDeclination(),
-//                      skyDistance);
-
   // Update appearance and position of the Moon
   /// \todo  Orient moon towards sun using the 'spin' parameter
   moonimage->Repaint (moonTheta, moon->GetAge ());
   moonimage->Reposition (p, moonTheta, lst, lat,
                        moon->GetRightAscension(), moon->GetDeclination(), 0);
-
   // Determine limiting magnitude and ambient light factor for night sky objects
   float limit, factor;
   float limitLastUpdate = 10.0;
@@ -425,7 +419,18 @@ void CSkyManager::PreDraw (void)
 
   // Sun and moon images temporarily left undrawn
   //solimage->Draw ();
+	// Set fog to the moon
+	/*
+	float	fogc[4] = {1,1,1,1};
+	glHint (GL_FOG_HINT, GL_NICEST);
+  glFogi (GL_FOG_MODE, GL_EXP2);
+  glFogf (GL_FOG_DENSITY,0.000003f);
+  glFogfv(GL_FOG_COLOR,fogc);
+  glEnable (GL_FOG);
+	*/
   moonimage->Draw ();
+	glDisable (GL_FOG);
+
   glPopAttrib ();
 }
 

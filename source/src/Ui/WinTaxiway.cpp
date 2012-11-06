@@ -129,7 +129,7 @@ void NavRoute::Clear()
 	nodQ.clear();
 }
 //----------------------------------------------------------------------------
-//	Set Route :  Collect all nodes 
+//	Set Route :  Collect all nodes for the given route
 //----------------------------------------------------------------------------
 void NavRoute::SetRoute(TaxiwayMGR *M,char D,LND_DATA *R)
 {	mgr	= M;

@@ -55,17 +55,9 @@
 
 CTimeManager::CTimeManager (void)
 {
-#ifdef PRECISION_TIMER_WIN32
   // Initialize Win32 performance counter variables
   count.QuadPart = 0;
   prev_count.QuadPart = 0;
-#endif
-
-#ifdef PRECISION_TIMER_PLIB
-  // Instantiate ulClock
-  clock = new ulClock;
-#endif
-
   // Initialize time scale
   scale = 1.0;
 
@@ -352,10 +344,11 @@ double CTimeManager::GetLocalSiderealTime (double lon)
 #pragma warning(push)
 #pragma warning(disable:4701)
 #endif
-
+//-----------------------------------------------------------------------------
+//		Update time
+//-----------------------------------------------------------------------------
 void CTimeManager::Update (void)
 {
-#ifdef PRECISION_TIMER_WIN32
   LARGE_INTEGER delta;
 
   // Get current value of performance timer
@@ -371,19 +364,9 @@ void CTimeManager::Update (void)
 
   // Calculate time since last time update
   dRealTime = (float)delta.QuadPart / freq;
-#endif
 
-#ifdef PRECISION_TIMER_PLIB
-  dRealTime = (float)(clock->getDeltaTime());
-#endif
-
-  // Calculate simulation elapsed time for this update
+	// Calculate simulation elapsed time for this update
   dSimTime = scale * dRealTime;
-
-//  char debug[80];
-//  sprintf (debug, "TimeManager::Update : dRealTime = %10.8f  dSimTime=%10.8f",
-//    dRealTime, dSimTime);
-//  DrawNoticeToUser (debug, 1);
 
   // If sim is not paused, update sim elapsed time
   if (!paused) {
@@ -398,43 +381,13 @@ void CTimeManager::Update (void)
 #pragma warning(pop)
 #endif
 
-//
-// Return sim elapsed time
-// inlined now
-//float CTimeManager::GetElapsedSimTime (void)
-//{
-//  return elapsed;
-//}
 
-//
-// Return real elapsed time
-//inlined now
-//float CTimeManager::GetElapsedRealTime (void)
-//{
-//  return elapsedReal;
-//}
-//
-// Return the amount of time between the last time manager update
-// inlined now
-//float CTimeManager::GetDeltaRealTime (void)
-//{
-//  return dRealTime;
-//}
-
-//
-// Return the amount of sim time between the last time manager updates
-// inlined now
-//float CTimeManager::GetDeltaSimTime (void)
-//{
-//  return dSimTime;
-//}
-
-//
+//------------------------------------------------------------------------------------
 // Algorithm supplied from:
 //    Almanac for Computers, 1990
 //    Nautical Almanac Office
 //    United States Naval Observatory
-//
+//-------------------------------------------------------------------------------------
 void CTimeManager::SunriseSunset (SPosition pos, SDate date, float zenith,
                   STime &rise, STime &set,
                   bool &neverRises, bool& neverSets)
@@ -635,15 +588,14 @@ int CTimeManager::DaysInMonth (int month, int year)
   return rc;
 }
 
-
-//
+//------------------------------------------------------------------------------------
 //  This function converts a Gregorian date and time of day into the corresponding
 //    Julian day number.
 //
 //  Parameters:
 //    d SDate structure containing year (relative to 1900)/month/day
 //    t STime structure containing hour/minute/second
-//
+//-------------------------------------------------------------------------------------
 double CTimeManager::JulianDate (SDateTime dt)
 {
   double j = 0;
@@ -677,11 +629,11 @@ double CTimeManager::JulianDate (SDateTime dt)
 }
 
 
-//
+//-------------------------------------------------------------------------------
 // Algorithm is based on that in Jean Meeus' "Astronomical Formulae for
 //   Calculators" as described on the "Ask Dr. Math" web site:
 //      http://mathforum.org/library/drmath/view/51907.html
-//
+//-------------------------------------------------------------------------------
 SDateTime CTimeManager::CalendarDate (double j)
 {
   SDateTime dt;

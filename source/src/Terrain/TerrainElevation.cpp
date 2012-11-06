@@ -973,6 +973,17 @@ int C_STile::Read (SStream *stream, Tag tag)
             U_CHAR h1 = (c1 <= '9')?(c1 -'0'):(c1 - '7');
             *dst++    = (h0 << 4) | h1;
           }
+					//--- TRACE allocation if needed ---------------------
+					char T = 0;
+					if (0 == T)		continue;
+					U_INT qx = cx >> TC_BY32;
+					U_INT qz = cz >> TC_BY32;
+					U_INT tx = cx & TC_032MODULO;
+					U_INT tz = cz & TC_032MODULO;
+					char nm[TC_TEXNAMESIZE+1];
+					strncpy(nm,txn->Name,TC_TEXNAMESIZE);
+					nm[TC_TEXNAMESIZE] = 0;
+					TRACE("QGT(%03d-%03d) DET(%03d-%03d) : texture %s",qx,qz,tx,tz,nm);
         }
       delete [] DayList;
       DayList = 0;

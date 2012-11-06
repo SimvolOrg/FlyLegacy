@@ -909,7 +909,7 @@ void CExport::Export3Dmodels()
   InitModelPosition();
   globals->fui->SetNoticeFont(&globals->fonts.ftmono20);
 	pif.mode= 0;								// Adding mode
-	SCENE("========== START OF MODEL EXPORT ==========");
+	SCENE("========== START MODEL IMPORT ==========");
 	if (globals->m3dDB)		return;
 	SCENE("No M3D database");
 	globals->appState = APP_EXIT_SCREEN;
@@ -941,9 +941,11 @@ bool CExport::Prepare3Dmodel(char *fn, char opt)
 	sprintf(tx,"TESTING %05d: %s in DATABASE",mCnt,mName);
   globals->fui->DrawNoticeToUser(tx,200);
   if (globals->sqm->Check3DModel(name)) return false;     // Already in DB
+	if (Mod)	delete Mod;
   Mod   = new C3Dmodel(name,0);
   Mod->LoadPart("MODELS");
   if (!Mod->IsOK())                     return false;
+	//--- Load polygon reductor -------------------------------
   Polys = new CPolyShop;
   Polys->SetModel(Mod);
   face = Polys->GetNbFaces();
@@ -1001,9 +1003,8 @@ void CExport::OneM3DPart(M3D_PART_INFO &pif)
   if (0 == inf.mADR)                          return;
 	if (0 == pif.ntex)                          return;
   //---Check if in database --------------------------------
-  if (globals->sqm->Check3DTexture(pif.ntex)) return;
-  //---Enter in database -----------------------------------
-  globals->sqm->WriteM3DTexture(inf);
+	SqlMGR *sqm = globals->sqm;
+  if (!sqm->Check3DTexture(pif.ntex)) sqm->WriteM3DTexture(inf);
   delete [] inf.mADR;
   return;
 }
@@ -1050,6 +1051,8 @@ void CExport::Export3DMlodQ(char * name, int n)
 void CExport::M3DMsgIntro()
 { char *msg = "GATHERING ALL SCENERY FILES";
   globals->fui->DrawNoticeToUser(msg,100);
+	stop	= 0;
+	Mod		= 0;
   return;
 }
 //-----------------------------------------------------------------------------------------
@@ -1071,8 +1074,6 @@ void CExport::CloseSceneries()
 //-----------------------------------------------------------------------------------------
 int  CExport::ExecuteMOD()
 { char fn[PATH_MAX];
-  char *mte = "FREEING SCENERIES";
-  char *mrx = "PAUSE. Type any key to continue. To stop type s";
 	Clear			= 0;
   switch(State) {
 		//--- Intro message ------------------
@@ -1091,6 +1092,7 @@ int  CExport::ExecuteMOD()
 			return EXP_NBIN;
 		//--- Prepare one BIN file ------------
 		case EXP_NBIN:
+			if (stop)												return Pause();
 			if (0 == mName)		{Clear = 1;		return EXP_FSMF;} 
 			if (Prepare3Dmodel(mName,1))		return EXP_WBIN;
 			mName = (char*)pfindnext (&globals->pfs);
@@ -1109,6 +1111,7 @@ int  CExport::ExecuteMOD()
 			return EXP_NSMF;
 		//--- Prepare one SMF file -------------
 		case EXP_NSMF:
+			if (stop)											return Pause();
 			if (0 == mName)		{Clear = 1; return EXP_END;} 
 			if (Prepare3Dmodel(mName,1))	return EXP_WSMF;
 			mName = (char*)pfindnext (&globals->pfs);
@@ -1124,11 +1127,8 @@ int  CExport::ExecuteMOD()
 		case EXP_END:
 			CloseSceneries();
 			Clear = 1;
+			globals->appState = APP_EXIT;
 			return EXP_OUT;
-		//---- Set pause mode -----------------
-		case EXP_RLAX:
-			globals->fui->DrawNoticeToUser(mrx,10);
-			return 0;
   }       //END OF SWITCH
   //------- STOP SIMU ------------------
 	globals->appState = APP_EXIT_SCREEN;
@@ -1139,12 +1139,20 @@ int  CExport::ExecuteMOD()
 //  Keyboard intercept
 //------------------------------------------------------------------------------------
 void CExport::KeyW3D(U_INT key,U_INT mod)
-{ if (State != EXP_RLAX) {rStat = State; State = EXP_RLAX;          return;}
-  //--- skey will stop the processus --------------------------------
-  if (0x73 == key)       {globals->appState = APP_EXIT;             return;}
-  //----Resume the processus ----------------------------------------
-  State = rStat;
+{ char ch = key;
+	if ('s'== ch)	 {State = EXP_END; return;}
+	//--- process stop request -----------------------------
+	stop ^= 1;
   return;
+}
+//------------------------------------------------------------------------------------
+//  M3D stop 
+//------------------------------------------------------------------------------------
+int CExport::Pause()
+{	char *mrx = "PAUSE. Type any key to continue. To stop type s";
+	globals->fui->DrawNoticeToUser(mrx,10);
+	globals->fui->DrawOnlyNotices();
+	return State;
 }
 //=========================================================================================
 //  Update 3D models

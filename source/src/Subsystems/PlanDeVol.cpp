@@ -725,13 +725,13 @@ void CWPoint::SetSeq(U_SHORT s)
 //  Return landing data
 //--------------------------------------------------------------------
 LND_DATA *CWPoint::GetLandingData()
-{	if (NotAirport())	return 0;
+{	if (NotAirport())			return 0;
 	//--- Locate airport in cache ----------
   CAirport *apt = globals->dbc->FindAPTbyKey(dbKey);
-	if (0 == apt)			return 0;
+	if (0 == apt)					return 0;
 	//--- Locate landing runway ----------------
 	LND_DATA    *lnd = apt->FindRunwayLND(lndRWY);		
-	if (0 == lnd)			return 0;
+	if (0 == lnd)					return 0;
 	sDir	= lnd->orie;
 	return lnd;
 }

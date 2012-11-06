@@ -2224,16 +2224,18 @@ void CRunway::EndAttributes(LND_DATA &d,SPosition &p,SPosition &q,int lg)
 	d.rwy	  = this;
   d.ils   = 0;
   d.lndP  = p;
+	d.refP  = q;
   d.altT  = alti;
 	d.gTan  = float(TANGENT_3DEG);
 	//--- Compute true orientation --------------------------
 	SVector	v	= GreatCirclePolar(&p, &q);
   d.orie		= Wrap360(v.h);
+
 	//--- Compute forward point -----------------------------
-	double R  = 1 + double(RWY_FWD_POINT) / lg;
-	d.fwdP    = GetAlignedSpot(q,p,R);
-	R	*= 0.5;
-	d.midP    = GetAlignedSpot(q,p,R);
+	double F  = 1 + double(RWY_FWD_POINT) / lg;
+	d.fwdP    = GetAlignedSpot(q,p,F);
+	F	*= 0.5;
+	d.midP    = GetAlignedSpot(q,p,F);
 	return;
 }
 //-----------------------------------------------------------------

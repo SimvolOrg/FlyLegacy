@@ -2234,7 +2234,8 @@ int C_QGT::StepINI()
 //	-Otherwise load default elevations
 //---------------------------------------------------------------------
 int C_QGT::StepELV()
-{	if (HasTRN())		return 1;
+{	//bool ok = AreWe(8,323);
+  if (HasTRN())		return 1;
 	return tcm->RequestELV(this);
 }
 //---------------------------------------------------------------------
@@ -5144,6 +5145,13 @@ void TCacheMGR::AddToPack(OSM_Object *obj)
 //=================================================================================
 void TCacheMGR::Draw()
 {	CCamera *cam = globals->cam;
+  //---------Activate fog --------------------------------------------
+  //  Fog is taken from sky dome, face to camera at about 45°  of zenith
+  //------------------------------------------------------------------
+  //globals->skm->GetSkyDomeColour (float(PI * 0.52), -orient,fogC[0],fogC[1],fogC[2]);
+  //DrawSun();
+  //SetSkyFog(fDens);
+
 	//--- Draw sky as background --------------------------------------
 	globals->skm->PreDraw();
 	CVehicleObject *veh = globals->pln;

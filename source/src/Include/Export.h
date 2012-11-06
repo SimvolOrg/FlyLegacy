@@ -90,10 +90,11 @@ class CExport {
 	SqlMGR *sqm;
 	U_INT   rowid;
   //-----ATTRIBUTES ---------------------------------------------
-  char Mode;
-	int  State;															// State routine
+	char	stop;
+  char	Mode;
+	int		State;														// State routine
 	U_INT	count;														// Export count
-	char Clear;															// Clear request
+	char	Clear;														// Clear request
   TEXT_INFO  inf;                         // Texture info
   M3D_PART_INFO pif;                      // Part info
 	SQL_DB   *DB;														// Curent database
@@ -201,6 +202,7 @@ public:
   void  CloseSceneries();
   int   ExecuteMOD();
   void  KeyW3D(U_INT key,U_INT mod);
+	int	  Pause();
 	//--- Update 3D models -------------------------------------
 	void	Update3DModels();
 	void	LoadUpdModel(char *name);

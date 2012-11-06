@@ -219,7 +219,7 @@ void SqlOBJ::Init()
 	txyDBE.mode = SQLITE_OPEN_READWRITE;
 
   //---Model 3D database ------------------------------------------
-	modDBE.vers	= 0;																// Minimum version
+	modDBE.vers	= 1;																// Minimum version
   strncpy(modDBE.path,"SQL",63);
   GetIniString("SQL","M3DDB",modDBE.path,lgr);
 	strncpy(modDBE.name,"M3D*.db",63);

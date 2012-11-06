@@ -58,6 +58,7 @@ void osmQGTkey(U_INT key, void *obj)
 }
 //==========================================================================
 //	Scenery POD to define a POD for scenery
+//	NOTE: The key is a QGT(X-Z) key
 //==========================================================================
 CSceneryPOD::CSceneryPOD(U_INT key, char *fn)
 {	users	= 0;
@@ -150,6 +151,16 @@ void	CSceneryDBM::AddPodToQGT(CSceneryPOD *pod)
 	return;
 }
 //--------------------------------------------------------------------------------
+//	Check if already in scenery pack
+//--------------------------------------------------------------------------------
+bool CSceneryDBM::AllreadyIN(U_INT key,char *pn)
+{	std::map<U_INT,CSceneryPack*>::iterator ip = gbtP.find(key);
+	if (ip == gbtP.end())	return false;
+	//--- Check for name --------------------
+	CSceneryPack *pak = (*ip).second;
+	return pak->AllreadyIN(pn);
+}
+//--------------------------------------------------------------------------------
 //	Add a pod to the GBT pack
 //--------------------------------------------------------------------------------
 void	CSceneryDBM::AddPodToGBT(CSceneryPOD *pod)
@@ -176,9 +187,11 @@ void CSceneryDBM::Cleanup (void)
 {	//----Clean QGT list -------------------------
 	std::map<U_INT,CSceneryPack*>::iterator ip;
 	for (ip=sqgt.begin(); ip!=sqgt.end(); ip++) delete (*ip).second;
+	sqgt.clear();
 	//----Clean GBT list -------------------------
 	std::map<U_INT,CSceneryPack*>::iterator ig;
 	for (ig=gbtP.begin(); ig!=gbtP.end(); ig++) delete (*ig).second;
+	gbtP.clear();
 }
 
 //--------------------------------------------------------------
@@ -269,6 +282,8 @@ void CSceneryDBM::ProcessPOD(char *path,char *fn)
 	strncpy(fname,dbp,lim);
 	fname[lim] = 0;
 	//--- Look into each files ---------------
+	//if (strncmp(fn,"Hyere",5)==0)
+	//int a = 0;
 	scanpod(pfs,name,ScnpodCB);
 
 }
@@ -289,9 +304,12 @@ int CSceneryDBM::CheckForScenery(PFSPODFILE *p)
 	if (nf != 2)		return 0;
 	//---- There is a DATA indication ----------------------
 	char *dot = strchr(fn1,'.');
-	if (0 == dot)		return SceneryForGBT(p,gx,gz);
+	if (0 == dot)										return SceneryForGBT(p,gx,gz);
+	//--- Check TRN files -----------------------------
+	if (strncmp(dot,".TRN",4) == 0)	return SceneryForGBT(p,gx,gz);
+	//--- Check scenery file S00 S01 S10 S11 ---------------
 	nf			= sscanf(dot,".S%1u%1u",&sx,&sz);
-	if (nf != 2)		return SceneryForGBT(p,gx,gz);
+	if (nf != 2)										return 0;				//SceneryForGBT(p,gx,gz);
 	//--- This is a scenery file XXX.s00 to .S11 -----------
 	gx = (gx << 1) + sx;						// QGT X index
 	gz = (gz << 1) + sz;						// QGT Z index
@@ -301,7 +319,7 @@ int CSceneryDBM::CheckForScenery(PFSPODFILE *p)
 	CSceneryPOD *pod = new CSceneryPOD(key,p->pod->name);
 	AddPodToQGT(pod);
 	SCENE("      ***** ADD QGT(%03d-%03d) SCENERY %s",gx,gz,fn);
-	return 1;
+	return 0;
 }
 //--------------------------------------------------------------
 //	We check the database (if any) for this pod file
@@ -314,14 +332,17 @@ int CSceneryDBM::CheckDatabase(char *pn)
 	return (in != 0);
 }
 //-----------------------------------------------------------------
-//	Load the scenery from path
+//	Associate the pod to the QGT
+//	NOTE:  The key is a global tile Key
 //-----------------------------------------------------------------
 int CSceneryDBM::SceneryForGBT(PFSPODFILE *p,int gx,int gz)
-{	U_INT key					= QGTKEY((gx << 1),(gz << 1));
-	CSceneryPOD *pod	= new CSceneryPOD(key,p->pod->name);
+{	U_INT key		= QGTKEY((gx << 1),(gz << 1));
+	char *pname = p->pod->name;
+	if (AllreadyIN(key,pname))	return 0;
+	CSceneryPOD *pod	= new CSceneryPOD(key,pname);
 	AddPodToGBT(pod);
 	SCENE("      ***** ADD GBT(%03d-%03d) SCENERY %s",gx,gz,p->pod->name);
-	return 1;
+	return 0;
 }
 //-----------------------------------------------------------------
 //	Load the scenery from path
@@ -564,6 +585,18 @@ CSceneryPack::~CSceneryPack()
 void CSceneryPack::MountPODs(CSceneryDBM *dbm)
 {	for (U_INT k=0; k < apod.size(); k++) apod[k]->Mount();
 	return;
+}
+//------------------------------------------------------------------
+//	remove all pods found
+//------------------------------------------------------------------
+bool CSceneryPack::AllreadyIN(char *pn)
+{	std::vector<CSceneryPOD*>::iterator ip;
+  for (ip=apod.begin(); ip!=apod.end(); ip++)
+	{	CSceneryPOD *pod = (*ip);
+		char *nm = pod->GetName();
+		if (strcmp(pn,nm) == 0)	return true;
+	}
+	return false;
 }
 
 //------------------------------------------------------------------

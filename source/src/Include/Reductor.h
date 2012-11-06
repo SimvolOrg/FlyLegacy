@@ -52,7 +52,7 @@ public:
   //---- METHODS--------------------------------------------------
   CrTriangle(CrPart *mp, CrVertex *v0,CrVertex *v1,CrVertex *v2);
   CrTriangle();
- ~CrTriangle();
+  virtual ~CrTriangle();
   bool  HasVertex(CrVertex *v);
   bool  Check(int mvt);
   void  ReplaceVertex(CrVertex *vu,CrVertex *vv);
@@ -90,16 +90,18 @@ class CrPart: public CrTriangle
   //--- Part attributes ---------------------------------
   int         type;                   // Part type
   U_CHAR      tsp;                    // Transparent indicator
-  char       *ntex;                   // Texture name
   //-----------------------------------------------------
   int         NbVT;                   // Number of vertices
   int         NbIN;                   // Number of Indices
-  void       *ref;                    // Texture reference
+  M3D_PART_INFO  *txp;								// Texture info
   U_INT      xOBJ;                    // Texture object
+	char      *texn;										// Texture name
   //-----METHOD -----------------------------------------
-  CrPart(int id,int type,void *ref);
+  CrPart(int id,int type,M3D_PART_INFO *ref);
+ ~CrPart()	{delete texn;}
   void  StoreInfo(M3D_PART_INFO &inf);
   void  CheckPart();
+	char *GetTexName();
   //-----------------------------------------------------
   inline void DecFace()     {NbIN -= 3;}
   inline void IncFace()     {NbIN += 3;}
@@ -110,7 +112,6 @@ class CrPart: public CrTriangle
   inline int  GetNbVertices() {return NbVT;}
   inline int  GetNbIndices()  {return NbIN;}
   inline U_CHAR GetTSP()      {return tsp;}
-  inline char  *GetTXN()      {return ntex;}
   inline U_INT  GetXOB()      {return xOBJ;}
 };
 //============================================================================
