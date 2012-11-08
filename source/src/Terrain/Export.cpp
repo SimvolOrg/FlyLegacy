@@ -330,7 +330,8 @@ CExport::CExport()
   GetIniVar("SQL","ExpGEN",&opt);
   gen		= opt;
 	sqm		=  globals->sqm;
-	pfs		= &globals->pfs;	
+	pfs		= &globals->pfs;
+	fui	  = globals->fui;	
   //------------------------------------------------------------
   opt = 0;
   GetIniVar("SQL","ExpELV",&opt);
@@ -773,7 +774,7 @@ void CExport::ExportCoastInDB()
   U_INT gx = 0;
   U_INT gz = 0;
   //---Get a list of all coast file per Globe Tiles -------------
-  globals->sqm->SEAtransaction();
+  sqm->SEAtransaction();
   for   (gz = 0; gz < 256; gz++)
   { for (gx = 0; gx < 256; gx++)
         { sprintf(name,"COAST/V%03d%03d.GTP",gx,gz);
@@ -781,7 +782,7 @@ void CExport::ExportCoastInDB()
           ExportCoastFile(name,gx,gz);
         }
   }
-  globals->sqm->SEAcommit();
+  sqm->SEAcommit();
 	globals->appState = APP_EXIT_SCREEN;
   return;
 }
@@ -855,8 +856,7 @@ COAST_VERTEX *CExport::CoastCount(COAST_VERTEX *pol)
 //  Export this File in Database
 //-----------------------------------------------------------------------------------------
 void CExport:: ExportCoastFile(char *name,int gx,int gz)
-{ SqlMGR *sqm = globals->sqm;
-  U_INT   ind = (gx << 16) | gz;
+{ U_INT   ind = (gx << 16) | gz;
   C_SEA  *sea = new C_SEA(ind,0);
   //----Init indice computation ----------------------------------------------
   bx  = gx << 1;                                         // base QGT X indice
@@ -907,7 +907,7 @@ void CExport::Export3Dmodels()
   minp  = red;
   globals->appState = APP_EXPORT;
   InitModelPosition();
-  globals->fui->SetNoticeFont(&globals->fonts.ftmono20);
+  fui->SetNoticeFont(&globals->fonts.ftmono20);
 	pif.mode= 0;								// Adding mode
 	SCENE("========== START MODEL IMPORT ==========");
 	if (globals->m3dDB)		return;
@@ -939,8 +939,8 @@ bool CExport::Prepare3Dmodel(char *fn, char opt)
 	//---------------------------------------------------------
 	mCnt++;
 	sprintf(tx,"TESTING %05d: %s in DATABASE",mCnt,mName);
-  globals->fui->DrawNoticeToUser(tx,200);
-  if (globals->sqm->Check3DModel(name)) return false;     // Already in DB
+  fui->DrawNoticeToUser(tx,200);
+  if (sqm->Check3DModel(name)) return false;     // Already in DB
 	if (Mod)	delete Mod;
   Mod   = new C3Dmodel(name,0);
   Mod->LoadPart("MODELS");
@@ -950,7 +950,7 @@ bool CExport::Prepare3Dmodel(char *fn, char opt)
   Polys->SetModel(Mod);
   face = Polys->GetNbFaces();
   sprintf(tx,"%s No %05d (%05d triangles):   %s",op,mCnt,face,mName);
-  globals->fui->DrawNoticeToUser(tx,200);
+  fui->DrawNoticeToUser(tx,200);
 	if (opt)  DrawModel();
   return true;
 }
@@ -1003,7 +1003,6 @@ void CExport::OneM3DPart(M3D_PART_INFO &pif)
   if (0 == inf.mADR)                          return;
 	if (0 == pif.ntex)                          return;
   //---Check if in database --------------------------------
-	SqlMGR *sqm = globals->sqm;
   if (!sqm->Check3DTexture(pif.ntex)) sqm->WriteM3DTexture(inf);
   delete [] inf.mADR;
   return;
@@ -1040,7 +1039,7 @@ void CExport::Export3DMlodQ(char * name, int n)
   float    bot = Mod->GetGround();
   C3DPart *prt = 0;
   for (prt = Mod->PopPart(n); prt != 0; prt = Mod->PopPart(n))
-  { globals->sqm->Write3Dmodel(name,prt,top, bot);
+  { sqm->Write3Dmodel(name,prt,top, bot);
     delete prt;
   }
   return;
@@ -1050,7 +1049,7 @@ void CExport::Export3DMlodQ(char * name, int n)
 //-----------------------------------------------------------------------------------------
 void CExport::M3DMsgIntro()
 { char *msg = "GATHERING ALL SCENERY FILES";
-  globals->fui->DrawNoticeToUser(msg,100);
+  fui->DrawNoticeToUser(msg,100);
 	stop	= 0;
 	Mod		= 0;
   return;
@@ -1066,7 +1065,7 @@ void CExport::CloseSceneries()
 				globals->scn->Deregister (key);
       }
     }
-  globals->fui->DrawNoticeToUser(mtm,500);
+  fui->DrawNoticeToUser(mtm,500);
   return;
 }
 //-----------------------------------------------------------------------------------------
@@ -1074,65 +1073,58 @@ void CExport::CloseSceneries()
 //-----------------------------------------------------------------------------------------
 int  CExport::ExecuteMOD()
 { char fn[PATH_MAX];
-	Clear			= 0;
   switch(State) {
 		//--- Intro message ------------------
 		case EXP_MSG1:
 			M3DMsgIntro();
+			Clear	= 0;
 			return EXP_INIT;					
 		//--- Collect all sceneries ----------
 		case EXP_INIT:
-			Clear = 1;
 			return EXP_FBIN;
 		//--- Init for BIN files ----------
 		case EXP_FBIN:
 			sprintf(fn,"MODELS/*.BIN");
 			mName = (char*)pfindfirst (&globals->pfs,fn);
-			Clear = 1;
 			return EXP_NBIN;
 		//--- Prepare one BIN file ------------
 		case EXP_NBIN:
 			if (stop)												return Pause();
-			if (0 == mName)		{Clear = 1;		return EXP_FSMF;} 
+			if (0 == mName)									return EXP_FSMF; 
 			if (Prepare3Dmodel(mName,1))		return EXP_WBIN;
 			mName = (char*)pfindnext (&globals->pfs);
-			Clear = 1;
 			return EXP_NBIN;
 		//--- Write the bin model --------------
 		case EXP_WBIN:
 			WriteTheModel();
 			mName = (char*)pfindnext (&globals->pfs);
-			Clear = 1;
 			return EXP_NBIN;
 		//--- Init for SMF files --------------
 		case EXP_FSMF:
+			Clear = 0;
 			sprintf(fn,"MODELS/*.SMF");
 			mName = (char*)pfindfirst (&globals->pfs,fn);
 			return EXP_NSMF;
 		//--- Prepare one SMF file -------------
 		case EXP_NSMF:
 			if (stop)											return Pause();
-			if (0 == mName)		{Clear = 1; return EXP_END;} 
+			if (0 == mName)								return EXP_END; 
 			if (Prepare3Dmodel(mName,1))	return EXP_WSMF;
 			mName = (char*)pfindnext (&globals->pfs);
-			Clear = 1;
 			return EXP_NSMF;
 		//--- Write one SMF file --------------
 		case EXP_WSMF:
 			WriteTheModel();
 			mName = (char*)pfindnext (&globals->pfs);
-			Clear = 1;
 			return EXP_NSMF;
 		//--- End of process ------------------
 		case EXP_END:
 			CloseSceneries();
-			Clear = 1;
 			globals->appState = APP_EXIT;
 			return EXP_OUT;
   }       //END OF SWITCH
   //------- STOP SIMU ------------------
 	globals->appState = APP_EXIT_SCREEN;
-	Clear = 1;
   return 0;
   }
 //------------------------------------------------------------------------------------
@@ -1149,9 +1141,10 @@ void CExport::KeyW3D(U_INT key,U_INT mod)
 //  M3D stop 
 //------------------------------------------------------------------------------------
 int CExport::Pause()
-{	char *mrx = "PAUSE. Type any key to continue. To stop type s";
-	globals->fui->DrawNoticeToUser(mrx,10);
-	globals->fui->DrawOnlyNotices();
+{	Clear = 0;
+	char *mrx = "PAUSE. Type any key to continue. To stop type s";
+	fui->DrawNoticeToUser(mrx,10);
+	fui->DrawOnlyNotices();
 	return State;
 }
 //=========================================================================================
@@ -1202,7 +1195,7 @@ void CExport::LoadUpdModel(char *name)
 //	Update the model
 //-------------------------------------------------------------------
 void CExport::UpdateTheModel(char *name)
-{	globals->sqm->DeleteM3DModel(name);
+{	sqm->DeleteM3DModel(name);
 	LoadUpdModel(name);
 	return;
 }
@@ -1212,26 +1205,97 @@ void CExport::UpdateTheModel(char *name)
 //-----------------------------------------------------------------------------------------
 //    CALL BACK FUNCTION
 //-----------------------------------------------------------------------------------------
+/*
 void GetTaxiway(CmHead *obj)
 { CAirport *apt = (CAirport *)obj;
   globals->exm->ExportOneTMS(apt);
   return;
 }
+*/
 //-----------------------------------------------------------------------------------------
 //  Request from MENU to export taxiways
 //-----------------------------------------------------------------------------------------
 void CExport::ExportTaxiways()
 { if (0 == txy) return;
   //---Collect all TMS files ---------------
+	count	= 0;
+  Mode  = EXP_TAXI;
+  State = EXP_TXY_1SKIP;
+  fName = 0;
+  globals->appState = APP_EXPORT;
+	fui->SetNoticeFont(&globals->fonts.ftmono20);
   apo = 0;
   apt = 0;
-  globals->sqm->GetAllAirports(GetTaxiway);
+ // globals->sqm->GetAllAirports(GetTaxiway);
+	fui->DrawNoticeToUser("MOUNTING ALL FILES",1);
+	SCENE("======= IMPORT ALL TAXIWAYS =============");
   return;
+}
+//-----------------------------------------------------------------------------------------
+// Warn for this file 
+//-----------------------------------------------------------------------------------------
+void CExport::ErrorTXY(char *msg)
+{	SCENE("File %s: %s",podN,msg);
+	return;
+}
+//-----------------------------------------------------------------------------------------
+// Warn for this file 
+//-----------------------------------------------------------------------------------------
+void CExport::NoticesTXY()
+{	if (0 == fName)			return;
+	_snprintf(edt,MAX_PATH,"PROCESSING FILE %s",fName);
+	fui->DrawNoticeToUser(edt,1);
+	return;
+}
+//-----------------------------------------------------------------------------------------
+//  Format airport Key
+//-----------------------------------------------------------------------------------------
+void CExport::FormatAptKey(char *fn)
+{	char idn[8];
+	int nf = sscanf(fn,"DATA/%32[^ .)].TMS",idn);
+	*Key	= 0;
+	if (0 == nf)		return;
+	if (strlen(idn) == 3)	strcpy(Key,"K");
+	strcat(Key,idn);
+	Key[4] = 0;
+	return;
+}
+//-----------------------------------------------------------------------------------------
+//  Find the first Taxiway file
+//-----------------------------------------------------------------------------------------
+void CExport::ProcessTXY()
+{ if (0 == fName)		return;
+	//--- Extract airport key ---------------------
+	FormatAptKey(fName);
+	strncpy(podN,fName,PATH_MAX);				// Save name
+	fName	= pfindnext (&globals->pfs);	// Next one
+	//--- Find associated airport -----------------
+	if (0 == *Key)	return ErrorTXY("Bad TMS name");
+	sqm->GetAirportByIden(Key,&apt);	
+	if (0 == apt)		return ErrorTXY("No Airport");
+	//-----------------------------------------------
+	char *akey = apt->GetKey();
+	if (sqm->FileInTXY(akey))		return;
+	//--- Add new Taxiway ----------------------------
+	apo = new CAptObject(apt);
+  CDataTMS tms(apo);                           // TMS decoder
+  tms.DecodeBinary(podN);                        // Create all queues
+	//----Export all pavements ------------------------------
+  ExportPaveQ(akey);
+  ExportEdgeQ(akey);
+  ExportCentQ(akey);
+  ExportLiteQ(akey,TC_GRN_LITE);
+  ExportLiteQ(akey,TC_BLU_LITE);
+  //-------------------------------------------------------
+	//--- Warn for next file --------------------------------
+	SCENE("...Add taxiway from %s",podN);
+	return;
 }
 
 //-----------------------------------------------------------------------------------------
 //    Export taxiway for one airport
 //-----------------------------------------------------------------------------------------
+/*
 void CExport::ExportOneTMS(CAirport *apt)
 { char *iden = apt->GetIdentity();
   char *key = apt->GetKey();
@@ -1252,9 +1316,10 @@ void CExport::ExportOneTMS(CAirport *apt)
   //-------------------------------------------------------
   delete apo;
   delete apt;
+
   return;
 }
-
+*/
 //-----------------------------------------------------------------------------------------
 //  Concatenate vertex into one table
 //  Source pavement are packed into a more compact pavemetn structure (up to 498 vertices)
@@ -1312,7 +1377,7 @@ void CExport::ExportPaveQ(char *key)
     pave->SetType (PAVE_TYPE_PAVE);
     pave->SetUsage(PAVE_USE_TAXI);
     //----Write the record --------------------
-    if (0 != pave->GetNBVT())  globals->sqm->WritePavement(pave,key);
+    if (0 != pave->GetNBVT())  sqm->WritePavement(pave,key);
     delete pave;
   }
   return;
@@ -1328,7 +1393,7 @@ void CExport::ExportEdgeQ(char *key)
     pave->SetType (PAVE_TYPE_EDGE);
     pave->SetUsage(PAVE_USE_TAXI);
     //----Write the record --------------------
-    if (0 != pave->GetNBVT()) globals->sqm->WritePavement(pave,key);
+    if (0 != pave->GetNBVT()) sqm->WritePavement(pave,key);
     delete pave;
   }
   return;
@@ -1344,7 +1409,7 @@ void CExport::ExportCentQ(char *key)
     pave->SetType (PAVE_TYPE_CENT);
     pave->SetUsage(PAVE_USE_TAXI);
     //----Write the record --------------------
-    if (0 != pave->GetNBVT()) globals->sqm->WritePavement(pave,key);
+    if (0 != pave->GetNBVT()) sqm->WritePavement(pave,key);
     delete pave;
   }
   return;
@@ -1361,10 +1426,40 @@ void CExport::ExportLiteQ(char *key,U_CHAR col)
     if (col != head->GetColor1()) return;   // End of color
     lite = BuildLite(qhd,col);
     //----Write the record --------------------
-    if (0 != lite->GetNbSpot()) globals->sqm->WriteTaxiLigth(lite,key);
+    if (0 != lite->GetNbSpot()) sqm->WriteTaxiLigth(lite,key);
     delete lite;
   }
   return;
+}
+//-----------------------------------------------------------------------------------------
+//  Execute export taxiways
+//-----------------------------------------------------------------------------------------
+int CExport::ExecuteTXY()
+{	char *fp	= "DATA/*.TMS";
+	switch (State)	{
+		//--- Skip a frame to draw notice --------------
+		case EXP_TXY_1SKIP:
+			return EXP_TXY_MOUNT;
+		//--- Mount all files --------------------------
+		case EXP_TXY_MOUNT:
+			globals->scn->MountAll();
+			fName	= pfindfirst(pfs,fp);
+		  NoticesTXY();
+			return EXP_TXY_PFILE;
+		//--- Extract first file -----------------------
+		case EXP_TXY_PFILE:
+			ProcessTXY();
+			NoticesTXY();
+			if (apo)	delete apo;
+			if (apt)	delete apt;
+			apo = 0;
+			apt	= 0;
+			return (fName)?(EXP_TXY_PFILE):(0);
+
+	}
+	globals->appState = APP_EXIT_SCREEN;
+	SCENE("======= END IMPORT TAXIWAYS =============");
+	return 0;
 }
 //=========================================================================================
 //  Export Generic texture
@@ -1431,7 +1526,7 @@ void CExport::DecodeTexture(char *name)
   strncpy(inf.path,rnm,TC_LAST_INFO_BYTE);
   inf.path[TC_LAST_INFO_BYTE]  = 0;
   //------Write the file in Database -----------------------------
-  globals->sqm->WriteGenTexture(inf,tab);
+  sqm->WriteGenTexture(inf,tab);
   //--------------------------------------------------------------
   delete [] inf.mADR;
   return;
@@ -1452,7 +1547,7 @@ void CExport::WriteMskTexture(char *name,int side)
  *dot       = 0;
   strncpy(inf.path,rnm,TC_LAST_INFO_BYTE);
   inf.path[TC_LAST_INFO_BYTE] = 0;
-  globals->sqm->WriteAnyTexture(inf);
+  sqm->WriteAnyTexture(inf);
   delete [] inf.mADR;
   return;
 }
@@ -1474,7 +1569,7 @@ void CExport::WriteRwyTexture(char *name,char seg,char tsp)
  *dot       = 0;
   strncpy(inf.path,rnm,TC_LAST_INFO_BYTE);
   inf.path[TC_LAST_INFO_BYTE] = 0;
-  globals->sqm->WriteAnyTexture(inf);
+  sqm->WriteAnyTexture(inf);
   delete [] inf.mADR;
   return;
 }
@@ -1496,7 +1591,7 @@ void CExport::WritePNGTexture(char *name,char tsp)
  *dot       = 0;
   strncpy(inf.path,rnm,TC_LAST_INFO_BYTE);
   inf.path[TC_LAST_INFO_BYTE] = 0;
-  globals->sqm->WriteAnyTexture(inf);
+  sqm->WriteAnyTexture(inf);
   delete [] inf.mADR;
   return;
 }
@@ -1538,10 +1633,12 @@ void CExport::ScanDirectory(int x, int z)
 //  Export Time Slice
 //=========================================================================================
 int CExport::TimeSlice(float dT)
-{ if (EXP_MW3D == Mode)		State = ExecuteMOD();
+{ Clear	= 1;
+  if (EXP_MW3D == Mode)		State = ExecuteMOD();
   if (EXP_TRNF == Mode)		State =	ExecuteTRN();
 	if (EXP_WOBJ == Mode)		State = ExecuteOBJ();
-  globals->fui->DrawOnlyNotices();
+	if (EXP_TAXI == Mode)		State = ExecuteTXY();
+  fui->DrawOnlyNotices();
   return Clear;
 }
 //=========================================================================================
@@ -1562,7 +1659,7 @@ void CExport::ExportSceneryOBJ()
   State = EXP_OBJ_INIT;
   fName = 0;
   globals->appState = APP_EXPORT;
-	globals->fui->SetNoticeFont(&globals->fonts.ftmono20);
+	fui->SetNoticeFont(&globals->fonts.ftmono20);
 	mCnt	= 0;
 	eof		= 0;
 	SCENE("================ START EXPORT =================");
@@ -1573,7 +1670,7 @@ void CExport::ExportSceneryOBJ()
 //---------------------------------------------------------------------------
 void CExport::InitOBJmsg()
 {	char *msg = "MOUNTING SCENERY FILES ";
-	globals->fui->DrawNoticeToUser(msg,200);
+	fui->DrawNoticeToUser(msg,200);
 	Clear = 1;
 	return;
 }
@@ -1596,7 +1693,7 @@ void CExport::BuildOBJname(char *fn)
 	//---------------------------------------------------------
 	char msg[1024];
 	_snprintf(msg,1023,"PROCESS: %s",podN);
-	globals->fui->DrawNoticeToUser(msg,200);
+	fui->DrawNoticeToUser(msg,200);
 	return;
 }
 
@@ -1648,7 +1745,7 @@ void CExport::ExportOBJ(char *fn)
 	//----Write all objects -------------------------------
   CWobj *obj = sny.GetWOBJ();
   while (obj)
-  {	globals->sqm->WriteWOBJ(qKey,obj,rowid);
+  {	sqm->WriteWOBJ(qKey,obj,rowid);
     delete obj;
     obj = sny.GetWOBJ();
     }
@@ -1712,7 +1809,7 @@ void CExport::CheckSceneryFiles()
 void CExport::CheckThisFile(char *fn)
 { char *n1 = fn;
 	if (strncmp(fn,"DATA/",5) == 0) n1 +=5;
-	int   nb = globals->sqm->SearchWOBJ(n1);
+	int   nb = sqm->SearchWOBJ(n1);
 	if (0 == nb)		return;
 	//---------------------------------------------------------
 	SCENE("  File Already in SQL base: %s",fn);
@@ -1733,7 +1830,7 @@ void CExport::ExportAllTRNs()
   State = EXP_TRN_INIT;
   fName = 0;
   globals->appState = APP_EXPORT;
-	globals->fui->SetNoticeFont(&globals->fonts.ftmono20);
+	fui->SetNoticeFont(&globals->fonts.ftmono20);
 	mCnt	= 0;
 	eof		= 0;
 	SCENE("================ START EXPORT =================");
@@ -1744,7 +1841,7 @@ void CExport::ExportAllTRNs()
 //-----------------------------------------------------------------------------------------
 void CExport::InitTRNmsg()
 {	char *msg = "MOUNTING SCENERY FILES ";
-	globals->fui->DrawNoticeToUser(msg,200);
+	fui->DrawNoticeToUser(msg,200);
 	Clear = 1;
 	return;
 }
@@ -1808,7 +1905,7 @@ int CExport::BuildTRNname(char *fn)
 	//---------------------------------------------------------
 	char msg[1024];
 	_snprintf(msg,1023,"PROCESS: %s",podN);
-	globals->fui->DrawNoticeToUser(msg,200);
+	fui->DrawNoticeToUser(msg,200);
 	return 1;
 }
 //-----------------------------------------------------------------------------------------
@@ -1881,12 +1978,12 @@ void CExport::ExportTRN(char *fn)
 //---------------------------------------------------------------------------
 void CExport::ExportSUPelevation(C_STile *asp)
 {	asp->SetKey(qKey);
-  globals->sqm->WriteElevationTRN(*asp,rowid);
+  sqm->WriteElevationTRN(*asp,rowid);
 	//--- Now, export all detail tiles from supertile ------
 	
 	TRN_HDTL *hd = asp->PopDetail();
 	while (hd)
-	{	globals->sqm->WriteElevationDET(qKey,*hd,rowid);
+	{	sqm->WriteElevationDET(qKey,*hd,rowid);
 		delete hd;
 		hd	= asp->PopDetail();
 	}

@@ -2953,7 +2953,7 @@ public:
 };
 //===================================================================================
 //	Executable object
-//	Must supply 2 methodes:  TimeSlice and Draw
+//	Must supply 3 methodes:  TimeSlice and Draw, DrawExternal
 //===================================================================================
 class CExecutable {
 	//--- Attribute is next executable of same type -------
@@ -2961,6 +2961,7 @@ class CExecutable {
 	//--- Methods -----------------------------------------
 public:
 	CExecutable() {Next = 0;}
+	virtual ~CExecutable() {;}
 	//-----------------------------------------------------
 	CExecutable *NextExec()	{return Next;}
 	//-----------------------------------------------------

@@ -32,7 +32,7 @@ struct AB_TXT {
 //	Change date and version here
 //===========================================================================================
 char *abT00	= "Version JS 1.04";
-char *abT01 = "5 Nov 2012";
+char *abT01 = "7 Nov 2012";
 char *abT02 = "FlyLegacy is hosted at www.simvol.org";
 char *abt03 = "(Stéphane Maillard President)";
 //===========================================================================================

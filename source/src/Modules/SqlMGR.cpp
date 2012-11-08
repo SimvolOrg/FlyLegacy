@@ -1441,7 +1441,7 @@ void SqlMGR::APTByKey(CDataBaseREQ *rqb)
 //----------------------------------------------------------------------------------
 void SqlMGR::GetAirportByIden  (char *idn,CAirport **ptr)
 { char req[1024];
-	_snprintf(req,1024,"SELECT * FROM APT WHERE iden = '%s'; ",idn);
+	_snprintf(req,1024,"SELECT * FROM APT WHERE (iden = '%s') OR (afaa = '%s'); ",idn,(idn + 1));
   sqlite3_stmt *stm = CompileREQ(req,genDBE);
  *ptr = 0;
   if (SQLITE_ROW == sqlite3_step(stm))
@@ -2228,6 +2228,17 @@ int  SqlMGR::DecodeLITE(CAptObject *apo)
   sqlite3_finalize(stm);
   return rec;
 }
+//------------------------------------------------------------------------------
+//  Check for Taxiway in Database
+//------------------------------------------------------------------------------
+bool SqlMGR::FileInTXY(char *akey)
+{	char rq[1024];
+	_snprintf(rq,1023,"SELECT * FROM Pave WHERE akey='%s';*",akey);
+	sqlite3_stmt *stm = CompileREQ(rq,txyDBE);
+	bool in = (SQLITE_ROW == sqlite3_step(stm));
+	sqlite3_finalize(stm);                      // Close statement
+	return in;
+}
 
 //==============================================================================
 //  TEXTURE ROUTINES
@@ -2559,6 +2570,18 @@ bool SqlMGR::FileInOBJ(char *fn)
 	sqlite3_finalize(stm);                      // Close statement
 	return in;
 }
+//==============================================================================
+//  Check for POD-OBJ in Database
+//==============================================================================
+bool SqlMGR::SceneInOBJ(char *pn)
+{	char rq[1024];
+	_snprintf(rq,1023,"SELECT * from FNM where file LIKE '%%%s%%';*",pn);
+	sqlite3_stmt *stm = CompileREQ(rq,objDBE);
+	bool in = (SQLITE_ROW == sqlite3_step(stm));
+	sqlite3_finalize(stm);                      // Close statement
+	return in;
+}
+
 //==============================================================================
 //  Write POD-OBJ in Database
 //==============================================================================

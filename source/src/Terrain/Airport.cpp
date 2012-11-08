@@ -726,7 +726,13 @@ CAptObject::CAptObject(CAirport *apt)
   txy     = 0;
   tcm     = globals->tcm;
   scale   = tcm->GetScale();
-	
+	taxiMGR = 0;									// Taxi manager
+	//---- Clear vbo buffer to avoid drawing -----------------------
+	pVBO	  = 0;
+	eVBO		= 0;
+	cVBO		= 0;
+	rVBO		= 0;
+	gBUF    = 0;
 }
 //----------------------------------------------------------------------------------
 //  Init position
@@ -781,9 +787,9 @@ CAptObject::~CAptObject()
 	for (U_INT k = 0; k < tmcQ.size(); k++) delete tmcQ[k];
 	tmcQ.clear();
 	//--- Free ground VBO -----------------------
-	if (gBUF)		delete [] gBUF;
+	if (gBUF)			delete [] gBUF;
 	//-------------------------------------------
-	delete taxiMGR;
+	if (taxiMGR)	delete taxiMGR;
 	//-------------------------------------------
   UnmarkGround();
 }

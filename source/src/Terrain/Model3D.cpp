@@ -482,7 +482,7 @@ int C3DMgr::LoadFromPod(C3Dfile &scf)
 	//--------------------------------------------------
 	while (name)
   { nbo = scf.Decode(name,pod); 
-	  if (tr && nbo) if (tr && nbo) TraceLoad(nbo,name,qgt);
+	  if (tr && nbo) TraceLoad(nbo,name,qgt);
     name = (char*)pfindnext (&globals->pfs);		// Next file
   }
 	//--- Return total decoded objects -----------------
@@ -712,6 +712,9 @@ int C3Dfile::Decode(char *fname,char *pn)
 	_snprintf(fullN,(PATH_MAX-1),"(%s)-(%s)",deb,pod);
   strncpy(namef,fname,63);
   namef[63] = 0;
+	//---Check if file is in database OBJ ------------
+	bool sql	= (globals->objDB != 0) && (pn != 0);
+	if (sql && globals->sqm->SceneInOBJ(deb))	return 0;;
   //---Open the file -------------------------------
 	cntr			= 0;
   SStream s(this,fname);

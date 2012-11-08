@@ -233,8 +233,9 @@ CDataTMS::CDataTMS(CAptObject *apo)
 //------------------------------------------------------------------
 //  Open and read the file
 //------------------------------------------------------------------
-bool CDataTMS::DecodeBinary(char *fname)
-{ SStream s(this,fname);
+bool CDataTMS::DecodeBinary(char *fn)
+{ CStreamFile sf;
+	if (sf.OpenRead(fn,&globals->pfs))	sf.ReadFrom(this);	
   return true;
 }
 //------------------------------------------------------------------

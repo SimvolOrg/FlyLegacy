@@ -666,6 +666,7 @@ public:
   void     WriteTaxiLigth(CBaseLITE *lite, char * key);
   int      DecodePAVE(CAptObject *apo);
   int      DecodeLITE(CAptObject *apo);
+	bool		 FileInTXY(char *key);
   //---- WRITING TEXTURE DATA -------------------------------------------
   int      WriteGenTexture(TEXT_INFO &inf,char *tab);
   int      WriteAnyTexture(TEXT_INFO &inf);
@@ -678,6 +679,7 @@ public:
   void    WriteLightsFrom(CWobj *obj);
 	int     WriteOBJname(char *fn);
 	bool		FileInOBJ(char *fn);
+	bool		SceneInOBJ(char *pn);
 	int 		SearchWOBJ(char *fn);
 	bool		SearchPODinOBJ(char *pn);
   int     ReadWOBJ(C_QGT *qgt);

@@ -102,9 +102,7 @@ CSceneryDBM::CSceneryDBM()
 //	NOTE: When configured to export Objects, Models or TRN files, all POD are mounted
 //----------------------------------------------------------------------------------
 void CSceneryDBM::Init (void)
-{ // Buffer for the current search path
-  char searchPath[PATH_MAX];
-	int pm;
+{ int pm;
 	pfs = &globals->pfs;
 	//--- Check for export ---------------------------
 	exp	= 0;
@@ -118,8 +116,7 @@ void CSceneryDBM::Init (void)
 	GetIniVar("SQL","ExpTRN",&pm);
 	exp |= pm;
   //--- Load SCF files from FlyLegacy /Scenery folder
-  strcpy (searchPath, "SCENERY/");
-  LoadInFolderTree (searchPath);
+  LoadInFolderTree ("SCENERY/",SCN_OPT_SELECT);
 	//--- Locate OSM folder ----------------------------
 	fname[0] = 0;
 	GetIniString("SQL","OSMDB",fname,FNAM_MAX);
@@ -193,12 +190,24 @@ void CSceneryDBM::Cleanup (void)
 	for (ig=gbtP.begin(); ig!=gbtP.end(); ig++) delete (*ig).second;
 	gbtP.clear();
 }
-
+//--------------------------------------------------------------
+// Process POD according to option
+//--------------------------------------------------------------
+void CSceneryDBM::ProcessThePOD(char *pn, char *fn, char opt)
+{	if (opt == SCN_OPT_SELECT)			SelectPOD(pn,fn);
+	if (opt == SCN_OPT_MOUNT)
+	{	char pname[MAX_PATH];
+		_snprintf(pname,MAX_PATH,"%s%s",pn,fn);
+		paddpod(pfs,pname);
+		SCENE(".. mount POD %s",pname);
+	}
+	return;
+}
 //--------------------------------------------------------------
 // Search for POD in this directory
 //	Locate each POD and process it 
 //--------------------------------------------------------------
-void CSceneryDBM::LookForPOD(char *path)
+void CSceneryDBM::LookForPOD(char *path,char opt)
 {	int sh = 0;
 	SCENE("SEARCH POD in: %s", path);
   // Iterate over all files in this folder.  Sub-folders are ignored
@@ -216,8 +225,9 @@ void CSceneryDBM::LookForPOD(char *path)
 			if (0 == ext)								continue;
       if ((_stricmp (ext, ".EPD") == 0) || (_stricmp(ext, ".POD") == 0))
 			{	char *fn = dp->d_name;
-				if (sh)		MountSharedPod(path,fn);
-			  else			ProcessPOD(path,fn);				}
+				if (sh)					MountSharedPod(path,fn);
+				else						ProcessThePOD(path,fn,opt);
+			}
     }
   }
   ulCloseDir(dirp);
@@ -263,7 +273,7 @@ void CSceneryDBM::SendPOD(char *pn)
 //			as a 2D scenery pack
 //		-Other files are mounted as a 3D object scenery pack
 //--------------------------------------------------------------
-void CSceneryDBM::ProcessPOD(char *path,char *fn)
+void CSceneryDBM::SelectPOD(char *path,char *fn)
 {	char *scn = "SCENERY/";
   int   lgr = strlen(scn);
 	int   lim = FNAM_MAX;
@@ -274,7 +284,7 @@ void CSceneryDBM::ProcessPOD(char *path,char *fn)
 	//--- First search pod in databases ------
 	char *pn  = strstr(path,scn) + lgr;
 	_snprintf(name,lim,"%s%s",pn,fn);
-	int   in  = CheckDatabase(name);
+	int   in  = CheckDatabase(fn);
 	if (in)		return Warn01(name);
 	//--- Search the QGT ---------------------
   _snprintf(name,lim,"%s%s",path,fn);
@@ -302,14 +312,15 @@ int CSceneryDBM::CheckForScenery(PFSPODFILE *p)
 	char *fn1 = fn + 5;
 	int nf	= sscanf(fn1,"D%3u%3u/",&gx,&gz);
 	if (nf != 2)		return 0;
+	//--- For debugg only ----------------------------------
+	//if (strncmp(fn,"DATA/D170158",12) == 0)
+	//int a = 0;
 	//---- There is a DATA indication ----------------------
 	char *dot = strchr(fn1,'.');
 	if (0 == dot)										return SceneryForGBT(p,gx,gz);
-	//--- Check TRN files -----------------------------
-	if (strncmp(dot,".TRN",4) == 0)	return SceneryForGBT(p,gx,gz);
 	//--- Check scenery file S00 S01 S10 S11 ---------------
 	nf			= sscanf(dot,".S%1u%1u",&sx,&sz);
-	if (nf != 2)										return 0;				//SceneryForGBT(p,gx,gz);
+	if (nf != 2)										return SceneryForGBT(p,gx,gz);
 	//--- This is a scenery file XXX.s00 to .S11 -----------
 	gx = (gx << 1) + sx;						// QGT X index
 	gz = (gz << 1) + sz;						// QGT Z index
@@ -349,10 +360,10 @@ int CSceneryDBM::SceneryForGBT(PFSPODFILE *p,int gx,int gz)
 //	Search all pods file located in scenery directory and all
 //			subdirectories.
 //-----------------------------------------------------------------
-void CSceneryDBM::LoadInFolderTree (const char *path)
+void CSceneryDBM::LoadInFolderTree (char *path, char opt)
 {
   // Load POD files from this folder
-	LookForPOD((char*)path);
+	LookForPOD((char*)path,opt);
   // Recursively load SCF files from subdirectories
   ulDir* dirp = ulOpenDir (path);
   if (dirp != NULL) {
@@ -366,7 +377,7 @@ void CSceneryDBM::LoadInFolderTree (const char *path)
         // This is a sub-folder, attempt to load scenery files in it
         char newPath[PATH_MAX];
 				_snprintf(newPath,(PATH_MAX-1),"%s%s/",path,dp->d_name);
-        LoadInFolderTree (newPath);
+        LoadInFolderTree (newPath,opt);
       }
     }
     ulCloseDir(dirp);
@@ -407,13 +418,17 @@ void CSceneryDBM::Register (C_QGT *qgt)
 //	Mount all sceneries
 //------------------------------------------------------------------------------
 void CSceneryDBM::MountAll()
-{	std::map<U_INT,CSceneryPack*>::iterator p1;
+{	SCENE("=======> MOUNT ALL POD FILES =============");
+	LoadInFolderTree ("SCENERY/",SCN_OPT_MOUNT);
+	SCENE("=======> ALL POD FILES MOUNTED=============");
+/*
+	std::map<U_INT,CSceneryPack*>::iterator p1;
 	for (p1 = sqgt.begin(); p1 != sqgt.end(); p1++)
 	{	CSceneryPack *pak = (*p1).second;
 	  pak->MountPODs(this);
 		U_INT gx	= pak->gx;
 		U_INT gz  = pak->gz;
-		SCENE("SCENERY MOUNTED for QGT (%03d-%03d)",gx,gz);
+		SCENE("..SCENERY MOUNTED for QGT (%03d-%03d)",gx,gz);
 	}
 	//--------------------------------------------------
 	for (p1 = gbtP.begin(); p1 != gbtP.end(); p1++)
@@ -421,9 +436,10 @@ void CSceneryDBM::MountAll()
 	  pak->MountPODs(this);
 		U_INT gx	= pak->gx;
 		U_INT gz  = pak->gz;
-		SCENE("SCENERY MOUNTED for GBT (%03d-%03d)",gx,gz);
+		SCENE("..SCENERY MOUNTED for GBT (%03d-%03d)",gx,gz);
 	}
-
+*/
+	
 	return;
 }
 //------------------------------------------------------------------------------

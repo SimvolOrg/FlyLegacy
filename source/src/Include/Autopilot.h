@@ -271,6 +271,7 @@ protected:
 	//--- Ground target ---------------------------------------------------
 	LND_DATA  *rend;							// Runway end
 	//--- Autothrottle parameters -----------------------------------------
+	double		 mRAT;							// Maximum rate
 	double     cRAT;							// Current rate to maintain
 	double     xRAT;							// Cruise rate
 	double     sAPR;							// Approach speed
@@ -279,8 +280,6 @@ protected:
 	double     vROT;							// Rotate speed
 	double		 aTGT;							// Target altitude
   //--- LEG2 mode control values --------------------------------------
-  double     tRAD;                         // Turning radius
-  double     sin3;                          // Sine(3°)
   double     glide;                         // Catching glide angle
 	double     rDIS;													// Remaining distance
 	//--- Lateral control values ----------------------------------------
@@ -385,7 +384,7 @@ public:
 	int				  EnterTakeOFF(char x,LND_DATA *rdt);
 	bool				EnterGPSMode();
 	void				ReleaseControl()		{xCtl = 0;}
-	void				SetWPTmode(double alt);
+	void				EnterWPT(double alt);
   //-------------------------------------------------------------------
   double          RoundValue(double v,double p);
   double          GetAOS();

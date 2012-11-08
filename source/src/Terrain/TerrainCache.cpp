@@ -2234,8 +2234,7 @@ int C_QGT::StepINI()
 //	-Otherwise load default elevations
 //---------------------------------------------------------------------
 int C_QGT::StepELV()
-{	//bool ok = AreWe(8,323);
-  if (HasTRN())		return 1;
+{ if (HasTRN())		return 1;
 	return tcm->RequestELV(this);
 }
 //---------------------------------------------------------------------

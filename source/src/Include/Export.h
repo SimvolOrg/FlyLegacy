@@ -72,6 +72,13 @@ class SqlMGR;
 #define EXP_OBJ_WRITE 5										// Write OBJ
 #define EXP_OBJ_EXIT	6										// Exit
 //============================================================================
+//	Export TXY files
+//============================================================================
+#define EXP_TXY_MOUNT (1)
+#define EXP_TXY_1SKIP (2)
+#define EXP_TXY_PFILE (3)
+
+//============================================================================
 //	IMPORT Airport Objects
 //============================================================================
 #define IMP_APT_INIT  (1)
@@ -81,6 +88,7 @@ class SqlMGR;
 #define EXP_TRNF	2												// Export TRN files
 #define EXP_WOBJ	3												// Export world objects
 #define IMP_APTO  4												// Import airport objects
+#define EXP_TAXI	5												// Export Taxiways
 //============================================================================
 //  Class to export DATA for SQL Database
 //============================================================================
@@ -100,6 +108,7 @@ class CExport {
 	SQL_DB   *DB;														// Curent database
 	//--- Stream file ---------------------------------------------
 	CStreamFile sf;
+	CFuiManager *fui;
   //-------------------------------------------------------------
   char gen;                               // Export indicator
   char elv;                               // Export ELV
@@ -121,10 +130,12 @@ class CExport {
   U_INT minp;                             // Minimum to keep
   CPolyShop *Polys;                       // PolyShop 
   C3Dmodel  *Mod;                         // Model
+	//--- Used by all ----------------------------------------------
+	char *fName;														// File name
+	char  Key[8];														// Ident Key
 	//--- TRN control ----------------------------------------------
 	char eof;																// End of file
 	char *pod;
-	char *fName;														// File name
 	char  podN[PATH_MAX];										// Pod name
   //----Generic parameters ---------------------------------------
 	U_INT qKey;															// QGT key
@@ -208,8 +219,13 @@ public:
 	void	LoadUpdModel(char *name);
 	void	UpdateTheModel(char *name);
   //-----TAXIWAYS---------------------------------------------
+	void	ErrorTXY(char *msg);
+	void	ProcessTXY();
+	void	NoticesTXY();
   void  ExportTaxiways();
-  void  ExportOneTMS(CAirport *apt);
+	void	FormatAptKey(char *fn);
+	int		ExecuteTXY();
+  //void  ExportOneTMS(CAirport *apt);
   CPaveRWY  *BuildPave(CPaveQ *qhd);
   CBaseLITE *BuildLite(CLiteQ *qhd,U_CHAR col);
   void  ExportPaveQ(char *key);

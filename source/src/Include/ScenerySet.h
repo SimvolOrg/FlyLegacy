@@ -31,6 +31,9 @@
 //===================================================================================
 class CSceneryDBM;
 struct SQL_DB;
+//===================================================================================
+#define SCN_OPT_SELECT	(1)
+#define SCN_OPT_MOUNT   (2)
 //==================================================================================
 //	Class CSceneryPOD to hold a scenery POD associated to a QGT or a GBT
 //==================================================================================
@@ -122,14 +125,15 @@ public:
 	void		MountSharedPod(char *pat,char *fn);
   //  Load initial files --------------------------------------------------
 protected:
-  void    LoadInFolderTree (const char *path);
+  void    LoadInFolderTree (char *path,char opt);
 	void		Warn01(char *fn);
 	void		SendPOD(char *pn);
 	bool		AllreadyIN(U_INT key,char *pn);
+	void		ProcessThePOD(char *pn, char *fn, char opt);
 	//------------------------------------------------------------------------
 	int     CheckDatabase(char *pn);
-	void		LookForPOD(char *path);
-	void		ProcessPOD(char *path,char *fn);
+	void		LookForPOD(char *path, char opt);
+	void		SelectPOD(char *path,char *fn);
 	int			GetSceneryType(char *path);
 	int 		SceneryForGBT(PFSPODFILE *p,int gx,int gz);
   //------------------------------------------------------------------------

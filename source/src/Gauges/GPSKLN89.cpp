@@ -4448,7 +4448,7 @@ void GPSRadio::TrackNewWPT()
 	//--- Configure autopilot ------------------------------
 	double alt = double(wTRK->GetAltitude());
 	if (wTRK->IsFirst()) alt = mveh->GetPosition().alt;
-	APL->SetWPTmode(alt);
+	APL->EnterWPT(alt);
 	return;
 }
 //--------------------------------------------------------------

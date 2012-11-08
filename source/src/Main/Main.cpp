@@ -1280,7 +1280,8 @@ void InitSimulation (void)
 	//--- Load external plugs ----------------------------------------
 	int p0 = 0;
 	GetIniVar("Sim","NavigationPlug",&p0);
-	if (p0)	CNavPlug *nav = new CNavPlug();		
+	//if (p0)	CNavPlug *nav = new CNavPlug();	
+	CNavPlug *nav = new CNavPlug();	
 	//----------------------------------------------------------------
   TRACE("End of InitSimulation");
 DupplicateString("***END INITSIM ***",32);

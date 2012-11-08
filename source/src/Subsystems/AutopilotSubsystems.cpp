@@ -639,10 +639,6 @@ AutoPilot::AutoPilot (void)
   mVSI.id = MSG_GETDATA;              // Get data
   mVSI.dataType = TYPE_REAL;          // Double format
   //-------------------------------------------------------
-  double d3 = 3.0;
-  double r3 = DegToRad(d3);           // 3° in radian
-  sin3      = sin(r3);                // sine(3°)
-  //-------------------------------------------------------
   plane = 0;
   //---Set Time K ------------------------------------------
   timK  = float(VSI_SAMPLE);
@@ -701,6 +697,7 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
 	Radio = mveh->GetRadioBUS();
 	CSimulatedVehicle *svh = &mveh->svh;
 	xRAT  = svh->GetCruiseSpeed() * 0.98;
+	mRAT	= svh->GetCruiseSpeed();
 	//--- Set speed limit -----------------------
 	if (0 == fSPD)	fSPD = svh->GetApproachSpeed();
 	CPIDbox *box = pidL[PID_SPD];
@@ -727,19 +724,19 @@ void AutoPilot::InitPID()
   minA    = RadToDeg(minA) * 0.5f;
   maxA    = RadToDeg(maxA) * 0.6f;
   //------------------------------------------------------
-  pidL[PID_GLS]->SetMaxi(maxA);
-  pidL[PID_GLS]->SetMini(minA);
+  //pidL[PID_GLS]->SetMaxi(maxA);
+  //pidL[PID_GLS]->SetMini(minA);
   //------------------------------------------------------
-  pidL[PID_ALT]->SetMaxi(maxA);
-  pidL[PID_ALT]->SetMini(minA);
+  //pidL[PID_ALT]->SetMaxi(maxA);
+  //pidL[PID_ALT]->SetMini(minA);
   //------------------------------------------------------
   pidL[PID_BNK]->SetClamp(ailS);
   pidL[PID_AOA]->SetClamp(elvS);
   pidL[PID_AOA]->SetClamp(elvT);
   //------------------------------------------------------
-  if (0 == uvsp)  return;
-  pidL[PID_VSP]->SetMaxi(maxA);
-  pidL[PID_VSP]->SetMini(minA);
+  //if (0 == uvsp)  return;
+  //pidL[PID_VSP]->SetMaxi(maxA);
+  //pidL[PID_VSP]->SetMini(minA);
   return;
 }
 //------------------------------------------------------------------------------------
@@ -842,7 +839,7 @@ double AutoPilot::GetAOS()
 //  The error is the difference between actual slope and target one (in radian)
 //------------------------------------------------------------------------------------
 void AutoPilot::VSPerror()
-{ double fpm  = FN_FEET_FROM_MILE(aSPD) / 60;  // In feet per minute 
+{ double fpm  = FN_FEET_FROM_MILE(aSPD) / 60;  // In feet per minute
   if (aSPD < 10) return;                       // No more speed 
   double val  = rVSP / fpm;                    // Sine of angle of target slope
   double phi  = asin(val);
@@ -867,9 +864,12 @@ void AutoPilot::VSPerror()
 //------------------------------------------------------------------------------------
 bool AutoPilot::CheckAlert()
 { eVRT			= (rALT.Get() - cALT);   // Vertical error
+	if (0 == alta)	return false;
 	float lim = fabs(float(eVRT));
-	if ((alta) && (lim > 200) && (lim < 1000))  flsh = 1;
-  return (lim < 50);
+	if ((lim > 200) && (lim < 1000))  flsh = 1;
+	bool  in  = (lim < 50);
+	if (in)	alta	= 0;
+  return (in);
 }
 //------------------------------------------------------------------------------------
 //  Add PID controller 
@@ -1164,7 +1164,7 @@ void AutoPilot::TimeSlice(float dT,U_INT FrNo)
 	wgrd  = mveh->WheelsAreOnGround();
 	cALT	= altS->GaugeBusFT01();					// Current altitude
 	cAGL	= mveh->GetAltitudeAGL();
-	aSPD	= mveh->GetPreCalculedKIAS();		// Current speed
+	aSPD	= mveh->GetTAS();								//mveh->GetPreCalculedKIAS();		// Current speed
 	aHDG	= cmpS->GaugeBusFT01();					// Current mag heading
 	//--- Update both modes -----------------------------------
   LateralMode();
@@ -1257,9 +1257,9 @@ void AutoPilot::GlideHold()
 void AutoPilot::AltitudeHold()
 { double nul = pidL[PID_VSP]->Update(dTime,eVRT,0); // Maintain VSP controller
   double taa = pidL[PID_ALT]->Update(dTime,eVRT,0); // erro to altitude controller
-  double alt = RoundValue(taa,10);                  // round value
+  double ref = RoundValue(taa,10);                  // round value
   double aoa = GetAOS();
-  double val = pidL[PID_AOA]->Update(dTime,aoa,alt);// Feed AOA controler
+  double val = pidL[PID_AOA]->Update(dTime,aoa,ref);// Feed AOA controler
   elvT->SetValue(-val);                             // To elevator TRIM
   return;
 }
@@ -1484,8 +1484,7 @@ void AutoPilot::ModeGND()
 //		Set altitude alert to requested altitude
 //-----------------------------------------------------------------------
 void AutoPilot::Rotate()
-{	alta  = 1;                        // ALT armed
-  StateChanged(AP_STATE_AAA);       // State is changed
+{	ALTalertSET();
 	//--- Set reference altitude ------------------------
 	rALT.Set(RoundAltitude(aTGT + mveh->GetGroundAltitude()),0.5);
 	StateChanged(AP_STATE_ACH);				// Altitude changed
@@ -1496,7 +1495,6 @@ void AutoPilot::Rotate()
 	ailS->Neutral();									// Reset ailerons
   pidL[PID_ALT]->Init();            // init PID
   pidL[PID_AOA]->Init();            // init PID
-	elvT->PidValue(0.5);							// Boost up								
 	EnterROL();
 	sreg->SteerOFF();									// Stop steering
 	return;
@@ -1549,7 +1547,6 @@ void AutoPilot::ModeALT()
 { bool in = CheckAlert();
   AltitudeHold();
 	if (!in)				return;
-  alta  = 0;                        // ALT arm off
   StateChanged(AP_STATE_AAA);       // State is changed
   return;
 }
@@ -1592,7 +1589,6 @@ bool AutoPilot::AbortLanding(char r)
   Alarm();
   EnterALT();
   EnterROL();
-	//rALT.Set(RoundAltitude(globals->tcm->GetGroundAltitude() + aTGA),0.5);
 	rALT.Set(RoundAltitude(mveh->GetGroundAltitude() + aTGA),0.5);
 	StateChanged(AP_STATE_ALT);
 	lStat	= AP_LAT_TGA;
@@ -1638,7 +1634,7 @@ void AutoPilot::ModeFLR()
 //			Compute runway segment:
 ///-----------------------------------------------------------------------
 void AutoPilot::ModeFIN()
-{	
+{	elvT->SetValue(-0.20f);
 	return;	}
 
 //-----------------------------------------------------------------------
@@ -1840,12 +1836,10 @@ void AutoPilot::EnterNAV()
 //  Swap ALTITUDE HOLD Mode
 //-----------------------------------------------------------------------
 void AutoPilot::SwapALT()
-{ if (vStat == AP_VRT_ALT)  return EnterVSP();
+{ aprm	= 0;
+	if (vStat == AP_VRT_ALT)  return EnterVSP();
   //--- Enter Altitude mode -------------
   EnterALT();
-  //--- Leave approach mode if needed ---
-  if (aprm)   EnterROL();
-	aprm	= 0;
   return;
 }
 //-----------------------------------------------------------------------
@@ -1940,7 +1934,7 @@ void AutoPilot::EnterFIN()
 	mveh->SetABS(0);
 	//--- push plane on ground ---------------------------------
 	ailS->Neutral();
-	elvT->SetValue(0);
+	elvT->SetValue(-0.20f);
 	elvS->SetValue(0.1f);
 	rudS->Neutral();
 	lStat		= AP_LAT_GND;
@@ -2217,14 +2211,14 @@ double AutoPilot::SelectSpeed()
 		}
 		//--- take-off -------------------------------
 		case AP_VRT_TKO:
-			return (cRAT>=20)?(1000):(20);
+			return (cRAT>=20)?(mRAT):(20);
 		//--- climbing -------------------------------
 		case AP_VRT_VSP:
-			if (rVSP > 0)			return 1000;
+			if (rVSP > 0)			return mRAT;
 			return xRAT;
 		//--- Altitude mode --------------------------
 		case AP_VRT_ALT:
-			if (eVRT > 100)	  return 1000;			// Going up
+			if (eVRT > 100)	  return mRAT;			// Going up
 			return xRAT;
 	}
 
@@ -2234,7 +2228,7 @@ double AutoPilot::SelectSpeed()
 //-----------------------------------------------------------------------
 //  External Request to enter lateral NAV mode
 //-----------------------------------------------------------------------
-void AutoPilot::SetWPTmode(double alt)
+void AutoPilot::EnterWPT(double alt)
 {	elvT->PidValue(0);					// Inhibit boost
 	EnterALT();
 	EnterNAV();

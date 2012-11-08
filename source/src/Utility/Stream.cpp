@@ -271,7 +271,13 @@ CStreamFile::CStreamFile (void)
 //------------------------------------------------------------------------
 //  Open for reading
 //------------------------------------------------------------------------
-void CStreamFile::OpenRead (const char *filename, PFS *pfs)
+CStreamFile::CStreamFile(char *fn,PFS *pfs,CStreamObject *obj)
+{	if (OpenRead (fn,pfs))	ReadFrom(obj);
+}
+//------------------------------------------------------------------------
+//  Open for reading
+//------------------------------------------------------------------------
+int CStreamFile::OpenRead (char *filename, PFS *pfs)
 { line   = 0;
   podfile = popen (pfs, filename);
   if (podfile != NULL) {
@@ -286,6 +292,7 @@ void CStreamFile::OpenRead (const char *filename, PFS *pfs)
   nBytes  = 1;
   buf[0]  = ' ';                // trigger pump
   rpos    = buf;
+	return (readable)?(1):(0);
 }
 //------------------------------------------------------------------------
 //    Fill the read buffer with a chunk of charater from the file
@@ -466,12 +473,11 @@ void  CStreamFile::ReadFrom(CStreamObject *object)
 //------------------------------------------------------------------------
 //  Open for writing
 //------------------------------------------------------------------------
-void CStreamFile::OpenWrite (const char *filename)
+int CStreamFile::OpenWrite (char *filename)
 {
   f = fopen (filename, "w");
-  if (f != NULL) {
-    writeable = true;
-  }
+  if (f != NULL)  writeable = true;
+	return (writeable)?(1):(0);
 }
 //------------------------------------------------------------------------
 //  Close file
@@ -754,6 +760,18 @@ int OpenRStream(char *fn,SStream &s)
 	return OpenStream (&globals->pfs, &s);
 }
 //===========================================================================
+// OpenStream - Open a binary stream file for reading
+//
+// The function returns 1 if the stream was successfully opened, 0 otherwise
+//==========================================================================
+int OpenBStream(char *fn,SStream &s)
+{ if (0 == fn)	return 0;
+	strncpy (s.filename, fn,(PATH_MAX-1));
+  strcpy  (s.mode, "rb");
+	return OpenStream (&globals->pfs, &s);
+}
+
+//===========================================================================
 // OpenStream - Open a stream file for reading from WORLD DIRECTORY
 //
 // The function returns 1 if the stream was successfully opened, 0 otherwise
@@ -777,7 +795,7 @@ int   OpenStream(PFS *pfs, SStream *stream)
   //   a readable or writeable stream.  Mixed-mode "rw" and append mode "a"
   //   streams are not supported.
 
-  if (stricmp (stream->mode, "r") == 0) {
+  if (*stream->mode == 'r') {
     // Open readable stream
     CStreamFile* sf = new CStreamFile;
     sf->OpenRead (stream->filename, pfs);
@@ -791,7 +809,7 @@ int   OpenStream(PFS *pfs, SStream *stream)
       delete sf;
       return 0;
     }
-  } else if (stricmp (stream->mode, "w") == 0) {
+  } else if (*stream->mode == 'w') {
     // Open writeable stream
     CStreamFile* sf = new CStreamFile;
     sf->OpenWrite (stream->filename);

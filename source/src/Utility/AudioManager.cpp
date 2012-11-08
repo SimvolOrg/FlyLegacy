@@ -236,7 +236,7 @@ void CSoundOBJ::SetEnginePitch(float p)
 //  JS: Sound source:  Non localized source used for panel and subsystems
 //=====================================================================================
 CSoundSRC::CSoundSRC()
-{ sPlay = 0;
+{ sBuf = 0;
   alGenSources (1, &alSRC);
   globals->snd->Check();
 }
@@ -248,10 +248,10 @@ void  CSoundSRC::Play(CSoundBUF *sbf)
   //---Stop current sound if any ----------------
   alSourceStop(alSRC);
   alSourcei (alSRC, AL_BUFFER, 0);
-  sPlay = sbf;
+  sBuf = sbf;
   //-- Play the current sound -------------------
   if (0 == sbf)     return;
-  ALint buf = sPlay->GetBuffer();
+  ALint buf = sBuf->GetBuffer();
   alSourcei(alSRC,AL_BUFFER,buf);
   alSourcei(alSRC,AL_LOOPING,loop);
   alSourcePlay(alSRC);

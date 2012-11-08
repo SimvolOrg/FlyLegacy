@@ -37,14 +37,14 @@ class CStreamFile {
 public:
   // Constructor
   CStreamFile (void);
-
+	CStreamFile(char *fn,PFS *pfs,CStreamObject *obj);
   // Status methods
-  virtual bool      IsReadable (void)  { return readable; }
-  virtual bool      IsWriteable (void) { return writeable; }
+  bool      IsReadable (void)  { return readable; }
+  bool      IsWriteable (void) { return writeable; }
 
   // Open/close methods
-  void      OpenRead (const char* filename, PFS *pfs);
-  void      OpenWrite (const char* filename);
+  int       OpenRead (char* filename, PFS *pfs);
+  int       OpenWrite(char* filename);
   void      Close (void);
 
   // Low level Read methods--------------------------
@@ -110,6 +110,8 @@ int   OpenRStream(char *pn,char *fn, SStream &s);
 int   OpenRStream(char *fn, SStream &s);
 int   OpenStream(SStream *stream);
 int   OpenStream(PFS *pfs, SStream *stream);
+int		OpenBStream(char *fn,SStream &s);
+
 void  CloseStream(SStream *stream);
 void  ReadFrom(CStreamObject *object, SStream *stream);
 void  SkipObject(SStream *stream);

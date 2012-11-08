@@ -106,7 +106,7 @@ public:
 class CSoundSRC {
   //-----ATTRIBUTES ---------------------------------------------
   U_INT       alSRC;                // AL source
-  CSoundBUF  *sPlay;                // Buffer in play
+  CSoundBUF  *sBuf;                // Buffer in play
   char        loop;
   //-----METHODES -----------------------------------------------
 public:

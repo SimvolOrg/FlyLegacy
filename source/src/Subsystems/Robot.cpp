@@ -708,7 +708,7 @@ void VPilot::ChangeWaypoint()
 	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wayP->GetAltitude());
-	apil->SetWPTmode(alt);
+	apil->EnterWPT(alt);
 	State = VPL_TRACKING;
 	//------------------------------------------------------
 	_snprintf(note,128,"Route to waypoint %s",wayP->GetName());

@@ -283,10 +283,11 @@ void CWeightManager::PrintInfo (int bar_cycle)
 	double spd	= mveh->GetIAS();
 	double vsi	= (VSI)?(VSI->GaugeBusFT01()):(0);
 	double cap	= mveh->GetMagneticDirection();
+	double pit  = mveh->GetPitch();
 	vsi					= GetRounded(vsi);
 	int fps			= (dT > 0.00001)?(double(1) / dT): 0;
-  _snprintf (buf,255, "Alt= %-5.0lf  AGL= %-5.0lf Speed= %-2.0lf  VSI= %-5.0lf CAP= %-3.0lf  FPS= %03d",
-						alt, agl, spd, vsi, cap, fps);
+  _snprintf (buf,255, "Alt= %-5.0lf  AGL= %-5.0lf Speed= %-2.0lf  VSI= %-5.0lf CAP= %-3.0lf  PITCH=%.2lf FPS= %03d",
+						alt, agl, spd, vsi, cap, pit, fps);
 	globals->fui->DrawNoticeToUser (buf, 1);
 	return;
 	  
