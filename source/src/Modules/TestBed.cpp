@@ -33,8 +33,7 @@ using namespace std;
 // Constructor 
 //--------------------------------------------------------------------
 CTestBed::CTestBed()
-{ D2_Session dds;
-	bool ok = dds.ReadParameters("Session01.txt");
+{ 
 }
 
 //--------------------------------------------------------------------

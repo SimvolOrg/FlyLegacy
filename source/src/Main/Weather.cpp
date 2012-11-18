@@ -185,7 +185,7 @@ void CWeatherManager::AddDefaultLayer(char No)
 {	char key[16];
 	_snprintf(key,16,"Layer%d",No);
 	char str[64];
-	GetIniString("WIND",key,str,64);
+	GetIniString("Wind",key,str,64);
 	float	a;			// Altitude
 	float d;			// Direction
 	float s;			// Speed
@@ -288,6 +288,7 @@ void CWeatherManager::Init (void)
 	nw	= 0;
 	nw	|= HasIniKey("TRACE","AeroForce")? (1):(0);
 	nw  |= HasIniKey("TRACE","AeroMoment")?(1):(0);
+	nw  |= HasIniKey("Wind","NoWind")?(1):(0);
   //-------------------------------------------------------------
   srand ((unsigned) clock ());
 }

@@ -378,25 +378,28 @@ void CRadio::SelectSource()
 //  Enter/leave external mode:  ROBOT/GPS interface
 //	Synchronize radio with type of source
 //--------------------------------------------------------------------------
-void CRadio::ModeEXT(CmHead *src,LND_DATA *lnd)
-{	//--- Back to normal mode. Synchro radio with nav ------
-	if (0 == src)	
-	{	EXT.Stop();
-		globals->lnd	= 0;
-	  if (0 == sPower)		return;
-		SelectSource();
-	}
-	//--- Update external bus ---------------------------
-	else
-	{	mveh->GetFlightPlan()->SetRadio(this);
-		busRD.mode = RADIO_MODE_TRACK;
-		SRC->DecUser();
-		EXT.SetSource(src,lnd);
-		SRC	= &EXT;
-		if ((uNum == 1)	&& (lnd) && mveh->IsUserPlan())	globals->lnd	= lnd;
-	}
+void CRadio::ExternalMode(CmHead *src,LND_DATA *lnd, char dm)
+{	//--- Update external bus ---------------------------
+	if (dm)	busRD.mode = RADIO_MODE_DIRECT;
+	mveh->GetFlightPlan()->SetRadio(this);
+	busRD.mode = RADIO_MODE_TRACK;
+	SRC->DecUser();
+	EXT.SetSource(src,lnd);
+	SRC	= &EXT;
+	if ((uNum == 1)	&& (lnd) && mveh->IsUserPlan())	globals->lnd	= lnd;
 	Synchronize();
 	//TRACE("EXT set %s radi=%.2f hDEV=%.4f", src->GetIdent(), Radio.radi,Radio.hDEV);
+	return;
+}
+//--------------------------------------------------------------------------
+//  Leave external mode:  ROBOT/GPS interface
+//--------------------------------------------------------------------------
+void CRadio::NormalMode()
+{	busRD.mode = RADIO_MODE_TRACK;
+  EXT.Stop();
+	globals->lnd	= 0;
+	if (0 == sPower)		return;
+	SelectSource();
 	return;
 }
 //--------------------------------------------------------------------------

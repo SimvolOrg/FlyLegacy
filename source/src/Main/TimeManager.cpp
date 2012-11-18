@@ -245,13 +245,14 @@ SDateTime CTimeManager::GetUTCDateTime (void)
   return dt;
 }
 
-//
+//------------------------------------------------------------------------
 // Returns the simulation local date and time.  Note this is based on the
 //   timezone of the users' PC, not that of the simulation location.
 //
 // Note: Contrary to localtime() convention, the month value ranges
 //   from 1..12 for January..December
-//
+//-------------------------------------------------------------------------
+
 SDateTime CTimeManager::GetLocalDateTime (void)
 { SDateTime dt = GetUTCDateTime ();
   // Adjust by time zone offset

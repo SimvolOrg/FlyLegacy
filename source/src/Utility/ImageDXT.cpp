@@ -306,3 +306,4 @@ UINT32 CImageDXT::GetTextureMemorySize (void)
   }
   return rc;
 }
+//=== END OF FILE =============================================================================

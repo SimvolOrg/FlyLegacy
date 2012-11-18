@@ -1577,11 +1577,11 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
   if (caging_fixed_alt) fb.z = double(wgh.GetTotalMassInKgs ()) * GRAVITY_MTS;   // 
 
   lf.vec = CVectorToVec3r (fb);
-  lf.duration = static_cast<opal::real> (dT); 
+  lf.duration = opal::real(dT); 
   if (caging_fixed_roll)   tb.y = caging_fixed_roll_dval;
 
   tf.vec = CVectorToVec3r (tb);
-  tf.duration = static_cast<opal::real> (dT);//
+  tf.duration = opal::real(dT);//
   Plane->addForce (lf); //
 	Plane->addForce (ef); //
   Plane->addForce (tf); //
@@ -1591,9 +1591,6 @@ void COPALObject::Simulate (float dT,U_INT FrNo)
     Plane->setLocalLinearVel (fixed_vel);  
   }
   if (turbulence_effect) Plane->addForce (yf);
-	//--- Call simulation step ---------------------------------------------
-  //globals->opal_sim->simulate (dT);
-	//UpdateData(dT);
 	return;
 }
 //------------------------------------------------------------------------------

@@ -207,7 +207,8 @@ public:
 	void	SetDirectMode();
 	void	CorrectDrift();
 	//--- Enter /leave waypoint mode ---------------------------
-	void	ModeEXT(CmHead *src,LND_DATA *ils = 0);	// Enter/leave external mode
+	void	ExternalMode(CmHead *src,LND_DATA *ils,char mode);	// Enter/leave external mode
+	void	NormalMode();
 	void	ChangeRefDirection(float d);
 	void	ChangePosition(SPosition *p);
   //-----------------------------------------------------------

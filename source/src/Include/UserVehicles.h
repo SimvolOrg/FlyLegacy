@@ -56,27 +56,6 @@ class CFPlan;
 class VPilot;
 class CRobot;
 //=======================================================================================
-//
-// Sound effects for an engine; corresponds to <engn> sub-object in .SFX file
-//
-class CEngineSound : public CStreamObject {
-public:
-  CEngineSound (void);
-
-  // CStreamObject methods
-  int   Read (SStream *stream, Tag tag);
-
-protected:
-  int         engineNumber;               ///< Engine number
-  std::string startInt, startExt;         ///< Starting sounds
-  std::string idleInt, idleExt;           ///< Idle sounds
-  std::string flyInt, flyExt;             ///< In-flight sounds
-  std::string stopInt, stopExt;           ///< Stop sounds
-  std::string rampUpInt, rampUpExt;       ///< Ramp up sounds
-  std::string rampDownInt, rampDownExt;   ///< Ramp down sounds
-  float       bendMin, bendMax;           ///< Min/max prop pitch bend
-  float       freqTolerance;              ///< Frequency tolerance
-};
 
 //====================================================================
 // Sounds related to the user simulated vehicle
@@ -107,11 +86,6 @@ public:
   char  NbTire;
   // pre-cache sfx files
   bool cach;
-
-  // Support for alternative specification of engine sounds
-  std::vector<CEngineSound*>   engineSounds;
-
-
 };
 
 //=======================================================================================
@@ -260,7 +234,6 @@ public:
   int       LaunchEngine();
   int       FailEngine();
 	int				MissfireEngine();
-  int       StartEngine();
 	//--- STATE routines -----------------------------------------
   int       StateStopped();
   int       StateCranking();

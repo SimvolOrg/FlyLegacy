@@ -759,6 +759,10 @@ void C_TRN::ReadSUPR(SStream *stream)
 	//--- Compute current detail tile base ------------
 	cx	= ax + (stx << 2);				// Multiply n°SP by 4
 	cz  = az + (stz << 2);				// idem
+	//--- Use for debuging ----------------------------
+	//bool stop = qgt->AreWe(8,323) && (stx==5) && (stz==5);
+	//if (stop)
+	//int a = 0;
   //----USE a SUPERTILE DECODER to hold data --------
   C_STile *spt = &aST[stx][stz];
 	spt->SetAX(cx);
@@ -785,11 +789,12 @@ int C_TRN::Read (SStream *stream, Tag tag)
     return  TAG_READ;
 
   case 'lowr':
+	{
     // Detail tile indices for lower-left corner
     ReadUInt (&ax, stream);
     ReadUInt (&az, stream);
     return  TAG_READ;
-
+	}
   case 'supr':
     // Super tile sub-object
 		ReadSUPR(stream);
@@ -871,6 +876,7 @@ void C_STile::Abort(char *msg)
 { gtfo("ERROR in TRN:%s",msg);
 return;
 }
+
 //--------------------------------------------------------------------------------
 //  READ SuperTile PARAMETERS from TRN FILE
 //  TODO: See if <tref> is associated to each of <txtl> and <ntxl> tags
@@ -910,7 +916,7 @@ int C_STile::Read (SStream *stream, Tag tag)
     }
   //----Night texture list ----------------------------
   case 'ntxt':
-    { CTxtDecoder tdc;
+    {	CTxtDecoder tdc;
       ReadFrom(&tdc,stream);
       CTextureDef *txn = tdc.txd;
       int nbr          = tdc.nbx;
@@ -935,9 +941,9 @@ int C_STile::Read (SStream *stream, Tag tag)
 			    cx					= ax + TinxTAB[Order];
 					cz					= az + TinzTAB[Order];
 //--- Debugg: Use statement to check a specific detail tile ------------
-//				bool ok = (cx == TC_ABSOLUTE_DET(341,0)) && (cz == TC_ABSOLUTE_DET(317,0));
-//				if (ok)
-//								int a = 0;				// Put breakpoint here
+				//bool ok = (cx == TC_ABSOLUTE_DET(10,7)) && (cz == TC_ABSOLUTE_DET(325,8));
+				//if (ok)
+				//				int a = 0;				// Put breakpoint here
 //--- end debuging -----------------------------------------------------
           ReadInt(&nr,stream);
           CTextureDef *src = &DayList[nr];
@@ -973,9 +979,11 @@ int C_STile::Read (SStream *stream, Tag tag)
             U_CHAR h1 = (c1 <= '9')?(c1 -'0'):(c1 - '7');
             *dst++    = (h0 << 4) | h1;
           }
+					//--- Process skipped texture ------------------------
+					if (strncmp(src->Name,"*skip*",6) == 0) 	txn->ClearName();
 					//--- TRACE allocation if needed ---------------------
 					char T = 0;
-					if (0 == T)		continue;
+					if (0 == tr)		continue;
 					U_INT qx = cx >> TC_BY32;
 					U_INT qz = cz >> TC_BY32;
 					U_INT tx = cx & TC_032MODULO;
@@ -1125,6 +1133,7 @@ CTxtDecoder::CTxtDecoder()
 void CTxtDecoder::NormeName(char *txt,CTextureDef *txd)
 { char *dot = strstr(txt,".RAW");
   strncpy(txd->Name,txt,8);
+	if (strncmp(txt,"*skip*",6)	== 0)	return;
   //----- Must be a generic name -------------------------------------------
   if (0 == dot) return;                                  // This is a generic name
   //------ Look for W marker -----------------------------------------------

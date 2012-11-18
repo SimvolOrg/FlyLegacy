@@ -1804,13 +1804,15 @@ GLuint CTextureWard::Get3DObject(void *tref)
 	GLuint obj  = 0;
   glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
+//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,globals->mipOBJ);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_COMPRESSED_RGBA,inf->wd,inf->ht,0,GL_RGBA,GL_UNSIGNED_BYTE,inf->mADR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
   inf->xOBJ = obj;
   delete [] inf->mADR;
@@ -1857,13 +1859,15 @@ GLuint CTextureWard::GetTexOBJ(TEXT_INFO &inf, U_INT mip,U_INT type)
 { GLuint obj = inf.xOBJ;
   if (0 == obj) glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
+//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,mip);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,inf.wd,inf.ht,0,type,GL_UNSIGNED_BYTE,inf.mADR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
   inf.xOBJ = obj;
   if (inf.mADR) delete [] inf.mADR;
@@ -1917,14 +1921,15 @@ GLuint CTextureWard::GetRepeatOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
 { U_INT  dim  = SideRES[res];
   if (0 == obj) glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
+ // glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,3);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,dim,dim,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
+	glGenerateMipmap(GL_TEXTURE_2D);
+ // glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
   //----Check for error -----------------------------------------
 	/*
@@ -1943,14 +1948,16 @@ GLuint CTextureWard::GetRepeatOBJ(TEXT_INFO &xds)
 { U_INT obj = 0;
   glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
+ // glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,5);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,xds.wd,xds.ht,0,GL_RGBA,GL_UNSIGNED_BYTE,xds.mADR);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
   //----Check for error -----------------------------------------
 	/*
@@ -1969,7 +1976,7 @@ GLuint CTextureWard::GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
 { U_INT  dim  = SideRES[res];
   if (0 == obj) glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
+ // glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,globals->mipTER);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
@@ -1977,7 +1984,8 @@ GLuint CTextureWard::GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,cTERRA,dim,dim,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
+	glGenerateMipmap(GL_TEXTURE_2D);
+//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
 
   //----Check for error -----------------------------------------
 	/*
@@ -1997,14 +2005,15 @@ GLuint CTextureWard::GetLitOBJ(TEXT_INFO &xds)
   if (0 == xds.mADR)  return 0;
   glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
+//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,1);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D   (GL_TEXTURE_2D,0,GL_INTENSITY,xds.wd,xds.ht,0,GL_RGBA,GL_UNSIGNED_BYTE,xds.mADR);
-  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
+	glGenerateMipmap(GL_TEXTURE_2D);
+//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	delete [] xds.mADR;
 	xds.mADR	= 0;
@@ -2099,7 +2108,7 @@ int CTextureWard::FreeAllTextures(CSuperTile *sp)
 ///----------------------------------------------------------------------------
 int CTextureWard::SwapTextures(CSuperTile *sp)
 { CmQUAD      *qad  = 0;
-  U_CHAR       res = sp->aRes;                            // Alternate resolution
+ // U_CHAR       res = sp->aRes;                            // Alternate resolution
   CTextureDef *txn = 0;
   //------For each Detail swap the texture----------------------
   for (int Nd = 0; Nd != TC_TEXSUPERNBR; Nd++)

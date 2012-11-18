@@ -119,6 +119,8 @@ public:
   inline  U_CHAR IsAnEPD()  {return (TypTX == TC_TEXRAWEP);}
   inline  U_CHAR IsShare()  {return (TypTX == TC_TEXSHARD);}
 	//-------------------------------------------------------------
+	inline void    ClearName() {*Name = 0; *Hexa = 0; TypTX = 0;}
+	//-------------------------------------------------------------
 	inline  bool   HasType(U_CHAR t)	{return (TypTX == t);}
   //-------------------------------------------------------------
   inline  bool   NotRDY()   {return (dOBJ == 0);}
@@ -176,7 +178,7 @@ public:
 		//---Rendering vector -------------------------------------------
 		VREND					Rend;										// Rending vector
     //---------------------------------------------------------------
-    U_CHAR        aRes;                   // Alternate resolution
+    U_CHAR        levl;                   // Texture level
     U_CHAR        swap;                   // 0 = No swap permitted
     U_CHAR        Reso;                   // Resolution 1
     U_CHAR        LOD;                    // Level of Detail
@@ -255,19 +257,16 @@ public:
     inline bool NeedLOD() {return (State == TC_TEX_LOD);}
     inline bool NeedOBJ() {return (State == TC_TEX_OBJ);}
     inline bool NeedSWP() {return (State == TC_TEX_POP);}
-    inline bool NeedALT() {return (State == TC_TEX_ALT);}
 		inline bool InFarQ()	{return (State == TC_TEX_INQ);}
     //-----------------------------------------------------
     inline void WantRDY() {State  = TC_TEX_RDY; }
     inline void WantLOD() {State  = TC_TEX_LOD; }
     inline void WantOBJ() {State  = TC_TEX_OBJ; }
-    inline void WantALT() {State  = TC_TEX_ALT; }
     inline void WantSWP() {State  = TC_TEX_POP; }
 		inline void WantINQ() {State  = TC_TEX_INQ; }
     inline void SetState(U_CHAR s)  {State = s;}
     //-----------------------------------------------------
-    inline bool NeedHigres() {return((Reso != TC_HIGHTR) && (aRes != TC_HIGHTR));}
-    //-----------------------------------------------------
+       //-----------------------------------------------------
 		inline void RenderOUT()	{Rend = &CSuperTile::DrawOuterSuperTile;}
 		inline void RenderINR()	{Rend = &CSuperTile::DrawInnerSuperTile;}
 		inline void Draw()		{(this->*Rend)();}
@@ -928,7 +927,8 @@ public:
   //---------Inline ---------------------------------------------
 	void	ProbeBB(CFuiCanva *c,int n) {;}
   CTextureWard *GetTexWard() {return txw;}
-  void   InActQ(C_QGT *qgt)  {ActQ.PutLast(qgt);}
+  void   InActQ (C_QGT *qgt) {ActQ.PutLast(qgt);}
+	void	 HeadofQ(C_QGT *qgt) {ActQ.PutHead(qgt);}
   //-------------------------------------------------------------
 	void IncDSP()							{DrSUP++;}
 	void IncRDY(short n)			{qRDY += n;}

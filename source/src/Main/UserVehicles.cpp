@@ -2466,8 +2466,9 @@ bool  CEngine::SetEngineModel()
 void CEngine::ReadFinished (void)
 { if (!SetEngineModel()) WARNINGLOG("No valid Engine model");
   //---Set Engine sound ---------------------------------
+	CVector npos(0,0,0);
   Tag  engn = 'eng0' + eNum;
-  sound = new CSoundOBJ(engn,bPos);
+  sound = new CSoundOBJ(engn,bPos,0.40f);
   sound->AddSound(ENGINE_CRANKING,'crkE');              // Cranking
   sound->AddSound(ENGINE_CATCHING,'catE');              // catching
 	sound->AddSound(ENGINE_RUNNING, 'runE');              // Runing
@@ -2596,7 +2597,7 @@ void CEngine::Timeslice (float dT,U_INT FrNo)
   if (eData->EngPowered())  eData->e_hob += (dT / 3600);
   ngnModel->TimeSlice(dT,FrNo);
   ngnModel->SetTrueRPM();
-  if (spinner) spinner->SetRPM(eData->e_rpm);
+  if (spinner) spinner->SetRPM(eData->e_spin);
 }
 //---------------------------------------------------------------------
 //  Set Fuel state from fuel cycle
@@ -2667,6 +2668,7 @@ int  CEngine::StopEngine(char r)
   eData->e_stop   = r;
   pstat           = eData->e_state;
   eData->e_state  = ENGINE_STOPPING;
+	eData->e_spin  = float(7) / 31;
 	//--- Play stopping sound ---------------------
 	sound->SetLoop(false);
   sound->StopSound();
@@ -2703,7 +2705,8 @@ int CEngine::CrankEngine()
 //  This state is intermediate before running state
 //---------------------------------------------------------------------
 int CEngine::LaunchEngine()
-{ pstat           = eData->e_state; 
+{ pstat           = eData->e_state;
+	eData->e_spin  = float(3) / 31; 
   eData->e_state  = ENGINE_CATCHING;
 	sound->SetOffset(0);
   sound->SetLoop(false);
@@ -2720,17 +2723,6 @@ int CEngine::FailEngine()
   sound->SetLoop(false);
   sound->SetEnginePitch(1);
   sound->Play(ENGINE_FAILING);
-  return 1;
-}
-//---------------------------------------------------------------------
-//  Set Start state
-//---------------------------------------------------------------------
-int CEngine::StartEngine()
-{ pstat           = eData->e_state;
-  eData->e_state  = ENGINE_RUNNING;
-  sound->SetLoop(true);
-  sound->Play(ENGINE_CATCHING);
-	mveh->IncEngR();
   return 1;
 }
 //---------------------------------------------------------------------
@@ -2753,6 +2745,7 @@ int CEngine::MissfireEngine()
 //---------------------------------------------------------------------
 int  CEngine::StateStopped()
 { //--- Check cranking conditions ------------------
+	eData->e_spin  = 0;
   if (mveh->NotState(VEH_OPER)) return ENGINE_STOPPED;
   U_INT strt = eData->startKit;
   U_INT ston = strt & ENGINE_STARTER;
@@ -2767,6 +2760,7 @@ int  CEngine::StateStopped()
   sound->SetEnginePitch(eData->Pitch());
   sound->Play(ENGINE_MISSFIRE);
   eData->e_state = ENGINE_MISSFIRE;
+	eData->e_spin  = float(17) / 31;
   return 1;
 }
 //---------------------------------------------------------------------
@@ -2778,7 +2772,8 @@ int  CEngine::StateStopped()
 //   if echec go back to previou state (either stopped or windmill)
 //---------------------------------------------------------------------
 int  CEngine::StateCranking()
-{ if (sound->IsPlaying()) return 0;
+{ eData->e_spin  = float(1) / 31;
+	if (sound->IsPlaying()) return 0;
   U_INT cond = (ENGINE_MAGN_12 + ENGINE_FUELED);
   //--- Start if conditions OK ---------------------
   U_INT ston = eData->startKit & cond;
@@ -2792,6 +2787,7 @@ int  CEngine::StateCranking()
 //---------------------------------------------------------------------
 int CEngine::StateCatching()
 { //--- Check if conditions OK ---------------
+  eData->e_spin  = float(5) / 31;
   U_INT neto = (eData->startKit & ENGINE_MAGN_12);
   U_INT fuel = (eData->startKit & ENGINE_FUELED);
 	U_INT mix  = (eData->startKit & ENGINE_MIXTURE);
@@ -2810,7 +2806,8 @@ int CEngine::StateCatching()
 //  Check if sound must be changed
 //---------------------------------------------------------------------
 int CEngine::StateFailing()
-{ if (sound->IsPlaying()) return 0;
+{ eData->e_spin  = float(11) / 31;
+	if (sound->IsPlaying()) return 0;
   pstat           = eData->e_state;
   eData->e_state  = ENGINE_STOPPED;
   return 1;
@@ -2828,6 +2825,7 @@ int CEngine::StateRunning()
   if (!neto)          return StopEngine(1);
   if (!fuel)          return StopEngine(2);
 	if (!mixt)					return MissfireEngine();
+	eData->e_spin  = ((float(2500) / eData->e_rpm) * 0.2f) + 0.8f;
   //----Check for stall conditions ------------------------------------
   bool stal  = (eData->e_rpm < eData->s_rpm);
   if  (stal)    			return StopEngine(3);

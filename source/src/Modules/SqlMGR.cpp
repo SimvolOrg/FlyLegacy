@@ -219,7 +219,7 @@ void SqlOBJ::Init()
 	txyDBE.mode = SQLITE_OPEN_READWRITE;
 
   //---Model 3D database ------------------------------------------
-	modDBE.vers	= 1;																// Minimum version
+	modDBE.vers	= 2;																// Minimum version
   strncpy(modDBE.path,"SQL",63);
   GetIniString("SQL","M3DDB",modDBE.path,lgr);
 	strncpy(modDBE.name,"M3D*.db",63);
@@ -235,7 +235,7 @@ void SqlOBJ::Init()
   texDBE.dbn = "Generic Textures";
 	texDBE.mode = SQLITE_OPEN_READONLY;
   //---World Object database --------------------------------------
-	objDBE.vers	= 2;																// Minimum version
+	objDBE.vers	= 3;																// Minimum version
   strncpy(objDBE.path,"SQL",63);
   GetIniString("SQL","OBJDB",objDBE.path,lgr);
 	strncpy(objDBE.name,"OBJ*.db",63);
@@ -1770,12 +1770,11 @@ void SqlMGR::WriteElevationRecord(REGION_REC &reg)
 //==============================================================================
 //  Check for POD-TRN in Database
 //==============================================================================
-bool SqlMGR::FileInELV(char *fn, U_INT *row)
+bool SqlMGR::FileInELV(char *fn)
 {	char rq[1024];
-	_snprintf(rq,1023,"SELECT rowid from FNM where file = '%s';*",fn);
+	_snprintf(rq,1023,"SELECT rowid FROM FNM WHERE file LIKE '%%%s%%';*",fn);
 	sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
 	bool in = (SQLITE_ROW == sqlite3_step(stm));
-	*row      =  sqlite3_column_int(stm, 0);
 	sqlite3_finalize(stm);                      // Close statement
 	return in;
 }
@@ -2412,8 +2411,8 @@ void SqlMGR::GetTerraSQL(TCacheMGR *tcm)
 //=================================================================================
 void SqlMGR::WriteWOBJ(U_INT qgt,CWobj *obj,int row)
 { char req[1024];
-  strcpy(req,"INSERT INTO OBJ (qgt,type,xk,yk,kind,flag,mday,nday,lon,lat,xori,yori,zori,fobj,nozb,nozu,pm1,pm2,name,desc)" 
-    "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20);*");
+  strcpy(req,"INSERT INTO OBJ (qgt,type,xk,yk,kind,flag,mday,nday,lon,lat,xori,yori,zori,fobj,nozb,nozu,pm1,pm2,name,desc,scn)" 
+    "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21);*");
   sqlite3_stmt *stm = CompileREQ(req,objDBE);
   //---Extract all value from this object ----------------------
   U_INT xk = obj->GetIntLongitude();
@@ -2468,6 +2467,9 @@ void SqlMGR::WriteWOBJ(U_INT qgt,CWobj *obj,int row)
   if (rep != SQLITE_OK) Abort(objDBE);
   rep      = sqlite3_bind_text(stm,  20, obj->GetDescription(), -1, SQLITE_TRANSIENT);
   if (rep != SQLITE_OK) Abort(objDBE);
+	//--- Object scene name index ------------------------------------------
+	rep			 =  sqlite3_bind_int (stm, 21, obj->GetScene());     // Scene index
+	if (rep != SQLITE_OK) Abort(objDBE);
   //----End of statement -------------------------------------------------
   rep      = sqlite3_step(stm);               // Insert value in database
   if (rep != SQLITE_DONE) Abort(objDBE);
@@ -2698,6 +2700,8 @@ void SqlMGR::DecodeWOBJ(sqlite3_stmt *stm,CWobj *obj)
   if (nam)  obj->SetObjName(nam);
   char *dsc = (char*)sqlite3_column_text(stm,CLN_OBJ_DSC);
   if (dsc) obj->SetObjDesc(dsc);
+	int scn = sqlite3_column_int(stm,CLN_OBJ_SCN);
+  obj->SetScene(scn);
   //---Mother file ---------------------------------------------
   int fob = sqlite3_column_int(stm,CLN_OBJ_FOB);
 	ReadOBJFile(obj,fob);
@@ -2817,6 +2821,7 @@ int SqlMGR::DecodeTRNrow()
 	U_INT	wt		= (U_INT)sqlite3_column_int(stm,CLN_ETR_WTR);
 	U_INT	nt		= (U_INT)sqlite3_column_int(stm,CLN_ETR_NIT);
 	U_INT	tokn	= 0x00000001;
+	//------------------------------------------------
 	//--- TextureDef Reconstruction ------------------
 	for (int k=0; k<TC_TEXSUPERNBR; k++,txd++)
 	{	name	+= txd->CopyName(name);
@@ -2877,6 +2882,7 @@ int SqlMGR::DecodeDETrow()
 	for (int k=0; k<nbe; k++)	*dst++ = *src++;
 	//--- Set Super Tile No -----------------------------
 	int				sno = sqlite3_column_int(stm,CLN_TIL_SUP);
+	//---------------------------------------------------
 	hdt.SetSup(sno);
 	qgt->DivideHDTL(&hdt);
 	return 0;

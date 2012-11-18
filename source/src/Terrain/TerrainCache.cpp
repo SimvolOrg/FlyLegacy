@@ -1480,7 +1480,8 @@ CSuperTile::CSuperTile()
   MiniH   = 0;
   MaxiH   = 0;
   Reso    = 0;
-  aRes    = 0;
+ // aRes    = 0;
+	levl		= 0;											// Current level
   swap    = 1;                      // Allow texture swap by default
   alpha   = 0;
   LOD     = 0;
@@ -1682,7 +1683,7 @@ bool CSuperTile::NeedMedResolution(float rd)
 { if (TC_TEX_RDY != State)  return false;           // Not ready
   if (dEye <= rd)           return false;           // Still inside hi radius
   if (Reso == TC_MEDIUM)    return false;           // Already set
-  if (aRes == TC_MEDIUM)    return false;           // Already requested
+ // if (aRes == TC_MEDIUM)    return false;           // Already requested
   return true;
 }
 //-------------------------------------------------------------------------
@@ -1693,7 +1694,7 @@ bool CSuperTile::NeedHigResolution(float rd)
 { if (TC_TEX_RDY != State)  return false;           // Not ready
   if (dEye >  rd)           return false;           // Outside hi radius
   if (Reso == TC_HIGHTR)    return false;           // Already set
-  if (aRes == TC_HIGHTR)    return false;           // Already requested
+ // if (aRes == TC_HIGHTR)    return false;           // Already requested
   if (0    == swap)         return false;           // Fixed medium resolution
   return true;
 }
@@ -3242,8 +3243,9 @@ int C_QGT::UpdateInnerCircle()
     }
     //-------Leaving hi resolution radius -------------------
     if (sp->NeedMedResolution(hird))
-    { sp->WantALT();
-      sp->aRes = TC_MEDIUM; 
+    { sp->levl	= 1;						// Alternate level
+			sp->Reso  =  TC_MEDIUM;		// Medium resolution
+			sp->WantLOD();
       CSuperTile *nx = NearQ.Detach(sp);
       LoadQ.Lock();
 			LoadQ.PutEnd(sp);
@@ -3253,8 +3255,9 @@ int C_QGT::UpdateInnerCircle()
     }
     //------Needing hi resolution ---------------------------
     if (sp->NeedHigResolution(hird) && hiok)
-    { sp->WantALT();
-      sp->aRes = TC_HIGHTR; 
+    { sp->levl	= 1;						// Alternate level
+			sp->Reso  =  TC_HIGHTR;   // Hight resolutuion
+			sp->WantLOD(); 
       CSuperTile *nx = NearQ.Detach(sp);
       LoadQ.Lock();
 			LoadQ.PutEnd(sp);
@@ -3273,14 +3276,14 @@ int C_QGT::UpdateInnerCircle()
   //  Super Tile is put in the Load texture Queue 
   //  processed by the file thread
   //-----------------------------------------------------------
-  //LockState();
 	FarsQ.Lock();
   sp = FarsQ.GetFirst();
   while (sp)
     { sp->dEye = tcm->AircraftFeetDistance(sp->mPos);
       if (sp->dEye > ndis)  {sp = FarsQ.GetNext(sp); continue;}
+			sp->levl = 0;							// Normal level
+			sp->Reso = TC_MEDIUM;			// Medium resolution
       sp->WantLOD();
-      sp->Reso = TC_MEDIUM;
       tcm->GetTransitionMask(this,sp);
 			sp->AllocateVertices(vbu);
       CSuperTile *nx = FarsQ.Detach(sp);
@@ -3290,7 +3293,6 @@ int C_QGT::UpdateInnerCircle()
       sp  = nx;
     }
 	FarsQ.Unlock();
-  //UnLockState();
   //-----------------------------------------------------------
   //  Activate the Texture Thread if LoadQ is not empty
   //-----------------------------------------------------------
@@ -3350,7 +3352,8 @@ void C_QGT::SetStep(U_CHAR st)
 		//--- Ready. Outside active Queue -----------
 		case TC_QT_RDY:											// Ready state
 			Step	= st;												// Immediate
-			if	(dead)	tcm->InActQ(this);		// activate QGT
+	//		if	(dead)	tcm->InActQ(this);		// activate QGT
+			if (dead)	  tcm->HeadofQ(this);
 			break;
 	 //--- Default: state is immediate -------------
 		default:
@@ -3652,8 +3655,8 @@ TCacheMGR::TCacheMGR()
   if (0 != t2OK)  Abort("Cannot Create File Thread");
   pthread_attr_destroy(&attr);
   //-----Reserve a big bloc of memory to ensure continuity ------
-  char *res = new char[2000000];
-  delete [] res;
+  //char *res = new char[2000000];
+  //delete [] res;
   //-----Get country names ---------- ---------------------------
   CDbCacheMgr *dbc = globals->dbc;
   SqlMGR      *sqm = globals->sqm;

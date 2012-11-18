@@ -33,10 +33,6 @@
 #include "FlyLegacy.h"
 #include "../Include/3dMath.h"
 //===================================================================================
-//  Test Bed state
-//===================================================================================
-
-//===================================================================================
 //  TEST BED is used to test important features that needs most of Legacy environment
 //  (Textures, terrain, weather, etc) before including those features into the main
 //  code.

@@ -186,19 +186,13 @@ U_CHAR popSTA[] = {
 //  TEXTURE LOADING
 //---------------------------------------------------------------------------------
 void TextureLoad(C_QGT *qgt)
-{ CTextureWard *txw = globals->txw;       //tcm->GetTexWard();
-  TCacheMGR    *tcm = globals->tcm;
- // qgt->LockState();
-  //--------Load Texture in Load Queue ------------------------------------
+{ //--------Load Texture in Load Queue ------------------------------------
   CSuperTile *sp = 0;
   for (sp = qgt->PopLoad(); sp != 0; sp = qgt->PopLoad())
-    {	
-			if (sp->NeedALT())  txw->LoadTextures(1,sp->aRes,qgt,sp);
-			if (sp->NeedLOD())  txw->LoadTextures(0,sp->Reso,qgt,sp);
+    {	globals->txw->LoadTextures(sp->levl,sp->Reso,qgt,sp);
       qgt->EnterNearQ(sp);
 			sp->RenderINR();
     }
- // qgt->UnLockState();
   qgt->PostIO();
   return;          
 }
@@ -248,7 +242,6 @@ void ProcessFiles(TCacheMGR *tcm, SqlTHREAD *sql)
 							//								tcm->Time(),qgt->GetXkey(),qgt->GetZkey());
               GetQTRfile(qgt,tcm);
 							//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
-
               continue;
 					//--- Load elevations ---------------------------
           case TC_SQL_ELV:
@@ -259,7 +252,6 @@ void ProcessFiles(TCacheMGR *tcm, SqlTHREAD *sql)
 							sql->GetQgtElevation(reg,ELVtoCache);
               qgt->PostIO();
 							//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
- 
               continue;
 					//--- Load coast data ---------------------------
            case TC_REQ_SEA:
@@ -269,7 +261,6 @@ void ProcessFiles(TCacheMGR *tcm, SqlTHREAD *sql)
               else              tcm->AllSeaPOD(qgt);
               qgt->PostIO();
 							//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
-
               continue;
 
         } // end of switch
@@ -320,8 +311,7 @@ void ProcessOSM(TCacheMGR *tcm, SqlTHREAD *sql)
 //  FILE THREAD LOOP
 //=================================================================================
 void *FileThread(void *p)
-{ 
-  TCacheMGR   *tcm	= (TCacheMGR*) p;
+{ TCacheMGR   *tcm	= (TCacheMGR*) p;
 	char         thn  = tcm->GetThreadNumber();
   SqlTHREAD sql;												// Local instance of SQL manager
 	globals->elvDB	= sql.UseELV();
@@ -337,14 +327,14 @@ void *FileThread(void *p)
   //--- Region parameters --------------------
   while (tcm->RunThread())
     { pthread_cond_wait(cond,tmux);						// Wait for signal
-      //----Process load texture Queue first -------------------------------------
-      if (thn == 0)		ProcessTexture(tcm);
       //----Process file Requests ------------------------------------------------
       if (thn == 1)		ProcessFiles(tcm,&sql);
       //--- Process 3DModel requests ----------------------------------------------
 		  if (thn == 0)		ProcessModels(tcm,&sql);
 			//--- Process OSM models requests--------------------------------------------
 			if (thn == 1)   ProcessOSM(tcm,&sql);
+			//----Process load texture Queue --------------------------------------------
+      if (thn == 0)		ProcessTexture(tcm);
     }
 	//--- File thread is stopped ------------------
 	if (globals->sql == &sql) globals->sql = 0;
@@ -408,10 +398,14 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
       { txn   = &sp->Tex[Nd];
         qad   = txn->quad;
         //---Uncomment and set Tile indices for stop on tile -
-//       qad->AreWe(508,28,336,6);
-//				int ok = strcmp(txn->Name,"656C0F03");
-//				if (ok ==  0)
-//					int	a = 1;
+				/*
+        bool stop = qad->AreWe(10,8,325,00);
+				if (stop)
+				int a = 0;
+				int ok = strcmp(txn->Name,"656C0F03");
+				if (ok ==  0)
+				int	a = 1;
+				*/
         //-----Clear  descriptor ----------------------------
         dTEX = 0;
         nTEX = 0;

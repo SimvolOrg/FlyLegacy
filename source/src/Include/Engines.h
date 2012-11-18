@@ -109,6 +109,7 @@ public:
 	float   e_minRv;										  // Minimum RPM
 	float   e_maxRv;											// Maximum RPM
 	float		e_govrn;											// Governor gain
+	float		e_spin;												// Animating spiner
   //----Sound ratio --------------------------------------------
   float   e_Srat;                       // Sound ratio
   //----Piston engine parameters -------------------------------

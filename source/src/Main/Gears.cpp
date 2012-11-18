@@ -592,7 +592,8 @@ CGroundSuspension::~CGroundSuspension (void)
 // Read all parameters
 //------------------------------------------------------------------------------
 int CGroundSuspension::Read (SStream *stream, Tag tag)
-{ switch (tag) {
+{ int pm;
+	switch (tag) {
   case 'rMas':
     // rated mass (slugs)
     ReadFloat (&rMas, stream);
@@ -621,6 +622,11 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
 	//--- Turn radius coefficient -----------------------
 	case 'trad':
 		ReadDouble(&trad,stream);
+		return TAG_READ;
+	//--- Nose wheel type -------------------------------
+	case 'nose':
+		ReadInt(&pm,stream);
+		mveh->SetNoseType(pm);
 		return TAG_READ;
   //---JS decode suspension type -------------------------
   case 'type':

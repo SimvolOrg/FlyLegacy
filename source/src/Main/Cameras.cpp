@@ -933,6 +933,9 @@ void CCamera::UpdateCameraPosition(SPosition &wpos)
 	double	lim		= globals->tcm->GetGroundAltitude() + minAGL;				//minAGL;
   //---Update phi if camera is too low -------------------------
   if (camPos.alt < lim)		phi += DegToRad(0.25f);
+	//--- Update sound when permited by camera -------------------
+	if (Prof.Not(CAM_HAS_SOUND))	return;
+	globals->snd->SetListener(this);
 	return;
 }
 //-------------------------------------------------------------------------
@@ -1035,7 +1038,7 @@ typedef enum {
 //=====================================================================================
 CCameraCockpit::CCameraCockpit (CVehicleObject *mv)
 { //mveh	 = mv;
-	Prof.Set(CAM_MAY_ZOOM);
+	Prof.Set(CAM_MAY_ZOOM | CAM_HAS_SOUND);
 	Rate	 = 2;						// Default rotation rate
 	//-----------------------------------------------
 	Seat.x = Seat.y = Seat.z = 0;
@@ -1141,6 +1144,8 @@ void CCameraCockpit::UpdateCamera (SPosition wpos, SVector ori ,float dT)
   Ofs.MultMatGL(mSEAT,offset);
 	//--- Update camera world position ----------------
 	camPos  = AddToPositionInFeet(wpos,offset, globals->exf);
+	//--- Update sound ---------------------------------
+	globals->snd->SetListener(this);
 	return;
 }
 
@@ -1322,7 +1327,7 @@ void CRabbitCamera::UpdateCamera (SPosition wpos, SVector tori,float dT)
 //=========================================================================
 CCameraSpot::CCameraSpot (void)
 : CCamera()
-{ Prof.Set(CAM_IS_SPOT);
+{ Prof.Set(CAM_IS_SPOT | CAM_HAS_SOUND);
   theta = DegToRad (30.0f);
   phi   = DegToRad (15.0f);
   //--- Link to cameras -------------------------
@@ -1378,7 +1383,7 @@ void CCameraSpot::RangeFor(double D, double A)
 //================================================================================
 CCameraObserver::CCameraObserver (void)
 : CCamera()
-{ Prof.Set(CAM_MAY_MOVE | CAM_MAY_ZOOM | CAM_VERT_ROT | CAM_SIDE_ROT);
+{ Prof.Set(CAM_IS_SPOT | CAM_HAS_SOUND);
   theta = DegToRad (-30.0f);
   phi   = DegToRad (15.0f);
   //--- Link to cameras -------------------------
@@ -1437,7 +1442,7 @@ void  CCameraObserver::SetCameraPosition (const float &pitchInRads, const float 
 //===================================================================================
 CCameraFlyby::CCameraFlyby (void)
 { // This camera cannot be manually handled
-  Prof.Set(CAM_MAY_ZOOM);
+  Prof.Set(CAM_MAY_ZOOM | CAM_HAS_SOUND);
   // Default position to an arbitrary value to cause position recalc on first update
   camPos.lat = camPos.lon = camPos.alt = 0;
   // Temporarily set orientation based on position NE of the target
@@ -1474,7 +1479,6 @@ void CCameraFlyby::UpdateCamera (SPosition wPos, SVector tori,float dT)
     matx.ParentToChild (w_dir, _angle);                                 // LH
     dir.x = w_dir.z; dir.y = w_dir.x; dir.z = 0.0;
     // set camera to the NE of target position
-    // camPos = AddToPositionInFeet(wPos, dir, globals->exf);
     v = dir;//	SubtractPositionInFeet (wPos, camPos);
   }
   offset.x = v.x;
@@ -1484,6 +1488,9 @@ void CCameraFlyby::UpdateCamera (SPosition wPos, SVector tori,float dT)
   //---Update phi if camera is too low -------------------------
 	double alt = globals->tcm->GetGroundAltitude() + minAGL;
   if (camPos.alt < alt)  camPos.alt += 4 ;
+	//--- Update sound -------------------------------------------
+	globals->snd->SetListener(this);
+
   return;
 }
 //==============================================================================
@@ -1496,7 +1503,7 @@ void CCameraFlyby::UpdateCamera (SPosition wPos, SVector tori,float dT)
 //==============================================================================
 CCameraTower::CCameraTower (void)
 : CCamera()
-{ Prof.Set(CAM_SIDE_ROT + CAM_VERT_ROT + CAM_MAY_ZOOM); 
+{ Prof.Set(CAM_SIDE_ROT | CAM_VERT_ROT | CAM_MAY_ZOOM | CAM_HAS_SOUND); 
 	Mode				= CAM_TRK_MODE;
   t_zoomRatio = 40.0f;
   //--- Default range for flyby camera
@@ -1561,7 +1568,7 @@ void CCameraTower::UpdateCamera (SPosition wPos, SVector tgtOrient,float Dt)
 		case CAM_TRK_MODE:
 			{	UpdatePosition(Dt);
 				ComputeOffset(wPos);
-				return;
+				break;
 			}
 		case CAM_MAN_MODE:
 			{ DrawNoticeToUser("Tower Camera in manual mode",2);
@@ -1573,10 +1580,12 @@ void CCameraTower::UpdateCamera (SPosition wPos, SVector tgtOrient,float Dt)
 				tpos.z			= range * sin(orient.x);
 				//--- relative to camera ------------------
 				tpos.Add(offset);
-				return;
+				break;
 			}
 	}
-return;
+	//--- Update sound ------------------------------------
+	globals->snd->SetListener(this);
+	return;
 }
 //-------------------------------------------------------------------------------
 //  Toggle camera mode
@@ -1689,7 +1698,7 @@ void CCameraTower::ZoomRatioOut (void)
 //==============================================================================
 CCameraOverhead::CCameraOverhead (void)
 : CCamera()
-{ Prof.Set(CAM_MAY_MOVE + CAM_MAY_ZOOM);
+{ Prof.Set(CAM_MAY_MOVE | CAM_MAY_ZOOM | CAM_HAS_SOUND);
 	Up.x = 0;
   Up.z = 0;
   Up.y = 1.0f;
@@ -1717,13 +1726,16 @@ void CCameraOverhead::UpdateCamera (SPosition wpos, SVector tgtOrient,float Dt)
 	//--- Update camera world position --------------------
 	camPos			= wpos;
 	camPos.alt	= range + wpos.alt;
+	//--- Update sound ------------------------------------
+	globals->snd->SetListener(this);
+
 }
 //=====================================================================================
 // Orbit camera
 //=====================================================================================
 CCameraOrbit::CCameraOrbit (void)
 : CCamera()
-{ Prof.Set(CAM_VERT_ROT + CAM_MAY_MOVE + CAM_MAY_ZOOM);
+{ Prof.Set(CAM_VERT_ROT | CAM_MAY_MOVE | CAM_MAY_ZOOM | CAM_HAS_SOUND);
   // Initialize orbit rate
   orbitRate = 0;
   // Initialize theta and phi angles

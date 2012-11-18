@@ -1240,7 +1240,7 @@ void AutoPilot::LateralHold()
 //  easier to control by the PID.
 //-----------------------------------------------------------------------
 void AutoPilot::GlideHold()
-{ eVRT *= vAMP;                                       // Amplify glide error
+{ eVRT *= 1000;	//vAMP;                                       // Amplify glide error
   double gld = pidL[PID_GLS]->Update(dTime,eVRT,0);   // error to glide controller
   double glr = RoundValue(gld,100);
   double aoa = GetAOS();                              // Current AOA inverted
@@ -1255,7 +1255,9 @@ void AutoPilot::GlideHold()
 //         controller.
 //-----------------------------------------------------------------------
 void AutoPilot::AltitudeHold()
-{ double nul = pidL[PID_VSP]->Update(dTime,eVRT,0); // Maintain VSP controller
+{ double gler= -Radio->gDEV * 1000;
+	double nl0 = pidL[PID_VSP]->Update(dTime,eVRT,0); // Maintain VSP controller
+	double nl1 = pidL[PID_GLS]->Update(dTime,gler,0); // Maintain Glide controller
   double taa = pidL[PID_ALT]->Update(dTime,eVRT,0); // erro to altitude controller
   double ref = RoundValue(taa,10);                  // round value
   double aoa = GetAOS();
@@ -1574,7 +1576,7 @@ void AutoPilot::ModeGSW()
 { eVRT  = (rALT.Get() - cALT);   // Vertical error
 	if (lStat == AP_LAT_LT0)			return AltitudeHold();
   if (Radio->gDEV < 0.0005)			return AltitudeHold();
-	pidL[PID_GLS]->Init();
+	//pidL[PID_GLS]->Init();
   vStat = AP_VRT_GST;
   StateChanged(AP_STATE_VTK);
   vAMP  = 0;               // Vertical amplifier
@@ -1866,6 +1868,10 @@ void AutoPilot::EnterAPR()
   //--Init vertical mode -----
   pidL[PID_GLS]->Init();
   vStat = AP_VRT_GSW;
+	//--------------------------------------------------------
+	ailS->SetValue(0);
+	elvS->SetValue(0);
+	elvT->SetValue(0);
 	//	TRACE("EnterAPR elvT=%.4f eVRT=%.4f AOA=%.4f",elvT->Val(),eVRT,pidL[PID_AOA]->GetVN());
   return;
 }

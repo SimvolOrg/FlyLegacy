@@ -745,7 +745,7 @@ bool CWPoint::EnterLanding(CRadio *rad)
 	//--- Set landing mode -------------
 	position	= lnd->refP;
 	SetLandingMode();
-	rad->ModeEXT(GetDBobject(),lnd);
+	rad->ExternalMode(GetDBobject(),lnd,0);
 	return true;
 }
 //----------------------------------------------------------------------
@@ -1780,7 +1780,7 @@ CWPoint *CFPlan::StartingNode()
 //	NOTE: This function assume that there is only one slot to define
 //				a waypoint
 //-----------------------------------------------------------------
-CWPoint *CFPlan::GetWaypoint(int No)
+CWPoint *CFPlan::GetInitialWaypoint(int No)
 {	int index = (No < 1)?(1):(No);
   return (CWPoint *)wPoints.GetSlot(index); }
 //-----------------------------------------------------------------

@@ -26,6 +26,7 @@
 #include "../Include/FlyLegacy.h"
 #include "../Include/Model3d.h"
 #include "../Include/LightSystem.h"
+#include "../Include/Compression.h"
 //======================================================================================
 class CAirportMgr;
 class C3Dmodel;

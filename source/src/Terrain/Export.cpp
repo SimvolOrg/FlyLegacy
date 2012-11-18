@@ -1936,8 +1936,10 @@ int CExport::GetNextTRN()
 //-----------------------------------------------------------------------------------------
 void  CExport::WriteTRN()
 {	if (0 == fName)		return;
-	//--- check if file already in data base
-	bool in					= sqm->FileInELV(podN, &rowid);
+	//--- check if file already in data base ---------------
+	char *slh = strrchr(podN,'/');
+	char *pn	= (slh)?(slh+1):(podN);
+	bool in					= sqm->FileInELV(pn);
 	if (in)					 return;
 	//--- Write file name in database ----------------------
 	rowid = sqm->WriteTRNname(podN);
@@ -1954,14 +1956,8 @@ void  CExport::WriteTRN()
 void CExport::ExportTRN(char *fn)
 { if (!pexists(&globals->pfs,fn))	return;
 	ftrn = new C_TRN(0,0);			// Create TRN
-	SStream s(ftrn,fn);					// Stream file
-	/*
-  if (!OpenRStream (fn, s))  return;
-  ftrn = new C_TRN(0,0);
 	ftrn->Export();
-  ReadFrom (ftrn, &s);
-  CloseStream (&s);
-	*/
+	SStream s(ftrn,fn);					// Stream file
   //--- Process all Super tile -----------------------------
 	for (short   sz = 0; sz != TC_SUPERT_PER_QGT; sz++)
   { for (short sx = 0; sx != TC_SUPERT_PER_QGT; sx++)

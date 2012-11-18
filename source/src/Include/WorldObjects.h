@@ -412,6 +412,7 @@ public:
 	bool					AllWheelsOnGround()			{return whl.AllWheelsOnGround();}
 	void					GearConnector(char g)		{amp.GearConnector(g);}
 	char					GearConnexion()					{return amp.GearConnexion();}
+	void					SetNoseType(char p)			{wTyp	= p;}
 	void					SpeedRegulation(char s)	{sreg = s;}
 	char          UnderRegulation()				{return sreg;}
 	//--- Brake interface -------------------------------------------------------------
@@ -463,6 +464,8 @@ protected:
   //---Wheels parameters ---------------------------------------------------------
   char    wNbr;															// Wheel number
   char    wBrk;                             // Wheel with brakes
+	char    wTyp;															// Nose wheel type
+	char		wrfu;															// Reserved
   //---Wheels functions ----------------------------------------------------------
 public:
 	inline  void	IncWheelBrake()										{wBrk++;}

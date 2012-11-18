@@ -4214,7 +4214,7 @@ CWPoint *CK89gps::SelectedNode()
 	if (0 == basWP)												return 0;
 	//--- Compute sequence number -------------------
 	int seq = basWP->GetSequence() + curPOS - 1;
-  return  FPL->GetWaypoint(seq);
+  return  FPL->GetInitialWaypoint(seq);
 }
 //---------------------------------------------------------------------
 //  Flight Plan is modified
@@ -4249,7 +4249,15 @@ void GPSRadio::EnterTRK()
 	navON	= 1;
 	gpsTK	= GPSR_TRAK;
 	//---Get first waypoint to track ----------------
-	TrackNewWPT();
+	wTRK = wp;
+	if (FPL->IsOnFinal())			return EnterAPR();
+	//--- Set Waypoint On External Source ------------------
+	CmHead *obj = wp->GetDBobject();
+  RAD->ExternalMode(obj,0,1);				// Set external direct mode
+	//--- Configure autopilot ------------------------------
+	double alt = wp->GetAltitude();
+	if (wp->IsFirst()) alt = mveh->GetPosition().alt;
+	APL->EnterWPT(alt);
 	return;
 }
 
@@ -4393,7 +4401,7 @@ void GPSRadio::PowerEVN(char parm)
 	//--- Check for power off ----------------
 	if (pw)				return;
 	gpsTK = GPSR_PWOF;
-	if (RAD) RAD->ModeEXT(0);
+	if (RAD) RAD->NormalMode();
 	return;
 }
 //----------------------------------------------------------------------------------
@@ -4443,7 +4451,7 @@ void GPSRadio::TrackNewWPT()
 	//--- Set Waypoint On External Source ------------------
 	float   dir = wTRK->GetDTK();											
 	CmHead *obj = wTRK->GetDBobject();
-  RAD->ModeEXT(obj);								// Set EXT mode
+  RAD->ExternalMode(obj,0,0);			// Set External track mode
 	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
 	double alt = double(wTRK->GetAltitude());
@@ -4464,7 +4472,7 @@ void GPSRadio::EnterSBY()
 	gpsTK	= GPSR_STBY;
 	navON	= 0;
 	aprON = 0;
-	if (RAD) RAD->ModeEXT(0);
+	if (RAD) RAD->NormalMode();
 	return;
 }
 //--------------------------------------------------------------
@@ -4500,7 +4508,7 @@ void GPSRadio::UpdateTracking(float dT,U_INT frm)
 		case GPSR_TRAK:
 			if (APL->IsDisengaged())	EnterSBY();
 			if (0 == wTRK)						return;
-			if (wTRK->IsActive())	    return RAD->CorrectDrift();		//wTRK->CorrectDrift(RAD);
+			if (wTRK->IsActive())	    return RAD->CorrectDrift();		
 			TrackNewWPT();
 			return;
 		//--- Just watch the auto pilot ------------

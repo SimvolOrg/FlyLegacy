@@ -518,7 +518,7 @@ public:
 	CWPoint *BaseWPT(CWPoint *w);
 	CWPoint *StartingNode();
 	CWPoint *GetBestWaypoint();
-	CWPoint *GetWaypoint(int No);
+	CWPoint *GetInitialWaypoint(int No);
 	//--- Tracking flight plan --------------------------------------
 	CWPoint *GetSelectedNode()			{return sWPT;}
 	void	SetSelection(CWPoint *p)	{sWPT = p;}

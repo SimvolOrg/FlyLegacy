@@ -62,8 +62,10 @@ struct RGBA_COLOR
 #define CAM_VERT_ROT (0x0002)						// Camera may rotate up/down
 #define CAM_MAY_MOVE (0x0004)						// Camera may move in/out from target
 #define CAM_MAY_ZOOM (0x0008)						// Camera may zoom in/out
+//---------------------------------------------------------------
+#define CAM_HAS_SOUND (0x0010)
 //---Combination ------------------------------------------------
-#define CAM_IS_SPOT  (CAM_SIDE_ROT + CAM_VERT_ROT + CAM_MAY_MOVE + CAM_MAY_ZOOM)
+#define CAM_IS_SPOT  (CAM_SIDE_ROT | CAM_VERT_ROT | CAM_MAY_MOVE | CAM_MAY_ZOOM)
 //===================================================================================
 //   Class Tracker for interractive windows.
 //		This class is used in conjonction with camera to pick object on screen
@@ -228,6 +230,12 @@ public:
   double GetRange()						{return range;}
   void   SetMaxRange(double m){rmax  = m;}
   void   GetUpVector (SVector &v) {v = Up;}
+	//------------------------------------------------------------
+	SVector	GetUpVector()				{return Up;}
+	SVector GetATVector()				{return Fw;}
+	SVector GetRZvector()				{return Rz;}
+	SVector GetRYvector()				{return Ry;}
+	//------------------------------------------------------------
   double GetTargetLon()				{return tgtPos.lon;}
   double GetTargetLat()				{return tgtPos.lat;}
   double GetTargetAlt()				{return tgtPos.alt;}
@@ -235,6 +243,7 @@ public:
   SVector   &CamOffset()			{return offset;}
 	void   GetOffset (SVector &v)            {v = offset;}
   void   GetOrientation (SVector &v)       {v = orient;}
+	SPosition &GetPosition()		{return camPos;}
 	//------------------------------------------------------------
 	char	GetINTMOD()					{return intcm;}
 	char  GetEXTMOD()					{return extcm;}

@@ -138,10 +138,10 @@ protected:
   CSoundBUF  *sounds[ENGINE_MAX_SOUND]; // Stock of sound
   //-------METHODS ------------------------------------------------------
 public:
-  CSoundOBJ(Tag idn, SVector &pos);   // Create a positional source
-  CSoundOBJ();                        // Panel and subsystem
+  CSoundOBJ(Tag idn, SVector &pos,float rof=1);   // Create a positional source
+  CSoundOBJ();																		// Panel and subsystem
  ~CSoundOBJ();
-  void  Init(Tag t, SVector &pos);
+  void  Init(Tag t, SVector &pos,float rof=1);
   //---------------------------------------------------------------------
   void  Play(int No);      // Play a buffer in the specified pitch
   void  StopSound();
@@ -199,7 +199,9 @@ public:
   void Init (void);
   void AllocateSources(char n);
   void Cleanup (void);
-  void SetListenerPosition (SPosition *p);
+  void SetListenerPosition (SVector &v);
+	void SetListenerOrientation (ALfloat *v);
+	void SetListener(CCamera *cam);
   //---------------------------------------------------------------------
   U_INT       Play(CSoundBUF *sbf);
   void        Loop(CSoundBUF *sbf);

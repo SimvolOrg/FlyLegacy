@@ -380,6 +380,7 @@ struct ELV_PATCHE;
 //------------------------------------------------
 #define CLN_OBJ_NAM 18            // Name
 #define CLN_OBJ_DSC 19            // Descriptor
+#define CLN_OBJ_SCN 20						// SCene index
 //=====================================================================================
 //  DEFINE COLUMN INDICES FOR  ELEVATION IN TRN TABLE
 //=====================================================================================
@@ -694,7 +695,7 @@ public:
   GLubyte *GetGenTexture(TEXT_INFO &inf);
   GLubyte *GetAnyTexture(TEXT_INFO &inf);
   //--- SPECIFIC TRN ELEVATIONS -----------------------------------------
-	bool	FileInELV(char *fn, U_INT *r);
+	bool	FileInELV(char *fn);
 	bool	SearchPODinTRN(char *pn);
 	int		GetTRNElevations(C_QGT *qgt);
 	int		DecodeTRNrow();

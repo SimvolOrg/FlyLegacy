@@ -497,7 +497,7 @@ void VPilot::GroundBraking()
 //--------------------------------------------------------------
 void VPilot::HandleBack()
 {	apil->ReleaseControl();
-	if (RAD)	RAD->ModeEXT(0);
+	if (RAD)	RAD->NormalMode();
 	Error(0);
 	fpln->StopPlan();
 	return;
@@ -703,7 +703,7 @@ void VPilot::ChangeWaypoint()
 	float dir = wayP->GetDTK();												//SetDirection();
 	//--- Set Waypoint on external source -----------------
 	CmHead *obj = wayP->GetDBobject();
-	RAD->ModeEXT(obj);
+	RAD->ExternalMode(obj,0,0);
 	//--- Set Reference direction --------------------------
 	RAD->ChangeRefDirection(dir);
 	//--- Configure autopilot ------------------------------
@@ -779,7 +779,7 @@ void VPilot::ModeGoHome()
 void VPilot::GoParking()
 {	//--- Disengage autopilot ------------------
 	apil->Disengage(1);
-	RAD->ModeEXT(0);
+	RAD->NormalMode();
 	//--- Taxi to parking ----------------------
 	StartTaxiing(VPL_STOPPED);
 	return;

@@ -410,6 +410,7 @@ protected:
 	GroundSpot  spot;
   //----------------------------------------------------------
   Tag         kind;                   // Object category
+	U_INT				scene;									// Scene index
   U_INT       flag;                   // FLAG
   //---REFERENCE QUEUES (one for Day, one for Night) ----------
   C3Dmodel   *modL[2];                // Day and nigth modesl
@@ -523,6 +524,7 @@ public:
   inline bool       IsaShare()            {return (shar != 0);}
 	inline char       Rotate()							{return roty;}
   //-------------------------------------------------------------
+	inline U_INT			GetScene()						{return scene;}
 	inline U_INT			GetType()						  {return type;}
   inline void       SetParameter(CmHead *obj) {pmOB = obj;}
   inline CmHead    *GetUserParam()        {return pmOB.Pointer();}
@@ -534,6 +536,7 @@ public:
 	//-------------------------------------------------------------
   inline C_QGT     *GetQGT()    {return spot.qgt;}
   //-------------------------------------------------------------
+	inline void				SetScene(U_INT s)			{scene  = s;}
 	inline void				SetType(U_INT t)			{type		= t;}
   inline void       SetDistance(float d)  {pDis = d;}
   inline void       SetParent(C3Dworld *w){wd3D = w;}

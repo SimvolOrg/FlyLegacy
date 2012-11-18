@@ -192,7 +192,6 @@ void MouseForSImulation(int x,int y,EMouseButton b,int u,int but)
 //====================================================================================
 void mouse ( int button, int u, int x, int y )
 { globals->cScreen = &globals->mScreen;
-  bool used = false;
   EMouseButton b = MouseEvent(button);
   // Send mouse click events to FUI for processing
   switch (globals->appState)  {
@@ -238,9 +237,9 @@ int nKeys = sizeof(nonGlutKeys) / sizeof(SNonGlutKey);
 //========================================================================
 
 void idle (void)
-{
+{	//--- MODE SIMULATION ------------------------------------------------
+  if (globals->appState != APP_SIMULATION)    return;
   BYTE keys[256];
-
   // Update the key modifier state
   GetKeyboardState(keys);
   int flymod = KB_MODIFIER_NONE;
@@ -319,7 +318,8 @@ void motion2 ( int x, int y )
 //===========================================================================
 void motion ( int x, int y )
 { CCursorManager *cum = globals->cum;
-	if (0 == cum)		return;
+	//--- MODE SIMULATION ------------------------------------------------
+  if (globals->appState != APP_SIMULATION)    return;
 	//--------------------------------------------------
 	CVehicleObject *veh		= globals->pln;
   CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
@@ -328,14 +328,11 @@ void motion ( int x, int y )
   globals->cScreen = &globals->mScreen;
   // Send mouse motion data to FUI
   bool used = globals->fui->MouseMove (x, y);
-  if (!used) {
-    // Send mouse motion data to PUI for potential processing
-    puMouse (x, y);
+  if (!used)	used =	(0 !=		puMouse (x, y));
     // Send mouse motion to veh interior panel
-    if (pit)  used = pit->MouseMove(x,y);
-  }
+  if (!used && pit)		 pit->MouseMove(x,y);
   // Send mouse motion to cursor manager
-  cum->MouseMotion (x, y);
+  if (cum)	cum->MouseMotion (x, y);
   // Force screen redraw
   glutPostRedisplay () ;
 }
@@ -363,24 +360,22 @@ void passive_motion2 ( int x, int y )
 //============================================================================
 void passive_motion ( int x, int y )
 { CCursorManager *cum = globals->cum;
-	if (0 == cum)		return;
+	//--- MODE SIMULATION ------------------------------------------------
+  if (globals->appState != APP_SIMULATION)                    return;
 	//--------------------------------------------------
 	CVehicleObject *veh		= globals->pln;
   CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
 	//--------------------------------------------------
   cum->SetCursor(Cursor);
   globals->cScreen = &globals->mScreen;
-
+	bool	used = globals->fui->MouseMove (x, y);
   // Send mouse motion to PU
-  bool used = (0 != puMouse (x, y));
-  //--Not used then try Fui ----------------
-  if (!used)  used = globals->fui->MouseMove (x, y);
+  if (!used)		used	= (0 != puMouse (x, y));
   //-- Not used.  Try panel ----------------
-  if (!used)
-  { if (pit)        pit->MouseMove(x,y); }
+  if (!used && pit) pit->MouseMove(x,y);
   // Send mouse motion to cursor manager
-  cum->MouseMotion (x, y);
-  // Force screen redraw
+  if (cum)		cum->MouseMotion (x, y);
+  //--- Force screen redraw -----------------
   glutPostRedisplay () ;
 }
 
@@ -449,10 +444,10 @@ void keyboard (unsigned char key, int x, int y)
 void special2(int key, int x, int y)
 { CKeyMap *kbd = globals->kbd;
   globals->cScreen = &globals->sScreen;
-
-  // Pass keystroke to PUI keyboard handler 
+	//--- MODE SIMULATION ------------------------------------------------
+  if (globals->appState != APP_SIMULATION)                    return;
+  //--- Pass keystroke to PUI keyboard handler 
   if (!puKeyboard (key + PU_KEY_GLUT_SPECIAL_OFFSET, PU_DOWN)) {
-
 
     // Get GLUT modifiers and convert to FlyLegacy modifiers
     int glutmod = glutGetModifiers ();

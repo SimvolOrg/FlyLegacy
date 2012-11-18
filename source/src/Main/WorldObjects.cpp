@@ -431,6 +431,7 @@ CVehicleObject::CVehicleObject (void)
 	
   //--------------------------------------------------------
   wNbr  = wBrk = 0;
+	wTyp	= 1;
   //---- Initialize user vehicle subclasses ----------------
   swd		= 0;
   hst		= 0;
@@ -637,14 +638,16 @@ void CVehicleObject::ReadFinished (void)
   amp.Init(nfo.GetAMP(), &eng);				
   //--- Read Cockpit Manager -------------
   pit.Init(nfo.GetPIT());
-  //--- Read Control Mixer
+  //--- Read Control Mixer ---------------
   mix.Init(nfo.GetMIX());
 	//---Add various parameters ---------------------------------------
   nEng  = eng.HowMany();
 	//--- Read CheckList ----------------------------------------------
 	ckl.Init(this,svh.GetTailNumber());
-  //--  Initialisations (after all the objects creation) ------------
+  //--  Initialisations (after all objects creation) ----------------
   wgh.Init ();
+	//--- gear connexion to rudder ------------------------------------
+	GearConnector(wTyp);
   //--- Add drawing position as external feature ---------------------
 	if (IsUserPlan())	{											// MARK TEST
 		CDrawPosition *upos = new CDrawPosition(this);
@@ -655,11 +658,7 @@ void CVehicleObject::ReadFinished (void)
 		CVehicleSmoke *usmk = new CVehicleSmoke(this);
 		amp.AddExternal(usmk,0);							
 	}
-	//--- Temporary gear connexion ------------------------------------
-	int	pm	= 1;
-	GetIniVar("Sim","GearConnected",&pm);
-	GearConnector(pm);
-  return;
+	
 }
 
 // Read aircraft history file ---------------------------------------

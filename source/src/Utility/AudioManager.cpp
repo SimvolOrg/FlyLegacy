@@ -55,8 +55,8 @@ using namespace std;
 //  to the listener position
 //  All soundOBJ are collected into a pool located in the veh object
 //=====================================================================================
-CSoundOBJ::CSoundOBJ(Tag t, SVector &pos)
-{ Init(t,pos);
+CSoundOBJ::CSoundOBJ(Tag t, SVector &pos,float rof)
+{ Init(t,pos,rof);
 }
 //---------------------------------------------------------------------
 //  CSound object for panel and subsystem
@@ -69,7 +69,7 @@ CSoundOBJ::CSoundOBJ()
 //---------------------------------------------------------------------
 //  Init sound object
 //---------------------------------------------------------------------
-void  CSoundOBJ::Init(Tag t, SVector &pos)
+void  CSoundOBJ::Init(Tag t, SVector &pos,float rof)
 { CAudioManager *snd = globals->snd;
   sEnd    = 0;
   idn     = t;
@@ -83,7 +83,9 @@ void  CSoundOBJ::Init(Tag t, SVector &pos)
   snd->Check();
   snd->IncSRC();
   alSource3f(alSRC,AL_POSITION,pos.x,pos.y,pos.z);
-  alSourcef (alSRC,AL_REFERENCE_DISTANCE,8.0f);
+  alSourcef (alSRC,AL_REFERENCE_DISTANCE,20.0f);
+	alSourcef (alSRC,AL_MAX_DISTANCE,10000.0f);
+	alSourcef (alSRC,AL_ROLLOFF_FACTOR,rof);
   snd->Check();
 	for (int k=0; k<ENGINE_MAX_SOUND; k++) sounds[k] = 0;
 }
@@ -461,6 +463,8 @@ void CAudioManager::Init (void)
 
   if ((error = alGetError ()) != AL_NO_ERROR) return Warn("CAudioManager:  Could not set listener orientation");
   alGetError();
+
+	alDistanceModel(AL_EXPONENT_DISTANCE);
 }
 //-------------------------------------------------------------------
 // Init sources
@@ -485,6 +489,33 @@ void CAudioManager::AllocateSources(char n)
 // SetSfxPosition (SVector) method, then the application does not need to
 // continuously update the listener world position by calling this function.
 //============================================================================
+//------------------------------------------------------------
+// Change listener position (in feet) from aircraft center
+//------------------------------------------------------------
+void CAudioManager::SetListener(CCamera *cam)
+{	//SVector ofs		= SubtractPositionInFeet(cam->GetPosition(), globals->geop);
+	SVector *ofs	= cam->GetOffset();
+	ALfloat pos[] = {ofs->x, ofs->y, ofs->z};
+	alListenerfv (AL_POSITION, pos);
+	//--- Orientation ------------------------------
+	SVector up = cam->GetRZvector();
+	SVector at = cam->GetRYvector();
+	ALfloat ori[] = {at.x,at.y, at.z,up.x,up.y,up.z};
+	alListenerfv (AL_ORIENTATION, ori);
+}
+//------------------------------------------------------------
+// Change listener position (in feet) from aircraft center
+//------------------------------------------------------------
+void CAudioManager::SetListenerPosition (SVector &v)
+{	ALfloat pos[] = {v.x, v.z, -v.y};
+  alListenerfv (AL_POSITION, pos);
+}
+//------------------------------------------------------------
+// Change listener orientation (in feet) from aircraft center
+//------------------------------------------------------------
+void CAudioManager::SetListenerOrientation(ALfloat *v)
+{	alListenerfv (AL_ORIENTATION, v); }
+
 //------------------------------------------------------------
 // Check any error
 //------------------------------------------------------------

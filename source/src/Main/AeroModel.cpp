@@ -291,7 +291,7 @@ void CAerodynamicModel::Timeslice(float dT) {
 	//		For now, I work towards getting ComputeForces() independant of the unit system.
 	//		It will compute forces as per the unit matching the unti of rho*relV*relV*area as made available.
 	// Luc's comment : Modifying ComputeForces()
-  double hAgl = FN_METRE_FROM_FEET (double(mveh->GetBodyAGL())); ///< meters;
+  double hAgl = FN_METRE_FROM_FEET (mveh->GetBodyAGL()); ///< meters;
   // value rho 1.16->1.34 at 1 atm
   double rho = globals->atm->GetDensityKgM3 ();             ///< GetDensitySlugsFt3() * 515.317882;
   // value soundspeed : In SI Units with dry air at 20 °C (68 °F), the speed of sound is 343 m/s.
@@ -361,8 +361,8 @@ void CAerodynamicModel::Timeslice(float dT) {
     relV = VectorSum(*v, omegaV);                                 ///< m/s 
     // Luc's comment : Modifying ComputeForces()
     ws->ComputeForces(relV, rho, soundSpeed, hAgl);               /// inertial frame
+		//TRACE("VELOCITY x=%.4lf y=%.4lf z=%.4lf",relV.x,relV.y,relV.z);
 
-    //elmF = VectorSum(ws->GetLiftVector(), ws->GetDragVector());
     elmF  = VectorSum(ws->GetLiftVector(), VectorMultiply (ws->GetDragVector(), cd));   ///< total force
     force = VectorSum(force, elmF);
     //
@@ -1080,6 +1080,19 @@ void CAeroWingSection::ComputeForces(SVector &v_, double rho, double soundSpeed,
   // Actually parasite drag depends on all components of local speed.
   // CVector speedVector; ///< v transformed to local coordinates ///< class member
   // Luc's comment : See comment above. Need to customize the rotation matrix setup via Euler angles.
+	//	JS Notes: Position orientation is coming from FlyII and is
+	//			x+ => Right side of aircraft
+	//			y+ => Upper top of aircraft
+	//			z+ => Forward (nose)
+	//	Now force computation for OPAL are
+	//			x+ => Left direction 
+	//			y+ => Up direction 
+	//			z+ => Forward direction
+	//			
+	//---------------------------------------------------------------------------------------------------
+	//	JS:  I dont understand how the rudder works in computation as there is no distinctive code.
+	//			 Seems to me thata rudder lift should generate sideway forces.  May be the direction of lift
+	//			is encoded into the aoa computation?
   //---------------------------------------------------------------------------------------------------
   bAngMatrix_bhp.ParentToChild(speedVector, v_);																		// Local coordinate
 

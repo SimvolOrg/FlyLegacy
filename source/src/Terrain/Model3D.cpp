@@ -1069,11 +1069,12 @@ CModQ::~CModQ()
 //  WORLD OBJECT
 //===================================================================================
 CWobj::CWobj(Tag k)                   // : CmHead(SHR,WOB)
-{ type       = 0;
+{ type      = 0;
   User      = 1;
   pthread_mutex_init (&mux,  NULL);
   wd3D      = 0;
   kind      = k;
+	scene			= 0;
   fnam      = 0;
   name      = 0;
   flag      = 0;

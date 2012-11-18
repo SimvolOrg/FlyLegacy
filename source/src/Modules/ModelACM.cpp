@@ -786,8 +786,10 @@ void CAcmPart::Draw (char mode)
 //  A sector increment is computed when the speed is below 400 rpm
 //-------------------------------------------------------------------------
 void CAcmPart::SetRPM(float rpm)
-{ float rat = rpm / 2500;
-  uprm = rat * (float(1) / 63);
+{ //float rat = rpm / 2500;
+  //uprm = rat * (float(1) / 63);
+	uprm	= rpm;
+	if (uprm > 1)	uprm = 1;
   return;
 }
 //------------------------------------------------------------------------------
@@ -816,8 +818,9 @@ void CAcmPart::DrawAsSpinr(char mode,CKeyFrame &kf)
   glRotatef (transform.b, 0, 1, 0);   // Bank    (Y)
   glDisable(GL_CULL_FACE);
   //---------- Draw child parts --------------------------------
-  if (uprm > 0) DrawFastProp(kf);
-  else          DrawFixeProp(kf);
+  if (uprm > 0.9)				DrawFastProp(kf);
+	else if (uprm > 0.0)	DrawSlowProp(kf);
+  else									DrawFixeProp(kf);
   //---------- Draw spinner cap  -------------------------------
   //-- Set texturing parameters --------------------------------
 	model->BindTxObject(txOBJ);
@@ -884,7 +887,7 @@ void CAcmPart::DrawSlowProp(CKeyFrame &kf)
 void CAcmPart::DrawFastProp(CKeyFrame &kf)
 { white[3] = 0.025f;
   int nb     = childList.size();
-  int end    = (180 / nb);                     // Sector to cover
+  int end    = (180 / nb) - 2;                     // Sector to cover
   glDepthMask(GL_FALSE);
   for (int k = 0; k <= end; k++)
   { 
@@ -899,8 +902,8 @@ void CAcmPart::DrawFastProp(CKeyFrame &kf)
       CAcmPart *child = *i;
       child->DrawAsBlade ();
     }
- //   IncKeyframe(PROP_SDEG_INCR);
-    IncKeyframe(uprm);
+    //IncKeyframe(uprm);
+		IncKeyframe(uprm / 63);
   }
   glDepthMask(GL_TRUE);
   white[3]  = 1;

@@ -45,8 +45,6 @@ CVehicleSound::CVehicleSound (char *sfxFilename)
 //-------------------------------------------------------------------------
 CVehicleSound::~CVehicleSound (void)
 { // Clean up engine sound sub-object instances
-  std::vector<CEngineSound*>::iterator i;
-  for (i=engineSounds.begin(); i!=engineSounds.end(); i++) delete (*i); 
   //---Release Engine sounds buffers ---------------------------
   CAudioManager *snd = globals->snd;
   snd->ReleaseSoundBUF('crkE');           // External engine start
@@ -147,12 +145,6 @@ int CVehicleSound::Read (SStream *stream, Tag tag)
     cach = true;;
     return TAG_READ;
     //---  Engine sounds ----------------------------
-  case 'engn':
-    { CEngineSound *engn = new CEngineSound;
-      ReadFrom (engn, stream);
-      engineSounds.push_back (engn);
-    }
-    return TAG_READ;
     //--- Crash sounds ------------------------------
   case 'crsh':
     ReadCrashSounds(stream);
@@ -375,85 +367,5 @@ void CVehicleSound::ReadFinished (void)
 //===================================================================
 // CEngineSound
 //===================================================================
-CEngineSound::CEngineSound (void)
-{
-  engineNumber = 0;
-  bendMin = bendMax = 0;
-  freqTolerance = 0;
-}
-//-----------------------------------------------------------------------
-//  Read sound parameters
-//-----------------------------------------------------------------------
-int CEngineSound::Read (SStream *stream, Tag tag)
-{
-  int rc = TAG_IGNORED;
-  char s[80];
-
-  switch (tag) {
-  case 'enum':
-  case 'eNum':
-    ReadInt (&engineNumber, stream);
-    rc = TAG_READ;
-    break;
-  case 'strt':
-    ReadString (s, 80, stream);
-    startInt = s;
-    ReadString (s, 80, stream);
-    startExt = s;
-    rc = TAG_READ;
-    break;
-  case 'idle':
-    ReadString (s, 80, stream);
-    idleInt = s;
-    ReadString (s, 80, stream);
-    idleExt = s;
-    rc = TAG_READ;
-    break;
-  case 'fly_':
-    ReadString (s, 80, stream);
-    flyInt = s;
-    ReadString (s, 80, stream);
-    flyExt = s;
-    rc = TAG_READ;
-    break;
-  case 'stop':
-    ReadString (s, 80, stream);
-    stopInt = s;
-    ReadString (s, 80, stream);
-    stopExt = s;
-    rc = TAG_READ;
-    break;
-  case 'rmpu':
-    ReadString (s, 80, stream);
-    rampUpInt = s;
-    ReadString (s, 80, stream);
-    rampUpExt = s;
-    rc = TAG_READ;
-    break;
-  case 'rmpd':
-    ReadString (s, 80, stream);
-    rampDownInt = s;
-    ReadString (s, 80, stream);
-    rampDownExt = s;
-    rc = TAG_READ;
-    break;
-  case 'bend':
-    ReadFloat (&bendMin, stream);
-    ReadFloat (&bendMax, stream);
-    rc = TAG_READ;
-    break;
-  case 'frqt':
-    ReadFloat (&freqTolerance, stream);
-    rc = TAG_READ;
-    break;
-  }
-
-  if (rc != TAG_READ) {
-    // Tag was not processed by this object, it is unrecognized
-    WARNINGLOG ("CEngineSound::Read : Unrecognized tag <%s>", TagToString(tag));
-  }
-
-  return rc;
-}
 
 //==========================END OF FILE ====================================================
