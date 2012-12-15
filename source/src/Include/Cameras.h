@@ -178,9 +178,13 @@ public:
 	void		ToggleBox();
   void    OffsetFrom(SPosition &pos,CVector &v);
   void    AbsoluteFeetPosition(CVector &p);
+	//--- Drawing modes ------------------------------------------
   void    DrawObject(float dT,VIEW_PORT  &vp,CFuiWindow *win);
-  void    Projection(VIEW_PORT &vp,U_INT xOBJ);
-  void    Projection(VIEW_PORT &vp,TEXT_INFO &inf);
+  void    DebOrtho(VIEW_PORT &vp);
+  void    EndOrtho();
+	void		Projection(VIEW_PORT &vp,U_INT xOBJ);
+	void		Projection(VIEW_PORT &vp,TEXT_INFO &inf);
+	//---Helpers ------------------------------------------------
   void    SetAngle(double a,double b);
   void    Reset();
   void    Save(CAMERA_CTX &ctx);
@@ -188,13 +192,14 @@ public:
   void    SetMinAGL();
 	void		NoseUp();
 	void		NoseDown();
-	double  SetRange(double d);
-  void    SetZoom(float z);
   void    RangeAdjust(double lg);
   void    ShowRange();
 	void		RockArround (SPosition tpos, SVector tori,float dT);
 	void		UpdateCameraPosition(SPosition &wpos);
+	void		FixeOrthoScreen();
 	//------------------------------------------------------------
+	double  SetRange(double d);
+  void    SetZoom(float z);
 	//--- Set perspective parameters -----------------------------
 	void    SetCameraParameters(double fov, double ratio);
 	void		SetReferential(SPosition &tg);
@@ -205,17 +210,17 @@ public:
 	void		RoundRight();
 	void		RoundUp();
 	void		RoundDown();
-  //------------------------------------------------------------
-  Tag   NextCamera()   {return cNext;}
-  Tag   PrevCamera()   {return cPrev;}
-  Tag   GetIdent()     {return cIden;}
-  void  SetNext(Tag t) {cNext = t;}
-  void  SetPrev(Tag t) {cPrev = t;}
-  SVector *GetOffset() {return &offset;}
-  void  SetOffset(SVector &v) {offset = v;}
-  void  SetUpDir(SVector &u)  {Up = u;}
 	//------------------------------------------------------------
-	float GetRate()						{return Rate;}
+	void		SetNext(Tag t) {cNext = t;}
+  void		SetPrev(Tag t) {cPrev = t;}
+  //------------------------------------------------------------
+  Tag			NextCamera()   {return cNext;}
+  Tag			PrevCamera()   {return cPrev;}
+	//------------------------------------------------------------
+  Tag			GetIdent()     {return cIden;}
+  void		SetOffset(SVector &v) {offset = v;}
+  void		SetUpDir(SVector &u)  {Up = u;}
+	//------------------------------------------------------------
 	void  SetAngles(SVector &a)	{theta = a.x; phi = a.y;}
   //---Position parameters -------------------------------------
 	void   FootPerPixel();
@@ -230,7 +235,10 @@ public:
   double GetRange()						{return range;}
   void   SetMaxRange(double m){rmax  = m;}
   void   GetUpVector (SVector &v) {v = Up;}
+	float  GetRate()						{return Rate;}
 	//------------------------------------------------------------
+  SVector *GetOffset()				{return &offset;}
+  SVector &CamOffset()				{return offset;}
 	SVector	GetUpVector()				{return Up;}
 	SVector GetATVector()				{return Fw;}
 	SVector GetRZvector()				{return Rz;}
@@ -240,7 +248,6 @@ public:
   double GetTargetLat()				{return tgtPos.lat;}
   double GetTargetAlt()				{return tgtPos.alt;}
   float  GetFOV ()						{return fov;}
-  SVector   &CamOffset()			{return offset;}
 	void   GetOffset (SVector &v)            {v = offset;}
   void   GetOrientation (SVector &v)       {v = orient;}
 	SPosition &GetPosition()		{return camPos;}
@@ -249,7 +256,6 @@ public:
 	char  GetEXTMOD()					{return extcm;}
 	//---Tracking functions --------------------------------------
 	bool		PickObject(U_INT mx, U_INT my);
-
   //---CAMERA ATTRIBUTES ---------------------------------------
 public:
 	COption   Prof;				// Camera profile
@@ -316,7 +322,7 @@ protected:
 
 };
 //====================================================================================
-// Rabbit camera
+// Free camera
 //  Camera used for editor purpose.  No aircraft is displayed.
 //	A virtual rabbit is set at the geographical position, and the camera
 //	tracks this rabbit

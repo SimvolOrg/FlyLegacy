@@ -1489,7 +1489,7 @@ void CAptObject::DrawGround()
 	std::vector<CGroundTile*>::iterator it;
 	for (it = grnd.begin();it != grnd.end(); it++)
 	{	CGroundTile *gnd	= (*it);
-	  vis += gnd->DrawGround(0);
+	  vis += gnd->DrawGround();
 	}
 	visible	= vis;
 	glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -1914,12 +1914,17 @@ void CGroundTile::RelocateVertices(TC_GTAB *vbo, int nbv, SPosition *org)
 
 //-------------------------------------------------------------
 //	Draw ground tiles
+//	NOTE:  Contour is drwed from the Quad, not from the VBO
+//				because VBO vertices are relocated relative to airport
+//				origin which is the current origin.
 //-------------------------------------------------------------
-int CGroundTile::DrawGround(U_INT x)
+int CGroundTile::DrawGround()
 { char vis = sup->Visibility();
 	if (vis)
 	{	glBindTexture(GL_TEXTURE_2D,txn->dOBJ);
 		glMultiDrawArrays(GL_TRIANGLE_FAN,sIND,nIND,dim);
+		if (!globals->tcm->SameQuad(quad))		return vis;
+		if (globals->aPROF.Not(PROF_DR_DET))	return vis;
 	}
 	return vis;
 }

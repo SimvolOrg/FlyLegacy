@@ -866,6 +866,7 @@ void CThrottleControl::ReadFinished()
   //--- Init engine message -------------------
   engm.dataType   = TYPE_REAL;
   engm.user.u.datatag = 'thro';     // Starter
+	indnMode = INDN_NONE;
   return;
 }
 //-----------------------------------------------------------------------

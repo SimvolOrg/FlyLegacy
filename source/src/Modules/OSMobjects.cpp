@@ -1045,17 +1045,19 @@ void OSM_Object::Write(FILE *p)
 }
 //==================================================================================
 //
-//	SQL FUNCTIONS RELATED  to OSM
+//	SQL FUNCTIONS RELATED  to other bases
 //
 //==================================================================================
 //--------------------------------------------------------------------
 //  Close requested database
+//
 //--------------------------------------------------------------------
-void *SqlOBJ::CloseOSMbase(SQL_DB *db)
-{	db->ucnt--;
+void *SqlOBJ::CloseSQLbase(SQL_DB *db)
+{	if (0 == db)						return 0;
+	db->ucnt--;
 	if (db->ucnt > 0)				return db;
 	//---  Close database and delete all resources ----------
-	TRACE("SQL %d Close OSM database %s",sqlTYP,db->path);
+	TRACE("SQL %d Close database %s",sqlTYP,db->path);
 	sqlite3_close(db->sqlOB);
 	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(db->path);
 	if (rb != dbase.end())	dbase.erase(rb);
@@ -1083,6 +1085,8 @@ void SqlOBJ::GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj)
 //	NOTE:		Filter on Max Objects to load is done here by dividing the
 //					object identity by 100 and checking the rest against the
 //					percentile allowed
+//	NOTE:   This request may execute on either File Thread instance
+//					even if OSM database are only open by first instance
 //--------------------------------------------------------------------
 int SqlOBJ::LoadOSM(OSM_DBREQ *rdq)
 { int			rep		= 0;

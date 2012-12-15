@@ -69,6 +69,19 @@ typedef struct {
 //================================================================================
 GLOBE_TILE globe_tile_lat [132];
 GLOBE_TILE qgt_latitude[260];
+//==========================================================================
+//  SUPER TILE Base Detail Tile coordinates
+//==========================================================================
+TC_INCREMENT SuperDT[]  = {
+  { 0, 0},{ 4, 0},{ 8, 0},{12, 0},{16, 0},{20, 0},{24, 0},{28, 0},
+  { 0, 4},{ 4, 4},{ 8, 4},{12, 4},{16, 4},{20, 4},{24, 4},{28, 4},
+  { 0, 8},{ 4, 8},{ 8, 8},{12, 8},{16, 8},{20, 8},{24, 8},{28, 8},
+  { 0,12},{ 4,12},{ 8,12},{12,12},{16,12},{20,12},{24,12},{28,12},
+  { 0,16},{ 4,16},{ 8,16},{12,16},{16,16},{20,16},{24,16},{28,16},
+  { 0,20},{ 4,20},{ 8,20},{12,20},{16,20},{20,20},{24,20},{28,20},
+  { 0,24},{ 4,24},{ 8,24},{12,24},{16,24},{20,24},{24,24},{28,24},
+  { 0,28},{ 4,28},{ 8,28},{12,28},{16,28},{20,28},{24,28},{28,28},
+};
 
 //================================================================================
 //  Compute vertical range toward pole for Globe Tile
@@ -1076,12 +1089,13 @@ char  GroundSpot::GetTerrain()
 { Rdy	= 0;
 	if (0 == qgt)           return 0;
   if ( qgt->NoQuad())     return 0;
-  if (!qgt->GetTileIndices(*this))      
-					gtfo("Position error");
+  if (!qgt->GetTileIndices(*this))			gtfo("Position error");
   U_INT No    = FN_DET_FROM_XZ(tx,tz);    
   CmQUAD  *dt = qgt->GetQUAD(No);             // Detail tile QUAD
   Type        = dt->GetGroundType();          // Ground Type
   Quad        = dt;
+	ax					= dt->GetTileAX();
+	az					= dt->GetTileAZ();
   //------Compute precise elevation at position ---------------
   CVector  p(lon,lat,0);
 	qgt->RelativeToBase(p);											// Relative to SW corner
@@ -1103,6 +1117,16 @@ double GroundSpot::GetAltitude(SPosition &p)
 	IndicesInQGT(*this);
 	GetTerrain();
 	return alt;
+}
+//-------------------------------------------------------------------------
+//	Return Texture number in supertile for current detail tile
+//-------------------------------------------------------------------------
+U_INT	GroundSpot::GetTextureInSUP()
+{	if (0 == Quad)	gtfo("Invalid call to GroundSpot");
+	U_INT No	= Quad->GetSuperNo();
+	U_INT rx  = tx - SuperDT[No].dx;
+	U_INT rz  = tz - SuperDT[No].dz;
+	return (rz * 4) + rx;
 }
 //-------------------------------------------------------------------------
 //  Check QUAD validity
@@ -1140,15 +1164,15 @@ CSuperTile *GroundSpot::GetSuperTile()
 //-------------------------------------------------------------------------
 //  Update Altitude above ground
 //-------------------------------------------------------------------------
-char GroundSpot::UpdateAGL(SPosition &P,double R)
+void GroundSpot::UpdateAGL(SPosition &P,double R)
 {	lon		= P.lon;
   lat		= P.lat;
   alt		= 0;
 	rdf		= R;
-  char	T    = GetTerrain();
+  GetTerrain();
 	//--- Update AGL and ground plane ---------------------
 	agl		=		P.alt - alt;
-	return T;
+	return;
 }
 //-------------------------------------------------------------------------
 //  Get Ground info at position
@@ -1171,6 +1195,11 @@ void GroundSpot::GetGroundAt(SPosition &pos)
   alt     = p.z;
 	return;
 }
+//-------------------------------------------------------------------------
+//	Check for same spot
+//-------------------------------------------------------------------------
+bool GroundSpot::SameSpot(CmQUAD *Q)
+{return (Q->GetTileAX() == ax) && (Q->GetTileAZ() == az);}
 //=========================================================================================
 //  return rounded value as integer
 //=========================================================================================

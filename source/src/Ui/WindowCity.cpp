@@ -210,7 +210,7 @@ CFuiSketch::~CFuiSketch()
 	//--- Back to position ------------------------------
 	SAFE_DELETE(globals->trn);
 
-  if (sqlp)	globals->sqm->CloseOSMbase(sqlp);
+  if (sqlp)	globals->sqm->CloseSQLbase(sqlp);
 	sqlp = 0;
 	//---- Marker 2 -------------------------------------
 	char *ds = DupplicateString("*END CityEDIT*",32);
@@ -838,7 +838,7 @@ U_INT CFuiSketch::OpenDatabase(char **script)
 	objno	= 1;
 	qKey	= 0;
 	count = 0;
-	sqlp = globals->sqm->OpenSQLbase(dbase,script);
+	sqlp = globals->sqm->OpenSQLbase(dbase,script,"OSM");
 	int ok = sqlp->use;
 	return (ok)?(SKETCH_SAVEE):(SKETCH_SAVEF);
 }
@@ -882,7 +882,7 @@ U_INT CFuiSketch::SaveEnd()
 	char *msg;
 	
 	int OK = sqlp->use;
-	globals->sqm->CloseOSMbase(sqlp);
+	globals->sqm->CloseSQLbase(sqlp);
 	sqlp = 0;
 	msg = (OK)?(okm):(erm);
 	//------------------------------------------------

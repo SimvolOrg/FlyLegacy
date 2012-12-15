@@ -49,12 +49,6 @@ protected:
   Tag           csid;             ///< Unique cursor ID
   char          imag[64];         ///< Image .PBM filename
   int           hots_x, hots_y;   ///< Hotspot x, y
-  short         bx,by;            // Bitmap size
-  // GL texture for cursor
-//  int           texwidth;         ///< Texture image width
-//  int           texheight;        ///< Texture image height
-//  GLubyte       *teximage;        ///< Texture image data
-//  GLuint        texid;
   //--------Texture quad ------------------------------------
   TEXT_DEFN     txd;              // Texture definition
   TC_VTAB       qad[4];           // cursor quad
@@ -67,15 +61,14 @@ public:
   virtual void  ReadFinished (void){}
   //---------Cursor methods ---------------------------------
   void  SetQuad(int wd);
-  void  LoadPBM(char* pbmName);
   void  LoadCursor(char* name);
   void  CreateTexture (void);
   void  FreeTexture (void);
-  void  SetHotSpot();
+	void	HotSpot();
   void  Draw();
   //---------------------------------------------------------
   inline  int   GetHotx()       {return hots_x;}
-  inline  int   GetHoty()       {return hots_y;}
+  inline  int   GetHoty()       {return (hots_y - txd.ht);}
   inline  bool  IsThisOne(const char *fn) {return (strcmp(fn,curs) == 0);}
   inline  Tag   GetKey()        {return csid;}
   inline GLuint GetTextId()     {return txd.xo;}
@@ -110,7 +103,7 @@ public:
   Tag     CrsrArrow();
   Tag     BindCursor (const char* csr);
   Tag     BindFuiCursor(char *name,Tag key);
-
+	void		HideAll();
   void    MouseMotion (int mouse_x, int mouse_y);
 
   CCursor *FindCursor (const char *csrfilename);
@@ -118,16 +111,16 @@ public:
   //--------------------------------------------------------------------------
   ECursorResult SetCursor (Tag tag);
   Tag           GetCursor (void);
-
-  void    Draw (void);
+  void					Draw (float dT);
   //---------------------------------------------------------------------------
   inline void NoCursor()      {cCur = 0;}
   inline void SetArrow()      {SetCursor(crsrArrow);}
   //---------------------------------------------------------------------------
 protected:
-  Tag       crsrArrow;
+	char			state;										// Cursor state
+  Tag       crsrArrow;								// 
   std::map<Tag,CCursor*>    cache;    // Cursor cache, indexed by unique ID tag
-  U_INT      Time;                    // Timer for cursor live
+  float      Time;                    // Timer for cursor live
   CCursor   *cCur;                    // Pointer to current cursor
   int       x, y;                     // Current mouse position in screen coordinates
 };

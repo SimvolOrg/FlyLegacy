@@ -493,7 +493,7 @@ int C3DMgr::LoadFromPod(C3Dfile &scf)
 //  Objects are loaded from the SQL database OBJ.db
 //	Then collected from loaded POD
 //	NOTE: A specific object cannot be loaded twice (once from database)
-//				and once from POD) because POD already in registered in the 
+//				and once from POD) because POD already registered in the 
 //				OBJ database are not mounted at startup time.
 //--------------------------------------------------------------------
 int C3DMgr::LocateObjects(C_QGT *qgt)
@@ -705,16 +705,20 @@ C3Dfile::~C3Dfile()
 //  to the corresponding QGT C3Dworld manager.
 //---------------------------------------------------------------------
 int C3Dfile::Decode(char *fname,char *pn)
-{ char *dt  = "DATA/";
+{ SqlMGR *sqm = globals->sqm; 
+  char *dt  = "DATA/";
 	char *deb = strstr(fname,dt) + strlen(dt);
 	char *pod = GetSceneryPOD(pn);
+	//--- Rear part of pod ---------------------------
+	char *slh = strrchr(pod,'/');
+	char *p2	= (slh)?(slh+1):(pod);
 	//---Save the file name --------------------------
 	_snprintf(fullN,(PATH_MAX-1),"(%s)-(%s)",deb,pod);
   strncpy(namef,fname,63);
   namef[63] = 0;
 	//---Check if file is in database OBJ ------------
 	bool sql	= (globals->objDB != 0) && (pn != 0);
-	if (sql && globals->sqm->SceneInOBJ(deb))	return 0;;
+	if (sql && sqm->FileInBase(deb,p2,sqm->DBobj()))	return 0;;
   //---Open the file -------------------------------
 	cntr			= 0;
   SStream s(this,fname);

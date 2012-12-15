@@ -738,6 +738,23 @@ void CCamera::GetPosition(SPosition &pos)
   return;
 }
 //-------------------------------------------------------------------------
+//  Set camera face to screen and prepare for ortho projection
+//-------------------------------------------------------------------------
+void CCamera::FixeOrthoScreen()
+{	camPos.lat	= 0;
+	camPos.lat	= 0;
+	camPos.lon	= 0;
+	//----------------------------------------
+	range				= 0;
+	theta	= phi	= 0;
+	//----------------------------------------
+	Lf.Set(-1,0,0);
+	Fw.Set( 0,1,0);
+	Up.Set( 0,0,1);
+	//----------------------------------------
+}
+
+//-------------------------------------------------------------------------
 // Prepare OpenGL to draw with this camera
 //  This is standard drawing where camera look at model position stored
 //  in global geop with orientation iang.
@@ -838,25 +855,21 @@ void CCamera::StopShoot()
   return;
 }
 //-------------------------------------------------------------------------
-// Prepare OpenGL to project a 2D object on the viewport
+// Prepare OpenGL for ortho projection
 //    The camera is set to a orthographic projection on the viewport
 //    xOBJ must be a texture object binded to some texture
 //-------------------------------------------------------------------------
-void CCamera::Projection(VIEW_PORT &vp,U_INT xOBJ)
-{ //-- Save and set   he viewport ----------------------------
-  int wd  = vp.wd;
+void CCamera::DebOrtho(VIEW_PORT &vp)
+{ //--- Save actual viewport ----------------------------------
+	glGetIntegerv(GL_VIEWPORT,(GLint*)&vps);        // Save it
+	//-- Get Screen Dimensions ----------------------------------
+	int wd  = vp.wd;
   int ht  = vp.ht;
-  glGetIntegerv(GL_VIEWPORT,(GLint*)&vps);        // Save it
-  //---Set projection on the QUAD ----------------------------
+  //---Set projection mode on whole screen --------------------
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
   gluOrtho2D (0,wd,0, ht);
-  //---Init QUAD coordinates ----------------------------------
-  Pan[1].VT_X = wd;                       // SE corner
-  Pan[2].VT_X = wd;                       // NE corner
-  Pan[2].VT_Y = ht;
-  Pan[3].VT_Y = ht;                       // NW corner
   //-----------------------------------------------------------
   // Initialize modelview matrix 
   glMatrixMode (GL_MODELVIEW);
@@ -866,25 +879,49 @@ void CCamera::Projection(VIEW_PORT &vp,U_INT xOBJ)
   glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   //----Set pre conditions ------------------------------------
   glViewport(vp.x0,vp.y0,wd,ht);
- // glColor4f(1,1,1,1);
 	ColorGL(COLOR_WHITE);
   glDisable(GL_LIGHTING);
   glEnable  (GL_TEXTURE_2D);
   glDisable (GL_DEPTH_TEST);
-  glBindTexture(GL_TEXTURE_2D,xOBJ);
   glDisable(GL_BLEND);
-  //----Draw the Quad at screen position ---------------------
-  glPolygonMode(GL_FRONT,GL_FILL);
-  glInterleavedArrays(GL_T2F_V3F,0,Pan);
-  glDrawArrays(GL_QUADS,0,4);
-  //----Restore everything -----------------------------------
-  glViewport(vps.x0,vps.y0,vps.wd,vps.ht);
-  glPopClientAttrib();
+	return;
+}
+//-------------------------------------------------------------------------
+//	End of ortho projection
+//-------------------------------------------------------------------------
+void CCamera::EndOrtho()
+{ glViewport(vps.x0,vps.y0,vps.wd,vps.ht); // Restore viewport
+	glPopClientAttrib();
   glPopAttrib();
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
   glMatrixMode (GL_MODELVIEW);
   glPopMatrix();
+  return;
+}
+//-------------------------------------------------------------------------
+// Prepare OpenGL to project a 2D object on the viewport
+//    The camera is set to a orthographic projection on the viewport
+//    xOBJ must be a texture object binded to some texture
+//-------------------------------------------------------------------------
+void CCamera::Projection(VIEW_PORT &vp,U_INT xOBJ)
+{ //-- Save and set   he viewport ----------------------------
+  int wd  = vp.wd;
+  int ht  = vp.ht;
+  //---Init QUAD coordinates ----------------------------------
+  Pan[1].VT_X = wd;                       // SE corner
+  Pan[2].VT_X = wd;                       // NE corner
+  Pan[2].VT_Y = ht;
+  Pan[3].VT_Y = ht;                       // NW corner
+  //--- Initialize ortho projection ---------------------------
+	DebOrtho(vp);
+  glBindTexture(GL_TEXTURE_2D,xOBJ);
+  //----Draw the Quad at screen position ---------------------
+  glPolygonMode(GL_FRONT,GL_FILL);
+  glInterleavedArrays(GL_T2F_V3F,0,Pan);
+  glDrawArrays(GL_QUADS,0,4);
+  //----Restore everything -----------------------------------
+	EndOrtho();
   return;
 }
 //-------------------------------------------------------------------------
@@ -902,6 +939,7 @@ void CCamera::Projection(VIEW_PORT &vp,TEXT_INFO &inf)
   glDeleteTextures(1,&inf.xOBJ);
   return;
 }
+
 //-------------------------------------------------------------------------
 // Rotate arround aircraft
 //  -offset are in feet from aircraft position

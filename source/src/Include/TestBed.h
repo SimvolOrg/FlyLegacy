@@ -32,6 +32,44 @@
 
 #include "FlyLegacy.h"
 #include "../Include/3dMath.h"
+#include "../Include/TerrainCache.h"
+#include "crnlib.h"
+//===================================================================================
+//	Class ground Quad to build a terrain tile for tests
+//===================================================================================
+class GroundQUAD	
+{	
+protected:
+	TC_GTAB				Q[4];											// Ground QUAD
+	U_INT					xOBJ;											// Texture object
+	U_INT         zOBJ;											// Compressed
+	CTextureDef		txd;
+	U_SHORT				wd;
+	U_SHORT				ht;
+	//-----------------------------------------------------------
+	U_CHAR				cmp;											// Comprssion format
+	int						mip;											// Mip base level [0,n]
+	//-----------------------------------------------------------
+	double				cx;
+	double				cy;
+	double				cz;
+	//--- METHODES ----------------------------------------------
+public:
+	GroundQUAD(int x,int y, int z,int d,char c);
+ ~GroundQUAD();
+	void		SetQuad(int x, int y, int dim);
+	void		GetTextureFromPOD(char *n,U_INT qx,U_INT qz);
+	void		GetTextureFromSQL(char *n,U_INT dx,U_INT dz);
+	void		GetTexOBJ(TEXT_INFO &txd);
+	//-----------------------------------------------------------
+	bool		IncDistance();
+	bool		DecDistance();
+	//-----------------------------------------------------------
+	void	Draw();
+	//-----------------------------------------------------------
+	void	SetCompression()	{cmp = 1;}
+};
+
 //===================================================================================
 //  TEST BED is used to test important features that needs most of Legacy environment
 //  (Textures, terrain, weather, etc) before including those features into the main
@@ -44,15 +82,27 @@ private:
   CAMERA_CTX       ctx;         // Original camera and situation
 	//--- Rabbit camera -----------------------------------------
 	CRabbitCamera   *rcam;
+	int							vp[4];
+	//--- State --------------------------------------------------
+	U_CHAR	state;
+	U_CHAR	hold;
+	int			time;
+	//--- Terrain quad -------------------------------------------
+	GroundQUAD  *Q0;
+	GroundQUAD  *Q1;
   //----  METHODS --------------------------------------------------
 public:
   CTestBed();
- ~CTestBed();
+  virtual ~CTestBed();
+	void	Clean();
+	//----------------------------------------------------------------
+	U_INT DetailKEY(U_INT qx,U_INT qz,U_INT tx, U_INT tz);
   //----------------------------------------------------------------
- void   Keyboard(U_INT key,int mod);
- void   Special(U_INT key,int mdf);
- void   TimeSlice();
- void   Draw();
+	void   Keyboard(U_INT key,int mod);
+	void   Special(U_INT key,int mdf);
+	void   TimeSlice();
+	void	Shoot();
+	void   Draw();
 };
 //================END OF FILE ===========================================================
 #endif // TESTBED_H

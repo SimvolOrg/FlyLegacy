@@ -1376,9 +1376,9 @@ void CFuiWindow::ReadFinished (void)
   //--Create all decorations --------------------------------------
   CreateFBox(this,fBox,x,y,w,h);
   //--Process resize parameters is allowed -------------------- ----
-	Tag xcs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZEX.PBM",'sizr');
-  Tag ycs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZEY.PBM",'sizl');
-  Tag bcs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZE.PBM",'sizc');
+	Tag xcs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZEX.BMP",'sizr');
+  Tag ycs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZEY.BMP",'sizl');
+  Tag bcs = globals->cum->BindFuiCursor("UI/CURSORS/CURSOR_RESIZE.BMP",'sizc');
   vStat = WINDOW_SIZE_NORM;
 	CFuiComponent *cmp = 0;
 	cmp		= fBox[RIGW];					// Right edge for X redim
@@ -1922,8 +1922,7 @@ bool CFuiWindow::MouseClick (int mx, int my, EMouseButton button)
 //  Mouse stop click.  Check for which component
 //----------------------------------------------------------------------------------
 bool CFuiWindow::MouseStopClick (int mx, int my, EMouseButton button)
-{
-  if ((state == FUI_WINDOW_MOVE) && (button == MOUSE_BUTTON_LEFT)) { state = FUI_WINDOW_OPEN; return true;}
+{ if ((state == FUI_WINDOW_MOVE) && (button == MOUSE_BUTTON_LEFT)) { state = FUI_WINDOW_OPEN; return true;}
   globals->cum->SetArrow();    
   // If mouse click has not been handled yet, send to focused component
   bool fw =  (cFocus && (cFocus != this) && (cFocus->MouseStopClick (mx, my, button)));

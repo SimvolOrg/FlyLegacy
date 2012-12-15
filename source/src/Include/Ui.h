@@ -62,10 +62,9 @@ int         VirtualKeyToGlutKey (BYTE vk, bool shift, bool ctrl, bool alt);
 //
 // Menu functions
 //
-void hide_menu (void);
-void show_menu (void);
-void toggle_menu (void);
-
+int toggle_menu ();
+int GetMenuState();
+int SetMenuState(char s);
 //
 // sdk: Menu additional class and structure // 
 //

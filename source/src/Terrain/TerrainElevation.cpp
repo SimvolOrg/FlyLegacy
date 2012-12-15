@@ -724,13 +724,13 @@ void C_QTR::RelativeElevation(QTR_REGION *reg)
 //      there is no contention problem as the QGT is suspended during the
 //      file loading
 //================================================================================
-C_TRN::C_TRN(C_QGT *qt,U_INT tra)
+C_TRN::C_TRN(char *fn,C_QGT *qt,U_INT tra)
 { tr    = tra;
   qgt   = qt;
   nHDTL = 0;
   nDETS = 0;
-	mode  = 0;
-
+	impr  = (qt)?(0):(1);
+	CStreamFile stf(fn,&globals->pfs,this);
 }
 //--------------------------------------------------------------------------------
 //  Destroy TRN Object
@@ -747,13 +747,18 @@ return;
 }
 //--------------------------------------------------------------------------------
 //  READ SUPER TILE PARAMETERS for normal operation
+//	NOTE: Compression indicator is set under following conditions
+//				a) The QGT is registered into a DTX database
+//				b) We are not in import mode
+//	Compressed textures are used only in simulation mode
 //--------------------------------------------------------------------------------
-void C_TRN::ReadSUPR(SStream *stream)
+void C_TRN::ReadSUPR(CStreamFile *stf)
 { CTextureDef *txl = 0;
 	U_INT stx;
   U_INT stz;
-	ReadUInt (&stx, stream);
-  ReadUInt (&stz, stream);
+	stf->GetUINT(stx);
+	stf->GetUINT(stz);
+	//--- Check indices -------------------------------
   if ((stx > 7) || (stz > 7)) Abort("ST indices > 7");
   U_INT No = (stz << TC_BY08) | stx;
 	//--- Compute current detail tile base ------------
@@ -768,39 +773,45 @@ void C_TRN::ReadSUPR(SStream *stream)
 	spt->SetAX(cx);
 	spt->SetAZ(cz);
 	//--- Allocate a texture def list -----------------
-	if (0 == mode)  txl = qgt->GetTexList(No);	// Real
-	else						txl = spt->GetTexList();		// Export
+	if (0 == impr)  txl = qgt->GetTexList(No);	// Real
+	else						txl = spt->GetTexList();		// Import
+	//--- Compute texture compression indicator --------
+	U_CHAR cprs	= (qgt)?(qgt->GetCompTextureInd()):(0);
+	cprs &= globals->comp;
+	type  = (cprs)?(TC_TEXCMPRS):(TC_TEXRAWTN);
+	//--- Set decoding parameters ----------------------
   spt->qgt     = qgt;
-  spt->SetTrace(this,tr);
-  spt->SetList(txl);
-  ReadFrom (spt,stream);
+  spt->SetParam(this,tr);
+  spt->SetTList(txl,type);
+	//--- Decode SuperTile statement -----------------
+	stf->ReadFrom(spt);
   return;   
 }
 //--------------------------------------------------------------------------------
 //  READ ALL PARAMETERS from TRN FILE 
 //--------------------------------------------------------------------------------
-int C_TRN::Read (SStream *stream, Tag tag)
+int C_TRN::Read (CStreamFile *stf, Tag tag)
 { U_INT nb;
   switch (tag) {
   case 'half':
     // Quarter globe tile indices
-    ReadUInt (&nb, stream);
-    ReadUInt (&nb, stream);
+		stf->GetUINT(nb);
+		stf->GetUINT(nb);
     return  TAG_READ;
 
   case 'lowr':
 	{
     // Detail tile indices for lower-left corner
-    ReadUInt (&ax, stream);
-    ReadUInt (&az, stream);
+		stf->GetUINT(ax);
+		stf->GetUINT(az);
     return  TAG_READ;
 	}
   case 'supr':
     // Super tile sub-object
-		ReadSUPR(stream);
+		ReadSUPR(stf);
 		return TAG_READ;
   }
-
+	gtfo("TRN error 1");
   return 0;
 }
 //--------------------------------------------------------------------------------
@@ -881,7 +892,7 @@ return;
 //  READ SuperTile PARAMETERS from TRN FILE
 //  TODO: See if <tref> is associated to each of <txtl> and <ntxl> tags
 //--------------------------------------------------------------------------------
-int C_STile::Read (SStream *stream, Tag tag)
+int C_STile::Read (CStreamFile *stf, Tag tag)
 { int   n1;
   int   nr;
   float ft;
@@ -890,7 +901,7 @@ int C_STile::Read (SStream *stream, Tag tag)
   switch (tag) {
   case 'dimn':
     // Dimension of sub-tile array
-    ReadInt (&n1, stream);
+		stf->GetINT(n1);
     Dim   = short(n1)* short(n1) ;
 		side  = n1 + 1;
     if (16 != Dim)  Abort("<Dimn> Super Tile # 4");
@@ -898,26 +909,26 @@ int C_STile::Read (SStream *stream, Tag tag)
 
   case 'type':
     // Tile type
-    ReadInt (&n1, stream);
+		stf->GetINT(n1);
     Type  = short(n1);
     return TAG_READ;
   //--- Indices of this super tile in the parent; discarded
   case 'prta':
-    ReadUInt (&sx, stream);
-    ReadUInt (&sz, stream);
+		stf->GetUINT(sx);
+		stf->GetUINT(sz);
     No = (sz << TC_BY08) | sx;
     return TAG_READ;
   //----Day texture list -------------------------------
   case 'txtl':
-    { CTxtDecoder tdc;
-      ReadFrom(&tdc,stream);
+    { CTxtDecoder tdc(comp);
+			stf->ReadFrom(&tdc);
       DayList = tdc.txd;
       return TAG_READ;
     }
   //----Night texture list ----------------------------
   case 'ntxt':
-    {	CTxtDecoder tdc;
-      ReadFrom(&tdc,stream);
+    {	CTxtDecoder tdc(comp);
+			stf->ReadFrom(&tdc);
       CTextureDef *txn = tdc.txd;
       int nbr          = tdc.nbx;
       for (int k = 0; k != nbr; k++)  FlagDayTexture(txn++);
@@ -942,10 +953,11 @@ int C_STile::Read (SStream *stream, Tag tag)
 					cz					= az + TinzTAB[Order];
 //--- Debugg: Use statement to check a specific detail tile ------------
 				//bool ok = (cx == TC_ABSOLUTE_DET(10,7)) && (cz == TC_ABSOLUTE_DET(325,8));
+				//bool ok = (cx == 10811) && (cz == 10016);
 				//if (ok)
 				//				int a = 0;				// Put breakpoint here
 //--- end debuging -----------------------------------------------------
-          ReadInt(&nr,stream);
+					stf->GetINT(nr);
           CTextureDef *src = &DayList[nr];
           CTextureDef *txn = &qList[Order];
           txn->xFlag  = src->xFlag;
@@ -958,19 +970,21 @@ int C_STile::Read (SStream *stream, Tag tag)
             char z = txn->Name[8];          //  Z indice
             txn->Name[8]  = x;
             txn->Name[9]  = z;
-           }
-          //----Build the texture KEY ---------------------------
-          char *name  = txn->Name;
-          U_CHAR a0   = name[0];
-          U_CHAR a1   = name[1];
-          U_CHAR k0   = (a0 <= '9')?(a0 -'0'):(a0 - '7');
-          U_CHAR k1   = (a1 <= '9')?(a1 -'0'):(a1 - '7');
-          U_CHAR j1   = name[8] - '0';              // I index
-          U_CHAR j2   = name[9] - '0';              // J index
-          U_INT key   = (k0 << 12)|(k1 << 8)|(j1 << 4)|(j2);
-          txn->sKey   = key;
+						//----Build the texture KEY ---------------------------
+						char *name  = txn->Name;
+						U_CHAR a0   = name[0];
+						U_CHAR a1   = name[1];
+						U_CHAR k0   = (a0 <= '9')?(a0 -'0'):(a0 - '7');
+						U_CHAR k1   = (a1 <= '9')?(a1 -'0'):(a1 - '7');
+						U_CHAR j1   = name[8] - '0';              // I index
+						U_CHAR j2   = name[9] - '0';              // J index
+						U_INT key   = (k0 << 12)|(k1 << 8)|(j1 << 4)|(j2);
+						txn->sKey   = key;
+					}
+					//--- compressed texture key --------------------------
+					else txn->sKey = (cx << 16) | cz;
           //----Build the Hexa name -----------------------------
-          U_CHAR *org = (U_CHAR*)name;
+          U_CHAR *org = (U_CHAR*)txn->Name;
           U_CHAR *dst = (U_CHAR*)txn->Hexa;
           for (int n = 0; n!= 4; n++)
           { U_CHAR c0 = *org++;
@@ -979,6 +993,7 @@ int C_STile::Read (SStream *stream, Tag tag)
             U_CHAR h1 = (c1 <= '9')?(c1 -'0'):(c1 - '7');
             *dst++    = (h0 << 4) | h1;
           }
+					
 					//--- Process skipped texture ------------------------
 					if (strncmp(src->Name,"*skip*",6) == 0) 	txn->ClearName();
 					//--- TRACE allocation if needed ---------------------
@@ -1001,22 +1016,26 @@ int C_STile::Read (SStream *stream, Tag tag)
   //----Default elevations ---------------------------
   case 'elev':
     { for (int z=0; z != 5; z++)
-      { for (int x=0; x != 5; x++) { ReadFloat(&ft,stream); elev[z][x] = ft; }
+      { for (int x=0; x != 5; x++) 
+				{ stf->GetFloat(ft); 
+					elev[z][x] = ft; }
       }
     return TAG_READ;
     }
   //----Optional elevations for a Detail Tile ---------
   case 'hdtl':
     { ChdtlDecoder dt(trn,No,tr);
-      ReadFrom(&dt,stream);
+			stf->ReadFrom(&dt);
       qHDTL.PutLast(dt.hd);
       return TAG_READ;
     }
   }
+	gtfo("TRN error 2");
   return 0;
 }
 //--------------------------------------------------------------------------------
-//  Find day texture and flag it
+//  Find day texture and flag for night texture if any
+//	Check if texture can use compressed database
 //--------------------------------------------------------------------------------
 void C_STile::FlagDayTexture(CTextureDef *txn)
 { CTextureDef *txd = qList;
@@ -1101,8 +1120,7 @@ void C_STile::GetHdltElevations(U_INT bx,U_INT bz,C_QGT *qgt)
 { TRN_HDTL *hd = qHDTL.Pop();
 
   while(hd)
-  {	//hd->UpdTile(bx,bz);										// DET(X,Z) in QGT
-		//--- compute super tile number -------------------
+  {	//--- compute super tile number -------------------
 		U_INT sx = bx >> TC_SPTPOSITION;
 		U_INT sz = bz >> TC_SPTPOSITION;
 		hd->SetSup((sz << TC_BY08) | sx);
@@ -1119,8 +1137,9 @@ void C_STile::GetHdltElevations(U_INT bx,U_INT bz,C_QGT *qgt)
 //  CTxtDecoder to decode the <txtl> tag
 //  All routines are called from the auxillary THREAD
 //================================================================================
-CTxtDecoder::CTxtDecoder()
-{ nbx = 0;
+CTxtDecoder::CTxtDecoder(char t)
+{ type = t;
+	nbx = 0;
   txd = 0;
 }
 //--------------------------------------------------------------------------------
@@ -1130,16 +1149,17 @@ CTxtDecoder::CTxtDecoder()
 //          water texture.
 //                    
 //--------------------------------------------------------------------------------
-void CTxtDecoder::NormeName(char *txt,CTextureDef *txd)
+U_INT CTxtDecoder::NormeName(char *txt,CTextureDef *txd)
 { char *dot = strstr(txt,".RAW");
-  strncpy(txd->Name,txt,8);
-	if (strncmp(txt,"*skip*",6)	== 0)	return;
+  strncpy(txd->Name,txt,10);
+	txd->Name[10] = 0;
+	if (strncmp(txt,"*skip*",6)	== 0)	return 0;
   //----- Must be a generic name -------------------------------------------
-  if (0 == dot) return;                                  // This is a generic name
+  if (0 == dot)											return TC_TEXGENER;  // This is a generic name
   //------ Look for W marker -----------------------------------------------
-  char *wtr  = dot - 1;
-  char *end  = (*wtr == 'W')?(wtr):(dot);
-  txd->TypTX = (*wtr == 'W')?(TC_TEXWATER):(TC_TEXRAWTN);               
+  char *wtr		= dot - 1;
+  char *end		= (*wtr == 'W')?(wtr):(dot);
+  U_CHAR xtyp	= (*wtr == 'W')?(TC_TEXWATER):(type);               
   //------ Eliminate directory if any ---------------------------------------
   char *sep =   strrchr(txt,'/'); 
   if (0 == sep) sep = strrchr(txt,'\\');
@@ -1147,19 +1167,20 @@ void CTxtDecoder::NormeName(char *txt,CTextureDef *txd)
   *end  = 0;                                        // Set limit
   strncpy(txd->Name,src,TC_TEXNAMESIZE);
 	if ((nbx > 16) || dot) txd->SetFlag(TC_USRTEX);		// Set user texture
-  return;
+  return xtyp;
 }
 //--------------------------------------------------------------------------------
 //  READ <txtl> in SuperTile PARAMETERS from TRN FILE
 //--------------------------------------------------------------------------------
-int CTxtDecoder::Read (SStream *stream, Tag tag)
+int CTxtDecoder::Read (CStreamFile *stf, Tag tag)
 { char txt[PATH_MAX];
   if  ('txtl' != tag) return 0;
-  ReadUInt (&nbx, stream);
+	stf->GetUINT(nbx);
   txd = new CTextureDef[nbx];
+	//--- Normalize texture name and assign texture type ------------
   for (U_SHORT nt=0; nt<nbx; nt++) 
-    {   ReadString (txt, FNAM_MAX, stream);
-        NormeName(txt,&txd[nt]);
+    {  	stf->GetString(txt,FNAM_MAX);
+        txd[nt].TypTX = NormeName(txt,txd+nt);
     }
   return TAG_READ;
 }
@@ -1190,7 +1211,8 @@ void ChdtlDecoder::GetHDTL(int res)
 //--------------------------------------------------------------------------------
 //  READ <hdtl> in SuperTile PARAMETERS from TRN FILE
 //--------------------------------------------------------------------------------
-int ChdtlDecoder::Read (SStream *stream, Tag tag)
+//int ChdtlDecoder::Read (SStream *stream, Tag tag)
+int ChdtlDecoder::Read (CStreamFile *stf, Tag tag)
 { int dm = 0;
   int ig;
   int cx;
@@ -1198,17 +1220,17 @@ int ChdtlDecoder::Read (SStream *stream, Tag tag)
   switch (tag)  {
   //----dimension for the Detailed elevation ----------
   case 'dimn':
-    ReadInt(&dm,stream);
+		stf->GetINT(dm);
     GetHDTL(dm);
     return TAG_READ;
   //----Type  : ignore for now ------------------------
   case 'type':
-    ReadInt(&ig,stream);
+		stf->GetINT(ig);
     return TAG_READ;
   //----prta: Detail Tile index in Super Tile ---------
   case 'prta':
-		{	ReadInt(&cx,stream);
-			ReadInt(&cz,stream);
+		{	stf->GetINT(cx);
+			stf->GetINT(cz);
 			hd->SetTile(cx,cz);
 			return TAG_READ;
 		}
@@ -1220,7 +1242,9 @@ int ChdtlDecoder::Read (SStream *stream, Tag tag)
     { float  flt;
       int   *arr = hd->GetElvArray();
       int    end = hd->GetArrayDim();
-      for (int i = 0; i != end; i++) {ReadFloat(&flt,stream); arr[i] = flt;}
+      for (int i = 0; i != end; i++) 
+			{	stf->GetFloat(flt); 
+				arr[i] = flt;}
       trn->IncHDTL();
 /*      if (tr) TRACE("<hdtl> for DT %03d-%03d with %03d*%03d elevations",
               hd->tx,hd->tz,hd->aDim,hd->aDim);

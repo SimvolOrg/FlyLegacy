@@ -1447,8 +1447,9 @@ typedef struct SStream
   void  *stream;
 	//----------------------------------------------------
 	SStream() {;}									// Standard constructor
-	SStream(CStreamObject *object, char *fn);						// Open file for read 
-	SStream(CStreamObject *object, char *pn, char *fn);	// Open file in path for read
+	SStream(CStreamObject *object, char *fn, int b);								// Open in binary mode
+	SStream(CStreamObject *object, char *fn);											// Open file for read 
+	SStream(CStreamObject *object, char *pn, char *fn);						// Open file in path for read
 } SStream;
 
 //===============================================================================
@@ -2809,16 +2810,21 @@ public:
 #define TC_LAST_INFO_BYTE   (TC_TEXTURE_NAME_DIM - 1)
 //-------------------------------------------------------------------
 struct  TEXT_INFO {
-	U_INT			key;
+	U_INT			key;												// Any appropriated key
   short     wd;                           // Texture width
   short     ht;                           // Texture height
 	U_INT			dim;													// Texture dimension
+	//------------------------------------------------------------------
   U_CHAR    apx;                          // alpha when pixel
-	U_CHAR		azp;													// alpha when 0 pixle
+	U_CHAR		azp;													// alpha when 0 pixel
+	U_CHAR		qty;													// Compression quality
+	U_CHAR		mip;													// Mip level
+	//------------------------------------------------------------------
 	char			Dir;													// Directory
 	char      bpp;                          // Byte per plan
   char      res;                          // Resolution     (if needed)
   char      type;                         // Terrain type   (if needed)
+	//------------------------------------------------------------------
   U_INT     xOBJ;                         // Texture object (if needed)
   GLubyte  *mADR;                         // RGBA Memory addresse
 	GLubyte  *nite;													// Night texture if needed

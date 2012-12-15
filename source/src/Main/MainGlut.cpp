@@ -64,7 +64,6 @@ void mouse2         (int button, int updown, int x, int y);
 void keyboard2      (unsigned char key, int x, int y);
 void special2       (int key, int x, int y);
 
-int           Choice  =  0;                       // Initial choice;
 Tag           Cursor = 0;
 //===========================================================================
 // Terminate function
@@ -193,16 +192,14 @@ void MouseForSImulation(int x,int y,EMouseButton b,int u,int but)
 void mouse ( int button, int u, int x, int y )
 { globals->cScreen = &globals->mScreen;
   EMouseButton b = MouseEvent(button);
-  // Send mouse click events to FUI for processing
+  // Send mouse click events to application
+
   switch (globals->appState)  {
-    case APP_LOADING_SCREEN:
-      globals->cum->SetCursor(Cursor);
-      Choice = 1;
-      return;
     case APP_SIMULATION:
       MouseForSImulation(x,y,b,u,button);
       return;
   }
+	return;
 }
 
 //========================================================================
@@ -249,6 +246,7 @@ void idle (void)
   if (ctrl)  flymod |= KB_MODIFIER_CTRL;
   bool alt   = (keys[VK_MENU] & 0x80) != 0;
   if (alt)   flymod |= KB_MODIFIER_ALT;
+	if (globals->appState != APP_SIMULATION)	return;
   //--- Check for keys that are not supported by GLUT, and pass them to the sim
   //   on keydown events.
   for (int i=0; i<nKeys; i++) {
@@ -414,7 +412,6 @@ void keyboard (unsigned char key, int x, int y)
 
   switch(globals->appState) {
     case APP_LOADING_SCREEN:
-      Choice = 1;
       return;
     case APP_SIMULATION:
       break;
@@ -430,7 +427,7 @@ void keyboard (unsigned char key, int x, int y)
       return;
   }
   //---- Pass keystroke to PUI keyboard handler--
-  if (puKeyboard (key, PU_DOWN))                            return; 
+  if (puKeyboard (key, PU_DOWN))                        return; 
   //---- Pass Keystroke to FUI handler -----------
   if (globals->fui->KeyboardInput((mod << 16) | codk))  return;
   //----- Get FlyLegacy key code -------------------------------
@@ -521,9 +518,10 @@ void redraw2 ()
 //  Check for test mode
 //===========================================================================
 bool CheckForTest()
-{ int tst = 0;
-  GetIniVar ("Sim", "TestBed", &tst);
-  if (0 == tst) return false;
+{ char	tst[12];
+  GetIniString("Sim", "Mode", tst,12);
+	bool ok = (strcmp(tst,"Test") == 0);
+  if (!ok) return false;
   //---- Create the test bed ------------------------
   globals->tsb = new CTestBed();
   return true;
@@ -577,6 +575,7 @@ void redraw ()
   case APP_LOADING_SCREEN:
     // Display selection screen.  Currently only one choice supported
     globals->appState = (CheckForTest())?(APP_TEST):(APP_LOAD_SITUATION); 
+		 RedrawSplashScreen ();
     break;
 
   case APP_LOAD_SITUATION:
@@ -627,6 +626,7 @@ void redraw ()
     CleanupSplashScreen ();
     globals->tsb->TimeSlice();
     globals->tsb->Draw();
+		if (globals->stop)	ExitScreen();
     break;
 
   case APP_EXPORT:

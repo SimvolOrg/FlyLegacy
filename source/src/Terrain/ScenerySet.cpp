@@ -33,15 +33,15 @@
 #include "../Include/Pod.h"
 using namespace std;
 struct SQL_DB;
-//==========================================================================
+//==================================================================================
 //   Global function to process a file from a POD 
-//==========================================================================
+//==================================================================================
 int ScnpodCB(PFS *pfs, PFSPODFILE *p)
 {	int stop = globals->scn->CheckForScenery(p);
 	return stop;
 }
 //==================================================================================
-//	Global function to add a database
+//	Global function to add an OSM database
 //==================================================================================
 int OsmBaseCB(char *fn,void *upm)
 {	CSceneryDBM *dbm = (CSceneryDBM *)upm;
@@ -93,7 +93,6 @@ CSceneryDBM::CSceneryDBM()
 {	globals->scn	= this;	
 	Init();
 }	
-
 //--------------------------------------------------------------------------------
 // "Constructor" for scenery set database singleton.  Search for any scenery files
 //   that describe sliced scenery areas.  Scenery files are stream files
@@ -102,19 +101,15 @@ CSceneryDBM::CSceneryDBM()
 //	NOTE: When configured to export Objects, Models or TRN files, all POD are mounted
 //----------------------------------------------------------------------------------
 void CSceneryDBM::Init (void)
-{ int pm;
+{ sqm	= globals->sqm;
 	pfs = &globals->pfs;
 	//--- Check for export ---------------------------
-	exp	= 0;
-	pm	= 0;
-	GetIniVar("SQL","ExpM3D",&pm);			// Models
-	exp |= pm;
-	pm	= 0;
-	GetIniVar("SQL","ExpOBJ",&pm);			// Objects
-	exp |= pm;
-	pm	= 0;
-	GetIniVar("SQL","ExpTRN",&pm);
-	exp |= pm;
+	imp	= globals->import;
+	//--- Compression option ---------------------------
+	cmp = 1;												// By default
+	GetIniVar("Performances","UseDTXdatabase",&cmp);
+	cmp &= (!imp);									// Not importing
+	globals->comp	= cmp;
   //--- Load SCF files from FlyLegacy /Scenery folder
   LoadInFolderTree ("SCENERY/",SCN_OPT_SELECT);
 	//--- Locate OSM folder ----------------------------
@@ -131,11 +126,11 @@ void CSceneryDBM::Init (void)
 //	Get a Scenery Pack or create it
 //--------------------------------------------------------------------------------
 CSceneryPack *CSceneryDBM::GetQGTPack(U_INT key)
-{	std::map<U_INT,CSceneryPack*>::iterator rp = sqgt.find(key);
-	if (rp != sqgt.end()) return (*rp).second;
+{	std::map<U_INT,CSceneryPack*>::iterator rp = m3dPAK.find(key);
+	if (rp != m3dPAK.end()) return (*rp).second;
 	//--- Create a new pack ----------------------------------
 	CSceneryPack *pak = new CSceneryPack(key);
-	sqgt[key] = pak;
+	m3dPAK[key] = pak;
 	return pak;
 }
 //--------------------------------------------------------------------------------
@@ -151,8 +146,8 @@ void	CSceneryDBM::AddPodToQGT(CSceneryPOD *pod)
 //	Check if already in scenery pack
 //--------------------------------------------------------------------------------
 bool CSceneryDBM::AllreadyIN(U_INT key,char *pn)
-{	std::map<U_INT,CSceneryPack*>::iterator ip = gbtP.find(key);
-	if (ip == gbtP.end())	return false;
+{	std::map<U_INT,CSceneryPack*>::iterator ip = s2dPAK.find(key);
+	if (ip == s2dPAK.end())	return false;
 	//--- Check for name --------------------
 	CSceneryPack *pak = (*ip).second;
 	return pak->AllreadyIN(pn);
@@ -162,12 +157,12 @@ bool CSceneryDBM::AllreadyIN(U_INT key,char *pn)
 //--------------------------------------------------------------------------------
 void	CSceneryDBM::AddPodToGBT(CSceneryPOD *pod)
 {	U_INT key = pod->GetKey();
-	std::map<U_INT,CSceneryPack*>::iterator ip = gbtP.find(key);
-	if (ip != gbtP.end())	{(*ip).second->AddPod(pod); return;}
+	std::map<U_INT,CSceneryPack*>::iterator ip = s2dPAK.find(key);
+	if (ip != s2dPAK.end())	{(*ip).second->AddPod(pod); return;}
 	//---- create a new pack ----------------------------------
 	CSceneryPack *pak = new CSceneryPack(key);
 	pak->AddPod(pod);
-	gbtP[key] = pak;
+	s2dPAK[key] = pak;
 	return;
 }
 //--------------------------------------------------------------------------------
@@ -183,12 +178,12 @@ CSceneryDBM::~CSceneryDBM()
 void CSceneryDBM::Cleanup (void)
 {	//----Clean QGT list -------------------------
 	std::map<U_INT,CSceneryPack*>::iterator ip;
-	for (ip=sqgt.begin(); ip!=sqgt.end(); ip++) delete (*ip).second;
-	sqgt.clear();
+	for (ip=m3dPAK.begin(); ip!=m3dPAK.end(); ip++) delete (*ip).second;
+	m3dPAK.clear();
 	//----Clean GBT list -------------------------
 	std::map<U_INT,CSceneryPack*>::iterator ig;
-	for (ig=gbtP.begin(); ig!=gbtP.end(); ig++) delete (*ig).second;
-	gbtP.clear();
+	for (ig=s2dPAK.begin(); ig!=s2dPAK.end(); ig++) delete (*ig).second;
+	s2dPAK.clear();
 }
 //--------------------------------------------------------------
 // Process POD according to option
@@ -280,7 +275,7 @@ void CSceneryDBM::SelectPOD(char *path,char *fn)
 	char name[PATH_MAX];
 	//--- mount pod if exporting -------------
 	_snprintf(name,lim,"%s%s",path,fn);
-	if  (exp)	 return SendPOD(name); 
+	if  (imp)	 return SendPOD(name); 
 	//--- First search pod in databases ------
 	char *pn  = strstr(path,scn) + lgr;
 	_snprintf(name,lim,"%s%s",pn,fn);
@@ -339,7 +334,7 @@ int CSceneryDBM::CheckForScenery(PFSPODFILE *p)
 int CSceneryDBM::CheckDatabase(char *pn)
 {	//--- Search in scenery database ------------------
 	if (0 == globals->objDB)			return 0;
-	bool in = globals->sqm->SearchPODinOBJ(pn);
+	bool in = sqm->SearchPODinOBJ(pn);
 	return (in != 0);
 }
 //-----------------------------------------------------------------
@@ -389,30 +384,56 @@ void CSceneryDBM::LoadInFolderTree (char *path, char opt)
 //    assigns a new QGT.
 //	The QGT key is used to activate all sceneries registered for this QGT
 //=============================================================================
-//	Register by QGT key
 //------------------------------------------------------------------------------
-void CSceneryDBM::Register (C_QGT *qgt)
-{	char reg	= 1;
-	U_INT	key	= qgt->FullKey();
-	U_INT gx	= (key >> 16);
-	U_INT gz	= (key & 0xFFFF);
-	std::map<U_INT,CSceneryPack*>::iterator p1 = sqgt.find(key);
-	if (p1 != sqgt.end())
+//	Mount the given key  except OSM databases
+//------------------------------------------------------------------------------
+void CSceneryDBM::MountByKey(U_INT qx,U_INT qz)
+{	char	reg = 1;
+  U_INT	key	= QGTKEY(qx,qz);
+	std::map<U_INT,CSceneryPack*>::iterator p1 = m3dPAK.find(key);
+	if (p1 != m3dPAK.end())
 	{//--- Activate all sceneries in QGT --------------------
-		if (reg)		{SCENE("QGT (%03d-%03d) REGISTER",gx,gz); reg = 0;}
+		if (reg)		{SCENE("QGT (%03d-%03d) REGISTER",qx,qz); reg = 0;}
 		(*p1).second->MountPODs(this);
 	}
 	//--- Look for global tile scenery ----------------------
 	U_INT gbk = key & 0xFFFEFFFE;
-	std::map<U_INT,CSceneryPack*>::iterator p2 = gbtP.find(gbk);
-	if (p2 != gbtP.end())
+	std::map<U_INT,CSceneryPack*>::iterator p2 = s2dPAK.find(gbk);
+	if (p2 != s2dPAK.end())
 	{	CSceneryPack *pak = (*p2).second;
-		if (reg)	SCENE("GBT (%03d-%03d) REGISTER",gx,gz);
+		SCENE("GBT (%03d-%03d) REGISTER",qx,qz);
 		pak->MountPODs(this);
 	}
+	return;
+}
+//------------------------------------------------------------------------------
+//	Register by QGT key
+//	Check if  the QGT has compressed textures
+//	We check whether the  SW corner detail tile is in the texture DTX database
+//------------------------------------------------------------------------------
+int CSceneryDBM::Register (C_QGT *qgt)
+{	U_INT	key	= qgt->FullKey();
+	U_INT qx	= (key >> 16);
+	U_INT qz	= (key & 0xFFFF);
+	//--- Mount all pod by Key ----------------------------
+	MountByKey(qx,qz);
 	//--- Load OSM databases ------------------------------
 	if (globals->noOSM == 0)	LoadBasesOSM(qgt);
-	return;
+	//--- Check for compressed texture --------------------
+	if (0 == cmp)							return 0;
+	//--- Create area name form QGT indices ---------------
+	char pn[MAX_PATH];				// Pathname
+	char nm[64];							// Database name
+	globals->sqm->CreateCompressedDBname(pn,nm,qx,qz);
+	strcat(pn,"/");
+	strncat(pn,nm,MAX_PATH);
+	//--- Use SQL manager to remember databases -----------
+	//SQL_DB *db = 	globals->sql->OpenSQLbase(pn,0,nm);
+	SQL_DB *db = 	sqm->OpenSQLbase(pn,0,nm);
+	qgt->StoreCompressedTexDB(db);
+	//char *idb=(db)?(db->dbn):("None");
+	//TRACE("**** Register QGT(%03d-%03d) Name=%s",qx,qz,idb);								
+	return (db)?(1):(0);
 }
 //------------------------------------------------------------------------------
 //	Mount all sceneries
@@ -421,25 +442,7 @@ void CSceneryDBM::MountAll()
 {	SCENE("=======> MOUNT ALL POD FILES =============");
 	LoadInFolderTree ("SCENERY/",SCN_OPT_MOUNT);
 	SCENE("=======> ALL POD FILES MOUNTED=============");
-/*
-	std::map<U_INT,CSceneryPack*>::iterator p1;
-	for (p1 = sqgt.begin(); p1 != sqgt.end(); p1++)
-	{	CSceneryPack *pak = (*p1).second;
-	  pak->MountPODs(this);
-		U_INT gx	= pak->gx;
-		U_INT gz  = pak->gz;
-		SCENE("..SCENERY MOUNTED for QGT (%03d-%03d)",gx,gz);
-	}
-	//--------------------------------------------------
-	for (p1 = gbtP.begin(); p1 != gbtP.end(); p1++)
-	{ CSceneryPack *pak = (*p1).second;
-	  pak->MountPODs(this);
-		U_INT gx	= pak->gx;
-		U_INT gz  = pak->gz;
-		SCENE("..SCENERY MOUNTED for GBT (%03d-%03d)",gx,gz);
-	}
-*/
-	
+
 	return;
 }
 //------------------------------------------------------------------------------
@@ -449,18 +452,19 @@ void CSceneryDBM::Deregister (U_INT key)
 {	U_INT gx = (key >> 16);
 	U_INT gz = (key & 0xFFFF);
 	int  reg = 1;
-	std::map<U_INT,CSceneryPack*>::iterator p1 = sqgt.find(key);
-	if (p1 != sqgt.end())	
+	std::map<U_INT,CSceneryPack*>::iterator p1 = m3dPAK.find(key);
+	if (p1 != m3dPAK.end())	
 	{	//--- remove all sceneries in QGT ---------------
 		if (reg)	{	SCENE("QGT (%03d-%03d) UNREGISTER",gx,gz); reg = 0; }
 		(*p1).second->RemovePODs(this);
 	}
 	//--- Look for global tile scenery ----------------------
 	U_INT gbk = key & 0xFFFEFFFE;
-	std::map<U_INT,CSceneryPack*>::iterator p2 = gbtP.find(gbk);
-	if (p2 == gbtP.end())	return;
+	std::map<U_INT,CSceneryPack*>::iterator p2 = s2dPAK.find(gbk);
+	if (p2 == s2dPAK.end())	return;
 	if (reg)	SCENE("GBT (%03d-%03d) UNREGISTER",gx,gz); 
 	(*p2).second->RemovePODs(this);
+	//--- Remove compressed texture database ----------------
 	return;
 }
 //=================================================================================
@@ -496,12 +500,12 @@ int CSceneryDBM::AddOSMbase(char *fn)
 	*slh = 0;
 	_snprintf(fname,FNAM_MAX,"%s/%s",path,fn);
 	*slh = '/';
-	cdb = globals->sqm->OpenSQLbase(fname,0);
+	cdb = sqm->OpenSQLbase(fname,0,"OSM");
 	if (0 == cdb)					return 1;
 	if (0 == cdb->use)		return 1;
 	//--- Get covered QGTs -----------------------
-	globals->sqm->GetQGTlistOSM(*cdb,osmQGTkey,this);
-	globals->sqm->CloseOSMbase(cdb);
+	sqm->GetQGTlistOSM(*cdb,osmQGTkey,this);
+	sqm->CloseSQLbase(cdb);
 	cdb	= 0;
 	SCENE("Add OSM database %s",fname);
 	return 1;
@@ -524,12 +528,12 @@ void CSceneryDBM::AddGQTforOSM(U_INT key)
 //	Assign a number for this dabase
 //------------------------------------------------------------------
 SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
-{	std::map<U_INT,CSceneryPack*>::iterator rp = sqgt.find(qgt->FullKey());
-	if (rp == sqgt.end())				return 0;
+{	std::map<U_INT,CSceneryPack*>::iterator rp = m3dPAK.find(qgt->FullKey());
+	if (rp == m3dPAK.end())				return 0;
 	//--- OPEN the database -------------------------------
 	const char *fn = (*rp).second->GetOSMname(nb);
 	if (0 == fn)								return 0;
-	SQL_DB *db = globals->sql->OpenSQLbase((char*)fn,0);
+	SQL_DB *db = sqm->OpenSQLbase((char*)fn,0,"OSM");
 	if (0 == db)								return 0;
 	TRACE("Mounting database %s",fn);
 	return db;
@@ -551,7 +555,7 @@ void CSceneryDBM::LoadBasesOSM(C_QGT *qgt)
 //	Unload OSM base from a QGT
 //------------------------------------------------------------------
 void CSceneryDBM::FreeBasesOSM(SQL_DB *db)
-{	globals->sql->CloseOSMbase(db);
+{	globals->sqm->CloseSQLbase(db);
 	return;
 }
 //------------------------------------------------------------------
@@ -633,4 +637,20 @@ const char *CSceneryPack::GetOSMname(U_INT k)
 {	if (k >= aosm.size())		return 0;
 	return aosm[k].c_str();
 }
+//==============================================================================
+//	Globe area
+//==============================================================================
+//	Constructor 
+//------------------------------------------------------------------------------
+GlobeArea::GlobeArea(char *n,U_INT x, U_INT z, U_INT w, U_INT h)
+{	name	= n;
+	gx		= x;
+	gz		= z;
+	wd		= w;
+	ht		= h;
+}
+//------------------------------------------------------------------------------
+//	Check if QGT inside area
+//------------------------------------------------------------------------------
+
 //===================END OF FILE ===============================================================

@@ -408,7 +408,8 @@ void CSlewManager::StartSlew()
 //  Start slew mode for rabbit camera
 //------------------------------------------------------------------------
 void CSlewManager::StartMode(CAMERA_CTX *ctx)
-{	vopt	= globals->pln->GetOPT(VEH_D_CRASH);
+{	CAirplane *pln = globals->pln;
+  vopt	= (pln)?(pln->GetOPT(VEH_D_CRASH)):(0);
 	grnd	= 0;
 	mode	= ctx->mode;
 	flpn  = ctx->fpln;
@@ -1073,11 +1074,11 @@ void CSituation::TeleportS2()
 	State = SIT_NORMAL;
 	if (0 == sVeh)		return	DrawNormal();
 	//--- Place aircraft on ground --------------
-
 	sVeh->SetObjectPosition(contx.pos);
 	sVeh->SetObjectOrientation(contx.ori);
 	sVeh->SetPhysicalOrientation(contx.ori);
 	planes.BackToSimulation(1);
+	TRACE("End near TELEPORT");
 	return DrawNormal();
 }
 //=====================================================================================

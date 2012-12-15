@@ -60,8 +60,9 @@ class SqlMGR;
 #define EXP_TRN_FFILE 3										// First file
 #define EXP_TRN_NFILE 4										// Next file
 #define EXP_TRN_WRITE 5										// Export one file
-#define EXP_TRN_WTEXT 6
-#define EXP_TRN_EXIT	7
+#define EXP_TRN_WTEXT 6										// Process texture
+#define EXP_TRN_COMPR 7										// Compress supertile
+#define EXP_TRN_EXIT	8
 //============================================================================
 //	Export OBJ files
 //============================================================================
@@ -134,9 +135,10 @@ class CExport {
 	char *fName;														// File name
 	char  Key[8];														// Ident Key
 	//--- TRN control ----------------------------------------------
-	char eof;																// End of file
-	char *pod;
-	char  podN[PATH_MAX];										// Pod name
+	char			eof;													// End of file
+	char		 *pod;
+	char			podN[PATH_MAX];										// Pod name
+	C_STile  *asp;
   //----Generic parameters ---------------------------------------
 	U_INT qKey;															// QGT key
   U_INT bx;                               // Base QGT X
@@ -147,10 +149,16 @@ class CExport {
 	U_INT	gz;																// Gloabl tile Z
   U_INT ax;                               // Tile X
   U_INT az;                               // Tile Z
+	U_INT kx;																// Key X
+	U_INT	kz;																// Key Z
 	U_INT	sx;																// SUPER TILE X
 	U_INT	sz;																// SUPER TILE Z
+	U_INT dx;																// Detail X
+	U_INT	dz;																// Detail Z
 	//--- TRN parameters -------------------------------------------
-	U_INT dKey;															// Detail tile key
+	CTextureDef *texQ;											// Texture Queue
+	int   noTX;															// Texture No
+	char  repr;															// Restart indicator
   //----SEA Values -----------------------------------------------
   int   row;
   int   col;
@@ -260,16 +268,23 @@ public:
 	int		ExecuteTRN();
 	void	ExportAllTRNs();
 	void	InitTRNmsg();
-	int		BuildTRNname(char *fn);
+	bool	BuildTRNname(char *fn);
 	int 	GetFirstTRN();
 	int		GetNextTRN();
-	void	WriteTRN();
-	void	ExportTRN(char *fn);
-	//int 	WriteT2D();
-	//int		ExportT2D();
-	void	ExportSUPelevation(C_STile *asp);
-	//void	WriteTexture2D(C_STile *sp);
-	//void	LoadTRNTexture(CTextureDef	 *txd,char R);
+	bool	BuildTRNdata(char *fn);
+	void	WriteTRNelevations();
+	void	ImportSUPelevations(C_STile *asp);
+	bool	LoadSuperTile();
+	//------------------------------------------------------------
+	bool  FileInDatabase(SQL_DB &db);
+	//------------------------------------------------------------
+	bool	NextSupertile();
+	int	  WriteTRNtextures();
+	int		CompressTRNtexture();
+	void	CompressTexture(CTextureDef *txd,U_INT ax,U_INT az);
+	void	WriteDayTexture(CTextureDef *txd);
+	void	ErrorTRN01();
+	void	WarnTRN();
 };
 //============================END OF FILE =================================================
 #endif  // EXPORT_H

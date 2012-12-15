@@ -617,7 +617,7 @@ AutoPilot::AutoPilot (void)
   hMIS    = 2;
 	cMIS    = 2 / aMIS;
   //--Vertical error is tangent(1) * 1000 units -------------
-  vMIS  = 2.5;
+  vMIS  = 2.8;
   //---Default limits ------------------------------------
   aLim    = 10000;
   vLim    = 2000;

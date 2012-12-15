@@ -1702,7 +1702,7 @@ void COPALObject::RestOnGround()
 { double    grn = globals->tcm->GetGroundAltitude();
   //--- Zero Forces and Moments --------------------------
   ResetSpeeds ();
-  Plane->zeroForces ();
+ // Plane->zeroForces ();
   //--- Clear wheels forces ------------------------------
   whl.ResetForce();
 	SPosition p = geop;

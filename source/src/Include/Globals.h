@@ -395,6 +395,7 @@ typedef struct {
   //----APPLICATION PROFILE -----------------------------------------
 	COption			aPROF;										// Application profile
 	U_INT				iPROF;										// Initial profile
+	U_CHAR      import;										// Import configuration
   U_CHAR      noAWT;                    // No animated water
   U_CHAR      noTER;                    // No terrain
   U_CHAR      noEXT;                    // No external aircraft
@@ -412,7 +413,7 @@ typedef struct {
   char        m3dDB;                    // 3D model database
   char        texDB;                    // Terra texture database
   char        objDB;                    // World Object
-	char				t2dDB;										// Texture 2D database
+	char				dtxDB;										// TRN Texture database
 	//----VMAP Parameters --------------------------------------------
   char        MapName[SLOT_NAME_DIM];   /// Selected Map Name
   char        NulChar;                  /// Null Char
@@ -441,6 +442,7 @@ typedef struct {
   U_CHAR             tod;               // Time of Day ('N' or 'D');
   U_CHAR            init;               // Initial time
 	U_CHAR						zero;								// Clear Screen
+	U_CHAR						comp;								// Texture compression
 	//---------Timer for everybody -------------------------------------
   float             dRT;                // Real time delta from last frame
   float             dST;                // Simu time delta from last Frame
@@ -570,10 +572,10 @@ typedef struct {
   char      **rwgTAB;           // Runway ground
   TC_TERRA   *terTAB;           // Terra data
   // GL compressed texture support
-  bool      dxt1Supported;      ///< Compressed texture format DXT1 supported
-  bool      dxt1aSupported;     ///< Compressed texture format DXT1 with alpha supported
-  bool      dxt3Supported;      ///< Compressed texture format DXT3 supported
-  bool      dxt5Supported;      ///< Compressed texture format DXT5 supported
+  char      dxt1Supported;      ///< Compressed texture format DXT1 supported
+  char      dxt1aSupported;     ///< Compressed texture format DXT1 with alpha supported
+  char      dxt3Supported;      ///< Compressed texture format DXT3 supported
+  char      dxt5Supported;      ///< Compressed texture format DXT5 supported
 	//--- OPAL simulation --------------------------------------------
 	float			TimLim;								// Time limit for simulation
   opal::Solid *Ground;                                              // Ground solid

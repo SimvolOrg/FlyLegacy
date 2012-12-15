@@ -195,7 +195,9 @@ public:
 	//----------------------------------------------------------------------	
 	U_INT					qKey;												// QGT key
 	//---------------------------------------------------------------------
-  short         tr;                         // Trace indicator
+  char         tr;                          // Trace indicator
+	U_CHAR			 comp;												// Texture type
+	//--- Parameters -------------------------------------------------------
 	short         side;												// elevation side
   U_INT         No;                         // Super Tile Number
   short         Type;                       // Type
@@ -212,7 +214,7 @@ public:
   C_STile();                                // Constructor
  ~C_STile();                                // Destructor
   void    Abort(char *msg);                 // TRN error
-  int     Read (SStream *stream, Tag tag);  // Read STILE parameters
+	int     Read (CStreamFile *stf, Tag tag);  // Read STILE parameters
   void    SetSupElevation(U_INT sx, U_INT sz, C_QGT *qgt);
   void    GetHdltElevations(U_INT sx,U_INT sz,C_QGT *qgt);
   void    FlagDayTexture(CTextureDef *txn);
@@ -222,9 +224,9 @@ public:
 	U_INT		GetTextureOrg();
 	U_INT   GetNite();
   //--------inline -----------------------------------------------------
-  void    SetTrace(C_TRN *trn,U_INT tra){tr = tra; this->trn = trn;}
-  void    SetList(CTextureDef *lst)       {qList = lst;}
-	void		SetKey(U_INT k)									{qKey	= k;}
+  void    SetParam(C_TRN *trn,U_INT t)			{tr = t; this->trn = trn;}
+  void    SetTList(CTextureDef *l,U_CHAR c) {qList = l; comp = c; }
+	void		SetKey(U_INT k)										{qKey	= k;}
 	//--------------------------------------------------------------------
 	inline void				SetAX(U_INT x)				{ax = x;}
 	inline void				SetAZ(U_INT z)				{az = z;}
@@ -246,13 +248,14 @@ public:
 class CTxtDecoder: public CStreamObject {
    friend class C_STile;
   //---------ATTRIBUTES ------------------------------------------------
+	U_CHAR type;																			// Comprssion indicator
   U_INT nbx;                                        // Number of textures
   CTextureDef *txd;                                 // List of texture name
   //---------METHODS ---------------------------------------------------
 public:
-  CTxtDecoder();
-  int     Read (SStream *stream, Tag tag);  // Read <txtl> parameters
-  void    NormeName(char *txt,CTextureDef *txd);
+  CTxtDecoder(char t);
+	int     Read (CStreamFile *stf, Tag tag);  // Read <txtl> parameters
+  U_INT   NormeName(char *txt,CTextureDef *txd);
 };
 //===================================================================================
 //  CLASS ChdtlDecoder  Temprorary class to decode <hdtl> tag
@@ -268,7 +271,7 @@ class ChdtlDecoder : public CStreamObject {
 public:
   ChdtlDecoder(C_TRN *trn,short No,U_INT tr); // Constructor
   void      Abort(char *msg);                 // Abort process
-  int       Read (SStream *stream, Tag tag);  // Read <hdtl> parameters
+	int       Read (CStreamFile *stf, Tag tag);  // Read <hdtl> parameters
   void      GetHDTL(int dim);                 // Allocate a TRN_HDTL struct
 	//--------------------------------------------------------------------
 };
@@ -284,29 +287,31 @@ class  C_TRN: public CStreamObject {
 	U_INT		cx;																					// Current DT
 	U_INT		cz;																					// Current dt
   //---------ATTRIBUTES -------------------------------------------------
-  U_INT   tr;                                         // Trace indicator
+  U_CHAR   tr;                                        // Trace indicator
+	U_CHAR	type;																				// Compression indicator
   C_QGT  *qgt;                                        // Quarter Global Tile
   C_STile aST[TC_SUPERT_PER_QGT][TC_SUPERT_PER_QGT];  // Array of Supertiles
   //---------Accounting -------------------------------------------------
   U_INT   nHDTL;                                      // Number of <hdtl> tags
   U_INT   nDETS;                                      // Number of processed tags
 	//---------------------------------------------------------------------
-	char		mode;																				// Real or export
+	char		impr;																				// Real or export
   //---------------------------------------------------------------------
 public:
-  C_TRN(C_QGT *qgt,U_INT tr);                         // TRN File 
+  C_TRN(char *fn,C_QGT *qgt,U_INT tr);                         // TRN File 
  ~C_TRN();                                            // TRN destructor
-	void		ReadSUPR(SStream *stream);	 								// Read 'supr' tag
+	void		ReadSUPR(CStreamFile *stf);	 								// Read 'supr' tag
   void    Abort(char *msg);                           // ABORT for errors
-  int     Read (SStream *stream, Tag tag);            // Read Parameters
+	int     Read (CStreamFile *stf, Tag tag);           // Read Parameters
   void    ReadFinished ();                            // Read finished
   void    SetTRNdefault(C_QGT *qgt);                  // Default elevations
   void    GetHdtlElevations(C_QGT *qgt);              // Super Tile elevations
   //---------------------------------------------------------------------
   inline void IncHDTL()   {nHDTL++;}                  // Increment HDTL statement
   inline void IncDETS()   {nDETS++;}                  // Increment number of processed tags
-	inline void Export()		{mode = 1;}									// Export mode
-	inline char GetMode()		{return mode;}
+	inline void ForExport()	{impr = 1;}									// Export mode
+	inline char GetMode()		{return impr;}
+	inline C_QGT	*GetQGT()	{return qgt;}
 	//---------------------------------------------------------------------
 	C_STile *GetSupTile(short x,short z)	{return &aST[x][z];}	// Return array of SupTile
 };

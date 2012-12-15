@@ -70,11 +70,14 @@ public:
   U_CHAR   xFlag;                           // Flag indicator
   U_CHAR   Tmask;                           // Transition mask
   U_CHAR   TypTX;                           // Texture Type
-  U_CHAR   aRes;                            // Alternate resolution
+  U_CHAR   cTyp;                            // compression type
   //----------------------------------------------------------
   U_CHAR   Reso[2];                         // Resolution
   //----------------------------------------------------------
   U_INT    sKey;                            // Shared key
+	U_INT		 dSiz;														// Compressed day size
+	U_INT    nSiz;														// Compressed night size
+	//-----------------------------------------------------------
   GLuint   dOBJ;                            // Day texture Object
   GLuint   nOBJ;                            // Nigth texture Object
   GLubyte *dTEX[2];                         // Day texture data
@@ -106,7 +109,6 @@ public:
 	//--- Name --------------------------------------------------
 	inline  char *GetName()		{return Name;}
 	//--- Set Type ----------------------------------------------
-	inline  void   SetType(U_CHAR t)	{TypTX |= t;}
 	inline  void   SetFlag(U_CHAR t)	{xFlag |= t;}
   //-------Check texture type ---------------------------------
   inline  void   RazName()  {TypTX = 0;}
@@ -118,6 +120,7 @@ public:
   inline  U_CHAR IsCoast()  {return (TypTX == TC_TEXCOAST);}
   inline  U_CHAR IsAnEPD()  {return (TypTX == TC_TEXRAWEP);}
   inline  U_CHAR IsShare()  {return (TypTX == TC_TEXSHARD);}
+	inline  U_CHAR IsCmprs()	{return (TypTX == TC_TEXCMPRS);}
 	//-------------------------------------------------------------
 	inline void    ClearName() {*Name = 0; *Hexa = 0; TypTX = 0;}
 	//-------------------------------------------------------------
@@ -128,6 +131,7 @@ public:
   inline  U_CHAR UserTEX()  {return (xFlag & TC_USRTEX);}
   inline  U_CHAR SeaLayer() {return (xFlag & TC_SEALAY);}
   inline  U_CHAR IsNight()  {return (xFlag & TC_NITTEX)?(1):(0);}
+	inline  void   Raz(U_CHAR F)			{xFlag &= (-1 - F);}
   //-------------------------------------------------------------
   inline  GLuint   GetDOBJ()  {return dOBJ;}
   inline  GLuint   GetNOBJ()  {return nOBJ;}
@@ -262,7 +266,7 @@ public:
     inline void WantRDY() {State  = TC_TEX_RDY; }
     inline void WantLOD() {State  = TC_TEX_LOD; }
     inline void WantOBJ() {State  = TC_TEX_OBJ; }
-    inline void WantSWP() {State  = TC_TEX_POP; }
+    inline void WantPOP() {State  = TC_TEX_POP; }
 		inline void WantINQ() {State  = TC_TEX_INQ; }
     inline void SetState(U_CHAR s)  {State = s;}
     //-----------------------------------------------------
@@ -273,6 +277,7 @@ public:
 		//-----------------------------------------------------
 		inline CSuperTile *Next()				{return next;}
 		inline void Next(CSuperTile *s)	{next = s;}
+		inline C_QGT      *GetQGT()			{return qgt;}
 		//------------------------------------------------------
   };
 //============================================================================
@@ -369,9 +374,9 @@ public:
   bool        PointInNW(CVector &p, CVector nm);
   //-------------------------------------------------------
   void        Contour();
-  //void        DrawNML();			// Draw normal mode
 	void				DrawIND();			// Draw with indices
 	void				DrawVBO();			// Draw with VBO
+	void				CheckTour();
 	//--- For terrain editor interface ----------------------
 	void				GetVertices(TRACK_EDIT &w);
 	void				PutVertices(TRACK_EDIT &w, CmQUAD  *qd);
@@ -462,7 +467,7 @@ public:
 	char		Visibility()	{return sup->Visibility();}
 	//--- VBO management -----------------------------------------
 	int 		GetNbrVTX();
-	int 		DrawGround(U_INT xo);
+	int 		DrawGround();
 	//------------------------------------------------------------
 	inline void					StoreSup(CSuperTile *s) {sup = s;}
   inline CmQUAD      *GetQUAD()			{return quad;}
@@ -502,10 +507,13 @@ private:
 	U_INT					sqlNO;										// Current Database
 	SQL_DB       *sqlDB;										// Current Descriptor
 	std::vector<SQL_DB*> osmDB;							// Database Queue
-  //--------Band parameters--------------------------------------
+	//--- Compressed texture database ----------------------------
+	SQL_DB			 *ctxDB;										// Pointer to descriptor
+  //--------Option parameters--------------------------------------
   U_CHAR        rCode;                    // Request code
   U_CHAR        visb;                     // is visible
 	U_CHAR        strn;											// Skip trn
+	U_CHAR				rfux;											// reserved futur use
   //--------Mux for Step protection -----------------------------
   pthread_mutex_t	stMux;                  // State lock
   U_CHAR        qSTAT;                    // Quad available when 0
@@ -565,26 +573,27 @@ public:
   //-------------------------------------------------------------
   void TimeSlice(float dT);
   //---------Helpers  ---------------------------------
-  inline  U_CHAR      GetReqCode()        {return rCode;}
-  inline  U_INT       GetReqKey()         {return rKey;}
-  inline  void        SetQTR(C_QTR *qtf)  {qtr  = qtf;}
-  inline  double      GetDlon() {return  dLon;}
-  inline  double      GetDlat() {return  (nLat - sLat);}
-  inline  U_INT       GetXkey() {return xKey;}
-  inline  U_INT       GetZkey() {return zKey;}
-  inline  U_INT       FullKey() {return qKey;}
-  inline  bool  NotVisible()    {return (visb == 0);}
-  inline  bool        NoQuad()  {return (1 == qSTAT);}
-  inline  bool        HasQuad() {return (0 == qSTAT);}
-	inline  bool				InLoad()	{return LoadQ.NotEmpty();}
+  U_CHAR      GetReqCode()        {return rCode;}
+  U_INT       GetReqKey()         {return rKey;}
+  void        SetQTR(C_QTR *qtf)  {qtr  = qtf;}
+  double      GetDlon() {return  dLon;}
+  double      GetDlat() {return  (nLat - sLat);}
+  U_INT       GetXkey() {return xKey;}
+  U_INT       GetZkey() {return zKey;}
+  U_INT       FullKey() {return qKey;}
+  bool     NotVisible() {return (visb == 0);}
+  bool        NoQuad()  {return (1 == qSTAT);}
+  bool        HasQuad() {return (0 == qSTAT);}
+	bool				InLoad()	{return LoadQ.NotEmpty();}
+	void				StoreCompressedTexDB(SQL_DB *p) {ctxDB = p;}
 	//-----------------------------------------------------
-	inline  void				IndElevation()	{elv = 1;}
-	inline  bool				HasElevation()	{return elv != 0;}
+	void				IndElevation()	{elv = 1;}
+	bool				HasElevation()	{return elv != 0;}
   //--------3D Object -----------------------------------
-  inline  int         GetNOBJ() {return w3D.GetNOBJ();}
-  inline  C3Dworld   *Get3DW()  {return &w3D;}
+  int         GetNOBJ() {return w3D.GetNOBJ();}
+  C3Dworld   *Get3DW()  {return &w3D;}
   //-------Create vertex in line ------------------------
-  inline  CVertex    *CreateVertex(U_INT vx,U_INT vz)
+  CVertex    *CreateVertex(U_INT vx,U_INT vz)
                       { CVertex *vt = new CVertex(vx,vz);
                         globals->NbVTX++;
                         return vt;
@@ -664,9 +673,9 @@ public:
   CTextureDef    *GetTexList(U_INT No)    {return Super[No].Tex;}
 	CSuperTile     *GetSuperTile(int tx,int tz);
 	bool						AllTextured(char opt);
-	//-------------------------------------------------------------
+	//-----------------------------------------------------------
   CSuperTile     *GetSuperTile(U_INT No) { return (No > 63)?(0):(&Super[No]); }
-//--------Delete resources --------------------------------------
+	//--- Delete resources --------------------------------------
   int         FreeQuad(CmQUAD *cp);
   int         FreeVertices(CmQUAD *cp);
   int         DeleteQTR();
@@ -674,32 +683,35 @@ public:
   void        FreeVMidVertex(CVertex *vt);
   void        FreeAllVertices();
   void        UnlinkVertex(CVertex *vt);
-  //--------Drawing ----------------------------------------------
+  //--- Drawing ----------------------------------------------
   void        DrawSuperMesh(CCamera *cam, char d);
   void        DrawWiresSuperTile(CSuperTile *sp);
 	void				DrawContour();
-  //--------Coast management -------------------------------------
-  inline      U_INT       GetSeaKEY(int k)        {return seaKEY[k];}
-  inline      U_INT       GetSeaREQ(int k)        {return seaREQ[k];}
-  inline      void        SetSeaREQ(int k,U_INT r){seaKEY[k] = r;}
-  //--------3D object management ---------------------------------
-  inline      SPosition  *GetMidPoint()       {return &mPoint;}
-  inline      double      GetMidLat()         {return  mPoint.lat;}
-  inline      double      GetMidLon()         {return  mPoint.lon;}
-  inline      double      GetMidAlt()         {return  mPoint.alt;}
-  inline      double      GetWesLon()         {return  wLon;}
-  inline      double      GetNorLat()         {return  nLat;}
-  inline      double      GetSudLat()         {return  sLat;}
-  //--------Meteo Management  -------------------------------------
-  inline      void        SetMETAR(Tag m)     {Metar = m;}
-  inline      Tag         GetMETAR()          {return Metar;}
-  inline      bool        DifMETAR(Tag m)     {return (m != Metar);}
+  //--- Coast management -------------------------------------
+  U_INT       GetSeaKEY(int k)        {return seaKEY[k];}
+  U_INT       GetSeaREQ(int k)        {return seaREQ[k];}
+  void        SetSeaREQ(int k,U_INT r){seaKEY[k] = r;}
+  //--- 3D object management ---------------------------------
+  SPosition  *GetMidPoint()       {return &mPoint;}
+  double      GetMidLat()         {return  mPoint.lat;}
+  double      GetMidLon()         {return  mPoint.lon;}
+  double      GetMidAlt()         {return  mPoint.alt;}
+  double      GetWesLon()         {return  wLon;}
+  double      GetNorLat()         {return  nLat;}
+  double      GetSudLat()         {return  sLat;}
+  //---		Management  -------------------------------------
+  void        SetMETAR(Tag m)     {Metar = m;}
+  Tag         GetMETAR()          {return Metar;}
+  bool        DifMETAR(Tag m)     {return (m != Metar);}
   //---------------------------------------------------------------
-  inline      void        IncCloud(U_CHAR t)  {cloud[t]++;}
-  inline      void        DecCloud(U_CHAR t)  {cloud[t]--;}
+  void        IncCloud(U_CHAR t)  {cloud[t]++;}
+  void        DecCloud(U_CHAR t)  {cloud[t]--;}
   inline      U_INT       NbCloud(U_CHAR t)   {return cloud[t];}
   //---------------------------------------------------------------
-  inline      void        CheckW3D()          {w3D.Check();}
+  void        CheckW3D()          {w3D.Check();}
+	//--- Texture management ----------------------------------------
+	char				GetCompTextureInd()	{return (ctxDB != 0);}
+	SQL_DB     *GetCompTextureDBE()	{return ctxDB;}
 };
 //=============================================================================
 //	Structure to save modified elevation into blob
@@ -733,7 +745,7 @@ class TCacheMGR: public CExecutable {
   //------Terrain parameters ------------------------------------
   U_CHAR      stop;                         // stop sql
   U_CHAR      wire;                         // QGT step
-  U_CHAR      Terrain;                      // Terrian indicator
+  U_CHAR      trfu;													// Terrian indicator
 	U_CHAR        strn;											  // Skip trn
   //------Teleport ----------------------------------------------
   U_CHAR      Tele;                         // Teleport in action
@@ -868,7 +880,6 @@ public:
   void        Abort(char *msg);
   U_SHORT     GetTablePos(short vp) {return (vp < 256)?(255 - vp):(vp - 256);}
   int         LastAction();
-  void        GetTileName (U_CHAR *base);
   U_CHAR      BuildName(CTextureDef *txn,U_SHORT nx,U_SHORT nz);
   void        FormatName(C_QGT *qt,CSuperTile *sp);
   int         GetTransitionMask(C_QGT *qt,CSuperTile *sp);
@@ -897,7 +908,6 @@ public:
   CmQUAD      *GetTileQuad(SPosition pos);
   CmQUAD      *GetTileQuad(U_INT ax,U_INT az);
   CTextureDef *GetTexDescriptor();
- // CTextureDef *GetTexDescriptor(U_INT tx,U_INT tz);
   CTextureDef *GetTexDescriptor(C_QGT *qtg,U_INT ax,U_INT az);
 	void				FillGroundTile(CGroundTile *gnt);
   //--------METAR MANAGEMENT -------------------------------------
@@ -969,7 +979,7 @@ public:
   double      GetCenterLongitude(){return globals->geop.lon;}
   double      GetCenterLatitude() {return globals->geop.lat;}
   C_QGT      *GetCenterQGT()      {return Spot.qgt;}
-  bool        CenterQuad(CmQUAD *q)	{return (q == Spot.Quad);}
+  bool        SameQuad(CmQUAD *q)	{return (Spot.SameSpot(q));}
   //--------------------------------------------------------------
   bool   HiResPermited()     {return (HiRes!= 0);}
   char   GetTrace()          {return (tr)?(1):(0);}

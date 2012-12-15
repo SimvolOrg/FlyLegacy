@@ -149,14 +149,22 @@ void CTimeManager::SetTimeZoneDelta (bool subtract, SDateTimeDelta delta)
 void CTimeManager::SetTimeZone()
 { struct __timeb64 t64;
   _ftime64(&t64);           // Get Time offset
-  int dh = 0;
-  _get_daylight(&dh);
   int tz = t64.timezone;
   int hh = abs(tz) / 60;
   int mn = abs(tz) % 60;
-  tzDelta.dHours = hh + dh;
+  tzDelta.dHours = hh;
   tzDelta.dMinutes = mn;
   tzSubtract = (tz < 0)?(false):(true);
+	//---Compute effective daylight offset -----
+	SDateTime dt = GetUTCDateTime();
+	//------------------------------------------
+	__time64_t lt;
+	_time64(&lt);
+	tm *now = _localtime64( &lt);
+	//--- Check for daylight time offset -------
+	int dlt = now->tm_hour - dt.time.hour - hh;
+	tzDelta.dHours +=dlt;
+	return;
 }
 ///==============================================================================
 /// Set the local time zone offset relative to UTC.  This offset will be used
@@ -252,7 +260,6 @@ SDateTime CTimeManager::GetUTCDateTime (void)
 // Note: Contrary to localtime() convention, the month value ranges
 //   from 1..12 for January..December
 //-------------------------------------------------------------------------
-
 SDateTime CTimeManager::GetLocalDateTime (void)
 { SDateTime dt = GetUTCDateTime ();
   // Adjust by time zone offset
@@ -613,8 +620,8 @@ double CTimeManager::JulianDate (SDateTime dt)
   }
 
   double a = floor (yy / 100);      // Non-leap days on even centuries
-  double b = floor (a / 4);       // Leap days on even-four year bounds
-  double c = 2 - a + b;         // Total number of leap days
+  double b = floor (a / 4);					// Leap days on even-four year bounds
+  double c = 2 - a + b;							// Total number of leap days
   double e = floor (365.25 * (yy + 4716));// Days to zeroth day of year
   double f = floor (30.6001 * (mm + 1));  // Days to zeroth day of month
 
@@ -800,12 +807,7 @@ SDateTime CTimeManager::AddTimeDelta (SDateTime dt, SDateTimeDelta delta)
 
   // Add milliseconds
   result.time.msecs = dt.time.msecs + delta.dMillisecs;
-  if (result.time.msecs > 999) {
-    carry = 1;
-    result.time.msecs -= 1000;
-  } else {
-    carry = 0;
-  }
+  if (result.time.msecs > 999) { carry = 1; result.time.msecs -= 1000;}
 
   // Add seconds
   result.time.second = dt.time.second + delta.dSeconds + carry;
@@ -946,7 +948,7 @@ SDateTimeDelta CTimeManager::SubtractTime (SDateTime from, SDateTime to)
 {
   // Convert starting and ending date/time to julian dates
   double jdFrom = JulianDate (from);
-  double jdTo = JulianDate (to);
+  double jdTo		= JulianDate (to);
 
   // Subtract julian dates
   float delta = (float)(jdTo - jdFrom);

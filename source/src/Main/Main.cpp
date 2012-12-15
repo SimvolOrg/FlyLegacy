@@ -71,6 +71,7 @@
 #include "../Include/Collisions.h"
 #include "../Include/Cameras.h"
 #include "../Include/External.h"
+#include "../Include/TestBed.h"
 #include "../Plugin/Plugin.h"
 //----Windows particular -------------------------
 #include <math.h>
@@ -388,6 +389,10 @@ float colorTABLE[] = {
 	float(0.84),float(0.35),0,1,							// 8 Amber
 };
 //================================================================================
+//	yes no table
+//================================================================================
+char *yesno[] = {"not","is"};
+//================================================================================
 //	globals activity frame count
 //================================================================================
 int	globalsINIT = 200;
@@ -459,12 +464,12 @@ bool OSMnotUsed(char type)
 //================================================================================
 void CheckPerformances(float fps)
 {	int lim = 0;
-		GetIniVar("Performances", "OSMAutoRegulation",&lim);
+	GetIniVar("Performances", "OSMAutoRegulation",&lim);
 	if (lim == 0)			return;
 	if (fps > lim)		return;
 	//--- Inihibit forest ---------------------------------
 	osmTYPE[OSM_FOREST].Use = 0;
-	globals->tcm->FlushOSM();
+	//globals->tcm->FlushOSM();
 	return;
 }
 //=============================================================================================
@@ -737,8 +742,7 @@ int VMAP::Read(SStream * st, Tag tag)
 //  Code in this function may be dependent on INI settings and globals
 //========================================================================================
 void InitGraphics (void)
-{
-  // Initialize GLEW
+{	// Initialize GLEW
   GLenum e = glewInit ();
   if (e != GLEW_OK)  WARNINGLOG ("GLEW Initialization error : 0x%04X", e);
 
@@ -746,10 +750,10 @@ void InitGraphics (void)
   //   global flags accordingly
 
   // Check for compressed texture formats
-  globals->dxt1Supported = false;
-  globals->dxt1aSupported = false;
-  globals->dxt3Supported = false;
-  globals->dxt5Supported = false;
+  globals->dxt1Supported	= 0;
+  globals->dxt1aSupported = 0;
+  globals->dxt3Supported	= 0;
+  globals->dxt5Supported	= 0;
   GLint nFormats;
   glGetIntegerv (GL_NUM_COMPRESSED_TEXTURE_FORMATS_ARB, &nFormats);
   GLint *format = new GLint[nFormats];
@@ -757,21 +761,23 @@ void InitGraphics (void)
   for (int i=0; i<nFormats; i++) {
     switch (format[i]) {
     case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-      globals->dxt1Supported = true;
+      globals->dxt1Supported = 1;
       break;
     case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-      globals->dxt1aSupported = true;
+      globals->dxt1aSupported = 1;
       break;
     case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-      globals->dxt3Supported = true;
+      globals->dxt3Supported = 1;
       break;
     case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-      globals->dxt5Supported = true;
+      globals->dxt5Supported = 1;
       break;
     }
   }
   SAFE_DELETE_ARRAY (format);
-
+	//-------------------------------------------------------------------------
+	TRACE("Compression DTX5 %s supported",yesno[globals->dxt5Supported]);
+	//-------------------------------------------------------------------------
   // Establish baseline OpenGL state that differs from default.
   // The following states are not explicitly set, as the baseline uses the
   //   defaults per OpenGL standards:
@@ -779,7 +785,7 @@ void InitGraphics (void)
   //    GL_ALPHA_TEST           Disabled
   //    GL_STENCIL_TEST         Disabled
   //    GL_FOG                  Disabled
-  //
+  //-------------------------------------------------------------------------
   glClearColor (0, 0, 0, 0);
   glEnable (GL_BLEND);
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1033,7 +1039,9 @@ void InitGlobalsNoPodFilesystem (char *root)
 //  Cleanup settings in the Global data structure
 //======================================================================================
 void CleanupGlobals (void)
-{ if (globals->plugins_num) globals->plugins->On_EndSituation ();
+{ CTestBed *tsb = globals->tsb;
+	if (tsb)		delete tsb;
+	if (globals->plugins_num) globals->plugins->On_EndSituation ();
 	delete(globals->plugins);
   CloseUserMenu();   
   CleanupFonts();
@@ -1398,7 +1406,7 @@ int RedrawSimulation ()
 	//--- Draw master menu --------------------------------
 	puDisplay();
   // draw cursor only on the window where the mouse is really on
-  globals->cum->Draw ();
+  globals->cum->Draw (dSimT);
   return APP_SIMULATION;
 }
 
@@ -1705,7 +1713,7 @@ int main (int argc, char **argv)
   globals->maxView  = 40;                     // Default Maximum view (miles)
   globals->highRAT  = 0.32;                   // Hight resolution (ratio of maxView)
   globals->skyDist  = FN_FEET_FROM_MILE(60);  // Sky distance
-	globals->mipOBJ		= 3;											// Mip level for Objects
+	globals->mipOBJ		= 4;											// Mip level for Objects
 	globals->mipTER		= 3;											// Mip level for terrain
   //---SQL databases -------------------------------------------------
   globals->genDB = 0;
@@ -1715,6 +1723,7 @@ int main (int argc, char **argv)
   globals->m3dDB = 0;
   globals->texDB = 0;
   globals->objDB = 0;
+	globals->dtxDB = 0;
   //---Master radio interface ----------------------------------------
   globals->lnd  =  0;
   //---Object pointer ------------------------------------------------

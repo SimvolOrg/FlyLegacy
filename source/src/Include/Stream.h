@@ -49,6 +49,7 @@ public:
 
   // Low level Read methods--------------------------
   bool              Refill();
+	bool							SameLine();
   bool              GetChar(char *st,int nb);
   bool              NextCharacter(short nc);
   bool              NextToken();
@@ -56,10 +57,23 @@ public:
   bool              NextTag();
   bool              GetTag();
   bool              ParseError();
+	bool							NextString();
+	bool							TrueString();
+	//-----------------------------------------------
+	char							OneCharacter();
+	void							SkipLine();
+	//---------------------------------------------
   void              ReadFrom(CStreamObject *object);
   void              ReadDouble(double &nd);
   void              ReadLong(long &nb);
   void              ReadFloat(float &nb);
+	void							ReadUINT(U_INT &nb);
+	void							ReadINT(int &nb);
+	void							GetINT(int &nd);
+	void              GetFloat(float &nf);
+	void							GetDouble(double &nd);
+	void							GetUINT(U_INT &nb);
+	void							GetString(char *dst,int sz);
   // Write methods------------------------------------
 	void							DebObject();
 	void							EndObject();
@@ -94,8 +108,12 @@ protected:
   bool      writeable;      // Whether this stream is writeable
   int       indent;
   int       line;           // Line number about
+	U_INT	    tot;
+	//----------String buffer -------------------------------------------------
+	char			string[128];
+	char			dtag[8];
   //----------For low level decoding ----------------------------------------
-  char            buf[256];     // Read buffer
+  char            buf[258];     // Read buffer
   int             nBytes;       // Number of bytes left
   char           *rpos;         // Character position in buffer
   Tag             tag;          // Decoded tag

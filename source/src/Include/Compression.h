@@ -22,14 +22,42 @@
 //===============================================================================================
 #ifndef COMPRESSION_H
 #define COMPRESSION_H
+#define CRND_HEADER_FILE_ONLY 
 #include "../Include/FlyLegacy.h"
 #include <crnlib.h>
-class RawCompressor: public CStreamObject {
+#include "crn_decomp.h"
+//------------------------------------------------------------------------------------------------
+using namespace crnd;
+//===========================================================================================
+#define COMP_DTX0			(0)
+#define COMP_DTX1			(1)
+#define COMP_DTX3			(2)
+#define COMP_DTX5			(3)
+//================================================================================================
+class CTextureDef;
+//================================================================================================
+class Compressor: public CStreamObject {
 protected:
 	//--- ATTRIBUTS ------------------------------
-	//--- METHODS --------------------------------
+	void	*crnd;
+	crn_texture_info			txd;			// Texture descriptor
+	crnd_unpack_context		ctx;			// Pointer to context
+	U_INT	mode;
+	//----------------------------------------------
+	void *img[1][cCRNMaxLevels];
+	U_INT siz[cCRNMaxLevels];
+	//--- Texture object ---------------------------
+	U_INT	xOBJ;
+	U_INT	mip;											// Mip level
+	//--- METHODS ----------------------------------
 public:
-	RawCompressor(char *fn);
+	Compressor(U_INT t,U_INT m);
+	//----------------------------------------------
+	U_INT  Clean();
+	//----------------------------------------------
+	void  EncodeCRN(TEXT_INFO &tdf);
+	U_INT	DecodeCRN(void *data, U_INT sze,U_CHAR l0, U_CHAR ln);
+
 };
 //=== END OF FILE ====================================================================================
 #endif COMPRESSION_H

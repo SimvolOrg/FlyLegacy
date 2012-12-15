@@ -21,6 +21,9 @@
 //=============================================================================
 #include "../Include/3DMath.h"
 #include "../Include/TerrainUnits.h"
+#include "../Include/TerrainData.h"
+//=============================================================================
+extern TC_INCREMENT SuperDT[];
 //=============================================================================
 //  Class for transformation
 //=============================================================================
@@ -73,6 +76,9 @@ public:
   short   tz;                         // Vertical detail tile index [0-31]
   short   vx;                         // Vertex X key
   short   vz;                         // Vertex Z key
+	//---  absolute tile key -------------------------------------
+	U_INT		ax;
+	U_INT   az;
 	//------------------------------------------------------------
 	CSuperTile *sup;
 	//---Terrain ready ------------------------------------------
@@ -93,7 +99,7 @@ public:
 	void		FeetCoordinatesTo(CVertex *vtx,CVector &v);
 	//-------------------------------------------------------------
 	CSuperTile   *GetSuperTile();
-	char		UpdateAGL(SPosition &p,double rdf);
+	void		UpdateAGL(SPosition &p,double rdf);
 	void		GetGroundAt(SPosition &pos);
 	//-------------------------------------------------------------
   void    SetQGT(C_QGT *qgt);
@@ -102,6 +108,8 @@ public:
 	double	GetAltitude(SPosition &p);
 	bool    InvalideQuad();
 	bool    Valid();
+	//--- Return texture number in supertile given Tile (X,Z) indices
+	U_INT		GetTextureInSUP();
   //------------------------------------------------------------
 	void		Edit(char *txt) {sprintf(txt,"QGT(%03d-%03d) TILE(%02d-%02d) GROUND=%4d feet",
 		qx,qz,tx,tz,int(alt));}
@@ -113,7 +121,8 @@ public:
   void   Reset()           {pgt = qgt; qgt = 0;}
   void   PopQGT()          {if (0 == qgt)  qgt = pgt;}
   bool   HasQGT()          {return (0 != qgt);}
-	//-------------------------------------------------------------
+	//---Check for same spot --------------------------------------
+	bool	 SameSpot(CmQUAD *Q);	
 };
 
 //=============================================================================

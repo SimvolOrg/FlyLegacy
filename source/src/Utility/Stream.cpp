@@ -273,25 +273,27 @@ CStreamFile::CStreamFile (void)
 //------------------------------------------------------------------------
 CStreamFile::CStreamFile(char *fn,PFS *pfs,CStreamObject *obj)
 {	if (OpenRead (fn,pfs))	ReadFrom(obj);
+	Close();
 }
 //------------------------------------------------------------------------
 //  Open for reading
 //------------------------------------------------------------------------
 int CStreamFile::OpenRead (char *filename, PFS *pfs)
-{ line   = 0;
+{ line		= 0;
+	tot			= 0;						// Total blocks
   podfile = popen (pfs, filename);
   if (podfile != NULL) {
     // File was opened from the POD filesystem
     readable = true;
   } else 
 	{ // Attempt to open from normal (non-POD) filesystem
-    f = fopen (filename, "r");
+    f = fopen (filename, "rb");
     if (f != NULL) readable = true;
   }
   //---------Init for first reading ------------------------
-  nBytes  = 1;
-  buf[0]  = ' ';                // trigger pump
-  rpos    = buf;
+  nBytes		= 1;
+  strcpy(buf," ");                // trigger pump
+  rpos			= buf;
 	return (readable)?(1):(0);
 }
 //------------------------------------------------------------------------
@@ -300,21 +302,32 @@ int CStreamFile::OpenRead (char *filename, PFS *pfs)
 //------------------------------------------------------------------------
 bool CStreamFile::Refill()
 {if (0 == podfile) return false;
+	FILE *file = podfile->pFile;
  switch (podfile->source) {
     case PODFILE_SOURCE_POD:
       // Reads to different files within the same POD may be interspersed,
       //   so the read pointer must be reset to the next expected byte for
       //   this pod file.
-      fseek (podfile->pFile, podfile->pos, SEEK_SET);
-      nBytes        = fread (buf, 1, 256, podfile->pFile);
-      podfile->pos  = ftell (podfile->pFile);
+			//_lock_file(file);
+      fseek (file, podfile->pos, SEEK_SET);
+      nBytes        = fread (buf, 1, 256, file);
+      //podfile->pos  = ftell (podfile->pFile);
+			podfile->pos += nBytes;
       rpos          = buf;
-      return (nBytes)?(true):(false);
+			buf[nBytes]		= 0;
+			tot++;
+			//_lock_file(file);
+			//--- DEBUG ONLY ----------------------
+			//if (nBytes < 256)
+			//int a = 0;
+			//-------------------------------------
+      return true;
 
     case PODFILE_SOURCE_DISK:
-      nBytes  = fread (buf, 1, 256, podfile->pFile);
-      rpos    = buf;
-      return (nBytes)?(true):(false);
+      nBytes				= fread (buf, 1, 256, file);
+      rpos					= buf;
+			buf[nBytes]		= 0;
+      return true;
     }
 
   return false;
@@ -329,6 +342,7 @@ bool CStreamFile::ParseError()
 }
 //------------------------------------------------------------------------
 //  check for valid character
+//  -Skip space, tab, CR, LF,
 //------------------------------------------------------------------------
 bool CStreamFile::IsValid(char car)
 { if (' '   == car) return false;
@@ -338,66 +352,134 @@ bool CStreamFile::IsValid(char car)
   return true;
 }
 //------------------------------------------------------------------------
-//  Set pointer to next character
+//  One character
+//------------------------------------------------------------------------
+char CStreamFile::OneCharacter()
+{	char car = *rpos++;
+	if (*rpos == 0)	Refill();
+	return car;
+}
+//------------------------------------------------------------------------
+//  Check for inline position
+//------------------------------------------------------------------------
+bool CStreamFile::SameLine()
+{	char car = OneCharacter();
+	return (car)?(car != 0x0A):false;
+}	
+//------------------------------------------------------------------------
+//  By pass n characters
 //------------------------------------------------------------------------
 bool CStreamFile::NextCharacter(short nc)
-{ while (nc-- != 0)
-  { nBytes--;
-    rpos++;
-    if (0 < nBytes) continue;
-    if (!Refill())  return false;
-  }
+{ while (nc-- != 0)	OneCharacter();
   return true;
 }
 //------------------------------------------------------------------------
 //  Return n characters in the string
 //------------------------------------------------------------------------
 bool  CStreamFile::GetChar(char *st,int nb)
-{ while (nb-- != 0)
-  { if ((0 == nBytes) && (!Refill())) ParseError();
-    *st++ = *rpos++;
-    nBytes--;
-  }
+{ while (nb-- > 0) *st++ = OneCharacter();
   return true;
 }
 //------------------------------------------------------------------------
+//  Skip any comment
+//------------------------------------------------------------------------
+void CStreamFile::SkipLine()
+{	while (SameLine())	continue;
+	return;
+}
+//------------------------------------------------------------------------
 //  Advance up to the next valid character
-//  -Skip space, tab, CF, LF,
+//  -Skip space, tab, CR, LF,
 //------------------------------------------------------------------------
 bool CStreamFile::NextToken()
-{ while (podfile)
-  { if (IsValid(*rpos))     return true;
-    if (!NextCharacter(1))  return false;
-  }
-  return false;
+{ while (!IsValid(*rpos) && OneCharacter()) continue;
+  return (*rpos != 0);
 }
 //------------------------------------------------------------------------
 //  Decode tag
 //------------------------------------------------------------------------
 bool CStreamFile::GetTag()
-{ char data[8];
-  int  dim  = 0;
-  while (*rpos != '>')
-  { if (!NextCharacter(1))  return false;
-    data[dim++] = *rpos;
-    if (dim == 4) break;
+{ int  dim  = 0;
+	char car  = 0;
+	for (int k=0; k < 8; k++)
+	{	car = OneCharacter();
+		if ('>' == car)	break;
+    dtag[k] =  car;
   }
-  NextCharacter(1);
-  if (*rpos != '>')         return ParseError();
-  NextCharacter(2);                               // Skip > and 0
-  tag = StringToTag(data);
+  if (car != '>')         return ParseError();
+  SkipLine();                               // Skip > and 0
+  tag = StringToTag(dtag);
   return true;
 }
 //------------------------------------------------------------------------
 //  Find next tag
 //------------------------------------------------------------------------
 bool CStreamFile::NextTag()
-{ if  (!NextToken())        return false;
-  while (podfile)
-  { if ('<' == *rpos)       return GetTag();
-    if (!NextCharacter(1))  return false;
-  }
-  return false;
+{ while (NextToken() && (*rpos != '<')) continue;
+  OneCharacter();
+  return GetTag();
+}
+//------------------------------------------------------------------------
+//  Find next string
+//------------------------------------------------------------------------
+bool CStreamFile::NextString()
+{*string = 0;
+  NextToken();
+	int	k;
+	for (k = 0; k < 127; k++)
+	{	char car = OneCharacter();
+		if (!IsValid(car))	break;
+		string[k]	= car;
+	}
+	string[k]	= 0;
+	SkipLine();
+	return true;
+}
+//------------------------------------------------------------------------
+//  Find next string without comment
+//------------------------------------------------------------------------
+bool	CStreamFile::TrueString()
+{	while(NextString())
+	{	if (strncmp(string,"//",2) != 0)	return true; 
+	}
+	return false;
+}
+//------------------------------------------------------------------------
+//  Get a double number
+//------------------------------------------------------------------------
+void CStreamFile::GetINT(int &nd)
+{	if (!TrueString())	return;
+	nd = int(atoi (string));
+}
+
+//------------------------------------------------------------------------
+//  Get a double number
+//------------------------------------------------------------------------
+void CStreamFile::GetUINT(U_INT &nd)
+{	if (!TrueString())	return;
+	nd = U_INT(atoi (string));
+}
+//------------------------------------------------------------------------
+//  Get a float number
+//------------------------------------------------------------------------
+void CStreamFile::GetFloat(float &nd)
+{	if (!TrueString())	return;
+	nd = float(atof (string));
+}
+//------------------------------------------------------------------------
+//  Get a String
+//------------------------------------------------------------------------
+void CStreamFile::GetString(char *dst,int sz)
+{	if (!TrueString())	return;
+	strncpy(dst,string,sz);
+}
+
+//------------------------------------------------------------------------
+//  Get a double number
+//------------------------------------------------------------------------
+void CStreamFile::GetDouble(double &nd)
+{	if (!TrueString())	return;
+	nd = double(atof (string));
 }
 //------------------------------------------------------------------------
 //  Read a double number
@@ -419,6 +501,27 @@ void CStreamFile::ReadLong(long &nb)
   nb   = LittleEndian (nl);
   return;
 }
+//------------------------------------------------------------------------
+//  Read a  number
+//------------------------------------------------------------------------
+void CStreamFile::ReadINT(int &nb)
+{ char lg[12];
+  GetChar(lg,sizeof(int));
+  int nl = *(int*)(lg);
+  nb   = LittleEndian (nl);
+  return;
+}
+//------------------------------------------------------------------------
+//  Read a unsigned number
+//------------------------------------------------------------------------
+void CStreamFile::ReadUINT(U_INT &nb)
+{ char lg[12];
+  GetChar(lg,sizeof(int));
+  U_INT nl = *(U_INT*)(lg);
+  nb   = LittleEndian (nl);
+  return;
+}
+
 //------------------------------------------------------------------------
 //  Read a float number
 //------------------------------------------------------------------------
@@ -458,7 +561,7 @@ void  CStreamFile::ReadFrom(CStreamObject *object)
       nestCount--;
     } 
     // Pass tag to the object and keep going
-    object->Read (this, tag);
+    int rep = object->Read (this, tag);
     // After the first tag has been read, we are no longer expecting an
     //   opening <bgno>
     openingBgno = false;
@@ -756,7 +859,7 @@ Tag    snexttag (char* s, int maxLength, SStream *stream)
 int OpenRStream(char *fn,SStream &s)
 { if (0 == fn)	return 0;
 	strncpy (s.filename, fn,(PATH_MAX-1));
-  strcpy  (s.mode, "r");
+  strcpy  (s.mode, "rb");
 	return OpenStream (&globals->pfs, &s);
 }
 //===========================================================================
@@ -1370,7 +1473,6 @@ void StreamWarn(char *pn, char *fn)
 //==================================================================================
 SStream::SStream(CStreamObject *O,char *fn)
 {	ok = false;
-
   if (fn && *fn && OpenRStream (fn,*this)) 
 	{	ReadFrom (O,this);
 	  CStreamFile* sf = (CStreamFile*)stream;

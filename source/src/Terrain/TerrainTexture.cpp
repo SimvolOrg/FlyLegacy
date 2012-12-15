@@ -30,7 +30,9 @@
 #include "../Include/Utility.h"
 #include "../Include/FreeImage.h"
 #include "../Include/FileParser.h"
+#include "../Include/Compression.h"
 #include "../Include/Fui.h"
+#include "../Include/GeoMath.h"
 //===================================================================================
 extern U_CHAR NameRES[];
 //===================================================================================
@@ -364,10 +366,6 @@ CShared3DTex::~CShared3DTex()
 { if (x3d.xOBJ)  glDeleteTextures(1,&x3d.xOBJ); 
   if (x3d.mADR)  delete [] x3d.mADR;
 }
-//=============================================================================
-//  External for getting the base Detail Tile coordinate in Super Tile
-//=============================================================================
-TC_INCREMENT SuperDT[];
 //=============================================================================
 //  CArtParser:  To read RAW texture files and provide all kind of mergers
 //                and blending
@@ -1023,7 +1021,7 @@ GLubyte *CArtParser::GetNitTexture(TEXT_INFO &txd)
 { SqlTHREAD *sql = globals->sql;
   GLubyte   *tex = 0;
   DontAbort();
-  if (sql->SQLtex()){ tex = sql->GetGenTexture(txd);
+  if (sql->SQLtex()){ tex = sql->GetSQLGenTexture(txd);
                       SetSide(txd.wd);
                     }
   else              { tex = LoadRaw(txd,0);    }
@@ -1035,7 +1033,7 @@ GLubyte *CArtParser::GetNitTexture(TEXT_INFO &txd)
 //--------------------------------------------------------------------
 GLubyte *CArtParser::LoadTextureFT(TEXT_INFO &txd)
 { afa            = 0;
-	GLubyte   *tex = globals->sql->GetGenTexture(txd);
+	GLubyte   *tex = globals->sql->GetSQLGenTexture(txd);
 	if (0 == tex)  tex = LoadRaw(txd,0);			
   SetSide(txd.wd);
   if (0 == tex) gtfo("BAD TEXTURE NAME: %s",txd.path);
@@ -1256,11 +1254,17 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
   iBox.zmin = 4096;
   iBox.xmax = 0;
   iBox.zmax = 0;
-	//--- Compressed format -------------------------------------
-	cTERRA		= GL_RGBA;
+	//--- Terrain texture format --------------------------------
+	TERcomp		= GL_RGBA;
 	int pm;
 	GetIniVar("Performances","UseTerrainCompression",&pm);
-	if (pm)	cTERRA	= GL_COMPRESSED_RGBA;
+	if (pm)	TERcomp	= GL_COMPRESSED_RGBA;
+	//--- Model 3D texture format --------------------------------
+	M3Dcomp		= GL_RGBA;
+	pm = 0;
+	GetIniVar("Performances","Use3DObjectCompression",&pm);
+	if (pm)	M3Dcomp	= GL_COMPRESSED_RGBA;
+
   //------Init Counters ---------------------------------------
   NbCUT   = 0;
 	NbG3D		= 0;
@@ -1657,45 +1661,6 @@ CShared3DTex *CTextureWard::AddSHX(CShared3DTex *shx ,TEXT_INFO &txd)
 }
 //-----------------------------------------------------------------------------
 //  Get A 3D model Texture
-//  Format may be either
-//  1)RAW-ACT
-//  2)TIF
-//	Allocated a shared object for this texture name
-//	Return the shared objet as a reference to this texture
-//-----------------------------------------------------------------------------
-/*
-CShared3DTex *CTextureWard::GetM3DPodTexture(TEXT_INFO &txd)
-{ char *dir = directoryTAB[txd.Dir];
-	_snprintf(txd.path,FNAM_MAX,"%s/%s",dir,txd.name);
-	//-------------------------------------------------------
-  CShared3DTex *ref = RefTo3DTexture(txd);
-  if   (ref)  return ref;
-  //---Add a new shared texture --------------------------
-  CShared3DTex *shx = new CShared3DTex(txd);
-	return AddSHX(shx ,txd);
-}
-*/
-//-----------------------------------------------------------------------------
-//  Get A 3D model Texture
-//  from SQL database.  This function runs in SQL thread
-//-----------------------------------------------------------------------------
-/*
-CShared3DTex *CTextureWard::GetM3DSqlTexture(TEXT_INFO &txd)
-{ //-- Make a key with ART directory ---------------------
-	char *dir = directoryTAB[txd.Dir];
-	_snprintf(txd.path,FNAM_MAX,"%s/%s",dir,txd.name);
-  //------------------------------------------------------
-	CShared3DTex *ref = RefTo3DTexture(txd);
-  if   (ref)  	return ref;
-  //---Add a new shared texture --------------------------
-  CShared3DTex *shx = new CShared3DTex(txd);
-	AddSHX(shx ,SHX_SQL);
-	shx->GetDimension(txd);
-  return shx;
-}
-*/
-//-----------------------------------------------------------------------------
-//  Get A 3D model Texture
 //  Search in the following order
 //	In texture cache
 //	In SQL database
@@ -1804,7 +1769,6 @@ GLuint CTextureWard::Get3DObject(void *tref)
 	GLuint obj  = 0;
   glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
-//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,globals->mipOBJ);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
@@ -1859,7 +1823,6 @@ GLuint CTextureWard::GetTexOBJ(TEXT_INFO &inf, U_INT mip,U_INT type)
 { GLuint obj = inf.xOBJ;
   if (0 == obj) glGenTextures(1,&obj);
   glBindTexture(GL_TEXTURE_2D,obj);
-//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_TRUE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,mip);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
@@ -1867,7 +1830,6 @@ GLuint CTextureWard::GetTexOBJ(TEXT_INFO &inf, U_INT mip,U_INT type)
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,inf.wd,inf.ht,0,type,GL_UNSIGNED_BYTE,inf.mADR);
 	glGenerateMipmap(GL_TEXTURE_2D);
-
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
   inf.xOBJ = obj;
   if (inf.mADR) delete [] inf.mADR;
@@ -1983,10 +1945,8 @@ GLuint CTextureWard::GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex)
 
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D,0,cTERRA,dim,dim,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
+  glTexImage2D(GL_TEXTURE_2D,0,TERcomp,dim,dim,0,GL_RGBA,GL_UNSIGNED_BYTE,tex);
 	glGenerateMipmap(GL_TEXTURE_2D);
-//  glTexParameteri(GL_TEXTURE_2D,GL_GENERATE_MIPMAP,GL_FALSE);
-
   //----Check for error -----------------------------------------
 	/*
   {GLenum e = glGetError ();
@@ -2019,6 +1979,25 @@ GLuint CTextureWard::GetLitOBJ(TEXT_INFO &xds)
 	xds.mADR	= 0;
   return obj;
 }
+//-----------------------------------------------------------------------------
+//  Load compressed texture from crunch (CRN) format 
+//-----------------------------------------------------------------------------
+int CTextureWard::LoadCrunchTex(CTextureDef *txn)
+{ U_INT obj = 0;
+	U_CHAR mip = 2;			//globals->mipTER;
+	Compressor comp(txn->cTyp,mip);
+	void *data = txn->dTEX[0];
+	if (0 == data)	return 0;
+	obj = comp.DecodeCRN(data,txn->dSiz,0,1);
+	return txn->AssignDAY(obj);
+} 
+//-----------------------------------------------------------------------------
+//  Load compressed texture from memory 
+//-----------------------------------------------------------------------------
+int CTextureWard::LoadMemCRNTex(CTextureDef *txn)
+{ 
+  return 0;
+	}
 //-----------------------------------------------------------------------------
 //  Assign a texture object to each detail tile in the Super Tile
 //  For a shared texture, allocate a shared object
@@ -2064,7 +2043,24 @@ void CTextureWard::GetSupOBJ(CSuperTile *sp)
             obj = GetTerraOBJ(txn->dOBJ,res,rgb);
             NbDOB += txn->AssignDAY(obj);
             break;
-      }
+					//--- Compressed texture ------------
+					case TC_TEXCMPRS:
+					{	U_CHAR lev = sp->levl;
+						U_CHAR mip = globals->mipTER;
+						U_CHAR mmp = mip+1;
+						Compressor comp(txn->cTyp,mip);
+						void *data = txn->dTEX[lev];
+						if (0 == data)			continue;
+						obj = comp.DecodeCRN(data,txn->dSiz,lev,mmp);
+						NbDOB += txn->AssignDAY(obj);
+						//--- check for night texture -----
+						data	= txn->nTEX[0];
+						if (0 == data)			continue;
+						obj = comp.DecodeCRN(data,txn->nSiz,lev,mmp);
+						NbNOB += txn->AssignNIT(obj);
+            continue;
+					}
+				}	// End switch
       //--------Assign night texture if any ----------------
       rgb = txn->nTEX[0];
       if (0 == rgb)  continue;
@@ -2088,10 +2084,7 @@ int CTextureWard::FreeAllTextures(CSuperTile *sp)
         { txn = &sp->Tex[Nd];
           if (txn->IsShare())     { FreeShared(txn);     continue;}
           if (txn->IsWater())     { FreeWater (txn);     continue;}
-          if (txn->IsCoast())     { txn->FreeALL();      continue;}
-          if (txn->IsSlice())     { txn->FreeALL();      continue;}
-          if (txn->IsAnEPD())     { txn->FreeALL();      continue;}
-          if (txn->IsGener())     { txn->FreeALL();      continue;}
+					txn->FreeALL();
         }
   return 0;
 }
@@ -2108,7 +2101,6 @@ int CTextureWard::FreeAllTextures(CSuperTile *sp)
 ///----------------------------------------------------------------------------
 int CTextureWard::SwapTextures(CSuperTile *sp)
 { CmQUAD      *qad  = 0;
- // U_CHAR       res = sp->aRes;                            // Alternate resolution
   CTextureDef *txn = 0;
   //------For each Detail swap the texture----------------------
   for (int Nd = 0; Nd != TC_TEXSUPERNBR; Nd++)
@@ -2139,8 +2131,11 @@ int CTextureWard::SwapTextures(CSuperTile *sp)
                 txn->PopTextures(1);
                 continue;
             //----------------------------------------------------
-            // FLY I EPD textures don't need swapping
+            // Compressed textures swapped here
             //----------------------------------------------------
+						case TC_TEXCMPRS:
+							txn->PopTextures(1);
+							continue;
           }
         }
   //---Change state ----------------------------------
@@ -2223,7 +2218,7 @@ int CTextureWard::FreeWater(CTextureDef *txn)
 int CTextureWard::FreeShared(CTextureDef *txn)
 { FreeSharedSlot(txn);
   //------Free alternate Day texture ------------------------------------
-  U_INT key  = KeyForTerrain(txn,txn->aRes);      //(txn->aRes << TC_BYWORD) | txn->Key;
+  U_INT key  = KeyForTerrain(txn,txn->Reso[1]);      //(txn->aRes << TC_BYWORD) | txn->Key;
   if (txn->HasADTX())  FreeSharedKey(key);
   //------Free the possible alternate  textures --------------------
   txn->FreeALT();

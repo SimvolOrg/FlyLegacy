@@ -32,11 +32,13 @@
 #include "../Include/3dMath.h"
 #include "../Include/sky.h"
 #include "../Include/Model3D.h"
+#include "../Include/Compression.h"
 #include <map>
 #include<crtdbg.h>
 //=============================================================================
 extern U_INT    SizeRES[];
 extern U_SHORT  SideRES[];
+struct SQL_DB;
 //=============================================================================
 //  Night table gives the tile types that have night textures
 //  TODO:  Built this table dynamically by scanning the files or by
@@ -166,10 +168,10 @@ int skipRES[TC_MAX_TEX_RES] = {
 //  level 1:  The alternate texture are loaded. We must replace the
 //            front textures with alternate ones
 //==========================================================================
-U_CHAR popSTA[] = {
-  TC_TEX_OBJ,             // 0 => State to allocate texture object
-  TC_TEX_POP,             // 1 => State to pop textures 
-};
+//U_CHAR popSTA[] = {
+//  TC_TEX_OBJ,             // 0 => State to allocate texture object
+//  TC_TEX_POP,             // 1 => State to pop textures 
+//};
 //=================================================================================
 //  THIS FILE CONTAINS ALL ROUTINES THAT EXECUTE ON A SEPARATED THREAD
 //  All threaded functions OF TEXTURE MANAGER are included for CLARITY.
@@ -186,12 +188,15 @@ U_CHAR popSTA[] = {
 //  TEXTURE LOADING
 //---------------------------------------------------------------------------------
 void TextureLoad(C_QGT *qgt)
-{ //--------Load Texture in Load Queue ------------------------------------
+{ //--------Load Texture in Load Queue -------------------
   CSuperTile *sp = 0;
   for (sp = qgt->PopLoad(); sp != 0; sp = qgt->PopLoad())
-    {	globals->txw->LoadTextures(sp->levl,sp->Reso,qgt,sp);
+    {	U_CHAR lev = sp->levl;
+			globals->txw->LoadTextures(lev,sp->Reso,qgt,sp);
+			//--- Update supertile state -----------------------
+			if (lev)	sp->WantPOP();
+			else			sp->WantOBJ();
       qgt->EnterNearQ(sp);
-			sp->RenderINR();
     }
   qgt->PostIO();
   return;          
@@ -324,17 +329,17 @@ void *FileThread(void *p)
 	pthread_cond_t  *cond = tcm->GetTHcond();
 	pthread_mutex_t *tmux = tcm->GetaMux(thn);
 	TRACE("SQL Thread started");
-  //--- Region parameters --------------------
+  //--- File Processing --------------------
   while (tcm->RunThread())
     { pthread_cond_wait(cond,tmux);						// Wait for signal
       //----Process file Requests ------------------------------------------------
       if (thn == 1)		ProcessFiles(tcm,&sql);
       //--- Process 3DModel requests ----------------------------------------------
-		  if (thn == 0)		ProcessModels(tcm,&sql);
+		  if (thn == 0)		ProcessTexture(tcm);
 			//--- Process OSM models requests--------------------------------------------
 			if (thn == 1)   ProcessOSM(tcm,&sql);
 			//----Process load texture Queue --------------------------------------------
-      if (thn == 0)		ProcessTexture(tcm);
+      if (thn == 0)		ProcessModels(tcm,&sql);
     }
 	//--- File thread is stopped ------------------
 	if (globals->sql == &sql) globals->sql = 0;
@@ -378,12 +383,16 @@ int CTextureWard::GetSeaTexture(CTextureDef *txn)
 //  PARAMETERS:
 //  1)lev is texture level: 0=> Current textures
 //                        1=> Alternate textures 
-//    Front textures are the one actually used to dispaly terrain
+//    Front textures are the one actually used to display terrain
 //    Alternate textures are loaded when the Supertile must change resolution
 //    either because it enters the inner circle, or it leaves the inner circle
 //  2) res is the texture resolution (Hi or LO)
 //  3) qgt is the Quarter Global Tile
 //  4) sp is the SuperTile for which textures are requested
+//	
+//	Depending on the texture type, a dedicated texture loader is called.
+//	All texture loader set the memory pixel array in dTEX for day texture
+//		and into nTEX for night textures
 //----------------------------------------------------------------------
 int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
 { CTextureDef *txn  = 0;
@@ -392,16 +401,17 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
   Resn              = res;                    // Requested Resolution
   gx  = (qgt->GetXkey() >> TC_BY02);          // Globe Tile X composite
   gz  = (qgt->GetZkey() >> TC_BY02);          // Globe Tile Z composite
-
+	SQL_DB      *dbe  = qgt->GetCompTextureDBE();
   //---- Load the textures for each detail tile -------------
   for (int Nd = 0; Nd != TC_TEXSUPERNBR; Nd++)
       { txn   = &sp->Tex[Nd];
         qad   = txn->quad;
         //---Uncomment and set Tile indices for stop on tile -
+			
+        // bool stop = qad->AreWe(337,30,313,18);
+				//if (stop)
+				//int a = 0;
 				/*
-        bool stop = qad->AreWe(10,8,325,00);
-				if (stop)
-				int a = 0;
 				int ok = strcmp(txn->Name,"656C0F03");
 				if (ok ==  0)
 				int	a = 1;
@@ -434,17 +444,22 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
           case TC_TEXSHARD:
                 GetGenTexture(txn);
                 break;
+					//--- Compressed texture ----------
+					case TC_TEXCMPRS:
+								GetCmpTexture(txn,dbe);
+								txn->SetDayTexture(lev,dTEX);
+								txn->SetNitTexture(lev,nTEX);
+								txn->SetResolution(lev,TC_HIGHTR);
+								continue;
         }
       //--- SAVE Texture parameters ---------------------
       txn->SetDayTexture(lev,dTEX);
       txn->SetNitTexture(lev,nTEX);
       txn->SetResolution(lev,Resn);
       }
-  //----Next state is to request texture objects -------------------------
-  sp->SetState(popSTA[lev]);         // Next State is set objects
+  //----End supertile processing -------------------------
   return 0;
 }
-
 //-----------------------------------------------------------------------------
 //  Build a Night texture matching the resolution for a generic tile
 //  When day texture is 256 wide, the night texture is giving 4 pixels from
@@ -472,7 +487,7 @@ int CTextureWard::NightGenTexture(CTextureDef *txn)
   nTEX  = img.GetNitTexture(xld);
   if (0 == nTEX)  return 0;
   //-----Replace night texture with same resolution -----
-  if (Resn == TC_HIGHTR)   DoubleNiTexture(txn,(U_INT *)nTEX);
+  if (Resn == TC_HIGHTR)   DoubleNiTexture((U_INT *)nTEX);
   return 1;
 }
 //-----------------------------------------------------------------------
@@ -491,27 +506,45 @@ int CTextureWard::GetRawTexture(CTextureDef *txn)
   img.SetWaterRGBA(GetWaterRGBA(Resn));
   dTEX = img.GetRawTexture(xsp,1);
   //-------Check for night texture ----------------------------------
-  U_CHAR nt = txn->IsNight() & NT;      // Nitght texture
-  if  (nt == 0)         return 1;
+  if (!(NT && txn->IsNight()))		return 1;         
   return NightRawTexture(txn) + 1;      // Load night texture
 }
-//-----------------------------------------------------------------------------
-//	Return Texture from TRN file 
-//-----------------------------------------------------------------------------
-int CTextureWard::GetTRNtextures(CTextureDef *txn, U_INT qx, U_INT qz)
-{	Resn	= txn->Reso[0];									//	Save Resolution
-	gx		= qx >> 1;											//	Save Globals Tile X
-	gz		= qz >> 1;											//	Save Globals Tile Z
-	dTEX	= 0;
-	nTEX	= 0;
-	GetRawTexture(txn);										// Get textures
-	txn->dTEX[0]	= dTEX;									// return day texture
-	txn->nTEX[0]  = nTEX;									// return nitght texture
-	dTEX	= 0;
-	nTEX  = 0;
-	//--- Encode texture dimension --------------------------------
-	U_INT dim = (xsp.wd << 16) | xsp.ht;
-	return dim;
+
+//-----------------------------------------------------------------------
+//  Get compressed texture from database
+//-----------------------------------------------------------------------
+int CTextureWard::GetCmpTexture(CTextureDef *txn,SQL_DB *db)
+{ cds.key	= txn->sKey;
+	globals->sql->ReadaTRNtexture(cds,"TEX",db);
+	dTEX					= cds.mADR;
+	txn->dSiz			= cds.dim;
+	txn->cTyp			= cds.type;
+	//--- Check for night texture now -------------------------
+	if (!(NT & txn->IsNight()))		return 1;
+	globals->sql->ReadaTRNtexture(cds,"NIT",db);
+	nTEX					= cds.mADR;
+	txn->nSiz			= cds.dim;
+	return 1;
+}
+//-----------------------------------------------------------------------
+//  Get compressed texture from GPU
+//  NOTE:  We prepare texture level 1 as a medium resolution texture
+//	However, the resolution level is still HI due to textures offset
+//	which are applied when the QUAD is reformated.
+//	NOT USED     
+//-----------------------------------------------------------------------
+int CTextureWard::GetGPUtexture(CTextureDef *txn)
+{	U_INT xobj	= txn->dOBJ;
+	if (0 == txn->dOBJ)		return 0;											// No texture object
+	//--- Retreive compressed texture level 1 -----------------------
+	GLint siz = 0;
+	glBindTexture(GL_TEXTURE_2D,xobj);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D,1,GL_TEXTURE_COMPRESSED_IMAGE_SIZE,&siz);
+	void *mem = new char[siz];
+	glGetCompressedTexImage (GL_TEXTURE_2D,1,mem);
+	txn->Reso[1] = TC_HIGHTR;
+	txn->dTEX[1] = (GLubyte*)mem;
+	return 1;
 }
 //-----------------------------------------------------------------------------
 //  Return a full day texture RGBA from file thread
@@ -523,7 +556,7 @@ GLubyte *CArtParser::GetDayTexture(TEXT_INFO &txd,char opt)
   GLubyte   *tex = 0;
   bool       sqb = ((0 == epd) && sql->SQLtex());
   afa            = 0;
-  if (sqb) { sql->GetGenTexture(txd);
+  if (sqb) { sql->GetSQLGenTexture(txd);
              SetSide(txd.wd);
            }
   else     { txd.mADR = LoadRaw(txd,opt); }
@@ -711,7 +744,8 @@ int CTextureWard::GetEPDTexture(CTextureDef *txn)
 //  Get a Generated texture with no coast data
 //-----------------------------------------------------------------------------
 int CTextureWard::GetGenTexture(CTextureDef *txn)
-{ int ntx  = GetMixTexture(txn,1);        // Get Day texture
+{ 
+  int ntx  = GetMixTexture(txn,1);        // Get Day texture
       ntx += NightGenTexture(txn);        // Get Night Texture
   return ntx;
 }
@@ -932,17 +966,17 @@ void CTextureWard::BuildNightTexture(U_INT *txt)
 //  Replace Night texture with a double resolution texture
 //  NOTE: Night texture is presupposed to be meduim resolution in this routine
 //-----------------------------------------------------------------------------
-int CTextureWard::DoubleNiTexture(CTextureDef *txn,U_INT *txt)
+GLubyte *CTextureWard::DoubleNiTexture(U_INT *txt)
 { U_INT *src = txt;                       // Source texture
   U_INT  sln = SideRES[TC_MEDIUM];        // Source line size
-  U_INT  dim = SizeRES[Resn];             // Target size
+  U_INT  dim = SizeRES[TC_HIGHTR];        // Target size
   U_INT *dst = new U_INT[dim];            // New array
   U_INT *ln1 = 0;                         // destination Line 1 
   U_INT *ln2 = dst;                       // Destination line 2
   if (0 == dst) Abort("Texture","No more memory");
   for (U_INT z = 0; z != sln; z++)        // One line
   { ln1 = ln2;                            // Start of line 1
-    ln2 = ln1 + SideRES[Resn];            // Start of line 2
+    ln2 = ln1 + SideRES[TC_HIGHTR];       // Start of line 2
     for (U_INT x = 0; x != sln; x++)      // Double this line
     { U_INT pix = *src++;                 
       *ln1++    = pix;                    // twice in line 1
@@ -954,7 +988,7 @@ int CTextureWard::DoubleNiTexture(CTextureDef *txn,U_INT *txt)
   //-----replace night texture ----------------------------------
   nTEX = (GLubyte *)dst;
   delete [] txt;
-  return 1;
+  return nTEX;
 }
 //----------------------------------------------------------------------
 //  Return a shared texture from the map
@@ -984,7 +1018,7 @@ int CTextureWard::NightRawTexture(CTextureDef *txn)
   if (0 == nTEX)  return 0;
   img.MergeNight(nTEX);
   //-----Replace night texture with same resolution ------
-  if (Resn == TC_HIGHTR)   DoubleNiTexture(txn,(U_INT*)nTEX);
+  if (Resn == TC_HIGHTR)   DoubleNiTexture((U_INT*)nTEX);
   return 1;
 }
 

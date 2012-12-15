@@ -47,6 +47,7 @@ class OSM_Object;
 class TaxNODE;
 class TaxEDGE;
 class TaxiwayMGR;
+class CTextureDef;
 struct TRACK_EDIT;
 struct ELV_PATCHE;
 //=====================================================================================
@@ -433,7 +434,8 @@ struct SQL_DB {
     char      opn;                // Open indicator
     char      use;                // Use database
     char      mgr;                // Thread only if no export
-    char     *dbn;                // Database name
+		char      fix;								// fixed 
+    char      dbn[32];            // Database name
 	//--- Constructor ------------------------------
 		SQL_DB::SQL_DB()
 		{	next	= 0;
@@ -441,9 +443,10 @@ struct SQL_DB {
 			mode	= SQLITE_OPEN_READONLY;
 			exp		= 0;
 			opn		= 0;
-			use		= 0;
+			use		= 1;
 			vers	= 0;
-			dbn		= 0;
+		 *dbn		= 0;
+			fix   = 0;
 		}
 		//----------------------------------------------
 		void SQL_DB::Copy(SQL_DB &db)
@@ -494,14 +497,15 @@ protected:
   //---Type of manager ----------------------------------------------
   U_CHAR    sqlTYP;                       // Type of base
   U_CHAR    tr;                           // Trace indicator
-	char      rfu1;													// Reserved
+	char      repr;													// Restart
 	char			rfu2;													// Reserved
 	U_INT			count;
 	C_QGT			*qgt;
+	//--- Full  path name ---------------------------------------------
 	//------Attributes ------------------------------------------------
-	sqlite3_stmt *stm;
+	sqlite3_stmt *stm;											// SQLite context
 	C_STile      *sup;
-  //---Common attributes --------------------------------------------
+  //--- DATABASES ---------------------------------------------------
   SQL_DB    genDBE;                       // Generic database
   //-----------------------------------------------------------------
   SQL_DB    wptDBE;                       // Waypoint database
@@ -518,8 +522,11 @@ protected:
   //-----------------------------------------------------------------
   SQL_DB    objDBE;                       // Object database
   //-----------------------------------------------------------------
-	SQL_DB    t2dDBE;												// Texture 2D database
-	//--- list of OSM database ----------------------------------------
+	SQL_DB    dtxDBE;												// Texture 2D database
+	//--- Current globe area ------------------------------------------
+	U_INT			glx;													// X index
+	U_INT			glz;													// Z index
+	//--- list open  database  ----------------------------------------
 	std::map<std::string, SQL_DB*> dbase;		// List of open  bases
   //---Common methods -----------------------------------------------
 public:
@@ -528,6 +535,7 @@ public:
   //-----------------------------------------------------------------
   void          Init();
   void          OpenBases();
+	int 					OpenDTX();
   int           Open(SQL_DB &db);
   void          WarnE(SQL_DB &db);
   void          Warn1(SQL_DB &db);
@@ -535,6 +543,7 @@ public:
 	int						ReadVersion(SQL_DB &db);
 	void					SetPageSize(int dim,SQL_DB &db);
 	void					ImportConfiguration(char *fn);
+	void					CreateCompressedDBname(char *pn, char *fn, U_INT qx, U_INT qz);
 	//-----------------------------------------------------------------
   sqlite3_stmt *CompileREQ(char *req,SQL_DB &db);
   void          Abort(SQL_DB &db);
@@ -546,18 +555,29 @@ public:
   void          DeleteElvRegion(U_INT key);
   void          DeleteElevation(U_INT key);
 	//-----------------------------------------------------------------
+	unsigned long	FileInBase(char *fn,char *pn,SQL_DB &db);
+	int						WriteFileNameInBase(char *fn,SQL_DB &db);
+	//-----------------------------------------------------------------
   inline char   UseELV()			{return elvDBE.use;}
   inline bool   MainSQL()			{return (sqlTYP == SQL_MGR);}
 	//-----------------------------------------------------------------
-	SQL_DB			 *OpenSQLbase(char *fn,char **S);
+	SQL_DB			 *OpenSQLbase(char *fn,char **S,char *dbn);
+	void				 *CloseSQLbase(SQL_DB *pm);
 	SQL_DB       *CreateSQLbase(SQL_DB *db,char **S);
-	void				 *CloseOSMbase(SQL_DB *pm);
 	void					UpdateOSMobj(SQL_DB &db, OSM_Object *obj, GN_VTAB *tab);
 	void  				UpdateOSMqgt(SQL_DB &db, U_INT key);
 	//--- Get items from OSM database ---------------------------------
 	void					GetQGTlistOSM(SQL_DB &db, IntFunCB *fun, void* obj);
 	int 					LoadOSM(OSM_DBREQ *req);
-
+	//------------------------------------------------------------------
+	char					GetREPR()	{return repr;}
+	//-----------------------------------------------------------------
+	SQL_DB			 &DBobj()		{return objDBE;}
+	SQL_DB			 &DBdtx()		{return dtxDBE;}
+	SQL_DB			 &DBelv()		{return elvDBE;}
+	//-----------------------------------------------------------------
+	SQL_DB			*aDBtex()   {return &texDBE;}
+	//-----------------------------------------------------------------
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD
@@ -566,6 +586,8 @@ class SqlMGR: public SqlOBJ {
   //---------ATTRIBUTE OBJECT ---------------------------------------------
   char     *query;                        // Current query
   char      nArg;                         // Argument number
+	//-----------------------------------------------------------------
+	U_CHAR		rawtype;
   //-----------------------------------------------------------------
   int       low;                          // Low resolution
   int       med;                          // Medium resolution
@@ -586,7 +608,7 @@ public:
   inline bool SQLtxy()      {return (1 == txyDBE.use );}
   inline bool SQLtex()      {return (1 == texDBE.use );}
   inline bool SQLobj()      {return (1 == objDBE.use );}
-	inline bool SQLt2d()			{return (1 == t2dDBE.use );}
+	inline bool SQLdtx()			{return (1 == dtxDBE.use );}
   //-----------------------------------------------------------------------
   CComLine    *GetComSlot(sqlite3_stmt *stm,CDataBaseREQ *req);
   CAptLine    *GetAptSlot(sqlite3_stmt *stm);
@@ -648,7 +670,6 @@ public:
 	void		 WriteElevationDET(U_INT key,TRN_HDTL &hdl,int row);
   void     ELVtransaction();
   void     ELVcommit();
-	int      WriteTRNname(char *fn);
   //----WRITING FOR COAST DATA ---------------------------------------------
   void     SEAtransaction();
   void     SEAcommit();
@@ -678,9 +699,7 @@ public:
   void    WriteWOBJ(U_INT qgt,CWobj *obj,int row);
   void    Write3DLight(CWobj *obj,C3DLight *lit);
   void    WriteLightsFrom(CWobj *obj);
-	int     WriteOBJname(char *fn);
 	bool		FileInOBJ(char *fn);
-	bool		SceneInOBJ(char *pn);
 	int 		SearchWOBJ(char *fn);
 	bool		SearchPODinOBJ(char *pn);
   int     ReadWOBJ(C_QGT *qgt);
@@ -696,17 +715,19 @@ public:
   GLubyte *GetAnyTexture(TEXT_INFO &inf);
   //--- SPECIFIC TRN ELEVATIONS -----------------------------------------
 	bool	FileInELV(char *fn);
-	bool	SearchPODinTRN(char *pn);
 	int		GetTRNElevations(C_QGT *qgt);
-	int		DecodeTRNrow();
+	int		DecodeTRNrow(char comp,U_INT key);
+	void	ResetDetailTRN(CTextureDef *txd);
 	int		GetTILElevations(C_QGT *qgt);
 	int		DecodeDETrow();
 	int   ReadPatches(C_QGT *qgt,ELV_PATCHE &p);
-	int		WriteT2D(TEXT_INFO *tdf);
-	bool	TileInBase(U_INT key);
 	//--- WRITING PATCHE ELEVATIONS ---------------------------------------
 	int		WritePatche (ELV_PATCHE &p);
 	int		DeletePatche(ELV_PATCHE &p);
+	//--- TRN texture interface -------------------------------------------
+	int   WriteTRNtexture(TEXT_INFO &txd,char *tab);
+	bool  TRNTextureInTable(U_INT key,char *tab);
+	bool	QGTnotInArea(U_INT qx,U_INT qz);
 	//--- TAXIWAY INTERFACE -----------------------------------------------
 	int		RemoveTaxiData(char *key);
 	int		AddTaxiNode(char *key,TaxNODE *N);
@@ -721,7 +742,8 @@ public:
 //=============================================================================
 class SqlTHREAD: public SqlOBJ {
 	//---- Attribute ---------------------------------------------------
-	bool		go;						// Running indicator
+	bool			go;						// Running indicator
+	SQL_DB   *texDBT;
   //-----Methods -----------------------------------------------------
 public:
   SqlTHREAD();
@@ -745,7 +767,10 @@ public:
   int   DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl, EXT_3D &x);
   int   GetM3Dmodel(C3Dmodel *modl);
   //---Generic texture -----------------------------------------------
-  GLubyte *GetGenTexture(TEXT_INFO &txd);
+  GLubyte *GetSQLGenTexture(TEXT_INFO &txd);
+	//--- TRN texture --------------------------------------------------
+	int		ReadaTRNtexture(TEXT_INFO &txd,char *tab,SQL_DB *db);
+
 };
 
 //=======END OF FILE ==================================================================

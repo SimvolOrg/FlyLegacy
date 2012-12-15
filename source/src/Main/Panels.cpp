@@ -1487,6 +1487,7 @@ CGauge* CPanel::GaugeHit (int px, int py)
 	{	CGauge *g = (*it);
 		// --- check for a hit -------------------------------
 		if (g->IsHit(px,py,hit)) return g;
+
   }
   return 0;
 }

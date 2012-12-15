@@ -35,6 +35,22 @@ struct SQL_DB;
 #define SCN_OPT_SELECT	(1)
 #define SCN_OPT_MOUNT   (2)
 //==================================================================================
+//	Class GlobeArea define a region for compressed texture
+//==================================================================================
+class GlobeArea {
+	//--- ATTRIBUTES -------------------------------------
+	char	*name;										// Region Name
+	U_INT  gx;											// Base X-Globe Tile
+	U_INT  gz;											// Base Z-Globe Tile
+	U_INT  wd;											// Width (gt unit)
+	U_INT	 ht;											// Eight (gt unit)
+	//------------------------------------------------------
+public:
+	GlobeArea(char *n,U_INT x, U_INT z, U_INT w, U_INT h);
+	//------------------------------------------------------
+	bool QGTinside(U_INT qx,U_INT qz);
+	};
+//==================================================================================
 //	Class CSceneryPOD to hold a scenery POD associated to a QGT or a GBT
 //==================================================================================
 class CSceneryPOD {
@@ -118,8 +134,9 @@ public:
 	void				FlushOSM();
 	//-----------------------------------------------------------------------
 	void		MountAll();
-  void    Register(C_QGT *qgt);
+  int     Register(C_QGT *qgt);
 	void    Deregister(U_INT key);
+	void		MountByKey(U_INT qx,U_INT qz);
 	//-----------------------------------------------------------------------
 	//--- For shared scenery pod --------------------------------------------
 	void		MountSharedPod(char *pat,char *fn);
@@ -138,14 +155,18 @@ protected:
 	int 		SceneryForGBT(PFSPODFILE *p,int gx,int gz);
   //------------------------------------------------------------------------
 protected:
-	PFS *pfs;
+	PFS *pfs;														// Unic PSF
+	SqlMGR *sqm;												// SQL manager
+	//--------------------------------------------------------------------------
 	U_CHAR	tr;													// Trace indicator
-	int		  exp;
+	U_CHAR  imp;												// Import mode
+	int	    cmp;												// Compression mode
+	//--------------------------------------------------------------------------
 	SQL_DB *cdb;												// Current database
 	char fname[PATH_MAX];
 	char path [PATH_MAX];
-	std::map<U_INT,CSceneryPack*> sqgt;
-	std::map<U_INT,CSceneryPack*> gbtP;
+	std::map<U_INT,CSceneryPack*> m3dPAK;	// Scenery 3D
+	std::map<U_INT,CSceneryPack*> s2dPAK;	// Scenery 2D
 	//--- Queue of database descriptor ----------------------------------------
 	qHDR	<SQL_DB>		osmQ;
 	//--- Queue of Database request for OSM -----------------------------------

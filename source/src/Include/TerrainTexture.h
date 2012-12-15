@@ -37,6 +37,7 @@
 //-----------------------------------------------------------------------------
 #define TC_ACTSIZE 0x300
 //=============================================================================
+struct SQL_DB;
 class CTarmac;
 class CTextureWard;
 extern U_CHAR    MaxiRES[];
@@ -256,7 +257,8 @@ public:
   inline void  SetTrans2(GLubyte *t)        {Tx2 = t;}
   inline void  SetTrans3(GLubyte *t)        {Tx3 = t;}
 	//--- Texture management ----------------------------------------------
-	void					ReplaceRGBA(U_INT *buf);
+	void	 ReplaceRGBA(U_INT *buf);
+	//---------------------------------------------------------------------
   inline U_INT GetDim()                     {return dim;}
   inline U_INT GetSide()                    {return side;}
   inline U_INT GetHeigth()                  {return htr;}
@@ -314,6 +316,8 @@ class CTextureWard  {
   TEXT_INFO  xsp;                     // Texture loading specific
   TEXT_INFO  xld;                     // Texture loading terrain
   TEXT_INFO  xds;                     // Texture loading others
+	TEXT_INFO  cds;                     // Texture loading compressed texture
+	//--- Allocated texture parameters ---------------------------
   GLubyte *dTEX;                      // Day texture
   GLubyte *nTEX;                      // Night texture
   U_CHAR   Resn;                      // Requested Resolution
@@ -344,7 +348,8 @@ class CTextureWard  {
   //-------Animated water ---------------------------------------
   U_INT     kaf;
   //-------Light textures ---------------------------------------
-	GLuint  cTERRA;											// Compressed format
+	GLuint  TERcomp;										// Terrain Compressed format
+	GLuint  M3Dcomp;										// Model 3D compression
   GLuint  LiOBJ[8];                   // Ligth Texture objects
   //-------CANVAS for drawing coast polygons --------------------
   int     Dim;                        // Dimension for resolution
@@ -386,10 +391,9 @@ public:
   int     GetRawTexture(CTextureDef *txn);
   int     GetEPDTexture(CTextureDef *txn);
   int     GetSeaTexture(CTextureDef *txn);
-	int 		GetTRNtextures(CTextureDef *txn, U_INT qx, U_INT qz);
+	int		  GetCmpTexture(CTextureDef *txn,SQL_DB *db);
+	int     GetGPUtexture(CTextureDef *txn);
 	//----------------------------------------------------------
-  void    GetTileName (char *base);
-  void    BuildName(char *gen,char *root,char res);
   void    GetMediumTexture(CTextureDef *txn);
   //----------------------------------------------------------
   void    GetShdOBJ(CTextureDef *txn);
@@ -412,7 +416,8 @@ public:
 	//------Night textures -------------------------------------
   int     NightGenTexture(CTextureDef *txd);
   int     NightRawTexture(CTextureDef *txn);
-  int     DoubleNiTexture(CTextureDef *txn,U_INT *tex);
+	//----------------------------------------------------------
+  GLubyte	*DoubleNiTexture(U_INT *tex);
   //-----Texture Handling ------------------------------------
   int     FreeShared(CTextureDef *txn);
   int     FreeWater (CTextureDef *txn);
@@ -448,10 +453,14 @@ public:
   //----------------------------------------------------------
   U_INT  *GetWaterRGBA(U_CHAR res)    {return Tank[res].rgba;}
   U_INT  *GetWaterCopy(U_CHAR res)    {return Tank[res].GetWaterCopy();}
+	U_INT   GetWaterXOBJ(U_CHAR res)		{return Tank[res].GetXOBJ();}
+	//----------------------------------------------------------
   bool    LoadImagePNG(char *fn, S_IMAGE &ref);
   bool    LoadImageJPG(char *fn, S_IMAGE &ref);
   GLuint  LoadIconPNG(char *fn);
   void    LoadAnyTexture(char *fn,TEXT_DEFN &txd);
+	int		  LoadCrunchTex(CTextureDef *txn);
+	int			LoadMemCRNTex(CTextureDef *txn);
   //------------COAST ROUTINES       ----------------------
   void    DrawTLine (int x1,int y1,int x2, int y2);
   void    DrawVLine(int x0,int y1,int y2);

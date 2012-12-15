@@ -37,6 +37,7 @@
 #include "../Include/Endian.h"
 #include "../Include/Utility.h"
 #include <io.h>
+#include <stdio.h>
 using namespace std;
 //=================================================================================
 //	Vector to process a pod file
@@ -334,6 +335,7 @@ int paddpodfile (PFS *pfs, PFSPODFILE *p)
   pr.second = p;
   pfs->podFileList.insert(pr);
 	p->IncUser();
+
   //--- JSDEV Unlock PFS --------------------------------------------
   pthread_mutex_unlock   (&pfs->mux);           // Lock access
   plog (pfs,"......ADD file KEY %s",p->name);
@@ -920,15 +922,19 @@ void padddiskfolder (PFS *pPfs, const char* root, const char* folder)
 //  Search file in pod
 //  WARNING:  This routine is locked for multithread
 //-----------------------------------------------------------------------
-static PODFILE* findinpod (PFS* pPfs, const char* filename)
+static PODFILE* findinpod (PFS* pfs, const char* filename)
 { PODFILE* p = NULL;
-  pthread_mutex_lock   (&pPfs->mux);             // Lock access
+  pthread_mutex_lock   (&pfs->mux);             // Lock access
   // POD filenames are case-insensitive, normalize case
   char keyFilename[PATH_MAX];
   strncpy (keyFilename, filename,(PATH_MAX-1));
   strupper (keyFilename);
 
   PFSPODFILE *pf = NULL;
+  //----- Search pod file list for normalized filename
+  std::multimap<string,PFSPODFILE*>::iterator i = pfs->podFileList.find(filename);
+  if (i != pfs->podFileList.end()) pf = (*i).second;
+	/*
   std::multimap<string,PFSPODFILE*>::iterator i;
   std::multimap<string,PFSPODFILE*>::iterator lower = pPfs->podFileList.lower_bound(keyFilename);
   std::multimap<string,PFSPODFILE*>::iterator upper = pPfs->podFileList.upper_bound(keyFilename);
@@ -952,7 +958,7 @@ static PODFILE* findinpod (PFS* pPfs, const char* filename)
       priority = pf->priority;
     }
   }
-  
+  */
   if (pf != NULL) {
     // Instantiate new PODFILE struct
     p = new PODFILE;
@@ -970,7 +976,7 @@ static PODFILE* findinpod (PFS* pPfs, const char* filename)
     // Increment reference counter of containing POD
     pf->pod->refs++;
   }
-  pthread_mutex_unlock   (&pPfs->mux);             // Lock access
+  pthread_mutex_unlock   (&pfs->mux);             // Lock access
   return p;
 }
 //----------------------------------------------------------------------
@@ -1296,18 +1302,18 @@ size_t pread (void* buffer, size_t size, size_t count, PODFILE* f)
       // Reads to different files within the same POD may be interspersed,
       //   so the read pointer must be reset to the next expected byte for
       //   this pod file.
-      _lock_file(f->pFile);                     // JS Make thread safe
+      //_lock_file(f->pFile);                     // JS Make thread safe. 2010 ok
       fseek (f->pFile, f->pos, SEEK_SET);
       rc = fread (buffer, size, count, f->pFile);
       f->pos = ftell (f->pFile);
-      _unlock_file(f->pFile);                   // JS Make thread safe
+      //_unlock_file(f->pFile);                   // JS Make thread safe
       break;
 
     case PODFILE_SOURCE_DISK:
-      _lock_file(f->pFile);                     // JS Make thread safe
+      //_lock_file(f->pFile);                     // JS Make thread safe
       rc = fread (buffer, size, count, f->pFile);
 			f->pos = ftell (f->pFile);
-      _unlock_file(f->pFile);                   // JS Make thread safe
+      //_unlock_file(f->pFile);                   // JS Make thread safe
       break;
     }
   }
@@ -1324,11 +1330,11 @@ size_t pwrite(void *buf,size_t size,size_t count, PODFILE *f)
     case PODFILE_SOURCE_POD:
       return 0;
     case PODFILE_SOURCE_DISK:
-      _lock_file(f->pFile);                     // JS Make thread safe
+      //_lock_file(f->pFile);                     // JS Make thread safe
       fseek (f->pFile, f->pos, SEEK_SET);
       nf = fwrite (buf, size, count, f->pFile);
            fflush(f->pFile);
-      _unlock_file(f->pFile);                   // JS Make thread safe
+      //_unlock_file(f->pFile);                   // JS Make thread safe
       return nf;
   }
   return 0;
@@ -1411,7 +1417,7 @@ char* pgets (char* s, int n, PODFILE* f)
       //   this pod file.
       fseek (f->pFile, f->pos, SEEK_SET);
       rc = fgets (s, n, f->pFile);
-      f->pos = ftell (f->pFile);
+			f->pos = ftell (f->pFile);
       break;
 
     case PODFILE_SOURCE_DISK:

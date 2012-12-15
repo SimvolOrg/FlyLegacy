@@ -106,8 +106,7 @@ char *file_legends[] =
 };
 
 puCallback file_cb[] =
-{
-  file_quit_cb,
+{ file_quit_cb,
   NULL,
   file_manage_dll_cb,             // file_manage_dll_cb,
   NULL,
@@ -603,8 +602,8 @@ void CheckImportAccess(puCallback cb,puObject *itm)
 	{	if (cb != Import_cb[k++])	continue;
 		int m = k-1;
 		if ('*' == *keySQL[m])		return;
-		GetIniVar("SQL",keySQL[m],&a);
-		if (0==a)		itm->greyOut();
+		bool ex = HasIniKey("SQL",keySQL[m]);
+		if (0==ex)		itm->greyOut();
 		return;
 	}
 	itm->greyOut();
@@ -1193,24 +1192,26 @@ puCallback help_cb[] =
 };
 
 //=============================================================================
-
-void hide_menu (void)
-{
-  menu->hide ();
-}
-
-void show_menu (void)
-{
+//---------------------------------------------------------------------------
+//	Toggle menu visibility
+//---------------------------------------------------------------------------
+int toggle_menu (void)
+{ if (menu->isVisible()) {menu->hide (); return 1;}
   menu->reveal ();
+	return 0;
 }
-
-void toggle_menu (void)
-{
-  if (menu->isVisible()) {
-    menu->hide ();
-  } else {
-    menu->reveal ();
-  }
+//---------------------------------------------------------------------------
+//	Return menu state
+//---------------------------------------------------------------------------
+int GetMenuState()
+{	return (menu->isVisible())?(1):(0); }
+//---------------------------------------------------------------------------
+//	Set menu state
+//---------------------------------------------------------------------------
+int SetMenuState(char s)
+{	if (s)	{menu->reveal(); return 1;}
+	menu->hide();
+	return 0;
 }
 //==========================================================================
 //---------------------------------------------------------------------------
@@ -1238,9 +1239,7 @@ void FillSDKmenu();
 // Menu initialization
 //============================================================================
 void OpenUserMenu (void)
-{ 
-
-  menu = new puMenuBar(-1);
+{ menu = new puMenuBar(-1);
 	menu->setStyle(PUSTYLE_SHADED | PUSTYLE_BEVELLED);
   menu->add_submenu (gmFile,				file_legends, file_cb);
   menu->add_submenu (gmOption,			options_legends, options_cb);
@@ -1295,9 +1294,9 @@ void OpenUserMenu (void)
 */
   menu->close ();
   //--- Hide menu by default ------------------------
-  // hide_menu ();
+  // menu->hide ();
   //--- Show menu by default ------------------------
-  show_menu ();
+  menu->reveal ();
 }
 //=====================================================================
 //  Close Menu

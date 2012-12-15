@@ -241,7 +241,8 @@
 #define TC_TEXRAWEP     0x04          // Raw from EPD
 #define TC_TEXSHARD     0x05          // Shared texture
 #define TC_TEXWATER     0x06          // Water texture
-#define TC_TEX_END      0x07          // Number of textures
+#define TC_TEXCMPRS			0x07					// Compressed texture
+#define TC_TEX_END      0x08          // Number of types
 //------TEXTURE FLAGS----------------------------------
 #define TC_USRTEX       0x04          // User texture
 #define TC_SEALAY       0x10          // Sea  layer

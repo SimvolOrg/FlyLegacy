@@ -172,19 +172,6 @@ TC_ST_COORD SuperCT[]  = {
   { 2,30},{ 6,30},{10,30},{14,30},{18,30},{22,30},{26,30},{30,30},
 };
 //==========================================================================
-//  SUPER TILE Base Detail Tile coordinates
-//==========================================================================
-TC_INCREMENT SuperDT[]  = {
-  { 0, 0},{ 4, 0},{ 8, 0},{12, 0},{16, 0},{20, 0},{24, 0},{28, 0},
-  { 0, 4},{ 4, 4},{ 8, 4},{12, 4},{16, 4},{20, 4},{24, 4},{28, 4},
-  { 0, 8},{ 4, 8},{ 8, 8},{12, 8},{16, 8},{20, 8},{24, 8},{28, 8},
-  { 0,12},{ 4,12},{ 8,12},{12,12},{16,12},{20,12},{24,12},{28,12},
-  { 0,16},{ 4,16},{ 8,16},{12,16},{16,16},{20,16},{24,16},{28,16},
-  { 0,20},{ 4,20},{ 8,20},{12,20},{16,20},{20,20},{24,20},{28,20},
-  { 0,24},{ 4,24},{ 8,24},{12,24},{16,24},{20,24},{24,24},{28,24},
-  { 0,28},{ 4,28},{ 8,28},{12,28},{16,28},{20,28},{24,28},{28,28},
-};
-//==========================================================================
 //  QGT Base QUAD indexed by Super Tile number
 //==========================================================================
 U_INT SuperQDB[] = {
@@ -702,11 +689,19 @@ void CmQUAD::SetParameters(CVertex *ct,U_CHAR lv)
   return;
 }
 //----------------------------------------------------------------------------
+//  Draw QUAD contour for ground tile
+//----------------------------------------------------------------------------
+void CmQUAD::CheckTour()
+{ if (!globals->tcm->SameQuad(this))		return;
+	if (globals->aPROF.Not(PROF_DR_DET))	return;
+	Contour();
+	return;
+}
+//----------------------------------------------------------------------------
 //  Draw QUAD contour
 //----------------------------------------------------------------------------
 void CmQUAD::Contour()
 { //if (!globals->clk->GetON())								return;	// Blink
-	glDisableClientState(GL_VERTEX_ARRAY);
 	glPushMatrix();
   CVertex   *sw = Center.Edge[TC_SWCORNER];
   CVertex   *nw = Center.Edge[TC_NWCORNER];
@@ -716,6 +711,8 @@ void CmQUAD::Contour()
   D3_VERTEX v;
   U_CHAR    dep = glIsEnabled(GL_DEPTH_TEST);
   U_CHAR    lit = glIsEnabled(GL_LIGHTING);
+	U_CHAR    arv = glIsEnabled(GL_VERTEX_ARRAY);
+	if (arv) glDisableClientState(GL_VERTEX_ARRAY);
   glGetFloatv(GL_CURRENT_COLOR,col);
   //---Disable depth and set red color -----
   glDisable(GL_DEPTH_TEST);
@@ -741,11 +738,11 @@ void CmQUAD::Contour()
   glEnd();
 
   //---Restore depth and color --------------
+	if (arv) glEnableClientState(GL_VERTEX_ARRAY);
   if (dep) glEnable(GL_DEPTH_TEST);
   if (lit) glEnable(GL_LIGHTING);
   glColor4fv(col);
   glPopMatrix();
-	glEnableClientState(GL_VERTEX_ARRAY);
 	glLineWidth(1);
   return;
 }
@@ -1279,25 +1276,6 @@ U_INT CmQUAD::WorldTileKey()
 	return (wx << 16 | wz);
 }
 //-------------------------------------------------------------------------
-//  Draw the ground detail in normal mode (no VBO)
-//-------------------------------------------------------------------------
-/*void CmQUAD::DrawNML()
-{ //--- For final quad, draw the detail tile ---------------
-	CmQUAD *qd = qARR;
-	for (U_INT k = 0; k != qDim; k++,qd++)
-	{	TC_GTAB *tab = qd->GetVTAB();
-		int			 nbv = qd->GetNbrVTX();
-		glVertexPointer  (3,UNIT_OPENGL,sizeof(TC_GTAB),&tab[0].GT_X);
-		glTexCoordPointer(2,UNIT_OPENGL,sizeof(TC_GTAB),tab);
-		glDrawArrays(GL_TRIANGLE_FAN,0,nbv);
-	}
-  //---- Draw contour if Terra Browser is active -----------
-  if (globals->aPROF.Not(PROF_DR_DET))	return;
-  if (!globals->tcm->CenterQuad(this))		return;
-  return Contour();
-}
-*/
-//-------------------------------------------------------------------------
 //  Draw the ground detail with list of indices
 //-------------------------------------------------------------------------
 void CmQUAD::DrawIND()
@@ -1308,8 +1286,8 @@ void CmQUAD::DrawIND()
 	glTexCoordPointer(2,UNIT_GTAB,sizeof(TC_GTAB), vt);
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
   //---- Draw contour if Terra Browser is active -----------
-  if (globals->aPROF.Not(PROF_DR_DET))		return;
-  if (!globals->tcm->CenterQuad(this))		return;
+  if (!globals->tcm->SameQuad(this))		return;
+  if (globals->aPROF.Not(PROF_DR_DET))	return;
   return Contour();
 }
 //-------------------------------------------------------------------------
@@ -1320,8 +1298,8 @@ void CmQUAD::DrawVBO()
 	//--- For final quad, draw the detail tile ---------------
 	glMultiDrawArrays(GL_TRIANGLE_FAN,iBUF,count,qDim);
   //---- Draw contour if Terra Browser is active -----------
+  if (!globals->tcm->SameQuad(this))	return;
   if (globals->aPROF.Not(PROF_DR_DET))	return;
-  if (!globals->tcm->CenterQuad(this))	return;
   return Contour();
 }
 //-------------------------------------------------------------------------
@@ -1480,7 +1458,6 @@ CSuperTile::CSuperTile()
   MiniH   = 0;
   MaxiH   = 0;
   Reso    = 0;
- // aRes    = 0;
 	levl		= 0;											// Current level
   swap    = 1;                      // Allow texture swap by default
   alpha   = 0;
@@ -1680,10 +1657,9 @@ bool CSuperTile::IsTextured(char opt)
 //  -rd is the hi resolution radius
 //-------------------------------------------------------------------------
 bool CSuperTile::NeedMedResolution(float rd)
-{ if (TC_TEX_RDY != State)  return false;           // Not ready
+{ if (Reso == TC_MEDIUM)    return false;           // Already set
+	if (TC_TEX_RDY != State)  return false;           // Not ready
   if (dEye <= rd)           return false;           // Still inside hi radius
-  if (Reso == TC_MEDIUM)    return false;           // Already set
- // if (aRes == TC_MEDIUM)    return false;           // Already requested
   return true;
 }
 //-------------------------------------------------------------------------
@@ -1691,10 +1667,9 @@ bool CSuperTile::NeedMedResolution(float rd)
 //  -rd is the hight resolution radius
 //-------------------------------------------------------------------------
 bool CSuperTile::NeedHigResolution(float rd)
-{ if (TC_TEX_RDY != State)  return false;           // Not ready
+{ if (Reso == TC_HIGHTR)    return false;           // Already set
+	if (TC_TEX_RDY != State)  return false;           // Not ready
   if (dEye >  rd)           return false;           // Outside hi radius
-  if (Reso == TC_HIGHTR)    return false;           // Already set
- // if (aRes == TC_HIGHTR)    return false;           // Already requested
   if (0    == swap)         return false;           // Fixed medium resolution
   return true;
 }
@@ -1854,14 +1829,14 @@ void CSuperTile::DrawInnerSuperTile()
 			//       ax = ax;                                      // Break point here
 			*/
       //---Stop for a given detail tile -------------------------------
-      //
-      //	if (txn->AreWe(TC_ABSOLUTE_DET(509,0),TC_ABSOLUTE_DET(334,18)))
-      //    txn = txn;                  // Set break point here
+      
+      //	if (txn->AreWe(TC_ABSOLUTE_DET(8,0),TC_ABSOLUTE_DET(329,0)))
+      //   txn = txn;                  // Set break point here
       //
       //--Avoid ground airport ------------------------------------------------
-      if (qd->IsAptGround())  continue;
+      if (qd->IsAptGround())  {qd->CheckTour(); continue; }
       //-----Draw sea or land texture -----------------------------------------
-			if (aVBO)	BindVBO();									//glBindBuffer(GL_ARRAY_BUFFER,aVBO);
+			if (aVBO)	BindVBO();						// Check for allocated VBO
 			glBindTexture(GL_TEXTURE_2D,txn->dOBJ);
 			qd->DrawTile();
       //-----Draw night texture -----------------------------------------------
@@ -2087,22 +2062,28 @@ C_QGT::C_QGT(U_INT cx, U_INT cz,TCacheMGR *tm)
 	GetQgtMidPoint(cx,cz,mPoint);
 	Scene				= mPoint;
 	//---Register the QGT for scenery --------------------
+	ctxDB				= 0;
 	globals->scn->Register(this);
 }
-
 //----------------------------------------------------------------------------
 //  Delete this Quarter Global Tile
 //  CmQUAD destructor are automaticaly called
+//	NOTE: while ctxDB are database acceded in file Thread, they dont
+//				need to be locked for the CloseSQLbase() request because the QGT 
+//				destructors are serially called. This is the same for creation as
+//				the Register() call is emitted from the QGT constructor.
 //----------------------------------------------------------------------------
 C_QGT::~C_QGT()
 { //--------Deregister Scenery ---------------------------
 	globals->scn->Deregister(qKey);
+	globals->sqm->CloseSQLbase(ctxDB);
 	//------------------------------------------------------
 	if (0 == qSTAT) FreeAllVertices();
   if (trn)  delete trn;
   tcm->FreeSEA(this);
   tcm->FreeCST(this);
 	for (U_INT k=0; k< osmDB.size(); k++) globals->scn->FreeBasesOSM(osmDB[k]);
+
 }
 //----------------------------------------------------------------------------
 //  Trace deletion for this QGT
@@ -2289,10 +2270,10 @@ int C_QGT::HasTRN()
   _snprintf (fn,64,"DATA/D%03d%03d/G%01d%01d.TRN", gx,gz,qx, qz);
   //---------Create a TRN object -------------------------------
   if (!pexists(&globals->pfs, fn)) return 0;						///
-	trn = new C_TRN(this,tr);
 	if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d Open TRN %s",
           tcm->Time(),xKey,zKey,fn);
-	SStream s(trn,fn);                                // Stream file
+	trn = new C_TRN(fn,this,tr);
+//	SStream s(trn,fn);                                // Stream file
 	//------------------------------------------------------------
 	IndElevation();														// QGT has elevation
   SetStep(TC_QT_TRN);												// Next Step is TRN assigned
@@ -3245,7 +3226,7 @@ int C_QGT::UpdateInnerCircle()
     if (sp->NeedMedResolution(hird))
     { sp->levl	= 1;						// Alternate level
 			sp->Reso  =  TC_MEDIUM;		// Medium resolution
-			sp->WantLOD();
+			sp->WantLOD();						// Next state
       CSuperTile *nx = NearQ.Detach(sp);
       LoadQ.Lock();
 			LoadQ.PutEnd(sp);
@@ -3283,7 +3264,7 @@ int C_QGT::UpdateInnerCircle()
       if (sp->dEye > ndis)  {sp = FarsQ.GetNext(sp); continue;}
 			sp->levl = 0;							// Normal level
 			sp->Reso = TC_MEDIUM;			// Medium resolution
-      sp->WantLOD();
+      sp->WantLOD();						// Next state
       tcm->GetTransitionMask(this,sp);
 			sp->AllocateVertices(vbu);
       CSuperTile *nx = FarsQ.Detach(sp);
@@ -3306,6 +3287,7 @@ void C_QGT::EnterNearQ(CSuperTile *sp)
 { NearQ.Lock();
 	NearQ.PutEnd(sp);
   NearQ.Unlock();
+	sp->RenderINR();
   return;
 }
 //---------------------------------------------------------------------
@@ -3521,7 +3503,6 @@ TCacheMGR::TCacheMGR()
   scale.y = TC_FEET_PER_ARCSEC;
   scale.z = 1.0;
   mask    = GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_POLYGON_BIT | GL_FOG | GL_LIGHTING_BIT | GL_COLOR;
-  Terrain = 0;
   Tele    = 0;
   //----Sun Radius base on average apparent diameter in[0.5244°,0.5422°]------
   double alf = DegToRad(double(0.533333) * 0.5);
@@ -3654,9 +3635,6 @@ TCacheMGR::TCacheMGR()
 	t2OK  = pthread_create (&t2id, &attr, FileThread, this);
   if (0 != t2OK)  Abort("Cannot Create File Thread");
   pthread_attr_destroy(&attr);
-  //-----Reserve a big bloc of memory to ensure continuity ------
-  //char *res = new char[2000000];
-  //delete [] res;
   //-----Get country names ---------- ---------------------------
   CDbCacheMgr *dbc = globals->dbc;
   SqlMGR      *sqm = globals->sqm;
@@ -3769,6 +3747,7 @@ void TCacheMGR::LoadPodTerra()
 }
 //-------------------------------------------------------------------------
 //  OverLoad Terra data from SQL if present
+//NOTE: Manque uer texture
 //-------------------------------------------------------------------------
 void TCacheMGR::LoadSqlTerra()
 { if (0 == globals->texDB)  return;
@@ -3826,7 +3805,6 @@ void TCacheMGR::Teleport(SPosition *P, SVector *O)
 	if (globals->aPROF.Has(PROF_NO_TEL))	return;
 	globals->sit->EnterTeleport(P,O);
   globals->m3d->ReleaseVOR();
-  Terrain       = 0;
   return;
 }
 //-----------------------------------------------------------------------------
@@ -3910,15 +3888,6 @@ void TCacheMGR::Abort(char *msg)
   return;
 }
 //----------------------------------------------------------------------
-//  Get Tile name
-//----------------------------------------------------------------------
-void TCacheMGR::GetTileName (U_CHAR *base)
-{ U_INT ax = (cQGT->GetXkey() << TC_BY32) | tx;
-  U_INT az = (cQGT->GetZkey() << TC_BY32) | tz;
-  tFIL->GetBase(ax,az,(char*)base);
-  return;
-}
-//----------------------------------------------------------------------
 //  Make a Generic texture name
 //    The name is formed as follow:
 //    AAXXBBYYij  where AA XX BB abd YY are terrain type
@@ -3928,9 +3897,13 @@ void TCacheMGR::GetTileName (U_CHAR *base)
 //----------------------------------------------------------------------
 U_CHAR TCacheMGR::BuildName(CTextureDef *txn,U_SHORT nx,U_SHORT nz)
 { if (txn->HasName())  return 0;
-  char *base = txn->Hexa;
-  char *dst  = txn->Name; 
-  GetTileName((U_CHAR*)base);
+	char *base = txn->Hexa;
+  char *dst  = txn->Name;
+	//--- Build tile generic name using Image file ---------- 
+	U_INT ax = (cQGT->GetXkey() << TC_BY32) | tx;
+  U_INT az = (cQGT->GetZkey() << TC_BY32) | tz;
+  tFIL->GetBase(ax,az,(char*)base);
+	//--- Build name in hexasecimal -------------------------
   nz = 3 - nz;
   for (int k = 0; k != 4;k++)
       { U_CHAR h = base[k];
@@ -3948,7 +3921,7 @@ U_CHAR TCacheMGR::BuildName(CTextureDef *txn,U_SHORT nx,U_SHORT nz)
   return *txn->Hexa;
 }
 //-------------------------------------------------------------------------
-//  1) Build all textures name for the super Tile (except those coming
+//  1) Build all textures name for the super Tile (except those originating
 //  from TRN file)
 //  2) Enter the QUAD pointer
 //-------------------------------------------------------------------------
@@ -3958,14 +3931,14 @@ void TCacheMGR::FormatName(C_QGT *qt,CSuperTile *sp)
   {     U_INT nz    = (nd >> TC_BY04);                  // Z number
         U_INT nx    = (nd &  TC_004MODULO);             // X number
         //----------------------------------------------------------
-        tx          = SuperDT[sp->NoSP].dx | nx;         // Tile X index in QGT
-        tz          = SuperDT[sp->NoSP].dz | nz;         // Tile Z index in QGT
-        U_INT   No  = FN_DET_FROM_XZ(tx,tz);             //(tz << TC_BY32) | tx;
-        CmQUAD *qd  = qt->GetQUAD(No);                   // Detail tile center
-        CTextureDef *txn = &sp->Tex[nd];
-        txn->quad   = qd;
-        char gdn    = BuildName(txn,nx,nz);
-        qd->SetGroundType(gdn);                          // Type of tile
+        tx          = SuperDT[sp->NoSP].dx | nx;        // Tile X index in QGT
+        tz          = SuperDT[sp->NoSP].dz | nz;        // Tile Z index in QGT
+        U_INT   No  = FN_DET_FROM_XZ(tx,tz);            //(tz << TC_BY32) | tx;
+        CmQUAD *qd  = qt->GetQUAD(No);                  // Detail tile center
+        CTextureDef *txn = &sp->Tex[nd];								// Texture descriptor
+        txn->quad   = qd;																// Link to QUAD
+        char gdn    = BuildName(txn,nx,nz);							// Build texture name
+        qd->SetGroundType(gdn);                         // Type of tile
   }
   //----------------------------------------------------------------
   return;
@@ -4134,7 +4107,7 @@ int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
   pthread_cond_signal(&thCond);    // Signal file THREAD
   //-----Update QGT formation --------------------------------------------
   char nqgt = (nKEY == rKEY)?(0):(RefreshCache());
-  Terrain   = Spot.UpdateAGL(aPos,rFactor);
+  Spot.UpdateAGL(aPos,rFactor);
   gplan[3]	=  float(Spot.agl);			// Ground plane OK
 	//---Update Tracker ----------------------------------------------------
 	globals->etrk.TimeSlice(dT);

@@ -39,8 +39,18 @@
 #include "../Include/LightSystem.h"
 #include "../Include/PlanDeVol.h"
 #include "../Include/3dMath.h"
-
+#include "../Include/ScenerySet.h"
+//-------------------------------------------------------------------------
 #include <io.h>
+//=============================================================================
+//	Transform index [0-16] to column index in SUpertile
+//=============================================================================
+char colInSUP[] = {'0','1','2','3', '0','1','2','3', '0','1','2','3', '0','1','2','3'};
+//=============================================================================
+//	Transform index [0-16] to row index in SUpertile
+//=============================================================================
+char rowInSUP[] = {'0','0','0','0', '1','1','1','1', '2','2','2','2', '3','3','3','3'};
+
 //==================================================================================
 //  Database request to compile
 //==================================================================================
@@ -160,14 +170,14 @@ SqlOBJ::SqlOBJ()
 }
 //-----------------------------------------------------------------------------
 //  Close all open bases
-//	NOTE: Database structures with a description in dbn are fixed 
+//	NOTE: Database structures with fix attribut are not destroyed 
 //-----------------------------------------------------------------------------
 SqlOBJ::~SqlOBJ()
 {	std::map<std::string,SQL_DB*>::iterator rb;
 	for (rb = dbase.begin(); rb != dbase.end(); rb++)
 	{	SQL_DB *db = (*rb).second;
 		sqlite3_close(db->sqlOB);
-		if (0 == db->dbn)	delete db;
+		if (0 == db->fix)	delete db;
 	}
 	dbase.clear();
 }
@@ -175,81 +185,79 @@ SqlOBJ::~SqlOBJ()
 //  Initialize databases
 //-----------------------------------------------------------------------------
 void SqlOBJ::Init()
-{ int   lgr = (MAX_PATH - 1);
+{ int   lgr  = (MAX_PATH - 1);
   //---Generic database ---------------------------------------------
+	genDBE.fix  = 1;
 	genDBE.vers	= 0;																// Minimum version
   strncpy(genDBE.path,"SQL",63);
   GetIniString("SQL","GENDB",genDBE.path,lgr);
 	strncpy(genDBE.name,"GEN*.db",63);
   genDBE.mgr	= SQL_MGR;
-  genDBE.dbn	= "Generic files";
+  strncpy(genDBE.dbn,"Generic files",32);
 	genDBE.mode = SQLITE_OPEN_READONLY;
   //---Waypoint database -------------------------------------------
+	wptDBE.fix	= 1;
 	wptDBE.vers	= 0;																// Minimum version
   strncpy(wptDBE.path,"SQL",63);
   GetIniString("SQL","WPTDB",wptDBE.path,lgr);
 	strncpy(wptDBE.name,"WPT*.db",63);
   wptDBE.mgr = SQL_MGR;
-  wptDBE.dbn = "Waypoints";
+  strncpy(wptDBE.dbn,"Waypoints",32);
 	wptDBE.mode = SQLITE_OPEN_READONLY;
   //---Elevation database ------------------------------------------
+	elvDBE.fix	= 1;
 	elvDBE.vers	= 2;																// Minimum version
   strncpy(elvDBE.path,"SQL",63);
   GetIniString("SQL","ELVDB",elvDBE.path,lgr);
 	strncpy(elvDBE.name,"ELV*.db",63);
   elvDBE.mgr	= SQL_THR | SQL_MGR; 
-  elvDBE.dbn	= "Elevation Data";
+  strncpy(elvDBE.dbn,"Elevation Data",32);
 	elvDBE.mode	= SQLITE_OPEN_READWRITE;
-
   //---Coast data database -----------------------------------------
+	seaDBE.fix	= 1;
 	seaDBE.vers	= 1;																// Minimum version
   strncpy(seaDBE.path,"SQL",63);
   GetIniString("SQL","SEADB",seaDBE.path,lgr);
 	strncpy(seaDBE.name,"SEA*.db",63);
   seaDBE.mgr	= SQL_THR;
-  seaDBE.dbn	= "Coast data";
+  strncpy(seaDBE.dbn,"Coast data",32);
 	seaDBE.mode = SQLITE_OPEN_READONLY;
   //---Taxiways database ------------------------------------------
+	txyDBE.fix	= 1;
 	txyDBE.vers	= 1;																// Minimum version
   strncpy(txyDBE.path,"SQL",63);
   GetIniString("SQL","TXYDB",txyDBE.path,lgr);
 	strncpy(txyDBE.name,"TXY*.db",63);
   txyDBE.mgr = SQL_MGR;
-  txyDBE.dbn = "Taxiway data";
+  strncpy(txyDBE.dbn,"Taxiway data",32);
 	txyDBE.mode = SQLITE_OPEN_READWRITE;
-
   //---Model 3D database ------------------------------------------
+	modDBE.fix	= 1;
 	modDBE.vers	= 2;																// Minimum version
   strncpy(modDBE.path,"SQL",63);
   GetIniString("SQL","M3DDB",modDBE.path,lgr);
 	strncpy(modDBE.name,"M3D*.db",63);
   modDBE.mgr =  SQL_THR;
-  modDBE.dbn = "Model3D data";
+  strncpy(modDBE.dbn,"Model3D data",32);
 	modDBE.mode = SQLITE_OPEN_READONLY;
   //---Generic textures database ----------------------------------
+	texDBE.fix	= 1;
 	texDBE.vers	= 0;																// Minimum version
   strncpy(texDBE.path,"SQL",63);
   GetIniString("SQL","TEXDB",texDBE.path,lgr);
 	strncpy(texDBE.name,"TEX*.db",63);
   texDBE.mgr =  SQL_THR + SQL_MGR;
-  texDBE.dbn = "Generic Textures";
+  strncpy(texDBE.dbn,"Generic Textures",32);
 	texDBE.mode = SQLITE_OPEN_READONLY;
   //---World Object database --------------------------------------
+	objDBE.fix	= 1;
 	objDBE.vers	= 3;																// Minimum version
   strncpy(objDBE.path,"SQL",63);
   GetIniString("SQL","OBJDB",objDBE.path,lgr);
 	strncpy(objDBE.name,"OBJ*.db",63);
   objDBE.mgr	=  SQL_MGR;
-  objDBE.dbn	= "World Objects";
+  strncpy(objDBE.dbn,"World Objects",32);
 	objDBE.mode = SQLITE_OPEN_READWRITE;
-	//---Texture 2D database --------------------------------------
-	t2dDBE.vers	= 0;																// Minimum version
-  strncpy(t2dDBE.path,"SQL",63);
-  GetIniString("SQL","T2DDB",t2dDBE.path,lgr);
-	strncpy(t2dDBE.name,"T2D*.db",63);
-  t2dDBE.mgr	=  SQL_THR + SQL_MGR;
-  t2dDBE.dbn	= "Texture 2D";
-	t2dDBE.mode = SQLITE_OPEN_READONLY;
   //--- Process  export flags -------------------------------------
   int exp = 0;
   GetIniVar("SQL","ExpGEN",&exp);           
@@ -290,20 +298,66 @@ void SqlOBJ::Init()
   GetIniVar("SQL","ExpOBJ",&exp);
   objDBE.exp = exp;
   if (exp) objDBE.mgr = SQL_MGR;
-  //---------Check for export TRN files ------------------
-	exp = 0;
-  GetIniVar("SQL","ExpTRN",&exp);
-	if (exp)	elvDBE.mgr = SQL_MGR;
-	if (exp)	t2dDBE.mgr = SQL_MGR;
-	elvDBE.exp |= exp;
-	t2dDBE.exp |= exp;
   return;
 }
+//-----------------------------------------------------------------------------
+//  Create texture database path and name name
+//-----------------------------------------------------------------------------
+void SqlOBJ::CreateCompressedDBname(char *pn, char *fn, U_INT qx, U_INT qz)
+{	//---- Compute globe area indices (divide by 8) -----
+  glx = (qx >> 3);								// AREA x indice
+	glz = (qz >> 3);								// AREA z indice
+	//--- Compute base globe tile of area ---------------
+	U_INT bx	= (glx << 2);						// GTx indice
+	U_INT bz	= (glz << 2);						// GTz indice
+	//--- Format path ----------------------------------
+	strncpy(pn,"DTX",32);									// Default path
+  GetIniString("SQL","DTXDB",pn,(MAX_PATH - 1));
+	_snprintf(fn,63,"T%03d_%03d.db",bx,bz);
+	return;
+}
+//-----------------------------------------------------------------------------
+//  Open export texture database
+//-----------------------------------------------------------------------------
+int SqlOBJ::OpenDTX()
+{ if (sqlTYP != SQL_MGR)						return 0;
+	repr	= 0;
+	//---------Check for export TRN files ------------------
+	char prm[128];
+	char rep[12];
+	int x,z;
+	if (!HasIniKey("SQL","ExpTRN"))		return 0;
+  GetIniString("SQL","ExpTRN",prm,127);
+	int nf = sscanf(prm,"( %d - %d ) %s ",&x,&z,rep);
+	if  ((nf < 2) && (nf > 0))				gtfo("Use TRN=(x-y)");
+	repr	= *rep;	
+	//--- Compression requested ---------------------------
+	if (0 == globals->dxt5Supported)	gtfo("Compression not supported");
+	//--- Check the base of globe area --------------------
+	CreateCompressedDBname(dtxDBE.path,dtxDBE.name,(x << 1),(z << 1));
+	//--- Init the dtx dabase for import ------------------
+	dtxDBE.fix	= 1;
+	dtxDBE.vers	= 0;																// Minimum version
+  dtxDBE.mgr	=  SQL_THR + SQL_MGR;
+  strncpy(dtxDBE.dbn,"TRN Texture",32);
+	dtxDBE.exp = 1;
+	//--- Open the database ------------------------------
+	int use = Open(dtxDBE);
+	globals->dtxDB = use;
+	if (0 == use)											gtfo("Cant open database %s",dtxDBE.name); 
+	//----------------------------------------------------
+	elvDBE.mgr = SQL_MGR;
+	dtxDBE.mgr = SQL_MGR;
+	elvDBE.exp |= 1;
+	dtxDBE.exp |= 1;
+	return 0;
+}
 //=============================================================================
-//  Open all required database
+//  Open all fixed database
 //=============================================================================
 void SqlOBJ::OpenBases()
-{ //---Open Generic database -----------------------------------------
+{ globals->import = 0;
+	//---Open Generic database -----------------------------------------
   globals->genDB |= Open(genDBE);
   //---Open Taxiway database -----------------------------------------
   globals->txyDB |= Open(txyDBE);
@@ -315,10 +369,10 @@ void SqlOBJ::OpenBases()
   globals->seaDB |= Open(seaDBE);
   //---Open texture database -----------------------------------------
   globals->texDB |= Open(texDBE);
-  //---Open World Object database -----------------------------------------
+  //---Open World Object database ------------------------------------
   globals->objDB |= Open(objDBE);
-	//---Open Texture 2D database ---------------------------------------
-	//globals->t2dDB |= Open(t2dDBE);
+	//---Open Texture 2D database for export ---------------------------
+	OpenDTX();
   return;
 }
 //-----------------------------------------------------------------------------
@@ -332,6 +386,7 @@ void SqlOBJ::ImportConfiguration(char *fn)
 	globals->noAPT  = 7;
 	globals->noOBJ  = 7;
 	globals->noOSM	= 7;
+	globals->import = 1;
 	return;
 }
 //-----------------------------------------------------------------------------
@@ -345,6 +400,10 @@ int SqlOBJ::Open(SQL_DB &db)
 { char fnm[MAX_PATH];
   int lgr = (MAX_PATH-1);
 	if (db.exp)	db.mode = SQLITE_OPEN_READWRITE;
+	if (0 == db.use)		return 0;
+	//--- Check manager right ---------------------------
+	U_CHAR mgr = db.mgr & sqlTYP;
+	if (0 == mgr)				return 0;
 	//--- Check if file exist ---------------------------
 	_snprintf(fnm,lgr,"%s/%s",db.path,db.name);
 	db.path[lgr] = 0;
@@ -376,8 +435,8 @@ int SqlOBJ::Open(SQL_DB &db)
 //-----------------------------------------------------------------------------
 void SqlOBJ::WarnE(SQL_DB &db)
 { char *sql = (SQL_THR == sqlTYP)?("THREAD"):("MAIN ");
-  WARNINGLOG("%s SQL Database %s MSG %s",sql,db.path,(char*)sqlite3_errmsg(db.sqlOB));
-  WARNINGLOG("%s SQL Using POD for %s",sql,db.dbn);
+  TRACE("%s SQL Database %s MSG %s",sql,db.path,(char*)sqlite3_errmsg(db.sqlOB));
+  TRACE("%s SQL Using POD for %s",sql,db.dbn);
   return;
 }
 //-----------------------------------------------------------------------------
@@ -386,7 +445,7 @@ void SqlOBJ::WarnE(SQL_DB &db)
 void SqlOBJ::Warn1(SQL_DB &db)
 { db.opn = 1;
   char *sql = (SQL_THR == sqlTYP)?("THREAD"):("MAIN ");
-  WARNINGLOG("%s Using SQL %s for %s",sql,db.path,db.dbn);
+  TRACE("%s Using SQL %s for %s",sql,db.path,db.dbn);
   return;
 }
 
@@ -394,8 +453,7 @@ void SqlOBJ::Warn1(SQL_DB &db)
 //  Compile a Statement for a given database
 //=============================================================================
  sqlite3_stmt *SqlOBJ::CompileREQ(char *req,SQL_DB &db)
-{ //MEMORY_LEAK_MARKER ("prepare_v2 e");
-  sqlite3_stmt *stm = 0;
+{ sqlite3_stmt *stm = 0;
   const char   *end;
   int rep = sqlite3_prepare_v2(
             db.sqlOB,          // Database handle 
@@ -404,7 +462,6 @@ void SqlOBJ::Warn1(SQL_DB &db)
             &stm,              // OUT: Statement handle 
             &end               // OUT: Pointer to unused portion of zSql 
           );
-  //MEMORY_LEAK_MARKER ("prepare_v2 s");
   return stm;
 }
 //-----------------------------------------------------------------------------
@@ -488,7 +545,7 @@ void  SqlOBJ::ReadElevation(REGION_REC &reg)
     reg.data  = dst;
     int *src = (int*)sqlite3_column_blob(stm,CLN_HTR_MAT);
     //---Transfer elevation array of int -------------------------
-    for (int k=0; k!=nbv; k++) *dst++ = *src++;
+		for (int k=0; k < nbv; k++) *dst++ = *src++;
   }
   else Abort(elvDBE);
   sqlite3_finalize(stm);                      // Close statement
@@ -547,9 +604,46 @@ void SqlOBJ::DeleteElevation(U_INT key)
   DeleteElvRegion(key);
   return;
 }
-//--------------------------------------------------------------------
+//==============================================================================
+//  Check for POD-OBJ in Database
+//==============================================================================
+unsigned long SqlOBJ::FileInBase(char *fn,char *pn,SQL_DB &dbObj)
+{	char rq[1024];
+	unsigned long row = 0;
+	_snprintf(rq,1023,"SELECT key from FNM where file LIKE '%%%s%%%s%%';*",fn,pn);
+	sqlite3_stmt *stm = CompileREQ(rq,dbObj);
+	bool in = (SQLITE_ROW == sqlite3_step(stm));
+	if (in)		row = sqlite3_column_int(stm, 0);
+	sqlite3_finalize(stm);                      // Close statement
+	return row;
+}
+//==============================================================================
+//  Write POD-TRN in Database
+//==============================================================================
+int SqlOBJ::WriteFileNameInBase(char *fn,SQL_DB &db)
+{	char rq[1024];
+	_snprintf(rq,1023,"INSERT INTO FNM (file) VALUES(?1);*");
+	sqlite3_stmt *stm = CompileREQ(rq,db);
+	//--- Origin file ---------------------------------------
+  int rep = sqlite3_bind_text(stm,1,fn,-1,SQLITE_TRANSIENT);
+  if (rep != SQLITE_OK) Abort(db);
+  //---Execute insert -------------------------------------------------------
+  rep      = sqlite3_step(stm);               // Insert value in database
+  if (rep != SQLITE_DONE) Abort(db);
+	sqlite3_finalize(stm);                      // Close statement
+	//--- return rowid --------------------------------------------------------
+  unsigned long row = 0;
+	_snprintf(rq,1023,"SELECT key from FNM where file = '%s';*",fn);
+	stm = CompileREQ(rq,db);
+	bool in = (SQLITE_ROW == sqlite3_step(stm));
+	if (in)		row = sqlite3_column_int(stm, 0);
+	sqlite3_finalize(stm);                      // Close statement
+	return row;
+}
+
+//==============================================================================
 //	Create the database first using script
-//--------------------------------------------------------------------
+//==============================================================================
 SQL_DB *SqlOBJ::CreateSQLbase(SQL_DB *db,char **S)
 { if (0 == S)	{delete db; return 0; }
 	char *fn = db->path;
@@ -583,30 +677,32 @@ SQL_DB *SqlOBJ::CreateSQLbase(SQL_DB *db,char **S)
 	return db;
 }
 //--------------------------------------------------------------------
-//  Open requested database
+//  Open requested database (OSM dedicated see TRACE msg)
 //	If the file does not exists and script S is supplied*
 //	then create the base with script S
 //--------------------------------------------------------------------
-SQL_DB *SqlOBJ::OpenSQLbase(char *fn,char **S)
+SQL_DB *SqlOBJ::OpenSQLbase(char *fn,char **S,char *name)
 { SQL_DB *db = 0;
 	std::map<std::string,SQL_DB*>::iterator rb = dbase.find(fn);
 	if (rb != dbase.end())
 	{	db = (*rb).second;
 		db->IncUser();
-		TRACE("SQL %d-User %d Found OSM database %s",sqlTYP,db->ucnt,db->path);
+		TRACE("SQL %d-ucnt %d Found database %s",sqlTYP,db->ucnt,db->path);
 		return db;
 	}
 	db = new SQL_DB();
+	strncpy(db->dbn,name,31);
+	db->dbn[31]	= 0;
 	strncpy(db->path,fn,FNAM_MAX);
 	db->mode  = SQLITE_OPEN_READWRITE;
-	TRACE("SQL %d-User %d Open  OSM database %s",sqlTYP,db->ucnt,db->path);
-	//--- Check if file exist ------------------------
+	TRACE("SQL %d-ucnt %d Open  database %s",sqlTYP,db->ucnt,db->path);
+	//--- Check if file exist ----------------------------
 	FILE *pf	= fopen(fn,"r");
 	bool  ok		= (pf != 0);
 	if (pf)	fclose(pf);
-	//--- if file exist open the database in mode ----
+	//--- if no file create DB with script S (optional)----
 	if (!ok)	return CreateSQLbase(db,S);
-	//--- OK file exist -------------------------------
+	//--- OK file exist -----------------------------------
 	int rep  = sqlite3_open_v2(fn,  &db->sqlOB,db->mode,0 );
   if (rep)  WarnE(*db);
   else      Warn1(*db);
@@ -1779,25 +1875,6 @@ bool SqlMGR::FileInELV(char *fn)
 	return in;
 }
 //==============================================================================
-//  Write POD-TRN in Database
-//==============================================================================
-int SqlMGR::WriteTRNname(char *fn)
-{	char rq[1024];
-	_snprintf(rq,1023,"INSERT INTO FNM (file) VALUES(?1);*");
-	sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
-	//--- Origin file ---------------------------------------
-  int rep = sqlite3_bind_text(stm,1,fn,-1,SQLITE_TRANSIENT);
-  if (rep != SQLITE_OK) Abort(elvDBE);
-  //---Execute insert -------------------------------------------------------
-  rep      = sqlite3_step(stm);               // Insert value in database
-  if (rep != SQLITE_DONE) Abort(elvDBE);
-	sqlite3_finalize(stm);                      // Close statement
-	//--- return rowid --------------------------------------------------------
-  int seq  = sqlite3_last_insert_rowid(elvDBE.sqlOB);   // Last ROWID
-  return seq;
-}
-
-//==============================================================================
 //  Insert Elevation record
 //==============================================================================
 void SqlMGR::WriteElevationTRN(C_STile &sup,U_INT row)
@@ -2324,8 +2401,7 @@ GLubyte *SqlMGR::GetGenTexture(TEXT_INFO &txd)
     char *src =  (char*)sqlite3_column_blob (stm,CLN_TEX_IMG);
     tex = new char[dim];
     //---Copy texture to destination -----------------------------------
-    char *dst = tex;
-    for (int k=0; k<dim; k++) *dst++ = *src++;
+		memcpy(tex,src,dim);
 		//--- Update txd parameters ----------------------------------------
 		int wd    = sqlite3_column_int (stm,CLN_TXT_WID);
     txd.wd    = wd;
@@ -2355,8 +2431,7 @@ GLubyte *SqlMGR::GetAnyTexture(TEXT_INFO &inf)
   int   dim =  sqlite3_column_bytes(stm,CLN_TXT_IMG);
   char *src =  (char*)sqlite3_column_blob (stm,CLN_TXT_IMG);
   char *tex = new char[dim];
-  char *dst = tex;
-  for (int k=0; k<dim; k++) *dst++ = *src++;
+	memcpy(tex,src,dim);
   //---Free statement --------------------------------------------------
   inf.mADR = (GLubyte*)tex;
   sqlite3_finalize(stm);
@@ -2572,37 +2647,6 @@ bool SqlMGR::FileInOBJ(char *fn)
 	sqlite3_finalize(stm);                      // Close statement
 	return in;
 }
-//==============================================================================
-//  Check for POD-OBJ in Database
-//==============================================================================
-bool SqlMGR::SceneInOBJ(char *pn)
-{	char rq[1024];
-	_snprintf(rq,1023,"SELECT * from FNM where file LIKE '%%%s%%';*",pn);
-	sqlite3_stmt *stm = CompileREQ(rq,objDBE);
-	bool in = (SQLITE_ROW == sqlite3_step(stm));
-	sqlite3_finalize(stm);                      // Close statement
-	return in;
-}
-
-//==============================================================================
-//  Write POD-OBJ in Database
-//==============================================================================
-int SqlMGR::WriteOBJname(char *fn)
-{	char rq[1024];
-	_snprintf(rq,1023,"INSERT INTO FNM (file) VALUES(?1);*");
-	sqlite3_stmt *stm = CompileREQ(rq,objDBE);
-	//--- Origin file ---------------------------------------
-  int rep = sqlite3_bind_text(stm,1,fn,-1,SQLITE_TRANSIENT);
-  if (rep != SQLITE_OK) Abort(objDBE);
-  //---Execute insert -------------------------------------------------------
-  rep      = sqlite3_step(stm);               // Insert value in database
-  if (rep != SQLITE_DONE) Abort(objDBE);
-	sqlite3_finalize(stm);                      // Close statement
-	//--- return rowid --------------------------------------------------------
-  int seq  = sqlite3_last_insert_rowid(objDBE.sqlOB);   // Last ROWID
-  return seq;
-}
-
 //=================================================================================
 //  Read a set of World Object model
 //=================================================================================
@@ -2784,7 +2828,8 @@ int SqlMGR::GetTRNElevations(C_QGT *qgt)
 	stm = CompileREQ(req,elvDBE);
 	sup->qKey = key;
 	sup->qgt	= qgt;
-	while (SQLITE_ROW == sqlite3_step(stm))	DecodeTRNrow();
+	char comp	= globals->comp & qgt->GetCompTextureInd();
+	while (SQLITE_ROW == sqlite3_step(stm))	DecodeTRNrow(comp,key);
 	//---Free statement ------------------------------------------
   sqlite3_finalize(stm);
 	return count;
@@ -2795,13 +2840,18 @@ int SqlMGR::GetTRNElevations(C_QGT *qgt)
 //		There are 4 * 4 Detail Tiles in a SuperTile
 //		The mesh redefines default elevation for each vertex in the Sup mesh
 //---------------------------------------------------------------------
-int SqlMGR::DecodeTRNrow()
-{ sup->No			= sqlite3_column_int(stm,CLN_ETR_SUP);
-  int  sub		= sqlite3_column_int(stm,CLN_ETR_SUB);
-	int  nbe		= sqlite3_column_int(stm,CLN_ETR_NBE);
+int SqlMGR::DecodeTRNrow(char comp,U_INT key)
+{ //--- Separate key components ---------------------
+	U_INT	qx	= ((key >> 16) << 5);			// Base X indice
+	U_INT qz  = ((key & 0xFFFF) << 5);	// Base Z indice
+	//--- Decode the Supertile record -----------------
+	sup->No			= sqlite3_column_int(stm,1);
+  int  sub		= sqlite3_column_int(stm,6);
+	int  nbe		= sqlite3_column_int(stm,11);
+	//-------------------------------------------------
 	sup->side		= sub + 1;
 	sup->Dim    = (sup->side)*(sup->side);
-  float *src	= (float*)sqlite3_column_blob (stm,CLN_ETR_ELV);
+  float *src	= (float*)sqlite3_column_blob (stm,12);
 	float	*dst	= *sup->elev;
 	for (int k=0; k<sup->Dim; k++) *dst++ = *src++;
 	//--- Compute Base Detail Tile -------------------
@@ -2809,46 +2859,59 @@ int SqlMGR::DecodeTRNrow()
 	U_INT sx    = (sup->No & 0x07);					// SUP(X)
 	U_INT tx    = (sx << 2);								// DET(X)
 	U_INT	tz		= (sz << 2);								// DET(Z)
+	//--- Compute Supertile SW corner key ------------
+	U_INT dx    = qx | tx;									// Base key
+	U_INT dz    = qz | tz;						
 	//--- Set default elevation in SuperTile ---------
   qgt->SetElvFromTRN(tx,tz,*sup->elev);
 	//--- Generate TextureDef list -------------------
 	CTextureDef *txd  = qgt->GetTexList(sup->No);
-	sup->SetList(txd);
+	sup->SetTList(txd,comp);
 	//--- Extract names and flags --------------------
-	char *name  = (char*)sqlite3_column_text(stm,CLN_ETR_TXN);
-	U_INT fg    = (U_INT)sqlite3_column_int(stm,CLN_ETR_FLG);
-	U_INT us    = (U_INT)sqlite3_column_int(stm,CLN_ETR_USR);
-	U_INT	wt		= (U_INT)sqlite3_column_int(stm,CLN_ETR_WTR);
-	U_INT	nt		= (U_INT)sqlite3_column_int(stm,CLN_ETR_NIT);
+	char *name  = (char*)sqlite3_column_text(stm,10);		// Texture name
+	U_INT pt    = (U_INT)sqlite3_column_int(stm,  2);		// Patche
+	U_INT fg    = (U_INT)sqlite3_column_int(stm,  5);		// Flag
+	U_INT us    = (U_INT)sqlite3_column_int(stm,  7);   // User texture
+	U_INT	wt		= (U_INT)sqlite3_column_int(stm,  8);		// Water texture
+	U_INT	nt		= (U_INT)sqlite3_column_int(stm,  9);		// Night texture
 	U_INT	tokn	= 0x00000001;
-	//------------------------------------------------
+	//--- Precompute raw type ------------------------
+	rawtype = (comp)?(TC_TEXCMPRS):(TC_TEXRAWTN);
+	//U_CHAR rawtype = TC_TEXRAWTN;
 	//--- TextureDef Reconstruction ------------------
-	for (int k=0; k<TC_TEXSUPERNBR; k++,txd++)
+	for (U_INT k=0; k<TC_TEXSUPERNBR; k++,txd++)
 	{	name	+= txd->CopyName(name);
-		if (fg & tokn)  txd->SetFlag(TC_USRTEX);
-		if (us & tokn)	txd->SetType(TC_TEXRAWTN);
-		if (wt & tokn)	txd->SetType(TC_TEXWATER);
-		if (nt & tokn)	txd->SetFlag(TC_NITTEX);
+		txd->Name[8] = colInSUP[k];
+		txd->Name[9] = rowInSUP[k];
+		if (fg & tokn)  txd->SetFlag (TC_USRTEX);
+		if (us & tokn)	txd->TypTX = (rawtype);
+		if (wt & tokn)	txd->TypTX = (TC_TEXWATER);
+		if (nt & tokn)	txd->SetFlag (TC_NITTEX);
+		if (pt & tokn)  ResetDetailTRN(txd);
+		//--- Next token for next texture --------------
 		tokn   = (tokn << 1);
+		//---  Make detail tile key for compression ----
+		U_INT px = dx | (k & 0x03);
+		U_INT pz = dz | (k >> 2);
+		txd->sKey	= (px << 16) | pz;
 	}
 	//--- End of process -----------------------------
 	qgt->IndElevation();
 	return 0;
 }
-//---------------------------------------------------------------------------------
-//  Select a POD file name
-//---------------------------------------------------------------------------------
-bool  SqlMGR::SearchPODinTRN(char *pn)
-{ int nb = 0;
-	char req[1024];
-  _snprintf(req,1024,"SELECT file FROM FNM where file LIKE '%%%s%%';*",pn);
-	sqlite3_stmt *stm = CompileREQ(req,elvDBE);
-//	while (SQLITE_ROW == sqlite3_step(stm)) nb++; 
-	nb = (SQLITE_ROW == sqlite3_step(stm))?(1):(0);
-	sqlite3_finalize(stm);
-	return (nb != 0);
+//---------------------------------------------------------------------
+//	NOTE: Column det is used as a patch indicator to void the
+//				specific texture.  When the bit is set, the corresponding
+//				detail tile is processed as a generic tile
+//---------------------------------------------------------------------
+void SqlMGR::ResetDetailTRN(CTextureDef *txd)
+{ if (txd->TypTX != rawtype)				return;
+	//---  This is either a raw or compressed texture -----------
+  txd->Name[0] = 0;											// Force generic name assignment
+	txd->TypTX	 = 0;											// No type yet
+	txd->Raz(TC_USRTEX);
+	return;
 }
-
 //===================================================================================
 //  Decode TILE TABLE elevations for a given QGT
 //	Each row defines a detailled tile with a subdivision level with a
@@ -2879,7 +2942,7 @@ int SqlMGR::DecodeDETrow()
 	int			  nbe	= sqlite3_column_int(stm,CLN_TIL_NBE); 
 	int      *src = (int*)sqlite3_column_blob (stm,CLN_TIL_ELV);
 	int      *dst = hdt.GetElvArray();
-	for (int k=0; k<nbe; k++)	*dst++ = *src++;
+	for (int k=0; k<nbe; k++) *dst++ = *src++;
 	//--- Set Super Tile No -----------------------------
 	int				sno = sqlite3_column_int(stm,CLN_TIL_SUP);
 	//---------------------------------------------------
@@ -2897,14 +2960,14 @@ int SqlMGR::ReadPatches(C_QGT *qgt, ELV_PATCHE &p)
 	stm = CompileREQ(req,elvDBE);
 	while (SQLITE_ROW == sqlite3_step(stm))
 	{	//-- Decode patche row -----------------------
-    p.dtNo =	sqlite3_column_int(stm,CLN_PCH_DET);	// Det number
+    p.dtNo = sqlite3_column_int(stm,CLN_PCH_DET);	// Det number
 		p.subL = sqlite3_column_int(stm,CLN_PCH_SUB);	// Det subdivision
 		p.nbe  = sqlite3_column_int(stm,CLN_PCH_NBE);	// Number of elevations
 		int		dim = p.nbe * sizeof(ELV_VTX);
 		//--- Read elevation array -------------------
 		char    *src	= (char*)sqlite3_column_blob (stm,CLN_PCH_ELV);
-		char    *dst  = (char*)p.mat;
-		for (int k=0; k<dim; k++)	*dst++ = *src++;
+		char    *dst	= (char*)p.mat;
+		memcpy(dst,src,dim);
 		//--- Send to detail tile --------------------
 		CmQUAD *qd = qgt->GetQUAD(p.dtNo);
 		qd->ProcessPatche(p);
@@ -2956,59 +3019,77 @@ int SqlMGR::DeletePatche(ELV_PATCHE &p)
 	return 0;
 }
 //===================================================================================
-//	SAVE USER 2D TEXTURE
+//	SAVE TRN TEXTURE
 //	
 //===================================================================================
-
-int SqlMGR::WriteT2D(TEXT_INFO *tdf)
-{	char *rq = "INSERT INTO texture (kdet,file,rfu,wdt,htr,res,day,ind,nit) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9);*";
-	int rep	 = 0;
-	int nit  = 0;
-  sqlite3_stmt *stm = CompileREQ(rq,t2dDBE);
-	//--- insert DET key ------------------------
-	sqlite3_bind_int(stm, 1,tdf->key);
-	//--- insert file reference -----------------
-	sqlite3_bind_int(stm, 2,tdf->xOBJ);
-	//---- Set reserved to 0 --------------------
-	sqlite3_bind_int(stm, 3,0);
-	//--- Save width -----------------------------
-	sqlite3_bind_int(stm, 4,tdf->wd);
-	//--- Save height -----------------------------
-	sqlite3_bind_int(stm, 5,tdf->ht);
-	//--- Save resolution ------------------------
-	sqlite3_bind_int(stm, 6,tdf->res);
-	//--- Insert day texture in blob -------------
-	int dim  = tdf->dim;
-  sqlite3_bind_blob(stm,7,tdf->mADR, dim, SQLITE_TRANSIENT);
-	//--- Save night indicator -------------------
-	nit = (tdf->nite)?(1):(0);
-	sqlite3_bind_int(stm, 8,nit);
-	if (nit)
-	{	//--- Save night texture ---------------------
-		sqlite3_bind_blob(stm,8,tdf->nite, dim, SQLITE_TRANSIENT);
-	}
-	//--- Execute statement ---------------------
-	rep      = sqlite3_step(stm);        // Insert value in database
-  if (rep != SQLITE_DONE) Abort(t2dDBE);
-  //---Free statement ------------------------------------------
-  sqlite3_finalize(stm);
-	return 0;
-
+int SqlMGR::WriteTRNtexture(TEXT_INFO &txd,char *tab)
+{ SQL_DB &db = dtxDBE;
+	char req[1024];
+  _snprintf(req,1024,"INSERT INTO %s (key,qgt,type,name,file,mip,width,height,size,reso,data) "
+					"VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11);*",tab);
+	sqlite3_stmt *stm = CompileREQ(req,db);
+	//---Key ---------------------------------------------------------------
+  int  rep = sqlite3_bind_int(stm, 1,txd.key);
+  if (rep != SQLITE_OK)   Abort(db);
+	//---QGT ---------------------------------------------------------------
+  rep = sqlite3_bind_int(stm, 2,0);				// Is not used
+  if (rep != SQLITE_OK)   Abort(db);
+	//---Compression type --------------------------------------------------
+  rep = sqlite3_bind_int(stm, 3,txd.type);
+  if (rep != SQLITE_OK)   Abort(db);
+	//---Texture name ------------------------------------------------------
+	rep = sqlite3_bind_text(stm,4,txd.name,8,SQLITE_TRANSIENT);
+  if (rep != SQLITE_OK) Abort(db);
+	//---Index in File name table (FNM) ------------------------------------
+  rep = sqlite3_bind_int(stm, 5,txd.Dir);
+  if (rep != SQLITE_OK)   Abort(db);
+	//---Mip level encoded in the texture  ---------------------------------
+  rep = sqlite3_bind_int(stm, 6,txd.mip);
+  if (rep != SQLITE_OK)   Abort(db);
+	//---Uncompressed texture width  ---------------------------------------
+  rep = sqlite3_bind_int(stm, 7,txd.wd);
+  if (rep != SQLITE_OK)   Abort(db);
+	//---Uncompressed texture height  ---------------------------------------
+  rep = sqlite3_bind_int(stm,8,txd.ht);
+  if (rep != SQLITE_OK)   Abort(db);
+	//--- byte size of compressed texture  ----------------------------------
+  rep = sqlite3_bind_int(stm,9,txd.dim);
+  if (rep != SQLITE_OK)   Abort(db);
+	//--- Texture resolution  ----------------------------------------------
+  rep = sqlite3_bind_int(stm,10,txd.res);
+  if (rep != SQLITE_OK)   Abort(db);
+	//--- pixel Blob --------------------------------------------------------
+  int dim  = txd.dim;
+  rep = sqlite3_bind_blob(stm,11,txd.mADR, dim, SQLITE_TRANSIENT);
+  if (rep != SQLITE_OK)   Abort(db);
+	//--- Commit in database ------------------------------------------------
+	rep      = sqlite3_step(stm);               // Insert value in database
+	//--- End of record -----------------------------------------------------
+	sqlite3_finalize(stm);                      // Close statement
+	return 1;
 }
 
-//-----------------------------------------------------------------------------
-//	Check if detail tile already in data base
-//-----------------------------------------------------------------------------
-bool SqlMGR::TileInBase(U_INT key)
+//---------------------------------------------------------------------------------
+//  check for the texture reference
+//---------------------------------------------------------------------------------
+bool SqlMGR::TRNTextureInTable(U_INT key,char *tab)
 { char req[1024];
-  _snprintf(req,1024,"SELECT rowid FROM texture WHERE kdet = %d;*",key);
-  sqlite3_stmt *stm = CompileREQ(req,t2dDBE);
+	_snprintf(req,1024,"SELECT key FROM %s WHERE key = %d;*",tab,key);
+  sqlite3_stmt *stm = CompileREQ(req,dtxDBE);
   //-----Execute statement -----------------------------------------------
-  int rep = sqlite3_step(stm);              // Search database
-  sqlite3_finalize(stm);                    // Close statement
-  return (rep == SQLITE_ROW)?(true):(false);
+  int rep = sqlite3_step(stm);                  // Search database
+  sqlite3_finalize(stm);												// Close statement
+	return (rep == SQLITE_ROW); 
 }
-
+//---------------------------------------------------------------------------------
+//  Enter QGT in table of compression indicator
+//---------------------------------------------------------------------------------
+bool SqlMGR::QGTnotInArea(U_INT qx,U_INT qz)
+{	//--- Compute global tile indices --------------------------
+	U_INT gx = (qx >> 1) >> 2;		// X  QGT->GTx->AREAx
+	U_INT gz = (qz >> 1) >> 2;		// Z  QGT->GTz->AREAz												
+	return (gx != glx) || (gz != glz);
+}
 //=================================================================================
 //
 //  SQL THREAD Access methods
@@ -3119,11 +3200,11 @@ int SqlTHREAD::GetM3DTexture(TEXT_INFO *inf)
   if (SQLITE_ROW == sqlite3_step(stm))
   {
     //---- Decode the texture and return it ----------------------------
-    int   dim =        sqlite3_column_bytes(stm,CLN_NTX_TEX);
-    char *src = (char*)sqlite3_column_blob (stm,CLN_NTX_TEX);
+    int   dim		=      sqlite3_column_bytes(stm,CLN_NTX_TEX);
+    char *src	= (char*)sqlite3_column_blob (stm,CLN_NTX_TEX);
     char *tex = new char[dim];
-    char *dst = tex;
-    for (int k=0; k<dim; k++) *dst++ = *src++;
+		memcpy(tex,src,dim);
+		//------------------------------------------------------------------
     inf->mADR = (GLubyte*)tex;
     inf->wd   =  sqlite3_column_int (stm,CLN_NTX_WID);
     inf->ht   =  sqlite3_column_int (stm,CLN_NTX_HTR);
@@ -3153,7 +3234,7 @@ int SqlTHREAD::GetM3Dmodel(C3Dmodel *modl)
 //===================================================================================
 //  Decode a Generic terrain Texture
 //===================================================================================
-GLubyte *SqlTHREAD::GetGenTexture(TEXT_INFO &txd)
+GLubyte *SqlTHREAD::GetSQLGenTexture(TEXT_INFO &txd)
 { if (!SQLtex())     return 0;
   char *name = txd.path;
   char *dot  = strrchr(txd.path,'.');
@@ -3171,12 +3252,13 @@ GLubyte *SqlTHREAD::GetGenTexture(TEXT_INFO &txd)
   sqlite3_stmt *stm = CompileREQ(req,texDBE);
   if (SQLITE_ROW == sqlite3_step(stm))
   {  //---- Decode the texture and return it ------------------------------
-    int    dim =         sqlite3_column_bytes(stm,CLN_NTX_TEX) >> 2;
+    int   dim = sqlite3_column_bytes(stm,CLN_NTX_TEX);
     U_INT *src = (U_INT*)sqlite3_column_blob (stm,CLN_TEX_IMG);
-    U_INT *tex = new U_INT[dim];
+    char *tex = new char[dim];
     //---- Transfer pixels without alpha chanel (land texture) -----------
-    U_INT *dst = tex;
-    for (int k=0; k<dim; k++)    *dst++ = *src++ & 0x00FFFFFF;
+    U_INT *dst = (U_INT*)tex;
+		int    nbw = dim >> 2;			// Word count
+    for (int k=0; k<nbw; k++)    *dst++ = (*src++) & (0x00FFFFFF);
     int wd    = sqlite3_column_int (stm,CLN_NTX_WID);
     txd.wd    = wd;
     txd.ht    = wd;
@@ -3186,9 +3268,44 @@ GLubyte *SqlTHREAD::GetGenTexture(TEXT_INFO &txd)
   sqlite3_finalize(stm);
   return txd.mADR;
 }
-//===================================================================================
-// Search a POD file in a database
-//===================================================================================
+//---------------------------------------------------------------------------------
+//	Read compressed texture 
+//	NOTE:  Only the first thread instance has the Compressed database open
+//---------------------------------------------------------------------------------
+int SqlTHREAD::ReadaTRNtexture (TEXT_INFO &txd,char *tab,SQL_DB *db)
+{	char req[1024];
+	_snprintf(req,1024,"SELECT * FROM %s WHERE key=%d;*",tab,txd.key);
+  sqlite3_stmt *stm = CompileREQ(req,*db);
+	char *src;
+	txd.mADR	= 0;
+	txd.dim		= 0;
+  if (SQLITE_ROW == sqlite3_step(stm))
+  { //--- decode type -------------------------------------------------
+		txd.type   = sqlite3_column_int(stm, 2);
+		//--- Decode name -------------------------------------------------
+		src		= (char*)sqlite3_column_text(stm,3);
+		strncpy(txd.name,src,8);
+		//--- Decode mip level --------------------------------------------
+		txd.mip   = sqlite3_column_int(stm, 5);
+		//--- Decode widht & height ---------------------------------------
+		txd.wd		= sqlite3_column_int(stm, 6);
+		txd.ht		= sqlite3_column_int(stm, 7);
+		//--- Decode resolution ---- ---------------------------------------
+		txd.res		= sqlite3_column_int(stm, 9);
+    //---- Decode the texture and return it ----------------------------
+    int   dim = sqlite3_column_int(stm,8);
+    src = (char*)sqlite3_column_blob (stm,10);
+		//--- allocate a bufer and transfert into --------------------------
+    char *tex = new char[dim];
+		memcpy(tex,src,dim);
+    //------------------------------------------------------------------
+    txd.mADR = (GLubyte*)tex;
+		txd.dim	 =  dim;
+  }
+  //---Free statement --------------------------------------------------
+  sqlite3_finalize(stm);
+	return 1;
+}
 
 
 //=============END OF FILE ==========================================================
