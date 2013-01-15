@@ -69,6 +69,7 @@ class CFuiFuel: public CFuiWindow {
   CFuiPopupMenu   *pop;
   CFuiList        *Tnk;
   CListBox        gBOX;
+	CAirplane       *plan;
   //----CG box -------------------------------------------------------
   CFuiBox         *cBOX;
   //----Fixed cell to compute total ----------------------------------
@@ -88,7 +89,8 @@ class CFuiFuel: public CFuiWindow {
 public:
    CFuiFuel(Tag idn, const char* filename);
   ~CFuiFuel();
-  void            Refresh();
+	void						Init();
+  void            TimeSlice();
   //------------------------------------------------------------------
   void            InitGradMenu();
   void            SetPopTitle(U_SHORT No);

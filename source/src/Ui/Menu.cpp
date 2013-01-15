@@ -1080,7 +1080,7 @@ void CrossTuningMenu(char *iden,char st)
 //	Inhibit some menus
 //============================================================================
 void CheckTuningMenu()
-{ char elv = globals->elvDB;
+{ char elv = globals->sqm->UseElvDB();
   CrossTuningMenu("TERRA Editor",elv);
 	return;
 }

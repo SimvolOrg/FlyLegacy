@@ -53,7 +53,7 @@ void        init_keyboard (void);
 void        BindAllKeys (CKeyMap *keymap);
 EKeyboardModifiers  glutModifiersToFlyLegacyModifiers (int glutmod);
 U_INT       glutKeyToFlyLegacyKey (U_INT gkey, U_INT mdf);
-bool        glutSpecialToFlyLegacyKey (int glutkey, U_INT *flykey);
+U_INT       glutSpecialToFlyLegacyKey (int glutkey);
 #ifdef _WIN32
 EKeyboardKeys   VirtualKeyToLegacyKey (BYTE vk);
 int         VirtualKeyToGlutKey (BYTE vk, bool shift, bool ctrl, bool alt);

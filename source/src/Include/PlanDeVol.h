@@ -425,6 +425,8 @@ private:
   //----------Logical state --------------------------------------
   U_CHAR          State;                      // State
 	U_CHAR          edMOD;											// protected or editable
+	U_CHAR					demo;												// For demo
+	U_CHAR					rfu;			
   //--------------------------------------------------------------
 	Tag							format;											// Actual format
 	//--------------------------------------------------------------
@@ -482,6 +484,7 @@ public:
 	void	UpdateDirectNode();
 	void	UpdateActiveNode();
 	void	ActivateNode(CWPoint *wpt);
+	bool	ActivateEnd();
 	void	RestoreNode();
 	//---------------------------------------------------------------
 	bool	SwapEditMode();
@@ -574,6 +577,7 @@ public:
 	bool      IsNotLast(U_INT s){return (s != NbWPT);}
 	bool      IsLast(U_INT s)		{return (s == NbWPT);}
 	bool			Inactive()				{return (State == FPL_STA_NUL);}
+	bool			NotForDemo()			{return (0 == demo);}
 	//--------------------------------------------------------------
 	int				Size()						{return NbWPT;}
 	//--------------------------------------------------------------

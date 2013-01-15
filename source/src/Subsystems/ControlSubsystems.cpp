@@ -2622,7 +2622,10 @@ bool CSpeedRegulator::SetON(U_INT CTRL)
 	return true;
 }
 //--------------------------------------------------------------------------------
-//	Send  steering orders 
+//	Send  steering orders
+//	-Compute angle between aircraft position and target position relative to north
+//	-When 0 we are on track.  Use difference as input to PID in order to correct 
+//		gear deflection to stay on track 
 //--------------------------------------------------------------------------------
 void CSpeedRegulator::SteerControl(float  dT)
 {	hdg		= mveh->GetHeading();						// Actual Heading
@@ -2639,11 +2642,12 @@ void CSpeedRegulator::SteerControl(float  dT)
 void CSpeedRegulator::RouteControl()
 {	bool towd = (fdist < pdist) && (fdist > limit);
 	pdist			= fdist;
-	if (towd)		return;
+	if (towd)		return;  // Still toward control point
 	//--- Change to next waypoint --------
 	SPosition *pos = route->NextPosition();
 	pdist			= 100000;
 	if (pos)	{tgp  = *pos; return; }
+	//--- No more point. Stop steering ---
 	steer = 0;
 	return;
 }

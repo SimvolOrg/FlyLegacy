@@ -103,7 +103,6 @@ CFuiLoad::CFuiLoad(Tag idn, const char*filename)
   wTOT  = new CFuiLabel(400,240,140,20);
   AddChild('wtot',wTOT,"3203 lbs");
   //----Register and create ----------------------
-  globals->wld = this;
   CFuiWindow::ReadFinished();
   U_INT type = LIST_NOHSCROLL;
   sBOX.SetParameters(this,'wsta',type);
@@ -116,7 +115,6 @@ CFuiLoad::CFuiLoad(Tag idn, const char*filename)
 //---------------------------------------------------------------------------
 CFuiLoad::~CFuiLoad()
 { vlod.clear();
-  globals->wld = 0;
 }
 
 //---------------------------------------------------------------------------

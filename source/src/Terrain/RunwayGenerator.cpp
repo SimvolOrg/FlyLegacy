@@ -417,16 +417,17 @@ void CRwyGenerator::SetRunwayData()
 //  all coordinates are in absolutes arcseconds
 //	Then we compute a far point (fwdP) 15000 feet away for drawing ILS
 //	Example:
-//          mini above
-//				(M)	Threshold 
-//					  |        lndP (landing point)
-//						|					|										Opposite End
-//	RWY 12L  -------------------------------------                 (at -15000 feet)
-//											L												|                    |
-//																							|                    |
-//																							|                    |
-//																							refP(R)              |
-//																																FarP (F)
+//                         mini above
+//               				(M)	Threshold 
+//               					  |        lndP (landing point [p])
+//              						|					|										Opposite End [q]
+//(at -18200 ft) --------- 	RWY 12L  -------------------------------------        
+//	|               									L												     |   
+//	|   used for approach																			     |                    
+//	|              																						     |      
+//	|		              																				  refP(R)    
+//	fwdP (F)
+//
 //	M, L , R and F are aligned at 3° slope
 //--------------------------------------------------------------------------------
 void CRwyGenerator::SetLandingPRM(LND_DATA *ils,float ld,float td)
@@ -442,15 +443,7 @@ void CRwyGenerator::SetLandingPRM(LND_DATA *ils,float ld,float td)
   ref->alt  = land->alt - (fabs(d2 - d1) * ils->gTan);
   //--- Compute forward point altitude    ----------
   SPosition *fpn = &ils->fwdP;
-  //fpn->lon  = p0.x + (arcX * d3) + Org.lon;  // X coord
-  //fpn->lat  = p0.y + (arcY * d3) + Org.lat;  // Y coord
   fpn->alt  = land->alt + (fabs(d3 - d1) * ils->gTan);
-	//--- Compute midwward ils point --------------------
-  //SPosition *mpn = &ils->midP;
-  //mpn->lon  = p0.x + (arcX * d3) + Org.lon;  // X coord
-  //mpn->lat  = p0.y + (arcY * d3) + Org.lat;  // Y coord
-  //mpn->alt  = 0;								// Altitude not used
-
 	//--- Compute take-off spot  ---------------------
 	SPosition *tkp = &ils->tkoP;
 	tkp->lon	= p0.x + (arcX * d4);

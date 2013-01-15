@@ -310,7 +310,12 @@ public:
 	void  DrawOutsideLights();
   void  DrawExternalFeatures();
 	//--- Engine interface ----------------------------------------------------
-  bool					AllEngineOn()				{return (engR == eng.GetEngineNbr());}
+	bool	AllEngStopped()			{return eng.AllEngStopped();}
+	void	RazEngR()						{engR	= 0;}
+	void	IncEngR()						{engR++;}
+	void	DecEngR()						{engR--;}
+  bool	AllEngineOn()				{return (engR == eng.GetEngineNbr());}
+	bool	AllEngineOff()			{return (0 == engR);}
 	//-------Keyboard messages ------------------------------------------------
   virtual void  SetNaviMSG(Tag t) {}
   virtual void  SetTaxiMSG(Tag t) {}
@@ -471,10 +476,6 @@ public:
 	inline  void	IncWheelBrake()										{wBrk++;}
 	inline  int   GetWheelBrake()										{return wBrk;}
 	//---Engine interface ----------------------------------------------------------
-	bool AllEngStopped()							{return eng.AllEngStopped();}
-	void RazEngR()										{engR	= 0;}
-	void IncEngR()										{engR++;}
-	void DecEngR()										{engR--;}
 protected:
   //--- PLOT parameter table -----------------------------------------------------
   PLOT_PM   plotPM[16];                    // Plot parameters table

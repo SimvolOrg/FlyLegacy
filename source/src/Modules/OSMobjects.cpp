@@ -89,9 +89,9 @@ OSM_CONFP  buildingVAL[] = {
 	{EndOSM,						0},									// End of table
 };
 //==========================================================================================
-//  List of LIGHT VALUES Tags
+//  List of HIGHWAY VALUES Tags
 //==========================================================================================
-OSM_CONFP  liteVAL[] = {
+OSM_CONFP  highwayVAL[] = {
 	//--- TAG VALUE --OTYPE ----------OPROP ------------BVEC -----------LAYER ------------
 	{"YES",						OSM_LIGHT,			OSM_PROP_LITE,		OSM_BUILD_LITE,		OSM_LAYER_LITE},
 	{"RESIDENTIAL",		OSM_LIGHT,			OSM_PROP_LITE,		OSM_BUILD_LITE,		OSM_LAYER_LITE},
@@ -149,6 +149,8 @@ OSM_CONFP leisureVAL[] = {
 	//--- TAG VALUE --OTYPE ----------OPROP -----------BVEC -----------LAYER ------------
 	{"GARDEN",		  OSM_GARDEN,	      OSM_PROP_PARK,   OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10, "GREEN" },
 	{"PARK",		    OSM_GARDEN,	      OSM_PROP_PARK,   OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10, "GREEN" },
+	{"PLAYGROUND",	OSM_GARDEN,	      OSM_PROP_PARK,   OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10, "GREEN" },
+	{"COMMON",			OSM_GARDEN,	      OSM_PROP_PARK,   OSM_BUILD_FLAT, OSM_LAYER_BLDG, 10, "GREEN" },
 	{EndOSM,					0},
 };
 //==========================================================================================
@@ -168,8 +170,8 @@ OSM_TAG TagLIST[] = {
 	//--- TAG -----Value Table ---- Layer ---
 	{"AMENITY",			amenityVAL,	},
 	{"BUILDING",		buildingVAL,},
-	{"LIT",					liteVAL,		},
-	{"HIGHWAY",			liteVAL,		},
+	{"LIT",					highwayVAL,	},
+	{"HIGHWAY",			highwayVAL,	},
 	{"LANDUSE",     landVAL,    },
 	{"MAN_MADE",    manmadeVAL,	},
 	{"JUNCTION",		junctionVAL,},
@@ -212,18 +214,18 @@ float lightDIS[]  = {0.0f,0.01f,0.00001f};
 //==========================================================================================
 //	Locate OSM value slot
 //==========================================================================================
-OSM_CONFP *LocateOSMvalue(char *t,char *v)
+OSM_CONFP *LocateOSMvalue(char *tag,char *val)
 {	OSM_TAG *tab = TagLIST;
 	while (strcmp(tab->tag,EndOSM) != 0)
-	{	if  (strcmp(tab->tag,t)   != 0) {tab++; continue;}
+	{	if  (strcmp(tab->tag,tag)   != 0) {tab++; continue;}
 	  OSM_CONFP *cnf = tab->table;	
 	  while (strcmp(cnf->val,EndOSM) != 0)
-		{	if  (strcmp(cnf->val,v) == 0) return cnf;
-			if	(*cnf->val == '$')				return cnf;
+		{	if  (strcmp(cnf->val,val) == 0) return cnf;
+			if	(*cnf->val == '$')					return cnf;
 			cnf++;
 		}
 		//--- unknown value --------------------------
-		STREETLOG("Unknow value %s %s",t,v);
+		STREETLOG("Unknow value %s %s",tag,val);
 		return 0;
 	}
 	//--- Unknown tag ------------------------------
@@ -252,7 +254,7 @@ U_INT  GetOSMobjType(char *t ,char *v)
 //==========================================================================================
 void  GetOSMconfig(char *t ,char *v, OSM_CONFP &V)
 {	//--- Skip if we already have major tag --------------------
-	bool mt = (V.tag != 0) && (V.prop & OSM_PROP_MAJT);
+	bool mt = (V.mtag != 0) && (V.prop & OSM_PROP_MAJT);
 	if (mt)		return;
 	//--- Get this Tag -----------------------------------------
 	OSM_CONFP *cnf = LocateOSMvalue(t,v);
@@ -260,7 +262,7 @@ void  GetOSMconfig(char *t ,char *v, OSM_CONFP &V)
 	V.otype = 0;
 	if (0 == cnf) {STREETLOG("Tag (%s,%s) Skipped",t,v); return;}
 	V	= *cnf;
-	V.tag		= tab->tag;
+	V.mtag		= tab->tag;
 	return;
 }
 //==========================================================================================
@@ -317,7 +319,7 @@ OSM_Object::OSM_Object(CBuilder *B,OSM_CONFP *CF, D2_Style *sty)
 	orien       = 0;
 	style				= 0;
 	tag	= val		= 0;
-	if (CF->tag)	tag = DupplicateString(CF->tag,64);
+	if (CF->mtag)	tag = DupplicateString(CF->mtag,64);
 	if (CF->val)	val = DupplicateString(CF->val,64);
 	if (sty)	ForceStyle(sty);
 }
@@ -656,11 +658,13 @@ CShared3DTex *OSM_Object::GetPartTREF()
 //-----------------------------------------------------------------
 //	Select this building
 //-----------------------------------------------------------------
+/*
 void OSM_Object::Select()
 {	globals->osmS = this;
 	bpm.selc	= 1;
 	return;
 }
+*/
 //-----------------------------------------------------------------
 //	Return Texture parameters
 //-----------------------------------------------------------------
@@ -672,19 +676,23 @@ char *OSM_Object::TextureData(char &d)
 //-----------------------------------------------------------------
 //	Change selection on building
 //-----------------------------------------------------------------
+/*
 void OSM_Object::SwapSelect()
 {	if (bpm.selc)	Deselect();
-	else		Select();
+	else					Select();
 	return;
 }
+*/
 //-----------------------------------------------------------------
 //	Deselect this building
 //-----------------------------------------------------------------
+/*
 void OSM_Object::Deselect()
 {	globals->osmS = 0;
 	bpm.selc	= 0;
 	return;
 }
+*/
 //-----------------------------------------------------------------
 //	Replace  this object
 //-----------------------------------------------------------------
@@ -727,6 +735,7 @@ void OSM_Object::BuildLightRow(double ht)
 	part->AllocateOsmLIT(bpm.side);
 	TEXT_INFO txd;
 	strncpy(txd.name,"GLOBE.PNG",FNAM_MAX);
+	//strncpy(txd.name,"IODE.JPG",FNAM_MAX);
 	txd.Dir = FOLDER_OSM_TEXT;
 	CShared3DTex *ref = globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
 	part->SetTREF(ref);
@@ -882,12 +891,14 @@ int OSM_Object::NextForestRow()
 //-----------------------------------------------------------------
 void OSM_Object::Draw()
 {	//--- check for selected object -----------------
-  bool ok		= (this != globals->osmS) || globals->clk->GetON();
+  //bool ok		= (this != globals->osmS) || globals->clk->GetON();
+	bool sl   =  bld->HasSelected(this);
+	bool ok		= (!sl) || globals->clk->GetON();
 			 ok  &= (State == 1);
 	if (!ok)		return;
 	//--- Get line mode -----------------------------
 	U_INT mode = bld->DrawMode();
-	bool  tour = (mode == 0) && (bpm.selc);
+	bool  tour = (mode == 0) && sl;				//(bpm.selc);
 	//--- Draw my parts -----------------------------
 	glLoadName(bpm.stamp);
 	glPushMatrix();
@@ -1108,7 +1119,7 @@ int SqlOBJ::LoadOSM(OSM_DBREQ *rdq)
 			if (rst >= globals->osmMX)			continue;						// Eliminate
 			typ						= sqlite3_column_int(stm,2);					// Type
 			if (0 == GetOSMUse(typ))				continue;						// Not loaded
-			//--- Add this object on its layer -----------------------------
+			//--- Add this object to its layer -----------------------------
 			U_INT  lay = sqlite3_column_int(stm,3);							// OSM layer
 			char	 dir = sqlite3_column_int(stm,5);							// Directory
 			char	*ntx = (char*)sqlite3_column_text(stm,6);			// Texture name

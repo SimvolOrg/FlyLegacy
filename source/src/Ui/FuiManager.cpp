@@ -228,7 +228,7 @@ Tag CFuiManager::GetaTag(U_INT *x, U_INT *y)
 //	Check if tool allowed
 //---------------------------------------------------------------------------------
 bool	CFuiManager::ToolNotAllowed()
-{	bool ok = globals->pln->AllEngStopped();
+{	bool ok = globals->pln->AllEngineOff();
   if (!ok)	return true;
 	return (globals->aPROF.Has(PROF_TOOL) != 0);
 }
@@ -242,6 +242,8 @@ void CFuiManager::CloseAllWindows()
     window->Close();
     delete window;
   }
+	winMap.clear();
+	winList.clear();
 	return;
 }
 ///==========================================================================================
@@ -857,10 +859,11 @@ bool CFuiManager::MouseMove (int mx, int my)
 //  param key    ASCII code of key pressed
 //  NOTE: Only the TOP Fui receive the keyboard
 ///-------------------------------------------------------------------
-bool  CFuiManager::KeyboardInput(U_INT key)
+bool  CFuiManager::KeyboardInput(U_INT key,int mod)
 { if (0 == wTop)                          return false;
+  U_INT code = (mod << 16) | key;
   CFuiWindow *win = wTop;
-  return (win->KeyboardInput(key));
+  return (win->KeyboardInput(code));
 }
 //--------------------------------------------------------------------
 //	Mouse is captured by a window, send mouse to it
@@ -868,6 +871,7 @@ bool  CFuiManager::KeyboardInput(U_INT key)
 bool CFuiManager::MouseToWind(int mx, int my, EMouseButton bt)
 { if (0 == wCap)			return false;
 	if (wCap != wTop)		MoveOnTop(wCap);
+	tClick = 0.25F;										// Arm timer 1/4 sec
   return wCap->MouseCapture(mx, my, bt);
 }
 ///-------------------------------------------------------------------
@@ -898,9 +902,9 @@ bool CFuiManager::MouseClick (int mx, int my, EMouseButton bt)
   //--- If a window was hit by the mouse click, send the click event to it
   if (win == 0)					return  MouseToWind(mx, my, bt);                            
 	//---This is a simple click. Arm timer -------------------
-	win->MouseClick (mx, my, bt);
+	else									win->MouseClick (mx, my, bt);
 	tClick = 0.25F;
-	return true;
+	return true;							//true;
 }
 //-------------------------------------------------------------------
 // A double click was detected.  Send to last clicked windows

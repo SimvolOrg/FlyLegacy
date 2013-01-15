@@ -106,7 +106,6 @@ class CFuiSketch : public CFuiWindow
 	//--- Dialogue button -----------------------------------------
 	Tag					  dial;
 	//--- OSM object attributs ------------------------------------
-	//U_INT					otype;					// Object type
 	OSM_CONFP			confp;					// Configuration
 	char					tagn[64];				// Tag name
 	char					valn[64];				// Value name
@@ -219,6 +218,7 @@ public:
 	U_INT SaveEnd();
 	//--- mouse --------------------------------------------------
 	bool	MouseCapture(int mx, int my, EMouseButton bt);
+	bool  DoubleClick (int mx, int my, EMouseButton bt);
 	//--- Keyboard -----------------------------------------------
 	void	TimeSlice();
 	//--- Drawing() ----------------------------------------------

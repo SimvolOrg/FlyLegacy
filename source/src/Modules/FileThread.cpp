@@ -279,18 +279,18 @@ void ProcessModels(TCacheMGR *tcm, SqlTHREAD *sql)
 {	C3DMgr   *m3d	= globals->m3d;	
 	C_QGT    *qgt		= 0;
 	char *dir = "MODELS";
-  for (C3Dmodel *mod = m3d->ModelToLoad(); (mod != 0); mod = m3d->ModelToLoad())
+	for (C3Dmodel *mod = m3d->ModelToLoad(); (mod != 0); mod = m3d->ModelToLoad())
       { //--- To debug a specific file ------------------
 				//char *mn = mod->GetFileName();
 				//if (strncmp(mn,"PA28LM",6) == 0)
 				//int a = 0;									// Break point here
 				//TRACE("TCM: -- Time: %04.2f ---------------THREAD MODELS",tcm->Time());
 				//TRACE("Model: Load %s",mn);
-        if (!sql->SQLmod())						{mod->LoadPart(dir); mod->DecUser(); continue;}
+				if (!sql->SQLmod())						{mod->LoadPart(dir); mod->DecUser(); continue;}
 				if (!sql->GetM3Dmodel(mod))		{mod->LoadPart(dir); mod->DecUser(); continue;}
         //-------------------------------------------------------------------------
 				mod->Finalize();
-        mod->DecUser();
+				mod->DecUser();
 				//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
 
       }
@@ -318,31 +318,36 @@ void ProcessOSM(TCacheMGR *tcm, SqlTHREAD *sql)
 void *FileThread(void *p)
 { TCacheMGR   *tcm	= (TCacheMGR*) p;
 	char         thn  = tcm->GetThreadNumber();
-  SqlTHREAD sql;												// Local instance of SQL manager
-	globals->elvDB	= sql.UseELV();
+  SqlTHREAD sql(thn);												// Local instance of SQL manager
   C_QGT    *qgt		= 0;
   U_INT     key		= 0;
 	char			tr    = 1;									// Trace time
+
 	//--- Declare first instance ----------------
-	if (0 == globals->sql)  globals->sql = &sql;
+	globals->sql[thn] = &sql;
 	//--- Thread parameters ---------------------
 	pthread_cond_t  *cond = tcm->GetTHcond();
 	pthread_mutex_t *tmux = tcm->GetaMux(thn);
 	TRACE("SQL Thread started");
   //--- File Processing --------------------
   while (tcm->RunThread())
-    { pthread_cond_wait(cond,tmux);						// Wait for signal
+    { globals->thread[thn] = "OFF";
+		  pthread_cond_wait(cond,tmux);						// Wait for signal
       //----Process file Requests ------------------------------------------------
-      if (thn == 1)		ProcessFiles(tcm,&sql);
+			globals->thread[thn]	= "FILEs";
+      if (thn == THREAD_GEN)	ProcessFiles(tcm,&sql);
       //--- Process 3DModel requests ----------------------------------------------
-		  if (thn == 0)		ProcessTexture(tcm);
+			globals->thread[thn]	= "TEXTUREs";
+		  if (thn == THREAD_TEX)	ProcessTexture(tcm);
 			//--- Process OSM models requests--------------------------------------------
-			if (thn == 1)   ProcessOSM(tcm,&sql);
+			globals->thread[thn]	= "OSM";
+			if (thn == THREAD_OSM)  ProcessOSM(tcm,&sql);
 			//----Process load texture Queue --------------------------------------------
-      if (thn == 0)		ProcessModels(tcm,&sql);
+			globals->thread[thn]	= "MODELs";
+      if (thn == THREAD_M3D)	ProcessModels(tcm,&sql);
     }
 	//--- File thread is stopped ------------------
-	if (globals->sql == &sql) globals->sql = 0;
+	globals->sql[thn] = 0;
 	TRACE("FileThread %d STOP",thn);
 	pthread_mutex_unlock(tmux);
 	pthread_exit(0);
@@ -515,13 +520,13 @@ int CTextureWard::GetRawTexture(CTextureDef *txn)
 //-----------------------------------------------------------------------
 int CTextureWard::GetCmpTexture(CTextureDef *txn,SQL_DB *db)
 { cds.key	= txn->sKey;
-	globals->sql->ReadaTRNtexture(cds,"TEX",db);
+	globals->sql[THREAD_TEX]->ReadaTRNtexture(cds,"TEX",db);
 	dTEX					= cds.mADR;
 	txn->dSiz			= cds.dim;
 	txn->cTyp			= cds.type;
 	//--- Check for night texture now -------------------------
 	if (!(NT & txn->IsNight()))		return 1;
-	globals->sql->ReadaTRNtexture(cds,"NIT",db);
+	globals->sql[THREAD_TEX]->ReadaTRNtexture(cds,"NIT",db);
 	nTEX					= cds.mADR;
 	txn->nSiz			= cds.dim;
 	return 1;
@@ -552,9 +557,9 @@ int CTextureWard::GetGPUtexture(CTextureDef *txn)
 //               with a OPA mask for water merging
 //-----------------------------------------------------------------------------
 GLubyte *CArtParser::GetDayTexture(TEXT_INFO &txd,char opt)
-{ SqlTHREAD *sql = globals->sql;
+{ SqlTHREAD *sql = globals->sql[THREAD_TEX];
   GLubyte   *tex = 0;
-  bool       sqb = ((0 == epd) && sql->SQLtex());
+  bool       sqb = ((0 == epd) && sql->UseTexDB());			//sql->SQLtex());
   afa            = 0;
   if (sqb) { sql->GetSQLGenTexture(txd);
              SetSide(txd.wd);

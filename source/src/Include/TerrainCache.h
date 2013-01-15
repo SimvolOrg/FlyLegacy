@@ -978,7 +978,7 @@ public:
   CVector    *PlaneFeetPos()      {return &geow;}
   double      GetCenterLongitude(){return globals->geop.lon;}
   double      GetCenterLatitude() {return globals->geop.lat;}
-  C_QGT      *GetCenterQGT()      {return Spot.qgt;}
+  C_QGT      *GetSpotQGT()				{return Spot.qgt;}
   bool        SameQuad(CmQUAD *q)	{return (Spot.SameSpot(q));}
   //--------------------------------------------------------------
   bool   HiResPermited()     {return (HiRes!= 0);}

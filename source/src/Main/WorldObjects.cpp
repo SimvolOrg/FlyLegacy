@@ -539,8 +539,6 @@ void CVehicleObject::StoreNFO(char *nfo)
 CVehicleObject::~CVehicleObject (void)
 {
 	//---Close any open window related to aircraft ------------
-  if (globals->wfl) globals->wfl->Close();      // Fuel load
-  if (globals->wld) globals->wld->Close();      // Load weight
   if (globals->wpb) globals->wpb->Close();      // Window probe
 	if (IsUserPlan())	globals->rdb.Register(0);
   if (IsUserPlan()) globals->inside   =  0;
@@ -603,6 +601,7 @@ void CVehicleObject::ReadFinished (void)
 { 
   // Call ReadFinished() method of parent
   CWorldObject::ReadFinished ();
+	TRACE("CWorldObject ReadFinished");
   //MEMORY_LEAK_MARKER ("readfnvehi")
 	if(IsUserPlan())	globals->rdb.Register(this);
   // If NFO file was specified, instantiate vehicle info member
@@ -610,36 +609,51 @@ void CVehicleObject::ReadFinished (void)
   if (0 == *nfoFilename)  gtfo("NO NFO file, so no Aircraft");
 	//--- Process NFO file ----------------
   nfo.Init(nfoFilename);
+	TRACE("NFO init");
 	//---- Read panel Cameras -------------
 	globals->ccm->ReadPanelCamera(this,nfo.GetCAM());
+	TRACE("Panel Camera");
   //--- Read Level of Detail models.  Must be loaded first
   lod.Init(nfo.GetLOD(),type);
+	TRACE("LOD init");
 	//--- Read PHY file -------------------
   phy.Init(nfo.GetPHY());
+	TRACE("PHY init");
 	//--- process SVH ---------------------
   svh.Init(nfo.GetSVH(), &wgh);
+	TRACE("SVH init");
   //--- Read Aerodynamic Model ----------
 	wng.Init(nfo.GetWNG());
+	TRACE("WNG init");
   //--- Read Pitot/Static Systems -------
   pss.Init(nfo.GetPSS());
+	TRACE("PSS init");
   //--- Read Ground Suspension  ---------
 	whl.Init(&wgh,nfo.GetWHL());
+	TRACE("WHL init");
   //--- Read Variable Loadouts
   vld.Init(&wgh,nfo.GetVLD());
+	TRACE("VLD init");
 	//--- Read External Lights
   elt.Init(nfo.GetELT());
+	TRACE("ELT init");
   //--- Read Engine Manager
   eng.Init(nfo.GetENG());
+	TRACE("ENG init");
   /// \todo Why are AMP and GAS files dependent upon ENG?  Particularly
   //        for the case of gliders, an AMP may exist without an ENG
   //--- Read Fuel System ------
   gas.Init(nfo.GetGAS(), &eng, &wgh);
+	TRACE("GAS init");
   //---Read Electrical Subystems. --------
-  amp.Init(nfo.GetAMP(), &eng);				
+  amp.Init(nfo.GetAMP(), &eng);
+	TRACE("AMP init");
   //--- Read Cockpit Manager -------------
   pit.Init(nfo.GetPIT());
+	TRACE("PIT init");
   //--- Read Control Mixer ---------------
   mix.Init(nfo.GetMIX());
+	TRACE("MIX init");
 	//---Add various parameters ---------------------------------------
   nEng  = eng.HowMany();
 	//--- Read CheckList ----------------------------------------------
@@ -658,7 +672,7 @@ void CVehicleObject::ReadFinished (void)
 		CVehicleSmoke *usmk = new CVehicleSmoke(this);
 		amp.AddExternal(usmk,0);							
 	}
-	
+TRACE("CVehicleObject ReadFinished");	
 }
 
 // Read aircraft history file ---------------------------------------

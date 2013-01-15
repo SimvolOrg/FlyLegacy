@@ -68,10 +68,14 @@ Tag           Cursor = 0;
 //===========================================================================
 // Terminate function
 //===========================================================================
-void FatalError(int code)
+int FatalError(int code)
 { TRACE("=====FATAL Error===================");
-  TRACE("CODE = %d", code);
- 	globals->mBox.DumpAll();
+  TRACE("Module %s, ThREAD0 in %s, Thread1 in %s",
+				globals->module,globals->thread[0],globals->thread[1]);
+	TRACE("Error code = %8x",code);
+	TerminateProcess (GetCurrentProcess(), 0);
+	exit(-1);
+	return -1;
 }
 //=====================================================================================
 _EXCEPTION_POINTERS *excp = 0;
@@ -155,8 +159,7 @@ EMouseButton MouseEvent(int button)
 //  MOUSE EVENT OVER SIMULATION
 //====================================================================================
 void MouseForSImulation(int x,int y,EMouseButton b,int u,int but)
-{ CSituation *sit = globals->sit;
-  //Send to PU first -----------------------------------------------
+{ //Send to PU first -----------------------------------------------
   PUuse = (0 != puMouse (but, u, x, y));
   // Send mouse click events to FUI for processing
   switch (u) {
@@ -166,9 +169,7 @@ void MouseForSImulation(int x,int y,EMouseButton b,int u,int but)
     FUuse = globals->fui->MouseClick (x, y, b);
     //---Send mouse event to panel for potential processing--------------
     if (FUuse)            break;
-    if (!sit )            break;
-		if (!globals->pln)    break;
-    VHuse = globals->pln->MouseClick(b,u,x,y);
+		if (globals->pln)     VHuse = globals->pln->MouseClick(b,u,x,y);
     break;
 
   case GLUT_UP:
@@ -193,12 +194,8 @@ void mouse ( int button, int u, int x, int y )
 { globals->cScreen = &globals->mScreen;
   EMouseButton b = MouseEvent(button);
   // Send mouse click events to application
-
-  switch (globals->appState)  {
-    case APP_SIMULATION:
-      MouseForSImulation(x,y,b,u,button);
-      return;
-  }
+	if (globals->noINP)		return;
+  MouseForSImulation(x,y,b,u,button);
 	return;
 }
 
@@ -235,7 +232,8 @@ int nKeys = sizeof(nonGlutKeys) / sizeof(SNonGlutKey);
 
 void idle (void)
 {	//--- MODE SIMULATION ------------------------------------------------
-  if (globals->appState != APP_SIMULATION)    return;
+  //if (globals->appState != APP_SIMULATION)    return;
+	if (globals->noINP)		return;
   BYTE keys[256];
   // Update the key modifier state
   GetKeyboardState(keys);
@@ -317,7 +315,8 @@ void motion2 ( int x, int y )
 void motion ( int x, int y )
 { CCursorManager *cum = globals->cum;
 	//--- MODE SIMULATION ------------------------------------------------
-  if (globals->appState != APP_SIMULATION)    return;
+//  if (globals->appState != APP_SIMULATION)    return;
+	if (globals->noINP)		return;
 	//--------------------------------------------------
 	CVehicleObject *veh		= globals->pln;
   CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
@@ -359,7 +358,8 @@ void passive_motion2 ( int x, int y )
 void passive_motion ( int x, int y )
 { CCursorManager *cum = globals->cum;
 	//--- MODE SIMULATION ------------------------------------------------
-  if (globals->appState != APP_SIMULATION)                    return;
+ // if (globals->appState != APP_SIMULATION)                    return;
+	if (globals->noINP)			return;
 	//--------------------------------------------------
 	CVehicleObject *veh		= globals->pln;
   CCockpitManager *pit	= (veh)?(veh->GetPIT()):(0);
@@ -409,27 +409,14 @@ void keyboard (unsigned char key, int x, int y)
 	int mod = glutGetModifiers ();
   EKeyboardModifiers mdf	= glutModifiersToFlyLegacyModifiers (mod);
   U_INT codk =  glutKeyToFlyLegacyKey(key, mdf);
-
-  switch(globals->appState) {
-    case APP_LOADING_SCREEN:
-      return;
-    case APP_SIMULATION:
-      break;
-    case APP_TEST:
-      { globals->tsb->Keyboard(codk,mod);
-        return;
-      }
-    case APP_EXPORT:
-      { globals->exm->Keyboard(codk,mdf);
-        return;
-      }
-    default:
-      return;
-  }
-  //---- Pass keystroke to PUI keyboard handler--
-  if (puKeyboard (key, PU_DOWN))                        return; 
-  //---- Pass Keystroke to FUI handler -----------
-  if (globals->fui->KeyboardInput((mod << 16) | codk))  return;
+	if (APP_TEST				==	globals->appState)		return globals->tsb->Keyboard(codk,mdf);
+	if (APP_EXPORT			==	globals->appState)		return globals->exm->Keyboard(codk,mdf);
+	if (globals->noINP)														return;
+//	if (APP_SIMULATION	!=  globals->appState)		return;
+  //---- Pass keystroke to PUI keyboard handler----------
+  if (puKeyboard (key, PU_DOWN))								return; 
+  //---- Pass Keystroke to FUI handler ------------------
+  if (globals->fui->KeyboardInput(codk,mdf))		return;
   //----- Get FlyLegacy key code -------------------------------
 	kbd->KeyPress (codk, mdf);
   return;
@@ -444,20 +431,16 @@ void special2(int key, int x, int y)
 	//--- MODE SIMULATION ------------------------------------------------
   if (globals->appState != APP_SIMULATION)                    return;
   //--- Pass keystroke to PUI keyboard handler 
-  if (!puKeyboard (key + PU_KEY_GLUT_SPECIAL_OFFSET, PU_DOWN)) {
+  if (puKeyboard (key + PU_KEY_GLUT_SPECIAL_OFFSET, PU_DOWN)) return;
 
-    // Get GLUT modifiers and convert to FlyLegacy modifiers
-    int glutmod = glutGetModifiers ();
-    EKeyboardModifiers flymod = glutModifiersToFlyLegacyModifiers (glutmod);
+  // Get GLUT modifiers and convert to FlyLegacy modifiers
+  int glutmod = glutGetModifiers ();
+  EKeyboardModifiers flymod = glutModifiersToFlyLegacyModifiers (glutmod);
 
-    // Get FlyLegacy key code
-    U_INT flykey;
-    if (glutSpecialToFlyLegacyKey (key, &flykey)) 
-    { kbd->KeyPress (flykey, flymod);
-      return;
-    }
-  WARNINGLOG ("Unmapped GLUT key %d", key);
-  }
+  // Get FlyLegacy key code
+  key = glutSpecialToFlyLegacyKey (key);
+  kbd->KeyPress (key, flymod);
+  return;
 }
 //================================================================================
 // GLUT special keys event
@@ -467,28 +450,25 @@ void special (int key, int x, int y)
   globals->cScreen = &globals->mScreen;
 	int mod = glutGetModifiers ();
 	EKeyboardModifiers mdf = glutModifiersToFlyLegacyModifiers (mod);
+	//--- Translate special keys -----------------------------------------
+	key = glutSpecialToFlyLegacyKey (key);
   //--- MODE TEST ------------------------------------------------------
-	if (globals->appState == APP_TEST)
-		{ globals->tsb->Special(key,mdf);
-			return;
-		}
+	if (globals->appState == APP_TEST) return globals->tsb->Special(key,mdf);
   //--- MODE SIMULATION ------------------------------------------------
-  if (globals->appState != APP_SIMULATION)                    return;
+	if (globals->noINP)								 return;
+ // if (globals->appState != APP_SIMULATION)                    return;
   //---- Pass Keystroke to PUI handler ---------------------------------
   if (puKeyboard (key + PU_KEY_GLUT_SPECIAL_OFFSET, PU_DOWN)) return;
-	//--- Translate special keys -----------------------------------------
-	U_INT skey = KB_KEY_NONE;
-	glutSpecialToFlyLegacyKey (key, &skey);
   //---- Pass Keystroke to FUI Handler ---------------------------------
-  if (globals->fui->KeyboardInput((mod << 16) | skey))				return;
+  if (globals->fui->KeyboardInput(key,mdf))									  return;
   //---- Simulator key event handling ----------------------------------
-  kbd->KeyPress (skey, mdf);
+  kbd->KeyPress (key, mdf);
   return;
 }
 
-//
+//===============================================================================
 // Window manager redraw callback
-//
+//===============================================================================
 void redraw2 ()
 {
   globals->cScreen = &globals->sScreen;
@@ -597,19 +577,18 @@ void redraw ()
 		}
   case APP_SIMULATION:
     // Run simulation
+		/*
 		 RedrawSimulation ();
 		 if (globals->stop)	ExitScreen();
 		 break;
-		/*
+		 */
+		
     __try {	globals->appState = (EAppState)RedrawSimulation ();			}
-    __except(EXCEPTION_EXECUTE_HANDLER)										//(std::exception &e)
-    { int code = GetExceptionCode();
-			FatalError(code);
-			TerminateProcess (GetCurrentProcess(), 0);
-			exit(-1);	}
-			if (globals->stop)	ExitScreen();
-			break; 
-	*/
+    __except(FatalError(GetExceptionCode()))		{;}								//(std::exception &e)
+		//-- Continue when no error -------------	
+		if (globals->stop)	ExitScreen();
+		break; 
+	
   case APP_EXIT_SCREEN:
     // Display exit screen
 		DupplicateString("***EXIT SIMULATION ***",32);

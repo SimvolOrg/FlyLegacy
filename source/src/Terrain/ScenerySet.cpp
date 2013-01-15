@@ -333,7 +333,8 @@ int CSceneryDBM::CheckForScenery(PFSPODFILE *p)
 //--------------------------------------------------------------
 int CSceneryDBM::CheckDatabase(char *pn)
 {	//--- Search in scenery database ------------------
-	if (0 == globals->objDB)			return 0;
+//	if (0 == globals->objDB)			return 0;
+	if (0 == globals->sqm->UseObjDB())	return 0;
 	bool in = sqm->SearchPODinOBJ(pn);
 	return (in != 0);
 }
@@ -428,7 +429,6 @@ int CSceneryDBM::Register (C_QGT *qgt)
 	strcat(pn,"/");
 	strncat(pn,nm,MAX_PATH);
 	//--- Use SQL manager to remember databases -----------
-	//SQL_DB *db = 	globals->sql->OpenSQLbase(pn,0,nm);
 	SQL_DB *db = 	sqm->OpenSQLbase(pn,0,nm);
 	qgt->StoreCompressedTexDB(db);
 	//char *idb=(db)?(db->dbn):("None");
@@ -529,13 +529,12 @@ void CSceneryDBM::AddGQTforOSM(U_INT key)
 //------------------------------------------------------------------
 SQL_DB *CSceneryDBM::GetOSMbase(C_QGT *qgt, int nb)
 {	std::map<U_INT,CSceneryPack*>::iterator rp = m3dPAK.find(qgt->FullKey());
-	if (rp == m3dPAK.end())				return 0;
+	if (rp == m3dPAK.end())			return 0;
 	//--- OPEN the database -------------------------------
 	const char *fn = (*rp).second->GetOSMname(nb);
 	if (0 == fn)								return 0;
 	SQL_DB *db = sqm->OpenSQLbase((char*)fn,0,"OSM");
-	if (0 == db)								return 0;
-	TRACE("Mounting database %s",fn);
+	if (db)	TRACE("Mounting database %s",fn);
 	return db;
 }
 //------------------------------------------------------------------

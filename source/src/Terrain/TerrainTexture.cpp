@@ -1018,10 +1018,10 @@ GLubyte *CArtParser::TransitionTexture(TEXT_INFO &txd)
 //  Return a night texture RGBA 
 //-----------------------------------------------------------------------------
 GLubyte *CArtParser::GetNitTexture(TEXT_INFO &txd)
-{ SqlTHREAD *sql = globals->sql;
+{ SqlTHREAD *sql = globals->sql[THREAD_TEX];
   GLubyte   *tex = 0;
   DontAbort();
-  if (sql->SQLtex()){ tex = sql->GetSQLGenTexture(txd);
+  if (sql->UseTexDB()){ tex = sql->GetSQLGenTexture(txd);
                       SetSide(txd.wd);
                     }
   else              { tex = LoadRaw(txd,0);    }
@@ -1033,7 +1033,7 @@ GLubyte *CArtParser::GetNitTexture(TEXT_INFO &txd)
 //--------------------------------------------------------------------
 GLubyte *CArtParser::LoadTextureFT(TEXT_INFO &txd)
 { afa            = 0;
-	GLubyte   *tex = globals->sql->GetSQLGenTexture(txd);
+	GLubyte   *tex = globals->sql[THREAD_TEX]->GetSQLGenTexture(txd);
 	if (0 == tex)  tex = LoadRaw(txd,0);			
   SetSide(txd.wd);
   if (0 == tex) gtfo("BAD TEXTURE NAME: %s",txd.path);
@@ -1240,7 +1240,7 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
   tr      = t;
   Night   = 'D';
   sqm     = globals->sqm;
-  usq     = sqm->SQLtex();
+  usq     = (sqm->UseTexDB() != 0);
   nPic    = 0;
   //-----------------------------------------------------------
   strcpy(xld.path,"SYSTEM/GLOBE/*");        // Texture path
@@ -1680,7 +1680,8 @@ CShared3DTex *CTextureWard::Get3DTexture(TEXT_INFO &txd)
 	 CShared3DTex *shx = new CShared3DTex(txd);
 	//--- Search texture in sql database if used ------------
 	TEXT_INFO *inf = shx->GetDescription();
-	if (globals->m3dDB) globals->sql->GetM3DTexture(inf);
+	SqlTHREAD *sql = globals->sql[0];
+	if (sql->UseModDB()) sql->GetM3DTexture(inf);
 	if (shx->HasData())  return AddSHX(shx,txd);
 	//--- Search texture in POD files -----------------------
 	char *dot = strrchr(inf->path,'.');

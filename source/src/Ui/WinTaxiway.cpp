@@ -553,9 +553,7 @@ TaxEDGE *TaxiCircuit::NextPathArc()
 //	Taxiway tracker
 //===========================================================================================
 TaxiTracker::TaxiTracker()
-{	Seq			= 1;
-	Prk			= 1;
-	selN		= 0;
+{	selN		= 0;
 	lpos		= 0;
 	taxiMENU[0] = bf1;
 	disk		= gluNewQuadric();
@@ -572,7 +570,15 @@ void	TaxiTracker::NodeSupplier(TaxiwayMGR *M)
 	lnd		= M->GetLndCircuit();
 	circuit		= lnd;
 }
-
+//--------------------------------------------------------------------------
+//	Temporary Repair
+//--------------------------------------------------------------------------
+char TaxiTracker::RepairSelection(Tag idn)
+{	if (0 == selN)					return 0;
+	if (!selN->IsTkoNode())	return 0;
+	selN->SetIdent(idn);
+	return 1;
+}
 //--------------------------------------------------------------------------
 //	Exit from tracker
 //--------------------------------------------------------------------------
@@ -678,8 +684,6 @@ char TaxiTracker::TaxiNodeType(char t1,char t2)
 	indx += (t2 & 0x07);
 	if (indx >= 25)	return 0;
 	return taxiNODE[indx];
-//	char ta = t1 & t2 & TAXI_NODE_AXES;
-//	return (ta)?(TAXI_NODE_EXIT):(TAXI_NODE_TAXI);
 }
 //-------------------------------------------------------------------------------------------
 //	Insert a node between to nodes.  Node type is A
@@ -740,7 +744,7 @@ Tag TaxiTracker::AddOneNode(Tag A, Tag B,SPosition &P)
 //-------------------------------------------------------------------------------------------
 int TaxiTracker::MoveSelectedNode(SPosition &P)
 {	if (0 == selN)											return 0;
-  //if (selN->HasType(TAXI_NODE_FIXE))	return 0;
+  if (selN->HasType(TAXI_NODE_FIXE))	return 0;	// Patch here to move the point
 	selN->SetPosition(P);
 	return 1;
 }
@@ -1525,6 +1529,7 @@ int SqlMGR::ReadTaxiNodes(char *key, TaxiwayMGR *txm)
   //----Execute select -------------------------------------------
 	 while (SQLITE_ROW == sqlite3_step(stm))
 	 {	int idn = sqlite3_column_int(stm, 1);					// Node ident
+			if (0 == idn)		gtfo("No identity for Node at key %s",key); 
 			P.lat		= sqlite3_column_double(stm, 2);				// Latitude
 			P.lon		= sqlite3_column_double(stm, 3);				// Longitude
 			P.alt		= sqlite3_column_double(stm, 4);				// Altitude

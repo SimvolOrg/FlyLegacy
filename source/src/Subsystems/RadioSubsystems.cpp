@@ -69,8 +69,8 @@ void CExtSource::SetSource(CmHead *src,LND_DATA *ils)
 	refD    = 0;													//(ils)?(ils->lnDIR):(0);
 	//--- Set landing parameters ------------------------------
 	if (ils)	
-	{	spos		= ils->refP;
-		refD		= ils->orie;
+	{	spos		= ils->fwdP;								// Target to far point
+		refD		= ils->orie;								// Reference direction
 	}
 	//--- Compute feet factor at given latitude ---------------
 	double lr   = FN_RAD_FROM_ARCS(spos.lat);					//DegToRad  
@@ -80,7 +80,7 @@ void CExtSource::SetSource(CmHead *src,LND_DATA *ils)
 	return;
 }
 //--------------------------------------------------------------------------
-//	Refresh distance and direction to aircraft
+//	Refresh distance, direction and vertical error
 //--------------------------------------------------------------------------
 void CExtSource::RefreshStation(U_INT fram)
 {	//----compute WPT relative position -------------
@@ -91,11 +91,13 @@ void CExtSource::RefreshStation(U_INT fram)
   radial  = Wrap360((float)v.h - smag);			
 	nmiles  = (float)v.r * MILE_PER_FOOT;
   dsfeet  =  v.r;
-	//--- Compute vertical deviation ----------------
+	//--- Compute vertical deviation -----------------------
 	if (0 == ilsD)		return;
+	//--- compute distance to opposite runway end ----------
+	double dis  = DistancePositionInFeet(*acp,ilsD->refP);	
 	double alr  = ilsD->refP.alt;
-	double vH		= dsfeet * ilsD->gTan;
-	vdev  = (acp->alt - vH - alr) / dsfeet;
+	double vH	= dis * ilsD->gTan;					// Vertical altitude				
+	vdev  = (acp->alt - vH - alr) / dis;	// Vertical error
 	ilsD->errG  = vdev;			  
 	return;
 }
@@ -143,6 +145,7 @@ CRadio::CRadio (void)
   busRD.ntyp = SIGNAL_OFF;
   busRD.flag = VOR_SECTOR_OF;
 	busRD.xOBS = 0;
+	busRD.extS = &EXT;
   ActCom.freq   = 0;
   ActCom.fract  = 0;
   ActCom.whole  = 0;
@@ -360,6 +363,10 @@ void CRadio::FreeRadios(char opt)
 }
 //--------------------------------------------------------------------------
 //  Select Radio source
+//	Radio source may one of the following:
+//	a)	Null Source when no real source is active
+//	b)	A tuned VOR or ILS
+//	c) External source used for Waypoints and landing
 //--------------------------------------------------------------------------
 void CRadio::SelectSource()
 {	//--- Source is external ---------------------------
@@ -426,7 +433,7 @@ int CRadio::IncXOBS(short inc)
   return obs;
 }
 //--------------------------------------------------------------------------
-//  Change source position
+//  Change external source position
 //--------------------------------------------------------------------------
 void CRadio::ChangePosition(SPosition *p)
 { if (!EXT.IsActive())			return;

@@ -1210,8 +1210,10 @@ CFPlan::CFPlan(CVehicleObject *m,char rp)
 	//------------------------------------------------
 	strncpy(nul,"    ",6);
 	//------------------------------------------------
+	demo	 = 0;
 	format = '0';
 	edMOD	 = FPL_EDITABLE;
+
 }
 //-----------------------------------------------------------------
 //  Flight Plan is destroyed
@@ -1254,6 +1256,7 @@ void CFPlan::ClearPlan()
 	uWPT			= 0;
 	sWPT			= 0;
   Version		= 0;
+	demo			= 0;
   modify		= 0;
 	NbWPT			= 0;
 	genWNO		= 0;
@@ -1309,6 +1312,9 @@ void CFPlan::ReadFormat(SStream *stream)
 //-----------------------------------------------------------------
 int CFPlan::Read (SStream *stream, Tag tag)
 { switch (tag) {
+	case 'demo':
+		demo = 1;
+		return TAG_READ;
 	case 'form':
 		ReadFormat(stream);
 		return TAG_READ;
@@ -1743,6 +1749,14 @@ void CFPlan::ActivateNode(CWPoint *nxt)
 	return;
 }
 //-----------------------------------------------------------------
+//	Activate the last node
+//-----------------------------------------------------------------
+bool CFPlan::ActivateEnd()
+{	CWPoint *lst = (CWPoint*)wPoints.LastPrimary();
+	if (lst->NotAirport())		return false;
+	return StartPlan(lst);
+}
+//-----------------------------------------------------------------
 //	Retrieve next waypoint from flight plan
 //-----------------------------------------------------------------
 CWPoint *CFPlan::NextStep(CWPoint *wpt)
@@ -1861,6 +1875,10 @@ void CFPlan::StopPlan()
 	aWPT	= 0;	
 	return;
 }
+//-----------------------------------------------------------------
+//	Activate the Last node
+//-----------------------------------------------------------------
+
 //-----------------------------------------------------------------
 //	Return a node type related to active state
 //	0=> Forward waypoint or past terminated
@@ -2026,6 +2044,7 @@ void CFPlan::Save()
   CStreamFile sf;
   sf.OpenWrite(name);
   sf.DebObject();
+	if (demo)	sf.WriteTag('demo', "used for demo too ");
 	sf.WriteTag('form', "---- Format Type -----------------");
 	_snprintf(txt,d,"wpno=%02d, format=FM01",genWNO);
 	sf.WriteString(txt);

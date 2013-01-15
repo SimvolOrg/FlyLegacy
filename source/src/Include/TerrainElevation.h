@@ -203,6 +203,7 @@ public:
   short         Type;                       // Type
   short         Dim;                        // Dimension
   C_QGT        *qgt;                        // Mother QGT
+	//---------------------------------------------------------------------
 	CTextureDef  *xtmp;                       // Texture list for export
   CTextureDef  *DayList;                    // List of Day textures
   float         elev[5][5];                 // Default elevation matrix
@@ -231,10 +232,10 @@ public:
 	inline void				SetAX(U_INT x)				{ax = x;}
 	inline void				SetAZ(U_INT z)				{az = z;}
 	//--------------------------------------------------------------------
-	inline int				GetKey()							{return qKey;}
-	inline int				GetNo()								{return No;}
-	inline int				GetDim()							{return Dim;}
-	inline int				GetSide()							{return side;}
+	inline U_INT			GetKey()							{return qKey;}
+	inline U_INT			GetNo()								{return No;}
+	inline U_INT			GetDim()							{return Dim;}
+	inline U_INT			GetSide()							{return side;}
 	inline float     *GetElvArray()					{return *elev;}
 	inline TRN_HDTL  *PopDetail()						{return qHDTL.Pop();}
 	//--------------------------------------------------------------------

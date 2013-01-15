@@ -300,8 +300,8 @@ struct ELV_PATCHE;
 //  DEFINE COLUMN INDICES FOR  3Dmodel
 //=====================================================================================
 #define CLN_MOD_NAM 0             // Model file name
-#define CLN_MOD_TSP 1             // Transparent indicator
-#define CLN_MOD_TYP 2             // Type of model
+#define CLN_MOD_TSP 2             // Transparent indicator
+#define CLN_MOD_TYP 1             // Type of model
 #define CLN_MOD_TXN 3             // Texture name
 #define CLN_MOD_TOP 4             // TOP Feet
 #define CLN_MOD_BOT 5             // Bottom feet
@@ -419,6 +419,13 @@ struct ELV_PATCHE;
 //=====================================================================================
 #define ELV_DEFAULT 0
 #define ELV_DETAIL  1
+//=====================================================================================
+#define THREAD_GEN		(1)
+#define THREAD_ELV		(1)
+#define THREAD_SEA		(1)
+#define THREAD_OSM		(1)
+#define THREAD_TEX		(0)
+#define THREAD_M3D		(0)
 //=====================================================================================
 //  Define a database
 //=====================================================================================
@@ -558,7 +565,6 @@ public:
 	unsigned long	FileInBase(char *fn,char *pn,SQL_DB &db);
 	int						WriteFileNameInBase(char *fn,SQL_DB &db);
 	//-----------------------------------------------------------------
-  inline char   UseELV()			{return elvDBE.use;}
   inline bool   MainSQL()			{return (sqlTYP == SQL_MGR);}
 	//-----------------------------------------------------------------
 	SQL_DB			 *OpenSQLbase(char *fn,char **S,char *dbn);
@@ -578,6 +584,15 @@ public:
 	//-----------------------------------------------------------------
 	SQL_DB			*aDBtex()   {return &texDBE;}
 	//-----------------------------------------------------------------
+	char				UseGenDB()	{return genDBE.opn;}
+	char        UseWptDB()	{return wptDBE.opn;}
+	char        UseElvDB()	{return elvDBE.opn;}
+	char        UseSeaDB()	{return seaDBE.opn;}
+	char        UseTxyDB()	{return txyDBE.opn;}
+	char        UseModDB()	{return modDBE.opn;}
+	char        UseTexDB()	{return texDBE.opn;}
+	char        UseObjDB()	{return objDBE.opn;}
+	char        UseDtxDB()	{return dtxDBE.opn;}
 };
 //=====================================================================================
 //  CLASS SQL MANAGER to handle data access in main THREAD
@@ -601,14 +616,6 @@ public:
   SqlMGR();
  ~SqlMGR();
   //-----------------------------------------------------------------------
-  inline bool SQLgen()      {return (1 == genDBE.use );}
-  inline bool SQLelv()      {return (1 == elvDBE.use );}
-  inline bool SQLsea()      {return (1 == seaDBE.use );}
-  inline bool SQLmod()      {return (1 == modDBE.use );}
-  inline bool SQLtxy()      {return (1 == txyDBE.use );}
-  inline bool SQLtex()      {return (1 == texDBE.use );}
-  inline bool SQLobj()      {return (1 == objDBE.use );}
-	inline bool SQLdtx()			{return (1 == dtxDBE.use );}
   //-----------------------------------------------------------------------
   CComLine    *GetComSlot(sqlite3_stmt *stm,CDataBaseREQ *req);
   CAptLine    *GetAptSlot(sqlite3_stmt *stm);
@@ -668,6 +675,8 @@ public:
   void     WriteElevationRecord(REGION_REC &reg);
 	void		 WriteElevationTRN(C_STile &sup,U_INT row);
 	void		 WriteElevationDET(U_INT key,TRN_HDTL &hdl,int row);
+	void		 PatchDetailTRN(U_INT qkey,U_INT sno,U_INT ndt);
+	U_INT		 ReadPatchDetail(U_INT key,U_INT sno);
   void     ELVtransaction();
   void     ELVcommit();
   //----WRITING FOR COAST DATA ---------------------------------------------
@@ -743,16 +752,13 @@ public:
 class SqlTHREAD: public SqlOBJ {
 	//---- Attribute ---------------------------------------------------
 	bool			go;						// Running indicator
-	SQL_DB   *texDBT;
   //-----Methods -----------------------------------------------------
 public:
-  SqlTHREAD();
+  SqlTHREAD(char tn);
  ~SqlTHREAD();
   //------------------------------------------------------------------
-  inline bool SQLelv()  {return (elvDBE.use == 1);}
   inline bool SQLsea()  {return (seaDBE.use == 1);}
   inline bool SQLmod()  {return (modDBE.use == 1);}
-  inline bool SQLtex()  {return (texDBE.use == 1);}
 	//--- Execution control --------------------------------------------
 	inline bool IsRuning()	{return go;}
 	inline void Stop()			{go = false;}

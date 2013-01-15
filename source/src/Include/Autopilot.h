@@ -256,9 +256,14 @@ protected:
   double     vMIS;              // Vertical miss error
 	double	   dSPD;							// Disengage speed
 	//--- GO ARROUND ------------------------------------------------------
-	double			TGA0;							// Distance for LEG 1
-	double			TGA1;							// Distance for LEG 2
-	double			aTGA;							// TGA altitude
+	int					flp0;							// Flap position Leg1
+	double			ang0;							// Angle away from runway
+	double			dga0;							// Distance for LEG 1
+	//---------------------------------------------------------------------
+	double			ang1;							// Angle away from runway
+	double			dga1;							// Distance for LEG 2
+	//---------------------------------------------------------------------
+	double			aTGA;							// TGA altitude above Ground
 	//--- Flap control ----------------------------------------------------
 	char			 tkoFP;							// Take off flap position
 	double		 tkoFA;							// Altitude for retracting flaps
@@ -286,7 +291,6 @@ protected:
 	double		 vDTA;													// Distnce Turning Anticipation
   double     rHDG;                          // Target Heading
   double     aHDG;                          // Actual heading (yaw)
-	double     gHDG;													// ground heading
   double     xHDG;                          // cross heading
 	double     xCOR;													// 45° correction
 	double     xAPW;													// Cross angle of approach
@@ -320,7 +324,7 @@ protected:
   char       abrt;                          // Abort land
   //---Delta time ------------------------------------------------------
   float      dTime;                         // Dt
-  BUS_RADIO *Radio;                         // Radio Data 
+  BUS_RADIO *busRD;                          // Radio bus 
   //--------------------------------------------------------------------
   CPIDQ       pidQ;                         // List of components
   CPIDbox    *pidL[PID_MAX];                // Stack of PID
@@ -355,12 +359,12 @@ public:
   void            GetAllSubsystems(std::vector<CPIDbox*> &pid);
   void            GetAllPID(CFuiPID *win);
   void            InitPID();
-	void						DecodeVROT(SStream *st);
 	void						DecodeTHRO(SStream *st);
 	void						DecodeLMIS(SStream *st);
+	void						DecodeTKOF(SStream *st);
+	void						DecodeTOGA(SStream *st);
+	void						DecodeAPRO(SStream *st);
 	void						DecodeLAND(SStream *st);
-	void						DecodeFLAP(SStream *st);
-	void						DecodeASPD(SStream *st);
 	//-------------------------------------------------------------------
 	void						InitLINE(SStream *st);
   int             BadSignal(char s);
@@ -373,7 +377,6 @@ public:
   inline void SetVREF(double v)           {Vref		= v;}
   inline void SetGLDopt(double g)         {glide	= g;}
   inline void SetDISopt(double a)         {aLND		= a;}
-	inline void SetAPRW(double a)						{xAPW   = a;}
 	void				SetLndFLP(char p,double a)	{lndFP = p; lndFA = a;}
 	void				SetTkoFLP(char p,double a)  {tkoFP = p; tkoFA = a;}
   void        SetFLRopt(double a, double b,double d);

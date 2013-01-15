@@ -343,7 +343,6 @@ int SqlOBJ::OpenDTX()
 	dtxDBE.exp = 1;
 	//--- Open the database ------------------------------
 	int use = Open(dtxDBE);
-	globals->dtxDB = use;
 	if (0 == use)											gtfo("Cant open database %s",dtxDBE.name); 
 	//----------------------------------------------------
 	elvDBE.mgr = SQL_MGR;
@@ -354,25 +353,28 @@ int SqlOBJ::OpenDTX()
 }
 //=============================================================================
 //  Open all fixed database
+//	NOTE: The global mux prevent reentrency problem in SQLITE
 //=============================================================================
 void SqlOBJ::OpenBases()
 { globals->import = 0;
+	pthread_mutex_lock(&globals->mux);
 	//---Open Generic database -----------------------------------------
-  globals->genDB |= Open(genDBE);
+  Open(genDBE);
   //---Open Taxiway database -----------------------------------------
-  globals->txyDB |= Open(txyDBE);
+  Open(txyDBE);
   //---Open Elevation database ---------------------------------------
-  globals->elvDB |= Open(elvDBE);
+  Open(elvDBE);
   //---Open 3D model database ----------------------------------------
-  globals->m3dDB |= Open(modDBE);
+  Open(modDBE);
   //---Open Sea database ---------------------------------------------
-  globals->seaDB |= Open(seaDBE);
+  Open(seaDBE);
   //---Open texture database -----------------------------------------
-  globals->texDB |= Open(texDBE);
+  Open(texDBE);
   //---Open World Object database ------------------------------------
-  globals->objDB |= Open(objDBE);
+  Open(objDBE);
 	//---Open Texture 2D database for export ---------------------------
 	OpenDTX();
+	pthread_mutex_unlock(&globals->mux);
   return;
 }
 //-----------------------------------------------------------------------------
@@ -1935,6 +1937,31 @@ void SqlMGR::WriteElevationTRN(C_STile &sup,U_INT row)
   sqlite3_finalize(stm);                      // Close statement
   return;
 }
+//------------------------------------------------------------------------------
+//	Patch detail tile texture: Restore generic texture construction
+//------------------------------------------------------------------------------
+void	SqlMGR::PatchDetailTRN(U_INT key,U_INT sno,U_INT det)
+{	char rq[1024];  
+  _snprintf(rq,1024,"UPDATE trn SET det=%u WHERE (qgt=%d) AND (sup=%d);*",det,key,sno);
+  sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
+	int rep = sqlite3_step(stm);
+  if (SQLITE_ERROR == rep)	Abort(elvDBE);
+	sqlite3_finalize(stm);                      // Close statement
+	return;
+}
+//------------------------------------------------------------------------------
+//	Read Patch detail tile texture: Restore generic texture construction
+//------------------------------------------------------------------------------
+U_INT	SqlMGR::ReadPatchDetail(U_INT key,U_INT sno)
+{	U_INT P = 0;
+	char rq[1024];  
+  _snprintf(rq,1024,"SELECT det FROM trn WHERE (qgt=%d) AND (sup=%d);*",key,sno);
+  sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
+	if (SQLITE_ROW == sqlite3_step(stm)) P = sqlite3_column_int(stm, 0);
+	sqlite3_finalize(stm);                      // Close statement
+	return P;
+}
+
 //==============================================================================
 //  Insert Elevation record
 //	NOTE: parameter txn (?10) is skipped
@@ -2688,7 +2715,6 @@ int  SqlMGR::SearchWOBJ(char *fn)
 	char req[1024];
   _snprintf(req,1024,"SELECT qgt FROM OBJ where fobj LIKE '%%%s%%';*",fn);
 	sqlite3_stmt *stm = CompileREQ(req,objDBE);
-//	while (SQLITE_ROW == sqlite3_step(stm)) nb++; 
 	nb = (SQLITE_ROW == sqlite3_step(stm))?(1):(0);
 	sqlite3_finalize(stm);
 	return nb;
@@ -2818,7 +2844,7 @@ void SqlMGR::Decode3DLight(sqlite3_stmt *stm,CWobj *obj)
 //  Decode all TRN elevations for a given QGT
 //===================================================================================
 int SqlMGR::GetTRNElevations(C_QGT *qgt)
-{	if (!SQLobj())		return 0;
+{	if (!UseElvDB())		return 0;
   
 	char req[1024];
 	U_INT key = qgt->FullKey();
@@ -3096,10 +3122,28 @@ bool SqlMGR::QGTnotInArea(U_INT qx,U_INT qz)
 //
 //=================================================================================
 //=================================================================================
-SqlTHREAD::SqlTHREAD()
+SqlTHREAD::SqlTHREAD(char tn)
 { sqlTYP    = SQL_THR;
   Init();
-  OpenBases();
+ // OpenBases();
+	pthread_mutex_lock(&globals->mux);
+	//---Open Generic database -----------------------------------------
+  if (tn == 1)	Open(genDBE);
+  //---Open Taxiway database -----------------------------------------
+  //Open(txyDBE);
+  //---Open Elevation database ---------------------------------------
+  if (tn == 1)	Open(elvDBE);
+  //---Open 3D model database ----------------------------------------
+  if (tn == 0)	Open(modDBE);
+  //---Open Sea database ---------------------------------------------
+  if (tn == 1)	Open(seaDBE);
+  //---Open texture database -----------------------------------------
+  if (tn == 0)	Open(texDBE);
+  //---Open World Object database ------------------------------------
+  //Open(objDBE);
+	//---Open Texture 2D database for export ---------------------------
+	OpenDTX();
+	pthread_mutex_unlock(&globals->mux);
 	go = true;
 }
 //-----------------------------------------------------------------------------
@@ -3197,6 +3241,7 @@ int SqlTHREAD::GetM3DTexture(TEXT_INFO *inf)
   char *name = inf->path+4;
   _snprintf(req,1024,"SELECT * FROM texture WHERE xname='%s';*",name);
   sqlite3_stmt *stm = CompileREQ(req,modDBE);
+
   if (SQLITE_ROW == sqlite3_step(stm))
   {
     //---- Decode the texture and return it ----------------------------
@@ -3235,7 +3280,7 @@ int SqlTHREAD::GetM3Dmodel(C3Dmodel *modl)
 //  Decode a Generic terrain Texture
 //===================================================================================
 GLubyte *SqlTHREAD::GetSQLGenTexture(TEXT_INFO &txd)
-{ if (!SQLtex())     return 0;
+{ if (!UseTexDB())     return 0;
   char *name = txd.path;
   char *dot  = strrchr(txd.path,'.');
   char *typ  = dot - 1;

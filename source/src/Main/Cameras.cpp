@@ -2578,7 +2578,7 @@ CCameraManager::~CCameraManager (void)
 //-----------------------------------------------------------------
 void CCameraManager::ReadPanelCamera(CVehicleObject *veh,char * fn)
 {	mveh	= veh;
-	if (mveh->IsUserPlan())	SStream s(this, "WORLD",fn);
+	if (mveh->IsUserPlan() && *fn)	SStream s(this, "WORLD",fn);
 }
 //-----------------------------------------------------------------
 //  Set minimum range for camera
@@ -2588,7 +2588,6 @@ void	CCameraManager::SetMinimumRange(double m)
 	for (i=came.begin(); i!=came.end(); i++)
 	{	CCamera *cam = (*i).second;
 		cam->MinRange(m);
-		
 	}
 	return;
 }

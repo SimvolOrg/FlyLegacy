@@ -2159,7 +2159,8 @@ class CKeyDefinition;             // Key definition
 class CKeyFile;                   // Default keys
 class PlaneCheckList;                    // Checklist
 //---NAVIGATION -------------------------------------------------
-class CILS;
+class CILS;												// ILS
+class CExtSource;									// External radio source
 //---Line box ---------------------------------------------------
 class CTgxLine;
 //----CONTROL ---------------------------------------------------
@@ -3098,7 +3099,6 @@ struct LND_DATA {
     SPosition  lndP;                          // Landing point (on tarmac)
     SPosition  refP;                          // reference point
     SPosition  fwdP;                          // Forward point
-		SPosition  midP;													// Mid point
 		SPosition  tkoP;													// Take off point
 		//-----------------------------------------------------------
 		double     orie;													// Runway true orientation
@@ -3107,7 +3107,7 @@ struct LND_DATA {
     float      errG;                          // Glide error (in tan unit)
     float      gTan;                          // Tan of glide slope
     float      altT;                          // altitude above threshold
-		//--- End (0 == hi, 1 == low) ------------
+		//--- End (0 == hi, 1 == low) ------------------
 		char			 rEnd;													// Runway end
 		char			 rfu1;													// Reserved
 		U_SHORT    sect;													// Runway sector
@@ -3117,7 +3117,8 @@ struct LND_DATA {
 		char       ridn[4];												// Runway end identifier
     //--- Airport definition -----------------------
     CAptObject *apo;
-		//------------------------------------------------
+		//---METHODs -----------------------------------
+		SPosition	LND_DATA::GetLateralSpot(double dis, double dir);
 };
 //===================================================================================
 //  NOTE:  dLon and dLat are working area used for several purposes 
@@ -3630,7 +3631,9 @@ struct BUS_RADIO {U_CHAR    rnum;       // Radio num
                   double    aDir;       // Aircraft direction (relative to VOR/ILS)
                   double    iAng;       // Intercept angle plane to OBS/ILS
                   double    sens;       // Horizontal sensibility
-                  CmHead   *rSRC;       // Radio Source
+									//--- Interfaces -------------------------
+									CExtSource *extS;			// External source
+                  CmHead     *rSRC;     // Radio Source
 	//----------------------------------------------------------
 } ;
 //=============================================================

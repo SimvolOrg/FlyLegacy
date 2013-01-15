@@ -684,8 +684,6 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   //-----Drawing parameters --------------------------------------
   sta3D   = TC_AP_FADE_IN;
   alpha   = 0;
-  //-----SQL option ----------------------------------------------
-  txy     = globals->sqm->SQLtxy();
   //-----Compute scale factor for designator ---------------------
   scl.x = FN_ARCS_FROM_FEET(1.4) * xpf;
   scl.y = FN_ARCS_FROM_FEET(1.4);
@@ -723,7 +721,6 @@ CAptObject::CAptObject(CAirport *apt)
   Org     = apt->GetPosition();
   ground  = Org.alt;
   GetLatitudeFactor(Org.lat,rdf,xpf);
-  txy     = 0;
   tcm     = globals->tcm;
   scale   = tcm->GetScale();
 	taxiMGR = 0;									// Taxi manager
@@ -982,6 +979,7 @@ int CAptObject::GetTaxiways()
 	nEDG	= 0;
 	nCTR	= 0;
 	//--- Load yellow texture --------------------------
+  char txy = globals->sqm->UseTxyDB();
 	if (0 == txy) return BuildTaxiways();
   //---Read taxiways from SQL database ---------------
   int np = globals->sqm->DecodePAVE(this);
@@ -1694,6 +1692,7 @@ CAirportMgr::~CAirportMgr()
 //=========================================================================================
 void CAirportMgr::TimeSlice(float dT)
 {	if (globals->noAPT)  return;
+	globals->module = "APM TimeSlice";
   CAptObject *apo = 0;
   CAptObject *prv = 0;
   CAirport   *apt = 0;

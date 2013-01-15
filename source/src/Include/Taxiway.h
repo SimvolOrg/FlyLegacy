@@ -117,12 +117,14 @@ public:
 		U_CHAR	GetDirection()			{return (type & TAXI_NODE_DIR);}
 		Tag			GetIdent()					{return idn;}
 		bool		HasIdent(Tag T)			{return (idn != T);}
+		void		SetIdent(Tag T)			{idn = T;}
 		//-----------------------------------------------------------------
 		bool		IsType(char T)			{return (T == type);}
 		bool    NotType(char T)			{return ((T & type) != T);}
 		bool		HasType(char T)			{return ((T & type) == T);}
 		bool    IsLndNode()				  {return ((type & 0x67) == TAXI_NODE_EXIT);}
 		bool		IsTkoNode()					{return ((type & 0x67) == TAXI_NODE_TKOF);}
+		bool		NoIdent()						{return (idn == 0);}
 		//----------------------------------------------------------------
 		void		IncINP(char t);
 		void    IncOUT(char t);			

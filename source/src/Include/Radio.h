@@ -202,6 +202,8 @@ public:
 	void	Synchronize();
   void  Probe(CFuiCanva *cnv);
 	void	DirectMode();
+	bool	Powered()	{return (sPower == 1);}
+	bool	IsOFF()		{return (sPower != 1);}
 	//-------------------------------------------------------------
 	void	WayPointMoved(CmHead *wpt,SPosition *P);
 	void	SetDirectMode();
@@ -497,11 +499,13 @@ public:
 	virtual void			TrackWaypoint(CWPoint *wpt,char mode) {;}
 	virtual void			UpdNavigationData(CWPoint *w) {;}
 	virtual void			NavIsActive()	{;}
+	
 	//--- Tracking management --------------------------------
 	void	TrackGPSEvent(U_CHAR evn, char prm);
 	void	PowerEVN (char parm);
 	void	SwitchNAV(char parm);
 	void	SwitchAPR(char parm);
+	void  SetLanding();
 	//--------------------------------------------------------
 	float	SelectDirection();
 	void	UpdateTracking(float dT,U_INT frm);

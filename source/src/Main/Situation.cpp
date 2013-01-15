@@ -626,12 +626,9 @@ CSituation::CSituation()
   globals->sit	= this;
 	sVeh					= 0;
 	State					= SIT_NORMAL;
-  //MEMORY_LEAK_MARKER (">SIT Construct")
   // Perform base initialization
 	FrameNo	= 0;										
- // Open SIT file from pod filesystem
-  OpenSitFile ();
-  //MEMORY_LEAK_MARKER ("<SIT Construct")
+ // OpenSitFile ();
 }
 //-------------------------------------------------------------------------
 //  Open situation file
@@ -831,7 +828,7 @@ void CSituation::ReadFinished (void)
 void CSituation::Prepare (void)
 { TRACE("CSituation::Prepare");
 	// Prepare terrain manager
-
+	OpenSitFile();
 	// Create Database cache manager and populate first queues
 	globals->dbc->TimeSlice(2,(U_INT)-1);				// Force update
   globals->tcm->TimeSlice(2,(U_INT)-1);       // Force Update
@@ -1012,7 +1009,8 @@ void CSituation::EnterTeleport(SPosition *P, SVector *O)
 	contx.ori		= *O;
 	wait				= 0;
 	P->alt			= 0;
-	globals->geop	= *P;			// Target position
+	globals->noINP = 1;
+	globals->geop	 = *P;			// Target position
 	TRACE("TELEPORT to lon=%lf lat=%lf alt=%lf",P->lon,P->lat,P->alt);
 	//-- TODO: InitState (cut engine, gear down, etc) ----
 	
@@ -1039,8 +1037,6 @@ void CSituation::TeleportS1()
 {	char txt[128];
 	_snprintf(txt,127,"%05d Teleporting to destination. PLEASE WAIT",wait++);
 	DrawNoticeToUser(txt,4);
-	//bool ok = globals->tcm->TerrainStable(1);
-	//if (!ok)			return DrawNormal();
 	if (globals->tcm->StillLoading(GLOBAL_EVN_TELEPORT))	return DrawNormal();
 	//-- OK terrain ready at destination --------------
 	globals->fui->ResetFont();
@@ -1051,7 +1047,8 @@ void CSituation::TeleportS1()
 	TRACE("STABLE at lon=%lf lat=%lf alt=%lf",P.lon,P.lat,P.alt);
 	rcam			= 0;
 	planes.BackToSimulation(1);
-	DrawNormal();
+	globals->noINP	= 0;
+	//DrawNormal();
 	return;
 }
 //----------------------------------------------------------------------------
@@ -1059,7 +1056,8 @@ void CSituation::TeleportS1()
 //	for a given position P at orientation O
 //----------------------------------------------------------------------------
 void CSituation::ShortTeleport(SPosition *P, SVector *O)
-{	globals->geop	= *P;			// Target position
+{	globals->noINP= 1;
+  globals->geop	= *P;			// Target position
 	contx.pos			= *P;			// Save position
 	contx.ori			= *O;			// Save orientation
 	State = SIT_TELEP02;
@@ -1079,6 +1077,7 @@ void CSituation::TeleportS2()
 	sVeh->SetPhysicalOrientation(contx.ori);
 	planes.BackToSimulation(1);
 	TRACE("End near TELEPORT");
+	globals->noINP = 0;
 	return DrawNormal();
 }
 //=====================================================================================

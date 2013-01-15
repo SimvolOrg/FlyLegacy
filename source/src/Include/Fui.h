@@ -2051,7 +2051,7 @@ public:
   bool   MouseStopClick (int x, int y, EMouseButton button);
   bool	 MouseToWind(int mx, int my, EMouseButton bt);
   // Keyboard input method (CFuiTextField only ?)
-  bool  KeyboardInput(U_INT key);
+  bool  KeyboardInput(U_INT key,int mdf);
 
   // Miscellaneous
   CFuiWindow*    GetFuiWindow (Tag window);

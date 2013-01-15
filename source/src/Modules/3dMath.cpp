@@ -544,6 +544,14 @@ void	CVector::FeetTranslation(double rdf,SPosition &p1, SPosition &p2)
 	y = FN_FEET_FROM_ARCS(dy);
 	z = p2.alt - p1.alt;
 }
+//---------------------------------------------------------------
+//  Compute geo difference between origin and extremity
+//---------------------------------------------------------------
+void	CVector::GeoDifference(SPosition org, SPosition ext)
+{	x = LongitudeDifference(ext.lon,org.lon);
+	y = (ext.lat - org.lat); 
+	z = (ext.alt - org.alt);
+}
 //==========================================================================
 //  Homogeneous vector
 //==========================================================================

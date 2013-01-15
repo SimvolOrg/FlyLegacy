@@ -109,6 +109,7 @@ public:
 	void		FeetTranslation(double rdf,SPosition &p1, SPosition &p2);
 	void		Affect(SPosition &p);
 	void		ArcsToFeetUnit();
+	void		GeoDifference(SPosition org, SPosition ext);
 	//--------------------------------------------------------------------
 	void operator= (F3_VERTEX &v)	{x = v.VT_X; y = v.VT_Y; z= v.VT_Z;}
 	void operator= (TC_VTAB   &v)	{x = v.VT_X; y = v.VT_Y; z= v.VT_Z;}

@@ -216,6 +216,7 @@ public:
 	void		PackArc(char d,PACK_EDGE *s)				{return txx[d]->PackArc(s);}
 	void		UnpackArc(char d,int n, void *z)		{txx[d]->UnpackArc(n,z);}
 	void		UnpackPath(char d,int n, void *z)		{txx[d]->UnpackPath(n,z);}
+	U_INT   GetSequence()												{return Seq;}
 };
 
 //================================================================================================
@@ -223,8 +224,6 @@ public:
 //================================================================================================
 class TaxiTracker: public CExecutable, public Tracker, public CStreamObject {
 	//--- ATTRIBUTES -------------------------------------
-	U_INT		 Seq;								// Node sequence
-	U_INT		 Prk;								// Parking number
 	TaxNODE *selN;							// Selected node
 	//--- Link position ----------------------------------
 	SPosition *lpos;						// Link position
@@ -249,7 +248,7 @@ public:
 	TaxiTracker();
  ~TaxiTracker();
   //-----------------------------------------------------
-  //int				Read(SStream *sf,Tag tag);
+  char      RepairSelection(Tag idn);
 	void			NodeSupplier(TaxiwayMGR *M);
 	//-----------------------------------------------------
 	int 			Attach(Tag A, Tag B);
@@ -289,6 +288,8 @@ public:
 	int 			DeleteEdge(Tag A,Tag B)	{return circuit->DeleteEdge(A,B);}
 	void			EditMode(char m)	{edtm = m;}
 	void			Test()	{circuit->Test();}
+	bool			HasSelection()					{return (0 != selN);}
+	TaxNODE * GetSelection()					{return selN;}
 	//-----------------------------------------------------------
 };
 //================================================================================================

@@ -177,7 +177,8 @@ char CGearOpal::GCompression(char pp)
   double lim1 = -gearData->maxC;
   if (wagl < lim1)                        return susp->GearShock(1);    // Gear impaired
 	//--- Check for ground transition ------------------------------
-  if (pp == 0)  susp->PlayTire(0);
+	int nbr = RandomNumber(3);
+	if ((pp == 0) && (0 == nbr))  susp->PlayTire(0);
   return 1;
 }
 //-----------------------------------------------------------------------

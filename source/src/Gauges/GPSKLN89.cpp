@@ -4228,38 +4228,6 @@ void CK89gps::ModifiedPlan()
 	TrackWaypoint(actWP,WPT_MODE_FPLAN);
 	return;
 }
-//----------------------------------------------------------------------------------
-//  Enter tracking
-//	Autopilot must be engaged
-//	Then
-//	Activate Plan if any and get first node to track
-//----------------------------------------------------------------------------------
-void GPSRadio::EnterTRK()
-{	CWPoint *wp = SelectedNode();
-	if (0 == wp)									return;
-	if (GPSR_STBY != gpsTK)				return;   // Not the good state
-	if (RAD)	RAD->PowerON();
-	if (APL)	APL->Engage();
-	if (!APL->EnterGPSMode())			return;
-	//--- Stop current plan and start new one ------
-	FPL->StopPlan();
- 	if (!FPL->StartPlan(wp))			return;
-	APL->SetGasControl(1);
-	//--- Set Tracking mode -------------------------
-	navON	= 1;
-	gpsTK	= GPSR_TRAK;
-	//---Get first waypoint to track ----------------
-	wTRK = wp;
-	if (FPL->IsOnFinal())			return EnterAPR();
-	//--- Set Waypoint On External Source ------------------
-	CmHead *obj = wp->GetDBobject();
-  RAD->ExternalMode(obj,0,1);				// Set external direct mode
-	//--- Configure autopilot ------------------------------
-	double alt = wp->GetAltitude();
-	if (wp->IsFirst()) alt = mveh->GetPosition().alt;
-	APL->EnterWPT(alt);
-	return;
-}
 
 //---------------------------------------------------------------------
 //  Active waypoint is modified
@@ -4417,9 +4385,12 @@ void GPSRadio::SwitchNAV(char parm)
 //  Switch EVENT
 //----------------------------------------------------------------------------------
 void GPSRadio::SwitchAPR(char parm)
-{	if (0 == navON)	return;			// Power OFF ignore
+{	aprON	= parm;
+	if (1 == navON)	return;
 	//--- Change state -----------------------------------
-	aprON	= parm;
+	if (0 == aprON)	return;
+	if (gpsTK == GPSR_PWOF)					return;
+	SetLanding();
 	return;
 }
 
@@ -4459,6 +4430,38 @@ void GPSRadio::TrackNewWPT()
 	APL->EnterWPT(alt);
 	return;
 }
+//----------------------------------------------------------------------------------
+//  Enter tracking
+//	Autopilot must be engaged
+//	Then
+//	Activate Plan if any and get first node to track
+//----------------------------------------------------------------------------------
+void GPSRadio::EnterTRK()
+{	CWPoint *wp = SelectedNode();
+	if (0 == wp)									return;
+	if (GPSR_STBY != gpsTK)				return;   // Not the good state
+	if (RAD)	RAD->PowerON();
+	if (APL)	APL->Engage();
+	if (!APL->EnterGPSMode())			return;
+	//--- Stop current plan and start new one ------
+	FPL->StopPlan();
+ 	if (!FPL->StartPlan(wp))			return;
+	APL->SetGasControl(1);
+	//--- Set Tracking mode -------------------------
+	navON	= 1;
+	gpsTK	= GPSR_TRAK;
+	//---Get first waypoint to track ----------------
+	wTRK = wp;
+	if (FPL->IsOnFinal())			return EnterAPR();
+	//--- Set Waypoint On External Source ------------------
+	CmHead *obj = wp->GetDBobject();
+  RAD->ExternalMode(obj,0,1);				// Set external direct mode
+	//--- Configure autopilot ------------------------------
+	double alt = wp->GetAltitude();
+	if (wp->IsFirst()) alt = mveh->GetPosition().alt;
+	APL->EnterWPT(alt);
+	return;
+}
 //--------------------------------------------------------------
 //	Go back to standby mode
 //	Relax Radio BUS
@@ -4476,7 +4479,7 @@ void GPSRadio::EnterSBY()
 	return;
 }
 //--------------------------------------------------------------
-//	Enter final mode
+//	Enter final mode from tracking mode
 //	Final may use 
 //	-ILS radio station
 //  -GPS waypoint
@@ -4492,6 +4495,21 @@ void GPSRadio::EnterAPR()
 	gpsTK = GPSR_LAND;
 	return;
 }
+//--------------------------------------------------------------
+//	Try again landing mode
+//--------------------------------------------------------------
+void GPSRadio::SetLanding()
+{ //--- Last node active.  Set tracking mode --------
+	if (GPSR_STBY != gpsTK)						return;   // Not the good state
+	if (!RAD || RAD->IsOFF())					return;
+	if (!APL || APL->IsDisengaged())	return;
+	if (!FPL->ActivateEnd())					return;
+	APL->SetGasControl(1);
+	gpsTK	= GPSR_TRAK;
+	wTRK  = FPL->GetActiveNode();
+	EnterAPR();
+}
+
 //--------------------------------------------------------------
 //	Refresh tracking
 //--------------------------------------------------------------

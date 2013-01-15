@@ -1039,10 +1039,9 @@ U_INT glutKeyToFlyLegacyKey (U_INT gkey, U_INT mdf)
 //-------------------------------------------------------------------------------
 //	Translate Glut Special KEYs to specific keys
 //-------------------------------------------------------------------------------
-bool glutSpecialToFlyLegacyKey (int glutkey, U_INT *flykey)
+U_INT glutSpecialToFlyLegacyKey (int glutkey)
 {
-  *flykey = glutSpecial[glutkey].flylegacy;
-  return (*flykey != KB_KEY_META);
+  return glutSpecial[glutkey].flylegacy;
 }
 //=============================================================================
 //  Create Keyfile from default if needed

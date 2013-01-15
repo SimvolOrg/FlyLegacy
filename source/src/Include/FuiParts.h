@@ -1110,16 +1110,19 @@ class CFuiTBROS: public CFuiWindow {
   CListBox        *aBOX;                        // Driving box
   CFuiLabel       *wLB1;                        // Label 1
   CFuiCanva       *xCNV;                        // Texture Canva
-  CFuiCheckbox    *wOPT;                        // Option
-  CFuiButton      *wBTN;                        // Assign button
+  CFuiCheckbox    *wLOK;                        // Lock
+  CFuiButton      *wBT1;                        // Assign button
   CFuiButton      *zBTN;                        // Cancel button
   //---Original context -----------------------------------------
   CAMERA_CTX       ctx;                         // Original camera
   //-----------------------------------------------------------------
   CTerraFile      *tFIL;                        // Tile file 
+	//-----------------------------------------------------------------
+	SPosition				pos;
   //-----------------------------------------------------------------
+	char					state;													// Modifying state
+	char						sel;													// One selection	
   char           lock;                          // Lock mode
-  char           mode;                          // Auto mode 
   int            Type;                          // Texture type
   //----Changed tile ------------------------------------------------
   U_INT            sx;                          // Absolute indice
@@ -1137,7 +1140,12 @@ public:
   int     ChangeTile(int gnd);
   void    Draw();
   void    RefreshOPT();
+	//----------------------------------------------------------------
+	void		PatchTexture();
+	void		ChangeUserTexture();
+	//----------------------------------------------------------------
   void    UpdateGround();
+	void		UpdatePosition();
   void    GetSelection();
   void    NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
 	//--- Dont close this window ----------------------------------------

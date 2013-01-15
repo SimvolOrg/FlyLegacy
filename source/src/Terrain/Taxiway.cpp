@@ -629,7 +629,8 @@ TaxiwayMGR::~TaxiwayMGR()
 //------------------------------------------------------------------
 void TaxiwayMGR::LoadAirport()
 {	char *key	= apt->GetKey();
-	if (0 == globals->txyDB)		return;
+//	if (0 == globals->txyDB)		return;
+	if (0 == globals->sqm->UseTxyDB())	return;
 	globals->sqm->ReadTaxiNodes(key,this);
 	globals->sqm->ReadTaxiEdges(key,this);
 	return;
@@ -770,7 +771,8 @@ void TaxiwayMGR::DeleteNode(Tag A)
 //-------------------------------------------------------------------------------
 void TaxiwayMGR::SaveToBase(TaxiTracker &T)
 {	if (0 == apt)								return;
-	if (0 == globals->txyDB)		return;
+//	if (0 == globals->txyDB)		return;
+	if (0 == globals->sqm->UseTxyDB())	return;
 	T.ComputeAllShortCut();
 	char *key		= apt->GetKey();
 	SqlMGR *sqm = globals->sqm;
@@ -779,7 +781,9 @@ void TaxiwayMGR::SaveToBase(TaxiTracker &T)
 	//--- Save all nodes -----------------------------------
 	std::map<Tag,TaxNODE*>::iterator rn;
 	for (rn = nodQ.begin(); rn != nodQ.end(); rn++)
-	{	sqm->AddTaxiNode(key,(*rn).second);}
+	{	TaxNODE *nod = (*rn).second;
+		if (nod->NoIdent())		gtfo("Node without identity");
+		sqm->AddTaxiNode(key,nod);}
 	//--- Save all edges -----------------------------------
 	sqm->AddTaxiEdges(key,this);
 	return;

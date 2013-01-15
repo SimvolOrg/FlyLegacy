@@ -729,7 +729,7 @@ void CFuelSystem::Timeslice (float dT,U_INT FrNo)				// JSDEV*
 { UpdateComponents(dT,FrNo);
   FeedEngines(dT);
   RefillTanks(dT);
-  if (globals->wfl) globals->wfl->Refresh();				// $MARK
+//  if (globals->wfl) globals->wfl->Refresh();				// $MARK
 }
 //-----------------------------------------------------------------------
 //  Stop fuel system when witching aircraft 

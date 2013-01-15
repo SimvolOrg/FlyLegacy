@@ -893,7 +893,8 @@ void CExport::Export3Dmodels()
   fui->SetNoticeFont(&globals->fonts.ftmono20);
 	pif.mode= 0;								// Adding mode
 	SCENE("========== START MODEL IMPORT ==========");
-	if (globals->m3dDB)		return;
+	//if (globals->m3dDB)		return;
+	if (globals->sql[0]->UseModDB())	return;
 	SCENE("No M3D database");
 	globals->appState = APP_EXIT_SCREEN;
 	Clear = 1;
@@ -1637,7 +1638,7 @@ void CExport::Keyboard(U_INT key,U_INT mod)
 //=========================================================================================
 void CExport::ExportSceneryOBJ()
 {	if (0 == wob)       return;
-	if (!sqm->SQLobj())	return;
+	if (!sqm->UseObjDB())	return;
 	count	= 0;
   Mode  = EXP_WOBJ;
   State = EXP_OBJ_INIT;
@@ -1940,7 +1941,7 @@ bool CExport::FileInDatabase(SQL_DB &db)
 //  Write elevations from TRN file
 //-----------------------------------------------------------------------------------------
 void  CExport::WriteTRNelevations()
-{	if (!sqm->SQLelv())									return;					// No ddatabase
+{	if (!sqm->UseElvDB())									return;					// No ddatabase
 	//--- Check if file already in data base ---------------
 	if (FileInDatabase(sqm->DBelv()))		return;
 	//--- Write file name in database ----------------------
@@ -2019,7 +2020,7 @@ bool CExport::NextSupertile()
 //  Write textures from TRN file
 //-----------------------------------------------------------------------------------------
 int CExport::WriteTRNtextures()
-{	if (!sqm->SQLdtx())	return EXP_TRN_NFILE;					// No ddatabase
+{	if (!sqm->UseDtxDB())	return EXP_TRN_NFILE;					// No ddatabase
 	//--- Check if file already in data base ---------------
 	FileInDatabase(sqm->DBdtx());
 	//--- Write file name in database ----------------------

@@ -377,10 +377,7 @@ void CTimeManager::Update (void)
   dSimTime = scale * dRealTime;
 
   // If sim is not paused, update sim elapsed time
-  if (!paused) {
-    elapsed += dSimTime;
-  }
-
+  if (!paused)  elapsed += dSimTime;
   // Always update elapsed real time
   elapsedReal += dRealTime;
 }

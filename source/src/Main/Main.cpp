@@ -79,6 +79,8 @@
 #include <direct.h>
 using namespace std;
 //=============================================================================================
+
+//=============================================================================================
 //  GLOBAL DATABANK
 //  The following data are used at global level for consistency.
 //  All module using those name refer to those table
@@ -330,7 +332,7 @@ struct OSM_TP {
 	char *type;										// Type
 	char  Dir;										// Directory
 	char  Use;										// Use it
-	char	rfu1;										// Reserved
+	char	nite;										// May have nite texture
 	char	rfu2;										// Reserved
 };
 //==========================================================================================
@@ -344,33 +346,35 @@ char *directoryTAB [] = {
 	"OpenStreet/Models/Lights",				// 4 => OSM Lights
 	"OpenStreet/Databases",						// 5 => OSM Databases
 	};
-//--- Per object type ----------------------------------------
+//==========================================================================================
+//	List of OSM objects supported and some properties
+//==========================================================================================
 OSM_TP osmTYPE[OSM_MAX+1] = {
-	{"NONE",				FOLDER_ART,				1},					// 0 Not a OSM object
-	{"OSM_BUILDING",FOLDER_OSM_OBJS,	1},					// 1  OSM_BUILDING		(1)
-	{"OSM_CHURCH",	FOLDER_OSM_OBJS,	1},					// 2  OSM_CHURCH			(2)
-	{"OSM_POLICE",	FOLDER_OSM_OBJS,	1},					// 3  OSM_POLICE			(3)
-	{"OSM_FIRE_STA",FOLDER_OSM_OBJS,	1},					// 4  OSM_FIRE_STA		(4)
-	{"OSM_TOWNHALL",FOLDER_OSM_OBJS,	1},					// 5  OSM_TOWNHALL		(5)
-	{"OSM_SCHOOL",	FOLDER_OSM_OBJS,	1},					// 6  OSM_SCHOOL			(6)
-	{"OSM_COLLEGE",	FOLDER_OSM_OBJS,	1},					// 7  OSM_COLLEGE			(7)
-	{"OSM_HOSPITAL",FOLDER_OSM_OBJS,	1},					// 8  OSM_HOSPITAL		(8)
-	{"OSM_HOTEL",		FOLDER_OSM_OBJS,	1},					// 9  OSM_HOTEL				(9)
+	{"NONE",				FOLDER_ART,				1,0},					// 0 Not a OSM object
+	{"OSM_BUILDING",FOLDER_OSM_OBJS,	1,1},					// 1  OSM_BUILDING		(1)
+	{"OSM_CHURCH",	FOLDER_OSM_OBJS,	1,0},					// 2  OSM_CHURCH			(2)
+	{"OSM_POLICE",	FOLDER_OSM_OBJS,	1,1},					// 3  OSM_POLICE			(3)
+	{"OSM_FIRE_STA",FOLDER_OSM_OBJS,	1,1},					// 4  OSM_FIRE_STA		(4)
+	{"OSM_TOWNHALL",FOLDER_OSM_OBJS,	1,1},					// 5  OSM_TOWNHALL		(5)
+	{"OSM_SCHOOL",	FOLDER_OSM_OBJS,	1,1},					// 6  OSM_SCHOOL			(6)
+	{"OSM_COLLEGE",	FOLDER_OSM_OBJS,	1,1},					// 7  OSM_COLLEGE			(7)
+	{"OSM_HOSPITAL",FOLDER_OSM_OBJS,	1,1},					// 8  OSM_HOSPITAL		(8)
+	{"OSM_HOTEL",		FOLDER_OSM_OBJS,	1,1},					// 9  OSM_HOTEL				(9)
 	//-----------------------------------------------------------------------
-	{"OSM_CHATODO",	FOLDER_OSM_OBJS,	1},					// 10 OSM_CHATODO			(10)
-	{"OSM_PHARES",	FOLDER_OSM_OBJS,	1},					// 11 OSM_PHARES		  (11)
-	{"OSM_PSTREET", FOLDER_OSM_TREE,	1},					// 12 OSM_PSTREET			(12)
-	{"OSM_FORTIF",	FOLDER_OSM_TEXT,	1},					// 13 OSM_FORTIFS     (13)
-	{"OSM_DOCK",		FOLDER_OSM_OBJS,	1},					// 14 OSM_DOCK				(14)
-	{"OSM_FOREST",	FOLDER_OSM_TREE,	1},					// 15 OSM_TREE				(15)
-	{"OSM_LIGHT",		FOLDER_OSM_LITE,	1},					// 16 OSM_LIGHT				(16)
-	{"OSM_RPOINT",	FOLDER_OSM_OBJS,	1},					// 17	OSM_RPOINT			(17) 
-	{"OSM_GARDEN",	FOLDER_OSM_TEXT,	1},					// 18 OSM_GARDEN			(18)
-	{"OSM_SPORT",		FOLDER_OSM_TEXT,	1},					// 19 OSM_SPORT 		  (19)
+	{"OSM_CHATODO",	FOLDER_OSM_OBJS,	1,0},					// 10 OSM_CHATODO			(10)
+	{"OSM_PHARES",	FOLDER_OSM_OBJS,	1,0},					// 11 OSM_PHARES		  (11)
+	{"OSM_PSTREET", FOLDER_OSM_TREE,	1,0},					// 12 OSM_PSTREET			(12)
+	{"OSM_FORTIF",	FOLDER_OSM_TEXT,	1,0},					// 13 OSM_FORTIFS     (13)
+	{"OSM_DOCK",		FOLDER_OSM_OBJS,	1,0},					// 14 OSM_DOCK				(14)
+	{"OSM_FOREST",	FOLDER_OSM_TREE,	1,0},					// 15 OSM_TREE				(15)
+	{"OSM_LIGHT",		FOLDER_OSM_LITE,	1,0},					// 16 OSM_LIGHT				(16)
+	{"OSM_RPOINT",	FOLDER_OSM_OBJS,	1,0},					// 17	OSM_RPOINT			(17) 
+	{"OSM_GARDEN",	FOLDER_OSM_TEXT,	1,0},					// 18 OSM_GARDEN			(18)
+	{"OSM_SPORT",		FOLDER_OSM_TEXT,	1,0},					// 19 OSM_SPORT 		  (19)
 	//-----------------------------------------------------------------------
-	{"OSM_PARKING",	FOLDER_OSM_TEXT,	1},					// 20 OSM_PARKING 		(20)
-	{"OSM_HEDGE",		FOLDER_OSM_TREE,	1},					// 21 OSM_EDGE				(21)
-	{"OSM_FARM",		FOLDER_OSM_TREE,	1},					// 22 OSM_FARM				(22)
+	{"OSM_PARKING",	FOLDER_OSM_TEXT,	1,0},					// 20 OSM_PARKING 		(20)
+	{"OSM_HEDGE",		FOLDER_OSM_TREE,	1,0},					// 21 OSM_EDGE				(21)
+	{"OSM_FARM",		FOLDER_OSM_TREE,	1,0},					// 22 OSM_FARM				(22)
 	{0},
 
 };
@@ -449,6 +453,17 @@ void InhibitOSM(char *type)
 	{	if (0 != strcmp(osm->type,type)) {osm++; continue;}
 		osm->Use = 0;
 		return;
+	}
+	return;
+}
+//================================================================================
+//	Init  OSM exclude
+//================================================================================
+void InitOSMusage()
+{	OSM_TP *ost = osmTYPE;
+	while (ost->type)
+	{	if (HasIniKey("OSMexclude",ost->type)) ost->Use = 0;
+		ost++;
 	}
 	return;
 }
@@ -624,6 +639,7 @@ void InitialProfile()
 	globals->noEXT = 0;
 	globals->noINT = 0;
 	globals->noMET = 0;
+	globals->noINP = 1;
 	//-----------------------------------------------------
 	int nt   = 0;
 	//--- Check for terrain rendition ---------------------
@@ -1289,7 +1305,9 @@ void InitSimulation (void)
 	int p0 = 0;
 	GetIniVar("Sim","NavigationPlug",&p0);
 	//if (p0)	CNavPlug *nav = new CNavPlug();	
-	CNavPlug *nav = new CNavPlug();	
+	CNavPlug *nav = new CNavPlug();
+	//--- Init OSM usage ---------------------------------------------
+	InitOSMusage();
 	//----------------------------------------------------------------
   TRACE("End of InitSimulation");
 DupplicateString("***END INITSIM ***",32);
@@ -1308,8 +1326,6 @@ void COption::Toggle(U_INT p)
 //=======================================================================================
 // Redraw function when application is in simulation state
 //========================================================================================
-unsigned int   nFrames = 0;      // Sim frame rate counter
-float          tFrames = 0.0f;   // Sim frame rate timer
 float          frameRate = 0.0f; // Sim frame rate
 //===========================================================================
 //  Global frame count used to synchronize all subsystems
@@ -1368,33 +1384,14 @@ int RedrawSimulation ()
     globals->dRT = dRealT;
     tmp_timerR = tmp_timerS;
   } 
-  // Accumulate frame rate statistics every second
-  nFrames++;
-  tFrames += dRealT;
-  if (tFrames > 1.0f) {
-      frameRate = (float)nFrames / tFrames;
-      tFrames = 0.0f;
-      nFrames = 0;
-  }
 	//--- Check performance OSM ---------------------------
-	if (Frame == 600)	CheckPerformances(frameRate);
+	//if (Frame == 600)	CheckPerformances(frameRate);
   //------------Update global clock ---------------------
   Frame++;
+	frameRate	= float(Frame) / dSimT;
 	globals->Frame = Frame;
   globals->clk->Update(dRealT);
   //-------- Update situation----------------------------
-//
-////#ifdef _DEBUG	
-//  {	FILE *fp_debug;
-//	  if(!(fp_debug = fopen("__DDEBUG_frame.txt", "a")) == NULL)
-//	  {
-//		  fprintf(fp_debug, "%f %u %f [R=%f S=%f]\n", 
-//        dSimT, Frame, frameRate, 
-//        dRealT, tmp_timerS);
-//		  fclose(fp_debug); 
-//  }	}
-////#endif
-
   globals->sit->Timeslice (dSimT,Frame);
 	if (globals->tcm->StillLoading(GLOBAL_EVN_INITLOAD))		return APP_SIMULATION;
   // The global CSituation object contains all informations about the current
@@ -1621,7 +1618,75 @@ void PrepareSimulation (void)
 {
   globals->sit->Prepare ();
 }
-
+//==================================================================================
+//	This is a patch for X64 system where user exception handler are not called
+//	by windows
+//==================================================================================
+void EnableCrashingOnCrashes()
+{
+    typedef BOOL (WINAPI *tGetPolicy)(LPDWORD lpFlags);
+    typedef BOOL (WINAPI *tSetPolicy)(DWORD dwFlags);
+    const DWORD EXCEPTION_SWALLOWING = 0x0001;
+		const DWORD MaskException = (~EXCEPTION_SWALLOWING);
+    HMODULE kernel32 = LoadLibraryA("kernel32.dll");
+    tGetPolicy pGetPolicy = (tGetPolicy)GetProcAddress(kernel32,
+                "GetProcessUserModeExceptionPolicy");
+    tSetPolicy pSetPolicy = (tSetPolicy)GetProcAddress(kernel32,
+                "SetProcessUserModeExceptionPolicy");
+    if (pGetPolicy && pSetPolicy)
+    {
+        DWORD dwFlags;
+        if (pGetPolicy(&dwFlags))
+        {
+            // Turn off the filter
+            pSetPolicy(dwFlags & MaskException);	//~EXCEPTION_SWALLOWING);
+        }
+    }
+}
+//=======================================================================================
+//	Qualify some standards exceptions
+//=======================================================================================
+extern int FatalError(int code);
+//=======================================
+char* GetExDescription( int code )
+   {
+      switch( code ) {
+         case EXCEPTION_ACCESS_VIOLATION:         return "ACCESS_VIOLATION"         ;
+         case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:    return "ARRAY_BOUNDS_EXCEEDED"    ;
+         case EXCEPTION_BREAKPOINT:               return "BREAKPOINT"               ;
+         case EXCEPTION_DATATYPE_MISALIGNMENT:    return "DATATYPE_MISALIGNMENT"    ;
+         case EXCEPTION_FLT_DENORMAL_OPERAND:     return "FLT_DENORMAL_OPERAND"     ;
+         case EXCEPTION_FLT_DIVIDE_BY_ZERO:       return "FLT_DIVIDE_BY_ZERO"       ;
+         case EXCEPTION_FLT_INEXACT_RESULT:       return "FLT_INEXACT_RESULT"       ;
+         case EXCEPTION_FLT_INVALID_OPERATION:    return "FLT_INVALID_OPERATION"    ;
+         case EXCEPTION_FLT_OVERFLOW:             return "FLT_OVERFLOW"             ;
+         case EXCEPTION_FLT_STACK_CHECK:          return "FLT_STACK_CHECK"          ;
+         case EXCEPTION_FLT_UNDERFLOW:            return "FLT_UNDERFLOW"            ;
+         case EXCEPTION_ILLEGAL_INSTRUCTION:      return "ILLEGAL_INSTRUCTION"      ;
+         case EXCEPTION_IN_PAGE_ERROR:            return "IN_PAGE_ERROR"            ;
+         case EXCEPTION_INT_DIVIDE_BY_ZERO:       return "INT_DIVIDE_BY_ZERO"       ;
+         case EXCEPTION_INT_OVERFLOW:             return "INT_OVERFLOW"             ;
+         case EXCEPTION_INVALID_DISPOSITION:      return "INVALID_DISPOSITION"      ;
+         case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "NONCONTINUABLE_EXCEPTION" ;
+         case EXCEPTION_PRIV_INSTRUCTION:         return "PRIV_INSTRUCTION"         ;
+         case EXCEPTION_SINGLE_STEP:              return "SINGLE_STEP"              ;
+         case EXCEPTION_STACK_OVERFLOW:           return "STACK_OVERFLOW"           ;
+         default: return "OTHER EXCEPTION" ;
+      }
+   }
+//==================================================================================
+//	Application exception handler to replace Windows provided
+//==================================================================================
+LONG WINAPI FlyExceptionFilter(PEXCEPTION_POINTERS p)
+{ TRACE("===================EXCEPTION CALLED ============================\n");
+	PEXCEPTION_RECORD px = p->ExceptionRecord;
+	DWORD code = px->ExceptionCode;
+	char *text = GetExDescription(code);
+	TRACE("Module %s, ThREAD0 in %s, Thread1 in %s",
+				globals->module,globals->thread[0],globals->thread[1]);
+	TRACE("Error code = %8x: %s",code,text);
+  return EXCEPTION_EXECUTE_HANDLER;
+}
 //==================================================================================
 //==================================================================================
 //  Initial application entry point.
@@ -1635,7 +1700,13 @@ void PrepareSimulation (void)
 //==================================================================================
 //==================================================================================
 int main (int argc, char **argv)
-{ double pxr = double(1) / 72;                // Pixel radius in inch
+{ 
+	//--- Microsoft bug for exception handler ---------------------------
+	EnableCrashingOnCrashes();
+	//--- Replace standard unhandled exception handler ------------------
+	SetUnhandledExceptionFilter(FlyExceptionFilter);
+	//-------------------------------------------------------------------
+	double pxr = double(1) / 72;                // Pixel radius in inch
   double hpx = FN_FEET_FROM_INCH(pxr);        // Pixel radius in feet
   double nrp = 20;                            // Near clip plane
   globals = new SGlobals;	                    // Create global structure
@@ -1715,15 +1786,6 @@ int main (int argc, char **argv)
   globals->skyDist  = FN_FEET_FROM_MILE(60);  // Sky distance
 	globals->mipOBJ		= 4;											// Mip level for Objects
 	globals->mipTER		= 3;											// Mip level for terrain
-  //---SQL databases -------------------------------------------------
-  globals->genDB = 0;
-  globals->elvDB = 0;
-  globals->seaDB = 0;
-  globals->txyDB = 0;
-  globals->m3dDB = 0;
-  globals->texDB = 0;
-  globals->objDB = 0;
-	globals->dtxDB = 0;
   //---Master radio interface ----------------------------------------
   globals->lnd  =  0;
   //---Object pointer ------------------------------------------------
@@ -1733,7 +1795,8 @@ int main (int argc, char **argv)
   globals->sit  = 0;                          // Situation
   globals->dbc	= 0;								          // Database cache
   globals->sqm  = 0;                          // SQL Manager
-  globals->sql  = 0;                          // SQL thread
+  globals->sql[0] = 0;                        // SQL thread 0
+	globals->sql[1]	= 0;												// SQL thread 1
   globals->tcm  = 0;                          // Terrain cache
   globals->txw  = 0;                          // Texture cache
   globals->apm  = 0;                          // Airport models
@@ -1754,9 +1817,12 @@ int main (int argc, char **argv)
   //---Aircraft objects -----------------------------------------------
   globals->pln  = 0;
   globals->ccm  = 0;                          // Camera manager 
-  globals->wfl  = 0;                          // Fuel loadout
-  globals->wld  = 0;                          // Load window
   globals->wpb  = 0;                          // Window probe
+	//--- Module and thread state ---------------------------------------
+	globals->module = "Init";
+	globals->thread[0]	= "OFF";
+	globals->thread[1]	= "OFF";
+	pthread_mutex_init(&globals->mux,NULL);
   //-------------------------------------------------------------------
   globals->wObj = 0;                          // Current object
   TRACE("Globals INITIALIZED");

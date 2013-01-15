@@ -405,7 +405,7 @@ CAirplane::~CAirplane (void)
 //	JSDEV* All parameters are read
 //-----------------------------------------------------------------------------
 void CAirplane::ReadFinished (void)
-{
+{ TRACE("Cairplane Step 0");
   CVehicleObject::ReadFinished ();
 	SetName(nfoFilename);
   //--- Init rudder parameters ---------------------------------
@@ -423,6 +423,7 @@ void CAirplane::ReadFinished (void)
 	amp.rTrim->SetMainControl(amp.GetRudders());
 	//--- Load optionnal flight plan -----------------
 	LoadFPLAN(fplname);
+	TRACE(" CAirplane::ReadFinished");
   return;
 }
 //-----------------------------------------------------------------------------

@@ -1496,7 +1496,7 @@ void CSuperTile::TraceEnd()
 }
 //-------------------------------------------------------------------------
 // Seach a part with same reference as the given one
-//	Must lock the Queue beacuse it may work for SQlThread as well
+//	Must lock the Queue because it may work for SQlThread as well
 //-------------------------------------------------------------------------
 void CSuperTile::MakeOSMPart(CShared3DTex *ref, char L, int nv, GN_VTAB *S)
 {	C3DPart *prt = 0;
@@ -1514,7 +1514,6 @@ void CSuperTile::MakeOSMPart(CShared3DTex *ref, char L, int nv, GN_VTAB *S)
 	prt	= new C3DPart();
 	prt->Reserve(ref); 
 	//--- Add a new part -----------------------------
-	//osmQ[L].Lock();
 	prt->ExtendOSM(nv,S);
 	osmQ[L].PutHead(prt);
 	osmQ[L].UnLock();
@@ -1710,7 +1709,7 @@ void CSuperTile::Refresh3D()
 			//--- Fading in view ------------------------
 			case SUP3D_FADE_IN:
 				if (dEye > lim)  {sta3D = SUP3D_FADEOUT; return;}
-				alpha += float(0.005);
+				alpha += float(0.002);
 				if (alpha < 1)	return;
 				alpha = 1;
 				sta3D = SUP3D_VIEWING;
@@ -1718,7 +1717,7 @@ void CSuperTile::Refresh3D()
 			//--- Fading out ----------------------------
 			case SUP3D_FADEOUT:
 				if (dEye < lim)	{sta3D = SUP3D_FADE_IN; return;}
-				alpha -= float(0.005);
+				alpha -= float(0.002);
 				if (alpha > 0)	return;
 				alpha  = 0;
 				sta3D	 = SUP3D_INS_OSM;
@@ -1920,19 +1919,28 @@ int CSuperTile::Draw3D(U_CHAR tod)
 	glTranslated(T.x, T.y, T.z);		// Go to supertile center
 	//--- DRAW OSM BUILDING LAYER ----------------------------
 	C3DPart *prt;
+	osmQ[OSM_LAYER_BLDG].Lock();
 	for (prt = osmQ[OSM_LAYER_BLDG].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsOSM();
+	osmQ[OSM_LAYER_BLDG].UnLock();
+
+	osmQ[OSM_LAYER_DBLE].Lock();
 	//--- DRAW OSM FOREST LAYER ------------------------------
 	DebDrawOSMtrees();
 	for (prt = osmQ[OSM_LAYER_DBLE].GetFirst(); prt != 0; prt= prt->Next())	   prt->DrawAsOSM();
+	osmQ[OSM_LAYER_DBLE].UnLock();
+
 	glDisable(GL_ALPHA_TEST);
 	glPolygonMode(GL_FRONT,GL_FILL);
 	glEnable(GL_CULL_FACE);
 	//--- DRAW OSM Light layer   -----------------------------
 	if (tod == MODEL_NIT)
 	{	DebDrawOSMlight(lightOSM, alphaOSM);
+		osmQ[OSM_LAYER_LITE].Lock();
 		for (prt = osmQ[OSM_LAYER_LITE].GetFirst(); prt != 0; prt= prt->Next())	 prt->DrawAsLIT();
+		osmQ[OSM_LAYER_LITE].UnLock();
 		EndDrawOSM();
 	}
+
 	//---  Restore matrix ------------------------------------
 	glPopMatrix();
 	return nbo;
@@ -2256,7 +2264,8 @@ int C_QGT::HasTRN()
   if (strn)				return 0;
 	if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d Start   TRN elevations",
 								tcm->Time(),xKey,zKey);
-	if (globals->elvDB)	globals->sqm->GetTRNElevations(this);
+	char sql= globals->sql[THREAD_GEN]->UseElvDB();
+	if (sql)	globals->sqm->GetTRNElevations(this);
 	if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d End SQL TRN elevations",
 								tcm->Time(),xKey,zKey); 
 	if (HasElevation()) {SetStep(TC_QT_TIL);	return 1;}		
@@ -2283,7 +2292,7 @@ int C_QGT::HasTRN()
 //  Check for Detailled elevation in SQL database
 //---------------------------------------------------------------------
 int C_QGT::StepTIL()
-{ if (0 == globals->elvDB)	return StepSEA();
+{ if (0 == globals->sql[THREAD_ELV]->UseElvDB())	return StepSEA();
 	globals->sqm->GetTILElevations(this);
   SetStep(TC_QT_PCH);			// Check elevation patche
 	return 1;
@@ -2292,7 +2301,7 @@ int C_QGT::StepTIL()
 //  Check for elevation in SQL database
 //---------------------------------------------------------------------
 int C_QGT::StepPCH()
-{	if (0 == globals->elvDB)	return StepSEA();
+{	if (0 == globals->sql[THREAD_SEA]->UseElvDB())	return StepSEA();
   ELV_PATCHE  p;
 	p.dir		= 1;
 	globals->sqm->ReadPatches(this,p);
@@ -2306,7 +2315,7 @@ int C_QGT::StepPCH()
 //----------------------------------------------------------------------------
 int C_QGT::StepSEA()
 { if (tr) TRACE("TCM: -- QGT(%3d-%3d) End of elevations process",xKey,zKey);
-	char  sql = globals->seaDB;
+	char	sql = globals->sql[THREAD_SEA]->UseSeaDB();
   U_INT req = 0;
   //---Build the AXBY key for this QGT ------------------------------
   SetAXBYkey();
@@ -2348,6 +2357,8 @@ bool C_QGT::GetTileIndices(GroundSpot &gns)
   //---Compute latitude index -----------------
   double dtz	= gns.lat - sLat;
   gns.tz			= int(dtz / dLat) & 31;
+	//--- Get SuperTile -------------------------
+	gns.sup			= GetSuperTile(gns.tx,gns.tz);
   return true;
 }
 //---------------------------------------------------------------------
@@ -2688,14 +2699,16 @@ void C_QGT::ExtendOSMPart(char No,char dir, char *ntx, char L, int nv, GN_VTAB  
 { CSuperTile *sup = (No > 63)?(0):(&Super[No]);
 	if (0 == sup)		return;
 	//--- Get texture reference --------------------------
+	//pthread_mutex_lock(&globals->mux);
 	TEXT_INFO txd;
 	txd.apx = 0xFF;
 	txd.azp = 0x00;
 	txd.Dir = dir;
 	strncpy(txd.name,ntx,FNAM_MAX);
-	CShared3DTex *ref = globals->txw->Get3DTexture(txd);	//GetM3DPodTexture(txd);
+	CShared3DTex *ref = globals->txw->Get3DTexture(txd);	
 	sup->MakeOSMPart(ref,L,nv,S);
 	globals->txw->Free3DTexture(ref);
+ // pthread_mutex_unlock(&globals->mux);
 	return;
 }
 
@@ -3334,7 +3347,6 @@ void C_QGT::SetStep(U_CHAR st)
 		//--- Ready. Outside active Queue -----------
 		case TC_QT_RDY:											// Ready state
 			Step	= st;												// Immediate
-	//		if	(dead)	tcm->InActQ(this);		// activate QGT
 			if (dead)	  tcm->HeadofQ(this);
 			break;
 	 //--- Default: state is immediate -------------
@@ -3638,7 +3650,8 @@ TCacheMGR::TCacheMGR()
   //-----Get country names ---------- ---------------------------
   CDbCacheMgr *dbc = globals->dbc;
   SqlMGR      *sqm = globals->sqm;
-  (globals->genDB)?(sqm->GetCountryName(this)):(dbc->GetCountryName(this));
+ // (globals->genDB)?(sqm->GetCountryName(this)):(dbc->GetCountryName(this));
+  (globals->sqm->UseGenDB())?(sqm->GetCountryName(this)):(dbc->GetCountryName(this));
   //-----Get Terrain type from memory ---------------------------
   terBOX = new CListBox();
   LoadPodTerra();
@@ -3750,7 +3763,8 @@ void TCacheMGR::LoadPodTerra()
 //NOTE: Manque uer texture
 //-------------------------------------------------------------------------
 void TCacheMGR::LoadSqlTerra()
-{ if (0 == globals->texDB)  return;
+{ //if (0 == globals->texDB)  return;
+	if (0 == globals->sqm->UseTexDB())  return;
   //---delete all terrain types -----------------------
   terBOX->EmptyIt();
   globals->sqm->GetTerraSQL(this);
@@ -3799,7 +3813,7 @@ void TCacheMGR::CheckTeleport()
 //  Teleport to requested position P at Orientation O
 //-------------------------------------------------------------------------
 void TCacheMGR::Teleport(SPosition *P, SVector *O)
-{ CVehicleObject *veh = globals->pln;
+{ CAirplane *veh = globals->pln;
   if (0 == veh)													return;
   if (veh->HasState(VEH_INOP))					return;
 	if (globals->aPROF.Has(PROF_NO_TEL))	return;
@@ -3956,7 +3970,7 @@ char  TCacheMGR::GetTileType(char tn,int dir)
   U_INT tx  = (ax + TransTAB[dir].dx) & TC_WORLDDETMOD;   // Next Tile X
   U_INT tz  = (az + TransTAB[dir].dz) & TC_WORLDDETMOD;   // Next Tile Z
   U_INT kc  = (tx << 16) | tz;                            // Globe tile key
-  char *cdt = (globals->seaDB)?(GetCDTdata(kc)):(GetSEAdata(tx,tz));
+  char *cdt = (globals->sql[THREAD_SEA]->UseSeaDB())?(GetCDTdata(kc)):(GetSEAdata(tx,tz));
   return (cdt)?(2):(0);
 }
 //-------------------------------------------------------------------------
@@ -3981,7 +3995,8 @@ void TCacheMGR::SetTransitionMask(C_QGT *qgt,CTextureDef *txn)
 
 //--- end debuging -----------------------------------------------------
   U_INT kc      = (ax << 16) | az;
-  char *cdt     = (globals->seaDB)?(GetCDTdata(kc)):(GetSEAdata(ax,az));
+	char use      = globals->sql[THREAD_SEA]->UseSeaDB();
+  char *cdt     = (use)?(GetCDTdata(kc)):(GetSEAdata(ax,az));
   txn->SetCoast(cdt);
 	if (txn->UserTEX())					return;
   if (cdt)      {txn->TypTX = TC_TEXCOAST;}          // this is a coast tile
@@ -4069,7 +4084,15 @@ void TCacheMGR::Probe(CFuiCanva *cnv)
 //  Edit ground position
 //-------------------------------------------------------------------------
 void TCacheMGR::EditGround(char *txt)
-{ sprintf_s(txt,127,"QGT (%03d-%03d) TILE(%02d-%02d)",xKey,zKey,Spot.xDet(),Spot.zDet());
+{ CTextureDef *txn = GetTexDescriptor();
+  char nfil[12];
+	strncpy(nfil,txn->Name,10);
+	nfil[10] = 0;
+	U_INT qx	= Spot.xQGT();
+	U_INT qz  = Spot.zQGT();
+	U_INT tx  = Spot.xDet();
+	U_INT tz  = Spot.zDet();
+  sprintf_s(txt,127,"QGT (%03d-%03d) TILE(%02d-%02d) TEX=%s",qx,qz,tx,tz,nfil);
   return;
 }
 //-------------------------------------------------------------------------
@@ -4084,10 +4107,15 @@ void TCacheMGR::GetAbsoluteIndices(U_INT &ax,U_INT &az)
 //  Time slice.  Update the terrain cache
 //-------------------------------------------------------------------------
 int TCacheMGR::TimeSlice(float dT, U_INT FrNo)
-{ eTime     = dT;
+{ globals->module = "TCM TimeSlice";
+	eTime     = dT;
   dTime    += dT;
   aPos      = globals->geop;                            // Update aircraft position
-
+	//--- Access violation ------
+// int* p;
+//  p = 0;
+//  *p = 10;
+	//-----------------------------
   //---Update QGT position at global level --------------------------------
   IndicesInQGT (aPos, globals->qgtX, globals->qgtZ);
   nKEY      = QGTKEY(globals->qgtX, globals->qgtZ);
@@ -4269,7 +4297,8 @@ int TCacheMGR::RefreshCache()
 //  Call Time slice for each QGT that is in ready state
 //-----------------------------------------------------------------------
 int TCacheMGR::UpdateQGTs(float dT)
-{ if (0 == qgtMAP.size())		return 0;
+{ globals->module = "QGT TimeSlice";
+	if (0 == qgtMAP.size())		return 0;
 	if (iqt == qgtMAP.end())  iqt = qgtMAP.begin();
   C_QGT *qgt = (*iqt).second;
   if (qgt->IsReady()) qgt->TimeSlice(dT);
@@ -4773,7 +4802,7 @@ void TCacheMGR::LoadCoastSQL(U_INT kxz)
   cst = new C_CDT(kxz,this);
   COAST_REC rec;
   rec.qtk = kxz;
-  globals->sql->ReadCoast(rec,cst);
+  globals->sql[THREAD_SEA]->ReadCoast(rec,cst);
   AddCST(kxz,cst);
   return;
 }
@@ -5028,7 +5057,7 @@ void TCacheMGR::CheckW3D()
 //  Scan coast
 //---------------------------------------------------------------------------------
 void TCacheMGR::ScanCoast(SSurface *sf)
-{ if (globals->seaDB) return ScanCoastSQL(sf);
+{ if (globals->sql[THREAD_SEA]->UseSeaDB()) return ScanCoastSQL(sf);
  //---  Scan POD files for coast data
   std::map<U_INT,C_SEA*>::iterator im;
   LockSEA();
@@ -5119,7 +5148,8 @@ void TCacheMGR::AddToPack(OSM_Object *obj)
 //         this is contrary to the objective. This is to avoid extensive GL commands
 //=================================================================================
 void TCacheMGR::Draw()
-{	CCamera *cam = globals->cam;
+{ globals->module = "TCM Draw";
+ 	CCamera *cam = globals->cam;
   //---------Activate fog --------------------------------------------
   //  Fog is taken from sky dome, face to camera at about 45°  of zenith
   //------------------------------------------------------------------
@@ -5403,7 +5433,7 @@ int TCacheMGR::RequestELV(C_QGT *qgt)
 { //--- Search in SQL data base ----------------------------------
 	U_CHAR end	= 0;								// QGT step after read
 	qgt->qtr    = 0;
-	if (globals->elvDB)
+	if (globals->sql[THREAD_ELV]->UseElvDB())
 	{	end					= TC_QT_TIL;
 		qgt->rCode  = TC_SQL_ELV;   // Request code
 	}

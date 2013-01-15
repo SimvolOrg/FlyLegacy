@@ -2230,12 +2230,9 @@ void CRunway::EndAttributes(LND_DATA &d,SPosition &p,SPosition &q,int lg)
 	//--- Compute true orientation --------------------------
 	SVector	v	= GreatCirclePolar(&p, &q);
   d.orie		= Wrap360(v.h);
-
 	//--- Compute forward point -----------------------------
 	double F  = 1 + double(RWY_FWD_POINT) / lg;
 	d.fwdP    = GetAlignedSpot(q,p,F);
-	F	*= 0.5;
-	d.midP    = GetAlignedSpot(q,p,F);
 	return;
 }
 //-----------------------------------------------------------------
@@ -2690,7 +2687,7 @@ CDbCacheMgr::CDbCacheMgr(void)
   GetIniVar("Sim","UseObstructions",&opt);
   uOBS = opt;
   //---Check for SQL usage -------------------------------
-  gSQL = globals->sqm->SQLgen();
+  gSQL = globals->sqm->UseGenDB();
 	//--- Enter in dispatching -----------------------------
 	globals->Disp.Enter(this, PRIO_DBCACHE, DISP_EXCONT, 0);
 	return;
@@ -5006,7 +5003,7 @@ void CDatabaseManager::Init (void)
 { PFS *pfs = &globals->pfs; 
 	//---------------------------------------------
   MEMORY_LEAK_MARKER ("database_init")
-  if (0 == globals->sqm->SQLgen())
+  if (0 == globals->sqm->UseGenDB())
   {TRACE("------------DB Loading AIRPORTS");
 	 paddpod(pfs,"DATABASE/AIRPORT.POD");
 	 CDatabase *dbAirport = new CDatabaseAPT ("Airport.dbt");
@@ -5030,7 +5027,7 @@ void CDatabaseManager::Init (void)
   db[DB_ATS_ROUTE] = dbAtsRoute;
   TRACE("ATS     count %u",dbAtsRoute->GetNumRecords());
 
-  if (0 == globals->sqm->SQLgen())
+  if (0 == globals->sqm->UseGenDB())
   { // Load Comm facility database
     TRACE("------------DB Loading COMM FACILITY");
 		paddpod(pfs,"DATABASE/COMM.POD");
@@ -5041,7 +5038,7 @@ void CDatabaseManager::Init (void)
     db[DB_COMM] = dbComm;
     TRACE("COM     count %u",dbComm->GetNumRecords());
   }
-  if (0 == globals->sqm->SQLgen())
+  if (0 == globals->sqm->UseGenDB())
   { // Load Country name database
     TRACE("------------DB Loading COUNTRY");
 		paddpod(pfs,"DATABASE/GEOGRAPH.POD");
@@ -5052,7 +5049,7 @@ void CDatabaseManager::Init (void)
     db[DB_COUNTRY] = dbCountry;
     TRACE("COUNTRY count %u",dbCountry->GetNumRecords());
   }
-  if (0 == globals->sqm->SQLgen())
+  if (0 == globals->sqm->UseGenDB())
   { // Load State name database
     TRACE("------------DB Loading STATES");
     CDatabase *dbState = new CDatabaseSTA ("State.dbt");
@@ -5063,7 +5060,7 @@ void CDatabaseManager::Init (void)
     db[DB_STATE] = dbState;
     TRACE("STATE   count %u",dbState->GetNumRecords());
   }
-  if (0 == globals->sqm->SQLgen())
+  if (0 == globals->sqm->UseGenDB())
   { // Load ILS Facility database
     TRACE("------------DB Loading ILS");
 		paddpod(pfs,"DATABASE/ILS.POD");
@@ -5075,7 +5072,7 @@ void CDatabaseManager::Init (void)
     db[DB_ILS] = dbIls;
     TRACE("ILS     count %u",dbIls->GetNumRecords());
   }
-  if (0 == globals->sqm->SQLgen())
+  if (0 == globals->sqm->UseGenDB())
   { // Load Navaid database
     TRACE("------------DB Loading NAVAIDs");
 		paddpod(pfs,"DATABASE/NAVAID.POD");
@@ -5089,7 +5086,7 @@ void CDatabaseManager::Init (void)
     db[DB_NAVAID] = dbNavaid;
     TRACE("NAV     count %u",dbNavaid->GetNumRecords());
   }
-	  if (0 == globals->sqm->SQLgen())
+	  if (0 == globals->sqm->UseGenDB())
   { // Load Runway database
     TRACE("------------DB Loading RUNWAYS");
 		paddpod(pfs,"DATABASE/RUNWAY.POD");
@@ -5110,7 +5107,7 @@ void CDatabaseManager::Init (void)
   db[DB_OBSTRUCTION] = dbObstruct;
   TRACE("OBS     count %u",dbObstruct->GetNumRecords());
 	*/
-  if (0 == globals->sqm->SQLgen())
+  if (0 == globals->sqm->UseGenDB())
   { // Load Waypoint database
     TRACE("------------DB Loading WAYPOINTS");
 		paddpod(pfs,"DATABASE/WAYPOINT.POD");

@@ -220,7 +220,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   //--------------Attributes -----------------------------------------------
 	U_CHAR					state;															// Airport state
 	U_CHAR					tr;																	// Trace option
-  U_CHAR          txy;                                // Taxiway in SQL
+  U_CHAR          rfu;                                // Taxiway in SQL
   U_CHAR          visible;                            // Visibility
 	//------------------------------------------------------------------------
   CAirportMgr    *apm;                                // Airport Manager

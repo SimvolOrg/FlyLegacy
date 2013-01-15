@@ -375,8 +375,6 @@ bool CFuiSketch::ParseTAG(char *txt)
 {	int nf = sscanf(txt,"TAG ( %32[^ =)] = %32[^ )] ) ",tagn, valn);
 	if (nf != 2)		return false;
 	GetOSMconfig(tagn,valn,confp);
-if (strcmp(tagn,"AMENITY") == 0)
-int a = 0;
 	return true;
 }
 //-------------------------------------------------------------------
@@ -691,7 +689,8 @@ bool CFuiSketch::EditError()
 //	Change the current style
 //-----------------------------------------------------------------------
 void CFuiSketch::ChangeStyle()
-{	if ((tera) && (0 == trn->ActualFocus()))	return;
+{//	if ((tera) && (0 == trn->ActualFocus()))	return;
+	if ((tera) && (!trn->HasSelection()))	return;
   EditError();
 	D2_Style *sty = (D2_Style*)sBOX.GetSelectedSlot();
 	trn->ModifyStyle(sty);
@@ -755,12 +754,19 @@ void CFuiSketch::OnePicking(U_INT No)
 	return;
 }
 //-----------------------------------------------------------------------
+//	Double click here
+//-----------------------------------------------------------------------
+bool CFuiSketch::DoubleClick(int mx, int my, EMouseButton bt)
+{	rcam->GoToPosition(geop);
+	return true;
+}
+
+//-----------------------------------------------------------------------
 //	Check if selected
 //-----------------------------------------------------------------------
 bool CFuiSketch::NoSelection()
-{	char sel = trn->ActualFocus();	
-	if (0 == tera)	return false;
-	return (sel == 0);
+{	if (0 == tera)	return false;
+	return trn->NoSelection();	//		(sel == 0);
 }
 //-----------------------------------------------------------------------
 //	Fly Over the city

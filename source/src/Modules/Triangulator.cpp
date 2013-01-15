@@ -302,8 +302,6 @@ CBuilder::CBuilder(D2_Session *s)
 	session		= s;
 	dop.Set(TRITOR_DRAW_LINE + TRITOR_DRAW_FILL);
 	bevel			= 0;
-	osmB			= 0;
-	remB			= 0;
 	t70				= tan(DegToRad(double(70)));
 	dMOD			= 0;
 	Clean();
@@ -470,7 +468,7 @@ void CBuilder::Clean()
 	//--- delete bevel point array ----------
 	if (bevel)	delete [] bevel;
 	//--- Reset all values ------------------
-	osmB			= 0;
+	osmB			= osmS = remB = 0;
 	bevel			= 0;
 	seq				= 0;										// Vertex sequence
 	num				= 0;										// Null number
@@ -502,8 +500,7 @@ void CBuilder::CheckAll()
 //-------------------------------------------------------------------
 void CBuilder::ModeSingle()
 {	dMOD = 0;
-	if (0 == osmB)	return;
-	osmB->Deselect();
+	Deselect();
 	return;
 }
 //-------------------------------------------------------------------
@@ -511,15 +508,14 @@ void CBuilder::ModeSingle()
 //-------------------------------------------------------------------
 void CBuilder::ModeGroups()
 {	dMOD = 1;
-	if (0 == osmB)	return;
-	osmB->Deselect();
+	Deselect();
+	return;
 }
 //-------------------------------------------------------------------
 //	Start a new object 
 //-------------------------------------------------------------------
 void CBuilder::StartOBJ()
-{	if (osmB)	osmB->Deselect();
-	Clean();
+{	Clean();
 	return;
 }
 //-------------------------------------------------------------------
@@ -682,17 +678,10 @@ U_CHAR CBuilder::ModifyStyle(D2_Style *sty)
 //	Select one building
 //-----------------------------------------------------------------------
 bool CBuilder::SelectOBJ(U_INT No)
-{	//--- Deselect previous selection------------------
-	char same = (osmB != 0)  && (osmB->SameStamp(No));
-	if (same)	osmB->SwapSelect();
-	//--- see for new building ------------------------
-	else
-	{	if (osmB)	osmB->Deselect();
-		//--- Get the new object ------------------------
-		osmB = session->GetObjectOSM(No);
-		//--- Establish the new building ------------------
-		if (osmB)	osmB->Select();
-	}
+{	OSM_Object *obj = session->GetObjectOSM(No);
+	if (obj == osmS)	osmS = 0;
+	else							osmS = obj;
+	osmB	= obj;
 	return true;
 }
 
@@ -702,7 +691,7 @@ bool CBuilder::SelectOBJ(U_INT No)
 void CBuilder::RemoveOBJ()
 {	if (0 == osmB)		return;
 	remB		= osmB;
-	osmB->Deselect();
+	Deselect();
 	osmB->Remove();
 	osmB		= 0;
 	return;
@@ -712,11 +701,11 @@ void CBuilder::RemoveOBJ()
 //-----------------------------------------------------------------------
 void CBuilder::RestoreOBJ()
 {	if (0 == remB)			return;
-	if (osmB)	osmB->Deselect();
+	Deselect();
 	osmB	= remB;
 	osmB->Restore();
-	osmB->Select();
-	remB			= 0;
+	Select();
+	remB	= 0;
 	return;
 }
 //----------------------------------------------------------------
@@ -1504,7 +1493,7 @@ void			CBuilder::ActualPosition(SPosition &P) {if (osmB) osmB->ObjGeoPos(P);}
 U_INT			CBuilder::ActualStamp()			{ return (osmB)?(osmB->GetStamp()):(0); }
 D2_Style *CBuilder::ActualStyle()			{	return (osmB)?(osmB->GetStyle()):(0); }
 int       CBuilder::ActualError()			{ return (osmB)?(osmB->GetError()):(0); }
-char      CBuilder::ActualFocus()			{ return (osmB)?(osmB->GetFocus()):(0); }
+//char      CBuilder::ActualFocus()			{ return (osmB)?(osmB->Selection()):(0); }
 
 //=========================================================================
 //	D2-FACE class

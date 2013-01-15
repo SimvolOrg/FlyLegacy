@@ -160,7 +160,7 @@ struct D2_BPM {
 	char				  flNbr;									// floor number
 	char					mans;										// Style mansart
 	char					error;									// Error number
-	char					selc;										// Selected
+	//char					selc;										// Selected
 	//-----------------------------------------------------
 	U_INT					side;										// Side number
 	double        surf;										// Surface
@@ -184,7 +184,7 @@ void Clear()
 		style	= 0;
 		roofM	= 0;
 		roofP	= 0;
-		selc	= 0;
+		//selc	= 0;
 		flNbr = 0;
 		geop.lat = geop.lon = geop.alt = 0;
 		lgx = lgy = 0;
@@ -826,6 +826,7 @@ protected:
 	U_INT		ident;
 	OSM_Object *osmB;															// Current building
 	OSM_Object *remB;															// Removed building
+	OSM_Object *osmS;															// Current selection
 	U_INT   xOBJ;																	// Current texture
 	//---  Texture descriptor ----------------------------
 	TEXT_INFO txd;																// Texture desc
@@ -949,7 +950,14 @@ public:
 	U_INT     ActualStamp();
 	D2_Style *ActualStyle();
 	int       ActualError();
-	char      ActualFocus();
+	//char      ActualFocus();
+	//--- Selection management -----------------------------
+	void			Select()			{osmS	= osmB;}
+	void			Deselect()		{osmS = 0;}
+	bool			NoSelection() {return (0 == osmS);}
+	bool			HasSelection(){return (0 != osmS);}
+	bool			HasObject()		{return (0 != osmB);}
+	bool			HasSelected(OSM_Object *obj)	{return (osmS == obj);}
 	//------------------------------------------------------
 	U_CHAR	ModifyStyle(D2_Style *sty);
 	int     ReOrientation(D2_BPM *bpm);

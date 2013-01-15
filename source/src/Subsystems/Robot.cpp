@@ -435,7 +435,7 @@ void VPilot::Warn(int No)
 	return;
 }
 //--------------------------------------------------------------
-//	Open a flight plan and add to airport list
+//	Open a flight plan and add to airport list for demo
 //--------------------------------------------------------------
 int VPilot::OpenFPL(char *fn)
 { char txt[PATH_MAX];
@@ -445,6 +445,7 @@ int VPilot::OpenFPL(char *fn)
 	//--- Check if this is our airport ---------------
 	char *idn = globals->apm->NearestIdent();
 	if (fpn.NotThisAirport(idn))			return 1;
+	if (fpn.NotForDemo())							return 1;
 	//--- Keep name ----------------------------------
 	fplQ.push_back(fn);
 	return 1;
@@ -454,9 +455,11 @@ int VPilot::OpenFPL(char *fn)
 //--------------------------------------------------------------
 void VPilot::GetanyFlightPlan()
 {	char  pn[MAX_PATH];
+	
 	ApplyToFiles("FlightPlan/*.FPL",FPLfilesCB,this);
 	//--- Load a random flight plan -------------------
 	int nb = fplQ.size();
+	if (0 == nb)		return;
 	int np = RandomNumber(nb);
 	char *fn = (char*)fplQ[np].c_str();
 	RemoveExtension(pn,fn);

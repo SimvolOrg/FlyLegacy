@@ -170,9 +170,8 @@ public:
   ~CSituation                          (void);
   
   //----- CStreamObject methods-----------------------
-  virtual int   Read                   (SStream *stream, Tag tag);
-  virtual void  ReadFinished           (void);
-
+  int   Read                   (SStream *stream, Tag tag);
+  void  ReadFinished           (void);
   //----- CSituation methods---------------------------
   void              OpenSitFile        (void);
   void              AdjustCameras      (void);

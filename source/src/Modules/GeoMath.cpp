@@ -1201,6 +1201,21 @@ void GroundSpot::GetGroundAt(SPosition &pos)
 bool GroundSpot::SameSpot(CmQUAD *Q)
 {return (Q->GetTileAX() == ax) && (Q->GetTileAZ() == az);}
 //=========================================================================================
+//	Get a lateral spot 
+//	dis = distance from far point
+//	dir	= (+1)		Right
+//			= (-1)		Left
+//=========================================================================================
+SPosition	LND_DATA::GetLateralSpot(double dis, double dir)
+{ double  R = (dis / RWY_FWD_POINT);
+	CVector D(LongitudeDifference(refP.lon,fwdP.lon),(refP.lat - fwdP.lat), (refP.alt - fwdP.alt));
+	SPosition Q;
+	Q.lon = AddLongitude(fwdP.lon, (D.y * dir));
+	Q.lat = fwdP.lat - D.x;
+	Q.alt	= fwdP.alt + D.z;
+	return Q;
+}
+//=========================================================================================
 //  return rounded value as integer
 //=========================================================================================
 int GetRounded(float nb)
@@ -1335,7 +1350,7 @@ double RelativeLatitudeInQGT(U_INT vz)
 	U_INT  nz   = (No >= 256)?(No - 256):(255 - No);			// Table entry        
   U_INT sub   = FN_SUB_FROM_INDX(vz);										// Number of subdivisions
   double dt   = qgt_latitude[nz].sub * sub;							// Delta from south border
-  return (No >= 256)?(dt):(-dt);												// Latitude of tz 
+	return dt;
 }
 //-----------------------------------------------------------------------------------
 //	Return Absolute latitude of vertex indice vz

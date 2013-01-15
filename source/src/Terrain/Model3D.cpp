@@ -372,10 +372,11 @@ C3DMgr::C3DMgr(TCacheMGR *m )
   //--------------------------------------------------------------
 	int lq = 1;
 	GetIniVar("Performances","LookOnlyInSQL",&lq);
-	lpod  = (1 - lq);
+	//lpod  = (1 - lq);
 	//--------------------------------------------------------------
-	sql	= globals->objDB;
-	if (0 == sql)	lpod = 1;
+	sql	= globals->sqm->UseObjDB();
+	//if (0 == sql)	lpod = 1;
+	//lpod = (globals->sqm->UseObjDB())?(0):(1);
   return;
 }
 //----------------------------------------------------------------
@@ -717,8 +718,9 @@ int C3Dfile::Decode(char *fname,char *pn)
   strncpy(namef,fname,63);
   namef[63] = 0;
 	//---Check if file is in database OBJ ------------
-	bool sql	= (globals->objDB != 0) && (pn != 0);
-	if (sql && sqm->FileInBase(deb,p2,sqm->DBobj()))	return 0;;
+	//bool sql	= (globals->objDB != 0) && (pn != 0);
+	bool sqb = (globals->sqm->UseObjDB()) && (pn != 0);
+	if (sqb && sqm->FileInBase(deb,p2,sqm->DBobj()))	return 0;;
   //---Open the file -------------------------------
 	cntr			= 0;
   SStream s(this,fname);
@@ -936,8 +938,10 @@ void C3Dmodel::GetParts(CPolyShop *psh,M3D_PART_INFO &inf)
 C3DPart *C3Dmodel::GetNewPart (char dir,char *txn, int lod, int nbx)
 {	C3DPart *prt = new C3DPart(dir,txn,lod,nbx);
 	//--- Add part to lod level ----------------------
+  pLOD[lod].Lock();
 	pLOD[lod].PutLast(prt); 
   rLOD[lod] = lod;            // Activate lod level
+	pLOD[lod].UnLock();
 	return prt;
 }
 
@@ -954,7 +958,9 @@ C3DPart *C3Dmodel::GetPartFor(char dir,char *txn, int lod, int nbx)
 	U_INT nbp = prt->GetNBVTX();
 	if (nbp > globals->pakCAP)	return GetNewPart(dir,txn,lod,nbx);
 	//--- Extend actual part -------------------------------
+	pLOD[lod].Lock();
 	prt->ExtendGTB(nbx);
+	pLOD[lod].UnLock();
 	return prt;
 }
 
@@ -1906,20 +1912,6 @@ C3DPart::C3DPart(char dir, char *txn,int lq,int nbx)
 }
 
 //----------------------------------------------------------------------
-//	Get texture reference
-//----------------------------------------------------------------------
-/*
-CShared3DTex *C3DPart::GetReference(TEXT_INFO &txd)
-{	if (0 == *txd.name)	return 0;
-	//--- search a texture in SQL or in POD -----------------------
-	CShared3DTex *shx = 0;
-	if (globals->m3dDB) shx = globals->txw->GetM3DSqlTexture(txd);
-	if (0 == shx)				shx = globals->txw->GetM3DPodTexture(txd);
-	if (shx)						return shx;
-	//--- Create a new entry for this texture 
-}
-*/
-//----------------------------------------------------------------------
 //  Free Texture
 //----------------------------------------------------------------------
 C3DPart::~C3DPart()
@@ -2371,7 +2363,7 @@ void C3Dworld::TraceEnd()
 //-----------------------------------------------------------------------
 void C3Dworld::SetQGTparameters(C_QGT *q)
 { qgt  = q;
-  GetLatitudeFactor(qgt->GetMidLat(),rFactor,cFactor);
+  if (qgt) GetLatitudeFactor(qgt->GetMidLat(),rFactor,cFactor);
   return;
 } 
 //-----------------------------------------------------------------------
@@ -2468,12 +2460,16 @@ void C3Dworld::AddToWOBJ(CWobj *obj)
 //  Camera must be set to origin
 //-----------------------------------------------------------------------------
 void C3Dworld::Draw(U_CHAR tod)
-{  U_CHAR     mod = ('N' == tod)?(MODEL_NIT):(MODEL_DAY);
+{ U_CHAR     mod = ('N' == tod)?(MODEL_NIT):(MODEL_DAY);
   //----------------------------------------------------------
+	if (0 == qgt)						return;
+	if (qgt->NotAlive())		return;
   CSuperTile *sup = 0;
   for (U_INT No = 0; No != TC_SUPERT_NBR; No++) 
-  { sup = qgt->GetSuperTile(No);
-    if  (!sup->Update()) continue;
+  {	sup = qgt->GetSuperTile(No);
+		globals->module = "Update";
+    if  (!sup->Update())	continue;
+		globals->module = "Draw3D";
     globals->cnt1 += sup->Draw3D(mod);       // Count objects          
   }
   //----------------------------------------------------------

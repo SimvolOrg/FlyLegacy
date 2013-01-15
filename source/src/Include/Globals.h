@@ -381,6 +381,10 @@ typedef struct {
 	//--- Frame number ------------------------------------------------
 	U_INT			Frame;
 	BBM				mBox;												// Master black box
+	//--- Runing module -----------------------------------------------
+	char     *module;
+	char     *thread[2];
+	pthread_mutex_t		mux;
 	//--- Dispatcher --------------------------------------------------
 	CDispatcher Disp;
   //----World position ----------------------------------------------
@@ -404,8 +408,10 @@ typedef struct {
 	U_CHAR      noOSM;										// No OSM objects
   U_CHAR      noAPT;                    // No Airport
   U_CHAR      noMET;                    // No Meteo
+	U_CHAR      noINP;										// No input whatever
   CWobj       *wObj;										// Current object in focus
   //----SQL database detected ---------------------------------------
+	/*
   char        genDB;                    // Generic database
   char        elvDB;                    // Elevation database
   char        seaDB;                    // Coast database
@@ -414,6 +420,7 @@ typedef struct {
   char        texDB;                    // Terra texture database
   char        objDB;                    // World Object
 	char				dtxDB;										// TRN Texture database
+	*/
 	//----VMAP Parameters --------------------------------------------
   char        MapName[SLOT_NAME_DIM];   /// Selected Map Name
   char        NulChar;                  /// Null Char
@@ -480,7 +487,7 @@ typedef struct {
   CMagneticModel        *mag;           // Magnetic model
   CCloudSystem          *cld;           // Cloud System
   SqlMGR                *sqm;           // SQL Manager
-  SqlTHREAD             *sql;           // SQL Thread
+  SqlTHREAD             *sql[2];        // SQL Thread
   CSlewManager          *slw;           // Slew manager
   CAtmosphereModelJSBSim *atm;          // Atmosphere
   CAudioManager         *snd;           // Sound manager
@@ -488,8 +495,6 @@ typedef struct {
 	CSceneryDBM						*scn;						// Scenery set
   //-------Aircraft items --------------------------------------------
   CCameraManager        *ccm;           /// Current camera manager
-  CFuiFuel              *wfl;           /// Fuel window
-  CFuiLoad              *wld;           /// Load window
   CFuiProbe             *wpb;           // Window probe
 	//--- Included items -----------------------------------------------
   CFuiRadioBand          rdb;           // Radio band

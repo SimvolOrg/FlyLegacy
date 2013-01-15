@@ -126,10 +126,10 @@ bool GroundQUAD::DecDistance()
 //         in the super Tile
 //-----------------------------------------------------------------------
 void GroundQUAD::GetTextureFromSQL(char *nam,U_INT px,U_INT pz)
-{	if (0 == globals->dtxDB)		return;
+{	if (0 == globals->sqm->UseDtxDB())		return;
   TEXT_INFO xds;
 	xds.key	= (px << 16) | pz;
-	globals->sql->ReadaTRNtexture(xds,"TEX",0);
+	globals->sql[THREAD_TEX]->ReadaTRNtexture(xds,"TEX",0);
 	//--- Decompress it ---------------------------------------------
 	mip	= 5;
 	Compressor comp(xds.type,mip);

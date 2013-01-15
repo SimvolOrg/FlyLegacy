@@ -421,34 +421,29 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
   double   prm = 0;
   float    fnb = 10;
   switch (tag)  {
-		//--- Rotation speed for take-off ------------------------
-		case 'Vrot':
-			apil->DecodeVROT(st);
+		//--- Take off parameters  ------------------------
+		case 'TKOF':
+			apil->DecodeTKOF(st);
 			return TAG_READ;
 		//--- Cut off altitude -----------------------------------
 		case 'cgas':
 			apil->DecodeTHRO(st);
 			return TAG_READ;
-		//--- Angle of approach to runway -----------------------
-		case 'aprw':
-			ReadDouble(&prm,st);
-			apil->SetAPRW(prm);
-			return TAG_READ;
-		//--- Speed of approach to runway -----------------------
-		case 'aspd':
-			apil->DecodeASPD(st);
+		//--- APproach mode ---------------------------------------
+		case 'APPR':
+			apil->DecodeAPRO(st);
 			return TAG_READ;
 		//---Disengage altitude ---------------------------------
-		case 'land':
+		case 'LAND':
 			apil->DecodeLAND(st);
 			return TAG_READ;
-		//--- Flaps parameters ----------------------------------
-		case 'flap':
-			apil->DecodeFLAP(st);
-			return TAG_READ;
 		//---MISS LANDING PARAMETERS ---------------
-		case 'miss':
+		case 'MISS':
 			apil->DecodeLMIS(st);
+			return TAG_READ;
+		//--- GO ARROUND parameters -----------------------------
+		case 'TOGA':
+			apil->DecodeTOGA(st);
 			return TAG_READ;
 		//---Heading coefficient --------------------------------
 		case 'bias':              // Head adjust
@@ -569,7 +564,7 @@ AutoPilot::AutoPilot (void)
   lStat   = AP_DISENGD;
   vStat   = AP_DISENGD;
   glide   = 0.5;                     // Default catching glide angle
-  Radio   = 0;
+  busRD   = 0;
   Powr    = 0;
   land    = LAND_DISCT;			// Landing option
 	rend		= 0;							// No runway end
@@ -578,9 +573,12 @@ AutoPilot::AutoPilot (void)
 	//--- Final leg parameters -------------------------
 	Turn		= 1;							// Turning anticipation factor
 	gain		= 2.5;
-	//--- TGA parameters -----------------------------------
-	TGA0		= 2.5;						// 2.5 miles for Leg0
-	TGA1		= 4.0;						// 6.0 miles for Leg1
+	//--- TGA default parameters ---------------------------
+	flp0		= 0;
+	ang0		= -90;						// Angle away from runway
+	dga0		= 2.5;						// 2.5 miles for Leg0
+	ang1    = -180;						// Angle away from runway
+	dga1		= 6.0;						// 6.0 miles for Leg1
 	//---Flap parameters -----------------------------------
 	tkoFP		= 0;
 	tkoFA		= -100;
@@ -616,8 +614,8 @@ AutoPilot::AutoPilot (void)
   SetAMIS(400,1500);						// Misslanding altitude check
   hMIS    = 2;
 	cMIS    = 2 / aMIS;
-  //--Vertical error is tangent(1) * 1000 units -------------
-  vMIS  = 2.8;
+  //--Vertical error is tangent(1deg) * 1000 units -------------
+  vMIS		= 10.0;
   //---Default limits ------------------------------------
   aLim    = 10000;
   vLim    = 2000;
@@ -694,7 +692,7 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
 	//--- Get Speed regulator -------------------
 	sreg = mveh->GetSREG();
 	//--- Get radio bus -------------------------
-	Radio = mveh->GetRadioBUS();
+	busRD = mveh->GetRadioBUS();
 	CSimulatedVehicle *svh = &mveh->svh;
 	xRAT  = svh->GetCruiseSpeed() * 0.98;
 	mRAT	= svh->GetCruiseSpeed();
@@ -724,12 +722,6 @@ void AutoPilot::InitPID()
   minA    = RadToDeg(minA) * 0.5f;
   maxA    = RadToDeg(maxA) * 0.6f;
   //------------------------------------------------------
-  //pidL[PID_GLS]->SetMaxi(maxA);
-  //pidL[PID_GLS]->SetMini(minA);
-  //------------------------------------------------------
-  //pidL[PID_ALT]->SetMaxi(maxA);
-  //pidL[PID_ALT]->SetMini(minA);
-  //------------------------------------------------------
   pidL[PID_BNK]->SetClamp(ailS);
   pidL[PID_AOA]->SetClamp(elvS);
   pidL[PID_AOA]->SetClamp(elvT);
@@ -744,29 +736,24 @@ void AutoPilot::InitPID()
 //------------------------------------------------------------------------------------
 void AutoPilot::DecodeLMIS(SStream *st)
 { char txt[128];
-	double pm1;
-  double pm2;
+	double alt;
+  double up;
 	ReadString(txt,128,st);
-	int nf = sscanf(txt,"Check %lf ft , TGO %lf ft",&pm1, &pm2);
-	if (nf != 2)		return;
-	SetAMIS(pm1,pm2);
+	int nf = sscanf(txt,"Check ( %lf ft ) , TGO ( %lf ft ), Flap ( %d )",&alt, &up, &flp0);
+	if (nf != 3)		return;
+	SetAMIS(alt,up);
 	return;
 }
 //------------------------------------------------------------------------------------
-//  Decode Rotation speed
+//  Decode go round parameters 
 //------------------------------------------------------------------------------------
-void AutoPilot::DecodeVROT(SStream *st)
-{	char txt[128];	
-	double pm1;
-	double pm2;
+void AutoPilot::DecodeTOGA(SStream *st)
+{	char txt[128];
 	ReadString(txt,128,st);
-  int nf = sscanf(txt,"%lf kts , %lf ft",&pm1,&pm2);
-	if (nf != 2)	return;
-	vROT		= pm1;
-	aTGT		= pm2;
+	int nf = sscanf(txt,"Leg1 ( %lf , %lf nm) , Leg2 ( %lf , %lf nm)", 
+			&ang0, &dga0, &ang1, &dga1);
 	return;
 }
-
 //------------------------------------------------------------------------------------
 //  Decode throttle control
 //------------------------------------------------------------------------------------
@@ -775,43 +762,65 @@ void AutoPilot::DecodeTHRO(SStream *st)
 	return;
 }
 //------------------------------------------------------------------------------------
+//  Decode Take OFF parameters 
+//------------------------------------------------------------------------------------
+void AutoPilot::DecodeTKOF(SStream *st)
+{	char str[128];
+	int nf = 0;
+	int			fpp;
+	double	fpa,spd, alt;
+	ReadString(str,120,st);
+	nf = sscanf(str,"Flap ( %d , %lf ft ) , Rot ( %lf kts , %lf ft )",
+					&fpp,&fpa,&spd,&alt);
+	if (4 != nf)	return;
+	//--- Take off parameters ----------------------
+	tkoFP = fpp; 
+	tkoFA = fpa;
+	vROT		= spd;
+	aTGT		= alt;
+}
+//------------------------------------------------------------------------------------
+//  Decode Approach option
+//------------------------------------------------------------------------------------
+void AutoPilot::DecodeAPRO(SStream *st)
+{ double spd,ang;
+	int nf = 0;
+  char str[128];
+  ReadString(str,120,st);
+	nf = sscanf(str,"Speed ( %lf kts ) , RwyCross ( %lf deg)", &spd, &ang);
+	if (2 != nf)	return;
+	fSPD	= spd;
+	xAPW  = ang;
+	return;
+	}
+//------------------------------------------------------------------------------------
 //  Decode Landing option
 //------------------------------------------------------------------------------------
 void AutoPilot::DecodeLAND(SStream *st)
-{ double pm1;
-  double pm2;
-	double pm3;
-  int nf;
+{ double alt;
+  double ang;
+	double spd;
+	int    fpp;
+	double fpa;
+  int nf = 0;
   char str[128];
-  ReadString(str,100,st);
-  nf = sscanf(str," disengage , %lf ft", &pm1);
-  if (1 == nf)    {aLND = pm1; return; }
-  nf = sscanf(str," Flare , %lf ft, %lf deg, %lf kts",&pm1,&pm2,&pm3);
-  if (3 == nf)     SetFLRopt(pm1,pm2,pm3);
+  ReadString(str,120,st);
+	nf = sscanf(str,"Flap ( %d , %lf ft) , Disengage at %lf", &fpp, &fpa, &aLND);
+	//--- Check for disengage option ----------------------------------
+	if (3 == nf) return SetLndFLP(fpp,fpa);
+	//--- Check for autoland ------------------------------------------
+	nf = sscanf(str,"Flap ( %d , %lf ft), Flare at %lf ft to %lf deg , Disengage at %lf kts",
+				&fpp, &fpa, &alt, &ang, &spd);
+	if (5 != nf)	return;
+	//--- Set autoland parameters -------------------------------------
+	SetLndFLP(fpp,fpa);
+	double r	= DegToRad(ang);
+  aLND			= alt;
+	dSPD			= spd;
+	sTAN			= tan(r);
+  land			= LAND_FLARE;
   return;
 }
-//------------------------------------------------------------------------------------
-//  Decode Approach speed
-//------------------------------------------------------------------------------------
-void AutoPilot::DecodeASPD(SStream *st)
-{	ReadDouble(&fSPD,st);
-	return;
-}
-//------------------------------------------------------------------------------------
-//  Decode Flaps parameters
-//------------------------------------------------------------------------------------
-void AutoPilot::DecodeFLAP(SStream *st)
-{	char txt[128];
-	int		 pm1,pm3;
-	double pm2,pm4;
-	ReadString(txt,128,st);
-	int nf = sscanf(txt,"tko ( %d , %lf ft ) , lnd ( %d , %lf ft)", &pm1,&pm2,&pm3,&pm4);
-	if (nf != 4)	return;
-	SetTkoFLP(pm1,pm2);
-	SetLndFLP(pm3,pm4);
-	return;
-}
-
 //------------------------------------------------------------------------------------
 //  Fill alignment table
 //------------------------------------------------------------------------------------
@@ -1154,13 +1163,13 @@ void AutoPilot::VerticalMode()
 void AutoPilot::TimeSlice(float dT,U_INT FrNo)
 { CDependent::TimeSlice(dT,FrNo);
 	rALT.Upd(dT);															// Update reference altitude
-	if (0 == Radio)												return;
+	if (0 == busRD)												return;
   if (0 == active) {PowerLost();        return;}                        
   if (globals->dbc->NotSynch(FrameNo))  return;
   dTime = dT;
   if (AP_DISENGD == lStat)              return;
   //----Get current parameters (altitude, heading, etc)------
-	sect	= (Radio->flag == VOR_SECTOR_TO)?(1):(0);
+	sect	= busRD->flag;
 	wgrd  = mveh->WheelsAreOnGround();
 	cALT	= altS->GaugeBusFT01();					// Current altitude
 	cAGL	= mveh->GetAltitudeAGL();
@@ -1202,8 +1211,8 @@ void AutoPilot::Disengage(char gr)
 //  Check radio Signal
 //-----------------------------------------------------------------------
 int AutoPilot::BadSignal(char s)
-{ if (0 == Radio)           {Alarm(); return 1;}
-  char  msk = Radio->ntyp & s; 
+{ if (0 == busRD)           {Alarm(); return 1;}
+  char  msk = busRD->ntyp & s; 
   if (0 == msk)             {Alarm(); return 1;}
   signal  = s;
   return 0;
@@ -1227,8 +1236,8 @@ void AutoPilot::LateralHold()
   CPIDbox *hbox = pidL[PID_HDG];                    // Heading controller
   CPIDbox *bbox = pidL[PID_BNK];                    // Banking controller
   double   err  = Norme180(aHDG - rHDG);						// Error in [-180,+180]
-  double   trn = hbox->Update(dTime,err,0);					// Input to Head controller
-  double   avl = bbox->Update(dTime,turn,trn);      // Banking to controller
+  double   trn	= hbox->Update(dTime,err,0);				// Input to Head controller
+  double   avl	= bbox->Update(dTime,turn,trn);     // Banking to controller
   ailS->PidValue(avl);                              // result to ailerons
 	if (trace)  TRACE("HOLD: aHDG=%.2f rHDG=%.2f",aHDG,rHDG);
   return;
@@ -1255,7 +1264,7 @@ void AutoPilot::GlideHold()
 //         controller.
 //-----------------------------------------------------------------------
 void AutoPilot::AltitudeHold()
-{ double gler= -Radio->gDEV * 1000;
+{ double gler= -busRD->gDEV * 1000;
 	double nl0 = pidL[PID_VSP]->Update(dTime,eVRT,0); // Maintain VSP controller
 	double nl1 = pidL[PID_GLS]->Update(dTime,gler,0); // Maintain Glide controller
   double taa = pidL[PID_ALT]->Update(dTime,eVRT,0); // erro to altitude controller
@@ -1284,7 +1293,8 @@ void AutoPilot::ModeROL()
 //--------------------------------------------------------------------------------
 void	AutoPilot::ModeLT0()
 { //--- Check for new approach conditions -------
-	bool go = (sect) && (Radio->mdis > TGA1);
+	//bool go = (sect == VOR_SECTOR_TO) && (busRD->mdis > dga1);
+	bool go = (sect == VOR_SECTOR_TO);		// Check for sector TO		
 	if (go)		return GetCrossHeading();
 	LateralHold();
 	return;
@@ -1317,11 +1327,12 @@ void	AutoPilot::ModeLT0()
 void AutoPilot::ModeLT1()
 { if (BadSignal(signal))		return EnterROL();
   //----Compute distance to desired track/runway direction ----------
-  double rd   = DegToRad(Radio->rDEV);
-  rDIS        = Radio->mdis * sin(rd);    // Distance to R (nm)
+  double rd   = DegToRad(busRD->rDEV);
+  rDIS        = busRD->mdis * sin(rd);    // Distance to R (nm)
 	//--- Remaining distance to ils plane ----------------------------------
 	if (fabs(rDIS) > vDTA)	return CrossDirection();
   //----Enter second leg ------------------------------------------------
+	if (aprm)		busRD->extS->SetPosition(&rend->refP);			// Change target
   if (trace)	TRACE("Enter LT2");
   lStat = AP_LAT_LT2;
   StateChanged(sEVN);
@@ -1330,16 +1341,18 @@ void AutoPilot::ModeLT1()
 //-----------------------------------------------------------------------
 // Get the runway crossing direction
 //  The precomputed cross direction xHDG is used.
-//  xHDG was computed to cross the NAV/ILS signal at right angle
+//  xHDG was computed to cross the NAV/ILS signal at some angle
 //-----------------------------------------------------------------------
 void AutoPilot::CrossDirection()
 { rHDG	= xHDG;
+	if (aprm)		rHDG	= busRD->radi;					// Approach: go to far point
+	else				rHDG	= xHDG;									// Nav:  cross track
 	if (trace) TRACE("rHDG to %.1f", rHDG);
   return LateralHold();
 }
 //-----------------------------------------------------------------------
 //	Adjust correction factor according to different types of legs
-//	Red azone is a cone of 20° around the ils line
+//	Red zone is a cone of 20° around the ils line
 //	When landing in red zone, the heading correction is boosted to allow
 //	more sensibility
 //	era is error in horizontal plan between actual radial and target one.
@@ -1347,20 +1360,20 @@ void AutoPilot::CrossDirection()
 //-----------------------------------------------------------------------
 double AutoPilot::AdjustHDG()
 { //-- Approach=> 45° toward ILS---------------------
-	double era  = fabs(Radio->hDEV);
+	double era  = fabs(busRD->hDEV);
 	redz				= (era < 20)?(1):(0);			// Red sector
 	cFAC				= 0;
 	//--- Remaining distance to runway axis -----------
-	double rd   = DegToRad(Radio->rDEV);
-  rDIS        = Radio->mdis * sin(rd);    // Distance to R (nm)
+	double rd   = DegToRad(busRD->rDEV);
+  rDIS        = busRD->mdis * sin(rd);    // Distance to R (nm)
 	//--- Approach leg and not in red sector ----------
 	if (!redz &&  aprm)		return xCOR;
-	//--- Other tracking mode --------------
+	//--- Other tracking mode -------------------------
 	double coef  = linTB.Lookup(era);
-  cFAC  =  (coef * Radio->hDEV);
+  cFAC  =  (coef * busRD->hDEV);
 	if (!aprm)	cFAC *= 0.4;
 	else				lStat = AP_LAT_LND;
-	rHDG  =  Wrap360(Radio->radi - cFAC );
+	rHDG  =  Wrap360(busRD->radi - cFAC );
 	rHDG	=	 Wrap360(rHDG - globals->magDEV);
 	return rHDG;
 }
@@ -1392,13 +1405,13 @@ void AutoPilot::ModeLT2()
 void AutoPilot::ModeLND()
 {	if (BadSignal(signal))  return ExitLT2();
   //--- Remaining distance to runway axis -----------
-	double rd   = DegToRad(Radio->rDEV);
-  rDIS        = Radio->mdis * sin(rd);    // Distance to R (nm)
+	double rd   = DegToRad(busRD->rDEV);
+  rDIS        = busRD->mdis * sin(rd);    // Distance to R (nm)
 	//--- Tracking mode --------------
-	double era  = fabs(Radio->hDEV);
+	double era  = fabs(busRD->hDEV);
 	double coef = linTB.Lookup(era);
-  cFAC  =  (coef * Radio->hDEV);
-	rHDG  =  Wrap360(Radio->radi - cFAC );
+  cFAC  =  (coef * busRD->hDEV);
+	rHDG  =  Wrap360(busRD->radi - cFAC );
 	rHDG	=	 Wrap360(rHDG - globals->magDEV);
 	return LateralHold();
 }
@@ -1413,8 +1426,9 @@ void AutoPilot::ModeLND()
 void	AutoPilot::ModeTGA()
 {	double amin = aMIS + 100;
 	double agrn = mveh->GetGroundAltitude();			//globals->tcm->GetGroundAltitude();
-	double mref = RoundAltitude(agrn + aTGA);
-	rALT.Set(mref,1);
+	double mref = (agrn + aTGA);
+	if (rALT.Tvl() < mref)	rALT.Set(mref,1);
+	StateChanged(AP_STATE_ACH);
 	//TRACE("LEG=%d cAGL=%.2lf rALT.tval=%.2lf rALT.cval=%.2lf",stga,cAGL,rALT.Tvl(),rALT.Get());
 	switch (stga)	{
 		//--- climb to (aMISS + 100) AGL -----------
@@ -1422,22 +1436,22 @@ void	AutoPilot::ModeTGA()
 			if (cAGL < amin)			 return LateralHold();
 			flpS->SetPosition(0);
 			//--- Set direction to 90° left of runway --
-			rHDG	= Wrap360(Radio->hREF - 90);
+			rHDG	= Wrap360(busRD->hREF + ang0);
 			stga  = AP_TGA_HD1;
 			return  LateralHold();
 		//--- Go back to heading mode --------------
 		case AP_TGA_HD1:
-			if (Radio->mdis < TGA0)	return LateralHold();
+			if (busRD->mdis < dga0)	return LateralHold();
 			stga	= AP_TGA_HD2;
 			return LateralHold();
 		//--- wait for some distance --------------
 		case AP_TGA_HD2:
 			//--- Set Direction along the runway ----
-			rHDG	= Wrap360(Radio->hREF - 180);
+			rHDG	= Wrap360(busRD->hREF + ang1);
 			stga  = AP_TGA_HD3;
 			return  LateralHold();
 		case AP_TGA_HD3:
-			if (Radio->mdis < TGA1)		return LateralHold();
+			if (busRD->mdis < dga1)		return LateralHold();
 			return EnterAPR();
 	}
 	return;
@@ -1519,7 +1533,7 @@ bool AutoPilot::MissLanding()
 //	This function is called only from vertical glide tracking mode
 //-----------------------------------------------------------------------
 void AutoPilot::LandingOption()
-{ hERR	= Radio->hDEV;
+{ hERR	= busRD->hDEV;
 	if (MissLanding())					return;
 	//--- Update options ---------------------------
 	U_INT opt = mveh->GetOPT(VEH_AP_OPTN) | land;  // Land option
@@ -1561,7 +1575,7 @@ void AutoPilot::ModeALT()
 //         vAMP is set to 1000 at maximum value
 //-----------------------------------------------------------------------
 void AutoPilot::ModeGST()
-{ eVRT = -Radio->gDEV;          // Glide error
+{ eVRT = -busRD->gDEV;          // Glide error
   if (vAMP < 1000) vAMP += 5;   // Increase amplifier
   GlideHold();                  // Hold slope
 	LandingOption();
@@ -1575,7 +1589,7 @@ void AutoPilot::ModeGST()
 void AutoPilot::ModeGSW()
 { eVRT  = (rALT.Get() - cALT);   // Vertical error
 	if (lStat == AP_LAT_LT0)			return AltitudeHold();
-  if (Radio->gDEV < 0.0005)			return AltitudeHold();
+  if (busRD->gDEV < 0.0005)			return AltitudeHold();
 	//pidL[PID_GLS]->Init();
   vStat = AP_VRT_GST;
   StateChanged(AP_STATE_VTK);
@@ -1595,6 +1609,7 @@ bool AutoPilot::AbortLanding(char r)
 	StateChanged(AP_STATE_ALT);
 	lStat	= AP_LAT_TGA;
 	stga	= AP_TGA_UP5;
+	flpS->SetPosition(flp0);
   return true;
 }
 //-----------------------------------------------------------------------
@@ -1619,7 +1634,7 @@ void AutoPilot::ModeVSP()
 //-----------------------------------------------------------------------
 void AutoPilot::ModeFLR()
 { //--- compute expected altitude ------------------------------
-	double dis	= Radio->fdis - nTDP;								// Distance to touch
+	double dis	= busRD->fdis - nTDP;								// Distance to touch
 	double xagl	=	dis * sTAN;												// Expected AGL
 	dTDP				= dis;															// Touch down point
 	eVRT				= (xagl - cAGL) / dis;							// Expressed in tan unit
@@ -1789,33 +1804,34 @@ void AutoPilot::OnlyHDG()
 //
 //-----------------------------------------------------------------------
 void AutoPilot::GetCrossHeading()
-{ //--- normal approach ------------------------
-  if ((aprm) && (sect))
+{ //--- Approach in SECTOR TO ------------------------
+  if ((aprm) && (sect == VOR_SECTOR_TO))
 	{	lStat = AP_LAT_LT1;
-	  double cor	= (Radio->rDEV > 0)?(+xAPW):(-xAPW);
-		double qrt  = cor * 0.25;
-		xHDG				= Wrap360(Radio->hREF + cor);
-		xCOR				= Wrap360(Radio->hREF + qrt);
+	  double cor	= (busRD->rDEV > 0)?(+xAPW):(-xAPW);
+		double dem  = cor * 0.5;
+		xHDG				= busRD->radi;										// Toward far Point
+		xCOR				= Wrap360(rend->orie + dem);      // angle of approach
+
 	  //TRACE("CROSS (aprm) hREF=%.4f rDEV=%.4f xHDG=%.4f",Radio->hREF,Radio->rDEV,xHDG);
 	  //	trace = 1;
 		return;
 	}
-	//--- Approach in sector FR -----------------------
+	//--- Approach in SECTOR FROM ---------------------
 	//--- Must do a go arround to catch direction -----
-	if (aprm)
+	if ((aprm) && (sect != VOR_SECTOR_TO))
 	{ lStat				= AP_LAT_LT0;
-		xHDG				= Wrap360(Radio->hREF + 180);
+		xHDG				= Wrap360(busRD->hREF + 180);
 		rHDG				= xHDG;
 		return;
 	}
 	//--- NAV mode: Direction to cross Radial ---------
 	lStat = AP_LAT_LT1;
-	double dev    = Wrap180(aHDG - Radio->hREF);
+	double dev    = Wrap180(aHDG - busRD->hREF);
 	//TRACE("CROSS hREF=%.4f aHDG=%.4f dev=%.4f rHDG=%.4f",Radio->hREF,aHDG,dev,rHDG);
   xHDG				= rHDG;							// Set cross heading as actual
 	if ((dev > -90) || (dev < +90))	return;
-	double cor	= (Radio->hDEV > 0)?(-90):(+90);
-	xHDG				= Wrap360(Radio->hREF + cor);
+	double cor	= (busRD->hDEV > 0)?(-90):(+90);
+	xHDG				= Wrap360(busRD->hREF + cor);
 	rHDG				= xHDG;
 	//TRACE("CHANGE rHDG=%.4f",rHDG);
   return;
@@ -1859,7 +1875,7 @@ void AutoPilot::EnterAPR()
   StateChanged(AP_STATE_APR);
   sEVN  = AP_STATE_ATK;             // next state
 	//--- Get landing data  ---------------------------------
-	rend		= Radio->rSRC->GetLandSpot();
+	rend		= busRD->rSRC->GetLandSpot();
 	//--- This is only for test ----------------------------
 	//rend->apo->SetDatatoDraw(rend);
 	//TRACE("EnterAPR lndDIR=%.4f",rend->lnDIR);
@@ -1919,7 +1935,7 @@ void AutoPilot::EnterFLR()
 	//  TRACE("ENTER FLARE");
 	//--- Compute touch down point from ILS ----------
 	double tdp = aLND / sTAN;
-	nTDP	= Radio->fdis - tdp ;
+	nTDP	= busRD->fdis - tdp ;
 	//	globals->Trace.Set(TRACE_WHEEL);
 	mveh->SetABS(1);
   return;
@@ -2186,7 +2202,7 @@ int AutoPilot::EnterTakeOFF(char x, LND_DATA *rwd)
 //-----------------------------------------------------------------------
 bool AutoPilot::EnterGPSMode()
 {	if (0 != xCtl)						return false;
-	if (0 == Radio)						return false;
+	if (0 == busRD)						return false;
 	if (cAGL < 500)						return false;
 	if (AP_DISENGD == vStat)	return false;
 	if (AP_VRT_TKO == vStat)	return false;
@@ -2208,11 +2224,11 @@ double AutoPilot::SelectSpeed()
 			return 0;
 		//--- Tracking glide in final ----------------
 		case AP_VRT_GST:
-		{	if (sect == 0)			return xRAT;
-			if (cAGL <= aCUT)		return fSPD;
-			xAGL		= Radio->gDEV * Radio->fdis;
+		{	if (sect != VOR_SECTOR_TO)	return xRAT;
+			if (cAGL <= aCUT)						return fSPD;
+			xAGL		= busRD->gDEV * busRD->fdis;
 			double err	= (xAGL - cAGL);
-			if (0 == sbox)			return 75.5;
+			if (0 == sbox)							return 75.5;
 			return sbox->Update(dTime,err,0);		// Input to SPD controller
 		}
 		//--- take-off -------------------------------
@@ -2302,10 +2318,10 @@ void AutoPilot::Probe(CFuiCanva *cnv)
   cnv->AddText( 1,1,"hERR: %.5f",hERR);
 	cnv->AddText( 1,1,"eVRT: %.4f",eVRT);
 	cnv->AddText( 1,1,"rDIS: %.5f",rDIS);
-  if (Radio)
-  { cnv->AddText( 1,1,"hREF %.5f",Radio->hREF);
-		cnv->AddText( 1,1,"hDEV %.5f",Radio->hDEV);
-		cnv->AddText( 1,1,"Feet %.0f",Radio->fdis);
+  if (busRD)
+  { cnv->AddText( 1,1,"hREF %.5f",busRD->hREF);
+		cnv->AddText( 1,1,"hDEV %.5f",busRD->hDEV);
+		cnv->AddText( 1,1,"Feet %.0f",busRD->fdis);
   }
 	if ((lStat == AP_LAT_LT0) || (lStat == AP_LAT_LT1)) 
   { cnv->AddText( 1,1,"vHRZ %.5f",vHRZ);

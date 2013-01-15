@@ -75,27 +75,33 @@ CFuiFuel::CFuiFuel(Tag idn, const char* filename)
   Tot.SetName("ALL TANKS");
   sCel  = &Tot;
   cBOX  = 0;
-  //---------------------------------------------------
-  CVehicleObject *veh  = globals->pln;
-  gas = (veh)?(veh->GetGAS()):(0);
+	//---------------------------------------------------
+	plan	= globals->pln;
+	if (plan)	Init();
+	else			Close();
+}
+//------------------------------------------------------------------------
+// Init fuel load
+//------------------------------------------------------------------------
+void CFuiFuel::Init()
+{ gas = plan->GetGAS();
   //---Init title --------------------------------------
-  if (veh)   veh->gas.GetAllCells(fcel);
+  plan->gas.GetAllCells(fcel);
   U_INT type = LIST_HAS_TITLE + LIST_NOHSCROLL;
   gBOX.SetParameters(this,'tank',type);
-  //----------------------------------------------------
+  //--- Build list of tanks and compute contributions ---
   BuildTankList();
   InitGradMenu();
   GetTotalGas();
   SelectTank();
-  //------Register me-----------------------------------
-  globals->wfl  = this;
+	//--- End of initialization --------------------------
+	return;
 }
 //------------------------------------------------------------------------
 //  Destroy this window
 //------------------------------------------------------------------------
 CFuiFuel::~CFuiFuel()
-{ globals->wfl = 0;
-}
+{}
 
 //-----------------------------------------------------------------------
 //  Compute global capacity, quantity and weight
@@ -190,7 +196,10 @@ void CFuiFuel::ChangeAllQTY(float rate)
 //  Change quantity in the selected cell
 //----------------------------------------------------------------------------------
 void CFuiFuel::ChangeTankQTY(U_INT inx) 
-{ CFuelCell *cel  = sCel;
+{ bool ok		=  plan->AllWheelsOnGround();
+			 ok  &= plan->AllEngineOff();
+	if (!ok)		return;
+	CFuelCell *cel  = sCel;
   float       old = cel->GetCellQty();          // Actual QTY
   float       tot = Tot.GetCellQty();
   float       rat = rul->GetValue() * 0.01f;
@@ -211,7 +220,7 @@ void CFuiFuel::ChangeTankQTY(U_INT inx)
 //--------------------------------------------------------------------------
 //  Refresh from fuel system
 //--------------------------------------------------------------------------
-void CFuiFuel::Refresh()
+void CFuiFuel::TimeSlice()
 { gBOX.Refresh();
   EditGlobalFuel();
   //--- Refresh ruler for selected tank -----

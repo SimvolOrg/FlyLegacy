@@ -36,10 +36,6 @@ extern char *HexTAB;
 //=================================================================================
 //  Button text
 //=================================================================================
-char *ButTXT[] = {
-  "ASSIGN to this TILE",
-  "LOCKED in AUTO MODE",
-};
 //---------------------------------------------------------------------------------
 char *ObjBTN[] = {
   "Hide Objects",
@@ -49,8 +45,8 @@ char *ObjBTN[] = {
 char  btnLOK[] = {-1,+1};
 //---------------------------------------------------------------------------------
 char *OptTXT[] = {
-  "AUTO OFF: You may change the tile type",
-  "AUTO ON : The type change with aircraft moving",
+  "You may change the texture type",
+  "Locked  : You cannot change the texture type",
 };
 //---------------------------------------------------------------------------------
 char *AptBTN[] = {
@@ -64,21 +60,26 @@ CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
 :CFuiWindow(idn,filename,600,360,0)
 { strncpy(text,"TERRA BROWSER",255);
 	//-------------------------------------------------
+	state	= 0;
+	sel		= 0;
+	chng	= 0;
 	Type  = -1;
   inf.mADR = 0;
   inf.xOBJ = 0;
   inf.res  = TC_HIGHTR;
-  mode     = 1;
 	obtn	= 0;
 	abtn	= 0;
+	lock  = 1;
   //----Create a label title ----------------------
   CFuiLabel *lab1 = new CFuiLabel(20,10,280, 20,this);
   lab1->SetText("TYPE OF TERRAIN TEXTURES");
   AddChild('lbl1',lab1);
+
   //----Create the List box -----------------------
   xWIN  =           new CFuiList (20,30,270,256,this);
   xWIN->SetVScroll();
   AddChild('xlst',xWIN);
+
   //----Create a Canvas ---------------------------
   xCNV  =           new CFuiCanva(320,30,256,256,this);
   AddChild('xcnv',xCNV);
@@ -87,16 +88,16 @@ CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
   wLB1  =           new CFuiLabel(320,10,256,20,this);
   AddChild('wlb1',wLB1);
   //----Create RadioButton ------------------------
-  wOPT  =           new CFuiCheckbox(20, 300,420,16,this);
-  AddChild('wopt',wOPT,OptTXT[mode]);
-  wOPT->SetState(mode);
+  wLOK  =           new CFuiCheckbox(20, 300,420,16,this);
+  AddChild('wlok',wLOK,OptTXT[lock]);
+  wLOK->SetState(lock);
+
   //----Create the button -------------------------
-  wBTN  =           new CFuiButton(420,  300, 140,20,this);
-  AddChild('wbtn',wBTN,ButTXT[mode]);
+  wBT1  =           new CFuiButton(420,  300, 140,20,this);
+  AddChild('wbt1',wBT1,"Assign selected Texture");
   //----Create Cancel button ----------------------
   zBTN  =           new CFuiButton(420,  326, 140,20,this);
   AddChild('zbtn',zBTN,"CANCEL");
-  zBTN->Hide();
 	//--- Create group edit -------------------------
 	BuildGroupEdit(10,320);
   //----Create surface ----------------------------
@@ -106,7 +107,6 @@ CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
   //---Get a camera to draw texture ---------------
   Cam     = new CCameraSpot();
   //-----------------------------------------------
-  lock    = 0;
   tFIL    = globals->tcm->GetTerraFile();
   //-----------------------------------------------
   aBOX->SortAndDisplay();
@@ -142,7 +142,6 @@ void CFuiTBROS::GetSelection()
 { char name[PATH_MAX];
   CTgxLine *lin = (CTgxLine*)aBOX->GetSelectedSlot();
   int       ntp = lin->GetType();
-  if (0 ==  lin)              return;
   if (ntp == Type)            return;
   Type  =   ntp;
   if (0 == Type)              return;
@@ -154,9 +153,6 @@ void CFuiTBROS::GetSelection()
   CArtParser img(TC_HIGHTR);
   img.LoadTextureMT(inf);
   globals->txw->GetTexOBJ(inf,0,GL_RGBA);
-  //--------------------------------------------
-  if (0 == Type)  mode = 1;
-  RefreshOPT();
   return;
 }
 //-----------------------------------------------------------------------
@@ -164,9 +160,9 @@ void CFuiTBROS::GetSelection()
 //-----------------------------------------------------------------------
 void CFuiTBROS::UpdateGround()
 { char txt[256];
+	if (sel)									return;
   globals->tcm->EditGround(txt);
   wLB1->SetText(txt);
-  if (0 == mode)            return;
   int gnd = globals->tcm->GetGroundType();
   if (gnd == Type)          return;
   aBOX->GoToKey(&gnd);
@@ -174,22 +170,56 @@ void CFuiTBROS::UpdateGround()
   return;
 }
 //-----------------------------------------------------------------------
+//  Update position  while moving
+//-----------------------------------------------------------------------
+void CFuiTBROS::UpdatePosition()
+{	SPosition p = globals->geop;
+	if (p.lon != pos.lon)	sel = 0;
+	if (p.lat != pos.lat)	sel = 0;
+	pos	= p;
+	return;
+}
+//-----------------------------------------------------------------------
 //  Cannot write on this install
 //-----------------------------------------------------------------------
 int CFuiTBROS::Error()
 { lock = 1;
-  mode = 1;
-  wOPT->SetState(mode);
-  wOPT->SetText("LOCK: ImageType file cannot be modified on this installation");
+  wLOK->SetState(1);
+  wLOK->SetText("LOCK: ImageType file cannot be modified on this installation");
   return 0;
+}
+//-----------------------------------------------------------------------
+//  Patch texture
+//	Compute a flag at position corresponding to the actual detail tile
+//						in the supertile  in [0-15];  The  SW detail tile
+//						has index 0 into the supertile.
+//-----------------------------------------------------------------------
+void CFuiTBROS::PatchTexture()
+{	GroundSpot *spot	= globals->tcm->GetSpot();
+	U_INT				ind   = spot->GetTextureInSUP();
+	U_INT				key		= QGTKEY(spot->qx,spot->qz);
+	U_INT				sno   = spot->sup->GetNumber();
+	U_INT       pat   = globals->sqm->ReadPatchDetail(key,sno);
+	pat  |= (1 << ind);				// Position of patch 
+	globals->sqm->PatchDetailTRN(key,sno,pat);
+	//--- Update Texture Descriptor ----------------
+	CTextureDef *txd = globals->tcm->GetTexDescriptor();
+	txd->TypTX			 = 0;
+	//--- Refresh display --------------------------
+	globals->tcm->GetSpotQGT()->PutOutside();
+  return;
+}
+//-----------------------------------------------------------------------
+//  Change user texture back to generic texture
+//-----------------------------------------------------------------------
+void CFuiTBROS::ChangeUserTexture()
+{	//if (gnd != 0)									return 0;
 }
 //-----------------------------------------------------------------------
 //  Change actual tile
 //-----------------------------------------------------------------------
 int CFuiTBROS::ChangeTile(int gnd)
-{ if (mode == 1)                return 0;     // Locked     
-  if (gnd  == 0)                return 0;     // User ground
-  if (lock == 1)                return 0;     // previous error
+{ if (gnd  == 0)                return 0;     // User ground
   if (gnd  == Type)             return 0;     // same type
   //---Try to change the tile type -------------------
   U_INT ax; 
@@ -200,7 +230,6 @@ int CFuiTBROS::ChangeTile(int gnd)
   chng      = gnd;                   // Save change
   this->sx  = ax;
   this->sz  = az;       
-  zBTN->Show();
   //---Enter a log -----------------------------------
   int qx  = (ax >> TC_BY32);        // QGT  X index
   int qz  = (az >> TC_BY32);        // QGT  Z index
@@ -209,7 +238,7 @@ int CFuiTBROS::ChangeTile(int gnd)
   TERRA("   QGT(%03d-%03d) DET(%02d-%02d) Type was %03d  Changed for %03d",
         qx,tx,qz,tz,gnd,int(tp));
   //---Refresh texture load --------------------------
-  C_QGT     *qgt = globals->tcm->GetCenterQGT();
+  C_QGT     *qgt = globals->tcm->GetSpotQGT();
   if (qgt)   qgt->PutOutside();
   return 1;
 }
@@ -217,7 +246,8 @@ int CFuiTBROS::ChangeTile(int gnd)
 //  Restore Tile
 //-----------------------------------------------------------------------
 int  CFuiTBROS::RestoreTile(int gnd)
-{ if (0 == chng)                  return 0;
+{ sel	= 0;
+  if (0 == chng)                  return 0;
   if (!tFIL->Write(sx,sz,&chng))  return Error();
   //--- Restoration is OK ----------------------------
   zBTN->Hide();
@@ -228,12 +258,14 @@ int  CFuiTBROS::RestoreTile(int gnd)
   int tz  = sz & TC_032MODULO;      // Tile Z index
   TERRA("   QGT(%03d-%03d) DET(%02d-%02d) Type was %03d  Restored to %03d",
         qx,tx,qz,tz,gnd,chng);
+	//--- -----------------------------------------------
+	chng	= 0;
   //--Refresh view if position not moved --------------
   U_INT ax;
   U_INT az;
   globals->tcm->GetAbsoluteIndices(ax,az);
   if ((ax != sx) || (az != sz)) return 0;
-  C_QGT     *qgt = globals->tcm->GetCenterQGT();
+  C_QGT     *qgt = globals->tcm->GetSpotQGT();
   if (qgt)   qgt->PutOutside();
   return 1;
 }
@@ -241,32 +273,54 @@ int  CFuiTBROS::RestoreTile(int gnd)
 //  Refresh option
 //-----------------------------------------------------------------------
 void CFuiTBROS::RefreshOPT()
-{   wOPT->SetState(mode);
-    wOPT->SetText(OptTXT[mode]);
-    wBTN->SetText(ButTXT[mode]);
+{  	wLOK->SetState(lock);
+    wLOK->SetText(OptTXT[lock]);
+		//--- Refresh ground ---------------------
+		if (1 == lock) sel = 0;
+		wBT1->Hide();
+		zBTN->Hide();
+		state	= 0;
+		//--- State c1 for generic textures -------
+		bool c1 = (0 == lock) && (0 != Type);
+		if (c1) 
+		{	state	= 1;
+			wBT1->SetText("Assign selected Texture");
+			wBT1->Show();
+			zBTN->Show();
+		}
+		//---- State C2 for user textures --------
+		bool c2 = (0 == lock) && (0 == Type);
+		c2 &= (globals->sqm->UseElvDB() != 0);
+		if (c2)
+		{	state = 2;
+			wBT1->SetText("Back to Generic Texture");
+			wBT1->Show();
+		}
     return;
 }
 //-----------------------------------------------------------------------
 //  Notifications
 //-----------------------------------------------------------------------
 void  CFuiTBROS::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
-{ int gnd = globals->tcm->GetGroundType(); 
+{ int gnd = globals->tcm->GetGroundType();
+	bool nok = (0 == Type) || (lock);
   switch (idm)  {
   case 'sysb':
     SystemHandler(evn);
     return;
   case 'xlst':
-    if (1 == mode)    return;
+    if (nok)    return;
+		sel	= 1;
     aBOX->VScrollHandler((U_INT)itm,evn);
     GetSelection();
     return;
-  case 'wopt':
-    mode    = (gnd)?(itm):(1);
-    mode   |= lock;
-    RefreshOPT();
+  case 'wlok':
+    lock ^= 1;
+		RefreshOPT();
     return;
-  case 'wbtn':
-    ChangeTile(gnd);
+  case 'wbt1':
+    if (1 == state)	ChangeTile(gnd);
+		if (2 == state)	PatchTexture();
     return;
   case 'zbtn':
     RestoreTile(gnd);
@@ -292,7 +346,9 @@ void CFuiTBROS::Draw()
 { //---Refresh texture if changed -------------------------
   VIEW_PORT vp;
   xCNV->GetViewPort(vp);
+	UpdatePosition();
   UpdateGround();
+	RefreshOPT();
   CFuiWindow::Draw();
   Cam->Projection(vp,inf.xOBJ);
 }
@@ -456,10 +512,11 @@ void CFuiMBROS::Teleport()
 //  ZB option is changed
 //--------------------------------------------------------------------------------
 void CFuiMBROS::ChangeZB()
-{	if (0 == wObj)						return;
+{	if (0 == wObj)											return;
 	char zb = wZbo->GetState();
 	wObj->SetNOZB(zb);
-	if (0 == globals->objDB)	return;
+//	if (0 == globals->objDB)	return;
+  if (0 == globals->sqm->UseObjDB())	return;
 	globals->sqm->UpdateOBJzb(wObj);
 	return;
 }

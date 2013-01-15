@@ -1881,7 +1881,9 @@ int COBJparser::Decode(char *fn,char t)
 		if (Parse3NFaces(s))							continue;
 		if (Parse4Faces(s))								continue;
 		if (Parse3Faces(s))								continue;
-		if (*s == 'g')										continue;
+		//--- Ignore statement ---------------------
+//		if (*s == 's')										continue;
+//		if (*s == 'g')										continue;
 	}
 	//--- Close file  ---------------------------
 	if (pod)  pclose(pod);

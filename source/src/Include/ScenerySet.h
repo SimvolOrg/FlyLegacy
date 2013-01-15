@@ -168,7 +168,6 @@ protected:
 	std::map<U_INT,CSceneryPack*> m3dPAK;	// Scenery 3D
 	std::map<U_INT,CSceneryPack*> s2dPAK;	// Scenery 2D
 	//--- Queue of database descriptor ----------------------------------------
-	qHDR	<SQL_DB>		osmQ;
 	//--- Queue of Database request for OSM -----------------------------------
 	qHDR  <OSM_DBREQ> reqQ;
 };

@@ -131,7 +131,8 @@ void CImport::Reset()
 //  TODO:  Check for existing database
 //-----------------------------------------------------------------
 void CImport::ImportElevations()
-{ if (0 == globals->elvDB)    return;
+{ //if (0 == globals->elvDB)    return;
+  if (0 == globals->sqm->UseElvDB())	return;
   if (0 == elv)               return;
   ImportElevations("Import/sanfrancisco.bt");
 }

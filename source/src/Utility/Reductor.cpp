@@ -884,8 +884,6 @@ bool CPolyShop::ClosePart(CrTriangle *tr)
   Part->ReduceIndice(crIND);
   Mod->AddLodPart(Part,nLOD);
   Part  = 0;
-if (nLOD == 0)
-int a = 0;
   return true;
 }
 //----------------------------------------------------------------------
