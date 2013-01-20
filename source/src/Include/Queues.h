@@ -245,6 +245,45 @@ template <class T> void  qHDR<T>::Raz()
   Prev  = 0;
   return;
 }
-
+//=====================================================================
+//	Generic class simple stack of 16 items
+//=====================================================================
+template <class T> class stackP {
+#define STACK_DIM (16)
+protected:
+	//--- Attributes --------------------------------
+	T		*list[STACK_DIM];									// Pointers to T items
+	char inx;															// Index 
+	//--- Methode -----------------------------------
+public:
+	stackP()	{	Reset();}
+	//------------------------------------------------
+	void		Reset();
+	void		Push(T *ap);
+	T      *Pop();
+};
+//--------------------------------------------------------------
+//	Rest the stack
+//--------------------------------------------------------------
+template <class T> void stackP<T>::Reset()
+{	inx	= 0;
+	for (int k=0; k < STACK_DIM; k++) list[k] = 0;
+}
+//--------------------------------------------------------------
+//	push one item
+//--------------------------------------------------------------
+template <class T> void stackP<T>::Push(T *ap)
+{	list[inx++]	= ap;
+  inx &= (STACK_DIM - 1);
+	return;
+}
+//--------------------------------------------------------------
+//	Pop one item
+//--------------------------------------------------------------
+template <class T> T *stackP<T>::Pop()
+{	inx--;
+  inx &= (STACK_DIM - 1);
+	return list[inx];
+}
 //============================END OF FILE =================================================
 #endif // QUEUES_H

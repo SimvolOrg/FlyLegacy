@@ -828,6 +828,8 @@ protected:
 	OSM_Object *remB;															// Removed building
 	OSM_Object *osmS;															// Current selection
 	U_INT   xOBJ;																	// Current texture
+	//--- Stack of removed objects -----------------------
+	stackP<OSM_Object>	rOBJ;											// Removed object
 	//---  Texture descriptor ----------------------------
 	TEXT_INFO txd;																// Texture desc
 	//--- METHODS ----------------------------------------

@@ -725,40 +725,40 @@ class CFuiTED : public CFuiWindow
 	CFuiButton      *nBut;								// No button
 	//--- Rabbit camera -----------------------------------------
 	CRabbitCamera   *rcam;
-	//--- Hit buffer -------------------------------------
+	//--- Elevation management ----------------------------------
+	char						mode;									// Mode edit
+	int							alti;									// Current altitude
+	int							palt;									// Past altitude
+	//--- Menus -------------------------------------------------
+  FL_MENU          menu;								// menu descriptor
+	//--- Hit buffer --------------------------------------------
 	GLuint					 bHit[8];						  // Hit buffer
-	//----Patche area -------------------------------------------
-	ELV_PATCHE			pbuf;									// Patche buffer
 	//--- Update parameters -------------------------------------
-	short					  count;								// Modification indicator
-	char						mdif;									// reserved
-	char						msgw;									// Warning indicator
-	std::map<U_INT,U_INT> ldet;						// List of modified tiles
+	U_INT					  count;								// Modification indicator
 	//--- METHODS -----------------------------------------------
 public:
 	CFuiTED(Tag idn, const char *filename);
  ~CFuiTED();
  //------------------------------------------------------------
- void   TileNotify(CmQUAD *qd, CVertex *vt);
- void		EnterKey(U_INT tx,U_INT tz);
- //------------------------------------------------------------
  bool   NoAlert();
  void   Warn01();
- void		WarnM1();
  void		SaveAll();
- void		SaveOne(U_INT key);
  bool   WantToClose();
  void		SaveAndQuit(char opt);
  //------------------------------------------------------------
  void		Draw();
- void		EditElevation(float e);
+ void		EditElevation();
  //------------------------------------------------------------
- void		IncElevation(float dte);
- void		GetElevation();
+ void		IncElevation(int dte);
+ void		StoreElevation();
+ void		OneElevation(double e);
+ void		Unselect();
  //--- Mouse events -------------------------------------------
  bool		MouseCapture (int mx, int my, EMouseButton bt);
  //--- Notifications ------------------------------------------
  void		NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn);
+ void		NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn);
+
  //--- Dont close the windows ----------------------------------
  bool		CheckProfile(char a);
 };

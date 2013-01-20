@@ -48,8 +48,6 @@ class TaxNODE;
 class TaxEDGE;
 class TaxiwayMGR;
 class CTextureDef;
-struct TRACK_EDIT;
-struct ELV_PATCHE;
 //=====================================================================================
 //  DEFINE COLUMN INDICES FOR AIRPORT
 //=====================================================================================
@@ -729,10 +727,9 @@ public:
 	void	ResetDetailTRN(CTextureDef *txd);
 	int		GetTILElevations(C_QGT *qgt);
 	int		DecodeDETrow();
-	int   ReadPatches(C_QGT *qgt,ELV_PATCHE &p);
 	//--- WRITING PATCHE ELEVATIONS ---------------------------------------
-	int		WritePatche (ELV_PATCHE &p);
-	int		DeletePatche(ELV_PATCHE &p);
+	int		WritePatche(PATCH_ELV &p);
+	void	ReadPatches(C_QGT *qgt);
 	//--- TRN texture interface -------------------------------------------
 	int   WriteTRNtexture(TEXT_INFO &txd,char *tab);
 	bool  TRNTextureInTable(U_INT key,char *tab);

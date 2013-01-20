@@ -76,19 +76,26 @@ CElvTracker::CElvTracker()
 {	tcm		= 0;
 	upd		= 0;
 	wind	= 0;
+	area.quad	= 0;
 }
 //----------------------------------------------------------------------
 //	Free resources
 //----------------------------------------------------------------------
 CElvTracker::~CElvTracker()
-{		}
+{	std::map<U_INT,PATCH_ELV*>::iterator ip;
+	for (ip = patch.begin(); ip != patch.end(); ip++)
+	{	PATCH_ELV *p = (*ip).second;
+		delete p;
+	}
+	patch.clear();
+}
 //----------------------------------------------------------------------
 //	Register window tracker
 //----------------------------------------------------------------------
 void	CElvTracker::Register(CFuiTED *w)
 {	wind	= w;
 	if (wind)			return;
-	tile	= 0;
+	area.quad	= 0;
 	return;
 }
 //------------------------------------------------------------------------
@@ -100,50 +107,54 @@ void	CElvTracker::Register(CFuiTED *w)
 //		be reallocated
 //------------------------------------------------------------------------
 void CElvTracker::InitStack()
-{	for (int k=1; k!=4; k++)	stak[k].key	= 0;
-	U_INT ax			= tile->GetTileAX();
-	U_INT az			= tile->GetTileAZ();
-	stak[0].key		= WorldSuperKey(ax,az);
+{	for (int k=1; k!=4; k++)	stak[k].skey	= 0;
+	U_INT ax			= area.quad->GetTileAX();				// Detail Tile absolute X index
+	U_INT az			= area.quad->GetTileAZ();				// Detail Tile absolute Z index
+	U_INT dkey		= (ax << 16) | az;							// Detail tile Key
+	stak[0].dkey	= dkey;
+	stak[0].skey	= WorldSuperKey(ax,az);
 	stak[0].qgt		= spot->qgt;
-	stak[0].quad	= tile;
+	stak[0].quad	= area.quad;
 	nbs						= 1;
-	//--- Search for all 8 neighboring tiles -------------
+	//--- Search for all 8 neighboring Detail Tiles -------------
 	for (int m=0; m<8; m++)
-	{	U_INT cx = (ax + quadINC[m].dx) & TC_QGT_DET_MOD;
-		U_INT cz = (az + quadINC[m].dz) & TC_QGT_DET_MOD;
-		FillStack(cx,cz);
+	{	U_INT dx = (ax + quadINC[m].dx) & TC_QGT_DET_MOD;
+		U_INT dz = (az + quadINC[m].dz) & TC_QGT_DET_MOD;
+		FillStack(dx,dz);
 	}
 	return;
 }
 //------------------------------------------------------------------------
-//	Store surrounding super tiles
+//	Store surrounding Detail tiles that does not resides in the same
+//	Supertile.
 //------------------------------------------------------------------------
 void CElvTracker::FillStack(U_INT ax,U_INT az)
-{	U_INT key = WorldSuperKey(ax,az);
+{	U_INT skey = WorldSuperKey(ax,az);
 	int	k = 0;
-  for (k=0; k!= nbs; k++)	if (key == stak[k].key)	return; 
+  for (k=0; k!= nbs; k++)	if (skey == stak[k].skey)	return; 
 	if (k == 4) gtfo("Elv Tracker: Bad mesh");
-	//--- Enter new slot ----------
+	//--- Locate QGT ------------------
 	U_INT	  qx		= (ax >> 5);					// Isolate QGT(X)
 	U_INT   qz		= (az >> 5);					// Isolate QGT(Z)
 	C_QGT *qgt		= globals->tcm->GetQGT(qx,qz);
 	if (0 == qgt)						return;
-	//--- Enter in stack ----------
-	U_INT tx			= (ax & 31);
-	U_INT tz			= (az & 31);
-	stak[k].key		= key;
-	stak[k].qgt		= qgt;
-	stak[k].quad	= qgt->GetQuad(tx,tz);
+	//--- Enter in stack --------------
+	U_INT tx			= (ax & 31);					// Isolate X index
+	U_INT tz			= (az & 31);					// Isolate Z index
+	//----------------------------------
+	stak[k].dkey	= (ax << 16) | az;			// Detail Tile  key
+	stak[k].skey	= skey;									// Supertile key
+	stak[k].qgt		= qgt;									// QGT
+	stak[k].quad	= qgt->GetQuad(tx,tz);	// Detail Tile
+	//----------------------------------
 	nbs++;
 	return;
 }
 //------------------------------------------------------------------------
-//	Save all modifications for storing in database
-//------------------------------------------------------------------------
-//------------------------------------------------------------------------
 //	Fix elevation
 //	-Call each SuperTile with the corresponding modified tile
 //	 so that the SuperTile VBO is reallocated
+//	-Terrain will be updated and next frame will show it
 //------------------------------------------------------------------------
 void CElvTracker::FixElevation()
 {	globals->slw->StopSlew();					// Stop moving
@@ -152,9 +163,19 @@ void CElvTracker::FixElevation()
 	{	C_QGT		*qgt = stak[k].qgt;
 	  CmQUAD  *qad = stak[k].quad;
 		qgt->Reallocate(qad);
+		//--- Enter a patch slot for each tile -------
+		U_INT	tx				= TILE_PART(stak[k].dkey >> 16);
+		U_INT tz				= TILE_PART(stak[k].dkey);
+		PATCH_ELV *slot = GetPatch(stak[k].dkey);
+		slot->key				= qgt->FullKey();
+		slot->sno				= MakeSuperNo(tx,tz);
+		slot->dno				= FN_DET_FROM_XZ(tx,tz);
+		slot->nbp				= 0;
+		slot->dir				= PATCH_READ;
+		slot->qgt				= qgt;
+		slot->quad			= qad;
+		qad->ScanPatch(slot);
 	}
-	//--- Report tile to window editor -------------
-	wind->TileNotify(tile,svrt->vrt);
 	return;
 }
 //------------------------------------------------------------------------
@@ -165,19 +186,21 @@ void CElvTracker::FixElevation()
 //------------------------------------------------------------------------
 void CElvTracker::TimeSlice(float dT)
 {	if (globals->aPROF.Not(PROF_TRACKE))	return;
+	CmQUAD *quad = area.quad;
 	spot = tcm->GetSpot();			// Rabbit spot
 	if (spot->InvalideQuad())							return;
-	if (tile == spot->Quad)								return;
+	if (quad == spot->Quad)								return;
 	//--- Update to new Tile -------------------
-	tile			= spot->Quad;
-	tile->GetVertices(wrk);
-	wrk.qKey	= QGTKEY(spot->qx,spot->qz);		// QGT key
-	wrk.detNo = tile->GetTileNo();
-	wrk.tile	= tile;
+	area.quad			= spot->Quad;
 	InitStack();
-	//--- Locate first vertex ------------------
-	svrt = (0 == wrk.vNum)?(0):(wrk.lvx);
-	HaveElevation();
+	//--- Init current area --------------------
+	area.dir	= PATCH_READ;
+	area.qgt	= spot->qgt;
+	area.nbp	= 0;
+	area.quad->ScanPatch(&area);
+	//--- Unselect -----------------------------
+	if (wind)		wind->Unselect();
+	svtx = -1;
 	return;
 }
 //----------------------------------------------------------------------
@@ -185,47 +208,68 @@ void CElvTracker::TimeSlice(float dT)
 //----------------------------------------------------------------------
 void CElvTracker::OneSelection(U_INT No)
 {	//-- Change selected vertex ---------------------------
-	globals->slw->StopSlew();						// Stop moving
-	svrt			= wrk.lvx+No;					// Selected vertex
-	HaveElevation();
+	globals->slw->StopSlew();				// Stop moving
+	svtx = No;											// Selected vertex
+	double elv = HaveElevation();
+	if (wind)	wind->OneElevation(elv);
 	return;
 }
 //----------------------------------------------------------------------
 //	Get elevation at selected spot
 //----------------------------------------------------------------------
-void CElvTracker::HaveElevation()
-{	if (spot->InvalideQuad())									return;
-	if (tile != spot->Quad)										return;
-	float elv =	svrt->vrt->GetWZ();
-	if (wind)	wind->EditElevation(elv);
-	return;
-}
-//----------------------------------------------------------------------
-//	Modify elevation at selected spot
-//  -This is requested from the TERRA EDITOR WINDOW
-//----------------------------------------------------------------------
-float CElvTracker::IncElevation(float dte)
-{	float amx = globals->aMax;
-	float	amn = -5000;
-	float elv = svrt->vrt->GetWZ() + dte;
-	if (elv > amx)	elv = amx;
-	if (elv < amn)  elv = amn;
-	svrt->vrt->SetWZ(elv);
-	FixElevation();
-	return elv;
+double CElvTracker::HaveElevation()
+{	if (spot->InvalideQuad())									return 0;
+	if (area.quad != spot->Quad)							return 0;
+	if (svtx < 0)															return 0;
+	//--- Get elevation from selected vertice -------
+	return area.vtb[svtx]->GetWZ();
 }
 //----------------------------------------------------------------------
 //	Set elevation at selected spot
 //  -This is requested from the TERRA EDITOR WINDOW
 //----------------------------------------------------------------------
-float CElvTracker::SetElevation(float elv)
-{	float amx = globals->aMax;
-	float	amn = -5000;
-	if (elv > amx)	elv = amx;
-	if (elv < amn)  elv = amn;
-	svrt->vrt->SetWZ(elv);
+int CElvTracker::SetElevation(int alt)
+{	if (svtx < 0)	return 0;
+	CVertex  *vtx = area.GetVertex(svtx);
+	if (vtx)	vtx->ClampAltitude(double(alt));
 	FixElevation();
-	return elv;
+	return int(vtx->GetWZ());
+}
+//----------------------------------------------------------------------
+//	Flatten tile to unic elevation
+//  -This is requested from the TERRA EDITOR WINDOW
+//----------------------------------------------------------------------
+int CElvTracker::FlattenTile(int alt)
+{	CVertex *vtx = 0;
+	for (U_INT k = 0; k < area.nbp; k++)
+	{	vtx = area.GetVertex(k);
+		if (vtx)	vtx->ClampAltitude(double(alt));
+	}
+	FixElevation();
+	return int(vtx->GetWZ());
+}
+//----------------------------------------------------------------------
+//	Get a patch for the detail tile
+//----------------------------------------------------------------------
+PATCH_ELV *CElvTracker::GetPatch(U_INT key)
+{	std::map<U_INT,PATCH_ELV*>::iterator it = patch.find(key);
+	if (it != patch.end())	return (*it).second;
+	//--- Create one slot ------------------------
+	PATCH_ELV *slot = new PATCH_ELV(key);
+	patch[key]			= slot;
+	return slot;
+}
+//----------------------------------------------------------------------
+//	Save all patches
+//----------------------------------------------------------------------
+void CElvTracker::SavePatches()
+{	std::map<U_INT,PATCH_ELV*>::iterator ip;
+	for (ip = patch.begin(); ip != patch.end(); ip++)
+	{	PATCH_ELV *p = (*ip).second;
+		globals->sqm->WritePatche(*p);
+		delete p;
+	}
+	patch.clear();
 }
 //----------------------------------------------------------------------
 //	Draw markers
@@ -234,7 +278,7 @@ void CElvTracker::Draw()
 {	//--- Check if no more tracking -----------------
 	if (globals->aPROF.Not(PROF_TRACKE))	return;
 	if (spot->InvalideQuad())							return;
-	if (tile != spot->Quad)								return;
+	if (area.quad != spot->Quad)					return;
 	return DrawMarks();
 }
 //----------------------------------------------------------------------
@@ -251,7 +295,7 @@ void CElvTracker::DrawMarks()
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 	//--- draw all marks over the vertices ----
-	for (U_INT k=0; k<wrk.vNum; k++) DrawOneMark(wrk.lvx + k);
+	for (U_INT k=0; k<area.nbp; k++)	DrawOneMark(k);
 	//--- Reset all attributes ----------------
 	glPopAttrib();
 	return;
@@ -260,15 +304,15 @@ void CElvTracker::DrawMarks()
 //	Draw one marker
 //	For picking mode, the vertex number is used as the vertex name
 //----------------------------------------------------------------------
-void CElvTracker::DrawOneMark(TVertex *vdf)
-{	CVertex *vtx = vdf->vrt;
-	spot->FeetCoordinatesTo(vtx,tran);				// components in feet
-	glLoadName(vdf->vnum);									// Vector number
+void CElvTracker::DrawOneMark(int k)
+{	CVertex *vtx = area.GetVertex(k);
+	spot->FeetCoordinatesTo(vtx,tran);			// components in feet
+	glLoadName(k);													// Vertex number
 	//--- Camera at vertex and draw ----------------------------
 	glPushMatrix();
 	glTranslated(tran.x,tran.y,tran.z);			// Camera at vertex
 	//----------------------------------------------------------
-	U_INT col = (vdf ==svrt)?(COLOR_RED):(COLOR_LIGHT_BLUE);
+	U_INT col = (k ==svtx)?(COLOR_RED):(COLOR_LIGHT_BLUE);
 	ColorGL(col);
 	glPushClientAttrib (GL_CLIENT_VERTEX_ARRAY_BIT);
   glEnableClientState(GL_VERTEX_ARRAY);

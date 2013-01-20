@@ -611,6 +611,7 @@ U_CHAR CBuilder::ReplaceOBJ(OSM_MDEF *rpp, char or)
 	if (0 == rpp->obj)					return 0;
 	if (!osmB->CanBeReplaced())	return 0;
 	if (or) {rpp->sinA = sinA; rpp->cosA = cosA; }
+	
 	osmB->ReplaceBy(rpp);
 	return 1;
 }
@@ -690,7 +691,8 @@ bool CBuilder::SelectOBJ(U_INT No)
 //-----------------------------------------------------------------------
 void CBuilder::RemoveOBJ()
 {	if (0 == osmB)		return;
-	remB		= osmB;
+	//remB		= osmB;
+	rOBJ.Push(osmB);
 	Deselect();
 	osmB->Remove();
 	osmB		= 0;
@@ -700,9 +702,12 @@ void CBuilder::RemoveOBJ()
 //	Restore the last deleted building
 //-----------------------------------------------------------------------
 void CBuilder::RestoreOBJ()
-{	if (0 == remB)			return;
+{	//if (0 == remB)			return;
+	OSM_Object *old = rOBJ.Pop();
+	if (0 == old)			return;
 	Deselect();
-	osmB	= remB;
+	//osmB	= remB;
+	osmB	= old;
 	osmB->Restore();
 	Select();
 	remB	= 0;

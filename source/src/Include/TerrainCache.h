@@ -321,6 +321,7 @@ public:
 //				
 //============================================================================
 #define QUAD_GND  0x01                // Airport ground indicator
+#define QUAD_UPH  0x02								// No patche
 //============================================================================
 class CmQUAD {
 	friend class TCacheMGR;
@@ -328,7 +329,7 @@ class CmQUAD {
 	typedef void (CmQUAD::*VREND)();	// Rendering vector
 	//--- ATTRIBUTES ---------------------------------------------------
   U_CHAR      subL;                   // Subdivision level
-  U_CHAR      Flag;                   // Indicators
+  U_CHAR      qFlag;                  // Indicators
   U_SHORT     qDim;                   // Array dimension (0 for a Quad pointer)
   U_SHORT     nvtx;                   // Number of vertices
 	//------------------------------------------------------------------
@@ -377,13 +378,10 @@ public:
 	void				DrawIND();			// Draw with indices
 	void				DrawVBO();			// Draw with VBO
 	void				CheckTour();
-	//--- For terrain editor interface ----------------------
-	void				GetVertices(TRACK_EDIT &w);
-	void				PutVertices(TRACK_EDIT &w, CmQUAD  *qd);
-	void				StoreVertex(TRACK_EDIT &w, CVertex *vt);
-	void				PatchVertices(ELV_PATCHE &p);
-	void				ProcessPatche(ELV_PATCHE &p);
-	CVertex    *Patche(CVertex *vt,ELV_PATCHE &p,int dir);
+	//--- Patch management ----------------------------------
+	void				ScanPatch(PATCH_ELV *pat);
+	void				PatchQuad(PATCH_ELV *pat);
+	CVertex    *PatchVertex(CVertex *vtx, PATCH_ELV *pat, U_CHAR dir);
   //-------------------------------------------------------
   inline CmQUAD  *GetArray()                {return qARR;}
   inline TC_GTAB *GetVTAB()                 {return vTab;}
@@ -407,11 +405,10 @@ public:
 	inline U_INT    GetTileVZ()			{return (Center.zKey &  TC_1024MOD);}
 	inline int      GetNbrVTX()     {return nvtx;}
   //--------------------------------------------------------------------
-	inline void SetGTAB(TC_GTAB *t)				{vTab = t;}
   inline void SetGroundType(U_CHAR t)   {Center.gType = t;}
-  inline void MarkAsGround()            {Flag |= QUAD_GND;}
-  inline void ClearGround()             {Flag &= (-1 - QUAD_GND);}
-  inline bool IsAptGround()             {return ((Flag & QUAD_GND) != 0);}
+  inline void MarkAsGround()            {qFlag |= QUAD_GND;}
+  inline void ClearGround()             {qFlag &= (-1 - QUAD_GND);}
+  inline bool IsAptGround()             {return ((qFlag & QUAD_GND) != 0);}
   //--------------------------------------------------------------------
 	inline void			RenderIND()			{Rend = &CmQUAD::DrawIND;}
 	inline void			RenderVBO()			{Rend = &CmQUAD::DrawVBO;}
@@ -439,46 +436,6 @@ struct CTX_QUAD {
     U_INT      tx;                        // Tile key
     U_INT      tz;                        // Tile Key
   };
-//============================================================================
-//  Ground tile: Define text descriptor for a detail tile that
-//  if part of an airport ground
-//============================================================================
-class CGroundTile {
-  //--- Attributes --------------------------------------------
-  U_INT         ax;                       //  Tile ident X
-  U_INT         az;                       //  Tile ident Z
-	C_QGT       *qgt;												//  Tile QGT
-  CTextureDef *txn;                       //  Tile descriptor
-	CmQUAD      *quad;											// Quad
-	CSuperTile  *sup;												// Super tile
-	int          dim;												// Quad number
-	//------------------------------------------------------------
-	GLint        sIND[QUAD_RESOLUTION];			//   Start indices
-	GLint				 nIND[QUAD_RESOLUTION];			//   Count of indices
-  //--- Methods ------------------------------------------------
-public:
-  CGroundTile(U_INT x,U_INT z);
-  //------------------------------------------------------------
-	void		Free();
-  int		  StoreData(CTextureDef *d);
-	int			TransposeTile(TC_GTAB *d,int s, SPosition *o);
-	void		RelocateVertices(TC_GTAB *vbo, int nbv, SPosition *org);
-	//------------------------------------------------------------
-	char		Visibility()	{return sup->Visibility();}
-	//--- VBO management -----------------------------------------
-	int 		GetNbrVTX();
-	int 		DrawGround();
-	//------------------------------------------------------------
-	inline void					StoreSup(CSuperTile *s) {sup = s;}
-  inline CmQUAD      *GetQUAD()			{return quad;}
-  inline U_INT        GetAX()				{return ax;}
-  inline U_INT        GetAZ()				{return az;}
-	//------------------------------------------------------------
-	inline	void	SetQGT(C_QGT *q)			{qgt = q;}
-	inline	void	SetTXD(CTextureDef *t){txn = t;} 
-	inline	void	SetQUAD(CmQUAD *q)		{quad = q;}
-};
-
 //=============================================================================
 //  CLASS Quarter Tile descriptor
 //  C_QGT
@@ -613,6 +570,8 @@ public:
 	int					StepSEA();					// Set coast data
 	int					StepSUP();					// Finalize Super Tile
 	int					Step3DO();					// Load 3D objects
+	//--- Patch management ---------------------------------------
+	void				ApplyPatches(PATCH_ELV *p);
 	//---------State management ----------------------------------
   void				LockState()  {pthread_mutex_lock   (&stMux);}
   void				UnLockState(){pthread_mutex_unlock (&stMux);}
@@ -712,24 +671,6 @@ public:
 	//--- Texture management ----------------------------------------
 	char				GetCompTextureInd()	{return (ctxDB != 0);}
 	SQL_DB     *GetCompTextureDBE()	{return ctxDB;}
-};
-//=============================================================================
-//	Structure to save modified elevation into blob
-//=============================================================================
-struct ELV_VTX {
-		U_INT key;										// Vertex local key
-		float elv;										// elevation
-};
-//=============================================================================
-//		Structure to process ELEVATION PATCHE
-//=============================================================================
-struct ELV_PATCHE {
-		char			dir;											// Patche direction
-		char			subL;											// Subdivision level
-		short			nbe;											// Number of entries
-		U_INT			qKey;											// QGT key
-		U_INT			dtNo;											// Tile number
-		ELV_VTX	  mat[TC_MAX_ELV_DIM];			// Matrice of key-elevation
 };
 
 //=============================================================================
@@ -909,7 +850,6 @@ public:
   CmQUAD      *GetTileQuad(U_INT ax,U_INT az);
   CTextureDef *GetTexDescriptor();
   CTextureDef *GetTexDescriptor(C_QGT *qtg,U_INT ax,U_INT az);
-	void				FillGroundTile(CGroundTile *gnt);
   //--------METAR MANAGEMENT -------------------------------------
   void         AssignMetar(CMeteoArea *ma);
   //---------Helper --------------------------------------------

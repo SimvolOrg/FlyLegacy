@@ -1309,6 +1309,7 @@ protected:
 public:
   CRunway(OTYPE qo,QTYPE qa);
  ~CRunway();
+ void			RazRLP();
  //------------------------------------------------------------------
   CRunway *GetNext()     {return (CRunway*)CmHead::Cnext;}
  //------------------------------------------------------------------

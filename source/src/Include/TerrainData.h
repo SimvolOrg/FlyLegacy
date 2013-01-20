@@ -122,39 +122,13 @@ struct TVertex{
 	//----------------------------------------------------
 } ;
 //=============================================================================
-//  Structure for Elevation Tracker
-//=============================================================================
-struct TRACK_EDIT {
-	U_INT	qKey;														// QGT Key
-	U_INT	detNo;													// Detail tile Number in QGT
-	CmQUAD *tile;													// Detail Tile
-	char	rfu;														// reserved
-	char	subq;														// subdivision levl
-	U_INT		vNum;													// number of vertices
-	TVertex  lvx[TC_MAX_ELV_DIM];					// List of vertices
-	//------------------------------------------------------------
-	TRACK_EDIT::TRACK_EDIT()
-	{	subq	= 0;
-		vNum	= 0;
-	}
-	//--- Free lists ---------------------------------------------
-	void	TRACK_EDIT::Free()
-	{	vNum	= 0;									// number of vertices
-		return;
-	}
-	//--- Destructor ---------------------------------------------
-	TRACK_EDIT::~TRACK_EDIT()
-	{	Free();	}
-	//------------------------------------------------------------
-};
-
-//=============================================================================
 //	Structure for Detail Tile in QGT
 //=============================================================================
 struct QUAD_QGT {
-	U_INT		 key;				// SuperTile Key
-	C_QGT		*qgt;				// QGT
-	CmQUAD	*quad;			// Detail Tile
+	U_INT    dkey;				// Detail tile Key
+	U_INT		 skey;				// SuperTile Key
+	C_QGT		*qgt;					// QGT
+	CmQUAD	*quad;				// Detail Tile
 	//--- constructor ------------------------------------------
 	QUAD_QGT::QUAD_QGT()
 	{	qgt		= 0;
@@ -245,9 +219,6 @@ class CVertex {
   double	rx;
 	double  ry;
 	double  wdz;
-	//float rx;
-	//float ry;
-	//float wdz;
   //------------Methods ---------------------------------
 public:
   CVertex(U_INT xk, U_INT zk);
@@ -276,7 +247,9 @@ public:
   bool    IsNWcorner(CVertex *vt) {return (vt == Edge[TC_NWCORNER]);}
   //------------------------------------------------------
   void    Init(U_INT vx,U_INT vz);
-  //------------------------------------------------------
+	void		AddAltitude(double inc);
+	void		ClampAltitude(double alt);
+	//------------------------------------------------------
   void    CopyEdge(CVertex *vt);
   //-------------------------------------------------------
 	SVector GeoCoordinates(C_QGT *qgt);
@@ -379,5 +352,60 @@ public:
 	void	SetWZ(double a)	
 	{	wdz = a;	}
  };
+//=============================================================================
+//  Structure for elementary patch
+//=============================================================================
+struct ELV_ITEM {
+	U_INT		vkey;								// Vertex key
+	double	alti;								// Altitude
+};
+//=============================================================================
+#define PATCH_READ	(0)
+#define PATCH_WRITE (1)
+//=============================================================================
+//  Structure for Elevation Patch
+//=============================================================================
+struct PATCH_ELV {
+	//--- Global parameters ------------------------------------------
+	C_QGT	 *qgt;						// Current QGT
+	CmQUAD *quad;						// Current quad
+	char		dir;						// Patch direction
+	U_INT		inx;						// Read index
+	//--- List of vertex pointers ------------------------------------
+	CVertex *vtb[TC_MAX_ELV_DIM];		// List of pointers
+	//--- Parameters for record in SQL database ----------------------
+	U_INT		key;						// QGT key
+	U_INT		sno;						// Supertile No
+	U_INT		dno;						// Detail tile No (0-1023];
+	U_INT		nbp;						// Number of patches
+	ELV_ITEM tab[TC_MAX_ELV_DIM];		// List of patches
+	//-----------------------------------------------------------------
+	PATCH_ELV()								{nbp = 0;}
+	PATCH_ELV(U_INT k)				{nbp = 0; key = k;}
+	//--- Store one patche --------------------------------------------
+	void Store(U_INT key,CVertex *v)
+	{	U_INT k;
+		for (k=0; k<nbp; k++)	if (vtb[k] == v)	return;
+		if (nbp >= TC_MAX_ELV_DIM) gtfo ("Error1 in Patch");
+  	vtb[nbp]			= v;
+		tab[nbp].vkey = key;
+		tab[nbp].alti = v->GetWZ();
+		nbp++;
+	}
+	//--- Update vertex if same key as current slot -------------------
+	void  Update(CVertex *v, U_INT k)
+	{	if (inx > nbp)					return;
+		if (k != tab[inx].vkey)	return;
+		v->SetWZ(tab[inx].alti);
+		inx++;
+		return;
+	}
+	//--- Get parameters ---------------------------------------------
+	bool			SameKey(U_INT k)	{ return	(k == tab[nbp].vkey);}
+	double		GetAlti()					{ return	tab[nbp].alti;}
+	double		ReadAltitude()		{	return	tab[nbp++].alti;}
+	CVertex	 *GetVertex(int k)	{	return  vtb[k];}
+};
+
 //======================= END OF FILE ==============================================================
 #endif // TERRAIN_DATA_H

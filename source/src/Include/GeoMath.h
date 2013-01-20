@@ -288,15 +288,6 @@ inline double GetReductionFactor(double lat)
 { double rad = FN_RAD_FROM_ARCS(lat);				// DegToRad(lat / 3600);
   return cos(rad);}
 //-----------------------------------------------------------------------------
-//  Return the band longitude of vertex
-//  vx = full vertex indice
-//  Band longitude is the relative longitude in current band (64 QGT)
-//-----------------------------------------------------------------------------
-inline double GetBandLongitude(U_INT vx)
-{ U_INT bm = (vx & TC_BANDMOD);                   // Modulo Band
-  return FN_ARCS_FROM_SUB(bm);
-}
-//-----------------------------------------------------------------------------
 //  Compute COAST File index from QGT(X-Z) key
 //-----------------------------------------------------------------------------
 inline U_INT GetCoastIndex(U_INT key)

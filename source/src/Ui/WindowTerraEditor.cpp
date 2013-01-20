@@ -32,6 +32,12 @@
 //  Window profile
 //=================================================================================
 #define TED_PROF (PROF_NO_PLANE+PROF_NO_MET+PROF_DR_DET+PROF_TRACKE+PROF_NO_TEL+PROF_EDITOR)
+//==========================================================================
+//	Menu
+//==========================================================================
+char trakTED1[32];
+char trakTED2[64];
+char *trakMENU[] = {"Copy elevation",trakTED1,trakTED2,0,0};
 //========================================================================================
 //  Window for terrain editor
 //========================================================================================
@@ -41,8 +47,9 @@ CFuiTED::CFuiTED(Tag idn, const char *filename)
 	abtn	= 1;
 	obtn	= 1;
 	//-----------------------------------------------
-	mdif	= 0;
 	count	= 0;
+	mode	= 0;
+	palt	= 0;
 	//-----------------------------------------------
 	warn[0]	= MakeRGBA(0,255,0,255);		// Green color
 	warn[1]	= MakeRGBA(255,0,0,255);		// Red color
@@ -69,10 +76,10 @@ CFuiTED::CFuiTED(Tag idn, const char *filename)
 	//---  Add buttons ------------------------------
 	elvm  = new CFuiButton( 6,44,36,20,this); 
   AddChild('elvm',elvm,"-",FUI_REPEAT_BT);
-	elvm->SetRepeat(0.5);
+	elvm->SetRepeat(0.25);
 	elvp  = new CFuiButton(95,44,36,20,this);
 	AddChild('elvp',elvp,"+",FUI_REPEAT_BT);
-	elvp->SetRepeat(0.5);
+	elvp->SetRepeat(0.25);
 	//--- Add  Box ----------------------------------
 	mBox	= new CFuiBox( 258,6,28,28,this);
 	AddChild('mbox',mBox,"",0);
@@ -110,7 +117,6 @@ CFuiTED::CFuiTED(Tag idn, const char *filename)
 //----------------------------------------------------------------------
 CFuiTED::~CFuiTED()
 {	//-----------------------------------------------
-	ldet.clear();
 	trak->Register(0);
 	globals->noOBJ -= obtn;
   globals->noAPT -= abtn;
@@ -126,11 +132,21 @@ bool CFuiTED::CheckProfile(char a)
 //----------------------------------------------------------------------
 void CFuiTED::Draw()
 {	char txt[128];
+	char mdif = (trak->GetModif())?(1):(0);
 	spot = globals->tcm->GetSpot();			// Rabbit spot
 	spot->Edit(txt);										// Edit tile coordinates
 	lab1->SetText(txt);
 	mBox->BackColor(warn[mdif]);				// Warning color
 	CFuiWindow::Draw();
+	return;
+}
+//-----------------------------------------------------------------------
+//  Unselect mode
+//-----------------------------------------------------------------------
+void CFuiTED::Unselect()
+{	trak->Unselect();
+	mode		= 0;												// No selection
+	lab3->SetText("");
 	return;
 }
 //-----------------------------------------------------------------------
@@ -141,141 +157,68 @@ void CFuiTED::Draw()
 //	object in scene
 //-----------------------------------------------------------------------
 bool CFuiTED::MouseCapture(int mx, int my, EMouseButton bt)
-{	RegisterFocus(0);										// Free textedit
-	bool		hit = rcam->PickObject(mx, my);						
-	return	hit;
+{ int keym = glutGetModifiers();
+	RegisterFocus(0);										// Free textedit
+	Unselect();
+	if (!rcam->PickObject(mx, my))		return false;
+	if ( MOUSE_BUTTON_RIGHT != bt)		return false;
+	menu.Ident	= 'menu';
+	menu.aText	= trakMENU;
+	_snprintf(trakTED1,32,"Paste %d feet",palt);
+	_snprintf(trakTED2,32,"Flatten tile to %d feet",palt);
+	//--- Open a  pop menu ---------------
+	OpenPopup(mx,my,&menu);
+	return	true;
+}
+//-----------------------------------------------------------------------
+//  One elevation selected from tracker
+//-----------------------------------------------------------------------
+void	CFuiTED::OneElevation(double e)
+{	alti	= int(e);
+	mode	= 1;
+	EditElevation();
+	return;
 }
 //-----------------------------------------------------------------------
 //  Edit elevation
 //-----------------------------------------------------------------------
-void CFuiTED::EditElevation(float e)
+void CFuiTED::EditElevation()
 {	char txt[32];
-	sprintf(txt,"%0.2f",e);
-	lab3->SetText(txt);
+	_snprintf(txt,31,"%d",alti);
+	char *edt = (mode)?(txt):("");
+	lab3->SetText(edt);
 	return;
 }
 //-----------------------------------------------------------------------
 //  Modify elevation
 //-----------------------------------------------------------------------
-void CFuiTED::IncElevation(float dte)
-{	float e = trak->IncElevation(dte);
-	mdif		= 1;
-	count++;
-	WarnM1();
-	return EditElevation(e);
+void CFuiTED::IncElevation(int dte)
+{	if (0 == mode)		return;
+	alti	 += dte;
+	alti		= trak->SetElevation(alti);
+	return EditElevation();
 }
 //-----------------------------------------------------------------------
 //  Convert text into elevation
 //-----------------------------------------------------------------------
-void CFuiTED::GetElevation()
-{	float  e	= 0;						
+void CFuiTED::StoreElevation()
+{	if (0 == mode)		return;
+	double e	= 0;						
 	char  *s	= lab3->GetText();
 	double v	= 0;
 	char *p;
-	v = strtod (s,&p);
-  e = float(v);
+	e = strtod (s,&p);
+	alti			= int(e);
 	//--- check if value is ok ----------
 	if (*p)	{lab3->SetText("Error"); return;}
-	trak->SetElevation(e);
-	mdif		= 1;
-	count++;
-	WarnM1();
-	return EditElevation(e);
-}
-//-----------------------------------------------------------------------
-//  One modification is done
-//	Locate all QGT where the vertex is modified
-//-----------------------------------------------------------------------
-void	CFuiTED::TileNotify(CmQUAD *qd,CVertex *vt)
-{	U_INT ax = qd->GetTileAX();
-	U_INT	az = qd->GetTileAZ();
-	EnterKey(ax,az);
-	//--- Check for a left tile (DET-VTX= (00-00)----
-	U_INT tx =  ax & TC_032MODULO;  // Isolate DET-VRT
-	//--- Tile is left side of QGT------------------- 
-	if (0 == tx)
-	{	U_INT x = (ax - 1) & TC_QGT_DET_MOD;	// Left tile index
-		EnterKey(x,az);
-	}
-	//--- Tile is right side of QGT -----------------
-	if (TC_032MODULO == tx)
-	{	U_INT x = (ax + 1) & TC_QGT_DET_MOD;	// right tile index
-		EnterKey(x,az);
-	}
-	//--- Check for a south border tile ------------
-	U_INT tz = az & TC_032MODULO;  // Isolate DET-VRT
-	//--- Tile is south border ---------------------
-	if (0 == tz)
-	{	U_INT z = (az - 1) & TC_QGT_DET_MOD;	// Lower tile border
-		EnterKey(ax,z);
-	}
-	//--- Tile is north border ---------------------
-	if (QGT_OTHER_SIDE == tz)
-	{	U_INT z = (az + 1) & TC_QGT_DET_MOD;	// Upper tile border
-		EnterKey(ax,z);
-	}
-	return;
-}
-//-----------------------------------------------------------------------
-//  Enter modification if it is not in table
-//-----------------------------------------------------------------------
-void CFuiTED::EnterKey(U_INT tx,U_INT tz)
-{	U_INT key = (tx << 16) | tz;
-	std::map<U_INT,U_INT>::iterator iq = ldet.find(key);
-	if (iq == ldet.end())	ldet[key] = key;
-	return;
+	trak->SetElevation(alti);
+	return  EditElevation();
 }
 //-----------------------------------------------------------------------
 //  Save all patches
 //-----------------------------------------------------------------------
 void CFuiTED::SaveAll()
-{	if (0 == mdif)	return;
-	pbuf.dir = 0;												// Out direction
-	std::map<U_INT,U_INT>::iterator im;
-	for (im=ldet.begin(); im!=ldet.end(); im++) SaveOne((*im).first);
-	ldet.clear();
-	mdif	= 0;
-	count	= 0;
-	WarnM1();
-	return;
-}
-//-----------------------------------------------------------------------
-//	Save one QUAD.  Check if still in cache before
-//-----------------------------------------------------------------------
-void CFuiTED::SaveOne(U_INT key)
-{	U_INT		ax	= (key >> 16);
-	U_INT		az  = (key & 0x0000FFFF);
-	U_SHORT qx	= (ax >> TC_BY32);
-	U_SHORT qz  = (az >> TC_BY32);
-	C_QGT	*qgt	= globals->tcm->GetQGT(qx,qz);
-	if (0 == qgt)				return Warn01();
-	if (qgt->NotAlive())return Warn01();
-	if (qgt->NoQuad())	return Warn01();
-	//--- Locate QGT -------------------
-	CmQUAD *qd  = qgt->GetQuad((ax & TC_032MODULO),(az & TC_032MODULO));
-	pbuf.subL		= qd->GetLevel();
-	pbuf.nbe		= 0;												// Init counter
-	qd->ProcessPatche(pbuf);
-	//--- Write in database ------------
-	pbuf.qKey	= qgt->FullKey();
-	pbuf.dtNo	= qd->GetTileNo();
-	globals->sqm->DeletePatche(pbuf);
-	globals->sqm->WritePatche(pbuf);
-	return;
-}
-//-----------------------------------------------------------------------
-//	Warning
-//-----------------------------------------------------------------------
-void CFuiTED::WarnM1()
-{	char txt[128];
-  if (count > 20)
-	{	sprintf(txt,"You have made about %d modifications.\nTIME TO SAVE??",count);
-	  wrn1->SetColour(warn[0]);
-	  wrn1->SetText(txt);
-	}
-	else
-	{ wrn1->SetText("");
-	}
+{	trak->SavePatches();
 	return;
 }
 //-----------------------------------------------------------------------
@@ -287,10 +230,11 @@ void CFuiTED::Warn01()
 //	Alert
 //-----------------------------------------------------------------------
 bool CFuiTED::NoAlert()
-{ if (0 == mdif)		return true;
+{ count	= trak->GetModif();
+	if (0 == count)		return true;
 	//--- Set alert message for closing ---------
 	char txt[128];
-	sprintf(txt,"you have %d modifications.\n WANT TO SAVE??",count);
+	sprintf(txt,"%d Detail Tile(s) are modified.\n WANT TO SAVE??",count);
   wrn1->SetColour(warn[1]);
 	wrn1->SetText(txt);
 	yBut->Show();
@@ -335,13 +279,13 @@ void  CFuiTED::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
     return;
 	//--- Increase elevation ---------------------------
 	case 'elvp':
-		return IncElevation(+0.5);
+		return IncElevation(+1);
 		//--- Decrease elevation -------------------------
 	case 'elvm':
-		return IncElevation(-0.5);
+		return IncElevation(-1);
 		//--- Enter text ---------------------------------
 	case 'lab3':
-		if (evn == EVENT_TEXTENTER)	GetElevation();
+		if (evn == EVENT_TEXTENTER)	StoreElevation();
 		return;
 		//--- Request to save elevations ------------------
 	case 'save':
@@ -357,4 +301,30 @@ void  CFuiTED::NotifyChildEvent(Tag idm,Tag itm,EFuiEvents evn)
   }
   return;
 }
+//------------------------------------------------------------------------------
+//	NOTIFICATIONS from popup menu
+//------------------------------------------------------------------------------
+void CFuiTED::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
+{	if ((EVENT_POP_CLICK  != evn)	 || (id != 'menu'))		return;
+	char  opt = *menu.aText[itm];
+  switch (opt) {
+			//--- Copy elevation ----------------
+			case 'C':
+				palt	= alti;
+				break;
+			//--- Paste alti --------------------
+			case 'P':
+				alti		= trak->SetElevation(palt);
+				EditElevation();
+				break;
+			//--- Flatten tile ------------------
+			case 'F':
+				alti = trak->FlattenTile(palt);
+				EditElevation();
+				globals->apm->KillNearest();
+				break;
+	}
+  ClosePopup();
+}
+
 //==========================END OF FILE ==========================================================

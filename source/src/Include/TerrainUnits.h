@@ -134,6 +134,9 @@
 #define TC_QT_DEL 15               // Candidate to delete
 #define TC_QT_END 16								// Ultimate step
 //--------------------------------------------------------------------
+#define QGT_PART(x)				  (U_INT(x >> TC_BY32))
+#define TILE_PART(x)				(U_INT(x &  TC_032MODULO))
+//--------------------------------------------------------------------
 #define TC_HH_PER_SEC        (double(1) / double(3600))
 //--------------------------------------------------------------------
 #define TC_MAX_COORDINATE ((512)<< TCBY32768)
@@ -205,7 +208,7 @@
 #define TC_HORIZONMAX       double(32 * TC_FEET_PER_MILE)
 //------Detail Tile parameters ----------------------------------------
 #define TC_DT_ELV_PER_ST  (TC_DETAIL_PER_SPT + 1)
-#define TC_DETAIL_NBR     (TC_DET_PER_QGT * TC_DET_PER_QGT)
+#define TC_DT_PER_QGT     (TC_DET_PER_QGT * TC_DET_PER_QGT)
 #define TC_DETMASK  ((1 << 14) - 1) // Mask for DT absolute coordinate in QTR
 #define TC_QGTMASK  (511 << (TC_BY32 + TC_BY1024))
 //-------Super Tile Parameters ----------------------------------------

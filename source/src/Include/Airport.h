@@ -220,7 +220,7 @@ class CAptObject : public CqItem, public CDrawByCamera {
   //--------------Attributes -----------------------------------------------
 	U_CHAR					state;															// Airport state
 	U_CHAR					tr;																	// Trace option
-  U_CHAR          rfu;                                // Taxiway in SQL
+  U_CHAR          dead;                               // delete airport
   U_CHAR          visible;                            // Visibility
 	//------------------------------------------------------------------------
   CAirportMgr    *apm;                                // Airport Manager
@@ -275,14 +275,11 @@ class CAptObject : public CqItem, public CDrawByCamera {
   SPosition llc;                                // Texture left corner
   //---Ground tile management -----------------------------------------
   TC_BOUND  glim;                               // Ground limit
-  std::vector<CGroundTile*> grnd;               // Airport ground
+	std::vector<CTextureDef *>gtile;							// Ground tile
 	//---Ground Vertex buffer -------------------------------------------
 	char			 gRES;										// Ground resolution
 	char       rfu2;										// Reserved
 	U_INT			 Time;
-  U_SHORT    nGVT;										// Number of ground vertices
-	TC_GTAB		*gBUF;										// Ground Buffer
-	U_INT			 gVBO;										// Vertex Buffer Object
   //------------------------------------------------------------------
   CVector   center;                             // Ground center
   CVector   gBound;                             // ground bound   
@@ -311,6 +308,7 @@ public:
 	 bool		BuildAll();
 	 bool   SetRunway();
 	 bool   BuildEnd();
+	 void		Kill();									// Explicit request to kill this airport
    //---TIME SLICE ----------------------------------------------------
    void   TimeSlice(float dT);
    //--- RUNWAY BUILDING ----------------------------------------------
@@ -323,8 +321,6 @@ public:
    void   AptExtension(GroundSpot &gs);
 	 //--- Airport ground management -------------------------------------
    void   LocateGround();
-	 void		BuildGroundVBO();
-	 void		FillGroundVBO();
    void   MarkGround(TC_BOUND &bnd);
    void   UnmarkGround();
 	 //-------------------------------------------------------------------
@@ -405,7 +401,9 @@ public:
 	bool NoRunway()	  {return (tmcQ.size() == 0);}
 	bool HasRunway()	{return (tmcQ.size() != 0);}
 	bool HasDILS()		{return (lnDW != 0);}
-  //----------------------------------------------------------------------
+	bool		IsDead()	{return (dead != 0);}
+	bool		IsAlive() {return (dead == 0);}
+	//-----------------------------------------------------------------------
   char *GetKey()        {return (Airp)?(Airp->GetKey()):(0);}
   //--------DRAW Airport --------------------------------------------------
   void    Draw();
@@ -502,6 +500,7 @@ public:
 	CAptObject  *GetNearestAPT()						{return nApt;}
 	bool			   NotNearest(CAptObject *a)	{return nApt != a;}
 	//------------------------------------------------------------------
+	void				 KillNearest()						{if (nApt)	nApt->Kill();}
 };
 
 //============================END OF FILE =================================================

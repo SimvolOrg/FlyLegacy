@@ -657,6 +657,7 @@ CAptQueue::~CAptQueue()
 CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 {	state		= APT_CREATED;
 	apm     = md;
+	dead		= 0;
   pApt    = apt;
   Airp    = apt;
 	nmiles  = apt->GetNmiles();
@@ -692,9 +693,6 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
   sct.y = FN_ARCS_FROM_FEET(1);
 	//--- VBO Management -------------------------------------------
 	nDES	= 0;
-	nGVT	= 0;
-	gBUF	= 0;
-	glGenBuffers(1,&gVBO);
   //----Add profile to POD ---------------------------------------
   AddPOD();
   //-----Lighting control -----------------------------------------
@@ -716,6 +714,7 @@ CAptObject::CAptObject(CAirportMgr *md, CAirport *apt)
 //----------------------------------------------------------------------------------
 CAptObject::CAptObject(CAirport *apt)
 { apm     = 0;
+	dead		= 0;
   pApt    = 0;
   Airp    = apt;
   Org     = apt->GetPosition();
@@ -729,7 +728,6 @@ CAptObject::CAptObject(CAirport *apt)
 	eVBO		= 0;
 	cVBO		= 0;
 	rVBO		= 0;
-	gBUF    = 0;
 }
 //----------------------------------------------------------------------------------
 //  Init position
@@ -768,27 +766,37 @@ void CAptObject::RemPOD()
 }
 //---------------------------------------------------------------------------------
 //  destroy Airport Object
-//  NOTE:  Before proceeding a new organisation for airports, we must avoid thz teleport
-//         case where the QGT are destroyed first then the airport object (then the Quad
-//         and the textureDef are no longer allocated)
-// Dont destroy the ground tiles as they will be freed from the Terrain Manager
+//  NOTE:		We must avoid the teleport
+//					case where the QGT are destroyed first followed some time later by
+//					the airport object (then the Quad and the textureDef are no longer allocated);  
+//					Thus each time a ground tile is marked, the QGT user count is increment
+//					to prevent QGT deletion
+// 
 //----------------------------------------------------------------------------------
 CAptObject::~CAptObject()
-{ if (apm) RemPOD();
+{ UnmarkGround();
+	if (apm) RemPOD();
   if (pVBO)	glDeleteBuffers(1,&pVBO);
 	if (eVBO)	glDeleteBuffers(1,&eVBO);
 	if (cVBO)	glDeleteBuffers(1,&cVBO);
-	if (gVBO) glDeleteBuffers(1,&gVBO);
 	if (rVBO) glDeleteBuffers(1,&rVBO);
   //--- free tarmac segments ------------------
 	for (U_INT k = 0; k < tmcQ.size(); k++) delete tmcQ[k];
 	tmcQ.clear();
-	//--- Free ground VBO -----------------------
-	if (gBUF)			delete [] gBUF;
 	//-------------------------------------------
 	if (taxiMGR)	delete taxiMGR;
 	//-------------------------------------------
-  UnmarkGround();
+}
+//---------------------------------------------------------------------------------
+//  Kill this airport
+//---------------------------------------------------------------------------------
+void	CAptObject::Kill()
+{	dead	= 1;
+	CRunway  *rwy = 0;
+  //-----Build non paved runway first -----------------
+  for (rwy = Airp->GetNextRunway(rwy); rwy != 0;rwy = Airp->GetNextRunway(rwy))
+	{	rwy->RazRLP();	}
+	return;
 }
 //---------------------------------------------------------------------------------
 //  Compute airport extension in term of Detail Tiles
@@ -1089,83 +1097,37 @@ void CAptObject::MarkGround(TC_BOUND &bnd)
   U_INT  tze = TC_NEXT_INDICE(bnd.zmax);
   U_INT   lz = 0;
   U_INT   cx = 0;
-  CTextureDef *txn = 0;
   TCacheMGR *tcm = globals->tcm;
   //-----Mark all tiles making airport ground ----
   for   (lz = bnd.zmin; lz != tze; lz = TC_NEXT_INDICE(lz))
   { for (cx = bnd.xmin; cx != txe; cx = TC_NEXT_INDICE(cx))
-    { //---Add a ground tile to list ------------
-      CGroundTile *gnd = new CGroundTile(cx,lz);
-			tcm->FillGroundTile(gnd);
-      grnd.push_back(gnd);
+    { //--- Get tile descriptor -----------------
+			U_INT qx = QGT_PART(cx);
+			U_INT qz = QGT_PART(lz);
+			C_QGT *qgt = globals->tcm->GetQGT(qx,qz);
+			U_INT	tx = TILE_PART(cx);
+			U_INT tz = TILE_PART(lz);
+			CTextureDef *txd = qgt->GetTexDescriptor(tx,tz);
+			CmQUAD *quad = tcm->GetTileQuad(cx,lz);
+			gtile.push_back(txd);
+			qgt->IncUser();
     }
   }
   return;
 }
 //-----------------------------------------------------------------------
-//  Build ground VBO
-//	We build a VBO for all ground tiles.  
-//	NOTE: Vertices in Tile are allocated when the tile enters the inner ring
-//				of visibility.  If only one tile is not yet ready, the VBO build
-//				is deffered until the tile is ready.  
-//				Without VBO, the airport is not drawed, but this is not important
-//				as this is occurring for airport in the remote ring of visibility
-//	
-//-----------------------------------------------------------------------
-void CAptObject::BuildGroundVBO()
-{	int tot = 0;
-	std::vector<CGroundTile*>::iterator it;
-  for (it = grnd.begin();it != grnd.end(); it++)
-	{	CGroundTile *gnd	= (*it); 
-		int nbv	= gnd->GetNbrVTX();
-		if (nbv == 0)	return;
-		tot += nbv;
-	}
-	if (0 == tot)		return;
-	//--- Now allocate the ground VBO --------------
-	gRES  = 0;
-	nGVT  = tot;
-	gBUF	= new TC_GTAB[tot];
-	FillGroundVBO();
-	//--- Request handle from OpenGL ---------------
-	int dim = tot * sizeof(TC_GTAB);
-	glBindBuffer(GL_ARRAY_BUFFER,gVBO);
-	glBufferData(GL_ARRAY_BUFFER,dim,gBUF,GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER,0);
-	return;
-}
-//-----------------------------------------------------------------------
-//	Fill the ground VBO
-//-----------------------------------------------------------------------
-void CAptObject::FillGroundVBO()
-{	TC_GTAB   *dst = gBUF;
-	int				 inx = 0;
-	int        tot = 0;
-//TRACE("FillVBO for %s  org.x= %.5f org.y = %.5f",Airp->GetAptName(),Org.lon,Org.lat);
-	std::vector<CGroundTile*>::iterator it;
-	for (it = grnd.begin();it != grnd.end(); it++)
-	{	CGroundTile *gnd	= (*it);
-		int nbv = gnd->TransposeTile(dst,inx,&Org);
-		dst		 += nbv;
-		inx    += nbv;
-		tot    += nbv;
-	}
-	if (tot != nGVT)	gtfo("FillGroundVBO Count error");
-	return;
-}
-
-//-----------------------------------------------------------------------
 //  UnMark the ground tiles
 //  NOTE:  Check for txn existence (teleport case)
 //-----------------------------------------------------------------------
 void CAptObject::UnmarkGround()
-{ std::vector<CGroundTile*>::iterator it;
-  for (it = grnd.begin();it != grnd.end(); it++)
-    { CGroundTile *gnd = (*it);
-	    gnd->Free();
-      delete gnd;
+{ //------------------------------------------------
+	std::vector<CTextureDef *>::iterator ig;
+	for (ig = gtile.begin(); ig != gtile.end(); ig++)
+    { CTextureDef *txd		= (*ig);
+	    txd->quad->ClearGround();
+			txd->quad->GetSuperTile()->GetQGT()->DecUser();
     }
-  grnd.clear();
+  gtile.clear();
   return;
 }
 //-----------------------------------------------------------------------
@@ -1214,8 +1176,6 @@ void	CAptObject::BuildLandingLane(LND_DATA *lnd)
 //-----------------------------------------------------------------------
 void CAptObject::TimeSlice(float dT)
 { //-----------------------------------------------------	
-	//--- Process Ground resolution -----------------------
-	if (0 == gBUF)	BuildGroundVBO();
 	//--- Process lighting order --------------------------
 	float lum = globals->tcm->GetLuminosity();
   if (lrwy)           return UpdateLights(dT) ;
@@ -1320,16 +1280,15 @@ void CAptObject::DrawDesignators()
 void CAptObject::Draw()
 { TCacheMGR *tcm = globals->tcm;
   //--- Draw Airport ground ----------------------------------------------
+  glDisable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
+	DrawGround();
   //----Compute translation offset from aircraft to airport origin --------
   ofap.x  = LongitudeDifference(Org.lon,apos.lon);
   ofap.y  = Org.lat - apos.lat;
   ofap.z  = Org.alt - apos.alt;
   Alt     = -ofap.z;
   //----Cull airport based on ground tile corners -------------------------
-  //-------Draw the ground tiles first ------------------------------------
-	glDisable(GL_BLEND);
-  glEnable(GL_TEXTURE_2D);
-  if (gBUF)	DrawGround();						// Draw the airport tiles first
   if (globals->noAPT)     return;
 	if (NotVisible())				return;
   //-----Prepare taxiway drawing ------------------------------------------
@@ -1354,7 +1313,6 @@ void CAptObject::Draw()
 	std::vector<CTarmac*>::iterator tm;
 	for(tm=tmcQ.begin(); tm!=tmcQ.end(); tm++) (*tm)->Draw();
 	//--- Draw designators---------------------------------------------------
-	//DrawDesignators();
 	glBindBuffer(GL_ARRAY_BUFFER,0);
   //-----Draw Center marks if distance < 2Nm  -----------------------------
 	if (nmiles < 2)  { apm->BindYellow();	DrawVBO(cVBO,nCTR); }
@@ -1473,25 +1431,33 @@ void CAptObject::EndDraw(CCamera *cam)
 //				May be some better way is to be found to get better performances.
 //==========================================================================================
 void CAptObject::DrawGround()
-{ char vis = 0;
+{ visible = 0;
 	glMaterialfv (GL_FRONT, GL_EMISSION, tcm->GetDeftEmission()); 
 	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
   glFrontFace(GL_CCW);
-	glPushMatrix();
-	glTranslated(ofap.x, ofap.y, ofap.z);			// Camera to airport
-	//--- Activate ground VBO ------------------------------
-	glBindBuffer(GL_ARRAY_BUFFER,gVBO);
-  glTexCoordPointer(2,UNIT_GTAB,sizeof(TC_GTAB),0);
-	glVertexPointer  (3,UNIT_GTAB,sizeof(TC_GTAB),OFFSET_VBO(2*sizeof(UNIT_GTAB)));
 	//-------------------------------------------------------
-	std::vector<CGroundTile*>::iterator it;
-	for (it = grnd.begin();it != grnd.end(); it++)
-	{	CGroundTile *gnd	= (*it);
-	  vis += gnd->DrawGround();
+	glPushClientAttrib (GL_CLIENT_ALL_ATTRIB_BITS);
+	glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	CVector T;
+	std::vector<CTextureDef*>::iterator ig;
+	for (ig = gtile.begin(); ig != gtile.end(); ig++)
+	{	CTextureDef  *txd = (*ig);
+		CmQUAD *quad		= txd->quad;
+		if (!quad->GetSuperTile()->Visibility()) continue;
+		visible					= 1;
+		C_QGT  *qgt			= quad->GetSuperTile()->GetQGT();
+		SPosition P			= qgt->GetBase();
+		SVector  vtr		= SubtractPositionInArcs(apos,P);
+		glPushMatrix();
+		glTranslated(vtr.x, vtr.y, vtr.z);
+		glBindTexture(GL_TEXTURE_2D,txd->dOBJ);
+		quad->DrawIND();
+		glPopMatrix();
 	}
-	visible	= vis;
+	glPopClientAttrib();
+	//-------------------------------------------------------
 	glBindBuffer(GL_ARRAY_BUFFER,0);
-	glPopMatrix();
 	//-------------------------------------------------------
 	return;
 }
@@ -1711,8 +1677,9 @@ void CAirportMgr::TimeSlice(float dT)
 				float dst = GetRealFlatDistance(apt);
 				apo->SetMiles(dst);
         apo->TimeSlice(dT);
-				SaveNearest(apo);																	// Save nearest airport
-        if (dst <= Limit)   continue;
+				SaveNearest(apo);									// Save nearest airport
+				if (dst > Limit)		apo->Kill();
+        if (apo->IsAlive()) continue;
         //-----Destroy airport when out of reach --------------------
 				if (apo == nApt)	nApt = 0;				// No more nearest
         apt->SetAPO(0);										// Remove pointer
@@ -1836,95 +1803,5 @@ void CAirportMgr::DrawLights()
   glDisable(GL_TEXTURE_2D);
   return;
 }
-//==========================================================================
-//  Ground Detail tile 
-//==========================================================================
-CGroundTile::CGroundTile(U_INT x,U_INT z)
-{ ax  = x;
-  az  = z;
-  txn = 0;
-}
-//-------------------------------------------------------------
-//	Free resources
-//-------------------------------------------------------------
-void CGroundTile::Free()
-{	quad->ClearGround();
-	qgt->DecUser();
-	return;
-}
-//-------------------------------------------------------------
-//	Set Ground parameters
-//-------------------------------------------------------------
-int CGroundTile::StoreData(CTextureDef *t)
-{	txn		= t;
-	quad	= t->GetQUAD();
-	if (0 == quad)	gtfo("Timing error in Airport MGR");
-	return quad->GetNbrVTX();
-}
-//-------------------------------------------------------------
-//	Return number of vertices
-//-------------------------------------------------------------
-int CGroundTile::GetNbrVTX()
-{ return quad->NbrVerticesInTile(); }
 
-//-------------------------------------------------------------------------
-//	Transpose vertices for each subquad of the detail tile
-//-------------------------------------------------------------------------
-int CGroundTile::TransposeTile(TC_GTAB *vbo,int dep,SPosition *ori)
-{	CmQUAD  *qd		= quad->GetArray();
-  TC_GTAB *dst	= vbo;
-	int			 tot  = 0;
-	int      inx  = dep;
-//TRACE("TRANSPOSE TILE-------------------");
-  dim  = quad->GetSize();
-  for (int k = 0; k != dim; k++,qd++)
-	{	sIND[k]  = inx;
-		int nbv  = qd->InitVertexCoord(dst,TexRES[TC_HIGHTR]);
-		RelocateVertices(dst,nbv,ori);
-		nIND[k]  = nbv;
-		inx += nbv;
-		tot += nbv;
-		dst += nbv;
-	}
-	quad->MarkAsGround();
-	return tot;
-}
-//-------------------------------------------------------------------------
-//	Relocate vertices for airport ground
-//	Vertex parameter X and Y are recomputed to be relative to airport
-//	origin
-//-------------------------------------------------------------------------
-void CGroundTile::RelocateVertices(TC_GTAB *vbo, int nbv, SPosition *org)
-{	SPosition base  = qgt->GetBase();
-  TC_GTAB *dst = vbo;
-//TRACE("QUAD %d-%d -----",Center.keyX(),Center.keyZ());
-	for (int k=0; k< nbv; k++)
-	{	double x  = AddLongitude(dst->GT_X,base.lon);			 
-		double y  = dst->GT_Y + base.lat;
-		double z  = dst->GT_Z;
-		dst->GT_X		= LongitudeDifference(x, org->lon);
-		dst->GT_Y		= y - org->lat;
-		dst->GT_Z		= z - org->alt;
-//TRACE("   DST= %10d   X=%.5f Y=%.5f Z=%.5f",(int)dst,dst->GT_X,dst->GT_Y,dst->GT_Z);
-		dst++;
-	}
-	return;
-}
-
-//-------------------------------------------------------------
-//	Draw ground tiles
-//	NOTE:  Contour is drwed from the Quad, not from the VBO
-//				because VBO vertices are relocated relative to airport
-//				origin which is the current origin.
-//-------------------------------------------------------------
-int CGroundTile::DrawGround()
-{ char vis = sup->Visibility();
-	if (vis)
-	{	glBindTexture(GL_TEXTURE_2D,txn->dOBJ);
-		glMultiDrawArrays(GL_TRIANGLE_FAN,sIND,nIND,dim);
-		if (!globals->tcm->SameQuad(quad))		return vis;
-		if (globals->aPROF.Not(PROF_DR_DET))	return vis;
-	}
-	return vis;
-}
 //============================END OF FILE =================================================

@@ -301,9 +301,6 @@ public:
 	void		SeedLine(D2_POINT *p0, OSM_MDEF *mdf);
 	//----------------------------------------------------------------
 	void		SetPart(C3DPart *p)				{part = p;}
-	//void		Select();
-	//void		Deselect();
-	//void		SwapSelect();
 	void		ReplacePart(C3DPart *p);
 	void		ReplaceBy(OSM_MDEF *rpp);
 	void		AdjustPart();
@@ -323,13 +320,11 @@ public:
 	U_INT			GetStamp()								{return bpm.stamp;}
 	D2_Style *GetStyle()								{return bpm.style;}
 	U_INT			GetError()								{return bpm.error;}
-	//char      GetFocus()								{return bpm.selc;}
 	//----------------------------------------------------------------
 	C3DPart *GetPart()									{return part;}
 	char    *GetTag()										{return tag;	}
 	char    *GetVal()										{return val;	}
 	//----------------------------------------------------------------
-	//char		Selection()								  {return bpm.selc;}
 	char    GetLayer()									{return Layer;}
 	char    GetBuildVector()						{return bvec;}
 	//----------------------------------------------------------------
@@ -341,7 +336,6 @@ public:
 	void		Restore()							{State = 1;}
 	bool	  IsValid()							{return (1 == State);}
 	bool    IsaLight()						{return (type == OSM_LIGHT);}
-	//bool		IsSelected()					{return (bpm.selc != 0);}
 	bool    SameStamp(U_INT n)		{return (bpm.stamp == n);}
 	//----------------------------------------------------------------
 	bool    AreYou(char *T)				{return (strcmp(T,tag) == 0);}

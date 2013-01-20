@@ -1942,7 +1942,7 @@ void SqlMGR::WriteElevationTRN(C_STile &sup,U_INT row)
 //------------------------------------------------------------------------------
 void	SqlMGR::PatchDetailTRN(U_INT key,U_INT sno,U_INT det)
 {	char rq[1024];  
-  _snprintf(rq,1024,"UPDATE trn SET det=%u WHERE (qgt=%d) AND (sup=%d);*",det,key,sno);
+  _snprintf(rq,1024,"UPDATE TRN SET det=%u WHERE (qgt=%d) AND (sup=%d);*",det,key,sno);
   sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
 	int rep = sqlite3_step(stm);
   if (SQLITE_ERROR == rep)	Abort(elvDBE);
@@ -1955,7 +1955,7 @@ void	SqlMGR::PatchDetailTRN(U_INT key,U_INT sno,U_INT det)
 U_INT	SqlMGR::ReadPatchDetail(U_INT key,U_INT sno)
 {	U_INT P = 0;
 	char rq[1024];  
-  _snprintf(rq,1024,"SELECT det FROM trn WHERE (qgt=%d) AND (sup=%d);*",key,sno);
+  _snprintf(rq,1024,"SELECT det FROM TRN WHERE (qgt=%d) AND (sup=%d);*",key,sno);
   sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
 	if (SQLITE_ROW == sqlite3_step(stm)) P = sqlite3_column_int(stm, 0);
 	sqlite3_finalize(stm);                      // Close statement
@@ -2850,7 +2850,7 @@ int SqlMGR::GetTRNElevations(C_QGT *qgt)
 	U_INT key = qgt->FullKey();
 	count			= 0;
 	this->qgt	= qgt;
-	_snprintf(req,1024,"SELECT * FROM trn WHERE qgt= %d;*",key);
+	_snprintf(req,1024,"SELECT * FROM TRN WHERE qgt= %d;*",key);
 	stm = CompileREQ(req,elvDBE);
 	sup->qKey = key;
 	sup->qgt	= qgt;
@@ -2948,7 +2948,7 @@ int SqlMGR::GetTILElevations(C_QGT *qgt)
 	U_INT key = qgt->FullKey();
 	count			= 0;
 	this->qgt	= qgt;
-	_snprintf(req,1024,"SELECT * FROM tile WHERE qgt= %d;*",key);
+	_snprintf(req,1024,"SELECT * FROM TILE WHERE qgt= %d;*",key);
 	stm = CompileREQ(req,elvDBE);
 	sup->qKey = key;
 	sup->qgt	= qgt;
@@ -2979,69 +2979,54 @@ int SqlMGR::DecodeDETrow()
 //===================================================================================
 //	Read ELEVATION PATCHE FOR A QGT
 //===================================================================================
-int SqlMGR::ReadPatches(C_QGT *qgt, ELV_PATCHE &p)
+void SqlMGR::ReadPatches(C_QGT *qgt)
 { char req[1024];
   U_INT key = qgt->FullKey();
-	_snprintf(req,1024,"SELECT * FROM patche WHERE qgt= %d;*",key);
+	_snprintf(req,1024,"SELECT * FROM patch WHERE qgt= %d;*",key);
 	stm = CompileREQ(req,elvDBE);
 	while (SQLITE_ROW == sqlite3_step(stm))
-	{	//-- Decode patche row -----------------------
-    p.dtNo = sqlite3_column_int(stm,CLN_PCH_DET);	// Det number
-		p.subL = sqlite3_column_int(stm,CLN_PCH_SUB);	// Det subdivision
-		p.nbe  = sqlite3_column_int(stm,CLN_PCH_NBE);	// Number of elevations
-		int		dim = p.nbe * sizeof(ELV_VTX);
-		//--- Read elevation array -------------------
-		char    *src	= (char*)sqlite3_column_blob (stm,CLN_PCH_ELV);
-		char    *dst	= (char*)p.mat;
-		memcpy(dst,src,dim);
-		//--- Send to detail tile --------------------
-		CmQUAD *qd = qgt->GetQUAD(p.dtNo);
-		qd->ProcessPatche(p);
+	{	PATCH_ELV	*p = new PATCH_ELV();
+		p->inx		= 0;
+		p->qgt		= qgt;
+		p->key		= qgt->FullKey();
+		p->dno		= sqlite3_column_int(stm,1);		// Detail Tile No
+		p->sno		= sqlite3_column_int(stm,2);		// Supertile No
+		p->nbp		= sqlite3_column_int(stm,3);		// number of patches
+		int	dim		= p->nbp * sizeof(ELV_ITEM);		// Blob size in bytes
+		char *src	= (char *)sqlite3_column_blob(stm, 4); // Elevations
+		memcpy(p->tab,src,dim);
+		p->dir		= PATCH_WRITE;
+		qgt->ApplyPatches(p);
 	}
   //---Free statement ------------------------------------------
   sqlite3_finalize(stm);
-	return 1;
+	return;
 }
 //===================================================================================
 //	SAVE PATCHE into ELEVATION DATABASE
 //	A patche for the detail tile is saved under the QGT key
 //===================================================================================
-int SqlMGR::WritePatche(ELV_PATCHE &p)
+int SqlMGR::WritePatche(PATCH_ELV &p)
 { //--- then insert the new one ----------------------------------------
-	char *rq = "INSERT INTO patche (qgt,det,sub,nbe,elv) VALUES(?1,?2,?3,?4,?5);*";
+	char *rq = "INSERT OR REPLACE INTO patch (qgt,sno,dno,nbp,elev) VALUES(?1,?2,?3,?4,?5);*";
 	int rep	 = 0;
   sqlite3_stmt *stm = CompileREQ(rq,elvDBE);
 	//--- insert QGT key ------------------------
-	sqlite3_bind_int(stm, 1,p.qKey);
+	sqlite3_bind_int(stm, 1,p.key);				// Param 1
+	//--- Insert SuperTile No -------------------
+	sqlite3_bind_int(stm, 2,p.sno);				// Param 2
 	//--- insert DET Key ------------------------
-	sqlite3_bind_int(stm, 2,p.dtNo);
-	//--- Insert subdivision level --------------
-	sqlite3_bind_int(stm, 3,p.subL);
+	sqlite3_bind_int(stm, 3,p.dno);			// Param 3
 	//--- Insert number of entries --------------
-	sqlite3_bind_int(stm, 4,p.nbe);
+	sqlite3_bind_int(stm, 4,p.nbp);				// Param 4
 	//--- Insert elevations in blob -------------
-	int dim  = p.nbe * sizeof(ELV_VTX);
-  sqlite3_bind_blob(stm, 5,p.mat, dim, SQLITE_TRANSIENT);
+	int dim  = p.nbp * sizeof(ELV_ITEM);	// Param 5
+  sqlite3_bind_blob(stm, 5,p.tab, dim, SQLITE_TRANSIENT);
 	//--- Execute statement ---------------------
 	rep      = sqlite3_step(stm);               // Insert value in database
   if (rep != SQLITE_DONE) Abort(elvDBE);
   //---Free statement ------------------------------------------
   sqlite3_finalize(stm);
-	return 0;
-}
-//-----------------------------------------------------------------------------
-//	Delete patche
-//	Patche for the selected detail tile is deleted before inserting a new one
-//-----------------------------------------------------------------------------
-int SqlMGR::DeletePatche(ELV_PATCHE &p)
-{ char req[1024];
-	U_INT key = p.qKey;
-	U_INT det = p.dtNo;
-  _snprintf(req,1024,"DELETE FROM patche where (qgt = %d) and (det = %d);*",key,det);
-	sqlite3_stmt *stm			= CompileREQ(req,elvDBE);
-	//--- Execute Request ---------------------------------------
-  int rep = sqlite3_step(stm);
-  sqlite3_finalize(stm);  
 	return 0;
 }
 //===================================================================================
@@ -3212,12 +3197,17 @@ bool SqlTHREAD::CheckM3DModel(char *name)
 //  NOTE: Type is ignored for now
 //---------------------------------------------------------------------------------
 int SqlTHREAD::DecodeM3DdayPart(sqlite3_stmt *stm,C3Dmodel *modl,EXT_3D &E)
-{ int   tsp =        sqlite3_column_int (stm,CLN_MOD_TSP);
+{ int   lod =        sqlite3_column_int (stm,CLN_MOD_LOD);
+	//--- Eliminate non 3D parts ---------------------------
+  if (lod > 3)			 return 0;
+	int   tsp =        sqlite3_column_int (stm,CLN_MOD_TSP);
   char *txn = (char*)sqlite3_column_text(stm,CLN_MOD_TXN);
   int   nbv =        sqlite3_column_int (stm,CLN_MOD_NVT);
   int   nbx =        sqlite3_column_int (stm,CLN_MOD_NIX);
-	int   lod =        sqlite3_column_int (stm,CLN_MOD_LOD);
+	//--- Search part for same texture ---------------------
+
 	C3DPart *prt = modl->GetPartFor(FOLDER_ART,txn,lod, nbx);
+
 	//---- Build this part --------------------------------
   float top =  float(sqlite3_column_double(stm, CLN_MOD_TOP));
   modl->SaveTop(top);

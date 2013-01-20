@@ -326,7 +326,6 @@ bool QGTHead::DecUser()
   pthread_mutex_unlock (&mux);
 	if (del == false)     return false;
 	//--Delete this QGT ----------------------
-	globals->cnDOB	= 0;
   int tr = 0;
 	int qx = 0;
 	int qz = 0;
@@ -334,9 +333,8 @@ bool QGTHead::DecUser()
   delete this;
 	//--- TRACE QGT deletion ---------------------------------------------------------
 	if (tr)
-	{	int		nob = globals->cnDOB;
-	 	float tim = globals->tcm->Time();
-		TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) Deleted. Release %06d Objects",tim,qx,qz,nob);
+	{	float tim = globals->tcm->Time();
+		TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) Deleted.",tim,qx,qz);
 	}
 	return true;
 }
@@ -535,6 +533,22 @@ void  CVertex::Init(U_INT xv,U_INT zv)
 	wdz	= 0;
   return;
 }
+//-------------------------------------------------------------------------
+//  Store clamped altitude 
+//-------------------------------------------------------------------------
+void CVertex::AddAltitude(double inc)
+{	return ClampAltitude(wdz + inc);
+}
+//-------------------------------------------------------------------------
+//  Store clamped altitude 
+//-------------------------------------------------------------------------
+void CVertex::ClampAltitude(double alt)
+{	double amx = globals->aMax;
+	double amn = -5000;
+	if (alt > amx)	alt = amx;
+	if (alt < amn)  alt = amn;
+	wdz	= alt;
+}
 
 //-------------------------------------------------------------------------
 //  Compute in V the relative coordinates to vertex A
@@ -634,7 +648,7 @@ CmQUAD::CmQUAD()
   qARR    = this;
   nvtx    = 0;
   vTab    = 0;
-  Flag    = 0;
+  qFlag   = 0;
 	iBUF		= 0;
 	msp			= 0;
 	RenderIND();
@@ -751,7 +765,8 @@ void CmQUAD::Contour()
 //-------------------------------------------------------------------------
 void CmQUAD::Clean()
 {	if (iBUF)	delete [] iBUF;
-	vTab = 0;
+	iBUF	= 0;
+	vTab	= 0;
 	return;
 }
 //-------------------------------------------------------------------------
@@ -789,15 +804,13 @@ void CmQUAD::AssignGeoCOORD(TC_GTAB *t, CVertex *v)
 //	Those two items are then used in the glMultiDrawArray() primitive
 //-------------------------------------------------------------------------
 int CmQUAD::InitVTAB(TC_GTAB *vbo,int deb, U_CHAR res)
-{ CmQUAD  *qad	= qARR;
-  TC_GTAB	*dst	= vbo;
+{ TC_GTAB	*dst	= vbo;
 	int      tot  = 0;
 	int      inx  = deb;
 	//--- Update first and count lists -------
-	for (U_SHORT k = 0; k != qDim; k++,qad++)
+	for (U_SHORT k = 0; k != qDim; k++)
 	{ iBUF[k]			= inx;
-	  qad->SetGTAB(dst);
-	  int nbv			= qad->InitVertexCoord(dst,TexRES[res]);
+	  int nbv			= qARR[k].InitVertexCoord(dst,TexRES[res]);
 		iBUF[qDim+k]= nbv;
 		inx        += nbv;
 		tot        += nbv;
@@ -806,10 +819,14 @@ int CmQUAD::InitVTAB(TC_GTAB *vbo,int deb, U_CHAR res)
   return tot;
 }
 //-------------------------------------------------------------------------
-//    Allocate vertex table
-//    txt is the table corresponding to the resolution (medium or Hight)
+//    Build vertex table
+//		a)	vbo is the vertex buffer
+//    b)	txt is the table corresponding to texture resolution (medium or Hight)
 //		This table gives the texture coordinates S and T corresponding to
 //		the vertex indice in the mesh
+//
+//		1) geo coordinates are stored for each quad vertex
+//		2) Texture coordinates are computed and saved too
 //	NOTE:  The first vertex address of each subquad is saved in vTab.
 //		It is used each time the texture coordinates need to be
 //		refreshed due to a change in resolution.
@@ -817,6 +834,7 @@ int CmQUAD::InitVTAB(TC_GTAB *vbo,int deb, U_CHAR res)
 int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
 {//	AreWe(337,31,313,0);
  //	AreWe(338, 0,313,0);
+	vTab = vbo;															// Save vertex table
 	char       sh = globals->tcm->GetFactEV();			// Shift factor	
 	char			 fx = globals->tcm->GetLastEVindex();
 	CVertex   *ct = GetCenter();
@@ -897,8 +915,7 @@ int  CmQUAD::InitVertexCoord(TC_GTAB *vbo,float *txt)
 //  xk:     QGT X index
 //-------------------------------------------------------------------------
 void CmQUAD::RefreshVTAB(CSuperTile *sp,U_CHAR res)
-{ CmQUAD *qd = qARR;
-	for (int k = 0; k != qDim; k++,qd++) qd->RefreshVertexCoord(sp,TexRES[res]);
+{ for (int k = 0; k != qDim; k++) qARR[k].RefreshVertexCoord(sp,TexRES[res]);
 	sp->LoadVBO();
   return;
 }
@@ -1198,8 +1215,7 @@ int  CmQUAD::CountVertices()
 //-------------------------------------------------------------------------
 int CmQUAD::InitIndices(CSuperTile *sp,char opt)
 {	int nbv	= 0;
-  CmQUAD *qd = qARR;
-	for (int k=0; k < qDim; k++,qd++)	nbv += qd->CountVertices();
+	for (int k=0; k < qDim; k++)	nbv += qARR[k].CountVertices();
 	//--- Allocate list of first index and count --------------
 	int  dim = (qDim << 1) + 2;
 	msp		= sp;
@@ -1213,8 +1229,7 @@ int CmQUAD::InitIndices(CSuperTile *sp,char opt)
 //-------------------------------------------------------------------------
 int CmQUAD::NbrVerticesInTile()
 {	int    nbv = 0;
-  CmQUAD *qd = qARR;
-	for (int k=0; k < qDim; k++,qd++)	nbv += qd->nvtx;
+  for (int k=0; k < qDim; k++)	nbv += qARR[k].nvtx;
 	return nbv;
 }
 //-------------------------------------------------------------------------
@@ -1303,108 +1318,50 @@ void CmQUAD::DrawVBO()
   return Contour();
 }
 //-------------------------------------------------------------------------
-//  Get list of vertices for Terra editor
+//  Process patch
 //-------------------------------------------------------------------------
-void CmQUAD::GetVertices(TRACK_EDIT &wrk)
-{	CmQUAD *qd	= qARR;
-	wrk.vNum		= 0;
-	wrk.subq	 = subL;
-	for (int k = 0; k != qDim; k++, qd++) { PutVertices(wrk,qd);}
+void CmQUAD::ScanPatch(PATCH_ELV *pat)
+{	if (IsaQuad())	return PatchQuad(pat);
+	for (int k=0; k!= qDim; k++) qARR[k].ScanPatch(pat);
 	return;
 }
 //-------------------------------------------------------------------------
-//  Get list of vertices
+//  Patch this final Quad
 //-------------------------------------------------------------------------
-void CmQUAD::PutVertices(TRACK_EDIT &wrk, CmQUAD *qd)
-{	//--- Start with Center vertice -------------------
-	//--- Store center vertex -------------------------
-	CVertex *ct = qd->GetCenter();
-	StoreVertex(wrk,ct);
-	//--- Explore all borders -------------------------
-	CVertex *vt = ct->GetCorner(TC_SWCORNER);
-	//--- Explore south border ------------------------
-	CVertex *se = ct->GetCorner(TC_SECORNER);
-	while (vt != se)	{StoreVertex(wrk,vt); vt = vt->GetEdge(TC_EAST);}
-	//--- Explore East border -------------------------
-	CVertex *ne = ct->GetCorner(TC_NECORNER);
-	while (vt != ne)	{StoreVertex(wrk,vt); vt = vt->GetEdge(TC_NORTH);}
-	//--- Explore North Border ------------------------
-	CVertex *nw = ct->GetCorner(TC_NWCORNER);
-	while (vt != nw)	{StoreVertex(wrk,vt); vt = vt->GetEdge(TC_WEST);}
-	//--- Explore West border -------------------------
-	CVertex *sw = ct->GetCorner(TC_SWCORNER);
-	while (vt != sw)	{StoreVertex(wrk,vt); vt = vt->GetEdge(TC_SOUTH);}
-	//-------------------------------------------------
-	return;
-}
-//-------------------------------------------------------------------------
-//  Save vertex
-//	lk is used to store vertex keys and avoid dupplicate
-//	lv is used to draw and save vertices
-//-------------------------------------------------------------------------
-void CmQUAD::StoreVertex(TRACK_EDIT &wrk, CVertex *vt)
-{ //--- Look into the table ----------------------------
-	U_INT key			= vt->VertexKey();
-	TVertex *vtx  = wrk.lvx;
-	for (U_INT k=0; k<wrk.vNum; k++,vtx++)	if (key == vtx->key)	return;
-	//---- Store the new vertex --------------------------
-	vtx->key			= key;						// Vertex absolute key
-	vtx->vnum			= wrk.vNum++;			// Vertex number
-	vtx->vrt			= vt;							// Vertex pointer
-	return;
-}
-//-------------------------------------------------------------------------
-//  Patche elevations
-//-------------------------------------------------------------------------
-void CmQUAD::ProcessPatche(ELV_PATCHE &p)
-{	CmQUAD *qd = qARR;
-	for (int k = 0; k != qDim; k++, qd++) qd->PatchVertices(p);
-	return;
-}
-//-------------------------------------------------------------------------
-// Seach all vertices
-//-------------------------------------------------------------------------
-void CmQUAD::PatchVertices(ELV_PATCHE &p)
-{ Patche(&Center,p,TC_SOUTH);
+void CmQUAD::PatchQuad(PATCH_ELV *pat)
+{	//--- Store center vertex -------------------------
+	PatchVertex(GetCenter(),pat,TC_SOUTH);
 	CVertex *se = GetCorner(TC_SECORNER);
 	CVertex *vt = GetCorner(TC_SWCORNER);
-	while (vt != se)	vt = Patche(vt,p,TC_EAST); 
+	while (vt != se)	vt = PatchVertex(vt,pat,TC_EAST); 
 	CVertex *ne = GetCorner(TC_NECORNER);
-	while (vt != ne)	vt = Patche(vt,p,TC_NORTH);
+	while (vt != ne)	vt = PatchVertex(vt,pat,TC_NORTH);
 	CVertex *nw = GetCorner(TC_NWCORNER);
-	while (vt != nw)	vt = Patche(vt,p,TC_WEST);
+	while (vt != nw)	vt = PatchVertex(vt,pat,TC_WEST);
 	CVertex *sw = GetCorner(TC_SWCORNER);
-	while (vt != sw)	vt = Patche(vt,p,TC_SOUTH);
+	while (vt != sw)	vt = PatchVertex(vt,pat,TC_SOUTH);
 	return;
 }
 //-------------------------------------------------------------------------
-//  Patche elevations
-//	dir = 0 ==>  Store elevation from vertex to patche
-//	dir = 1 =>   Store patche into vertex elevation 
+//  Patch vertex
 //-------------------------------------------------------------------------
-CVertex *CmQUAD::Patche(CVertex *vt,ELV_PATCHE &p,int nxt)
-{	
-	U_INT key			= vt->VertexKey();
-	ELV_VTX *mat	= p.mat;
-	int			  k		= 0;
-	//--- Process according to direction -------------------
-	switch (p.dir)	{
-		//--- Patche out: Save elevation in  table ------
-		case 0:
-			for (k=0; k!=p.nbe; k++) if (key == mat[k].key) break;
-			mat[k].key	= key;
-			mat[k].elv	= vt->GetWZ();
-			p.nbe++;
-			break;
-		//--- Patch in: modify vertex elevation -------------
-		case 1:
-			for (k=0; k!=p.nbe; k++)
-			{	if (key == mat[k].key) {vt->SetWZ(mat[k].elv); break;}
-			}
+CVertex *CmQUAD::PatchVertex(CVertex *vtx, PATCH_ELV *pat, U_CHAR dir)
+{	U_INT key			= vtx->VertexKey();
+	switch (pat->dir)
+	{		//--- Save elevations --------------
+			case PATCH_READ:
+				pat->Store(key,vtx);
+				return vtx->GetEdge(dir);
+			//--- Store vertices ---------------
+			case PATCH_WRITE:
+				pat->Update(vtx,key);
+				return vtx->GetEdge(dir);
 	}
-
-	return vt->GetEdge(nxt);
+	gtfo("Error2 in Patche");
+	return 0;
 }
+
+
 //=========================================================================
 //  QGT Queue
 //=========================================================================
@@ -1619,7 +1576,7 @@ void CSuperTile::AllocateVertices(char opt)
 	{	int	dm = nbVTX * sizeof(TC_GTAB);
 		if (0 == aVBO) glGenBuffers(1,&aVBO);
 		glBindBuffer(GL_ARRAY_BUFFER,aVBO);
-		glBufferData(GL_ARRAY_BUFFER,dm,vBUF,GL_STATIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER,dm,vBUF,GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER,0);
 	}
 	//--------------------------------------------------
@@ -1935,6 +1892,8 @@ int CSuperTile::Draw3D(U_CHAR tod)
 	//--- DRAW OSM Light layer   -----------------------------
 	if (tod == MODEL_NIT)
 	{	DebDrawOSMlight(lightOSM, alphaOSM);
+	  glDisableClientState(GL_NORMAL_ARRAY);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		osmQ[OSM_LAYER_LITE].Lock();
 		for (prt = osmQ[OSM_LAYER_LITE].GetFirst(); prt != 0; prt= prt->Next())	 prt->DrawAsLIT();
 		osmQ[OSM_LAYER_LITE].UnLock();
@@ -2302,11 +2261,21 @@ int C_QGT::StepTIL()
 //---------------------------------------------------------------------
 int C_QGT::StepPCH()
 {	if (0 == globals->sql[THREAD_SEA]->UseElvDB())	return StepSEA();
-  ELV_PATCHE  p;
-	p.dir		= 1;
-	globals->sqm->ReadPatches(this,p);
+  globals->sqm->ReadPatches(this);
 	SetStep(TC_QT_SEA);			// Check coast data
 	return 1;
+}
+//---------------------------------------------------------------------
+//  Apply one patch
+//---------------------------------------------------------------------
+void C_QGT::ApplyPatches(PATCH_ELV *p)
+{	U_INT dno	= p->dno;
+	if (dno < TC_DT_PER_QGT)
+	{	CmQUAD *quad = qTAB + dno;
+		quad->ScanPatch(p);
+	}
+	delete p;
+	return;
 }
 //----------------------------------------------------------------------------
 //	Step SEA:
@@ -2382,7 +2351,7 @@ void C_QGT::FreeAllVertices()
 { CmQUAD *qd  = qTAB;
   U_INT nt    = 0;
   int  nb1    = globals->NbVTX;
-  while (nt++ != TC_DETAIL_NBR)     FreeQuad(qd++);
+  while (nt++ != TC_DT_PER_QGT)     FreeQuad(qd++);
   int  nb2    = nb1 - globals->NbVTX;
   if (tr) TRACE("TCM: -- Time: %04.2f QGT %03d-%03d releases %06d vertices",tcm->Time(),xKey,zKey,nb2);
   return;
@@ -4446,32 +4415,6 @@ CmQUAD *TCacheMGR::GetTileQuad(U_INT ax,U_INT az)
 CTextureDef *TCacheMGR::GetTexDescriptor()
 { return GetTexDescriptor(Spot.qgt,Spot.xDet(),Spot.zDet());}
 //-----------------------------------------------------------------------
-//  Locate texture descriptor for  tile (x,z)
-//-----------------------------------------------------------------------
-void TCacheMGR::FillGroundTile(CGroundTile *gnt)
-{ U_INT ax = gnt->GetAX();
-	U_INT az = gnt->GetAZ();
-	U_INT qx = ax >> TC_BY32;
-  U_INT qz = az >> TC_BY32;
-  U_INT tx = ax &  TC_032MODULO;
-  U_INT tz = az &  TC_032MODULO;
-  C_QGT  *qgt = GetQGT(qx,qz);
-	gnt->SetQGT(qgt);
-  if (0 == qgt) gtfo("Timing problem with AP manager");
-	//--- Reserve one reference to QGT ---------
-	qgt->IncUser();
-  //----Access the Super Tile ----------------
-  CSuperTile   *sp  = qgt->GetSuperTile(tx,tz);
-	gnt->StoreSup(sp);
-  //----Local  tile number -------------------
-  U_INT lx	= tx & TC_004MODULO;
-  U_INT lz	= tz & TC_004MODULO;
-  U_INT nt	= (lz << TC_BY04) | lx;
-  CTextureDef *txn = &sp->Tex[nt];
-	gnt->StoreData(txn);
-  return;
-}
-//-----------------------------------------------------------------------
 //  Locate texture descriptor for  tile (x,z) in qgt
 //-----------------------------------------------------------------------
 CTextureDef *TCacheMGR::GetTexDescriptor(C_QGT *qgt,U_INT tx,U_INT tz)
@@ -4879,6 +4822,7 @@ int TCacheMGR::OneAction()
 	int pm = 0;
   if (0 == qgt)   return 0;
   ActQ.PutHead(qgt);
+	//ActQ.PutLast(qgt);
   //-----Dispatch action code -----------------------------
   switch (qgt->Step)  {
     case TC_QT_INI:

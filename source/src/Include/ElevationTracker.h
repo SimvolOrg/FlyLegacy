@@ -42,40 +42,47 @@ class CElvTracker: public Tracker {
 	TCacheMGR       *tcm;									// Cache manager
 	GroundSpot			*spot;								// Ground spot
 	CVector					 tran;								// Translation vector
-	CmQUAD          *tile;								// Current tile
+	//--- Current tile -----------------------------------
+	PATCH_ELV        area;								// Current Tile
 	//--- Hit buffer -------------------------------------
 	GLuint					 bHit[8];						  // Hit buffer
 	//--- WIndow tracker ---------------------------------
 	CFuiTED         *wind;								// Window editor
 	//--- Working area for QUAD --------------------------
-	TRACK_EDIT			 wrk;									// For QUAD
 	QUAD_QGT				 stak[4];							// Stock of QGT
 	int							 nbs;									// Number of super Tile
+	//--- Patche table -----------------------------------
+	std::map<U_INT,PATCH_ELV*>	patch;		// List of patches
 	//--- Selected vertex --------------------------------
-	TVertex         *svrt;
+	int							 svtx;								// Selected vertex
 	//--- METHODS ----------------------------------------
 public:
 	CElvTracker();
  ~CElvTracker();
+ 	void  Register(CFuiTED *w);
 	//----------------------------------------------------
 	void	TimeSlice(float dT);
 	//----------------------------------------------------
-	void	FixElevation();
-	void	InitStack();
-	void	FillStack(U_INT ax,U_INT az);
-	void  HaveElevation();
-	float	IncElevation(float dte);
-	float	SetElevation(float elv);
-	void  Register(CFuiTED *w);	
+	void		FixElevation();
+	void		InitStack();
+	void		FillStack(U_INT ax,U_INT az);
+	double  HaveElevation();
+	//----------------------------------------------------
+	int			SetElevation(int alt);
+	int			FlattenTile(int alt);
+	//----------------------------------------------------
+	PATCH_ELV *GetPatch(U_INT key);
 	//----------------------------------------------------
 	void	OneSelection(U_INT No);
+	void	SavePatches();
 	//----------------------------------------------------
 	void	Draw();
 	void	DrawMarks();
-	void	DrawOneMark(TVertex *vdf);
+	void	DrawOneMark(int k);
 	//----------------------------------------------------
 	inline void SetTCM(TCacheMGR *t)	{tcm = t;}
-	inline CmQUAD *GetTile()	{return tile;}							
+	inline int  GetModif()						{return patch.size();}
+	inline void	Unselect()						{svtx = -1;}
 };
 
 //======================= END OF FILE ==============================================================

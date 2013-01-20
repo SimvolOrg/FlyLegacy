@@ -511,7 +511,6 @@ void TraceObjectSize()
 	TRACE("%30s size = %05d","CShared3DTex",			sizeof(CShared3DTex));
 	TRACE("%30s size = %05d","CTextureDef",				sizeof(CTextureDef));
 	TRACE("---TERRAIN -----------------------------");
-	TRACE("%30s size = %05d","CGroundTile",				sizeof(CGroundTile));
 	TRACE("%30s size = %05d","CSuperTile",				sizeof(CSuperTile));
 	TRACE("%30s size = %05d","CVertex",				    sizeof(CVertex));
 	TRACE("%30s size = %05d","CmQUAD",				    sizeof(CmQUAD));

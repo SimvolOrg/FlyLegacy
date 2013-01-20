@@ -1224,7 +1224,7 @@ void CFuiTaxi::AttachNodes()
 //	Mouse click are captured here
 //------------------------------------------------------------------------------
 bool CFuiTaxi::MouseCapture(int mx, int my, EMouseButton bt)
-{	if (MouseClick (mx, my, bt))		return true;
+{	//if (MouseClick (mx, my, bt))		return true;
 	//--- Select node if needed ------------------------------
 	keym = glutGetModifiers();
 	MousePicking(mx,my);
@@ -1401,8 +1401,7 @@ void CFuiTaxi::NotifyFromPopup(Tag id,Tag itm,EFuiEvents evn)
 //	Save to file
 //-------------------------------------------------------------------------------
 void CFuiTaxi::SaveData()
-{	//nsup->SaveToFile(trak);
-	if (0 == modf)		return;
+{	if (0 == modf)		return;
 	if (taxm)	taxm->SaveToBase(trak);
 	return;
 	

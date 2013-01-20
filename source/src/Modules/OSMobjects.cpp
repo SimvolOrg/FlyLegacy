@@ -674,26 +674,6 @@ char *OSM_Object::TextureData(char &d)
 	return ref->TextureData(d);
 }
 //-----------------------------------------------------------------
-//	Change selection on building
-//-----------------------------------------------------------------
-/*
-void OSM_Object::SwapSelect()
-{	if (bpm.selc)	Deselect();
-	else					Select();
-	return;
-}
-*/
-//-----------------------------------------------------------------
-//	Deselect this building
-//-----------------------------------------------------------------
-/*
-void OSM_Object::Deselect()
-{	globals->osmS = 0;
-	bpm.selc	= 0;
-	return;
-}
-*/
-//-----------------------------------------------------------------
 //	Replace  this object
 //-----------------------------------------------------------------
 void	OSM_Object::ReplaceBy(OSM_MDEF *rpp)
