@@ -70,14 +70,6 @@ float CSimAxe::aCOEF[] = {
    1,
 };
 //==============================================================================
-//  JOYSTICK NEUTRAL AREA 
-//  Adjust value to increase/decrease sensibility for the type of control
-//==============================================================================
-JOY_NULL_AREA CJoysticksManager::nZON[] = {
-  { 0.0f,   0.0f,  0.0f },            // 0 Not used
-  {-0.25f, +0.25f, 0.0f },            // Stick type in [-1,+1];
-};
-//==============================================================================
 //  Create a JOYSTICK DEVICE
 //==============================================================================
 JoyDEV::JoyDEV(int n)
@@ -284,15 +276,24 @@ CSimAxe::CSimAxe()
   iAxe          = -1;
   inv						= +1;
   pos           = false;
+	msk						= 0;
   neutral       = 0;
   msg.sender    = 'Saxe';
-  attn          = 1.0f;
+  attn          = 1;
  *devc					= 0;
 }
 //----------------------------------------------------------------------
 //  Delete
 //----------------------------------------------------------------------
 CSimAxe::~CSimAxe(){}
+//----------------------------------------------------------------------
+//  Change force in [0.01- 1]
+//----------------------------------------------------------------------
+void CSimAxe::ChangeForce(float a)
+{	if (a < 0.01)	a = float(0.01);
+	attn	= a;
+	return;
+}
 //----------------------------------------------------------------------
 //  Read AXE PARAMETERS
 //----------------------------------------------------------------------
@@ -378,24 +379,30 @@ void CSimAxe::Assignment(char *edt,int s)
 //------------------------------------------------------------------------
 //  Return axe value
 //------------------------------------------------------------------------
-float CSimAxe::Value(JOY_NULL_AREA *nz)
+float CSimAxe::Value(JOY_NEUTRAL &nz)
 { float f = jdev->axeData[iAxe] * inv;
-	//----Normalize value ------------------------------------------
+	//----Get Normalized value -----------------------------------
 	f  = bCOEF[pos] + (aCOEF[pos] * f);
-	int	nx = neutral;
-	if (nx && (f > nz[nx].lo) && (f < nz[nx].hi)) f = nz[nx].md;
-  return f * attn;
+	if (0 == neutral)		return (f * attn);
+	//--- Remove neutral area --------------------------------------
+	float val = 0;
+	if (f < nz.lo)		val = f - nz.lo;
+	if (f > nz.hi)		val = f - nz.hi;
+  return (val * attn * nz.rf);
 }
 
 //------------------------------------------------------------------------
 //  Return raw axe value
 //------------------------------------------------------------------------
-float CSimAxe::RawVal(JOY_NULL_AREA *nz)
+float CSimAxe::RawVal(JOY_NEUTRAL &nz)
 { float f = jdev->axeData[iAxe] * inv;
-	//----Normalize value ------------------------------------------
-	int	nx = neutral;
-	if (nx && (f > nz[nx].lo) && (f < nz[nx].hi)) f = nz[nx].md;
-  return f * attn;
+	//----Get raw value with attenuation ---------------------------
+	if (0 == neutral)		return (f * attn);
+	//--- Remove neutral area --------------------------------------
+	float val = 0;
+	if (f < nz.lo)		val = f - nz.lo;
+	if (f > nz.hi)		val = f - nz.hi;
+  return (val * attn * nz.rf);
 }
 
 //==============================================================================
@@ -466,7 +473,7 @@ int CSimButton::Read(SStream * stream, Tag tag)
 //        have a diffrent name assigned by the user in the AMP file
 //  Each control has a generic name such as 'thr1' or 'bld1' that stores the user
 //  tag provided in the file.
-//  Funtion MapTo(gen,subs) remaps the generic commande  to the calling subsystem
+//  Function MapTo(gen,subs) remaps the generic commande  to the calling subsystem
 //			thus joystick is linked correctly to the proper aircraft control
 //			when changing aircraft
 //  Conversaly the manager can return the user name given the generic one.
@@ -493,69 +500,70 @@ void CJoysticksManager::PreInit()
 { int opt = 0;
   globals->jsm        = this;
   //---Init neutral area -------------------------
-  SetNulleArea(0.50,0);
+  SetNulleArea(float(0.10));
   //----------------------------------------------
   AxeMoved.iAxe		= -1;
 	AxeMoved.jdev		= 0;
-  //--------Assign plane axe name ----------------
-  InitAxe( 0,JOY_TYPE_PLAN, JS_AILR_BIT,"Aileron  (Bank)",		'ailr'			, 0, true); 
-  InitAxe( 1,JOY_TYPE_PLAN, JS_ELVR_BIT,"Elevator (Pitch)",		'elev'			, 0, true, -1);
-  InitAxe( 2,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)",		'rudr'      , 0, true,  1);
-  InitAxe( 3,JOY_TYPE_PLAN, JS_ELVT_BIT,"Elevator Trim",			'trim'      , 0, true);
-	//---Group toes -------------------------------------------------------------------
-  InitAxe( 4,JOY_TYPE_PLAN, JS_BRAK_BIT,"Right Toe-brake",		'rtoe'			, 0, false);
-  InitAxe( 5,JOY_TYPE_PLAN, JS_BRAK_BIT,"Left  Toe-brake",		'ltoe'			, 0, false);
-	//---Group throttle ---------------------------------------------------------------
-  InitAxe( 6,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",					'thr1'  , JOY_THROTTLE, false,1);
-  InitAxe( 7,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 2",					'thr2'  , JOY_THROTTLE, false,1);
-  InitAxe( 8,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 3",					'thr3'  , JOY_THROTTLE, false,1);
-  InitAxe( 9,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 4",					'thr4'  , JOY_THROTTLE, false,1);
+  //--------Assign plane axe name --------------------------------------------------------
+  InitAxe( JS_AILR,JOY_TYPE_PLAN, JS_AILR_BIT,"Aileron  (Bank)",		'ailr'			, 0, true); 
+  InitAxe( JS_ELVR,JOY_TYPE_PLAN, JS_ELVR_BIT,"Elevator (Pitch)",		'elev'			, 0, true, -1);
+  InitAxe( JS_RUDR,JOY_TYPE_PLAN, JS_RUDR_BIT,"Rudder (Heading)",		'rudr'      , 0, true,  1);
+	InitAxe( JS_STER,JOY_TYPE_PLAN, JS_STER_BIT,"Steering gear",		  'ster'      , 0, true,  1);
+  InitAxe( JS_ETRM,JOY_TYPE_PLAN, JS_ELVT_BIT,"Elevator Trim",			'trim'      , 0, true);
+	//---Group toes ------------------------------------------------------------------------
+  InitAxe( JS_RTOE,JOY_TYPE_PLAN, JS_BRAK_BIT,"Right Toe-brake",		'rtoe'			, 0, false);
+  InitAxe( JS_LTOE,JOY_TYPE_PLAN, JS_BRAK_BIT,"Left  Toe-brake",		'ltoe'			, 0, false);
+	//---Group throttle ---------------------------------------------------------------------
+  InitAxe( JS_THR1,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 1",					'thr1'  , JOY_THROTTLE, false,1);
+  InitAxe( JS_THR2,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 2",					'thr2'  , JOY_THROTTLE, false,1);
+  InitAxe( JS_THR3,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 3",					'thr3'  , JOY_THROTTLE, false,1);
+  InitAxe( JS_THR4,JOY_TYPE_PLAN, JS_THRO_BIT,"Throttle 4",					'thr4'  , JOY_THROTTLE, false,1);
 	//---Group mixture -----------------------------------------------------------------
-  InitAxe(10,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 1",					'mix1'   , JOY_MIXTURE, false);
-  InitAxe(11,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 2",					'mix2'   , JOY_MIXTURE, false);
-  InitAxe(12,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 3",					'mix3'   , JOY_MIXTURE, false);
-  InitAxe(13,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 4",					'mix4'   , JOY_MIXTURE, false);
+  InitAxe( JS_MIX1,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 1",					'mix1'   , JOY_MIXTURE, false);
+  InitAxe( JS_MIX2,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 2",					'mix2'   , JOY_MIXTURE, false);
+  InitAxe( JS_MIX3,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 3",					'mix3'   , JOY_MIXTURE, false);
+  InitAxe( JS_MIX4,JOY_TYPE_PLAN, JS_MIXT_BIT,"Mixture 4",					'mix4'   , JOY_MIXTURE, false);
 	//---Group Propellor ---------------------------------------------------------------
-  InitAxe(14,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 1",							'pro1'      , JOY_PROPEL, false);
-  InitAxe(15,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 2",							'pro2'      , JOY_PROPEL, false);
-  InitAxe(16,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 3",							'pro3'      , JOY_PROPEL, false);
-  InitAxe(17,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 4",							'pro4'      , JOY_PROPEL, false);
+  InitAxe( JS_PRP1,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 1",							'pro1'      , JOY_PROPEL, false);
+  InitAxe( JS_PRP2,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 2",							'pro2'      , JOY_PROPEL, false);
+  InitAxe( JS_PRP3,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 3",							'pro3'      , JOY_PROPEL, false);
+  InitAxe( JS_PRP4,JOY_TYPE_PLAN, JS_PROP_BIT,"Prop 4",							'pro4'      , JOY_PROPEL, false);
 	//--- Mark controls with neutral area ----------------------------------------------
-  NeutralMark(0,JOY_NEUTRAL_STICK);
-  NeutralMark(1,JOY_NEUTRAL_STICK);
-  NeutralMark(2,JOY_NEUTRAL_STICK);
-  EndMark(17);
+  NeutralMark(JS_AILR,JOY_NEUTRAL_STICK);
+  NeutralMark(JS_ELVR,JOY_NEUTRAL_STICK);
+  NeutralMark(JS_RUDR,JOY_NEUTRAL_STICK);
+  EndMark(18);
   //----Init helicopter axis ----------------------------------------
-  InitAxe(18,JOY_TYPE_HELI, JS_HELI_BIT,"Roll Cyclic",  JS_ROLL_CYCLIC,  0, false);
-  InitAxe(19,JOY_TYPE_HELI, JS_HELI_BIT,"Pitch Cyclic", JS_PITCH_CYCLIC, 0, false);
-  InitAxe(20,JOY_TYPE_HELI, JS_HELI_BIT,"Tail Rotor",   JS_TAIL_ROTOR,   0, false);
-  InitAxe(21,JOY_TYPE_HELI, JS_HELI_BIT,"Trim",         JS_PITCHTRIM,    0, false);
-  InitAxe(22,JOY_TYPE_HELI, JS_HELI_BIT,"Collective",   JS_COLLECTIVE,   0, true);
-  InitAxe(23,JOY_TYPE_HELI, JS_HELI_BIT,"Throttle",     JS_THROTTLE,     0, true);
-  EndMark(23);
+  InitAxe(19,JOY_TYPE_HELI, JS_HELI_BIT,"Roll Cyclic",  JS_ROLL_CYCLIC,  0, false);
+  InitAxe(20,JOY_TYPE_HELI, JS_HELI_BIT,"Pitch Cyclic", JS_PITCH_CYCLIC, 0, false);
+  InitAxe(21,JOY_TYPE_HELI, JS_HELI_BIT,"Tail Rotor",   JS_TAIL_ROTOR,   0, false);
+  InitAxe(22,JOY_TYPE_HELI, JS_HELI_BIT,"Trim",         JS_PITCHTRIM,    0, false);
+  InitAxe(23,JOY_TYPE_HELI, JS_HELI_BIT,"Collective",   JS_COLLECTIVE,   0, true);
+  InitAxe(24,JOY_TYPE_HELI, JS_HELI_BIT,"Throttle",     JS_THROTTLE,     0, true);
+  EndMark(24);
   //------------------------------------------------------------------
-  InitAxe(24,JOY_TYPE_GVEH, JS_VEHI_BIT,"Throttle",     JS_GAS,        0, true);
-  InitAxe(25,JOY_TYPE_GVEH, JS_VEHI_BIT,"STEER",        JS_STEER ,     0, true);
-  //------------------------------------------------------------------
-  EndMark(25);
+  InitAxe(25,JOY_TYPE_GVEH, JS_VEHI_BIT,"Throttle",     JS_GAS,        0, true);
+  InitAxe(26,JOY_TYPE_GVEH, JS_VEHI_BIT,"STEER",        JS_STEER ,     0, true);
+  //-----------------------------------------------------------------
+  EndMark(26);
 	//------------------------------------------------------------------
-	SetMessage(4, SUBSYSTEM_BRAKE_CONTROL,BRAKE_LEFT,'btoe');
-	SetMessage(5, SUBSYSTEM_BRAKE_CONTROL,BRAKE_RITE,'btoe');
+	SetMessage(JS_LTOE, SUBSYSTEM_BRAKE_CONTROL,BRAKE_LEFT,'btoe');
+	SetMessage(JS_RTOE, SUBSYSTEM_BRAKE_CONTROL,BRAKE_RITE,'btoe');
   //------------------------------------------------------------------
-  SetMessage( 6,SUBSYSTEM_THROTTLE_CONTROL,1,'thro');
-  SetMessage( 7,SUBSYSTEM_THROTTLE_CONTROL,2,'thro');
-  SetMessage( 8,SUBSYSTEM_THROTTLE_CONTROL,3,'thro');
-  SetMessage( 9,SUBSYSTEM_THROTTLE_CONTROL,4,'thro');
+  SetMessage(JS_THR1,SUBSYSTEM_THROTTLE_CONTROL,1,'thro');
+  SetMessage(JS_THR2,SUBSYSTEM_THROTTLE_CONTROL,2,'thro');
+  SetMessage(JS_THR3,SUBSYSTEM_THROTTLE_CONTROL,3,'thro');
+  SetMessage(JS_THR4,SUBSYSTEM_THROTTLE_CONTROL,4,'thro');
   //--------------------------------------------------
-  SetMessage(10,SUBSYSTEM_MIXTURE_CONTROL, 1,'mixt');
-  SetMessage(11,SUBSYSTEM_MIXTURE_CONTROL, 2,'mixt');
-  SetMessage(12,SUBSYSTEM_MIXTURE_CONTROL, 3,'mixt');
-  SetMessage(13,SUBSYSTEM_MIXTURE_CONTROL, 4,'mixt');
+  SetMessage(JS_MIX1,SUBSYSTEM_MIXTURE_CONTROL, 1,'mixt');
+  SetMessage(JS_MIX2,SUBSYSTEM_MIXTURE_CONTROL, 2,'mixt');
+  SetMessage(JS_MIX3,SUBSYSTEM_MIXTURE_CONTROL, 3,'mixt');
+  SetMessage(JS_MIX4,SUBSYSTEM_MIXTURE_CONTROL, 4,'mixt');
   //--------------------------------------------------
-  SetMessage(14,SUBSYSTEM_PROPELLER_CONTROL, 1,'blad');
-  SetMessage(15,SUBSYSTEM_PROPELLER_CONTROL, 2,'blad');
-  SetMessage(16,SUBSYSTEM_PROPELLER_CONTROL, 3,'blad');
-  SetMessage(17,SUBSYSTEM_PROPELLER_CONTROL, 4,'blad');
+  SetMessage(JS_PRP1,SUBSYSTEM_PROPELLER_CONTROL, 1,'blad');
+  SetMessage(JS_PRP2,SUBSYSTEM_PROPELLER_CONTROL, 2,'blad');
+  SetMessage(JS_PRP3,SUBSYSTEM_PROPELLER_CONTROL, 3,'blad');
+  SetMessage(JS_PRP4,SUBSYSTEM_PROPELLER_CONTROL, 4,'blad');
   //------------------------------------------------------------------
 	CollectDevices();
 	return;
@@ -629,12 +637,10 @@ void CJoysticksManager::CreateDevList(char **men,U_INT lim)
 //----------------------------------------------------------------------------------
 //  Set the nulle area
 //----------------------------------------------------------------------------------
-void CJoysticksManager::SetNulleArea(float n,char m)
-{ nValue              = n;
-  nZON[JOY_NEUTRAL_STICK].lo = -n;
-  nZON[JOY_NEUTRAL_STICK].md = 0;
-  nZON[JOY_NEUTRAL_STICK].hi = +n;
-  nZON[JOY_NEUTRAL_STICK].ap = 1 - n;
+void CJoysticksManager::SetNulleArea(float n)
+{ nzon.hi			= +n;
+	nzon.lo			= -n;
+	nzon.rf			= float(1) / (float (1) - n);
   return;
 }
 //----------------------------------------------------------------------------------
@@ -695,8 +701,8 @@ void CJoysticksManager::EndMark(int nx)
 //-------------------------------------------------------------------------------
 //  Mark axe for neutral control
 //-------------------------------------------------------------------------------
-void CJoysticksManager::NeutralMark(int nx,U_CHAR type)
-{ AxesList[nx].neutral = type;
+void CJoysticksManager::NeutralMark(int nx,U_CHAR nt)
+{ AxesList[nx].neutral = nt;
 }
 //---------------------------------------------------------------------------------
 //  Free all resources
@@ -771,7 +777,8 @@ void CJoysticksManager::ReleaseAxe(CSimAxe *axn)
 //  2)  
 //---------------------------------------------------------------------------------
 void CJoysticksManager::AssignAxe(CSimAxe *axe, CSimAxe *axn, U_CHAR all)
-{ ReleaseAxe(axn);
+{ if (axe->IsFixe())						return;
+	ReleaseAxe(axn);
 	axe->Assign(axn);
 	U_CHAR grp = axe->group;
 	if ((0 == all) ||(0 == grp))	return;
@@ -812,6 +819,21 @@ void CJoysticksManager::Invert(CSimAxe *axe,U_CHAR all)
     axk->Invert();
   }
   return;
+}
+//---------------------------------------------------------------------------------
+//  return axe attenuation
+//---------------------------------------------------------------------------------
+double	CJoysticksManager::GetAxeAttenuation(U_INT axn)
+{	CSimAxe *axe = AxesList + axn;
+	return double(axe->GetATTN());
+}
+//---------------------------------------------------------------------------------
+//  Change axe attenuation
+//---------------------------------------------------------------------------------
+void	CJoysticksManager::SetAxeAttenuation(U_INT axn,double c)
+{	CSimAxe *axe = AxesList + axn;
+	axe->ChangeForce(float(c));
+	return;
 }
 
 //==========================================================================================
@@ -945,7 +967,7 @@ float CJoysticksManager::AxeVal(CSimAxe *pa)
 { if (0 == pa)        return 0;
   if (0 == pa->jdev)  return 0;
   //----Normalize value ------------------------------------------
-	return pa->Value(nZON);
+	return pa->Value(nzon);
 }
 
 //-------------------------------------------------------------------------------
@@ -956,7 +978,7 @@ float CJoysticksManager::RawVal(CSimAxe *pa)
 { if (0 == pa)        return 0;
   if (0 == pa->jdev)  return 0;
   //----Normalize value ------------------------------------------
-	return pa->RawVal(nZON);
+	return pa->RawVal(nzon);
 }
 
 //--------------------------------------------------------------------------------
@@ -1022,9 +1044,10 @@ void CJoysticksManager::JoyDisconnect(CObject *obj,U_INT m)
 void CJoysticksManager::Poll(CObject *obj,EAllAxes tag, float &v)
 {	if (obj != mveh)		return;
 	CSimAxe *pa = GetAxe(tag);
-  if (pa && pa->IsConnected(axeCNX))	v = pa->Value(nZON);
+  if (pa && pa->IsConnected(axeCNX))	v = pa->Value(nzon);
 	return;
 }
+
 //--------------------------------------------------------------------------------
 //  Send messages related to PMT group (Prop-Mixture-Throttle)
 //	This function is called from the aircraft TimeSlice() routine
@@ -1046,14 +1069,13 @@ void CJoysticksManager::SendGroupPMT(CObject *obj,U_CHAR nbu)
     SMessage *msg = &axe->msg;
 		//--- Skip non existing engine or control ---------
     if (msg->user.u.engine > nbu) continue;
-    msg->realData = axe->Value(nZON);			//AxeVal(axe);
+    msg->realData = axe->Value(nzon);			
     msg->user.u.datatag = axe->cmd;
     CSubsystem *sys = (CSubsystem *) msg->receiver;
 		if (sys) sys->ReceiveMessage(msg);
   }
   return;
 }
-
 //--------------------------------------------------------------------------------
 //  Send messages related to given group (Prop or Mixture or Throttle)
 //  Any  control in requested group receives a message with the corresponding
@@ -1094,14 +1116,6 @@ void CJoysticksManager::ClearGroupPMT(CObject *obj)
   return;
 }
 
-//--------------------------------------------------------------------------------
-//  Check for neutral area
-//--------------------------------------------------------------------------------
-float CJoysticksManager::Neutral(float f, int nx)
-{ float val = f;
-  if ((f > nZON[nx].lo) && (f < nZON[nx].hi)) val = nZON[nx].md;
-  return val;
-}
 //-----------------------------------------------------------------------------------
 //  Use Hat for the given joystick
 //-----------------------------------------------------------------------------------
@@ -1198,8 +1212,12 @@ int CJoysticksManager::Read (SStream *stream, Tag tag)
     return TAG_READ;
   case 'neut':
     ReadFloat(&pm,stream);
-		SetNulleArea(pm,0);
+		SetNulleArea(pm);
     return TAG_READ;
+	case 'trad':
+		ReadFloat(&pm,stream);
+		
+		return TAG_READ;
   case 'jaxe':
 		rax.jdev	= 0;
 		rax.inv		= 1;
@@ -1238,18 +1256,16 @@ void CJoysticksManager::ProcessHat(SStream *stream)
 	if (jsp) jsp->SetHat(1);
   return;
 }
-//-----------------------------------------------------------------------------------
-//  Process Hat
-//-----------------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------------
 //  Process the axe
 //-----------------------------------------------------------------------------------
-bool CJoysticksManager::ProcessAxe(CSimAxe *from)
-{ CSimAxe *axe = GetAxe(from->gen);     // plane axe ?
-  if (axe)  {axe->Copy(from); return true;}
-  WARNINGLOG("CJoysticksManager::Read : device not connected");
-  return true;
+void CJoysticksManager::ProcessAxe(CSimAxe *from)
+{	CSimAxe *axe = GetAxe(from->gen);     // plane axe ?
+  if (!axe)  return  WARNINGLOG("JSM::Read : device not connected");
+	axe->Copy(from); 
+  axe->ChangeForce(from->attn);
+  return;
 }
 //-----------------------------------------------------------------------------------
 //  Process the button
@@ -1360,7 +1376,11 @@ void CJoysticksManager::SaveConfiguration()
 	sf.WriteString(txt);
   //-- Write neutral coefficient ----------------------------
   sf.WriteTag('neut', " -- Neutral [0-1] stick coefficient ------");
-  sf.WriteFloat(nValue);
+  sf.WriteFloat(nzon.hi);
+	//--- Write steering coefficient --------------------------
+	float atn = float(GetAxeAttenuation(JS_STER));
+	sf.WriteTag('trad'," -- Turn  coefficient ---------------------");
+	sf.WriteFloat(atn);
   //---------------------------------------------------------
 	SaveAxisConfig(sf);
   for (it = devQ.begin(); it != devQ.end(); it++)

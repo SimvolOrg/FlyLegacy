@@ -263,19 +263,32 @@ CAileronControl::CAileronControl (void)
 {
   TypeIs (SUBSYSTEM_AILERON_CONTROL);
 }
-//---------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//  Get timer
+//-----------------------------------------------------------------------------
+void CAileronControl::ReadFinished()
+{	CAeroControl::ReadFinished();
+}
+//-----------------------------------------------------------------------------
 //  Integrate pilot move and autopilot ?
-//---------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void CAileronControl::TimeSlice (float dT,U_INT FrNo)			
 { globals->jsm->Poll(mveh,JS_AILERON, data.raw);
   CAeroControl::TimeSlice(dT,FrNo);								
 }
-//===========================================================================
+//=================================================================================
 // CElevatorControl
-//===========================================================================
+//=================================================================================
 CElevatorControl::CElevatorControl (void)
 { TypeIs (SUBSYSTEM_ELEVATOR_CONTROL);
 }
+//-----------------------------------------------------------------------------
+//  Get timer
+//-----------------------------------------------------------------------------
+void CElevatorControl::ReadFinished()
+{	CAeroControl::ReadFinished();
+}
+
 //---------------------------------------------------------------------------------
 //  Set value from joystick
 //---------------------------------------------------------------------------------
@@ -314,6 +327,12 @@ int CRudderControl::Read(SStream * stream, Tag tag)
 		}
 		return CAeroControl::Read(stream, tag);
 }
+//-----------------------------------------------------------------------------
+//  Get timer
+//-----------------------------------------------------------------------------
+void CRudderControl::ReadFinished()
+{	CAeroControl::ReadFinished();
+}
 //--------------------------------------------------------------------------------
 //  Set PID coefficients
 //--------------------------------------------------------------------------------
@@ -342,8 +361,7 @@ void CRudderControl::TimeSlice (float dT,U_INT FrNo)			// JSDEV*
 	//--- Set steering wheel deflection into [-1,+1] ----------------
 	if (0 == steer)	return;
 	float dev = UnBias() * 2;
-	if (sCTLR)			sCTLR->Target(dev);
-	steer->deflect = (sCTLR)?(sCTLR->IndnValue()):(UnBias());
+	steer->deflect = (sCTLR)?(sCTLR->Target(dev)):(UnBias());
 	return;  
 }
 //--------------------------------------------------------------------------------
@@ -360,6 +378,7 @@ void CRudderControl::ModBias(float v)
 CEngineControl::CEngineControl()
 { TypeIs(SUBSYSTEM_ENGINE_SUBSYSTEM);
   step  = float(0.1);
+	conv	= 'F';
 }
 //-------------------------------------------------------------------------
 // Read control parameters
@@ -371,12 +390,14 @@ int CEngineControl::Read (SStream *stream, Tag tag)
     ReadFloat(&step,stream);
       return TAG_READ;
     case 'degF':
-      conv = 0;
+      conv = 'F';
       return TAG_READ;
     case 'degC':
-      conv = 1;
+      conv = 'C';
       return TAG_READ;
-
+		case 'inHG':
+			conv = 'H';
+			return TAG_READ;
   }
   // See if the tag can be processed by the parent class type
   return CDependent::Read (stream, tag);
@@ -403,6 +424,18 @@ void CEngineControl::Monitor(Tag tag)
   state = 1;
   return;
 }
+//-------------------------------------------------------------------------
+//  Probe system
+//-------------------------------------------------------------------------
+void CEngineControl::Probe(CFuiCanva *cnv)
+{	char edt[128];
+	_snprintf(edt,120,"Engine %d",eNum);
+	cnv->AddText(1,edt,1);
+	_snprintf(edt,120,"Unit   %d",uNum);
+	cnv->AddText(1,edt,1);
+	CDependent::Probe(cnv,0);
+}
+
 //-------------------------------------------------------------------------
 //	Specific Identification needed for engine control
 //  Engine and optionaly unit must match
@@ -451,13 +484,14 @@ EMessageResult CEngineControl::ReceiveMessage (SMessage *msg)
    return CDependent::ReceiveMessage (msg);
 }
 //-------------------------------------------------------------------------
-//  Poll engine with message
+//  Poll engine with message; Store value as target
+//	Convert according to parameter 'conv'
 //-------------------------------------------------------------------------
 void CEngineControl::PollEngine(U_CHAR c)
 { Send_Message(&engm);
   indnTarget = (active)?(engm.realData):(0);
-  if (0 == c)     return;
-  indnTarget = DEGRE_FROM_FAHRENHEIT(indnTarget);
+  if ('D' == c)   indnTarget = DEGRE_FROM_FAHRENHEIT(indnTarget);
+	if ('H' == c)   indnTarget = PAS_TO_INHG * indnTarget;
   return;
 }
 
@@ -736,10 +770,10 @@ void CStarterControl::ReadFinished()
   //----Init starter message to engine susbsystem ------------
   engm.dataType   = TYPE_INT;
   engm.user.u.datatag = 'strt';     // Starter
-  state           = 0;
   //--- Build ON/OFF mask ------------------------------------
   mask[0]   = 0;      // OFF
   mask[1]   = ENGINE_STARTER;
+	state			= 1;
   return;
 }
 //--------------------------------------------------------------------
@@ -772,11 +806,13 @@ EMessageResult CStarterControl::ReceiveMessage (SMessage *msg)
       case MSG_SETDATA:
         switch (msg->user.u.datatag) {
           case 'st8t':
-            state = (0 != msg->intData);
-            engm.intData = mask[state];
-            Send_Message(&engm);
-            //--Update timer override if needed ----
-            ArmTimer(msg);
+						if (active)
+						{	indx = msg->intData & 0x01;
+							engm.intData = mask[indx];
+							Send_Message(&engm);
+							//--Update timer override if needed ----
+							ArmTimer(msg);
+						}
             return MSG_PROCESSED;
           }
         break;
@@ -788,14 +824,14 @@ EMessageResult CStarterControl::ReceiveMessage (SMessage *msg)
 //  Starter time slice
 //--------------------------------------------------------------------
 void CStarterControl::TimeSlice(float dT, U_INT FrNo)
-{ if (0 == time)        return;
+{ CDependent::TimeSlice(dT,FrNo);
+	if (0 == time)        return;
   U_INT now = globals->clk->GetActual();
   if (now < time)       return;
   //------Set state to OFF ---------------------------
   time  = 0;
-  state = 0;
   //---- Send to engine ------------------------------
-  engm.intData = mask[state];
+  engm.intData = mask[0];
   Send_Message(&engm);
   return;
 }
@@ -926,9 +962,10 @@ EMessageResult  CThrottleControl::ReceiveMessage (SMessage *msg)
 //-----------------------------------------------------------------------
 //  Set target Value
 //-----------------------------------------------------------------------
-void CThrottleControl::Target(float val)
+float CThrottleControl::Target(float val)
 {	 indnTarget    = val;
 	 data->e_thro  = indn;
+	 return indn;
 }
 //===========================================================================
 // CThrustReverseControl
@@ -1426,7 +1463,7 @@ void CManifoldPressure::ReadFinished()
 EMessageResult  CManifoldPressure::ReceiveMessage (SMessage *msg)
 { switch (msg->id) {
     case MSG_GETDATA:
-      PollEngine(0);
+      PollEngine(conv);
       msg->realData = indn;
       return MSG_PROCESSED;
 

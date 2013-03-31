@@ -192,6 +192,11 @@ public:
 //============================================================================
 //  Class CVertex
 //  This class is the base class to build terrain mesh
+//	IMPORTANT NOTE:		The actual implementation limit the number of 
+//										subdivisions in the detail tile to 256 on eahc direction.
+//										Indices are stored in indS,indT,inES and inNT
+//										If more subdivision is requested, tabove fields must be
+//										extended as U_SHORT types.
 //============================================================================
 #define VTX_DYNAM (0x01)
 //----------------------------------------------------
@@ -246,7 +251,7 @@ public:
   bool    IsNEcorner(CVertex *vt) {return (vt == Edge[TC_NECORNER]);}
   bool    IsNWcorner(CVertex *vt) {return (vt == Edge[TC_NWCORNER]);}
   //------------------------------------------------------
-  void    Init(U_INT vx,U_INT vz);
+  void    InitCenter(U_INT vx,U_INT vz);
 	void		AddAltitude(double inc);
 	void		ClampAltitude(double alt);
 	//------------------------------------------------------
@@ -287,40 +292,15 @@ public:
   //---------------------------------------------------
   inline CVertex *GetEdge(U_SHORT cnr)  {return Edge[cnr];}
   inline CVertex *GetCorner(U_SHORT cnr){return Edge[cnr];}
-	//--- Compute texture indices -----------------------
-	inline U_LONG	SCoord(char sh)				{return (xKey & TC_1024MOD) >> sh;}
-	inline U_LONG TCoord(char sh)				{return (zKey & TC_1024MOD) >> sh;}
-	//--- Set S Coordinate ------------------------------
-	inline U_INT S_Coord(char sh)
-	{	indS	= (xKey & TC_1024MOD) >> sh;
-		return indS;		}
-	//--- Set T Coordinate ------------------------------
-	inline U_INT T_Coord(char sh)
-	{	indT	=	(zKey & TC_1024MOD) >> sh;
-		return indT;	}
-	//--- Set East border S coordinate ------------------
-	inline U_INT ES_Coord(char sh,char fx)
-	{	int n = (xKey & TC_1024MOD) >> sh;
-		inES	= (n)?(n):(fx);
-		return inES;	}
-	//--- Set North border T coordinate -----------------
-	inline U_INT NT_Coord(char sh,char fx)
-	{	int n = (zKey & TC_1024MOD) >> sh;
-		inNT	= (n)?(n):(fx);	
-		return inNT;	}
-	//----Compute texture index on East Side-------------  
-	inline U_LONG ESCoord(char sh,char fx)
-		{	int n = (xKey & TC_1024MOD) >> sh;
-			return (n == 0)?(fx):(n);	}
-	//----Compute texture index on North Side -----------
-	inline U_LONG NTCoord(char sh,char fx)
-		{	int n = (zKey & TC_1024MOD) >> sh;
-			return (n == 0)?(fx):(n);	}
 	//--- Copy World coordinates ------------------------
-	inline void CopyCOORD(CVertex &v)
+	void CopyCOORD(CVertex &v)
 		{	this->rx = v.rx;
 			this->ry = v.ry;
 			SetWZ(v.wdz);
+			this->indS = v.indS;
+			this->indT = v.indT;
+			this->inES = v.inES;
+			this->inNT = v.inNT;
 		}
 	//--- Check for same QGT in X direction --------------
   bool SameXQGT(U_INT x)

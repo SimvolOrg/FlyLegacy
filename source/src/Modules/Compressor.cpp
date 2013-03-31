@@ -82,6 +82,7 @@ void Compressor::EncodeCRN(TEXT_INFO &txd)
  	//---Mipmap parameters      --------------------------------------
 	pm1.m_mode				= cCRNMipModeGenerateMips;
 	pm1.m_max_levels	= mip + 1;
+	pm1.m_gamma_filtering = false;
 	//--- Compression ------------------------------------------------ 
   txd.mADR	= (GLubyte*)crn_compress(mp0,pm1,sze, &qty, &bitr);
 	txd.dim		= sze;
@@ -102,16 +103,20 @@ U_INT Compressor::Clean()
 }
 //------------------------------------------------------------------------------
 //	Decode a CRN file 
+//	l0:			Resolution level:		0 => max resolution R, 
+//														1 => R/2 resolution
+//	ln:			is the maximum mip level (excluded) to decode and load
+//	mode:		Is the DTX format
 //------------------------------------------------------------------------------
 U_INT Compressor::DecodeCRN(void *data, U_INT sze,U_CHAR l0, U_CHAR ln)
 { bool ok = crnd_get_texture_info(data, sze, &txd);
 	if (!ok)		
-	return Clean();
+			return Clean();
 	//--- Start decoding -----------------------------
 	crnd	= data;
 	ctx = crnd_unpack_begin(data, sze);
 	if (!ctx)		
-	return Clean();
+			return Clean();
 	//--- Allocate a texture object ------------------
 	glGenTextures(1,&xOBJ);
   glBindTexture(GL_TEXTURE_2D,xOBJ);
@@ -121,7 +126,7 @@ U_INT Compressor::DecodeCRN(void *data, U_INT sze,U_CHAR l0, U_CHAR ln)
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
 	int lk	= l0;
-	//--- Extract the texture ------------------------
+	//--- Extract the texture for each mip level------------------------
 	for (U_INT inx = 0; inx < ln; inx++)			// Was txd.m_levels
    {  // Compute the face's width, height, number of DXT blocks per row/col, etc.
       const U_INT wd = max(1U, txd.m_width  >> lk);		// Width of level k

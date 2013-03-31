@@ -1422,17 +1422,22 @@ float CRandomizer::TimeSlice(float dT)
 }
 //==============================================================================
 // ValGenerator:
-//  Produce a value according to target and time constant
+//  Produce a value y=f(t) where t is time.
 //	1)-One shot Generator is configured by a call to Conf(char M,float T);
-//			M = INDN_LINEAR or INDN_EXPONENTIAL to indicate which way the current
+//			M = INDN_LINEAR or INDN_EXPONENTIAL to indicate which mode the current
 //			value is computed into the time interval T.
 //		-Then the valuateur is armed by a call to Set(float TV).  Starting from actual
 //			value whatever it is, the target value TV will then be reached at time T. 
-//		-Intermediate values are retrieve by
+//		-Intermediate values during simulation are retrieved by
 //			float v = Get() or through TimeSLice() call
+//		-After reaching the target value, subsequent calls return TV, until the 
+//		generator is rearmed with a different target value.
+//		This feature may be used to smooth a given signal  TV by delaying the output
+//		by the time constant T.
 //	2)- Generator may be used to produce a damped sinusoidal value according to
 //			formulea x(t) = A * power(e,-t) cos (2PI*t)  where t is time.
-//		- Arming:  StartSin(float A,int T)
+//		- Arming:  StartSin(float A,int T) where A is signal amplitude and T the
+//			signal duration
 //		- Intermediate values are retrieve by
 //			float v = Get() or through TimeSlice() call
 //			When value reaches near 0, the Generator stay quiet during a random time 
@@ -1680,6 +1685,31 @@ void WriteTexture(U_INT xob,char *dir, char *name)
   img.WriteBitmap(FIF_TIFF,fn,wd,ht,buf);
   delete [] buf;
   return;
+}
+//=======================================================================
+//  Gamma transfer
+//=======================================================================
+void GammaCorrection(U_CHAR *img, U_INT nbp, U_INT *lut)
+{	U_CHAR *src = img;
+	U_CHAR *dst = src;
+	U_INT   dim = nbp;
+	for (U_INT k=0; k< dim; k++)
+	{	*dst++ = lut[*src++];		// Red chanel
+		*dst++ = lut[*src++];		// Green
+		*dst++ = lut[*src++];		// Blue
+		*dst++ = *src++;				// Alpha
+	}
+}
+//=======================================================================
+//	Check for file existence
+//=======================================================================
+bool DirectoryExists(char* filePath)
+{	//This will get the file attributes bitlist of the file
+	DWORD fileAtt = GetFileAttributesA(filePath);
+	//If an error occurred it will equal to INVALID_FILE_ATTRIBUTES
+	if(fileAtt == INVALID_FILE_ATTRIBUTES) return false;
+	//--- check for directory ------------------------------
+	return ( ( fileAtt & FILE_ATTRIBUTE_DIRECTORY ) != 0 ); 
 }
 //=======================END OF FILE ======================================================
 

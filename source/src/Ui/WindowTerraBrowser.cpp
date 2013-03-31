@@ -66,7 +66,7 @@ CFuiTBROS::CFuiTBROS(Tag idn, const char *filename)
 	Type  = -1;
   inf.mADR = 0;
   inf.xOBJ = 0;
-  inf.res  = TC_HIGHTR;
+  inf.res  = TX_HIGHTR;
 	obtn	= 0;
 	abtn	= 0;
 	lock  = 1;
@@ -150,7 +150,7 @@ void CFuiTBROS::GetSelection()
   name[0] = HexTAB[Type >> TC_BY16];
   name[1] = HexTAB[Type &  TC_016MODULO];
   sprintf(inf.path,"SYSTEM/GLOBE/%s.RAW",name);
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
   img.LoadTextureMT(inf);
   globals->txw->GetTexOBJ(inf,0,GL_RGBA);
   return;

@@ -161,17 +161,6 @@ int skipRES[TC_MAX_TEX_RES] = {
   2,                              // 2 wide 240
   1,                              // 3 wide 118
 };
-//==========================================================================
-//  Next state for texture descriptor
-//  The state is function of the texture level
-//  level 0:  The front texture are loaded.  We must allocate texture object
-//  level 1:  The alternate texture are loaded. We must replace the
-//            front textures with alternate ones
-//==========================================================================
-//U_CHAR popSTA[] = {
-//  TC_TEX_OBJ,             // 0 => State to allocate texture object
-//  TC_TEX_POP,             // 1 => State to pop textures 
-//};
 //=================================================================================
 //  THIS FILE CONTAINS ALL ROUTINES THAT EXECUTE ON A SEPARATED THREAD
 //  All threaded functions OF TEXTURE MANAGER are included for CLARITY.
@@ -187,12 +176,13 @@ int skipRES[TC_MAX_TEX_RES] = {
 //---------------------------------------------------------------------------------
 //  TEXTURE LOADING
 //---------------------------------------------------------------------------------
-void TextureLoad(C_QGT *qgt)
+void SqlTHREAD::TextureLoad(C_QGT *qgt)
 { //--------Load Texture in Load Queue -------------------
+	//------------------------------------------------------
   CSuperTile *sp = 0;
   for (sp = qgt->PopLoad(); sp != 0; sp = qgt->PopLoad())
     {	U_CHAR lev = sp->levl;
-			globals->txw->LoadTextures(lev,sp->Reso,qgt,sp);
+			globals->txw->LoadQuadsTexture(sp);
 			//--- Update supertile state -----------------------
 			if (lev)	sp->WantPOP();
 			else			sp->WantOBJ();
@@ -204,7 +194,7 @@ void TextureLoad(C_QGT *qgt)
 //---------------------------------------------------------------------------------
 //  Get a QTR file
 //---------------------------------------------------------------------------------
-void GetQTRfile(C_QGT *qgt,TCacheMGR *tcm)
+void SqlTHREAD::GetQTRfile(C_QGT *qgt,TCacheMGR *tcm)
 { char td = tcm->GetDebug();
   //-------Search the map first --------------------------------------------
   tcm->LockQTR();
@@ -224,7 +214,7 @@ void GetQTRfile(C_QGT *qgt,TCacheMGR *tcm)
 //=================================================================================
 //  THREAD FOR TEXTURES
 //=================================================================================
-void ProcessTexture( TCacheMGR   *tcm)
+void SqlTHREAD::ProcessTexture( TCacheMGR   *tcm)
 {	C_QGT    *qgt		= 0;
   for (qgt = tcm->PopLoadTEX(); (qgt != 0); qgt = tcm->PopLoadTEX())
 			{ //TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) THREAD TEXTURE",
@@ -237,7 +227,7 @@ void ProcessTexture( TCacheMGR   *tcm)
 //=================================================================================
 //  THREAD FOR FILES
 //=================================================================================
-void ProcessFiles(TCacheMGR *tcm, SqlTHREAD *sql)
+void SqlTHREAD::ProcessFiles(TCacheMGR *tcm)
 {	REGION_REC  reg;
 	for ( C_QGT *qgt = tcm->PopFileREQ(); (qgt != 0); qgt = tcm->PopFileREQ())
 			{ switch (qgt->GetReqCode()) {
@@ -254,7 +244,7 @@ void ProcessFiles(TCacheMGR *tcm, SqlTHREAD *sql)
 							//								tcm->Time(),qgt->GetXkey(),qgt->GetZkey());
               reg.qgt = qgt;
               reg.key = qgt->FullKey();
-							sql->GetQgtElevation(reg,ELVtoCache);
+							GetQgtElevation(reg,ELVtoCache);
               qgt->PostIO();
 							//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
               continue;
@@ -262,8 +252,8 @@ void ProcessFiles(TCacheMGR *tcm, SqlTHREAD *sql)
            case TC_REQ_SEA:
 							//TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) THREAD SEA",
 							//								tcm->Time(),qgt->GetXkey(),qgt->GetZkey());
-              if (sql->SQLsea()) tcm->AllSeaSQL(qgt);
-              else              tcm->AllSeaPOD(qgt);
+              if (SQLsea())		tcm->AllSeaSQL(qgt);
+              else            tcm->AllSeaPOD(qgt);
               qgt->PostIO();
 							//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
               continue;
@@ -275,7 +265,7 @@ void ProcessFiles(TCacheMGR *tcm, SqlTHREAD *sql)
 //=================================================================================
 //  THREAD FOR 3D MODELS
 //=================================================================================
-void ProcessModels(TCacheMGR *tcm, SqlTHREAD *sql)
+void SqlTHREAD::ProcessModels(TCacheMGR *tcm)
 {	C3DMgr   *m3d	= globals->m3d;	
 	C_QGT    *qgt		= 0;
 	char *dir = "MODELS";
@@ -286,8 +276,8 @@ void ProcessModels(TCacheMGR *tcm, SqlTHREAD *sql)
 				//int a = 0;									// Break point here
 				//TRACE("TCM: -- Time: %04.2f ---------------THREAD MODELS",tcm->Time());
 				//TRACE("Model: Load %s",mn);
-				if (!sql->SQLmod())						{mod->LoadPart(dir); mod->DecUser(); continue;}
-				if (!sql->GetM3Dmodel(mod))		{mod->LoadPart(dir); mod->DecUser(); continue;}
+				if (!SQLmod())						{mod->LoadPart(dir); mod->DecUser(); continue;}
+				if (!GetM3Dmodel(mod))		{mod->LoadPart(dir); mod->DecUser(); continue;}
         //-------------------------------------------------------------------------
 				mod->Finalize();
 				mod->DecUser();
@@ -300,13 +290,13 @@ void ProcessModels(TCacheMGR *tcm, SqlTHREAD *sql)
 //=================================================================================
 //  THREAD FOR OSM Layers
 //=================================================================================
-void ProcessOSM(TCacheMGR *tcm, SqlTHREAD *sql)
+void SqlTHREAD::ProcessOSM(TCacheMGR *tcm)
 {	CSceneryDBM *scn	= globals->scn;
 	for (OSM_DBREQ *dbr = scn->PopOSMrequest(); (dbr != 0); dbr = scn->PopOSMrequest())
 			{	C_QGT *qgt = dbr->qgt;
 				//TRACE("TCM: -- Time: %04.2f QGT(%03d-%03d) THREAD OSM",
 				//								tcm->Time(),qgt->GetXkey(),qgt->GetZkey());
-			  sql->LoadOSM(dbr);
+			  LoadOSM(dbr);
 				delete dbr;
 				//TRACE("TCM: -- Time: %04.2f ---------------THREAD END",tcm->Time()); 
 			}
@@ -335,16 +325,16 @@ void *FileThread(void *p)
 		  pthread_cond_wait(cond,tmux);						// Wait for signal
       //----Process file Requests ------------------------------------------------
 			globals->thread[thn]	= "FILEs";
-      if (thn == THREAD_GEN)	ProcessFiles(tcm,&sql);
+      if (thn == THREAD_GEN)	sql.ProcessFiles(tcm);
       //--- Process 3DModel requests ----------------------------------------------
 			globals->thread[thn]	= "TEXTUREs";
-		  if (thn == THREAD_TEX)	ProcessTexture(tcm);
+		  if (thn == THREAD_TEX)	sql.ProcessTexture(tcm);
 			//--- Process OSM models requests--------------------------------------------
 			globals->thread[thn]	= "OSM";
-			if (thn == THREAD_OSM)  ProcessOSM(tcm,&sql);
+			if (thn == THREAD_OSM)  sql.ProcessOSM(tcm);
 			//----Process load texture Queue --------------------------------------------
 			globals->thread[thn]	= "MODELs";
-      if (thn == THREAD_M3D)	ProcessModels(tcm,&sql);
+      if (thn == THREAD_M3D)	sql.ProcessModels(tcm);
     }
 	//--- File thread is stopped ------------------
 	globals->sql[thn] = 0;
@@ -399,15 +389,16 @@ int CTextureWard::GetSeaTexture(CTextureDef *txn)
 //	All texture loader set the memory pixel array in dTEX for day texture
 //		and into nTEX for night textures
 //----------------------------------------------------------------------
-int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
+int CTextureWard::LoadQuadsTexture(CSuperTile *sp)
 { CTextureDef *txn  = 0;
   CmQUAD      *qad  = 0;
-  this->qgt         = qgt;                    // Remember QGT
-  Resn              = res;                    // Requested Resolution
+  this->qgt         = sp->GetQGT();           // Remember QGT
+  Resn              = sp->Reso;               // Requested Resolution
   gx  = (qgt->GetXkey() >> TC_BY02);          // Globe Tile X composite
   gz  = (qgt->GetZkey() >> TC_BY02);          // Globe Tile Z composite
 	SQL_DB      *dbe  = qgt->GetCompTextureDBE();
-  //---- Load the textures for each detail tile -------------
+	U_CHAR lev = sp->levl;
+  //--- Load the textures for each detail tile --------------
   for (int Nd = 0; Nd != TC_TEXSUPERNBR; Nd++)
       { txn   = &sp->Tex[Nd];
         qad   = txn->quad;
@@ -437,10 +428,6 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
           case TC_TEXRAWTN:
                 GetRawTexture(txn);
                 break;
-          //---Raw from EPD ------------------
-          //case TC_TEXRAWEP:
-          //      GetEPDTexture(txn);
-          //      break;
           //---Dedicated texture -------------
           case TC_TEXGENER:
                 GetGenTexture(txn);
@@ -454,7 +441,7 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
 								GetCmpTexture(txn,dbe);
 								txn->SetDayTexture(lev,dTEX);
 								txn->SetNitTexture(lev,nTEX);
-								txn->SetResolution(lev,TC_HIGHTR);
+								//txn->SetResolution(lev,TX_HIGHTR);
 								continue;
         }
       //--- SAVE Texture parameters ---------------------
@@ -463,6 +450,7 @@ int CTextureWard::LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp)
       txn->SetResolution(lev,Resn);
       }
   //----End supertile processing -------------------------
+	sp->RenderINR();
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -488,11 +476,11 @@ int CTextureWard::NightGenTexture(CTextureDef *txn)
   root[6] = '.';                                // End     
   root[7] = 0;
   //---Load the file without OPA ------------------------
-  CArtParser img(TC_MEDIUM);      // Parse texture
+  CArtParser img(TX_MEDIUM);      // Parse texture
   nTEX  = img.GetNitTexture(xld);
   if (0 == nTEX)  return 0;
   //-----Replace night texture with same resolution -----
-  if (Resn == TC_HIGHTR)   DoubleNiTexture((U_INT *)nTEX);
+  if (Resn == TX_HIGHTR)   DoubleNiTexture((U_INT *)nTEX);
   return 1;
 }
 //-----------------------------------------------------------------------
@@ -547,7 +535,7 @@ int CTextureWard::GetGPUtexture(CTextureDef *txn)
 	glGetTexLevelParameteriv(GL_TEXTURE_2D,1,GL_TEXTURE_COMPRESSED_IMAGE_SIZE,&siz);
 	void *mem = new char[siz];
 	glGetCompressedTexImage (GL_TEXTURE_2D,1,mem);
-	txn->Reso[1] = TC_HIGHTR;
+	txn->Reso[1] = TX_HIGHTR;
 	txn->dTEX[1] = (GLubyte*)mem;
 	return 1;
 }
@@ -725,25 +713,6 @@ int CTextureWard::GetMixTexture(CTextureDef *txn,U_CHAR opt)
   }
   //------Assign the day texture ----------------------------
   return 1;
-}
-//-----------------------------------------------------------------------
-//  Get Texture from EPD system
-//  NOTE:  For water we only use one texture as they are all the same
-//         in the super Tile
-//-----------------------------------------------------------------------
-int CTextureWard::GetEPDTexture(CTextureDef *txn)
-{ TEXT_INFO txd;
-  char  res = TC_EPDRES;                // Fixed medium resolution
-  char  root[32];                       // file name
-  strncpy(root,txn->Name,8);            // Root Name
-  root[8]   = 0;                        // Day close here
-  _snprintf(txd.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,root);
-  //--------Read the RAW and ACT texture file ----------------------
-  CArtParser img(res);
-  img.SetEPD();
-  img.SetWaterRGBA(GetWaterRGBA(res));
-  dTEX  = img.GetDayTexture(txd,1);
-  return 1;      // 
 }
 //-----------------------------------------------------------------------------
 //  Get a Generated texture with no coast data
@@ -973,15 +942,15 @@ void CTextureWard::BuildNightTexture(U_INT *txt)
 //-----------------------------------------------------------------------------
 GLubyte *CTextureWard::DoubleNiTexture(U_INT *txt)
 { U_INT *src = txt;                       // Source texture
-  U_INT  sln = SideRES[TC_MEDIUM];        // Source line size
-  U_INT  dim = SizeRES[TC_HIGHTR];        // Target size
+  U_INT  sln = SideRES[TX_MEDIUM];        // Source line size
+  U_INT  dim = SizeRES[TX_HIGHTR];        // Target size
   U_INT *dst = new U_INT[dim];            // New array
   U_INT *ln1 = 0;                         // destination Line 1 
   U_INT *ln2 = dst;                       // Destination line 2
   if (0 == dst) Abort("Texture","No more memory");
   for (U_INT z = 0; z != sln; z++)        // One line
   { ln1 = ln2;                            // Start of line 1
-    ln2 = ln1 + SideRES[TC_HIGHTR];       // Start of line 2
+    ln2 = ln1 + SideRES[TX_HIGHTR];       // Start of line 2
     for (U_INT x = 0; x != sln; x++)      // Double this line
     { U_INT pix = *src++;                 
       *ln1++    = pix;                    // twice in line 1
@@ -1018,12 +987,12 @@ int CTextureWard::NightRawTexture(CTextureDef *txn)
   root[10]  = 0;
   _snprintf(xsp.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,root);
   //-----READ the Night texture file with ----------------
-  CArtParser img(TC_MEDIUM);						// Reader instance
+  CArtParser img(TX_MEDIUM);						// Reader instance
   nTEX		= img.LoadRaw(xsp,0);
   if (0 == nTEX)  return 0;
   img.MergeNight(nTEX);
   //-----Replace night texture with same resolution ------
-  if (Resn == TC_HIGHTR)   DoubleNiTexture((U_INT*)nTEX);
+  if (Resn == TX_HIGHTR)   DoubleNiTexture((U_INT*)nTEX);
   return 1;
 }
 

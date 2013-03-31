@@ -37,7 +37,7 @@
 class COpalSuspension : public CSuspension {
 
 public:
-  COpalSuspension (CVehicleObject *v, CGroundSuspension *mgsp,char *name, CWeightManager *wgh, char = TRICYCLE);
+  COpalSuspension (CVehicleObject *v, CSuspensionMGR *mgsp,char *name, CWeightManager *wgh, char = TRICYCLE);
   virtual ~COpalSuspension   (void);
 
   ///< CStreamObject methods
@@ -90,7 +90,7 @@ public:
   /*! moment in Kg.m */
   const SVector& GetBodyGearMoment_ISU (void);
   /*! */
-  void InitJoint(char type, CGroundSuspension *s);
+  void InitJoint(char type, CSuspensionMGR *s);
   /*! */ 
   //-------------------------------------------------------------------
   void    Repair();

@@ -68,13 +68,22 @@ U_INT SizeRES[] = {
   128 * 128,                              // 3 EPD Medium
 };
 //==========================================================================
-//  Texture side = f(resolution)
+//  Texture overall side = f(resolution)
 //==========================================================================
 U_SHORT SideRES[] = {
   64,                               // 0 low
   128,                              // 1 medium
   256,                              // 2 hight
-  128,                              // 3 EPD Medium
+  960,                              // 3 Super texture
+};
+//==========================================================================
+//  Texture used side = f(resolution)
+//==========================================================================
+U_INT UtilRES[] = {
+	0,
+	128 - 16,
+	256 - 16,
+	0,
 };
 //==========================================================================
 //  DTO factor:  Origin of real texture
@@ -83,7 +92,7 @@ float dtoRES[TC_MAX_TEX_RES] = {
   (float(8)/ 64),                 // 0 low 64
   (float(8)/128),                 // 1 medium (8/128)
   (float(8)/256),                 // 2 Hight
-  (float(4)/128),                 // 3 EPD
+  (float(0)),											// 3 Compressed texture
 };
 //==========================================================================
 //  DTS factor:  Size of real texture
@@ -92,27 +101,27 @@ float dtsRES[TC_MAX_TEX_RES] = {
   (float(48) / 64),               // 0 low 64
   (float(112)/128),               // 1 medium (112/128)
   (float(240)/256),               // 2 Hight
-  (float(120)/128),               // 3 EDP
+  (float(1)),											// 3 compressed Texture
 };
 //=============================================================================
 //  RUNWAY KEYS orderd by Ground type
 //=============================================================================
 U_INT RunwayKEY[] = {
    0,
-  (GROUND_CONCRETE) | (TC_HIGHTR << 8) , // 1 Cement
-  (GROUND_ASPHALT ) | (TC_HIGHTR << 8) , // 2 Asphalt
-  (GROUND_TURF    ) | (TC_HIGHTR << 8) , // 3 turf
-  (GROUND_DIRT    ) | (TC_HIGHTR << 8) , // 4 dirt
-  (GROUND_GRAVEL  ) | (TC_HIGHTR << 8) , // 5 gravel
-  (GROUND_METAL   ) | (TC_HIGHTR << 8) , // 6 metal
-  (GROUND_SAND    ) | (TC_HIGHTR << 8) , // 7 sand
-  (GROUND_WOOD    ) | (TC_HIGHTR << 8) , // 8 wood
-  (GROUND_WATER   ) | (TC_HIGHTR << 8) , // 9 water
-  (GROUND_MATS    ) | (TC_HIGHTR << 8) , // 10 misc
-  (GROUND_SNOW    ) | (TC_HIGHTR << 8) , // 11 snow
-  (GROUND_ICE     ) | (TC_HIGHTR << 8) , // 12 Ice
-  (GROUND_GROOVED ) | (TC_HIGHTR << 8) , // 13 Groove
-  (GROUND_TREATED ) | (TC_HIGHTR << 8) , // 14 Treated
+  (GROUND_CONCRETE) | (TX_HIGHTR << 8) , // 1 Cement
+  (GROUND_ASPHALT ) | (TX_HIGHTR << 8) , // 2 Asphalt
+  (GROUND_TURF    ) | (TX_HIGHTR << 8) , // 3 turf
+  (GROUND_DIRT    ) | (TX_HIGHTR << 8) , // 4 dirt
+  (GROUND_GRAVEL  ) | (TX_HIGHTR << 8) , // 5 gravel
+  (GROUND_METAL   ) | (TX_HIGHTR << 8) , // 6 metal
+  (GROUND_SAND    ) | (TX_HIGHTR << 8) , // 7 sand
+  (GROUND_WOOD    ) | (TX_HIGHTR << 8) , // 8 wood
+  (GROUND_WATER   ) | (TX_HIGHTR << 8) , // 9 water
+  (GROUND_MATS    ) | (TX_HIGHTR << 8) , // 10 misc
+  (GROUND_SNOW    ) | (TX_HIGHTR << 8) , // 11 snow
+  (GROUND_ICE     ) | (TX_HIGHTR << 8) , // 12 Ice
+  (GROUND_GROOVED ) | (TX_HIGHTR << 8) , // 13 Groove
+  (GROUND_TREATED ) | (TX_HIGHTR << 8) , // 14 Treated
 };
 //=============================================================================
 //  RUNWAY KEYS orderd by Ground type
@@ -373,7 +382,7 @@ CShared3DTex::~CShared3DTex()
 //         It is expected that further developpment will include exception
 //         process
 //=============================================================================
-CArtParser::CArtParser(char rs)
+CArtParser::CArtParser(char rs, char rv)
 { ref     = 0;
   res     = rs;
   rgb     = 0;
@@ -387,6 +396,7 @@ CArtParser::CArtParser(char rs)
   afa     = 0xFF;             // Default alpha 
 	rrv			= 1;								// Reverse row
 	mac			= 0;
+	inv			= rv;
   //-----Transition file 1 --------------------------
   Tx1     = 0;
   Ms1     = 0;
@@ -556,15 +566,20 @@ int CArtParser::PixlBGRO(U_CHAR alf)
 int CArtParser::Pixl4BMP(U_CHAR alf)
 { // rgb has to be freed before any new allocation
   if (bpp != 32)  gtfo("Unsupported format");
-  if (rgb) delete [] rgb; 
+  if (rgb) delete [] rgb;
+	//--- Set direction ----------------------
+	int z     = (inv)?(   -1):(htr);
+	int end		= (inv)?(htr-1):(0);
+	int inc		= (inv)?(   +1):(-1);
   //----------------------------------------
   U_INT *buf = new U_INT[dim];
   U_INT *dst = buf;
   rgb        = buf;
   U_INT af1 = (U_INT)(0xFF000000);
 	U_INT	af2	=	(alf << 24);
-  for (U_INT z=(htr-1); z>0; z--)
-  { BYTE *src = FreeImage_GetScanLine(ref,z);
+  while (z != end)
+  { z += inc;
+		BYTE *src = FreeImage_GetScanLine(ref,z);
     for (U_INT x=0; x<wid; x++)
     { char  B   = *src++;
       char  G   = *src++;
@@ -665,13 +680,12 @@ void CArtParser::NoFile(char *fn)
 //--------------------------------------------------------------------
 void CArtParser::TryFILE(char *fnm,U_CHAR **buf,int &sz)
 { FILE *pf = 0;
-	if (fopen_s(&pf,fnm,"rb"))		return NoFile(fnm);
-	if (fseek(pf,0,SEEK_END))			return NoFile(fnm);
+	if (fopen_s(&pf,fnm,"rb"))		return;
+	if (fseek(pf,0,SEEK_END))			return;
 	long rdz = ftell(pf);
-	if (fseek(pf,0,SEEK_SET))			return NoFile(fnm);
+	if (fseek(pf,0,SEEK_SET))			return;
  *buf = new U_CHAR[rdz];
   sz	= fread(*buf,1,rdz,pf);
-	if (sz != rdz)								return NoFile(fnm);
 	fclose(pf);
 	return;
 }
@@ -695,8 +709,8 @@ void CArtParser::TryaPOD(char *fnm,U_CHAR **buf,int &sz)
 bool CArtParser::LoadFFF(char *rnm,char azp,FREE_IMAGE_FORMAT ff)
 {	U_CHAR *buf = 0;
 	int     rdz = 0;
-	TryaPOD(rnm,&buf,rdz);
-	if (0 == buf)	TryFILE(rnm,&buf,rdz);
+	TryFILE(rnm,&buf,rdz);
+	if (0 == buf)	TryaPOD(rnm,&buf,rdz);
 	if (0 == buf)	return false;
   //----Wrap it with Freeimage --------------------
   FIMEMORY *hmem  = FreeImage_OpenMemory(buf,rdz);
@@ -1307,28 +1321,28 @@ CTextureWard::CTextureWard(TCacheMGR *mgr,U_INT t)
   //--------Build the medium Water Texture --------------------------
   //    ONLY ONE WATER TEXTURE IS USED
   strcpy(xld.path + 13,"0C014D.");
-  Tank[TC_MEDIUM].LoadTexture(xld,TC_MEDIUM,kaf);
+  Tank[TX_MEDIUM].LoadTexture(xld,TX_MEDIUM,kaf);
   //--------Build the hight Water Texture --------------------------
   //    ONLY ONE WATER TEXTURE IS USED
   strcpy(xld.path + 13,"0C015D.");
-  Tank[TC_HIGHTR].LoadTexture(xld,TC_HIGHTR,kaf);
+  Tank[TX_HIGHTR].LoadTexture(xld,TX_HIGHTR,kaf);
   //--------Load right mask medium transition -------------------------
-  ind       = TC_BLENDRT | TC_MEDIUM;
+  ind       = TC_BLENDRT | TX_MEDIUM;
   LoadMaskTexture(ind,"RGHBLEND4",TC_MEDIUM_DIM);
   //-------Load right mask hight transition ---------------------------
-  ind       = TC_BLENDRT | TC_HIGHTR;
+  ind       = TC_BLENDRT | TX_HIGHTR;
   LoadMaskTexture(ind,"RGHBLEND5",TC_HIGHTR_DIM);
   //-------Load bottom mask medium transition -------------------------
-  ind       = TC_BLENDBT | TC_MEDIUM;
+  ind       = TC_BLENDBT | TX_MEDIUM;
   LoadMaskTexture(ind,"BOTBLEND4",TC_MEDIUM_DIM);
   //-------Load bottom mask hight transition -------------------------
-  ind       = TC_BLENDBT | TC_HIGHTR;
+  ind       = TC_BLENDBT | TX_HIGHTR;
   LoadMaskTexture(ind,"BOTBLEND5",TC_HIGHTR_DIM);
   //-------Load corner mask medium transition -------------------------
-  ind       = TC_BLENDCN | TC_MEDIUM;
+  ind       = TC_BLENDCN | TX_MEDIUM;
   LoadMaskTexture(ind,"CNRBLEND4",TC_MEDIUM_DIM);
   //-------Load corner mask hight transition -------------------------
-  ind       = TC_BLENDCN | TC_HIGHTR;
+  ind       = TC_BLENDCN | TX_HIGHTR;
   LoadMaskTexture(ind,"CNRBLEND5",TC_HIGHTR_DIM);
   //-------Load taxiways texture ------------------------------------
   LoadTaxiTexture("TAXICMNT",(U_CHAR)0xFF);
@@ -1473,7 +1487,7 @@ GLuint CTextureWard::GetWatOBJ(CTextureDef *txn)
 //  Load Default Taxiway texture as a shared one
 //-----------------------------------------------------------------------------
 void CTextureWard::LoadTaxiTexture(char *name,char tsp)
-{ U_CHAR res = TC_HIGHTR;
+{ U_CHAR res = TX_HIGHTR;
   CArtParser img(res);
   //----PATH is ART --------------------------------
   strncpy(xds.name,name,TC_TEXTURE_NAME_NAM);
@@ -1515,7 +1529,7 @@ void CTextureWard::LoadMaskTexture(int No,char *name,int dim)
 //  tsp is transparency option
 //-----------------------------------------------------------------------------
 void CTextureWard::LoadRwyTexture(U_INT key,char *fn, char tsp)
-{ U_CHAR res = TC_HIGHTR;                         // Resolution
+{ U_CHAR res = TX_HIGHTR;                         // Resolution
   U_CHAR bld = (tsp == 0);
   CArtParser img(res);
   //----PATH is ART --------------------------------
@@ -1575,7 +1589,7 @@ void CTextureWard::LoadAnyTexture(char *pn,TEXT_DEFN &txd)
 {	TEXT_INFO txf;                // Texture info;
 	txf.azp = 0;
   //--- Read the texture ----------------------
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
   strncpy(txf.path,pn,TC_TEXTURE_NAME_DIM);
   img.GetAnyTexture(txf);
   txd.Copy(txf);
@@ -1589,7 +1603,7 @@ void CTextureWard::LoadAnyTexture(char *pn,TEXT_DEFN &txd)
 //  Associate black pixel to a 0 Alpha channel
 //-----------------------------------------------------------------------------
 void CTextureWard::LoadLightTexture(U_CHAR No)
-{ U_CHAR res = TC_LOWRES;
+{ U_CHAR res = TX_LOWRES;
   CArtParser img(res);
   char *name  = LiteNAM[No];
   //----PATH is ART --------------------------------
@@ -1606,7 +1620,7 @@ void CTextureWard::LoadLightTexture(U_CHAR No)
 //  Assign a texture object
 //-----------------------------------------------------------------------------
 GLuint CTextureWard::LoadIconPNG(char *name)
-{ U_CHAR res = TC_LOWRES;
+{ U_CHAR res = TX_LOWRES;
   CArtParser img(res);
   //----PATH is ART --------------------------------
   _snprintf(xds.path,TC_TEXTURE_NAME_DIM,"ART/%s.PNG",name);
@@ -1632,7 +1646,7 @@ void CTextureWard::GetRwyTexture(CTarmac *tmac,U_CHAR gt)
 //  Get Taxiway default texture object
 //-----------------------------------------------------------------------------
 GLuint CTextureWard::GetTaxiTexture()
-{ U_INT key = KeyForTaxiway(TC_HIGHTR);         //TC_TAXI_TEXKEY | (TC_HIGHTR << TC_BYWORD) | 'TX';
+{ U_INT key = KeyForTaxiway(TX_HIGHTR);         //TC_TAXI_TEXKEY | (TC_HIGHTR << TC_BYWORD) | 'TX';
   CSharedTxnTex *shx  = GetSharedTex(key);
   if (0 == shx) Abort("Taxiway Texture: ","No texture");
   return shx->dOBJ;
@@ -1641,7 +1655,7 @@ GLuint CTextureWard::GetTaxiTexture()
 //	Get any texture from other formats
 //------------------------------------------------------------------------------
 void CTextureWard::GetAnyTexture(TEXT_INFO *inf)
-{	CArtParser img(TC_HIGHTR);
+{	CArtParser img(TX_HIGHTR);
 	img.DontAbort();
   img.GetAnyTexture(*inf);
 }
@@ -2004,15 +2018,16 @@ int CTextureWard::LoadMemCRNTex(CTextureDef *txn)
 //  For a shared texture, allocate a shared object
 //  NOTE: After texture object is allocated memory RGBA may be deleted
 //-----------------------------------------------------------------------------
-void CTextureWard::GetSupOBJ(CSuperTile *sp)
+void CTextureWard::GetQuadsOBJ(CSuperTile *sp)
 { CTextureDef *txn = 0;
   U_CHAR res = 0;
   U_INT  obj = 0;
+	bool   rfh = sp->NeedRefresh();
   for (int k = 0; k!= TC_TEXSUPERNBR; k++)     
     { txn = &sp->Tex[k];
       res = txn->GetResolution();
       CmQUAD *qad = txn->quad;
-			qad->RefreshVTAB(sp,res);            // Allocate Vertex table
+			if (rfh)	qad->RefreshVTAB(sp,res); // Refresh texture coordinates
       GLubyte *rgb = txn->dTEX[0];
       //--------assign day texture object ------------------
       
@@ -2039,25 +2054,20 @@ void CTextureWard::GetSupOBJ(CSuperTile *sp)
             obj = GetTerraOBJ(txn->dOBJ,res,rgb);
             NbDOB += txn->AssignDAY(obj);
             break;
-          case TC_TEXRAWEP:
-            if (0 == rgb) break;
-            obj = GetTerraOBJ(txn->dOBJ,res,rgb);
-            NbDOB += txn->AssignDAY(obj);
-            break;
 					//--- Compressed texture ------------
 					case TC_TEXCMPRS:
-					{	U_CHAR lev = sp->levl;
+					{	U_CHAR niv = (res == TX_HIGHTR)?(0):(1);
 						U_CHAR mip = globals->mipTER;
 						U_CHAR mmp = mip+1;
 						Compressor comp(txn->cTyp,mip);
-						void *data = txn->dTEX[lev];
+						void *data = txn->dTEX[0];
 						if (0 == data)			continue;
-						obj = comp.DecodeCRN(data,txn->dSiz,lev,mmp);
+						obj = comp.DecodeCRN(data,txn->dSiz,niv,mmp);
 						NbDOB += txn->AssignDAY(obj);
 						//--- check for night texture -----
 						data	= txn->nTEX[0];
 						if (0 == data)			continue;
-						obj = comp.DecodeCRN(data,txn->nSiz,lev,mmp);
+						obj = comp.DecodeCRN(data,txn->nSiz,niv,mmp);
 						NbNOB += txn->AssignNIT(obj);
             continue;
 					}
@@ -2082,7 +2092,7 @@ void CTextureWard::GetSupOBJ(CSuperTile *sp)
 int CTextureWard::FreeAllTextures(CSuperTile *sp)
 { CTextureDef *txn = 0;
   for (int Nd = 0; Nd != TC_TEXSUPERNBR; Nd++)
-        { txn = &sp->Tex[Nd];
+        { txn = sp->Tex + Nd;
           if (txn->IsShare())     { FreeShared(txn);     continue;}
           if (txn->IsWater())     { FreeWater (txn);     continue;}
 					txn->FreeALL();
@@ -2100,12 +2110,12 @@ int CTextureWard::FreeAllTextures(CSuperTile *sp)
 //  NOTE: Dont use any variables from TextureWard as it would conflict
 //        with the Texture load THREAD
 ///----------------------------------------------------------------------------
-int CTextureWard::SwapTextures(CSuperTile *sp)
-{ CmQUAD      *qad  = 0;
+void CTextureWard::SwapTextures(CSuperTile *sp,char stx)
+{ CmQUAD      *qad = 0;
   CTextureDef *txn = 0;
   //------For each Detail swap the texture----------------------
   for (int Nd = 0; Nd != TC_TEXSUPERNBR; Nd++)
-        { txn = &sp->Tex[Nd];
+        { txn = sp->Tex + Nd;
           qad = txn->quad;
           switch (txn->TypTX) {
             //----Water texture -------------------------------
@@ -2141,13 +2151,6 @@ int CTextureWard::SwapTextures(CSuperTile *sp)
         }
   //---Change state ----------------------------------
   sp->WantOBJ();                                           // Next step
-  return 1;
-}
-//-----------------------------------------------------------------------------
-//  Get a reduced texture from the mipmap set
-//-----------------------------------------------------------------------------
-void CTextureWard::GetMediumTexture(CTextureDef *txn)
-{ 
   return;
 }
 //-----------------------------------------------------------------------------
@@ -2175,7 +2178,8 @@ return;
 //  NOTE: This routine runs on MAIN THREAD
 //-----------------------------------------------------------------------------
 int CTextureWard::FreeSharedSlot(CTextureDef *txn)
-{ U_INT key = KeyForTerrain(txn,txn->GetResolution());             
+{ if (0 == txn->dOBJ)		return 0;
+	U_INT key = KeyForTerrain(txn,txn->GetResolution());             
   FreeSharedKey(key);
   //---------Clean descriptor --------------------------------
   txn->FreeDAY();

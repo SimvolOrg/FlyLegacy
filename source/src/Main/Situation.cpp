@@ -810,8 +810,6 @@ void CSituation::ReadFinished (void)
 { // Initialize magnetic model date to the start date of the situation
   SDateTime dt = globals->tim->GetLocalDateTime ();
   CMagneticModel::Instance().Init (dt.date);
-  // sdk:save a pointer to 'user' as the first item in the sdk SFlyObjectRef list
-  //if (uVeh) sdk_flyobject_list.InsertUserInFirstPosition (uVeh);
   TRACE("CSituation::ReadFinished");
 	//--- Load aircraft at position ----------------------
 	CAirplane *pln = globals->pln;

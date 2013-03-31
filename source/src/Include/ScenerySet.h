@@ -153,6 +153,8 @@ protected:
 	void		SelectPOD(char *path,char *fn);
 	int			GetSceneryType(char *path);
 	int 		SceneryForGBT(PFSPODFILE *p,int gx,int gz);
+	//------------------------------------------------------------------------
+	bool		UseDTX()				{return (dtx == 0);}
   //------------------------------------------------------------------------
 protected:
 	PFS *pfs;														// Unic PSF
@@ -160,14 +162,13 @@ protected:
 	//--------------------------------------------------------------------------
 	U_CHAR	tr;													// Trace indicator
 	U_CHAR  imp;												// Import mode
-	int	    cmp;												// Compression mode
+	int	    dtx;												// Compression mode
 	//--------------------------------------------------------------------------
 	SQL_DB *cdb;												// Current database
 	char fname[PATH_MAX];
 	char path [PATH_MAX];
 	std::map<U_INT,CSceneryPack*> m3dPAK;	// Scenery 3D
 	std::map<U_INT,CSceneryPack*> s2dPAK;	// Scenery 2D
-	//--- Queue of database descriptor ----------------------------------------
 	//--- Queue of Database request for OSM -----------------------------------
 	qHDR  <OSM_DBREQ> reqQ;
 };

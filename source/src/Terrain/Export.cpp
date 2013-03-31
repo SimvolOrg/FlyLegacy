@@ -37,6 +37,8 @@
 //=============================================================================
 extern char *RunwayNAM[];
 extern char *LiteNAM[];
+extern U_SHORT SideRES[];
+extern U_INT   UtilRES[];
 //=============================================================================
 //  Write a flat record as CSV (comma separated field) for SQL base
 //  sep is the separator
@@ -1496,9 +1498,9 @@ void CExport::DecodeTexture(char *name)
   U_CHAR res = 0;
   char *rnm = strrchr(name,'/') + 1;
   if (*typ == '1')  return;
-  if (*mod == '4')  {res = TC_MEDIUM; tab = "DAY128"; dim = 128;}
-  if (*mod == '5')  {res = TC_HIGHTR; tab = "DAY256"; dim = 256;}
-  if (*typ == 'N')  {res = TC_MEDIUM, tab = "NIT128"; dim = 128;}
+  if (*mod == '4')  {res = TX_MEDIUM; tab = "DAY128"; dim = 128;}
+  if (*mod == '5')  {res = TX_HIGHTR; tab = "DAY256"; dim = 256;}
+  if (*typ == 'N')  {res = TX_MEDIUM, tab = "NIT128"; dim = 128;}
   if (0 == res)     return;                 // Ignore other resolution
   CArtParser img(res);
   img.DontAbort();
@@ -1809,14 +1811,29 @@ void CExport::CheckThisFile(char *fn)
 //---------------------------------------------------------------------------
 void CExport::ExportAllTRNs()
 {	if (0 == trn)       return;
-	stop	= 0;
-	count = 0;
-  Mode  = EXP_TRNF;
-  State = EXP_TRN_INIT;
-  fName = 0;
+	//--- Get starting QGT ---------------------------------
+	char prm[128];
+	GetIniString("SQL","ExpTRN",prm,127);
+	int nf = sscanf(prm,"QGT ( %d - %d ) %s ",&stqx,&stqz);
+	if  (2 != nf)				gtfo("Use: TRN=QGT(x-y)");
+	//--- Init parameters ----------------------------------
+	stop		= 0;
+	count		= 0;
+  Mode		= EXP_TRNF;
+  State		= EXP_TRN_INIT;
+  fName		= 0;
   globals->appState = APP_EXPORT;
 	fui->SetNoticeFont(&globals->fonts.ftmono20);
 	mCnt	= 0;
+	//--- Build gamma table ---------------------------------
+	float gm = float(1);
+	GetIniFloat("SQL","Gamma",&gm);
+	double g = double(gm);
+	for (int k=0; k<256; k++)
+	{	double f1 = double(k) / 255;
+		double p1 = pow(f1,g);
+		Lut[k] = U_INT(double(255) * pow((double (k)/255),g));
+	}
 	SCENE("================ START EXPORT =================");
 	return;
 }
@@ -1859,27 +1876,31 @@ int  CExport::ExecuteTRN()
 		case EXP_TRN_WTEXT:
 				Clear = 1;
 				return WriteTRNtextures();
-		//--- Compress teexure --------------------
+		//--- Compress texture --------------------
 		case EXP_TRN_COMPR:
 				Clear = 1;
 				return CompressTRNtexture();
-
 	}
 	SCENE("========== Exported: %05d files ==========",count);
+	//------- STOP SIMU ------------------
 	globals->appState = APP_EXIT_SCREEN;
+	SAFE_DELETE(ftrn);
 	return 0;
 }
 //-----------------------------------------------------------------------------------------
 //  Build TRN full name
 //-----------------------------------------------------------------------------------------
 bool CExport::BuildTRNname(char *fn)
-{	if (0 == fn)	return false;
+{	if (0 == fn)		return false;
 	int nf  =  sscanf(fn,"DATA/D%3d%3d/G%1d%1d.TRN",&gx,&gz,&bx,&bz);
-	if (nf != 4)	return false;
+	if (nf != 4)		return false;
 	//--- Compute QGT key -------------------------------------
 	qx = (gx << 1) + bx;
 	qz = (gz << 1) + bz;
 	qKey  = QGTKEY(qx, qz);
+	//--- Filter on start QGT ----------------------------------
+	if (qx < stqx)	return false;
+	if (qz < stqz)	return false;
 	if (globals->sqm->QGTnotInArea(qx,qz))	return false;
 	//--- build pod name --------------------------------------
 	char *dbn = fn + strlen("DATA/");
@@ -1901,25 +1922,29 @@ int CExport::GetFirstTRN()
 	fName			= 0;
 	ftrn			= 0;
 	if (0 == fn)	return 0;
-	bool ok   = BuildTRNname(fn) && BuildTRNdata(fName);	
-	return (ok)?(EXP_TRN_WRITE):(EXP_TRN_NFILE);
+	bool ok   = BuildTRNname(fn) && BuildTRNdata(fName);
+	if (!ok)						return EXP_TRN_NFILE;
+	return EXP_TRN_WRITE;
 }
 
 //-----------------------------------------------------------------------------------------
 //  Find the next file
 //-----------------------------------------------------------------------------------------
 int CExport::GetNextTRN()
-{	char *fn  = pfindnext(pfs,&pod);
-	if (0 == fn)	return 0;
-	bool ok = BuildTRNname(fn) && BuildTRNdata(fName);	
-	return (ok)?(EXP_TRN_WRITE):(EXP_TRN_NFILE);
+{	SAFE_DELETE(ftrn);
+	if (stop == 'q')			return 0;
+	char *fn  = pfindnext(pfs,&pod);
+	if (0 == fn)					return 0;
+	bool ok = BuildTRNname(fn) && BuildTRNdata(fName);
+  if (ok)								return EXP_TRN_WRITE;
+	//--- Check if outside of database ----------------
+	return EXP_TRN_NFILE;
 }
 //---------------------------------------------------------------------------
 //  Build a TRN data
 //---------------------------------------------------------------------------
 bool CExport::BuildTRNdata(char *fn)
-{	SAFE_DELETE(ftrn);
-	if (!pexists(&globals->pfs,fn))			return false;
+{	if (!pexists(&globals->pfs,fn))			return false;
 	ftrn = new C_TRN(fn,0,0);			// Create TRN
 	bx	 = (qx << 5);		// Base X indices
 	bz	 = (qz << 5);		// Base Z indices
@@ -1941,9 +1966,10 @@ bool CExport::FileInDatabase(SQL_DB &db)
 //  Write elevations from TRN file
 //-----------------------------------------------------------------------------------------
 void  CExport::WriteTRNelevations()
-{	if (!sqm->UseElvDB())									return;					// No ddatabase
+{	if (!sqm->UseElvDB())										return;					// No ddatabase
+  if (globals->sqm->QGTnotInArea(qx,qz))	return;
 	//--- Check if file already in data base ---------------
-	if (FileInDatabase(sqm->DBelv()))		return;
+	if (FileInDatabase(sqm->DBelv()))				return;
 	//--- Write file name in database ----------------------
 	rowid = sqm->WriteFileNameInBase(podN,sqm->DBelv());
 	//--- Import all super tiles elevations ----------------
@@ -1990,6 +2016,7 @@ bool CExport::LoadSuperTile()
 {	if (eof)		return false;
 	asp = ftrn->GetSupTile(sx,sz);
 	asp->SetKey(qKey);
+	sno	= asp->GetNo();
 	//--- SW corner DET indices ----------------------------
 	ax		= bx | (sx << 2);			// Base ax
 	az		= bz | (sz << 2);			// Base az
@@ -2020,11 +2047,11 @@ bool CExport::NextSupertile()
 //  Write textures from TRN file
 //-----------------------------------------------------------------------------------------
 int CExport::WriteTRNtextures()
-{	if (!sqm->UseDtxDB())	return EXP_TRN_NFILE;					// No ddatabase
+{	if (!sqm->UseDtxDB())										return EXP_TRN_NFILE;					// No ddatabase
+	if (globals->sqm->QGTnotInArea(qx,qz))	return EXP_TRN_NFILE;
 	//--- Check if file already in data base ---------------
-	FileInDatabase(sqm->DBdtx());
-	//--- Write file name in database ----------------------
-	if (0 == rowid) rowid = sqm->WriteFileNameInBase(podN,sqm->DBdtx());
+	if (FileInDatabase(sqm->DBdtx()))       return EXP_TRN_NFILE;
+	rowid = sqm->WriteFileNameInBase(podN,sqm->DBdtx());
 	//--- Prepare reading of supertiles --------------------
 	sx	= 0;
 	sz	= 0;
@@ -2053,7 +2080,6 @@ int CExport::CompressTRNtexture()
 	dx	= 0;							// restart column indice
 	if (dz < 4)						return EXP_TRN_COMPR;	
 	//--- Next supertile or Next TRN file-----------
-	if (stop == 'q')			return 0;
 	if (!NextSupertile())	return EXP_TRN_NFILE;
 	LoadSuperTile();
 	return EXP_TRN_COMPR;
@@ -2078,6 +2104,8 @@ void CExport::WriteDayTexture(CTextureDef *txd)
   img.SetWaterRGBA(wtr);
   inf.mADR	= img.GetRawTexture(inf,1);
 	if (0 == inf.mADR)		return;
+	//--- Extract the used part of texture --------------------------
+	ExtractTexture(TX_HIGHTR);
 	//--- Build compressed format -----------------------------------
 	inf.mip	= 8;
 	Compressor comp(COMP_DTX5,inf.mip);
@@ -2097,44 +2125,32 @@ void CExport::WriteDayTexture(CTextureDef *txd)
 void CExport::CompressTexture(CTextureDef *txd,U_INT ax,U_INT az)
 {	gx		= (qx >> 1);										// Global tile x indice
 	gz		= (qz >> 1);										// Global tile z indice
-	//---------------------------------------------------------------
+	//--- Check if texture is in table already ---------------------
 	inf.key			= (ax << 16) | (az);
-	char	reso	= TC_HIGHTR;							// Resolution
-	char  root[32];                       // file name
-  inf.Dir			= rowid;									// File reference
-	inf.type		= COMP_DTX5;							// Compression type
-	inf.res			= reso;										// Resolution
-	inf.qty			= 128;										// Compression quality (half)
-  strncpy(root,txd->Name,8);						// Root Name
-  root[8]   = '5';											// Resolution
-  root[9]   = 0;                        // Close name
-	strncpy(inf.name,root,8);
-  _snprintf(inf.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,root);
-	if (!sqm->TRNTextureInTable(inf.key,"TEX"))	WriteDayTexture(txd);		
+	if (sqm->TRNTextureInTable(inf.key,"TEX"))	return;
+	//--- Prepare reading parameters ---------------------
+	PrepareReading(txd);
+	WriteDayTexture(txd);		
 	//--- Check for associatd night texture --------------------------
 	if (!txd->IsNight())												return;
 	//--- Check if already in database -------------------------------
 	if (sqm->TRNTextureInTable(inf.key,"NIT"))	return;
 	//--- Now prepare for night texture ------------------------------
-	root[9]   = 'N';                      // Night indicator
-  root[10]  = 0;
-  _snprintf(inf.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,root);
+	Root[9]   = 'N';                      // Night indicator
+  Root[10]  = 0;
+  _snprintf(inf.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,Root);
 	 //--- READ the Night texture file -------------------------------
-  CArtParser img(TC_MEDIUM);						// Reader instance
+  CArtParser img(TX_MEDIUM);						// Reader instance
   GLubyte *nite		= img.LoadRaw(inf,0);	// Read file
   if (0 == nite)						return;
-  img.MergeNight(nite);									// Add alpha chanel
-	//--- Double texture size to match hi resolution -----------------
-	nite	= globals->txw->DoubleNiTexture((U_INT*)nite);
-	inf.wd		= (inf.wd << 1);						// Double width
-	inf.ht		= (inf.ht << 1);						// Double height
 	inf.mADR	= nite;
+  img.MergeNight(nite);									// Add alpha chanel
+	ExtractTexture(TX_MEDIUM);
 	//--- Build compressed format -----------------------------------
 	inf.mip	= 8;
 	Compressor comp(COMP_DTX5,inf.mip);
 	comp.EncodeCRN(inf);
 	nite = inf.mADR;
-	if (0 == nite)	return ErrorTRN01();
 	//--- Write compressed format in DTX database -------------------
 	sqm->WriteTRNtexture(inf,"NIT");			// Write night texture
 	delete [] nite;
@@ -2142,6 +2158,74 @@ void CExport::CompressTexture(CTextureDef *txd,U_INT ax,U_INT az)
 	return;
 }
 //---------------------------------------------------------------------------
-//  Load Texture textures
+//  Prepare reading parameters for raw texture file
 //---------------------------------------------------------------------------
+void CExport::PrepareReading(CTextureDef *txd)
+{	char	reso	= TX_HIGHTR;							// Resolution
+  inf.Dir			= rowid;									// File reference
+	inf.type		= COMP_DTX5;							// Compression type
+	inf.res			= reso;										// Resolution
+	inf.qty			= 232;										// Compression quality (half)
+  strncpy(Root,txd->Name,8);						// Root Name
+  Root[8]   = '5';											// Resolution
+  Root[9]   = 0;                        // Close name
+	strncpy(inf.name,Root,8);
+  _snprintf(inf.path,TC_TEXTURE_NAME_DIM,"DATA/D%03d%03d/%s.",gx,gz,Root);
+	return;
+}
+//---------------------------------------------------------------------------
+//  Expend textures from TRN file
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//  Prepare reading parameters for raw texture file
+//---------------------------------------------------------------------------
+void CExport::ReadRawTexture(CTextureDef *txd)
+{	PrepareReading(txd);
+	//--- Read this texture ------------------------------------------
+  char	reso	= TX_HIGHTR;							// Resolution
+	U_INT *wtr  = globals->txw->GetWaterRGBA(reso);
+	//--- Read the RAW,ACT,OPA  texture file ------------------------
+  CArtParser img(reso);
+  img.SetWaterRGBA(wtr);
+  inf.mADR	= img.GetRawTexture(inf,1);
+	return;
+}
+//---------------------------------------------------------------------------
+//  Extract Hight resolution texture from TRN file 
+//	Offset in source texture is 8 lines of 256 char 
+//	+ marge (8) - one adjustment  for starting
+//	Offset in destination is computed from tx and tz, the tile coordinates
+//	We have rx = relative X Tile index into Supertile
+//					rz = relative Z Tile index into SuperTile 
+//	All computing done in pixels
+//---------------------------------------------------------------------------
+void CExport::ExtractTexture(U_CHAR res)
+{	if (inf.mADR == 0)		return;
+	inf.res			= res;
+	U_INT usz		= UtilRES[res];								// Util side of texture
+	U_INT side	= SideRES[res];
+	//-------------------------------------------------------------------
+	U_INT  dim  = usz * usz;
+	U_INT *buf  = new U_INT[dim];
+	//--- Compute source parameters -------------------------------------
+	U_INT  ajx	= side - usz;		// Adjust to next line + marge
+	U_INT  ofs	= (RAW_TEX_MARGE  * side) + RAW_TEX_MARGE;
+	U_INT *src	= (U_INT*)(inf.mADR) + ofs - ajx;		// Source buffer
+	//--- Compute Destination parameters ---------------------------------
+	U_INT *dst	= buf;
+	//--- Place texture --------------------------------------------------
+	for (U_INT lz=0; lz < usz; lz++)
+	{	//---  change to next line in source
+		src	+= ajx;
+		//---  Copy one line to destination --------------------------
+		for (U_INT cx=0; cx < usz; cx++) 	*dst++ = *src++;
+	}
+	SAFE_DELETE(inf.mADR);
+	inf.mADR	= (GLubyte*)buf;
+	inf.dim		= dim;
+	inf.wd    = usz;
+	inf.ht		= usz;
+	return;
+}
+
 //===================================END OF FILE ==========================================

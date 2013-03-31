@@ -61,9 +61,9 @@ public:
 //=======================================================================
 // C1NeedleGauge
 //  This is the simplest gauge with one message and one needle
-//  It use the needle of the upper CTexturedGauge
+//  It use the needle of the upper CBasicGauge
 //=======================================================================
-class C1NeedleGauge: public CTexturedGauge {
+class C1NeedleGauge: public CBasicGauge {
   //--- ATTRIBUTES -----------------------------
   CGauge       *mgg;    // Optional mother gauge
   //--- METHODS --------------------------------
@@ -166,7 +166,7 @@ protected:
 //=======================================================================
 // CAltimeterGauge
 //=======================================================================
-class C_AltimeterGauge : public CTexturedGauge {
+class C_AltimeterGauge : public CBasicGauge {
 public:
   C_AltimeterGauge (CPanel *mp);
   virtual ~C_AltimeterGauge (void);
@@ -188,6 +188,7 @@ public:
   void      DisplayHelp();
   //----Attributes -------------------------------------------------
 protected:
+	CAltimeter     *alti;
   VStrip          base;               // Underlay over baro      
   CNeedle        *ndl1;
   CNeedle        *ndl2;
@@ -200,7 +201,7 @@ protected:
 //======================================================================
 // JSDEV*  Simplified CDirectionalGyroGauge
 //======================================================================
-class C_DirectionalGyroGauge : public CTexturedGauge {
+class C_DirectionalGyroGauge : public CBasicGauge {
     //--------------------------------------------------------------
 protected:
   CNeedle     apbg;   // Bug image
@@ -211,7 +212,7 @@ protected:
 	SMessage		mbug;						// bug message
   SMessage    mgyr;           // gyro message
 	//--- Related subsystems ---------------------------------------
-	CSubsystem *gyrS;
+	CDirectionalGyro *gyrS;
   //----Values for display----------------------------------------
   float       hdg;              // Gyro direction
   float       bug;              // Autopilot bug
@@ -223,8 +224,8 @@ public:
   virtual ~C_DirectionalGyroGauge (void);
 
   //---- CStreamObject methods -----------------------------------
-  virtual int   Read (SStream *stream, Tag tag);
-  virtual void  ReadFinished ();
+  int   Read (SStream *stream, Tag tag);
+  void  ReadFinished ();
   // CGauge methods
   void		            PrepareMsg(CVehicleObject *veh);
   EClickResult        MouseClick (int x, int y, int buttons);
@@ -236,14 +237,13 @@ public:
   //--------------------------------------------------------------
   void                Draw ();
   //--------------------------------------------------------------
-  ECursorResult       DisplayBUG();
   ECursorResult       DisplayHDG();
   void                DisplayHelp() {}
 };
 //======================================================================
 // CAirspeedGauge
 //======================================================================
-class C_AirspeedGauge : public CTexturedGauge {
+class C_AirspeedGauge : public CBasicGauge {
 public:
   C_AirspeedGauge (CPanel *mp);
 
@@ -268,7 +268,7 @@ protected:
 //======================================================================
 // C_VerticalSpeedGauge
 //======================================================================
-class C_VerticalSpeedGauge : public CTexturedGauge {
+class C_VerticalSpeedGauge : public CBasicGauge {
 public:
   C_VerticalSpeedGauge (CPanel *mp);
   virtual ~C_VerticalSpeedGauge (void);
@@ -291,7 +291,7 @@ protected:
 //======================================================================
 // CHorizonGauge
 //======================================================================
-class C_HorizonGauge : public CTexturedGauge {
+class C_HorizonGauge : public CBasicGauge {
 public:
   C_HorizonGauge                       (CPanel *mp);
   virtual ~C_HorizonGauge              (void);
@@ -312,12 +312,13 @@ public:
 	//-------------------------------------------------------------
   void									Draw();
 	void									DrawAmbient();
+	//--- ATTRIBUTES ----------------------------------------------
 protected:
 	//-------------------------------------------------------------
   CNeedle	Bfoot;
 	CNeedle	Bmire;
 	CNeedle	Birim;
-	CNeedle	Borim;
+	C_Cover	Borim;
 	//-------------------------------------------------------------
 protected:
 	int         hoff;
@@ -332,11 +333,60 @@ protected:
 	CSubsystem *rolS;
 
 };
+//======================================================================
+// C_HSIgauge: One of the most complicated
+//======================================================================
+class C_HSIgauge: public CBasicGauge {
+//--- ATTRIBUTES -----------------------
+protected:
+	CDirectionalGyro *gyrS;	// Gyro system
+	//------------------------------------
+	float			hdg;					// Heading
+	float     bug;					// Bug position
+	float     crs;					// Course
+	float			vobs;					// OBS value
+	//--- Pixel per degre -----------------
+	float			pixd;
+	//-------------------------------------
+	int				dir;					// Bug direction
+	//-------------------------------------
+	U_CHAR    rflg;					// Radio Flag
+	//-------------------------------------
+	SMessage  mobs;					// OBS message
+	SMessage  mrad;					// Radio Message
+	SMessage  mbug;					// Bug message
+	//-------------------------------------
+	CNeedle		Hcomp;				// Compass plate
+	CNeedle   Hcurs;				// Course director
+	CNeedle   Hdevs;				// Deviation
+	CNeedle   Hpbug;				// Pilot Bug
+	//-------------------------------------
+	C_Cover		Fgnav;				// Flag Nav
+	C_Cover   Fghdg;				// Falg heading
+	//-------------------------------------
+	C_Knob    pbug;					// Pilot bug
+//--- Methods ---------------------------
+public:
+	C_HSIgauge(CPanel *mp);
+	virtual ~C_HSIgauge();
+	int		Read(SStream *stream, Tag tag);
+	void	ReadFinished();
+	void	PrepareMsg(CVehicleObject *veh);
+	//-------------------------------------
+	void	CopyFrom(SStream *stream);
+	void	CollectVBO(TC_VTAB *vtb);
+	//--- Mouse interface -----------------
+	EClickResult		MouseClick (int x, int y, int buttons);
+	EClickResult		StopClick ();
+	ECursorResult		MouseMoved (int x, int y);
+	//--------------------------------------
+	void	Draw();
+};
 //=======================================================================
 // CSimpleSwitch
 //	Derived class must supply the Draw function
 //=======================================================================
-class C_SimpleSwitch : public CTexturedGauge {
+class C_SimpleSwitch : public CBasicGauge {
 public:
   C_SimpleSwitch (CPanel *mp);
   virtual ~C_SimpleSwitch (void);
@@ -378,7 +428,7 @@ protected:
 //=======================================================================
 // CGenericSwitch
 //=======================================================================
-class CGenericSwitch: public CTexturedGauge {
+class CGenericSwitch: public CBasicGauge {
   //--- Attributes ---------------------------------
   U_CHAR  nba;                    // Number of actions
   U_CHAR  nbm;                    // Number of messages
@@ -411,7 +461,7 @@ public:
 //===========================================================================
 // CPushPullKnobGauge
 //===========================================================================
-class C_PushPullKnobGauge : public CTexturedGauge {
+class C_PushPullKnobGauge : public CBasicGauge {
 public:
   C_PushPullKnobGauge (CPanel *mp);
  ~C_PushPullKnobGauge (void);
@@ -467,7 +517,7 @@ protected:
 //===========================================================================
 // JSDEV* simplified CNavigationGauge
 //===========================================================================
-class C_NavigationGauge : public CTexturedGauge {
+class C_NavigationGauge : public CBasicGauge {
 	//---------------------------------------------------------
 public:
   C_NavigationGauge (CPanel *mp);
@@ -484,8 +534,6 @@ public:
   //--- CGauge methods -----------------------------------------
 	virtual const char* GetClassName (void) { return "CNavigationGauge"; }
 	virtual void  PrepareMsg(CVehicleObject *veh);
-  void          GetRadio();
-  ECursorResult ShowOBS();
   //------------------------------------------------------------
 	EClickResult  MouseClick (int x, int y, int buttons);
 	EClickResult  StopClick  ();
@@ -494,11 +542,7 @@ public:
 	void          Draw (void);
 protected:
   //--- Needle is defined at CTextured gauge level -------------
-  Tag       radi_tag;
-  int       radi_unit;
   SMessage  mobs;             // OBS message set
-  SMessage  mrad;             // Radio Message
-  BUS_RADIO *radio;           // Radio data
 	//--------Localizer needle-- -------------------------------
   float     vobs;             // OBS from radio
   float     lndK;             // Horizontal coefficient
@@ -509,7 +553,6 @@ protected:
   U_CHAR    rflg;             // Radio Flag
   float     gldK;             // Glide coefficient
   //----------OBS management --------------------------------
-	C_Knob	knob;						    // OBS KNOB
   TEXT_DEFN  Flag;            // Flag texture
 	//----------FLAG bitmap ---------------------------------
   VStrip	gldF;				        // glide flag
@@ -518,7 +561,7 @@ protected:
 //==========================================================================
 // CTachometerGauge
 //===========================================================================
-class C_TachometerGauge : public CTexturedGauge {
+class C_TachometerGauge : public CBasicGauge {
 public:
   C_TachometerGauge (CPanel *mp);
   virtual ~C_TachometerGauge (void);
@@ -539,7 +582,7 @@ protected:
 //===========================================================================
 // JSDEV* Simplified CBasicADFGauge
 //===========================================================================
-class C_BasicADFGauge : public CTexturedGauge {
+class C_BasicADFGauge : public CBasicGauge {
 public:
   C_BasicADFGauge (CPanel *mp);
   virtual ~C_BasicADFGauge (void);
@@ -570,7 +613,7 @@ protected:
 //======================================================================
 // CHobbsMeterGauge
 //======================================================================
-class C_HobbsMeterGauge : public CTexturedGauge {
+class C_HobbsMeterGauge : public CBasicGauge {
   //--- METHODS ---------------------------------------------
 public:
   C_HobbsMeterGauge (CPanel *mp);
@@ -646,7 +689,7 @@ protected:
 //=======================================================================
 // C2NeedleGauge
 //========================================================================
-class C2NeedleGauge : public CTexturedGauge {
+class C2NeedleGauge : public CBasicGauge {
 protected:
   //--- Attributes ------------------------------------------
   char     type;                // Horizontal or vertical
@@ -783,7 +826,7 @@ enum B_POS {
 //
 // CFlyhawkAnnunciatorTest
 //======================================================================
-class C_FlyhawkAnnunciatorTest : public CTexturedGauge {
+class C_FlyhawkAnnunciatorTest : public CBasicGauge {
 public:
   C_FlyhawkAnnunciatorTest (CPanel *mp);
   virtual ~C_FlyhawkAnnunciatorTest (void);
@@ -825,7 +868,7 @@ protected:
 //====================================================================
 // CFlyhawkElevatorTrimGauge
 //====================================================================
-class CElevatorTrimGauge : public CTexturedGauge {
+class CElevatorTrimGauge : public CBasicGauge {
 public:
   CElevatorTrimGauge (CPanel *mp);
   virtual ~CElevatorTrimGauge (void);
@@ -888,7 +931,7 @@ protected:
 //====================================================================
 // JSDEV* CBasicCompassGauge
 //====================================================================
-class C_BasicCompassGauge : public CTexturedGauge{
+class C_BasicCompassGauge : public CBasicGauge{
 public:
   C_BasicCompassGauge (CPanel *mp);
   virtual ~C_BasicCompassGauge (void);
@@ -978,7 +1021,7 @@ protected:
 //========================================================================
 // strip Gauge:  Gauge using a vertical strip
 //=========================================================================
-class CStripGauge : public CTexturedGauge
+class CStripGauge : public CBasicGauge
 {	
 protected:
 	//--- Attributes --------------------------------

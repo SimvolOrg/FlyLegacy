@@ -223,6 +223,7 @@ public:
   void  DecodePROJ(SStream *str, TC_VTAB *qd,char opt);
   void  DecodeNCTR(SStream *str, TC_VTAB *qd,char opt);
 	void	DecodeSHAP(SStream *str, S_PIXEL *sp,char opt);
+	void	DecodeRAD(SStream  *str, Tag &T, U_INT &U);
   void  PrepareQuad(TC_VTAB *pan);
 	void	BuildQuad(TC_VTAB *qd,float px,float py,float wd,float ht);
 	void	BuildQuad(TC_VTAB *pan, S_PIXEL *sp);
@@ -257,6 +258,7 @@ public:
   virtual const char *GetClassName (void) { return "CGauge"; }
   virtual void        Update (void);
 	virtual void				SubsystemCall(CSubsystem *sys,int stat) {;}
+	virtual U_INT       GetVBOofs()		{return vOfs;}
   //--------------------------------------------------------------
   virtual int         CharWD()  {return 0;}
   virtual int         CharHT()  {return 0;}
@@ -316,8 +318,11 @@ public:
 	U_SHORT	FixRoom(U_SHORT n);
 	CVehicleObject *GetMVEH()	{return mveh;}
 	//---------------------------------------------------------------
+	bool		HaveHit(short x,short y,HIT_GAUGE &hg);
 	bool		RectHit(short x,short y,HIT_GAUGE &sh);
 	bool		TourHit(short x,short y,HIT_GAUGE &hg);
+	bool		LeftHit(short x,short y,HIT_GAUGE &hg);
+	bool    RiteHit(short x,short y,HIT_GAUGE &hg);
   //---------------------------------------------------------------
   float   ClampTo(float lim,float val)
   { if (val > +lim)   return +lim;
@@ -452,7 +457,8 @@ public:
   void  GetTexture(SStream *str);
   void  Draw(float deg);
   void  DrawFixe();
-  void  Draw (float rol, float pit);
+  void  DrawVert (float rol, float pit);
+	void	DrawHorz (float hdg, float dev);
 	//----------------------------------------------------------
   void  CopyFrom(CGauge *mg,CRotNeedle &src);
 	void	CollectVBO(TC_VTAB *vtb);
@@ -538,7 +544,8 @@ public:
   void        Draw();
   //--------------------------------------------------------------------
   void        DrawNeedle(float deg);
-	void        DrawNeedle(float rol,float pit) {rotn.Draw(rol,pit);}
+	void        DrawVert(float R,float P) {rotn.DrawVert(R,P);}
+	void				DrawHorz(float H,float D) {rotn.DrawHorz(H,D);}
   //---------------------------------------------------------------------
   inline void   SetPPD(double p)    {rotn.SetPPD(p);}
   inline float  GetAMPV()           {return ampv;}
@@ -651,25 +658,39 @@ public:
 //  -One overlay
 //  It may be used as far as only one needle is used
 //=======================================================================
-class CTexturedGauge: public CGauge {
+class CBasicGauge: public CGauge {
   //---- ATTRIBUTES ---------------------------------------
 protected:
   C_Cover       under;        // Underlay Texture info
   C_Cover       overl;        // Overlay  Texture info
-  CNeedle       nedl;         // Needle
+  CNeedle       nedl;         // one Needle
+	C_Knob				knob;					// One knob
+	//--- Radio interface -----------------------------------
+	Tag						radioT;				// Radio identity
+	U_INT					radioU;				// Radio Unit
+	BUS_RADIO    *radio;        // Radio data
   //---- METHODS ------------------------------------------
 public:
-  CTexturedGauge(CPanel *mp);
- ~CTexturedGauge();
+  CBasicGauge(CPanel *mp);
+ ~CBasicGauge();
   virtual int   Read(SStream *str, Tag tag);
   virtual void  RenderGauge() {;}
   virtual void  Draw();
 	virtual void	CollectVBO(TC_VTAB *vtb);
   //-------------------------------------------------------
-  void  CopyFrom(CTexturedGauge &src);
+  void  CopyFrom(CBasicGauge &src);
   //------------------------------------------------------
   void  ReadLayer(SStream *str,TEXT_DEFN &txd);
   void  ShowHelp(char *fmt, ...);
+	void	SetRadioMessage(SMessage &M);
+	void	SetOBSmessage(SMessage &M);
+	void	SetBUGmessage(SMessage &M, Tag dst);
+	void	GetRadio(SMessage &M);
+	//------------------------------------------------------
+	bool	DrawKnob(SMessage &M);
+	//--- Special help -------------------------------------
+	ECursorResult	ShowOBS(U_CHAR F,float V);
+	ECursorResult DisplayBUG(int dir);
   //------------------------------------------------------
   inline void  DrawUnderlay()   {under.Draw();}
   inline void  DrawOverlay()    {overl.Draw();}

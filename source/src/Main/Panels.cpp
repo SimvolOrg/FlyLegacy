@@ -350,15 +350,16 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_BITMAP:
         { CBitmapGauge *g = new CBitmapGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_NEEDLE:
         { CNeedleGauge *g = new CNeedleGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_NEEDLE_DUAL:
         { CTwoNeedleGauge *g = new CTwoNeedleGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_NEEDLE_TRIPLE:
         { CThreeNeedleGauge *g = new CThreeNeedleGauge(this);
           return ProcessGauge(g,stream); }
@@ -366,20 +367,20 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_DIGITAL_NEEDLE:
         { CDigitalNeedleGauge *g = new CDigitalNeedleGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_ALTIMETER:
         { CAltimeterGauge *g = new CAltimeterGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
 
       case GAUGE_ALTIMETER_ROLLING:
         { CRollingAltimeterGauge *g = new CRollingAltimeterGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_HORIZON:
         { CHorizonGauge *g = new CHorizonGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_HORIZON_FD:
         { CFDHorizonGauge *g = new CFDHorizonGauge(this);
           return ProcessGauge(g,stream); }
@@ -387,23 +388,26 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_HORIZONTAL_BALL:
         { CHorizontalBallGauge *g = new CHorizontalBallGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_AIRSPEED:
         { CAirspeedGauge *g = new CAirspeedGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_VERTICAL_SPEED:
         { CVerticalSpeedGauge *g = new CVerticalSpeedGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_DIRECTIONAL_GYRO:
         { CDirectionalGyroGauge *g = new CDirectionalGyroGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_VACUUM:
         { CVacuumGauge *g = new CVacuumGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_SUCTION:
         { CSuctionGauge *g = new CSuctionGauge(this);
           return ProcessGauge(g,stream); }
@@ -411,23 +415,27 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_FUEL:
         { CFuelGauge *g = new CFuelGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_FUEL_FLOW:
         { CFuelFlowGauge *g = new CFuelFlowGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_OIL_PRESSURE:
         { COilPressureGauge *g = new COilPressureGauge(this);
           return ProcessGauge(g,stream); }
+*/
+/*
 
       case GAUGE_OIL_TEMPERATURE:
         { COilTemperatureGauge *g = new COilTemperatureGauge(this);
           return ProcessGauge(g,stream); }
-
-      case GAUGE_TACHOMETER:
+*/
+ /*     
+			case GAUGE_TACHOMETER:
         { CTachometerGauge *g = new CTachometerGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_TACHOMETER_DUAL:
         { CDualTachometerGauge *g = new CDualTachometerGauge(this);
           return ProcessGauge(g,stream); }
@@ -435,19 +443,21 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_N1_TACHOMETER:
         { CN1TachometerGauge *g = new CN1TachometerGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_EXHAUST_GAS_TEMP:
         { CExhaustGasTemperatureGauge *g = new CExhaustGasTemperatureGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_BASIC_COMPASS:
         { CBasicCompassGauge *g = new CBasicCompassGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_AMMETER:
         { CAmmeterGauge *g = new CAmmeterGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_ANALOG_CLOCK:
         { CAnalogClockGauge *g = new CAnalogClockGauge(this);
           return ProcessGauge(g,stream); }
@@ -459,11 +469,11 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_DIGITAL_CLOCK_BASIC:
         { CBasicDigitalClockGauge *g = new CBasicDigitalClockGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_ADF_BASIC:
         { CBasicADFGauge *g = new CBasicADFGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_DIGITAL_READOUT:
         { CDigitalReadoutGauge *g = new CDigitalReadoutGauge(this);
           return ProcessGauge(g,stream); }
@@ -487,39 +497,42 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_AOA:
         { CAOANeedleGauge *g = new CAOANeedleGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_TURN_COORDINATOR:
         { CTurnCoordinatorGauge *g = new CTurnCoordinatorGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_SLIP_INDICATOR:
         { CSlipIndicatorGauge *g = new CSlipIndicatorGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_HOBBS_METER:
         { CHobbsMeterGauge *g = new CHobbsMeterGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_NAVIGATION:
         { CNavigationGauge *g = new CNavigationGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_NAV_COMM_KX155:
         { CK155gauge *g = new CK155gauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_GPS_KLN89:
         { CK89gauge *g = new CK89gauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_XPDR_KT76:
         { CKT76gauge *g = new CKT76gauge(this);
           return ProcessGauge(g,stream); }
-
+*/
+/*
       case GAUGE_ADF_KR87:
         { CKR87gauge *g = new CKR87gauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_AUTOPILOT_KAP140:
         { CBKAP140Gauge *g = new CBKAP140Gauge(this);
           return ProcessGauge(g,stream); }
@@ -535,11 +548,11 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_AUDIO_KMA26:
         { CBKAudioKMA26Gauge *g = new CBKAudioKMA26Gauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_HSI:
         { CHSIGauge *g = new CHSIGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_FLYHAWK_ELT:
         { CFlyhawkELTGauge *g = new CFlyhawkELTGauge(this);
           return ProcessGauge(g,stream); }
@@ -579,11 +592,11 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_FLYHAWK_ANNUNCIATOR:
         { CFlyhawkAnnunciator *g = new CFlyhawkAnnunciator(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_FLYHAWK_ANNUNCIATOR_TEST:
         { CFlyhawkAnnunciatorTest *g = new CFlyhawkAnnunciatorTest(this);
           return ProcessGauge(g,stream); }
-
+*/
  //     case GAUGE_FLYHAWK_NAV_GPS_PANEL:
  //       { CFlyhawkNavGpsPanelGauge *g = new CFlyhawkNavGpsPanelGauge(this);
  //         return ProcessGauge(g,stream); }
@@ -591,11 +604,11 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_FLYHAWK_FUEL_SELECTOR:
         { CFlyhawkFuelSelectorGauge *g = new CFlyhawkFuelSelectorGauge(this);
           return ProcessGauge(g,stream); }
-
+/*
       case GAUGE_ELEVATOR_TRIM:
         { CFlyhawkElevatorTrimGauge *g = new CFlyhawkElevatorTrimGauge(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_MALIBU_CHT_INDICATOR:
         { CMalybooCHTIndicatorGauge *g = new CMalybooCHTIndicatorGauge(this);
           return ProcessGauge(g,stream); }
@@ -713,23 +726,24 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_HOTSPOT:
         { CMomentaryHotSpotGauge *g = new CMomentaryHotSpotGauge(this);
           return ProcessGauge(g,stream); }
-     
+ /*    
       case GAUGE_SIMPLE_IN_OUT:
         { CSimpleInOutStateSwitch *g = new CSimpleInOutStateSwitch(this);
           return ProcessGauge(g,stream); }
-
+*/
       case GAUGE_LIT_IN_OUT:
         { CLitInOutSwitch *g = new CLitInOutSwitch(this);
           return ProcessGauge(g,stream); }
-      
+ /*     
       case GAUGE_SIMPLE_SWITCH:
         { CSimpleSwitch *g = new CSimpleSwitch(this);
           return ProcessGauge(g,stream); }
-      
+ */  
+/*
       case GAUGE_BATTERY_SWITCH:
         { CBasicBatterySwitch *g = new CBasicBatterySwitch(this);
           return ProcessGauge(g,stream); }
-      
+*/      
       case GAUGE_TWO_STATE_ELT:
         { CTwoStateELTGauge *g = new CTwoStateELTGauge(this);
           return ProcessGauge(g,stream); }
@@ -745,27 +759,27 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_DUAL_SWITCH:
         { CDualSwitch *g = new CDualSwitch(this);
           return ProcessGauge(g,stream); }
-      
+/*      
       case GAUGE_PUSH_PULL_KNOB:
         { CPushPullKnobGauge *g = new CPushPullKnobGauge(this);
           return ProcessGauge(g,stream); }
-      
+*/      
       case GAUGE_PRIMER_KNOB:
         { CPrimerKnobGauge *g = new CPrimerKnobGauge(this);
           return ProcessGauge(g,stream); }
-      
+/*      
       case GAUGE_FLAP:
         { CFlapsSwitchGauge *g = new CFlapsSwitchGauge(this);
           return ProcessGauge(g,stream); }
-      
+*/      
       case GAUGE_LIT_LANDING_GEAR_KNOB:
         { CLitLandingGearKnobGauge *g = new CLitLandingGearKnobGauge(this);
           return ProcessGauge(g,stream); }
-      
+/*      
       case GAUGE_MIXTURE_KNOB:
         { CPushPullKnobGauge *g = new CPushPullKnobGauge(this);
           return ProcessGauge(g,stream); }
-      
+*/      
       case GAUGE_REVERSIBLE_THROTTLE_KNOB:
         { CReversibleThrottleKnobGauge *g = new CReversibleThrottleKnobGauge(this);
           return ProcessGauge(g,stream); }
@@ -778,11 +792,11 @@ int CPanel::ReadGauge(SStream *stream, Tag tag)
       case GAUGE_TURN_KNOB:
         { CTurnKnobGauge *g = new CTurnKnobGauge(this);
           return ProcessGauge(g,stream); }
-      
+/*      
       case GAUGE_MAGNETO_SWITCH:
         { CBasicMagnetoSwitch *g = new CBasicMagnetoSwitch(this);
           return ProcessGauge(g,stream); }
-      
+*/      
       case GAUGE_COVERED_SWITCH:
         { CCoveredSwitch *g = new CCoveredSwitch(this);
           return ProcessGauge(g,stream); }
@@ -891,23 +905,24 @@ int CPanel::ReadNewGauge(SStream *str, Tag tag)
         case GAUGE_ALTIMETER:
             { C_AltimeterGauge *g = new C_AltimeterGauge(this);
               return ProcessGauge(g,str); }
-
         case GAUGE_DIRECTIONAL_GYRO:
             { C_DirectionalGyroGauge *g = new C_DirectionalGyroGauge(this);
               return ProcessGauge(g,str); }
-
         case GAUGE_VERTICAL_SPEED:
           { C_VerticalSpeedGauge *g = new C_VerticalSpeedGauge(this);
             return ProcessGauge(g,str); }
-
+				//-- Horizon gauge ---------------------------------------
         case GAUGE_HORIZON:
           { C_HorizonGauge *g = new C_HorizonGauge(this);
             return ProcessGauge(g,str); }
-
+				//--- HSI gauge -------------------------------------------
+				case GAUGE_HSI:
+          { C_HSIgauge *g = new C_HSIgauge(this);
+            return ProcessGauge(g,str); }
+				//-- Airspeed gauge ---------------------------------------
         case GAUGE_AIRSPEED:
           { C_AirspeedGauge *g = new C_AirspeedGauge(this);
             return ProcessGauge(g,str); }
-
         //--------------------------------------------------------
 				case GAUGE_VERTICAL_NEEDLE:
           { CVertNeedle *g = new CVertNeedle(this);
@@ -1047,7 +1062,7 @@ void CPanel::LoadTexture(char *fn)
 { TEXT_INFO txf;  // Texture info;
 	txf.apx = 0;
 	txf.azp = 0;
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
  // txf.tsp   = 1;
   strncpy(txf.name,fn,TC_TEXTURE_NAME_NAM);
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",fn);
@@ -1166,7 +1181,7 @@ int CPanel::Read (SStream *stream, Tag tag)
 //  Check parameters
 //-----------------------------------------------------------------------------
 bool CPanel::ParametersOK()
-{ if ((x_isiz > 0) && (x_isiz <= 2048) && (y_isiz > 0) && (y_isiz <= 2048)) return true;
+{ if ((x_isiz > 0) && (x_isiz <= 4096) && (y_isiz > 0) && (y_isiz <= 4096)) return true;
   gtfo ("CPanel::Activate : Could not create %dx%d surface for panel", x_isiz, y_isiz);
   return false;
 }
@@ -1436,9 +1451,10 @@ void CPanel::Activate (void)
   //---Allocate one object for gauges --------------------------
   glGenTextures(1,&ngOBJ);
   glBindTexture(GL_TEXTURE_2D,ngOBJ);
+	//glTexParameterfv(GL_TEXTURE_2D,GL_TEXTURE_BORDER_COLOR,colorTABLE);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
   glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
@@ -1794,11 +1810,12 @@ void CPanel::Draw ()
 		g->DrawAmbient();
 		//--- Trace the gauge ---------------------------
 		if (0 == trn1)	continue;
-		TRACE("..Gauge %s",g->GetUniqueID());
+		TRACE("..Gauge %s VBO=%05d ",g->GetUniqueID(),g->GetVBOofs());
   }
 	
 	trn1 = 0;
 	glBindBuffer(GL_ARRAY_BUFFER,0);
+	/*
   //-- SDK:Draw DLL Gauge -------------------------------------------
   if (globals->plugins_num) {
     std::vector<CDLLGauge *>::iterator dll_iter;
@@ -1807,6 +1824,7 @@ void CPanel::Draw ()
       dg->Draw ();
     }
   }
+	*/
 	//--- Draw bands and dynamics gauges ------------------------------
 	int	tot = PANEL_VBO_TOT * sizeof(TC_VTAB);
 	glBindBuffer(GL_ARRAY_BUFFER,pVBO);

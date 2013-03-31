@@ -86,8 +86,7 @@ public:
   //----Output values -------------------------
   float   e_hob;                        // Hobb value
 	float		e_Boost;											// Booster
-  float   e_Map;                        // Manifold presure (P)
-  float   e_hMap;                       // Manifold presure (Hg)
+  float   e_Map;                        // Manifold presure (Pascal)
   float   e_gph;                        // fuel requested (galon per hour)
   float   e_rpm;                        // Engine RPM
   float   e_vel;                        // Aircraft velocity
@@ -374,6 +373,7 @@ protected:
   void  ReadFinished();
   void  PollEngine(U_CHAR c);
   void  Monitor(Tag tag);
+	void  Probe(CFuiCanva *cnv);
 public:
   CEngineControl();
   virtual bool  MsgForMe (SMessage *msg);
@@ -526,7 +526,7 @@ public:
   CThrottleControl (void);
   void  ReadFinished();
 	void	PrepareMsg(CVehicleObject *veh);
-	void	Target(float v);
+	float	Target(float v);
   // CSubsystem methods
   const char* GetClassName (void) { return "CThrottleControl"; }
   EMessageResult  ReceiveMessage (SMessage *msg);
@@ -838,14 +838,14 @@ public:
   void Probe(CFuiCanva *cnv);
 
 protected:
-  float             rpm;
-  float             suct;				      //< Pump suction (psi) at Max RPM
+  float             oprs;				      //< Pump suction (psi) at Max RPM
 //  unsigned int pump_eNum;				    //< specifies the index of the engine that this pump depends
   int               dIce;				      //< the pressure required to operate the de-ice inflatable boots
   int               Lrpm;				      //< the least RPM required to create sufficient succion
-  int               Hrpm;				      //< the greatest RPM tolerated to create sufficient succion
-  float             mSct;				      //< the suction generated at the Least Operative RPM
-  float				     Coef;				      //< proportional coef to RPM
+  int               Hrpm;				      //< the operative RPM to create operative succion
+	float							crpm;							// Current rpm
+  float             mins;				      //< the suction generated at the Least Operative RPM
+  float				      Coef;				      //< proportional coef to RPM
 };
 //=====================================================================
 // CEngineAntiIceV1

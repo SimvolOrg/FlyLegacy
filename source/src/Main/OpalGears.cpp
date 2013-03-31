@@ -82,7 +82,7 @@ void  CGearOpal::GetGearPosition(CVector &mp,double  &rad)
 //	cog				Is the center of mass position relative to the aircraft origin (in feet)
 //	bpos			Is the wheel center relative to aircraft origin (in feet)
 //---------------------------------------------------------------------------------
-void CGearOpal::InitJoint (char type, CGroundSuspension *susp)
+void CGearOpal::InitJoint (char type, CSuspensionMGR *susp)
 { //if (!mveh->IsUserPlan())		return;
 	opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
 	opal::real   fric = gearData->mgsp->GetFriction();
@@ -254,12 +254,12 @@ void CGearOpal::VtForce_Timeslice (float dT)
 void CGearOpal::DirectionForce_Timeslice (float dT)
 { opal::Solid *phyM = (opal::Solid*)mveh->GetPhyModel();
 	if (0 == phyM)		return;
-  double angr = 0.0f;
   susp->MoveWheelTo(vWhlVelVec.y,dT);								// Animated 3D model wheel
 	speed				= vWhlVelVec.y;												// linear velocity in forward direction;
 	//--- Process nose gear ------------------------------------------
-  double   angv   = 0;											// Angular velovcity
   if (gearData->ster) {
+	  double angr		= 0;
+	  double angv   = 0;											// Angular velovcity
 		//--- Compute keyframe for 3D model -----------------------------
 		float kfr = 0.5 * (1 + gearData->deflect);
 		gearData->kframe	= kfr;
@@ -270,7 +270,7 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 		double amp				= gearData->mStr * dif_brk;  
 		angr							= WrapPiPi(angr + DegToRad(amp));
 		//--- process steering wheel -----------------------------------
-		char   reg    = mveh->UnderRegulation();
+		char   reg    = mveh->UnderRegulation();	// Turn coefficient
     double base		= gearData->wheel_base;			// In meter
 		double sind		= sin(angr); 			// Sinus
 		double trad   = (reg)?(1):(gearData->mgsp->GetTurnCoefficient());
@@ -292,9 +292,9 @@ void CGearOpal::DirectionForce_Timeslice (float dT)
 	  opal::Vec3r vec = phyM->getLocalAngularVel();
 		vec.z = angv;
 		phyM->setLocalAngularVel(vec);
-		local_velocity.x = static_cast<opal::real> (0.0f);
+		local_velocity.x = opal::real(0);
 	  //--------------------------------------------------------------
-		gt_.duration = static_cast<opal::real> (dT);
+		gt_.duration = opal::real(dT);
 		phyM->addForce (gt_);
 		mveh->RazDifBrake();
 
@@ -544,7 +544,7 @@ void CTailGearOpal::VtMoment_Timeslice (void)
  * COpalSuspension
  */
 //============================================================================================
-COpalSuspension::COpalSuspension (CVehicleObject *v, CGroundSuspension *mgsp, char *nm, CWeightManager *wgh, char tps)
+COpalSuspension::COpalSuspension (CVehicleObject *v, CSuspensionMGR *mgsp, char *nm, CWeightManager *wgh, char tps)
 : CSuspension(v,mgsp,nm,tps)
 { amort.StartSin(1,5);
 }

@@ -30,7 +30,6 @@
 #include "../Include/Joysticks.h"
 using namespace std;
 //============================================================================
-#define VSI_SAMPLE (double(0.05))
 //============================================================================
 //  K140 Fields to draw
 //============================================================================
@@ -459,11 +458,12 @@ int CPIDdecoder::Read(SStream *st,Tag tag)
 			ReadDouble(&prm,st);
 			apil->SetGLDopt(prm);
 			return TAG_READ;
-		//---Vertical trim reference -----------------------------
-		case 'vref':
+			//---Vertical trim reference -----------------------------
+		case 'aVSI':
 			ReadDouble(&prm,st);
-			apil->SetVREF(prm);
+			apil->SetAVSI(prm);
 			return TAG_READ;
+
 		//----ROLL controller ------------------------------------
 		case 'roll':              
 			pbx = new CPIDbox(PID_ROL,apil);
@@ -593,7 +593,7 @@ AutoPilot::AutoPilot (void)
   rHDG    = 0;
   hERR    = 0;
   vHRZ    = 0;
-  Vref    = 0;            // Default Vertical Trim reference
+	aVSI		= 0;						// Vertical correction  for VSI
 	//------------------------------------------------------
 	aTGT		= 2500;					// Target altitude at take off
 	vROT		= 0;						// Rotation speed at TKO
@@ -605,7 +605,7 @@ AutoPilot::AutoPilot (void)
   //---Vertical parameters -------------------------------
   eVRT    = 0;
   rALT.Set(400,1);
-  rVSP    = 0;
+  rVSI    = 0;
   //---Options and controls ------------------------------
   uvsp    = 0;
   aprm    = 0;
@@ -618,7 +618,6 @@ AutoPilot::AutoPilot (void)
   vMIS		= 10.0;
   //---Default limits ------------------------------------
   aLim    = 10000;
-  vLim    = 2000;
   abrt    = 0;
   //-------------------------------------------------------
   for (int k=0; k<PID_MAX; k++) pidL[k] = 0;
@@ -633,14 +632,11 @@ AutoPilot::AutoPilot (void)
   //-------------------------------------------------------
   mVSI.group  = 'vsi_';               // VSI
   mVSI.sender = unId;
-  mVSI.user.u.datatag = 'vsi_';       // vertical speed
   mVSI.id = MSG_GETDATA;              // Get data
   mVSI.dataType = TYPE_REAL;          // Double format
   //-------------------------------------------------------
   plane = 0;
   //---Set Time K ------------------------------------------
-  timK  = float(VSI_SAMPLE);
-  eVSP  = 0;
   aLND  = 200;                        // Disengage altitude
  
   //----Init lights ----------------------------------------
@@ -681,6 +677,13 @@ void AutoPilot::PrepareMsg(CVehicleObject *veh)
   char *fcs = mveh->nfo.GetFCS();
   ReadPID(fcs);
   InitPID();
+	//--- Locate VSI ----------------------------
+	mVSI.user.u.datatag = 'gets';       // system pointer
+	Send_Message(&mVSI);
+	mVSI.user.u.datatag = 'vsi_';       // vertical speed
+	CVerticalSpeedIndicator *svsi = (CVerticalSpeedIndicator*)mVSI.voidData;
+	fmin	= (svsi)?(svsi->GetFMIN()):(-2000);
+	fmax  = (svsi)?(svsi->GetFMAX()):(+2000);
 	//--- Locate altimeter ----------------------
 	mveh->FindReceiver(&mALT);
 	altS = (CSubsystem*)mALT.receiver;
@@ -848,19 +851,13 @@ double AutoPilot::GetAOS()
 //  The error is the difference between actual slope and target one (in radian)
 //------------------------------------------------------------------------------------
 void AutoPilot::VSPerror()
-{ double fpm  = FN_FEET_FROM_MILE(aSPD) / 60;  // In feet per minute
-  if (aSPD < 10) return;                       // No more speed 
-  double val  = rVSP / fpm;                    // Sine of angle of target slope
-  double phi  = asin(val);
-  phi         = RadToDeg(phi);
-  //---Get actual angle ------------------
-  double aos  = -GetAOS();
-  eVSP        = (phi - aos);
-	bool in			= CheckAlert();
-  //---Check for Altitude Alert ----------
-  if (!in)		return;
-  //---Change to ALTITUDE HOLD ------------
-  EnterALT();
+{ bool in			= CheckAlert();
+	//--- Compute expected altitude --------
+  xALT	 += (vFPS * dTime * aVSI);
+	eVRT		= (xALT - cALT);
+	if (!in)		return;
+	//--- Change to ALTITUDE HOLD ----------
+	EnterALT();
   return;
 }
 //------------------------------------------------------------------------------------
@@ -943,11 +940,6 @@ int AutoPilot::Read (SStream *stream, Tag tag)
   case 'aLim':
     ReadFloat(&pm,stream);
     aLim  = pm;
-    return TAG_READ;
-  //---VSP limit -----------------------------
-  case 'vLim':
-    ReadFloat(&pm,stream);
-    vLim  = pm;
     return TAG_READ;
   }
 
@@ -1171,10 +1163,10 @@ void AutoPilot::TimeSlice(float dT,U_INT FrNo)
   //----Get current parameters (altitude, heading, etc)------
 	sect	= busRD->flag;
 	wgrd  = mveh->WheelsAreOnGround();
-	cALT	= altS->GaugeBusFT01();					// Current altitude
+	cALT	= altS->GaugeBusALT();					// Current altitude
 	cAGL	= mveh->GetAltitudeAGL();
 	aSPD	= mveh->GetTAS();								//mveh->GetPreCalculedKIAS();		// Current speed
-	aHDG	= cmpS->GaugeBusFT01();					// Current mag heading
+	aHDG	= cmpS->GaugeBusHDG();					// Current mag heading
 	//--- Update both modes -----------------------------------
   LateralMode();
   VerticalMode();
@@ -1189,19 +1181,16 @@ void AutoPilot::TimeSlice(float dT,U_INT FrNo)
 //			so there is no brutal change when autopilot is disengaged in flight
 //-----------------------------------------------------------------------
 void AutoPilot::Disengage(char gr)
-{ lStat   = AP_DISENGD;
+{ SetGasControl(0);
+	lStat   = AP_DISENGD;
   vStat   = AP_DISENGD;
   signal  = SIGNAL_OFF;
   StateChanged(AP_STATE_DIS);
 	mveh->SetABS(0);
-  ailS->Neutral();							// Aileron to O
-  rudS->Neutral();
 	flpS->SetPosition(0);
-	//sreg->SetOFF();
-	SetGasControl(0);
 	rend		= 0;
 	//---- Pull up if altitude is lower than 500 ---------
-	if (cAGL < 500)	elvT->SetValue(-0.5);
+	if (cAGL < 500)	elvT->SetValue(0.5);
   //----Reset trim if aircraft on ground ---------------
   if ((gr) || (wgrd)) elvT->SetValue(0);
   Alarm();
@@ -1267,7 +1256,7 @@ void AutoPilot::AltitudeHold()
 { double gler= -busRD->gDEV * 1000;
 	double nl0 = pidL[PID_VSP]->Update(dTime,eVRT,0); // Maintain VSP controller
 	double nl1 = pidL[PID_GLS]->Update(dTime,gler,0); // Maintain Glide controller
-  double taa = pidL[PID_ALT]->Update(dTime,eVRT,0); // erro to altitude controller
+  double taa = pidL[PID_ALT]->Update(dTime,eVRT,0); // erro to ALT controller
   double ref = RoundValue(taa,10);                  // round value
   double aoa = GetAOS();
   double val = pidL[PID_AOA]->Update(dTime,aoa,ref);// Feed AOA controler
@@ -1614,16 +1603,13 @@ bool AutoPilot::AbortLanding(char r)
 }
 //-----------------------------------------------------------------------
 //  Track vertical speed. 
-//  Get VSP error in eVSP
 //  Maintain ALT controller in synchro
-//  Use VSP controller to get correction . Vref is the trim position
+//  Use VSP controller to get correction .
 //  at null VSI (depend on aircraft)
 //-----------------------------------------------------------------------
 void AutoPilot::ModeVSP()
 { VSPerror();
-  double nul = pidL[PID_ALT]->Update(dTime,eVSP,0);       // Maintain ALT controller
-  double trm = pidL[PID_VSP]->Update(dTime,eVSP,Vref);    // Feed VSI controler
-  elvT->SetValue(-trm);                                   // value to TRIM elevator
+	AltitudeHold();
   return;
 }
 //-----------------------------------------------------------------------
@@ -1673,9 +1659,10 @@ void AutoPilot::ModeHDG()
 //  In disengage mode, we maintain the VSP controller in standby
 //-----------------------------------------------------------------------
 void AutoPilot::ModeDIS()
-{ rVSP = CatchVSP();
+{ double v = CatchVSP();
+  SetRVSI(v);
   VSPerror();
-  pidL[PID_VSP]->Update(dTime,eVSP,0);
+  pidL[PID_VSP]->Update(dTime,eVRT,0);
 	rALT.Set(RoundAltitude(cALT),1);		// Current altitude As reference
   return;
 }
@@ -1901,23 +1888,23 @@ double AutoPilot::CatchVSP()
   double rst = fmod(mVSI.realData,100 );    // fract part
   double rnd = (rst > 50)?(100):(0);
   double rvs = (double(vsi) * 100) + rnd;
-  if (rvs < -2000) rvs = -2000;
-  if (rvs > +2000) rvs = +2000;
+  if (rvs < -fmin) rvs = -fmin;
+  if (rvs > +fmax) rvs = +fmax;
   return rvs;
 }
 //-----------------------------------------------------------------------
 //  Enter vertical speed
 //-----------------------------------------------------------------------
 void AutoPilot::EnterVSP()
-{ eVSP  = 0;
-  aprm  = 0;
+{ aprm  = 0;
   vStat = AP_DISENGD;						// VSP holder
   StateChanged(AP_STATE_VOF);
   if (0 == uvsp) return;
   pidL[PID_VSP]->Init();
   pidL[PID_AOA]->Init();
-  elvT->Neutral();
-  rVSP	= CatchVSP();           // Get VSI
+ // elvT->Neutral();
+  double v	= CatchVSP();        // Get VSI
+	SetRVSI(v);
   vStat = AP_VRT_VSP;           // VSP holder
   StateChanged(AP_STATE_VSP);   // state change
   return;
@@ -1965,6 +1952,14 @@ void AutoPilot::EnterFIN()
 	return;
 }
 //-----------------------------------------------------------------------
+//  Set reference VSI
+//-----------------------------------------------------------------------
+void AutoPilot::SetRVSI(double v)
+{	rVSI = v;
+	vFPS = v / 60;			// Feet per second
+	xALT = cALT;				// Expected altitude from current
+}
+//-----------------------------------------------------------------------
 //  Inc ALT
 //-----------------------------------------------------------------------
 void AutoPilot::IncALT()
@@ -2004,9 +1999,10 @@ void AutoPilot::DecALT()
 //  Button UP
 //-----------------------------------------------------------------------
 void AutoPilot::IncVSP()
-{ if (aprm)                 return;
-  if (rVSP >= +vLim)        return;
-  rVSP += 100;
+{ if (aprm)             return;
+  double v = rVSI;
+  if (v >= +fmax)       return;
+  SetRVSI(v + 100);
   StateChanged(AP_STATE_VCH);       // VSP change
   return;
 }
@@ -2014,9 +2010,10 @@ void AutoPilot::IncVSP()
 //  Button DN
 //-----------------------------------------------------------------------
 void AutoPilot::DecVSP()
-{ if (aprm)                 return;
-  if (rVSP <= -vLim)        return;
-  rVSP -= 100;
+{ if (aprm)							return;
+	double v = rVSI;
+  if (v <= -fmin)       return;
+  SetRVSI(v - 100);
   StateChanged(AP_STATE_VCH);       // VSP change
   return;
 }
@@ -2203,7 +2200,6 @@ int AutoPilot::EnterTakeOFF(char x, LND_DATA *rwd)
 bool AutoPilot::EnterGPSMode()
 {	if (0 != xCtl)						return false;
 	if (0 == busRD)						return false;
-	if (cAGL < 500)						return false;
 	if (AP_DISENGD == vStat)	return false;
 	if (AP_VRT_TKO == vStat)	return false;
 	if (0 == sreg)						return false;
@@ -2236,7 +2232,7 @@ double AutoPilot::SelectSpeed()
 			return (cRAT>=20)?(mRAT):(20);
 		//--- climbing -------------------------------
 		case AP_VRT_VSP:
-			if (rVSP > 0)			return mRAT;
+			if (rVSI > 0)			return mRAT;
 			return xRAT;
 		//--- Altitude mode --------------------------
 		case AP_VRT_ALT:
@@ -2275,12 +2271,12 @@ void AutoPilot::SetGasControl(U_INT gmk)
 {	ugaz	= gmk;
 	U_INT ctrl = (JS_AUTO_BIT | gmk);
 	//--- check all conditions ---------------------------------
-	if (0 == sreg)						return;
 	if (AP_DISENGD == lStat)	return;
 	//---Stop gas control. Reconnect joystick ------------------
 	if (0 == gmk)	
 	{	sreg->SetOFF();					// Stop regulator
 		ailS->Neutral();
+    rudS->Neutral();
 	}
 	//--- Control throttle. Disconnect all surfaces -----------											
   else
@@ -2337,8 +2333,9 @@ void AutoPilot::Probe(CFuiCanva *cnv)
 	{	cnv->AddText( 1,1,"rALT %.0f",rALT.Get());
 	}
   if (vStat == AP_VRT_VSP)
-  { cnv->AddText( 1,1,"eVSP %.5f",eVSP);
-		cnv->AddText( 1,1,"rVSP %.5f",rVSP);
+  {	cnv->AddText( 1,1,"vFPS %.5f",vFPS);
+		cnv->AddText( 1,1,"xALT %.5f",xALT);
+		cnv->AddText( 1,1,"cALT %.5f",cALT);
   }
 	if (vStat == AP_VRT_FLR)
   { cnv->AddText( 1,1,"dTDP %.0f",dTDP);	}
@@ -2526,7 +2523,7 @@ void CKAP140Panel::TimeSlice(float dT,U_INT FrNo)
 //  Edit VSP
 //--------------------------------------------------------------------
 void CKAP140Panel::EditVSP()
-{ int   pm = int(rVSP);
+{ int   pm = int(rVSI);
   sprintf_s(vsp,8,"%+04d",pm);
   vsp[7]   = 0;
   Lite(K140_FD_VSI,vsp);

@@ -91,6 +91,11 @@ class SqlMGR;
 #define IMP_APTO  4												// Import airport objects
 #define EXP_TAXI	5												// Export Taxiways
 //============================================================================
+//	Texture parameters 
+//============================================================================
+#define RAW_TEX_MARGE (8)
+#define RAW_TEX_HSIZE (240)
+//============================================================================
 //  Class to export DATA for SQL Database
 //============================================================================
 class CExport {
@@ -136,9 +141,17 @@ class CExport {
 	char  Key[8];														// Ident Key
 	//--- TRN control ----------------------------------------------
 	char			eof;													// End of file
-	char		 *pod;
-	char			podN[PATH_MAX];										// Pod name
+	char		 *pod;													//
+	char			podN[PATH_MAX];								// Pod name
+	char			Root[PATH_MAX];								// root name
+	U_INT			Lut[256];											// Gamma table
+	TEXT_INFO supx;													// Output texture
 	C_STile  *asp;
+	U_INT			stqx;													// QGT  start X
+	U_INT     stqz;													// QGT  Start Z
+	//--- TRN parameters -------------------------------------------
+	CTextureDef *texQ;											// Texture Queue
+	int   noTX;															// Texture No
   //----Generic parameters ---------------------------------------
 	U_INT qKey;															// QGT key
   U_INT bx;                               // Base QGT X
@@ -155,10 +168,7 @@ class CExport {
 	U_INT	sz;																// SUPER TILE Z
 	U_INT dx;																// Detail X
 	U_INT	dz;																// Detail Z
-	//--- TRN parameters -------------------------------------------
-	CTextureDef *texQ;											// Texture Queue
-	int   noTX;															// Texture No
-	char  repr;															// Restart indicator
+	U_INT	sno;															// Supertile number
   //----SEA Values -----------------------------------------------
   int   row;
   int   col;
@@ -283,6 +293,11 @@ public:
 	int		CompressTRNtexture();
 	void	CompressTexture(CTextureDef *txd,U_INT ax,U_INT az);
 	void	WriteDayTexture(CTextureDef *txd);
+	//------------------------------------------------------------
+	void	ReadRawTexture(CTextureDef *txd);
+	void	ExtractTexture(U_CHAR res);
+	//------------------------------------------------------------
+	void  PrepareReading(CTextureDef *txd);
 	void	ErrorTRN01();
 	void	WarnTRN();
 };

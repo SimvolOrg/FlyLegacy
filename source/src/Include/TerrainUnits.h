@@ -195,10 +195,11 @@
 #define FN_ARCS_FROM_SUB(X)  ((double(X) * TC_FULL_WRD_ARCS) / TC_FULL_WRD_SUBD)
 //----------------------------------------------------------------------
 #define FN_RAD_FROM_ARCS(X)  ( double(X) * (PI / 648000))      
-//------------LONGITUDE BAND PARAMETERS --------------------------------
+//------INDICES FUNCTIONS ----------------------------------------------
 #define FN_ABS_QGT_DET(X)		 (X >> TC_BY1024)
 #define FN_QGT_FROM_INDX(X)  ( U_INT(X) >> (TC_BY1024 + TC_BY32))       
 #define FN_DET_FROM_INDX(X)  ((U_INT(X) >> TC_BY1024) & 31)
+#define FN_DSU_FROM_INDX(X)  ((U_INT(X) >> TC_BY1024) & 0x03)
 #define FN_DET_FROM_XZ(X,Z)  ((Z << TC_BY32) | X)
 #define FN_BAND_FROM_QGT(X)  ( U_INT(X) >> TC_BY64)
 #define FN_BAND_FROM_INX(X)  ( U_INT(X) >> (TC_BY1024 + TC_BY32 + TC_BY64))
@@ -219,7 +220,7 @@
 #define TC_SPTBORDNBR     16        // Number of border vertices
 #define TC_NBPOLARVERT     9        // Number of polar vertices
 //-------ELEVATION PARAMETERS -------------------------------------------
-#define TC_MAX_ELV_LEV   3          // Maximum elevation level
+#define TC_MAX_ELV_LEV   4          // Maximum elevation level
 #define TC_MAX_ELV_SIDE  ((1 << TC_MAX_ELV_LEV) + 1)
 #define TC_MAX_ELV_DIM   (TC_MAX_ELV_SIDE * TC_MAX_ELV_SIDE)
 //-------TEXTURE PARAMETERS -------------------------------------------
@@ -241,11 +242,10 @@
 #define TC_TEXGENER     0x01          // Generic texture
 #define TC_TEXRAWTN     0x02          // TRN RAW texture
 #define TC_TEXCOAST     0x03          // Coast texture
-#define TC_TEXRAWEP     0x04          // Raw from EPD
-#define TC_TEXSHARD     0x05          // Shared texture
-#define TC_TEXWATER     0x06          // Water texture
-#define TC_TEXCMPRS			0x07					// Compressed texture
-#define TC_TEX_END      0x08          // Number of types
+#define TC_TEXSHARD     0x04          // Shared texture
+#define TC_TEXWATER     0x05          // Water texture
+#define TC_TEXCMPRS			0x06					// Compressed texture
+#define TC_TEX_END      0x07          // Number of types
 //------TEXTURE FLAGS----------------------------------
 #define TC_USRTEX       0x04          // User texture
 #define TC_SEALAY       0x10          // Sea  layer
@@ -264,10 +264,10 @@
 #define TC_INNER        1           // Inner super tile
 #define TC_POLAR        2           // Polar super tile
 //------RESOLUTION PARAMETERS ------------------------
-#define TC_LOWRES       0           // Low resolution
-#define TC_MEDIUM       1           // Medium resolution
-#define TC_HIGHTR       2           // Hight resolution
-#define TC_EPDRES       3           // EPD resolution
+#define TX_LOWRES       0           // Low resolution
+#define TX_MEDIUM       1           // Medium resolution
+#define TX_HIGHTR       2           // Hight resolution
+#define TX_CMPRES				3						// Compressed resolution
 //-----DIMENSION PARAMETERS ---------------------------
 #define TC_MEDIUM_DIM (128)
 #define TC_HIGHTR_DIM (256)
@@ -290,7 +290,7 @@
 #define TC_TEX_POP    3             // Swap texture
 #define TC_TEX_OBJ    4             // Request Object
 #define TC_TEX_INQ    5             // In Queue
-#define TC_TEX_NEW    9							// New supertile
+#define TC_TEX_NEW    6							// New supertile
 //-----CONTOUR STATE parameters --------------------------
 #define TC_PIX_ZERO   0             // Value 0
 #define TC_PIX_RED    4             // RED value

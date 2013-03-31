@@ -1719,22 +1719,10 @@ int main (int argc, char **argv)
 	pthread_mutex_init (&mutexScene, NULL);
 	//--- Create trace file now -----------------------------------------
   globals->logTrace	= new CLogFile ("logs/Trace.log", "w");
-  //--------- Load application settings from INI file -----------------
+  //--------- Load application parameters from INI file -----------------
   LoadIniSettings ();
-
-  // Initialize simulation situation (.SIT) to load
-  if (argc == 2) {
-    // First argument is .SIT filename
-    strncpy (globals->sitFilename, argv[1],FNAM_MAX);
-  } else {
-    // No .SIT filename provided on command line; use INI settings
-    GetIniString ("UI", "startupSituation", globals->sitFilename, FNAM_MAX);
-    if (strlen (globals->sitFilename) == 0) {
-      // No default startup situation specified in INI settings
-      strncpy (globals->sitFilename, "Saved Simulations/Default.sit",FNAM_MAX);
-    }
-  }
-
+	strncpy (globals->sitFilename, "Saved Simulations/Default.sit",FNAM_MAX);
+	GetIniString ("UI", "startupSituation", globals->sitFilename, FNAM_MAX);
   //---Put find root foldeer here to open log file in final directory
 	char *flyRootFolder = ".";
   //=========Init the global structure==================================
@@ -1810,8 +1798,6 @@ int main (int argc, char **argv)
   globals->mag  = 0;                          // Magnetic Model
   globals->cld  = 0;                          // Cloud system
   globals->slw  = 0;                          // Slew manager
-  globals->exm  = 0;													// Export manager
-  globals->imp  = 0;		//new CImport();      // Import manager
   globals->atm  = 0;                          // Atmosphere
   //---Aircraft objects -----------------------------------------------
   globals->pln  = 0;
@@ -1860,7 +1846,6 @@ DupplicateString("****POD INI ****",32);
   char folder[PATH_MAX];
 	_snprintf(folder,lgr,"%s/SYSTEM",flyRootFolder);
   paddpodfolder (pfs, folder);
-	
   //------------------------------------------
 	TRACE("Mounting Pods in /AIRCRAFT");
 	_snprintf(folder,lgr,"%s/AIRCRAFT",flyRootFolder);

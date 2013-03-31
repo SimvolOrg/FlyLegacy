@@ -79,9 +79,9 @@ void CRadioGauge::Copy(CRadioGauge &rg)
 int CRadioGauge::Read (SStream *stream, Tag tag)
 { char txt[16];
   Tag  rad;
-  int unit;
+  U_INT unit;
     switch (tag)  {
-    //-- Decode extra tags ---------------
+    //-- Decode extra tags ----------------------
       case 'font':
         ReadString(txt,16,stream);
         ChangeFont(txt);
@@ -90,14 +90,13 @@ int CRadioGauge::Read (SStream *stream, Tag tag)
         brow.SetGauge(this);
         ReadFrom(&brow,stream);
         return TAG_READ;
-      //-- Decode projector ----------------
+      //-- Decode projector ---------------------
       case 'proj':
         DecodePROJ(stream,quad,0);
         return TAG_READ;
       //--- Associated radio unit ---------------
       case 'radi':
-        ReadTag (&rad, stream);
-        ReadInt (&unit, stream);
+				DecodeRAD(stream,rad,unit);
         mesg.group          = rad;
         mesg.user.u.unit    = unit;
         mesg.id             = MSG_GETDATA;

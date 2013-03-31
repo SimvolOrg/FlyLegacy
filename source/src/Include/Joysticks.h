@@ -60,9 +60,11 @@ class CSimAxe;
 //	Used for locking associated axis when autopilot is ON
 //=====================================================================================
 enum JoyConnector {
-		JS_AILR_BIT	= 0x0001,								// Ailerons
-		JS_ELVR_BIT = 0x0002,								// Elevator
-		JS_RUDR_BIT = 0x0004,								// Rudder
+		//--- Standard controls --------------------------------------
+		JS_AILR_BIT	= 0x0001,		// Ailerons
+		JS_ELVR_BIT = 0x0002,		// Elevator
+		JS_RUDR_BIT = 0x0004,		// Rudder
+		//------------------------------------------------------------
 		JS_AILT_BIT = 0x0008,								// Aileron trim
 		JS_ELVT_BIT	= 0x0010,								// Elevator trim	
 		JS_RUDT_BIT = 0x0020,								// Rudder trim
@@ -72,6 +74,11 @@ enum JoyConnector {
 		JS_BRAK_BIT = 0x0200,								// brake axis
 		JS_HELI_BIT = 0x1000,								// Helico bcontrol
 		JS_VEHI_BIT	= 0x2000,								// Ground vehicle
+		//--- Assignation -------------------------------------------
+		JS_FIXE_BIT = 0x10000000,						// Cant change axe
+		JS_STER_BIT = 0x4000 + JS_FIXE_BIT,	// Steering wheel
+		//--- Identifies AERO_CONTROLS-------------------------------
+		JS_AERO_BIT = (JS_AILR_BIT | JS_ELVR_BIT | JS_RUDR_BIT),
 		//-----------------------------------------------------------
 		JS_SURF_APL = (JS_AILR_BIT | JS_ELVR_BIT),
 		JS_SURF_ALL = (JS_AILR_BIT | JS_ELVR_BIT | JS_RUDR_BIT),
@@ -80,15 +87,6 @@ enum JoyConnector {
 		//-----------------------------------------------------------
 		JS_AUTO_BIT = (JS_SURF_APL | JS_TRIM_ALL | JS_GROUPBIT | JS_BRAK_BIT),
 };
-//=====================================================================================
-//  Neutral definition
-//=====================================================================================
-typedef struct {  
-          float lo;                       // Lower limit
-          float hi;                       // Higher limit
-          float md;                       // Middle value
-          float ap;                       // Amplitude
-} JOY_NULL_AREA;
 
 //============================================================================
 //  Class to describe a button
@@ -117,7 +115,14 @@ public:
 	JoyDEV *GetDevice()			{return jdev; }
 	int     GetNo()					{return nBut; }
 };
-
+//=============================================================================
+//		Neutral area 
+//=============================================================================
+struct JOY_NEUTRAL {
+		float		lo;
+		float		hi;
+		float   rf;
+};
 //=============================================================================
 //  Structure to describe a Joystick
 //=============================================================================
@@ -212,27 +217,29 @@ public:
   int   Read (SStream * st, Tag tag);
   void  Copy (CSimAxe *from);
   bool  NotAs(CSimAxe *axe);
-	float	Value (JOY_NULL_AREA *n);
-	float RawVal(JOY_NULL_AREA *n);
+	float	Value (JOY_NEUTRAL &nz);
+	float RawVal(JOY_NEUTRAL &nz);
 	void	Assign(CSimAxe *axn);
 	void  Assignment(char *edt,int s);
+	void	ChangeForce(float a);
 	//--------------------------------------------------------------
 	bool	NoDevice()		{return (*devc == 0);}
 	bool  NulDev()			{return (strcmp(devc,"None") == 0);}
 	bool	IsConnected(U_INT m)
 	{	U_INT sel = m & msk;	return ((sel) && (jdev != 0));  }
+	bool	IsAero()			{		return ((msk & JS_AERO_BIT)!= 0);}
+	bool  IsFixe()			{		return ((msk & JS_FIXE_BIT)!= 0);}
 	//--------------------------------------------------------------
-	inline void				 SetATTN(float v)	{attn = v;}
-	inline float			 GetATTN()			{return attn;}
+	float	GetATTN()			{return attn;}
   //--------------------------------------------------------------
-	inline void				 Invert()				{inv = -inv;}
-	inline char       *GetDevice()    {return (jdev)?(jdev->dName):("");}
-	inline void				 Clear()				{jdev = 0; inv =+1; *devc = 0;}
-  inline char       *GetName()      {return name;}
-  inline int         Positive()     {return pos;}
-  inline bool        IsUnassigned() {return (0 == jdev);}
-  inline int         AxeNo()        {return iAxe;}
-  inline int         GetInvert()    {return (inv==1)?(0):(1);}
+	void				Invert()				{inv = -inv;}
+	char       *GetDevice()    {return (jdev)?(jdev->dName):("");}
+	void				Clear()				{jdev = 0; inv =+1; *devc = 0;}
+  char       *GetName()      {return name;}
+  int         Positive()     {return pos;}
+  bool        IsUnassigned() {return (0 == jdev);}
+  int         AxeNo()        {return iAxe;}
+  int         GetInvert()    {return (inv==1)?(0):(1);}
 };
 
 //=============================================================================
@@ -269,9 +276,35 @@ typedef enum
 
 } EAllAxes;
 //=====================================================================================
+enum AxeIndex {
+	JS_AILR	= 0,													// 0 Ailerons
+	JS_ELVR = 1,													// 1 Elevators
+	JS_RUDR = 2,													// 2 Rudder
+	JS_STER = 3,													// 3 Steering wheel
+	JS_ETRM	= 4,													// 4 Elevator trim
+	JS_RTOE	= 5,													// 5 Right toe
+  JS_LTOE = 6,													// 6 Left toe
+	//---------------------------------------------------
+	JS_THR1 = 7,													// 7 Throttle 0
+	JS_THR2 = 8,													// 8 Throttle 1
+	JS_THR3	= 9,													// 9 Throttle 2
+	JS_THR4 = 10,													//10 Throttle 3
+	//---------------------------------------------------
+	JS_MIX1 = 11,													//11 Mixture 1
+	JS_MIX2 = 12,													//12 Mixture 2
+	JS_MIX3 = 13,													//13 Mixture 3
+	JS_MIX4 = 14,													//14 Mixture 4
+	//---------------------------------------------------
+	JS_PRP1 = 15,													//15 Prop 1
+	JS_PRP2 = 16,													//16 Prop 2
+	JS_PRP3 = 17,													//17 Prop 3
+	JS_PRP4 = 18,													//18 Prop 4
+	};
+
+//=====================================================================================
 typedef void(JoyDetectCB(char code,JoyDEV *J,CSimAxe *A,int B,Tag W));
 //=====================================================================================
-#define JOY_AXIS_NUMBER   30
+#define JOY_AXIS_NUMBER   32
 #define JOY_TYPE_PLAN   0         // Plane axis
 #define JOY_TYPE_HELI   1         // Heli axis
 #define JOY_TYPE_GVEH   2         // Ground vehicle axis
@@ -280,18 +313,18 @@ typedef void(JoyDetectCB(char code,JoyDEV *J,CSimAxe *A,int B,Tag W));
 #define JOY_FIRST_PLAN   0        // entry for First plane axe in list
 #define JOY_FIRST_HELI  18        // entry for First heli  axe in list
 #define JOY_FIRST_GVEH  24        // entry for first vehicle axe in list
-#define JOY_FIRST_PMT    6        // Group controle for planes firts entry
+#define JOY_FIRST_PMT   JS_THR1   // Group control for planes firts entry
 //----------------------------------------------------------------------
-#define JOY_GROUP_TOES   4        // Index of first TOE axis 
-#define JOY_GROUP_THRO   6        // Index of first THRO axis
-#define JOY_GROUP_MIXT  10        // Index of first mixture axis
-#define JOY_GROUP_PROP  14        // Index of first Prop (blad) axis 
-//----------------------------------------------------------------------
+#define JOY_GROUP_TOES   JS_RTOE        // Index of first TOE axis 
+#define JOY_GROUP_THRO   JS_THR1				// Index of first THRO axis
+#define JOY_GROUP_MIXT   JS_MIX1        // Index of first mixture axis
+#define JOY_GROUP_PROP   JS_PRP1        // Index of first Prop (blad) axis 
+//----Group bits ------------------------------------------------------
 #define JOY_GROUP_PMT   0x10
 #define JOY_THROTTLE    0x01 + JOY_GROUP_PMT
 #define JOY_MIXTURE     0x02 + JOY_GROUP_PMT
 #define JOY_PROPEL      0x04 + JOY_GROUP_PMT
-//----NEUTRAL CONTROL TYPE -----------------------------------
+//----NEUTRAL CONTROL TYPE --------------------------------------------
 #define JOY_NEUTRAL_STICK 1
 //=====================================================================================
 //  JOYSTICK MANAGER
@@ -327,7 +360,6 @@ public:
 	//--------------------------------------------------------------------
 	void						Reconnect(U_INT m);
 	//--------------------------------------------------------------------
-  float           Neutral(float f, int nx);
   float           AxeVal(CSimAxe *pa);
 	float           RawVal(CSimAxe *pa);
 	bool						StartDetection(JoyDetectCB *F, Tag W);
@@ -359,21 +391,23 @@ public:
 	void						Clear(CSimAxe *axn,U_CHAR all);
 	void						UseHat(JoyDEV *jsp,char s);
   //------------------------------------------------------------------------
-  bool            ProcessAxe(CSimAxe *from);
+  void            ProcessAxe(CSimAxe *from);
   CSimAxe        *GetAxe(Tag tag);
   bool            HasAxe(EAllAxes axe);
   void            Invert(CSimAxe *axn,U_CHAR all);
   void            ReleaseAxe(CSimAxe *axn);
   void            SetInvert(EAllAxes tag,int p);
   int             GetInvert(EAllAxes tag);
+	double					GetAxeAttenuation(U_INT axn);
+	void						SetAxeAttenuation(U_INT axn,double c);
   //------------------------------------------------------------------------
 	void						SaveOneButton   (CStreamFile &sf,CSimButton *sbt);
 	void            SaveButtonConfig(CStreamFile &sf,JoyDEV *jsd);
   void            SaveAxisConfig(CStreamFile &sf);
   void            SaveConfiguration();
-  void            SetNulleArea(float n,char m); 
+  void            SetNulleArea(float n); 
   //------------------------------------------------------------------------
-  float			GetNulleArea()				{return nValue;}
+  float			GetNulleArea()				{return nzon.hi;}
 	void  		Modifier()						{modify = 1;}
 	char			GasDisconnected()		  {return (axeCNX & JS_THRO_BIT)?(0):(1);}
   //------------------------------------------------------------------------
@@ -404,11 +438,9 @@ private:
 	JoyDetectCB		 *jFunCB;						// Detecte joystick moves
 	//-----Control commande -------------------------------
 	Tag			cmde;										// Current command
-  //-----Static tables ----------------------------------
-  float   nValue;                 // Neutral value [0,1]
-	//-----------------------------------------------------
-  static JOY_NULL_AREA nZON[];
-	//-----------------------------------------------------
+	//--- Neutral zone -------------------------------------
+	JOY_NEUTRAL			nzon;						// Neutral area
+
 };
 
 #endif JOYSTICKS_H

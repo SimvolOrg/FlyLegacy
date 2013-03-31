@@ -780,14 +780,14 @@ int CDamageModel::Read (SStream *stream, Tag tag)
 CElectricalSystem::CElectricalSystem ()
 { // Initialize control subsystem pointers
 	sReg					= 0;
-  pAils         = 0;
-  pElvs         = 0;
-  pRuds         = 0;
-  pFlaps        = 0;
-	pSter         = 0;
-  aTrim         = 0;
-  eTrim         = 0;
-  rTrim         = 0;
+  ailr					= 0;
+  elvr					= 0;
+  rudr					= 0;
+  flap					= 0;
+	ster					= 0;
+  atrm					= 0;
+  etrm					= 0;
+  rtrm					= 0;
   pwb           = 0;      // Brake system for keyboard
   pgr           = 0;      // Gear control for keyboard
   lastID[0]     = 0;
@@ -1298,50 +1298,50 @@ int CElectricalSystem::Read (SStream *stream, Tag tag)
       case SUBSYSTEM_STEERING_CONTROL:
         //MEMORY_LEAK_MARKER ("electr71")
         s = new  CSteeringControl;
-				pSter = (CSteeringControl*)s;
+				ster = (CSteeringControl*)s;
         //MEMORY_LEAK_MARKER ("electr71")
         break;
       case SUBSYSTEM_FLAP_CONTROL:
         //MEMORY_LEAK_MARKER ("electr72")
         s = new CFlapControl;
         //MEMORY_LEAK_MARKER ("electr72")
-        pFlaps = (CFlapControl *)s;
+        flap = (CFlapControl *)s;
         break;
       case SUBSYSTEM_ELEVATOR_CONTROL:
         //MEMORY_LEAK_MARKER ("electr73")
         s = new CElevatorControl;
         //MEMORY_LEAK_MARKER ("electr73")
-        pElvs = (CElevatorControl *)s;
+        elvr = (CElevatorControl *)s;
         break;
       case SUBSYSTEM_AILERON_CONTROL:
         //MEMORY_LEAK_MARKER ("electr74")
         s = new CAileronControl;
         //MEMORY_LEAK_MARKER ("electr74")
-        pAils = (CAileronControl *)s;
+        ailr = (CAileronControl *)s;
         break;
       case SUBSYSTEM_RUDDER_CONTROL:
         //MEMORY_LEAK_MARKER ("electr75")
         s = new CRudderControl;
         //MEMORY_LEAK_MARKER ("electr75")
-        pRuds = (CRudderControl *)s;
+        rudr = (CRudderControl *)s;
         break;
       case SUBSYSTEM_ELEVATOR_TRIM_CONTROL:
         //MEMORY_LEAK_MARKER ("electr76")
         s = new CElevatorTrimControl;
         //MEMORY_LEAK_MARKER ("electr76")
-        eTrim = (CElevatorTrimControl *) s;
+        etrm = (CElevatorTrimControl *) s;
         break;
       case SUBSYSTEM_AILERON_TRIM_CONTROL:
         //MEMORY_LEAK_MARKER ("electr77")
         s = new CAileronTrimControl;
         //MEMORY_LEAK_MARKER ("electr77")
-        aTrim = (CAileronTrimControl *) s;
+        atrm = (CAileronTrimControl *) s;
         break;
       case SUBSYSTEM_RUDDER_TRIM_CONTROL:
         //MEMORY_LEAK_MARKER ("electr78")
         s = new CRudderTrimControl;
         //MEMORY_LEAK_MARKER ("electr78")
-        rTrim = (CRudderTrimControl *) s;
+        rtrm = (CRudderTrimControl *) s;
         break;
       case SUBSYSTEM_IDLE_CONTROL:
         //MEMORY_LEAK_MARKER ("electr*1")
@@ -1669,17 +1669,17 @@ void CElectricalSystem::AddExternal(CSubsystem *sy,SStream *st)
 //  All is read
 //---------------------------------------------------------------------------
 void CElectricalSystem::ReadFinished (void)
-{	if (pRuds) pRuds->InitCTLR(pSter);
-	mveh->whl.SetSteerData(pRuds);
+{	if (rudr) rudr->InitCTLR(ster);
+	mveh->whl.SetSteerData(rudr);
 	return;
 }
 //---------------------------------------------------------------------------
 //  Gear data connector
 //---------------------------------------------------------------------------
 void CElectricalSystem::GearConnector(char opt)
-{	if (0 == opt)	return mveh->whl.DisconnectGear(pRuds);
-	if (pRuds) pRuds->InitCTLR(pSter);
-	mveh->whl.SetSteerData(pRuds);
+{	if (0 == opt)	return mveh->whl.DisconnectGear(rudr);
+	if (rudr) rudr->InitCTLR(ster);
+	mveh->whl.SetSteerData(rudr);
 	return;
 }
 //-----------------------------------------------------------------------------

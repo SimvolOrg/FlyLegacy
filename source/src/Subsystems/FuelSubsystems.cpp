@@ -293,30 +293,25 @@ CFuelTap::CFuelTap (void)
 //-------------------------------------------------------------------------
 int CFuelTap::Read (SStream *stream, Tag tag)
 {
-  int rc = TAG_IGNORED;
-
+	U_INT  engk;
   switch (tag) {
   case 'stFF':
     // Initial fuel flow (gph)
     ReadFloat (&stff, stream);
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
 
   case 'eNum':
     // Engine number
-    ReadUInt (&eNum, stream);
-    rc = TAG_READ;
-    break;
+    ReadUInt (&engk, stream);
+		eNum	= engk;
+    return TAG_READ;
   }
 
   // If tag has not been processed, pass it to the parent
-  if (rc != TAG_READ) {
-    // See if the tag can be processed by the parent class type
-    rc = CFuelSubsystem::Read (stream, tag);
-  }
-
-  return rc;
+  // See if the tag can be processed by the parent class type
+  return CFuelSubsystem::Read (stream, tag);
 }
+
 //-------------------------------------------------------------------------
 //  All parameters are read
 //  set initial state

@@ -637,6 +637,14 @@ public:
 	//	BUS of the name INxx must return integer value
 	//	BUS of the name FTyy must return a float value
 	//---------------------------------------------------------------------------
+	//---- From altimeter -------------------------------------------------------
+	virtual	float		GaugeBusALT()	{return 0;}					// Altitude
+	virtual float		GaugeBusRAD()	{return 0;}					// Radar altitude
+	//---- From directional gyro (CAP central) ----------------------------------
+	virtual float		GaugeBusBUG()	{return 0;}					// Pilot bug
+	virtual float		GaugeBusYAW()	{return 0;}					// Heading with drift
+	virtual float		GaugeBusHDG()	{return 0;}					// Heading (no drift)
+	//---------------------------------------------------------------------------
 	virtual int   GaugeBusINNO(char no)	{return 0;}				// Get data bus number no
 	virtual int   GaugeBusIN01()				{return 0;}				// State
 	virtual int   GaugeBusIN02()				{return 0;}				// Activity
@@ -651,7 +659,7 @@ public:
 	virtual float GaugeBusFT01()				{return indn;}		// Float p1 (indn)
 	virtual float GaugeBusFT02()				{return 0;}				// Float p2
 	//---------------------------------------------------------------------------
-	virtual void	Target(float v)		{indnTarget = v;}
+	virtual float	Target(float v)		{indnTarget = v; return indn;}
   //---------------------------------------------------------------------------
   void  TraceTimeSlice(U_INT FrNo);					        // JSDEV*	Trace activation
   void  SetIdent(Tag id);
@@ -689,6 +697,7 @@ protected:
   //-------- Probe option ----------------------------------------------------
   char      popt;                           // Probe option
   char      rfu1;                           // RFU
+  U_SHORT   eNum;							// ENgine num
   //-------- TRACE option ----------------------------------------------------
   #define TRACE_ACTV	(0x01)			          // Trace activity
   U_INT			Trace;
@@ -862,12 +871,11 @@ public:
   float         mVlt; // Maximum voltage
   float         load; // Subsystem load (amps)
   float         freQ; // AC frequency
-  unsigned int  eNum; // Dependent engine number
   //--- Real-time state---------------------------------------
   bool			    dflact;			// Initial aggregate (Or => 0, AND => 1)
   bool          active;			// Activity state (true=active, false=inactive)
   char          state;			// State controller value
-	char					oper;				// Operator
+  char			oper;				// Operator
   //---indicators --------------------------------------------
   char          splay;      // Sound is playing
   char          nDPND;      // Number of dependents
@@ -1004,14 +1012,14 @@ protected:
   float           period;         ///< Repair period (hours)
 };
 
-class CGroundSuspension;
+class CSuspensionMGR;
 //========================================================================================
 //  struct used to share data between classes
 //  
 //  all the WHL file data
 //========================================================================================
 struct SGearData {
-	CGroundSuspension  *mgsp;						// Mother suspension for shared data
+	CSuspensionMGR  *mgsp;						// Mother suspension for shared data
 	//------------------------------------------------------------------------
   char onGd;                          // On Ground
   char shok;                          // Shock number

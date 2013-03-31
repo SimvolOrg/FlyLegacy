@@ -301,8 +301,7 @@ bool CSubsystem::MsgForMe (SMessage *msg)
   //  respond to  message , just uncomment
   //  the following lines and change id
   //-------------------------------------------------------
-  //Tag idn = 'Bld1';                     // Change subsystem name here
-	//if (unId == 'sREG')
+  //Tag idn = 'ailr';                     // Change subsystem name here
 	//  if ((unId == idn) && (msg->group == idn))           
   // int a = 0;                          // Put a break point here
   //-------------------------------------------------------
@@ -378,10 +377,14 @@ EMessageResult CSubsystem::ReceiveMessage (SMessage *msg)
           case 'indn':
             indnTarget  = (float)msg->realData;
 			      return MSG_PROCESSED;
-        //-- Set associated gauge ------------
+        //--- Set associated gauge ------------
           case 'gets':
             msg->voidData = this;
             return MSG_PROCESSED;
+				//--- Change Timk ---------------------
+					case 'timk':
+						timK	= msg->realData;
+						return MSG_PROCESSED;
         }
    }
   return MSG_IGNORED;
@@ -662,11 +665,13 @@ void CDependent::ReadComponent(EMessageHWType Hw, SStream *stream)
 //-------------------------------------------------------------------
 int CDependent::Read (SStream *stream, Tag tag)
 { int rc = TAG_IGNORED;
-  SMessage *msg = 0;;
+  SMessage *msg = 0;
+	U_INT		  engk;
   switch (tag) {
   case 'eNum':
     // Dependent engine number
-    ReadUInt (&eNum, stream);
+    ReadUInt (&engk, stream);
+		eNum	= engk;
     return TAG_READ;
   case 'volt':
     // Circuit voltage

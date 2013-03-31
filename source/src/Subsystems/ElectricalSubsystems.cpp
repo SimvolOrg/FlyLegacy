@@ -100,6 +100,7 @@ EMessageResult CBattery::ReceiveMessage (SMessage *msg)
 }
 //===================================================================================
 // CAlternator
+// TODO:  Charge battery when enough voltage
 //===================================================================================
 CAlternator::CAlternator (void)
 {
@@ -170,12 +171,13 @@ void CAlternator::TimeSlice(float dT,U_INT FrNo)
     state = 0;
     return;
   }
+	float	rpm	 = data->EngRPM();
+	//--- Compute volt if low rpm ---------------
+  float rat  = (rpm / loRg);
+	if (rat > 1)	rat = 1;
   //---Check enough RPM ----------------------
-  bool rpm  = ((data->EngRPM() > loRg) && (data->EngRPM() < hiRg));
-  active   &= rpm;
-  //---Compute voltage ----------------------
-  volt      = (data->EngRPM() - loRg) * vFac * state;
-  if (volt > mvlt)  volt = mvlt;
+  active  &= (rpm > loRg) && (rpm < hiRg);
+  volt     = (mvlt * rat) * float(active);		// Voltage 
   return;
 }
 //-----------------------------------------------------------------------

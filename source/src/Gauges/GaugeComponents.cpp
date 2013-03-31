@@ -27,6 +27,14 @@
 #include "../Include/TerrainTexture.h"
 #include "../Include/CursorManager.h"
 #include "../Include/GaugeComponents.h"
+//=========================================================================
+//  Flag text
+//=========================================================================
+char *navflgTAB[] = {
+  "OFF",
+  "TO",
+  "FROM",
+};
 //====================================================================
 // GripGauge
 //=====================================================================
@@ -322,10 +330,14 @@ void CRotNeedle::GetTexture(SStream *str)
 //  1)  We have ppd = pixel per degre.
 //      1/ppd = degre per pixel
 //      Thus for a texture with ht pixels we can represent
-//      amp = ht * 1/ppd degre of amplitude
+//      amp = (ht * 1/ppd)* 0.5 degre of amplitude
+//			amp is the number of degre represented by half the picture
+//
 //      The texture coefficient inc = 1 / amp per degre
 //      inc = ppd * 1/ht = ppd  / ht
-// 
+//			
+//			inc multiplied by a degre quantity give texture translation
+//			to be used
 //---------------------------------------------------------------
 void CRotNeedle::SetPPD(double ppd)
 { if (txd.ht == 0)  return;
@@ -430,11 +442,12 @@ void CRotNeedle::DrawFixe()
   return;
 }
 //------------------------------------------------------------------------
-//  Draw as a rotated and translated texture
-//  -Roll will rotatte the texture
+//  Rotate, then pitch
+//  -Roll will rotate the texture
 //  -Pitch will translate the rotated picture verticaly
+//	Texture is first rotated  then translated
 //------------------------------------------------------------------------
-void CRotNeedle::Draw (float rol, float pit)
+void CRotNeedle::DrawVert (float rol, float pit)
 {	if (0 == vOfs)			return;
 	if (pit > +ampl) pit = +ampl;
   if (pit < -ampl) pit = -ampl;
@@ -450,6 +463,33 @@ void CRotNeedle::Draw (float rol, float pit)
   glTranslated(+ptrs.x,ptrs.y,0);
   glRotated(rol,0,0,1);
   glTranslated(-ptrs.x,bak,0);
+	glDrawArrays(GL_TRIANGLE_STRIP,vOfs,4);
+  glPopMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  return;
+}
+//------------------------------------------------------------------------
+//  Xtranslate then rotate
+//  -Head will rotate the texture
+//  -Dev will translate the rotated picture verticaly
+//	Texture is first translated by deviation then rotated
+//------------------------------------------------------------------------
+void CRotNeedle::DrawHorz(float hdg, float dev)
+{	if (0 == vOfs)			return;
+	if (dev > +ampl) dev = +ampl;
+  if (dev < -ampl) dev = -ampl;
+  double off = (dev * incd);
+  double pos = ptrs.x - off;
+  glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,txd.wd,txd.ht,0,GL_RGBA,GL_UNSIGNED_BYTE,txd.rgba);
+  //--- Clamp to the min/max degrees ---------------------------
+  if (hdg < mind) hdg = mind;
+  if (hdg > maxd) hdg = maxd;
+  //--- Rotate the texture  ------------------------------------
+  glMatrixMode(GL_TEXTURE);
+  glPushMatrix();
+  glTranslated(pos,ptrs.y,0);
+  glRotated(hdg,0,0,1);
+  glTranslated(-ptrs.x,-ptrs.y,0);
 	glDrawArrays(GL_TRIANGLE_STRIP,vOfs,4);
   glPopMatrix();
   glMatrixMode(GL_MODELVIEW);
@@ -1056,23 +1096,26 @@ void CNeedle::Draw (void)
 //=======================================================================
 // Textured gauge
 //=======================================================================
-CTexturedGauge::CTexturedGauge(CPanel *mp)
+CBasicGauge::CBasicGauge(CPanel *mp)
 :CGauge(mp)
 { Prop.Set(ROT_TEXTURE + NO_SURFACE);
-  arm = 0;  }
+  arm			= 0;  
+	radioT	= 0;
+	radioU	= 1;
+}
 //-----------------------------------------------------------
-CTexturedGauge::~CTexturedGauge()
+CBasicGauge::~CBasicGauge()
 { }
 //-----------------------------------------------------------
 //  Read texture parameters
 //-----------------------------------------------------------
-void CTexturedGauge::ReadLayer(SStream *str,TEXT_DEFN &df)
+void CBasicGauge::ReadLayer(SStream *str,TEXT_DEFN &df)
 { char fn[128];
   ReadString(fn,128,str);
   TEXT_INFO txf;  // Texture info;
 	txf.apx = 0;
 	txf.azp = 0;
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
   strncpy(txf.name,fn,TC_TEXTURE_NAME_NAM);
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",fn);
   img.GetAnyTexture(txf);
@@ -1081,7 +1124,7 @@ void CTexturedGauge::ReadLayer(SStream *str,TEXT_DEFN &df)
 //-----------------------------------------------------------
 //  Read gauge tags
 //-----------------------------------------------------------
-int CTexturedGauge::Read(SStream *str, Tag tag)
+int CBasicGauge::Read(SStream *str, Tag tag)
 { int  ph = panel->GetHeight();
   switch (tag) {
     //--- Define projector -----------------
@@ -1113,13 +1156,23 @@ int CTexturedGauge::Read(SStream *str, Tag tag)
       overl.SetGauge(this);
       ReadFrom(&overl,str);
       return TAG_READ;
+		//--- Define radio unit ---------------
+		case 'radi':
+			DecodeRAD(str,radioT,radioU);
+			return TAG_READ;
+		//--- a knob -----------------------
+    case 'knob':
+      knob.SetGauge(this);
+      ReadFrom(&knob,str);
+		  return TAG_READ;
+
   }
   return CGauge::Read (str, tag);
 }
 //-----------------------------------------------------------
 //  Dupplicate from a similar component
 //-----------------------------------------------------------
-void CTexturedGauge::CopyFrom(CTexturedGauge &src)
+void CBasicGauge::CopyFrom(CBasicGauge &src)
 { CGauge::CopyFrom(src);
   under.CopyFrom(this,src.under);
   overl.CopyFrom(this,src.overl);
@@ -1127,33 +1180,113 @@ void CTexturedGauge::CopyFrom(CTexturedGauge &src)
   return;
 }
 //-----------------------------------------------------------
+//  Init radio message
+//-----------------------------------------------------------
+void CBasicGauge::SetRadioMessage(SMessage &M)
+{ // Initialize message attributes
+  M.group		    = radioT;
+  M.sender      = unId;
+  M.user.u.unit	= radioU;
+  M.user.u.hw   = HW_RADIO;
+ 	M.id          = MSG_GETDATA;
+  M.dataType    = TYPE_REAL;
+	return;
+}
+//-----------------------------------------------------------
+//  Init OBS message
+//-----------------------------------------------------------
+void CBasicGauge::SetOBSmessage(SMessage &M)
+{ M.group          = radioT;
+  M.sender         = unId;
+  M.user.u.unit    = radioU;
+  M.user.u.hw      = HW_RADIO;
+  M.id             = MSG_SETDATA;
+  M.user.u.datatag = 'obs_';                       
+  M.dataType       = TYPE_REAL;
+	return;
+}
+//-----------------------------------------------------------
+//  Set BUG message message
+//-----------------------------------------------------------
+void CBasicGauge::SetBUGmessage(SMessage &M,Tag dst)
+{	//--- Locate bug receiver -----------
+	M.group			 =  dst;
+  M.sender     = unId;
+	M.user.u.datatag ='_Bug';
+	M.id         = MSG_SETDATA;
+	M.dataType   = TYPE_REAL;
+	return;
+}
+
+//-----------------------------------------------------------
 //  Collecte VBO data
 //-----------------------------------------------------------
-void CTexturedGauge::CollectVBO(TC_VTAB *vtb)
+void CBasicGauge::CollectVBO(TC_VTAB *vtb)
 {	CGauge::CollectVBO(vtb);
 	under.CollectVBO(vtb);
 	overl.CollectVBO(vtb);
 	nedl.CollectVBO(vtb);
+	knob.CollectVBO(vtb);
 	return;
 }
+//-------------------------------------------------------------------
+//  Get radio block 
+//-------------------------------------------------------------------
+void CBasicGauge::GetRadio(SMessage &M)
+{ Tag org = M.user.u.datatag;
+	M.user.u.datatag = 'rbus';
+	Send_Message(&M,mveh);
+  radio     = (BUS_RADIO*)M.voidData;
+	M.user.u.datatag	= org;
+  return;
+}
+
 //-----------------------------------------------------------
 //  Draw the needle
 //-----------------------------------------------------------
-void CTexturedGauge::Draw()
+void CBasicGauge::Draw()
 { // Draw vertical speed needle
   Update();                     // Update value
   nedl.DrawNeedle(value);       // Draw the needle
   return;
 }
 //-----------------------------------------------------------
+//  Draw the knob.  Return true if changed
+//-----------------------------------------------------------
+bool CBasicGauge::DrawKnob(SMessage &M)
+{ bool ch = knob.HasChanged();
+	if (ch)	
+  { M.realData = knob.GetChange();             
+	  Send_Message(&M,mveh);
+  }
+  knob.Draw(); 
+	return ch;
+}
+//-----------------------------------------------------------
 //  Helper for Drawing help
 //-----------------------------------------------------------
-void  CTexturedGauge::ShowHelp(char *fmt, ...)
+void  CBasicGauge::ShowHelp(char *fmt, ...)
 { va_list argp;
   va_start(argp, fmt);
   vsprintf(hbuf,fmt,argp);
   FuiHelp();
   return;
+}
+//-----------------------------------------------------------
+//  Helper for Drawing special help
+//-----------------------------------------------------------
+ECursorResult CBasicGauge::ShowOBS(U_CHAR F,float V)
+{ sprintf_s(hbuf,HELP_SIZE,"OBS (%s) %.0f°",navflgTAB[F],V);
+  FuiHelp();
+  return CURSOR_WAS_CHANGED;
+}
+//------------------------------------------------------------------------
+//  Display autopilot bug direction
+//------------------------------------------------------------------------
+ECursorResult CBasicGauge::DisplayBUG(int dir)
+{ sprintf_s(hbuf,HELP_SIZE,"BUG: %03d°",dir);
+  FuiHelp();
+  return CURSOR_WAS_CHANGED;
 }
 
 //==========================================================================

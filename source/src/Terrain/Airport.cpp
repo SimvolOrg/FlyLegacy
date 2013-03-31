@@ -1623,7 +1623,7 @@ CAirportMgr::CAirportMgr(TCacheMGR *tm)
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 	//--- Load yellow texture -------------------------
 	TEXT_INFO txf;
-	CArtParser img(TC_HIGHTR);
+	CArtParser img(TX_HIGHTR);
   strcpy(txf.path,"ART/YLWMARK.BMP");
   img.GetAnyTexture(txf);
 	xOBJ	= globals->txw->GetTexOBJ(txf,0,GL_RGBA);

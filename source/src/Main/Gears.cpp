@@ -47,7 +47,7 @@ char *prob_WHL[] =
 //            when the object is a wheel
 //    2) Add ident and hardware type for probe purpose
 //=====================================================================================
-CSuspension::CSuspension (CVehicleObject *v, CGroundSuspension *gssp, char *name, char tps)
+CSuspension::CSuspension (CVehicleObject *v, CSuspensionMGR *gssp, char *name, char tps)
 { Tag  idn = 'whl0';                                // Wheel identity
   mveh  = v;                                        // Save parent vehicle
   idn  |= mveh->GetWheelNum();                      // Get wheel number
@@ -246,7 +246,7 @@ int CSuspension::Read (SStream *stream, Tag tag)
 void CSuspension::ReadFinished (void)
 { int nbw			= mveh->GetWheelBrake();
 	double coef = (nbw)?( double(1) / nbw):(0);
-	CGroundSuspension *gssp = gear_data.mgsp;
+	CSuspensionMGR *gssp = gear_data.mgsp;
 	//----Set wheel side -------------------------------------------
   gear_data.Side	= BRAKE_NONE;
 	gear_data.repBF	= coef;
@@ -531,7 +531,7 @@ const SVector& CGear::GetBodyGearMoment_ISU (void)
 }
 //================================================================================
 //
-// CGroundSuspension
+// CSuspensionMGR
 // Based upon JSBSim code
 // see copyright below
 ///	GroundSuspension manage all wheels and suspension.
@@ -540,7 +540,7 @@ const SVector& CGear::GetBodyGearMoment_ISU (void)
 //    2) Add subsystem ident for probe purpose
 //
 //================================================================================
-CGroundSuspension::CGroundSuspension ()
+CSuspensionMGR::CSuspensionMGR ()
 { SetIdent('susp');                   // suspension manager
   hwId    = HW_UNKNOWN;               // No type
   wInd    = 0;                        // Wheel index
@@ -570,7 +570,7 @@ CGroundSuspension::CGroundSuspension ()
 //------------------------------------------------------------------------------
 // Read parameters
 //------------------------------------------------------------------------------
-void CGroundSuspension::Init(CWeightManager *wgh, char *fn)
+void CSuspensionMGR::Init(CWeightManager *wgh, char *fn)
 {	whm     = wgh;
   SStream s(this,"WORLD",fn);
 	return;
@@ -578,7 +578,7 @@ void CGroundSuspension::Init(CWeightManager *wgh, char *fn)
 //------------------------------------------------------------------------------
 // destroy this
 //------------------------------------------------------------------------------
-CGroundSuspension::~CGroundSuspension (void)
+CSuspensionMGR::~CSuspensionMGR (void)
 { TRACE("Destroy whl");
 	SAFE_DELETE (mstbl);
   SAFE_DELETE (mbtbl);
@@ -591,7 +591,7 @@ CGroundSuspension::~CGroundSuspension (void)
 //------------------------------------------------------------------------------
 // Read all parameters
 //------------------------------------------------------------------------------
-int CGroundSuspension::Read (SStream *stream, Tag tag)
+int CSuspensionMGR::Read (SStream *stream, Tag tag)
 { int pm;
 	switch (tag) {
   case 'rMas':
@@ -657,13 +657,13 @@ int CGroundSuspension::Read (SStream *stream, Tag tag)
   }
 
   // Tag was not processed by this object, it is unrecognized
-  WARNINGLOG ("CGroundSuspension::Read : Unrecognized tag <%s>", TagToString(tag));
+  WARNINGLOG ("CSuspensionMGR::Read : Unrecognized tag <%s>", TagToString(tag));
   return TAG_IGNORED;
 }
 //------------------------------------------------------------------------------
 // Read all parameters
 //------------------------------------------------------------------------------
-void CGroundSuspension::ReadSusp(SStream *st)
+void CSuspensionMGR::ReadSusp(SStream *st)
 {   char susp_[64], susp_type[8], susp_name[56];
 		CSuspension *ssp = 0;
     ReadString (susp_, 64, st);
@@ -682,7 +682,7 @@ void CGroundSuspension::ReadSusp(SStream *st)
         whl_bump.push_back (bump);
         return;
       } 
-    WARNINGLOG ("CGroundSuspension::Read : bad susp type");
+    WARNINGLOG ("CSuspensionMGR::Read : bad susp type");
     return;
 
 }
@@ -691,9 +691,11 @@ void CGroundSuspension::ReadSusp(SStream *st)
 //  Compute main gear axe barycenter
 //  Compute steering gear axe center in Legacy coordinate (Z is up)
 //---------------------------------------------------------------------------------
-void CGroundSuspension::ReadFinished (void) {;}
-
-void CGroundSuspension::BuildGears (void)
+void CSuspensionMGR::ReadFinished (void) {;}
+//---------------------------------------------------------------------------------
+//	Build all wheels and suspension
+//---------------------------------------------------------------------------------
+void CSuspensionMGR::BuildGears (void)
 { SGearData *gdt = 0;   //GetGearData()
   wheels_num	= whl_susp.size ();
   //---Compute wheel parameters --(Z is forward direction)---------
@@ -794,7 +796,7 @@ void CGroundSuspension::BuildGears (void)
 //---------------------------------------------------------------------------------
 //	Init steering path
 //---------------------------------------------------------------------------------
-void	CGroundSuspension::SetSteerData(CRudderControl *rud)
+void	CSuspensionMGR::SetSteerData(CRudderControl *rud)
 {	if (0 == rud)			return;
 	if (0 == steer)		return;
 	SGearData *gdt = steer->GetGearData();
@@ -805,7 +807,7 @@ void	CGroundSuspension::SetSteerData(CRudderControl *rud)
 //---------------------------------------------------------------------------------
 //	Disconnect steering from rudder
 //---------------------------------------------------------------------------------
-void CGroundSuspension::DisconnectGear(CRudderControl *rud)
+void CSuspensionMGR::DisconnectGear(CRudderControl *rud)
 {	if (0 == rud)			return;
 	if (0 == steer)		return;
 	SGearData *gdt	= steer->GetGearData();
@@ -816,7 +818,7 @@ void CGroundSuspension::DisconnectGear(CRudderControl *rud)
 //---------------------------------------------------------------------------------
 //  Time Slice all wheels
 //---------------------------------------------------------------------------------
-void CGroundSuspension::Timeslice (float dT)
+void CSuspensionMGR::Timeslice (float dT)
 {
   /// very important ! be sure to compute only during
   /// engine & aerodynamics cycle
@@ -864,7 +866,7 @@ void CGroundSuspension::Timeslice (float dT)
   //  the steering is in negative direction.
   //  So I made the following modifications
   //  The steering distance (in meters) is computed in the 
-  //  CGroundSuspension::InitJoint() when wheels positions are computed
+  //  CSuspensionMGR::InitJoint() when wheels positions are computed
   //  This vector is stored into mainVM and the massCF is the coeeficent
   //  that modulate the mass supported by the wheel.  
   //  Also, the mass_force is modified so that the force applied is in the
@@ -912,7 +914,7 @@ void CGroundSuspension::Timeslice (float dT)
 //---------------------------------------------------------------------------------
 //  Reset crash
 //---------------------------------------------------------------------------------
-void CGroundSuspension::ResetCrash()
+void CSuspensionMGR::ResetCrash()
 { std::vector<CSuspension *>::const_iterator wi;
   for (wi = whl_susp.begin (); wi != whl_susp.end (); wi++)
   { CSuspension *ssp = (CSuspension*)(*wi);
@@ -924,7 +926,7 @@ void CGroundSuspension::ResetCrash()
 //---------------------------------------------------------------------------------
 //  Reset crash
 //---------------------------------------------------------------------------------
-void CGroundSuspension::ResetForce()
+void CSuspensionMGR::ResetForce()
 { std::vector<CSuspension *>::const_iterator wi;
   for (wi = whl_susp.begin (); wi != whl_susp.end (); wi++)
   { CSuspension *ssp = (CSuspension*)(*wi);
@@ -935,7 +937,7 @@ void CGroundSuspension::ResetForce()
 //---------------------------------------------------------------------------------
 //  Set ABS feature
 //---------------------------------------------------------------------------------
-void CGroundSuspension::SetABS(char p)
+void CSuspensionMGR::SetABS(char p)
 { std::vector<CSuspension *>::const_iterator wi;
   for (wi = whl_susp.begin (); wi != whl_susp.end (); wi++)
   { CSuspension *ssp = (CSuspension*)(*wi);

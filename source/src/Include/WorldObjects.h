@@ -376,7 +376,7 @@ public:
   CControlMixer         mix;
   CCockpitManager       pit;
   CPitotStaticSystem    pss;
-  CGroundSuspension     whl;
+  CSuspensionMGR        whl;
   CVariableLoadouts     vld;
   CExternalLightManager elt;
 	PlaneCheckList        ckl;
@@ -575,19 +575,21 @@ public:
   void       SetTaxiMSG(Tag t) {Taxi.group = t;}
   void       SetStrbMSG(Tag t) {Strb.group = t;}
   //--- Engine interface --------------------------------------------------------
-  void              GetAllEngines(std::vector<CEngine*> &engs);
-  void              CutAllEngines()     {eng.CutAllEngines();}
-	void							HereWeCrash()       {eng.AbortEngines();}
+  void				GetAllEngines(std::vector<CEngine*> &engs);
+  void        CutAllEngines()     {eng.CutAllEngines();}
+	void				HereWeCrash()       {eng.AbortEngines();}
 	//-----------------------------------------------------------------------------
-  double            GetPositionAGL()  {return whl.GetPositionAGL();}
-  void              BodyCollision(CVector &p);
+  double      GetPositionAGL()  {return whl.GetPositionAGL();}
+	//-----------------------------------------------------------------------------
+  void        BodyCollision(CVector &p);
 	//----Update the vehicle ------------------------------------------------------
-  int               TimeSlice(float dT,U_INT frame);
+  int         TimeSlice(float dT,U_INT frame);
   //-----------------------------------------------------------------------------
-  void              BindKeys();
-	void							LoadFPLAN(char *fn);
-	void							NextWaypoint();
-	void							ToggleVPIL();
+  void        BindKeys();
+	void				LoadFPLAN(char *fn);
+	void				NextWaypoint();
+	void				ToggleVPIL();
+	void				SetTurnCoefficient(double c) {whl.SetTurnCoefficient(c);}
 	//-----------------------------------------------------------------------------
   // CAirplane methods
   /// The control surface methods AileronIncr etc. cause the appropriate

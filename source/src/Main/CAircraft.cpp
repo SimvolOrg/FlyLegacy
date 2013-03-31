@@ -419,8 +419,11 @@ void CAirplane::ReadFinished (void)
   //---- Set Initial state -------------------------
   State = VEH_INIT;
   //--- Interconnect trim controls -----------------
-	amp.aTrim->SetMainControl(amp.GetAilerons());
-	amp.rTrim->SetMainControl(amp.GetRudders());
+	amp.atrm->SetMainControl(amp.GetAilerons());
+	amp.rtrm->SetMainControl(amp.GetRudders());
+	//--- Set turn coefficient -----------------------
+	double atn = globals->jsm->GetAxeAttenuation(JS_STER);
+	whl.SetTurnCoefficient(atn);
 	//--- Load optionnal flight plan -----------------
 	LoadFPLAN(fplname);
 	TRACE(" CAirplane::ReadFinished");
@@ -785,13 +788,13 @@ void CAirplane::EndLevelling()
 bool CAirplane::CenterControls()
 { globals->slw->Level(0);
   //----Reset all axis -------------------
-  CAeroControl *a = amp.pAils;
+  CAeroControl *a = amp.ailr;
   if (a) a->Zero();
-  CAeroControl *e = amp.pElvs;
+  CAeroControl *e = amp.elvr;
   if (e) e->Zero();
-  CAeroControl *r = amp.pRuds;
+  CAeroControl *r = amp.rudr;
   if (r) r->Zero();
-  CAeroControl *t = amp.eTrim;
+  CAeroControl *t = amp.etrm;
   if (t) t->Zero();
   //------Set level ---------------
   return true;
@@ -799,49 +802,49 @@ bool CAirplane::CenterControls()
 //-----------------------------------------------------------------------------
 void CAirplane::AileronIncr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.pAils;
+  CAeroControl *p = amp.ailr;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.pAils;
+  CAeroControl *p = amp.ailr;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.pAils;
+  CAeroControl *p = amp.ailr;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorIncr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.pElvs;
+  CAeroControl *p = amp.elvr;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.pElvs;
+  CAeroControl *p = amp.elvr;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.pElvs;
+  CAeroControl *p = amp.elvr;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderOpalCoef (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CRudderControl *p = amp.pRuds;
+  CRudderControl *p = amp.rudr;
   if (p) p->SetOpalCoef (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderBankMap (CFmtxMap *m)
 { // Get pointer to control subsystem in electrical systems
-  CRudderControl *p = amp.pRuds;
+  CRudderControl *p = amp.rudr;
   if (p) p->SetBankMap(m);
 }
 
@@ -849,19 +852,19 @@ void CAirplane::RudderBankMap (CFmtxMap *m)
 void CAirplane::RudderIncr (void)
 {
   // Get pointer to control subsystem in electrical systems
-  CRudderControl *p = amp.pRuds;
+  CRudderControl *p = amp.rudr;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CRudderControl *p = amp.pRuds;
+  CRudderControl *p = amp.rudr;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.pRuds;
+  CAeroControl *p = amp.rudr;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
@@ -885,136 +888,136 @@ void CAirplane::GearUpDown (void) //
 //-----------------------------------------------------------------------------
 void CAirplane::FlapsExtend (void)
 {  // Get pointer to control subsystem in electrical systems
-  CFlapControl *p = amp.pFlaps;
+  CFlapControl *p = amp.flap;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::FlapsRetract (void)
 {  // Get pointer to control subsystem in electrical systems
-  CFlapControl *p = amp.pFlaps;
+  CFlapControl *p = amp.flap;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronTrimIncr (void)
 {  // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.aTrim;
+  CAeroControl *p = amp.atrm;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronTrimDecr (void)
 {  // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.aTrim;
+  CAeroControl *p = amp.atrm;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::AileronTrimSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.aTrim;
+  CAeroControl *p = amp.atrm;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorTrimIncr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.eTrim;
+  CAeroControl *p = amp.etrm;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorTrimDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.eTrim;
+  CAeroControl *p = amp.etrm;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::ElevatorTrimSet (float fv)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.eTrim;
+  CAeroControl *p = amp.etrm;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderTrimIncr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.rTrim;
+  CAeroControl *p = amp.rtrm;
   if (p) p->Incr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderTrimDecr (void)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.rTrim;
+  CAeroControl *p = amp.rtrm;
   if (p) p->Decr ();
 }
 //-----------------------------------------------------------------------------
 void CAirplane::RudderBias (float inc)
 { // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.pRuds;
+  CAeroControl *p = amp.rudr;
   if (p) p->ModBias(inc);
 }
 
 //-----------------------------------------------------------------------------
 void CAirplane::RudderTrimSet (float fv)
 {  // Get pointer to control subsystem in electrical systems
-  CAeroControl *p = amp.rTrim;
+  CAeroControl *p = amp.rtrm;
   if (p) p->SetValue (fv);
 }
 //-----------------------------------------------------------------------------
 float CAirplane::Aileron (void)
 {  float fv = 0.0f;
-  CAeroControl *p = amp.pAils;
+  CAeroControl *p = amp.ailr;
   if (p) fv = p->Val ();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::AileronDeflect (void)
 {  float fv = 0.0f;
-  CAeroControl *p = amp.pAils;
+  CAeroControl *p = amp.ailr;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::Elevator (void)
 {  float fv = 0.0f;
-  CAeroControl *p = amp.pElvs;
+  CAeroControl *p = amp.elvr;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::ElevatorDeflect (void)
 {  float fv = 0.0f;
-  CAeroControl *p = amp.pElvs;
+  CAeroControl *p = amp.elvr;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::Rudder (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp.pRuds;
+  CAeroControl *p = amp.rudr;
   if (p) fv = p->Val();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::RudderDeflect (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp.pRuds;
+  CAeroControl *p = amp.rudr;
   if (p) fv = p->Deflect ();
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::AileronTrim (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp.aTrim;
+  CAeroControl *p = amp.atrm;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::ElevatorTrim (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp.eTrim;
+  CAeroControl *p = amp.etrm;
   if (p) fv = p->Val( );
   return fv;
 }
 //-----------------------------------------------------------------------------
 float CAirplane::RudderTrim (void)
 { float fv = 0.0f;
-  CAeroControl *p = amp.rTrim;
+  CAeroControl *p = amp.rtrm;
   if (p) fv = p->Val( );
   return fv;
 }
@@ -1022,8 +1025,7 @@ float CAirplane::RudderTrim (void)
 //-----------------------------------------------------------------------------
 float CAirplane::Flaps (void)
 { float fv = 0.0f;
-  CFlapControl *p = amp.pFlaps;
- // if (p) fv = p->Val( );
+  CFlapControl *p = amp.flap;
   return fv;
 }
 

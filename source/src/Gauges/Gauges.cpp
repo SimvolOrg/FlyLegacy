@@ -686,10 +686,10 @@ void CGaugeKnob::Draw (void)
 
 
 //==========================================================================
-//  CVariator:  Increment or Decrement in a contineous fashion and
+//  CyclesBox:  Increment or Decrement in a contineous fashion and
 //              send message on a timer basis
 //==========================================================================
-CVariator::CVariator()
+CyclesBox::CyclesBox()
 { state = 2;
   Tmax  = 0.5;
   Incr  = 0;
@@ -697,7 +697,7 @@ CVariator::CVariator()
 //---------------------------------------------------------------------
 //  Init message
 //---------------------------------------------------------------------
-void CVariator::Init()
+void CyclesBox::Init()
 { msg.sender    = 'Vari';
   msg.id		    = MSG_SETDATA;
   msg.dataType  = TYPE_REAL;
@@ -706,7 +706,7 @@ void CVariator::Init()
 //---------------------------------------------------------------------
 //  Check for change
 //---------------------------------------------------------------------
-void CVariator::SendValue(float inc)
+void CyclesBox::SendValue(float inc)
 { msg.id		    = MSG_GETDATA;
   dst->ReceiveMessage(&msg);
   float val     = msg.realData + inc;
@@ -719,7 +719,7 @@ void CVariator::SendValue(float inc)
 //---------------------------------------------------------------------
 //  Arm the system
 //---------------------------------------------------------------------
-void CVariator::Arm(float inc)
+void CyclesBox::Arm(float inc)
 {	state		= 1;						            // Armed
 	Time		= 0;				                // For fist move
 	Incr		= inc;
@@ -729,7 +729,7 @@ void CVariator::Arm(float inc)
 //---------------------------------------------------------------------
 //  Check for change
 //---------------------------------------------------------------------
-bool CVariator::HasChanged()
+bool CyclesBox::HasChanged()
 {	if (state == 2) {state = 0;	return true;}		// First time
 	if (state == 0)					    return false;		// No change
 	//--- Timer is active ----------------------------
@@ -1387,6 +1387,21 @@ void CGauge::DecodePROJ(SStream *str, TC_VTAB *proj, char opt)
   }
   return;
 }
+//-----------------------------------------------------------
+//  Decode radio interface
+//-----------------------------------------------------------
+void CGauge::DecodeRAD(SStream *str,Tag &T, U_INT &U)
+{	char txt[128];
+	char rad[8];
+	int	 run;
+	ReadString(txt,128,str);
+	int nf = sscanf(txt,"%8[^ ,] , %u",&rad,&run);
+	if (nf != 2)	return;
+	T	= StringToTag(rad);
+	U	= U_INT(run);
+	return;
+}
+
 //--------------------------------------------------------------
 //  Decode the shape tag
 //	<shap> defines a quadrilater enclosing the gauge when
@@ -1437,7 +1452,7 @@ void CGauge::DecodeSHAP(SStream *str, S_PIXEL *sp, char opt)
 //-----------------------------------------------------------------------
 int CGauge::Read (SStream *stream, Tag tag)
 {   //  Uncomment for debugging 
-    // if (unId == 'avi2')       // Change id
+    // if (unId == 'avio')       // Change id
     //  int a  = 0;             // Set break point here
   Tag pm;
   switch (tag) {
@@ -1490,48 +1505,44 @@ int CGauge::Read (SStream *stream, Tag tag)
       gmap->IncUse();
       return TAG_READ;
     }
+	//--- Light definition ---------
   case 'lite':
     ReadTag (&pm, stream);
     plit  = panel->GetLight(pm);
     return TAG_READ;
-
+  //--- Light mask ---------------
   case 'mask':
     ReadLightMask(stream);
     return TAG_READ;
-
+	//--- obsolette ----------------
   case 'fore':
     return TAG_READ;
-
+  //--- cursors ------------------
   case 'curs':
   case 'crsr':
     cursTag = BindCursor(stream);
     return TAG_READ;
-
+  //--- Help text ---------------
   case 'help':
     ReadString (help, 64, stream);
     return TAG_READ;
 
   case 'dtyp':
     return TAG_READ;
-
+  //--- Format definition ------
   case 'dfmt':
     ReadString (dfmt, 64, stream);
     return TAG_READ;
-
-  case 'nomc':
-    return TAG_READ;
-
-  case 'igno':
-    return TAG_READ;
+  //--- Gauge on left side -----
+	case 'left':
+		vHit = &CGauge::LeftHit;
+		return TAG_READ;
+	//--- Gauge on right side ----
+	case 'rite':
+		vHit = &CGauge::RiteHit;
+		return TAG_READ;
   case 'sync':
     sync  = 1;
-    return TAG_READ;
-  case 'conn':
-    // DEPRECATED -- ignore at this level ------------
-    {
-      Tag tag;
-      ReadTag (&tag, stream);
-    }
     return TAG_READ;
   case 'onfx':
   case 'onsf': // Might also be onfx
@@ -1667,6 +1678,17 @@ void CGauge::GetTour(S_PIXEL *t, short *w, short *h)
 	return;
 }
 //-------------------------------------------------------------------------
+//  Save hit parameters
+//-------------------------------------------------------------------------
+bool CGauge::HaveHit(short x,short y,HIT_GAUGE &hg)
+{	hg.ghit = this;
+	hg.gx = tour[NW_PIX].x;
+	hg.gy = tour[NW_PIX].y;
+	hg.rx = x - hg.gx;
+	hg.ry = y - hg.gy;
+	return true;
+}
+//-------------------------------------------------------------------------
 //  Check for a hit
 //-------------------------------------------------------------------------
 bool CGauge::RectHit(short x,short y,HIT_GAUGE &hg)
@@ -1675,14 +1697,31 @@ bool CGauge::RectHit(short x,short y,HIT_GAUGE &hg)
 						&(tour[NW_PIX].y <  y)
 						&(tour[SW_PIX].y >= y);
 	hg.ghit = 0;
-	if (hit)
-	{	hg.ghit = this;
-		hg.gx = tour[NW_PIX].x;
-		hg.gy = tour[NW_PIX].y;
-		hg.rx = x - hg.gx;
-		hg.ry = y - hg.gy;
-	}
-	return hit;
+	return (!hit)?(false):(HaveHit(x,y,hg));
+}
+//-------------------------------------------------------------------------
+//  Check for a left hit
+//-------------------------------------------------------------------------
+bool CGauge::LeftHit(short x,short y,HIT_GAUGE &hg)
+{	short lm = tour[NW_PIX].x + cx;			// right limit
+  bool hit = (tour[NW_PIX].x <  x)	
+						&(lm >= x)
+						&(tour[NW_PIX].y <  y)
+						&(tour[SW_PIX].y >= y);
+	hg.ghit = 0;
+	return (!hit)?(false):(HaveHit(x,y,hg));
+}
+//-------------------------------------------------------------------------
+//  Check for a right hit
+//-------------------------------------------------------------------------
+bool CGauge::RiteHit(short x,short y,HIT_GAUGE &hg)
+{	short sx = tour[NW_PIX].x + cx;				// right start
+  bool hit = (sx <  x)	
+						&(tour[NE_PIX].x >= x)
+						&(tour[NW_PIX].y <  y)
+						&(tour[SW_PIX].y >= y);
+	hg.ghit = 0;
+	return (!hit)?(false):(HaveHit(x,y,hg));
 }
 //-------------------------------------------------------------------------
 //  Check for a hit
@@ -1719,15 +1758,8 @@ bool CGauge::TourHit(short x,short y,HIT_GAUGE &hg)
 		}
 		pp	= cp;
 	}
-	//--- If inside, fill parameters -------------------
-	if (in)
-		{	hg.ghit = this;
-			hg.gx = tour[NW_PIX].x;
-			hg.gy = tour[NW_PIX].y;
-			hg.rx = x - hg.gx;
-			hg.ry = y - hg.gy;
-		}
-	return (in != 0);
+	return (!in)?(false):(HaveHit(x,y,hg));
+	
 }
 //-------------------------------------------------------------------------
 //  return Center offset
@@ -4006,8 +4038,8 @@ CHSIGauge::CHSIGauge (CPanel *mp)
 	adir			= 0;
   rang_min	= 0;
   rang_max	= 360;
-  radi_tag	= 0;
-  radi_unit = 0;
+  radioT		= 0;
+  radioU		= 0;
   gsdf = 0;
   radio.flag = VOR_SECTOR_OF;
   radio.xOBS = 0;
@@ -4095,8 +4127,8 @@ int CHSIGauge::Read (SStream *stream, Tag tag)
     return TAG_READ;
 
   case 'radi':
-    ReadTag (&radi_tag, stream);
-    ReadInt (&radi_unit, stream);
+    ReadTag (&radioT, stream);
+    ReadInt (&radioU, stream);
     return TAG_READ;
 
   case 'gsdf':
@@ -4475,11 +4507,11 @@ CNavigationGauge::CNavigationGauge (CPanel *mp)
 : CBitmapGauge(mp)
 {
   // Subsystem message
-  radi_tag  = 'navi';             // Default radio
-  radi_unit = 1;                  // Unit 1
-  gflg      = 0;
-  vobs      = 0;
-  radio     = 0;
+  radioT  = 'navi';             // Default radio
+  radioU	= 1;                  // Unit 1
+  gflg    = 0;
+  vobs    = 0;
+  radio   = 0;
   // Compass card needle
   cmp = 0;
   obs = 0;
@@ -4562,8 +4594,8 @@ int CNavigationGauge::Read (SStream *stream, Tag tag)
 		return TAG_READ;
 
   case 'radi':
-		ReadTag (&radi_tag, stream);
-		ReadInt (&radi_unit, stream);
+		ReadTag (&radioT, stream);
+		ReadInt (&radioU, stream);
 		return TAG_READ;
 
   case 'fcs_':
@@ -4578,16 +4610,16 @@ void CNavigationGauge::ReadFinished ()
   CBitmapGauge::ReadFinished ();
 
   // Initialize message attributes
-  mesg.group		      = radi_tag;
+  mesg.group		      = radioT;
   mesg.sender         = unId;
-  mesg.user.u.unit	  = radi_unit;
+  mesg.user.u.unit	  = radioU;
   mesg.user.u.hw      = HW_RADIO;
  	mesg.id             = MSG_GETDATA;
   mesg.dataType       = TYPE_REAL;
   //----OBS message -----------------
-  mobs.group          = radi_tag;
+  mobs.group          = radioT;
   mobs.sender         = unId;
-  mobs.user.u.unit    = radi_unit;
+  mobs.user.u.unit    = radioU;
   mobs.user.u.hw      = HW_RADIO;
   mobs.id             = MSG_SETDATA;
   mobs.user.u.datatag = 'obs_';                       
@@ -4604,8 +4636,8 @@ void CNavigationGauge::ReadFinished ()
   mrad.user.u.hw      = HW_RADIO;
   mrad.id             = MSG_GETDATA;
   mrad.user.u.datatag = 'getr';
-  mrad.group          = radi_tag;
-  mrad.user.u.unit    = radi_unit;
+  mrad.group          = radioT;
+  mrad.user.u.unit    = radioU;
   //---------------------------------
   fcs.sender          = unId;
 }
@@ -5200,8 +5232,8 @@ ECursorResult CGenericNavRadioGauge::MouseMoved (int x, int y)
 CGenericComRadioGauge::CGenericComRadioGauge (CPanel *mp)
 : CBitmapGauge(mp)
 { RAD       = 0;
-  radi_tag  = 0;
-  radi_unit = 0;
+  radioT		= 0;
+  radioU		= 0;
   sdim      = false;
   amber     = MakeRGB (215, 90, 0);
   radi9     = (CVariFontBMP*)globals->fonts.ftradi9.font;
@@ -5224,8 +5256,8 @@ int CGenericComRadioGauge::Read (SStream *stream, Tag tag)
   //---Check for other tags -------------------
   switch (tag) {
   case 'radi':
-    ReadTag (&radi_tag, stream);
-    ReadInt (&radi_unit, stream);
+    ReadTag (&radioT, stream);
+    ReadInt (&radioU, stream);
     return TAG_READ;
   case 'sdim':
     sdim = true;
@@ -5253,8 +5285,8 @@ void CGenericComRadioGauge::ReadFinished()
 void CGenericComRadioGauge::GetRadio()
 { //----Get Radio ----------------------------
   mesg.id             = MSG_GETDATA;
-  mesg.group          = radi_tag;
-  mesg.user.u.unit    = radi_unit;
+  mesg.group          = radioT;
+  mesg.user.u.unit    = radioU;
   mesg.user.u.hw      = HW_RADIO;
   mesg.user.u.datatag = 'gets';
   Send_Message(&mesg,mveh);

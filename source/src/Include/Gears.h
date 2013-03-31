@@ -170,7 +170,7 @@ public:
   /*! moment in Kg.m */
   virtual const SVector& GetBodyGearMoment_ISU (void);
   /*! launch init joint */
-  virtual void InitJoint(char type,CGroundSuspension *s) {;}
+  virtual void InitJoint(char type,CSuspensionMGR *s) {;}
   //------ Probe functions ----------------------------------------
 	virtual void    Probe(CFuiCanva *cnv) {;}
   virtual void    ProbeBrake(CFuiCanva *cnv) {;}
@@ -196,14 +196,14 @@ protected:
   CGear            *gear;
   SGearData         gear_data;
 	//----------------------------------------------------------------
-	ValGenerator	amort;									
+	ValGenerator	    amort;									
 	//----------------------------------------------------------------
 public:
   int           reset_crash;                          ///< allows to reset sim
   char          type;                                 // Type of suspension
   char          wInd;                                 // Wheel index
   //----Full constructor ----------------------------------------
-  CSuspension (CVehicleObject *v, CGroundSuspension *gssp, char *susp_name,  char type_ = TRICYCLE);
+  CSuspension (CVehicleObject *v, CSuspensionMGR *gssp, char *susp_name,  char type_ = TRICYCLE);
   virtual ~CSuspension             (void);
   void    InitGear();
   ///< CStreamObject methods
@@ -238,33 +238,36 @@ public:
   //-------GetGear Position ----------------------------------------
   void  GetGearPosition(CVector &mp,double  &rad)    {gear->GetGearPosition(mp,rad);}
   //-------Define ground relation to wheels ------------------------
-  void  InitGearJoint(char type,CGroundSuspension *s) {gear->InitJoint(type,s);}
+  void  InitGearJoint(char type,CSuspensionMGR *s) {gear->InitJoint(type,s);}
   void  ResetCrash()			{gear_data.shok = 0;}
   void  ResetForce()			{gear->ResetForce();}
+	//-----------------------------------------------------------------
 	void  Deflect(double d) {gear_data.deflect = d;}
   //----------------------------------------------------------------
-  char**      GetProbeOptions();
-  void        Probe(CFuiCanva *cnv);
-	void				AnimateShock(float a)		{whel->SetShockTo(a);}
+  char**  GetProbeOptions();
+  void    Probe(CFuiCanva *cnv);
 	//----------------------------------------------------------------
-	float				GetSwing(float dT)			{return amort.TimeSlice(dT);}
+	void		AnimateShock(float a)		{whel->SetShockTo(a);}
+  void		SetShockTo(float v)     {whel->SetShockTo(v);}
+	//----------------------------------------------------------------
+	float		GetSwing(float dT)			{return amort.TimeSlice(dT);}
   //-----Wheel interface -------------------------------------------
-  inline void MoveWheelTo(float v,float dT)    {Tire->SetWheelVelocity(v,dT);}
+  void		MoveWheelTo(float v,float dT)    {Tire->SetWheelVelocity(v,dT);}
+	//----------------------------------------------------------------
+  bool		IsOnGround()            {return (0 != gear_data.onGd);}
   //-----Gear interface --------------------------------------------
-  inline void SetIndex(char x)        {wInd = x;}
-  inline void SetWheelAGL(float f)    {whel->SetAGL(f);}
-  inline void TurnWheelTo(float d)    {whel->TurnTo(d);}
-  inline void PushWheelTo(float d)    {whel->PushTo(d);}
-  inline void SetShockTo(float v)     {whel->SetShockTo(v);}
-  inline void PlayTire(int p)         {whel->PlayTire(p);}
-  inline bool IsOnGround()            {return (0 != gear_data.onGd);}
+  void		SetIndex(char x)        {wInd = x;}
+  void		SetWheelAGL(float f)    {whel->SetAGL(f);}
+  void		TurnWheelTo(float d)    {whel->TurnTo(d);}
+  void		PushWheelTo(float d)    {whel->PushTo(d);}
+  void		PlayTire(int p)         {whel->PlayTire(p);}
 	//-- Set ABS anti skid feature ---------------------
-	inline	void SetABS(char p)					{gear_data.sABS	= p;}	
-	inline  void SetAmplifier(double a)	{gear_data.ampBK = a;}
+	void		SetABS(char p)					{gear_data.sABS	= p;}	
+	void		SetAmplifier(double a)	{gear_data.ampBK = a;}
 	//-----------------------------------------------------------------
-	inline SGearData *GetGearData()			{return &gear_data;}
+	SGearData *GetGearData()			{return &gear_data;}
   //-----------------------------------------------------------------
-  inline char GetWheelIndex()         {return wInd;}
+  char		GetWheelIndex()         {return wInd;}
   //-----------------------------------------------------------------
 };
 //=====================================================================================
@@ -313,16 +316,16 @@ private:
 //          unit  2         This is for right wheel(s)
 //
 //===============================================================================================
-class CGroundSuspension: public CSubsystem {           // : public CWhl {
+class CSuspensionMGR: public CSubsystem {           // : public CWhl {
 public:
-  CGroundSuspension();
-  virtual ~CGroundSuspension       (void);
+  CSuspensionMGR();
+  virtual ~CSuspensionMGR       (void);
 
   /*! CStreamObject methods */
   virtual int   Read(SStream *stream, Tag tag);
   virtual void  ReadFinished(void);
 	void	Init(CWeightManager *wghman, char *fn);
-  /*! CGroundSuspension generic methods */
+  /*! CSuspensionMGR generic methods */
   virtual void  Timeslice          (float dT);
   //-------------------------------------------------------------------------
 	void	BuildGears();
@@ -349,11 +352,14 @@ public:
 	double	 GetBankCoef()				{return banK;}
 	double   GetFriction()				{return fric;}
 	double   GetBumpForce()				{return bump;}
-  double   GetMainGearRadius()	{return  mainR;}
+ // double   GetMainGearRadius()	{return  mainR;}
   double   GetMinimumBodyAGL()	{return  mAGL;}
   double   GetPositionAGL()			{return  (mAGL + mainR - 1);}
-  double   GetSterGearRadius()	{return  sterR;}
+  //double   GetSterGearRadius()	{return  sterR;}
+	//-------------------------------------------------------------------------
 	double   GetTurnCoefficient()	{return trad;}
+	void	   SetTurnCoefficient(double c)	{trad = c;}
+	//-------------------------------------------------------------------------
   void     StoreGearVM(CVector &v, double mc) {mainVM = v; massCF = mc;}
   char     GetNbWheelOnGround()	{return nWonG;}
   bool     WheelsAreOnGround()	{return (nWonG != 0);}

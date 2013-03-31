@@ -232,12 +232,22 @@ CVerticalSpeedIndicator::CVerticalSpeedIndicator (void)
 { TypeIs (SUBSYSTEM_VERTICAL_SPEED);
   hwId  = HW_GAUGE;
   old   = 0.0;
+	fup		= 2000;
+	fdn		= 2000;
 }
 //------------------------------------------------------------------------------
 //  Read parameters
 //------------------------------------------------------------------------------
 int CVerticalSpeedIndicator::Read (SStream *stream, Tag tag)
 {  // See if the tag can be processed by the parent class type
+		switch (tag)	{
+			case '+fpm':
+				ReadDouble(&fup,stream);
+				return TAG_READ;
+			case '-fpm':
+				ReadDouble(&fdn,stream);
+				return TAG_READ;
+		}
     return CPitotStaticSubsystem::Read (stream, tag);
 }
 //------------------------------------------------------------------------------
@@ -267,6 +277,10 @@ EMessageResult CVerticalSpeedIndicator::ReceiveMessage (SMessage *msg)
         case 'vfs_':
           msg->realData = vfs;
           return MSG_PROCESSED;
+				//--- System address ---------------------
+				case 'gets':
+					msg->voidData = this;
+					return MSG_PROCESSED;
         }
     case MSG_SETDATA:
       switch (msg->user.u.datatag) {
@@ -373,9 +387,11 @@ void CAirspeedIndicator::TimeSlice (float dT,U_INT FrNo)	// JSDEV*
 CPneumaticSubsystem::CPneumaticSubsystem (void)
 {
 	TypeIs (SUBSYSTEM_PNEUMATIC);
-	timer		= 0;
+	timer				= 0;
 	regulated   = false;
-	indn		= 0.6f;				// Initial for Gyro
+	indn				= 0.6f;				// Initial for Gyro
+	oprs				= 4.5;				// Default operating presure
+	fail				= true;					// Initial fail state
 }
 //--------------------------------------------------------------------------------
 //  Destructor
@@ -400,7 +416,10 @@ int CPneumaticSubsystem::Read (SStream *stream, Tag tag)
 		mPmp.push_back (msg);
     }
     return TAG_READ;
-
+	case 'oprs':
+		//--- Operating presure ---------
+		ReadFloat(&oprs, stream);
+		return TAG_READ;
   case 'regd':
     // System is pressure regulated
     regulated = true;
@@ -425,26 +444,21 @@ void CPneumaticSubsystem::PrepareMsg(CVehicleObject *veh)
 //	NOTES
 //	1	We update first the dependencies in case for some implementations
 //		the subsystem is rendered inoperative
-//	2	As pumps have some inertie, it is no necessary to poll pumps at
-//		every time slice.  Actually they are polled every 1/4 sec or so.
-//		If needed, the timer may be shortened or even suppressed
-//	3	Pressure is in PSI
-//  4 In debug mode (subsystem windows active) the pressure is established
+//	2	Pressure is in PSI
+//  3 In debug mode (subsystem windows active) the pressure is established
 //----------------------------------------------------------------------------
 void CPneumaticSubsystem::TimeSlice (float dT,U_INT FrNo)		
-{ timer	+= dT;
-	if (timer < 0.25)				return;						// Skip update
-	timer	 = 0;
-	CDependent::TimeSlice (dT,FrNo);							// Update acivity							
+{ CDependent::TimeSlice (dT,FrNo);							// Update activity
+	fail	= true;
 	if (!active){	indnTarget = 0; return; }
-	//-----compute total pressure from all pumps ------------------------------
+	//-----Get the maximum pressure from all pumps --------------
 	float press = 0;											// Total pressure
 	std::vector<SMessage>::iterator pm;
 	for (pm = mPmp.begin (); pm != mPmp.end (); pm++)
 	{	Send_Message (&(*pm));
 		if ((*pm).realData > press) press = (*pm).realData;									
 	}
-
+	fail = (indn < oprs);
   // Assign to indication target
 	indnTarget = press;
 }
@@ -456,12 +470,12 @@ CPneumaticPump::CPneumaticPump (void)
 { TypeIs (SUBSYSTEM_PNEUMATIC_PUMP);
   ratK			= 0.5;			// Default ratK
   mode			= INDN_LINEAR;
-  suct          = 2.0f;			// residual pressure for gyro animation at start up
+  oprs          = 2.0f;			// operative suction
   eNum          = 1;			  ///< default engine number
   dIce          = 2;			  ///< the pressure required to operate the de-ice inflatable boots
   Lrpm          = 200;			///< the least RPM required to create sufficient succion
   Hrpm          = 5000;			///< the greatest RPM tolerated to create sufficient succion
-  mSct          = 1.0;			///< the suction generated at the Least Operative RPM
+  mins          = 1.0;			///< the suction generated at the Least Operative RPM
   stat          = false;       ///< the initial pump dpnd state
 };
 //-------------------------------------------------------------------------
@@ -471,7 +485,7 @@ int CPneumaticPump::Read (SStream *stream, Tag tag)
 { switch (tag) {
     case 'suct':
       // Suction value
-      ReadFloat (&suct, stream);
+      ReadFloat (&oprs, stream);
       return TAG_READ;
   
     case 'dIce':
@@ -487,7 +501,7 @@ int CPneumaticPump::Read (SStream *stream, Tag tag)
       return TAG_READ;
 
     case 'mSct':
-      ReadFloat (&mSct, stream);
+      ReadFloat (&mins, stream);
       return TAG_READ;
   }
     return CEngineControl::Read (stream, tag);
@@ -501,9 +515,9 @@ void   CPneumaticPump::ReadFinished (void)
 { CEngineControl::ReadFinished();
   Monitor('erpm');
   //---- compute proportional coeff -----------------------
-  float	dy		= suct - mSct;
-  float	dx		= Hrpm - Lrpm;
-  Coef	= (dx <= 0.0001)?(0.5f):(dy /dx);		// Nul dx => Coef 0.5
+  float	dp		= oprs - mins;
+  float	dr		= Hrpm - Lrpm;
+  Coef	= (dr <= 0.0001)?(0.5f):(dp /dr);		// Nul dx => Coef 0.5
   return;
 }
 //------------------------------------------------------------------
@@ -514,7 +528,7 @@ void CPneumaticPump::Probe(CFuiCanva *cnv)
   CDependent::Probe(cnv,0);
   _snprintf(edt,16,"Coef %.4f",Coef);
   cnv->AddText( 1,edt,1);
-  _snprintf(edt,16,"RPM  %.4f",rpm);
+  _snprintf(edt,16,"RPM  %.4f",crpm);
   cnv->AddText( 1,edt,1);
   return;
 }
@@ -547,10 +561,10 @@ void CPneumaticPump::TimeSlice (float dT,U_INT FrNo)
 { CEngineControl::TimeSlice(dT,FrNo);								
   // get engine rpm
   Send_Message(&engm);
-  rpm = engm.realData;
+  crpm = engm.realData;
   indnTarget = 0.0;
-  if (rpm  > Hrpm)  {indnTarget	= suct;	return;}
-  if (rpm  > Lrpm)  {indnTarget = mSct + (rpm * Coef);  return; }
+	float drpm = crpm - Lrpm;
+  if (drpm > 0)  indnTarget = mins + (drpm * Coef);
 	return;
 }
 
@@ -566,7 +580,6 @@ CAttitudeIndicator::CAttitudeIndicator (void)
   P_LIMIT         = 30;								/* 30 degrees */;
   R_LIMIT         = 48;								 /* 48 degrees */;
   //-----------------------------------------------------
-	operP			= 1.0;			// To adjust
   delay     = 0.0f;
 	Etat			= INTROPC;
 	incp			= 0;
@@ -631,9 +644,9 @@ EMessageResult CAttitudeIndicator::ReceiveMessage (SMessage *msg)
 
     if (msg->id == MSG_GETDATA) {
       switch (msg->user.u.datatag) {
-      case 'atti':
-        // returns whether the atti is enabled; JS is this a real data or int?
-        msg->realData = (indn > operP);
+      case 'fail':
+        // returns whether the atti is enabled; 
+        msg->intData = fail;
         return MSG_PROCESSED;
 
       case 'roll':
@@ -670,6 +683,7 @@ EMessageResult CAttitudeIndicator::ReceiveMessage (SMessage *msg)
 void CAttitudeIndicator::Probe(CFuiCanva *cnv)
 { char edt[64];
   CDependent::Probe(cnv,0);
+	cnv->AddText(1,1,"Pres : %.2f", indn);
   cnv->AddText(1,1,"Etat : %d",Etat);
   cnv->AddText(1,1,"ndl Pitch : %.4f",Uatt.x);
   cnv->AddText(1,1,"ndl Roll  : %.4f",Uatt.z);
@@ -708,11 +722,11 @@ bool CAttitudeIndicator::TrackTarget(float dT)
 //-------------------------------------------------------------------------------
 void CAttitudeIndicator::TimeSlice(float dT,U_INT FrNo)
 {	//--- Update pressure value ------------------------------------------------- 
-  
+  float uprs = oprs * 0.5;
 	CPneumaticSubsystem::TimeSlice(dT,FrNo);							
 	switch (Etat){
 		case STOPPED:
-			if (indn < 0.5)				return;				// Not enough PSI
+			if (indn < oprs)				return;				// Not enough PSI
 			Etat	= INTROPC;
 			return;
 
@@ -757,7 +771,7 @@ void CAttitudeIndicator::TimeSlice(float dT,U_INT FrNo)
 
 
 			// ----- ENd of precession ------------------------
-			if (indn  > 1.2)	{							// pressure still building
+			if (indn  > uprs)	{							// pressure still building
 				Etat	= TO_USER;
 				return;
 			}
@@ -780,7 +794,7 @@ void CAttitudeIndicator::TimeSlice(float dT,U_INT FrNo)
 		case RUNING:
 			//-------Uatt is transformed in left hand   -------------------
 			mveh->GetRRtoLDOrientation(&Uatt);
-			if (indn > operP)						 return;
+			if (indn > oprs)						 return;
 			Etat	= INTROPC;
 			return;
 	}
@@ -800,8 +814,8 @@ CDirectionalGyro::CDirectionalGyro (void)
   regulated		= false;
   autoAlign		= false;
   eRate			= 0.0f;
-  aRat			= 0.0f;
   Error			= 0.0f;
+	oprs			= 4.5;
   gyro      = 0;
   rbug      = 0;
   abug      = 0;
@@ -811,40 +825,24 @@ CDirectionalGyro::CDirectionalGyro (void)
 //----------------------------------------------------------------------
 int CDirectionalGyro::Read (SStream *stream, Tag tag)
 {
-  int rc = TAG_IGNORED;
-
-  switch (tag) {
+ switch (tag) {
   case 'step':
     // Autopilot bug step size
     ReadFloat (&step, stream);
-    rc = TAG_READ;
-    break;
-
-  case 'aRat':
-    // Auto align rate
-    ReadFloat (&aRat, stream);
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
+	case 'erat':
+		//--- drift rate (error rate) ---------
+		ReadFloat(&eRate,stream);
+		return TAG_READ;
 
   case 'nErr':
     // Auto aligned
     autoAlign = true;
-    rc = TAG_READ;
-    break;
+    return TAG_READ;
 
-  case 'timK':
-    // error 1° in 12'
-    ReadFloat (&eRate, stream);
-    rc = TAG_READ;
-    break;
   }
 
-  if (rc != TAG_READ) {
-    // See if the tag can be processed by the parent class type
-    rc = CPneumaticSubsystem::Read (stream, tag);
-  }
-
-  return rc;
+  return CPneumaticSubsystem::Read (stream, tag);
 }
 //--------------------------------------------------------------
 //  Update Gyro °
@@ -880,6 +878,11 @@ EMessageResult CDirectionalGyro::ReceiveMessage (SMessage *msg)
       case 'dBug':
         msg->realData = rbug;
 			  return MSG_PROCESSED;
+				//--- True heading without drift -------
+			case 'head':
+				msg->realData	    = rYaw;					// Actual yaw
+        msg->user.u.unit  = abug;         // Pilot position
+				return MSG_PROCESSED;
       }
       return CSubsystem::ReceiveMessage (msg);
     }
@@ -921,24 +924,37 @@ EMessageResult CDirectionalGyro::ReceiveMessage (SMessage *msg)
 //--------------------------------------------------------------------
 void CDirectionalGyro::TimeSlice (float dT,U_INT FrNo)		
 {	// Update the pump value (indn) from the parent class
-	CPneumaticSubsystem::TimeSlice(dT,FrNo);					
+	CPneumaticSubsystem::TimeSlice(dT,FrNo);
 	// Compute compass indication from aircraft heading, error and knob.
 	SVector ori;
   ori.h  = 0;
 	mveh->GetRRtoLDOrientation(&ori);
-	if (!autoAlign) Error = eRate * dT;						            // proportional error
-	tYaw	= Wrap360(ori.h + Error + gyro - globals->magDEV);	// target yaw
+	if (fail)		ori.h = 0;
+	if (!autoAlign) Error = eRate * dT;														// proportional error
+	tYaw			= Wrap360(ori.h + Error + gyro - globals->magDEV);	// target yaw
+	rYaw			= Wrap360(ori.h - globals->magDEV);									// True heading
 	//-----Compute actual yaw ----------------------------
-	float fac	= (aRat)?(dT / aRat):(0.25);					    // Correction factor
-	if (fac >= 1)	fac = 0.25;								            // dont overshoot target
+	float fac	= dT / timK;					    // Correction factor
+	if (fac >= 1)	fac = 1;							// dont overshoot target
   float df =  (tYaw - aYaw);
   if (df < -180) df += 360;
   if (df > +180) df -= 360;
 	aYaw		+=  df * fac;		                            // converge to target
   aYaw     = Wrap360(aYaw);
-  abug     = int(Wrap360(360 - aYaw + rbug));         // Bug position on plate
+	abug     = int(Wrap360(360 - aYaw + rbug));         // Bug position on plate
 	return;
   }
+//-------------------------------------------------------------------------------
+//  Probe susbsystem
+//-------------------------------------------------------------------------------
+void CDirectionalGyro::Probe(CFuiCanva *cnv)
+{ CDependent::Probe(cnv,0);
+	cnv->AddText(1,1,"Pres : %.2f", indn);
+  cnv->AddText(1,1,"aYaw : %.2f", aYaw);
+  cnv->AddText(1,1,"rYaw : %.2f", rYaw);
+  cnv->AddText(1,1,"aBug : %03d", abug);
+  return;
+}
 
 //===================================================================
 //	CVacuumIndicator gives pressure of connected pumps

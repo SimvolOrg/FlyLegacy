@@ -186,6 +186,7 @@ SqlOBJ::~SqlOBJ()
 //-----------------------------------------------------------------------------
 void SqlOBJ::Init()
 { int   lgr  = (MAX_PATH - 1);
+  char *prm  = "None";
   //---Generic database ---------------------------------------------
 	genDBE.fix  = 1;
 	genDBE.vers	= 0;																// Minimum version
@@ -195,6 +196,7 @@ void SqlOBJ::Init()
   genDBE.mgr	= SQL_MGR;
   strncpy(genDBE.dbn,"Generic files",32);
 	genDBE.mode = SQLITE_OPEN_READONLY;
+	genDBE.param	= prm;
   //---Waypoint database -------------------------------------------
 	wptDBE.fix	= 1;
 	wptDBE.vers	= 0;																// Minimum version
@@ -203,16 +205,18 @@ void SqlOBJ::Init()
 	strncpy(wptDBE.name,"WPT*.db",63);
   wptDBE.mgr = SQL_MGR;
   strncpy(wptDBE.dbn,"Waypoints",32);
-	wptDBE.mode = SQLITE_OPEN_READONLY;
+	wptDBE.mode		= SQLITE_OPEN_READONLY;
+	wptDBE.param	= "ExpWPT";
   //---Elevation database ------------------------------------------
 	elvDBE.fix	= 1;
-	elvDBE.vers	= 2;																// Minimum version
+	elvDBE.vers	= 7;																// Minimum version
   strncpy(elvDBE.path,"SQL",63);
   GetIniString("SQL","ELVDB",elvDBE.path,lgr);
 	strncpy(elvDBE.name,"ELV*.db",63);
   elvDBE.mgr	= SQL_THR | SQL_MGR; 
   strncpy(elvDBE.dbn,"Elevation Data",32);
-	elvDBE.mode	= SQLITE_OPEN_READWRITE;
+	elvDBE.mode		= SQLITE_OPEN_READWRITE;
+	elvDBE.param	= "ExpELV";
   //---Coast data database -----------------------------------------
 	seaDBE.fix	= 1;
 	seaDBE.vers	= 1;																// Minimum version
@@ -221,7 +225,8 @@ void SqlOBJ::Init()
 	strncpy(seaDBE.name,"SEA*.db",63);
   seaDBE.mgr	= SQL_THR;
   strncpy(seaDBE.dbn,"Coast data",32);
-	seaDBE.mode = SQLITE_OPEN_READONLY;
+	seaDBE.mode		= SQLITE_OPEN_READONLY;
+	seaDBE.param  = "ExpSEA";
   //---Taxiways database ------------------------------------------
 	txyDBE.fix	= 1;
 	txyDBE.vers	= 1;																// Minimum version
@@ -230,7 +235,8 @@ void SqlOBJ::Init()
 	strncpy(txyDBE.name,"TXY*.db",63);
   txyDBE.mgr = SQL_MGR;
   strncpy(txyDBE.dbn,"Taxiway data",32);
-	txyDBE.mode = SQLITE_OPEN_READWRITE;
+	txyDBE.mode		= SQLITE_OPEN_READWRITE;
+	txyDBE.param	= "ExpTXY";
   //---Model 3D database ------------------------------------------
 	modDBE.fix	= 1;
 	modDBE.vers	= 2;																// Minimum version
@@ -239,7 +245,8 @@ void SqlOBJ::Init()
 	strncpy(modDBE.name,"M3D*.db",63);
   modDBE.mgr =  SQL_THR;
   strncpy(modDBE.dbn,"Model3D data",32);
-	modDBE.mode = SQLITE_OPEN_READONLY;
+	modDBE.mode		= SQLITE_OPEN_READONLY;
+	modDBE.param	= "ExpM3D";
   //---Generic textures database ----------------------------------
 	texDBE.fix	= 1;
 	texDBE.vers	= 0;																// Minimum version
@@ -248,7 +255,8 @@ void SqlOBJ::Init()
 	strncpy(texDBE.name,"TEX*.db",63);
   texDBE.mgr =  SQL_THR + SQL_MGR;
   strncpy(texDBE.dbn,"Generic Textures",32);
-	texDBE.mode = SQLITE_OPEN_READONLY;
+	texDBE.mode		= SQLITE_OPEN_READONLY;
+	texDBE.param	= "ExptEX";
   //---World Object database --------------------------------------
 	objDBE.fix	= 1;
 	objDBE.vers	= 3;																// Minimum version
@@ -257,47 +265,8 @@ void SqlOBJ::Init()
 	strncpy(objDBE.name,"OBJ*.db",63);
   objDBE.mgr	=  SQL_MGR;
   strncpy(objDBE.dbn,"World Objects",32);
-	objDBE.mode = SQLITE_OPEN_READWRITE;
-  //--- Process  export flags -------------------------------------
-  int exp = 0;
-  GetIniVar("SQL","ExpGEN",&exp);           
-  genDBE.exp = exp;
-	if (exp)	genDBE.mgr = SQL_MGR;
-   //---------Check for export elevation data ----------------------
-  exp = 0;
-  GetIniVar("SQL","ExpELV",&exp);
-  elvDBE.exp = exp;
-	if (exp)	elvDBE.mgr = SQL_MGR;
-  //---------Check for export coast data ---------------------
-  exp = 0;
-  GetIniVar("SQL","ExpSEA",&exp);
-  seaDBE.exp = exp;
-  if (exp)	seaDBE.mgr = SQL_MGR;
-  //---------Check for export model3D data -------------------
-  exp = 0;
-  GetIniVar("SQL","ExpM3D",&exp);
-  modDBE.exp  = exp;
-  if (exp) modDBE.mgr = SQL_MGR;
-	//---------Check for update model3D data -------------------
-	exp	= 0;
-	GetIniVar("SQL","UpdM3D",&exp);
-  modDBE.exp |= exp;
-  if (exp)	modDBE.mgr = SQL_MGR;
-  //---------Check for export taxiway data -------------------
-  exp = 0;
-  GetIniVar("SQL","ExpTXY",&exp);
-  txyDBE.exp = exp;
-  if (exp) txyDBE.mgr = SQL_MGR;
-  //---------Check for export textures data ------------------
-  exp = 0;
-  GetIniVar("SQL","ExpTEX",&exp);
-  texDBE.exp = exp;
-  if (exp) texDBE.mgr = SQL_MGR;
-  //---------Check for export object data ------------------
-  exp = 0;
-  GetIniVar("SQL","ExpOBJ",&exp);
-  objDBE.exp = exp;
-  if (exp) objDBE.mgr = SQL_MGR;
+	objDBE.mode		= SQLITE_OPEN_READWRITE;
+	objDBE.param	= "ExpOBJ";
   return;
 }
 //-----------------------------------------------------------------------------
@@ -321,21 +290,22 @@ void SqlOBJ::CreateCompressedDBname(char *pn, char *fn, U_INT qx, U_INT qz)
 //-----------------------------------------------------------------------------
 int SqlOBJ::OpenDTX()
 { if (sqlTYP != SQL_MGR)						return 0;
-	repr	= 0;
+	if (!HasIniKey("SQL","ExpTRN"))		return 0;
 	//---------Check for export TRN files ------------------
 	char prm[128];
-	char rep[12];
 	int x,z;
-	if (!HasIniKey("SQL","ExpTRN"))		return 0;
   GetIniString("SQL","ExpTRN",prm,127);
-	int nf = sscanf(prm,"( %d - %d ) %s ",&x,&z,rep);
-	if  ((nf < 2) && (nf > 0))				gtfo("Use TRN=(x-y)");
-	repr	= *rep;	
+	int nf = sscanf(prm,"QGT ( %d - %d ) %s ",&x,&z);
+	if  (2 != nf)				gtfo("Use TRN=(x-y)");
+	//--- Buid name and set mode ------------------------
+	CreateCompressedDBname(dtxDBE.path,dtxDBE.name,x,z);
+	ImportConfiguration(dtxDBE.name);
+	elvDBE.exp |= 1;
+	elvDBE.mgr = SQL_MGR;
 	//--- Compression requested ---------------------------
 	if (0 == globals->dxt5Supported)	gtfo("Compression not supported");
-	//--- Check the base of globe area --------------------
-	CreateCompressedDBname(dtxDBE.path,dtxDBE.name,(x << 1),(z << 1));
 	//--- Init the dtx dabase for import ------------------
+	dtxDBE.param	= "ExpTRN";
 	dtxDBE.fix	= 1;
 	dtxDBE.vers	= 0;																// Minimum version
   dtxDBE.mgr	=  SQL_THR + SQL_MGR;
@@ -345,9 +315,7 @@ int SqlOBJ::OpenDTX()
 	int use = Open(dtxDBE);
 	if (0 == use)											gtfo("Cant open database %s",dtxDBE.name); 
 	//----------------------------------------------------
-	elvDBE.mgr = SQL_MGR;
 	dtxDBE.mgr = SQL_MGR;
-	elvDBE.exp |= 1;
 	dtxDBE.exp |= 1;
 	return 0;
 }
@@ -373,7 +341,6 @@ void SqlOBJ::OpenBases()
   //---Open World Object database ------------------------------------
   Open(objDBE);
 	//---Open Texture 2D database for export ---------------------------
-	OpenDTX();
 	pthread_mutex_unlock(&globals->mux);
   return;
 }
@@ -395,11 +362,14 @@ void SqlOBJ::ImportConfiguration(char *fn)
 //  Open the requested database
 //  A database is opened if
 //  -The current manager match the allowed manager (THREAD or MAIN)
-//   or the database should be open for export
+//   or the database should be open for export by hte SQL manager (main)
 //  
 //-----------------------------------------------------------------------------
 int SqlOBJ::Open(SQL_DB &db)
-{ char fnm[MAX_PATH];
+{ //--- Process  export flags -------------------------
+	if (HasIniKey("SQL",db.param))	genDBE.mgr = SQL_MGR;
+	//--- Try to Open the database ----------------------
+	char fnm[MAX_PATH];
   int lgr = (MAX_PATH-1);
 	if (db.exp)	db.mode = SQLITE_OPEN_READWRITE;
 	if (0 == db.use)		return 0;
@@ -727,9 +697,9 @@ SqlMGR::SqlMGR()
   //-----------------------------------------------------------------
 	sup				= new C_STile();
   Init();
-  //MEMORY_LEAK_MARKER ("OpenBases");
+	//--- Check for TRN import ----------------------------------------
+	OpenDTX(); 
   OpenBases();
-  //MEMORY_LEAK_MARKER ("OpenBases");
   //----Locate Statement parameters ----------------------------------
   SelAPT_DB.arg[0] = strchr(SelAPT_DB.txt,'%');
   SelRWY_DB.arg[0] = strchr(SelRWY_DB.txt,'%');
@@ -2848,17 +2818,18 @@ int SqlMGR::GetTRNElevations(C_QGT *qgt)
   
 	char req[1024];
 	U_INT key = qgt->FullKey();
-	count			= 0;
+	//count			= 0;
 	this->qgt	= qgt;
 	_snprintf(req,1024,"SELECT * FROM TRN WHERE qgt= %d;*",key);
 	stm = CompileREQ(req,elvDBE);
 	sup->qKey = key;
 	sup->qgt	= qgt;
-	char comp	= globals->comp & qgt->GetCompTextureInd();
+	char comp	= globals->comp & qgt->UseCompTexture();
 	while (SQLITE_ROW == sqlite3_step(stm))	DecodeTRNrow(comp,key);
 	//---Free statement ------------------------------------------
   sqlite3_finalize(stm);
-	return count;
+	//return count;
+	return 0;
 }
 //---------------------------------------------------------------------
 //	Decode TRN Table elevation
@@ -2903,7 +2874,6 @@ int SqlMGR::DecodeTRNrow(char comp,U_INT key)
 	U_INT	tokn	= 0x00000001;
 	//--- Precompute raw type ------------------------
 	rawtype = (comp)?(TC_TEXCMPRS):(TC_TEXRAWTN);
-	//U_CHAR rawtype = TC_TEXRAWTN;
 	//--- TextureDef Reconstruction ------------------
 	for (U_INT k=0; k<TC_TEXSUPERNBR; k++,txd++)
 	{	name	+= txd->CopyName(name);
@@ -2946,7 +2916,7 @@ void SqlMGR::ResetDetailTRN(CTextureDef *txd)
 int SqlMGR::GetTILElevations(C_QGT *qgt)
 {	char req[1024];
 	U_INT key = qgt->FullKey();
-	count			= 0;
+	//count			= 0;
 	this->qgt	= qgt;
 	_snprintf(req,1024,"SELECT * FROM TILE WHERE qgt= %d;*",key);
 	stm = CompileREQ(req,elvDBE);
@@ -2955,7 +2925,8 @@ int SqlMGR::GetTILElevations(C_QGT *qgt)
 	while (SQLITE_ROW == sqlite3_step(stm))	DecodeDETrow();
   //---Free statement ------------------------------------------
   sqlite3_finalize(stm);
-	return count;
+	//return count;
+	return 0;
 }
 //---------------------------------------------------------------------
 //	Decode DET elevation
@@ -3039,6 +3010,8 @@ int SqlMGR::WriteTRNtexture(TEXT_INFO &txd,char *tab)
   _snprintf(req,1024,"INSERT INTO %s (key,qgt,type,name,file,mip,width,height,size,reso,data) "
 					"VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11);*",tab);
 	sqlite3_stmt *stm = CompileREQ(req,db);
+	//---Byte size of texture ----------------------------------------------
+	U_INT dim = txd.dim * sizeof(U_INT);
 	//---Key ---------------------------------------------------------------
   int  rep = sqlite3_bind_int(stm, 1,txd.key);
   if (rep != SQLITE_OK)   Abort(db);
@@ -3064,13 +3037,12 @@ int SqlMGR::WriteTRNtexture(TEXT_INFO &txd,char *tab)
   rep = sqlite3_bind_int(stm,8,txd.ht);
   if (rep != SQLITE_OK)   Abort(db);
 	//--- byte size of compressed texture  ----------------------------------
-  rep = sqlite3_bind_int(stm,9,txd.dim);
+  rep = sqlite3_bind_int(stm,9,dim);
   if (rep != SQLITE_OK)   Abort(db);
 	//--- Texture resolution  ----------------------------------------------
   rep = sqlite3_bind_int(stm,10,txd.res);
   if (rep != SQLITE_OK)   Abort(db);
 	//--- pixel Blob --------------------------------------------------------
-  int dim  = txd.dim;
   rep = sqlite3_bind_blob(stm,11,txd.mADR, dim, SQLITE_TRANSIENT);
   if (rep != SQLITE_OK)   Abort(db);
 	//--- Commit in database ------------------------------------------------
@@ -3093,7 +3065,7 @@ bool SqlMGR::TRNTextureInTable(U_INT key,char *tab)
 	return (rep == SQLITE_ROW); 
 }
 //---------------------------------------------------------------------------------
-//  Enter QGT in table of compression indicator
+//  Check if QGT match the database content
 //---------------------------------------------------------------------------------
 bool SqlMGR::QGTnotInArea(U_INT qx,U_INT qz)
 {	//--- Compute global tile indices --------------------------
@@ -3110,7 +3082,6 @@ bool SqlMGR::QGTnotInArea(U_INT qx,U_INT qz)
 SqlTHREAD::SqlTHREAD(char tn)
 { sqlTYP    = SQL_THR;
   Init();
- // OpenBases();
 	pthread_mutex_lock(&globals->mux);
 	//---Open Generic database -----------------------------------------
   if (tn == 1)	Open(genDBE);
@@ -3124,10 +3095,6 @@ SqlTHREAD::SqlTHREAD(char tn)
   if (tn == 1)	Open(seaDBE);
   //---Open texture database -----------------------------------------
   if (tn == 0)	Open(texDBE);
-  //---Open World Object database ------------------------------------
-  //Open(objDBE);
-	//---Open Texture 2D database for export ---------------------------
-	OpenDTX();
 	pthread_mutex_unlock(&globals->mux);
 	go = true;
 }

@@ -145,7 +145,7 @@ void CPistonTRI1::doMAP(void)
   MAP *= p_amb / p_amb_sea_level;
   indnTarget    = MAP;
   eData->e_Map  = indn; 
-  eData->e_hMap = PAS_TO_INHG * indn;
+  //eData->e_hMap = PAS_TO_INHG * indn;
   return;
 }
 
@@ -329,7 +329,7 @@ void CPistonTRI1::doOilPressure(void)
 // Probe data
 //-------------------------------------------------------------------------
 void CPistonTRI1::Probe(CFuiCanva *cnv)
-{ cnv->AddText(1,1,"MAP       =%.5f",  eData->e_hMap);
+{ cnv->AddText(1,1,"MAP       =%.5f",  eData->e_Map);
   cnv->AddText(1,1,"Air Flow   =%.5f", eData->e_af);
   cnv->AddText(1,1,"Fuel Flow  =%.5f", eData->e_gph);
   cnv->AddText(1,1,"Eng rawHP  =%.2f HP", eData->e_HP);
@@ -964,14 +964,14 @@ bool CPistonEngineModel::PlotParameters(PLOT_PP *pp, Tag id, Tag type)
         strncpy(pp->mask,"air Flow(%.4f)",63);
         return true;
       }
-    //--- Manifold pressure in inHg ----------------------
+    //--- Manifold pressure in PASCAL ----------------------
     case 'eMAP':
       { float map  = 30;
-        pp->pvl    = &eData->e_hMap;
+        pp->pvl    = &eData->e_Map;
         pp->dpnd   = this;
         pp->yUnit  = map;
         pp->sign   = +1;
-        strncpy(pp->mask,"MAP(%.1f) Hg",63);
+        strncpy(pp->mask,"MAP(%.1f) P",63);
         return true;
       }
     //--- TORQUE VALUE ---------------------------------

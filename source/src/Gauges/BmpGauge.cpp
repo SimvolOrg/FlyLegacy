@@ -35,14 +35,6 @@ float navssyTAB[] = {
   20,                               // VOR shows 20° deviation
   10,                               // ILS shows 10° deviation
 };
-//=========================================================================
-//  Flag text
-//=========================================================================
-char *navflgTAB[] = {
-  "OFF",
-  "TO",
-  "FROM",
-};
 //=======================================================================
 // JSDEV* CVertical Needle
 //  This defines a textured quad, following a vertical trajectory
@@ -120,13 +112,11 @@ void CVertNeedle::DrawAmbient()
 //  All computing done in the subsystem
 //========================================================================
 C_NavigationGauge::C_NavigationGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   // Subsystem message
-  radi_tag  = 0;             // Default radio
-  radi_unit = 1;             // Unit 1
-  vobs      = 0;
-  radio     = 0;
+  vobs    = 0;
+  radio		= 0;
 	return;
 }
 //--------------------------------------------------------
@@ -137,7 +127,7 @@ C_NavigationGauge::~C_NavigationGauge (void)
 //-------------------------------------------------------
 void C_NavigationGauge::PrepareMsg(CVehicleObject *veh)
 { veh->FindReceiver(&mobs);
-  veh->FindReceiver(&mrad);
+	GetRadio(mesg);
 	CGauge::PrepareMsg(veh);
 	return;
 }
@@ -149,7 +139,7 @@ void C_NavigationGauge::DecodeFlag(SStream *str)
   TEXT_INFO txf;                // Texture info;
   ReadString(txf.name,TC_TEXTURE_NAME_NAM,str);
   //--- Read the texture ----------------------
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
   txf.apx   = 0xFF;
 	txf.azp   = 0;
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",txf.name);
@@ -186,11 +176,6 @@ int C_NavigationGauge::Read (SStream *stream, Tag tag)
   int rc = TAG_IGNORED;
   Tag nav = 0;
   switch (tag) {
-    //--- Radio -------------------------------
-    case 'radi':
-		  ReadTag (&radi_tag, stream);
-		  ReadInt (&radi_unit, stream);
-		  return TAG_READ;
     //--- Compass plate -----------------------
     case 'comp':
       nedl.SetGauge(this);
@@ -232,36 +217,17 @@ int C_NavigationGauge::Read (SStream *stream, Tag tag)
       return TAG_READ;
 
   }
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
  }
 //----------------------------------------------------------
 //  All parameters are read
 //----------------------------------------------------------
 void C_NavigationGauge::ReadFinished ()
-{ CTexturedGauge::ReadFinished ();
+{ CBasicGauge::ReadFinished ();
   // Initialize message attributes
-  mesg.group		      = radi_tag;
-  mesg.sender         = unId;
-  mesg.user.u.unit	  = radi_unit;
-  mesg.user.u.hw      = HW_RADIO;
- 	mesg.id             = MSG_GETDATA;
-  mesg.dataType       = TYPE_REAL;
+	SetRadioMessage(mesg);
   //----OBS message -----------------
-  mobs.group          = radi_tag;
-  mobs.sender         = unId;
-  mobs.user.u.unit    = radi_unit;
-  mobs.user.u.hw      = HW_RADIO;
-  mobs.id             = MSG_SETDATA;
-  mobs.user.u.datatag = 'obs_';                       
-  mobs.dataType       = TYPE_REAL; 
-  //----Radio message ---------------
-  mrad.sender         = unId;
-  mrad.dataType       = TYPE_VOID;
-  mrad.user.u.hw      = HW_RADIO;
-  mrad.id             = MSG_GETDATA;
-  mrad.user.u.datatag = 'getr';
-  mrad.group          = radi_tag;
-  mrad.user.u.unit    = radi_unit;
+	SetOBSmessage(mobs);
   return;
 }
 //----------------------------------------------------------
@@ -271,12 +237,11 @@ void C_NavigationGauge::ReadFinished ()
 //----------------------------------------------------------
 void C_NavigationGauge::CopyFrom(SStream *stream)
 { C_NavigationGauge &src = *(C_NavigationGauge*)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   //--- copy local parameters --------------------
-  radi_tag  = src.radi_tag;
-  radi_unit = src.radi_unit;
+  radioT = src.radioT;
+  radioU = src.radioU;
   mobs  = src.mobs;
-  mrad  = src.mrad;
   lndK  = src.lndK;
   gldK  = src.gldK;
   lndl.CopyFrom(this,src.lndl);
@@ -288,20 +253,11 @@ void C_NavigationGauge::CopyFrom(SStream *stream)
 //  Collect vbo data
 //-------------------------------------------------------------------
 void	C_NavigationGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	lndl.CollectVBO(vtb);
 	gndl.CollectVBO(vtb);
-	knob.CollectVBO(vtb);
 	gldF.CollectVBO(vtb);
 	locF.CollectVBO(vtb);
-}
-//-------------------------------------------------------------------
-//  Get radio block 
-//-------------------------------------------------------------------
-void C_NavigationGauge::GetRadio()
-{ Send_Message(&mrad,mveh);
-  radio     = (BUS_RADIO*)mrad.voidData;
-  return;
 }
 //-------------------------------------------------------------------
 //	Knob click => Arm rotation
@@ -318,16 +274,8 @@ EClickResult C_NavigationGauge::StopClick ()
 //	Mouse move over
 //-------------------------------------------------------------------
 ECursorResult C_NavigationGauge::MouseMoved (int x, int y)
-{	if (knob.MouseMoved(x,y))  return ShowOBS(); 
+{	if (knob.MouseMoved(x,y))  return ShowOBS(rflg,vobs); 
   DisplayHelp();
-  return CURSOR_WAS_CHANGED;
-}
-//-------------------------------------------------------------------
-//	Draw note over knob
-//-------------------------------------------------------------------
-ECursorResult C_NavigationGauge::ShowOBS()
-{ sprintf_s(hbuf,HELP_SIZE,"OBS (%s) %.0f°",navflgTAB[rflg],vobs);
-  FuiHelp();
   return CURSOR_WAS_CHANGED;
 }
 //-----------------------------------------------------------------------------
@@ -359,8 +307,7 @@ ECursorResult C_NavigationGauge::ShowOBS()
 //          K = amp / tan(5°) so ang = gERR * K
 //----------------------------------------------------------------------------------
 void C_NavigationGauge::Draw (void)
-{	if (0 == radio) GetRadio();
-  if (0 == radio) return;
+{	if (0 == radio) return;
 	//---------Get OBS or ILS direction (depending on tuned station)  ----
   rflg          = radio->flag;
   //-------  Get NAV Type (ILS or VOR) ---------------------------------
@@ -381,20 +328,14 @@ void C_NavigationGauge::Draw (void)
   vobs = float(radio->xOBS);
   nedl.DrawNeedle (-vobs);
 	//----- Draw OBS knob if rotated ---------------------------------------
-   if (knob.HasChanged())	
-  { mobs.realData = knob.GetChange();             
-	  Send_Message(&mobs,mveh);
-    ShowOBS();
-  }
-  knob.Draw(); 
-	
+	if (DrawKnob(mobs)) ShowOBS(rflg,vobs);
 	return;
 }
 //==============================================================================
 // CTachometerGauge
 //===============================================================================
 C_TachometerGauge::C_TachometerGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   hobs = 0;
 }
@@ -426,20 +367,20 @@ int C_TachometerGauge::Read (SStream *stream, Tag tag)
     return TAG_READ;
 
   }
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
 }
 //----------------------------------------------------------------------
 //  All parameters are read
 //----------------------------------------------------------------------
 void C_TachometerGauge::ReadFinished (void)
-{ CTexturedGauge::ReadFinished ();
+{ CBasicGauge::ReadFinished ();
 }
 //----------------------------------------------------------------------
 //  Copy from similar gauge
 //----------------------------------------------------------------------
 void C_TachometerGauge::CopyFrom(SStream *stream)
 { C_TachometerGauge &src = *(C_TachometerGauge*)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
 	nedl.CopyFrom(this,src.nedl);
 	hobs = 0;
 	return;
@@ -448,7 +389,7 @@ void C_TachometerGauge::CopyFrom(SStream *stream)
 //  Collect VBO data
 //----------------------------------------------------------------------
 void  C_TachometerGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	nedl.CollectVBO(vtb);
 	if (0 == hobs)	return;
 	hobs->CollectVBO(vtb);
@@ -468,7 +409,7 @@ void C_TachometerGauge::Draw (void)
 // JSDEV* modified CBasicADFGauge
 //====================================================================
 C_BasicADFGauge::C_BasicADFGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   cpas = 0;
 }
@@ -500,13 +441,13 @@ int C_BasicADFGauge::Read (SStream *stream, Tag tag)
       CopyFrom(stream);
       return TAG_READ;
   }
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
   }
 //---------------------------------------------------------------
 //  All parameters are read
 //---------------------------------------------------------------
 void C_BasicADFGauge::ReadFinished (void)
-{ CTexturedGauge::ReadFinished();
+{ CBasicGauge::ReadFinished();
   knob.InitQuad();
   mesg.user.u.hw = HW_RADIO;
 }
@@ -517,7 +458,7 @@ void C_BasicADFGauge::ReadFinished (void)
 //---------------------------------------------------------------
 void C_BasicADFGauge::CopyFrom(SStream *stream)
 { C_BasicADFGauge &src = *(C_BasicADFGauge*)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   //--- local parameters -------------------------
   comp.CopyFrom(this,src.comp);
   return;
@@ -526,7 +467,7 @@ void C_BasicADFGauge::CopyFrom(SStream *stream)
 //	Collect VBO data
 //---------------------------------------------------------------
 void C_BasicADFGauge::CollectVBO(TC_VTAB *vtb)
-{ CTexturedGauge::CollectVBO(vtb);
+{ CBasicGauge::CollectVBO(vtb);
 	knob.CollectVBO(vtb);
 	comp.CollectVBO(vtb);
 	return;
@@ -592,7 +533,7 @@ void C_BasicADFGauge::ShowDIR()
 // JSDEV* modified CDirectionalGyroGauge
 //=====================================================================
 C_DirectionalGyroGauge::C_DirectionalGyroGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 {	Prop.Set(NO_SURFACE);
   dir = 0;
 }
@@ -632,7 +573,7 @@ int C_DirectionalGyroGauge::Read (SStream *stream, Tag tag)
       return TAG_READ;
   }
 
-  return  CTexturedGauge::Read (stream, tag);
+  return  CBasicGauge::Read (stream, tag);
 }
 //-------------------------------------------------------------------
 //  End of tag read
@@ -646,7 +587,7 @@ void C_DirectionalGyroGauge::ReadFinished ()
 //----------------------------------------------------------------------
 void C_DirectionalGyroGauge::CopyFrom(SStream *stream)
 { C_DirectionalGyroGauge &src = *(C_DirectionalGyroGauge*)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   //-------------------------------------------
   apbg.CopyFrom(this,src.apbg);
   bias  = src.bias;
@@ -658,7 +599,7 @@ void C_DirectionalGyroGauge::CopyFrom(SStream *stream)
 //	Collect VBO data
 //----------------------------------------------------------------------
 void C_DirectionalGyroGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	apbg.CollectVBO(vtb);
 	knob.CollectVBO(vtb);
 	apkb.CollectVBO(vtb);
@@ -671,12 +612,16 @@ void C_DirectionalGyroGauge::PrepareMsg(CVehicleObject *veh)
 { //--- Locate gyro subsystem ---------
 	mesg.sender     = unId;
 	veh->FindReceiver(&mesg);
-	gyrS = (CSubsystem*)mesg.receiver;
+	gyrS = (CDirectionalGyro*)mesg.receiver;
 	//--- Locate bug receiver -----------
-	mbug.group			= mesg.group;
-  mbug.sender     = unId;
-	mbug.id         = MSG_SETDATA;
-	mbug.dataType   = TYPE_REAL;
+	SetBUGmessage(mbug,mesg.group);
+	/*
+	mbug.group					= mesg.group;
+  mbug.sender					= unId;
+	mgyr.user.u.datatag ='_Bug';
+	mbug.id							= MSG_SETDATA;
+	mbug.dataType				= TYPE_REAL;
+	*/
 	veh->FindReceiver(&mbug);
 	//--- Locate compss receiver -------
 	mgyr.group			= mesg.group;
@@ -694,7 +639,7 @@ void C_DirectionalGyroGauge::PrepareMsg(CVehicleObject *veh)
 EClickResult C_DirectionalGyroGauge::MouseClick (int x, int y, int btn)
 { // Initialize Ap knob hold-down values
   if (apkb.ArmRotation(1,x,y,btn))
-  { DisplayBUG();
+  { DisplayBUG(dir);
 		return MOUSE_TRACKING_ON;
 	}
   if (knob.ArmRotation(0.2f,x,y,btn))
@@ -715,14 +660,15 @@ EClickResult C_DirectionalGyroGauge::StopClick ()
 //----------------------------------------------------------------------
 //	Draw the gauge
 //	NOTE:  Is is expected from the gyro subsystem that
-//				yaw is published through GaugeBusFT01()
-//				bug is published through GaugeBusFT02()
+//				yaw			is published through GaugeBusYAW()
+//				bug			is published through GaugeBusBUG()
+//			  heading	is published through GaugeBusHDG()
 //----------------------------------------------------------------------
 void C_DirectionalGyroGauge::Draw (void)
 { DrawUnderlay();
   //--- Get hsi heading -------------------------------------
-	hdg	= gyrS->GaugeBusFT01();
-	bug	= gyrS->GaugeBusFT02();
+	hdg	= gyrS->GaugeBusYAW();							// aYaw
+	bug	= gyrS->GaugeBusBUG();							// aBug
   nedl.DrawNeedle(Wrap360(-hdg));
 
 	//-----Update the gyro knob --------------------------------
@@ -742,7 +688,7 @@ void C_DirectionalGyroGauge::Draw (void)
     Send_Message(&mbug,mveh);
     bug           =  mbug.intData;
     dir           =  mbug.user.u.unit;
-    DisplayBUG();
+    DisplayBUG(dir);
   }
   apkb.Draw();
 	//-----Draw the bug over the plate ----------------------------------
@@ -759,20 +705,12 @@ ECursorResult C_DirectionalGyroGauge::DisplayHDG()
   FuiHelp();
   return CURSOR_WAS_CHANGED;
 }
-//------------------------------------------------------------------------
-//  Display autopilot bug direction
-//------------------------------------------------------------------------
-ECursorResult C_DirectionalGyroGauge::DisplayBUG()
-{ sprintf_s(hbuf,HELP_SIZE,"BUG: %03d°",dir);
-  FuiHelp();
-  return CURSOR_WAS_CHANGED;
-}
 //-------------------------------------------------------------------
 //	Mouse move over
 //-------------------------------------------------------------------
 ECursorResult C_DirectionalGyroGauge::MouseMoved (int x, int y)
 { if (knob.MouseMoved(x,y)) return DisplayHDG();  
-  if (apkb.MouseMoved(x,y)) return DisplayBUG(); 
+  if (apkb.MouseMoved(x,y)) return DisplayBUG(dir); 
   return CURSOR_WAS_CHANGED;
 }
 //=======================================================================
@@ -781,7 +719,7 @@ ECursorResult C_DirectionalGyroGauge::MouseMoved (int x, int y)
 //
 //=======================================================================
 C_AltimeterGauge::C_AltimeterGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   // Initialize members
   ndl1  = ndl2 = ndl3 = 0;
@@ -791,8 +729,7 @@ C_AltimeterGauge::C_AltimeterGauge (CPanel *mp)
 //  Free all resources
 //--------------------------------------------------------------------
 C_AltimeterGauge::~C_AltimeterGauge (void)
-{
-  if (ndl1) delete ndl1;
+{ if (ndl1) delete ndl1;
   if (ndl2) delete ndl2;
   if (ndl3) delete ndl3;
 }
@@ -859,7 +796,7 @@ int C_AltimeterGauge::Read (SStream *stream, Tag tag)
     kmsg.sender = 'kmsg';
    return TAG_READ;
   }
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
 }
 //--------------------------------------------------------------------
 //  All parameters are read. Set the quad to all needles
@@ -874,7 +811,7 @@ void C_AltimeterGauge::ReadFinished()
 //---------------------------------------------------------------------
 void C_AltimeterGauge::CopyFrom(SStream *stream)
 { C_AltimeterGauge &src = *(C_AltimeterGauge*)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   //--- Copy local components ------------------
   base.CopyFrom(this,src.base);
   if (src.ndl1) { ndl1 = new CNeedle(this); ndl1->CopyFrom(this,*src.ndl1);}
@@ -887,7 +824,7 @@ void C_AltimeterGauge::CopyFrom(SStream *stream)
 //  Collect VBO data
 //---------------------------------------------------------------------
 void C_AltimeterGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	base.CollectVBO(vtb);
 	ndl1->CollectVBO(vtb);
 	ndl2->CollectVBO(vtb);
@@ -904,6 +841,7 @@ void C_AltimeterGauge::PrepareMsg(CVehicleObject *veh)
 	veh->FindReceiver(&kmsg);
 	
 	CGauge::PrepareMsg(veh);
+	alti	= (CAltimeter*)subS;
 	return;	}
 //-------------------------------------------------------------------
 //	Draw note over knob
@@ -948,7 +886,7 @@ void C_AltimeterGauge::Draw(void)
   //--- Draw the base --------------------------------------
   base.Draw(0);
   //--- Compute needle values ------------------------------
-	float alt = subS->GaugeBusFT01();
+	float alt = alti->GaugeBusALT();
   float f3  = alt * (float(36)/10000);
   alt       = fmod(alt,10000);
   float f2  = alt * (float(36)/1000);
@@ -976,7 +914,7 @@ void C_AltimeterGauge::Draw(void)
 // TODO: Implement the MMO needle and knob
 //==================================================================
 C_AirspeedGauge::C_AirspeedGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
 }
 //----------------------------------------------------------
@@ -1002,13 +940,13 @@ int C_AirspeedGauge::Read (SStream *str, Tag tag)
     return TAG_READ;
   }
 
-  return CTexturedGauge::Read (str, tag);
+  return CBasicGauge::Read (str, tag);
 }
 //-----------------------------------------------------------
 //  All parameters are read
 //-----------------------------------------------------------
 void C_AirspeedGauge::ReadFinished()
-{ CTexturedGauge::ReadFinished();
+{ CBasicGauge::ReadFinished();
   return;
 }
 //-----------------------------------------------------------
@@ -1016,7 +954,7 @@ void C_AirspeedGauge::ReadFinished()
 //-----------------------------------------------------------
 void C_AirspeedGauge::CopyFrom(SStream *stream)
 { C_AirspeedGauge &src = *(C_AirspeedGauge *)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   //--- Dupplicate parameters ---------------
   nmmo.CopyFrom(this,src.nmmo);
   return;
@@ -1025,7 +963,7 @@ void C_AirspeedGauge::CopyFrom(SStream *stream)
 //  Collect VBO data
 //-----------------------------------------------------------
 void	C_AirspeedGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	knob.CollectVBO(vtb);
   nmmo.CollectVBO(vtb);
 	return;
@@ -1073,7 +1011,7 @@ void C_AirspeedGauge::Draw()
 //				subsystem
 //======================================================================
 C_VerticalSpeedGauge::C_VerticalSpeedGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
 }
 //---------------------------------------------------------------------
@@ -1095,7 +1033,7 @@ C_VerticalSpeedGauge::~C_VerticalSpeedGauge (void)
 //  Collect VBO data
 //---------------------------------------------------------------------
 void C_VerticalSpeedGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	knob.CollectVBO(vtb);
 	return;
 }
@@ -1113,7 +1051,7 @@ int C_VerticalSpeedGauge::Read (SStream *str, Tag tag)
       ReadMessage (&mesg, str);
       return TAG_READ;
   }
-  return CTexturedGauge::Read (str, tag);
+  return CBasicGauge::Read (str, tag);
 }
 //-------------------------------------------------------------------
 //  Mouse moves over
@@ -1128,25 +1066,25 @@ ECursorResult C_VerticalSpeedGauge::MouseMoved (int x, int y)
 //-------------------------------------------------------------------
 void C_VerticalSpeedGauge::Draw (void)
 { DrawUnderlay();
-	CTexturedGauge::Draw();
+	CBasicGauge::Draw();
   // Get vertical speed bug value
   //  Send_Message (&vmsg);
   //  vsbg.Draw(surf);
   return;
 }
 //===========================================================================
-// JSDEV* modified CHorizonGauge
+// JSDEV* New HorizonGauge
 //===========================================================================
 C_HorizonGauge::C_HorizonGauge (CPanel *mp)
-: CTexturedGauge(mp)
-{	Prop.Set(NO_SURFACE);
+: CBasicGauge(mp)
+{	
+	Prop.Set(NO_SURFACE);
   hoff    = 0;
 	pixd    = 0;
 	mdeg    = 0;
   // set messages default tag
 	pich.user.u.datatag = 'pich';
   pich.sender = 'pich';
-
 	roll.user.u.datatag = 'roll';
   roll.sender = 'roll';
 }
@@ -1215,7 +1153,7 @@ int C_HorizonGauge::Read (SStream *str, Tag tag)
     return TAG_READ;
   }
 
-  return CTexturedGauge::Read (str, tag);
+  return CBasicGauge::Read (str, tag);
 }
 //----------------------------------------------------------------------
 //  Dupplicate from similar gauge
@@ -1223,7 +1161,7 @@ int C_HorizonGauge::Read (SStream *str, Tag tag)
 //----------------------------------------------------------------------
 void C_HorizonGauge::CopyFrom(SStream *stream)
 { C_HorizonGauge &src = *(C_HorizonGauge*)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   //--- Dupplicate local items ------------------
   Bfoot.CopyFrom(this,src.Bfoot);
   Bmire.CopyFrom(this,src.Bmire);
@@ -1241,11 +1179,12 @@ void C_HorizonGauge::CopyFrom(SStream *stream)
 //  Collect VBO data
 //----------------------------------------------------------------------
 void C_HorizonGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	Bfoot.CollectVBO(vtb);
 	Bmire.CollectVBO(vtb);
 	Birim.CollectVBO(vtb);
 	Borim.CollectVBO(vtb);
+	knob.CollectVBO(vtb);
 	return;
 }
 //----------------------------------------------------------------------
@@ -1262,7 +1201,7 @@ void C_HorizonGauge::ReadFinished()
   //---- Init the mire texture ----------
   Bmire.SetPPD(pixd);
   //---- Init the knob texture ----------
-  CTexturedGauge::ReadFinished();
+  CBasicGauge::ReadFinished();
 }
 //----------------------------------------------------------------------
 //	Prepare Messages
@@ -1314,15 +1253,15 @@ void C_HorizonGauge::Draw(void)
 	//---- Get Roll value ------------
 	float	rollD = rolS->GaugeBusFT02();						// Should be roll
   //--- Draw foot -----------------
-	Bfoot.DrawNeedle(rollD,pichD);
+	Bfoot.DrawVert(rollD,pichD);
   //--- Draw ring  ----------------
   Birim.DrawNeedle(rollD);
   //--- Mire level ----------------
   mesg.id      = MSG_GETDATA;
   Send_Message(&mesg,mveh);
   float  levl  = mesg.intData;
-  Bmire.DrawNeedle(0,levl);
-  Borim.DrawNeedle(0);
+  Bmire.DrawVert(0,levl);
+  Borim.Draw();
   //--- Draw knob and signal change to subsystem ------
   if (knob.HasChanged())
   { mesg.id      = MSG_SETDATA;
@@ -1338,6 +1277,226 @@ void C_HorizonGauge::Draw(void)
 //-----------------------------------------------------------------------------
 void C_HorizonGauge::DrawAmbient()
 {	return 	DrawOverlay(); }
+//===========================================================================
+// JSDEV* New HSI gauge
+//===========================================================================
+C_HSIgauge::C_HSIgauge(CPanel *mp)
+: CBasicGauge(mp)
+{	Prop.Set(NO_SURFACE);
+	dir		= 0;
+}
+//----------------------------------------------------------------------
+C_HSIgauge::~C_HSIgauge (void)
+{ 
+}
+//----------------------------------------------------------------------
+//	Read all parameters
+//----------------------------------------------------------------------
+int C_HSIgauge::Read (SStream *str, Tag tag)
+{ Tag  prm = 0;
+  switch (tag) {
+		//--- Compas plate -------------------
+		case 'comp':
+			Hcomp.SetGauge(this);
+			ReadFrom(&Hcomp,str);
+			return TAG_READ;
+		//--- Course Needle ------------------
+		case 'curs':
+			Hcurs.SetGauge(this);
+			ReadFrom(&Hcurs,str);
+			return TAG_READ;
+		//--- Deviation needle ---------------
+		case 'lndl':
+			Hdevs.SetGauge(this);
+			ReadFrom(&Hdevs,str);
+			return TAG_READ;
+		//--- pilot bug needle ---------------
+		case 'abug':
+			Hpbug.SetGauge(this);
+			ReadFrom(&Hpbug,str);
+			return TAG_READ;
+		//--- NAV Flag -----------------------
+		case 'fnav':
+			Fgnav.SetGauge(this);
+			ReadFrom(&Fgnav,str);
+			return TAG_READ;
+		//--- NAV Flag -----------------------
+		case 'fhdg':
+			Fghdg.SetGauge(this);
+			ReadFrom(&Fghdg,str);
+			return TAG_READ;
+		//--- OBS knob -----------------------
+    case 'obsk':
+      knob.SetGauge(this);
+      ReadFrom(&knob,str);
+		  return TAG_READ;
+
+    //--- bug knob -----------------
+    case 'apbk':
+      pbug.SetGauge(this);
+      ReadFrom(&pbug,str);
+      return TAG_READ;
+		//--- Pixel per degre ----------
+		case 'pixd':
+			ReadFloat (&pixd, str);
+			return TAG_READ;
+    //--- copy from similar -------
+    case 'copy':
+      CopyFrom(str);
+      return TAG_READ;
+			
+  }
+
+  return  CBasicGauge::Read (str, tag);
+}
+
+//----------------------------------------------------------------------
+//  Dupplicate from similar gauge
+//  NOTE: Knob is not dupplicated as it need absolute coordinates
+//----------------------------------------------------------------------
+void C_HSIgauge::CopyFrom(SStream *stream)
+{ C_HSIgauge &src = *(C_HSIgauge*)LocateGauge(stream);
+  CBasicGauge::CopyFrom(src);
+  //--- Dupplicate local items ------------------
+  Hcomp.CopyFrom(this,src.Hcomp);
+	Hcurs.CopyFrom(this,src.Hcurs);
+	Hpbug.CopyFrom(this,src.Hpbug);
+	Hdevs.CopyFrom(this,src.Hdevs);
+	Fgnav.CopyFrom(this,src.Fgnav);
+	Fghdg.CopyFrom(this,src.Fghdg);
+	//--- Dupplicate messages ---------------------
+	mobs		= src.mobs;
+	mrad		= src.mrad;
+	mbug		= src.mbug;
+  //---------------------------------------------
+  return;
+}
+//----------------------------------------------------------------------
+//  All parameters are read. Init pitch and roll destination
+//----------------------------------------------------------------------
+void C_HSIgauge::ReadFinished()
+{ //---- Init the knob texture ----------
+  CBasicGauge::ReadFinished();
+	//--- HSI message -----------------
+	mesg.sender	= unId;
+	mobs.id			= MSG_SETDATA;
+	//----OBS message -----------------
+	SetOBSmessage(mobs);
+	SetBUGmessage(mbug,mesg.group);
+	SetRadioMessage(mrad);
+	//--- Set pixel per degre to dev --
+	Hdevs.SetPPD(pixd);
+  return;
+}
+//----------------------------------------------------------------------
+//  Collect VBO data
+//----------------------------------------------------------------------
+void C_HSIgauge::CollectVBO(TC_VTAB *vtb)
+{	CBasicGauge::CollectVBO(vtb);
+	Hcomp.CollectVBO(vtb);
+	Hcurs.CollectVBO(vtb);
+	Hpbug.CollectVBO(vtb);
+	Hdevs.CollectVBO(vtb);
+	Fgnav.CollectVBO(vtb);
+	Fghdg.CollectVBO(vtb);
+	//--------------------------------------------
+	pbug.CollectVBO(vtb);
+	return;
+}
+//-------------------------------------------------------------------
+//	Prepare message
+//------------------------------------------------------------------
+void C_HSIgauge::PrepareMsg(CVehicleObject *veh)
+{ CBasicGauge::PrepareMsg(veh);
+	//--- Locate gyro subsystem ---------
+	mesg.sender     = unId;
+	veh->FindReceiver(&mesg);
+	gyrS = (CDirectionalGyro*)mesg.receiver;
+	//--- OBS message -------------------
+	veh->FindReceiver(&mobs);
+	//--- BUG message -------------------
+	veh->FindReceiver(&mbug);
+	//--- Get Radio ---------------------
+	GetRadio(mrad);
+	hdg	= gyrS->GaugeBusHDG();							// indn
+	return;
+}
+//------------------------------------------------------------------
+//  Mouse click. Check for oany knob click
+//------------------------------------------------------------------
+EClickResult  C_HSIgauge::MouseClick (int x, int y, int btn)
+{	//--- Arm OBS change --------------------
+  if (knob.ArmRotation(1,x,y,btn))
+  { ShowOBS(rflg,vobs);
+		return MOUSE_TRACKING_ON;
+	}
+	//--- Arm pilot bug change --------------
+	if (pbug.ArmRotation(1,x,y,btn))
+  { DisplayBUG(dir);
+		return MOUSE_TRACKING_ON;
+	}
+	return MOUSE_TRACKING_OFF;	}
+//---------------------------------------------------------------------
+//	stop click
+//---------------------------------------------------------------------
+EClickResult C_HSIgauge::StopClick ()
+{ //Release OBS knob click if it is set
+  knob.DisarmKnob();
+  pbug.DisarmKnob();
+  return MOUSE_TRACKING_OFF;
+}
+//-------------------------------------------------------------------
+//	Mouse move over
+//-------------------------------------------------------------------
+ECursorResult C_HSIgauge::MouseMoved (int x, int y)
+{ if (knob.MouseMoved(x,y)) return ShowOBS(rflg,vobs);  
+  if (pbug.MouseMoved(x,y)) return DisplayBUG(dir); 
+  return CURSOR_WAS_CHANGED;
+}
+
+//----------------------------------------------------------------------
+// Draw the gauge
+//----------------------------------------------------------------------
+void C_HSIgauge::Draw ()
+{ rflg			= radio->flag;
+	char ils  = (radio->ntyp == SIGNAL_ILS);
+	DrawUnderlay();
+  //--- Get hsi heading -------------------------------------
+	hdg	= gyrS->GaugeBusHDG();							// indn
+	bug	= gyrS->GaugeBusBUG();							// aBug
+  Hcomp.DrawNeedle(Wrap360(-hdg));
+	//--- Draw the course director ----------------------------
+	vobs	= radio->xOBS;    // True OBS
+	float rot = Wrap360(vobs - hdg);
+	Hcurs.DrawNeedle(rot);
+	//--- Draw deviation needle -------------------------------
+	float sbly    = navssyTAB[ils];					// Sensiblity = f(type)
+  float coef    = (Hdevs.GetAMPH() / sbly);					// Compute sensibility
+  float dev     = ClampTo(sbly,radio->hDEV) * coef; // Deviation in deg
+	Hdevs.DrawHorz(rot,dev);
+	//--- Draw pilot bug --------------------------------------
+	float pos = Wrap360(dir - hdg);
+	Hpbug.DrawNeedle(pos);
+	//--- Draw Nav and hdg Flags if no signal -----------------
+	if (radio->ntyp == SIGNAL_OFF)	Fgnav.Draw();
+	bool ffg = gyrS->FailFlag();
+	if (ffg)	Fghdg.Draw();
+	//--- Draw cover ------------------------------------------
+	overl.Draw();
+	//----- Draw OBS knob if rotated --------------------------
+	if (DrawKnob(mobs)) ShowOBS(rflg,vobs);
+	//------Update the auto pilot knob ---and bug--------------
+  mbug.realData = 0;
+  if (pbug.HasChanged()) 
+  { mbug.realData = pbug.GetChange();
+    Send_Message(&mbug,mveh);
+    bug           =  mbug.intData;
+    dir           =  mbug.user.u.unit;
+    DisplayBUG(dir);
+  }
+	pbug.Draw();
+	return;
+}
 //=======================================================================
 // CPushPullKnobGauge
 //  The gauge may operate in vertical or horizontal mode and may
@@ -1347,7 +1506,7 @@ void C_HorizonGauge::DrawAmbient()
 //  bottom pixel
 //=======================================================================
 C_PushPullKnobGauge::C_PushPullKnobGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   lnk1.user.u.datatag = 'lnk1';
   polm.user.u.datatag = 'mpol';
@@ -1386,7 +1545,7 @@ void C_PushPullKnobGauge::PrepareMsg(CVehicleObject *veh)
 //	Collect VBO data
 //------------------------------------------------------------
 void C_PushPullKnobGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	return;
 }
 //------------------------------------------------------------
@@ -1599,7 +1758,7 @@ EClickResult  C_PushPullKnobGauge::StopClick()
 //             Multi position must use Indx as tag to change in swst
 //============================================================================
 C_SimpleSwitch::C_SimpleSwitch (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   csru_tag = csrd_tag = 0;
   stat_n     = 0;
@@ -1695,13 +1854,13 @@ int C_SimpleSwitch::Read (SStream *stream, Tag tag)
       mntO = true;
       return TAG_READ;
   }
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
 }
 //---------------------------------------------------------------------
 //  Read terminated
 //---------------------------------------------------------------------
 void C_SimpleSwitch::ReadFinished (void)
-{ CTexturedGauge::ReadFinished ();
+{ CBasicGauge::ReadFinished ();
   //---  Initialize default state ---------------------
   if (stat_n == 0)
   { // No <stat> tag was specified, default to two states, 0 (off) and 1 (on)
@@ -1723,7 +1882,7 @@ void C_SimpleSwitch::ReadFinished (void)
 //  Collect VBO data
 //--------------------------------------------------------------------------
 void C_SimpleSwitch::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	swit.CollectVBO(vtb);
 	return;
 }
@@ -1848,7 +2007,7 @@ EClickResult  C_SimpleSwitch::StopClick ()
 // CHobbsMeterGauge
 //======================================================================
 C_HobbsMeterGauge::C_HobbsMeterGauge(CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Rep(0);
   val   = 0;
   wCar  = 8;
@@ -1863,7 +2022,7 @@ C_HobbsMeterGauge::~C_HobbsMeterGauge()
 //	NOTE: This gauge
 //-------------------------------------------------------------
 void C_HobbsMeterGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	digt.CollectVBO(vtb);
 	return;	}
 //-------------------------------------------------------------
@@ -1897,13 +2056,13 @@ int C_HobbsMeterGauge::Read (SStream *str, Tag tag)
       return TAG_READ;
   }
   //------------------------------------------------------------
-  return  CTexturedGauge::Read (str, tag);
+  return  CBasicGauge::Read (str, tag);
 }
 //-------------------------------------------------------------
 //  All parameters are read
 //-------------------------------------------------------------
 void C_HobbsMeterGauge::ReadFinished()
-{ CTexturedGauge::ReadFinished();
+{ CBasicGauge::ReadFinished();
   mesg.id = MSG_GETDATA;
   mesg.dataType = TYPE_REAL;
   //--- Allocate a surface for 4 full digits -----
@@ -2269,7 +2428,7 @@ void C_TurnCoordinatorGauge::PrepareMsg(CVehicleObject *veh)
 //-------------------------------------------------------------------------
 void C_TurnCoordinatorGauge::CopyFrom(SStream *stream)
 { C_TurnCoordinatorGauge &src = *(C_TurnCoordinatorGauge*)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   //--- Copy local parameters ----------------
   nedl.CopyFrom(this,src.nedl);
   pcon  = src.pcon;
@@ -2350,7 +2509,7 @@ void C_FlapsSwitchGauge::CollectVBO(TC_VTAB *vtb)
 //	pos 2	Set Dim mode
 //=================================================================================
 C_FlyhawkAnnunciatorTest::C_FlyhawkAnnunciatorTest (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   // Cursor initialization
   csru_tag = csrd_tag = 0;
@@ -2407,20 +2566,20 @@ int C_FlyhawkAnnunciatorTest::Read (SStream *stream, Tag tag)
     csrd_tag = BindCursor(stream);
     return TAG_READ;
   }
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
  }
 //--------------------------------------------------------------
 //  All parameters are read
 //---------------------------------------------------------------
 void C_FlyhawkAnnunciatorTest::ReadFinished (void)
-{ CTexturedGauge::ReadFinished ();
+{ CBasicGauge::ReadFinished ();
   return;
 }
 //-------------------------------------------------------------
 //	Collect VBO data
 //-------------------------------------------------------------
 void C_FlyhawkAnnunciatorTest::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	butn.CollectVBO(vtb);
 	return; }
 //------------------------------------------------------------
@@ -2500,7 +2659,7 @@ EClickResult C_FlyhawkAnnunciatorTest::MouseClick (int mouseX, int mouseY, int b
 // CFlyhawkElevatorTrimGauge
 //==================================================================
 CElevatorTrimGauge::CElevatorTrimGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   wRatio  = 0.1f;
 }
@@ -2539,7 +2698,7 @@ int CElevatorTrimGauge::Read (SStream *stream, Tag tag)
       ReadFrom (&caup, stream);
       return TAG_READ;
   }
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
 }
 //-----------------------------------------------------------------
 //  All tags read
@@ -2548,7 +2707,7 @@ int CElevatorTrimGauge::Read (SStream *stream, Tag tag)
 //          Thus R = K / 2;
 //-----------------------------------------------------------------
 void CElevatorTrimGauge::ReadFinished (void)
-{ CTexturedGauge::ReadFinished ();
+{ CBasicGauge::ReadFinished ();
   mesg.id = MSG_SETDATA;
   mesg.dataType = TYPE_REAL;
   //----Compute frame per deflection --------------
@@ -2560,7 +2719,7 @@ void CElevatorTrimGauge::ReadFinished (void)
 //	Collect VBO data
 //-------------------------------------------------------------
 void CElevatorTrimGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	wheel.CollectVBO(vtb);
 	indwh.CollectVBO(vtb);
 	down.CollectVBO(vtb);
@@ -2849,13 +3008,12 @@ void C_SimpleInOutStateSwitch::Draw(char val)
 {	//---- Update state -----------------------
 	gpos = (val == vin[0])?(0):(1);
 	stsw.Draw(gpos);
-  if (0 == gpos)      return;
-  //---Check for time out -------------------
-  if (0 == mmnt)      return;
-  if (0 == time)      return;
-  time--;
-  if (time)           return;
-  gpos = 0; 
+	//--- Check stability ---------------------
+	if (0 == mmnt)			return;
+	if (0 == gpos)			return;
+	time--;
+	if (time > 0)				return;
+	gpos	= 0;
   return;
   }
 //-----------------------------------------------------------------------------
@@ -2893,7 +3051,7 @@ EClickResult C_SimpleInOutStateSwitch::MouseClick (int mouseX, int mouseY, int b
 //     and the frame to display
 //===============================================================================
 CGenericSwitch::CGenericSwitch(CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   dfa = 0;
   nfr = 0;
@@ -2960,13 +3118,13 @@ int CGenericSwitch::Read(SStream *st, Tag tag)
 		return TAG_READ;
 	}
   //--- Check for other tags -------------------
-  return CTexturedGauge::Read(st,tag);
+  return CBasicGauge::Read(st,tag);
 }
 //------------------------------------------------------------------
 //  All parameters are read
 //------------------------------------------------------------------
 void CGenericSwitch::ReadFinished()
-{ CTexturedGauge::ReadFinished();
+{ CBasicGauge::ReadFinished();
 	nba = vact.size();
   nbm = vmsg.size();
   return;
@@ -2982,7 +3140,7 @@ void CGenericSwitch::PrepareMsg(CVehicleObject *veh)
 //  Collect VBO data
 //-----------------------------------------------------------------------------
 void CGenericSwitch::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	bmap.CollectVBO(vtb);
 	return;
 }
@@ -3095,7 +3253,7 @@ EClickResult CRepeatPushPull::StopClick()
 // Constructor
 //---------------------------------------------------------------------
 C1NeedleGauge::C1NeedleGauge(CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Set(NO_SURFACE);
   mgg = this;
   nedl.SetGauge(this);
@@ -3104,7 +3262,7 @@ C1NeedleGauge::C1NeedleGauge(CPanel *mp)
 // Constructor
 //---------------------------------------------------------------------
 C1NeedleGauge::C1NeedleGauge()
-: CTexturedGauge(0) 
+: CBasicGauge(0) 
 { Prop.Set(NO_SURFACE);
   mgg = 0;
   nedl.SetGauge(this);
@@ -3132,13 +3290,13 @@ int C1NeedleGauge::Read (SStream *stream, Tag tag)
       CopyFrom(stream);
       return TAG_READ;
   }
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
 }
 //--------------------------------------------------------------------
 //  All  parameters are read
 //---------------------------------------------------------------------
 void C1NeedleGauge::ReadFinished()
-{ CTexturedGauge::ReadFinished();
+{ CBasicGauge::ReadFinished();
 	mesg.id = MSG_GETDATA;
 }
 //--------------------------------------------------------------------
@@ -3153,7 +3311,7 @@ void C1NeedleGauge::SetPanel(CPanel *mp)
 //  Collect VBO data
 //-----------------------------------------------------------------------------
 void C1NeedleGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	return;
 }
 //--------------------------------------------------------------------
@@ -3170,7 +3328,7 @@ void C1NeedleGauge::SetMother(CGauge *mg)
 //---------------------------------------------------------------------
 void C1NeedleGauge::CopyFrom(SStream *stream)
 { C1NeedleGauge &src = *(C1NeedleGauge*)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   return;
 }
 //--------------------------------------------------------------------
@@ -3211,7 +3369,7 @@ ECursorResult C1NeedleGauge::MouseMoved (int x, int y)
 //  Gauge with 2 rotating needles 
 //============================================================================
 C2NeedleGauge::C2NeedleGauge(CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { CCockpitManager *pit	= mp->GetPIT();
 	//--------------------------------------------------
 	type	= 0;
@@ -3269,14 +3427,14 @@ int C2NeedleGauge::Read(SStream *stream,Tag tag)
     CopyFrom(stream);
     return TAG_READ;
   }
-  return CTexturedGauge::Read(stream,tag);
+  return CBasicGauge::Read(stream,tag);
 }
 //------------------------------------------------------------------
 //  Copy from a similar gauge
 //------------------------------------------------------------------
 void C2NeedleGauge::CopyFrom(SStream *stream)
 { C2NeedleGauge &src = *(C2NeedleGauge *)LocateGauge(stream);
-  CTexturedGauge::CopyFrom(src);
+  CBasicGauge::CopyFrom(src);
   ndl1.CopyFrom(this,src.ndl1);
   ndl2.CopyFrom(this,src.ndl2);
   mrk1.CopyFrom(this,src.mrk1);
@@ -3296,7 +3454,7 @@ void C2NeedleGauge::PrepareMsg(CVehicleObject *veh)
 //  Collect VBO data
 //-----------------------------------------------------------------------------
 void C2NeedleGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	ndl1.CollectVBO(vtb);
 	ndl2.CollectVBO(vtb);
 	mrk1.CollectVBO(vtb);
@@ -3360,7 +3518,7 @@ EClickResult C2NeedleGauge::StopClick()
 // JSDEV* modified C_BasicCompassGauge
 //====================================================================
 C_BasicCompassGauge::C_BasicCompassGauge (CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 { Prop.Rep(NO_SURFACE);
   mesg.id	= MSG_GETDATA;
   A     = 0;
@@ -3405,13 +3563,13 @@ int C_BasicCompassGauge::Read (SStream *stream, Tag tag)
     return TAG_READ;
   }
 
-  return CTexturedGauge::Read (stream, tag);
+  return CBasicGauge::Read (stream, tag);
   }
 //---------------------------------------------------------------
 //  All parameters are read
 //---------------------------------------------------------------
 void C_BasicCompassGauge::ReadFinished (void)
-{ CTexturedGauge::ReadFinished ();  
+{ CBasicGauge::ReadFinished ();  
 	//--- Allocate dynamic room for the gauge ----
   TC_VTAB *vbo = panel->GetDynVBO();
 	U_SHORT  ofs = panel->DynRoom(4);
@@ -3424,7 +3582,7 @@ void C_BasicCompassGauge::ReadFinished (void)
 //  Collect VBO data
 //------------------------------------------------------------------
 void C_BasicCompassGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	return;
 }
 
@@ -3463,7 +3621,7 @@ void C_BasicCompassGauge::DisplayHelp()
 // strip Gauge:  Gauge using a vertical strip
 //=========================================================================
 CStripGauge::CStripGauge(CPanel *mp)
-: CTexturedGauge(mp)
+: CBasicGauge(mp)
 {}
 //-------------------------------------------------------------------
 //	Read All parameters
@@ -3475,13 +3633,13 @@ int  CStripGauge::Read (SStream *stream, Tag tag)
 			bmap.ReadStrip(stream);
 			return TAG_READ;
 	}
-	return CTexturedGauge::Read(stream,tag);	
+	return CBasicGauge::Read(stream,tag);	
 }
 //-----------------------------------------------------------------
 //  Collect VBO data
 //------------------------------------------------------------------
 void CStripGauge::CollectVBO(TC_VTAB *vtb)
-{	CTexturedGauge::CollectVBO(vtb);
+{	CBasicGauge::CollectVBO(vtb);
 	bmap.CollectVBO(vtb);
 	return;
 }

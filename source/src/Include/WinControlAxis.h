@@ -62,10 +62,9 @@ class CFuiAxis: public CFuiWindow
 	CFuiCheckbox      *chkHAT;                // Hat checkbox
 	//--- Gear connector -----------------------------------
 	CFuiCheckbox      *strBOX;								// Connector
-	CVehicleObject    *mveh;
+	CAirplane         *plan;
   //-------Detected axe -------------------------------------
   int                axeNo;                 // Selected axe
- // SJoyDEF           *jsd;                   // Joystick descriptor
 	JoyDEV						*jsd;										// Selected device
   //-------AXE LIST -----------------------------------------
 	U_CHAR              gear;									// Gear state

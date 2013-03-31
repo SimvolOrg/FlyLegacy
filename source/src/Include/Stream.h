@@ -52,7 +52,6 @@ public:
 	bool							SameLine();
   bool              GetChar(char *st,int nb);
   bool              NextCharacter(short nc);
-  bool              NextToken();
   bool              IsValid(char car);
   bool              NextTag();
   bool              GetTag();
@@ -60,6 +59,7 @@ public:
 	bool							NextString();
 	bool							TrueString();
 	//-----------------------------------------------
+  char              NextToken(char dt);
 	char							OneCharacter();
 	void							SkipLine();
 	//---------------------------------------------
@@ -116,6 +116,7 @@ protected:
   char            buf[258];     // Read buffer
   int             nBytes;       // Number of bytes left
   char           *rpos;         // Character position in buffer
+	char           *lpos;					// Last position
   Tag             tag;          // Decoded tag
 
 };

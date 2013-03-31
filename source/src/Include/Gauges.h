@@ -339,10 +339,10 @@ public:
   ECursorResult     MouseMoved (int x, int y);
 };
 //=================================================================================
-//  CVariator
+//  CyclesBox
 //  Provides a continious update in [0, 1] based on timer
 //=================================================================================
-class CVariator {
+class CyclesBox {
   //---Attribute --------------------------------------------
 public:
   SMessage msg;                             // Message to send
@@ -355,7 +355,7 @@ protected:
   float vmin;                               // Minimum value
   //---------------------------------------------------------
 public:
-  CVariator();
+  CyclesBox();
   //---------------------------------------------------------
   void  Init();
   void  Arm(float inc);                     // Arm the system
@@ -1309,8 +1309,8 @@ protected:
   int             adir;       // Autopilot direction
   int             odir;       // OBS direction
   //-----------------------------------------------------------
-  Tag         radi_tag;
-  int         radi_unit;
+  Tag         radioT;
+  int         radioU;
   float       rang_min, rang_max;
   float       gsdf;       // Glideslope deflection
   //-----------------------------------------------------------
@@ -1479,8 +1479,8 @@ protected:
   Tag       cmp;
   Tag       obs;
   CGaugeNeedle  comp_ndl;
-  Tag       radi_tag;
-  int       radi_unit;
+  Tag       radioT;
+  int       radioU;
   SMessage  fcs;
   SMessage  mobs;             // OBS message set
   SMessage  mnav;             // Nav message
@@ -1663,8 +1663,8 @@ class CGenericComRadioGauge : public CBitmapGauge {
 //------ATTRIBUTES -------------------------------------------------
   CGaugeClickArea ck[7];
   CComRadio  *RAD;                           // Radio component
-  Tag         radi_tag;
-  int         radi_unit;
+  Tag         radioT;
+  int         radioU;
   bool        sdim;
   //-------FONTS and colors -----------------------------------
   CVariFontBMP  *radi9;                       // Radio font
@@ -3213,8 +3213,8 @@ public:
 
   //-------Attributes -----------------------------------
 protected:
-  CVariator       ivar;
-  CVariator       ovar;
+  CyclesBox       ivar;
+  CyclesBox       ovar;
   float           iinc;
   float           idec;
   float           oinc;
@@ -3256,7 +3256,7 @@ public:
   //------------------------------------------------------------------
 protected:
   char bmap_art[64];
-  CVariator var;
+  CyclesBox var;
   float     incr;
   float     decr;
 };

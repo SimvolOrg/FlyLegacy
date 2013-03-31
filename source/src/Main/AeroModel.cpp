@@ -422,7 +422,7 @@ void CAerodynamicModel::DrawAerodelData (const double &lenght)
   //
 #ifdef _DEBUG_SCREEN_LINES
   //DebugScreenAero (NULL/*sf*/, "test");
-  CAeroControl *p = mveh->amp.eTrim;
+  CAeroControl *p = mveh->amp.etrm;
   if (p) {
     char buffer [128] = {0};
     float txt = p->Val ();

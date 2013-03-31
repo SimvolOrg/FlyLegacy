@@ -118,7 +118,6 @@ public:
   inline  U_CHAR IsSlice()  {return (TypTX == TC_TEXRAWTN);}
   inline  U_CHAR IsGener()  {return (TypTX == TC_TEXGENER);}
   inline  U_CHAR IsCoast()  {return (TypTX == TC_TEXCOAST);}
-  inline  U_CHAR IsAnEPD()  {return (TypTX == TC_TEXRAWEP);}
   inline  U_CHAR IsShare()  {return (TypTX == TC_TEXSHARD);}
 	inline  U_CHAR IsCmprs()	{return (TypTX == TC_TEXCMPRS);}
 	//-------------------------------------------------------------
@@ -141,14 +140,14 @@ public:
   inline  void   SetCoast(char *d)  {coast = d;}
   inline  void   SetQUAD(CmQUAD *q) {quad  = q;}
   //--------------------------------------------------------------
-  inline  void   SetResolution(U_CHAR n,U_CHAR r)   {Reso[n] = r;}
-  inline  U_CHAR GetResolution()    {return Reso[0];}
+  void   SetResolution(U_CHAR n,U_CHAR r)   {Reso[n] = r;}
+  U_CHAR GetResolution()    {return Reso[0];}
   //--------------------------------------------------------------
-  inline  U_INT  NextIndice(U_INT ind)  {return ((ind + 1) & TC_WORLDDETMOD);}
+  U_INT  NextIndice(U_INT ind)  {return ((ind + 1) & TC_WORLDDETMOD);}
   //--------------------------------------------------------------
-  inline  bool   HasADTX()    {return (dTEX[1] != 0);}
-  inline  bool   HasDOBJ()    {return (dOBJ != 0);}
-  inline  bool   NoCoast()    {return (0 == coast);}
+  bool   HasADTX()    {return (dTEX[1] != 0);}
+  bool   HasDOBJ()    {return (dOBJ != 0);}
+  bool   NoCoast()    {return (0 == coast);}
 	//--- copy name ------------------------------------------------
 	inline  int		 CopyName(char *n)	
 		{strncpy(Name,n,TEX_NAME_DIM); return TEX_NAME_DIM;}
@@ -184,22 +183,25 @@ public:
     //---------------------------------------------------------------
     U_CHAR        levl;                   // Texture level
     U_CHAR        swap;                   // 0 = No swap permitted
-    U_CHAR        Reso;                   // Resolution 1
+    U_CHAR        Reso;                   // Resolution flag 
     U_CHAR        LOD;                    // Level of Detail
+		//--- SuperTexture management -----------------------------------
+		TEXT_DEFN    supX[2];									// Super Texture
 		//--- Vertex buffer ---------------------------------------------
     U_SHORT      nbVTX;                   // Number of vertices
 		TC_GTAB			*vBUF;										// Buffer
 		U_INT				 aVBO;										// Vertex Buffer Object
     //----3D management ---------------------------------------------
+		float				 Time;										// Timer
     float        dEye;										// True eye distance
     float       alpha;										// Alpha chanel
     CObjQ         woQ;										// Super Tile 3D object Queue
     U_CHAR       visible;									// Visibility indicator
     float        white[4];                // Diffuse color for blending
-		//--- OSM management --------------------------------------------
+		//--- Various flags --------------------------------------------
 		U_CHAR        osmp;										// OSM objects
-		U_CHAR				rfu1;
-		U_CHAR				rfu2;
+		U_CHAR				comp;										// Compressed texture
+		U_CHAR				rfu2;										//
 		U_CHAR				rfu3;										// 
 		Queue<C3DPart> osmQ[OSM_LAYER_SIZE];	// osm Queue
     //---------------------------------------------------------------
@@ -243,42 +245,44 @@ public:
 		void					TraceEnd();
 		void					TraceRealloc(CmQUAD *qd);
     //-----------------------------------------------------------
-    inline CTextureDef    *GetTexDesc(int nd) {return (Tex + nd);}
+    CTextureDef    *GetTexDesc(int nd)		{return (Tex + nd);}
+		TEXT_DEFN      *GetSupDEFN(char nd)		{return supX + nd;}
     //-----------------------------------------------------------
-    inline void   SetVisibility(char v)   {visible = v;}
-    inline char   Visibility()            {return visible;}
-    inline bool   IsOutside()             {return (sta3D == SUP3D_OUTSIDE);}
-    inline float  GetTrueDistance()       {return dEye;}
-    inline float  GetAlpha()              {return alpha;}
+    void   SetVisibility(char v)   {visible = v;}
+    char   Visibility()            {return visible;}
+    bool   IsOutside()             {return (sta3D == SUP3D_OUTSIDE);}
+    float  GetTrueDistance()       {return dEye;}
+    float  GetAlpha()              {return alpha;}
 		//--- Vertex buffer manageement -----------------------------
-		inline TC_GTAB* GetVertexTable()			{return vBUF;}
-		inline SPosition GeoPosition()				{return mPos;}
+		TC_GTAB* GetVertexTable()			{return vBUF;}
+		SPosition GeoPosition()				{return mPos;}
     //-----------------------------------------------------------
-		inline int  GetNumber()	{return NoSP;}
-    inline U_CHAR GetLOD()  {return LOD;}
-    inline void zrSwap()  {swap = 0;}
-    inline bool IsReady() {return (State == TC_TEX_RDY);}
-    inline bool NeedLOD() {return (State == TC_TEX_LOD);}
-    inline bool NeedOBJ() {return (State == TC_TEX_OBJ);}
-    inline bool NeedSWP() {return (State == TC_TEX_POP);}
-		inline bool InFarQ()	{return (State == TC_TEX_INQ);}
+		int  GetNumber()	{return NoSP;}
+    U_CHAR GetLOD()   {return LOD;}
+    void zrSwap()  {swap = 0;}
+    bool IsReady() {return (State == TC_TEX_RDY);}
+    bool NeedLOD() {return (State == TC_TEX_LOD);}
+    bool NeedOBJ() {return (State == TC_TEX_OBJ);}
+    bool NeedSWP() {return (State == TC_TEX_POP);}
+		bool InFarQ()	 {return (State == TC_TEX_INQ);}
+		bool NeedRefresh()			{return (comp == 0);}
     //-----------------------------------------------------
-    inline void WantRDY() {State  = TC_TEX_RDY; }
-    inline void WantLOD() {State  = TC_TEX_LOD; }
-    inline void WantOBJ() {State  = TC_TEX_OBJ; }
-    inline void WantPOP() {State  = TC_TEX_POP; }
-		inline void WantINQ() {State  = TC_TEX_INQ; }
-    inline void SetState(U_CHAR s)  {State = s;}
+    void WantRDY() {State  = TC_TEX_RDY; }
+    void WantLOD() {State  = TC_TEX_LOD; }
+    void WantOBJ() {State  = TC_TEX_OBJ; }
+    void WantPOP() {State  = TC_TEX_POP; }
+		void WantINQ() {State  = TC_TEX_INQ; }
+    void SetState(U_CHAR s)  {State = s;}
     //-----------------------------------------------------
-       //-----------------------------------------------------
-		inline void RenderOUT()	{Rend = &CSuperTile::DrawOuterSuperTile;}
-		inline void RenderINR()	{Rend = &CSuperTile::DrawInnerSuperTile;}
-		inline void Draw()		{(this->*Rend)();}
+		void RenderOUT()	{Rend = &CSuperTile::DrawOuterSuperTile;}
+		void RenderINR()	{Rend = &CSuperTile::DrawInnerSuperTile;}
+		void Draw()		{(this->*Rend)();}
 		//-----------------------------------------------------
-		inline CSuperTile *Next()				{return next;}
-		inline void Next(CSuperTile *s)	{next = s;}
-		inline C_QGT      *GetQGT()			{return qgt;}
+		CSuperTile *Next()				{return next;}
+		void Next(CSuperTile *s)	{next = s;}
+		C_QGT      *GetQGT()			{return qgt;}
 		//------------------------------------------------------
+
   };
 //============================================================================
 //  QUEUE of SUPERTILES
@@ -322,13 +326,15 @@ public:
 //============================================================================
 #define QUAD_GND  0x01                // Airport ground indicator
 #define QUAD_UPH  0x02								// No patche
+#define RENDER_QUAD_IND	(0)
+#define RENDER_QUAD_VBO (1)
 //============================================================================
 class CmQUAD {
 	friend class TCacheMGR;
 	//--- Define render vector -----------------------------
-	typedef void (CmQUAD::*VREND)();	// Rendering vector
+	typedef void (CmQUAD::*rdqFN)();	  // Rendering vector
 	//--- ATTRIBUTES ---------------------------------------------------
-  U_CHAR      subL;                   // Subdivision level
+  U_CHAR      rend;                   // Render vector
   U_CHAR      qFlag;                  // Indicators
   U_SHORT     qDim;                   // Array dimension (0 for a Quad pointer)
   U_SHORT     nvtx;                   // Number of vertices
@@ -338,8 +344,9 @@ class CmQUAD {
 	CSuperTile *msp;										// Mother super tile
   TC_GTAB    *vTab;                   // Pointer in Vertex table
 	GLint      *iBUF;										// VBO indices
-	VREND       Rend;										// Rendering vector
-  //---- METHODS  -----------------------------------------------------
+  //---------Vector Table --------------------------------------------
+  static rdqFN   rdqTAB[];      // Vector table
+  //---- METHODS  ----------------------------------------------------
 public:
   CmQUAD();
  ~CmQUAD();
@@ -360,6 +367,7 @@ public:
 	int					InitVertexCoord(TC_GTAB *vbo,float *txt);
 	void				RefreshVTAB(CSuperTile *sp,U_CHAR res);
 	void				RefreshVertexCoord(CSuperTile *sp,float *txt);
+	void				SetSuperTexture(CSuperTile *sp,U_CHAR res);
 	//-------------------------------------------------------
 	void				StoreIn(D3_VERTEX *d, CVertex *v);
 	void				AssignGeoCOORD(TC_GTAB *tab, CVertex *v);
@@ -388,8 +396,6 @@ public:
   inline U_INT    GetSize()                 {return qDim;}
   inline float    CenterElevation()         {return Center.GetWZ();}
   inline void     SetCorner(U_CHAR c,CVertex *v) {Center.SetCorner(c,v);}
-	inline void			SetLevel(U_CHAR sub)			{subL = sub;}
-	inline U_CHAR   GetLevel()								{return subL;}
   //-----------Get inline ---------------------------------
   inline CVertex *GetCorner(U_SHORT cn) {return Center.Edge[cn];}
   inline CVertex *GetCenter()			{return &Center;}
@@ -410,11 +416,14 @@ public:
   inline void ClearGround()             {qFlag &= (-1 - QUAD_GND);}
   inline bool IsAptGround()             {return ((qFlag & QUAD_GND) != 0);}
   //--------------------------------------------------------------------
-	inline void			RenderIND()			{Rend = &CmQUAD::DrawIND;}
-	inline void			RenderVBO()			{Rend = &CmQUAD::DrawVBO;}
-	inline void			DrawTile(){(this->*Rend)();}
+	void			RenderIND()			{rend = RENDER_QUAD_IND;}
+	void			RenderVBO()			{rend = RENDER_QUAD_VBO;}
+	void			DrawTile(){(this->*rdqTAB[rend])();}
 	//--------------------------------------------------------------------
-	inline CSuperTile *GetSuperTile()	{return msp;}
+	CSuperTile *GetSuperTile()	{return msp;}
+	//--------------------------------------------------------------------
+	//void	BindTexture(U_INT xobj)	{msp->BindTexture(xobj);}
+
 };
 //==============================================================================
 //  CONTEXTE FOR QUAD SUBDIVISION
@@ -460,6 +469,9 @@ private:
   U_INT         qKey;                     // QGT key (X,Z)
   U_INT         rKey;                     // Request parameter
   SPosition     Scene;                    // Mid position for scenery
+	//--- Ground directory ----------------------------------------
+	char					sdir[MAX_PATH];						// Super texture directory
+	U_SHORT       appx;											// Append index
 	//--- OSM interface -------------------------------------------
 	U_INT					sqlNO;										// Current Database
 	SQL_DB       *sqlDB;										// Current Descriptor
@@ -632,6 +644,10 @@ public:
   CTextureDef    *GetTexList(U_INT No)    {return Super[No].Tex;}
 	CSuperTile     *GetSuperTile(int tx,int tz);
 	bool						AllTextured(char opt);
+	//-------------------------------------------------------------
+	bool						HasSuperTexture()		{	return (*sdir != 0);}
+	char           *GetSuperDirectory()	{ return sdir;}
+	char					 *GetTextureName(U_INT sno);
 	//-----------------------------------------------------------
   CSuperTile     *GetSuperTile(U_INT No) { return (No > 63)?(0):(&Super[No]); }
 	//--- Delete resources --------------------------------------
@@ -669,8 +685,9 @@ public:
   //---------------------------------------------------------------
   void        CheckW3D()          {w3D.Check();}
 	//--- Texture management ----------------------------------------
-	char				GetCompTextureInd()	{return (ctxDB != 0);}
-	SQL_DB     *GetCompTextureDBE()	{return ctxDB;}
+	char        GetVBOusage()				{return vbu;}
+	char				UseCompTexture()		{return (ctxDB != 0);}
+	SQL_DB     *GetCompTextureDBE()	{return  ctxDB;}
 };
 
 //=============================================================================
@@ -756,7 +773,7 @@ class TCacheMGR: public CExecutable {
   U_CHAR      rfu2;                         // Display accounting
   U_CHAR      HiRes;                        // Hires permited
   U_CHAR      FactEV;                       // Shift factor
-  U_CHAR      LastEV;                       // Last indice in elevation
+  U_CHAR      PartEV;                       // Number division
   //--------MAP for QGT and QTR ---------------------------------
   std::map<U_INT,C_QGT*>  qgtMAP;           // Map of QGT
   std::map<U_INT,C_QGT*>::iterator iqt;
@@ -931,7 +948,7 @@ public:
   float  GetHigDist()        {return higRAD;}
   float *GetFogColor()       {return fogC;}
   float *GetFarColor()       {return fogC;}
-  U_CHAR GetLastEVindex()    {return LastEV;}
+  U_CHAR GetLastEVindex()    {return PartEV;}
   float *GetNightEmission()  {return NitColor;}
   float *GetDeftEmission()   {return EmsColor;}
   //---------------------------------------------------------------

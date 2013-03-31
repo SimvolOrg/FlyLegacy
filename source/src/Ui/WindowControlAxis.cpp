@@ -70,31 +70,6 @@ void  WhenJoyMove(char code,JoyDEV *J, CSimAxe *A, int B, Tag W)
 }
 
 //======================================================================================
-//  Global CALLBACK WHEN AXE MOVE
-//======================================================================================
-void  WhenAxeMove(CSimAxe *axe, Tag winID)
-{ CFuiAxis *win = (CFuiAxis*)globals->fui->GetFuiWindow(winID);
-  win->AxeDetected(axe);
-  return;
-}
-//======================================================================================
-//  Global CALLBACK WHEN Button is clicked
-//======================================================================================
-void  WhenButtonClick(JoyDEV *jsd, int nbt, Tag id)
-{ CFuiAxis *win = (CFuiAxis*)globals->fui->GetFuiWindow(id);
-  win->ButtonClick(jsd,nbt);
-  return;
-}
-//======================================================================================
-//  Global CALLBACK WHEN Hat is moved
-//======================================================================================
-void  WhenHatMove(JoyDEV *jsd, Tag id)
-{ CFuiAxis *win = (CFuiAxis*)globals->fui->GetFuiWindow(id);
-  win->HatDetected(jsd);
-  return;
-}
-
-//======================================================================================
 //  CFuiAxis to assign Joystick axes
 //======================================================================================
 CFuiAxis::CFuiAxis(Tag idn, const char *filename)
@@ -106,8 +81,8 @@ CFuiAxis::CFuiAxis(Tag idn, const char *filename)
   jsd		= 0;
 	jsp		= 0;
   jsm		= globals->jsm;
-	mveh	= globals->pln;
-	gear	= mveh->GearConnexion();
+	plan	= globals->pln;
+	gear	= plan->GearConnexion();
   //---Locate components -----------------------------
   asgWIN    = (CFuiButton*)   GetComponent('defa');
   if (0 == asgWIN )  gtfo(err);
@@ -242,7 +217,6 @@ void CFuiAxis::HatDetected(JoyDEV *jdv)
 void CFuiAxis::AxeAssign()
 { CSimAxe axn;
   if (0 == jsd)   return;
-	
   axn.jdev = jsd;
   axn.iAxe = axeNo;
   jsm->AssignAxe(axe,&axn,all);
@@ -310,7 +284,11 @@ void CFuiAxis::AxeForce(float inc)
   val += inc;
   if (val >  1)  val = 1;
   if (val <  0)  val = 0;
-  axe->SetATTN(val);
+	//--- Update all parameters -------------------------
+	double atn = jsm->GetAxeAttenuation(JS_STER);
+	plan->SetTurnCoefficient(atn);
+  axe->ChangeForce(val);
+	//--------------------------------------------------
   ShowForce();
 	jsm->Modifier();
   return;
@@ -323,7 +301,7 @@ void CFuiAxis::AxeNeutral()
   float n = valNEU->GetValue();
 	sprintf(txt,"DEFINE NEUTRAL AREA: %0.2f",n);
   labNEU->SetText(txt);
-  jsm->SetNulleArea(n,1);
+  jsm->SetNulleArea(n);
   return;
 }
 //----------------------------------------------------------------------
@@ -378,7 +356,7 @@ void CFuiAxis::ButtonClick(JoyDEV *jsn, int nbut)
 //--------------------------------------------------------------------------
 void CFuiAxis::SwapGear()
 {	gear ^= 1;
-	mveh->GearConnector(gear);
+	plan->GearConnector(gear);
 	return;
 }
 //--------------------------------------------------------------------------

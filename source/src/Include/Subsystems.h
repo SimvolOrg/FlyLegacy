@@ -553,7 +553,11 @@ public:
 	U_INT   ComputeCorrection(float kpr);
   U_INT   UpdatePressure(float inc);
   void    Probe(CFuiCanva *cnv);
+	//----GAUGE BUS ------------------------------------------------
+	float		GaugeBusALT()	{return indn;}					// Altitude
+	float		GaugeBusRAD()	{return radarAlt;}
   //---------Attributes ------------------------------------------
+
 protected:
   float   kollValue;            // In inches of Hg
   float	  kollVariation;		    // Correction in feet
@@ -561,7 +565,6 @@ protected:
   float   radarAlt;             // Radar altitude
   float   hPres;                // presure in inHg
 	//--- Published values ---------------------------------------
-	float		GaugeBusFT02()					{return radarAlt;}
   //-----Kolman digits -----------------------------------------
   U_CHAR d1;
   U_CHAR d2;
@@ -578,6 +581,8 @@ protected:
   double old;
   double u100;
   double vfs;                     /// Vertical feet /sec
+	double fup;
+	double fdn;
 public:
   CVerticalSpeedIndicator (void);
 
@@ -588,6 +593,9 @@ public:
   const char*     GetClassName (void) { return "CVerticalSpeedIndicator"; }
   EMessageResult  ReceiveMessage (SMessage *msg);
   void            TimeSlice (float dT,U_INT FrNo = 0);		// JSDEV*
+	//-------------------------------------------------------------
+	double GetFMAX()	{return fup;}
+	double GetFMIN()	{return fdn;}
 
 };
 //=============================================================================
@@ -1165,18 +1173,20 @@ public:
  ~CPneumaticSubsystem();
   // CStreamObject methods
   virtual int   Read               (SStream *stream, Tag tag);
-//  virtual void  ReadFinished     (void);
-
-  // CSubsystem methods
+// CSubsystem methods
   virtual const char* GetClassName (void) { return "CPneumaticSubsystem"; }
-//  virtual EMessageResult  ReceiveMessage (SMessage *msg);
   void	PrepareMsg(CVehicleObject *veh);				// JSDEV* Prepare Messages
+	bool	FailFlag()	{return fail;}
+	//----------------------------------------------------------------------
   virtual void TimeSlice           (float dT,U_INT FrNo);			// JSDEV*
 
 protected:
-  std::vector<SMessage>            mPmp;				//< Dependent pump messages
-  bool                             regulated;			//< System is pressure regulated
-  float							   timer;				// Poll timer	
+  std::vector<SMessage>            mPmp;					//< Dependent pump messages
+  bool									regulated;			//< System is pressure regulated
+  float									timer;					// Poll timer	
+	float									oprs;						// Operating presure
+	//-------------------------------------------------------------------
+	bool								  fail;						// Not enough presure
 };
 
 //---------------------------------------------------------------------------
@@ -1255,17 +1265,20 @@ protected:
   bool      autoAlign;    ///< Gyro is auto aligned
   void      UpdateGyro(float inc);
   void      UpdatePbug(float inc);
+	void			Probe(CFuiCanva *cnv);
 	//--- Published values on Gauge BUS --------------
-	float     GaugeBusFT01()		{return aYaw;}
-	float			GaugeBusFT02()		{return abug;}
-	int			  GaugeBusIN03()		{return abug;}
+public:
+	float			GaugeBusBUG()		{return abug;}
+	float			GaugeBusYAW()		{return aYaw;}
+	float		  GaugeBusHDG()		{return rYaw;}
   //---------ATTRIBUTES ---------------------------
 private:
+	float						rYaw;		// Real yaw (no drift)
   float						aYaw;		// Actual yaw
   float						tYaw;		// Target yaw
-  float						aRat;		// Align rate
   float						eRate;		// error rate
   float						Error;
+	float						oprs;			// Operating pressure
   //-------------------------------------------------
   float           gyro;     // GYRO plate
   float           rbug;     // Auto pilot bug relative position
@@ -1342,14 +1355,15 @@ public:
   //-------------------------------------------------------------
   void    GetClamp(float &m1,float &m2) {m1 = data.minClamp,m2= data.maxClamp;}
   //---- for value ---------------------------------------------
-  inline  float    Val()   {return data.raw;}
-  inline  float Deflect()  {return data.deflect;};
-	inline  float UnBias()	 {return data.deflect - Bias;}
+  float    Val()   {return data.raw;}
+  float Deflect()  {return data.deflect;};
+	float UnBias()	 {return data.deflect - Bias;}
   //--- For autopilot ------------------------------------------
-	inline  void	   Neutral()	{vPID = 0; data.raw = 0;} 
-  inline  void     PidValue(double v)   {vPID = v;}
-  inline  void     SetMainControl(CAeroControl *c) {Cont = c;}
-  //---ATTRIBUTS -----------------------------------------------
+	void	   Neutral()	{vPID = 0; data.raw = 0;} 
+  void     PidValue(double v)   {vPID = v;}
+  void     SetMainControl(CAeroControl *c) {Cont = c;}
+	//--- For tuning ---------------------------------------------
+	//---ATTRIBUTS -----------------------------------------------
 protected:
   CAeroControl    *Cont;        // Associated control for trim
   MIXER_DATA       data;				// mixer data
@@ -1369,8 +1383,8 @@ public:
 
   // CSubsystem methods
   const char* GetClassName (void) { return "CAileronControl"; }
-  void                TimeSlice (float dT,U_INT FrNo = 0);					// JSDEV*
-
+  void        TimeSlice (float dT,U_INT FrNo = 0);					// JSDEV*
+	void				ReadFinished();
 protected:
 };
 
@@ -1385,8 +1399,8 @@ public:
 
   // CSubsystem methods
   const char* GetClassName (void) { return "CElevatorControl"; }
-  void                TimeSlice (float dT,U_INT FrNo = 0);
-
+  void        TimeSlice (float dT,U_INT FrNo = 0);
+	void				ReadFinished();
 protected:
 };
 //======================================================================
@@ -1412,6 +1426,7 @@ public:
   const char* GetClassName (void) { return "CRudderControl"; }
 	//--- Read Parameters -------------------------------------
   int       Read(SStream *st,Tag tag);
+	void			ReadFinished();
   //---Rudder methods ---------------------------------------
 	void			SetCoef(CPIDbox *B); 
 	void			ModBias(float v);

@@ -220,7 +220,9 @@ SPosition GetAlignedSpot(SPosition &org, SPosition ext, double R);
 void			InitGlobeTileTable ();
 void			InitQgtTable(float vmax);
 //-----------------------------------------------------------------------------
-float   ComputeDeviation(float ref,float rad,U_CHAR *flag, U_CHAR pwr);
+float			ComputeDeviation(float ref,float rad,U_CHAR *flag, U_CHAR pwr);
+//--- File functions ----------------------------------------------------------
+bool			DirectoryExists(char* filePath);
 //-----------------------------------------------------------------------------
 //	Return Detail tile indices in QGT
 //	sp = SuperTile No in QGT
@@ -228,6 +230,8 @@ float   ComputeDeviation(float ref,float rad,U_CHAR *flag, U_CHAR pwr);
 //	NOTE: Order is from SW to SE then upward
 //-----------------------------------------------------------------------------
 U_INT  DetailTileIndices(U_INT sp, U_INT dn, U_INT *tx, U_INT *tz);
+//-----------------------------------------------------------------------------
+void GammaCorrection(U_CHAR *img, U_INT nbp, U_INT *lut);
 //=============================================================================
 //  Inline globale functions
 //=============================================================================

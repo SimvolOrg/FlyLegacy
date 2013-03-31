@@ -776,7 +776,7 @@ void C_TRN::ReadSUPR(CStreamFile *stf)
 	if (0 == impr)  txl = qgt->GetTexList(No);	// Real
 	else						txl = spt->GetTexList();		// Import
 	//--- Compute texture compression indicator --------
-	U_CHAR cprs	= (qgt)?(qgt->GetCompTextureInd()):(0);
+	U_CHAR cprs	= (qgt)?(qgt->UseCompTexture()):(0);
 	cprs &= globals->comp;
 	type  = (cprs)?(TC_TEXCMPRS):(TC_TEXRAWTN);
 	//--- Set decoding parameters ----------------------
@@ -1253,54 +1253,6 @@ int ChdtlDecoder::Read (CStreamFile *stf, Tag tag)
     }
   }
   return TAG_READ;
-}
-//===================================================================================
-//  FILE C_CTEX to read and decode FLY I scenery files
-//===================================================================================
-C_CTEX::C_CTEX(C_QGT *qt,U_INT t)
-{ qgt = qt;
-  tr  = t;
-  nbt = 0;
-}
-//-----------------------------------------------------------------------------------
-//  Abort for error
-//-----------------------------------------------------------------------------------
-void C_CTEX::Abort(char *fn, char *em)
-{ gtfo("TEX %s : %s",fn,em);
-  return;
-}
-//-----------------------------------------------------------------------------------
-//  Assign texture name to the Detail Tile nt
-//-----------------------------------------------------------------------------------
-void C_CTEX::Assign(char *tnm,U_SHORT tx,U_SHORT tz)
-{ //----Find the related Super Tile-------------------
-  U_INT bz = (tz >> TC_BY04);                             // Base Z for Super Tile
-  U_INT bx = (tx >> TC_BY04);                             // Base X for Super Tile
-  U_INT No = (bz << TC_BY08) | bx;                        // Super Tile No
-  U_INT rz = (tz & TC_004MODULO);                         // Relative Z for DT in ST
-  U_INT rx = (tx & TC_004MODULO);                         // Relative X for DT in ST
-  U_INT nd = (rz << TC_BY04) | rx;                        // Texture index
-  CSuperTile   *sp  = qgt->GetSuperTile(No);
-  CTextureDef *lst  = qgt->GetTexList(No);
-  CTextureDef *txd  = &lst[nd];
-  strncpy(txd->Name,tnm,TC_TEXNAMESIZE);
-  txd->TypTX  = TC_TEXRAWEP;                          // Set texture type
-  txd->xFlag |= TC_USRTEX;                            // Set user texture
-  sp->zrSwap();                                       // Prevent swapping
-  return;
-}
-//-----------------------------------------------------------------------------------
-//  Normalize  the name
-//-----------------------------------------------------------------------------------
-void C_CTEX::NormeName(char *txt)
-{ strupper (txt);
-  char *end = strstr(txt,".RAW");
-  //------ Eliminate directory if any ---------------------------------------
-  char *sep =   strrchr(txt,'/'); 
-  if (0 == sep) sep = strrchr(txt,'\\');
-  char *src = (sep)?(sep+1):(txt);
-  *end  = 0;                                        // Set limit
-  return;
 }
 //===================================================================================
 //  READ AND DECODE A COAST FILE

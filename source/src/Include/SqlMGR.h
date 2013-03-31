@@ -435,10 +435,11 @@ struct SQL_DB {
     char      path[PATH_MAX];     // path name
 		char      name[64];						// File name
     sqlite3  *sqlOB;              // Object database
+		char     *param;						  // Export parameter
     char      exp;                // Export indicator
     char      opn;                // Open indicator
     char      use;                // Use database
-    char      mgr;                // Thread only if no export
+    char      mgr;                // Thread or main
 		char      fix;								// fixed 
     char      dbn[32];            // Database name
 	//--- Constructor ------------------------------
@@ -452,6 +453,7 @@ struct SQL_DB {
 			vers	= 0;
 		 *dbn		= 0;
 			fix   = 0;
+			param	= 0;
 		}
 		//----------------------------------------------
 		void SQL_DB::Copy(SQL_DB &db)
@@ -748,7 +750,9 @@ public:
 //=============================================================================
 class SqlTHREAD: public SqlOBJ {
 	//---- Attribute ---------------------------------------------------
-	bool			go;						// Running indicator
+	bool		go;						// Running indicator
+	char		gdir[MAX_PATH];
+	char		qdir[MAX_PATH];
   //-----Methods -----------------------------------------------------
 public:
   SqlTHREAD(char tn);
@@ -759,8 +763,14 @@ public:
 	//--- Execution control --------------------------------------------
 	inline bool IsRuning()	{return go;}
 	inline void Stop()			{go = false;}
-	//------------------------------------------------------------------
-  //---COAST METHODS -------------------------------------------------
+	//--- Thread processing --------------------------------------------
+	void	TextureLoad(C_QGT *qgt);
+	void	GetQTRfile(C_QGT *qgt,TCacheMGR *tcm);
+	void	ProcessTexture( TCacheMGR   *tcm);
+	void	ProcessFiles(TCacheMGR *tcm);
+	void	ProcessModels(TCacheMGR *tcm);
+	void	ProcessOSM(TCacheMGR *tcm);
+	//---COAST METHODS -------------------------------------------------
   void  DecodeCST(sqlite3_stmt *stm,COAST_REC &cst);
   void  ReadCoast(COAST_REC &rec,C_CDT *cst);
   void  CopyData (COAST_REC &rec);

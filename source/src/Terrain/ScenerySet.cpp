@@ -106,10 +106,10 @@ void CSceneryDBM::Init (void)
 	//--- Check for export ---------------------------
 	imp	= globals->import;
 	//--- Compression option ---------------------------
-	cmp = 1;												// By default
-	GetIniVar("Performances","UseDTXdatabase",&cmp);
-	cmp &= (!imp);									// Not importing
-	globals->comp	= cmp;
+	dtx = 0;												// By default
+	GetIniVar("Performances","UseDTXdatabase",&dtx);
+	dtx &= (!imp);									// Not importing
+	globals->comp	= dtx;
   //--- Load SCF files from FlyLegacy /Scenery folder
   LoadInFolderTree ("SCENERY/",SCN_OPT_SELECT);
 	//--- Locate OSM folder ----------------------------
@@ -421,7 +421,7 @@ int CSceneryDBM::Register (C_QGT *qgt)
 	//--- Load OSM databases ------------------------------
 	if (globals->noOSM == 0)	LoadBasesOSM(qgt);
 	//--- Check for compressed texture --------------------
-	if (0 == cmp)							return 0;
+	if (0 == dtx)							return 0;
 	//--- Create area name form QGT indices ---------------
 	char pn[MAX_PATH];				// Pathname
 	char nm[64];							// Database name

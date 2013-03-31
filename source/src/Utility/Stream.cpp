@@ -124,7 +124,7 @@ void CStreamObject::ReadStrip(SStream *str,TEXT_DEFN &txd)
 	txf.azp = 0;
   DecodeStripName(str,txf.name,txd);
   //--- Read the texture ----------------------
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",txf.name);
   img.GetAnyTexture(txf);
   txd.Copy(txf);
@@ -156,7 +156,7 @@ void CStreamObject::ReadMonoStrip(SStream *str,TEXT_DEFN &txd,int *px, int *py)
   txd.nf = 1;
   DecodeMonoName(str,txf.name,px,py);
   //--- Read the texture ----------------------
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
   txf.azp   = 0;
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",txf.name);
   img.GetAnyTexture(txf);
@@ -173,7 +173,7 @@ void CStreamObject::ReadBMAP(SStream *str,TEXT_DEFN &txd)
 	ReadString(fn,128,str);
 	TEXT_INFO txf;  // Texture info;
 	txf.azp = 0;
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
   strncpy(txf.name,fn,TC_TEXTURE_NAME_NAM);
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",fn);
   img.GetAnyTexture(txf);
@@ -294,6 +294,7 @@ int CStreamFile::OpenRead (char *filename, PFS *pfs)
   nBytes		= 1;
   strcpy(buf," ");                // trigger pump
   rpos			= buf;
+	lpos			= buf + 1;
 	return (readable)?(1):(0);
 }
 //------------------------------------------------------------------------
@@ -301,9 +302,9 @@ int CStreamFile::OpenRead (char *filename, PFS *pfs)
 //    NOTE: This actually work only for PODFILE
 //------------------------------------------------------------------------
 bool CStreamFile::Refill()
-{if (0 == podfile) return false;
+{	if (0 == podfile) return false;
 	FILE *file = podfile->pFile;
- switch (podfile->source) {
+	switch (podfile->source) {
     case PODFILE_SOURCE_POD:
       // Reads to different files within the same POD may be interspersed,
       //   so the read pointer must be reset to the next expected byte for
@@ -314,7 +315,8 @@ bool CStreamFile::Refill()
       //podfile->pos  = ftell (podfile->pFile);
 			podfile->pos += nBytes;
       rpos          = buf;
-			buf[nBytes]		= 0;
+			lpos					= buf + nBytes;
+//			buf[nBytes]		= 0;
 			tot++;
 			//_lock_file(file);
 			//--- DEBUG ONLY ----------------------
@@ -326,7 +328,8 @@ bool CStreamFile::Refill()
     case PODFILE_SOURCE_DISK:
       nBytes				= fread (buf, 1, 256, file);
       rpos					= buf;
-			buf[nBytes]		= 0;
+			lpos					= buf + nBytes;
+//			buf[nBytes]		= 0;
       return true;
     }
 
@@ -356,7 +359,7 @@ bool CStreamFile::IsValid(char car)
 //------------------------------------------------------------------------
 char CStreamFile::OneCharacter()
 {	char car = *rpos++;
-	if (*rpos == 0)	Refill();
+	if (rpos == lpos)	Refill();
 	return car;
 }
 //------------------------------------------------------------------------
@@ -390,10 +393,13 @@ void CStreamFile::SkipLine()
 //------------------------------------------------------------------------
 //  Advance up to the next valid character
 //  -Skip space, tab, CR, LF,
+//	NOTE that when a character is invalid from the abose function it is
+//	not zero. Thus for invalid character the call OneCharacter is always
+//	true
 //------------------------------------------------------------------------
-bool CStreamFile::NextToken()
+char CStreamFile::NextToken(char dt)
 { while (!IsValid(*rpos) && OneCharacter()) continue;
-  return (*rpos != 0);
+	return (dt)?(OneCharacter()):(*rpos);
 }
 //------------------------------------------------------------------------
 //  Decode tag
@@ -415,8 +421,8 @@ bool CStreamFile::GetTag()
 //  Find next tag
 //------------------------------------------------------------------------
 bool CStreamFile::NextTag()
-{ while (NextToken() && (*rpos != '<')) continue;
-  OneCharacter();
+{ while (NextToken(1) != '<') continue;
+ // OneCharacter();
   return GetTag();
 }
 //------------------------------------------------------------------------
@@ -424,7 +430,7 @@ bool CStreamFile::NextTag()
 //------------------------------------------------------------------------
 bool CStreamFile::NextString()
 {*string = 0;
-  NextToken();
+  NextToken(0);
 	int	k;
 	for (k = 0; k < 127; k++)
 	{	char car = OneCharacter();
@@ -577,8 +583,7 @@ void  CStreamFile::ReadFrom(CStreamObject *object)
 //  Open for writing
 //------------------------------------------------------------------------
 int CStreamFile::OpenWrite (char *filename)
-{
-  f = fopen (filename, "w");
+{ f = fopen (filename, "w");
   if (f != NULL)  writeable = true;
 	return (writeable)?(1):(0);
 }
@@ -1442,6 +1447,8 @@ void  ReadTag (Tag *tag, SStream *stream)
   //---eliminate any delimiters ------------------
 	char *t = s;			// Tag start
   if (*s == 0x027)  t++;
+	//---Skip introduction -------------------------
+	if (*s == '<')	  t++;
   // Pad string with spaces to four chars in length
   while (strlen(t) < 4)  strcat (t, " ");
   *tag = StringToTag (t);

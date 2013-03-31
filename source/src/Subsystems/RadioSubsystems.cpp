@@ -681,7 +681,7 @@ EMessageResult CRadio::ReceiveMessage (SMessage *msg)
       case 'test':
         msg->realData = test ? 1 : 0;
         return MSG_PROCESSED;
-
+			case 'rbus':
       case 'getr':
         msg->voidData = &busRD;
         return MSG_PROCESSED;

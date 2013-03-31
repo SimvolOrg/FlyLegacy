@@ -189,7 +189,7 @@ class CArtParser {
   U_CHAR    afa;                                // Alpha channel
 	//-----------------------------------------------------------
 	U_CHAR		mac;																// Mac option
-	char			rfu;																// Not used
+	char			inv;																// Invert row
   //-------Main tile data -------------------------------------
   GLubyte   *act;                               // ACT bytes
   GLubyte   *raw;                               // Raw bytes
@@ -209,7 +209,7 @@ class CArtParser {
   GLubyte   *Ms3;
   //------------Methods -------------------------------------------------
 public:
-  CArtParser(char res);
+  CArtParser(char res, char rv = 0);
   CArtParser()  {}
  ~CArtParser();
   void      Abort(char *fn,char *er);
@@ -389,12 +389,9 @@ public:
   int     GetShdTexture(CTextureDef *txn,char *name);
   int     GetGenTexture(CTextureDef *txn);
   int     GetRawTexture(CTextureDef *txn);
-  int     GetEPDTexture(CTextureDef *txn);
   int     GetSeaTexture(CTextureDef *txn);
 	int		  GetCmpTexture(CTextureDef *txn,SQL_DB *db);
 	int     GetGPUtexture(CTextureDef *txn);
-	//----------------------------------------------------------
-  void    GetMediumTexture(CTextureDef *txn);
   //----------------------------------------------------------
   void    GetShdOBJ(CTextureDef *txn);
   GLuint  GetTaxiTexture();
@@ -422,8 +419,8 @@ public:
   int     FreeShared(CTextureDef *txn);
   int     FreeWater (CTextureDef *txn);
   int     FreeAllTextures(CSuperTile *sp);
-  int     LoadTextures(U_CHAR lev,U_CHAR res,C_QGT *qgt,CSuperTile *sp);
-  int     SwapTextures(CSuperTile *sp);
+  int     LoadQuadsTexture(CSuperTile *sp);
+  void    SwapTextures(CSuperTile *sp,char opt);
   void    LoadMaskTexture(int No,char *name,int dim);
   void    LoadTaxiTexture(char *name,char tsp);
   void    LoadRwyTexture(U_INT key,char *fn, char tsp);
@@ -446,7 +443,7 @@ public:
   GLuint  GetRepeatOBJ(GLuint obj,U_CHAR res,GLubyte *tex);
   GLuint  GetTerraOBJ(GLuint obj,U_CHAR res,GLubyte *tex);
   GLuint  GetWatOBJ(CTextureDef *txn);
-  void    GetSupOBJ(CSuperTile *sp);
+  void    GetQuadsOBJ(CSuperTile *sp);
   //----------------------------------------------------------
   GLuint  GetRepeatOBJ(TEXT_INFO &xds);
   GLuint  GetLitOBJ(TEXT_INFO    &xds);

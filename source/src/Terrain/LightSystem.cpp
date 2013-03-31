@@ -1620,7 +1620,7 @@ double *CExternalLightManager::GetROTM()
 void CExternalLightManager::ReadHalo()
 { char *fn = "LiteHalo.bmp";
 	TEXT_INFO txf;  // Texture info;
-  CArtParser img(TC_HIGHTR);
+  CArtParser img(TX_HIGHTR);
   txf.azp = 0;
   strncpy(txf.name,fn,TC_TEXTURE_NAME_NAM);
   _snprintf(txf.path,TC_TEXTURE_NAME_DIM,"ART/%s",fn);

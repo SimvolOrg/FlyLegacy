@@ -50,7 +50,7 @@
 
 //=======================================================================================
 class CFuiPlot;
-class CGroundSuspension;
+class CSuspensionMGR;
 class CgHolder;
 class CFPlan;
 class VPilot;
@@ -468,17 +468,17 @@ public:
   ///---------------------------------------------------------------------
 	void	SetVEH(CVehicleObject *v)						{mveh = v;}
 	VPilot                 *GetVirtualPilot()	{return vpil;}
-	CFlapControl           *GetFlaps()				{return pFlaps;}
-  CAileronControl        *GetAilerons()			{return pAils;}
-  CElevatorControl       *GetElevators()		{return pElvs;}
-  CRudderControl         *GetRudders()			{return pRuds;}
-	CSteeringControl       *GetSteerCTRL()		{return pSter;}
-  CElevatorTrimControl   *GetElevatorTrim()	{return eTrim;}
+	CFlapControl           *GetFlaps()				{return flap;}
+  CAileronControl        *GetAilerons()			{return ailr;}
+  CElevatorControl       *GetElevators()		{return elvr;}
+  CRudderControl         *GetRudders()			{return rudr;}
+	CSteeringControl       *GetSteerCTRL()		{return ster;}
+  CElevatorTrimControl   *GetElevatorTrim()	{return etrm;}
 	CSpeedRegulator        *GetSpeedRegulator() {return sReg;}
 	//---------------------------------------------------------------------
 	CFPlan			*GetFlightPlan()	{return fpln;}
 	CRobot      *GetRobot()				{return d2r2;}
-	char				 GearConnexion()	{return (pRuds)?(pRuds->GearConnexion()):(0);}
+	char				 GearConnexion()	{return (rudr)?(rudr->GearConnexion()):(0);}
   //---------------------------------------------------------------------
 public:
   char     lastID[8];        // Last id   successfully read
@@ -491,14 +491,14 @@ public:
 	VPilot								*vpil;						// Virtual pilot
 	CRobot                *d2r2;						// Robot
 	CSpeedRegulator				*sReg;						// Speed regulator
-  CAileronControl       *pAils;						// Aileron
-  CElevatorControl      *pElvs;						// elevator
-  CRudderControl        *pRuds;						// Ruder
-  CFlapControl          *pFlaps;					// Flaps
-	CSteeringControl      *pSter;						// Steering controler
-  CAileronTrimControl   *aTrim;						// Aileron trim
-  CElevatorTrimControl  *eTrim;						// Elevator trim
-  CRudderTrimControl    *rTrim;						// Rudder trim
+  CAileronControl       *ailr;						// Aileron
+  CElevatorControl      *elvr;						// elevator
+  CRudderControl        *rudr;						// Ruder
+  CFlapControl          *flap;					// Flaps
+	CSteeringControl      *ster;						// Steering controler
+  CAileronTrimControl   *atrm;						// Aileron trim
+  CElevatorTrimControl  *etrm;						// Elevator trim
+  CRudderTrimControl    *rtrm;						// Rudder trim
   CEngineManager        *pEngineManager;	// Engine manager
   CBrakeControl         *pwb;             // Wheel brakes
   CGearControl          *pgr;             // gear control

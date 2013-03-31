@@ -300,11 +300,14 @@ protected:
 	//--- Landing parameters --------------------------------------------
 	CFmt1Map   linTB;													// Alignment table
   //----Vertical mode control values ----------------------------------
-  double     Vref;                          // VSP Reference
   double     eVRT;                          // Vertical error (glide)
   double     vAMP;                          // Vertical amplifier
-  double     eVSP;                          // VSP error 
-  double     rVSP;                          // Reference VSP
+  double     rVSI;                          // Reference VSI
+	double		 vFPS;													// Vertical feet/sec
+	double     aVSI;													// VSI adjustment
+	double     xALT;													// Expected altitude
+	double     fmax;													// FPM max
+	double     fmin;													// FPM min
 	VLinear    rALT;													// Reference altitude	
   //---Current parameters -------------------------------------------
 	double      cFAC;												  // Current factor
@@ -314,7 +317,7 @@ protected:
 	double			xAGL;													// Expected AGL
   //--------------------------------------------------------------------
   float      gTime;                         // ground timer
-  CAirplane *plane;                   // Plane to control
+  CAirplane *plane;													// Plane to control
   //---Lateral leg parameters ------------------------------------------
   U_CHAR     mode;                          // Autopilot mode
   U_CHAR     signal;                        // NAV Signal (VOR/ILS)
@@ -374,7 +377,7 @@ public:
   bool            CheckAlert();
   //-------Options ----------------------------------------------------
 	inline void	SetVDTA(double d)						{vDTA		= d;}
-  inline void SetVREF(double v)           {Vref		= v;}
+	inline void SetAVSI(double v)						{aVSI   = v;}
   inline void SetGLDopt(double g)         {glide	= g;}
   inline void SetDISopt(double a)         {aLND		= a;}
 	void				SetLndFLP(char p,double a)	{lndFP = p; lndFA = a;}
@@ -431,6 +434,7 @@ public:
   void            IncALT();
   void            DecALT();
 	void						ChangeALT(double a);
+	void						SetRVSI(double v);
 	void						SetLandingMode();
   //----Lateral modes --------------------------------------------------
 	double					AdjustHDG();

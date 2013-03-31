@@ -55,7 +55,7 @@ void GroundQUAD::SetQuad(int x, int y, int dim)
 	cy	= y;
 	float hf  = float(dim) * 0.5;
   float dto,dtu;
-	globals->txw->GetTextParam(TC_HIGHTR,&dto,&dtu); 
+	globals->txw->GetTextParam(TX_HIGHTR,&dto,&dtu); 
 	//-------------------------------------------------------
 	float t1 = dto;
 	float t2 = dto + dtu;
@@ -146,7 +146,7 @@ void GroundQUAD::GetTextureFromSQL(char *nam,U_INT px,U_INT pz)
 //-----------------------------------------------------------------------
 void GroundQUAD::GetTextureFromPOD(char *nam,U_INT qx,U_INT qz)
 { TEXT_INFO txd;
-	char	reso	= TC_HIGHTR;							// Resolution
+	char	reso	= TX_HIGHTR;							// Resolution
 	char  root[32];                       // file name
 	U_INT	gx		= (qx >> 1);							// Global tile x indice
 	U_INT	gz		= (qz >> 1);							// Global tile z indice
